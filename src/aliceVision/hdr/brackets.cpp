@@ -130,7 +130,7 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
         {
             lines.push_back(line);
         }
-        if ((lines.size() < 2) || (atoi(lines[0].c_str()) != groups.size()) || (atoi(lines[1].c_str()) < groups[0].size()))
+        if ((lines.size() < 3) || (atoi(lines[0].c_str()) != groups.size()) || (atoi(lines[1].c_str()) < groups[0].size()))
         {
             ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
         }
@@ -144,10 +144,11 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
             double lumaMeanMean = 0.0;
             for (int j = 0; j < nbGroup; ++j)
             {
-                std::istringstream iss(lines[2 + j * nbExp + i]);
+                std::istringstream iss(lines[3 + j * nbExp + i]);
+                aliceVision::IndexT srcId;
                 int exposure, nbItem;
                 double lumaMean, lumaMin, lumaMax;
-                if (!(iss >> exposure >> nbItem >> lumaMean >> lumaMin >> lumaMax))
+                if (!(iss >> srcId >> exposure >> nbItem >> lumaMean >> lumaMin >> lumaMax))
                 {
                     ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
                 }

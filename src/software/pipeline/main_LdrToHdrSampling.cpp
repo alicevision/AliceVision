@@ -44,6 +44,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
+using namespace aliceVision::hdr;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -54,8 +55,10 @@ int aliceVision_main(int argc, char** argv)
     std::string outputFolder;
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
+    ECalibrationMethod calibrationMethod = ECalibrationMethod::DEBEVEC;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     hdr::Sampling::Params params;
+    bool byPass = false;
     bool debug = false;
 
     int rangeStart = -1;
@@ -74,10 +77,14 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
          "bracket count per HDR image (0 means automatic).")
+        ("byPass", po::value<bool>(&byPass)->default_value(byPass),
+         "bypass HDR creation and use a single bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
+        ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
+         "Name of method used for camera calibration: linear, debevec, grossberg, laguerre.")
         ("blockSize", po::value<int>(&params.blockSize)->default_value(params.blockSize),
          "Size of the image tile to extract a sample.")
         ("radius", po::value<int>(&params.radius)->default_value(params.radius),
@@ -104,7 +111,6 @@ int aliceVision_main(int argc, char** argv)
     // set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
     omp_set_num_threads(hwc.getMaxThreads());
-
 
     const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
@@ -216,8 +222,10 @@ int aliceVision_main(int argc, char** argv)
         imgReadOptions.rawColorInterpretation = rawColorInterpretation;
         imgReadOptions.colorProfileFileName = colorProfileFileName;
 
+        const bool simplifiedSampling = byPass || (calibrationMethod == ECalibrationMethod::LINEAR);
+
         std::vector<hdr::ImageSample> out_samples;
-        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, imgReadOptions, params);
+        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, imgReadOptions, params, simplifiedSampling);
         if (!res)
         {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);

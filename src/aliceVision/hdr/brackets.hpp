@@ -11,6 +11,71 @@
 namespace aliceVision {
 namespace hdr {
 
+enum class ECalibrationMethod
+{
+    LINEAR,
+    DEBEVEC,
+    GROSSBERG,
+    LAGUERRE,
+};
+
+/**
+ * @brief convert an enum ECalibrationMethod to its corresponding string
+ * @param ECalibrationMethod
+ * @return String
+ */
+inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod calibrationMethod)
+{
+    switch (calibrationMethod)
+    {
+    case ECalibrationMethod::LINEAR:
+        return "linear";
+    case ECalibrationMethod::DEBEVEC:
+        return "debevec";
+    case ECalibrationMethod::GROSSBERG:
+        return "grossberg";
+    case ECalibrationMethod::LAGUERRE:
+        return "laguerre";
+    }
+    throw std::out_of_range("Invalid method name enum");
+}
+
+/**
+ * @brief convert a string calibration method name to its corresponding enum ECalibrationMethod
+ * @param ECalibrationMethod
+ * @return String
+ */
+inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& calibrationMethodName)
+{
+    std::string methodName = calibrationMethodName;
+    std::transform(methodName.begin(), methodName.end(), methodName.begin(), ::tolower);
+
+    if (methodName == "linear")
+        return ECalibrationMethod::LINEAR;
+    if (methodName == "debevec")
+        return ECalibrationMethod::DEBEVEC;
+    if (methodName == "grossberg")
+        return ECalibrationMethod::GROSSBERG;
+    if (methodName == "laguerre")
+        return ECalibrationMethod::LAGUERRE;
+
+    throw std::out_of_range("Invalid method name : '" + calibrationMethodName + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, ECalibrationMethod calibrationMethodName)
+{
+    os << ECalibrationMethod_enumToString(calibrationMethodName);
+    return os;
+}
+
+inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibrationMethod)
+{
+    std::string token;
+    in >> token;
+    calibrationMethod = ECalibrationMethod_stringToEnum(token);
+    return in;
+}
+
 /**
  * @brief Estimate brackets information from sfm data
  * @param[out] groups: estimated groups

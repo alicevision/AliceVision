@@ -146,7 +146,7 @@ void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RG
     }
 }
 
-bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string>& imagePaths, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::ImageReadOptions & imgReadOptions, const Sampling::Params params)
+bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string>& imagePaths, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::ImageReadOptions & imgReadOptions, const Sampling::Params params, const bool simplified)
 {
     const int radiusp1 = params.radius + 1;
     const int diameter = (params.radius * 2) + 1;
@@ -184,46 +184,96 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             throw std::runtime_error(ss.str());
         }
 
-        #pragma omp parallel for
-        for (int idx = 0; idx < vec_blocks.size(); ++idx)
+        if (simplified)
         {
-            int cx = vec_blocks[idx].first;
-            int cy = vec_blocks[idx].second;
+            // Luminance statistics are calculated from a subsampled square, centered and rotated by 45°.
+            // 2 vertices of this square are the centers of the longest sides of the image.
+            // Such a shape is suitable for both fisheye and classic images.
 
-            int blockWidth = ((img.Width() - cx) > params.blockSize) ? params.blockSize : img.Width() - cx;
-            int blockHeight = ((img.Height() - cy) > params.blockSize) ? params.blockSize : img.Height() - cy;
+            const int H = imageHeight;
+            const int W = imageWidth;
+            const int hH = imageHeight / 2;
+            const int hW = imageWidth / 2;
 
-            auto blockInput = img.block(cy, cx, blockHeight, blockWidth);
-            auto blockOutput = samples.block(cy, cx, blockHeight, blockWidth);
+            const int a1 = (H <= W) ? hW : hH;
+            const int a2 = (H <= W) ? hW : W - hH;
+            const int a3 = (H <= W) ? H - hW : hH;
+            const int a4 = (H <= W) ? hW + H : W + hH;
 
-            // Stats for deviation
-            Image<Rgb<double>> imgIntegral, imgIntegralSquare; 
-            Image<RGBfColor> imgSquare;
+            // All rows must be considered if image orientation is landscape (H < W)
+            // Only imgW rows centered on imgH/2 must be considered if image orientation is portrait (H > W)
+            const int rmin = (H <= W) ? 0 : (H - W) / 2;
+            const int rmax = (H <= W) ? H : (H + W) / 2;
 
-            square(imgSquare, blockInput);
-            integral(imgIntegral, blockInput);
-            integral(imgIntegralSquare, imgSquare);
+            const int sampling = 16;
 
-            for(int y = radiusp1; y < imgIntegral.Height() - params.radius; ++y)
+            #pragma omp parallel for
+            for (int r = rmin; r < rmax; r = r + sampling)
             {
-                for(int x = radiusp1; x < imgIntegral.Width() - params.radius; ++x)
-                {
-                    image::Rgb<double> S1 = imgIntegral(y + params.radius, x + params.radius) + imgIntegral(y - radiusp1, x - radiusp1) - imgIntegral(y + params.radius, x - radiusp1) - imgIntegral(y - radiusp1, x + params.radius);
-                    image::Rgb<double> S2 = imgIntegralSquare(y + params.radius, x + params.radius) + imgIntegralSquare(y - radiusp1, x - radiusp1) - imgIntegralSquare(y + params.radius, x - radiusp1) - imgIntegralSquare(y - radiusp1, x + params.radius);
-                    
-                    PixelDescription pd;
-                    
-                    pd.exposure = exposure;
-                    pd.mean.r() = blockInput(y,x).r(); 
-                    pd.mean.g() = blockInput(y,x).g(); 
-                    pd.mean.b() = blockInput(y,x).b();
-                    pd.variance.r() = (S2.r() - (S1.r()*S1.r()) / area) / area;
-                    pd.variance.g() = (S2.g() - (S1.g()*S1.g()) / area) / area;
-                    pd.variance.b() = (S2.b() - (S1.b()*S1.b()) / area) / area;
+                const int cmin = (r < hH) ? a1 - r : r - a3;
+                const int cmax = (r < hH) ? a2 + r : a4 - r;
 
-                    blockOutput(y, x).x = cx + x;
-                    blockOutput(y, x).y = cy + y;
-                    blockOutput(y, x).descriptions.push_back(pd);
+                for (int c = cmin; c < cmax; c = c + sampling)
+                {
+                    PixelDescription pd;
+
+                    pd.exposure = exposure;
+                    pd.mean.r() = img(r, c).r();
+                    pd.mean.g() = img(r, c).g();
+                    pd.mean.b() = img(r, c).b();
+                    pd.variance.r() = 0.0;
+                    pd.variance.g() = 0.0;
+                    pd.variance.b() = 0.0;
+
+                    samples(r, c).x = c;
+                    samples(r, c).y = r;
+                    samples(r, c).descriptions.push_back(pd);
+                }
+            }
+        }
+        else
+        {
+            #pragma omp parallel for
+            for (int idx = 0; idx < vec_blocks.size(); ++idx)
+            {
+                int cx = vec_blocks[idx].first;
+                int cy = vec_blocks[idx].second;
+
+                int blockWidth = ((img.Width() - cx) > params.blockSize) ? params.blockSize : img.Width() - cx;
+                int blockHeight = ((img.Height() - cy) > params.blockSize) ? params.blockSize : img.Height() - cy;
+
+                auto blockInput = img.block(cy, cx, blockHeight, blockWidth);
+                auto blockOutput = samples.block(cy, cx, blockHeight, blockWidth);
+
+                // Stats for deviation
+                Image<Rgb<double>> imgIntegral, imgIntegralSquare;
+                Image<RGBfColor> imgSquare;
+
+                square(imgSquare, blockInput);
+                integral(imgIntegral, blockInput);
+                integral(imgIntegralSquare, imgSquare);
+
+                for (int y = radiusp1; y < imgIntegral.Height() - params.radius; ++y)
+                {
+                    for (int x = radiusp1; x < imgIntegral.Width() - params.radius; ++x)
+                    {
+                        image::Rgb<double> S1 = imgIntegral(y + params.radius, x + params.radius) + imgIntegral(y - radiusp1, x - radiusp1) - imgIntegral(y + params.radius, x - radiusp1) - imgIntegral(y - radiusp1, x + params.radius);
+                        image::Rgb<double> S2 = imgIntegralSquare(y + params.radius, x + params.radius) + imgIntegralSquare(y - radiusp1, x - radiusp1) - imgIntegralSquare(y + params.radius, x - radiusp1) - imgIntegralSquare(y - radiusp1, x + params.radius);
+
+                        PixelDescription pd;
+
+                        pd.exposure = exposure;
+                        pd.mean.r() = blockInput(y, x).r();
+                        pd.mean.g() = blockInput(y, x).g();
+                        pd.mean.b() = blockInput(y, x).b();
+                        pd.variance.r() = (S2.r() - (S1.r() * S1.r()) / area) / area;
+                        pd.variance.g() = (S2.g() - (S1.g() * S1.g()) / area) / area;
+                        pd.variance.b() = (S2.b() - (S1.b() * S1.b()) / area) / area;
+
+                        blockOutput(y, x).x = cx + x;
+                        blockOutput(y, x).y = cy + y;
+                        blockOutput(y, x).descriptions.push_back(pd);
+                    }
                 }
             }
         }
@@ -235,124 +285,127 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         return false;
     }
 
-    // Create samples image
-    #pragma omp parallel for
-    for (int y = params.radius; y < samples.Height() - params.radius; ++y)
+    if (!simplified)
     {
-        for (int x = params.radius; x < samples.Width() - params.radius; ++x)
+        // Create samples image
+        #pragma omp parallel for
+        for (int y = params.radius; y < samples.Height() - params.radius; ++y)
         {
-            ImageSample & sample = samples(y, x);
-            if (sample.descriptions.size() < 2)
+            for (int x = params.radius; x < samples.Width() - params.radius; ++x)
             {
-                continue;
-            }
-
-            int last_ok = 0;
-
-            // Make sure we don't have a patch with high variance on any bracket.
-            // If the variance is too high somewhere, ignore the whole coordinate samples
-            bool valid = true;
-            const float maxVariance = 0.05f;
-            for (int k = 0; k < sample.descriptions.size(); ++k)
-            {
-                if (sample.descriptions[k].variance.r() > maxVariance ||
-                    sample.descriptions[k].variance.g() > maxVariance ||
-                    sample.descriptions[k].variance.b() > maxVariance)
-                {
-                    valid = false;
-                    break;
-                }
-            }
-
-            if (!valid)
-            {
-                sample.descriptions.clear();
-                continue;
-            }
-
-            // Makes sure the curve is monotonic
-            int firstvalid = -1;
-            int lastvalid = 0;
-            for (std::size_t k = 1; k < sample.descriptions.size(); ++k)
-            {
-                bool valid = false;
-
-                // Threshold on the max values, to avoid using fully saturated pixels
-                // TODO: on RAW images, values can be higher. May need to be computed dynamically?
-                const float maxValue = 0.99f;
-                if(sample.descriptions[k].mean.r() > maxValue ||
-                   sample.descriptions[k].mean.g() > maxValue ||
-                   sample.descriptions[k].mean.b() > maxValue)
+                ImageSample& sample = samples(y, x);
+                if (sample.descriptions.size() < 2)
                 {
                     continue;
                 }
 
-                // Ensures that at least one channel is strictly increasing with increasing exposure
-                // TODO: check "exposure" params, we may have the same exposure multiple times
-                const float minIncreaseRatio = 1.004f;
-                if(sample.descriptions[k].mean.r() > minIncreaseRatio * sample.descriptions[k - 1].mean.r() ||
-                   sample.descriptions[k].mean.g() > minIncreaseRatio * sample.descriptions[k - 1].mean.g() ||
-                   sample.descriptions[k].mean.b() > minIncreaseRatio * sample.descriptions[k - 1].mean.b())
-                {
-                    valid = true;
-                }
+                int last_ok = 0;
 
-                // Ensures that the values of each channel are increasing with increasing exposure
-                if (sample.descriptions[k].mean.r() < sample.descriptions[k - 1].mean.r() ||
-                    sample.descriptions[k].mean.g() < sample.descriptions[k - 1].mean.g() ||
-                    sample.descriptions[k].mean.b() < sample.descriptions[k - 1].mean.b())
+                // Make sure we don't have a patch with high variance on any bracket.
+                // If the variance is too high somewhere, ignore the whole coordinate samples
+                bool valid = true;
+                const float maxVariance = 0.05f;
+                for (int k = 0; k < sample.descriptions.size(); ++k)
                 {
-                    valid = false;
-                }
-
-                // If we have enough information to analyze the chrominance
-                const float minGlobalValue = 0.1f;
-                if(sample.descriptions[k - 1].mean.norm() > minGlobalValue)
-                {
-                    // Check that both colors are similars
-                    const float n1 = sample.descriptions[k - 1].mean.norm();
-                    const float n2 = sample.descriptions[k].mean.norm();
-                    const float dot = sample.descriptions[k - 1].mean.dot(sample.descriptions[k].mean);
-                    const float cosa = dot / (n1*n2);
-                    
-                    const float maxCosa = 0.95f; // ~ 18deg
-                    if(cosa < maxCosa)
+                    if (sample.descriptions[k].variance.r() > maxVariance ||
+                        sample.descriptions[k].variance.g() > maxVariance ||
+                        sample.descriptions[k].variance.b() > maxVariance)
                     {
                         valid = false;
-                    }
-                }
-
-                if (valid)
-                {
-                    if (firstvalid < 0)
-                    {
-                        firstvalid = int(k) - 1;
-                    }
-                    lastvalid = int(k);
-                }
-                else
-                {
-                    if (lastvalid != 0)
-                    {
                         break;
                     }
                 }
-            }
 
-            if (lastvalid == 0 || firstvalid < 0)
-            {
-                sample.descriptions.clear();
-                continue;
-            }
-
-            if (firstvalid > 0 || lastvalid < int(sample.descriptions.size()) - 1)
-            {
-                std::vector<PixelDescription> replace;
-                for (int pos = firstvalid; pos <= lastvalid; ++pos)
+                if (!valid)
                 {
-                    replace.push_back(sample.descriptions[pos]);
+                    sample.descriptions.clear();
+                    continue;
                 }
-                sample.descriptions = replace;
+
+                // Makes sure the curve is monotonic
+                int firstvalid = -1;
+                int lastvalid = 0;
+                for (std::size_t k = 1; k < sample.descriptions.size(); ++k)
+                {
+                    bool valid = false;
+
+                    // Threshold on the max values, to avoid using fully saturated pixels
+                    // TODO: on RAW images, values can be higher. May need to be computed dynamically?
+                    const float maxValue = 0.99f;
+                    if (sample.descriptions[k].mean.r() > maxValue ||
+                        sample.descriptions[k].mean.g() > maxValue ||
+                        sample.descriptions[k].mean.b() > maxValue)
+                    {
+                        continue;
+                    }
+
+                    // Ensures that at least one channel is strictly increasing with increasing exposure
+                    // TODO: check "exposure" params, we may have the same exposure multiple times
+                    const float minIncreaseRatio = 1.004f;
+                    if (sample.descriptions[k].mean.r() > minIncreaseRatio * sample.descriptions[k - 1].mean.r() ||
+                        sample.descriptions[k].mean.g() > minIncreaseRatio * sample.descriptions[k - 1].mean.g() ||
+                        sample.descriptions[k].mean.b() > minIncreaseRatio * sample.descriptions[k - 1].mean.b())
+                    {
+                        valid = true;
+                    }
+
+                    // Ensures that the values of each channel are increasing with increasing exposure
+                    if (sample.descriptions[k].mean.r() < sample.descriptions[k - 1].mean.r() ||
+                        sample.descriptions[k].mean.g() < sample.descriptions[k - 1].mean.g() ||
+                        sample.descriptions[k].mean.b() < sample.descriptions[k - 1].mean.b())
+                    {
+                        valid = false;
+                    }
+
+                    // If we have enough information to analyze the chrominance
+                    const float minGlobalValue = 0.1f;
+                    if (sample.descriptions[k - 1].mean.norm() > minGlobalValue)
+                    {
+                        // Check that both colors are similars
+                        const float n1 = sample.descriptions[k - 1].mean.norm();
+                        const float n2 = sample.descriptions[k].mean.norm();
+                        const float dot = sample.descriptions[k - 1].mean.dot(sample.descriptions[k].mean);
+                        const float cosa = dot / (n1 * n2);
+
+                        const float maxCosa = 0.95f; // ~ 18deg
+                        if (cosa < maxCosa)
+                        {
+                            valid = false;
+                        }
+                    }
+
+                    if (valid)
+                    {
+                        if (firstvalid < 0)
+                        {
+                            firstvalid = int(k) - 1;
+                        }
+                        lastvalid = int(k);
+                    }
+                    else
+                    {
+                        if (lastvalid != 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (lastvalid == 0 || firstvalid < 0)
+                {
+                    sample.descriptions.clear();
+                    continue;
+                }
+
+                if (firstvalid > 0 || lastvalid < int(sample.descriptions.size()) - 1)
+                {
+                    std::vector<PixelDescription> replace;
+                    for (int pos = firstvalid; pos <= lastvalid; ++pos)
+                    {
+                        replace.push_back(sample.descriptions[pos]);
+                    }
+                    sample.descriptions = replace;
+                }
             }
         }
     }
