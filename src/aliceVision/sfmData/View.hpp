@@ -703,6 +703,24 @@ public:
   }
 
   /**
+   * @brief Add a new ancestor to this view
+   * @param[in] viewId the view ancestor id
+   */
+  void addAncestor(IndexT viewId)
+  {
+    _ancestors.push_back(viewId);
+  }
+
+  /**
+  * @Brief get all ancestors for this view
+  * @return ancestors
+  */
+  const std::vector<IndexT> & getAncestors() const
+  {
+    return _ancestors;
+  }
+
+  /**
    * @brief Set the given resection id
    * @param[in] resectionId The given resection id
    */
@@ -801,6 +819,8 @@ private:
   bool _isPoseIndependent = true;
   /// map for metadata
   std::map<std::string, std::string> _metadata;
+  /// list of ancestors
+  std::vector<IndexT> _ancestors;
 };
 
 } // namespace sfmData

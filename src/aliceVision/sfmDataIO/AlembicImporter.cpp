@@ -401,6 +401,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
   std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
+  std::vector<IndexT> mvg_ancestorsParams;
   Vec2 initialFocalLengthPix = {-1, -1};
   double fisheyeCenterX = 0.0;
   double fisheyeCenterY = 0.0;
@@ -533,6 +534,13 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
         prop.get(sample, ISampleSelector(sampleFrame));
         mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
       }
+      if(userProps.getPropertyHeader("mvg_ancestorsParams"))
+      {
+        Alembic::Abc::IUInt32ArrayProperty prop(userProps, "mvg_ancestorsParams");
+        Alembic::Abc::IUInt32ArrayProperty::sample_ptr_type sample;
+        prop.get(sample, ISampleSelector(sampleFrame));
+        mvg_ancestorsParams.assign(sample->get(), sample->get()+sample->size());
+      }
     }
   }
 
@@ -600,7 +608,14 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
 
     // set metadata
     for(std::size_t i = 0; i < rawMetadata.size(); i+=2)
+    {
       view->addMetadata(rawMetadata.at(i), rawMetadata.at(i + 1));
+    }
+
+    for (IndexT val : mvg_ancestorsParams)
+    {
+      view->addAncestor(val);
+    }
 
     sfmData.views[viewId] = view;
   }
