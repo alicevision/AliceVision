@@ -58,7 +58,8 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
     viewTree.add_child("metadata", metadataTree);
   }
 
-  // metadata
+  // ancestors
+  if (!view.getAncestors().empty())
   {
     bpt::ptree ancestorsTree;
 
