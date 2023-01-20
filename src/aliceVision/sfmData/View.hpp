@@ -703,7 +703,11 @@ public:
   }
 
   /**
-   * @brief Add a new ancestor to this view
+   * @brief Get the list of viewID referencing the source views called "Ancestors"
+   * If an image is generated from multiple input images, "Ancestors" allows to keep track of the viewIDs of the original inputs views.
+   * For instance, the generated view can come from the fusion of multiple LDR images into one HDR image, the fusion from multi-focus 
+   * stacking to get a fully focused image, fusion of images with multiple lighting to get a more diffuse lighting, etc.
+   * @return list of viewID of the ancestors
    * @param[in] viewId the view ancestor id
    */
   void addAncestor(IndexT viewId)
