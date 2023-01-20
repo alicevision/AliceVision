@@ -18,6 +18,7 @@
 #include <boost/multi_index/member.hpp>
 
 #include <fstream>
+#include <list>
 #include <sstream>
 #include <queue>
 
