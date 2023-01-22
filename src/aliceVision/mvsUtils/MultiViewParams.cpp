@@ -328,50 +328,6 @@ bool MultiViewParams::is3DPointInFrontOfCam(const Point3d* X, int rc) const
     return XT.z >= 0;
 }
 
-void MultiViewParams::getMinMaxMidNbDepth(int index, float& min, float& max, float& mid, std::size_t& nbDepths, float percentile) const
-{
-  using namespace boost::accumulators;
-
-  const std::size_t cacheSize =  1000;
-  accumulator_set<float, stats<tag::tail_quantile<left>>>  accDistanceMin(tag::tail<left>::cache_size = cacheSize);
-  accumulator_set<float, stats<tag::tail_quantile<right>>> accDistanceMax(tag::tail<right>::cache_size = cacheSize);
-
-  const IndexT viewId = getViewId(index);
-
-  ALICEVISION_LOG_DEBUG("Compute min/max/mid/nb depth for view id: " << viewId);
-
-  OrientedPoint cameraPlane;
-  cameraPlane.p = CArr[index];
-  cameraPlane.n = iRArr[index] * Point3d(0.0, 0.0, 1.0);
-  cameraPlane.n = cameraPlane.n.normalize();
-
-  Point3d midDepthPoint = Point3d();
-  nbDepths = 0;
-
-  for(const auto& landmarkPair : _sfmData.getLandmarks())
-  {
-    const sfmData::Landmark& landmark = landmarkPair.second;
-    const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
-
-    for(const auto& observationPair : landmark.observations)
-    {
-      if(observationPair.first == viewId)
-      {
-        const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
-        accDistanceMin(distance);
-        accDistanceMax(distance);
-        midDepthPoint = midDepthPoint + point;
-        ++nbDepths;
-      }
-    }
-  }
-
-  min = quantile(accDistanceMin, quantile_probability = 1.0 - percentile);
-  max = quantile(accDistanceMax, quantile_probability = percentile);
-  midDepthPoint = midDepthPoint / static_cast<float>(nbDepths);
-  mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
-}
-
 void MultiViewParams::getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const
 {
     getPixelFor3DPoint(out, X, camArr[rc]);
@@ -624,6 +580,93 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
 
   if(out.size() < nbNearestCams)
     ALICEVISION_LOG_INFO("Found only " << out.size() << "/" << nbNearestCams << " nearest cameras for view id: " << getViewId(rc));
+
+  return out;
+}
+
+std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams, const std::vector<int>& tCams, const ROI& roi) const
+{
+  auto plateauFunction = [](int a, int b, int c, int d, int x)
+  {
+    if(x > a && x <= b)
+      return (float(x - a) / float(b - a));
+    if(x > b && x <= c)
+      return 1.0f;
+    if(x > c && x <= d)
+      return 1.0f - (float(x - c) / float(d - c));
+    return 0.f;
+  };
+
+  std::vector<int> out;
+  std::map<int, float> tcScore;
+
+  for(std::size_t i = 0; i < tCams.size(); ++i)
+    tcScore[tCams[i]] = 0.0f;
+
+  const sfmData::SfMData& sfmData = getInputSfMData();
+
+  const IndexT viewId = getViewId(rc);
+  const sfmData::View& view = *(sfmData.getViews().at(viewId));
+  const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+  const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
+
+  const ROI fullsizeRoi = upscaleROI(roi, getProcessDownscale()); // landmark observations are in the full-size image coordinate system
+
+  for(const auto& landmarkPair : sfmData.getLandmarks())
+  {
+    const auto& observations = landmarkPair.second.observations;
+
+    auto viewObsIt = observations.find(viewId);
+
+    // has landmark observation for the R camera
+    if(viewObsIt == observations.end())
+      continue;
+
+    // landmark R camera observation is in the image full-size ROI
+    if(!fullsizeRoi.contains(viewObsIt->second.x.x(), viewObsIt->second.x.y()))
+      continue;
+
+    for(const auto& observationPair : observations)
+    {
+      const IndexT otherViewId = observationPair.first;
+
+      // other view should not be the R camera
+      if(otherViewId == viewId)
+       continue;
+
+      const int tc = getIndexFromViewId(otherViewId);
+
+      // other view should be a T camera
+      if(tcScore.find(tc) == tcScore.end())
+        continue;
+
+      const sfmData::View& otherView = *(sfmData.getViews().at(otherViewId));
+      const geometry::Pose3 otherPose = sfmData.getPose(otherView).getTransform();
+      const camera::IntrinsicBase* otherIntrinsicPtr = sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
+
+      const double angle = camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+
+      tcScore[tc] += plateauFunction(1,10,50,150, angle);
+    }
+  }
+
+  std::vector<SortedId> ids;
+  ids.reserve(tcScore.size());
+
+  for(const auto& tcScorePair : tcScore)
+  {
+    if(tcScorePair.second > 0.0f)
+      ids.push_back(SortedId(tcScorePair.first, tcScorePair.second));
+  }
+
+  qsort(&ids[0], ids.size(), sizeof(SortedId), qsortCompareSortedIdDesc);
+
+  // ensure the ideal number of target cameras is not superior to the actual number of cameras
+  const int maxTc = std::min(std::min(getNbCameras(), nbNearestCams), static_cast<int>(ids.size()));
+  out.reserve(maxTc);
+
+  for(int i = 0; i < maxTc; ++i)
+    out.push_back(ids[i].id);
 
   return out;
 }

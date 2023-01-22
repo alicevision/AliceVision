@@ -16,22 +16,28 @@ struct RefineParams
 {
   // user parameters
 
+  int scale = 1;
+  int stepXY = 1;
   int wsh = 3;
-  int maxTCams = 6;
-  int nDepthsToRefine = 31;
-  int nSamplesHalf = 150;
-  int nIters = 100;
+  int halfNbDepths = 15;
+  int nbSubsamples = 10;
+  int maxTCamsPerTile = 4;
+  int optimizationNbIterations = 100;
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
-  bool useTcOrRcPixSize = false;
-  bool exportIntermediateResults = false;
+  bool useRefineFuse = true;
+  bool useColorOptimization = true;
+
+  // intermediate results export parameters
+
+  bool exportIntermediateDepthSimMaps = false;
+  bool exportIntermediateCrossVolumes = false;
+  bool exportIntermediateVolume9pCsv = false;
 
   // constant parameters
 
-  const int scale = 1; // should remain at 1 for now, some Refine functions do not support this parameter
-  const bool doRefineFuse = true;
-  const bool doRefineOpt = true;
+  const bool useNormalMap = false; // for experimentation purposes
 };
 
 } // namespace depthMap

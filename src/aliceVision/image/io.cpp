@@ -704,7 +704,8 @@ void writeImage(const std::string& path,
                 const Image<T>& image,
                 const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
-                const oiio::ROI& roi = oiio::ROI())
+                const oiio::ROI& displayRoi = oiio::ROI(), 
+                const oiio::ROI& pixelRoi = oiio::ROI())
 {
     const fs::path bPath = fs::path(path);
     const std::string extension = boost::to_lower_copy(bPath.extension().string());
@@ -733,12 +734,19 @@ void writeImage(const std::string& path,
     oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
     imageSpec.extra_attribs = metadata; // add custom metadata
 
-    imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
-    imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
-    if(roi.defined() && isEXR)
-    {
-        imageSpec.set_roi_full(roi);
-    }
+  imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
+  imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
+
+  if(displayRoi.defined() && isEXR)
+  {
+      imageSpec.set_roi_full(displayRoi);
+  }
+
+  if(pixelRoi.defined() && isEXR)
+  {
+      imageSpec.set_roi(pixelRoi);
+  }
+
 
     imageSpec.attribute("AliceVision:ColorSpace",
                         (toColorSpace == EImageColorSpace::NO_CONVERSION)
@@ -931,18 +939,24 @@ void writeImage(const std::string& path, const Image<IndexT>& image,
     writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<float>& image,
-                const ImageWriteOptions& options, const oiio::ParamValueList& metadata,
-                const oiio::ROI& roi)
+void writeImage(const std::string& path, 
+                const Image<float>& image,
+                const ImageWriteOptions& options,
+                const oiio::ParamValueList& metadata,
+                const oiio::ROI& displayRoi, 
+                const oiio::ROI& pixelRoi)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, 1, image, options, metadata,roi);
+    writeImage(path, oiio::TypeDesc::FLOAT, 1, image, options, metadata, displayRoi, pixelRoi);
 }
 
-void writeImage(const std::string& path, const Image<RGBAfColor>& image,
-                const ImageWriteOptions& options, const oiio::ParamValueList& metadata,
-                const oiio::ROI& roi)
+void writeImage(const std::string& path, 
+                const Image<RGBAfColor>& image,
+                const ImageWriteOptions& options, 
+                const oiio::ParamValueList& metadata,
+                const oiio::ROI& displayRoi, 
+                const oiio::ROI& pixelRoi)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, 4, image, options, metadata,roi);
+    writeImage(path, oiio::TypeDesc::FLOAT, 4, image, options, metadata, displayRoi, pixelRoi);
 }
 
 void writeImage(const std::string& path, const Image<RGBAColor>& image,
@@ -951,11 +965,14 @@ void writeImage(const std::string& path, const Image<RGBAColor>& image,
     writeImage(path, oiio::TypeDesc::UINT8, 4, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBfColor>& image,
-                const ImageWriteOptions& options, const oiio::ParamValueList& metadata,
-                const oiio::ROI& roi)
+void writeImage(const std::string& path, 
+                const Image<RGBfColor>& image,
+                const ImageWriteOptions& options, 
+                const oiio::ParamValueList& metadata,
+                const oiio::ROI& displayRoi,
+                const oiio::ROI& pixelRoi)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, 3, image, options, metadata, roi);
+    writeImage(path, oiio::TypeDesc::FLOAT, 3, image, options, metadata, displayRoi, pixelRoi);
 }
 
 void writeImage(const std::string& path, const Image<RGBColor>& image,

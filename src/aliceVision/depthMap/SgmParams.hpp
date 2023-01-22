@@ -9,10 +9,6 @@
 #include <string>
 
 namespace aliceVision {
-
-// MultiViewParams forward declaration
-namespace mvsUtils { class MultiViewParams; } 
-
 namespace depthMap {
 
 /**
@@ -22,39 +18,38 @@ struct SgmParams
 {
   // user parameters
 
-  int scale = -1;
-  int stepXY = -1;
+  int scale = 2;
+  int stepXY = 2;
   int stepZ = -1;
   int wsh = 4;
-  int maxTCams = 10;
-  int maxDepths = 3000;
-  int maxDepthsPerTc = 1500;
-  int maxSideXY = 700;
+  int maxDepths = 1500;
+  int maxTCamsPerTile = 4;
+  double seedsRangeInflate = 0.2;
   double gammaC = 5.5;
   double gammaP = 8.0;
   double p1 = 10;
   double p2Weighting = 100.0;
   std::string filteringAxes = "YX";
   bool useSfmSeeds = true;
-  bool exportIntermediateResults = false;
+  bool depthListPerTile = false;
+
+  // intermediate results export parameters
+
+  bool exportIntermediateDepthSimMaps = false;
+  bool exportIntermediateVolumes = false;
+  bool exportIntermediateCrossVolumes = false;
+  bool exportIntermediateVolume9pCsv = false;
+  const bool exportDepthsTxtFiles = false;
 
   // constant parameters
-  
-  const bool prematchinMinMaxDepthDontUseSeeds = false;
-  const float prematchingMaxDepthScale = 1.5f;
-  const float prematchingMinCamDist = 0.0f;
-  const float prematchingMaxCamDist = 15.0f;
 
-  const int rcTcDepthsHalfLimit = 2048;
-  const int rcDepthsCompStep = 6;
-  const double seedsRangeInflate = 0.2;
+  const bool updateUninitializedSim = true; // should always be true, false for debug purposes
+  const bool computeNormalMap = false;   // for experimentation purposes
+  const float prematchingMaxDepthScale = 1.5f;
   const double seedsRangePercentile = 0.999;
   const bool doSgmOptimizeVolume = true;
-  const bool interpolateRetrieveBestDepth = false;
-  const bool saveDepthsToSweepTxtFile = false;
+  
 };
-
-void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams);
 
 } // namespace depthMap
 } // namespace aliceVision

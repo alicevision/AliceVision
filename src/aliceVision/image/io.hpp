@@ -337,20 +337,29 @@ void writeImage(const std::string& path, const Image<IndexT>& image,
                 const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
-void writeImage(const std::string& path, const Image<float>& image, const ImageWriteOptions& options,
+void writeImage(const std::string& path, 
+                const Image<float>& image, 
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
-                const oiio::ROI& roi = oiio::ROI());
+                const oiio::ROI& displayRoi = oiio::ROI(), 
+                const oiio::ROI& pixelRoi = oiio::ROI());
 
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, const ImageWriteOptions& options,
+void writeImage(const std::string& path, 
+                const Image<RGBAfColor>& image, 
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
-                const oiio::ROI& roi = oiio::ROI());
+                const oiio::ROI& displayRoi = oiio::ROI(),
+                const oiio::ROI& pixelRoi = oiio::ROI());
 
 void writeImage(const std::string& path, const Image<RGBAColor>& image, const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
-void writeImage(const std::string& path, const Image<RGBfColor>& image, const ImageWriteOptions& options,
+void writeImage(const std::string& path, 
+                const Image<RGBfColor>& image, 
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
-                const oiio::ROI& roi = oiio::ROI());
+                const oiio::ROI& displayRoi = oiio::ROI(), 
+                const oiio::ROI& pixelRoi = oiio::ROI());
 
 void writeImage(const std::string& path, const Image<RGBColor>& image, const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
