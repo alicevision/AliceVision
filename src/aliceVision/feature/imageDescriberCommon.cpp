@@ -7,6 +7,7 @@
 
 #include "imageDescriberCommon.hpp"
 #include <aliceVision/types.hpp>
+#include <aliceVision/config.hpp>
 
 #include <boost/algorithm/string.hpp>
 
