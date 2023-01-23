@@ -102,7 +102,7 @@
 [LP] **Linear Programming** http://en.wikipedia.org/wiki/Linear_programming
 
 [ROCHADE] **ROCHADE: Robust Checkerboard Advanced Detection for Camera Calibration**
-    David Fleet and Tomas Pajdla and Bernt Schiele and Tinne Tuytelaars.
+    Simon Placht, Peter Fürsattel, Etienne Assoumou Mengue, Hannes Hofmann, Christian Schaller, Michael Balda & Elli Angelopoulou.
 
 [Geiger] **Automatic Calibration of Range and Camera Sensors using a single Shot**
     Andreas Geiger and Frank Moosmann and Oemer Car and Bernhard Schuster.

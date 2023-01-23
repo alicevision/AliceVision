@@ -9,6 +9,9 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/types.hpp>
 
+#include <vector>
+#include <unordered_map>
+
 namespace aliceVision {
 namespace calibration {
 
@@ -57,6 +60,9 @@ public:
     {
         Vec2 center;
         double scale;
+
+        IntermediateCorner() = default;
+        IntermediateCorner(const Vec2& c, double s) : center(c), scale(s) {}
     };
 
     /**
@@ -68,6 +74,10 @@ public:
         Vec2 dir1;
         Vec2 dir2;
         double scale;
+
+        CheckerBoardCorner() = default;
+        CheckerBoardCorner(const Vec2& c, double s) : center(c), scale(s) {}
+        CheckerBoardCorner(const Vec2& c, const Vec2& d1, const Vec2& d2, double s) : center(c), dir1(d1), dir2(d2), scale(s) {}
     };
 
 public:
@@ -285,7 +295,7 @@ private:
     bool growIterationUp(CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners, bool nested) const;
 
     /**
-     * @brief Extend a board in the up, down, right and left directions.
+     * @brief Extend a board outwards in the up, down, right and left directions (only if that creates a board with lower energy).
      * 
      * @param[in,out] board Checkerboard to extend.
      * @param[in] refinedCorners All detected corners.
@@ -307,6 +317,47 @@ private:
      * @return False if a problem occured during merging, otherwise true.
      */
     bool mergeCheckerboards();
+
+    /**
+     * @brief Trim the empty borders of a checkerboard.
+     *
+     * @param[in] board Input checkerboard.
+     * @return Same checkerboard without empty borders.
+     */
+    CheckerBoard trimEmptyBorders(const CheckerBoard & board) const;
+
+    /**
+     * @brief Find a common corner between two checkerboards.
+     *
+     * @param[in] board Input checkerboard.
+     * @param[in] cornerLookup Lookup table for corners of reference checkerboard.
+     * @param[out] coordsRef Coordinates of common corner in reference board.
+     * @param[out] coordsBoard Coordinates of common corner in input board.
+     * @return True if a common corner was found, otherwise false.
+     */
+    bool findCommonCorner(const CheckerBoard& board, const std::unordered_map<IndexT, Vec2i>& cornerLookup, Vec2i& coordsRef, Vec2i& coordsBoard) const;
+
+    /**
+     * @brief Merge two checkeroards that share a common corner.
+     * 
+     * @param[in] boardRef Reference checkerboard.
+     * @param[in] board Checkerboard to merge with the reference board.
+     * @param[in] coordsRef Common corner coordinates on reference board.
+     * @param[in] coordsBoard Common corner coordinates on board to merge.
+     * @param[out] boardMerge Resulting checkerboard after merge.
+     * @return False if a conflict was detected, otherwise true.
+     */
+    bool mergeCheckerboardsPair(const CheckerBoard& boardRef, const CheckerBoard& board, const Vec2i& coordsRef, const Vec2i& coordsBoard, CheckerBoard& boardMerge) const;
+
+    /**
+     * @brief Filter out overlapping checkerboards.
+     * 
+     * When two checkerboards share at least 80% of their corners, keep only the one with lowest energy.
+     * 
+     * @param[in] checkersWithScore Checkerboards with their corresponding energy.
+     * @param[out] toKeep Indices of checkerboards to keep.
+     */
+    void filterOverlapping(const std::vector<std::pair<CheckerBoard, double>>& checkersWithScore, std::vector<std::size_t>& toKeep) const;
 
     /**
      * @brief Filter out checkboards based on a geometric invalidation criteria.
