@@ -8,6 +8,8 @@
 
 #include <OpenImageIO/imagebuf.h>
 
+#include <aliceVision/image/all.hpp>
+
 namespace aliceVision {
 namespace image {
 
@@ -174,11 +176,25 @@ public:
     void getMatrices(const std::string& type, std::vector<Matrix>& v_Mat);
 
     /**
-     * @brief getMatrices gets some matrices contained in the profile in a string format (one string per matrix)
+     * @brief getMatricesAsStrings gets some matrices contained in the profile in a string format (one string per matrix)
      * param[in] type The matrices to get, "color" or "forward"
-     * param[in] v_Mat A vector of std::string to be populated
+     * param[in] v_strMat A vector of std::string to be populated
      */
     void getMatricesAsStrings(const std::string& type, std::vector<std::string>& v_strMat);
+
+    /**
+     * @brief setMatrices sets some matrices contained in the profile
+     * param[in] type The matrices to set, "color" or "forward"
+     * param[in] v_Mat A vector of matrices
+     */
+    void setMatrices(const std::string& type, std::vector<Matrix>& v_Mat);
+
+    /**
+     * @brief setMatricesFromStrings sets some matrices contained in the profile from strings (one string per matrix)
+     * param[in] type The matrices to set, "color" or "forward"
+     * param[in] v_strMat A vector of std::string
+     */
+    void setMatricesFromStrings(const std::string& type, std::vector<std::string>& v_strMat);
 
     /**
      * @brief applyLinear applies the linear part of a DCP profile on an OIIO image buffer
@@ -187,6 +203,14 @@ public:
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      */
     void applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool sourceIsRaw = false);
+
+    /**
+     * @brief applyLinear applies the linear part of a DCP profile on an aliceVision image
+     * param[in] image The aliceVision image on which the profile must be applied
+     * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
+     * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
+     */
+    void applyLinear(Image<image::RGBAfColor>& image, Triple neutral, const bool sourceIsRaw = false);
 
     /**
      * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer

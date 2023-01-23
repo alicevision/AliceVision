@@ -2201,6 +2201,73 @@ void DCPProfile::getMatricesAsStrings(const std::string& type, std::vector<std::
     }
 }
 
+void DCPProfile::setMatrices(const std::string& type, std::vector<Matrix>& v_Mat)
+{
+    if (type == "forward")
+    {
+        info.has_forward_matrix_1 = false;
+        info.has_forward_matrix_2 = false;
+        if (v_Mat.size() > 0)
+        {
+            info.has_forward_matrix_1 = true;
+            forward_matrix_1 = v_Mat[0];
+            if (v_Mat.size() > 1)
+            {
+                info.has_forward_matrix_2 = true;
+                forward_matrix_2 = v_Mat[1];
+            }
+        }
+    }
+    else if (type == "color")
+    {
+        info.has_color_matrix_1 = false;
+        info.has_color_matrix_2 = false;
+        if (v_Mat.size() > 0)
+        {
+            info.has_color_matrix_1 = true;
+            color_matrix_1 = v_Mat[0];
+            if (v_Mat.size() > 1)
+            {
+                info.has_color_matrix_2 = true;
+                color_matrix_2 = v_Mat[1];
+            }
+        }
+    }
+    else if (type == "calib")
+    {
+        info.has_camera_calibration_1 = false;
+        info.has_camera_calibration_2 = false;
+        if (v_Mat.size() > 0)
+        {
+            info.has_camera_calibration_1 = true;
+            camera_calibration_1 = v_Mat[0];
+            if (v_Mat.size() > 1)
+            {
+                info.has_camera_calibration_2 = true;
+                camera_calibration_2 = v_Mat[1];
+            }
+        }
+    }
+}
+
+void DCPProfile::setMatricesFromStrings(const std::string& type, std::vector<std::string>& v_strMat)
+{
+    std::vector<Matrix> v_Mat;
+
+    for (const std::string& strMat : v_strMat)
+    {
+        std::vector<std::string> v;
+        boost::algorithm::split(v, strMat, boost::algorithm::is_space());
+        Matrix mat;
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                mat[i][j] = atof(v[3*i + j].c_str());
+        v_Mat.push_back(mat);
+    }
+
+    setMatrices(type, v_Mat);
+}
+
 void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool sourceIsRaw)
 {
     const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
@@ -2222,6 +2289,29 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool s
                 }
             }
             image.setpixel(j, i, rgbOut, 3);
+        }
+}
+
+void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, Triple neutral, const bool sourceIsRaw)
+{
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
+
+    #pragma omp parallel for
+    for (int i = 0; i < image.Height(); ++i)
+        for (int j = 0; j < image.Width(); ++j)
+        {
+            const RGBAfColor rgb = image(i, j);
+
+            RGBAfColor rgbOut = rgb;
+            for (int r = 0; r < 3; ++r)
+            {
+                rgbOut[r] = 0.0;
+                for (int c = 0; c < 3; ++c)
+                {
+                    rgbOut[r] += cameraToACES2065Matrix[r][c] * rgb[c];
+                }
+            }
+            image(i, j) = rgbOut;
         }
 }
 
