@@ -695,8 +695,33 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
   try
   {
     viewId = boost::lexical_cast<IndexT>(camName);
-    if(!sfmData.getViews().count(viewId))
-      viewId = -1;
+    if (!sfmData.getViews().count(viewId))
+    {   
+        bool found = false;
+        //check if this view is an ancestor of a view
+        for (auto pv : sfmData.getViews())
+        {
+            for (auto ancestor : pv.second->getAncestors())
+            {
+                if (ancestor == viewId)
+                {
+                    viewId = pv.first;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            viewId = -1;
+        }
+    }
   }
   catch(const boost::bad_lexical_cast &)
   {
