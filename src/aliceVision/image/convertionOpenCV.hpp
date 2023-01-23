@@ -6,10 +6,13 @@
 
 #pragma once
 
+#include <aliceVision/config.hpp>
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 
 #include "aliceVision/image/Image.hpp"
 #include <aliceVision/numeric/numeric.hpp>
+
 
 #include <opencv2/core.hpp>
 

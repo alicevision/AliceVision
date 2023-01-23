@@ -8,6 +8,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/config.hpp>
 
 #include <boost/filesystem.hpp>
 
