@@ -6,12 +6,14 @@ set(calibration_files_headers
   exportData.hpp
   distortionEstimation.hpp
   checkerDetector.hpp
+  checkerDetector_io.hpp
 )
 
 # Sources
 set(calibration_files_sources
   distortionEstimation.cpp
   checkerDetector.cpp
+  checkerDetector_io.cpp
 )
 
 if(ALICEVISION_HAVE_OPENCV)
@@ -32,6 +34,7 @@ alicevision_add_library(aliceVision_calibration
     Boost::filesystem
     Boost::program_options
     Boost::boost
+    Boost::json
     ${CERES_LIBRARIES}
 )
 
