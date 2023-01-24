@@ -18,3 +18,7 @@ alicevision_add_library(aliceVision_keyframe
     aliceVision_system
     Boost::filesystem
 )
+
+if(ALICEVISION_HAVE_OPENCV)
+  target_link_libraries(aliceVision_keyframe PUBLIC ${OpenCV_LIBS})
+endif()
