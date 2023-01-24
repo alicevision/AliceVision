@@ -46,6 +46,11 @@ int aliceVision_main(int argc, char** argv)
     std::size_t sharpnessWindowSize = 200;  // sliding window's size in sharpness computation (smart selection)
     std::size_t flowCellSize = 90;          // size of the cells within a frame used to compute the optical flow (smart selection)
 
+    // Debug options
+    bool exportScores = false;              // export the sharpness and optical flow scores to a CSV file
+    std::string csvFilename = "scores.csv"; // name of the CSV file containing the scores
+    bool exportSelectedFrames = false;      // export the selected frames (1 for selected, 0 for not selected)
+
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
         ("mediaPaths", po::value<std::vector<std::string>>(&mediaPaths)->required()->multitoken(),
@@ -97,6 +102,16 @@ int aliceVision_main(int argc, char** argv)
         ("flowCellSize", po::value<std::size_t>(&flowCellSize)->default_value(flowCellSize),
             "Size, in pixels, of the cells within an input frame that are used to compute the optical flow scores.");
 
+    po::options_description debugParams("Debug parameters");
+    debugParams.add_options()
+        ("exportScores", po::value<bool>(&exportScores)->default_value(exportScores),
+            "Export the sharpness and optical flow scores to a CSV file.")
+        ("csvFilename", po::value<std::string>(&csvFilename)->default_value(csvFilename),
+            "Name of the CSV file containing the sharpness and optical flow scores.")
+        ("exportSelectedFrames", po::value<bool>(&exportSelectedFrames)->default_value(exportSelectedFrames),
+            "Add a column in the exported CSV file containing the selected frames (1 for frames that have been "
+            "selected, 0 otherwise).");
+
     aliceVision::CmdLine cmdline("This program is used to extract keyframes from single camera or a camera rig.\n"
                                 "AliceVision keyframeSelection");
     cmdline.add(inputParams);
@@ -104,6 +119,7 @@ int aliceVision_main(int argc, char** argv)
     cmdline.add(algorithmParams);
     cmdline.add(regularAlgorithmParams);
     cmdline.add(smartAlgorithmParams);
+    cmdline.add(debugParams);
     if (!cmdline.execute(argc, argv)) {
         return EXIT_FAILURE;
     }
@@ -171,6 +187,10 @@ int aliceVision_main(int argc, char** argv)
 
     // Write selected keyframes
     selector.writeSelection(brands, models, mmFocals);
+
+    // If debug options are set, export the scores as a CSV file
+    if (exportScores)
+        selector.exportScoresToFile(csvFilename, exportSelectedFrames);
 
     return EXIT_SUCCESS;
 }
