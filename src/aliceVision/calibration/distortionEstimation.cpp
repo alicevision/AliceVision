@@ -6,9 +6,10 @@
 
 #include "distortionEstimation.hpp"
 
-#include <ceres/ceres.h>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/CeresUtils.hpp>
+
+#include <ceres/ceres.h>
 
 
 namespace aliceVision {
@@ -179,8 +180,8 @@ bool estimate(std::shared_ptr<camera::Undistortion> & undistortionToEstimate, St
 
         if (!constantDistortions.empty())
         {
-            ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countUndistortionParams, constantDistortions);
-            problem.SetParameterization(ptrUndistortionParameters, subsetParameterization);
+            ceres::SubsetManifold* subsetManifold = new ceres::SubsetManifold(countUndistortionParams, constantDistortions);
+            problem.SetManifold(ptrUndistortionParameters, subsetManifold);
         }
     }
     

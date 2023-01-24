@@ -15,6 +15,7 @@
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/Undistortion.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <memory>

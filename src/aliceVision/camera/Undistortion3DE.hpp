@@ -1,7 +1,9 @@
 #pragma once
 
-#include <vector>
+#include <aliceVision/camera/Undistortion.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+
+#include <vector>
 
 namespace aliceVision{
 namespace camera{

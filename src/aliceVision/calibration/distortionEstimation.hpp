@@ -8,6 +8,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/Undistortion.hpp>
 
 #include <vector>
 
