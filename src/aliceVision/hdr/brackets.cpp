@@ -157,32 +157,67 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
             v_lumaMeanMean.push_back(lumaMeanMean / nbGroup);
         }
 
-        double minDiffWithLumaTarget = 1000.0;
-        targetIndex = 0;
-
-        for (int k = 0; k < v_lumaMeanMean.size(); ++k)
+        // Makes sure the luminance curve is monotonic
+        int firstvalid = -1;
+        int lastvalid = 0;
+        for (std::size_t k = 1; k < v_lumaMeanMean.size(); ++k)
         {
-            const double diffWithLumaTarget = fabs(v_lumaMeanMean[k] - meanTargetedLuma);
-            if (diffWithLumaTarget < minDiffWithLumaTarget)
+            bool valid = false;
+
+            if (v_lumaMeanMean[k] > v_lumaMeanMean[k - 1])
             {
-                minDiffWithLumaTarget = diffWithLumaTarget;
-                targetIndex = k;
+                valid = true;
+            }
+
+            if (valid)
+            {
+                if (firstvalid < 0)
+                {
+                    firstvalid = int(k) - 1;
+                }
+                lastvalid = int(k);
+            }
+            else
+            {
+                if (lastvalid != 0)
+                {
+                    break;
+                }
             }
         }
 
-        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automaticaly set to " << targetIndex);
+        if (lastvalid >= firstvalid && firstvalid >= 0)
+        {
+            double minDiffWithLumaTarget = 1000.0;
+            targetIndex = 0;
+
+            for (int k = firstvalid; k <= lastvalid; ++k)
+            {
+                const double diffWithLumaTarget = fabs(v_lumaMeanMean[k] - meanTargetedLuma);
+                if (diffWithLumaTarget < minDiffWithLumaTarget)
+                {
+                    minDiffWithLumaTarget = diffWithLumaTarget;
+                    targetIndex = k;
+                }
+            }
+            ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automaticaly set to " << targetIndex);
+        }
+        else
+        {
+            targetIndex = middleIndex;
+            ALICEVISION_LOG_WARNING("Non valid luminance statistics file, offsetRefBracketIndex parameter set to medium exposure " << targetIndex);
+        }
     }
 
+    for (auto& group : groups)
+    {
         //Set the ldr ancestors id
         for (auto v : group)
         {
             group[targetIndex]->addAncestor(v->getViewId());
         }
 
-        for (int i = 0; i < groups.size(); ++i)
-        {
-            out_targetViews.push_back(groups[i][targetIndexes[i]]);
-        }
+        out_targetViews.push_back(group[targetIndex]);
     }
     return;
 }
