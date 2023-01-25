@@ -480,8 +480,8 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         if (dcpMetadataOK)
         {
-            colorMatrixNb = atoi(imageMetadata["AliceVision:DCP:ColorMatrixNumber"].c_str());
-            fwdMatrixNb = atoi(imageMetadata["AliceVision:DCP:ForwardMatrixNumber"].c_str());
+            colorMatrixNb = std::stoi(imageMetadata["AliceVision:DCP:ColorMatrixNumber"].c_str());
+            fwdMatrixNb = std::stoi(imageMetadata["AliceVision:DCP:ForwardMatrixNumber"].c_str());
 
             ALICEVISION_LOG_INFO("Matrix Number : " << colorMatrixNb << " ; " << fwdMatrixNb);
 
@@ -499,8 +499,8 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image::DCPProfile dcpProf;
 
-        dcpProf.info.temperature_1 = atof(imageMetadata["AliceVision:DCP:Temp1"].c_str());
-        dcpProf.info.temperature_2 = atof(imageMetadata["AliceVision:DCP:Temp2"].c_str());
+        dcpProf.info.temperature_1 = std::stof(imageMetadata["AliceVision:DCP:Temp1"].c_str());
+        dcpProf.info.temperature_2 = std::stof(imageMetadata["AliceVision:DCP:Temp2"].c_str());
         dcpProf.info.has_color_matrix_1 = colorMatrixNb > 0;
         dcpProf.info.has_color_matrix_2 = colorMatrixNb > 1;
         dcpProf.info.has_forward_matrix_1 = fwdMatrixNb > 0;
@@ -535,7 +535,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
             v_mult.push_back(atof(cam_mul.substr(last, next - last).c_str()));
             last = next + 1;
         }
-        v_mult.push_back(atof(cam_mul.substr(last, cam_mul.find("}", last) - last).c_str()));
+        v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last).c_str()));
 
         image::DCPProfile::Triple neutral;
         for (int i = 0; i < 3; i++)

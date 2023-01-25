@@ -202,7 +202,7 @@ public:
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      */
-    void applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool sourceIsRaw = false);
+    void applyLinear(OIIO::ImageBuf& image, const Triple neutral, const bool sourceIsRaw = false);
 
     /**
      * @brief applyLinear applies the linear part of a DCP profile on an aliceVision image
@@ -210,7 +210,7 @@ public:
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      */
-    void applyLinear(Image<image::RGBAfColor>& image, Triple neutral, const bool sourceIsRaw = false);
+    void applyLinear(Image<image::RGBAfColor>& image, const Triple neutral, const bool sourceIsRaw = false);
 
     /**
      * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer
