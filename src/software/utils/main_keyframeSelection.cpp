@@ -51,6 +51,8 @@ int aliceVision_main(int argc, char** argv)
     std::string csvFilename = "scores.csv"; // name of the CSV file containing the scores
     bool exportSelectedFrames = false;      // export the selected frames (1 for selected, 0 for not selected)
     bool skipSelection = false;             // only compute the scores and do not proceed with the selection
+    bool exportFlowVisualisation = false;   // export optical flow visualisation for all the frames
+    bool flowVisualisationOnly = false;     // export optical flow visualisation for all the frames but do not compute scores
 
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
@@ -113,7 +115,11 @@ int aliceVision_main(int argc, char** argv)
             "Add a column in the exported CSV file containing the selected frames (1 for frames that have been "
             "selected, 0 otherwise).")
         ("skipSelection", po::value<bool>(&skipSelection)->default_value(skipSelection),
-            "Only compute the sharpness and optical flow scores, but do not proceed with the selection.");
+            "Only compute the sharpness and optical flow scores, but do not proceed with the selection.")
+        ("exportFlowVisualisation", po::value<bool>(&exportFlowVisualisation)->default_value(exportFlowVisualisation),
+            "For all frames, export the optical flow visualisation in HSV as PNG images.")
+        ("flowVisualisationOnly", po::value<bool>(&flowVisualisationOnly)->default_value(flowVisualisationOnly),
+            "Export the optical flow visualisation in HSV as PNG images for all frames but do not compute scores.");
 
     aliceVision::CmdLine cmdline("This program is used to extract keyframes from single camera or a camera rig.\n"
                                 "AliceVision keyframeSelection");
@@ -182,10 +188,20 @@ int aliceVision_main(int argc, char** argv)
     selector.setMinOutFrames(minNbOutFrames);
     selector.setMaxOutFrames(maxNbOutFrames);
 
+    if (flowVisualisationOnly) {
+        bool exported = selector.exportFlowVisualisation(rescaledWidth);
+        if (exported)
+            return EXIT_SUCCESS;
+        else
+            return EXIT_FAILURE;
+    }
+
     if (skipSelection) {
         selector.computeScores(rescaledWidth, sharpnessWindowSize, flowCellSize);
         if (exportScores)
             selector.exportScoresToFile(csvFilename);  // Frames have not been selected, ignore 'exportSelectedFrames'
+        if (exportFlowVisualisation)
+            selector.exportFlowVisualisation(rescaledWidth);
 
         return EXIT_SUCCESS;
     }
@@ -199,9 +215,11 @@ int aliceVision_main(int argc, char** argv)
     // Write selected keyframes
     selector.writeSelection(brands, models, mmFocals);
 
-    // If debug options are set, export the scores as a CSV file
+    // If debug options are set, export the scores as a CSV file and / or the motion vectors as images
     if (exportScores)
         selector.exportScoresToFile(csvFilename, exportSelectedFrames);
+    if (exportFlowVisualisation)
+        selector.exportFlowVisualisation(rescaledWidth);
 
     return EXIT_SUCCESS;
 }
