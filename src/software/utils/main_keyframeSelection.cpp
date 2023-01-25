@@ -50,6 +50,7 @@ int aliceVision_main(int argc, char** argv)
     bool exportScores = false;              // export the sharpness and optical flow scores to a CSV file
     std::string csvFilename = "scores.csv"; // name of the CSV file containing the scores
     bool exportSelectedFrames = false;      // export the selected frames (1 for selected, 0 for not selected)
+    bool skipSelection = false;             // only compute the scores and do not proceed with the selection
 
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
@@ -110,7 +111,9 @@ int aliceVision_main(int argc, char** argv)
             "Name of the CSV file containing the sharpness and optical flow scores.")
         ("exportSelectedFrames", po::value<bool>(&exportSelectedFrames)->default_value(exportSelectedFrames),
             "Add a column in the exported CSV file containing the selected frames (1 for frames that have been "
-            "selected, 0 otherwise).");
+            "selected, 0 otherwise).")
+        ("skipSelection", po::value<bool>(&skipSelection)->default_value(skipSelection),
+            "Only compute the sharpness and optical flow scores, but do not proceed with the selection.");
 
     aliceVision::CmdLine cmdline("This program is used to extract keyframes from single camera or a camera rig.\n"
                                 "AliceVision keyframeSelection");
@@ -178,6 +181,14 @@ int aliceVision_main(int argc, char** argv)
     selector.setMaxFrameStep(maxFrameStep);
     selector.setMinOutFrames(minNbOutFrames);
     selector.setMaxOutFrames(maxNbOutFrames);
+
+    if (skipSelection) {
+        selector.computeScores(rescaledWidth, sharpnessWindowSize, flowCellSize);
+        if (exportScores)
+            selector.exportScoresToFile(csvFilename);  // Frames have not been selected, ignore 'exportSelectedFrames'
+
+        return EXIT_SUCCESS;
+    }
 
     // Process media paths with regular or smart method
     if (useSmartSelection)
