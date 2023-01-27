@@ -1,10 +1,11 @@
 #pragma once
 
-#include <vector>
 #include <aliceVision/numeric/numeric.hpp>
 
-namespace aliceVision{
-namespace camera{
+#include <vector>
+
+namespace aliceVision {
+namespace camera {
 
 class Distortion
 {

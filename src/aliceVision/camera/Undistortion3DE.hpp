@@ -1,9 +1,16 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2023 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #pragma once
 
 #include <aliceVision/camera/Undistortion.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
 #include <vector>
+#include <cmath>
 
 namespace aliceVision{
 namespace camera{
@@ -29,22 +36,22 @@ public:
 
     virtual Vec2 undistortNormalized(const Vec2& p) const override
     {
-        const double cx02 = _undistortionParams[0];
-        const double cy02 = _undistortionParams[1];
-        const double cx22 = _undistortionParams[2];
-        const double cy22 = _undistortionParams[3];
-        const double cx04 = _undistortionParams[4];
-        const double cy04 = _undistortionParams[5];
-        const double cx24 = _undistortionParams[6];
-        const double cy24 = _undistortionParams[7];
-        const double cx44 = _undistortionParams[8];
-        const double cy44 = _undistortionParams[9];
-        const double phi = _undistortionParams[10];
-        const double sqx = _undistortionParams[11];
-        const double sqy = _undistortionParams[12];
+        const double& cx02 = _undistortionParams[0];
+        const double& cy02 = _undistortionParams[1];
+        const double& cx22 = _undistortionParams[2];
+        const double& cy22 = _undistortionParams[3];
+        const double& cx04 = _undistortionParams[4];
+        const double& cy04 = _undistortionParams[5];
+        const double& cx24 = _undistortionParams[6];
+        const double& cy24 = _undistortionParams[7];
+        const double& cx44 = _undistortionParams[8];
+        const double& cy44 = _undistortionParams[9];
+        const double& phi = _undistortionParams[10];
+        const double& sqx = _undistortionParams[11];
+        const double& sqy = _undistortionParams[12];
 
-        const double cphi = cos(phi);
-        const double sphi = sin(phi);
+        const double cphi = std::cos(phi);
+        const double sphi = std::sin(phi);
 
         const double cx_xx = cx02 + cx22;
         const double cx_yy = cx02 - cx22;
@@ -58,22 +65,22 @@ public:
         const double cy_xxxx = 2 * cy04 - 6 * cy44;
         const double cy_yyyy = cy04 - cy24 + cy44;
 
-        double x = p.x();
-        double y = p.y();
+        const double& x = p.x();
+        const double& y = p.y();
 
         //First rotate axis
-        double xr = x;// cphi* x + sphi * y;
-        double yr = y;// -sphi * x + cphi * y;
+        const double xr = cphi* x + sphi * y;
+        const double yr = -sphi * x + cphi * y;
 
-        double xx = xr * xr;
-        double xxxx = xx * xx;
-        double yy = yr * yr;
-        double yyyy = yy * yy;
-        double xxyy = xx * yy;
+        const double xx = xr * xr;
+        const double xxxx = xx * xx;
+        const double yy = yr * yr;
+        const double yyyy = yy * yy;
+        const double xxyy = xx * yy;
 
         //Compute dist
-        double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
-        double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
+        const double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
+        const double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
         
         //Squeeze axis
         const double squizzed_x = xd * sqx;
@@ -81,30 +88,30 @@ public:
 
         //Unrotate axis
         Vec2 np;
-        np.x() = squizzed_x;// cphi* squizzed_x - sphi * squizzed_y;
-        np.y() = squizzed_y;// sphi* squizzed_x + cphi * squizzed_y;
+        np.x() = cphi* squizzed_x - sphi * squizzed_y;
+        np.y() = sphi* squizzed_x + cphi * squizzed_y;
 
         return np;
     }
 
     virtual Eigen::Matrix<double, 2, 2> getDerivativeUndistortNormalizedwrtPoint(const Vec2 &p) const override
     {
-        const double cx02 = _undistortionParams[0];
-        const double cy02 = _undistortionParams[1];
-        const double cx22 = _undistortionParams[2];
-        const double cy22 = _undistortionParams[3];
-        const double cx04 = _undistortionParams[4];
-        const double cy04 = _undistortionParams[5];
-        const double cx24 = _undistortionParams[6];
-        const double cy24 = _undistortionParams[7];
-        const double cx44 = _undistortionParams[8];
-        const double cy44 = _undistortionParams[9];
-        const double phi = _undistortionParams[10];
-        const double sqx = _undistortionParams[11];
-        const double sqy = _undistortionParams[12];
+        const double& cx02 = _undistortionParams[0];
+        const double& cy02 = _undistortionParams[1];
+        const double& cx22 = _undistortionParams[2];
+        const double& cy22 = _undistortionParams[3];
+        const double& cx04 = _undistortionParams[4];
+        const double& cy04 = _undistortionParams[5];
+        const double& cx24 = _undistortionParams[6];
+        const double& cy24 = _undistortionParams[7];
+        const double& cx44 = _undistortionParams[8];
+        const double& cy44 = _undistortionParams[9];
+        const double& phi = _undistortionParams[10];
+        const double& sqx = _undistortionParams[11];
+        const double& sqy = _undistortionParams[12];
 
-        const double cphi = cos(phi);
-        const double sphi = sin(phi);
+        const double cphi = std::cos(phi);
+        const double sphi = std::sin(phi);
 
         const double cx_xx = cx02 + cx22;
         const double cx_yy = cx02 - cx22;
@@ -118,44 +125,35 @@ public:
         const double cy_xxxx = 2 * cy04 - 6 * cy44;
         const double cy_yyyy = cy04 - cy24 + cy44;
 
-        double x = p.x();
-        double y = p.y();
+        const double& x = p.x();
+        const double& y = p.y();
 
         //First rotate axis
-        double xr = x; // cphi* x + sphi * y;
-        double yr = y; // -sphi * x + cphi * y;
+        const double xr = cphi* x + sphi * y;
+        const double yr = -sphi * x + cphi * y;
 
-        double xx = xr * xr;
-        double yy = yr * yr;
-        double xy = xr * yr;
-        double xxxx = xx * xx;
-        double yyyy = yy * yy;
-        double xxyy = xx * yy;
-        double xxxy = xx * xy;
-        double xyyy = xy * xy;
+        const double xx = xr * xr;
+        const double yy = yr * yr;
+        const double xy = xr * yr;
+        const double xxxx = xx * xx;
+        const double yyyy = yy * yy;
+        const double xxyy = xx * yy;
+        const double xxxy = xx * xy;
+        const double xyyy = xy * xy;
 
         //Compute dist
-        double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
-        double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
+        const double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
+        const double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
         
         //Squeeze axis
         const double squizzed_x = xd * sqx;
         const double squizzed_y = yd * sqy;
 
-        //Unrotate axis
-        Vec2 np;
-        np.x() = squizzed_x; // cphi* squizzed_x - sphi * squizzed_y;
-        np.y() = squizzed_y; // sphi* squizzed_x + cphi * squizzed_y;
-
         Eigen::Matrix2d d_np_d_squizzed;
-       /* d_np_d_squizzed(0, 0) = cphi;
+        d_np_d_squizzed(0, 0) = cphi;
         d_np_d_squizzed(0, 1) = -sphi;
         d_np_d_squizzed(1, 0) = sphi;
-        d_np_d_squizzed(1, 1) = cphi;*/
-        d_np_d_squizzed(0, 0) = 1;
-        d_np_d_squizzed(0, 1) = 0;
-        d_np_d_squizzed(1, 0) = 0;
-        d_np_d_squizzed(1, 1) = 1;
+        d_np_d_squizzed(1, 1) = cphi;
 
         Eigen::Matrix2d d_squizzed_d_d;
         d_squizzed_d_d(0, 0) = sqx;
@@ -163,8 +161,6 @@ public:
         d_squizzed_d_d(1, 0) = 0;
         d_squizzed_d_d(1, 1) = sqy;
 
-        //double xd = xr + xxx * cx_xx + xyy * cx_yy + xxxxx * cx_xxxx + xxxyy * cx_xxyy + xyyyy * cx_yyyy);
-        //double yd = yr + xxy * cy_xx + yyy * cy_yy + xxxxy * cy_xxxx + xxyyy * cy_xxyy + yyyyy * cy_yyyy);
         Eigen::Matrix2d d_d_d_r;
         d_d_d_r(0, 0) = 1.0 + 3.0 * xx * cx_xx + yy * cx_yy + 5.0 * xxxx * cx_xxxx + 3.0 * xxyy * cx_xxyy + yyyy * cx_yyyy;
         d_d_d_r(0, 1) = 2.0 * xy * cx_yy + 2.0 * xxxy * cx_xxyy + 4.0 * xyyy * cx_yyyy;
@@ -177,28 +173,27 @@ public:
         d_r_d_p(1, 0) = 0;
         d_r_d_p(1, 1) = 1;
 
-
         return d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p;
     }
 
     virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortNormalizedwrtParameters(const Vec2 &p) const override
     {
-        const double cx02 = _undistortionParams[0];
-        const double cy02 = _undistortionParams[1];
-        const double cx22 = _undistortionParams[2];
-        const double cy22 = _undistortionParams[3];
-        const double cx04 = _undistortionParams[4];
-        const double cy04 = _undistortionParams[5];
-        const double cx24 = _undistortionParams[6];
-        const double cy24 = _undistortionParams[7];
-        const double cx44 = _undistortionParams[8];
-        const double cy44 = _undistortionParams[9];
-        const double phi = _undistortionParams[10];
-        const double sqx = _undistortionParams[11];
-        const double sqy = _undistortionParams[12];
+        const double& cx02 = _undistortionParams[0];
+        const double& cy02 = _undistortionParams[1];
+        const double& cx22 = _undistortionParams[2];
+        const double& cy22 = _undistortionParams[3];
+        const double& cx04 = _undistortionParams[4];
+        const double& cy04 = _undistortionParams[5];
+        const double& cx24 = _undistortionParams[6];
+        const double& cy24 = _undistortionParams[7];
+        const double& cx44 = _undistortionParams[8];
+        const double& cy44 = _undistortionParams[9];
+        const double& phi = _undistortionParams[10];
+        const double& sqx = _undistortionParams[11];
+        const double& sqy = _undistortionParams[12];
 
-        const double cphi = cos(phi);
-        const double sphi = sin(phi);
+        const double cphi = std::cos(phi);
+        const double sphi = std::sin(phi);
 
         const double cx_xx = cx02 + cx22;
         const double cx_yy = cx02 - cx22;
@@ -211,52 +206,41 @@ public:
         const double cy_xxxx = 2 * cy04 - 6 * cy44;
         const double cy_yyyy = cy04 - cy24 + cy44;
 
-        double x = p.x();
-        double y = p.y();
+        const double& x = p.x();
+        const double& y = p.y();
 
         //First rotate axis
-        double xr = x;// cphi* x + sphi * y;
-        double yr = y;//-sphi * x + cphi * y;
+        const double xr = cphi* x + sphi * y;
+        const double yr = -sphi * x + cphi * y;
 
-        
+        const double xx = xr * xr;
+        const double yy = yr * yr;
+        const double xy = xr * yr;
+        const double xxx = xx * xr;
+        const double yyy = yy * yr;
+        const double xxy = xx * yr;
+        const double xyy = xr * yy;
 
-        double xx = xr * xr;
-        double yy = yr * yr;
-        double xy = xr * yr;
-        double xxx = xx * xr;
-        double yyy = yy * yr;
-        double xxy = xx * yr;
-        double xyy = xr * yy;
+        const double xxxx = xx * xx;
+        const double yyyy = yy * yy;
+        const double xxyy = xx * yy;
+        const double xxxy = xx * xy;
+        const double xyyy = xy * xy;
 
-        double xxxx = xx * xx;
-        double yyyy = yy * yy;
-        double xxyy = xx * yy;
-        double xxxy = xx * xy;
-        double xyyy = xy * xy;
-
-        double xxxxx = xxxx * xr;
-        double xxxxy = xxxx * yr;
-        double xxxyy = xxx * yy;
-        double yyyyy = yyyy * yr;
-        double xyyyy = xr * yyyy;
-        double xxyyy = xx * yyy;
+        const double xxxxx = xxxx * xr;
+        const double xxxxy = xxxx * yr;
+        const double xxxyy = xxx * yy;
+        const double yyyyy = yyyy * yr;
+        const double xyyyy = xr * yyyy;
+        const double xxyyy = xx * yyy;
 
         //Compute dist
-        double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
-        double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
+        const double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
+        const double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
         
         //Squeeze axis
         const double squizzed_x = xd * sqx;
         const double squizzed_y = yd * sqy;
-
-        //Unrotate axis
-        Vec2 np;
-        np.x() = squizzed_x;// cphi* squizzed_x - sphi * squizzed_y;
-        np.y() = squizzed_y;// sphi* squizzed_x + cphi * squizzed_y;
-
-        /*Eigen::Matrix<double, 2, 14> d_np_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
-        d_np_d_disto(0, 10) = (squizzed_x * -sphi) + (squizzed_y * -cphi);
-        d_np_d_disto(1, 10) = (squizzed_x * cphi) + (squizzed_y * -sphi);*/
 
         Eigen::Matrix2d d_np_d_squizzed;
         d_np_d_squizzed(0, 0) = 1;
@@ -277,40 +261,23 @@ public:
         d_squizzed_d_disto(1, 11) = 0;
         d_squizzed_d_disto(1, 12) = yd;
 
-        //double xd = xr + xxx * cx_xx + xyy * cx_yy + xxxxx * cx_xxxx + xxxyy * cx_xxyy + xyyyy * cx_yyyy);
-        //double yd = yr + xxy * cy_xx + yyy * cy_yy + xxxxy * cy_xxxx + xxyyy * cy_xxyy + yyyyy * cy_yyyy);
         Eigen::Matrix2d d_d_d_r;
         d_d_d_r(0, 0) = 1.0 + 3.0 * xx * cx_xx + yy * cx_yy + 5.0 * xxxx * cx_xxxx + 3.0 * xxyy * cx_xxyy + yyyy * cx_yyyy;
         d_d_d_r(0, 1) = 2.0 * xy * cx_yy + 2.0 * xxxy * cx_xxyy + 4.0 * xyyy * cx_yyyy;
         d_d_d_r(1, 0) = 2.0 * xy * cy_xx + 4.0 * xxxy * cy_xxxx + 2.0 * xyyy * cy_xxyy;
         d_d_d_r(1, 1) = 1.0 + xx * cy_xx + 3.0 * yy * cy_yy + xxxx * cy_xxxx + 3.0 * xxyy * cy_xxyy + 5.0 * yyyy * cy_yyyy;
 
-
-        //double xd = xr + xxx * cx_xx + xyy * cx_yy + xxxxx * cx_xxxx + xxxyy * cx_xxyy + xyyyy * cx_yyyy);
-        //double yd = yr + xxy * cy_xx + yyy * cy_yy + xxxxy * cy_xxxx + xxyyy * cy_xxyy + yyyyy * cy_yyyy);
         Eigen::Matrix<double, 2, 10> d_d_d_distop = Eigen::Matrix<double, 2, 10>::Zero();
         d_d_d_distop(0, 0) = xxx;
         d_d_d_distop(0, 1) = xyy;
         d_d_d_distop(0, 2) = xxxxx;
         d_d_d_distop(0, 3) = xxxyy;
         d_d_d_distop(0, 4) = xyyyy;
-        d_d_d_distop(0, 5) = 0;
-        d_d_d_distop(0, 6) = 0;
-        d_d_d_distop(0, 7) = 0;
-        d_d_d_distop(0, 8) = 0;
-        d_d_d_distop(0, 9) = 0;
-        d_d_d_distop(1, 0) = 0;
-        d_d_d_distop(1, 1) = 0;
-        d_d_d_distop(1, 2) = 0;
-        d_d_d_distop(1, 3) = 0;
-        d_d_d_distop(1, 4) = 0;
         d_d_d_distop(1, 5) = xxy;
         d_d_d_distop(1, 6) = yyy;
         d_d_d_distop(1, 7) = xxxxy;
         d_d_d_distop(1, 8) = xxyyy;
         d_d_d_distop(1, 9) = yyyyy;
-
-   
 
         Eigen::Matrix<double, 10, 14> d_distop_d_disto = Eigen::Matrix<double, 10, 14>::Zero();
         d_distop_d_disto(0, 0) = 1.0;
@@ -341,15 +308,13 @@ public:
         
         Eigen::Matrix<double, 2, 14> J = (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto) ;
 
-        //J.block(0, 13, 2, 4) = Eigen::Matrix<double, 2, 4>::Zero();
-
         return J;
     }
 
     /// add distortion (return p' such that undisto(p') = p)
     Vec2 inverseNormalized(const Vec2& p) const override
     {
-        double epsilon = 1e-8;
+        const double epsilon = 1e-8;
         Vec2 distorted_value = p;
 
         Vec2 diff = undistortNormalized(distorted_value) - p;

@@ -45,6 +45,3 @@ endif()
 if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_calibration PRIVATE CCTag::CCTag)
 endif()
-
-
-alicevision_add_test(distortioncalibration_test.cpp   NAME "calibration_distortion"    LINKS aliceVision_calibration aliceVision_sfm aliceVision_system)

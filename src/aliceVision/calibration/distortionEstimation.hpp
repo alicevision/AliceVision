@@ -11,6 +11,7 @@
 #include <aliceVision/camera/Undistortion.hpp>
 
 #include <vector>
+#include <memory>
 
 namespace aliceVision {
 namespace calibration {
@@ -39,9 +40,13 @@ struct Statistics
 };
 
 /**
- * Estimate the parameters of a camera (mostly distortion, from a set of line aligned points)
+ * @brief Estimate the parameters of a camera (mostly distortion, from a set of line aligned points)
  */
-bool estimate(std::shared_ptr<camera::Undistortion>& undistortionToEstimate, Statistics& statistics, std::vector<LineWithPoints>& lines, bool lockCenter, const std::vector<bool>& lockDistortions);
+bool estimate(const std::shared_ptr<camera::Undistortion>& undistortionToEstimate,
+              Statistics& statistics,
+              std::vector<LineWithPoints>& lines,
+              bool lockCenter,
+              const std::vector<bool>& lockDistortions);
 
-}//namespace calibration
-}//namespace aliceVision
+} //namespace calibration
+} //namespace aliceVision

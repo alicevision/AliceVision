@@ -1,3 +1,9 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2023 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
@@ -6,8 +12,8 @@
 #include <string>
 #include <memory>
 
-namespace aliceVision{
-namespace camera{
+namespace aliceVision {
+namespace camera {
 
 class Undistortion
 {
@@ -22,9 +28,9 @@ public:
     {
         switch (type)
         {
-        case ANAMORPHIC4: 
+        case ANAMORPHIC4:
             return "anamorphic4";
-        default: 
+        default:
             return "none";
         }
     }
@@ -32,10 +38,10 @@ public:
     static Type stringToEnum(const std::string & typestr)
     {
         std::string type = typestr;
-        std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+        std::transform(type.begin(), type.end(), type.begin(), ::tolower);
 
         if (type == "anamorphic4") return Type::ANAMORPHIC4;
-        
+
         return Type::NONE;
     }
 
@@ -62,9 +68,9 @@ public:
         _offset = offset;
     }
 
-    inline Vec2 getOffset() const 
+    inline Vec2 getOffset() const
     { 
-        return _offset; 
+        return _offset;
     }
 
     Vec2 getSize() const
@@ -90,12 +96,12 @@ public:
         return _undistortionParams.size();
     }
 
-    virtual Type getType() const = 0 ;
+    virtual Type getType() const = 0;
     
     Vec2 undistort(const Vec2& p) const
     {
         Vec2 centered;
-        
+
         centered(0) = p(0) - _center(0) -_offset(0);
         centered(1) = p(1) - _center(1) -_offset(1);
 
@@ -105,7 +111,7 @@ public:
 
         Vec2 undistorted = undistortNormalized(normalized);
         Vec2 unnormalized;
-        
+
         unnormalized(0) = undistorted(0) * _diagonal + _center(0) + _offset(0);
         unnormalized(1) = undistorted(1) * _diagonal + _center(1) + _offset(1);
 
@@ -147,7 +153,7 @@ public:
         d_normalized_d_centered(1, 0) = 0;
         d_normalized_d_centered(1, 1) = 1.0 / _diagonal;
 
-        return  Eigen::Matrix2d::Identity() + d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtPoint(normalized) * d_normalized_d_centered * -1.0;
+        return Eigen::Matrix2d::Identity() + d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtPoint(normalized) * d_normalized_d_centered * -1.0;
     }
 
     /// add distortion (return p' such that undisto(p') = p)

@@ -22,7 +22,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 
-
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
@@ -34,13 +33,14 @@
 
 #include <boost/program_options.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/math/constants/constants.hpp>
 
 #include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
 using namespace aliceVision;
@@ -60,7 +60,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
         {
             //Random init
             calibration::LineWithPoints line;
-            line.angle = M_PI_4;
+            line.angle = boost::math::constants::pi<double>() * .25;
             line.dist = 1;
             line.horizontal = true;
             line.index = i;
@@ -84,7 +84,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
         for (int j = 0; j < b.cols(); j++)
         {
             calibration::LineWithPoints line;
-            line.angle = M_PI_4;
+            line.angle = boost::math::constants::pi<double>() * .25;
             line.dist = 1;
             line.horizontal = false;
             line.index = j;
@@ -109,7 +109,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
         for (int i = 0; i < b.rows(); i++)
         {
             calibration::LineWithPoints line;
-            line.angle = M_PI_4;
+            line.angle = boost::math::constants::pi<double>() * .25;
             line.dist = 1;
             line.horizontal = false;
             line.index = i;
@@ -139,7 +139,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
         for (int j = 0; j < b.cols(); j++)
         {
             calibration::LineWithPoints line;
-            line.angle = M_PI_4;
+            line.angle = boost::math::constants::pi<double>() * .25;
             line.dist = 1;
             line.horizontal = false;
             line.index = j;
@@ -169,7 +169,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
         for (int j = 0; j < b.cols(); j++)
         {
             calibration::LineWithPoints line;
-            line.angle = M_PI_4;
+            line.angle = boost::math::constants::pi<double>() * .25;
             line.dist = 1;
             line.horizontal = false;
             line.index = j;
@@ -226,8 +226,7 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Undistortion>& undistortion
     params[13] = 1.0;
     undistortion->setParameters(params);
 
-
-    std::vector<bool> locksDistortions = { true, true, true, true, true, true, true, true, true, true, true, true, true, true};
+    std::vector<bool> locksDistortions = {true, true, true, true, true, true, true, true, true, true, true, true, true, true};
 
     //Everything locked except lines parameters
     if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
@@ -235,7 +234,6 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Undistortion>& undistortion
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
-
 
     //Relax offcenter
     if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
@@ -286,7 +284,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Undistortion>& undistortion
 {
     std::vector<double> params = undistortion->getParameters();
     params[0] = 0.0;
-    params[1] = M_PI_2;
+    params[1] = boost::math::constants::pi<double>() * .5;
     params[2] = 0.0;
     params[3] = 0.0;
     params[4] = 0.0;
@@ -353,10 +351,12 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
-        ("checkerboards", po::value<std::string>(&checkerBoardsPath)->required(), "Checkerboards json files directory.")
-        ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
-        ;
+        ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(),
+        "SfMData file input.")
+        ("checkerboards", po::value<std::string>(&checkerBoardsPath)->required(),
+        "Checkerboards json files directory.")
+        ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
+        "SfMData file output.");
 
     CmdLine cmdline("This program calibrates camera distortion.\n"
                     "AliceVision distortionCalibration");
@@ -374,7 +374,6 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-
     //Load the checkerboards
     std::map < IndexT, calibration::CheckerDetector> boardsAllImages;
     for (auto& pv : sfmData.getViews())
@@ -385,10 +384,7 @@ int aliceVision_main(int argc, char* argv[])
         std::stringstream ss;
         ss << checkerBoardsPath << "/" << "checkers_" << viewId << ".json";
         std::ifstream inputfile(ss.str());
-        if (inputfile.is_open() == false)
-        {
-            continue;
-        }
+        if (!inputfile.is_open()) continue;
 
         std::stringstream buffer;
         buffer << inputfile.rdbuf();
@@ -415,7 +411,8 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Processing Intrinsic " << intrinsicId);
 
 
-        std::shared_ptr<camera::Undistortion> undistortion = std::make_shared<camera::Undistortion3DEAnamorphic4>(cameraPinhole->w(), cameraPinhole->h());
+        std::shared_ptr<camera::Undistortion> undistortion =
+            std::make_shared<camera::Undistortion3DEAnamorphic4>(cameraPinhole->w(), cameraPinhole->h());
         sfmData.getUndistortions()[intrinsicId] = undistortion;
 
         //Transform checkerboards to line With points
