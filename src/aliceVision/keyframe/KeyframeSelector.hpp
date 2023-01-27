@@ -14,6 +14,7 @@
 
 #include <string>
 #include <deque>
+#include <map>
 #include <vector>
 #include <memory>
 #include <limits>
@@ -101,6 +102,14 @@ public:
      */
     bool writeSelection(const std::vector<std::string>& brands, const std::vector<std::string>& models,
                     const std::vector<float>& mmFocals) const;
+
+    /**
+     * @brief Export the computed sharpness and optical flow scores to a CSV file
+     * @param[in] filename the name of the CSV file (e.g. "scores.csv"), which will be written in the output folder
+     * @param[in] exportSelectedFrames add a column with 1s and 0s depending on whether the frame has been selected
+     * @return true if the CSV was correctly written to disk, false otherwise
+     */
+    bool exportScoresToFile(const std::string& filename, const bool exportSelectedFrames = false) const;
 
     /**
      * @brief Set the minimum frame step parameter for the processing algorithm
@@ -231,10 +240,15 @@ private:
     std::vector<double> _sharpnessScores;
     /// Optical flow scores for each frame
     std::vector<double> _flowScores;
+    /// Vector containing 1s for frames that have been selected, 0 for those which have not
+    std::vector<char> _selectedFrames;
 
     /// Size of the frame (afer rescale, if any is applied)
     unsigned int _frameWidth = 0;
     unsigned int _frameHeight = 0;
+
+    /// Map score vectors with names for export
+    std::map<const std::string, const std::vector<double>*> scoresMap;
 };
 
 } // namespace keyframe 

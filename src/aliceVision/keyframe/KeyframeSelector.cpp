@@ -74,6 +74,9 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
     if (mediaPaths.empty()) {
         ALICEVISION_THROW(std::invalid_argument, "Cannot create KeyframeSelector without at least one media file path!");
     }
+
+    scoresMap["Sharpness"] = &_sharpnessScores;
+    scoresMap["OpticalFlow"] = &_flowScores;
 }
 
 void KeyframeSelector::processRegular()
@@ -137,6 +140,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                                     const std::size_t sharpnessWindowSize, const std::size_t flowCellSize)
 {
     _selectedKeyframes.clear();
+    _selectedFrames.clear();
 
     // Step 0: compute all the scores
     computeScores(rescaledWidth, sharpnessWindowSize, flowCellSize);
@@ -146,6 +150,11 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
     subsequenceLimits.push_back(0);  // Always use the first frame as the starting point
 
     std::size_t sequenceSize = _sharpnessScores.size();
+
+    // All frames are unselected so far
+    _selectedFrames.resize(sequenceSize);
+    std::fill(_selectedFrames.begin(), _selectedFrames.end(), '0');
+
     float step = pxDisplacement * std::min(_frameWidth, _frameHeight) / 100.0;
     double motionAcc = 0.0;
     for (std::size_t i = 1; i < sequenceSize; ++i) {  // Starts at 1 because the first frame's motion score will be -1
@@ -253,6 +262,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
         }
         ALICEVISION_LOG_DEBUG("Selecting frame " << bestIndex);
         _selectedKeyframes.push_back(bestIndex);
+        _selectedFrames.at(bestIndex) = '1';  // The frame has been selected, flip it to 1
     }
 }
 
@@ -426,6 +436,52 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
         }
     }
 
+    return true;
+}
+
+bool KeyframeSelector::exportScoresToFile(const std::string& filename, const bool exportSelectedFrames) const
+{
+    std::size_t sequenceSize = scoresMap.begin()->second->size();
+    if (sequenceSize == 0) {
+        ALICEVISION_LOG_ERROR("Nothing to export, scores do not seem to have been computed!");
+        return false;
+    }
+
+    std::ofstream os;
+    os.open((fs::path(_outputFolder) / filename).string(), std::ios::app);
+
+    if (!os.is_open()) {
+        ALICEVISION_LOG_ERROR("Unable to open the scores file: " << filename << ".");
+        return false;
+    }
+
+    ALICEVISION_LOG_DEBUG("Exporting scores as CSV file: " << filename << " (export selected frames: "
+                          << exportSelectedFrames << ")");
+
+    os.seekp(0, std::ios::end);  // Put the cursor at the end of the file
+    if (os.tellp() == std::streampos(0)) {  // 'tellp' returns the cursor's position
+        // If the file does not exist yet, add a header
+        std::string header = "FrameNb;";
+        for (const auto& mapIterator : scoresMap)
+            header += mapIterator.first + ";";
+
+        if (exportSelectedFrames)
+            header += "Selected;";
+
+        os << header << "\n";
+    }
+
+    for (std::size_t index = 0; index < sequenceSize; ++index) {
+        os << index << ";";  // First column: frame index
+
+        for (const auto& mapIterator : scoresMap)
+            os << mapIterator.second->at(index) << ";";
+        if (exportSelectedFrames)
+            os << _selectedFrames.at(index);
+        os << "\n";
+    }
+
+    os.close();
     return true;
 }
 
