@@ -157,7 +157,10 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
 
     float step = pxDisplacement * std::min(_frameWidth, _frameHeight) / 100.0;
     double motionAcc = 0.0;
-    for (std::size_t i = 1; i < sequenceSize; ++i) {  // Starts at 1 because the first frame's motion score will be -1
+
+    /* Starts at 1 because the first frame's motion score will be -1.
+     * Ends at sequenceSize - 1 to ensure the last frame cannot be pushed twice. */
+    for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
         motionAcc += _flowScores.at(i);
         if (motionAcc >= step) {
             subsequenceLimits.push_back(i);
@@ -188,7 +191,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                 }
                 motionAcc = 0.0;
 
-                for (std::size_t i = 1; i < sequenceSize; ++i) {
+                for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
                     motionAcc += _flowScores.at(i);
                     if (motionAcc >= step) {
                         newLimits.push_back(i);
@@ -204,7 +207,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                 newLimits.push_back(0);
                 std::size_t stepSize = (sequenceSize / _minOutFrames) + 1;
 
-                for (std::size_t i = 1; i < sequenceSize; i += stepSize)
+                for (std::size_t i = 1; i < sequenceSize - 1; i += stepSize)
                     newLimits.push_back(i);
                 newLimits.push_back(sequenceSize - 1);
             }
@@ -216,7 +219,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                 step = step + displacementDiff;
                 motionAcc = 0.0;
 
-                for (std::size_t i = 1; i < sequenceSize; ++i) {
+                for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
                     motionAcc += _flowScores.at(i);
                     if (motionAcc >= step) {
                         newLimits.push_back(i);
@@ -236,6 +239,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
         double bestSharpness = 0.0;
         std::size_t bestIndex = 0;
         std::size_t subsequenceSize = subsequenceLimits.at(i) - subsequenceLimits.at(i - 1);
+        ALICEVISION_LOG_DEBUG("Subsequence [" << subsequenceLimits.at(i - 1) << ", " << subsequenceLimits.at(i) << "]");
 
         // Weights for the whole subsequence [1.0; 2.0] (1.0 is on the subsequence's limits, 2.0 on its center)
         std::deque<double> weights;
@@ -260,10 +264,12 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                 bestSharpness = sharpness;
             }
         }
-        ALICEVISION_LOG_DEBUG("Selecting frame " << bestIndex);
+        ALICEVISION_LOG_DEBUG("Selecting frame with ID " << bestIndex);
         _selectedKeyframes.push_back(bestIndex);
         _selectedFrames.at(bestIndex) = '1';  // The frame has been selected, flip it to 1
     }
+
+    ALICEVISION_LOG_INFO("Finished selecting all the keyframes!");
 }
 
 bool KeyframeSelector::computeScores(const std::size_t rescaledWidth, const std::size_t sharpnessWindowSize,
@@ -350,7 +356,7 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidth, const std:
                 minimalFlow = std::min(minimalFlow, flow);
             }
 
-            ALICEVISION_LOG_DEBUG("Finished processing frame " << currentFrame + 1 << "/" << nbFrames);
+            ALICEVISION_LOG_INFO("Finished processing frame " << currentFrame + 1 << "/" << nbFrames);
         }
 
         // Save scores for the current frame
@@ -573,6 +579,7 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
                 std::ostringstream filenameSS;
                 filenameSS << std::setw(5) << std::setfill('0') << currentFrame << ".png";
                 cv::imwrite(outputFolders.at(mediaIndex) + "/OF_" + filenameSS.str(), bgr);
+                ALICEVISION_LOG_DEBUG("Wrote OF_" << filenameSS.str() << "!");
             }
         }
         ++currentFrame;
