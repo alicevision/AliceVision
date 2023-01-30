@@ -26,6 +26,7 @@ struct RefineParams
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
+  bool interpolateMiddleDepth = false;
   bool useRefineFuse = true;
   bool useColorOptimization = true;
 

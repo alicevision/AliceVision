@@ -13,7 +13,6 @@
 #include <aliceVision/depthMap/cuda/device/eig33.cuh>
 #include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
 
-#define ALICEVISION_DEPTHMAP_UPSCALE_NEAREST_NEIGHBOR
 
 namespace aliceVision {
 namespace depthMap {
@@ -123,8 +122,8 @@ __global__ void depthSimMapCopyDepthOnly_kernel(float2* out_deptSimMap_d, int ou
 template<class T>
 __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
                                   const T* in_map_d, int in_map_p, 
-                                  const ROI roi,
-                                  float ratio)
+                                  const float ratio,
+                                  const ROI roi)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -143,13 +142,12 @@ __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
     *get2DBufferAt(out_upscaledMap_d, out_upscaledMap_p, x, y) = *get2DBufferAt(in_map_d, in_map_p, xp, yp);
 }
 
-
-__global__ void depthSimMapUpscaleAndFilter_kernel(cudaTextureObject_t rcTex,
-                                                   float2* out_upscaledDeptSimMap_d, int out_upscaledDeptSimMap_p,
-                                                   const float2* in_otherDepthSimMap_d, int in_otherDepthSimMap_p,
-                                                   int stepXY,
-                                                   const ROI roi,
-                                                   float ratio)
+__global__ void depthSimMapUpscaleFilter_kernel(cudaTextureObject_t rcTex,
+                                                float2* out_upscaledDeptSimMap_d, int out_upscaledDeptSimMap_p,
+                                                const float2* in_otherDepthSimMap_d, int in_otherDepthSimMap_p,
+                                                const int stepXY,
+                                                const float ratio,
+                                                const ROI roi)
 {
     const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
     const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
@@ -171,9 +169,6 @@ __global__ void depthSimMapUpscaleAndFilter_kernel(cudaTextureObject_t rcTex,
     const float oy = (float(roiY) - 0.5f) * ratio;
     const float ox = (float(roiX) - 0.5f) * ratio;
 
-    float2 out_depthSim;
-
-#ifdef ALICEVISION_DEPTHMAP_UPSCALE_NEAREST_NEIGHBOR
     // nearest neighbor, no interpolation
     int xp = floor(ox + 0.5);
     int yp = floor(oy + 0.5);
@@ -181,14 +176,48 @@ __global__ void depthSimMapUpscaleAndFilter_kernel(cudaTextureObject_t rcTex,
     xp = min(xp, int(roi.width()  * ratio) - 1);
     yp = min(yp, int(roi.height() * ratio) - 1);
 
-    out_depthSim = *get2DBufferAt(in_otherDepthSimMap_d, in_otherDepthSimMap_p, xp, yp);
-#else
+    const float2 out_depthSim = *get2DBufferAt(in_otherDepthSimMap_d, in_otherDepthSimMap_p, xp, yp);
+
+    // write output
+    *get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, roiX, roiY) = out_depthSim;
+}
+
+__global__ void depthSimMapUpscaleFilter_bilinear_kernel(cudaTextureObject_t rcTex,
+                                                         float2* out_upscaledDeptSimMap_d, int out_upscaledDeptSimMap_p,
+                                                         const float2* in_otherDepthSimMap_d, int in_otherDepthSimMap_p,
+                                                         const int stepXY,
+                                                         const float ratio,
+                                                         const ROI roi)
+{
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(roiX >= roi.width() || roiY >= roi.height())
+        return;
+
+    // corresponding output upscaled depth/sim map
+    float2* out_depthSim = get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, roiX, roiY);
+
+    // corresponding device image coordinates
+    const int x = (roi.x.begin + roiX) * stepXY;
+    const int y = (roi.y.begin + roiY) * stepXY;
+
+    // filter masked pixels (alpha < 0.9f)
+    if(tex2D_float4(rcTex, x + 0.5f, y + 0.5f).w < 0.9f)
+    {
+        *out_depthSim = make_float2(-2.f, 1.f);
+        return;
+    }
+
+    const float oy = (float(roiY) - 0.5f) * ratio;
+    const float ox = (float(roiX) - 0.5f) * ratio;
+
     // interpolate using the distance to the pixels center
     int xp = floor(ox);
     int yp = floor(oy);
 
-    xp = min(xp, in_width  - 2);
-    yp = min(yp, in_height - 2);
+    xp = min(xp, int(roi.width()  * ratio) - 2);
+    yp = min(yp, int(roi.height() * ratio) - 2);
 
     const float2 lu = *get2DBufferAt(in_otherDepthSimMap_d, in_otherDepthSimMap_p, xp, yp);
     const float2 ru = *get2DBufferAt(in_otherDepthSimMap_d, in_otherDepthSimMap_p, xp + 1, yp);
@@ -222,26 +251,22 @@ __global__ void depthSimMapUpscaleAndFilter_kernel(cudaTextureObject_t rcTex,
         }
         if(count != 0)
         {
-            out_depthSim = {acc.x / float(count), acc.y / float(count)};
+            *out_depthSim = {acc.x / float(count), acc.y / float(count)};
             return;
         }
         else
         {
-            out_depthSim = {-1.0f, 1.0f};
+            *out_depthSim = {-1.0f, 1.0f};
             return;
         }
     }
 
     // bilinear interpolation
-    const float ui = x - float(xp);
-    const float vi = y - float(yp);
+    const float ui = ox - float(xp);
+    const float vi = oy - float(yp);
     const float2 u = lu + (ru - lu) * ui;
     const float2 d = ld + (rd - ld) * ui;
-    out_depthSim = u + (d - u) * vi;
-#endif
-
-    // write output
-    *get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, roiX, roiY) = out_depthSim;
+    *out_depthSim = u + (d - u) * vi; // write output
 }
 
 __global__ void depthSimMapComputePixSize_kernel(int rcDeviceCamId, float2* inout_deptPixSizeMap_d, int inout_deptPixSizeMap_p, int stepXY, const ROI roi)
