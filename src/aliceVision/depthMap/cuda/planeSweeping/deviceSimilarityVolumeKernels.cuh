@@ -210,21 +210,24 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     const int x = (roi.x.begin + vx) * stepXY;
     const int y = (roi.y.begin + vy) * stepXY;
 
-    // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
+    // corresponding input sgm depth/pixSize (middle depth)
+    const float2 in_sgmDepthPixSize = *get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy);
 
-    // original depth invalid or masked, similarity value remain at 255
-    if(originalDepth <= 0.0f)
+    // sgm depth (middle depth) invalid or masked
+    if(in_sgmDepthPixSize.x <= 0.0f)
         return; 
 
-    // get rc 3d point at original depth (z center)
-    float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), originalDepth);
+    // initialize rc 3d point at sgm depth (middle depth)
+    float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), in_sgmDepthPixSize.x);
 
-    // move rc 3d point according to the relative depth
+    // compute relative depth index offset from z center
     const int relativeDepthIndexOffset = vz - ((volDimZ - 1) / 2);
+
     if(relativeDepthIndexOffset != 0)
     {
-        const float pixSizeOffset = relativeDepthIndexOffset * computePixSize(rcDeviceCamId, p);
+        // not z center
+        // move rc 3d point by relative depth index offset * sgm pixSize
+        const float pixSizeOffset = relativeDepthIndexOffset * in_sgmDepthPixSize.y; // input sgm pixSize
         move3DPointByRcPixSize(rcDeviceCamId, p, pixSizeOffset);
     }
 
@@ -270,7 +273,8 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
 
     if(fsim == 1.f || fsim == CUDART_INF_F) // infinite or invalid similarity
     {
-        fsim = 0.0f; // 0 is the worst similarity value at this point
+        // do nothing
+        return;
     }
 
     // invert and filter similarity between 0 and 1
@@ -396,25 +400,26 @@ __global__ void volume_refineBestZ_kernel(float2* out_refineDepthSimMap_d, int o
     const int vy = roiY;
 
     // corresponding device image coordinates
-    const int x = (roi.x.begin + vx) * scaleStep;
-    const int y = (roi.y.begin + vy) * scaleStep;
+    // const int x = (roi.x.begin + vx) * scaleStep;
+    // const int y = (roi.y.begin + vy) * scaleStep;
 
-    // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
+    // corresponding input sgm depth/pixSize (middle depth)
+    const float2 in_sgmDepthPixSize = *get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy);
 
     // corresponding output depth/sim pointer
     float2* out_bestDepthSimPtr = get2DBufferAt(out_refineDepthSimMap_d, out_refineDepthSimMap_p, vx, vy);
 
-    if(originalDepth <= 0.0f) // original depth invalid or masked
+    // sgm depth (middle depth) invalid or masked
+    if(in_sgmDepthPixSize.x <= 0.0f)
     {
-        out_bestDepthSimPtr->x = originalDepth;  // -1 (invalid) or -2 (masked)
-        out_bestDepthSimPtr->y = 1.0f;           // similarity between (-1, +1)
+        out_bestDepthSimPtr->x = in_sgmDepthPixSize.x;  // -1 (invalid) or -2 (masked)
+        out_bestDepthSimPtr->y = 1.0f;                  // similarity between (-1, +1)
         return;
     }
 
     // find best z sample per pixel
-    float bestSampleSim = 99999.f;
-    int bestSampleOffsetIndex = 0;
+    float bestSampleSim = 0.f;      // all sample sim <= 0.f
+    int bestSampleOffsetIndex = 0;  // default is middle depth (SGM)
 
     // sliding gaussian window
     for(int sample = -halfNbSamples; sample <= halfNbSamples; ++sample)
@@ -423,15 +428,17 @@ __global__ void volume_refineBestZ_kernel(float2* out_refineDepthSimMap_d, int o
 
         for(int vz = 0; vz < volDimZ; ++vz)
         {
-            const int rz = (vz - halfNbDepths);        // relative depth index offset
-            const int zs = rz * samplesPerPixSize;     // relative sample offset
+            const int rz = (vz - halfNbDepths);    // relative depth index offset
+            const int zs = rz * samplesPerPixSize; // relative sample offset
 
             // get the inversed similarity sum value
             // best value is the HIGHEST
+            // worst value is 0
             const float invSimSum = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, vz);
 
             // reverse the inversed similarity sum value
-            // best similarity value is the LOWEST
+            // best value is the LOWEST
+            // worst value is 0
             const float simSum = -invSimSum;
 
             // apply gaussian
@@ -446,14 +453,19 @@ __global__ void volume_refineBestZ_kernel(float2* out_refineDepthSimMap_d, int o
         }
     }
 
-    // get rc 3d point at original depth (z center)
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), originalDepth);
-    const float sampleSize = computePixSize(rcDeviceCamId, p) / samplesPerPixSize;
-    const float sampleSizeOffset = bestSampleOffsetIndex * sampleSize;
-    const float bestDepth = originalDepth + sampleSizeOffset;
+    // compute sample size
+    const float sampleSize = in_sgmDepthPixSize.y / samplesPerPixSize; // input sgm pixSize / samplesPerPixSize
 
+    // compute sample size offset from z center
+    const float sampleSizeOffset = bestSampleOffsetIndex * sampleSize;
+
+    // compute best depth
+    // input sgm depth (middle depth) + sample size offset from z center
+    const float bestDepth = in_sgmDepthPixSize.x + sampleSizeOffset;
+
+    // write output best depth/sim
     out_bestDepthSimPtr->x = bestDepth;
-    out_bestDepthSimPtr->y = bestSampleSim;
+    out_bestDepthSimPtr->y = bestSampleSim; // TODO: should we convert best sample sim from (-x, 0) to (-x+1, +1) ?
 }
 
 template <typename T>
