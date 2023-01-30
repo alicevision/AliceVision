@@ -154,6 +154,8 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: GammaC threshold used for similarity computation.")
         ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
             "Refine: GammaP threshold used for similarity computation.")
+        ("refineInterpolateMiddleDepth", po::value<bool>(&refineParams.interpolateMiddleDepth)->default_value(refineParams.interpolateMiddleDepth),
+            "Enable/Disable middle depth bilinear interpolation for the refinement process.")
         ("colorOptimizationNbIterations", po::value<int>(&refineParams.optimizationNbIterations)->default_value(refineParams.optimizationNbIterations),
             "Color Optimization: Number of iterations of the optimization.")
         ("refineEnabled", po::value<bool>(&refineParams.useRefineFuse)->default_value(refineParams.useRefineFuse),
@@ -307,6 +309,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.nbSubsamples", refineParams.nbSubsamples);
     mp.userParams.put("refine.halfNbDepths", refineParams.halfNbDepths);
     mp.userParams.put("refine.optimizationNbIterations", refineParams.optimizationNbIterations);
+    mp.userParams.put("refine.interpolateMiddleDepth", refineParams.interpolateMiddleDepth);
     mp.userParams.put("refine.useRefineFuse", refineParams.useRefineFuse);
     mp.userParams.put("refine.useColorOptimization", refineParams.useColorOptimization);
     mp.userParams.put("refine.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
