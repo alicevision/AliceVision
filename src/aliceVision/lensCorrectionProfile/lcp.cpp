@@ -606,6 +606,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
         std::vector<int> candidatesLow;
         std::vector<int> candidatesHigh;
 
+        // Search all possible low and high candidates
         for (int i = 0; i < v_lensParams.size(); ++i)
         {
             bool isCurrentValid = (mode == LCPCorrectionMode::DISTORTION && v_isDistortionValid[i]) ||
@@ -621,6 +622,8 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
             }
         }
 
+        // If search mode is vignetting select low and high candidates with the closest aperture value.
+        // If search mode is not vignetting select low and high candidates with the closest focus distance value.
         for (int i = 0; i < candidatesLow.size(); ++i)
         {
             bool update = false;
@@ -629,16 +632,16 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
                 float currAperture = v_lensParams[iLow].camData.ApertureValue;
                 float candidateAperture = v_lensParams[candidatesLow[i]].camData.ApertureValue;
 
-                update = (candidateAperture >= settings.ApertureValue && candidateAperture < currAperture&& currAperture > settings.ApertureValue) ||
-                    (candidateAperture <= settings.ApertureValue &&
-                        (currAperture > settings.ApertureValue || std::fabs(settings.ApertureValue - candidateAperture) < std::fabs(settings.ApertureValue - currAperture)));
+                update = (candidateAperture >= settings.ApertureValue && candidateAperture < currAperture && currAperture > settings.ApertureValue) ||
+                         (candidateAperture <= settings.ApertureValue &&
+                          (currAperture > settings.ApertureValue || std::fabs(settings.ApertureValue - candidateAperture) < std::fabs(settings.ApertureValue - currAperture)));
             }
             else
             {
                 float currFocus = v_lensParams[iLow].camData.FocusDistance;
                 float candidateFocus = v_lensParams[candidatesLow[i]].camData.FocusDistance;
 
-                update = (candidateFocus >= settings.FocusDistance && candidateFocus < currFocus&& currFocus > settings.FocusDistance) ||
+                update = (candidateFocus >= settings.FocusDistance && candidateFocus < currFocus && currFocus > settings.FocusDistance) ||
                          (candidateFocus <= settings.FocusDistance &&
                           (currFocus > settings.FocusDistance || std::fabs(settings.FocusDistance - candidateFocus) < std::fabs(settings.FocusDistance - currFocus)));
             }
@@ -899,6 +902,115 @@ void LCPinfo::getVignettingParams(const float& focalLength, const float& apertur
     {
         combine(iLow, iHigh, weightLow, LCPCorrectionMode::VIGNETTE, lparam);
     }
+}
+
+void LCPinfo::setCommonSettings(const std::string& name)
+{
+    if (name == "stCamera:Author")
+        Author = _currText;
+    else if (name == "stCamera:ProfileName")
+        ProfileName = _currText;
+    else if (name == "stCamera:Make")
+        Make = _currText;
+    else if (name == "stCamera:Model")
+        Model = _currText;
+    else if (name == "stCamera:Lens")
+        Lens.push_back(_currText);
+    else if (name == "stCamera:LensID")
+        LensID.push_back(std::stoi(_currText.c_str()));
+    else if (name == "stCamera:LensInfo")
+        LensInfo = _currText;
+    else if (name == "stCamera:ImageWidth")
+        ImageWidth = std::stoi(_currText.c_str());
+    else if (name == "stCamera:ImageLength")
+        ImageLength = std::stoi(_currText.c_str());
+    else if (name == "stCamera:XResolution")
+        XResolution = std::stof(_currText.c_str());
+    else if (name == "stCamera:YResolution")
+        YResolution = std::stof(_currText.c_str());
+    else if (name == "stCamera:LensPrettyName")
+        LensPrettyName = _currText;
+    else if (name == "stCamera:CameraPrettyName")
+        CameraPrettyName = _currText;
+    else if (name == "stCamera:CameraRawProfile")
+        CameraRawProfile = ((_currText == "true") || (_currText == "True"));
+    else if (name == "stCamera:SensorFormatFactor")
+        SensorFormatFactor = std::stof(_currText.c_str());
+}
+
+void LCPinfo::setCameraSettings(const std::string& name)
+{
+    if (name == "stCamera:FocalLength")
+        currLensParam.camData.FocalLength = std::stof(_currText.c_str());
+    else if (name == "stCamera:ApertureValue")
+        currLensParam.camData.ApertureValue = std::stof(_currText.c_str());
+    else if (name == "stCamera:FocusDistance")
+        currLensParam.camData.FocusDistance = std::stof(_currText.c_str());
+}
+
+void LCPinfo::setRectilinearModel(RectilinearModel& model, const std::string& name)
+{
+    model.isEmpty = false;
+    if (name == "stCamera:Version")
+        model.Version = std::stoi(_currText.c_str());
+    else if (name == "stCamera:FocalLengthX")
+        model.FocalLengthX = std::stof(_currText.c_str());
+    else if (name == "stCamera:FocalLengthY")
+        model.FocalLengthY = std::stof(_currText.c_str());
+    else if (name == "stCamera:ImageXCenter")
+        model.ImageXCenter = std::stof(_currText.c_str());
+    else if (name == "stCamera:ImageYCenter")
+        model.ImageYCenter = std::stof(_currText.c_str());
+    else if (name == "stCamera:RadialDistortParam1")
+        model.RadialDistortParam1 = std::stof(_currText.c_str());
+    else if (name == "stCamera:RadialDistortParam2")
+        model.RadialDistortParam2 = std::stof(_currText.c_str());
+    else if (name == "stCamera:RadialDistortParam3")
+        model.RadialDistortParam3 = std::stof(_currText.c_str());
+    else if (name == "stCamera:TangentiallDistortParam1")
+        model.RadialDistortParam1 = std::stof(_currText.c_str());
+    else if (name == "stCamera:TangentiallDistortParam2")
+        model.RadialDistortParam2 = std::stof(_currText.c_str());
+    else if (name == "stCamera:ScaleFactor")
+        model.ScaleFactor = std::stof(_currText.c_str());
+}
+
+void LCPinfo::setFisheyeModel(const std::string& name)
+{
+    currLensParam.fisheyeParams.isEmpty = false;
+    if (name == "stCamera:Version")
+        currLensParam.fisheyeParams.Version = std::stoi(_currText.c_str());
+    else if (name == "stCamera:FocalLengthX")
+        currLensParam.fisheyeParams.FocalLengthX = std::stof(_currText.c_str());
+    else if (name == "stCamera:FocalLengthY")
+        currLensParam.fisheyeParams.FocalLengthY = std::stof(_currText.c_str());
+    else if (name == "stCamera:ImageXCenter")
+        currLensParam.fisheyeParams.ImageXCenter = std::stof(_currText.c_str());
+    else if (name == "stCamera:ImageYCenter")
+        currLensParam.fisheyeParams.ImageYCenter = std::stof(_currText.c_str());
+    else if (name == "stCamera:RadialDistortParam1")
+        currLensParam.fisheyeParams.RadialDistortParam1 = std::stof(_currText.c_str());
+    else if (name == "stCamera:RadialDistortParam2")
+        currLensParam.fisheyeParams.RadialDistortParam2 = std::stof(_currText.c_str());
+}
+
+void LCPinfo::setVignetteModel(const std::string& name)
+{
+    currLensParam.vignParams.isEmpty = false;
+    if (name == "stCamera:FocalLengthX")
+        currLensParam.vignParams.FocalLengthX = std::stof(_currText.c_str());
+    else if (name == "stCamera:FocalLengthY")
+        currLensParam.vignParams.FocalLengthY = std::stof(_currText.c_str());
+    else if (name == "stCamera:ImageXCenter")
+        currLensParam.vignParams.ImageXCenter = std::stof(_currText.c_str());
+    else if (name == "stCamera:ImageYCenter")
+        currLensParam.vignParams.ImageYCenter = std::stof(_currText.c_str());
+    else if (name == "stCamera:VignetteModelParam1")
+        currLensParam.vignParams.VignetteModelParam1 = std::stof(_currText.c_str());
+    else if (name == "stCamera:VignetteModelParam2")
+        currLensParam.vignParams.VignetteModelParam2 = std::stof(_currText.c_str());
+    else if (name == "stCamera:VignetteModelParam3")
+        currLensParam.vignParams.VignetteModelParam3 = std::stof(_currText.c_str());
 }
 
 void LCPdatabase::loadDirectory(const boost::filesystem::path& p)

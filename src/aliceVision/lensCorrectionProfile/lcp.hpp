@@ -66,6 +66,11 @@ struct settingsInfo
     }
 };
 
+/**
+ * @brief RectilinearModel contains parameters of a rectilinear model of distortion
+ * Detailed information on this model can be found in the Adobe technical report
+ * "Adobe Camera Model" part of the documentation of the Adobe free tool Lens Profile Creator.
+ */
 struct RectilinearModel
 {
     int Version = -1;
@@ -89,6 +94,11 @@ struct RectilinearModel
     }
 };
 
+/**
+ * @brief PerspectiveModel contains parameters of a perspective model of distortion
+ * Detailed information on this model can be found in the Adobe technical report
+ * "Adobe Camera Model" part of the documentation of the Adobe free tool Lens Profile Creator.
+ */
 struct PerspectiveModel
 {
     int Version = -1;
@@ -109,6 +119,11 @@ struct PerspectiveModel
     }
 };
 
+/**
+ * @brief VignetteModel contains parameters of a vignetting model of distortion
+ * Detailed information on this model can be found in the Adobe technical report
+ * "Adobe Camera Model" part of the documentation of the Adobe free tool Lens Profile Creator.
+ */
 struct VignetteModel
 {
     float FocalLengthX = 0.f;
@@ -126,6 +141,11 @@ struct VignetteModel
     }
 };
 
+/**
+ * @brief FisheyeModel contains parameters of a fisheye model of distortion
+ * Detailed information on this model can be found in the Adobe technical report
+ * "Adobe Camera Model" part of the documentation of the Adobe free tool Lens Profile Creator.
+ */
 struct FisheyeModel
 {
     int Version = -1;
@@ -267,7 +287,7 @@ public:
     * @brief Get distortion parameters for a given couple focal length, focus distance. Focus distance can set to zero.
     * @param[in] focalLength Focal length in mm
     * @param[in] focusDistance Focus distance in meters
-    * @param[in] lparam Lens parameters to be populated with the distortion model 
+    * @param[out] lparam Lens parameters to be populated with the distortion model 
     */
     void getDistortionParams(const float& focalLength, const float& focusDistance, LensParam& lparam);
 
@@ -275,7 +295,7 @@ public:
     * @brief Get vignetting parameters for a given couple focal length, aperture value. Aperture value can set to zero.
     * @param[in] focalLength Focal length in mm
     * @param[in] aperture Aperture value
-    * @param[in] lparam Lens parameters to be populated with the vignetting model
+    * @param[out] lparam Lens parameters to be populated with the vignetting model
     */
     void getVignettingParams(const float& focalLength, const float& aperture, LensParam& lparam);
 
@@ -545,114 +565,11 @@ private:
     float XResolution = 0.f;
     float YResolution = 0.f;
 
-    void setCommonSettings(const std::string& name)
-    {
-        if (name == "stCamera:Author")
-            Author = _currText;
-        else if (name == "stCamera:ProfileName")
-            ProfileName = _currText;
-        else if (name == "stCamera:Make")
-            Make = _currText;
-        else if (name == "stCamera:Model")
-            Model = _currText;
-        else if (name == "stCamera:Lens")
-            Lens.push_back(_currText);
-        else if (name == "stCamera:LensID")
-            LensID.push_back(std::atoi(_currText.c_str()));
-        else if (name == "stCamera:LensInfo")
-            LensInfo = _currText;
-        else if (name == "stCamera:ImageWidth")
-            ImageWidth = atoi(_currText.c_str());
-        else if (name == "stCamera:ImageLength")
-            ImageLength = atoi(_currText.c_str());
-        else if (name == "stCamera:XResolution")
-            XResolution = atof(_currText.c_str());
-        else if (name == "stCamera:YResolution")
-            YResolution = atof(_currText.c_str());
-        else if (name == "stCamera:LensPrettyName")
-            LensPrettyName = _currText;
-        else if (name == "stCamera:CameraPrettyName")
-            CameraPrettyName = _currText;
-        else if (name == "stCamera:CameraRawProfile")
-            CameraRawProfile = ((_currText == "true") || (_currText == "True"));
-        else if (name == "stCamera:SensorFormatFactor")
-            SensorFormatFactor = atof(_currText.c_str());
-    }
-
-    void setCameraSettings(const std::string& name)
-    {
-        if (name == "stCamera:FocalLength")
-            currLensParam.camData.FocalLength = atof(_currText.c_str());
-        else if (name == "stCamera:ApertureValue")
-            currLensParam.camData.ApertureValue = atof(_currText.c_str());
-        else if (name == "stCamera:FocusDistance")
-            currLensParam.camData.FocusDistance = atof(_currText.c_str());
-    }
-
-    void setRectilinearModel(RectilinearModel& model, const std::string& name)
-    {
-        model.isEmpty = false;
-        if (name == "stCamera:Version")
-            model.Version = atoi(_currText.c_str());
-        else if (name == "stCamera:FocalLengthX")
-            model.FocalLengthX = atof(_currText.c_str());
-        else if (name == "stCamera:FocalLengthY")
-            model.FocalLengthY = atof(_currText.c_str());
-        else if (name == "stCamera:ImageXCenter")
-            model.ImageXCenter = atof(_currText.c_str());
-        else if (name == "stCamera:ImageYCenter")
-            model.ImageYCenter = atof(_currText.c_str());
-        else if (name == "stCamera:RadialDistortParam1")
-            model.RadialDistortParam1 = atof(_currText.c_str());
-        else if (name == "stCamera:RadialDistortParam2")
-            model.RadialDistortParam2 = atof(_currText.c_str());
-        else if (name == "stCamera:RadialDistortParam3")
-            model.RadialDistortParam3 = atof(_currText.c_str());
-        else if (name == "stCamera:TangentiallDistortParam1")
-            model.RadialDistortParam1 = atof(_currText.c_str());
-        else if (name == "stCamera:TangentiallDistortParam2")
-            model.RadialDistortParam2 = atof(_currText.c_str());
-        else if (name == "stCamera:ScaleFactor")
-            model.ScaleFactor = atof(_currText.c_str());
-    }
-
-    void setFisheyeModel(const std::string& name)
-    {
-        currLensParam.fisheyeParams.isEmpty = false;
-        if (name == "stCamera:Version")
-            currLensParam.fisheyeParams.Version = atoi(_currText.c_str());
-        else if (name == "stCamera:FocalLengthX")
-            currLensParam.fisheyeParams.FocalLengthX = atof(_currText.c_str());
-        else if (name == "stCamera:FocalLengthY")
-            currLensParam.fisheyeParams.FocalLengthY = atof(_currText.c_str());
-        else if (name == "stCamera:ImageXCenter")
-            currLensParam.fisheyeParams.ImageXCenter = atof(_currText.c_str());
-        else if (name == "stCamera:ImageYCenter")
-            currLensParam.fisheyeParams.ImageYCenter = atof(_currText.c_str());
-        else if (name == "stCamera:RadialDistortParam1")
-            currLensParam.fisheyeParams.RadialDistortParam1 = atof(_currText.c_str());
-        else if (name == "stCamera:RadialDistortParam2")
-            currLensParam.fisheyeParams.RadialDistortParam2 = atof(_currText.c_str());
-    }
-
-    void setVignetteModel(const std::string& name)
-    {
-        currLensParam.vignParams.isEmpty = false;
-        if (name == "stCamera:FocalLengthX")
-            currLensParam.vignParams.FocalLengthX = atof(_currText.c_str());
-        else if (name == "stCamera:FocalLengthY")
-            currLensParam.vignParams.FocalLengthY = atof(_currText.c_str());
-        else if (name == "stCamera:ImageXCenter")
-            currLensParam.vignParams.ImageXCenter = atof(_currText.c_str());
-        else if (name == "stCamera:ImageYCenter")
-            currLensParam.vignParams.ImageYCenter = atof(_currText.c_str());
-        else if (name == "stCamera:VignetteModelParam1")
-            currLensParam.vignParams.VignetteModelParam1 = atof(_currText.c_str());
-        else if (name == "stCamera:VignetteModelParam2")
-            currLensParam.vignParams.VignetteModelParam2 = atof(_currText.c_str());
-        else if (name == "stCamera:VignetteModelParam3")
-            currLensParam.vignParams.VignetteModelParam3 = atof(_currText.c_str());
-    }
+    void setCommonSettings(const std::string& name);
+    void setCameraSettings(const std::string& name);
+    void setRectilinearModel(RectilinearModel& model, const std::string& name);
+    void setFisheyeModel(const std::string& name);
+    void setVignetteModel(const std::string& name);
 };
 
 std::string reduceString(const std::string& str);
