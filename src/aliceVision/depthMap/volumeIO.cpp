@@ -258,13 +258,10 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
             const int y = roi.y.begin + (double(vy) * refineParams.scale * refineParams.stepXY);
             const Point2d pix(x, y);
 
-            const double orignalDepth = in_depthSimMapSgmUpscale_hmh(vx, vy).x;
+            const float2 depthPixSizeMap = in_depthSimMapSgmUpscale_hmh(vx, vy);
 
-            if(orignalDepth < 0.0f) // original depth invalid or masked
+            if(depthPixSizeMap.x < 0.0f) // original depth invalid or masked
                 continue;
-
-            const Point3d originalP = mp.CArr[camIndex] + (mp.iCamArr[camIndex] * pix).normalize() * orignalDepth;
-            const double pixSize = mp.getCamPixelSize(originalP, camIndex);
 
             for(int vz = 0; vz < volDim[2]; ++vz)
             {
@@ -275,9 +272,9 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
                     continue;
 
                 const int relativeDepthIndexOffset = vz - refineParams.halfNbDepths;
-                const double depth = orignalDepth + (relativeDepthIndexOffset * pixSize); // original depth + z based pixSize offset
+                const double depth = depthPixSizeMap.x + (relativeDepthIndexOffset * depthPixSizeMap.y); // original depth + z based pixSize offset
 
-               const Point3d p = mp.CArr[camIndex] + (mp.iCamArr[camIndex] * pix).normalize() * depth;
+                const Point3d p = mp.CArr[camIndex] + (mp.iCamArr[camIndex] * pix).normalize() * depth;
 
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
                 pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
