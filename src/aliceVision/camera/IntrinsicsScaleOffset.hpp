@@ -245,11 +245,41 @@ public:
     return _ratioLocked;
   }
 
+  /**
+   * @brief lock the Scale
+   * @param lock is the scale locked
+   */
+  void setScaleLocked(bool lock) 
+  {
+    _scaleLocked = lock;
+  }
+
+  bool isScaleLocked() const
+  {
+    return _scaleLocked;
+  }
+
+  /**
+   * @brief lock the offset
+   * @param lock is the offset locked
+   */
+  void setOffsetLocked(bool lock) 
+  {
+    _offsetLocked = lock;
+  }
+
+  bool isOffsetLocked() const
+  {
+    return _offsetLocked;
+  }
+
 protected:
   Vec2 _scale{1.0, 1.0};
   Vec2 _offset{0.0, 0.0};
   Vec2 _initialScale{-1.0, -1.0};
   bool _ratioLocked{true};
+  bool _scaleLocked{false};
+  bool _offsetLocked{false};
 };
 
 } // namespace camera

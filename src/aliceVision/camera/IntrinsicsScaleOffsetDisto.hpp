@@ -257,6 +257,20 @@ public:
       return _pDistortion;
   }
 
+   /**
+   * @brief lock the distortion
+   * @param lock is the distortion locked
+   */
+  void setDistortionLocked(bool lock) 
+  {
+    _distortionLocked = lock;
+  }
+
+  bool isDistortionLocked() const
+  {
+    return _distortionLocked;
+  }
+
   ~IntrinsicsScaleOffsetDisto() override = default;
 
 protected:
@@ -270,6 +284,7 @@ protected:
   }
 
   std::shared_ptr<Distortion> _pDistortion;
+  bool _distortionLocked{false};
 };
 
 } // namespace camera

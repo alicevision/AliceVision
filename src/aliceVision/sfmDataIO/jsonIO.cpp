@@ -139,6 +139,8 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.put("focalLength", focalLengthMM);
     intrinsicTree.put("pixelRatio", pixelRatio);
     intrinsicTree.put("pixelRatioLocked", intrinsicScaleOffset->isRatioLocked());
+    intrinsicTree.put("scaleLocked", intrinsicScaleOffset->isScaleLocked());
+    intrinsicTree.put("offsetLocked", intrinsicScaleOffset->isOffsetLocked());
 
     saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
   }
@@ -156,6 +158,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     }
 
     intrinsicTree.add_child("distortionParams", distParamsTree);
+    intrinsicTree.put("distortionLocked", intrinsicScaleOffsetDisto->isDistortionLocked());
   }
 
   std::shared_ptr<camera::EquiDistant> intrinsicEquidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
@@ -252,6 +255,8 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
 
       intrinsicWithScale->setInitialScale(initialFocalLengthPx);
       intrinsicWithScale->setRatioLocked(intrinsicTree.get<bool>("pixelRatioLocked"));
+      intrinsicWithScale->setScaleLocked(intrinsicTree.get<bool>("scaleLocked", false));
+      intrinsicWithScale->setOffsetLocked(intrinsicTree.get<bool>("offsetLocked", false));
     }
   }
 
@@ -266,6 +271,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     //ensure that we have the right number of params
     distortionParams.resize(intrinsicWithDistoEnabled->getDistortionParams().size(), 0.0);
     intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
+    intrinsicWithDistoEnabled->setDistortionLocked(intrinsicTree.get<bool>("distortionLocked", false));
   }
 
   // Load EquiDistant params

@@ -218,8 +218,16 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(intrinsicCasted->getParams());
     OBoolProperty(userProps, "mvg_intrinsicLocked").set(intrinsicCasted->isLocked());
     OBoolProperty(userProps, "mvg_intrinsicPixelRatioLocked").set(intrinsicCasted->isRatioLocked());
+    OBoolProperty(userProps, "mvg_intrinsicScaleLocked").set(intrinsicCasted->isScaleLocked());
+    OBoolProperty(userProps, "mvg_intrinsicOffsetLocked").set(intrinsicCasted->isOffsetLocked());
 
     camObj.getSchema().set(camSample);
+  }
+
+  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicWithDistoEnabled = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  if(intrinsicWithDistoEnabled)
+  {
+    OBoolProperty(userProps, "mvg_intrinsicDistortionLocked").set(intrinsicWithDistoEnabled->isDistortionLocked());
   }
 
   std::shared_ptr<camera::EquiDistant> intrinsicEquiCasted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
