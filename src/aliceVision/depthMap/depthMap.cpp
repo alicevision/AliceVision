@@ -241,6 +241,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     refineParams.sigma = mp.userParams.get<double>("refine.sigma", refineParams.sigma);
     refineParams.gammaC = mp.userParams.get<double>("refine.gammaC", refineParams.gammaC);
     refineParams.gammaP = mp.userParams.get<double>("refine.gammaP", refineParams.gammaP);
+    refineParams.interpolateMiddleDepth = mp.userParams.get<bool>("refine.interpolateMiddleDepth", refineParams.interpolateMiddleDepth);
     refineParams.useRefineFuse = mp.userParams.get<bool>("refine.useRefineFuse", refineParams.useRefineFuse);
     refineParams.useColorOptimization = mp.userParams.get<bool>("refine.useColorOptimization", refineParams.useColorOptimization);
     refineParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("refine.exportIntermediateDepthSimMaps", refineParams.exportIntermediateDepthSimMaps);

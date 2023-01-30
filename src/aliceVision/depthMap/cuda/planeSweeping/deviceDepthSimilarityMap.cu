@@ -56,8 +56,8 @@ __host__ void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upsc
       out_upscaledMap_dmp.getPitch(),
       in_map_dmp.getBuffer(),
       in_map_dmp.getPitch(),
-      roi,
-      ratio);
+      ratio,
+      roi);
 
     CHECK_CUDA_ERROR();
 }
@@ -78,15 +78,30 @@ __host__ void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
-    depthSimMapUpscaleAndFilter_kernel<<<grid, block, 0, stream>>>(
-      rcDeviceCamera.getTextureObject(),
-      out_upscaledDepthSimMap_dmp.getBuffer(), 
-      out_upscaledDepthSimMap_dmp.getPitch(),
-      in_otherDepthSimMap_dmp.getBuffer(), 
-      in_otherDepthSimMap_dmp.getPitch(),
-      refineParams.stepXY,
-      roi,
-      ratio);
+    if(refineParams.interpolateMiddleDepth)
+    {
+        depthSimMapUpscaleFilter_bilinear_kernel<<<grid, block, 0, stream>>>(
+          rcDeviceCamera.getTextureObject(),
+          out_upscaledDepthSimMap_dmp.getBuffer(),
+          out_upscaledDepthSimMap_dmp.getPitch(),
+          in_otherDepthSimMap_dmp.getBuffer(),
+          in_otherDepthSimMap_dmp.getPitch(),
+          refineParams.stepXY,
+          ratio,
+          roi);
+    }
+    else
+    {
+        depthSimMapUpscaleFilter_kernel<<<grid, block, 0, stream>>>(
+          rcDeviceCamera.getTextureObject(),
+          out_upscaledDepthSimMap_dmp.getBuffer(),
+          out_upscaledDepthSimMap_dmp.getPitch(),
+          in_otherDepthSimMap_dmp.getBuffer(),
+          in_otherDepthSimMap_dmp.getPitch(),
+          refineParams.stepXY,
+          ratio,
+          roi);
+    }
 
     CHECK_CUDA_ERROR();
 }
