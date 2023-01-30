@@ -622,6 +622,8 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
       continue;
     }
 
+
+
     assert(isValid(intrinsicPtr->getType()));
 
     std::vector<double>& intrinsicBlock = _intrinsicsBlocks[intrinsicId];
@@ -650,10 +652,23 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     bool lockDistortion = false;
     double focalRatio = 1.0;
 
-    // refine the focal length
-    if(refineIntrinsicsFocalLength)
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+    if (intrinsicScaleOffset)
     {
-      std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      lockCenter = intrinsicScaleOffset->isOffsetLocked();
+      lockFocal = intrinsicScaleOffset->isScaleLocked();
+      lockRatio = intrinsicScaleOffset->isRatioLocked();
+    }
+
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicPtr);
+    if (intrinsicScaleOffsetDisto)
+    {
+      lockDistortion = intrinsicScaleOffsetDisto->isDistortionLocked();
+    }
+
+    // refine the focal length
+    if (refineIntrinsicsFocalLength)
+    {
       if (intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
       {
         // if we have an initial guess, we only authorize a margin around this value.
@@ -673,17 +688,12 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
       }
 
       focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
-
-      std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
-      if (castedcam_iso)
-      {
-        lockRatio = castedcam_iso->isRatioLocked();
-      }
     }
     else
     {
       // set focal length as constant
       lockFocal = true;
+      lockRatio = true;
     }
 
     // optical center
@@ -709,7 +719,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     }
 
     // lens distortion
-    if(!refineIntrinsicsDistortion)
+    if (!refineIntrinsicsDistortion)
     {
       lockDistortion = true;
     }

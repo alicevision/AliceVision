@@ -612,11 +612,24 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     bool lockDistortion = false;
     double focalRatio = 1.0;
 
-    // refine the focal length
-    if(refineIntrinsicsFocalLength)
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+    if (intrinsicScaleOffset)
     {
-      std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
-      if(intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
+      lockCenter = intrinsicScaleOffset->isOffsetLocked();
+      lockFocal = intrinsicScaleOffset->isScaleLocked();
+      lockRatio = intrinsicScaleOffset->isRatioLocked();
+    }
+
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicPtr);
+    if (intrinsicScaleOffsetDisto)
+    {
+      lockDistortion = intrinsicScaleOffsetDisto->isDistortionLocked();
+    }
+
+    // refine the focal length
+    if (refineIntrinsicsFocalLength)
+    {
+      if (intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
       {
         // if we have an initial guess, we only authorize a margin around this value.
         assert(intrinsicBlock.size() >= 1);
@@ -635,24 +648,20 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       }
 
       focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
-
-      std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
-      if (castedcam_iso)
-      {
-        lockRatio = castedcam_iso->isRatioLocked();
-      }
     }
     else
     {
       // set focal length as constant
       lockFocal = true;
+      lockRatio = true;
     }
 
-    const bool optional_center = ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA) && (usageCount > _minNbImagesToRefineOpticalCenter));
-    if ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || optional_center)
+    // optical center
+    if((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) ||
+       ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA) && _minNbImagesToRefineOpticalCenter > 0 && usageCount >= _minNbImagesToRefineOpticalCenter))
     {
       // refine optical center within 10% of the image size.
-      assert(intrinsicBlock.size() >= 4);
+      assert(intrinsicBlock.size() >= 3);
 
       const double opticalCenterMinPercent = -0.05;
       const double opticalCenterMaxPercent =  0.05;
@@ -670,7 +679,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     }
 
     // lens distortion
-    if(!refineIntrinsicsDistortion)
+    if (!refineIntrinsicsDistortion)
     {
       lockDistortion = true;
     }
