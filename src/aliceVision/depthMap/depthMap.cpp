@@ -214,6 +214,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.maxDepths = mp.userParams.get<int>("sgm.maxDepths", sgmParams.maxDepths);
     sgmParams.maxTCamsPerTile = mp.userParams.get<int>("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
     sgmParams.seedsRangeInflate = mp.userParams.get<double>("sgm.seedsRangeInflate", sgmParams.seedsRangeInflate);
+    sgmParams.depthThiknessInflate = mp.userParams.get<double>("sgm.depthThiknessInflate", sgmParams.depthThiknessInflate);
     sgmParams.maxSimilarity = mp.userParams.get<double>("sgm.maxSimilarity", sgmParams.maxSimilarity);
     sgmParams.gammaC = mp.userParams.get<double>("sgm.gammaC", sgmParams.gammaC);
     sgmParams.gammaP = mp.userParams.get<double>("sgm.gammaP", sgmParams.gammaP);
@@ -504,7 +505,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             if(depthMapParams.useRefine)
             {
               Refine& refine = refinePerStream.at(streamIndex);
-              refine.refineRc(tile, sgm.getDeviceDepthSimMap(), sgm.getDeviceNormalMap());
+              refine.refineRc(tile, sgm.getDeviceDepthSimMap(), sgm.getDeviceDepthThiknessMap(), sgm.getDeviceNormalMap());
 
               // copy Refine depth/similarity map from device to host
               tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));
@@ -551,6 +552,11 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             if(depthMapParams.sgmParams.exportIntermediateDepthSimMaps)
             {
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "sgm");
+            }
+
+            if(depthMapParams.sgmParams.exportIntermediateDepthThiknessMaps)
+            {
+                mergeDepthThiknessMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "sgm");
             }
 
             if(depthMapParams.sgmParams.exportIntermediateNormalMaps)

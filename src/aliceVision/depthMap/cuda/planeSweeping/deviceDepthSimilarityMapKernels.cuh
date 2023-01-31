@@ -13,6 +13,8 @@
 #include <aliceVision/depthMap/cuda/device/eig33.cuh>
 #include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
 
+// compute per pixel pixSize instead of using Sgm depth thikness
+//#define ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
 
 namespace aliceVision {
 namespace depthMap {
@@ -269,7 +271,13 @@ __global__ void depthSimMapUpscaleFilter_bilinear_kernel(cudaTextureObject_t rcT
     *out_depthSim = u + (d - u) * vi; // write output
 }
 
-__global__ void depthSimMapComputePixSize_kernel(int rcDeviceCamId, float2* inout_deptPixSizeMap_d, int inout_deptPixSizeMap_p, int stepXY, const ROI roi)
+__global__ void depthSimMapComputePixSize_kernel(int rcDeviceCamId,
+                                                 float2* inout_deptPixSizeMap_d, int inout_deptPixSizeMap_p,
+                                                 const float* in_sgmDepthThiknessMap_d, int in_sgmDepthThiknessMap_p,
+                                                 int stepXY,
+                                                 int halfNbDepths,
+                                                 float ratio,
+                                                 const ROI roi)
 {
     const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
     const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
@@ -277,24 +285,108 @@ __global__ void depthSimMapComputePixSize_kernel(int rcDeviceCamId, float2* inou
     if(roiX >= roi.width() || roiY >= roi.height()) 
         return;
 
-    // corresponding device image coordinates
-    const int x = (roi.x.begin + roiX) * stepXY;
-    const int y = (roi.y.begin + roiY) * stepXY;
-
     // corresponding input/output depthSim
     float2* inout_depthPixSize = get2DBufferAt(inout_deptPixSizeMap_d, inout_deptPixSizeMap_p, roiX, roiY);
 
-    // original depth invalid or masked, pixSize set to 0
-    if(inout_depthPixSize->x < 0.0f) 
+    // input depth invalid or masked, pixSize set to 0
+    if(inout_depthPixSize->x <= 0.0f)
     {
         inout_depthPixSize->y = 0;
         return; 
     }
 
+#ifdef ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
+    // corresponding device image coordinates
+    const int x = (roi.x.begin + roiX) * stepXY;
+    const int y = (roi.y.begin + roiY) * stepXY;
+
     // get rc 3d point
     const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), inout_depthPixSize->x);
 
+    // compute and write rc 3d point pixSize
     inout_depthPixSize->y = computePixSize(rcDeviceCamId, p);
+#else
+    // corresponding sgm depth thikness coordinates
+    // nearest neighbor, no interpolation
+    const int xp = min(int((float(roiX) - 0.5f) * ratio + 0.5f), int(roi.width()  * ratio) - 1);
+    const int yp = min(int((float(roiY) - 0.5f) * ratio + 0.5f), int(roi.height() * ratio) - 1);
+
+    // corresponding sgm depth thikness
+    const float in_sgmDepthThikness = *get2DBufferAt(in_sgmDepthThiknessMap_d, in_sgmDepthThiknessMap_p, xp, yp);
+
+    // compute and write pixSize from depth thikness
+    inout_depthPixSize->y = in_sgmDepthThikness / halfNbDepths;
+
+#endif
+
+}
+
+__global__ void depthSimMapSmoothPixSize_kernel(float2* inout_sgmDepthPixSizeMap_d, int inout_sgmDepthPixSizeMap_p,
+                                                const int halfNbDepths,
+                                                const int maxSgmPlanes,
+                                                const ROI roi)
+{
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(roiX >= roi.width() || roiY >= roi.height())
+        return;
+
+    // corresponding output pixSize
+    float2* inout_depthPixSize = get2DBufferAt(inout_sgmDepthPixSizeMap_d, inout_sgmDepthPixSizeMap_p, roiX, roiY);
+
+    // depth invalid or masked
+    if(inout_depthPixSize->x <= 0.0f)
+    {
+        // do nothing
+        return;
+    }
+
+    // get min/max distance to the center pixel
+    const float minCenterDist = inout_depthPixSize->y;                // input pixSize
+    const float maxCenterDist = inout_depthPixSize->y * maxSgmPlanes; // input pixSize * maxSgmPlanes
+
+    // compute average distance to the center pixel
+    float sumCenterDist = 0.f;
+    int nbValidPatchPixels = 0;
+
+    // patch 3x3
+    for(int yp = -1; yp <= 1; ++yp)
+    {
+        for(int xp = -1; xp <= 1; ++xp)
+        {
+            const int roiXp = roiX + xp;
+            const int roiYp = roiY + yp;
+
+            if((xp == 0 && yp == 0) ||                // avoid pixel center
+               roiXp < 0 || roiXp >= roi.width() ||   // avoid pixel outside the ROI
+               roiYp < 0 || roiYp >= roi.height())    // avoid pixel outside the ROI
+            {
+                continue;
+            }
+
+            const float2 in_depthSimPatch = *get2DBufferAt(inout_sgmDepthPixSizeMap_d, inout_sgmDepthPixSizeMap_p, roiXp, roiYp);
+
+            // depth valid and unmasked
+            if(in_depthSimPatch.x > 0.0f)
+            {
+              const float dist = abs(inout_depthPixSize->x - in_depthSimPatch.x) / halfNbDepths;
+              sumCenterDist += max(minCenterDist, min(maxCenterDist, dist)); // clamp (minCenterDist, maxCenterDist)
+              ++nbValidPatchPixels;
+            }
+        }
+    }
+
+    // we require at least 3 valid patch pixels (over 8)
+    if(nbValidPatchPixels < 3)
+    {
+      // do nothing
+      return;
+    }
+
+    // write output pixSize
+    // pixSize is the average distance to the center pixel
+    inout_depthPixSize->y = sumCenterDist / nbValidPatchPixels;
 }
 
 __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,

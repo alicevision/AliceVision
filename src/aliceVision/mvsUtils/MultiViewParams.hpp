@@ -73,7 +73,8 @@ enum class EFileType
     volume = 44,
     volumeCross = 45,
     stats9p = 46,
-    tilePattern = 47
+    tilePattern = 47,
+    depthThiknessMap = 48,
 };
 
 class MultiViewParams

@@ -298,11 +298,13 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
 }
 
 __global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int out_sgmDepthSimMap_p,
+                                            float* out_sgmDepthThiknessMap_d, int out_sgmDepthThiknessMap_p,
                                             const float* in_depths_d, int in_depths_p, 
                                             const TSim* in_volSim_d, int in_volSim_s, int in_volSim_p,
                                             int volDimZ, // useful for depth/sim interpolation
                                             int rcDeviceCamId,
                                             int scaleStep, 
+                                            float thiknessMultFactor, // default 1
                                             float maxSimilarity,
                                             const Range depthRange,
                                             const ROI roi)
@@ -318,6 +320,9 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int ou
 
     // corresponding output depth/sim pointer
     float2* out_bestDepthSimPtr = get2DBufferAt(out_sgmDepthSimMap_d, out_sgmDepthSimMap_p, vx, vy);
+
+    // corresponding output depth thikness pointer
+    float* out_bestDepthThiknessPtr = get2DBufferAt(out_sgmDepthThiknessMap_d, out_sgmDepthThiknessMap_p, vx, vy);
 
     // find best depth
     float bestSim = 255.0f;
@@ -336,21 +341,35 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int ou
     // note: this helps to reduce following calculations and also the storage volume of the depth maps.
     if((bestZIdx == -1) || (bestSim > maxSimilarity))
     {
-        out_bestDepthSimPtr->x = -1.0f; // invalid depth
-        out_bestDepthSimPtr->y =  1.0f; // worst similarity value
+        out_bestDepthSimPtr->x = -1.f;    // invalid depth
+        out_bestDepthSimPtr->y =  1.f;    // worst similarity value
+        *out_bestDepthThiknessPtr = -1.f; // invalid depth thikness
         return;
     }
+
+    // find best depth previous and next indexes
+    const int bestZIdx_m1 = max(0, bestZIdx - 1);         // best depth previous index
+    const int bestZIdx_p1 = min(volDimZ-1, bestZIdx + 1); // best depth next index
+
+    // find best best depth current, previous and next plane
+    // note: float3 struct is useful for depth/sim interpolation
+    float3 depthPlanes;
+    depthPlanes.x = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_m1, 0);  // best depth previous plane
+    depthPlanes.y = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx, 0);     // best depth plane
+    depthPlanes.z = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_p1, 0);  // best depth next plane
+
+    const float bestDepth    = depthPlaneToDepth(rcDeviceCamId, pix, depthPlanes.y); // best depth
+    const float bestDepth_m1 = depthPlaneToDepth(rcDeviceCamId, pix, depthPlanes.x); // previous best depth
+    const float bestDepth_p1 = depthPlaneToDepth(rcDeviceCamId, pix, depthPlanes.z); // next best depth
+
+    // write output depth thikness
+    // thikness is the maximum distance between best depth and previous or next depth
+    // thikness can be inflate with thiknessMultFactor
+    *out_bestDepthThiknessPtr = max(bestDepth_p1 - bestDepth, bestDepth - bestDepth_m1) * thiknessMultFactor;
 
 #ifdef ALICEVISION_DEPTHMAP_RETRIEVE_BEST_Z_INTERPOLATION
     // with depth/sim interpolation
     // NOTE: disable by default
-    const int bestZIdx_m1 = max(0, bestZIdx - 1);
-    const int bestZIdx_p1 = min(volDimZ-1, bestZIdx + 1);
-
-    float3 depths;
-    depths.x = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_m1, 0);
-    depths.y = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx, 0);
-    depths.z = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_p1, 0);
 
     float3 sims;
     sims.x = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, bestZIdx_m1);
@@ -363,16 +382,14 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int ou
     sims.z = (sims.z / 255.0f) * 2.0f - 1.0f;
 
     // interpolation between the 3 depth planes candidates
-    const float refinedDepthPlane = refineDepthSubPixel(depths, sims);
+    const float refinedDepthPlane = refineDepthSubPixel(depthPlanes, sims);
 
     out_bestDepthSimPtr->x = depthPlaneToDepth(rcDeviceCamId, pix, refinedDepthPlane);
     out_bestDepthSimPtr->y = sims.y;
 #else
     // without depth interpolation
-    const float bestDepthPlane = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx, 0);
-    out_bestDepthSimPtr->x = depthPlaneToDepth(rcDeviceCamId, pix, bestDepthPlane);
+    out_bestDepthSimPtr->x = bestDepth;
     out_bestDepthSimPtr->y = (bestSim / 255.0f) * 2.0f - 1.0f; // convert from (0, 255) to (-1, +1)
-    return;
 #endif
 }
 

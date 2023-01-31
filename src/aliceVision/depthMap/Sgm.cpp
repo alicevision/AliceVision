@@ -46,6 +46,9 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
         _depths_dmp.allocate(depthsDim);
     }
 
+    // allocate depth thikness map in device memory
+    _depthThiknessMap_dmp.allocate(depthSimMapDim);
+
     // allocate depth/sim map in device memory
     _depthSimMap_dmp.allocate(depthSimMapDim);
 
@@ -77,6 +80,7 @@ double Sgm::getDeviceMemoryConsumption() const
     size_t bytes = 0;
 
     bytes += _depths_dmp.getBytesPadded();
+    bytes += _depthThiknessMap_dmp.getBytesPadded();
     bytes += _depthSimMap_dmp.getBytesPadded();
     bytes += _normalMap_dmp.getBytesPadded();
     bytes += _volumeBestSim_dmp.getBytesPadded();
@@ -93,6 +97,7 @@ double Sgm::getDeviceMemoryConsumptionUnpadded() const
     size_t bytes = 0;
 
     bytes += _depths_dmp.getBytesUnpadded();
+    bytes += _depthThiknessMap_dmp.getBytesUnpadded();
     bytes += _depthSimMap_dmp.getBytesUnpadded();
     bytes += _normalMap_dmp.getBytesUnpadded();
     bytes += _volumeBestSim_dmp.getBytesUnpadded();
@@ -150,6 +155,12 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     if(_sgmParams.exportIntermediateDepthSimMaps)
     {
         writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _depthSimMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "sgm");
+    }
+
+    // export intermediate depth thikness map (if requested by user)
+    if(_sgmParams.exportIntermediateDepthThiknessMaps)
+    {
+        writeDepthThiknessMap(tile.rc, _mp, _tileParams, tile.roi, _depthThiknessMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "sgm");
     }
 
     // compute normal map from depth/sim map if needed
@@ -278,9 +289,10 @@ void Sgm::retrieveBestDepth(const Tile& tile, const SgmDepthList& tileDepthList)
     DeviceCache& deviceCache = DeviceCache::getInstance();
     const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, 1, _mp);
 
-    cuda_volumeRetrieveBestDepth(_depthSimMap_dmp,   // output depth/sim map
-                                 _depths_dmp,        // rc depth
-                                 _volumeBestSim_dmp, // second best sim volume optimized in best sim volume
+    cuda_volumeRetrieveBestDepth(_depthSimMap_dmp,      // output depth/sim map
+                                 _depthThiknessMap_dmp, // output depth thikness map
+                                 _depths_dmp,           // rc depth
+                                 _volumeBestSim_dmp,    // second best sim volume optimized in best sim volume
                                  rcDeviceCamera,
                                  _sgmParams,
                                  depthRange,

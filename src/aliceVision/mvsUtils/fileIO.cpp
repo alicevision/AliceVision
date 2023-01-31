@@ -301,6 +301,13 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           ext = "obj";
           break;
       }
+      case EFileType::depthThiknessMap:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_depthThiknessMap";
+          ext = "exr";
+          break;
+      }
   }
   if(scale > 1)
   {
