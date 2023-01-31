@@ -287,6 +287,139 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
     sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
+void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim,3>& in_volumeSim_hmh,
+                                          const std::vector<float>& in_depths,
+                                          const mvsUtils::MultiViewParams& mp,
+                                          int camIndex,
+                                          const SgmParams& sgmParams,
+                                          const std::string& filepath,
+                                          const ROI& roi)
+{
+    sfmData::SfMData pointCloud;
+
+    const auto volDim = in_volumeSim_hmh.getSize();
+    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
+    const size_t vy = size_t(divideRoundUp(int(volDim.y()), 2)); // center only
+
+    const Point3d planen = (mp.iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
+
+    // compute min and max similarity values
+    float minSim = std::numeric_limits<float>::max();
+    float maxSim = std::numeric_limits<float>::min();
+
+    for(size_t vx = 0; vx < volDim.x(); ++vx)
+    {
+        for(size_t vz = 0; vz < volDim.z(); ++vz)
+        {
+            const float simValue = float(*get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+
+            if(simValue > 254.f) // invalid similarity
+              continue;
+
+            maxSim = std::max(maxSim, simValue);
+            minSim = std::min(minSim, simValue);
+        }
+    }
+
+    // compute each point color and position
+    IndexT landmarkId = 0;
+
+    for(size_t vx = 0; vx < volDim.x(); ++vx)
+    {
+        const double x = roi.x.begin + (vx * sgmParams.scale * sgmParams.stepXY);
+        const double y = roi.y.begin + (vy * sgmParams.scale * sgmParams.stepXY);
+        const Point2d pix(x, y);
+
+        for(size_t vz = 0; vz < in_depths.size(); ++vz)
+        {
+            const float simValue = float(*get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+
+            if(simValue > 254.f) // invalid similarity
+              continue;
+
+            const float simValueNorm = (simValue - minSim) / (maxSim - minSim);
+
+            const double planeDepth = in_depths[vz];
+            const Point3d planep = mp.CArr[camIndex] + planen * planeDepth;
+            const Point3d v = (mp.iCamArr[camIndex] * (pix + Point2d(0.0, simValueNorm * 15.0))).normalize();
+            const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
+
+            const rgb c = getRGBFromJetColorMap(simValueNorm);
+            pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+
+            ++landmarkId;
+        }
+    }
+
+    // write point cloud
+    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+}
+
+void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
+                                          const CudaHostMemoryHeap<float2, 2>& in_depthSimMapSgmUpscale_hmh,
+                                          const mvsUtils::MultiViewParams& mp,
+                                          int camIndex,
+                                          const RefineParams& refineParams,
+                                          const std::string& filepath,
+                                          const ROI& roi)
+{
+    sfmData::SfMData pointCloud;
+
+    const auto volDim = in_volumeSim_hmh.getSize();
+    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
+    const size_t vy = size_t(divideRoundUp(int(volDim.y()), 2)); // center only
+
+    // compute min and max similarity values
+    const float minSim = 0.f;
+    float maxSim = std::numeric_limits<float>::epsilon();
+
+    for(size_t vx = 0; vx < volDim.x(); ++vx)
+    {
+        for(size_t vz = 0; vz < volDim.z(); ++vz)
+        {
+            const float simValue = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+            maxSim = std::max(maxSim, simValue);
+        }
+    }
+
+    // compute each point color and position
+    IndexT landmarkId = 0;
+
+    for(size_t vx = 0; vx < volDim.x(); ++vx)
+    {
+        const double x = roi.x.begin + (vx * refineParams.scale * refineParams.stepXY);
+        const double y = roi.y.begin + (vy * refineParams.scale * refineParams.stepXY);
+        const Point2d pix(x, y);
+
+        const float2 depthPixSizeMap = in_depthSimMapSgmUpscale_hmh(vx, vy);
+
+        if(depthPixSizeMap.x < 0.0f) // middle depth (SGM) invalid or masked
+            continue;
+
+        for(size_t vz = 0; vz < volDim.z(); ++vz)
+        {
+            const float simValue = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+            const float simValueNorm = (simValue - minSim) / (maxSim - minSim);
+            const float simValueColor = 1 - simValueNorm; // best similarity value is 0, worst value is 1
+
+            const int relativeDepthIndexOffset = vz - refineParams.halfNbDepths;
+            const double depth = depthPixSizeMap.x + (relativeDepthIndexOffset * depthPixSizeMap.y); // original depth + z based pixSize offset
+
+            const Point3d p = mp.CArr[camIndex] + (mp.iCamArr[camIndex] * (pix + Point2d(0.0, -simValueNorm * 15.0))).normalize() * depth;
+
+            const rgb c = getRGBFromJetColorMap(simValueColor);
+            pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+
+            ++landmarkId;
+        }
+    }
+
+    // write point cloud
+    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+}
+
 inline unsigned char float_to_uchar(float v)
 {
     float vv = std::max(0.f, v);
