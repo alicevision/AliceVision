@@ -58,12 +58,14 @@ extern void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2>&
 /**
  * @brief Compute the pixSize map from the depth map.
  * @param[in,out] inout_depthPixSizeMap_dmp the input depth map, the output depth/pixSize map
+ * @param[in] in_sgmDepthThiknessMap_dmp the input depth thikness map
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] refineParams the Refine parameters
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>& inout_depthPixSizeMap_dmp,
+                                           const CudaDeviceMemoryPitched<float, 2>& in_sgmDepthThiknessMap_dmp,
                                            const DeviceCamera& rcDeviceCamera, 
                                            const RefineParams& refineParams,
                                            const ROI& roi,

@@ -63,6 +63,26 @@ void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, floa
 void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
 
 /**
+ * @brief Write a depth thikness map on disk from device memory.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] in_depthThiknessMap_dmp the depth thikness map in device memory
+ * @param[in] scale the map downscale factor
+ * @param[in] step the map step factor
+ * @param[in] name the export filename suffix
+ */
+void writeDepthThiknessMap(int rc,
+                           const mvsUtils::MultiViewParams& mp,
+                           const mvsUtils::TileParams& tileParams,
+                           const ROI& roi,
+                           const CudaDeviceMemoryPitched<float, 2>& in_depthThiknessMap_dmp,
+                           int scale,
+                           int step,
+                           const std::string& name = "");
+
+/**
  * @brief Write a normal map on disk from device memory.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
@@ -141,6 +161,20 @@ void writeDepthSimMapFromTileList(int rc,
                                   int scale,
                                   int step,
                                   const std::string& name = "");
+
+/**
+ * @brief Merge depth thikness map tiles on disk.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] scale the depth thikness map downscale factor
+ * @param[in] step the depth thikness map step factor
+ * @param[in] name the export filename suffix
+ */
+void mergeDepthThiknessMapTiles(int rc,
+                                const mvsUtils::MultiViewParams& mp,
+                                int scale,
+                                int step,
+                                const std::string& name = "");
 
 /**
  * @brief Merge normal map tiles on disk.

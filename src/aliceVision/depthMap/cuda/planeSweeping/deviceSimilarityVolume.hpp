@@ -123,6 +123,7 @@ extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFilt
 /**
  * @brief Retrieve the best depth/sim in the given similarity volume.
  * @param[out] out_sgmDepthSimMap_dmp the output best depth/sim map in device memory
+ * @param[out] out_sgmDepthThiknessMap_dmp the output depth thikness map in device memory
  * @param[in] in_depths_dmp the R camera depth list in device memory
  * @param[in] in_volSim_dmp the input similarity volume in device memory
  * @param[in] rcDeviceCamera the R device camera
@@ -132,6 +133,7 @@ extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFilt
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthSimMap_dmp,
+                                         CudaDeviceMemoryPitched<float , 2>& out_sgmDepthThiknessMap_dmp,
                                          const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp, 
                                          const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
                                          const DeviceCamera& rcDeviceCamera,

@@ -97,7 +97,10 @@ double Refine::getDeviceMemoryConsumptionUnpadded() const
     return (double(bytes) / (1024.0 * 1024.0));
 }
 
-void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp)
+void Refine::refineRc(const Tile& tile,
+                      const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp,
+                      const CudaDeviceMemoryPitched<float , 2>& in_sgmDepthThiknessMap_dmp,
+                      const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp)
 {
     const IndexT viewId = _mp.getViewId(tile.rc);
 
@@ -120,7 +123,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
           writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _sgmDepthPixSizeMap_dmp, _refineParams.scale, _refineParams.stepXY, "sgmUpscaled");
 
         // compute pixSize to replace similarity (this is usefull for depth/sim map optimization)
-        cuda_depthSimMapComputePixSize(_sgmDepthPixSizeMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
+        cuda_depthSimMapComputePixSize(_sgmDepthPixSizeMap_dmp, in_sgmDepthThiknessMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
 
         if(_refineParams.useSgmNormalMap && in_sgmNormalMap_dmp.getBuffer() != nullptr)
         {

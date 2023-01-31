@@ -107,11 +107,18 @@ __host__ void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2
 }
 
 __host__ void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>& inout_depthPixSizeMap_dmp,
+                                             const CudaDeviceMemoryPitched<float, 2>& in_sgmDepthThiknessMap_dmp,
                                              const DeviceCamera& rcDeviceCamera,
                                              const RefineParams& refineParams,
                                              const ROI& roi,
                                              cudaStream_t stream)
 {
+    const CudaSize<2>& inout_depthSimMapSize = inout_depthPixSizeMap_dmp.getSize();
+    const CudaSize<2>& in_depthThiknessMapSize = in_sgmDepthThiknessMap_dmp.getSize();
+
+    const float ratio = float(in_depthThiknessMapSize.x()) / float(inout_depthSimMapSize.x());
+    const int maxSgmPlanes = 10;
+
     const int blockSize = 16;
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
@@ -120,7 +127,18 @@ __host__ void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>&
       rcDeviceCamera.getDeviceCamId(), 
       inout_depthPixSizeMap_dmp.getBuffer(), 
       inout_depthPixSizeMap_dmp.getPitch(),
+      in_sgmDepthThiknessMap_dmp.getBuffer(),
+      in_sgmDepthThiknessMap_dmp.getPitch(),
       refineParams.stepXY,
+      refineParams.halfNbDepths,
+      ratio,
+      roi);
+
+    depthSimMapSmoothPixSize_kernel<<<grid, block, 0, stream>>>(
+      inout_depthPixSizeMap_dmp.getBuffer(),
+      inout_depthPixSizeMap_dmp.getPitch(),
+      refineParams.halfNbDepths,
+      maxSgmPlanes,
       roi);
 
     CHECK_CUDA_ERROR();

@@ -93,6 +93,34 @@ void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, co
     image::writeImage(path, img, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }
 
+void writeDepthThiknessMap(int rc,
+                           const mvsUtils::MultiViewParams& mp,
+                           const mvsUtils::TileParams& tileParams,
+                           const ROI& roi,
+                           const CudaDeviceMemoryPitched<float, 2>& in_depthThiknessMap_dmp,
+                           int scale,
+                           int step,
+                           const std::string& name)
+{
+  const ROI downscaledROI = downscaleROI(roi, scale * step);
+  const int width  = int(downscaledROI.width());
+  const int height = int(downscaledROI.height());
+
+  // copy map from device pitched memory to host memory
+  CudaHostMemoryHeap<float, 2> map_hmh(in_depthThiknessMap_dmp.getSize());
+  map_hmh.copyFrom(in_depthThiknessMap_dmp);
+
+  // copy map from host memory to an Image
+  image::Image<float> map(width, height);
+
+  for(size_t x = 0; x < width; ++x)
+      for(size_t y = 0; y < height; ++y)
+          map(int(y), int(x)) = map_hmh(x, y);
+
+  // write map from the image buffer
+  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthThiknessMap, tileParams, roi, map, scale, step, (name.empty()) ? "" : "_" + name);
+}
+
 void writeNormalMap(int rc,
                     const mvsUtils::MultiViewParams& mp,
                     const mvsUtils::TileParams& tileParams,
@@ -214,6 +242,21 @@ void writeDepthSimMapFromTileList(int rc,
   // write fullsize maps on disk
   mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthMap, depthMap, scale, step, customSuffix); // write the merged depth map
   mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   simMap,   scale, step, customSuffix); // write the merged similarity map
+}
+
+void mergeDepthThiknessMapTiles(int rc,
+                                const mvsUtils::MultiViewParams& mp,
+                                int scale,
+                                int step,
+                                const std::string& name)
+{
+  const std::string customSuffix = (name.empty()) ? "" : "_" + name;
+
+  image::Image<float> map;
+
+  mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthThiknessMap, map, scale, step, customSuffix);  // read and merge map tiles
+  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthThiknessMap, map, scale, step, customSuffix); // write the merged map
+  mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::depthThiknessMap, scale, step, customSuffix); // delete map tile files
 }
 
 void mergeNormalMapTiles(int rc,

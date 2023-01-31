@@ -328,6 +328,7 @@ __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFi
 }
 
 __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthSimMap_dmp,
+                                           CudaDeviceMemoryPitched<float , 2>& out_sgmDepthThiknessMap_dmp,
                                            const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp, 
                                            const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
                                            const DeviceCamera& rcDeviceCamera,
@@ -337,7 +338,9 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
                                            cudaStream_t stream)
 {
     const int scaleStep = sgmParams.scale * sgmParams.stepXY;
+    const float thiknessMultFactor = 1.f + float(sgmParams.depthThiknessInflate);
     const float maxSimilarity = float(sgmParams.maxSimilarity) * 254.f; // convert from (0, 1) to (0, 254)
+
     const int blockSize = 8;
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
@@ -345,6 +348,8 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
     volume_retrieveBestZ_kernel<<<grid, block, 0, stream>>>(
       out_sgmDepthSimMap_dmp.getBuffer(),
       out_sgmDepthSimMap_dmp.getBytesPaddedUpToDim(0),
+      out_sgmDepthThiknessMap_dmp.getBuffer(),
+      out_sgmDepthThiknessMap_dmp.getBytesPaddedUpToDim(0),
       in_depths_dmp.getBuffer(), 
       in_depths_dmp.getBytesPaddedUpToDim(0), 
       in_volSim_dmp.getBuffer(), 
@@ -353,6 +358,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
       in_volSim_dmp.getSize().z(),
       rcDeviceCamera.getDeviceCamId(), 
       scaleStep, 
+      thiknessMultFactor,
       maxSimilarity,
       depthRange,
       roi);
