@@ -63,6 +63,7 @@ int aliceVision_main(int argc, char* argv[])
     bool exportIntermediateNormalMaps = false;
     bool exportIntermediateVolumes = false;
     bool exportIntermediateCrossVolumes = false;
+    bool exportIntermediateTopographicCutVolumes = false;
     bool exportIntermediateVolume9pCsv = false;
 
     // number of GPUs to use (0 means use all GPUs)
@@ -174,6 +175,8 @@ int aliceVision_main(int argc, char* argv[])
             "Export intermediate full similarity volumes from the SGM and Refine steps.")
         ("exportIntermediateCrossVolumes", po::value<bool>(&exportIntermediateCrossVolumes)->default_value(exportIntermediateCrossVolumes),
             "Export intermediate similarity cross volumes from the SGM and Refine steps.")
+        ("exportIntermediateTopographicCutVolumes", po::value<bool>(&exportIntermediateTopographicCutVolumes)->default_value(exportIntermediateTopographicCutVolumes),
+            "Export intermediate similarity topographic cut volumes from the SGM and Refine steps.")
         ("exportIntermediateVolume9pCsv", po::value<bool>(&exportIntermediateVolume9pCsv)->default_value(exportIntermediateVolume9pCsv),
             "Export intermediate volumes 9 points from the SGM and Refine steps in CSV files.")
         ("exportTilePattern", po::value<bool>(&depthMapParams.exportTilePattern)->default_value(depthMapParams.exportTilePattern),
@@ -299,6 +302,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.exportIntermediateNormalMaps", exportIntermediateNormalMaps);
     mp.userParams.put("sgm.exportIntermediateVolumes", exportIntermediateVolumes);
     mp.userParams.put("sgm.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
+    mp.userParams.put("sgm.exportIntermediateTopographicCutVolumes", exportIntermediateTopographicCutVolumes);
     mp.userParams.put("sgm.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
 
     // Refine Parameters
@@ -318,6 +322,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
     mp.userParams.put("refine.exportIntermediateNormalMaps", exportIntermediateNormalMaps);
     mp.userParams.put("refine.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
+    mp.userParams.put("refine.exportIntermediateTopographicCutVolumes", exportIntermediateTopographicCutVolumes);
     mp.userParams.put("refine.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
 
     // Workflow Parameters
