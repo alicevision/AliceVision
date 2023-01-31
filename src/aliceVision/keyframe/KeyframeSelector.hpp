@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/dataio/FeedProvider.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <opencv2/optflow.hpp>
@@ -98,10 +99,13 @@ public:
      * @param[in] brands brand name for each camera
      * @param[in] models model name for each camera
      * @param[in] mmFocals focal in millimeters for each camera
+     * @param[in] outputExtension file extension of the written keyframes
+     * @param[in] storageDataType EXR storage data type for the output keyframes (ignored when the extension is not EXR)
      * @return true if all the selected keyframes were successfully written, false otherwise
      */
     bool writeSelection(const std::vector<std::string>& brands, const std::vector<std::string>& models,
-                    const std::vector<float>& mmFocals) const;
+                    const std::vector<float>& mmFocals, const std::string& outputExtension,
+                    const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined) const;
 
     /**
      * @brief Export the computed sharpness and optical flow scores to a CSV file

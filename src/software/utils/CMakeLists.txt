@@ -223,6 +223,7 @@ if(ALICEVISION_HAVE_OPENCV)
     SOURCE main_keyframeSelection.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
     LINKS aliceVision_system
+          aliceVision_image
           aliceVision_keyframe
           ${OPENIMAGEIO_LIBRARIES}
           Boost::program_options

@@ -4,6 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/keyframe/KeyframeSelector.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -20,10 +21,12 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-using namespace aliceVision::keyframe;
+using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+
+const std::string supportedExtensions = "exr, jpg, png";
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -45,6 +48,9 @@ int aliceVision_main(int argc, char** argv)
     std::size_t rescaledWidth = 720;        // width of the rescaled frames; 0 if no rescale is performed (smart selection)
     std::size_t sharpnessWindowSize = 200;  // sliding window's size in sharpness computation (smart selection)
     std::size_t flowCellSize = 90;          // size of the cells within a frame used to compute the optical flow (smart selection)
+    std::string outputExtension = "exr";    // file extension of the written keyframes
+    image::EStorageDataType exrDataType =   // storage data type for EXR output files
+        image::EStorageDataType::Float;
 
     // Debug options
     bool exportScores = false;              // export the sharpness and optical flow scores to a CSV file
@@ -79,7 +85,11 @@ int aliceVision_main(int argc, char** argv)
             "\t- For the regular method, 0 = no limit. 'minFrameStep' and 'maxFrameStep' will always be respected, "
             "so combining them with this parameter might cause the selection to stop before reaching the end of the "
             "input sequence(s).\n"
-            "\t- For the smart method, the default value is set to 2000.");
+            "\t- For the smart method, the default value is set to 2000.")
+        ("outputExtension", po::value<std::string>(&outputExtension)->default_value(outputExtension),
+            "File extension of the output keyframes.")
+        ("storageDataType", po::value<image::EStorageDataType>(&exrDataType)->default_value(exrDataType),
+            ("Storage data type for EXR output files: " + image::EStorageDataType_informations()).c_str());
 
     po::options_description regularAlgorithmParams("Regular algorithm parameters");
     regularAlgorithmParams.add_options()
@@ -160,6 +170,12 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    if (supportedExtensions.find(outputExtension) == std::string::npos) {
+        ALICEVISION_LOG_ERROR("Unsupported extension for the output file. Supported extensions are: "
+                              << supportedExtensions);
+        return EXIT_FAILURE;
+    }
+
     brands.resize(nbCameras);
     models.resize(nbCameras);
     mmFocals.resize(nbCameras);
@@ -180,7 +196,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Initialize KeyframeSelector
-    KeyframeSelector selector(mediaPaths, sensorDbPath, outputFolder);
+    keyframe::KeyframeSelector selector(mediaPaths, sensorDbPath, outputFolder);
 
     // Set frame-related algorithm parameters
     selector.setMinFrameStep(minFrameStep);
@@ -213,7 +229,7 @@ int aliceVision_main(int argc, char** argv)
         selector.processRegular();
 
     // Write selected keyframes
-    selector.writeSelection(brands, models, mmFocals);
+    selector.writeSelection(brands, models, mmFocals, outputExtension, exrDataType);
 
     // If debug options are set, export the scores as a CSV file and / or the motion vectors as images
     if (exportScores)

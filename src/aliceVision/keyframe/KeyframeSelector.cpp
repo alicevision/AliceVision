@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "KeyframeSelector.hpp"
-#include <aliceVision/image/all.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/system/Logger.hpp>
 
@@ -370,7 +369,9 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidth, const std:
 
 bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                                       const std::vector<std::string>& models,
-                                      const std::vector<float>& mmFocals) const
+                                      const std::vector<float>& mmFocals,
+                                      const std::string& outputExtension,
+                                      const image::EStorageDataType storageDataType) const
 {
     image::Image<image::RGBColor> image;
     camera::PinholeRadialK3 queryIntrinsics;
@@ -422,7 +423,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
 
             fs::path folder = _outputFolder;
             std::ostringstream filenameSS;
-            filenameSS << std::setw(5) << std::setfill('0') << pos << ".exr";
+            filenameSS << std::setw(5) << std::setfill('0') << pos << "." << outputExtension;
             const auto filepath = (processedOutputFolder / fs::path(filenameSS.str())).string();
 
             image::ImageWriteOptions options;
@@ -435,6 +436,10 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                     options.toColorSpace(image::EImageColorSpace::NO_CONVERSION);
                 else
                     options.toColorSpace(image::EImageColorSpace::AUTO);
+            }
+
+            if (storageDataType != image::EStorageDataType::Undefined && outputExtension == "exr"){
+                options.storageDataType(storageDataType);
             }
 
             image::writeImage(filepath, image, options, metadata);
