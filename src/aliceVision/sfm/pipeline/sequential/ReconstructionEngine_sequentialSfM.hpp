@@ -333,9 +333,10 @@ private:
    * @brief  Loop over the reconstructed views, and for each landmark of the reconstructed views, 
    * loop over their tracks to detect which views may have new information using this newly reconstructed views
    * 
+   * @param linkedViews output non renconstructed views
    * @param newReconstructedViews a list of reconstructed views to analyse
    */
-  void registerChanges(const std::set<IndexT>& newReconstructedViews);
+  void registerChanges(std::set<IndexT>& linkedViews, const std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Remove observation/tracks that have:
@@ -364,9 +365,6 @@ private:
   int _pyramidThreshold;
 
   // Temporary data
-
-  /// List of views which are affected by a previous update
-  std::set<IndexT> _registeredCandidatesViews;
 
   /// Putative landmark tracks (visibility per potential 3D point)
   track::TracksMap _map_tracks;
