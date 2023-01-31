@@ -41,6 +41,7 @@ struct SgmParams
   bool exportIntermediateNormalMaps = false;
   bool exportIntermediateVolumes = false;
   bool exportIntermediateCrossVolumes = false;
+  bool exportIntermediateTopographicCutVolumes = false;
   bool exportIntermediateVolume9pCsv = false;
 
   const bool exportIntermediateDepthThiknessMaps = false;

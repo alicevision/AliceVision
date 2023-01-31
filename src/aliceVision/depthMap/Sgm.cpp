@@ -340,7 +340,6 @@ void Sgm::exportVolumeInformation(const Tile& tile,
         ALICEVISION_LOG_INFO(tile << "Export similarity volume (" << name << ") done.");
     }
 
-
     if(_sgmParams.exportIntermediateCrossVolumes)
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ").");
@@ -352,6 +351,16 @@ void Sgm::exportVolumeInformation(const Tile& tile,
         ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ") done.");
     }
 
+    if(_sgmParams.exportIntermediateTopographicCutVolumes)
+    {
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume topographic cut (" << name << ").");
+
+        const std::string volumeCutPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeTopographicCut, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
+
+        exportSimilarityVolumeTopographicCut(volumeSim_hmh, tileDepthList.getDepths(), _mp, tile.rc, _sgmParams, volumeCutPath, tile.roi);
+
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume topographic cut (" << name << ") done.");
+    }
 
     if(_sgmParams.exportIntermediateVolume9pCsv)
     {

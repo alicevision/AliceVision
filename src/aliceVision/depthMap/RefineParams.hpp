@@ -35,6 +35,7 @@ struct RefineParams
   bool exportIntermediateDepthSimMaps = false;
   bool exportIntermediateNormalMaps = false;
   bool exportIntermediateCrossVolumes = false;
+  bool exportIntermediateTopographicCutVolumes = false;
   bool exportIntermediateVolume9pCsv = false;
 
   // constant parameters
