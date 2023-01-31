@@ -227,6 +227,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.exportIntermediateNormalMaps = mp.userParams.get<bool>("sgm.exportIntermediateNormalMaps", sgmParams.exportIntermediateNormalMaps);
     sgmParams.exportIntermediateVolumes = mp.userParams.get<bool>("sgm.exportIntermediateVolumes", sgmParams.exportIntermediateVolumes);
     sgmParams.exportIntermediateCrossVolumes = mp.userParams.get<bool>("sgm.exportIntermediateCrossVolumes", sgmParams.exportIntermediateCrossVolumes);
+    sgmParams.exportIntermediateTopographicCutVolumes = mp.userParams.get<bool>("sgm.exportIntermediateTopographicCutVolumes", sgmParams.exportIntermediateTopographicCutVolumes);
     sgmParams.exportIntermediateVolume9pCsv = mp.userParams.get<bool>("sgm.exportIntermediateVolume9pCsv", sgmParams.exportIntermediateVolume9pCsv);
 
     // get Refine user parameters from MultiViewParams property_tree
@@ -248,6 +249,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     refineParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("refine.exportIntermediateDepthSimMaps", refineParams.exportIntermediateDepthSimMaps);
     refineParams.exportIntermediateNormalMaps = mp.userParams.get<bool>("refine.exportIntermediateNormalMaps", refineParams.exportIntermediateNormalMaps);
     refineParams.exportIntermediateCrossVolumes = mp.userParams.get<bool>("refine.exportIntermediateCrossVolumes", refineParams.exportIntermediateCrossVolumes);
+    refineParams.exportIntermediateTopographicCutVolumes = mp.userParams.get<bool>("refine.exportIntermediateTopographicCutVolumes", refineParams.exportIntermediateTopographicCutVolumes);
     refineParams.exportIntermediateVolume9pCsv = mp.userParams.get<bool>("refine.exportIntermediateVolume9pCsv", refineParams.exportIntermediateVolume9pCsv);
 
     // get workflow user parameters from MultiViewParams property_tree

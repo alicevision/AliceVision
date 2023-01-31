@@ -311,6 +311,17 @@ void Refine::exportVolumeInformation(const Tile& tile, const std::string& name) 
         ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ") done.");
     }
 
+    if(_refineParams.exportIntermediateTopographicCutVolumes)
+    {
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume topographic cut (" << name << ").");
+
+        const std::string volumeCutPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeTopographicCut, _refineParams.scale, "_" + name, tileBeginX, tileBeginY);
+
+        exportSimilarityVolumeTopographicCut(volumeSim_hmh, depthPixSizeMapSgmUpscale_hmh, _mp, tile.rc, _refineParams, volumeCutPath, tile.roi);
+
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume topographic cut (" << name << ") done.");
+    }
+
     if(_refineParams.exportIntermediateVolume9pCsv)
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume 9 points CSV (" << name << ").");
