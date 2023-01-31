@@ -118,6 +118,8 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Use landmarks from Structure-from-Motion as input seeds to define min/max depth ranges.")
         ("sgmSeedsRangeInflate", po::value<double>(&sgmParams.seedsRangeInflate)->default_value(sgmParams.seedsRangeInflate),
             "Semi Global Matching: Inflate factor to add margins around SfM seeds.")
+        ("sgmDepthThiknessInflate", po::value<double>(&sgmParams.depthThiknessInflate)->default_value(sgmParams.depthThiknessInflate),
+            "Semi Global Matching: Inflate factor to add margins to the depth thikness.")
         ("sgmMaxSimilarity", po::value<double>(&sgmParams.maxSimilarity)->default_value(sgmParams.maxSimilarity),
             "Semi Global Matching: Maximum similarity threshold (between 0 and 1) used to filter out poorly supported depth values.")
         ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
@@ -282,6 +284,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.stepZ", sgmParams.stepZ);
     mp.userParams.put("sgm.wsh", sgmParams.wsh);
     mp.userParams.put("sgm.seedsRangeInflate", sgmParams.seedsRangeInflate);
+    mp.userParams.put("sgm.depthThiknessInflate", sgmParams.depthThiknessInflate);
     mp.userParams.put("sgm.maxSimilarity", sgmParams.maxSimilarity);
     mp.userParams.put("sgm.gammaC", sgmParams.gammaC);
     mp.userParams.put("sgm.gammaP", sgmParams.gammaP);
