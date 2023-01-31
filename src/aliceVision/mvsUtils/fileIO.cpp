@@ -308,6 +308,13 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           ext = "exr";
           break;
       }
+      case EFileType::volumeTopographicCut:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_volumeTopographicCut";
+          ext = "abc";
+          break;
+      }
   }
   if(scale > 1)
   {

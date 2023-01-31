@@ -75,6 +75,7 @@ enum class EFileType
     stats9p = 46,
     tilePattern = 47,
     depthThiknessMap = 48,
+    volumeTopographicCut = 49,
 };
 
 class MultiViewParams
