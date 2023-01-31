@@ -112,6 +112,14 @@ public:
     bool exportScoresToFile(const std::string& filename, const bool exportSelectedFrames = false) const;
 
     /**
+     * @brief Export optical flow HSV visualisation for each frame as a PNG image
+     * @param[in] rescaledWidth the width to resize the input frames to before computing the optical flow (if equal
+     *            to 0, no rescale will be performed)
+     * @return true if the frames have been correctly exported, false otherwise
+     */
+    bool exportFlowVisualisation(const std::size_t rescaledWidth);
+
+    /**
      * @brief Set the minimum frame step parameter for the processing algorithm
      * @param[in] frameStep minimum number of frames between two keyframes
      */

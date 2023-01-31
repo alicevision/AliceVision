@@ -485,6 +485,102 @@ bool KeyframeSelector::exportScoresToFile(const std::string& filename, const boo
     return true;
 }
 
+bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
+{
+    // Create feeds and count minimum number of frames
+    std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
+    std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
+    std::vector<std::string> outputFolders;
+
+    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
+        const auto& path = _mediaPaths.at(mediaIndex);
+
+        // Create a feed provider per mediaPaths
+        feeds.emplace_back(new dataio::FeedProvider(path));
+        auto& feed = *feeds.back();
+
+        // Check if feed is initialized
+        if (!feed.isInit()) {
+            ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
+            return false;
+        }
+
+        feed.goToFrame(0);
+
+        // Update minimum number of frames
+        nbFrames = std::min(nbFrames, (size_t)feed.nbFrames());
+
+        // If there is a rig, create the corresponding folders
+        std::string processedOutputFolder = _outputFolder;
+        if (_mediaPaths.size() > 1) {
+            const std::string rigFolder = _outputFolder + "/rig/";
+            if (!fs::exists(rigFolder)) {
+                fs::create_directory(rigFolder);
+            }
+
+            processedOutputFolder = rigFolder + std::to_string(mediaIndex);
+            if (!fs::exists(processedOutputFolder)) {
+                fs::create_directory(processedOutputFolder);
+            }
+        }
+
+        // Save the output paths
+        outputFolders.push_back(processedOutputFolder);
+    }
+
+    if (nbFrames == 0) {
+        ALICEVISION_LOG_ERROR("No frame to visualise optical flow from!");
+        return false;
+    }
+
+    size_t currentFrame = 0;
+    cv::Mat previousMat, currentMat;  // OpenCV matrices for the optical flow computation
+    auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
+
+    /* To be able to handle the rigs and to avoid storing the optical flow results for all frames in case
+     * we might want to export them, we need to recompute the optical flow for all the frames, even if it has already
+     * been computed in computeScores(). */
+    while (currentFrame < nbFrames) {
+        for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
+            auto& feed = *feeds.at(mediaIndex);
+
+            if (currentFrame > 0) {  // Get currentFrame - 1 for the optical flow computation
+                previousMat = readImage(feed, rescaledWidth);
+                feed.goToNextFrame();
+            }
+
+            currentMat = readImage(feed, rescaledWidth);  // Read image and rescale it if requested
+
+            if (currentFrame > 0) {
+                cv::Mat flow;
+                ptrFlow->calc(currentMat, previousMat, flow);
+
+                cv::Mat flowParts[2];
+                cv::split(flow, flowParts);
+                cv::Mat magnitude, angle, magnNorm;
+                cv::cartToPolar(flowParts[0], flowParts[1], magnitude, angle, true);
+                cv::normalize(magnitude, magnNorm, 0.0f, 1.0f, cv::NORM_MINMAX);
+                angle *= ((1.f / 360.f) * (180.f / 255.f));
+
+                cv::Mat _hsv[3], hsv, hsv8, bgr;
+                _hsv[0] = angle;
+                _hsv[1] = cv::Mat::ones(angle.size(), CV_32F);
+                _hsv[2] = magnNorm;
+                cv::merge(_hsv, 3, hsv);
+                hsv.convertTo(hsv8, CV_8U, 255.0);
+                cv::cvtColor(hsv8, bgr, cv::COLOR_HSV2BGR);
+
+                std::ostringstream filenameSS;
+                filenameSS << std::setw(5) << std::setfill('0') << currentFrame << ".png";
+                cv::imwrite(outputFolders.at(mediaIndex) + "/OF_" + filenameSS.str(), bgr);
+            }
+        }
+        ++currentFrame;
+    }
+
+    return true;
+}
+
 cv::Mat KeyframeSelector::readImage(dataio::FeedProvider &feed, std::size_t width)
 {
     image::Image<image::RGBColor> image;
