@@ -183,15 +183,19 @@ struct ImageReadOptions
 {
     ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
         ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawWhiteBalancing,
-        const std::string& colorProfile = "", const oiio::ROI& roi = oiio::ROI()) :
-        workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), subROI(roi)
+        const std::string& colorProfile = "", const bool useDCPColorMatrixOnly = false, const oiio::ROI& roi = oiio::ROI()) :
+        workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), useDCPColorMatrixOnly(useDCPColorMatrixOnly),
+        doWBAfterDemosaicing(false), demosaicingAlgo("AHD"), highlightMode(0), subROI(roi)
     {
     }
 
     EImageColorSpace workingColorSpace;
     ERawColorInterpretation rawColorInterpretation;
     std::string colorProfileFileName;
-
+    bool useDCPColorMatrixOnly;
+    bool doWBAfterDemosaicing;
+    std::string demosaicingAlgo;
+    int highlightMode;
     //ROI for this image.
     //If the image contains an roi, this is the roi INSIDE the roi.
     oiio::ROI subROI;

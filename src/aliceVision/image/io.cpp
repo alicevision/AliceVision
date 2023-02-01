@@ -436,9 +436,39 @@ void readImage(const std::string& path,
     oiio::ImageSpec configSpec;
 
     const bool isRawImage = isRawFormat(path);
+    image::DCPProfile::Triple neutral = {1.0,1.0,1.0};
 
     if (isRawImage)
     {
+        if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+        {
+            oiio::ParamValueList imgMetadata = readImageMetadata(path);
+            std::string cam_mul = "";
+            if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
+            {
+                cam_mul = "{1024, 1024, 1024, 1024}";
+                ALICEVISION_LOG_WARNING("[readImage]: cam_mul metadata not available, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
+            }
+
+            std::vector<float> v_mult;
+            size_t last = 1;
+            size_t next = 1;
+            while ((next = cam_mul.find(",", last)) != std::string::npos)
+            {
+                v_mult.push_back(std::stof(cam_mul.substr(last, next - last).c_str()));
+                last = next + 1;
+            }
+            v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last).c_str()));
+
+            for (int i = 0; i < 3; i++)
+            {
+                //neutral[i] = v_mult[1] / v_mult[i];
+                neutral[i] = v_mult[i] / v_mult[1];
+            }
+        }
+
+        ALICEVISION_LOG_INFO("Neutral from camera = {" << neutral[0] << ", " << neutral[1] << ", " << neutral[2] << "}");
+
         // libRAW configuration
         // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
 
@@ -457,6 +487,7 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", 1); // unclip
+            configSpec.attribute("raw:Demosaic", "DHT"); // DHT algorithm
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawNoWhiteBalancing)
         {
@@ -478,13 +509,25 @@ void readImage(const std::string& path,
             {
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
-            float user_mul[4] = { 1,1,1,1 };
+            ALICEVISION_LOG_INFO("Raw demosaicing algo: " << imageReadOptions.demosaicingAlgo);
+            ALICEVISION_LOG_INFO("WB after demosaicing: " << (imageReadOptions.doWBAfterDemosaicing ? "True" : "False"));
+            ALICEVISION_LOG_INFO("Highlight mode: " << (imageReadOptions.highlightMode==0 ? "Clip" : (imageReadOptions.highlightMode == 1 ? "Unclip" : "Blend")));
 
+            float user_mul[4] = { neutral[0],neutral[1],neutral[2],neutral[1] };
+            if (imageReadOptions.doWBAfterDemosaicing)
+            {
+                for (int i = 0; i < 4; ++i)
+                {
+                    user_mul[i] = 1.0;
+                }
+            }
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
-            configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul); // no neutralization
+            configSpec.attribute("raw:use_camera_wb", 0); // No White balance correction => user_mul is used
+            configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul);
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");
+            configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata)
         {
@@ -492,14 +535,25 @@ void readImage(const std::string& path,
             {
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
-            float user_mul[4] = { 1,1,1,1 };
+            ALICEVISION_LOG_INFO("Raw demosaicing algo: " << imageReadOptions.demosaicingAlgo);
+            ALICEVISION_LOG_INFO("WB after demosaicing: " << (imageReadOptions.doWBAfterDemosaicing ? "True" : "False"));
+            ALICEVISION_LOG_INFO("Highlight mode: " << (imageReadOptions.highlightMode == 0 ? "Clip" : (imageReadOptions.highlightMode == 1 ? "Unclip" : "Blend")));
 
+            float user_mul[4] = { neutral[0],neutral[1],neutral[2],neutral[1] };
+            if (imageReadOptions.doWBAfterDemosaicing)
+            {
+                for (int i = 0; i < 4; ++i)
+                {
+                    user_mul[i] = 1.0;
+                }
+            }
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
             configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
             configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul); // no neutralization
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
-            configSpec.attribute("raw:HighlightMode", 1); // unclip
+            configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else
         {
@@ -525,6 +579,7 @@ void readImage(const std::string& path,
         imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
     {
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
+
 
         oiio::ParamValueList imgMetadata = readImageMetadata(path);
         std::string cam_mul = "";
@@ -552,7 +607,7 @@ void readImage(const std::string& path,
 
         ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = {" << neutral[0] << ", " << neutral[1] << ", " << neutral[2] << "}");
 
-        dcpProfile.applyLinear(inBuf, neutral, true);
+        dcpProfile.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
     }
 
     // color conversion

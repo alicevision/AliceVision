@@ -2106,10 +2106,12 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const
     return cameraToSrgbLinear;
 }
 
-DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw) const
+DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
+    const Triple asShotNeutralInv = { 1.0 / asShotNeutral[0] , 1.0 / asShotNeutral[1] , 1.0 / asShotNeutral[2] };
+
     double x, y;
-    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutral, x, y);
+    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutralInv, x, y);
     double cct, tint;
     setChromaticityCoordinates(x, y, cct, tint);
 
@@ -2119,14 +2121,14 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
 
     if (sourceIsRaw)
     {
-        neutral[0][0] = 1.0 / asShotNeutral[0];
-        neutral[1][1] = 1.0 / asShotNeutral[1];
-        neutral[2][2] = 1.0 / asShotNeutral[2];
+        neutral[0][0] = asShotNeutral[0];
+        neutral[1][1] = asShotNeutral[1];
+        neutral[2][2] = asShotNeutral[2];
     }
 
     Matrix cameraToXyzD50 = IdentityMatrix;
 
-    if ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2))
+    if (useColorMatrixOnly || ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2)))
     {
         Matrix xyzToCamera = IdentityMatrix;
         if (info.has_color_matrix_1 && info.has_color_matrix_2)
@@ -2268,9 +2270,11 @@ void DCPProfile::setMatricesFromStrings(const std::string& type, std::vector<std
     setMatrices(type, v_Mat);
 }
 
-void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw) const
+void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw, useColorMatrixOnly);
+
+    ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
 
     #pragma omp parallel for
     for (int i = 0; i < image.spec().height; ++i)
