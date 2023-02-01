@@ -75,24 +75,31 @@ public:
      *                    significant differences in their motion
      *        - Step 4: push the selected frames' IDs
      * @param[in] pxDisplacement in percent, the minimum of displaced pixels in the image since the last selected frame
+     * @param[in] rescaledWidthSharpness to resize the input frames to before using them to compute the
+     *            sharpness scores (if equal to 0, no rescale will be performed)
+     * @param[in] rescaledWidthFlow the width to resize the input frames to before using them to compute the
+     *            motion scores (if equal to 0, no rescale will be performed)
      * @param[in] sharpnessWindowSize the size of the sliding window used to compute sharpness scores, in pixels
      * @param[in] flowCellSize the size of the cells within a frame that are used to compute the optical flow scores,
      *            in pixels
      */
-    void processSmart(const float pxDisplacement, const std::size_t rescaledWidth,
-                      const std::size_t sharpnessWindowSize, const std::size_t flowCellSize);
+    void processSmart(const float pxDisplacement, const std::size_t rescaledWidthSharpness,
+                      const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
+                      const std::size_t flowCellSize);
 
     /**
      * @brief Compute the sharpness and optical flow scores for the input media paths
-     * @param[in] rescaledWidth the width to resize the input frames to before processing them (if equal to 0, no
-     *            rescale will be performed)
+     * @param[in] rescaledWidthSharpness the width to resize the input frames to before using them to compute the
+     *            sharpness scores (if equal to 0, no rescale will be performed)
+     * @param[in] rescaledWidthFlow the width to resize the input frames to before using them to compute the
+     *            motion scores (if equal to 0, no rescale will be performed)
      * @param[in] sharpnessWindowSize the size of the sliding window used to compute sharpness scores, in pixels
      * @param[in] flowCellSize the size of the cells within a frame that are used to compute the optical flow scores,
      *            in pixels
      * @return true if the scores have been successfully computed for all frames, false otherwise
      */
-    bool computeScores(const std::size_t rescaledWidth, const std::size_t sharpnessWindowSize,
-                       const std::size_t flowCellSize);
+    bool computeScores(const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
+                       const std::size_t sharpnessWindowSize, const std::size_t flowCellSize);
 
     /**
      * @brief Write the selected keyframes in the output folder

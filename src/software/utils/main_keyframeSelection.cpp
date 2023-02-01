@@ -45,7 +45,8 @@ int aliceVision_main(int argc, char** argv)
     unsigned int minNbOutFrames = 10;       // minimum number of selected keyframes (smart selection)
     unsigned int maxNbOutFrames = 2000;     // maximum number of selected keyframes (both selections)
     float pxDisplacement = 3.0;             // percentage of pixels that have moved across frames since last keyframe (smart selection)
-    std::size_t rescaledWidth = 720;        // width of the rescaled frames; 0 if no rescale is performed (smart selection)
+    std::size_t rescaledWidthSharp = 720;   // width of the rescaled frames for the sharpness; 0 if no rescale is performed (smart selection)
+    std::size_t rescaledWidthFlow = 720;    // width of the rescaled frames for the flow; 0 if no rescale is performed (smart selection)
     std::size_t sharpnessWindowSize = 200;  // sliding window's size in sharpness computation (smart selection)
     std::size_t flowCellSize = 90;          // size of the cells within a frame used to compute the optical flow (smart selection)
     std::string outputExtension = "exr";    // file extension of the written keyframes
@@ -107,9 +108,12 @@ int aliceVision_main(int argc, char** argv)
         ("pxDisplacement", po::value<float>(&pxDisplacement)->default_value(pxDisplacement),
             "Percentage of pixels in the image that have been displaced since the last selected frame. The absolute "
             "number of moving pixels is determined using min(imageWidth, imageHeight).")
-        ("rescaledWidth", po::value<std::size_t>(&rescaledWidth)->default_value(rescaledWidth),
-            "Width, in pixels, of the rescaled input frames used to compute the scores. The height of the rescaled "
-            "frames will be automatically determined to preserve the aspect ratio. 0 = no rescale.")
+        ("rescaledWidthSharpness", po::value<std::size_t>(&rescaledWidthSharp)->default_value(rescaledWidthSharp),
+            "Width, in pixels, of the rescaled input frames used to compute the sharpness scores. The height of the "
+            "rescaled frames will be automatically determined to preserve the aspect ratio. 0 = no rescale.")
+        ("rescaledWidthFlow", po::value<std::size_t>(&rescaledWidthFlow)->default_value(rescaledWidthFlow),
+            "Width, in pixels, of the rescaled input frames used to compute the motion scores. The height of the "
+            "rescaled frames will be automatically determined to preserve the aspect ratio. 0 = no rescale.")
         ("sharpnessWindowSize", po::value<std::size_t>(&sharpnessWindowSize)->default_value(sharpnessWindowSize),
             "Size, in pixels, of the sliding window that is used to compute the sharpness score of a frame.")
         ("flowCellSize", po::value<std::size_t>(&flowCellSize)->default_value(flowCellSize),
@@ -205,7 +209,7 @@ int aliceVision_main(int argc, char** argv)
     selector.setMaxOutFrames(maxNbOutFrames);
 
     if (flowVisualisationOnly) {
-        bool exported = selector.exportFlowVisualisation(rescaledWidth);
+        bool exported = selector.exportFlowVisualisation(rescaledWidthFlow);
         if (exported)
             return EXIT_SUCCESS;
         else
@@ -213,18 +217,18 @@ int aliceVision_main(int argc, char** argv)
     }
 
     if (skipSelection) {
-        selector.computeScores(rescaledWidth, sharpnessWindowSize, flowCellSize);
+        selector.computeScores(rescaledWidthSharp, rescaledWidthFlow, sharpnessWindowSize, flowCellSize);
         if (exportScores)
             selector.exportScoresToFile(csvFilename);  // Frames have not been selected, ignore 'exportSelectedFrames'
         if (exportFlowVisualisation)
-            selector.exportFlowVisualisation(rescaledWidth);
+            selector.exportFlowVisualisation(rescaledWidthFlow);
 
         return EXIT_SUCCESS;
     }
 
     // Process media paths with regular or smart method
     if (useSmartSelection)
-        selector.processSmart(pxDisplacement, rescaledWidth, sharpnessWindowSize, flowCellSize);
+        selector.processSmart(pxDisplacement, rescaledWidthSharp, rescaledWidthFlow, sharpnessWindowSize, flowCellSize);
     else
         selector.processRegular();
 
@@ -235,7 +239,7 @@ int aliceVision_main(int argc, char** argv)
     if (exportScores)
         selector.exportScoresToFile(csvFilename, exportSelectedFrames);
     if (exportFlowVisualisation)
-        selector.exportFlowVisualisation(rescaledWidth);
+        selector.exportFlowVisualisation(rescaledWidthFlow);
 
     return EXIT_SUCCESS;
 }

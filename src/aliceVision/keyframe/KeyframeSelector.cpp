@@ -135,14 +135,15 @@ void KeyframeSelector::processRegular()
     }
 }
 
-void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_t rescaledWidth,
-                                    const std::size_t sharpnessWindowSize, const std::size_t flowCellSize)
+void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_t rescaledWidthSharpness,
+                                    const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
+                                    const std::size_t flowCellSize)
 {
     _selectedKeyframes.clear();
     _selectedFrames.clear();
 
     // Step 0: compute all the scores
-    computeScores(rescaledWidth, sharpnessWindowSize, flowCellSize);
+    computeScores(rescaledWidthSharpness, rescaledWidthFlow, sharpnessWindowSize, flowCellSize);
 
     // Step 1: determine subsequences based on the motion accumulation
     std::vector<unsigned int> subsequenceLimits;
@@ -271,8 +272,8 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
     ALICEVISION_LOG_INFO("Finished selecting all the keyframes!");
 }
 
-bool KeyframeSelector::computeScores(const std::size_t rescaledWidth, const std::size_t sharpnessWindowSize,
-                                     const std::size_t flowCellSize)
+bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
+                                     const std::size_t sharpnessWindowSize, const std::size_t flowCellSize)
 {
     // Reset the computed scores
     _sharpnessScores.clear();
@@ -324,7 +325,8 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidth, const std:
     }
 
     std::size_t currentFrame = 0;
-    cv::Mat previousMat, currentMat;  // OpenCV matrices for the optical flow computation
+    cv::Mat currentMatSharpness;  // OpenCV matrix for the sharpness computation
+    cv::Mat previousMatFlow, currentMatFlow;  // OpenCV matrices for the optical flow computation
     auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
 
     while (currentFrame < nbFrames) {
@@ -335,23 +337,29 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidth, const std:
             auto& feed = *feeds.at(mediaIndex);
 
             if (currentFrame > 0) {  // Get currentFrame - 1 for the optical flow computation
-                previousMat = readImage(feed, rescaledWidth);
+                previousMatFlow = readImage(feed, rescaledWidthFlow);
                 feed.goToNextFrame();
             }
 
-            currentMat = readImage(feed, rescaledWidth);  // Read image and rescale it if requested
-            if (_frameWidth == 0 && _frameHeight == 0) {
-                _frameWidth = currentMat.size().width;
-                _frameHeight = currentMat.size().height;
+            currentMatSharpness = readImage(feed, rescaledWidthSharpness);  // Read image for sharpness and rescale it if requested
+            if (rescaledWidthSharpness == rescaledWidthFlow) {
+                currentMatFlow = currentMatSharpness;
+            } else {
+                currentMatFlow = readImage(feed, rescaledWidthFlow);
+            }
+
+            if (_frameWidth == 0 && _frameHeight == 0) {  // Will be used later on to determine the motion accumulation step
+                _frameWidth = currentMatFlow.size().width;
+                _frameHeight = currentMatFlow.size().height;
             }
 
             // Compute sharpness
-            const double sharpness = computeSharpness(currentMat, sharpnessWindowSize);
+            const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize);
             minimalSharpness = std::min(minimalSharpness, sharpness);
 
             // Compute optical flow
             if (currentFrame > 0) {
-                const double flow = estimateFlow(ptrFlow, currentMat, previousMat, flowCellSize);
+                const double flow = estimateFlow(ptrFlow, currentMatFlow, previousMatFlow, flowCellSize);
                 minimalFlow = std::min(minimalFlow, flow);
             }
 
