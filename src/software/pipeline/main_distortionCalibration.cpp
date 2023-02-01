@@ -47,296 +47,114 @@ using namespace aliceVision;
 
 bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, const calibration::CheckerDetector & detect)
 {
-    lineWithPoints.clear();
+    const std::size_t minPointsPerLine = 10;
 
-    std::vector<calibration::CheckerDetector::CheckerBoardCorner> corners = detect.getCorners();
-    std::vector<calibration::CheckerDetector::CheckerBoard> boards = detect.getBoards();
+    const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detect.getCorners();
+    const std::vector<calibration::CheckerDetector::CheckerBoard>& boards = detect.getBoards();
 
-    int boardIdx = 0;
-    for (auto& b : boards)
-    {
-        // Create horizontal lines
-        for (int i = 0; i < b.rows(); i++)
+    // Utility lambda to create lines by iterating over a board's cells in a given order
+    auto createLines = [&](const calibration::CheckerDetector::CheckerBoard& board,
+                           bool exploreByRow,
+                           bool replaceRowWithSum, bool replaceColWithSum,
+                           bool flipRow, bool flipCol) -> void {
+        int dim1 = exploreByRow ? board.rows() : board.cols();
+        int dim2 = exploreByRow ? board.cols() : board.rows();
+
+        for (int i = 0; i < dim1; ++i)
         {
             //Random init
             calibration::LineWithPoints line;
             line.angle = boost::math::constants::pi<double>() * .25;
             line.dist = 1;
-            line.horizontal = true;
-            line.index = i;
-            line.board = boardIdx;
 
-            for (int j = 0; j < b.cols(); j++)
+            for (int j = 0; j < dim2; ++j)
             {
-                const IndexT idx = b(i, j);
+                int i_cell = replaceRowWithSum ? i + j : (exploreByRow ? i : j);
+                i_cell = flipRow ? board.rows() - 1 - i_cell : i_cell;
+
+                int j_cell = replaceColWithSum ? i + j : (exploreByRow ? j : i);
+                j_cell = flipCol ? board.cols() - 1 - j_cell : j_cell;
+
+                if (i_cell < 0 || i_cell >= board.rows() || j_cell < 0 || j_cell >= board.cols()) continue;
+
+                const IndexT idx = board(i_cell, j_cell);
                 if (idx == UndefinedIndexT) continue;
 
                 const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
                 line.points.push_back(p.center);
             }
 
-            //Check we don't have a too small line which won't be easy to estimate
-            if (line.points.size() < 10) continue;
-            lineWithPoints.push_back(line);
-        }
-
-        // Create vertical lines
-        for (int j = 0; j < b.cols(); j++)
-        {
-            calibration::LineWithPoints line;
-            line.angle = boost::math::constants::pi<double>() * .25;
-            line.dist = 1;
-            line.horizontal = false;
-            line.index = j;
-            line.board = boardIdx;
-
-            for (int i = 0; i < b.rows(); i++)
-            {
-                const IndexT idx = b(i, j);
-                if (idx == UndefinedIndexT) continue;
-
-                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
-                line.points.push_back(p.center);
-            }
-
-            //Check we don't have a too small line which won't be easy to estimate
-            if (line.points.size() < 10) continue;
+            //Check that we don't have a too small line which won't be easy to estimate
+            if (line.points.size() < minPointsPerLine) continue;
 
             lineWithPoints.push_back(line);
         }
+    };
 
-        // Create diagonal 1 lines
-        for (int i = 0; i < b.rows(); i++)
-        {
-            calibration::LineWithPoints line;
-            line.angle = boost::math::constants::pi<double>() * .25;
-            line.dist = 1;
-            line.horizontal = false;
-            line.index = i;
-            line.board = boardIdx;
-
-            for (int j = 0; j < b.cols(); j++)
-            {
-                if (i + j >= b.rows())
-                {
-                    break;
-                }
-
-                const IndexT idx = b(i + j, j);
-                if (idx == UndefinedIndexT) continue;
-
-                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
-                line.points.push_back(p.center);
-            }
-
-            //Check we don't have a too small line which won't be easy to estimate
-            if (line.points.size() < 10) continue;
-
-            lineWithPoints.push_back(line);
-        }
-
-        // Create diagonal 2 lines
-        for (int j = 0; j < b.cols(); j++)
-        {
-            calibration::LineWithPoints line;
-            line.angle = boost::math::constants::pi<double>() * .25;
-            line.dist = 1;
-            line.horizontal = false;
-            line.index = j;
-            line.board = boardIdx;
-
-            for (int i = 0; i < b.rows(); i++)
-            {
-                if (i + j >= b.cols())
-                {
-                    break;
-                }
-
-                const IndexT idx = b(i, i + j);
-                if (idx == UndefinedIndexT) continue;
-
-                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
-                line.points.push_back(p.center);
-            }
-
-            //Check we don't have a too small line which won't be easy to estimate
-            if (line.points.size() < 10) continue;
-
-            lineWithPoints.push_back(line);
-        }
-
-        // Create diagonal 3 lines
-        for (int j = 0; j < b.cols(); j++)
-        {
-            calibration::LineWithPoints line;
-            line.angle = boost::math::constants::pi<double>() * .25;
-            line.dist = 1;
-            line.horizontal = false;
-            line.index = j;
-            line.board = boardIdx;
-
-            for (int i = 0; i < b.rows(); i++)
-            {
-                if (i + j >= b.cols())
-                {
-                    break;
-                }
-
-                const IndexT idx = b(b.rows() - 1 - i, i + j);
-                if (idx == UndefinedIndexT) continue;
-
-                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
-                line.points.push_back(p.center);
-            }
-
-            //Check we don't have a too small line which won't be easy to estimate
-            if (line.points.size() < 10) continue;
-
-            lineWithPoints.push_back(line);
-        }
-
-
-        boardIdx++;
-    }
-
-    if (lineWithPoints.size() < 2)
+    for (auto& b : boards)
     {
-        return false;
+        // Horizontal lines
+        createLines(b, true, false, false, false, false);
+
+        // 1st diagonal - 1st half
+        createLines(b, true, true, false, false, false);
+
+        // 2nd diagonal - 1st half
+        createLines(b, true, true, false, true, false);
+
+        // Vertical lines
+        createLines(b, false, false, false, false, false);
+
+        // 1st diagonal - 2nd half
+        createLines(b, false, false, true, false, false);
+
+        // 2nd diagonal - 2nd half
+        createLines(b, false, false, true, true, false);
     }
 
-    return true;
+    // Check that enough lines have been generated
+    return lineWithPoints.size() > 1;
 }
 
 template <class T>
 bool estimateDistortion3DEA4(std::shared_ptr<camera::Undistortion>& undistortion, calibration::Statistics& statistics, std::vector<T>& items)
 {
-    std::vector<double> params = undistortion->getParameters();
-    params[0] = 0.0;
-    params[1] = 0.0;
-    params[2] = 0.0;
-    params[3] = 0.0;
-    params[5] = 0.0;
-    params[6] = 0.0;
-    params[7] = 0.0;
-    params[8] = 0.0;
-    params[9] = 0.0;
-    params[10] = 0.0;
+    std::vector<double> params(14, 0.0);
     params[11] = 1.0;
     params[12] = 1.0;
     params[13] = 1.0;
     undistortion->setParameters(params);
 
-    std::vector<bool> locksDistortions = {true, true, true, true, true, true, true, true, true, true, true, true, true, true};
+    std::vector<bool> locksDistortions(14, true);
 
-    //Everything locked except lines parameters
+    // Everything locked except lines parameters
     if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
     {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        ALICEVISION_LOG_ERROR("Failed to calibrate with all parameters locked");
         return false;
     }
 
-    //Relax offcenter
+    // Relax few distortion parameters
+    for (std::size_t i = 0; i < 4; ++i)
+    {
+        locksDistortions[i] = false;
+    }
+
     if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
     {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        ALICEVISION_LOG_ERROR("Failed to calibrate with partial relaxation");
         return false;
     }
 
-    //Relax few distortion parameters
-    locksDistortions[0] = false;
-    locksDistortions[1] = false;
-    locksDistortions[2] = false;
-    locksDistortions[3] = false;
+    // All
+    for (std::size_t i = 4; i < 10; ++i)
+    {
+        locksDistortions[i] = false;
+    }
+
     if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
     {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }
-
-    /*//Relax offcenter
-    locksDistortions[10] = false;
-    locksDistortions[11] = false;
-    locksDistortions[12] = true;
-    if (!calibration::estimate(undistortion, statistics, items, false, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }*/
-
-    //All
-    locksDistortions[4] = false;
-    locksDistortions[5] = false;
-    locksDistortions[6] = false;
-    locksDistortions[7] = false;
-    locksDistortions[8] = false;
-    locksDistortions[9] = false;
-    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }
-
-    return true;
-}
-
-template <class T>
-bool estimateDistortion3DELD(std::shared_ptr<camera::Undistortion>& undistortion, calibration::Statistics& statistics, std::vector<T>& items)
-{
-    std::vector<double> params = undistortion->getParameters();
-    params[0] = 0.0;
-    params[1] = boost::math::constants::pi<double>() * .5;
-    params[2] = 0.0;
-    params[3] = 0.0;
-    params[4] = 0.0;
-    undistortion->setParameters(params);
-
-    std::vector<bool> locksDistortions = { true, true, true, true, true };
-
-    //Everything locked except lines parameters
-    locksDistortions[0] = true;
-    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }
-
-    //Relax distortion 1st order
-    locksDistortions[0] = false;
-    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }
-
-    //Relax offcenter
-    locksDistortions[0] = false;
-    if (!calibration::estimate(undistortion, statistics, items, false, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }
-
-    //Relax offcenter
-    locksDistortions[0] = false;
-    locksDistortions[1] = true;
-    locksDistortions[2] = false;
-    locksDistortions[3] = false;
-    locksDistortions[4] = true;
-    if (!calibration::estimate(undistortion, statistics, items, false, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }
-
-    //Relax offcenter
-    locksDistortions[0] = false;
-    locksDistortions[1] = false;
-    locksDistortions[2] = false;
-    locksDistortions[3] = false;
-    locksDistortions[4] = false;
-    if (!calibration::estimate(undistortion, statistics, items, false, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        ALICEVISION_LOG_ERROR("Failed to calibrate with full relaxation");
         return false;
     }
 
@@ -366,7 +184,7 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    //Load sfmData from disk
+    // Load sfmData from disk
     sfmData::SfMData sfmData;
     if (!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
@@ -374,7 +192,7 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    //Load the checkerboards
+    // Load the checkerboards
     std::map < IndexT, calibration::CheckerDetector> boardsAllImages;
     for (auto& pv : sfmData.getViews())
     {
@@ -390,12 +208,12 @@ int aliceVision_main(int argc, char* argv[])
         buffer << inputfile.rdbuf();
         boost::json::value jv = boost::json::parse(buffer.str());
 
-        //Store the checkerboard
+        // Store the checkerboard
         calibration::CheckerDetector detector(boost::json::value_to<calibration::CheckerDetector>(jv));
         boardsAllImages[viewId] = detector;
     }
 
-    //Calibrate each intrinsic independently
+    // Calibrate each intrinsic independently
     for (auto& pi : sfmData.getIntrinsics())
     {
         IndexT intrinsicId = pi.first;
@@ -415,7 +233,7 @@ int aliceVision_main(int argc, char* argv[])
             std::make_shared<camera::Undistortion3DEAnamorphic4>(cameraPinhole->w(), cameraPinhole->h());
         sfmData.getUndistortions()[intrinsicId] = undistortion;
 
-        //Transform checkerboards to line With points
+        // Transform checkerboards to line With points
         std::vector<calibration::LineWithPoints> allLinesWithPoints;
         for (auto& pv : sfmData.getViews())
         {
@@ -456,7 +274,7 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
     }
 
-    //Save sfmData to disk
+    // Save sfmData to disk
     if (!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be written.");

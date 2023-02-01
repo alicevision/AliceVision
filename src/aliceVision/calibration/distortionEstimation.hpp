@@ -16,22 +16,25 @@
 namespace aliceVision {
 namespace calibration {
 
+/**
+ * @brief Set of 2D points that belong to the same line.
+ * 
+ * The 2D points correspond to real-world points that are aligned and evenly spaced
+ * observed with a camera which applies some distortion on them.
+ * 
+ * Therefore these 2D points may not actually be aligned and evenly spaced,
+ * and this difference with the ideal line model is used to estimate distortion.
+ */
 struct LineWithPoints
 {
-    int index;
-    int board;
-    bool horizontal;
     double angle;
     double dist;
     std::vector<Vec2> points;
 };
 
-struct PointPair
-{
-    Vec2 distortedPoint;
-    Vec2 undistortedPoint;
-};
-
+/**
+ * @brief Statistics on distortion parameters estimation error.
+ */
 struct Statistics
 {
     double mean;
@@ -40,13 +43,22 @@ struct Statistics
 };
 
 /**
- * @brief Estimate the parameters of a camera (mostly distortion, from a set of line aligned points)
+ * @brief Estimate the undistortion parameters of a camera using a set of line aligned points.
+ * 
+ * This algorithms minimizes a distance between points and lines using distortion.
+ * 
+ * @param[out] undistortionToEstimate Undistortion object with the parameters to estimate.
+ * @param[out] statistics Statistics on the estimation error.
+ * @param[in] lines Set of line aligned points used to estimate distortion.
+ * @param[in] lockCenter Lock the distortion offset during optimization.
+ * @param[in] lockDistortions Distortion parameters to lock during optimization.
+ * @return False if the estimation failed, otherwise true.
  */
-bool estimate(const std::shared_ptr<camera::Undistortion>& undistortionToEstimate,
+bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
               std::vector<LineWithPoints>& lines,
               bool lockCenter,
               const std::vector<bool>& lockDistortions);
 
-} //namespace calibration
-} //namespace aliceVision
+} // namespace calibration
+} // namespace aliceVision

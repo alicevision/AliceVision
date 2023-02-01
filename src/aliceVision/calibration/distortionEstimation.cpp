@@ -11,6 +11,7 @@
 
 #include <ceres/ceres.h>
 
+#include <cmath>
 
 namespace aliceVision {
 namespace calibration {
@@ -18,9 +19,8 @@ namespace calibration {
 class CostLine : public ceres::CostFunction
 {
 public:
-    CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt)
-        : _pt(pt)
-        , _undistortion(undistortion)
+    CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt) :
+        _pt(pt), _undistortion(undistortion)
     {
         set_num_residuals(1);
 
@@ -40,12 +40,12 @@ public:
         const double angle = parameter_angle_line[0];
         const double distanceToLine = parameter_dist_line[0];
 
-        const double cangle = cos(angle);
-        const double sangle = sin(angle);
+        const double cangle = std::cos(angle);
+        const double sangle = std::sin(angle);
     
         std::vector<double> cameraDistortionParams = _undistortion->getParameters();
-        const int distortionSize = cameraDistortionParams.size();
-        for (int idParam = 0; idParam < distortionSize; idParam++)
+        const std::size_t distortionSize = cameraDistortionParams.size();
+        for (std::size_t idParam = 0; idParam < distortionSize; ++idParam)
         {
             cameraDistortionParams[idParam] = parameter_disto[idParam];
         }
@@ -57,29 +57,28 @@ public:
         _undistortion->setOffset(undistortionOffset);
 
         const Vec2 ipt = _undistortion->undistort(_pt);
-        const double w = 1.0; // w1 * w1;
+        const double w = 1.0;
 
         residuals[0] = w * (cangle * ipt.x() + sangle * ipt.y() - distanceToLine);
 
-        if(jacobians == nullptr)
+        if (jacobians == nullptr)
         {
             return true;
         }
 
-        if(jacobians[0] != nullptr)
+        if (jacobians[0] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[0]);
-
             J(0, 0) = w * (ipt.x() * -sangle + ipt.y() * cangle);
         }
 
-        if(jacobians[1] != nullptr)
+        if (jacobians[1] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[1]);
             J(0, 0) = -w;
         }
 
-        if(jacobians[2] != nullptr)
+        if (jacobians[2] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, 1, 2, Eigen::RowMajor>> J(jacobians[2]);
 
@@ -90,7 +89,7 @@ public:
             J = w * Jline * _undistortion->getDerivativeUndistortWrtOffset(_pt);
         }
 
-        if(jacobians[3] != nullptr)
+        if (jacobians[3] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[3], 1, distortionSize);
 
@@ -109,7 +108,7 @@ private:
     Vec2 _pt;
 };
 
-bool estimate(const std::shared_ptr<camera::Undistortion>& undistortionToEstimate,
+bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics & statistics,
               std::vector<LineWithPoints> & lines,
               bool lockCenter,
@@ -130,7 +129,7 @@ bool estimate(const std::shared_ptr<camera::Undistortion>& undistortionToEstimat
 
     std::vector<double> undistortionParameters = undistortionToEstimate->getParameters();
     Vec2 undistortionOffset = undistortionToEstimate->getOffset();
-    const size_t countUndistortionParams = undistortionParameters.size();
+    const std::size_t countUndistortionParams = undistortionParameters.size();
 
     if (lockDistortions.size() != countUndistortionParams)
     {
@@ -171,7 +170,7 @@ bool estimate(const std::shared_ptr<camera::Undistortion>& undistortionToEstimat
         // At least one parameter is not locked
 
         std::vector<int> constantDistortions;
-        for (int idParamDistortion = 0; idParamDistortion < lockDistortions.size(); idParamDistortion++)
+        for (int idParamDistortion = 0; idParamDistortion < lockDistortions.size(); ++idParamDistortion)
         {
             if (lockDistortions[idParamDistortion])
             {
@@ -220,8 +219,8 @@ bool estimate(const std::shared_ptr<camera::Undistortion>& undistortionToEstimat
 
     for (auto & l : lines)
     {
-        const double sangle = sin(l.angle);
-        const double cangle = cos(l.angle);
+        const double sangle = std::sin(l.angle);
+        const double cangle = std::cos(l.angle);
 
         for (const Vec2& pt : l.points)
         {
@@ -244,5 +243,5 @@ bool estimate(const std::shared_ptr<camera::Undistortion>& undistortionToEstimat
     return true;
 }
 
-}//namespace calibration
-}//namespace aliceVision
+} // namespace calibration
+} // namespace aliceVision

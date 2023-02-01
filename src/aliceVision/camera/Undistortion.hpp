@@ -15,6 +15,15 @@
 namespace aliceVision {
 namespace camera {
 
+/**
+ * @brief Abstract class to represent the inverse operation of a distortion model.
+ * 
+ * Contrary to distortion models, the undistortion process is a pixel-to-pixel operation
+ * and thus it does not depend on the camera's focal length.
+ * 
+ * Its main purpose is to undistort images before they are used in other calculations
+ * so that we can virtually "remove" distortion parameters from the camera.
+ */
 class Undistortion
 {
 public:
