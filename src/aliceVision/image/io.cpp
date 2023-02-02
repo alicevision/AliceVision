@@ -486,8 +486,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul); // no neutralization
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
-            configSpec.attribute("raw:HighlightMode", 1); // unclip
-            configSpec.attribute("raw:Demosaic", "DHT"); // DHT algorithm
+            configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawNoWhiteBalancing)
         {

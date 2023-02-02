@@ -2139,7 +2139,17 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         {
             xyzToCamera = color_matrix_1;
         }
-        const Matrix cameraToXyz = matInv(xyzToCamera);
+
+        Matrix wbInv = IdentityMatrix;
+        if (!sourceIsRaw)
+        {
+            // White balancing has been applied before demosaicing but color matrix is supposed to work on non white balanced data
+            // The white balance operation must be reversed
+            wbInv[0][0] = asShotNeutralInv[0];
+            wbInv[1][1] = asShotNeutralInv[1];
+            wbInv[2][2] = asShotNeutralInv[2];
+        }
+        const Matrix cameraToXyz = matMult(matInv(xyzToCamera), wbInv);
 
         const double D50_cct = 5000.706605070579;  //
         const double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
