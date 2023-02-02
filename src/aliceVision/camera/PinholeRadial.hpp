@@ -22,42 +22,46 @@ namespace camera {
 class PinholeRadialK1 : public Pinhole
 {
 public:
+    explicit PinholeRadialK1(int w = 0, int h = 0,
+                             double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
+                             double offsetX = 0, double offsetY = 0
+                             double k1 = 0.0,
+                             EInitMode distortionInitializationMode = EInitMode::NONE) :
+        Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
+                std::shared_ptr<Distortion>(new DistortionRadialK1(k1)),
+                distortionInitializationMode)
+    {
+    }
 
-  explicit PinholeRadialK1(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
-                             double offsetX = 0, double offsetY = 0, double k1 = 0.0, EInitMode distortionInitializationMode = EInitMode::NONE)
-        : Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
-                  std::shared_ptr<Distortion>(new DistortionRadialK1(k1)), distortionInitializationMode)
-  {
-  }
+    PinholeRadialK1* clone() const override { return new PinholeRadialK1(*this); }
 
-  PinholeRadialK1* clone() const override { return new PinholeRadialK1(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadialK1&>(other); }
+    EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL1; }
 
-  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL1; }
-
-  ~PinholeRadialK1() override = default;
+    ~PinholeRadialK1() override = default;
 };
 
 /// Implement a Pinhole camera with a 3 radial distortion coefficients.
 /// x_d = x_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6)
 class PinholeRadialK3 : public Pinhole
 {
-  public:
+public:
+    explicit PinholeRadialK3(int w = 0, int h = 0,
+                             double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
+                             double offsetX = 0, double offsetY = 0,
+                             double k1 = 0.0, double k2 = 0.0, double k3 = 0.0,
+                             EInitMode distortionInitializationMode = EInitMode::NONE) :
+        Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
+                std::shared_ptr<Distortion>(new DistortionRadialK3(k1, k2, k3)),
+                distortionInitializationMode)
+    {
+    }
 
-  explicit PinholeRadialK3(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
-                               double offsetX = 0, double offsetY = 0, double k1 = 0.0, double k2 = 0.0,
-                               double k3 = 0.0, EInitMode distortionInitializationMode = EInitMode::NONE)
-          : Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
-                    std::shared_ptr<Distortion>(new DistortionRadialK3(k1, k2, k3)), distortionInitializationMode)
-  {
-  }
+    PinholeRadialK3* clone() const override { return new PinholeRadialK3(*this); }
+    void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadialK3&>(other); }
 
-  PinholeRadialK3* clone() const override { return new PinholeRadialK3(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadialK3&>(other); }
+    EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL3; }
 
-  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL3; }
-
-  ~PinholeRadialK3() override = default;
+    ~PinholeRadialK3() override = default;
 };
 
 } // namespace camera

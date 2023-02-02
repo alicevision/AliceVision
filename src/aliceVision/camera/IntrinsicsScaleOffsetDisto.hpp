@@ -23,300 +23,302 @@ namespace camera {
 class IntrinsicsScaleOffsetDisto : public IntrinsicsScaleOffset
 {
 public:
-  IntrinsicsScaleOffsetDisto() = default;
+    IntrinsicsScaleOffsetDisto() = default;
 
-  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h,
-                             double scaleX, double scaleY,
-                             double offsetX, double offsetY,
-                             std::shared_ptr<Distortion> distortion = nullptr,
-                             std::shared_ptr<Undistortion> undistortion = nullptr,
-                             EInitMode distortionInitializationMode = EInitMode::NONE) :
-    IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
-    _pDistortion(distortion), _pUndistortion(undistortion), _distortionInitializationMode(distortionInitializationMode)
-  {}
-
-  void assign(const IntrinsicBase& other) override
-  {
-    *this = dynamic_cast<const IntrinsicsScaleOffsetDisto&>(other);
-  }
-
-  bool operator==(const IntrinsicBase& otherBase) const override
-  {
-      if (!IntrinsicsScaleOffset::operator==(otherBase))
-          return false;
-      if (typeid(*this) != typeid(otherBase))
-          return false;
-      const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
-
-      if (_distortionInitializationMode != other._distortionInitializationMode)
-          return false;
-
-      if (_pDistortion != nullptr && other._pDistortion != nullptr)
-          return (*_pDistortion) == (*other._pDistortion);
-      return _pDistortion == other._pDistortion;
-  }
-
-  void setDistortionObject(std::shared_ptr<Distortion> object)
-  {
-      _pDistortion = object;
-  }
-
-  bool hasDistortion() const override
-  {
-    return _pDistortion != nullptr;
-  }
-
-  Vec2 addDistortion(const Vec2& p) const override
-  {
-    if (_pDistortion == nullptr)
+    IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h,
+                                double scaleX, double scaleY,
+                                double offsetX, double offsetY,
+                                std::shared_ptr<Distortion> distortion = nullptr,
+                                std::shared_ptr<Undistortion> undistortion = nullptr,
+                                EInitMode distortionInitializationMode = EInitMode::NONE) :
+        IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
+        _pDistortion(distortion), _pUndistortion(undistortion), _distortionInitializationMode(distortionInitializationMode)
     {
-      return p;
     }
-    return _pDistortion->addDistortion(p); 
-  }
+
+    void assign(const IntrinsicBase& other) override
+    {
+        *this = dynamic_cast<const IntrinsicsScaleOffsetDisto&>(other);
+    }
+
+    bool operator==(const IntrinsicBase& otherBase) const override
+    {
+        if (!IntrinsicsScaleOffset::operator==(otherBase))
+            return false;
+        if (typeid(*this) != typeid(otherBase))
+            return false;
+        const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
+
+        if (_distortionInitializationMode != other._distortionInitializationMode)
+            return false;
+
+        if (_pDistortion != nullptr && other._pDistortion != nullptr)
+            return (*_pDistortion) == (*other._pDistortion);
+        return _pDistortion == other._pDistortion;
+    }
+
+    void setDistortionObject(std::shared_ptr<Distortion> object)
+    {
+        _pDistortion = object;
+    }
+
+    bool hasDistortion() const override
+    {
+        return _pDistortion != nullptr;
+    }
+
+    Vec2 addDistortion(const Vec2& p) const override
+    {
+        if (_pDistortion == nullptr)
+        {
+            return p;
+        }
+        return _pDistortion->addDistortion(p);
+    }
   
 
-  Vec2 removeDistortion(const Vec2& p) const override
-  {
-    if (_pDistortion == nullptr)
+    Vec2 removeDistortion(const Vec2& p) const override
     {
-      return p;
-    }
-    return _pDistortion->removeDistortion(p); 
-  }
-
-  /// Return the un-distorted pixel (with removed distortion)
-  Vec2 get_ud_pixel(const Vec2& p) const override
-  {
-    return cam2ima(removeDistortion(ima2cam(p)));
-  }
-
-  /// Return the distorted pixel (with added distortion)
-  Vec2 get_d_pixel(const Vec2& p) const override
-  {
-    return cam2ima(addDistortion(ima2cam(p)));
-  }
-
-  std::size_t getDistortionParamsSize() const
-  {
-    if (_pDistortion == nullptr)
-        return 0;
-    return _pDistortion->getParameters().size();
-  }
-
-  std::vector<double> getDistortionParams() const
-  {
-    if (!hasDistortion()) {
-      return std::vector<double>();
-    }
-    return _pDistortion->getParameters();
-  }
-
-  void setDistortionParams(const std::vector<double> & distortionParams)
-  {
-    int expected = 0;
-    if (_pDistortion != nullptr)
-    {
-      expected = _pDistortion->getDistortionParametersCount();
-    }
-
-    if (distortionParams.size() != expected)
-    {
-        throwSetDistortionParamsCountError(expected, distortionParams.size());
-    }
-
-    if (_pDistortion)
-    {
-      _pDistortion->getParameters() = distortionParams;
-    }
-  }
-
-  template<class F>
-  void setDistortionParamsFn(F&& callback)
-  {
-    if (_pDistortion == nullptr)
-        return;
-
-    auto& params = _pDistortion->getParameters();
-    for (std::size_t i = 0; i < params.size(); ++i)
-    {
-        params[i] = callback(i);
-    }
-  }
-
-  template<class F>
-  void setDistortionParamsFn(std::size_t count, F&& callback)
-  {
-    if (_pDistortion == nullptr)
-    {
-        if (count != 0)
+        if (_pDistortion == nullptr)
         {
-            throwSetDistortionParamsCountError(0, count);
+            return p;
         }
-        return;
+        return _pDistortion->removeDistortion(p);
     }
 
-    auto& params = _pDistortion->getParameters();
-    if (params.size() != count)
+    /// Return the un-distorted pixel (with removed distortion)
+    Vec2 get_ud_pixel(const Vec2& p) const override
     {
-        throwSetDistortionParamsCountError(params.size(), count);
+        return cam2ima(removeDistortion(ima2cam(p)));
     }
 
-    for (std::size_t i = 0; i < params.size(); ++i)
+    /// Return the distorted pixel (with added distortion)
+    Vec2 get_d_pixel(const Vec2& p) const override
     {
-        params[i] = callback(i);
+        return cam2ima(addDistortion(ima2cam(p)));
     }
-  }
 
-  // Data wrapper for non linear optimization (get data)
-  std::vector<double> getParams() const override
-  {
-    std::vector<double> params = {_scale(0), _scale(1), _offset(0), _offset(1)};
-
-    if (hasDistortion())
+    std::size_t getDistortionParamsSize() const
     {
-      params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
+        if (_pDistortion == nullptr)
+            return 0;
+        return _pDistortion->getParameters().size();
     }
 
-    return params;
-  }
-
-  std::size_t getParamsSize() const override
-  {
-    std::size_t size = 4;
-    if (hasDistortion())
+    std::vector<double> getDistortionParams() const
     {
-      size += _pDistortion->getParameters().size();
+        if (!hasDistortion()) {
+            return std::vector<double>();
+        }
+        return _pDistortion->getParameters();
     }
-    return size;
-  }
 
-  // Data wrapper for non linear optimization (update from data)
-  bool updateFromParams(const std::vector<double>& params) override
-  {
-    if (_pDistortion == nullptr)
+    void setDistortionParams(const std::vector<double> & distortionParams)
     {
-      if (params.size() != 4)
-      {
-        return false;
-      }
+        int expected = 0;
+        if (_pDistortion != nullptr)
+        {
+            expected = _pDistortion->getDistortionParametersCount();
+        }
+
+        if (distortionParams.size() != expected)
+        {
+            throwSetDistortionParamsCountError(expected, distortionParams.size());
+        }
+
+        if (_pDistortion)
+        {
+            _pDistortion->getParameters() = distortionParams;
+        }
     }
-    else
+
+    template<class F>
+    void setDistortionParamsFn(F&& callback)
     {
-      if (params.size() != (4 + _pDistortion->getDistortionParametersCount()))
-      {
-        return false;
-      }
+        if (_pDistortion == nullptr)
+            return;
+
+        auto& params = _pDistortion->getParameters();
+        for (std::size_t i = 0; i < params.size(); ++i)
+        {
+            params[i] = callback(i);
+        }
     }
 
-    _scale(0) = params[0];
-    _scale(1) = params[1];
-    _offset(0) = params[2];
-    _offset(1) = params[3];
-
-    setDistortionParams({params.begin() + 4, params.end()});
-
-    return true;
-  }
-
-  float getMaximalDistortion(double min_radius, double max_radius) const override
-  {
-    if (_pDistortion == nullptr)
+    template<class F>
+    void setDistortionParamsFn(std::size_t count, F&& callback)
     {
-      return max_radius;
+        if (_pDistortion == nullptr)
+        {
+            if (count != 0)
+            {
+                throwSetDistortionParamsCountError(0, count);
+            }
+            return;
+        }
+
+        auto& params = _pDistortion->getParameters();
+        if (params.size() != count)
+        {
+            throwSetDistortionParamsCountError(params.size(), count);
+        }
+
+        for (std::size_t i = 0; i < params.size(); ++i)
+        {
+            params[i] = callback(i);
+        }
     }
 
-    return _pDistortion->getUndistortedRadius(max_radius);
-  }
-
-  Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt) const
-  {
-    if (this->_pDistortion == nullptr)
+    // Data wrapper for non linear optimization (get data)
+    std::vector<double> getParams() const override
     {
-      return Eigen::Matrix<double, 2, 2>::Identity();
-    }
-    return this->_pDistortion->getDerivativeAddDistoWrtPt(pt);
-  }
+        std::vector<double> params = {_scale(0), _scale(1), _offset(0), _offset(1)};
 
-  Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt) const
-  {
-    if (this->_pDistortion == nullptr)
+        if (hasDistortion())
+        {
+            params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
+        }
+
+        return params;
+    }
+
+    std::size_t getParamsSize() const override
     {
-      return Eigen::Matrix<double, 2, 2>::Identity();
+        std::size_t size = 4;
+        if (hasDistortion())
+        {
+            size += _pDistortion->getParameters().size();
+        }
+        return size;
     }
 
-    return this->_pDistortion->getDerivativeRemoveDistoWrtPt(pt);
-  }
-
-  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt) const
-  {
-    if (this->_pDistortion == nullptr)
+    // Data wrapper for non linear optimization (update from data)
+    bool updateFromParams(const std::vector<double>& params) override
     {
-      return Eigen::MatrixXd(0, 0);
+        if (_pDistortion == nullptr)
+        {
+            if (params.size() != 4)
+            {
+            return false;
+            }
+        }
+        else
+        {
+            if (params.size() != (4 + _pDistortion->getDistortionParametersCount()))
+            {
+            return false;
+            }
+        }
+
+        _scale(0) = params[0];
+        _scale(1) = params[1];
+        _offset(0) = params[2];
+        _offset(1) = params[3];
+
+        setDistortionParams({params.begin() + 4, params.end()});
+
+        return true;
     }
 
-    return this->_pDistortion->getDerivativeAddDistoWrtDisto(pt);
-  }
-
-  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt) const
-  {
-    if (this->_pDistortion == nullptr)
+    float getMaximalDistortion(double min_radius, double max_radius) const override
     {
-      return Eigen::MatrixXd(0, 0);
+        if (_pDistortion == nullptr)
+        {
+            return max_radius;
+        }
+
+        return _pDistortion->getUndistortedRadius(max_radius);
     }
 
-    return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
-  }
+    Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt) const
+    {
+        if (this->_pDistortion == nullptr)
+        {
+            return Eigen::Matrix<double, 2, 2>::Identity();
+        }
+        return this->_pDistortion->getDerivativeAddDistoWrtPt(pt);
+    }
 
-  std::shared_ptr<Distortion> getDistortion() const
-  {
-      return _pDistortion;
-  }
+    Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt) const
+    {
+        if (this->_pDistortion == nullptr)
+        {
+            return Eigen::Matrix<double, 2, 2>::Identity();
+        }
 
-  /**
-  * @brief Set The intrinsic disto initialization mode
-  * @param[in] distortionInitializationMode The intrintrinsic distortion initialization mode enum
-  */
-  inline void setDistortionInitializationMode(EInitMode distortionInitializationMode) override
-  {
-      _distortionInitializationMode = distortionInitializationMode;
-  }
+        return this->_pDistortion->getDerivativeRemoveDistoWrtPt(pt);
+    }
 
-  /**
-   * @brief Get the intrinsic disto initialization mode
-   * @return The intrinsic disto initialization mode
-   */
-  inline EInitMode getDistortionInitializationMode() const override
-  {
-      return _distortionInitializationMode;
-  }
+    Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt) const
+    {
+        if (this->_pDistortion == nullptr)
+        {
+            return Eigen::MatrixXd(0, 0);
+        }
 
-  ~IntrinsicsScaleOffsetDisto() override = default;
+        return this->_pDistortion->getDerivativeAddDistoWrtDisto(pt);
+    }
 
-  void setUndistortionObject(std::shared_ptr<Undistortion> object)
-  {
-    _pUndistortion = object;
-  }
+    Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt) const
+    {
+        if (this->_pDistortion == nullptr)
+        {
+            return Eigen::MatrixXd(0, 0);
+        }
 
-  std::shared_ptr<Undistortion> getUndistortion() const
-  {
-    return _pUndistortion;
-  }
+        return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
+    }
+
+    /**
+     * @brief Set The intrinsic disto initialization mode
+     * @param[in] distortionInitializationMode The intrintrinsic distortion initialization mode enum
+     */
+    inline void setDistortionInitializationMode(EInitMode distortionInitializationMode) override
+    {
+        _distortionInitializationMode = distortionInitializationMode;
+    }
+
+    /**
+     * @brief Get the intrinsic disto initialization mode
+     * @return The intrinsic disto initialization mode
+     */
+    inline EInitMode getDistortionInitializationMode() const override
+    {
+        return _distortionInitializationMode;
+    }
+
+    std::shared_ptr<Distortion> getDistortion() const
+    {
+        return _pDistortion;
+    }
+
+    ~IntrinsicsScaleOffsetDisto() override = default;
+
+    void setUndistortionObject(std::shared_ptr<Undistortion> object)
+    {
+        _pUndistortion = object;
+    }
+
+    std::shared_ptr<Undistortion> getUndistortion() const
+    {
+        return _pUndistortion;
+    }
 
 protected:
-  void throwSetDistortionParamsCountError(std::size_t expected, std::size_t received)
-  {
-      std::stringstream s;
-      s << "IntrinsicsScaleOffsetDisto::setDistortionParams*: "
+    void throwSetDistortionParamsCountError(std::size_t expected, std::size_t received)
+    {
+        std::stringstream s;
+        s << "IntrinsicsScaleOffsetDisto::setDistortionParams*: "
         << "wrong number of distortion parameters (expected: "
         << expected << ", given:" << received << ").";
-      throw std::runtime_error(s.str());
-  }
+        throw std::runtime_error(s.str());
+    }
 
-  std::shared_ptr<Distortion> _pDistortion;
-  std::shared_ptr<Undistortion> _pUndistortion;
+    std::shared_ptr<Distortion> _pDistortion;
+    std::shared_ptr<Undistortion> _pUndistortion;
 
-  // Distortion initialization mode
-  EInitMode _distortionInitializationMode = EInitMode::NONE;
+    // Distortion initialization mode
+    EInitMode _distortionInitializationMode = EInitMode::NONE;
 };
+
 } // namespace camera

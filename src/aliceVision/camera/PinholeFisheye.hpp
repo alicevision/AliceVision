@@ -24,27 +24,32 @@ namespace camera {
  */
 class PinholeFisheye : public Pinhole
 {
-  public:
+public:
+    explicit PinholeFisheye(int w = 0, int h = 0,
+                            double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
+                            double offsetX = 0, double offsetY = 0,
+                            double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0,
+                            EInitMode distortionInitializationMode = EInitMode::NONE) :
+        Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
+                std::shared_ptr<Distortion>(new DistortionFisheye(k1, k2, k3, k4)),
+                distortionInitializationMode)
+    {
+    }
 
-  explicit PinholeFisheye(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0, EInitMode distortionInitializationMode = EInitMode::NONE)
-  :Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new DistortionFisheye(k1, k2, k3, k4)), distortionInitializationMode)
-  {
-  }
+    PinholeFisheye* clone() const override { return new PinholeFisheye(*this); }
+    void assign(const IntrinsicBase& other) override
+    {
+        *this = dynamic_cast<const PinholeFisheye&>(other);
+    }
 
-  PinholeFisheye* clone() const override { return new PinholeFisheye(*this); }
-  void assign(const IntrinsicBase& other) override
-  {
-      *this = dynamic_cast<const PinholeFisheye&>(other);
-  }
+    EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_FISHEYE; }
 
-  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_FISHEYE; }
+    bool isVisibleRay(const Vec3 & ray) const override
+    {
+        return ray(2) >= 0.0;
+    }
 
-  bool isVisibleRay(const Vec3 & ray) const override
-  {
-      return ray(2) >= 0.0;
-  }
-
-  ~PinholeFisheye() override = default;
+    ~PinholeFisheye() override = default;
 };
 
 } // namespace camera

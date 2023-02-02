@@ -19,10 +19,10 @@ namespace camera {
  */
 enum class EInitMode : std::uint8_t
 {
-  NONE = 0, //< Value not set
-  CALIBRATED, //< External calibration
-  ESTIMATED, //< Estimated, in the standard pipeline it is estimated from metadata information (FocalLength + sensor width or FocalLengthIn35mm with integer approximation)
-  UNKNOWN //< The camera parameters are unknown (can still have a default value guess)
+    NONE = 0, //< Value not set
+    CALIBRATED, //< External calibration
+    ESTIMATED, //< Estimated, in the standard pipeline it is estimated from metadata information (FocalLength + sensor width or FocalLengthIn35mm with integer approximation)
+    UNKNOWN //< The camera parameters are unknown (can still have a default value guess)
 };
 
 /**
@@ -32,14 +32,14 @@ enum class EInitMode : std::uint8_t
  */
 inline std::string EInitMode_enumToString(EInitMode intrinsicInitMode)
 {
-  switch(intrinsicInitMode)
-  {
-    case EInitMode::CALIBRATED: return "calibrated";
-    case EInitMode::ESTIMATED:  return "estimated";
-    case EInitMode::UNKNOWN:    return "unknown";
-    case EInitMode::NONE:       return "none";
-  }
-  throw std::out_of_range("Invalid Intrinsic init mode enum: " + std::to_string(int(intrinsicInitMode)));
+    switch (intrinsicInitMode)
+    {
+    case EIntrinsicInitMode::CALIBRATED: return "calibrated";
+    case EIntrinsicInitMode::ESTIMATED:  return "estimated";
+    case EIntrinsicInitMode::UNKNOWN:    return "unknown";
+    case EIntrinsicInitMode::NONE:       return "none";
+    }
+    throw std::out_of_range("Invalid Intrinsic init mode enum: " + std::to_string(int(intrinsicInitMode)));
 }
 
 /**
@@ -49,29 +49,29 @@ inline std::string EInitMode_enumToString(EInitMode intrinsicInitMode)
  */
 inline EInitMode EInitMode_stringToEnum(const std::string& intrinsicInitMode)
 {
-  std::string mode = intrinsicInitMode;
-  std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
+    std::string mode = intrinsicInitMode;
+    std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
 
-  if(mode == "calibrated") return EInitMode::CALIBRATED;
-  if(mode == "estimated")  return EInitMode::ESTIMATED;
-  if(mode == "unknown")    return EInitMode::UNKNOWN;
-  if(mode == "none")       return EInitMode::NONE;
+    if (mode == "calibrated") return EIntrinsicInitMode::CALIBRATED;
+    if (mode == "estimated")  return EIntrinsicInitMode::ESTIMATED;
+    if (mode == "unknown")    return EIntrinsicInitMode::UNKNOWN;
+    if (mode == "none")       return EIntrinsicInitMode::NONE;
 
-  throw std::out_of_range("Invalid Intrinsic init mode: " + intrinsicInitMode);
+    throw std::out_of_range("Invalid Intrinsic init mode: " + intrinsicInitMode);
 }
 
 inline std::ostream& operator<<(std::ostream& os, const EInitMode intrinsicInitMode)
 {
-  os << EInitMode_enumToString(intrinsicInitMode);
-  return os;
+    os << EIntrinsicInitMode_enumToString(intrinsicInitMode);
+    return os;
 }
 
 inline std::istream& operator>>(std::istream& in, EInitMode &intrinsicInitMode)
 {
-  std::string token;
-  in >> token;
-  intrinsicInitMode = EInitMode_stringToEnum(token);
-  return in;
+    std::string token;
+    in >> token;
+    intrinsicInitMode = EIntrinsicInitMode_stringToEnum(token);
+    return in;
 }
 
 } // namespace camera

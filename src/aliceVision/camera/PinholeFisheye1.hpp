@@ -26,25 +26,30 @@ namespace camera {
 class PinholeFisheye1 : public Pinhole
 {
 public:
+    explicit PinholeFisheye1(int w = 0, int h = 0,
+                             double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
+                             double offsetX = 0, double offsetY = 0,
+                             double k1 = 0.0,
+                             EInitMode distortionInitializationMode = EInitMode::NONE) :
+        Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
+                std::shared_ptr<Distortion>(new DistortionFisheye1(k1)),
+                distortionInitializationMode)
+    {
+    }
 
-  explicit PinholeFisheye1(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double k1 = 0.0, EInitMode distortionInitializationMode = EInitMode::NONE)
-  :Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new DistortionFisheye1(k1)), distortionInitializationMode)
-  {
-  }
+    PinholeFisheye1* clone() const override
+    {
+        return new PinholeFisheye1(*this);
+    }
 
-  PinholeFisheye1* clone() const override
-  {
-      return new PinholeFisheye1(*this);
-  }
+    void assign(const IntrinsicBase& other) override
+    {
+        *this = dynamic_cast<const PinholeFisheye1&>(other);
+    }
 
-  void assign(const IntrinsicBase& other) override
-  {
-      *this = dynamic_cast<const PinholeFisheye1&>(other);
-  }
+    EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1; }
 
-  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1; }
-
-  ~PinholeFisheye1() override = default;
+    ~PinholeFisheye1() override = default;
 };
 
 } // namespace camera

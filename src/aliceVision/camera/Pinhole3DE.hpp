@@ -17,7 +17,8 @@ namespace aliceVision {
 namespace camera {
 
 /// Implement a Pinhole camera with 3DE radial4 model
-class Pinhole3DERadial4 : public Pinhole {
+class Pinhole3DERadial4 : public Pinhole
+{
 public:
 
     explicit Pinhole3DERadial4(int w = 0, int h = 0,
@@ -42,7 +43,8 @@ public:
 };
 
 /// Implement a Pinhole camera with anamorphic distortion.
-class Pinhole3DEAnamorphic4 : public Pinhole {
+class Pinhole3DEAnamorphic4 : public Pinhole
+{
 public:
 
     explicit Pinhole3DEAnamorphic4(int w = 0, int h = 0,
@@ -65,7 +67,8 @@ public:
 };
 
 /// Implement a Pinhole camera with a 10 anamorphic distortion coefficients.
-class Pinhole3DEClassicLD : public Pinhole {
+class Pinhole3DEClassicLD : public Pinhole
+{
 public:
 
     explicit Pinhole3DEClassicLD(int w = 0, int h = 0,

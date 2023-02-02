@@ -21,16 +21,22 @@ namespace camera {
 /// y_d = y_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6) + (T_1 (r^2 + 2 y_u^2) + 2 T_2 x_u y_u)
 class PinholeBrownT2 : public Pinhole
 {
-    public:
-
-    explicit PinholeBrownT2(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double t1 = 0.0, double t2 = 0.0, EInitMode distortionInitializationMode = EInitMode::NONE)
-    : Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new DistortionBrown(k1, k2, k3, t1, t2)), distortionInitializationMode)
+public:
+    explicit PinholeBrownT2(int w = 0, int h = 0,
+                            double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
+                            double offsetX = 0, double offsetY = 0,
+                            double k1 = 0.0, double k2 = 0.0, double k3 = 0.0,
+                            double t1 = 0.0, double t2 = 0.0,
+                            EInitMode distortionInitializationMode = EInitMode::NONE) :
+        Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
+                std::shared_ptr<Distortion>(new DistortionBrown(k1, k2, k3, t1, t2)),
+                distortionInitializationMode)
     {
     }
 
     PinholeBrownT2* clone() const override { return new PinholeBrownT2(*this); }
     void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeBrownT2&>(other); }
-  
+
     EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_BROWN; }
 
     ~PinholeBrownT2() override = default;
