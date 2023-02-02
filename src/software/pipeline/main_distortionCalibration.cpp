@@ -56,7 +56,8 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
     auto createLines = [&](const calibration::CheckerDetector::CheckerBoard& board,
                            bool exploreByRow,
                            bool replaceRowWithSum, bool replaceColWithSum,
-                           bool flipRow, bool flipCol) -> void {
+                           bool flipRow, bool flipCol) -> void
+    {
         int dim1 = exploreByRow ? board.rows() : board.cols();
         int dim2 = exploreByRow ? board.cols() : board.rows();
 
@@ -116,46 +117,21 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
     return lineWithPoints.size() > 1;
 }
 
-template <class T>
-bool estimateDistortion3DEA4(std::shared_ptr<camera::Undistortion>& undistortion, calibration::Statistics& statistics, std::vector<T>& items)
+bool estimateDistortionMultiStep(std::shared_ptr<camera::Undistortion> undistortion,
+                                 calibration::Statistics& statistics,
+                                 std::vector<calibration::LineWithPoints>& lines,
+                                 std::vector<double> initialParams,
+                                 std::vector<std::vector<bool>> lockSteps)
 {
-    std::vector<double> params(14, 0.0);
-    params[11] = 1.0;
-    params[12] = 1.0;
-    params[13] = 1.0;
-    undistortion->setParameters(params);
+    undistortion->setParameters(initialParams);
 
-    std::vector<bool> locksDistortions(14, true);
-
-    // Everything locked except lines parameters
-    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
+    for (std::size_t i = 0; i < lockSteps.size(); ++i)
     {
-        ALICEVISION_LOG_ERROR("Failed to calibrate with all parameters locked");
-        return false;
-    }
-
-    // Relax few distortion parameters
-    for (std::size_t i = 0; i < 4; ++i)
-    {
-        locksDistortions[i] = false;
-    }
-
-    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate with partial relaxation");
-        return false;
-    }
-
-    // All
-    for (std::size_t i = 4; i < 10; ++i)
-    {
-        locksDistortions[i] = false;
-    }
-
-    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate with full relaxation");
-        return false;
+        if (!calibration::estimate(undistortion, statistics, lines, true, lockSteps[i]))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate at step " << i);
+            return false;
+        }
     }
 
     return true;
@@ -218,7 +194,7 @@ int aliceVision_main(int argc, char* argv[])
     {
         IndexT intrinsicId = pi.first;
 
-        //Convert to pinhole
+        // Convert to pinhole
         std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = pi.second;
         std::shared_ptr<camera::Pinhole> cameraPinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);
         if (!cameraPinhole)
@@ -228,10 +204,13 @@ int aliceVision_main(int argc, char* argv[])
         }
         ALICEVISION_LOG_INFO("Processing Intrinsic " << intrinsicId);
 
-
-        std::shared_ptr<camera::Undistortion> undistortion =
-            std::make_shared<camera::Undistortion3DEAnamorphic4>(cameraPinhole->w(), cameraPinhole->h());
-        sfmData.getUndistortions()[intrinsicId] = undistortion;
+        // Retrieve undistortion object
+        std::shared_ptr<camera::Undistortion> undistortion = cameraPinhole->getUndistortion();
+        if (!undistortion)
+        {
+            ALICEVISION_LOG_ERROR("Only work for cameras that support undistortion");
+            return EXIT_FAILURE;
+        }
 
         // Transform checkerboards to line With points
         std::vector<calibration::LineWithPoints> allLinesWithPoints;
@@ -241,8 +220,6 @@ int aliceVision_main(int argc, char* argv[])
             {
                 continue;
             }
-
-            pv.second->setUndistortionId(intrinsicId);
 
             std::vector<calibration::LineWithPoints> linesWithPoints;
             if (!retrieveLines(linesWithPoints, boardsAllImages[pv.first]))
@@ -255,10 +232,17 @@ int aliceVision_main(int argc, char* argv[])
 
         calibration::Statistics statistics;
 
-        // Estimate distortion
-        if (std::dynamic_pointer_cast<camera::Undistortion3DEAnamorphic4>(undistortion))
+        if (cameraPinhole->getType() == camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4)
         {
-            if (!estimateDistortion3DEA4(undistortion, statistics, allLinesWithPoints))
+            std::vector<double> initialParams = {
+                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0
+            };
+            std::vector<std::vector<bool>> lockSteps = {
+                {true, true, true, true, true, true, true, true, true, true, true, true, true, true},
+                {false, false, false, false, true, true, true, true, true, true, true, true, true, true},
+                {false, false, false, false, false, false, false, false, false, false, true, true, true, true}
+            };
+            if (!estimateDistortionMultiStep(undistortion, statistics, allLinesWithPoints, initialParams, lockSteps))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
@@ -266,7 +250,8 @@ int aliceVision_main(int argc, char* argv[])
         }
         else
         {
-            ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
+            ALICEVISION_LOG_ERROR("The only currently supported undistortion model is 3DEAnamorphic4");
+            return EXIT_FAILURE;
         }
 
         ALICEVISION_LOG_INFO("Result quality of calibration: ");

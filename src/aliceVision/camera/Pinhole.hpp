@@ -36,8 +36,9 @@ public:
             double focalLengthPixX, double focalLengthPixY,
             double offsetX, double offsetY,
             std::shared_ptr<Distortion> distortion = nullptr,
+            std::shared_ptr<Undistortion> undistortion = nullptr,
             EInitMode distortionInitializationMode = EInitMode::NONE) :
-    IntrinsicsScaleOffsetDisto(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, distortionInitializationMode)
+    IntrinsicsScaleOffsetDisto(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, undistortion, distortionInitializationMode)
     {
     }
 

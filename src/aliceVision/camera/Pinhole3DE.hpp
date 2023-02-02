@@ -9,6 +9,7 @@
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/Distortion3DE.hpp>
+#include <aliceVision/camera/Undistortion3DE.hpp>
 
 #include <memory>
 
@@ -40,25 +41,17 @@ public:
     ~Pinhole3DERadial4() override = default;
 };
 
-/// Implement a Pinhole camera with 14 anamorphic distortion coefficients.
+/// Implement a Pinhole camera with anamorphic distortion.
 class Pinhole3DEAnamorphic4 : public Pinhole {
 public:
 
     explicit Pinhole3DEAnamorphic4(int w = 0, int h = 0,
                                    double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
                                    double offsetX = 0, double offsetY = 0,
-                                   double cx02 = 0.0, double cy02 = 0.0,
-                                   double cx22 = 0.0, double cy22 = 0.0,
-                                   double cx04 = 0.0, double cy04 = 0.0,
-                                   double cx24 = 0.0, double cy24 = 0.0,
-                                   double cx44 = 0.0, double cy44 = 0.0,
-                                   double phi = 0.0,
-                                   double sqx = 1.0, double sqy = 1.0,
-                                   double ps = 1.0,
                                    EInitMode distortionInitializationMode = EInitMode::NONE) :
     Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
-            std::shared_ptr<Distortion>(
-                new Distortion3DEAnamorphic4(cx02, cy02, cx22, cy22, cx04, cy04, cx24, cy24, cx44, cy44, phi, sqx, sqy, ps)),
+            std::make_shared<Distortion3DEAnamorphic4>(),
+            std::make_shared<Undistortion3DEAnamorphic4>(w, h),
             distortionInitializationMode)
     {
     }

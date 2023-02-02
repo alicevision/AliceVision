@@ -11,6 +11,7 @@
 #include "IntrinsicInitMode.hpp"
 #include "Distortion.hpp"
 #include "Undistortion.hpp"
+
 #include <memory>
 
 namespace aliceVision {
@@ -24,10 +25,14 @@ class IntrinsicsScaleOffsetDisto : public IntrinsicsScaleOffset
 public:
   IntrinsicsScaleOffsetDisto() = default;
 
-  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY, std::shared_ptr<Distortion> distortion = nullptr, EInitMode distortionInitializationMode = EInitMode::NONE)
-  : IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY)
-  , _pDistortion(distortion)
-  , _distortionInitializationMode(distortionInitializationMode)
+  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h,
+                             double scaleX, double scaleY,
+                             double offsetX, double offsetY,
+                             std::shared_ptr<Distortion> distortion = nullptr,
+                             std::shared_ptr<Undistortion> undistortion = nullptr,
+                             EInitMode distortionInitializationMode = EInitMode::NONE) :
+    IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
+    _pDistortion(distortion), _pUndistortion(undistortion), _distortionInitializationMode(distortionInitializationMode)
   {}
 
   void assign(const IntrinsicBase& other) override
@@ -37,16 +42,16 @@ public:
 
   bool operator==(const IntrinsicBase& otherBase) const override
   {
-      if(!IntrinsicsScaleOffset::operator==(otherBase))
+      if (!IntrinsicsScaleOffset::operator==(otherBase))
           return false;
-      if(typeid(*this) != typeid(otherBase))
+      if (typeid(*this) != typeid(otherBase))
           return false;
       const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
 
       if (_distortionInitializationMode != other._distortionInitializationMode)
           return false;
 
-      if(_pDistortion != nullptr && other._pDistortion != nullptr)
+      if (_pDistortion != nullptr && other._pDistortion != nullptr)
           return (*_pDistortion) == (*other._pDistortion);
       return _pDistortion == other._pDistortion;
   }
@@ -288,6 +293,16 @@ public:
 
   ~IntrinsicsScaleOffsetDisto() override = default;
 
+  void setUndistortionObject(std::shared_ptr<Undistortion> object)
+  {
+    _pUndistortion = object;
+  }
+
+  std::shared_ptr<Undistortion> getUndistortion() const
+  {
+    return _pUndistortion;
+  }
+
 protected:
   void throwSetDistortionParamsCountError(std::size_t expected, std::size_t received)
   {
@@ -299,10 +314,9 @@ protected:
   }
 
   std::shared_ptr<Distortion> _pDistortion;
+  std::shared_ptr<Undistortion> _pUndistortion;
 
   // Distortion initialization mode
   EInitMode _distortionInitializationMode = EInitMode::NONE;
 };
-
 } // namespace camera
-} // namespace aliceVision

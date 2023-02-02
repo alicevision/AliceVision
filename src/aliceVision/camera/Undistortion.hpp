@@ -27,34 +27,6 @@ namespace camera {
 class Undistortion
 {
 public:
-    enum Type
-    {
-        NONE,
-        ANAMORPHIC4
-    };
-
-    static std::string enumToString(Type type)
-    {
-        switch (type)
-        {
-        case ANAMORPHIC4:
-            return "anamorphic4";
-        default:
-            return "none";
-        }
-    }
-
-    static Type stringToEnum(const std::string & typestr)
-    {
-        std::string type = typestr;
-        std::transform(type.begin(), type.end(), type.begin(), ::tolower);
-
-        if (type == "anamorphic4") return Type::ANAMORPHIC4;
-
-        return Type::NONE;
-    }
-
-    static std::shared_ptr<Undistortion> create(const Type& type, int width, int height);
 
     Undistortion(int width, int height)
     {
@@ -104,8 +76,6 @@ public:
     {
         return _undistortionParams.size();
     }
-
-    virtual Type getType() const = 0;
     
     Vec2 undistort(const Vec2& p) const
     {

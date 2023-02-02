@@ -274,22 +274,22 @@ int aliceVision_main(int argc, char** argv)
 
     if(exportFullROD && undistortedImages && outputFileType != image::EImageFileType::EXR)
     {
-    ALICEVISION_LOG_ERROR("Export full RoD (Region Of Definition) is only possible in EXR file format and not in '" << outputFileType << "'.");
-    return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("Export full RoD (Region Of Definition) is only possible in EXR file format and not in '" << outputFileType << "'.");
+        return EXIT_FAILURE;
     }
 
     // load SfMData files
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
-    return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+        return EXIT_FAILURE;
     }
 
     if(sfmData.getViews().empty())
     {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' is empty.");
-    return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' is empty.");
+        return EXIT_FAILURE;
     }
 
     sfmData::SfMData sfmDataFilter;
@@ -297,8 +297,8 @@ int aliceVision_main(int argc, char** argv)
     {
         if(!sfmDataIO::Load(sfmDataFilter, sfmDataFilterFilepath, sfmDataIO::ESfMData::VIEWS))
         {
-        ALICEVISION_LOG_ERROR("The input filter SfMData file '" << sfmDataFilterFilepath << "' cannot be read.");
-        return EXIT_FAILURE;
+            ALICEVISION_LOG_ERROR("The input filter SfMData file '" << sfmDataFilterFilepath << "' cannot be read.");
+            return EXIT_FAILURE;
         }
     }
     system::Timer timer;
@@ -307,40 +307,33 @@ int aliceVision_main(int argc, char** argv)
     sfmData::SfMData sfmDataExport;
     for(auto& viewPair : sfmData.getViews())
     {
-    sfmData::View& view = *(viewPair.second);
+        sfmData::View& view = *(viewPair.second);
 
-    // regex filter
-    if(!viewFilter.empty())
-    {
-        // Skip the view if it does not match the expression filter
-        const std::regex regexFilter = utils::filterToRegex(viewFilter);
-        if(!std::regex_match(view.getImagePath(), regexFilter))
-            continue;
-    }
+        // regex filter
+        if(!viewFilter.empty())
+        {
+            // Skip the view if it does not match the expression filter
+            const std::regex regexFilter = utils::filterToRegex(viewFilter);
+            if(!std::regex_match(view.getImagePath(), regexFilter))
+                continue;
+        }
 
-    // sfmData filter
-    if(!sfmDataFilterFilepath.empty())
-    {
-        // Skip the view if it exist in the sfmDataFilter
-        if(sfmDataFilter.getViews().find(view.getViewId()) != sfmDataFilter.getViews().end())
-            continue;
-    }
+        // sfmData filter
+        if(!sfmDataFilterFilepath.empty())
+        {
+            // Skip the view if it exist in the sfmDataFilter
+            if(sfmDataFilter.getViews().find(view.getViewId()) != sfmDataFilter.getViews().end())
+                continue;
+        }
 
-    sfmDataExport.getViews().emplace(view.getViewId(), viewPair.second);
+        sfmDataExport.getViews().emplace(view.getViewId(), viewPair.second);
 
-    // Export intrinsics if defined
-    if(view.getIntrinsicId() != UndefinedIndexT)
-    {
-        // std::map::emplace does nothing if the key already exist
-        sfmDataExport.getIntrinsics().emplace(view.getIntrinsicId(), sfmData.getIntrinsics().at(view.getIntrinsicId()));
-    }
-
-    // Export intrinsics if defined
-    if (view.getUndistortionId() != UndefinedIndexT)
-    {
-        // std::map::emplace does nothing if the key already exist
-        sfmDataExport.getUndistortions().emplace(view.getUndistortionId(), sfmData.getUndistortions().at(view.getUndistortionId()));
-    }
+        // Export intrinsics if defined
+        if(view.getIntrinsicId() != UndefinedIndexT)
+        {
+            // std::map::emplace does nothing if the key already exist
+            sfmDataExport.getIntrinsics().emplace(view.getIntrinsicId(), sfmData.getIntrinsics().at(view.getIntrinsicId()));
+        }
     }
 
     const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
@@ -352,37 +345,23 @@ int aliceVision_main(int argc, char** argv)
     std::map<std::string, std::map<std::size_t, IndexT>> videoViewPerFrame;
     std::map<std::string, std::vector<std::pair<std::size_t, IndexT>> > dslrViewPerKey;
 
-    std::set<std::pair<IndexT, IndexT>> unique_intrinsics;
-    for (const auto& view : sfmDataExport.getViews())
-    {
-        unique_intrinsics.insert(std::make_pair(view.second->getIntrinsicId(), view.second->getUndistortionId()));
-    }
-
     // export distortion map / one image per intrinsic/undistortion pair
     if(exportUVMaps)
     {
         oiio::ParamValueList targetMetadata;
         targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", "float"));
-        for(const auto& intrinsicPair : unique_intrinsics)
+        for(const auto& intrinsicPair : sfmData.getIntrinsics())
         {
             const IndexT intrinsicId = intrinsicPair.first;
-            const IndexT undistortionId = intrinsicPair.second;
+            const auto intrinsic = intrinsicPair.second;
 
-            const auto intrinsic = sfmDataExport.getIntrinsicsharedPtr(intrinsicId);
             std::shared_ptr<camera::Undistortion> undistortion;
-            if (undistortionId != UndefinedIndexT)
-            {
-                undistortion = sfmDataExport.getUndistortions()[undistortionId];
-            } 
             
             image::Image<image::RGBAfColor> stmap;
             if (intrinsic->isValid())
             {
                 std::shared_ptr<camera::IntrinsicsScaleOffset> iso_source = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
-                if (iso_source == nullptr)
-                {
-                continue;
-                }
+                if (iso_source == nullptr) continue;
 
                 std::shared_ptr<camera::IntrinsicBase> intrinsic_output(intrinsic->clone());
                 std::shared_ptr<camera::IntrinsicsScaleOffset> iso_output =
@@ -397,6 +376,7 @@ int aliceVision_main(int argc, char** argv)
                 if (isod_output)
                 {
                     isod_output->setDistortionObject(nullptr);
+                    undistortion = isod_output->getUndistortion();
                 }
 
                 if (correctPixelRatio)
@@ -427,7 +407,7 @@ int aliceVision_main(int argc, char** argv)
 
                     UndistortMap(stmap, iso_source, iso_output, undistortion, rod);
                     const oiio::ROI roi = convertRodToRoi(intrinsic_output.get(), rod);
-                    writeImage(dstImage, stmap, image::ImageWriteOptions(), targetMetadata, roi);
+                    image::writeImage(dstImage, stmap, image::ImageWriteOptions(), targetMetadata, roi);
                 }
                 else
                 {
@@ -501,18 +481,13 @@ int aliceVision_main(int argc, char** argv)
                     iso_output->setScale(scale);
                 }
 
+                std::shared_ptr<camera::Undistortion> undistortion;
                 std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod_output =
                     std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic_output);
                 if (isod_output)
                 {
                     isod_output->setDistortionObject(nullptr);
-                }
-
-                IndexT undistortionId = view.getUndistortionId();
-                std::shared_ptr<camera::Undistortion> undistortion = nullptr;
-                if (undistortionId != UndefinedIndexT)
-                {
-                    undistortion = sfmData.getUndistortions()[undistortionId];
+                    undistortion = isod_output->getUndistortion();
                 }
                 
                 // undistort the image and save it

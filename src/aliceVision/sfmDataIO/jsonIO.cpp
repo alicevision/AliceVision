@@ -6,7 +6,6 @@
 
 #include "jsonIO.hpp"
 #include <aliceVision/camera/camera.hpp>
-#include <aliceVision/camera/Undistortion.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
@@ -38,9 +37,6 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
 
   if(view.getIntrinsicId() != UndefinedIndexT)
     viewTree.put("intrinsicId", view.getIntrinsicId());
-
-  if (view.getUndistortionId() != UndefinedIndexT)
-      viewTree.put("undistortionId", view.getUndistortionId());
 
   if(view.getResectionId() != UndefinedIndexT)
     viewTree.put("resectionId", view.getResectionId());
@@ -94,7 +90,6 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
 
   view.setFrameId(viewTree.get<IndexT>("frameId", UndefinedIndexT));
   view.setIntrinsicId(viewTree.get<IndexT>("intrinsicId", UndefinedIndexT));
-  view.setUndistortionId(viewTree.get<IndexT>("undistortionId", UndefinedIndexT));
   view.setResectionId(viewTree.get<IndexT>("resectionId", UndefinedIndexT));
   view.setIndependantPose(viewTree.get<bool>("isPoseIndependant", true));
 
@@ -162,6 +157,23 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.put("distortionInitializationMode", camera::EInitMode_enumToString(intrinsicScaleOffsetDisto->getDistortionInitializationMode()));
 
     intrinsicTree.add_child("distortionParams", distParamsTree);
+
+    std::shared_ptr<camera::Undistortion> undistortionObject = intrinsicScaleOffsetDisto->getUndistortion();
+    if (undistortionObject)
+    {
+        saveMatrix("undistortionOffset", undistortionObject->getOffset(), intrinsicTree);
+
+        bpt::ptree undistParamsTree;
+
+        for (double param : undistortionObject->getParameters())
+        {
+            bpt::ptree paramTree;
+            paramTree.put("", param);
+            undistParamsTree.push_back(std::make_pair("", paramTree));
+        }
+
+        intrinsicTree.add_child("undistortionParams", undistParamsTree);
+    }
   }
 
   std::shared_ptr<camera::EquiDistant> intrinsicEquidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
@@ -273,13 +285,35 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     intrinsicWithDistoEnabled->setDistortionInitializationMode(distortionInitializationMode);
 
     std::vector<double> distortionParams;
-    for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
-      distortionParams.emplace_back(paramNode.second.get_value<double>());
+    for (bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
+    {
+        distortionParams.emplace_back(paramNode.second.get_value<double>());
+    }
 
-    //ensure that we have the right number of params
+    // ensure that we have the right number of params
     if (distortionParams.size() == intrinsicWithDistoEnabled->getDistortionParams().size())
     {
         intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
+    }
+
+    std::shared_ptr<camera::Undistortion> undistortionObject = intrinsicWithDistoEnabled->getUndistortion();
+    if (undistortionObject)
+    {
+        std::vector<double> undistortionParams;
+        for (bpt::ptree::value_type &paramNode : intrinsicTree.get_child("undistortionParams"))
+        {
+            undistortionParams.emplace_back(paramNode.second.get_value<double>());
+        }
+
+        // ensure that we have the right number of params
+        if (undistortionParams.size() == undistortionObject->getParameters().size())
+        {
+            undistortionObject->setParameters(undistortionParams);
+        }
+
+        Vec2 offset;
+        loadMatrix("undistortionOffset", offset, intrinsicTree);
+        undistortionObject->setOffset(offset);
     }
   }
 
@@ -291,57 +325,6 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     intrinsicEquiDistant->setCircleCenterY(intrinsicTree.get<double>("fisheyeCircleCenterY", 0.0));
     intrinsicEquiDistant->setCircleRadius(intrinsicTree.get<double>("fisheyeCircleRadius", 1.0));
   }
-}
-
-void saveUndistortion(const std::string& name, IndexT undistortionId, const std::shared_ptr<camera::Undistortion>& undistortion, bpt::ptree& parentTree)
-{
-    bpt::ptree undistortionTree;
-
-    camera::Undistortion::Type type = undistortion->getType();
-
-    undistortionTree.put("undistortionId", undistortionId);
-    undistortionTree.put("type", camera::Undistortion::enumToString(type));
-    
-    saveMatrix("size", undistortion->getSize(), undistortionTree);
-    saveMatrix("offset", undistortion->getOffset(), undistortionTree);
-
-    bpt::ptree paramsTree;
-
-    for (double param : undistortion->getParameters())
-    {
-        bpt::ptree paramTree;
-        paramTree.put("", param);
-        paramsTree.push_back(std::make_pair("", paramTree));
-    }
-
-    undistortionTree.add_child("undistortionParams", paramsTree);
-
-    parentTree.push_back(std::make_pair(name, undistortionTree));
-}
-
-void loadUndistortion(const Version& version, IndexT& undistortionId, std::shared_ptr<camera::Undistortion>& undistortion, bpt::ptree& undistortionTree)
-{
-    undistortionId = undistortionTree.get<IndexT>("undistortionId");
-
-    Vec2 size;
-    loadMatrix("size", size, undistortionTree);
-    camera::Undistortion::Type type = camera::Undistortion::stringToEnum(undistortionTree.get<std::string>("type", ""));
-   
-    undistortion = camera::Undistortion::create(type, size.x(), size.y());
-    if (undistortion)
-    {
-        std::vector<double> undistortionParams;
-        for (bpt::ptree::value_type& paramNode : undistortionTree.get_child("undistortionParams"))
-        {
-            undistortionParams.emplace_back(paramNode.second.get_value<double>());
-        }
-
-        undistortion->setParameters(undistortionParams);
-
-        Vec2 offset;
-        loadMatrix("offset", offset, undistortionTree);
-        undistortion->setOffset(offset);
-    }
 }
 
 void saveRig(const std::string& name, IndexT rigId, const sfmData::Rig& rig, bpt::ptree& parentTree)
@@ -463,7 +446,6 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
   // save flags
   const bool saveViews = (partFlag & VIEWS) == VIEWS;
   const bool saveIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
-  const bool saveUndistortions = (partFlag & UNDISTORTIONS) == UNDISTORTIONS;
   const bool saveExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
   const bool saveStructure = (partFlag & STRUCTURE) == STRUCTURE;
   const bool saveControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
@@ -525,19 +507,6 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
       saveIntrinsic("", intrinsicPair.first, intrinsicPair.second, intrinsicsTree);
 
     fileTree.add_child("intrinsics", intrinsicsTree);
-  }
-
-  // undistortions
-  if(saveUndistortions && !sfmData.getUndistortions().empty())
-  {
-    bpt::ptree undistortionsTree;
-
-    for (const auto& undistortionPair : sfmData.getUndistortions())
-    {
-        saveUndistortion("", undistortionPair.first, undistortionPair.second, undistortionsTree);
-    }
-
-    fileTree.add_child("undistortions", undistortionsTree);
   }
 
   //extrinsics
@@ -609,7 +578,6 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
   // load flags
   const bool loadViews = (partFlag & VIEWS) == VIEWS;
   const bool loadIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
-  const bool loadUndistortions = (partFlag & UNDISTORTIONS) == UNDISTORTIONS;
   const bool loadExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
   const bool loadStructure = (partFlag & STRUCTURE) == STRUCTURE;
   const bool loadControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
@@ -652,22 +620,6 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
 
       intrinsics.emplace(intrinsicId, intrinsic);
     }
-  }
-
-  // Undistortions
-  if (loadUndistortions && fileTree.count("undistortions"))
-  {
-      sfmData::Undistortions& undistortions = sfmData.getUndistortions();
-
-      for (bpt::ptree::value_type& undistortionNode : fileTree.get_child("undistortions"))
-      {
-          IndexT undistortionId;
-          std::shared_ptr<camera::Undistortion> undistortion;
-
-          loadUndistortion(version, undistortionId, undistortion, undistortionNode.second);
-
-          undistortions.emplace(undistortionId, undistortion);
-      }
   }
 
   // views

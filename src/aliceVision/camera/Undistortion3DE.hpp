@@ -29,11 +29,6 @@ public:
 
     Undistortion * clone() const override { return new Undistortion3DEAnamorphic4(*this); }
 
-    virtual Type getType() const override
-    {
-        return ANAMORPHIC4;
-    }
-
     virtual Vec2 undistortNormalized(const Vec2& p) const override
     {
         const double& cx02 = _undistortionParams[0];
