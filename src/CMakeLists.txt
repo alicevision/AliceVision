@@ -471,6 +471,7 @@ endif()
 # ==============================================================================
 set(ALICEVISION_HAVE_OPENCV 0)
 set(ALICEVISION_HAVE_OCVSIFT 0)
+set(ALICEVISION_HAVE_OPENCV_CONTRIB 0)
 
 if(ALICEVISION_BUILD_SFM)
   if(NOT ALICEVISION_USE_OPENCV STREQUAL "OFF")
