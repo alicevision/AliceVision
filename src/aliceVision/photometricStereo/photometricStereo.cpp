@@ -51,7 +51,8 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
 
     writePSResults(outputPath, normals, albedo);
 
-    aliceVision::image::writeImage(outputPath + "/mask.png", mask, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+    aliceVision::image::writeImage(outputPath + "/mask.png", mask, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION));
+
 }
 
 void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const size_t HS_order, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
@@ -107,7 +108,8 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
         photometricStereo(imageList, intList, lightMat, mask, downscale, normals, albedo);
         writePSResults(outputPath, normals, albedo, posesIt.first);
 
-        aliceVision::image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png", mask, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+        aliceVision::image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png", mask, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION));
+
     }
 }
 
@@ -143,9 +145,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         picturePath = imageList.at(0);
 
         aliceVision::image::Image<aliceVision::image::RGBfColor> imageFloat;
-        aliceVision::image::ImageReadOptions options;
-        options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
-        aliceVision::image::readImage(picturePath, imageFloat, options);
+        aliceVision::image::readImage(picturePath, imageFloat, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
         if(downscale > 1)
         {
@@ -167,9 +167,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         picturePath = imageList.at(i);
 
         aliceVision::image::Image<aliceVision::image::RGBfColor> imageFloat;
-        aliceVision::image::ImageReadOptions options;
-        options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
-        aliceVision::image::readImage(picturePath, imageFloat, options);
+        aliceVision::image::readImage(picturePath, imageFloat, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
         if(downscale > 1)
         {

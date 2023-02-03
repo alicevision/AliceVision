@@ -71,9 +71,7 @@ void lightCalibration(const std::vector<std::string>& imageList, const std::arra
 
         // Read picture :
         aliceVision::image::Image<float> imageFloat;
-        aliceVision::image::ImageReadOptions options;
-        options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
-        aliceVision::image::readImage(picturePath, imageFloat, options);
+        aliceVision::image::readImage(picturePath, imageFloat, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
         // Detect brightest point :
         Eigen::Vector2f brigthestPoint;

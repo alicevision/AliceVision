@@ -32,9 +32,7 @@ void normalIntegration(const std::string& inputPath, const bool& perspective, co
     std::string pathToK = inputPath + "/K.txt";
 
     aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG;
-    aliceVision::image::ImageReadOptions options;
-    options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
-    aliceVision::image::readImage(normalMapPath, normalsImPNG, options);
+    aliceVision::image::readImage(normalMapPath, normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
     Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
     readMatrix(pathToK, K);
@@ -70,16 +68,13 @@ void normalIntegration(const std::string& inputPath, const bool& perspective, co
 
     std::string pathToDM = outputFodler + "/output.exr";
 
-    oiio::ParamValueList metadata;
-    metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
-    aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
+    aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
+
 }
 
 void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler)
 {
     aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG;
-    aliceVision::image::ImageReadOptions options;
-    options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
 
     Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
     IndexT viewId;
@@ -91,7 +86,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         for(auto& poseIt: sfmData.getPoses())
         {
             // Read associated normal map :
-            aliceVision::image::readImage(inputPath + "/" + std::to_string(poseIt.first) + "_normals.png", normalsImPNG, options);
+            aliceVision::image::readImage(inputPath + "/" + std::to_string(poseIt.first) + "_normals.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
             int nbCols = normalsImPNG.cols();
             int nbRows = normalsImPNG.rows();
@@ -182,10 +177,12 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
             std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
             Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
-            oiio::ParamValueList metadata;
-            metadata.attribute("AliceypeDesc::DOUBLE, oiio::TypeDesVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
-            metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, P.data()));
-            aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
+            //oiio::ParamValueList metadata;
+            //metadata.attribute("AliceypeDesc::DOUBLE, oiio::TypeDesVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
+            //metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, P.data()));
+            //aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
+            aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
+
 
         }
     }
@@ -196,7 +193,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         poseId = sfmData.getViews().begin()->second->getPoseId();
 
         // Read associated normal map :
-        aliceVision::image::readImage(inputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, options);
+        aliceVision::image::readImage(inputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
         int nbCols = normalsImPNG.cols();
         int nbRows = normalsImPNG.rows();
@@ -258,10 +255,8 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         convertZtoDistance(depthMap, distanceMap, K);
 
         std::string pathToDM = outputFodler + "/" + std::to_string(poseId) + "_depthMap.exr";
-        oiio::ParamValueList metadata;
-        metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
+        aliceVision::image::writeImage(pathToDM, depthMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
 
-        aliceVision::image::writeImage(pathToDM, depthMap, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
     }
 }
 
