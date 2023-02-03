@@ -440,7 +440,8 @@ void readImage(const std::string& path,
 
     if (isRawImage)
     {
-        if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+        if ((imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ||
+            (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata))
         {
             oiio::ParamValueList imgMetadata = readImageMetadata(path);
             std::string cam_mul = "";
