@@ -21,7 +21,6 @@ namespace camera {
 class Distortion
 {
 public:
-
     Distortion() = default;
 
     virtual Distortion* clone() const = 0;
@@ -32,12 +31,17 @@ public:
         return _distortionParams == other._distortionParams;
     }
 
-    std::vector<double>& getParameters()
+    inline std::vector<double>& getParameters() 
     {
         return _distortionParams;
     }
 
-    size_t getDistortionParametersCount()
+    inline const std::vector<double>& getParameters() const
+    {
+        return _distortionParams;
+    }
+
+    inline std::size_t getDistortionParametersCount() const
     {
         return _distortionParams.size();
     }

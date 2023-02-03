@@ -10,7 +10,7 @@
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/DistortionFisheye1.hpp>
 
-#include <vector>
+#include <memory>
 
 namespace aliceVision {
 namespace camera {

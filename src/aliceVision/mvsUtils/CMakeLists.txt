@@ -21,6 +21,7 @@ set(mvsUtils_files_sources
 alicevision_add_library(aliceVision_mvsUtils
   SOURCES ${mvsUtils_files_headers} ${mvsUtils_files_sources}
   PUBLIC_LINKS
+    aliceVision_camera
     aliceVision_image
     aliceVision_numeric
     aliceVision_multiview

@@ -11,7 +11,6 @@
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/stl/hash.hpp>
 #include <aliceVision/version.hpp>
 
 #include <vector>
@@ -83,27 +82,7 @@ public:
      * @param[in] other
      * @return True if equals
      */
-    virtual bool operator==(const IntrinsicBase& other) const
-    {
-        if (getParams().size() != other.getParams().size())
-        {
-            return false;
-        }
-        for (std::size_t i = 0; i < getParams().size(); ++i)
-        {
-            if (!isSimilar(getParams()[i], other.getParams()[i]))
-            {
-                return false;
-            }
-        }
-        return _w == other._w &&
-                _h == other._h &&
-                _sensorWidth == other._sensorWidth &&
-                _sensorHeight == other._sensorHeight &&
-                _serialNumber == other._serialNumber &&
-                _initializationMode == other._initializationMode &&
-                getType() == other.getType();
-    }
+    virtual bool operator==(const IntrinsicBase& other) const;
 
     inline bool operator!=(const IntrinsicBase& other) const { return !(*this == other); }
 
@@ -124,40 +103,11 @@ public:
      * @param[in] depth The depth
      * @return The 3d point
      */
-    Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const
-    {
-        const Vec2 pt2D_cam = ima2cam(pt2D);
-        const Vec2 pt2D_undist = applyUndistortion ? removeDistortion(pt2D_cam) : pt2D_cam;
+    Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const;
 
-        const Vec3 pt3d = depth * toUnitSphere(pt2D_undist);
-        const Vec3 output = pose.inverse()(pt3d);
-        return output;
-    }
+    Vec4 getCartesianfromSphericalCoordinates(const Vec3 & pt);
 
-    Vec4 getCartesianfromSphericalCoordinates(const Vec3 & pt)
-    {
-        double u = pt(0);
-        double v = pt(1);
-
-        Vec4 rpt;
-        rpt.x() = pt(0);
-        rpt.y() = pt(1);
-        rpt.z() = 1.0;
-        rpt.w() = pt(2);
-
-        return rpt;
-    }
-
-    Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(const Vec3 & pt)
-    {
-        Eigen::Matrix<double, 4, 3> ret = Eigen::Matrix<double, 4, 3>::Zero();
-
-        ret(0, 0) = 1.0;
-        ret(1, 1) = 1.0;
-        ret(3, 2) = 1.0;
-
-        return ret;
-    }
+    Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(const Vec3 & pt);
 
     /**
      * @brief get derivative of a projection of a 3D point into the camera plane
@@ -389,14 +339,7 @@ public:
      * @param pix input pixel coordinates to check for visibility
      * @return true if visible
      */
-    virtual bool isVisible(const Vec2 & pix) const
-    {
-    if (pix(0) < 0 || pix(0) >= _w || pix(1) < 0 || pix(1) >= _h) {
-        return false;
-    }
-
-    return true;
-    }
+    virtual bool isVisible(const Vec2 & pix) const;
 
     /**
      * @brief Assuming the distortion is a function of radius, estimate the 
@@ -405,42 +348,19 @@ public:
      * @param max_radius the maximal radius to consider
      * @return the maximal undistorted radius
      */
-    virtual float getMaximalDistortion(double min_radius, double max_radius) const
-    {
-        /*Without distortion, obvious*/
-        return max_radius;
-    }
+    virtual float getMaximalDistortion(double min_radius, double max_radius) const;
 
     /**
      * @brief Generate an unique Hash from the camera parameters (used for grouping)
      * @return Unique Hash from the camera parameters
      */
-    virtual std::size_t hashValue() const
-    {
-        size_t seed = 0;
-        stl::hash_combine(seed, static_cast<int>(this->getType()));
-        stl::hash_combine(seed, _w);
-        stl::hash_combine(seed, _h);
-        stl::hash_combine(seed, _sensorWidth);
-        stl::hash_combine(seed, _sensorHeight);
-        stl::hash_combine(seed, _serialNumber);
-        const std::vector<double> params = this->getParams();
-        for (double param : params)
-        {
-            stl::hash_combine(seed, param);
-        }
-        return seed;
-    }
+    virtual std::size_t hashValue() const;
 
     /**
      * @brief Rescale intrinsics to reflect a rescale of the camera image
      * @param factor a scale factor
      */
-    virtual void rescale(float factor)
-    {
-        _w = (unsigned int)(floor(float(_w) * factor));
-        _h = (unsigned int)(floor(float(_h) * factor));
-    }
+    virtual void rescale(float factor);
 
     /**
      * @brief transform a given point (in pixels) to unit sphere in meters

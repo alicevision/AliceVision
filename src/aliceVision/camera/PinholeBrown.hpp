@@ -11,7 +11,7 @@
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/DistortionBrown.hpp>
 
-#include <vector>
+#include <memory>
 
 namespace aliceVision {
 namespace camera {

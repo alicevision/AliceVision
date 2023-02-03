@@ -41,21 +41,7 @@ public:
         *this = dynamic_cast<const IntrinsicsScaleOffsetDisto&>(other);
     }
 
-    bool operator==(const IntrinsicBase& otherBase) const override
-    {
-        if (!IntrinsicsScaleOffset::operator==(otherBase))
-            return false;
-        if (typeid(*this) != typeid(otherBase))
-            return false;
-        const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
-
-        if (_distortionInitializationMode != other._distortionInitializationMode)
-            return false;
-
-        if (_pDistortion != nullptr && other._pDistortion != nullptr)
-            return (*_pDistortion) == (*other._pDistortion);
-        return _pDistortion == other._pDistortion;
-    }
+    bool operator==(const IntrinsicBase& otherBase) const override;
 
     void setDistortionObject(std::shared_ptr<Distortion> object)
     {
@@ -87,16 +73,10 @@ public:
     }
 
     /// Return the un-distorted pixel (with removed distortion)
-    Vec2 get_ud_pixel(const Vec2& p) const override
-    {
-        return cam2ima(removeDistortion(ima2cam(p)));
-    }
+    Vec2 get_ud_pixel(const Vec2& p) const override;
 
     /// Return the distorted pixel (with added distortion)
-    Vec2 get_d_pixel(const Vec2& p) const override
-    {
-        return cam2ima(addDistortion(ima2cam(p)));
-    }
+    Vec2 get_d_pixel(const Vec2& p) const override;
 
     std::size_t getDistortionParamsSize() const
     {

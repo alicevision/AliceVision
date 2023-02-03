@@ -12,7 +12,7 @@
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/DistortionRadial.hpp>
 
-#include <vector>
+#include <memory>
 
 namespace aliceVision {
 namespace camera {

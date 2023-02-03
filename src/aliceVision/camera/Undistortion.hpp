@@ -59,7 +59,7 @@ public:
         return _size;
     }
 
-    const std::vector<double>& getParameters()
+    const std::vector<double>& getParameters() const
     {
         return _undistortionParams;
     }
@@ -72,89 +72,19 @@ public:
         }
     }
 
-    size_t getUndistortionParametersCount()
+    std::size_t getUndistortionParametersCount() const
     {
         return _undistortionParams.size();
     }
     
-    Vec2 undistort(const Vec2& p) const
-    {
-        Vec2 centered;
+    Vec2 undistort(const Vec2& p) const;
 
-        centered(0) = p(0) - _center(0) -_offset(0);
-        centered(1) = p(1) - _center(1) -_offset(1);
+    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortWrtParameters(const Vec2 &p);
 
-        Vec2 normalized;
-        normalized(0) = centered(0) / _diagonal;
-        normalized(1) = centered(1) / _diagonal;
-
-        Vec2 undistorted = undistortNormalized(normalized);
-        Vec2 unnormalized;
-
-        unnormalized(0) = undistorted(0) * _diagonal + _center(0) + _offset(0);
-        unnormalized(1) = undistorted(1) * _diagonal + _center(1) + _offset(1);
-
-        return unnormalized;
-    }
-
-    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortWrtParameters(const Vec2 &p)
-    {
-        Vec2 centered = p - _center - _offset;
-        Vec2 normalized = centered / _diagonal;
-        Vec2 undistorted = undistortNormalized(normalized);
-        Vec2 unnormalized = undistorted * _diagonal + _center + _offset;
-
-        Eigen::Matrix<double, 2, 2> d_unnormalized_d_undistorted;
-        d_unnormalized_d_undistorted(0, 0) = _diagonal;
-        d_unnormalized_d_undistorted(0, 1) = 0;
-        d_unnormalized_d_undistorted(1, 0) = 0;
-        d_unnormalized_d_undistorted(1, 1) = _diagonal;
-
-        return d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtParameters(normalized);
-    }
-
-    Eigen::Matrix<double, 2, 2> getDerivativeUndistortWrtOffset(const Vec2 &p)
-    {
-        Vec2 centered = p - _center - _offset;
-        Vec2 normalized = centered / _diagonal;
-        Vec2 undistorted = undistortNormalized(normalized);
-        Vec2 unnormalized = undistorted * _diagonal + _center + _offset;
-
-        Eigen::Matrix<double, 2, 2> d_unnormalized_d_undistorted;
-        d_unnormalized_d_undistorted(0, 0) = _diagonal;
-        d_unnormalized_d_undistorted(0, 1) = 0;
-        d_unnormalized_d_undistorted(1, 0) = 0;
-        d_unnormalized_d_undistorted(1, 1) = _diagonal;
-
-        Eigen::Matrix<double, 2, 2> d_normalized_d_centered;
-        d_normalized_d_centered(0, 0) = 1.0 / _diagonal;
-        d_normalized_d_centered(0, 1) = 0;
-        d_normalized_d_centered(1, 0) = 0;
-        d_normalized_d_centered(1, 1) = 1.0 / _diagonal;
-
-        return Eigen::Matrix2d::Identity() + d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtPoint(normalized) * d_normalized_d_centered * -1.0;
-    }
+    Eigen::Matrix<double, 2, 2> getDerivativeUndistortWrtOffset(const Vec2 &p);
 
     /// add distortion (return p' such that undisto(p') = p)
-    Vec2 inverse(const Vec2& p) const
-    {
-        Vec2 centered;
-
-        centered(0) = p(0) - _center(0) - _offset(0);
-        centered(1) = p(1) - _center(1) - _offset(1);
-
-        Vec2 normalized;
-        normalized(0) = centered(0) / _diagonal;
-        normalized(1) = centered(1) / _diagonal;
-
-        Vec2 distorted = inverseNormalized(normalized);
-        Vec2 unnormalized;
-
-        unnormalized(0) = distorted(0) * _diagonal + _center(0) + _offset(0);
-        unnormalized(1) = distorted(1) * _diagonal + _center(1) + _offset(1);
-
-        return unnormalized;
-    }
+    Vec2 inverse(const Vec2& p) const;
     
     virtual Vec2 inverseNormalized(const Vec2& p) const = 0;
     virtual Vec2 undistortNormalized(const Vec2& p) const = 0;

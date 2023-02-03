@@ -11,7 +11,8 @@
 #include <aliceVision/camera/Equidistant.hpp>
 #include <aliceVision/camera/DistortionRadial.hpp>
 
-#include <vector>
+#include <algorithm>
+#include <memory>
 
 namespace aliceVision {
 namespace camera {

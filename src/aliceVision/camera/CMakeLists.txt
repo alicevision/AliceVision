@@ -26,7 +26,18 @@ set(camera_files_headers
 )
 
 set(camera_files_sources
+    Distortion3DE.cpp
+    DistortionBrown.cpp
+    DistortionFisheye.cpp
+    DistortionFisheye1.cpp
+    DistortionRadial.cpp
+    Equidistant.cpp
+    IntrinsicBase.cpp
+    IntrinsicsScaleOffset.cpp
+    IntrinsicsScaleOffsetDisto.cpp
+    Pinhole.cpp
 	Undistortion.cpp
+    Undistortion3DE.cpp
 )
 
 alicevision_add_library(aliceVision_camera

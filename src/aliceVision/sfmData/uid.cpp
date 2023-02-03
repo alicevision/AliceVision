@@ -8,6 +8,7 @@
 #include "uid.hpp"
 
 #include <aliceVision/sfmData/View.hpp>
+#include <aliceVision/stl/hash.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp> 
 #include <boost/filesystem.hpp>
