@@ -222,6 +222,16 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           ext = "exr";
           break;
       }
+      case EFileType::simMap:
+      {
+          if(scale == 0)
+              folder = mp.getDepthMapsFilterFolder();
+          else
+              folder = mp.getDepthMapsFolder();
+          suffix = "_simMap";
+          ext = "exr";
+          break;
+      }
       case EFileType::normalMap:
       {
           if(scale == 0)
@@ -232,13 +242,17 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           ext = "exr";
           break;
       }
-      case EFileType::simMap:
+      case EFileType::thiknessMap:
       {
-          if(scale == 0)
-              folder = mp.getDepthMapsFilterFolder();
-          else
-              folder = mp.getDepthMapsFolder();
-          suffix = "_simMap";
+          folder = mp.getDepthMapsFolder();
+          suffix = "_thiknessMap";
+          ext = "exr";
+          break;
+      }
+      case EFileType::pixSizeMap:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_pixSizeMap";
           ext = "exr";
           break;
       }
@@ -283,7 +297,14 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
       case EFileType::volumeCross:
       {
           folder = mp.getDepthMapsFolder();
-          suffix = "_volume-cross";
+          suffix = "_volumeCross";
+          ext = "abc";
+          break;
+      }
+      case EFileType::volumeTopographicCut:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_volumeTopographicCut";
           ext = "abc";
           break;
       }
@@ -299,20 +320,6 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           folder = mp.getDepthMapsFolder();
           suffix = "_tilePattern";
           ext = "obj";
-          break;
-      }
-      case EFileType::depthThiknessMap:
-      {
-          folder = mp.getDepthMapsFolder();
-          suffix = "_depthThiknessMap";
-          ext = "exr";
-          break;
-      }
-      case EFileType::volumeTopographicCut:
-      {
-          folder = mp.getDepthMapsFolder();
-          suffix = "_volumeTopographicCut";
-          ext = "abc";
           break;
       }
   }
