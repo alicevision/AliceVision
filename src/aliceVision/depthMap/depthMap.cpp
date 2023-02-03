@@ -129,7 +129,10 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& dept
     double sgmTileCostMB = 0.0;
     double sgmTileCostUnpaddedMB = 0.0;
     {
-      Sgm sgm(mp, depthMapParams.tileParams, depthMapParams.sgmParams, 0 /*stream*/);
+      const bool sgmComputeDepthSimMap = !depthMapParams.useRefine;
+      const bool sgmComputeNormalMap = depthMapParams.refineParams.useSgmNormalMap;
+
+      Sgm sgm(mp, depthMapParams.tileParams, depthMapParams.sgmParams, sgmComputeDepthSimMap, sgmComputeNormalMap, 0 /*stream*/);
       sgmTileCostMB = sgm.getDeviceMemoryConsumption();
       sgmTileCostUnpaddedMB = sgm.getDeviceMemoryConsumptionUnpadded();
     }
@@ -374,14 +377,20 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     sgmPerStream.reserve(nbStreams);
     refinePerStream.reserve(depthMapParams.useRefine ? nbStreams : 0);
 
-    // initialize Sgm objects
-    for(int i = 0; i < nbStreams; ++i)
-      sgmPerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.sgmParams, deviceStreamManager.getStream(i));
+    // initialize Sgm and Refine objects
+    {
+        const bool sgmComputeDepthSimMap = !depthMapParams.useRefine;
+        const bool sgmComputeNormalMap = depthMapParams.refineParams.useSgmNormalMap;
 
-    // initialize Refine objects
-    if(depthMapParams.useRefine)
-      for(int i = 0; i < nbStreams; ++i)
-          refinePerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.refineParams, deviceStreamManager.getStream(i));
+        // initialize Sgm objects
+        for(int i = 0; i < nbStreams; ++i)
+          sgmPerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.sgmParams, sgmComputeDepthSimMap, sgmComputeNormalMap, deviceStreamManager.getStream(i));
+
+        // initialize Refine objects
+        if(depthMapParams.useRefine)
+          for(int i = 0; i < nbStreams; ++i)
+              refinePerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.refineParams, deviceStreamManager.getStream(i));
+    }
 
     // allocate final deth/similarity map tile list in host memory
     std::vector<std::vector<CudaHostMemoryHeap<float2, 2>>> depthSimMapTilePerCam(nbRcPerBatch);
@@ -507,7 +516,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             if(depthMapParams.useRefine)
             {
               Refine& refine = refinePerStream.at(streamIndex);
-              refine.refineRc(tile, sgm.getDeviceDepthSimMap(), sgm.getDeviceDepthThiknessMap(), sgm.getDeviceNormalMap());
+              refine.refineRc(tile, sgm.getDeviceDepthThiknessMap(), sgm.getDeviceNormalMap());
 
               // copy Refine depth/similarity map from device to host
               tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));
@@ -556,11 +565,6 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "sgm");
             }
 
-            if(depthMapParams.sgmParams.exportIntermediateDepthThiknessMaps)
-            {
-                mergeDepthThiknessMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "sgm");
-            }
-
             if(depthMapParams.sgmParams.exportIntermediateNormalMaps)
             {
                 mergeNormalMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "sgm");
@@ -570,7 +574,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             {
                 if(depthMapParams.refineParams.exportIntermediateDepthSimMaps)
                 {
-                    mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "sgmUpscaled");
+                    mergeDepthPixSizeMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "sgmUpscaled");
                     mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "refinedFused");
                 }
 

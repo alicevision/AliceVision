@@ -20,50 +20,81 @@
 namespace aliceVision {
 namespace depthMap {
 
-void copyDepthSimMap(image::Image<float>& out_depthMap, image::Image<float>& out_simMap, const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh, const ROI& roi, int downscale)
+void copyFloat2Map(image::Image<float>& out_mapX, image::Image<float>& out_mapY, const CudaHostMemoryHeap<float2, 2>& in_map_hmh, const ROI& roi, int downscale)
 {
     const ROI downscaledROI = downscaleROI(roi, downscale);
     const int width  = int(downscaledROI.width());
     const int height = int(downscaledROI.height());
 
     // resize output images
-    out_depthMap.resize(width, height);
-    out_simMap.resize(width, height);
+    out_mapX.resize(width, height);
+    out_mapY.resize(width, height);
 
     // copy image from host memory to output images
     for(int x = 0; x < width; ++x)
     {
         for(int y = 0; y < height; ++y)
         {
-            const float2& depthSim = in_depthSimMap_hmh(x, y);
-            out_depthMap(y, x) = depthSim.x;
-            out_simMap(y, x) = depthSim.y;
+            const float2& value = in_map_hmh(size_t(x), size_t(y));
+            out_mapX(y, x) = value.x;
+            out_mapY(y, x) = value.y;
         }
     }
 }
 
-void copyDepthSimMap(image::Image<float>& out_depthMap, image::Image<float>& out_simMap, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const ROI& roi, int downscale)
+void copyFloat2Map(image::Image<float>& out_mapX, image::Image<float>& out_mapY, const CudaDeviceMemoryPitched<float2, 2>& in_map_dmp, const ROI& roi, int downscale)
 {
-    // copy depth/sim maps from device pitched memory to host memory
-    CudaHostMemoryHeap<float2, 2> depthSimMap_hmh(in_depthSimMap_dmp.getSize());
-    depthSimMap_hmh.copyFrom(in_depthSimMap_dmp);
+    // copy float2 map from device pitched memory to host memory
+    CudaHostMemoryHeap<float2, 2> map_hmh(in_map_dmp.getSize());
+    map_hmh.copyFrom(in_map_dmp);
 
-    copyDepthSimMap(out_depthMap, out_simMap, depthSimMap_hmh, roi, downscale);
+    copyFloat2Map(out_mapX, out_mapY, map_hmh, roi, downscale);
 }
 
-void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth, float sim)
+void writeFloat2Map(int rc,
+                    const mvsUtils::MultiViewParams& mp,
+                    const mvsUtils::TileParams& tileParams,
+                    const ROI& roi,
+                    const CudaHostMemoryHeap<float2, 2>& in_map_hmh,
+                    const mvsUtils::EFileType fileTypeX,
+                    const mvsUtils::EFileType fileTypeY,
+                    int scale,
+                    int step,
+                    const std::string& name)
 {
-  const CudaSize<2>& depthSimMapSize = inout_depthSimMap_hmh.getSize();
+    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
+    const int scaleStep = scale * step;
 
-  for(size_t x = 0; x < depthSimMapSize.x(); ++x)
-  {
-      for(size_t y = 0; y < depthSimMapSize.y(); ++y)
-      {
-          float2& depthSim_hmh = inout_depthSimMap_hmh(x, y);
-          depthSim_hmh.x = depth;
-          depthSim_hmh.y = sim;
-      }
-  }
+    image::Image<float> mapX;
+    image::Image<float> mapY;
+
+    copyFloat2Map(mapX, mapY, in_map_hmh, roi, scaleStep);
+
+    mvsUtils::writeMap(rc, mp, fileTypeX, tileParams, roi, mapX, scale, step, customSuffix);
+    mvsUtils::writeMap(rc, mp, fileTypeY, tileParams, roi, mapY, scale, step, customSuffix);
+}
+
+void writeFloat2Map(int rc,
+                    const mvsUtils::MultiViewParams& mp,
+                    const mvsUtils::TileParams& tileParams,
+                    const ROI& roi,
+                    const CudaDeviceMemoryPitched<float2, 2>& in_map_dmp,
+                    const mvsUtils::EFileType fileTypeX,
+                    const mvsUtils::EFileType fileTypeY,
+                    int scale,
+                    int step,
+                    const std::string& name)
+{
+    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
+    const int scaleStep = scale * step;
+
+    image::Image<float> mapX;
+    image::Image<float> mapY;
+
+    copyFloat2Map(mapX, mapY, in_map_dmp, roi, scaleStep);
+
+    mvsUtils::writeMap(rc, mp, fileTypeX, tileParams, roi, mapX, scale, step, customSuffix);
+    mvsUtils::writeMap(rc, mp, fileTypeY, tileParams, roi, mapY, scale, step, customSuffix);
 }
 
 void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path) 
@@ -91,34 +122,6 @@ void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, co
 
     // write the image buffer
     image::writeImage(path, img, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
-}
-
-void writeDepthThiknessMap(int rc,
-                           const mvsUtils::MultiViewParams& mp,
-                           const mvsUtils::TileParams& tileParams,
-                           const ROI& roi,
-                           const CudaDeviceMemoryPitched<float, 2>& in_depthThiknessMap_dmp,
-                           int scale,
-                           int step,
-                           const std::string& name)
-{
-  const ROI downscaledROI = downscaleROI(roi, scale * step);
-  const int width  = int(downscaledROI.width());
-  const int height = int(downscaledROI.height());
-
-  // copy map from device pitched memory to host memory
-  CudaHostMemoryHeap<float, 2> map_hmh(in_depthThiknessMap_dmp.getSize());
-  map_hmh.copyFrom(in_depthThiknessMap_dmp);
-
-  // copy map from host memory to an Image
-  image::Image<float> map(width, height);
-
-  for(size_t x = 0; x < width; ++x)
-      for(size_t y = 0; y < height; ++y)
-          map(int(y), int(x)) = map_hmh(x, y);
-
-  // write map from the image buffer
-  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthThiknessMap, tileParams, roi, map, scale, step, (name.empty()) ? "" : "_" + name);
 }
 
 void writeNormalMap(int rc,
@@ -157,25 +160,36 @@ void writeNormalMap(int rc,
   mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::normalMap, tileParams, roi, map, scale, step, (name.empty()) ? "" : "_" + name);
 }
 
-void writeDepthSimMap(int rc,
-                      const mvsUtils::MultiViewParams& mp,
-                      const mvsUtils::TileParams& tileParams,
-                      const ROI& roi, 
-                      const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
-                      int scale,
-                      int step,
-                      const std::string& name)
+
+void writeDepthThiknessMap(int rc,
+                           const mvsUtils::MultiViewParams& mp,
+                           const mvsUtils::TileParams& tileParams,
+                           const ROI& roi,
+                           const CudaDeviceMemoryPitched<float2, 2>& in_depthThiknessMap_dmp,
+                           int scale,
+                           int step,
+                           const std::string& name)
 {
-    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
-    const int scaleStep = scale * step;
+    const mvsUtils::EFileType fileTypeX = mvsUtils::EFileType::depthMap;
+    const mvsUtils::EFileType fileTypeY = mvsUtils::EFileType::thiknessMap;
 
-    image::Image<float> depthMap;
-    image::Image<float> simMap;
+    writeFloat2Map(rc, mp, tileParams, roi, in_depthThiknessMap_dmp, fileTypeX, fileTypeY, scale, step, name);
+}
 
-    copyDepthSimMap(depthMap, simMap, in_depthSimMap_hmh, roi, scaleStep);
 
-    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthMap, tileParams, roi, depthMap, scale, step, customSuffix);
-    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   tileParams, roi, simMap,   scale, step, customSuffix);
+void writeDepthPixSizeMap(int rc,
+                          const mvsUtils::MultiViewParams& mp,
+                          const mvsUtils::TileParams& tileParams,
+                          const ROI& roi,
+                          const CudaDeviceMemoryPitched<float2, 2>& in_depthPixSize_dmp,
+                          int scale,
+                          int step,
+                          const std::string& name)
+{
+  const mvsUtils::EFileType fileTypeX = mvsUtils::EFileType::depthMap;
+  const mvsUtils::EFileType fileTypeY = mvsUtils::EFileType::pixSizeMap;
+
+  writeFloat2Map(rc, mp, tileParams, roi, in_depthPixSize_dmp, fileTypeX, fileTypeY, scale, step, name);
 }
 
 void writeDepthSimMap(int rc,
@@ -187,16 +201,10 @@ void writeDepthSimMap(int rc,
                       int step,
                       const std::string& name)
 {
-    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
-    const int scaleStep = scale * step;
+  const mvsUtils::EFileType fileTypeX = mvsUtils::EFileType::depthMap;
+  const mvsUtils::EFileType fileTypeY = mvsUtils::EFileType::simMap;
 
-    image::Image<float> depthMap;
-    image::Image<float> simMap;
-
-    copyDepthSimMap(depthMap, simMap, in_depthSimMap_dmp, roi, scaleStep);
-
-    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthMap, tileParams, roi, depthMap, scale, step, customSuffix);
-    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   tileParams, roi, simMap,   scale, step, customSuffix);
+  writeFloat2Map(rc, mp, tileParams, roi, in_depthSimMap_dmp, fileTypeX, fileTypeY, scale, step, name);
 }
 
 void writeDepthSimMapFromTileList(int rc,
@@ -232,7 +240,7 @@ void writeDepthSimMapFromTileList(int rc,
     image::Image<float> tileSimMap;
 
     // copy tile depth/sim map from host memory
-    copyDepthSimMap(tileDepthMap, tileSimMap, in_depthSimMapTiles_hmh.at(i), roi, scaleStep);
+    copyFloat2Map(tileDepthMap, tileSimMap, in_depthSimMapTiles_hmh.at(i), roi, scaleStep);
 
     // add tile maps to the full-size maps with weighting
     mvsUtils::addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileDepthMap, depthMap);
@@ -244,19 +252,19 @@ void writeDepthSimMapFromTileList(int rc,
   mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   simMap,   scale, step, customSuffix); // write the merged similarity map
 }
 
-void mergeDepthThiknessMapTiles(int rc,
-                                const mvsUtils::MultiViewParams& mp,
-                                int scale,
-                                int step,
-                                const std::string& name)
+void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth, float sim)
 {
-  const std::string customSuffix = (name.empty()) ? "" : "_" + name;
+  const CudaSize<2>& depthSimMapSize = inout_depthSimMap_hmh.getSize();
 
-  image::Image<float> map;
-
-  mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthThiknessMap, map, scale, step, customSuffix);  // read and merge map tiles
-  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthThiknessMap, map, scale, step, customSuffix); // write the merged map
-  mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::depthThiknessMap, scale, step, customSuffix); // delete map tile files
+  for(size_t x = 0; x < depthSimMapSize.x(); ++x)
+  {
+      for(size_t y = 0; y < depthSimMapSize.y(); ++y)
+      {
+          float2& depthSim_hmh = inout_depthSimMap_hmh(x, y);
+          depthSim_hmh.x = depth;
+          depthSim_hmh.y = sim;
+      }
+  }
 }
 
 void mergeNormalMapTiles(int rc,
@@ -271,8 +279,46 @@ void mergeNormalMapTiles(int rc,
 
     mvsUtils::readMap(rc, mp, mvsUtils::EFileType::normalMap, normalMap, scale, step, customSuffix);  // read and merge normal map tiles
     mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::normalMap, normalMap, scale, step, customSuffix); // write the merged normal map
-    mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::normalMap, scale, step, customSuffix); // delete normal map tile files
+    mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::normalMap, scale, step, customSuffix);      // delete normal map tile files
 }
+
+void mergeFloatMapTiles(int rc,
+                        const mvsUtils::MultiViewParams& mp,
+                        const mvsUtils::EFileType fileType,
+                        int scale,
+                        int step,
+                        const std::string& name)
+{
+    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
+
+    image::Image<float> map;
+
+    mvsUtils::readMap(rc, mp, fileType, map, scale, step, customSuffix);   // read and merge depth map tiles
+    mvsUtils::writeMap(rc, mp, fileType, map, scale, step, customSuffix);  // write the merged depth map
+    mvsUtils::deleteMapTiles(rc, mp, fileType, scale, step, customSuffix); // delete depth map tile files
+
+}
+
+void mergeDepthThiknessMapTiles(int rc,
+                                const mvsUtils::MultiViewParams& mp,
+                                int scale,
+                                int step,
+                                const std::string& name)
+{
+  mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::depthMap, scale, step, name);
+  mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::thiknessMap, scale, step, name);
+}
+
+void mergeDepthPixSizeMapTiles(int rc,
+                               const mvsUtils::MultiViewParams& mp,
+                               int scale,
+                               int step,
+                               const std::string& name)
+{
+  mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::depthMap, scale, step, name);
+  mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::pixSizeMap, scale, step, name);
+}
+
 
 void mergeDepthSimMapTiles(int rc,
                            const mvsUtils::MultiViewParams& mp,
@@ -280,19 +326,8 @@ void mergeDepthSimMapTiles(int rc,
                            int step,
                            const std::string& name)
 {
-    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
-
-    image::Image<float> depthMap;
-    image::Image<float> simMap;
-
-    mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthMap, depthMap, scale, step, customSuffix);  // read and merge depth map tiles
-    mvsUtils::readMap(rc, mp, mvsUtils::EFileType::simMap,   simMap,   scale, step, customSuffix);  // read and merge similarity map tiles
-
-    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthMap, depthMap, scale, step, customSuffix); // write the merged depth map
-    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   simMap,   scale, step, customSuffix); // write the merged similarity map
-
-    mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::depthMap, scale, step, customSuffix); // delete depth map tile files
-    mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::simMap,   scale, step, customSuffix); // delete similarity tile files
+  mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::depthMap, scale, step, name);
+  mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::simMap, scale, step, name);
 }
 
 void exportDepthSimMapTilePatternObj(int rc,

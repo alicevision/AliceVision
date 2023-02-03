@@ -20,67 +20,12 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Copy a depth/similarity map from host memory to 2 images.
- * @param[out] out_depthMap the output depth image
- * @param[out] out_simMap the output similarity image
- * @param[in] in_depthSimMap_hmh the depth/similarity map in host memory
- * @param[in] roi the 2d region of interest without any downscale apply
- * @param[in] downscale the depth/similarity map downscale factor
- */
-void copyDepthSimMap(image::Image<float>& out_depthMap,
-                     image::Image<float>& out_simMap,
-                     const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
-                     const ROI& roi,
-                     int downscale);
-/**
- * @brief Copy a depth/similarity map from device memory to 2 images.
- * @param[out] out_depthMap the output depth image
- * @param[out] out_simMap the output similarity image
- * @param[in] in_depthSimMap_dmp the depth/similarity map in device memory
- * @param[in] roi the 2d region of interest without any downscale apply
- * @param[in] downscale the depth/similarity map downscale factor
- */
-void copyDepthSimMap(image::Image<float>& out_depthMap,
-                     image::Image<float>& out_simMap,
-                     const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
-                     const ROI& roi,
-                     int downscale);
-
-/**
- * @brief Reset a depth/similarity map in host memory to the given default depth and similarity.
- * @param[in,out] inout_depthSimMap_hmh the depth/similarity map in host memory
- * @param[in] depth the depth reset value
- * @param[in] sim the sim reset value
- */
-void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth = -1.f, float sim = 1.f);
-
-/**
  * @brief Copy an image from device memory to host memory and write on disk.
  * @note  This function can be useful for code analysis and debugging. 
  * @param[in] in_img_dmp the image in device memory
  * @param[in] path the path of the output image on disk
  */
 void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
-
-/**
- * @brief Write a depth thikness map on disk from device memory.
- * @param[in] rc the related R camera index
- * @param[in] mp the multi-view parameters
- * @param[in] tileParams tile workflow parameters
- * @param[in] roi the 2d region of interest without any downscale apply
- * @param[in] in_depthThiknessMap_dmp the depth thikness map in device memory
- * @param[in] scale the map downscale factor
- * @param[in] step the map step factor
- * @param[in] name the export filename suffix
- */
-void writeDepthThiknessMap(int rc,
-                           const mvsUtils::MultiViewParams& mp,
-                           const mvsUtils::TileParams& tileParams,
-                           const ROI& roi,
-                           const CudaDeviceMemoryPitched<float, 2>& in_depthThiknessMap_dmp,
-                           int scale,
-                           int step,
-                           const std::string& name = "");
 
 /**
  * @brief Write a normal map on disk from device memory.
@@ -103,24 +48,44 @@ void writeNormalMap(int rc,
                     const std::string& name = "");
 
 /**
- * @brief Write a depth/similarity map on disk from host memory.
+ * @brief Write a depth/thikness map on disk from device memory.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
  * @param[in] tileParams tile workflow parameters
  * @param[in] roi the 2d region of interest without any downscale apply
- * @param[in] in_depthSimMap_hmh the depth/similarity map in host memory
- * @param[in] scale the depth/similarity map downscale factor
- * @param[in] step the depth/similarity map step factor
+ * @param[in] in_depthThiknessMap_dmp the depth/thikness map in device memory
+ * @param[in] scale the depth/thikness map downscale factor
+ * @param[in] step the depth/thikness map step factor
  * @param[in] name the export filename suffix
  */
-void writeDepthSimMap(int rc,
-                      const mvsUtils::MultiViewParams& mp,
-                      const mvsUtils::TileParams& tileParams,
-                      const ROI& roi, 
-                      const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
-                      int scale,
-                      int step,
-                      const std::string& name = "");
+void writeDepthThiknessMap(int rc,
+                           const mvsUtils::MultiViewParams& mp,
+                           const mvsUtils::TileParams& tileParams,
+                           const ROI& roi,
+                           const CudaDeviceMemoryPitched<float2, 2>& in_depthThiknessMap_dmp,
+                           int scale,
+                           int step,
+                           const std::string& name = "");
+
+/**
+ * @brief Write a depth/pixSize map on disk from device memory.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] in_depthPixSize_dmp the depth/pixSize map in device memory
+ * @param[in] scale the depth/pixSize map downscale factor
+ * @param[in] step the depth/pixSize map step factor
+ * @param[in] name the export filename suffix
+ */
+void writeDepthPixSizeMap(int rc,
+                          const mvsUtils::MultiViewParams& mp,
+                          const mvsUtils::TileParams& tileParams,
+                          const ROI& roi,
+                          const CudaDeviceMemoryPitched<float2, 2>& in_depthPixSize_dmp,
+                          int scale,
+                          int step,
+                          const std::string& name = "");
 
 /**
  * @brief Write a depth/similarity map on disk from device memory.
@@ -163,18 +128,12 @@ void writeDepthSimMapFromTileList(int rc,
                                   const std::string& name = "");
 
 /**
- * @brief Merge depth thikness map tiles on disk.
- * @param[in] rc the related R camera index
- * @param[in] mp the multi-view parameters
- * @param[in] scale the depth thikness map downscale factor
- * @param[in] step the depth thikness map step factor
- * @param[in] name the export filename suffix
+ * @brief Reset a depth/similarity map in host memory to the given default depth and similarity.
+ * @param[in,out] inout_depthSimMap_hmh the depth/similarity map in host memory
+ * @param[in] depth the depth reset value
+ * @param[in] sim the sim reset value
  */
-void mergeDepthThiknessMapTiles(int rc,
-                                const mvsUtils::MultiViewParams& mp,
-                                int scale,
-                                int step,
-                                const std::string& name = "");
+void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth = -1.f, float sim = 1.f);
 
 /**
  * @brief Merge normal map tiles on disk.
@@ -189,6 +148,34 @@ void mergeNormalMapTiles(int rc,
                          int scale,
                          int step,
                          const std::string& name = "");
+
+/**
+ * @brief Merge depth/thikness map tiles on disk.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] scale the depth/thikness map downscale factor
+ * @param[in] step the depth/thikness map step factor
+ * @param[in] name the export filename suffix
+ */
+void mergeDepthThiknessMapTiles(int rc,
+                                const mvsUtils::MultiViewParams& mp,
+                                int scale,
+                                int step,
+                                const std::string& name = "");
+
+/**
+ * @brief Merge depth/pixSize map tiles on disk.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] scale the depth/pixSize map downscale factor
+ * @param[in] step the depth/pixSize map step factor
+ * @param[in] name the export filename suffix
+ */
+void mergeDepthPixSizeMapTiles(int rc,
+                               const mvsUtils::MultiViewParams& mp,
+                               int scale,
+                               int step,
+                               const std::string& name = "");
 
 /**
  * @brief Merge depth/similarity map tiles on disk.

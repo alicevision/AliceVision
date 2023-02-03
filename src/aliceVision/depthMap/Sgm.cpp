@@ -24,10 +24,14 @@ namespace depthMap {
 Sgm::Sgm(const mvsUtils::MultiViewParams& mp, 
          const mvsUtils::TileParams& tileParams, 
          const SgmParams& sgmParams,
+         bool computeDepthSimMap,
+         bool computeNormalMap,
          cudaStream_t stream)
     : _mp(mp)
     , _tileParams(tileParams)
     , _sgmParams(sgmParams)
+    , _computeDepthSimMap(computeDepthSimMap || sgmParams.exportIntermediateDepthSimMaps)
+    , _computeNormalMap(computeNormalMap || sgmParams.exportIntermediateNormalMaps)
     , _stream(stream)
 {
     // get tile maximum dimensions
@@ -35,8 +39,8 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     const int maxTileWidth  = divideRoundUp(tileParams.bufferWidth , downscale);
     const int maxTileHeight = divideRoundUp(tileParams.bufferHeight, downscale);
 
-    // compute depth/sim map maximum dimensions
-    const CudaSize<2> depthSimMapDim(maxTileWidth, maxTileHeight);
+    // compute map maximum dimensions
+    const CudaSize<2> mapDim(maxTileWidth, maxTileHeight);
 
     // allocate depth list in device memory
     {
@@ -47,14 +51,15 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     }
 
     // allocate depth thikness map in device memory
-    _depthThiknessMap_dmp.allocate(depthSimMapDim);
+    _depthThiknessMap_dmp.allocate(mapDim);
 
     // allocate depth/sim map in device memory
-    _depthSimMap_dmp.allocate(depthSimMapDim);
+    if(_computeDepthSimMap)
+        _depthSimMap_dmp.allocate(mapDim);
 
     // allocate normal map in device memory
-    if(_sgmParams.computeNormalMap || _sgmParams.exportIntermediateNormalMaps)
-        _normalMap_dmp.allocate(depthSimMapDim);
+    if(_computeNormalMap)
+        _normalMap_dmp.allocate(mapDim);
 
     // allocate similarity volumes in device memory
     {
@@ -157,14 +162,8 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
         writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _depthSimMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "sgm");
     }
 
-    // export intermediate depth thikness map (if requested by user)
-    if(_sgmParams.exportIntermediateDepthThiknessMaps)
-    {
-        writeDepthThiknessMap(tile.rc, _mp, _tileParams, tile.roi, _depthThiknessMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "sgm");
-    }
-
     // compute normal map from depth/sim map if needed
-    if(_sgmParams.computeNormalMap || _sgmParams.exportIntermediateNormalMaps)
+    if(_computeNormalMap)
     {
         // downscale the region of interest
         const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
@@ -289,8 +288,8 @@ void Sgm::retrieveBestDepth(const Tile& tile, const SgmDepthList& tileDepthList)
     DeviceCache& deviceCache = DeviceCache::getInstance();
     const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, 1, _mp);
 
-    cuda_volumeRetrieveBestDepth(_depthSimMap_dmp,      // output depth/sim map
-                                 _depthThiknessMap_dmp, // output depth thikness map
+    cuda_volumeRetrieveBestDepth(_depthThiknessMap_dmp, // output depth thikness map
+                                 _depthSimMap_dmp,      // output depth/sim map (or empty)
                                  _depths_dmp,           // rc depth
                                  _volumeBestSim_dmp,    // second best sim volume optimized in best sim volume
                                  rcDeviceCamera,

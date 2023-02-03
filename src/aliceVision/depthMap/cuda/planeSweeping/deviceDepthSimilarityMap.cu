@@ -62,17 +62,17 @@ __host__ void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upsc
     CHECK_CUDA_ERROR();
 }
 
-__host__ void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthSimMap_dmp,
-                                               const CudaDeviceMemoryPitched<float2, 2>& in_otherDepthSimMap_dmp,
-                                               const DeviceCamera& rcDeviceCamera,
-                                               const RefineParams& refineParams,
-                                               const ROI& roi,
-                                               cudaStream_t stream)
+__host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthPixSizeMap_dmp,
+                                                     const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThiknessMap_dmp,
+                                                     const DeviceCamera& rcDeviceCamera,
+                                                     const RefineParams& refineParams,
+                                                     const ROI& roi,
+                                                     cudaStream_t stream)
 {
-    const CudaSize<2>& out_depthSimMapSize = out_upscaledDepthSimMap_dmp.getSize();
-    const CudaSize<2>& in_depthSimMapSize = in_otherDepthSimMap_dmp.getSize();
+    const CudaSize<2>& out_mapSize = out_upscaledDepthPixSizeMap_dmp.getSize();
+    const CudaSize<2>& in_mapSize = in_sgmDepthThiknessMap_dmp.getSize();
 
-    const float ratio = float(in_depthSimMapSize.x()) / float(out_depthSimMapSize.x());
+    const float ratio = float(in_mapSize.x()) / float(out_mapSize.x());
 
     const int blockSize = 16;
     const dim3 block(blockSize, blockSize, 1);
@@ -80,66 +80,30 @@ __host__ void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2
 
     if(refineParams.interpolateMiddleDepth)
     {
-        depthSimMapUpscaleFilter_bilinear_kernel<<<grid, block, 0, stream>>>(
+        computeSgmUpscaledDepthPixSizeMap_bilinear_kernel<<<grid, block, 0, stream>>>(
           rcDeviceCamera.getTextureObject(),
-          out_upscaledDepthSimMap_dmp.getBuffer(),
-          out_upscaledDepthSimMap_dmp.getPitch(),
-          in_otherDepthSimMap_dmp.getBuffer(),
-          in_otherDepthSimMap_dmp.getPitch(),
+          out_upscaledDepthPixSizeMap_dmp.getBuffer(),
+          out_upscaledDepthPixSizeMap_dmp.getPitch(),
+          in_sgmDepthThiknessMap_dmp.getBuffer(),
+          in_sgmDepthThiknessMap_dmp.getPitch(),
           refineParams.stepXY,
+          refineParams.halfNbDepths,
           ratio,
           roi);
     }
     else
     {
-        depthSimMapUpscaleFilter_kernel<<<grid, block, 0, stream>>>(
+        computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel<<<grid, block, 0, stream>>>(
           rcDeviceCamera.getTextureObject(),
-          out_upscaledDepthSimMap_dmp.getBuffer(),
-          out_upscaledDepthSimMap_dmp.getPitch(),
-          in_otherDepthSimMap_dmp.getBuffer(),
-          in_otherDepthSimMap_dmp.getPitch(),
+          out_upscaledDepthPixSizeMap_dmp.getBuffer(),
+          out_upscaledDepthPixSizeMap_dmp.getPitch(),
+          in_sgmDepthThiknessMap_dmp.getBuffer(),
+          in_sgmDepthThiknessMap_dmp.getPitch(),
           refineParams.stepXY,
+          refineParams.halfNbDepths,
           ratio,
           roi);
     }
-
-    CHECK_CUDA_ERROR();
-}
-
-__host__ void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>& inout_depthPixSizeMap_dmp,
-                                             const CudaDeviceMemoryPitched<float, 2>& in_sgmDepthThiknessMap_dmp,
-                                             const DeviceCamera& rcDeviceCamera,
-                                             const RefineParams& refineParams,
-                                             const ROI& roi,
-                                             cudaStream_t stream)
-{
-    const CudaSize<2>& inout_depthSimMapSize = inout_depthPixSizeMap_dmp.getSize();
-    const CudaSize<2>& in_depthThiknessMapSize = in_sgmDepthThiknessMap_dmp.getSize();
-
-    const float ratio = float(in_depthThiknessMapSize.x()) / float(inout_depthSimMapSize.x());
-    const int maxSgmPlanes = 10;
-
-    const int blockSize = 16;
-    const dim3 block(blockSize, blockSize, 1);
-    const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
-
-    depthSimMapComputePixSize_kernel<<<grid, block, 0, stream>>>(
-      rcDeviceCamera.getDeviceCamId(), 
-      inout_depthPixSizeMap_dmp.getBuffer(), 
-      inout_depthPixSizeMap_dmp.getPitch(),
-      in_sgmDepthThiknessMap_dmp.getBuffer(),
-      in_sgmDepthThiknessMap_dmp.getPitch(),
-      refineParams.stepXY,
-      refineParams.halfNbDepths,
-      ratio,
-      roi);
-
-    depthSimMapSmoothPixSize_kernel<<<grid, block, 0, stream>>>(
-      inout_depthPixSizeMap_dmp.getBuffer(),
-      inout_depthPixSizeMap_dmp.getPitch(),
-      refineParams.halfNbDepths,
-      maxSgmPlanes,
-      roi);
 
     CHECK_CUDA_ERROR();
 }

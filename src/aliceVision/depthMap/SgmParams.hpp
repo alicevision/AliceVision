@@ -43,14 +43,11 @@ struct SgmParams
   bool exportIntermediateCrossVolumes = false;
   bool exportIntermediateTopographicCutVolumes = false;
   bool exportIntermediateVolume9pCsv = false;
-
-  const bool exportIntermediateDepthThiknessMaps = false;
   const bool exportDepthsTxtFiles = false;
 
   // constant parameters
 
   const bool updateUninitializedSim = true; // should always be true, false for debug purposes
-  const bool computeNormalMap = false;   // for experimentation purposes
   const float prematchingMaxDepthScale = 1.5f;
   const double seedsRangePercentile = 0.999;
   const bool doSgmOptimizeVolume = true;
