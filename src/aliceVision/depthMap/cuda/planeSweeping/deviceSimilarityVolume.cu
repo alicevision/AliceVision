@@ -327,8 +327,8 @@ __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFi
     }
 }
 
-__host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthSimMap_dmp,
-                                           CudaDeviceMemoryPitched<float , 2>& out_sgmDepthThiknessMap_dmp,
+__host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthThiknessMap_dmp,
+                                           CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthSimMap_dmp,
                                            const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp, 
                                            const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
                                            const DeviceCamera& rcDeviceCamera,
@@ -346,10 +346,10 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
     
     volume_retrieveBestZ_kernel<<<grid, block, 0, stream>>>(
-      out_sgmDepthSimMap_dmp.getBuffer(),
-      out_sgmDepthSimMap_dmp.getBytesPaddedUpToDim(0),
       out_sgmDepthThiknessMap_dmp.getBuffer(),
       out_sgmDepthThiknessMap_dmp.getBytesPaddedUpToDim(0),
+      out_sgmDepthSimMap_dmp.getBuffer(),
+      out_sgmDepthSimMap_dmp.getBytesPaddedUpToDim(0),
       in_depths_dmp.getBuffer(), 
       in_depths_dmp.getBytesPaddedUpToDim(0), 
       in_volSim_dmp.getBuffer(), 

@@ -97,16 +97,14 @@ double Refine::getDeviceMemoryConsumptionUnpadded() const
     return (double(bytes) / (1024.0 * 1024.0));
 }
 
-void Refine::refineRc(const Tile& tile,
-                      const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp,
-                      const CudaDeviceMemoryPitched<float , 2>& in_sgmDepthThiknessMap_dmp,
-                      const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp)
+void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThiknessMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp)
 {
     const IndexT viewId = _mp.getViewId(tile.rc);
 
     ALICEVISION_LOG_INFO(tile << "Refine depth/sim map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
 
     // compute upscaled SGM depth/pixSize map
+    // compute upscaled SGM normal map
     {
         // downscale the region of interest
         const ROI downscaledRoi = downscaleROI(tile.roi, _refineParams.scale * _refineParams.stepXY);
@@ -115,16 +113,17 @@ void Refine::refineRc(const Tile& tile,
         DeviceCache& deviceCache = DeviceCache::getInstance();
         const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _refineParams.scale, _mp);
 
-        // upscale SGM depth/sim map and filter masked pixels (alpha)
-        cuda_depthSimMapUpscaleAndFilter(_sgmDepthPixSizeMap_dmp, in_sgmDepthSimMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
+        // compute upscaled SGM depth/pixSize map
+        // - upscale SGM depth/thikness map
+        // - filter masked pixels (alpha)
+        // - compute pixSize from SGM thikness
+        cuda_computeSgmUpscaledDepthPixSizeMap(_sgmDepthPixSizeMap_dmp, in_sgmDepthThiknessMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
 
-        // export intermediate depth/sim map (if requested by user)
+        // export intermediate depth/pixSize map (if requested by user)
         if(_refineParams.exportIntermediateDepthSimMaps)
-          writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _sgmDepthPixSizeMap_dmp, _refineParams.scale, _refineParams.stepXY, "sgmUpscaled");
+          writeDepthPixSizeMap(tile.rc, _mp, _tileParams, tile.roi, _sgmDepthPixSizeMap_dmp, _refineParams.scale, _refineParams.stepXY, "sgmUpscaled");
 
-        // compute pixSize to replace similarity (this is usefull for depth/sim map optimization)
-        cuda_depthSimMapComputePixSize(_sgmDepthPixSizeMap_dmp, in_sgmDepthThiknessMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
-
+        // upscale SGM normal map (if needed)
         if(_refineParams.useSgmNormalMap && in_sgmNormalMap_dmp.getBuffer() != nullptr)
         {
             cuda_normalMapUpscale(_sgmNormalMap_dmp, in_sgmNormalMap_dmp, downscaledRoi, _stream);
