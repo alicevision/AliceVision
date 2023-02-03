@@ -200,12 +200,12 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
                     targetIndex = k;
                 }
             }
-            ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automaticaly set to " << targetIndex);
+            ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automaticaly set to " << targetIndex - middleIndex);
         }
         else
         {
             targetIndex = middleIndex;
-            ALICEVISION_LOG_WARNING("Non valid luminance statistics file, offsetRefBracketIndex parameter set to medium exposure " << targetIndex);
+            ALICEVISION_LOG_WARNING("Non valid luminance statistics file, offsetRefBracketIndex parameter set to 0 (medium exposure)");
         }
     }
 
