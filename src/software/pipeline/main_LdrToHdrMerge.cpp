@@ -183,45 +183,47 @@ int aliceVision_main(int argc, char** argv)
     }
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
 
-    const int middleIndex = usedNbBrackets / 2;
-    const int targetIndex = middleIndex + offsetRefBracketIndex;
-    const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
-
-    const fs::path lumaStatFilepath(fs::path(inputResponsePath).parent_path() / (std::string("luminanceStatistics.txt")));
-
-    if (!fs::is_regular_file(lumaStatFilepath) && !isOffsetRefBracketIndexValid)
+    if (!byPass)
     {
-        ALICEVISION_LOG_ERROR("Unable to open the file " << lumaStatFilepath.string() << " with luminance statistics. This file is needed to select the optimal exposure for the creation of HDR images.");
-        return EXIT_FAILURE;
-    }
+        const int middleIndex = usedNbBrackets / 2;
+        const int targetIndex = middleIndex + offsetRefBracketIndex;
+        const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
 
-    // Adjust the targeted luminance level by removing the corresponding gamma if the working color space is not sRGB.
-    if (workingColorSpace != image::EImageColorSpace::SRGB)
-    {
-        meanTargetedLumaForMerging = std::pow((meanTargetedLumaForMerging + 0.055) / 1.055, 2.2);
-    }
-    hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
+        const fs::path lumaStatFilepath(fs::path(inputResponsePath).parent_path() / (std::string("luminanceStatistics.txt")));
 
-    if ((targetViews.empty() || targetViews.size() != groupedViews.size()) && !isOffsetRefBracketIndexValid)
-    {
-        ALICEVISION_LOG_ERROR("File " << lumaStatFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
-        return EXIT_FAILURE;
+        if (!fs::is_regular_file(lumaStatFilepath) && !isOffsetRefBracketIndexValid)
+        {
+            ALICEVISION_LOG_ERROR("Unable to open the file " << lumaStatFilepath.string() << " with luminance statistics. This file is needed to select the optimal exposure for the creation of HDR images.");
+            return EXIT_FAILURE;
+        }
+
+        // Adjust the targeted luminance level by removing the corresponding gamma if the working color space is not sRGB.
+        if (workingColorSpace != image::EImageColorSpace::SRGB)
+        {
+            meanTargetedLumaForMerging = std::pow((meanTargetedLumaForMerging + 0.055) / 1.055, 2.2);
+        }
+        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
+
+        if ((targetViews.empty() || targetViews.size() != groupedViews.size()) && !isOffsetRefBracketIndexValid)
+        {
+            ALICEVISION_LOG_ERROR("File " << lumaStatFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
+            return EXIT_FAILURE;
+        }
     }
 
     // Define range to compute
     if(rangeStart != -1)
     {
-      if(rangeStart < 0 || rangeSize < 0 ||
-         rangeStart > groupedViews.size())
-      {
-        ALICEVISION_LOG_ERROR("Range is incorrect");
-        return EXIT_FAILURE;
-      }
+        if(rangeStart < 0 || rangeSize < 0 || rangeStart > groupedViews.size())
+        {
+            ALICEVISION_LOG_ERROR("Range is incorrect");
+            return EXIT_FAILURE;
+        }
 
-      if(rangeStart + rangeSize > groupedViews.size())
-      {
-        rangeSize = groupedViews.size() - rangeStart;
-      }
+        if(rangeStart + rangeSize > groupedViews.size())
+        {
+            rangeSize = groupedViews.size() - rangeStart;
+        }
     }
     else
     {
@@ -239,7 +241,20 @@ int aliceVision_main(int argc, char** argv)
         // Export a new sfmData with HDR images as new Views.
         for(std::size_t g = 0; g < groupedViews.size(); ++g)
         {
-            std::shared_ptr<sfmData::View> hdrView = std::make_shared<sfmData::View>(*targetViews[g]);
+            std::shared_ptr<sfmData::View> hdrView;
+            if (groupedViews[g].size() == 1)
+            {
+                hdrView = std::make_shared<sfmData::View>(*groupedViews[g][0]);
+            }
+            else if (targetViews.empty())
+            {
+                ALICEVISION_LOG_ERROR("Target view for HDR merging has not been computed");
+                return EXIT_FAILURE;
+            }
+            else
+            {
+                hdrView = std::make_shared<sfmData::View>(*targetViews[g]);
+            }
             if(!byPass)
             {
                 const std::string hdrImagePath = getHdrImagePath(outputPath, g);
