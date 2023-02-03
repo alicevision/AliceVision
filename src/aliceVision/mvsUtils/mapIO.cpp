@@ -28,9 +28,11 @@ std::string getMapNameFromFileType(EFileType fileType)
 {
   switch(fileType)
   {
-    case EFileType::depthMap:   return "depth map";       break;
-    case EFileType::simMap:     return "similarity map";  break;
-    case EFileType::normalMap:  return "normal map";      break;
+    case EFileType::depthMap:    return "depth map";       break;
+    case EFileType::simMap:      return "similarity map";  break;
+    case EFileType::normalMap:   return "normal map";      break;
+    case EFileType::thiknessMap: return "thikness map";    break;
+    case EFileType::pixSizeMap:  return "pixSize map";     break;
     default: break;
   }
   return "unknown map";
