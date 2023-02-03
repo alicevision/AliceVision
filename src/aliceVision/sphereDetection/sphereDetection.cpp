@@ -264,3 +264,29 @@ void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session&
     root.add_child("poses", poses);
     bpt::write_json(output_path.append("detection.json").string(), root);
 }
+
+void writeManualSphereJSON(const aliceVision::sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path output_path)
+{
+    // main tree
+    bpt::ptree fileTree;
+
+    for(auto& viewID : sfmData.getViews())
+    {
+        ALICEVISION_LOG_DEBUG("View Id: " << viewID);
+
+        std::string sphereName = std::to_string(viewID.second->getViewId());
+
+        bpt::ptree spheres_node;
+        // Create an unnamed node containing the sphere
+        bpt::ptree sphere_node;
+        sphere_node.put("x", sphereParam[0]);
+        sphere_node.put("y", sphereParam[1]);
+        sphere_node.put("r", sphereParam[2]);
+
+        // add sphere to array
+        spheres_node.push_back(std::make_pair("", sphere_node));
+
+        fileTree.add_child(sphereName, spheres_node);
+    }
+    bpt::write_json(output_path.append("detection.json").string(), fileTree);
+}

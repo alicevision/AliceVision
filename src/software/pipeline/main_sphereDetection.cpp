@@ -31,21 +31,34 @@ namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char** argv)
 {
+
     std::string input_sfmdata_path;
     std::string input_model_path;
     std::string output_path;
     float input_min_score;
 
+    bool autoDetect;
+    Eigen::Vector2f sphereCenterOffset(0, 0);
+    double sphereRadius = 1.0;
+
     po::options_description required_parameters("Required parameters");
     required_parameters.add_options()                                                                           //
         ("input_sfmdata_path,i", po::value<std::string>(&input_sfmdata_path)->required(), "SFMData input path") //
         ("input_model_path,m", po::value<std::string>(&input_model_path)->required(), "model input path")       //
-        ("input_min_score,s", po::value<float>(&input_min_score)->required(), "minimum detection score")        //
+        ("autoDetect,a", po::value<bool>(&autoDetect)->required(), "Is the sphere automaticaly detected ?")     //
         ("output_path,o", po::value<std::string>(&output_path)->required(), "output path")                      //
         ;                                                                                                       //
 
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+    ("input_min_score,s", po::value<float>(&input_min_score)->default_value(0.0), "minimum detection score")
+    ("x,x", po::value<float>(&sphereCenterOffset(0))->default_value(0.0), "Sphere's center offset X (pixels).")
+    ("y,y", po::value<float>(&sphereCenterOffset(1))->default_value(0.0), "Sphere's center offset Y (pixels).")
+    ("sphereRadius,r", po::value<double>(&sphereRadius)->default_value(1.0), "Sphere's radius (pixels).");
+
+
     po::options_description all_parameters("AliceVision sphereDetection");
-    all_parameters.add(required_parameters);
+    all_parameters.add(required_parameters).add(optionalParams);
 
     po::variables_map variable_map;
     try
@@ -74,20 +87,9 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_COUT("Program called with the following parameters:");
     ALICEVISION_COUT(variable_map);
 
-    // onnxruntime session setup
-    Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "Sphere detector onnx model environment");
-    Ort::SessionOptions session_options;
-    Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(session_options, 0)); // use gpu n°0
-    Ort::Session session(env, input_model_path.c_str(), session_options);
-
-    // DEBUG: print model I/O
-    model_explore(session);
-
     // load SFMData file
     aliceVision::sfmData::SfMData sfmData;
-    if(!aliceVision::sfmDataIO::Load(
-           sfmData, input_sfmdata_path,
-           aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS | aliceVision::sfmDataIO::INTRINSICS)))
+    if(!aliceVision::sfmDataIO::Load(sfmData, input_sfmdata_path, aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS | aliceVision::sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + input_sfmdata_path + "' cannot be read");
         return EXIT_FAILURE;
@@ -96,8 +98,28 @@ int aliceVision_main(int argc, char** argv)
     // parse output_path
     fs::path fs_output_path(output_path);
 
-    // neural network magic
-    sphereDetection(sfmData, session, fs_output_path, input_min_score);
+    if(autoDetect)
+    {
+        // onnxruntime session setup
+        Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "Sphere detector onnx model environment");
+        Ort::SessionOptions session_options;
+        Ort::Session session(env, input_model_path.c_str(), session_options);
 
-    return EXIT_SUCCESS;
+        // DEBUG: print model I/O
+        model_explore(session);
+
+        // neural network magic
+        sphereDetection(sfmData, session, fs_output_path, input_min_score);
+        //std::cout << "WIP" << std::endl;
+    }
+    else
+    {
+        std::array<float, 3> sphereParam;
+        sphereParam[0] = sphereCenterOffset(0);
+        sphereParam[1] = sphereCenterOffset(1);
+        sphereParam[2] = sphereRadius;
+
+        writeManualSphereJSON(sfmData, sphereParam, fs_output_path);
+    }
+    return 0;
 }
