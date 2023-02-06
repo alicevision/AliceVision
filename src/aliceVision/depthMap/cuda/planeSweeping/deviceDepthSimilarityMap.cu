@@ -62,6 +62,37 @@ __host__ void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upsc
     CHECK_CUDA_ERROR();
 }
 
+__host__ void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThiknessMap_dmp,
+                                               const SgmParams& sgmParams,
+                                               const RefineParams& refineParams,
+                                               const ROI& roi,
+                                               cudaStream_t stream)
+{
+    const int sgmScaleStep = sgmParams.scale * sgmParams.stepXY;
+    const int refineScaleStep = refineParams.scale * refineParams.stepXY;
+
+    // min/max number of Refine samples in SGM thikness area
+    const float minNbRefineSamples = 2.f;
+    const float maxNbRefineSamples = max(sgmScaleStep / float(refineScaleStep), minNbRefineSamples);
+
+    // min/max SGM thikness inflate factor
+    const float minThiknessInflate = refineParams.halfNbDepths / maxNbRefineSamples;
+    const float maxThiknessInflate = refineParams.halfNbDepths / minNbRefineSamples;
+
+    const int blockSize = 8;
+    const dim3 block(blockSize, blockSize, 1);
+    const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
+
+    depthThiknessMapSmoothThikness_kernel<<<grid, block, 0, stream>>>(
+      inout_depthThiknessMap_dmp.getBuffer(),
+      inout_depthThiknessMap_dmp.getPitch(),
+      minThiknessInflate,
+      maxThiknessInflate,
+      roi);
+
+    CHECK_CUDA_ERROR();
+}
+
 __host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthPixSizeMap_dmp,
                                                      const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThiknessMap_dmp,
                                                      const DeviceCamera& rcDeviceCamera,

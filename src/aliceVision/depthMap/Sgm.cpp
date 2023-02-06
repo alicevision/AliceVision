@@ -118,7 +118,7 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
 {
     const IndexT viewId = _mp.getViewId(tile.rc);
 
-    ALICEVISION_LOG_INFO(tile << "SGM depth/sim map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
+    ALICEVISION_LOG_INFO(tile << "SGM depth/thikness map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
 
     // check SGM depth list and T cameras
     if(tile.sgmTCams.empty() || tileDepthList.getDepths().empty())
@@ -182,7 +182,20 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
         }
     }
 
-    ALICEVISION_LOG_INFO(tile << "SGM depth/sim map done.");
+    ALICEVISION_LOG_INFO(tile << "SGM depth/thikness map done.");
+}
+
+void Sgm::smoothThiknessMap(const Tile& tile, const RefineParams& refineParams)
+{
+    ALICEVISION_LOG_INFO(tile << "SGM Smooth thikness map.");
+
+    // downscale the region of interest
+    const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
+
+    // in-place result thikness map smoothing with adjacent pixels
+    cuda_depthThiknessSmoothThikness(_depthThiknessMap_dmp, _sgmParams, refineParams, downscaledRoi, _stream);
+
+    ALICEVISION_LOG_INFO(tile << "SGM Smooth thikness map done.");
 }
 
 void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDepthList)

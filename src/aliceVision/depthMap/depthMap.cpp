@@ -512,9 +512,13 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             Sgm& sgm = sgmPerStream.at(streamIndex);
             sgm.sgmRc(tile, sgmDepthList);
 
-            // compute Refine
             if(depthMapParams.useRefine)
             {
+              // smooth SGM thikness map
+              // in order to be a proper Refine input parameter
+              sgm.smoothThiknessMap(tile, depthMapParams.refineParams);
+
+              // compute Refine
               Refine& refine = refinePerStream.at(streamIndex);
               refine.refineRc(tile, sgm.getDeviceDepthThiknessMap(), sgm.getDeviceNormalMap());
 

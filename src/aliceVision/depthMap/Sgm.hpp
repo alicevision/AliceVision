@@ -10,6 +10,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/Tile.hpp>
+#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
@@ -72,11 +73,19 @@ public:
     double getDeviceMemoryConsumptionUnpadded() const;
 
     /**
-     * @brief Compute for a single R camera the Semi-Global Matching depth/sim map.
+     * @brief Compute for a single R camera the Semi-Global Matching.
      * @param[in] tile The given tile for SGM computation
      * @param[in] tileDepthList the tile SGM depth list
      */
     void sgmRc(const Tile& tile, const SgmDepthList& tileDepthList);
+
+    /**
+     * @brief Smooth SGM result thikness map
+     * @note Important to be a proper Refine input parameter.
+     * @param[in] tile The given tile for SGM computation
+     * @param[in] refineParams the Refine parameters
+     */
+    void smoothThiknessMap(const Tile& tile, const RefineParams& refineParams);
 
 private:
 
