@@ -50,6 +50,7 @@ int aliceVision_main(int argc, char **argv)
     std::string outputPath;
     std::string pathToLightData;
     size_t HS_order;
+    bool removeAmbiant;
 
     // image downscale factor during process
     int downscale = 1;
@@ -64,6 +65,7 @@ int aliceVision_main(int argc, char **argv)
     ("maskPath,m", po::value<std::string>(&maskPath)->default_value(""), "Path to mask folder/file.")
     ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"), "Path to light file (JSON). If empty, expects txt files in picture folder")
     ("HSOrder,h", po::value<size_t>(&HS_order)->default_value(0), "HS order, 0 = directional, 1 = directional + ambiant")
+    ("removeAmbiant,a", po::value<bool>(&removeAmbiant)->default_value(false), "Do we need to remove ambiant light on PS pictures ?")
     ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path")
     ("downscale, d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results" );
 
@@ -109,7 +111,7 @@ int aliceVision_main(int argc, char **argv)
     
     if(boost::filesystem::is_directory(inputPath))
     {
-        photometricStereo(inputPath, pathToLightData, outputPath, HS_order, downscale, normalsIm, albedoIm);
+        photometricStereo(inputPath, pathToLightData, outputPath, HS_order, removeAmbiant, downscale, normalsIm, albedoIm);
     }
     else
     {
@@ -120,7 +122,7 @@ int aliceVision_main(int argc, char **argv)
           return EXIT_FAILURE;
       }
 
-      photometricStereo(sfmData, pathToLightData, maskPath, outputPath, HS_order, downscale, normalsIm, albedoIm);
+      photometricStereo(sfmData, pathToLightData, maskPath, outputPath, HS_order, removeAmbiant, downscale, normalsIm, albedoIm);
     }
 
     return 0;

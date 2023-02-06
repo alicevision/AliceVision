@@ -18,7 +18,7 @@
 
 namespace fs = boost::filesystem;
 
-void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const size_t HS_order, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const size_t HS_order, const bool& removeAmbiant, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if(HS_order == 2)
@@ -47,15 +47,26 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
     std::string maskName = lightDataPath.remove_filename().string() + "/mask.png";
     loadMask(maskName, mask);
 
-    photometricStereo(imageList, intList, lightMat, mask, downscale, normals, albedo);
+    std::string pathToAmbiant = "";
+    if(removeAmbiant)
+    {
+        for (auto& currentPath : imageList)
+        {
+            const fs::path imagePath = fs::path(currentPath);
+            if(boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+            {
+                pathToAmbiant = imagePath.string();
+            }
+        }
+    }
+
+    photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, downscale, normals, albedo);
 
     writePSResults(outputPath, normals, albedo);
-
     aliceVision::image::writeImage(outputPath + "/mask.png", mask, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION));
-
 }
 
-void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const size_t HS_order, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const size_t HS_order, const bool& removeAmbiant, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if(HS_order == 2)
@@ -63,7 +74,7 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
         dim = 9;
     }
 
-    std::vector<std::string> imageList;
+    std::string pathToAmbiant = "";
     std::map<aliceVision::IndexT, std::vector<aliceVision::IndexT>> viewsPerPoseId;
 
     for(auto& viewIt: sfmData.getViews())
@@ -73,6 +84,8 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
 
     for(auto& posesIt: viewsPerPoseId)
     {
+        std::vector<std::string> imageList;
+
         ALICEVISION_LOG_INFO("Pose Id: " << posesIt.first);
         std::vector<aliceVision::IndexT>& viewIds = posesIt.second;
         for(auto& viewId: viewIds)
@@ -82,6 +95,10 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
             {
                 ALICEVISION_LOG_INFO("  - " << imagePath.string());
                 imageList.push_back(imagePath.string());
+            }
+            else if(removeAmbiant)
+            {
+                pathToAmbiant = imagePath.string();
             }
         }
 
@@ -105,15 +122,14 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
 
         loadMask(currentMaskPath, mask);
 
-        photometricStereo(imageList, intList, lightMat, mask, downscale, normals, albedo);
+        photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, downscale, normals, albedo);
         writePSResults(outputPath, normals, albedo, posesIt.first);
 
         aliceVision::image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png", mask, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION));
-
     }
 }
 
-void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, aliceVision::image::Image<float>& mask, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, aliceVision::image::Image<float>& mask, const std::string& pathToAmbiant, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t maskSize;
     int pictRows;
@@ -162,6 +178,18 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     Eigen::MatrixXf imMat_gray(imageList.size(), maskSize);
 
     // Read pictures :
+    aliceVision::image::Image<aliceVision::image::RGBfColor> imageAmbiant;
+    if(boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
+    {
+        std::cout << "Removing ambiant light" << std::endl;
+        aliceVision::image::readImage(pathToAmbiant, imageAmbiant, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+
+        if(downscale > 1)
+        {
+            downscaleImageInplace(imageAmbiant,downscale);
+        }
+    }
+
     for (size_t i = 0; i < imageList.size(); ++i)
     {
         picturePath = imageList.at(i);
@@ -172,6 +200,10 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         if(downscale > 1)
         {
             downscaleImageInplace(imageFloat,downscale);
+        }
+        if(boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
+        {
+            imageFloat = imageFloat - imageAmbiant;
         }
 
         intensityScaling(intList.at(i), imageFloat);
