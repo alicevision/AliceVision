@@ -40,6 +40,20 @@ extern void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upscal
                                   cudaStream_t stream);
 
 /**
+ * @brief Smooth thikness map with adjacent pixels.
+ * @param[in,out] inout_depthThiknessMap_dmp the depth/thikness map
+ * @param[in] sgmParams the Semi Global Matching parameters
+ * @param[in] refineParams the Refine parameters
+ * @param[in] roi the 2d region of interest
+ * @param[in] stream the stream for gpu execution
+ */
+extern void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThiknessMap_dmp,
+                                             const SgmParams& sgmParams,
+                                             const RefineParams& refineParams,
+                                             const ROI& roi,
+                                             cudaStream_t stream);
+
+/**
  * @brief Upscale the given depth/thikness map, filter masked pixels and compute pixSize from thikness.
  * @param[out] out_upscaledDepthPixSizeMap_dmp the output upscaled depth/pixSize map
  * @param[in] in_sgmDepthThiknessMap_dmp the input SGM depth/thikness map
@@ -54,23 +68,6 @@ extern void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<float
                                                    const RefineParams& refineParams,
                                                    const ROI& roi,
                                                    cudaStream_t stream);
-
-/**
- * @brief Compute the pixSize map from the depth map.
- * @param[in,out] inout_depthPixSizeMap_dmp the input depth map, the output depth/pixSize map
- * @param[in] in_sgmDepthThiknessMap_dmp the input depth thikness map
- * @param[in] rcDeviceCamera the R device camera
- * @param[in] refineParams the Refine parameters
- * @param[in] roi the 2d region of interest
- * @param[in] stream the stream for gpu execution
- */
-extern void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>& inout_depthPixSizeMap_dmp,
-                                           const CudaDeviceMemoryPitched<float, 2>& in_sgmDepthThiknessMap_dmp,
-                                           const DeviceCamera& rcDeviceCamera, 
-                                           const RefineParams& refineParams,
-                                           const ROI& roi,
-                                           cudaStream_t stream);
-
 
 /**
  * @brief Compute the normal map from the depth/sim map (only depth is used).

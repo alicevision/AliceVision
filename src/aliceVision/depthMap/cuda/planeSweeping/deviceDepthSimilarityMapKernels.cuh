@@ -145,8 +145,8 @@ __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
 }
 
 __global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknessMap_d, int inout_depthThiknessMap_p,
-                                                      const float minThikness,
-                                                      const float maxThikness,
+                                                      const float minThiknessInflate,
+                                                      const float maxThiknessInflate,
                                                       const ROI roi)
 {
     const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -161,6 +161,9 @@ __global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknes
     // depth invalid or masked
     if(inout_depthThikness->x <= 0.0f)
         return;
+
+    const float minThikness = minThiknessInflate * inout_depthThikness->y;
+    const float maxThikness = maxThiknessInflate * inout_depthThikness->y;
 
     // compute average depth distance to the center pixel
     float sumCenterDepthDist = 0.f;
