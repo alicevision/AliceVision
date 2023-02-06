@@ -89,6 +89,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         groups.push_back(group);
     }
 
+    std::vector< std::vector<sfmData::ExposureSetting>> v_exposuresSetting;
     for(auto & group : groups)
     {
         // Sort all images by exposure time
@@ -98,6 +99,28 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
                           return true;
                       return (a->getCameraExposureSetting().getExposure() < b->getCameraExposureSetting().getExposure());
                   });
+        std::vector<sfmData::ExposureSetting> exposuresSetting;
+        for (auto& v : group)
+        {
+            exposuresSetting.push_back(v->getCameraExposureSetting());
+        }
+        v_exposuresSetting.push_back(exposuresSetting);
+    }
+
+    // Check exposure consistency between group
+    if (v_exposuresSetting.size() > 1)
+    {
+        for (int g=1 ; g < v_exposuresSetting.size(); g++)
+        {
+            for (int e = 0; e < v_exposuresSetting[g].size(); e++)
+            {
+                if (!(v_exposuresSetting[g][e] == v_exposuresSetting[g - 1][e]))
+                {
+                    ALICEVISION_LOG_ERROR("Non consistant exposures between groups have been detected. Check your dataset metadata.");
+                    return false;
+                }
+            }
+        }
     }
 
     return true;
