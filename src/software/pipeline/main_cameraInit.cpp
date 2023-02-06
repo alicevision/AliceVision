@@ -532,7 +532,10 @@ int aliceVision_main(int argc, char **argv)
         const std::string& lensModel = view.getMetadataLensModel();
         const int lensID = view.getMetadataLensID();
 
-        lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
+        if (!make.empty() && !lensModel.empty())
+        {
+            lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
+        }
     }
 
     // check if the view intrinsic is already defined
