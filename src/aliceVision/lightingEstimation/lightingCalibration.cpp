@@ -14,6 +14,8 @@
 #include <aliceVision/image/convolution.hpp>
 #include <aliceVision/photometricStereo/photometricStereo.hpp>
 
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -44,6 +46,49 @@ void lightCalibration(const std::string& inputPath, const std::string& outputPat
     // lightCalibration(imageList, sphereParam, outputPath);
 }
 
+void lightCalibration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath)
+{
+
+    std::vector<std::string> imageList;
+    std::vector<std::array<float, 3>> allSpheresParams;
+    std::vector<float> focals;
+
+    std::string inputJSONFullName = inputJSON + "/detection.json";
+
+    // main tree
+    bpt::ptree fileTree;
+    // read the json file and initialize the tree
+    bpt::read_json(inputJSONFullName, fileTree);
+
+    for(auto& viewIt: sfmData.getViews())
+    {
+        ALICEVISION_LOG_INFO("View Id: " << viewIt.first);
+        const fs::path imagePath = fs::path(sfmData.getView(viewIt.first).getImagePath());
+
+        if(!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+        {
+            ALICEVISION_LOG_INFO("  - " << imagePath.string());
+            imageList.push_back(imagePath.string());
+
+            std::string sphereName = std::to_string(viewIt.second->getViewId());
+            std::array<float,3> currentSphereParams;
+
+            for (auto& currentSphere : fileTree.get_child(sphereName))
+            {
+                currentSphereParams[0] = currentSphere.second.get_child("").get("x",0.0);
+                currentSphereParams[1] = currentSphere.second.get_child("").get("y",0.0);
+                currentSphereParams[2] = currentSphere.second.get_child("").get("r",0.0);
+            }
+
+            allSpheresParams.push_back(currentSphereParams);
+
+            aliceVision::IndexT intrinsicId = viewIt.second->getIntrinsicId();
+            focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
+        }
+    }
+    lightCalibration(imageList, allSpheresParams, outputPath, focals);
+}
+
 void lightCalibration(const aliceVision::sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, const std::string& outputPath)
 {
     std::vector<std::string> imageList;
@@ -57,10 +102,35 @@ void lightCalibration(const aliceVision::sfmData::SfMData& sfmData, const std::a
                 imageList.push_back(imagePath.string());
         }
     }
-    lightCalibration(imageList, sphereParam, outputPath);
+
+    aliceVision::IndexT intrinsicId = sfmData.getViews().begin()->second->getIntrinsicId();
+    const float focal = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
+
+    lightCalibration(imageList, sphereParam, outputPath, focal);
 }
 
-void lightCalibration(const std::vector<std::string>& imageList, const std::array<float, 3>& sphereParam, const std::string& jsonName)
+void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals)
+{
+    Eigen::MatrixXf lightMat(imageList.size(), 3);
+    std::vector<std::array<float, 3>> intList;
+
+    Eigen::Vector3f lightingDirection;
+
+    for (size_t i = 0; i < imageList.size(); ++i)
+    {
+        std::string picturePath = imageList.at(i);
+        std::array<float,3> sphereParam = allSpheresParams.at(i);
+        float focal = focals.at(i);
+
+        lightCalibrationOneImage(picturePath, sphereParam, focal, "brightestPoint", lightingDirection);
+        lightMat.row(i) = lightingDirection;
+    }
+
+    // Write in JSON file :
+    writeJSON(jsonName, imageList, lightMat, intList);
+}
+
+void lightCalibration(const std::vector<std::string>& imageList, const std::array<float, 3>& sphereParam, const std::string& jsonName, const float& focal)
 {
     Eigen::MatrixXf lightMat(imageList.size(), 3);
     std::vector<std::array<float, 3>> intList;
@@ -76,17 +146,13 @@ void lightCalibration(const std::vector<std::string>& imageList, const std::arra
         // Detect brightest point :
         Eigen::Vector2f brigthestPoint;
         detectBrightestPoint(sphereParam, imageFloat, brigthestPoint);
-        // std::cout << brigthestPoint << std::endl;
 
         Eigen::Vector3f normalBrightestPoint;
         getNormalOnSphere(brigthestPoint(0), brigthestPoint(1), sphereParam, normalBrightestPoint);
-        //std::cout << normalBrightestPoint << std::endl;
 
         // Observation direction :
         Eigen::Vector3f observationRay;
-        //observationRay(0) = brigthestPoint(0) + imageFloat.cols()/2;
-        //observationRay(1) = brigthestPoint(1) + imageFloat.rows()/2;;
-        //observationRay(2) = // TO DO -> récupérer la focale ?
+
         // orthographic approximation :
         observationRay(0) = 0.0;
         observationRay(1) = 0.0;
@@ -96,12 +162,52 @@ void lightCalibration(const std::vector<std::string>& imageList, const std::arra
         Eigen::Vector3f lightingDirection;
         lightingDirection = 2 * normalBrightestPoint.dot(observationRay) * normalBrightestPoint - observationRay;
         lightingDirection = lightingDirection/lightingDirection.norm();
-
         lightMat.row(i) = lightingDirection;
     }
 
     // Write in JSON file :
     writeJSON(jsonName, imageList, lightMat, intList);
+}
+
+void lightCalibrationOneImage(const std::string& picturePath, const std::array<float, 3>& sphereParam, const float& focal, const std::string& method, Eigen::Vector3f& lightingDirection)
+{
+
+    // Read picture :
+    aliceVision::image::Image<float> imageFloat;
+    aliceVision::image::readImage(picturePath, imageFloat, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+
+    // If method = brightest point :
+    if(!method.compare("brightestPoint"))
+    {
+        // Detect brightest point :
+        Eigen::Vector2f brigthestPoint;
+        detectBrightestPoint(sphereParam, imageFloat, brigthestPoint);
+
+        Eigen::Vector3f normalBrightestPoint;
+        getNormalOnSphere(brigthestPoint(0), brigthestPoint(1), sphereParam, normalBrightestPoint);
+
+        // Observation direction :
+        Eigen::Vector3f observationRay;
+
+        // orthographic approximation :
+        observationRay(0) = 0.0;
+        observationRay(1) = 0.0;
+        observationRay(2) = -1.0;
+
+        // Evaluate lighting direction :
+        lightingDirection = 2 * normalBrightestPoint.dot(observationRay) * normalBrightestPoint - observationRay;
+        lightingDirection = lightingDirection/lightingDirection.norm();
+    }
+    // if method = HS :
+    else if(!method.compare("HS"))
+    {
+        std::cout << "WIP" << std::endl;
+        // Evaluate HS by pseudo-inverse
+        // createSphere(sphereParam, sphereNormals);
+        // estimateHS(sphereNormals, imageFloat, lightingDirection);
+    }
+
+
 }
 
 void detectBrightestPoint(const std::array<float, 3>& sphereParam, const aliceVision::image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint)

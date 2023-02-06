@@ -45,6 +45,7 @@ int aliceVision_main(int argc, char **argv)
     namespace fs = boost::filesystem;
 
     std::string inputPath;
+    std::string inputJSON;
     std::string ouputJSON;
     Eigen::Vector2f sphereCenterOffset(0, 0);
     double sphereRadius = 1.0;
@@ -53,10 +54,8 @@ int aliceVision_main(int argc, char **argv)
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
-    ("outputFile, j", po::value<std::string>(&ouputJSON)->required(), "Path to JSON output file")
-    ("x", po::value<float>(&sphereCenterOffset(0))->required(), "Sphere's center offset X (pixels).")
-    ("y", po::value<float>(&sphereCenterOffset(1))->required(), "Sphere's center offset Y (pixels).")
-    ("sphereRadius,r", po::value<double>(&sphereRadius)->required(), "Sphere's radius (pixels).");
+    ("inputJSON, j", po::value<std::string>(&inputJSON)->required(), "Path to JSON which describes sphere positions and radius")
+    ("outputFile, o", po::value<std::string>(&ouputJSON)->required(), "Path to JSON output file");
 
     allParams.add(requiredParams);
 
@@ -87,28 +86,20 @@ int aliceVision_main(int argc, char **argv)
 
     ALICEVISION_COUT("Program called with the following parameters:");
     ALICEVISION_COUT(vm);
-    
+
     if(boost::filesystem::is_directory(inputPath))
     {
         std::cout << "Directory input : WIP" << std::endl;
-    //    lightCalibration(inputPath, outputFile);
     }
     else
     {
-        std::cout << "SfMData input : WIP" << std::endl;
         aliceVision::sfmData::SfMData sfmData;
         if(!aliceVision::sfmDataIO::Load(sfmData, inputPath, aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS|aliceVision::sfmDataIO::INTRINSICS)))
         {
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
             return EXIT_FAILURE;
         }
-
-        std::array<float, 3> sphereParam;
-        sphereParam[0] = sphereCenterOffset(0);
-        sphereParam[1] = sphereCenterOffset(1);
-        sphereParam[2] = sphereRadius;
-
-        lightCalibration(sfmData, sphereParam, ouputJSON);
+        lightCalibration(sfmData, inputJSON, ouputJSON);
     }
 
     return 0;

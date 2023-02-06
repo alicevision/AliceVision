@@ -165,7 +165,7 @@ prediction predict(Ort::Session& session, const fs::path image_path, const fs::p
     for(size_t i = 0; i < shape[0]; i++)
     {
         float score = all_scores.at(i);
-        if(score > 0.9)
+        if(score > min_score)
         {
             // extract bboxe
             std::vector<float> bboxe(bboxes_ptr + 4 * i, bboxes_ptr + 4 * (i + 1));
