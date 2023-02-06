@@ -190,79 +190,50 @@ prediction predict(Ort::Session& session, const fs::path image_path, const fs::p
 void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path,
                      const float min_score)
 {
-    // split all views by pose
-    std::map<aliceVision::IndexT, std::vector<aliceVision::IndexT>> viewPerPoseID;
-    for(auto& viewIt : sfmData.getViews())
+    // main tree
+    bpt::ptree fileTree;
+
+    for(auto& viewID : sfmData.getViews())
     {
-        viewPerPoseID[viewIt.second->getPoseId()].push_back(viewIt.second->getViewId());
+        ALICEVISION_LOG_DEBUG("View Id: " << viewID);
+
+        std::string sphereName = std::to_string(viewID.second->getViewId());
+        const fs::path image_path = fs::path(sfmData.getView(viewID.second->getViewId()).getImagePath());
+        auto pred = predict(session, image_path, output_path, min_score);
+
+        bpt::ptree spheres_node;
+
+        //for(size_t i = 0; i < pred.scores.size(); i++)
+        //{
+        //We only take the best sphere in the picture
+        int i = 0;
+        // compute sphere coords from bboxe coords
+        auto bboxe = pred.bboxes.at(i);
+        float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
+        float x = bboxe.at(0) + r - pred.size.width / 2;
+        float y = bboxe.at(1) + r - pred.size.height / 2;
+
+        // create an unnamed node containing the sphere
+        bpt::ptree sphere_node;
+        sphere_node.put("x", x);
+        sphere_node.put("y", y);
+        sphere_node.put("r", r);
+        sphere_node.put("score", pred.scores.at(i));
+        sphere_node.put("mask", pred.masks.at(i));
+
+        // add sphere to array
+        spheres_node.push_back(std::make_pair("", sphere_node));
+        //}
+
+        // add spheres (array) to view
+        //view.add_child("spheres", spheres_node);
+
+        // add view n°i to array of views
+        //views.push_back(std::make_pair("", view));
+
+        fileTree.add_child(sphereName, spheres_node);
     }
-
-    // json init
-    bpt::ptree root;
-
-    bpt::ptree poses;
-    for(auto& poseID : viewPerPoseID)
-    {
-        ALICEVISION_LOG_DEBUG("Pose Id: " << poseID.first);
-
-        // initialize empty pose property tree
-        bpt::ptree pose;
-
-        // add poseID to pose property tree
-        pose.put("id", poseID.first);
-
-        bpt::ptree views;
-        std::vector<aliceVision::IndexT>& viewIDs = poseID.second;
-        for(auto& viewID : viewIDs)
-        {
-            ALICEVISION_LOG_DEBUG("View Id: " << viewID);
-
-            const fs::path image_path = fs::path(sfmData.getView(viewID).getImagePath());
-            auto pred = predict(session, image_path, output_path, min_score);
-
-            // initialize empty view property tree
-            bpt::ptree view;
-
-            // add viewID to view property tree
-            view.put("id", viewID);
-
-            bpt::ptree spheres_node;
-            for(size_t i = 0; i < pred.scores.size(); i++)
-            {
-                // compute sphere coords from bboxe coords
-                auto bboxe = pred.bboxes.at(i);
-                float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
-                float x = bboxe.at(0) + r - pred.size.width / 2;
-                float y = bboxe.at(1) + r - pred.size.height / 2;
-
-                // create an unnamed node containing the sphere
-                bpt::ptree sphere_node;
-                sphere_node.put("x", x);
-                sphere_node.put("y", y);
-                sphere_node.put("r", r);
-                sphere_node.put("score", pred.scores.at(i));
-                sphere_node.put("mask", pred.masks.at(i));
-
-                // add sphere to array
-                spheres_node.push_back(std::make_pair("", sphere_node));
-            }
-
-            // add spheres (array) to view
-            view.add_child("spheres", spheres_node);
-
-            // add view n°i to array of views
-            views.push_back(std::make_pair("", view));
-        }
-
-        // add views to current pose
-        pose.add_child("views", views);
-
-        // add current pose to poses
-        poses.push_back(std::make_pair("", pose));
-    }
-
-    root.add_child("poses", poses);
-    bpt::write_json(output_path.append("detection.json").string(), root);
+    bpt::write_json(output_path.append("detection.json").string(), fileTree);
 }
 
 void writeManualSphereJSON(const aliceVision::sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path output_path)
