@@ -378,6 +378,7 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
 bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                                       const std::vector<std::string>& models,
                                       const std::vector<float>& mmFocals,
+                                      const bool renameKeyframes,
                                       const std::string& outputExtension,
                                       const image::EStorageDataType storageDataType) const
 {
@@ -411,6 +412,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
             }
         }
 
+        unsigned int outputKeyframeCnt = 0;  // Used if the "renameKeyframes" option is enabled
         for (const auto pos : _selectedKeyframes) {
             if (!feed.goToFrame(pos)) {
                 ALICEVISION_LOG_ERROR("Invalid frame position. Ignoring this frame.");
@@ -431,7 +433,10 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
 
             fs::path folder = _outputFolder;
             std::ostringstream filenameSS;
-            filenameSS << std::setw(5) << std::setfill('0') << pos << "." << outputExtension;
+            if (renameKeyframes)
+                filenameSS << std::setw(5) << std::setfill('0') << outputKeyframeCnt++ << "." << outputExtension;
+            else
+                filenameSS << std::setw(5) << std::setfill('0') << pos << "." << outputExtension;
             const auto filepath = (processedOutputFolder / fs::path(filenameSS.str())).string();
 
             image::ImageWriteOptions options;

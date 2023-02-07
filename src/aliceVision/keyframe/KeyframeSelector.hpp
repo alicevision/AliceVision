@@ -106,12 +106,13 @@ public:
      * @param[in] brands brand name for each camera
      * @param[in] models model name for each camera
      * @param[in] mmFocals focal in millimeters for each camera
+     * @param[in] renameKeyframes name output keyframes as consecutive frames instead of using their index as a name
      * @param[in] outputExtension file extension of the written keyframes
      * @param[in] storageDataType EXR storage data type for the output keyframes (ignored when the extension is not EXR)
      * @return true if all the selected keyframes were successfully written, false otherwise
      */
     bool writeSelection(const std::vector<std::string>& brands, const std::vector<std::string>& models,
-                    const std::vector<float>& mmFocals, const std::string& outputExtension,
+                    const std::vector<float>& mmFocals, const bool renameKeyframes, const std::string& outputExtension,
                     const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined) const;
 
     /**

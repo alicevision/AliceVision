@@ -52,6 +52,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputExtension = "exr";    // file extension of the written keyframes
     image::EStorageDataType exrDataType =   // storage data type for EXR output files
         image::EStorageDataType::Float;
+    bool renameKeyframes = false;           // name selected keyframes as consecutive frames instead of using their index as a name
 
     // Debug options
     bool exportScores = false;              // export the sharpness and optical flow scores to a CSV file
@@ -87,6 +88,11 @@ int aliceVision_main(int argc, char** argv)
             "so combining them with this parameter might cause the selection to stop before reaching the end of the "
             "input sequence(s).\n"
             "\t- For the smart method, the default value is set to 2000.")
+        ("renameKeyframes", po::value<bool>(&renameKeyframes)->default_value(renameKeyframes),
+            "Instead of naming the keyframes according to their index in the input sequence / video, rename them as "
+            "consecutive frames, starting from 0.\n"
+            "If the selected keyframes should have originally be written as [00015.exr, 00294.exr, 00825.exr], they "
+            "will instead be written as [00000.exr, 00001.exr, 00002.exr] if this option is enabled.")
         ("outputExtension", po::value<std::string>(&outputExtension)->default_value(outputExtension),
             "File extension of the output keyframes.")
         ("storageDataType", po::value<image::EStorageDataType>(&exrDataType)->default_value(exrDataType),
@@ -233,7 +239,7 @@ int aliceVision_main(int argc, char** argv)
         selector.processRegular();
 
     // Write selected keyframes
-    selector.writeSelection(brands, models, mmFocals, outputExtension, exrDataType);
+    selector.writeSelection(brands, models, mmFocals, renameKeyframes, outputExtension, exrDataType);
 
     // If debug options are set, export the scores as a CSV file and / or the motion vectors as images
     if (exportScores)
