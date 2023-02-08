@@ -106,7 +106,7 @@ class CacheValue
 {
 public:
     /**
-     * @brief Factory method to create a CacheValue instance that wraps a shared inter to an image
+     * @brief Factory method to create a CacheValue instance that wraps a shared pointer to an image
      * @param[in] img shared pointer to an image 
      * @result CacheValue instance wrapping the shared pointer
      */
@@ -173,7 +173,7 @@ inline std::shared_ptr<Image<RGBAfColor>> CacheValue::get<RGBAfColor>() { return
 
 
 /**
- * @brief A class for retrieving images from disk (optionnaly downscaled) that implements a caching mechanism.
+ * @brief A class for retrieving images from disk (optionally downscaled) that implements a caching mechanism.
  * 
  * When creating an instance of this class, one must provide two memory size limits: 
  * - a capacity: the amount of space dedicated to storing images for later use
