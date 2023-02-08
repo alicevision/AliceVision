@@ -161,7 +161,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
     /* Starts at 1 because the first frame's motion score will be -1.
      * Ends at sequenceSize - 1 to ensure the last frame cannot be pushed twice. */
     for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
-        motionAcc += _flowScores.at(i);
+        motionAcc += _flowScores.at(i) > -1.f ? _flowScores.at(i) : 0.f;
         if (motionAcc >= step) {
             subsequenceLimits.push_back(i);
             motionAcc = 0.0;  // Reset the motion accumulator
@@ -192,7 +192,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                 motionAcc = 0.0;
 
                 for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
-                    motionAcc += _flowScores.at(i);
+                    motionAcc += _flowScores.at(i) > -1.f ? _flowScores.at(i) : 0.f;
                     if (motionAcc >= step) {
                         newLimits.push_back(i);
                         motionAcc = 0.0;
@@ -220,7 +220,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                 motionAcc = 0.0;
 
                 for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
-                    motionAcc += _flowScores.at(i);
+                    motionAcc += _flowScores.at(i) > -1.f ? _flowScores.at(i) : 0.f;
                     if (motionAcc >= step) {
                         newLimits.push_back(i);
                         motionAcc = 0.0;
@@ -341,7 +341,33 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
                 feed.goToNextFrame();
             }
 
-            currentMatSharpness = readImage(feed, rescaledWidthSharpness);  // Read image for sharpness and rescale it if requested
+            /* Handle input feeds that may have invalid or missing frames:
+             *   - catch the "invalid argument" exception thrown by "readImage" if a frame is invalid or missing
+             *   - try reading the next frame instead
+             *   - if the next frame is correctly read, then push dummy scores for the invalid frame and go on with
+             *     the process
+             *   - otherwise (feed not correctly moved to the next frame), throw a runtime error exception as something
+             *     is wrong with the video
+             */
+            try {
+                currentMatSharpness = readImage(feed, rescaledWidthSharpness);  // Read image for sharpness and rescale it if requested
+            } catch (const std::invalid_argument& ex) {
+                // currentFrame + 1 = currently evaluated frame with indexing starting at 1, for display reasons
+                // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
+                ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
+                                        << ", attempting to read frame " << currentFrame + 2 << ".");
+                bool success = feed.goToFrame(++currentFrame);
+                if (success) {
+                    // Will throw an exception if next frame is also invalid
+                    currentMatSharpness = readImage(feed, rescaledWidthSharpness);
+                    // If no exception has been thrown, push dummy scores for the frame that was skipped
+                    _sharpnessScores.push_back(-1.f);
+                    _flowScores.push_back(-1.f);
+                } else
+                    ALICEVISION_THROW_ERROR("Could not go to frame " << currentFrame + 1
+                                            << " either. The feed might be corrupted.");
+            }
+
             if (rescaledWidthSharpness == rescaledWidthFlow) {
                 currentMatFlow = currentMatSharpness;
             } else {
@@ -415,7 +441,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
         unsigned int outputKeyframeCnt = 0;  // Used if the "renameKeyframes" option is enabled
         for (const auto pos : _selectedKeyframes) {
             if (!feed.goToFrame(pos)) {
-                ALICEVISION_LOG_ERROR("Invalid frame position. Ignoring this frame.");
+                ALICEVISION_LOG_ERROR("Invalid frame position " << pos << ". Ignoring this frame.");
                 continue;
             }
 
@@ -573,7 +599,19 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
                 feed.goToNextFrame();
             }
 
-            currentMat = readImage(feed, rescaledWidth);  // Read image and rescale it if requested
+            // Handle invalid or missing frames
+            try {
+                currentMat = readImage(feed, rescaledWidth);  // Read image and rescale it if requested
+            } catch (const std::invalid_argument& ex) {
+                ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
+                                        << ", attempting to read frame " << currentFrame + 2 << ".");
+                bool success = feed.goToFrame(++currentFrame);
+                if (success)
+                    currentMat = readImage(feed, rescaledWidth);
+                else
+                    ALICEVISION_THROW_ERROR("Could not go to frame " << currentFrame + 1
+                                            << " either. The feed might be corrupted.");
+            }
 
             if (currentFrame > 0) {
                 cv::Mat flow;
