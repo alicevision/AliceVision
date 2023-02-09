@@ -177,13 +177,10 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
             std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
             Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
-            //oiio::ParamValueList metadata;
-            //metadata.attribute("AliceypeDesc::DOUBLE, oiio::TypeDesVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
-            //metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, P.data()));
-            //aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
-            aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
-
-
+            oiio::ParamValueList metadata;
+            metadata.attribute("AliceypeDesc::DOUBLE, oiio::TypeDesVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
+            metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, P.data()));
+            aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float), metadata);
         }
     }
     else
@@ -216,15 +213,15 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         else
         {
             // Create K matrix :
-            K(0,0) = 1000;
-            K(1,1) = 1000;
+            K(0,0) = 8000;
+            K(1,1) = 8000;
             K(0,2) = nbCols/2;
             K(1,2) = nbRows/2;
             K(2,2) = 1;
         }
 
         aliceVision::image::Image<float> normalsMask(nbCols, nbRows);
-        std::string maskName = inputPath + "/mask.png";
+        std::string maskName = inputPath + "/" + std::to_string(poseId) + "_mask.png";
         loadMask(maskName, normalsMask);
 
         // Float normal map
@@ -245,18 +242,47 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
 
         // Main fonction
         aliceVision::image::Image<float> depthMap(nbCols, nbRows);
-
-
-        aliceVision::image::Image<float> distanceMap(nbCols, nbRows);
-
         DCT_integration(normalsImPNG2, depthMap, perspective, K, normalsMask);
 
         // AliceVision uses distance-to-origin convention
+        aliceVision::image::Image<float> distanceMap(nbCols, nbRows);
         convertZtoDistance(depthMap, distanceMap, K);
 
-        std::string pathToDM = outputFodler + "/" + std::to_string(poseId) + "_depthMap.exr";
-        aliceVision::image::writeImage(pathToDM, depthMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
+        // TODO : Add fake metadata for display
+        /*Matrix3x3 K_bis;
+        K_bis.m11 = double(K(0,0));
+        K_bis.m12 = double(0.0);
+        K_bis.m13 = double(K(0,2));
 
+        K_bis.m21 = double(0.0);
+        K_bis.m22 = double(K(1,1));
+        K_bis.m23 = double(K(1,2));
+
+        K_bis.m31 = double(0.0);
+        K_bis.m32 = double(0.0);
+        K_bis.m33 = double(1.0);
+
+        Matrix3x3 R;
+        R.m11 = double(1.0);
+        R.m12 = double(0.0);
+        R.m13 = double(0.0);
+
+        R.m21 = double(0.0);
+        R.m22 = double(1.0);
+        R.m23 = double(0.0);
+
+        R.m31 = double(0.0);
+        R.m32 = double(0.0);
+        R.m33 = double(1.0);
+
+        Matrix3x3 iP = R.inverse()*K_bis.inverse(); // or K_bis.inverse()*R.inverse() ?
+        Point3d C = Point3d(0.0,0.0,0.0);
+
+        oiio::ParamValueList metadata;
+        metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, C.m));          //C.data()));
+        metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, iP.m));  // iP.data()));*/
+        std::string pathToDM = outputFodler + "/" + std::to_string(poseId) + "_depthMap.exr";
+        aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
     }
 }
 
