@@ -110,14 +110,15 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     // Check exposure consistency between group
     if (v_exposuresSetting.size() > 1)
     {
-        for (int g=1 ; g < v_exposuresSetting.size(); g++)
+        for (int g = 1 ; g < v_exposuresSetting.size(); ++g)
         {
-            for (int e = 0; e < v_exposuresSetting[g].size(); e++)
+            for (int e = 0; e < v_exposuresSetting[g].size(); ++e)
             {
                 if (!(v_exposuresSetting[g][e] == v_exposuresSetting[g - 1][e]))
                 {
-                    ALICEVISION_LOG_ERROR("Non consistant exposures between groups have been detected. Check your dataset metadata.");
-                    return false;
+                    ALICEVISION_LOG_WARNING("Non consistant exposures between poses have been detected. Most likely the dataset has been captured with an automatic exposure mode enabled. Final result can be impacted.");
+                    g = v_exposuresSetting.size();
+                    break;
                 }
             }
         }
@@ -153,12 +154,12 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
         {
             lines.push_back(line);
         }
-        if ((lines.size() < 3) || (atoi(lines[0].c_str()) != groups.size()) || (atoi(lines[1].c_str()) < groups[0].size()))
+        if ((lines.size() < 3) || (std::stoi(lines[0].c_str()) != groups.size()) || (std::stoi(lines[1].c_str()) < groups[0].size()))
         {
             ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
         }
-        int nbGroup = atoi(lines[0].c_str());
-        int nbExp = atoi(lines[1].c_str());
+        int nbGroup = std::stoi(lines[0].c_str());
+        int nbExp = std::stoi(lines[1].c_str());
 
         std::vector<double> v_lumaMeanMean;
 
@@ -169,8 +170,8 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
             {
                 std::istringstream iss(lines[3 + j * nbExp + i]);
                 aliceVision::IndexT srcId;
-                int exposure, nbItem;
-                double lumaMean, lumaMin, lumaMax;
+                int nbItem;
+                double exposure, lumaMean, lumaMin, lumaMax;
                 if (!(iss >> srcId >> exposure >> nbItem >> lumaMean >> lumaMin >> lumaMax))
                 {
                     ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");

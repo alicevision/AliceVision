@@ -65,7 +65,8 @@ std::istream & operator>>(std::istream& is, ImageSample & s)
 
 std::ostream & operator<<(std::ostream& os, const PixelDescription & p)
 {
-    os.write((const char *)&p.exposure, sizeof(p.exposure));
+    os.write((const char*)&p.srcId, sizeof(p.srcId));
+    os.write((const char*)&p.exposure, sizeof(p.exposure));
     os.write((const char *)&p.mean.r(), sizeof(p.mean.r()));
     os.write((const char *)&p.mean.g(), sizeof(p.mean.g()));
     os.write((const char *)&p.mean.b(), sizeof(p.mean.b()));
@@ -78,7 +79,8 @@ std::ostream & operator<<(std::ostream& os, const PixelDescription & p)
 
 std::istream & operator>>(std::istream& is, PixelDescription & p)
 {
-    is.read((char *)&p.exposure, sizeof(p.exposure));
+    is.read((char*)&p.srcId, sizeof(p.srcId));
+    is.read((char*)&p.exposure, sizeof(p.exposure));
     is.read((char *)&p.mean.r(), sizeof(p.mean.r()));
     is.read((char *)&p.mean.g(), sizeof(p.mean.g()));
     is.read((char *)&p.mean.b(), sizeof(p.mean.b()));
@@ -146,7 +148,7 @@ void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RG
     }
 }
 
-bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string>& imagePaths, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::ImageReadOptions & imgReadOptions, const Sampling::Params params, const bool simplified)
+bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string>& imagePaths, const std::vector<IndexT>& viewIds, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::ImageReadOptions & imgReadOptions, const Sampling::Params params, const bool simplified)
 {
     const int radiusp1 = params.radius + 1;
     const int diameter = (params.radius * 2) + 1;
@@ -217,6 +219,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
                 {
                     PixelDescription pd;
 
+                    pd.srcId = viewIds[idBracket];
                     pd.exposure = exposure;
                     pd.mean.r() = img(r, c).r();
                     pd.mean.g() = img(r, c).g();
@@ -262,6 +265,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
                         PixelDescription pd;
 
+                        pd.srcId = viewIds[idBracket];
                         pd.exposure = exposure;
                         pd.mean.r() = blockInput(y, x).r();
                         pd.mean.g() = blockInput(y, x).g();

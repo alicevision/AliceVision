@@ -196,6 +196,7 @@ int aliceVision_main(int argc, char** argv)
 
         std::vector<std::string> paths;
         std::vector<sfmData::ExposureSetting> exposuresSetting;
+        std::vector<IndexT> viewIds;
 
         image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
         std::string colorProfileFileName = "";
@@ -204,6 +205,7 @@ int aliceVision_main(int argc, char** argv)
         {
             paths.push_back(v->getImagePath());
             exposuresSetting.push_back(v->getCameraExposureSetting());
+            viewIds.push_back(v->getViewId());
 
             const std::string rawColorInterpretation_str = v->getRawColorInterpretation();
             rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(rawColorInterpretation_str);
@@ -225,7 +227,7 @@ int aliceVision_main(int argc, char** argv)
         const bool simplifiedSampling = byPass || (calibrationMethod == ECalibrationMethod::LINEAR);
 
         std::vector<hdr::ImageSample> out_samples;
-        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, imgReadOptions, params, simplifiedSampling);
+        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, viewIds, exposures, width, height, channelQuantization, imgReadOptions, params, simplifiedSampling);
         if (!res)
         {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);

@@ -38,8 +38,14 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
         imgReadOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
         imgReadOptions.workingColorSpace = image::EImageColorSpace::LINEAR;
 
+        std::vector<IndexT> viewIds;
+        for (size_t id = 0; id < imagePaths[idGroup].size(); ++id)
+        {
+            viewIds.push_back(id);
+        }
+
         std::vector<ImageSample> groupSamples;
-        if (!Sampling::extractSamplesFromImages(groupSamples, imagePaths[idGroup],
+        if (!Sampling::extractSamplesFromImages(groupSamples, imagePaths[idGroup], viewIds,
                                                 times[idGroup], width, height,
                                                 channelQuantization, imgReadOptions,
                                                 Sampling::Params{}))

@@ -49,36 +49,43 @@ namespace fs = boost::filesystem;
 
 struct luminanceInfo
 {
-    aliceVision::IndexT srcId;
-    double meanLum;
-    double minLum;
-    double maxLum;
-    int itemNb;
+    double exposure = 0.0;
+    double meanLum = 0.0;
+    double minLum = 1e6;
+    double maxLum = 0.0;
+    int itemNb = 0;
+
+    luminanceInfo() = default;
 };
 
-void computeLuminanceStatFromSamples(const std::vector<double>& groupedExposure, const std::vector<hdr::ImageSample>& samples, std::map<int, luminanceInfo>& luminanceInfos)
+void computeLuminanceStatFromSamples(const std::vector<hdr::ImageSample>& samples, std::map<int, luminanceInfo>& luminanceInfos)
 {
-    for (int i = 0; i < groupedExposure.size(); i++)
-    {
-        luminanceInfos[(int)(groupedExposure[i] * 1000)].itemNb = 0;
-        luminanceInfos[(int)(groupedExposure[i] * 1000)].meanLum = 0.0;
-        luminanceInfos[(int)(groupedExposure[i] * 1000)].minLum = 1000.0;
-        luminanceInfos[(int)(groupedExposure[i] * 1000)].maxLum = 0.0;
-    }
+    luminanceInfo lumaInfo;
+    luminanceInfos.clear();
+
     for (int i = 0; i < samples.size(); i++)
     {
         for (int j = 0; j < samples[i].descriptions.size(); j++)
         {
-            double lum = image::Rgb2GrayLinear(samples[i].descriptions[j].mean[0], samples[i].descriptions[j].mean[1], samples[i].descriptions[j].mean[2]);
-            luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].meanLum += lum;
-            luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].itemNb++;
-            if (lum < luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].minLum)
+            const IndexT key = samples[i].descriptions[j].srcId;
+
+            const double lum = image::Rgb2GrayLinear(samples[i].descriptions[j].mean[0], samples[i].descriptions[j].mean[1], samples[i].descriptions[j].mean[2]);
+
+            if (luminanceInfos.find(key) == luminanceInfos.end())
             {
-                luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].minLum = lum;
+                luminanceInfos[key] = lumaInfo;
+                luminanceInfos[key].exposure = samples[i].descriptions[j].exposure;
             }
-            if (lum > luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].maxLum)
+
+            luminanceInfos[key].meanLum += lum;
+            luminanceInfos[key].itemNb++;
+            if (lum < luminanceInfos[key].minLum)
             {
-                luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].maxLum = lum;
+                luminanceInfos[key].minLum = lum;
+            }
+            if (lum > luminanceInfos[key].maxLum)
+            {
+                luminanceInfos[key].maxLum = lum;
             }
         }
     }
@@ -300,21 +307,8 @@ int aliceVision_main(int argc, char** argv)
             sampling.analyzeSource(samples, channelQuantization, group_pos);
 
             std::map<int, luminanceInfo> luminanceInfos;
-            computeLuminanceStatFromSamples(groupedExposures[group_pos], samples, luminanceInfos);
+            computeLuminanceStatFromSamples(samples, luminanceInfos);
 
-            int v = 0;
-            for (auto it = luminanceInfos.begin(); it != luminanceInfos.end(); it++)
-            {
-                if (v < group.size())
-                {
-                    (it->second).srcId = group[v]->getViewId();
-                    v++;
-                }
-                else
-                {
-                    (it->second).srcId = 0;
-                }
-            }
             v_luminanceInfos.push_back(luminanceInfos);
 
             ++group_pos;
@@ -442,11 +436,26 @@ int aliceVision_main(int argc, char** argv)
 
         for (int i = 0; i < v_luminanceInfos.size(); ++i)
         {
-            for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
+            while (!v_luminanceInfos[i].empty())
             {
-                file << (it->second).srcId << " ";
-                file << it->first << " " << (it->second).itemNb << " " << (it->second).meanLum / (it->second).itemNb << " ";
-                file << (it->second).minLum << " " << (it->second).maxLum << std::endl;
+                // search min exposure
+                IndexT srcIdWithMinimalExposure = UndefinedIndexT;
+                double exposureMin = 1e9;
+                for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
+                {
+                    if ((it->second).exposure < exposureMin)
+                    {
+                        exposureMin = (it->second).exposure;
+                        srcIdWithMinimalExposure = it->first;
+                    }
+                }
+                // write in file
+                file << srcIdWithMinimalExposure << " ";
+                file << v_luminanceInfos[i][srcIdWithMinimalExposure].exposure << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                file << v_luminanceInfos[i][srcIdWithMinimalExposure].meanLum / v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                file << v_luminanceInfos[i][srcIdWithMinimalExposure].minLum << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].maxLum << std::endl;
+                // erase from map
+                v_luminanceInfos[i].erase(srcIdWithMinimalExposure);
             }
         }
     }
