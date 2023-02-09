@@ -347,6 +347,23 @@ void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfCol
             }
         }
     }
+
+    // Since we are not in a MV context, we can change the position of our depthmap
+    // We can then get away from negative values
+    for (int j = 0; j < nbCols; ++j)
+    {
+        for (int i = 0; i < nbRows; ++i)
+        {
+            if(normalsMask(i,j) > 0.7)
+            {
+                depth(i,j) = depth(i,j) - depth(floor(nbRows/2), floor(nbCols/2)) + 10*K(0,0);
+            }
+            else
+            {
+                depth(i,j) = -1.0;
+            }
+        }
+    }
 }
 
 
