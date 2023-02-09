@@ -165,6 +165,9 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
 
             aliceVision::image::Image<float> distanceMap;
             DCT_integration(normalsImPNG2, depthMap, perspective, K, normalsMask);
+            aliceVision::image::Image<float> z0(nbCols, nbRows);
+            aliceVision::image::Image<float> maskZ0(nbCols, nbRows);
+                getZ0FromLandmarks(sfmData, z0, maskZ0, viewId, normalsMask);
 
             // AliceVision uses distance-to-origin convention
             convertZtoDistance(depthMap, distanceMap, K);
@@ -515,6 +518,40 @@ void adjustScale(const aliceVision::sfmData::SfMData& sfmData, aliceVision::imag
     float denom = estimatedDepths.transpose()*estimatedDepths;
     float scale = num/denom;
     initDepth *= scale;
+}
+
+
+void getZ0FromLandmarks(const aliceVision::sfmData::SfMData& sfmData, aliceVision::image::Image<float>& z0, aliceVision::image::Image<float>& mask_z0, const size_t viewID, const aliceVision::image::Image<float>& mask)
+{
+    const aliceVision::sfmData::Landmarks& landmarks = sfmData.getLandmarks();
+    const aliceVision::sfmData::LandmarksPerView landmarksPerView = aliceVision::sfmData::getLandmarksPerViews(sfmData);
+    const aliceVision::sfmData::LandmarkIdSet& visibleLandmarks = landmarksPerView.at(viewID);
+
+    size_t numberOf3dPoints = visibleLandmarks.size();
+
+    const aliceVision::sfmData::CameraPose& currentPose = sfmData.getPose(sfmData.getView(viewID));
+    const geometry::Pose3& pose = currentPose.getTransform();
+
+    for (int i = 0; i < numberOf3dPoints; ++i)
+    {
+        size_t currentLandmarkIndex = visibleLandmarks.at(i);
+        const aliceVision::sfmData::Landmark& currentLandmark = landmarks.at(currentLandmarkIndex);
+        aliceVision::sfmData::Observation observationInCurrentPicture = currentLandmark.observations.at(viewID);
+
+        int rowInd = observationInCurrentPicture.x(1);
+        int colInd = observationInCurrentPicture.x(0);
+
+        if(mask(rowInd, colInd) > 0.7)
+        {
+            z0(rowInd, colInd) = pose.depth(currentLandmark.X);
+            mask_z0(rowInd, colInd) = 1.0;
+        }
+    }
+}
+
+void smoothIntegration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const aliceVision::image::Image<float>& mask, const aliceVision::image::Image<float>& z0, const aliceVision::image::Image<float>& mask_z0)
+{
+    std::cout << "WIP" << std::endl;
 }
 
 void convertZtoDistance(const aliceVision::image::Image<float>& zMap, aliceVision::image::Image<float>& distanceMap, const Eigen::Matrix3f& K)
