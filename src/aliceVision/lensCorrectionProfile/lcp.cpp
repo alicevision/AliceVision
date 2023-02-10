@@ -1057,12 +1057,17 @@ std::vector<std::string> reduceStrings(const std::vector<std::string>& v_str)
 
 LCPinfo* LCPdatabase::retrieveLCP(const std::string& lcpFilepath)
 {
+    if (lcpFilepath.empty())
+    {
+        return nullptr;
+    }
+
     // Check if the LCP is already in the cache, or add it
     auto lcpCacheIt = _lcpCache.find(lcpFilepath);
     if(lcpCacheIt == _lcpCache.end())
     {
         // If not already in the cache, add it.
-#pragma omp critical
+        #pragma omp critical
         _lcpCache[lcpFilepath] = LCPinfo(lcpFilepath, true);
         lcpCacheIt = _lcpCache.find(lcpFilepath);
     }
@@ -1099,7 +1104,7 @@ LCPinfo* LCPdatabase::findLCP(
         if(headerIt == _lcpHeaderCache.end())
         {
             // If not already in the cache of LCP headers, add it.
-#pragma omp critical
+            #pragma omp critical
             _lcpHeaderCache[lcpPath.path.string()] = LCPinfo(lcpPath.path.string(), false);
             headerIt = _lcpHeaderCache.find(lcpPath.path.string());
         }
@@ -1132,11 +1137,18 @@ LCPinfo* LCPdatabase::findLCP(
             continue;
 
         // Add the mapping of the lens ID to the found LCP filepath
-#pragma omp critical
+        #pragma omp critical
         _lcpCameraMappingCache[lensUidStr] = lcpPath.path.string();
 
         // Return the LCP from file or cache
         return retrieveLCP(lcpPath.path.string());
+    }
+
+    // No LCP has been found, add an empty path for that key in order to speed up next search of it
+    if (_lcpCameraMappingCache.find(lensUidStr) == _lcpCameraMappingCache.end())
+    {
+        #pragma omp critical
+        _lcpCameraMappingCache[lensUidStr] = "";
     }
 
     return nullptr;

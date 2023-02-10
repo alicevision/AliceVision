@@ -522,11 +522,11 @@ int aliceVision_main(int argc, char **argv)
     }
     // try to find an appropriate Lens Correction Profile
     LCPinfo* lcpData = nullptr;
-    if(lcpStore.size() == 1)
+    if (lcpStore.size() == 1)
     {
         lcpData = lcpStore.retrieveLCP();
     }
-    else if(!lcpStore.empty())
+    else if (!lcpStore.empty())
     {
         // Find an LCP file that matches the camera model and the lens model.
         const std::string& lensModel = view.getMetadataLensModel();
@@ -657,7 +657,7 @@ int aliceVision_main(int argc, char **argv)
     camera::EINTRINSIC lcpCameraModel = camera::EINTRINSIC::UNKNOWN;
 
     LensParam lensParam;
-    if (lcpData != nullptr)
+    if ((lcpData != nullptr) && !(lcpData->isEmpty()))
     {
         lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
         lcpData->getVignettingParams(focalLengthmm, focusDistance, lensParam);
