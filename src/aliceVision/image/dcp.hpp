@@ -29,12 +29,12 @@ constexpr double sRGB_xyz[3][3] = {
     { -0.9787684,  1.9161415,  0.0334540},
     {0.0719453, -0.2289914,  1.4052427}
 };
-        
+
 constexpr double xyz_prophoto[3][3] = {
     {0.7976749,  0.1351917,  0.0313534},
     {0.2880402,  0.7118741,  0.0000857},
     {0.0000000,  0.0000000,  0.8252100}
-};        
+};
 constexpr double prophoto_xyz[3][3] = {
     {1.3459433, -0.2556075, -0.0511118},
     { -0.5445989,  1.5081673,  0.0205351},
@@ -173,14 +173,14 @@ public:
      * param[in] type The matrices to get, "color" or "forward"
      * param[in] v_Mat A vector of matrices to be populated
      */
-    void getMatrices(const std::string& type, std::vector<Matrix>& v_Mat);
+    void getMatrices(const std::string& type, std::vector<Matrix>& v_Mat) const;
 
     /**
      * @brief getMatricesAsStrings gets some matrices contained in the profile in a string format (one string per matrix)
      * param[in] type The matrices to get, "color" or "forward"
      * param[in] v_strMat A vector of std::string to be populated
      */
-    void getMatricesAsStrings(const std::string& type, std::vector<std::string>& v_strMat);
+    void getMatricesAsStrings(const std::string& type, std::vector<std::string>& v_strMat) const;
 
     /**
      * @brief setMatrices sets some matrices contained in the profile
@@ -202,7 +202,7 @@ public:
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      */
-    void applyLinear(OIIO::ImageBuf& image, const Triple neutral, const bool sourceIsRaw = false);
+    void applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw = false) const;
 
     /**
      * @brief applyLinear applies the linear part of a DCP profile on an aliceVision image
@@ -210,7 +210,7 @@ public:
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      */
-    void applyLinear(Image<image::RGBAfColor>& image, const Triple neutral, const bool sourceIsRaw = false);
+    void applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw = false) const;
 
     /**
      * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer
@@ -256,21 +256,21 @@ private:
 
     void hsdApply(const HsdTableInfo& table_info, const std::vector<HsbModify>& table_base, float& h, float& s, float& v) const;
 
-    Matrix matMult(const Matrix& A, const Matrix& B);
-    Triple matMult(const Matrix& M, const Triple& V);
-    Matrix matInv(const Matrix& M);
+    Matrix matMult(const Matrix& A, const Matrix& B) const;
+    Triple matMult(const Matrix& M, const Triple& V) const;
+    Matrix matInv(const Matrix& M) const;
 
-    Matrix getInterpolatedMatrix(const double cct, const std::string& type);
-    void getChromaticityCoordinatesFromXyz(const Triple& xyz, double& x, double& y);
-    Triple getXyzFromChromaticityCoordinates(const double x, const double y);
-    Triple getXyzFromTemperature(const double cct, const double tint = 0.f);
-    void setChromaticityCoordinates(const double x, const double y, double& cct, double& tint);
-    void getChromaticityCoordinates(const double cct, const double tint, double& x, double& y);
-    void getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, double& x, double& y);
-    Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget);
-    Matrix getCameraToXyzD50Matrix(const double x, const double y);
-    Matrix getCameraToSrgbLinearMatrix(const double x, const double y);
-    Matrix getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw = false);
+    Matrix getInterpolatedMatrix(const double cct, const std::string& type) const;
+    void getChromaticityCoordinatesFromXyz(const Triple& xyz, double& x, double& y) const;
+    Triple getXyzFromChromaticityCoordinates(const double x, const double y) const;
+    Triple getXyzFromTemperature(const double cct, const double tint = 0.f) const;
+    void setChromaticityCoordinates(const double x, const double y, double& cct, double& tint) const;
+    void getChromaticityCoordinates(const double cct, const double tint, double& x, double& y) const;
+    void getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, double& x, double& y) const;
+    Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget) const;
+    Matrix getCameraToXyzD50Matrix(const double x, const double y) const;
+    Matrix getCameraToSrgbLinearMatrix(const double x, const double y) const;
+    Matrix getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw = false) const;
 
     Matrix ws_sRGB; // working color space to sRGB
     Matrix sRGB_ws; // sRGB to working color space
@@ -335,7 +335,7 @@ public:
     void add_or_replace(DCPProfile& dcpProf, const std::string& make, const std::string& model);
 
     /**
-     * @brief getDcpForCamera gets a DCP profile in the database for a given camera.
+     * @brief retrieveDcpForCamera searches for a DCP profile in the database for a given camera.
      * Search first in the cache. If no DCP profile is found search if an appropriate DCP file exists in the file list.
      * If a dcp file is found then load it and store it in the cache.
      * param[in] make The camera maker
@@ -343,7 +343,7 @@ public:
      * param[in] dcpProf the DCP profile to be filled in
      * return True if a corresponding profile has been found
      */
-    bool getDcpForCamera(const std::string& make, const std::string& model, DCPProfile& dcpProf);
+    bool retrieveDcpForCamera(const std::string& make, const std::string& model, DCPProfile& dcpProf);
 
 private:
 

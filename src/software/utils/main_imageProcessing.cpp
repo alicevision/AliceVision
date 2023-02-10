@@ -9,6 +9,7 @@
 #include <aliceVision/utils/regexFilter.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/stl/mapUtils.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -306,7 +307,7 @@ struct ProcessingParams
     };
 };
 
-void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, std::map<std::string, std::string>& imageMetadata)
+void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, const std::map<std::string, std::string>& imageMetadata)
 {
     const unsigned int nchannels = 4;
 
@@ -470,37 +471,40 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 #endif
     }
 
+
     if (pParams.applyDcpMetadata)
     {
-        bool dcpMetadataOK = !imageMetadata["AliceVision:DCP:Temp1"].empty() && !imageMetadata["AliceVision:DCP:Temp2"].empty() &&
-                             !imageMetadata["AliceVision:DCP:ForwardMatrixNumber"].empty() && !imageMetadata["AliceVision:DCP:ColorMatrixNumber"].empty();
+        bool dcpMetadataOK = map_has_non_empty_value(imageMetadata, "AliceVision:DCP:Temp1") &&
+                             map_has_non_empty_value(imageMetadata, "AliceVision:DCP:Temp2") &&
+                             map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ForwardMatrixNumber") &&
+                             map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ColorMatrixNumber");
 
         int colorMatrixNb;
         int fwdMatrixNb;
 
         if (dcpMetadataOK)
         {
-            colorMatrixNb = std::stoi(imageMetadata["AliceVision:DCP:ColorMatrixNumber"]);
-            fwdMatrixNb = std::stoi(imageMetadata["AliceVision:DCP:ForwardMatrixNumber"]);
+            colorMatrixNb = std::stoi(imageMetadata.at("AliceVision:DCP:ColorMatrixNumber"));
+            fwdMatrixNb = std::stoi(imageMetadata.at("AliceVision:DCP:ForwardMatrixNumber"));
 
             ALICEVISION_LOG_INFO("Matrix Number : " << colorMatrixNb << " ; " << fwdMatrixNb);
 
             dcpMetadataOK = !((colorMatrixNb == 0) ||
-                              ((colorMatrixNb > 0) && imageMetadata["AliceVision:DCP:ColorMat1"].empty()) ||
-                              ((colorMatrixNb > 1) && imageMetadata["AliceVision:DCP:ColorMat2"].empty()) ||
-                              ((fwdMatrixNb > 0) && imageMetadata["AliceVision:DCP:ForwardMat1"].empty()) ||
-                              ((fwdMatrixNb > 1) && imageMetadata["AliceVision:DCP:ForwardMat2"].empty()));
+                              ((colorMatrixNb > 0) && map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ColorMat1")) ||
+                              ((colorMatrixNb > 1) && map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ColorMat2")) ||
+                              ((fwdMatrixNb > 0) && map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ForwardMat1")) ||
+                              ((fwdMatrixNb > 1) && map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ForwardMat2")));
         }
 
         if (!dcpMetadataOK)
         {
-            ALICEVISION_THROW_ERROR("image Processing : All required DCP metadata cannot be found");
+            ALICEVISION_THROW_ERROR("Image Processing: All required DCP metadata cannot be found.\n" << imageMetadata);
         }
 
         image::DCPProfile dcpProf;
 
-        dcpProf.info.temperature_1 = std::stof(imageMetadata["AliceVision:DCP:Temp1"]);
-        dcpProf.info.temperature_2 = std::stof(imageMetadata["AliceVision:DCP:Temp2"]);
+        dcpProf.info.temperature_1 = std::stof(imageMetadata.at("AliceVision:DCP:Temp1"));
+        dcpProf.info.temperature_2 = std::stof(imageMetadata.at("AliceVision:DCP:Temp2"));
         dcpProf.info.has_color_matrix_1 = colorMatrixNb > 0;
         dcpProf.info.has_color_matrix_2 = colorMatrixNb > 1;
         dcpProf.info.has_forward_matrix_1 = fwdMatrixNb > 0;
@@ -508,25 +512,25 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         std::vector<std::string> v_str;
 
-        v_str.push_back(imageMetadata["AliceVision:DCP:ColorMat1"]);
+        v_str.push_back(imageMetadata.at("AliceVision:DCP:ColorMat1"));
         if (colorMatrixNb > 1)
         {
-            v_str.push_back(imageMetadata["AliceVision:DCP:ColorMat2"]);
+            v_str.push_back(imageMetadata.at("AliceVision:DCP:ColorMat2"));
         }
         dcpProf.setMatricesFromStrings("color", v_str);
 
         v_str.clear();
         if (fwdMatrixNb > 0)
         {
-            v_str.push_back(imageMetadata["AliceVision:DCP:ForwardMat1"]);
+            v_str.push_back(imageMetadata.at("AliceVision:DCP:ForwardMat1"));
             if (fwdMatrixNb > 1)
             {
-                v_str.push_back(imageMetadata["AliceVision:DCP:ForwardMat2"]);
+                v_str.push_back(imageMetadata.at("AliceVision:DCP:ForwardMat2"));
             }
             dcpProf.setMatricesFromStrings("forward", v_str);
         }
 
-        std::string cam_mul = imageMetadata["raw:cam_mul"];
+        std::string cam_mul = imageMetadata.at("raw:cam_mul");
         std::vector<float> v_mult;
         size_t last = 0;
         size_t next = 1;
@@ -895,13 +899,11 @@ int aliceVision_main(int argc, char * argv[])
                     image(i) = image(i) * exposureCompensation;
             }
 
-            std::map<std::string, std::string> metadata = view.getMetadata();
-
             // Image processing
-            processImage(image, pParams, metadata);
+            processImage(image, pParams, view.getMetadata());
 
             // Save the image
-            saveImage(image, viewPath, outputfilePath, metadata, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, viewPath, outputfilePath, view.getMetadata(), metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -1027,7 +1029,8 @@ int aliceVision_main(int argc, char * argv[])
                 const std::string& model = view.getMetadataModel();
 
                 // Get DCP profile
-                if (!dcpDatabase.getDcpForCamera(make, model, dcpProf))
+                if (!dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
+                {
                     if (errorOnMissingColorProfile)
                     {
                         ALICEVISION_LOG_ERROR("The specified DCP database does not contain an appropriate profil for DSLR " << make << " " << model);
@@ -1037,6 +1040,7 @@ int aliceVision_main(int argc, char * argv[])
                     {
                         ALICEVISION_LOG_WARNING("Can't find color profile for input image " << inputFilePath);
                     }
+                }
 
                 // Add color profile info in metadata
                 view.addDCPMetadata(dcpProf);
