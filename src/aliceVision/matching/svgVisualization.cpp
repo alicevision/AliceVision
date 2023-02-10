@@ -291,7 +291,7 @@ void saveMatches2SVG(const std::string &imagePathLeft,
     }
   }
  
-  std::ofstream svgFile( outputSVGPath.c_str() );
+  std::ofstream svgFile(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -617,7 +617,7 @@ void saveEpipolarGeometry2SVG(const std::string &imagePath,
     svgStream.drawCircle(point(0), point(1), 3 * radius, svg::svgStyle().stroke("red", strokeWidth).fill("red"));
   }
 
-  std::ofstream svgFile(outputSVGPath.c_str());
+  std::ofstream svgFile(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -655,7 +655,7 @@ void saveMatchesAsMotion(const std::string &imagePath,
 
     }
   }
-  std::ofstream svgFile(outputSVGPath.c_str());
+  std::ofstream svgFile(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -868,7 +868,7 @@ void saveCCTagMatches2SVG(const std::string &imagePathLeft,
     }
   }
 
-  std::ofstream svgFile(outputSVGPath.c_str());
+  std::ofstream svgFile(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }

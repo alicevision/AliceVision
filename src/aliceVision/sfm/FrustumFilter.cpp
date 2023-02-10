@@ -92,7 +92,7 @@ PairSet FrustumFilter::getFrustumIntersectionPairs() const
 // Export defined frustum in PLY file for viewing
 bool FrustumFilter::export_Ply(const std::string & filename) const
 {
-  std::ofstream of(filename.c_str());
+  std::ofstream of(filename);
   if (!of.is_open())
     return false;
   // Vertex count evaluation

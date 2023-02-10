@@ -75,7 +75,7 @@ inline bool exportToPly(const std::vector<Vec3> & vec_camPosGT,
   const std::string & sFileName)
 {
   std::ofstream outfile;
-  outfile.open(sFileName.c_str(), std::ios_base::out);
+  outfile.open(sFileName, std::ios_base::out);
 
   outfile << "ply"
     << '\n' << "format ascii 1.0"

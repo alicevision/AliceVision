@@ -192,7 +192,7 @@ bool exportToMVE2Format(
         << fileOut.widen('\n')
         << "[view]" << fileOut.widen('\n')
         << "id = " << view_index << fileOut.widen('\n')
-        << "name = " << fs::path(srcImage.c_str()).filename().string() << fileOut.widen('\n');
+        << "name = " << fs::path(srcImage).filename().string() << fileOut.widen('\n');
 
       // To do:  trim any extra separator(s) from aliceVision name we receive, e.g.:
       // '/home/insight/aliceVision_KevinCain/aliceVision_Build/software/SfM/ImageDataset_SceauxCastle/images//100_7100.JPG'

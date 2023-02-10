@@ -85,7 +85,7 @@ int aliceVision_main(int argc, char* argv[])
     typedef OpenMesh::Decimater::ModQuadricT< Mesh >::Handle HModQuadric;
 
     Mesh mesh;
-    if(!OpenMesh::IO::read_mesh(mesh, inputMeshPath.c_str()))
+    if(!OpenMesh::IO::read_mesh(mesh, inputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;

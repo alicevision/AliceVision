@@ -537,10 +537,10 @@ void readImage(const std::string& path,
         size_t next = 1;
         while ((next = cam_mul.find(",", last)) != std::string::npos)
         {
-            v_mult.push_back(atof(cam_mul.substr(last, next - last).c_str()));
+            v_mult.push_back(std::stof(cam_mul.substr(last, next - last)));
             last = next + 1;
         }
-        v_mult.push_back(atof(cam_mul.substr(last, cam_mul.find("}", last) - last).c_str()));
+        v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last)));
 
         image::DCPProfile::Triple neutral;
         for (int i = 0; i < 3; i++)

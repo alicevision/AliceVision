@@ -635,7 +635,7 @@ void VoxelsGrid::vizualize()
     {
         std::string subFoldeName = getVoxelFolderName(i);
         std::string fname = subFoldeName + "tracks.wrl";
-        if (bfs::is_directory(subFoldeName.c_str()))
+        if (bfs::is_directory(subFoldeName))
         {
             fprintf(f, "Inline{ url [\"%s\"] \n }\n", fname.c_str());
         }

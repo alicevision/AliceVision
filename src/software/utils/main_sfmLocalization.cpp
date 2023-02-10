@@ -201,7 +201,7 @@ int aliceVision_main(int argc, char **argv)
   const std::string out_file_name = (fs::path(outputFolder) / "found_pose_centers.ply").string();
   {
     std::ofstream outfile;
-    outfile.open(out_file_name.c_str(), std::ios_base::out);
+    outfile.open(out_file_name, std::ios_base::out);
     if (outfile.is_open()) {
       outfile << "ply"
        << "\n" << "format ascii 1.0"

@@ -77,7 +77,7 @@ void visibleCamPosToSVGSurface
     }
     std::ostringstream osSvgGT;
     osSvgGT << fileName;
-    std::ofstream svgFileGT( osSvgGT.str().c_str());
+    std::ofstream svgFileGT( osSvgGT.str());
     svgFileGT << svgSurface_GT.closeSvgFile().str();
   }
 }

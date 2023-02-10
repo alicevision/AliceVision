@@ -177,7 +177,7 @@ inline void loadDescsFromFile(
 {
   vec_desc.clear();
 
-  std::ifstream fileIn(sfileNameDescs.c_str());
+  std::ifstream fileIn(sfileNameDescs);
   if(!fileIn.is_open())
     throw std::runtime_error("Can't load descriptor file, can't open '" + sfileNameDescs + "' !");
 
@@ -198,7 +198,7 @@ inline void saveDescsToFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
-  std::ofstream file(sfileNameDescs.c_str());
+  std::ofstream file(sfileNameDescs);
   if(!file.is_open())
     throw std::runtime_error("Can't save descriptor file, can't open '" + sfileNameDescs + "' !");
 
@@ -261,7 +261,7 @@ inline void loadDescsFromBinFile(
   if( !append ) // for compatibility
     vec_desc.clear();
 
-  std::ifstream fileIn(sfileNameDescs.c_str(), std::ios::in | std::ios::binary);
+  std::ifstream fileIn(sfileNameDescs, std::ios::in | std::ios::binary);
 
   if(!fileIn.is_open())
     throw std::runtime_error("Can't load descriptor binary file, can't open '" + sfileNameDescs + "' !");
@@ -304,7 +304,7 @@ inline void saveDescsToBinFile(
 {
   typedef typename DescriptorsT::value_type VALUE;
 
-  std::ofstream file(sfileNameDescs.c_str(), std::ios::out | std::ios::binary);
+  std::ofstream file(sfileNameDescs, std::ios::out | std::ios::binary);
 
   if (!file.is_open())
     throw std::runtime_error("Can't save descriptor binary file, can't open '" + sfileNameDescs + "' !");

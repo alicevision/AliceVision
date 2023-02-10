@@ -122,7 +122,7 @@ inline void saveFeatsToFile(
   const std::string & sfileNameFeats,
   FeaturesT & vec_feat)
 {
-  std::ofstream file(sfileNameFeats.c_str());
+  std::ofstream file(sfileNameFeats);
 
   if (!file.is_open())
     throw std::runtime_error("Can't save features file, can't open '" + sfileNameFeats + "' !");

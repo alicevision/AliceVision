@@ -89,7 +89,7 @@ int aliceVision_main(int argc, char* argv[])
 
 
     TriMesh inMesh;
-    if(!OpenMesh::IO::read_mesh(inMesh, inputMeshPath.c_str()))
+    if(!OpenMesh::IO::read_mesh(inMesh, inputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;

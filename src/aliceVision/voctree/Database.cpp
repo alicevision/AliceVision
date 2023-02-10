@@ -157,7 +157,7 @@ void Database::computeTfIdfWeights(float default_weight)
 
 void Database::saveWeights(const std::string& file) const
 {
-  std::ofstream out(file.c_str(), std::ios_base::binary);
+  std::ofstream out(file, std::ios_base::binary);
   uint32_t num_words = word_weights_.size();
   out.write((char*) (&num_words), sizeof (uint32_t));
   out.write((char*) (&word_weights_[0]), num_words * sizeof (float));
@@ -170,7 +170,7 @@ void Database::loadWeights(const std::string& file)
 
   try
   {
-    in.open(file.c_str(), std::ios_base::binary);
+    in.open(file, std::ios_base::binary);
     uint32_t num_words = 0;
     in.read((char*) (&num_words), sizeof (uint32_t));
     word_files_.resize(num_words); // Inverted files start out empty

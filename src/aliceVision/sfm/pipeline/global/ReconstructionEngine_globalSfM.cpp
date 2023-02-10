@@ -60,7 +60,7 @@ ReconstructionEngine_globalSfM::~ReconstructionEngine_globalSfM()
   if(!_loggingFile.empty())
   {
     // Save the reconstruction Log
-    std::ofstream htmlFileStream(_loggingFile.c_str());
+    std::ofstream htmlFileStream(_loggingFile);
     htmlFileStream << _htmlDocStream->getDoc();
   }
 }

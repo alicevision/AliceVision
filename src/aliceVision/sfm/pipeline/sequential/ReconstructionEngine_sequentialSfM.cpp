@@ -884,7 +884,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     _htmlDocStream->pushXYChart(xBinTracks, observationsLengthHistogram.GetHist(),"3DtoTracksSize");
 
     // save the reconstruction Log
-    std::ofstream htmlFileStream(_htmlLogFile.c_str());
+    std::ofstream htmlFileStream(_htmlLogFile);
     htmlFileStream << _htmlDocStream->getDoc();
   }
 

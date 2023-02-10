@@ -125,7 +125,7 @@ void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, const std::string& outpu
             svg::svgStyle().stroke("red", 2));
     }
 
-    std::ofstream svgFile(outputPath.c_str());
+    std::ofstream svgFile(outputPath);
     svgFile << svgSurface.closeSvgFile().str();
     svgFile.close();
 }

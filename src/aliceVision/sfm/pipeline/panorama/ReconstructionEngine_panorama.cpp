@@ -243,7 +243,7 @@ ReconstructionEngine_panorama::~ReconstructionEngine_panorama()
   if(!_loggingFile.empty())
   {
     // Save the reconstruction Log
-    std::ofstream htmlFileStream(_loggingFile.c_str());
+    std::ofstream htmlFileStream(_loggingFile);
     htmlFileStream << _htmlDocStream->getDoc();
   }
 }

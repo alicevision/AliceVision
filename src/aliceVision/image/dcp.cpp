@@ -2261,7 +2261,7 @@ void DCPProfile::setMatricesFromStrings(const std::string& type, std::vector<std
         Matrix mat;
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++)
-                mat[i][j] = std::stof(v[3*i + j].c_str());
+                mat[i][j] = std::stof(v[3*i + j]);
         v_Mat.push_back(mat);
     }
 

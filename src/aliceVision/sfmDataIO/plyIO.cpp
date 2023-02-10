@@ -24,7 +24,7 @@ bool savePLY(
     return false;
 
   //Create the stream and check it is ok
-  std::ofstream stream(filename.c_str());
+  std::ofstream stream(filename);
   if (!stream.is_open())
     return false;
 

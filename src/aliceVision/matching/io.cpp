@@ -33,7 +33,7 @@ bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath)
 
   if(ext == ".txt")
   {
-    std::ifstream stream(filepath.c_str());
+    std::ifstream stream(filepath);
     if (!stream.is_open())
       return false;
 
@@ -293,7 +293,7 @@ private:
 
     // write temporary file
     {
-      std::ofstream stream(tmpPath.c_str(), std::ios::out);
+      std::ofstream stream(tmpPath, std::ios::out);
       for(PairwiseMatches::const_iterator match = matchBegin;
         match != matchEnd;
         ++match)

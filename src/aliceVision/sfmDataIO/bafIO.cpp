@@ -21,7 +21,7 @@ bool saveBAF(
   const std::string& filename,
   ESfMData partFlag)
 {
-  std::ofstream stream(filename.c_str());
+  std::ofstream stream(filename);
   if (!stream.is_open())
     return false;
 
@@ -103,7 +103,7 @@ bool saveBAF(
   {
     const std::string sFile = (fs::path(filename).parent_path() / (fs::path(filename).stem().string() + "_imgList.txt")).string();
 
-    stream.open(sFile.c_str());
+    stream.open(sFile);
     if (!stream.is_open())
       return false;
     for (sfmData::Views::const_iterator iterV = sfmData.getViews().begin();
