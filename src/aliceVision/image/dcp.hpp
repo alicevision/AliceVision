@@ -334,6 +334,12 @@ public:
     inline bool empty() { return dcpFilenamesList.empty(); }
 
     /**
+     * @brief Size of the database.
+     * return number of known profiles.
+     */
+    inline size_t size() { return dcpFilenamesList.size(); }
+
+    /**
      * @brief add_or_replace adds or replaces an existing DCP profile in the cache.
      * Update the DCP file list with dcpProf.info.filename. 
      * param[in] DCP profile to be stored.

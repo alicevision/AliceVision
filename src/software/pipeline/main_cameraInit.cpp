@@ -386,6 +386,10 @@ int aliceVision_main(int argc, char **argv)
   std::map<IndexT, std::vector<IndexT>> poseGroups;
   char allColorProfilesFound = 1; // char type instead of bool to support usage of atomic
   image::DCPDatabase dcpDatabase(colorProfileDatabaseDirPath);
+  if (!colorProfileDatabaseDirPath.empty())
+  {
+      ALICEVISION_LOG_INFO(dcpDatabase.size() << " profile(s) stored in the DCP database.");
+  }
   int viewsWithDCPMetadata = 0;
 
   LCPdatabase lcpStore(lensCorrectionProfileInfo, lensCorrectionProfileSearchIgnoreCameraModel);
