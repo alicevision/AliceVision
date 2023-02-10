@@ -508,18 +508,22 @@ int aliceVision_main(int argc, char **argv)
         }
     }
 
-    // Store the color interpretation mode choosed for raw images in metadata,
-    // so all future loads of this image will be interpreted in the same way.
-    if (!dcpError)
+    if (imgFormat.compare("raw") == 0)
     {
-        view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
+        // Store the color interpretation mode choosed for raw images in metadata,
+        // so all future loads of this image will be interpreted in the same way.
+        if (!dcpError)
+        {
+            view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
+        }
+        else
+        {
+            view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(image::ERawColorInterpretation::LibRawWhiteBalancing));
+            if (!dcpDatabase.empty())
+                ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
+        }
     }
-    else
-    {
-        view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(image::ERawColorInterpretation::LibRawWhiteBalancing));
-        if (!dcpDatabase.empty())
-            ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
-    }
+
     // try to find an appropriate Lens Correction Profile
     LCPinfo* lcpData = nullptr;
     if (lcpStore.size() == 1)
