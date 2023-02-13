@@ -414,10 +414,7 @@ void ImageCache::load(const CacheKey& key)
 
         // apply downscale
         int downscale = 1 << key.halfSampleLevel;
-        if (downscale > 1)
-        {
-            imageAlgo::resizeImage(downscale, *img, *img);
-        }
+        imageAlgo::resizeImage(downscale, *img);
 
         _info.nbLoadFromDisk++;
     }

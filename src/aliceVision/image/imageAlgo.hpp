@@ -47,10 +47,10 @@ void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
                   image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace);
 
 /**
- * @brief resize a given image buffer
+ * @brief Resize a given image buffer.
  * @param[in] downscale The resize downscale
- * @param[in] inBuffer The input image buffer
- * @param[out] outBuffer The output image buffer
+ * @param[in] inImage The input image buffer
+ * @param[out] outImage The output image buffer
  * @param[in] filter The name of a high-quality filter to use when resampling
  *            Default is bilinear resampling
  *            See openImageIO documentation "ImageBufAlgo filtername"
@@ -73,6 +73,28 @@ void resizeImage(int downscale, const image::Image<image::RGBAColor>& inImage,
                  const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
                  image::Image<image::RGBAfColor>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
+
+/**
+ * @brief Resize a given image buffer in place.
+ * @param[in] downscale The resize downscale
+ * @param[in,out] inoutImage The input/output image buffer
+ * @param[in] filter The name of a high-quality filter to use when resampling
+ *            Default is bilinear resampling
+ *            See openImageIO documentation "ImageBufAlgo filtername"
+ * @param[in] filterSize The resize filter size
+ */
+void resizeImage(int downscale, image::Image<unsigned char>& inoutImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, image::Image<float>& inoutImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, image::Image<image::RGBColor>& inoutImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, image::Image<image::RGBfColor>& inoutImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, image::Image<image::RGBAColor>& inoutImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, image::Image<image::RGBAfColor>& inoutImage,
                  const std::string& filter = "", float filterSize = 0);
 
 /**
