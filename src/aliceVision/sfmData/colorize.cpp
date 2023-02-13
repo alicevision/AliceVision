@@ -85,7 +85,7 @@ void colorizeTracks(SfMData& sfmData)
             {
                 const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
                 const Vec3& pt = landmark.X;
-                const double eucd = (Tcenter - pt).norm();
+                const double eucd = 1.0 / (Tcenter - pt).norm();
                 Vec2 uv = it->second.x;
                 uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
                 uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
@@ -107,7 +107,7 @@ void colorizeTracks(SfMData& sfmData)
       
   }
   
-  std::cout << sfmData.getViews().size() << " views and " << remainingLandmarksToColor.size() << " points Colorize Time: " << timer << std::endl;
+  ALICEVISION_LOG_INFO(sfmData.getViews().size() << " views and " << remainingLandmarksToColor.size() << " points Colorize Time: " << timer << std::endl);
 }
 
 } // namespace sfm
