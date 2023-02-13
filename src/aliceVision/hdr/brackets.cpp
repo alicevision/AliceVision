@@ -181,10 +181,17 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
             v_lumaMeanMean.push_back(lumaMeanMean / nbGroup);
         }
 
+        // adjust last index to avoid non increasing luminance curve due to saturation in highlights
+        int lastIdx = v_lumaMeanMean.size() - 1;
+        while ((lastIdx > 1) && ((v_lumaMeanMean[lastIdx] < v_lumaMeanMean[lastIdx - 1]) || (v_lumaMeanMean[lastIdx] < v_lumaMeanMean[lastIdx - 2])))
+        {
+            lastIdx--;
+        }
+
         double minDiffWithLumaTarget = 1000.0;
         targetIndex = 0;
 
-        for (int k = 0; k < v_lumaMeanMean.size(); ++k)
+        for (int k = 0; k < lastIdx; ++k)
         {
             const double diffWithLumaTarget = (v_lumaMeanMean[k] > meanTargetedLuma) ? (v_lumaMeanMean[k] - meanTargetedLuma) : (meanTargetedLuma - v_lumaMeanMean[k]);
             if (diffWithLumaTarget < minDiffWithLumaTarget)
