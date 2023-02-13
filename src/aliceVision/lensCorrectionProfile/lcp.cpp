@@ -1125,7 +1125,7 @@ LCPinfo* LCPdatabase::findLCP(
 
         const bool cameraOK =
             ((reducedCameraModelLCP == reducedCameraModel) || (reducedCameraPrettyNameLCP == reducedCameraModel));
-        const bool lensOK = ((reducedLensPrettyNameLCP == reducedLensModel) ||
+        const bool lensOK = ((reducedLensPrettyNameLCP.find(reducedLensModel) != std::string::npos) ||
                        (std::find(reducedLensModelsLCP.begin(), reducedLensModelsLCP.end(), reducedLensModel) != reducedLensModelsLCP.end()));
         const bool lensIDOK = (std::find(lensIDsLCP.begin(), lensIDsLCP.end(), lensID) != lensIDsLCP.end());
         const bool isRaw = lcpHeader.isRawProfile();

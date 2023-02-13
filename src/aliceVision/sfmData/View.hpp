@@ -486,7 +486,7 @@ public:
    */
   int getMetadataLensID() const
   {
-      return getIntMetadata({ "Exif:LensID", "lensID" });
+      return getIntMetadata({ "Exif:LensID", "lensID", "lensType"});
   }
 
   /**
