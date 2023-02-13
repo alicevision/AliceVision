@@ -22,7 +22,7 @@ void buildFrameCudaTexture(CudaDeviceMemoryPitched<CudaRGBA, 2>& frame_dmp, cuda
     texDesc.addressMode[2] = cudaAddressModeClamp;
 
 #if defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR) && defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION)
-    tex_desc.readMode = cudaReadModeNormalizedFloat; // uchar to float [0:1], see tex2d_float4 function
+    texDesc.readMode = cudaReadModeNormalizedFloat; // uchar to float [0:1], see tex2d_float4 function
 #else
     texDesc.readMode = cudaReadModeElementType;
 #endif
