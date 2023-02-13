@@ -68,6 +68,8 @@ set(depthMap_cuda_imageProcessing_sources
   cuda/imageProcessing/deviceGaussianFilter.cu
   cuda/imageProcessing/deviceColorConversion.hpp
   cuda/imageProcessing/deviceColorConversion.cu
+  cuda/imageProcessing/deviceMipmappedArray.hpp
+  cuda/imageProcessing/deviceMipmappedArray.cu
 )
 
 # normalMapping CUDA Headers Only
