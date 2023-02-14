@@ -33,6 +33,7 @@
 #include <sstream>
 
 #include <fstream>
+#include <map>
 
 
 // These constants define the current software version.
@@ -41,73 +42,100 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
+using namespace aliceVision::hdr;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-enum class ECalibrationMethod
+struct luminanceInfo
 {
-    LINEAR,
-    DEBEVEC,
-    GROSSBERG,
-    LAGUERRE,
+    double exposure = 0.0;
+    double meanLum = 0.0;
+    double minLum = 1e6;
+    double maxLum = 0.0;
+    int itemNb = 0;
+
+    luminanceInfo() = default;
 };
 
-/**
- * @brief convert an enum ECalibrationMethod to its corresponding string
- * @param ECalibrationMethod
- * @return String
- */
-inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod calibrationMethod)
+void computeLuminanceStatFromSamples(const std::vector<hdr::ImageSample>& samples, std::map<int, luminanceInfo>& luminanceInfos)
 {
-    switch(calibrationMethod)
+    luminanceInfo lumaInfo;
+    luminanceInfos.clear();
+
+    for (int i = 0; i < samples.size(); i++)
     {
-        case ECalibrationMethod::LINEAR:
-            return "linear";
-        case ECalibrationMethod::DEBEVEC:
-            return "debevec";
-        case ECalibrationMethod::GROSSBERG:
-            return "grossberg";
-        case ECalibrationMethod::LAGUERRE:
-            return "laguerre";
+        for (int j = 0; j < samples[i].descriptions.size(); j++)
+        {
+            const IndexT key = samples[i].descriptions[j].srcId;
+
+            const double lum = image::Rgb2GrayLinear(samples[i].descriptions[j].mean[0], samples[i].descriptions[j].mean[1], samples[i].descriptions[j].mean[2]);
+
+            if (luminanceInfos.find(key) == luminanceInfos.end())
+            {
+                luminanceInfos[key] = lumaInfo;
+                luminanceInfos[key].exposure = samples[i].descriptions[j].exposure;
+            }
+
+            luminanceInfos[key].meanLum += lum;
+            luminanceInfos[key].itemNb++;
+            if (lum < luminanceInfos[key].minLum)
+            {
+                luminanceInfos[key].minLum = lum;
+            }
+            if (lum > luminanceInfos[key].maxLum)
+            {
+                luminanceInfos[key].maxLum = lum;
+            }
+        }
     }
-    throw std::out_of_range("Invalid method name enum");
 }
 
-/**
- * @brief convert a string calibration method name to its corresponding enum ECalibrationMethod
- * @param ECalibrationMethod
- * @return String
- */
-inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& calibrationMethodName)
+void computeLuminanceInfoFromImage(image::Image<image::RGBfColor>& image, luminanceInfo& lumaInfo)
 {
-    std::string methodName = calibrationMethodName;
-    std::transform(methodName.begin(), methodName.end(), methodName.begin(), ::tolower);
+    // Luminance statistics are calculated from a subsampled square, centered and rotated by 45°.
+    // 2 vertices of this square are the centers of the longest sides of the image.
+    // Such a shape is suitable for both fisheye and classic images.
 
-    if(methodName == "linear")
-        return ECalibrationMethod::LINEAR;
-    if(methodName == "debevec")
-        return ECalibrationMethod::DEBEVEC;
-    if(methodName == "grossberg")
-        return ECalibrationMethod::GROSSBERG;
-    if(methodName == "laguerre")
-        return ECalibrationMethod::LAGUERRE;
+    double meanLuminance = 0.0;
+    double maxLuminance = 0.0;
+    double minLuminance = 1000.0;
+    int sampleNb = 0;
 
-    throw std::out_of_range("Invalid method name : '" + calibrationMethodName + "'");
-}
+    const int imgH = image.Height();
+    const int imgW = image.Width();
 
-inline std::ostream& operator<<(std::ostream& os, ECalibrationMethod calibrationMethodName)
-{
-    os << ECalibrationMethod_enumToString(calibrationMethodName);
-    return os;
-}
+    const int a1 = (imgH <= imgW) ? imgW / 2 : imgH / 2;
+    const int a2 = (imgH <= imgW) ? imgW / 2 : imgW - (imgH / 2);
+    const int a3 = (imgH <= imgW) ? imgH - (imgW / 2) : imgH / 2;
+    const int a4 = (imgH <= imgW) ? (imgW / 2) + imgH : imgW + (imgH / 2);
 
-inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibrationMethod)
-{
-    std::string token;
-    in >> token;
-    calibrationMethod = ECalibrationMethod_stringToEnum(token);
-    return in;
+    // All rows must be considered if image orientation is landscape
+    // Only imgW rows centered on imgH/2 must be considered if image orientation is portrait
+    const int rmin = (imgH <= imgW) ? 0 : (imgH - imgW) / 2;
+    const int rmax = (imgH <= imgW) ? imgH : (imgH + imgW) / 2;
+
+    const int sampling = 16;
+
+    for (int r = rmin; r < rmax; r = r + sampling)
+    {
+        const int cmin = (r < imgH / 2) ? a1 - r : r - a3;
+        const int cmax = (r < imgH / 2) ? a2 + r : a4 - r;
+
+        for (int c = cmin; c < cmax; c = c + sampling)
+        {
+            double luma = image::Rgb2GrayLinear(image(r, c)[0], image(r, c)[1], image(r, c)[2]);
+            meanLuminance += luma;
+            minLuminance = (luma < minLuminance) ? luma : minLuminance;
+            maxLuminance = (luma > maxLuminance) ? luma : maxLuminance;
+            sampleNb++;
+        }
+    }
+
+    lumaInfo.itemNb = sampleNb;
+    lumaInfo.minLum = minLuminance;
+    lumaInfo.maxLum = maxLuminance;
+    lumaInfo.meanLum = meanLuminance;
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -115,11 +143,13 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmInputDataFilename;
     std::string samplesFolder;
     std::string outputResponsePath;
-    ECalibrationMethod calibrationMethod = ECalibrationMethod::LINEAR;
+    ECalibrationMethod calibrationMethod = ECalibrationMethod::DEBEVEC;
     std::string calibrationWeightFunction = "default";
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     size_t maxTotalPoints = 1000000;
+    bool byPass = false;
 
     // Command line parameters
 
@@ -138,14 +168,18 @@ int aliceVision_main(int argc, char** argv)
          "Name of method used for camera calibration: linear, debevec, grossberg, laguerre.")
         ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
          "Weight function used to calibrate camera response (default depends on the calibration method, gaussian, "
-        "triangle, plateau).")
+         "triangle, plateau).")
         ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
          "bracket count per HDR image (0 means automatic).")
+        ("byPass", po::value<bool>(&byPass)->default_value(byPass),
+         "bypass HDR creation and use a single bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+         ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("maxTotalPoints", po::value<size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
-         "Max number of points used from the sampling. This ensures that the number of pixels values extracted by the sampling "
-         "can be managed by the calibration step (in term of computation time and memory usage).")
+            "Max number of points used from the sampling. This ensures that the number of pixels values extracted by the sampling "
+            "can be managed by the calibration step (in term of computation time and memory usage).")
         ;
 
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
@@ -216,29 +250,41 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    std::vector<std::map<int, luminanceInfo>> v_luminanceInfos;
     std::vector<std::vector<hdr::ImageSample>> calibrationSamples;
     hdr::rgbCurve calibrationWeight(channelQuantization);
+    std::vector<std::vector<double>> groupedExposures;
 
-    if(calibrationMethod == ECalibrationMethod::LINEAR)
+    if (samplesFolder.empty())
     {
-        ALICEVISION_LOG_INFO("No calibration needed in Linear.");
-        if(!samplesFolder.empty())
-        {
-            ALICEVISION_LOG_WARNING("The provided input sampling folder will not be used.");
-        }
+        ALICEVISION_LOG_ERROR("A folder with selected samples is required to calibrate the Camera Response Function (CRF) and/or estimate the hdr output exposure level.");
+        return EXIT_FAILURE;
     }
     else
     {
-        if(samplesFolder.empty())
+        // Build camera exposure table
+        for (int i = 0; i < groupedViews.size(); ++i)
         {
-            ALICEVISION_LOG_ERROR("A folder with selected samples is required to calibrate the Camera Response Function (CRF).");
-            return EXIT_FAILURE;
+            const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
+            std::vector<sfmData::ExposureSetting> exposuresSetting;
+
+            for (int j = 0; j < group.size(); ++j)
+            {
+                const sfmData::ExposureSetting exp = group[j]->getCameraExposureSetting();
+                exposuresSetting.push_back(exp);
+            }
+            if (!sfmData::hasComparableExposures(exposuresSetting))
+            {
+                ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
+            }
+            groupedExposures.push_back(getExposures(exposuresSetting));
         }
+
         size_t group_pos = 0;
         hdr::Sampling sampling;
 
         ALICEVISION_LOG_INFO("Analyzing samples for each group");
-        for(auto & group : groupedViews)
+        for (auto& group : groupedViews)
         {
             // Read from file
             const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
@@ -250,7 +296,7 @@ int aliceVision_main(int argc, char** argv)
             }
 
             std::size_t size;
-            fileSamples.read((char *)&size, sizeof(size));
+            fileSamples.read((char*)&size, sizeof(size));
 
             std::vector<hdr::ImageSample> samples(size);
             for (std::size_t i = 0; i < size; ++i)
@@ -260,50 +306,57 @@ int aliceVision_main(int argc, char** argv)
 
             sampling.analyzeSource(samples, channelQuantization, group_pos);
 
-            ++group_pos;
-        }
+            std::map<int, luminanceInfo> luminanceInfos;
+            computeLuminanceStatFromSamples(samples, luminanceInfos);
 
-        // We need to trim samples list
-        sampling.filter(maxTotalPoints);
-
-        ALICEVISION_LOG_INFO("Extracting samples for each group");
-        group_pos = 0;
-
-        std::size_t total = 0;
-        for(auto & group : groupedViews)
-        {
-            // Read from file
-            const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
-            std::ifstream fileSamples(samplesFilepath, std::ios::binary);
-            if (!fileSamples.is_open())
-            {
-                ALICEVISION_LOG_ERROR("Impossible to read samples from file " << samplesFilepath);
-                return EXIT_FAILURE;
-            }
-
-            std::size_t size = 0;
-            fileSamples.read((char *)&size, sizeof(size));
-
-            std::vector<hdr::ImageSample> samples(size);
-            for (int i = 0; i < size; ++i)
-            {
-                fileSamples >> samples[i];
-            }
-
-            std::vector<hdr::ImageSample> out_samples;
-            sampling.extractUsefulSamples(out_samples, samples, group_pos);
-
-            calibrationSamples.push_back(out_samples);
+            v_luminanceInfos.push_back(luminanceInfos);
 
             ++group_pos;
         }
 
-        // Define calibration weighting curve from name
-        boost::algorithm::to_lower(calibrationWeightFunction);
-        if(calibrationWeightFunction == "default")
+        if (!byPass)
         {
-            switch(calibrationMethod)
+            // We need to trim samples list
+            sampling.filter(maxTotalPoints);
+
+            ALICEVISION_LOG_INFO("Extracting samples for each group");
+            group_pos = 0;
+
+            std::size_t total = 0;
+            for (auto& group : groupedViews)
             {
+                // Read from file
+                const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
+                std::ifstream fileSamples(samplesFilepath, std::ios::binary);
+                if (!fileSamples.is_open())
+                {
+                    ALICEVISION_LOG_ERROR("Impossible to read samples from file " << samplesFilepath);
+                    return EXIT_FAILURE;
+                }
+
+                std::size_t size = 0;
+                fileSamples.read((char*)&size, sizeof(size));
+
+                std::vector<hdr::ImageSample> samples(size);
+                for (int i = 0; i < size; ++i)
+                {
+                    fileSamples >> samples[i];
+                }
+
+                std::vector<hdr::ImageSample> out_samples;
+                sampling.extractUsefulSamples(out_samples, samples, group_pos);
+
+                calibrationSamples.push_back(out_samples);
+
+                ++group_pos;
+            }
+
+            // Define calibration weighting curve from name
+            boost::algorithm::to_lower(calibrationWeightFunction);
+            if (calibrationWeightFunction == "default")
+            {
+                switch (calibrationMethod)
+                {
                 case ECalibrationMethod::DEBEVEC:
                     calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::TRIANGLE);
                     break;
@@ -313,35 +366,19 @@ int aliceVision_main(int argc, char** argv)
                 default:
                     calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
                     break;
+                }
             }
+            calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
         }
-        calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
     }
 
-    ALICEVISION_LOG_INFO("Start calibration");
-    hdr::rgbCurve response(channelQuantization);
-
-    // Build camera exposure table
-    std::vector<std::vector<double>> groupedExposures;
-    for(int i = 0; i < groupedViews.size(); ++i)
+    if (!byPass)
     {
-        const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
-        std::vector<sfmData::ExposureSetting> exposuresSetting;
+        ALICEVISION_LOG_INFO("Start calibration");
+        hdr::rgbCurve response(channelQuantization);
 
-        for(int j = 0; j < group.size(); ++j)
+        switch (calibrationMethod)
         {
-            const sfmData::ExposureSetting exp = group[j]->getCameraExposureSetting(/*group[0]->getMetadataISO(), group[0]->getMetadataFNumber()*/);
-            exposuresSetting.push_back(exp);
-        }
-        if(!sfmData::hasComparableExposures(exposuresSetting))
-        {
-            ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
-        }
-        groupedExposures.push_back(getExposures(exposuresSetting));
-    }
-
-    switch(calibrationMethod)
-    {
         case ECalibrationMethod::LINEAR:
         {
             // set the response function to linear
@@ -374,13 +411,54 @@ int aliceVision_main(int argc, char** argv)
             calibration.process(calibrationSamples, groupedExposures, channelQuantization, false, response);
             break;
         }
+        }
+
+        const std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
+        const std::string htmlOutput = (fs::path(outputResponsePath).parent_path() / (std::string("response_") + methodName + std::string(".html"))).string();
+
+        response.write(outputResponsePath);
+        response.writeHtml(htmlOutput, "response");
     }
 
-    const std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
-    const std::string htmlOutput = (fs::path(outputResponsePath).parent_path() / (std::string("response_") + methodName + std::string(".html"))).string();
+    const std::string lumastatFilename = (fs::path(outputResponsePath).parent_path() / "luminanceStatistics.txt").string();
+    std::ofstream file(lumastatFilename);
+    if (!file)
+    {
+        ALICEVISION_LOG_ERROR("Unable to create file " << lumastatFilename << " for storing luminance statistics");
+        return EXIT_FAILURE;
+    }
 
-    response.write(outputResponsePath);
-    response.writeHtml(htmlOutput, "response");
+    file << v_luminanceInfos.size() << std::endl;
+    if (!v_luminanceInfos.empty())
+    {
+        file << v_luminanceInfos[0].size() << std::endl;
+        file << "# viewId ; exposure ; sampleNumber ; meanLuminance ; minLuminance ; maxLuminance" << std::endl;
+
+        for (int i = 0; i < v_luminanceInfos.size(); ++i)
+        {
+            while (!v_luminanceInfos[i].empty())
+            {
+                // search min exposure
+                IndexT srcIdWithMinimalExposure = UndefinedIndexT;
+                double exposureMin = 1e9;
+                for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
+                {
+                    if ((it->second).exposure < exposureMin)
+                    {
+                        exposureMin = (it->second).exposure;
+                        srcIdWithMinimalExposure = it->first;
+                    }
+                }
+                // write in file
+                file << srcIdWithMinimalExposure << " ";
+                file << v_luminanceInfos[i][srcIdWithMinimalExposure].exposure << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                file << v_luminanceInfos[i][srcIdWithMinimalExposure].meanLum / v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                file << v_luminanceInfos[i][srcIdWithMinimalExposure].minLum << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].maxLum << std::endl;
+                // erase from map
+                v_luminanceInfos[i].erase(srcIdWithMinimalExposure);
+            }
+        }
+    }
 
     return EXIT_SUCCESS;
 }

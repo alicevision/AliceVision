@@ -1,5 +1,7 @@
 #include "brackets.hpp"
 
+#include <fstream>
+
 #include <aliceVision/numeric/numeric.hpp>
 
 #include <boost/filesystem.hpp>
@@ -87,6 +89,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         groups.push_back(group);
     }
 
+    std::vector< std::vector<sfmData::ExposureSetting>> v_exposuresSetting;
     for(auto & group : groups)
     {
         // Sort all images by exposure time
@@ -96,21 +99,112 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
                           return true;
                       return (a->getCameraExposureSetting().getExposure() < b->getCameraExposureSetting().getExposure());
                   });
+        std::vector<sfmData::ExposureSetting> exposuresSetting;
+        for (auto& v : group)
+        {
+            exposuresSetting.push_back(v->getCameraExposureSetting());
+        }
+        v_exposuresSetting.push_back(exposuresSetting);
+    }
+
+    // Check exposure consistency between group
+    if (v_exposuresSetting.size() > 1)
+    {
+        for (int g = 1 ; g < v_exposuresSetting.size(); ++g)
+        {
+            for (int e = 0; e < v_exposuresSetting[g].size(); ++e)
+            {
+                if (!(v_exposuresSetting[g][e] == v_exposuresSetting[g - 1][e]))
+                {
+                    ALICEVISION_LOG_WARNING("Non consistant exposures between poses have been detected. Most likely the dataset has been captured with an automatic exposure mode enabled. Final result can be impacted.");
+                    g = v_exposuresSetting.size();
+                    break;
+                }
+            }
+        }
     }
 
     return true;
 }
 
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex)
+void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex, const std::string& lumaStatFilepath, const double meanTargetedLuma)
 {
-    for(auto & group : groups)
-    {
-        // Target views are the middle exposed views
-        // For add number, there is no ambiguity on the middle image.
-        // For even number, we arbitrarily choose the more exposed view (as we usually have more under-exposed images than over-exposed).
-        const int middleIndex = int(group.size()) / 2;
-        const int targetIndex = clamp(middleIndex + offsetRefBracketIndex, 0, int(group.size()) - 1);
+    // If targetIndexesFilename cannot be opened or is not valid an error is thrown
+    // For odd number, there is no ambiguity on the middle image.
+    // For even number, we arbitrarily choose the more exposed view (as we usually have more under-exposed images than over-exposed).
+    const int viewNumberPerGroup = groups[0].size();
+    const int middleIndex = viewNumberPerGroup / 2;
+    int targetIndex = middleIndex + offsetRefBracketIndex;
 
+    out_targetViews.clear();
+
+    if ((targetIndex >= 0) && (targetIndex < viewNumberPerGroup))
+    {
+        ALICEVISION_LOG_INFO("Use offsetRefBracketIndex parameter");
+    }
+    else // try to use the luminance statistics of the LDR images stored in the file
+    {
+        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter out of range, read file containing luminance statistics to compute an estimation");
+        std::ifstream file(lumaStatFilepath);
+        if (!file)
+            ALICEVISION_THROW_ERROR("Failed to open file: " << lumaStatFilepath);
+        std::vector<std::string> lines;
+        std::string line;
+        while (std::getline(file, line))
+        {
+            lines.push_back(line);
+        }
+        if ((lines.size() < 3) || (std::stoi(lines[0].c_str()) != groups.size()) || (std::stoi(lines[1].c_str()) < groups[0].size()))
+        {
+            ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
+        }
+        int nbGroup = std::stoi(lines[0].c_str());
+        int nbExp = std::stoi(lines[1].c_str());
+
+        std::vector<double> v_lumaMeanMean;
+
+        for (int i = 0; i < nbExp; ++i)
+        {
+            double lumaMeanMean = 0.0;
+            for (int j = 0; j < nbGroup; ++j)
+            {
+                std::istringstream iss(lines[3 + j * nbExp + i]);
+                aliceVision::IndexT srcId;
+                int nbItem;
+                double exposure, lumaMean, lumaMin, lumaMax;
+                if (!(iss >> srcId >> exposure >> nbItem >> lumaMean >> lumaMin >> lumaMax))
+                {
+                    ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
+                }
+                lumaMeanMean += lumaMean;
+            }
+            v_lumaMeanMean.push_back(lumaMeanMean / nbGroup);
+        }
+
+        // adjust last index to avoid non increasing luminance curve due to saturation in highlights
+        int lastIdx = v_lumaMeanMean.size() - 1;
+        while ((lastIdx > 1) && ((v_lumaMeanMean[lastIdx] < v_lumaMeanMean[lastIdx - 1]) || (v_lumaMeanMean[lastIdx] < v_lumaMeanMean[lastIdx - 2])))
+        {
+            lastIdx--;
+        }
+
+        double minDiffWithLumaTarget = 1000.0;
+        targetIndex = 0;
+
+        for (int k = 0; k < lastIdx; ++k)
+        {
+            const double diffWithLumaTarget = (v_lumaMeanMean[k] > meanTargetedLuma) ? (v_lumaMeanMean[k] - meanTargetedLuma) : (meanTargetedLuma - v_lumaMeanMean[k]);
+            if (diffWithLumaTarget < minDiffWithLumaTarget)
+            {
+                minDiffWithLumaTarget = diffWithLumaTarget;
+                targetIndex = k;
+            }
+        }
+        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automaticaly set to " << targetIndex - middleIndex);
+    }
+
+    for (auto& group : groups)
+    {
         //Set the ldr ancestors id
         for (auto v : group)
         {
@@ -119,6 +213,8 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
 
         out_targetViews.push_back(group[targetIndex]);
     }
+    return;
 }
+
 }
 }

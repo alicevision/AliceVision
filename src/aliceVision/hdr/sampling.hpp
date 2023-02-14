@@ -24,6 +24,7 @@ struct UniqueDescriptor
 
 struct PixelDescription
 {
+    aliceVision::IndexT srcId = 0;
     float exposure;
     image::Rgb<float> mean;
     image::Rgb<float> variance;
@@ -66,7 +67,7 @@ public:
     void filter(size_t maxTotalPoints);
     void extractUsefulSamples(std::vector<ImageSample> & out_samples, const std::vector<ImageSample> & samples, int imageIndex) const;
     
-    static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::ImageReadOptions & imgReadOptions, const Params params);
+    static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<IndexT>& viewIds, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::ImageReadOptions & imgReadOptions, const Params params, const bool simplified = false);
 
 private:
     MapSampleRefList _positions;
