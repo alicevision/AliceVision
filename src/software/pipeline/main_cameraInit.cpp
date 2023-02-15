@@ -729,7 +729,8 @@ int aliceVision_main(int argc, char **argv)
                   ++lcpGeometryViewCount;
               }
           }
-          intrinsicInitMode = camera::EIntrinsicInitMode::LCP;
+          // set disto initialization mode
+          intrinsicDisto->setDistoInitializationMode(camera::EIntrinsicDistoInitMode::ESTIMATED);
         }
 
         if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty)

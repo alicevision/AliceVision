@@ -8,6 +8,7 @@
 #pragma once
 
 #include "IntrinsicsScaleOffset.hpp"
+#include "IntrinsicInitMode.hpp"
 #include "Distortion.hpp"
 #include <memory>
 
@@ -257,6 +258,24 @@ public:
       return _pDistortion;
   }
 
+  /**
+  * @brief Set The intrinsic disto initialization mode
+  * @param[in] distoInitializationMode The intrintrinsic disto initialization mode enum
+  */
+  inline void setDistoInitializationMode(EIntrinsicDistoInitMode distoInitializationMode)
+  {
+      _distoInitializationMode = distoInitializationMode;
+  }
+
+  /**
+   * @brief Get the intrinsic disto initialization mode
+   * @return The intrinsic disto initialization mode
+   */
+  inline EIntrinsicDistoInitMode getDistoInitializationMode() const
+  {
+      return _distoInitializationMode;
+  }
+
   ~IntrinsicsScaleOffsetDisto() override = default;
 
 protected:
@@ -270,6 +289,9 @@ protected:
   }
 
   std::shared_ptr<Distortion> _pDistortion;
+
+  // Distortion initialization mode
+  EIntrinsicDistoInitMode _distoInitializationMode = EIntrinsicDistoInitMode::NONE;
 };
 
 } // namespace camera

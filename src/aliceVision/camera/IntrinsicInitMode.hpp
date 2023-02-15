@@ -21,7 +21,6 @@ enum class EIntrinsicInitMode : std::uint8_t
 {
   NONE = 0, //< Value not set
   CALIBRATED, //< External calibration
-  LCP, //< Distortion model is extracted from a LCP profile using metadata information
   ESTIMATED, //< Estimated, in the standard pipeline it is estimated from metadata information (FocalLength + sensor width or FocalLengthIn35mm with integer approximation)
   UNKNOWN //< The camera parameters are unknown (can still have a default value guess)
 };
@@ -36,7 +35,6 @@ inline std::string EIntrinsicInitMode_enumToString(EIntrinsicInitMode intrinsicI
   switch(intrinsicInitMode)
   {
     case EIntrinsicInitMode::CALIBRATED: return "calibrated";
-    case EIntrinsicInitMode::LCP:        return "lcp";
     case EIntrinsicInitMode::ESTIMATED:  return "estimated";
     case EIntrinsicInitMode::UNKNOWN:    return "unknown";
     case EIntrinsicInitMode::NONE:       return "none";
@@ -55,7 +53,6 @@ inline EIntrinsicInitMode EIntrinsicInitMode_stringToEnum(const std::string& int
   std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
 
   if(mode == "calibrated") return EIntrinsicInitMode::CALIBRATED;
-  if(mode == "lcp")        return EIntrinsicInitMode::LCP;
   if(mode == "estimated")  return EIntrinsicInitMode::ESTIMATED;
   if(mode == "unknown")    return EIntrinsicInitMode::UNKNOWN;
   if(mode == "none")       return EIntrinsicInitMode::NONE;
@@ -75,6 +72,66 @@ inline std::istream& operator>>(std::istream& in, EIntrinsicInitMode &intrinsicI
   in >> token;
   intrinsicInitMode = EIntrinsicInitMode_stringToEnum(token);
   return in;
+}
+
+/**
+ * @brief Camera Intrinsic Disto initialization mode
+ */
+enum class EIntrinsicDistoInitMode : std::uint8_t
+{
+    NONE = 0, //< Value not set
+    CALIBRATED, //< Full calibration
+    ESTIMATED, //< Estimated from LCP profile
+    UNKNOWN //< The camera parameters are unknown (can still have a default value guess)
+};
+
+/**
+ * @brief convert an enum EIntrinsicDistoInitMode to its corresponding string
+ * @param EIntrinsicDistoInitMode
+ * @return String
+ */
+inline std::string EIntrinsicDistoInitMode_enumToString(EIntrinsicDistoInitMode intrinsicDistoInitMode)
+{
+    switch (intrinsicDistoInitMode)
+    {
+    case EIntrinsicDistoInitMode::CALIBRATED: return "calibrated";
+    case EIntrinsicDistoInitMode::ESTIMATED:  return "estimated";
+    case EIntrinsicDistoInitMode::UNKNOWN:    return "unknown";
+    case EIntrinsicDistoInitMode::NONE:       return "none";
+    }
+    throw std::out_of_range("Invalid Disto init mode enum: " + std::to_string(int(intrinsicDistoInitMode)));
+}
+
+/**
+ * @brief convert a string Disto init mode to its corresponding enum EIntrinsicDistoInitMode
+ * @param String
+ * @return EIntrinsicDistoInitMode
+ */
+inline EIntrinsicDistoInitMode EIntrinsicDistoInitMode_stringToEnum(const std::string& intrinsicDistoInitMode)
+{
+    std::string mode = intrinsicDistoInitMode;
+    std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
+
+    if (mode == "calibrated") return EIntrinsicDistoInitMode::CALIBRATED;
+    if (mode == "estimated")  return EIntrinsicDistoInitMode::ESTIMATED;
+    if (mode == "unknown")    return EIntrinsicDistoInitMode::UNKNOWN;
+    if (mode == "none")       return EIntrinsicDistoInitMode::NONE;
+
+    throw std::out_of_range("Invalid Disto init mode: " + intrinsicDistoInitMode);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const EIntrinsicDistoInitMode intrinsicDistoInitMode)
+{
+    os << EIntrinsicDistoInitMode_enumToString(intrinsicDistoInitMode);
+    return os;
+}
+
+inline std::istream& operator>>(std::istream& in, EIntrinsicDistoInitMode& intrinsicDistoInitMode)
+{
+    std::string token;
+    in >> token;
+    intrinsicDistoInitMode = EIntrinsicDistoInitMode_stringToEnum(token);
+    return in;
 }
 
 } // namespace camera
