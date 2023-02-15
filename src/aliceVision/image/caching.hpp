@@ -144,12 +144,12 @@ public:
     int memorySize() const;
 
 private:
-    std::shared_ptr<Image<unsigned char>> imgUChar = nullptr;
-    std::shared_ptr<Image<float>> imgFloat = nullptr;
-    std::shared_ptr<Image<RGBColor>> imgRGB = nullptr;
-    std::shared_ptr<Image<RGBfColor>> imgRGBf = nullptr;
-    std::shared_ptr<Image<RGBAColor>> imgRGBA = nullptr;
-    std::shared_ptr<Image<RGBAfColor>> imgRGBAf = nullptr;
+    std::shared_ptr<Image<unsigned char>> imgUChar;
+    std::shared_ptr<Image<float>> imgFloat;
+    std::shared_ptr<Image<RGBColor>> imgRGB;
+    std::shared_ptr<Image<RGBfColor>> imgRGBf;
+    std::shared_ptr<Image<RGBAColor>> imgRGBA;
+    std::shared_ptr<Image<RGBAfColor>> imgRGBAf;
     
 };
 
