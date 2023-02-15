@@ -937,10 +937,10 @@ void logOIIOImageCacheInfo()
   float maxMemoryMB = -1.f;
   cache->getattribute("max_memory_MB", maxMemoryMB);
 
-  int64 cacheMemoryUsed = -1;
+  int64_t cacheMemoryUsed = -1;
   cache->getattribute("stat:cache_memory_used", oiio::TypeDesc::INT64, &cacheMemoryUsed);
 
-  int64 bytesRead = -1;
+  int64_t bytesRead = -1;
   cache->getattribute("stat:bytes_read", oiio::TypeDesc::INT64, &bytesRead);
 
   ALICEVISION_LOG_INFO("OIIO image cache info: " << 
