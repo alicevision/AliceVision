@@ -151,13 +151,11 @@ public:
    * @param[in] resectionId The resection id
    * @param[in] bestViewIds The best remaining view ids
    * @param[in] prevReconstructedViews The previously reconstructed view ids
-   * @param[in,out] viewIds The remaining view ids
    * @return new reconstructed view ids
    */
   std::set<IndexT> resection(IndexT resectionId,
                              const std::vector<IndexT>& bestViewIds,
-                             const std::set<IndexT>& prevReconstructedViews,
-                             std::set<IndexT>& viewIds);
+                             const std::set<IndexT>& prevReconstructedViews);
 
   /**
    * @brief triangulate
