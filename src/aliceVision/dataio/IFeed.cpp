@@ -35,19 +35,19 @@ void readCalibrationFromFile(const std::string &filename, camera::PinholeRadialK
   int height = 0;
   const size_t numParam = 6;
   std::vector<double> params(numParam, 0);
-  
+
   fs >> width;
   fs >> height;
   for(size_t i = 0; i < numParam; ++i)
   {
     fs >> params[i];
   }
-  camIntrinsics = camera::PinholeRadialK3(width, height, 
+  camIntrinsics = camera::PinholeRadialK3(width, height,
                                   params[0], params[1], params[2],
                                   params[3], params[4], params[5]);
-  
+
   fs.close();
 }
 
-}//namespace dataio 
+}//namespace dataio
 }//namespace aliceVision

@@ -17,9 +17,9 @@ namespace dataio{
 class FeedProvider
 {
 public:
-  
+
   FeedProvider(const std::string &feedPath, const std::string &calibPath = "");
-  
+
   /**
    * @brief Provide a new RGB image from the feed.
    * 
@@ -51,7 +51,7 @@ public:
         camera::PinholeRadialK3 &camIntrinsics,
         std::string &mediaPath,
         bool &hasIntrinsics);
-  
+
   /**
    * @brief Provide a new grayscale image from the feed.
    * 
@@ -101,7 +101,7 @@ public:
    * @return True if the feed is a video.
    */    
   bool isVideo() const {return _isVideo; }
-  
+
   /**
    * @brief Return true if the feed is a live stream (e.g. a  webcam).
    * 
@@ -110,7 +110,7 @@ public:
   bool isLiveFeed() const {return _isLiveFeed; }
 
   virtual ~FeedProvider();
-    
+
 private:
   std::unique_ptr<IFeed> _feeder;
   bool _isVideo;
@@ -118,6 +118,6 @@ private:
 
 };
 
-}//namespace dataio 
+}//namespace dataio
 }//namespace aliceVision
 

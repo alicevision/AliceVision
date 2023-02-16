@@ -56,7 +56,7 @@ public:
    * @see readCalibrationFromFile()
    */    
   VideoFeed(int videoDevice, const std::string &calibPath);
-  
+
   /**
    * @brief Provide a new RGB image from the feed
    * 
@@ -101,13 +101,13 @@ public:
             camera::PinholeRadialK3 &camIntrinsics,
             std::string &mediaPath,
             bool &hasIntrinsics);
-  
+
   std::size_t nbFrames() const;
-  
+
   bool goToFrame(const unsigned int frame);
-  
+
   bool goToNextFrame();
-  
+
   /**
    * @brief Return true if the feed is correctly initialized.
    * 
@@ -115,8 +115,8 @@ public:
    */  
   bool isInit() const;
 
-  virtual ~VideoFeed( );
-  
+  virtual ~VideoFeed();
+
 private:
   class FeederImpl;
   std::unique_ptr<FeederImpl> _feeder;

@@ -23,7 +23,7 @@ public:
    * @return True if the feed is correctly initialized.
    */
   virtual bool isInit() const = 0;
-  
+
     /**
    * @brief Provide a new RGB image from the feed
    * @param[out] imageRGB The new RGB image from the feed.
@@ -51,7 +51,7 @@ public:
                     camera::PinholeRadialK3 &camIntrinsics,
                     std::string &mediaPath,
                     bool &hasIntrinsics) = 0;
-  
+
   /**
    * @brief Provide a new grayscale image from the feed
    * @param[out] imageGray The new image from the feed.
@@ -62,16 +62,16 @@ public:
    * @return True if there is a new image, false otherwise.
    */
   virtual bool readImage(image::Image<unsigned char> &imageGray,
-                    camera::PinholeRadialK3 &camIntrinsics, 
+                    camera::PinholeRadialK3 &camIntrinsics,
                     std::string &mediaPath,
-                    bool &hasIntrinsics) = 0;  
+                    bool &hasIntrinsics) = 0;
 
   virtual std::size_t nbFrames() const = 0;
-  
+
   virtual bool goToFrame(const unsigned int frame) = 0;
-  
+
   virtual bool goToNextFrame() = 0;
-  
+
   virtual ~IFeed( ) {}
 
 };
@@ -84,6 +84,6 @@ public:
  */
 void readCalibrationFromFile(const std::string &filename, camera::PinholeRadialK3 &camIntrinsics);
 
-}//namespace dataio 
+}//namespace dataio
 }//namespace aliceVision
 
