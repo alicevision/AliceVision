@@ -553,7 +553,7 @@ void rgbCurve::writeHtml(const std::string& path, const std::string& title) cons
     jsxGraph.close();
 
     // save the reconstruction Log
-    std::ofstream htmlFileStream(path.c_str());
+    std::ofstream htmlFileStream(path);
     htmlFileStream << htmlDocumentStream(title).getDoc();
     htmlFileStream << jsxGraph.toStr();
 }

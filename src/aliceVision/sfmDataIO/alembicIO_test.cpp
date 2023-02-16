@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     {
         BOOST_CHECK(Save(
         sfmData,
-        jsonFile.c_str(),
+        jsonFile,
         ESfMData(flags)));
     }
 
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     {
         BOOST_CHECK(Save(
         sfmData,
-        abcFile.c_str(),              
+        abcFile,              
         ESfMData(flags)));
     }
 
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         std::string abcFile2 = "abcToJson.sfm";
         BOOST_CHECK(Save(
         sfmAbcToAbc,
-        abcFile2.c_str(),
+        abcFile2,
         ESfMData(flags)));
         BOOST_CHECK(sfmData == sfmAbcToAbc);
     }
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     {
         BOOST_CHECK(Save(
         sfmAbcToAbc,
-        abcFile2.c_str(),
+        abcFile2,
         ESfMData(flags)));
     }
 
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     {
         BOOST_CHECK(Save(
         sfmData,
-        jsonFile3.c_str(),
+        jsonFile3,
         ESfMData(flags)));
     }
 
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     {
         BOOST_CHECK(Save(
         sfmJsonToABC,
-        abcFile3.c_str(),
+        abcFile3,
         ESfMData(flags)));
     }
 
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     {
         BOOST_CHECK(Save(
         sfmJsonToABC2,
-        abcFile4.c_str(),
+        abcFile4,
         ESfMData(flags)));
     }
 
@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     {
         BOOST_CHECK(Save(
         sfmJsonToABC3,
-        jsonFile4.c_str(),
+        jsonFile4,
         ESfMData(flags)));
     }
 

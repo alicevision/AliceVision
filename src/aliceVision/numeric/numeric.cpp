@@ -139,7 +139,7 @@ bool exportMatToTextFile(const Mat & mat, const std::string & filename,
 {
   bool bOk = false;
   std::ofstream outfile;
-  outfile.open(filename.c_str(), std::ios_base::out);
+  outfile.open(filename, std::ios_base::out);
   if (outfile.is_open()) {
     outfile << sPrefix << "=[" << std::endl;
     for (int j=0; j < mat.rows(); ++j)  {

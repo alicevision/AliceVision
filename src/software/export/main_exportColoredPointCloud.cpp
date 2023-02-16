@@ -73,7 +73,7 @@ int aliceVision_main(int argc, char **argv)
 
   // export the SfMData scene in the expected format
   ALICEVISION_LOG_INFO("Saving output result to " << outputSfMDataFilename << "...");
-  if(!sfmDataIO::Save(sfmData, outputSfMDataFilename.c_str(), sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::Save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The output SfMData file '" + sfmDataFilename + "' cannot be save.");
     return EXIT_FAILURE;

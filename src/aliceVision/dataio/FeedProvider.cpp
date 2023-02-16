@@ -61,7 +61,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
   else if(isdigit(feedPath[0]))
   {
     // let's try it with a video
-    const int deviceNumber =  std::atoi(feedPath.c_str());
+    const int deviceNumber =  std::stoi(feedPath);
     _feeder.reset(new VideoFeed(deviceNumber, calibPath));
     _isVideo = true;
     _isLiveFeed = true;

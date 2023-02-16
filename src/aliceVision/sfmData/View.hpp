@@ -569,10 +569,10 @@ public:
       size_t next = 0;
       while ((next = cam_mul.find(" ", last)) != std::string::npos)
       {
-          v_mult.push_back(atoi(cam_mul.substr(last, next - last).c_str()));
+          v_mult.push_back(std::stoi(cam_mul.substr(last, next - last)));
           last = next + 1;
       }
-      v_mult.push_back(atoi(cam_mul.substr(last).c_str()));
+      v_mult.push_back(std::stoi(cam_mul.substr(last)));
 
       return v_mult;
   }

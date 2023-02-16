@@ -102,7 +102,7 @@ bool loadPairsFromFile(const std::string& sFileName, // filename of the list fil
                        int rangeStart,
                        int rangeSize)
 {
-    std::ifstream in(sFileName.c_str());
+    std::ifstream in(sFileName);
     if (!in.is_open())
     {
         ALICEVISION_LOG_WARNING("loadPairsFromFile: Impossible to read the specified file: \""

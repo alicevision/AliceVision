@@ -64,7 +64,7 @@ inline bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
                            const std::string & sFileName,
                            bool bVerbose = true )
 {
-  std::ifstream in(sFileName.c_str());
+  std::ifstream in(sFileName);
   if(!in.is_open())
   {
     std::cerr << std::endl

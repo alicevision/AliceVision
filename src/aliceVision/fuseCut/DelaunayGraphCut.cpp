@@ -461,7 +461,7 @@ void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& 
 
     long t1 = clock();
 
-    // std::ofstream oFileT(fileNameDh.c_str());
+    // std::ofstream oFileT(fileNameDh);
     // oFileT << *_tetrahedralization; // TODO GEOGRAM
 
     mvsUtils::printfElapsedTime(t1);

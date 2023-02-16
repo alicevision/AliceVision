@@ -334,11 +334,15 @@ int aliceVision_main(int argc, char** argv)
         const std::string hdrImagePath = getHdrImagePath(outputPath, g);
 
         // Write an image with parameters from the target view
-        oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
-        targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace",
-                                                       image::EImageColorSpace_enumToString(image::EImageColorSpace::LINEAR)));
-        image::writeImage(hdrImagePath, HDRimage,
-                          image::ImageWriteOptions().storageDataType(storageDataType), targetMetadata);
+        std::map<std::string, std::string> viewMetadata = targetView->getMetadata();
+
+        oiio::ParamValueList targetMetadata;
+        for (const auto& meta : viewMetadata)
+        {
+            targetMetadata.add_or_replace(oiio::ParamValue(meta.first, meta.second));
+        }
+        targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(image::EImageColorSpace::LINEAR)));
+        image::writeImage(hdrImagePath, HDRimage, image::ImageWriteOptions().storageDataType(storageDataType), targetMetadata);
     }
 
     return EXIT_SUCCESS;

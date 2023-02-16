@@ -471,7 +471,7 @@ int aliceVision_main(int argc, char **argv)
         {
             image::DCPProfile dcpProf;
 
-            if (!dcpDatabase.empty() && dcpDatabase.getDcpForCamera(make, model, dcpProf))
+            if (!dcpDatabase.empty() && dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
             {
                 view.addDCPMetadata(dcpProf);
 

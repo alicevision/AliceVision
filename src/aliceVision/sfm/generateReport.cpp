@@ -169,7 +169,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData,
     }
   }
 
-  std::ofstream htmlFileStream(htmlFilename.c_str());
+  std::ofstream htmlFileStream(htmlFilename);
   htmlFileStream << htmlDocStream.getDoc();
   const bool bOk = !htmlFileStream.bad();
   return bOk;

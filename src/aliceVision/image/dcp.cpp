@@ -18,7 +18,7 @@ namespace image {
 using aliceVision::clamp;
 namespace bfs = boost::filesystem;
 
-double calibrationIlluminantToTemperature(LightSource light)
+double calibrationIlluminantToTemperature(const LightSource light)
 {
     // These temperatures are those found in DNG SDK reference code
     switch(light)
@@ -1580,14 +1580,14 @@ inline void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vect
     }
 }
 
-DCPProfile::Matrix DCPProfile::getInterpolatedMatrix(const double cct, const std::string& type)
+DCPProfile::Matrix DCPProfile::getInterpolatedMatrix(const double cct, const std::string& type) const
 {
-    double a = 1.e6 / info.temperature_1;
-    double b = 1.e6 / info.temperature_2;
-    double c = 1.e6 / cct;
+    const double a = 1.e6 / info.temperature_1;
+    const double b = 1.e6 / info.temperature_2;
+    const double c = 1.e6 / cct;
 
-    Matrix Ma = (type == "color") ? color_matrix_1 : ((type == "calib") ? camera_calibration_1 : forward_matrix_1);
-    Matrix Mb = (type == "color") ? color_matrix_2 : ((type == "calib") ? camera_calibration_2 : forward_matrix_2);
+    const Matrix Ma = (type == "color") ? color_matrix_1 : ((type == "calib") ? camera_calibration_1 : forward_matrix_1);
+    const Matrix Mb = (type == "color") ? color_matrix_2 : ((type == "calib") ? camera_calibration_2 : forward_matrix_2);
     Matrix interpolatedMatrix;
     for (int i = 0; i < 3; ++i)
     {
@@ -1600,55 +1600,55 @@ DCPProfile::Matrix DCPProfile::getInterpolatedMatrix(const double cct, const std
     return interpolatedMatrix;
 }
 
-DCPProfile::Matrix DCPProfile::matMult(const Matrix& A, const Matrix& B)
+DCPProfile::Matrix DCPProfile::matMult(const Matrix& A, const Matrix& B) const
 {
-    Matrix Res;
+    Matrix res;
     for (int i = 0; i < 3; ++i)
     {
         for (int j = 0; j < 3; ++j)
         {
-            Res[i][j] = 0.f;
+            res[i][j] = 0.f;
             for (int k = 0; k < 3; k++)
             {
-                Res[i][j] += A[i][k] * B[k][j];
+                res[i][j] += A[i][k] * B[k][j];
             }
         }
     }
-    return Res;
+    return res;
 }
-DCPProfile::Triple DCPProfile::matMult(const Matrix& M, const Triple& V)
+DCPProfile::Triple DCPProfile::matMult(const Matrix& M, const Triple& V) const
 {
-    Triple Res;
+    Triple res;
     for (int i = 0; i < 3; ++i)
     {
-        Res[i] = 0.f;
+        res[i] = 0.f;
         for (int k = 0; k < 3; k++)
         {
-            Res[i] += M[i][k] * V[k];
+            res[i] += M[i][k] * V[k];
         }
     }
-    return Res;
+    return res;
 }
-DCPProfile::Matrix DCPProfile::matInv(const Matrix& M)
+DCPProfile::Matrix DCPProfile::matInv(const Matrix& M) const
 {
-    Matrix Inv = M;
+    Matrix inv = M;
 
-    float det = M[0][0]*M[1][1]*M[2][2] + M[0][1]*M[1][2]*M[2][0] + M[0][2]*M[1][0]*M[2][1] - M[2][0]*M[1][1]*M[0][2] - M[1][0]*M[0][1]*M[2][2] - M[0][0]*M[2][1]*M[1][2];
+    const float det = M[0][0]*M[1][1]*M[2][2] + M[0][1]*M[1][2]*M[2][0] + M[0][2]*M[1][0]*M[2][1] - M[2][0]*M[1][1]*M[0][2] - M[1][0]*M[0][1]*M[2][2] - M[0][0]*M[2][1]*M[1][2];
 
     if (det != 0.f)
     {
-        Inv[0][0] = (M[1][1] * M[2][2] - M[2][1] * M[1][2]) / det;
-        Inv[0][1] = (M[0][2] * M[2][1] - M[0][1] * M[2][2]) / det;
-        Inv[0][2] = (M[0][1] * M[1][2] - M[0][2] * M[1][1]) / det;
-        Inv[1][0] = (M[1][2] * M[2][0] - M[1][0] * M[2][2]) / det;
-        Inv[1][1] = (M[0][0] * M[2][2] - M[2][0] * M[0][2]) / det;
-        Inv[1][2] = (M[0][2] * M[1][0] - M[0][0] * M[1][2]) / det;
-        Inv[2][0] = (M[1][0] * M[2][1] - M[1][1] * M[2][0]) / det;
-        Inv[2][1] = (M[0][1] * M[2][0] - M[0][0] * M[2][1]) / det;
-        Inv[2][2] = (M[0][0] * M[1][1] - M[1][0] * M[0][1]) / det;
+        inv[0][0] = (M[1][1] * M[2][2] - M[2][1] * M[1][2]) / det;
+        inv[0][1] = (M[0][2] * M[2][1] - M[0][1] * M[2][2]) / det;
+        inv[0][2] = (M[0][1] * M[1][2] - M[0][2] * M[1][1]) / det;
+        inv[1][0] = (M[1][2] * M[2][0] - M[1][0] * M[2][2]) / det;
+        inv[1][1] = (M[0][0] * M[2][2] - M[2][0] * M[0][2]) / det;
+        inv[1][2] = (M[0][2] * M[1][0] - M[0][0] * M[1][2]) / det;
+        inv[2][0] = (M[1][0] * M[2][1] - M[1][1] * M[2][0]) / det;
+        inv[2][1] = (M[0][1] * M[2][0] - M[0][0] * M[2][1]) / det;
+        inv[2][2] = (M[0][0] * M[1][1] - M[1][0] * M[0][1]) / det;
     }
 
-    return Inv;
+    return inv;
 }
 
 /**
@@ -1668,7 +1668,7 @@ DCPProfile::Matrix DCPProfile::matInv(const Matrix& M)
  *  Returns:
  *      tuple. Temperature, tint
  */
-void DCPProfile::setChromaticityCoordinates(const double x, const double y, double& cct, double& tint)
+void DCPProfile::setChromaticityCoordinates(const double x, const double y, double& cct, double& tint) const
 {
     const double u = 2.0 * x / (1.5 - x + 6.0 * y);
     const double v = 3.0 * y / (1.5 - x + 6.0 * y);
@@ -1734,7 +1734,7 @@ void DCPProfile::setChromaticityCoordinates(const double x, const double y, doub
  *  Returns:
  *      tuple. Chromaticity coordinates.
 */
-void DCPProfile::getChromaticityCoordinates(const double cct, const double tint, double& x, double& y)
+void DCPProfile::getChromaticityCoordinates(const double cct, const double tint, double& x, double& y) const
 {
     const double r = 1.0e6 / cct;
     const double offset = tint * (1.0 / TINT_SCALE);
@@ -1786,13 +1786,13 @@ void DCPProfile::getChromaticityCoordinates(const double cct, const double tint,
 }
 
 
-void DCPProfile::getChromaticityCoordinatesFromXyz(const Triple& xyz, double& x, double& y)
+void DCPProfile::getChromaticityCoordinatesFromXyz(const Triple& xyz, double& x, double& y) const
 {
     x = xyz[0] / (xyz[0] + xyz[1] + xyz[2]);
     y = xyz[1] / (xyz[0] + xyz[1] + xyz[2]);
 }
 
-DCPProfile::Triple DCPProfile::getXyzFromChromaticityCoordinates(const double x, const double y)
+DCPProfile::Triple DCPProfile::getXyzFromChromaticityCoordinates(const double x, const double y) const
 {
     Triple xyz;
     xyz[0] = x * 1.0 / y;
@@ -1801,7 +1801,7 @@ DCPProfile::Triple DCPProfile::getXyzFromChromaticityCoordinates(const double x,
     return xyz;
 }
 
-DCPProfile::Triple DCPProfile::getXyzFromTemperature(const double cct, const double tint)
+DCPProfile::Triple DCPProfile::getXyzFromTemperature(const double cct, const double tint) const
 {
     double x, y;
     getChromaticityCoordinates(cct, tint, x, y);
@@ -1851,7 +1851,7 @@ DCPProfile::Triple DCPProfile::getXyzFromTemperature(const double cct, const dou
  *     Returns :
  * tuple.Chromaticity coordinates.
  */
-void DCPProfile::getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, double& x, double& y)
+void DCPProfile::getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, double& x, double& y) const
 {
     x = 0.24559589702841558;
     y = 0.24240399461846152;
@@ -1925,7 +1925,7 @@ void DCPProfile::getChromaticityCoordinatesFromCameraNeutral(const Matrix& analo
  *     Returns:
  *         Matrix. Chromatic Adaptation matrix ( 3 x 3 ).
  */
-DCPProfile::Matrix DCPProfile::getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget)
+DCPProfile::Matrix DCPProfile::getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget) const
 {
     const Triple pybSource = matMult(CAT02_MATRIX, xyzSource);
     const Triple pybTarget = matMult(CAT02_MATRIX, xyzTarget);
@@ -1996,7 +1996,7 @@ DCPProfile::Matrix DCPProfile::getChromaticAdaptationMatrix(const Triple& xyzSou
  *     Returns:
  *         Matrix.  Camera to XYZ ( D50 ) matrix ( 3 x 3 ).
  */
-DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const double x, const double y)
+DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const double x, const double y) const
 {
     double cct, tint;
     setChromaticityCoordinates(x, y, cct, tint);
@@ -2057,7 +2057,7 @@ DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const double x, const dou
     return cameraToXyzD50;
 }
 
-DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const double y)
+DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const double y) const
 {
     double cct, tint;
     setChromaticityCoordinates(x, y, cct, tint);
@@ -2106,7 +2106,7 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const
     return cameraToSrgbLinear;
 }
 
-DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw)
+DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw) const
 {
     double x, y;
     getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutral, x, y);
@@ -2158,7 +2158,7 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
 }
 
 
-void DCPProfile::getMatrices(const std::string& type, std::vector<Matrix>& v_Mat)
+void DCPProfile::getMatrices(const std::string& type, std::vector<Matrix>& v_Mat) const
 {
     v_Mat.clear();
 
@@ -2185,7 +2185,7 @@ void DCPProfile::getMatrices(const std::string& type, std::vector<Matrix>& v_Mat
     }
 }
 
-void DCPProfile::getMatricesAsStrings(const std::string& type, std::vector<std::string>& v_strMat)
+void DCPProfile::getMatricesAsStrings(const std::string& type, std::vector<std::string>& v_strMat) const
 {
     v_strMat.clear();
     std::vector<Matrix> v_Mat;
@@ -2201,7 +2201,74 @@ void DCPProfile::getMatricesAsStrings(const std::string& type, std::vector<std::
     }
 }
 
-void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool sourceIsRaw)
+void DCPProfile::setMatrices(const std::string& type, std::vector<Matrix>& v_Mat)
+{
+    if (type == "forward")
+    {
+        info.has_forward_matrix_1 = false;
+        info.has_forward_matrix_2 = false;
+        if (v_Mat.size() > 0)
+        {
+            info.has_forward_matrix_1 = true;
+            forward_matrix_1 = v_Mat[0];
+            if (v_Mat.size() > 1)
+            {
+                info.has_forward_matrix_2 = true;
+                forward_matrix_2 = v_Mat[1];
+            }
+        }
+    }
+    else if (type == "color")
+    {
+        info.has_color_matrix_1 = false;
+        info.has_color_matrix_2 = false;
+        if (v_Mat.size() > 0)
+        {
+            info.has_color_matrix_1 = true;
+            color_matrix_1 = v_Mat[0];
+            if (v_Mat.size() > 1)
+            {
+                info.has_color_matrix_2 = true;
+                color_matrix_2 = v_Mat[1];
+            }
+        }
+    }
+    else if (type == "calib")
+    {
+        info.has_camera_calibration_1 = false;
+        info.has_camera_calibration_2 = false;
+        if (v_Mat.size() > 0)
+        {
+            info.has_camera_calibration_1 = true;
+            camera_calibration_1 = v_Mat[0];
+            if (v_Mat.size() > 1)
+            {
+                info.has_camera_calibration_2 = true;
+                camera_calibration_2 = v_Mat[1];
+            }
+        }
+    }
+}
+
+void DCPProfile::setMatricesFromStrings(const std::string& type, std::vector<std::string>& v_strMat)
+{
+    std::vector<Matrix> v_Mat;
+
+    for (const std::string& strMat : v_strMat)
+    {
+        std::vector<std::string> v;
+        boost::algorithm::split(v, strMat, boost::algorithm::is_space());
+        Matrix mat;
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                mat[i][j] = std::stof(v[3*i + j]);
+        v_Mat.push_back(mat);
+    }
+
+    setMatrices(type, v_Mat);
+}
+
+void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw) const
 {
     const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
 
@@ -2222,6 +2289,29 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool s
                 }
             }
             image.setpixel(j, i, rgbOut, 3);
+        }
+}
+
+void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw) const
+{
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
+
+    #pragma omp parallel for
+    for (int i = 0; i < image.Height(); ++i)
+        for (int j = 0; j < image.Width(); ++j)
+        {
+            const RGBAfColor rgb = image(i, j);
+
+            RGBAfColor rgbOut = rgb;
+            for (int r = 0; r < 3; ++r)
+            {
+                rgbOut[r] = 0.0;
+                for (int c = 0; c < 3; ++c)
+                {
+                    rgbOut[r] += cameraToACES2065Matrix[r][c] * rgb[c];
+                }
+            }
+            image(i, j) = rgbOut;
         }
 }
 
@@ -2266,7 +2356,7 @@ void DCPDatabase::clear()
     folderName = "";
 }
 
-bool DCPDatabase::getDcpForCamera(const std::string& make, const std::string& model, DCPProfile& dcpProf)
+bool DCPDatabase::retrieveDcpForCamera(const std::string& make, const std::string& model, DCPProfile& dcpProf)
 {
     const std::string dcpKey = make + "_" + model;
 

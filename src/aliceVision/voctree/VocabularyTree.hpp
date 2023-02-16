@@ -284,7 +284,7 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::save(const std::string
   /// @todo Some identifying name for the distance used
   assert(initialized());
 
-  std::ofstream out(file.c_str(), std::ios_base::binary);
+  std::ofstream out(file, std::ios_base::binary);
   out.write((char*) (&k_), sizeof (uint32_t));
   out.write((char*) (&levels_), sizeof (uint32_t));
   uint32_t size = centers_.size();
@@ -304,7 +304,7 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string
   uint32_t size;
   try
   {
-    in.open(file.c_str(), std::ios_base::binary);
+    in.open(file, std::ios_base::binary);
     in.read((char*) (&k_), sizeof (uint32_t));
     in.read((char*) (&levels_), sizeof (uint32_t));
     in.read((char*) (&size), sizeof (uint32_t));
