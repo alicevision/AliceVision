@@ -384,6 +384,8 @@ int aliceVision_main(int argc, char **argv)
   boost::regex extractNumberRegex("\\d+");
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
+
+  ALICEVISION_LOG_DEBUG("List files in the DCP database: " << colorProfileDatabaseDirPath);
   char allColorProfilesFound = 1; // char type instead of bool to support usage of atomic
   image::DCPDatabase dcpDatabase(colorProfileDatabaseDirPath);
   if (!colorProfileDatabaseDirPath.empty())
@@ -392,6 +394,7 @@ int aliceVision_main(int argc, char **argv)
   }
   int viewsWithDCPMetadata = 0;
 
+  ALICEVISION_LOG_DEBUG("List files in the LCP database: " << lensCorrectionProfileInfo);
   LCPdatabase lcpStore(lensCorrectionProfileInfo, lensCorrectionProfileSearchIgnoreCameraModel);
   if (!lensCorrectionProfileInfo.empty())
   {
@@ -1001,14 +1004,13 @@ int aliceVision_main(int argc, char **argv)
 
   // print report
   ALICEVISION_LOG_INFO("CameraInit report:"
-                   << "\n\t- # views listed: " << sfmData.getViews().size()
-                   << "\n\t   - # views with an initialized intrinsic listed: " << completeViewCount
-                   << "\n\t   - # views without metadata (with a default intrinsic): " << noMetadataImagePaths.size()
-                   << "\n\t   - # views with DCP metadata (raw images only): " << viewsWithDCPMetadata
-                   << "\n\t   - # views with a LCP initialized intrinsic listed: " << lcpGeometryViewCount
-                   << "\n\t   - # views with a vignetting model added in metadata: " << lcpVignettingViewCount
-                   << "\n\t   - # views without metadata (with a default intrinsic): " <<  noMetadataImagePaths.size()
-                   << "\n\t- # intrinsics listed: " << sfmData.getIntrinsics().size());
+                   << "\n\t- # Views: " << sfmData.getViews().size()
+                   << "\n\t   - # with focal length initialization (from metadata): " << completeViewCount
+                   << "\n\t   - # without metadata: " << noMetadataImagePaths.size()
+                   << "\n\t   - # with DCP color calibration (raw images only): " << viewsWithDCPMetadata
+                   << "\n\t   - # with LCP lens distortion initialization: " << lcpGeometryViewCount
+                   << "\n\t   - # with LCP vignetting calibration: " << lcpVignettingViewCount
+                   << "\n\t- # Cameras Intrinsics: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;
 }
