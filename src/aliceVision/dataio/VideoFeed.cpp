@@ -8,6 +8,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/convertion.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -203,7 +204,10 @@ bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
 std::size_t VideoFeed::FeederImpl::nbFrames() const
 {
   if (!_videoCapture.isOpened())
+  {
+    ALICEVISION_LOG_WARNING("The video file could not be opened.");
     return 0;
+  }
   return _videoCapture.get(cv::CAP_PROP_FRAME_COUNT);
 }
 
@@ -281,6 +285,11 @@ bool VideoFeed::goToNextFrame()
 }
 
 bool VideoFeed::isInit() const {return(_feeder->isInit()); }
+
+bool VideoFeed::isSupported(const std::string &extension)
+{
+  return image::isVideoExtension(extension);
+}
 
 VideoFeed::~VideoFeed() { }
 

@@ -117,6 +117,13 @@ public:
 
   virtual ~VideoFeed();
 
+/**
+ * @brief For a given extension, return true if that file can be used as input video for the feed.
+ * @param extension The file extension to check in ".ext" format (case insensitive).
+ * @return True if the file is supported.
+ */
+static bool isSupported(const std::string &extension);
+
 private:
   class FeederImpl;
   std::unique_ptr<FeederImpl> _feeder;

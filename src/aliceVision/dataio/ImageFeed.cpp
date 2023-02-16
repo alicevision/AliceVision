@@ -29,8 +29,6 @@ class ImageFeed::FeederImpl
 {
 public:
 
-  static bool isSupported(const std::string &ext);
-
   FeederImpl() : _isInit(false) {}
 
   FeederImpl(const std::string& imagePath, const std::string& calibPath);
@@ -136,9 +134,6 @@ private:
   }
 
 private:
-  static const std::vector<std::string> supportedExtensions;
-
-private:
   bool _isInit;
   bool _withCalibration;
   // It contains the images to be fed
@@ -150,15 +145,6 @@ private:
   sfmData::Views::const_iterator _viewIterator;
   unsigned int _currentImageIndex = 0;
 };
-
-const std::vector<std::string> ImageFeed::FeederImpl::supportedExtensions = {".jpg", ".jpeg", ".png", ".ppm", ".tif", ".tiff", ".exr"};
-
-bool ImageFeed::FeederImpl::isSupported(const std::string &ext)
-{
-  const auto start = FeederImpl::supportedExtensions.begin();
-  const auto end = FeederImpl::supportedExtensions.end();
-  return(std::find(start, end, boost::to_lower_copy(ext)) != end);
-}
 
 ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::string& calibPath)
 : _isInit(false)
@@ -179,7 +165,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
       _sfmMode = true;
     }
     // if it is an image file
-    else if(FeederImpl::isSupported(ext))
+    else if(image::isSupported(ext) && !image::isVideoExtension(ext))
     {
       _images.push_back(imagePath);
       _withCalibration = !calibPath.empty();
@@ -244,13 +230,17 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     {
       // get the extension of the current file to check whether it is an image
       const std::string ext = iterator->path().extension().string();
-      if(FeederImpl::isSupported(ext))
+      if(image::isSupported(ext) && !image::isVideoExtension(ext))
       {
         const std::string filepath = iterator->path().string();
         const std::string filename = iterator->path().filename().string();
         // If we have a filePattern (a sequence of images), we have to match the regex.
         if(filePattern.empty() || std::regex_match(filename, re))
           tmpSorter.push(filepath);
+      }
+      else
+      {
+        ALICEVISION_LOG_WARNING("Unsupported file extension " << ext << " for " << iterator->path().string() << ".");
       }
     }
     // put all the retrieve files inside the queue
@@ -408,7 +398,7 @@ bool ImageFeed::isSupported(const std::string &extension)
   }
   else
   {
-    return FeederImpl::isSupported(ext);
+    return (image::isSupported(ext) && !image::isVideoExtension(ext));
   }
 }
 
