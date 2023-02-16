@@ -1104,7 +1104,6 @@ LCPinfo* LCPdatabase::findLCP(
         if(headerIt == _lcpHeaderCache.end())
         {
             // If not already in the cache of LCP headers, add it.
-            #pragma omp critical
             _lcpHeaderCache[lcpPath.path.string()] = LCPinfo(lcpPath.path.string(), false);
             headerIt = _lcpHeaderCache.find(lcpPath.path.string());
         }
@@ -1137,7 +1136,6 @@ LCPinfo* LCPdatabase::findLCP(
             continue;
 
         // Add the mapping of the lens ID to the found LCP filepath
-        #pragma omp critical
         _lcpCameraMappingCache[lensUidStr] = lcpPath.path.string();
 
         // Return the LCP from file or cache
@@ -1147,7 +1145,6 @@ LCPinfo* LCPdatabase::findLCP(
     // No LCP has been found, add an empty path for that key in order to speed up next search of it
     if (_lcpCameraMappingCache.find(lensUidStr) == _lcpCameraMappingCache.end())
     {
-        #pragma omp critical
         _lcpCameraMappingCache[lensUidStr] = "";
     }
 

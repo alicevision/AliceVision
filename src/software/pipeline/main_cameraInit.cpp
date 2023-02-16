@@ -420,7 +420,7 @@ int aliceVision_main(int argc, char **argv)
         std::hash<std::string> hash; // TODO use boost::hash_combine
         view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
 
-        #pragma omp critical
+        #pragma omp critical (rig)
         detectedRigs[view.getRigId()][view.getSubPoseId()]++;
       }
       catch(std::exception& e)
@@ -446,7 +446,7 @@ int aliceVision_main(int argc, char **argv)
         std::hash<std::string> hash;
         IndexT tmpPoseID = hash(parentPath.string()); // use a temporary pose Id to group the images
 
-        #pragma omp critical
+        #pragma omp critical (poseGroups)
         {
             poseGroups[tmpPoseID].push_back(view.getViewId());
         }
@@ -494,19 +494,21 @@ int aliceVision_main(int argc, char **argv)
         {
             image::DCPProfile dcpProf;
 
-            if (!dcpDatabase.empty() && dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
+            #pragma omp critical (dcp)
             {
-                view.addDCPMetadata(dcpProf);
+                if (!dcpDatabase.empty() && dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
+                {
+                    view.addDCPMetadata(dcpProf);
 
-                #pragma omp critical
-                viewsWithDCPMetadata++;
+                    viewsWithDCPMetadata++;
 
-                dcpError = false;
-            }
-            else if (allColorProfilesFound)
-            {
-                // there is a missing color profile for at least one image
-                boost::atomic_ref<char>{allColorProfilesFound} = 0;
+                    dcpError = false;
+                }
+                else if (allColorProfilesFound)
+                {
+                    // there is a missing color profile for at least one image
+                    boost::atomic_ref<char>{allColorProfilesFound} = 0;
+                }
             }
 
         }
@@ -542,6 +544,7 @@ int aliceVision_main(int argc, char **argv)
 
         if (!make.empty() && !lensModel.empty())
         {
+            #pragma omp critical (lcp)
             lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
         }
     }
@@ -629,15 +632,16 @@ int aliceVision_main(int argc, char **argv)
     // error handling
     if(sensorWidth == -1.0)
     {
-  #pragma omp critical
       if(hasCameraMetadata)
       {
         // sensor is not in the database
+  #pragma omp critical (unknownSensors)
         unknownSensors.emplace(std::make_pair(make, model), view.getImagePath()); // will throw a warning at the end
       }
       else
       {
         // no metadata 'Make' and 'Model' can't find sensor width
+  #pragma omp critical (noMetadataImagePaths)
         noMetadataImagePaths.emplace_back(view.getImagePath()); // will throw a warning message at the end
       }
     }
@@ -786,7 +790,7 @@ int aliceVision_main(int argc, char **argv)
       else
       {
         // We have no way to identify a camera device correctly.
-#pragma omp critical
+#pragma omp critical (missingDeviceUID)
         {
           missingDeviceUID.emplace_back(view.getImagePath()); // will throw a warning message at the end
         }
@@ -837,7 +841,7 @@ int aliceVision_main(int argc, char **argv)
       intrinsicId = intrinsic->hashValue();
     }
 
-    #pragma omp critical
+    #pragma omp critical (intrinsics)
     {
       view.setIntrinsicId(intrinsicId);
       sfmData.getIntrinsics().emplace(intrinsicId, intrinsicBase);

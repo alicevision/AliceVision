@@ -2455,7 +2455,6 @@ bool DCPDatabase::retrieveDcpForCamera(const std::string& make, const std::strin
         if (it != dcpFilenamesList.end())
         {
             dcpProf.Load(*it);
-            #pragma omp critical
             dcpStore.insert(std::pair<std::string, image::DCPProfile>(dcpKey, dcpProf));
             return true;
         }
