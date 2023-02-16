@@ -146,6 +146,18 @@ bool isSupported(const std::string& extension)
   const auto end = supportedExtensions.end();
   return (std::find(start, end, boost::to_lower_copy(extension)) != end);
 }
+
+bool isVideoExtension(const std::string& extension)
+{
+    // List provided by OpenImageIO:
+    // https://openimageio.readthedocs.io/en/latest/builtinplugins.html#movie-formats-using-ffmpeg
+    static const std::array<std::string, 11> supportedExtensions = {
+        ".avi", ".qt", ".mov",  ".mp4", ".m4a", ".m4v",
+        ".3gp", ".3g2", ".mj2", ".m4v", ".mpg"
+    };
+    const auto start = supportedExtensions.begin();
+    const auto end = supportedExtensions.end();
+    return (std::find(start, end, boost::to_lower_copy(extension)) != end);
 }
 
 std::string EStorageDataType_informations()

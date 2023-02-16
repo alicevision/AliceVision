@@ -115,6 +115,13 @@ std::vector<std::string> getSupportedExtensions();
  */
 bool isSupported(const std::string& extension);
 
+/**
+ * @brief Check if the extension is a video format supported by OpenImageIO, based on the list provided by OpenImageIO
+ *        (https://openimageio.readthedocs.io/en/latest/builtinplugins.html#movie-formats-using-ffmpeg).
+ * @param[in] extension the input file's extension.
+ * @return true if the extension is a valid video extension supported by OpenImageIO, false otherwise.
+ */
+bool isVideoExtension(const std::string& extension);
 
 /**
 * @brief Data type use to write the image
