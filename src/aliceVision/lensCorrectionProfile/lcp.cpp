@@ -1,9 +1,10 @@
+#include <iostream>
+
 #include "boost/filesystem.hpp"
+#include "boost/algorithm/string.hpp"
 
 #include <expat.h>
-#include "aliceVision/lensCorrectionProfile/lcp.hpp"
-
-
+#include "lcp.hpp"
 
 template<typename T>
 constexpr T intp(T a, T b, T c)
@@ -12,29 +13,52 @@ constexpr T intp(T a, T b, T c)
     return a * (b - c) + c;
 }
 
-void XmlStartHandler(void* data, const char* el, const char** attr)
+void LensParam::clear()
 {
-    LCPinfo* LCPdata = static_cast<LCPinfo*>(data);
+    _isFisheye = false;
+    _hasVignetteParams = false;
+    fisheyeParams.reset();
+    perspParams.reset();
+    vignParams.reset();
+    camData.reset();
+}
+
+// Set of handlers to be connected with the expat XML parser contained in the "load" method of the "LCPinfo" class.
+
+void XMLCALL LCPinfo::XmlStartHandler(void* pLCPinfo, const char* el, const char** attr)
+{
+    LCPinfo* LCPdata = static_cast<LCPinfo*>(pLCPinfo);
 
     std::string element(el);
 
-    if (!LCPdata->isSeqOpened)
+    if (!LCPdata->isSeqOpened() && (element == "photoshop:CameraProfiles"))
     {
-        LCPdata->isSeqOpened = (element == "photoshop:CameraProfiles");
+        LCPdata->openSequence();
     }
-    else if (LCPdata->inAlternate)
+    else if (element == "stCamera:AlternateLensIDs")
     {
-        // do nothing
+        LCPdata->openAlternateLensIDs();
     }
-    else if ((element == "stCamera:AlternateLensIDs") || (element == "stCamera:AlternateLensNames"))
+    else if (element == "stCamera:AlternateLensNames")
     {
-        LCPdata->inAlternate = true;
+        LCPdata->openAlternateLensNames();
     }
     else if (element == "rdf:li")
     {
-        LCPdata->modelCount++;
+        if ((LCPdata->isAlternateLensIDsOpened()) && !LCPdata->isCommonOK())
+        {
+            LCPdata->setGetText();
+        }
+        else if ((LCPdata->isAlternateLensNamesOpened()) && !LCPdata->isCommonOK())
+        {
+            LCPdata->setGetText();
+        }
+        else if (!LCPdata->isAlternateLensIDsOpened() && !LCPdata->isAlternateLensNamesOpened())
+        {
+            LCPdata->increaseModelCount();
+        }      
     }
-    else if ((LCPdata->modelCount == 1) && !LCPdata->isCommonOK && (element == "rdf:Description"))
+    else if ((LCPdata->getModelCount() == 1) && !LCPdata->isCommonOK() && (element == "rdf:Description"))
     {
         for (int i = 0; attr[i]; i += 2)
         {
@@ -43,55 +67,59 @@ void XmlStartHandler(void* data, const char* el, const char** attr)
 
             if (key == "stCamera:Author")
             {
-                LCPdata->Author = value;
+                LCPdata->setAuthor(value);
             }
             else if (key == "stCamera:ProfileName")
             {
-                LCPdata->ProfileName = value;
+                LCPdata->setProfileName(value);
             }
             else if (key == "stCamera:Lens")
             {
-                LCPdata->Lens = value;
+                LCPdata->addLensModel(value);
             }
             else if (key == "stCamera:LensPrettyName")
             {
-                LCPdata->LensPrettyName = value;
+                LCPdata->setLensPrettyName(value);
             }
             else if (key == "stCamera:LensInfo")
             {
-                LCPdata->LensInfo = value;
+                LCPdata->setLensInfo(value);
             }
             else if (key == "stCamera:LensID")
             {
-                LCPdata->LensID = atoi(value.c_str());
+                LCPdata->addLensID(atoi(value.c_str()));
             }
             else if (key == "stCamera:Make")
             {
-                LCPdata->Make = value;
+                LCPdata->setCameraMaker(value);
             }
             else if (key == "stCamera:Model")
             {
-                LCPdata->Model = value;
+                LCPdata->setCameraModel(value);
+            }
+            else if ((key == "stCamera:CameraRawProfile") && (value == "True"))
+            {
+                LCPdata->setAsRawProfile();
             }
             else if (key == "stCamera:UniqueCameraModel")
             {
-                LCPdata->UniqueCameraModel = value;
+                LCPdata->setUniqueCameraModel(value);
             }
             else if (key == "stCamera:CameraPrettyName")
             {
-                LCPdata->CameraPrettyName = value;
+                LCPdata->setCameraPrettyName(value);
             }
             else if (key == "stCamera:SensorFormatFactor")
             {
-                LCPdata->SensorFormatFactor = atof(value.c_str());
+                LCPdata->setSensorFormatFactor(atof(value.c_str()));
             }
             else if (key == "stCamera:ImageLength")
             {
-                LCPdata->ImageLength = atoi(value.c_str());
+                LCPdata->setImageLength(atoi(value.c_str()));
             }
             else if (key == "stCamera:ImageWidth")
             {
-                LCPdata->ImageWidth = atoi(value.c_str());
+                LCPdata->setImageWidth(atoi(value.c_str()));
             }
             else if (key == "stCamera:ApertureValue")
             {
@@ -106,9 +134,8 @@ void XmlStartHandler(void* data, const char* el, const char** attr)
                 LCPdata->currLensParam.camData.FocusDistance = atof(value.c_str());
             }
         }
-        LCPdata->isCommonOK = true;
     }
-    else if ((LCPdata->modelCount > 1) && !LCPdata->isCamDataOK && (element == "rdf:Description"))
+    else if ((LCPdata->getModelCount() > 1) && !LCPdata->isCamDataOK() && (element == "rdf:Description"))
     {
         for (int i = 0; attr[i]; i += 2)
         {
@@ -128,19 +155,19 @@ void XmlStartHandler(void* data, const char* el, const char** attr)
                 LCPdata->currLensParam.camData.FocusDistance = atof(value.c_str());
             }
         }
-        LCPdata->isCamDataOK = true;
+        LCPdata->setCamDataOK();
     }
-    else if (LCPdata->isSeqOpened && LCPdata->isCommonOK)
+    else if (LCPdata->isSeqOpened() && LCPdata->isCommonOK())
     {
-        if ((element == "stCamera:PerspectiveModel") || ((element == "rdf:Description") && LCPdata->waitPerspModeldescription))
+        if ((element == "stCamera:PerspectiveModel") || ((element == "rdf:Description") && LCPdata->isWaitPerspModeldescription()))
         {
             if (!attr[0])
             {
-                LCPdata->waitPerspModeldescription = true;
+                LCPdata->setWaitPerspModeldescription();
             }
             else if (element == "rdf:Description")
             {
-                LCPdata->waitPerspModeldescription = false;
+                LCPdata->unsetWaitPerspModeldescription();
             }
 
             for (int i = 0; attr[i]; i += 2)
@@ -160,6 +187,14 @@ void XmlStartHandler(void* data, const char* el, const char** attr)
                 {
                     LCPdata->currLensParam.perspParams.FocalLengthY = atof(value.c_str());
                 }
+                else if (key == "stCamera:ImageXCenter")
+                {
+                    LCPdata->currLensParam.perspParams.ImageXCenter = atof(value.c_str());
+                }
+                else if (key == "stCamera:ImageYCenter")
+                {
+                    LCPdata->currLensParam.perspParams.ImageYCenter = atof(value.c_str());
+                }
                 else if (key == "stCamera:RadialDistortParam1")
                 {
                     LCPdata->currLensParam.perspParams.RadialDistortParam1 = atof(value.c_str());
@@ -178,7 +213,7 @@ void XmlStartHandler(void* data, const char* el, const char** attr)
         }
         else if (element == "stCamera:FisheyeModel")
         {
-            LCPdata->currLensParam.isFisheye = true;
+            LCPdata->currLensParam.setFisheyeStatus(true);
 
             for (int i = 0; attr[i]; i += 2)
             {
@@ -226,14 +261,22 @@ void XmlStartHandler(void* data, const char* el, const char** attr)
         }
         else if (element == "stCamera:VignetteModel")
         {
-            LCPdata->currLensParam.hasVignetteParams = true;
+            LCPdata->currLensParam.setVignetteParamsStatus(true);
 
             for (int i = 0; attr[i]; i += 2)
             {
                 std::string key(attr[i]);
                 std::string value(attr[i + 1]);
 
-                if (key == "stCamera:VignetteModelParam1")
+                if (key == "stCamera:FocalLengthX")
+                {
+                    LCPdata->currLensParam.vignParams.FocalLengthX = atof(value.c_str());
+                }
+                else if (key == "stCamera:FocalLengthY")
+                {
+                    LCPdata->currLensParam.vignParams.FocalLengthY = atof(value.c_str());
+                }
+                else if (key == "stCamera:VignetteModelParam1")
                 {
                     LCPdata->currLensParam.vignParams.VignetteModelParam1 = atof(value.c_str());
                 }
@@ -264,42 +307,207 @@ void XmlStartHandler(void* data, const char* el, const char** attr)
 
 }  /* End of start handler */
 
-void XmlEndHandler(void* data, const char* el)
+void XMLCALL LCPinfo::XmlEndHandler(void* pLCPinfo, const char* el)
 {
-    LCPinfo* LCPdata = static_cast<LCPinfo*>(data);
+    LCPinfo* LCPdata = static_cast<LCPinfo*>(pLCPinfo);
 
     std::string element(el);
 
-    if (LCPdata->isSeqOpened && (element == "photoshop:CameraProfiles"))
+    if (LCPdata->isSeqOpened() && (element == "photoshop:CameraProfiles"))
     {
-        LCPdata->isSeqOpened = false;
+        LCPdata->closeSequence();
     }
-    else if (LCPdata->inAlternate && ((element == "stCamera:AlternateLensIDs") || (element == "stCamera:AlternateLensNames")))
+    else if (LCPdata->isAlternateLensIDsOpened() && (element == "stCamera:AlternateLensIDs"))
     {
-        LCPdata->inAlternate = false;
+        LCPdata->closeAlternateLensIDs();
     }
-    else if (LCPdata->isSeqOpened && (element == "rdf:li") && !LCPdata->inAlternate)
+    else if (LCPdata->isAlternateLensNamesOpened() && ((element == "stCamera:AlternateLensNames")))
     {
-        LCPdata->v_lensParams.push_back(LCPdata->currLensParam);
-        LCPdata->currLensParam.reset();
-        LCPdata->isCamDataOK = false;
+        LCPdata->closeAlternateLensNames();
+    }
+    else if ((element == "rdf:li") && (LCPdata->isAlternateLensIDsOpened() || LCPdata->isAlternateLensNamesOpened()))
+    {
+        LCPdata->unsetGetText();
+    }
+    else if (LCPdata->isSeqOpened() && (element == "rdf:li") && !LCPdata->isAlternateLensIDsOpened() && !LCPdata->isAlternateLensNamesOpened())
+    {
+        LCPdata->storeCurrParams();
+        LCPdata->currLensParam.clear();
+        LCPdata->unsetCamDataOK();
+    }
+    else if ((LCPdata->getModelCount() == 1) && !LCPdata->isCommonOK() && (element == "rdf:Description"))
+    {
+        LCPdata->setCommonOK();
     }
 }  /* End of end handler */
 
-LCPinfo::LCPinfo(const std::string& filename) :
-    isSeqOpened(false),
-    isCommonOK(false),
-    isCamDataOK(false),
-    inAlternate(false),
-    waitPerspModeldescription(false),
-    modelCount(0),
+void XMLCALL LCPinfo::XmlTextHandler(void* pLCPinfo, const char* s, int len)
+{
+    LCPinfo* LCPdata = static_cast<LCPinfo*>(pLCPinfo);
+
+    std::ostringstream localtextbuf;
+
+    if (LCPdata->isGetText())
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            localtextbuf << s[i];
+        }
+        if (LCPdata->isAlternateLensIDsOpened())
+        {
+            LCPdata->addLensID(std::atoi(localtextbuf.str().c_str()));
+        }
+        else if (LCPdata->isAlternateLensNamesOpened())
+        {
+            LCPdata->addLensModel(localtextbuf.str());
+        }
+    }
+}
+
+void XMLCALL LCPinfo::XmlStartHandlerCommonOnly(void* pLCPinfo, const char* el, const char** attr)
+{
+    LCPinfo* LCPdata = static_cast<LCPinfo*>(pLCPinfo);
+
+    std::string element(el);
+
+    if (!LCPdata->isSeqOpened() && (element == "photoshop:CameraProfiles"))
+    {
+        LCPdata->openSequence();
+    }
+    else if (element == "stCamera:AlternateLensIDs")
+    {
+        LCPdata->openAlternateLensIDs();
+    }
+    else if (element == "stCamera:AlternateLensNames")
+    {
+        LCPdata->openAlternateLensNames();
+    }
+    else if (element == "rdf:li")
+    {
+        if ((LCPdata->isAlternateLensIDsOpened()) && !LCPdata->isCommonOK())
+        {
+            LCPdata->setGetText();
+        }
+        else if ((LCPdata->isAlternateLensNamesOpened()) && !LCPdata->isCommonOK())
+        {
+            LCPdata->setGetText();
+        }
+        else if (!LCPdata->isAlternateLensIDsOpened() && !LCPdata->isAlternateLensNamesOpened())
+        {
+            LCPdata->increaseModelCount();
+        }
+    }
+    else if ((LCPdata->getModelCount() == 1) && !LCPdata->isCommonOK() && (element == "rdf:Description"))
+    {
+        for (int i = 0; attr[i]; i += 2)
+        {
+            std::string key(attr[i]);
+            std::string value(attr[i + 1]);
+
+            if (key == "stCamera:Author")
+            {
+                LCPdata->setAuthor(value);
+            }
+            else if (key == "stCamera:ProfileName")
+            {
+                LCPdata->setProfileName(value);
+            }
+            else if (key == "stCamera:Lens")
+            {
+                LCPdata->addLensModel(value);
+            }
+            else if (key == "stCamera:LensPrettyName")
+            {
+                LCPdata->setLensPrettyName(value);
+            }
+            else if (key == "stCamera:LensInfo")
+            {
+                LCPdata->setLensInfo(value);
+            }
+            else if (key == "stCamera:LensID")
+            {
+                LCPdata->addLensID(atoi(value.c_str()));
+            }
+            else if (key == "stCamera:Make")
+            {
+                LCPdata->setCameraMaker(value);
+            }
+            else if (key == "stCamera:Model")
+            {
+                LCPdata->setCameraModel(value);
+            }
+            else if ((key == "stCamera:CameraRawProfile") && (value == "True"))
+            {
+                LCPdata->setAsRawProfile();
+            }
+            else if (key == "stCamera:UniqueCameraModel")
+            {
+                LCPdata->setUniqueCameraModel(value);
+            }
+            else if (key == "stCamera:CameraPrettyName")
+            {
+                LCPdata->setCameraPrettyName(value);
+            }
+            else if (key == "stCamera:SensorFormatFactor")
+            {
+                LCPdata->setSensorFormatFactor(atof(value.c_str()));
+            }
+            else if (key == "stCamera:ImageLength")
+            {
+                LCPdata->setImageLength(atoi(value.c_str()));
+            }
+            else if (key == "stCamera:ImageWidth")
+            {
+                LCPdata->setImageWidth(atoi(value.c_str()));
+            }
+        }
+    }
+}  /* End of start handler common only*/
+
+void XMLCALL LCPinfo::XmlEndHandlerCommonOnly(void* pLCPinfo, const char* el)
+{
+    LCPinfo* LCPdata = static_cast<LCPinfo*>(pLCPinfo);
+
+    std::string element(el);
+
+    if (LCPdata->isSeqOpened() && (element == "photoshop:CameraProfiles"))
+    {
+        LCPdata->closeSequence();
+    }
+    else if (LCPdata->isAlternateLensIDsOpened() && (element == "stCamera:AlternateLensIDs"))
+    {
+        LCPdata->closeAlternateLensIDs();
+    }
+    else if (LCPdata->isAlternateLensNamesOpened() && ((element == "stCamera:AlternateLensNames")))
+    {
+        LCPdata->closeAlternateLensNames();
+    }
+    else if ((element == "rdf:li") && (LCPdata->isAlternateLensIDsOpened() || LCPdata->isAlternateLensNamesOpened()))
+    {
+        LCPdata->unsetGetText();
+    }
+    else if ((LCPdata->getModelCount() == 1) && !LCPdata->isCommonOK() && (element == "rdf:Description"))
+    {
+        LCPdata->setCommonOK();
+    }
+}  /* End of end handler common only */
+
+// LCPinfo class implementation
+
+LCPinfo::LCPinfo(const std::string& filename, bool fullParsing) :
+    _isSeqOpened(false),
+    _isCommonOK(false),
+    _isCamDataOK(false),
+    _inAlternateLensIDs(false),
+    _inAlternateLensNames(false),
+    _waitPerspModeldescription(false),
+    _getText(false),
+    _modelCount(0),
     Author(""),
     Make(""),
     Model(""),
     UniqueCameraModel(""),
     CameraRawProfile(false),
-    LensID(0),
-    Lens(""),
     LensInfo(""),
     CameraPrettyName(""),
     LensPrettyName(""),
@@ -308,13 +516,27 @@ LCPinfo::LCPinfo(const std::string& filename) :
     ImageWidth(0),
     ImageLength(0)
 {
+    load(filename, fullParsing);
+}
+
+void LCPinfo::load(const std::string& filename, bool fullParsing)
+{
     XML_Parser parser = XML_ParserCreate(nullptr);
 
     if (!parser) {
         throw std::runtime_error("Couldn't allocate memory for XML parser");
     }
 
-    XML_SetElementHandler(parser, XmlStartHandler, XmlEndHandler);
+    if (fullParsing)
+    {
+        XML_SetElementHandler(parser, XmlStartHandler, XmlEndHandler);
+    }
+    else
+    {
+        XML_SetElementHandler(parser, XmlStartHandlerCommonOnly, XmlEndHandlerCommonOnly);
+    }
+    
+    XML_SetCharacterDataHandler(parser, XmlTextHandler);
     XML_SetUserData(parser, static_cast<void*>(this));
 
     FILE* const pFile = fopen(filename.c_str(), "rb");
@@ -353,8 +575,8 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
         const LensParam& currParam = v_lensParams[i];
         const float f = currParam.camData.FocalLength;
 
-        v_isDistortionValid.push_back(currParam.isFisheye ? !currParam.fisheyeParams.isEmpty : !currParam.perspParams.isEmpty);
-        v_isVignetteValid.push_back(currParam.hasVignetteParams && !currParam.vignParams.isEmpty);
+        v_isDistortionValid.push_back(currParam.isFisheye() ? !currParam.fisheyeParams.isEmpty : !currParam.perspParams.isEmpty);
+        v_isVignetteValid.push_back(currParam.hasVignetteParams() && !currParam.vignParams.isEmpty);
 
         bool isCurrentValid = (mode == LCPCorrectionMode::DISTORTION && v_isDistortionValid.back()) ||
                               (mode == LCPCorrectionMode::VIGNETTE && v_isVignetteValid.back());
@@ -477,34 +699,81 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
 
         if (mode == LCPCorrectionMode::VIGNETTE)
         {
-            weightLow = (v_lensParams[iHigh].camData.ApertureValue - settings.ApertureValue) / (v_lensParams[iHigh].camData.ApertureValue - v_lensParams[iLow].camData.ApertureValue);
+            if (v_lensParams[iHigh].camData.ApertureValue > v_lensParams[iLow].camData.ApertureValue)
+            {
+                weightLow = (v_lensParams[iHigh].camData.ApertureValue - settings.ApertureValue) /
+                            (v_lensParams[iHigh].camData.ApertureValue - v_lensParams[iLow].camData.ApertureValue);
+            }
+            else if (v_lensParams[iHigh].camData.ApertureValue == v_lensParams[iLow].camData.ApertureValue)
+            {
+                if (v_lensParams[iHigh].camData.ApertureValue < settings.ApertureValue)
+                {
+                    weightLow = 0.f;
+                }
+                else
+                {
+                    weightLow = 1.f;
+                }
+            }
+            else
+            {
+                // Should never occur.
+                weightLow = -1.0f;
+            }
         }
         else
         {
-            weightLow = (std::log(v_lensParams[iHigh].camData.FocusDistance) - std::log(settings.FocusDistance)) /
-                        (std::log(v_lensParams[iHigh].camData.FocusDistance) - std::log(v_lensParams[iLow].camData.FocusDistance));
+            if (v_lensParams[iHigh].camData.FocusDistance > v_lensParams[iLow].camData.FocusDistance)
+            {
+                weightLow = (std::log(v_lensParams[iHigh].camData.FocusDistance) - std::log(settings.FocusDistance)) /
+                            (std::log(v_lensParams[iHigh].camData.FocusDistance) - std::log(v_lensParams[iLow].camData.FocusDistance));
+            }
+            else if (v_lensParams[iHigh].camData.FocusDistance == v_lensParams[iLow].camData.FocusDistance)
+            {
+                if (v_lensParams[iHigh].camData.FocusDistance < settings.FocusDistance)
+                {
+                    weightLow = 0.f;
+                }
+                else
+                {
+                    weightLow = 1.f;
+                }
+            }
+            else
+            {
+                // Should never occur.
+                weightLow = -1.0f;
+            }
         }
 
-        if (v_lensParams[iHigh].camData.FocalLength != v_lensParams[iLow].camData.FocalLength)
+        if (v_lensParams[iHigh].camData.FocalLength > v_lensParams[iLow].camData.FocalLength)
         {
             float weightLowFocalLength = (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(settings.FocalLength)) /
                                          (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(v_lensParams[iLow].camData.FocalLength));
 
             if (mode == LCPCorrectionMode::VIGNETTE)
             {
-                weightLow = 0.5 * (weightLow + weightLowFocalLength);
+                weightLow = (weightLow != -1.0f) ? 0.5 * (weightLow + weightLowFocalLength) : weightLowFocalLength;
             }
             else
             {
-                weightLow = 0.2 * weightLow + 0.8 * weightLowFocalLength;
+                weightLow = (weightLow != -1.0f) ? 0.2 * weightLow + 0.8 * weightLowFocalLength : weightLowFocalLength;
             }
         }
 
-        return true;
+        return (weightLow != -1.0f);
     }
     else if (iLow == iHigh && iLow != -1)
     {
         weightLow = 1.0;
+        return true;
+    }
+    else if (((mode == LCPCorrectionMode::VIGNETTE && settings.ApertureValue == 0.f) ||
+              (mode == LCPCorrectionMode::DISTORTION && settings.FocusDistance == 0.f)) &&
+            (v_lensParams[iHigh].camData.FocalLength > v_lensParams[iLow].camData.FocalLength))
+    {
+        weightLow = (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(settings.FocalLength)) /
+                    (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(v_lensParams[iLow].camData.FocalLength));
         return true;
     }
     else
@@ -520,48 +789,190 @@ void LCPinfo::combine(size_t iLow, size_t iHigh, float weightLow, LCPCorrectionM
 
     switch (mode) {
     case LCPCorrectionMode::VIGNETTE: {
-        pOut.hasVignetteParams = true;
-        pOut.vignParams.isEmpty = false;
-        pOut.vignParams.FocalLengthX = intp<float>(weightLow, p1.vignParams.FocalLengthX, p2.vignParams.FocalLengthX);
-        pOut.vignParams.FocalLengthY = intp<float>(weightLow, p1.vignParams.FocalLengthY, p2.vignParams.FocalLengthY);
-        pOut.vignParams.VignetteModelParam1 = intp<float>(weightLow, p1.vignParams.VignetteModelParam1, p2.vignParams.VignetteModelParam1);
-        pOut.vignParams.VignetteModelParam2 = intp<float>(weightLow, p1.vignParams.VignetteModelParam2, p2.vignParams.VignetteModelParam2);
-        pOut.vignParams.VignetteModelParam3 = intp<float>(weightLow, p1.vignParams.VignetteModelParam3, p2.vignParams.VignetteModelParam3);
-        pOut.vignParams.isEmpty = false;
+        if (p1.hasVignetteParams() && !p1.vignParams.isEmpty && p2.hasVignetteParams() && !p2.vignParams.isEmpty)
+        {
+            pOut.setVignetteParamsStatus(true);
+            pOut.vignParams.FocalLengthX = intp<float>(weightLow, p1.vignParams.FocalLengthX, p2.vignParams.FocalLengthX);
+            pOut.vignParams.FocalLengthY = intp<float>(weightLow, p1.vignParams.FocalLengthY, p2.vignParams.FocalLengthY);
+            pOut.vignParams.VignetteModelParam1 = intp<float>(weightLow, p1.vignParams.VignetteModelParam1, p2.vignParams.VignetteModelParam1);
+            pOut.vignParams.VignetteModelParam2 = intp<float>(weightLow, p1.vignParams.VignetteModelParam2, p2.vignParams.VignetteModelParam2);
+            pOut.vignParams.VignetteModelParam3 = intp<float>(weightLow, p1.vignParams.VignetteModelParam3, p2.vignParams.VignetteModelParam3);
+            pOut.vignParams.isEmpty = false;
+        }
+        else
+        {
+            pOut.setVignetteParamsStatus(false);
+            pOut.vignParams.isEmpty = true;
+        }
         break;
     }
 
     case LCPCorrectionMode::DISTORTION: {
-        pOut.isFisheye = p1.isFisheye;
-        if (pOut.isFisheye)
+        pOut.setFisheyeStatus(p1.isFisheye() && p2.isFisheye() && !p1.fisheyeParams.isEmpty && !p2.fisheyeParams.isEmpty);
+        if (pOut.isFisheye())
         {
             pOut.fisheyeParams.FocalLengthX = intp<float>(weightLow, p1.fisheyeParams.FocalLengthX, p2.fisheyeParams.FocalLengthX);
             pOut.fisheyeParams.FocalLengthY = intp<float>(weightLow, p1.fisheyeParams.FocalLengthY, p2.fisheyeParams.FocalLengthY);
+            pOut.fisheyeParams.ImageXCenter = intp<float>(weightLow, p1.fisheyeParams.ImageXCenter, p2.fisheyeParams.ImageXCenter);
+            pOut.fisheyeParams.ImageYCenter = intp<float>(weightLow, p1.fisheyeParams.ImageYCenter, p2.fisheyeParams.ImageYCenter);
             pOut.fisheyeParams.RadialDistortParam1 = intp<float>(weightLow, p1.fisheyeParams.RadialDistortParam1, p2.fisheyeParams.RadialDistortParam1);
             pOut.fisheyeParams.RadialDistortParam2 = intp<float>(weightLow, p1.fisheyeParams.RadialDistortParam2, p2.fisheyeParams.RadialDistortParam2);
             pOut.fisheyeParams.isEmpty = false;
         }
-        else
+        else if (!p1.perspParams.isEmpty && !p2.perspParams.isEmpty)
         {
             pOut.perspParams.FocalLengthX = intp<float>(weightLow, p1.perspParams.FocalLengthX, p2.perspParams.FocalLengthX);
             pOut.perspParams.FocalLengthY = intp<float>(weightLow, p1.perspParams.FocalLengthY, p2.perspParams.FocalLengthY);
+            pOut.perspParams.ImageXCenter = intp<float>(weightLow, p1.perspParams.ImageXCenter, p2.perspParams.ImageXCenter);
+            pOut.perspParams.ImageYCenter = intp<float>(weightLow, p1.perspParams.ImageYCenter, p2.perspParams.ImageYCenter);
             pOut.perspParams.RadialDistortParam1 = intp<float>(weightLow, p1.perspParams.RadialDistortParam1, p2.perspParams.RadialDistortParam1);
             pOut.perspParams.RadialDistortParam2 = intp<float>(weightLow, p1.perspParams.RadialDistortParam2, p2.perspParams.RadialDistortParam2);
             pOut.perspParams.RadialDistortParam3 = intp<float>(weightLow, p1.perspParams.RadialDistortParam3, p2.perspParams.RadialDistortParam3);
             pOut.perspParams.isEmpty = false;
         }
+        else
+        {
+            pOut.fisheyeParams.isEmpty = true;
+            pOut.perspParams.isEmpty = true;
+        }
         break;
     }
+    }
+}
 
-    //case LCPCorrectionMode::CA: {
-    //	pCorr1->merge(pLow->chromRG, pHigh->chromRG, facLow);
-    //	pCorr2->merge(pLow->chromG, pHigh->chromG, facLow);
-    //	pCorr3->merge(pLow->chromBG, pHigh->chromBG, facLow);
-    //	break;
-    //}
+void LCPinfo::getDistortionParams(const float& focalLength, const float& focusDistance, LensParam& lparam)
+{
+    settingsInfo userSettings;
+    userSettings.ApertureValue = 0.f;
+    userSettings.FocalLength = focalLength;
+    userSettings.FocusDistance = focusDistance;
+
+    int iLow, iHigh;
+    float weightLow;
+    if (search(userSettings, LCPCorrectionMode::DISTORTION, iLow, iHigh, weightLow))
+    {
+        combine(iLow, iHigh, weightLow, LCPCorrectionMode::DISTORTION, lparam);
+    }
+}
+
+void LCPinfo::getVignettingParams(const float& focalLength, const float& aperture, LensParam& lparam)
+{
+    settingsInfo userSettings;
+    userSettings.ApertureValue = aperture;
+    userSettings.FocalLength = focalLength;
+    userSettings.FocusDistance = 0.f;
+
+    int iLow, iHigh;
+    float weightLow;
+    if (search(userSettings, LCPCorrectionMode::VIGNETTE, iLow, iHigh, weightLow))
+    {
+        combine(iLow, iHigh, weightLow, LCPCorrectionMode::VIGNETTE, lparam);
+    }
+}
+
+// Some useful functions when parsing the LCP database
+
+void parseDirectory(const boost::filesystem::path& p, std::vector<boost::filesystem::path>& v)
+{
+    if (boost::filesystem::is_directory(p))
+    {
+        for (auto&& x : boost::filesystem::directory_iterator(p))
+            parseDirectory(x.path(), v);
+    }
+    else if (boost::filesystem::is_regular_file(p) && (boost::filesystem::extension(p) == ".lcp"))
+    {
+        v.push_back(p);
+    }
+}
+
+std::string reduceString(const std::string& str)
+{
+    std::string localStr = str;
+
+    // remove all space
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), ' '), localStr.end());
+    // remove all '/'
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), '/'), localStr.end());
+    // remove all '.'
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), '.'), localStr.end());
+    // remove all '_'
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), '_'), localStr.end());
+    // remove all '-'
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), '-'), localStr.end());
+    // remove all '*'
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), '*'), localStr.end());
+    // remove all ','
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), ','), localStr.end());
+    // remove all ';'
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), ';'), localStr.end());
+    // remove all ':'
+    localStr.erase(std::remove(localStr.begin(), localStr.end(), ':'), localStr.end());
+    // to lowercase
+    boost::algorithm::to_lower(localStr);
+
+    return localStr;
+}
+
+std::vector<std::string> reduceStrings(std::vector<std::string>& v_str)
+{
+    std::vector<std::string> v_localStr;
+    for (auto& s : v_str)
+    {
+        v_localStr.push_back(reduceString(s));
+    }
+    return v_localStr;
+}
+
+// LCP database parsing implementation
+
+bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraModelOrMaker, const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel)
+{
+    std::vector<boost::filesystem::path> v_lcpFilename;
+    parseDirectory(dbDirectoryname, v_lcpFilename);
+
+    return findLCPInfo(v_lcpFilename, cameraModelOrMaker, lensModel, lensID, rawMode, lcpData, omitCameraModel);
+}
+
+bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames, const std::string& cameraModelOrMaker, const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel)
+{
+    std::string reducedCameraModel = reduceString(cameraModelOrMaker);
+    std::string reducedLensModel = reduceString(lensModel);
+
+    bool lcpFound = false;
+    size_t lcpIndex = 0;
+    while ((lcpIndex < lcpFilenames.size()) && !lcpFound)
+    {
+        LCPinfo lcp(lcpFilenames[lcpIndex].string(), false);
+
+        std::string reducedCameraModelLCP = reduceString(omitCameraModel ? lcp.getCameraMaker() : lcp.getCameraModel());
+        std::string reducedCameraPrettyNameLCP = reduceString(lcp.getCameraPrettyName());
+        std::string reducedLensPrettyNameLCP = reduceString(lcp.getLensPrettyName());
+
+        std::vector<std::string> lensModelsLCP;
+        lcp.getLensModels(lensModelsLCP);
+        std::vector<std::string> reducedLensModelsLCP = reduceStrings(lensModelsLCP);
+
+        std::vector<int> lensIDsLCP;
+        lcp.getLensIDs(lensIDsLCP);
+
+        bool cameraOK = ((reducedCameraModelLCP == reducedCameraModel) || (reducedCameraPrettyNameLCP == reducedCameraModel));
+        bool lensOK = ((reducedLensPrettyNameLCP == reducedLensModel) ||
+                       (std::find(reducedLensModelsLCP.begin(), reducedLensModelsLCP.end(), reducedLensModel) != reducedLensModelsLCP.end()));
+        bool lensIDOK = (std::find(lensIDsLCP.begin(), lensIDsLCP.end(), lensID) != lensIDsLCP.end());
+        bool isRaw = lcp.isRawProfile();
+
+        lcpFound = (cameraOK && lensOK && lensIDOK && ((isRaw && rawMode < 2) || (!isRaw && (rawMode%2 == 0))));
+        if (lcpFound)
+        {
+            lcpData.load(lcpFilenames[lcpIndex].string(), true);
+        }
+        else
+        {
+            lcpIndex++;
+        }
     }
 
-
-
+    return lcpFound;
 }
+
 

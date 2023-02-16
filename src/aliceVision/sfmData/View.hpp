@@ -473,6 +473,15 @@ public:
   }
 
   /**
+   * @brief Get the corresponding "LensID" metadata value
+   * @return the metadata value -1 if no corresponding value
+   */
+  int getMetadataLensID() const
+  {
+      return getIntMetadata({ "Exif:LensID", "lensID" });
+  }
+
+  /**
    * @brief Get the corresponding "LensSerialNumber" metadata value
    * @return the metadata value string or "" if no corresponding value
    */

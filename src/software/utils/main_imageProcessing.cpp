@@ -35,6 +35,40 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+struct LensCorrectionParams
+{
+    bool enabled;
+    bool geometry;
+    bool vignetting;
+    bool chromaticAberration;
+
+    std::vector<double> gParams;
+    std::vector<double> vParams;
+    std::vector<double> caParams;
+};
+
+std::istream& operator>>(std::istream& in, LensCorrectionParams& lcParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if (splitParams.size() != 4)
+        throw std::invalid_argument("Failed to parse LensCorrectionParams from: " + token);
+    lcParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    lcParams.geometry = boost::to_lower_copy(splitParams[1]) == "true";
+    lcParams.vignetting = boost::to_lower_copy(splitParams[2]) == "true";
+    lcParams.chromaticAberration = boost::to_lower_copy(splitParams[3]) == "true";
+
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const LensCorrectionParams& lcParams)
+{
+    os << lcParams.enabled << ":" << lcParams.geometry << ":" << lcParams.vignetting << ":" << lcParams.chromaticAberration;
+    return os;
+}
+
 struct SharpenParams
 {
     bool enabled;
@@ -267,6 +301,14 @@ struct ProcessingParams
     bool applyDcpMetadata = false;
     bool useDCPColorMatrixOnly = false;
 
+    LensCorrectionParams lensCorrection =
+    {
+        false, // enable
+        false, // geometry
+        false, // vignetting
+        false  // chromatic aberration
+    };
+
     SharpenParams sharpen = 
     {
         false, // enable
@@ -308,7 +350,7 @@ struct ProcessingParams
     };
 };
 
-void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, const std::map<std::string, std::string>& imageMetadata)
+void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, const std::map<std::string, std::string>& imageMetadata, const camera::IntrinsicBase* cam = NULL)
 {
     const unsigned int nchannels = 4;
 
@@ -321,6 +363,25 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         // Works inplace
         oiio::ImageBufAlgo::fixNonFinite(inBuf, inBuf, oiio::ImageBufAlgo::NonFiniteFixMode::NONFINITE_BOX3, &pixelsFixed);
         ALICEVISION_LOG_INFO("Fixed " << pixelsFixed << " non-finite pixels.");
+    }
+
+    if (pParams.lensCorrection.enabled && pParams.lensCorrection.geometry)
+    {
+        if (cam != NULL && cam->hasDistortion())
+        {
+            const image::RGBAfColor FBLACK_A(.0f, .0f, .0f, 1.0f);
+            image::Image<image::RGBAfColor> image_ud;
+            camera::UndistortImage(image, cam, image_ud, FBLACK_A);
+            image = image_ud;
+        }
+        else if (cam != NULL && !cam->hasDistortion())
+        {
+            ALICEVISION_LOG_INFO("No distortion model available for lens correction.");
+        }
+        else if (cam == NULL)
+        {
+            ALICEVISION_LOG_INFO("No intrinsics data available for lens correction.");
+        }
     }
 
     if (pParams.scaleFactor != 1.0f)
@@ -698,6 +759,13 @@ int aliceVision_main(int argc, char * argv[])
         ("exposureCompensation", po::value<bool>(& pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
          "Exposure Compensation.")
 
+        ("lensCorrection", po::value<LensCorrectionParams>(&pParams.lensCorrection)->default_value(pParams.lensCorrection),
+            "Lens Correction parameters:\n"
+            " * Enabled: Use automatic lens correction.\n"
+            " * Geometry: For geometry if a model is available in sfm data.\n"
+            " * Vignetting: For vignetting if model parameters is available in metadata.\n "
+            " * Chromatic Aberration: For chromatic aberration (fringing) if model parameters is available in metadata.")
+
         ("contrast", po::value<float>(&pParams.contrast)->default_value(pParams.contrast),
          "Contrast Factor (1.0: no change).")
         ("medianFilter", po::value<int>(&pParams.medianFilter)->default_value(pParams.medianFilter),
@@ -940,8 +1008,11 @@ int aliceVision_main(int argc, char * argv[])
                     image(i) = image(i) * exposureCompensation;
             }
 
+            sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
+            const camera::IntrinsicBase* cam = iterIntrinsic->second.get();
+
             // Image processing
-            processImage(image, pParams, view.getMetadata());
+            processImage(image, pParams, view.getMetadata(), cam);
 
             if (pParams.applyDcpMetadata)
             {
