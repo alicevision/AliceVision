@@ -126,28 +126,26 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
 
 std::vector<std::string> getSupportedExtensions()
 {
-  static const std::string extensionList = oiio::get_string_attribute("extension_list");
   std::vector<std::string> supportedExtensions;
 
-  std::vector<std::string> supportedFormat;
-  boost::split(supportedFormat, extensionList, boost::is_any_of(";"), boost::token_compress_on);
-  for(const std::string& format: supportedFormat)
-  {
-    std::vector<std::string> extensions;
-    const std::string str = format.substr(format.find(":")+1);
-    boost::split(extensions, str, boost::is_any_of(","), boost::token_compress_on);
-    for(std::string& extension: extensions)
-      supportedExtensions.push_back(extension.insert(0, "."));
+  // Map containing the parsed "extension_list" with each supported format and its associated extensions
+  static std::map<std::string, std::vector<std::string>> extensionList = oiio::get_extension_map();
+
+  for (auto& format : extensionList) {
+    for (auto& extension : format.second) {
+        supportedExtensions.push_back(extension.insert(0, "."));
+    }
   }
   return supportedExtensions;
 }
 
-bool isSupported(const std::string& ext)
+bool isSupported(const std::string& extension)
 {
   static const std::vector<std::string> supportedExtensions = getSupportedExtensions();
   const auto start = supportedExtensions.begin();
   const auto end = supportedExtensions.end();
-  return (std::find(start, end, boost::to_lower_copy(ext)) != end);
+  return (std::find(start, end, boost::to_lower_copy(extension)) != end);
+}
 }
 
 std::string EStorageDataType_informations()

@@ -100,17 +100,20 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 
 /**
- * @brief Return a list of extensions supported by openImageIO ie exists in extension_list from imageio.h
- * @return A vector containing all supported extensions
+ * @brief Return a list of extensions supported by OpenImageIO (ie. extensions existing in extension_list from imageio.h).
+ *        The list of supported extensions also includes video formats.
+ * @return a vector containing all the extensions supported by OpenImageIO.
  */
 std::vector<std::string> getSupportedExtensions();
 
 /**
- * @brief Check if input image extension is supported by openImageIO ie exists in extension_list from imageio.h
- * @param[in] ext - image extension
- * @return true if valid extension
+ * @brief Check if an input image extension is supported by OpenImageIO (ie. it exists in extension_list from imageio.h).
+ *        This function might return true if the input is a video rather than an image, as long as the video format is
+ *        supported by OpenImageIO.
+ * @param[in] extension the input image extension.
+ * @return true if the extension is valid and supported by OpenImageIO, false otherwise.
  */
-bool isSupported(const std::string& ext);
+bool isSupported(const std::string& extension);
 
 
 /**
