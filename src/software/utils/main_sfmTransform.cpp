@@ -299,11 +299,6 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  IndexT refViewId = getReferenceViewId(sfmData, transform);
-  IndexT refPoseId = sfmData.getView(refViewId).getPoseId();
-
-  Eigen::Matrix3d ref_R_world = sfmData.getAbsolutePose(refPoseId).getTransform().rotation();
-
   double S = 1.0;
   Mat3 R = Mat3::Identity();
   Vec3 t = Vec3::Zero();
@@ -342,11 +337,15 @@ int aliceVision_main(int argc, char **argv)
 
     case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:
     {
-        //Align with x axis
+        // Align with x axis
         sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, S, R, t);
 
-        //Apply x axis alignment before doing the y alignment
-        Eigen::Matrix3d refcam_R_updatedWorld = ref_R_world * R.transpose();
+        const IndexT refViewId = getReferenceViewId(sfmData, transform);
+
+        const Eigen::Matrix3d ref_R_world = sfmData.getPose(sfmData.getView(refViewId)).getTransform().rotation();
+
+        // Apply x axis alignment before doing the y alignment
+        const Eigen::Matrix3d refcam_R_updatedWorld = ref_R_world * R.transpose();
 
         Eigen::Matrix3d zeroX_R_world;
         sfm::getRotationNullifyX(zeroX_R_world, refcam_R_updatedWorld);
