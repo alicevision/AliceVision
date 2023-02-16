@@ -13,6 +13,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/image/io.cpp>
 #include <aliceVision/image/dcp.hpp>
 
 #include <boost/atomic/atomic_ref.hpp>
@@ -426,7 +427,7 @@ int aliceVision_main(int argc, char **argv)
 
   std::map<std::string, LCPinfo> lcpStore;
 
-  //#pragma omp parallel for
+  #pragma omp parallel for
   for (int i = 0; i < sfmData.getViews().size(); ++i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
@@ -711,6 +712,7 @@ int aliceVision_main(int argc, char **argv)
 
         LensParam lensParam;
         lcpData.getDistortionParams(focalLength, focusDistance, lensParam);
+        lcpData.getVignettingParams(focalLength, focusDistance, lensParam);
 
         std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
         if (intrinsicDisto)
@@ -738,6 +740,8 @@ int aliceVision_main(int argc, char **argv)
         {
             view.addMetadata("AliceVision:VignParamFocX", std::to_string(lensParam.vignParams.FocalLengthX));
             view.addMetadata("AliceVision:VignParamFocY", std::to_string(lensParam.vignParams.FocalLengthY));
+            view.addMetadata("AliceVision:VignParamCenterX", std::to_string(lensParam.vignParams.ImageXCenter));
+            view.addMetadata("AliceVision:VignParamCenterY", std::to_string(lensParam.vignParams.ImageYCenter));
             view.addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
             view.addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
             view.addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));

@@ -4,8 +4,6 @@
 #include <vector>
 #include <sstream>
 
-#include <aliceVision/image/all.hpp>
-
 enum class LCPCorrectionMode
 {
     VIGNETTE,
@@ -725,17 +723,3 @@ bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMo
 * @return True if a file is found
 */
 bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames, const std::string& cameraModelOrMaker, const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel = false);
-
-
-/**
-* @brief Undistort vignetting in the given image according to the given parameters and focal info.
-* @param[in] image Image to undistort
-* @param[in] vparam Vector of 3 floating parameters as contained in a LCP file for vignetting correction
-* @param[in] focX Focal info on X axis
-* @param[in] focY Focal info on Y axis
-* @param[in] imageXCenter Principal point X coordinate
-* @param[in] imageYCenter Principal point Y coordinate
-*/
-void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColor>& img, const std::vector<float>& vparam, const float focX, const float focY, const float imageXCenter = 0.5, const float imageYCenter = 0.5);
-
-

@@ -37,14 +37,16 @@ namespace fs = boost::filesystem;
 
 struct LensCorrectionParams
 {
-    bool enabled;
-    bool geometry;
-    bool vignetting;
-    bool chromaticAberration;
+    bool enabled = false;
+    bool geometry = false;
+    bool vignetting = false;
+    bool chromaticAberration = false;
 
-    std::vector<double> gParams;
-    std::vector<double> vParams;
-    std::vector<double> caParams;
+    std::vector<float> gParams;
+    std::vector<float> vParams;
+    std::vector<float> caGParams;
+    std::vector<float> caRGParams;
+    std::vector<float> caBGParams;
 };
 
 std::istream& operator>>(std::istream& in, LensCorrectionParams& lcParams)
@@ -350,6 +352,38 @@ struct ProcessingParams
     };
 };
 
+void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColor>& img, const std::vector<float>& vparam)
+{
+    if (vparam.size() >= 7)
+    {
+        const float focX = vparam[0];
+        const float focY = vparam[1];
+        const float imageXCenter = vparam[2];
+        const float imageYCenter = vparam[3];
+
+        const float p1 = -vparam[4];
+        const float p2 = vparam[4] * vparam[4] - vparam[5];
+        const float p3 = -(vparam[4] * vparam[4] * vparam[4] - 2 * vparam[4] * vparam[5] + vparam[6]);
+        const float p4 = vparam[4] * vparam[4] * vparam[4] * vparam[4] + vparam[5] * vparam[5] + 2 * vparam[4] * vparam[6] - 3 * vparam[4] * vparam[4] * vparam[5];
+
+        #pragma omp parallel for
+        for (int j = 0; j < img.Height(); ++j)
+            for (int i = 0; i < img.Width(); ++i)
+            {
+                const aliceVision::Vec2 p(i, j);
+
+                aliceVision::Vec2 np;
+                np(0) = ((p(0) / img.Width()) - imageXCenter) / focX;
+                np(1) = ((p(1) / img.Height()) - imageYCenter) / focY;
+
+                const float rsqr = np(0) * np(0) + np(1) * np(1);
+                const float gain = 1.f + p1 * rsqr + p2 * rsqr * rsqr + p3 * rsqr * rsqr * rsqr + p4 * rsqr * rsqr * rsqr * rsqr;
+
+                img(j, i) *= gain;
+            }
+    }
+}
+
 void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, const std::map<std::string, std::string>& imageMetadata, const camera::IntrinsicBase* cam = NULL)
 {
     const unsigned int nchannels = 4;
@@ -363,6 +397,11 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         // Works inplace
         oiio::ImageBufAlgo::fixNonFinite(inBuf, inBuf, oiio::ImageBufAlgo::NonFiniteFixMode::NONFINITE_BOX3, &pixelsFixed);
         ALICEVISION_LOG_INFO("Fixed " << pixelsFixed << " non-finite pixels.");
+    }
+
+    if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
+    {
+        undistortVignetting(image, pParams.lensCorrection.vParams);
     }
 
     if (pParams.lensCorrection.enabled && pParams.lensCorrection.geometry)
@@ -989,6 +1028,15 @@ int aliceVision_main(int argc, char * argv[])
             options.colorProfileFileName = view.getColorProfileFileName();
             options.demosaicingAlgo = demosaicingAlgo;
             options.highlightMode = highlightMode;
+
+            if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
+            {
+                pParams.lensCorrection.vParams;
+                if (!view.getVignettingParams(pParams.lensCorrection.vParams))
+                {
+                    pParams.lensCorrection.vParams.clear();
+                }
+            }
 
             // Read original image
             image::Image<image::RGBAfColor> image;

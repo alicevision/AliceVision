@@ -430,6 +430,14 @@ public:
   double getDoubleMetadata(const std::vector<std::string>& names) const;
 
   /**
+   * @brief Get the metadata value as a double
+   * @param[in] names List of possible names for the metadata
+   * @param[in] val Data to be set with the metadata value
+   * @return true if the metadata is found or false if it does not exist
+   */
+  bool getDoubleMetadata(const std::vector<std::string>& names, double& val) const;
+
+  /**
    * @brief Get the metadata value as an integer
    * @param[in] names List of possible names for the metadata
    * @return the metadata value as an integer or -1 if it does not exist
@@ -593,6 +601,29 @@ public:
       v_mult.push_back(std::stoi(cam_mul.substr(last)));
 
       return v_mult;
+  }
+
+  const bool getVignettingParams(std::vector<float>& v_vignParam) const
+  {
+      v_vignParam.clear();
+      bool valid = true;
+      double value;
+
+      valid = valid && getDoubleMetadata({ "AliceVision:VignParamFocX" }, value);
+      v_vignParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({ "AliceVision:VignParamFocY" }, value);
+      v_vignParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({ "AliceVision:VignParamCenterX" }, value);
+      v_vignParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({ "AliceVision:VignParamCenterY" }, value);
+      v_vignParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({ "AliceVision:VignParam1" }, value);
+      v_vignParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({ "AliceVision:VignParam2" }, value);
+      v_vignParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({ "AliceVision:VignParam3" }, value);
+      v_vignParam.push_back(static_cast<float>(value));
+      return valid;
   }
 
   const bool hasMetadataDateTimeOriginal() const

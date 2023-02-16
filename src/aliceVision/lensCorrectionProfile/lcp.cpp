@@ -3,10 +3,9 @@
 #include "boost/filesystem.hpp"
 #include "boost/algorithm/string.hpp"
 
-#include <aliceVision/numeric/numeric.hpp>
-
 #include <expat.h>
 #include "lcp.hpp"
+
 
 template<typename T>
 constexpr T interpolate(T a, T b, T c)
@@ -444,135 +443,6 @@ void XMLCALL LCPinfo::XmlEndHandlerCommonOnly(void* pLCPinfo, const char* el)
     }
 }  /* End of end handler */
 
-/*
-void XMLCALL LCPinfo::XmlStartHandlerCommonOnly(void* pLCPinfo, const char* el, const char** attr)
-{
-    LCPinfo* LCPdata = static_cast<LCPinfo*>(pLCPinfo);
-
-    std::string element(el);
-
-    if (!LCPdata->isSeqOpened() && (element == "photoshop:CameraProfiles"))
-    {
-        LCPdata->openSequence();
-    }
-    else if (element == "stCamera:AlternateLensIDs")
-    {
-        LCPdata->openAlternateLensIDs();
-    }
-    else if (element == "stCamera:AlternateLensNames")
-    {
-        LCPdata->openAlternateLensNames();
-    }
-    else if (element == "rdf:li")
-    {
-        if ((LCPdata->isAlternateLensIDsOpened()) && !LCPdata->isCommonOK())
-        {
-            LCPdata->setGetText();
-        }
-        else if ((LCPdata->isAlternateLensNamesOpened()) && !LCPdata->isCommonOK())
-        {
-            LCPdata->setGetText();
-        }
-        else if (!LCPdata->isAlternateLensIDsOpened() && !LCPdata->isAlternateLensNamesOpened())
-        {
-            LCPdata->increaseModelCount();
-        }
-    }
-    else if ((LCPdata->getModelCount() == 1) && !LCPdata->isCommonOK() && (element == "rdf:Description"))
-    {
-        for (int i = 0; attr[i]; i += 2)
-        {
-            std::string key(attr[i]);
-            std::string value(attr[i + 1]);
-
-            if (key == "stCamera:Author")
-            {
-                LCPdata->setAuthor(value);
-            }
-            else if (key == "stCamera:ProfileName")
-            {
-                LCPdata->setProfileName(value);
-            }
-            else if (key == "stCamera:Lens")
-            {
-                LCPdata->addLensModel(value);
-            }
-            else if (key == "stCamera:LensPrettyName")
-            {
-                LCPdata->setLensPrettyName(value);
-            }
-            else if (key == "stCamera:LensInfo")
-            {
-                LCPdata->setLensInfo(value);
-            }
-            else if (key == "stCamera:LensID")
-            {
-                LCPdata->addLensID(atoi(value.c_str()));
-            }
-            else if (key == "stCamera:Make")
-            {
-                LCPdata->setCameraMaker(value);
-            }
-            else if (key == "stCamera:Model")
-            {
-                LCPdata->setCameraModel(value);
-            }
-            else if ((key == "stCamera:CameraRawProfile") && (value == "True"))
-            {
-                LCPdata->setAsRawProfile();
-            }
-            else if (key == "stCamera:UniqueCameraModel")
-            {
-                LCPdata->setUniqueCameraModel(value);
-            }
-            else if (key == "stCamera:CameraPrettyName")
-            {
-                LCPdata->setCameraPrettyName(value);
-            }
-            else if (key == "stCamera:SensorFormatFactor")
-            {
-                LCPdata->setSensorFormatFactor(atof(value.c_str()));
-            }
-            else if (key == "stCamera:ImageLength")
-            {
-                LCPdata->setImageLength(atoi(value.c_str()));
-            }
-            else if (key == "stCamera:ImageWidth")
-            {
-                LCPdata->setImageWidth(atoi(value.c_str()));
-            }
-        }
-    }
-}  /* End of start handler common only*/
-/*
-void XMLCALL LCPinfo::XmlEndHandlerCommonOnly(void* pLCPinfo, const char* el)
-{
-    LCPinfo* LCPdata = static_cast<LCPinfo*>(pLCPinfo);
-
-    std::string element(el);
-
-    if (LCPdata->isSeqOpened() && (element == "photoshop:CameraProfiles"))
-    {
-        LCPdata->closeSequence();
-    }
-    else if (LCPdata->isAlternateLensIDsOpened() && (element == "stCamera:AlternateLensIDs"))
-    {
-        LCPdata->closeAlternateLensIDs();
-    }
-    else if (LCPdata->isAlternateLensNamesOpened() && ((element == "stCamera:AlternateLensNames")))
-    {
-        LCPdata->closeAlternateLensNames();
-    }
-    else if ((element == "rdf:li") && (LCPdata->isAlternateLensIDsOpened() || LCPdata->isAlternateLensNamesOpened()))
-    {
-        LCPdata->unsetGetText();
-    }
-    else if ((LCPdata->getModelCount() == 1) && !LCPdata->isCommonOK() && (element == "rdf:Description"))
-    {
-        LCPdata->setCommonOK();
-    }
-}  /* End of end handler common only */
-
 // LCPinfo class implementation
 
 LCPinfo::LCPinfo(const std::string& filename, bool fullParsing) :
@@ -875,6 +745,8 @@ void LCPinfo::combine(size_t iLow, size_t iHigh, float weightLow, LCPCorrectionM
             pOut.setVignetteParamsStatus(true);
             pOut.vignParams.FocalLengthX = interpolate<float>(weightLow, p1.vignParams.FocalLengthX, p2.vignParams.FocalLengthX);
             pOut.vignParams.FocalLengthY = interpolate<float>(weightLow, p1.vignParams.FocalLengthY, p2.vignParams.FocalLengthY);
+            pOut.vignParams.ImageXCenter = interpolate<float>(weightLow, p1.vignParams.ImageXCenter, p2.vignParams.ImageXCenter);
+            pOut.vignParams.ImageYCenter = interpolate<float>(weightLow, p1.vignParams.ImageYCenter, p2.vignParams.ImageYCenter);
             pOut.vignParams.VignetteModelParam1 = interpolate<float>(weightLow, p1.vignParams.VignetteModelParam1, p2.vignParams.VignetteModelParam1);
             pOut.vignParams.VignetteModelParam2 = interpolate<float>(weightLow, p1.vignParams.VignetteModelParam2, p2.vignParams.VignetteModelParam2);
             pOut.vignParams.VignetteModelParam3 = interpolate<float>(weightLow, p1.vignParams.VignetteModelParam3, p2.vignParams.VignetteModelParam3);
@@ -930,7 +802,7 @@ void LCPinfo::getDistortionParams(const float& focalLength, const float& focusDi
 
     int iLow, iHigh;
     float weightLow;
-    if(search(userSettings, LCPCorrectionMode::DISTORTION, iLow, iHigh, weightLow))
+    if (search(userSettings, LCPCorrectionMode::DISTORTION, iLow, iHigh, weightLow))
     {
         combine(iLow, iHigh, weightLow, LCPCorrectionMode::DISTORTION, lparam);
     }
@@ -1055,36 +927,3 @@ bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames, const
 
     return lcpFound;
 }
-
-
-
-
-void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColor>& img, const std::vector<float>& vparam, const float focX, const float focY, const float imageXCenter = 0.5, const float imageYCenter = 0.5)
-{
-
-#pragma omp parallel for
-    for (int j = 0; j < img.Height(); ++j)
-        for (int i = 0; i < img.Width(); ++i)
-        {
-            const aliceVision::Vec2 pix(i, j);
-            // compute coordinates with distortion
-            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
-
-            aliceVision::Vec2 pp = getPrincipalPoint();
-
-            np(0) = (p(0) - pp(0)) / _scale(0);
-            np(1) = (p(1) - pp(1)) / _scale(1);
-
-
-
-
-            // pick pixel if it is in the image domain
-            if (imageIn.Contains(disto_pix(1), disto_pix(0)))
-                image_ud(j, i) = sampler(imageIn, disto_pix(1), disto_pix(0));
-        }
-
-
-
-
-}
-
