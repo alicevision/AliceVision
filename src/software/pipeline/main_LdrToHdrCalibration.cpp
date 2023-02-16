@@ -309,6 +309,17 @@ int aliceVision_main(int argc, char** argv)
             std::map<int, luminanceInfo> luminanceInfos;
             computeLuminanceStatFromSamples(samples, luminanceInfos);
 
+            // Check that all views in the group have an associated luminance stat info
+            for (auto& v : group)
+            {
+                if (luminanceInfos.find(v->getViewId()) == luminanceInfos.end())
+                {
+                    luminanceInfo lumaInfo;
+                    lumaInfo.exposure = -1.0; // Dummy exposure used later indicating a dummy info
+                    luminanceInfos[v->getViewId()] = lumaInfo;
+                }
+            }
+
             v_luminanceInfos.push_back(luminanceInfos);
 
             ++group_pos;

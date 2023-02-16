@@ -154,7 +154,8 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
         {
             lines.push_back(line);
         }
-        if ((lines.size() < 3) || (std::stoi(lines[0].c_str()) != groups.size()) || (std::stoi(lines[1].c_str()) < groups[0].size()))
+        if ((lines.size() < 3) || (std::stoi(lines[0].c_str()) != groups.size()) || (std::stoi(lines[1].c_str()) < groups[0].size()) ||
+            (lines.size() < 3 + std::stoi(lines[0].c_str()) * std::stoi(lines[1].c_str())))
         {
             ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
         }
@@ -166,6 +167,7 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
         for (int i = 0; i < nbExp; ++i)
         {
             double lumaMeanMean = 0.0;
+            double nbValidViews = 0;
             for (int j = 0; j < nbGroup; ++j)
             {
                 std::istringstream iss(lines[3 + j * nbExp + i]);
@@ -176,9 +178,13 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
                 {
                     ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
                 }
-                lumaMeanMean += lumaMean;
+                if (exposure > 0.0) // discard dummy luminance info (with exposure set to -1.0) added at calibration stage if samples are missing for a view
+                {
+                    lumaMeanMean += lumaMean;
+                    nbValidViews++;
+                }
             }
-            v_lumaMeanMean.push_back(lumaMeanMean / nbGroup);
+            v_lumaMeanMean.push_back(lumaMeanMean / nbValidViews);
         }
 
         // adjust last index to avoid non increasing luminance curve due to saturation in highlights
