@@ -463,7 +463,14 @@ int aliceVision_main(int argc, char** argv)
                 // write in file
                 file << srcIdWithMinimalExposure << " ";
                 file << v_luminanceInfos[i][srcIdWithMinimalExposure].exposure << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
-                file << v_luminanceInfos[i][srcIdWithMinimalExposure].meanLum / v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                if (v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb > 0)
+                {
+                    file << v_luminanceInfos[i][srcIdWithMinimalExposure].meanLum / v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                }
+                else
+                {
+                    file << "0.0 ";
+                }
                 file << v_luminanceInfos[i][srcIdWithMinimalExposure].minLum << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].maxLum << std::endl;
                 // erase from map
                 v_luminanceInfos[i].erase(srcIdWithMinimalExposure);
