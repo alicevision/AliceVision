@@ -450,12 +450,17 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                 return false;
             }
 
+            oiio::ImageSpec inputSpec;
+            inputSpec.extra_attribs = image::readImageMetadata(currentImgName);
+            int orientation = inputSpec.get_int_attribute("Orientation", 1);
+
             oiio::ParamValueList metadata;
             metadata.push_back(oiio::ParamValue("Make", brands[id]));
             metadata.push_back(oiio::ParamValue("Model", models[id]));
             metadata.push_back(oiio::ParamValue("Exif:BodySerialNumber", std::to_string(getRandomInt())));
             metadata.push_back(oiio::ParamValue("Exif:FocalLength", mmFocals[id]));
             metadata.push_back(oiio::ParamValue("Exif:ImageUniqueID", std::to_string(getRandomInt())));
+            metadata.push_back(oiio::ParamValue("Orientation", orientation));  // Will not propagate for PNG outputs
 
             fs::path folder = _outputFolder;
             std::ostringstream filenameSS;
