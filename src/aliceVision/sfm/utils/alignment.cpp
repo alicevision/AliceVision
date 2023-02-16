@@ -963,6 +963,12 @@ bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData, std:
     return aliceVision::geometry::ACRansac_FindRTS(x1, x2, randomNumberGenerator, out_S, out_t, out_R, inliers, refine);
 }
 
+void getRotationNullifyX(Eigen::Matrix3d & out_R, const Eigen::Matrix3d & R)
+{
+    Eigen::Vector3d alignmentVector = R.transpose() * Eigen::Vector3d::UnitZ();
+    getRotationNullifyX(out_R, alignmentVector);
+}
+
 void getRotationNullifyX(Eigen::Matrix3d & out_R, const Eigen::Vector3d & pt)
 {
     /*

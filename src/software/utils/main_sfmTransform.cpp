@@ -184,19 +184,19 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
 
 } // namespace
 
-IndexT getReferenceViewIndex(const sfmData::SfMData & sfmData, const std::string & transform)
+IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & transform)
 {
-    IndexT refPoseId;
+    IndexT refViewId;
     try
     {
-        refPoseId = sfm::getViewIdFromExpression(sfmData, transform);
+        refViewId = sfm::getViewIdFromExpression(sfmData, transform);
     }
     catch (...)
     {
-        refPoseId = UndefinedIndexT;
+        refViewId = UndefinedIndexT;
     }
 
-    if (refPoseId == UndefinedIndexT)
+    if (refViewId == UndefinedIndexT)
     {
         // Sort views per timestamps
         std::vector<std::pair<int64_t, IndexT>> sorted_views;
@@ -208,10 +208,10 @@ IndexT getReferenceViewIndex(const sfmData::SfMData & sfmData, const std::string
 
         // Get the view which was taken at the middle of the sequence 
         int median = sorted_views.size() / 2;
-        refPoseId = sorted_views[sorted_views.size() - 1].second;
+        refViewId = sorted_views[sorted_views.size() - 1].second;
     }
 
-    return refPoseId;
+    return refViewId;
 }
 
 int aliceVision_main(int argc, char **argv)
@@ -299,7 +299,8 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  IndexT refPoseId = getReferenceViewIndex(sfmData, transform);
+  IndexT refViewId = getReferenceViewId(sfmData, transform);
+  IndexT refPoseId = sfmData.getView(refViewId).getPoseId();
 
   Eigen::Matrix3d ref_R_world = sfmData.getAbsolutePose(refPoseId).getTransform().rotation();
 
@@ -344,18 +345,11 @@ int aliceVision_main(int argc, char **argv)
         //Align with x axis
         sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, S, R, t);
 
-        //Align with reference image
+        //Apply x axis alignment before doing the y alignment
         Eigen::Matrix3d refcam_R_updatedWorld = ref_R_world * R.transpose();
-        Eigen::Matrix3d updatedWorld_R_refcam = refcam_R_updatedWorld.transpose();
-        Eigen::Vector3d alignmentVector = updatedWorld_R_refcam * Eigen::Vector3d::UnitZ();
 
         Eigen::Matrix3d zeroX_R_world;
-        sfm::getRotationNullifyX(zeroX_R_world, alignmentVector);
-
-        //Cumulate both transformations
-        //(zeroX_R_world * updatedWorld_R_refcam).transpose()
-        //(zeroX_R_world * (ref_R_world * R.transpose()).transpose()).transpose()
-        // ref_R_world * R.transpose() * zeroX_R_world.transpose()
+        sfm::getRotationNullifyX(zeroX_R_world, refcam_R_updatedWorld);
         R = zeroX_R_world * R;
     }
     break;
