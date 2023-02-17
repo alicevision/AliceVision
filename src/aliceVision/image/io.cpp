@@ -407,6 +407,8 @@ void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer)
 bool isRawFormat(const std::string& path)
 {
     std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+    if(!in)
+        return false;
     std::string imgFormat = in->format_name();
 
     return (imgFormat.compare("raw") == 0);
