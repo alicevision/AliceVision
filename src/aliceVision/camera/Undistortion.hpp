@@ -31,7 +31,7 @@ public:
     Undistortion(int width, int height)
     {
         _size = { width, height };
-        _diagonal = sqrt(width * width + height * height);
+        _diagonal = sqrt(width * width + height * height) * 0.5;
         _center = {width / 2, height / 2};
         _offset = { 0.0, 0.0 };
     }
