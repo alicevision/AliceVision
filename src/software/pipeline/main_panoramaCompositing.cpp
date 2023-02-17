@@ -729,7 +729,6 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        /*381188086_11*/
         if (!processImage(*panoramaMap, sfmData, compositerType, warpingFolder, labelsFilepath, outputFolder, storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams)) 
         {
             succeeded = false;
