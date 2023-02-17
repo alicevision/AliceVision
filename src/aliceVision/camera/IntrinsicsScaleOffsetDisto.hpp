@@ -262,7 +262,7 @@ public:
   * @brief Set The intrinsic disto initialization mode
   * @param[in] distortionInitializationMode The intrintrinsic distortion initialization mode enum
   */
-  inline void setDistortionInitializationMode(EIntrinsicDistoInitMode distortionInitializationMode)
+  inline void setDistortionInitializationMode(EInitMode distortionInitializationMode)
   {
       _distortionInitializationMode = distortionInitializationMode;
   }
@@ -271,7 +271,7 @@ public:
    * @brief Get the intrinsic disto initialization mode
    * @return The intrinsic disto initialization mode
    */
-  inline EIntrinsicDistoInitMode getDistortionInitializationMode() const
+  inline EInitMode getDistortionInitializationMode() const
   {
       return _distortionInitializationMode;
   }
@@ -291,7 +291,7 @@ protected:
   std::shared_ptr<Distortion> _pDistortion;
 
   // Distortion initialization mode
-  EIntrinsicDistoInitMode _distortionInitializationMode = EIntrinsicDistoInitMode::NONE;
+  EInitMode _distortionInitializationMode = EInitMode::NONE;
 };
 
 } // namespace camera

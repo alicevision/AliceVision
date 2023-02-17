@@ -93,7 +93,7 @@ public:
    * @brief Get the intrinsic initialization mode
    * @return The intrinsic initialization mode
    */
-  inline EIntrinsicInitMode getInitializationMode() const
+  inline EInitMode getInitializationMode() const
   {
     return _initializationMode;
   }
@@ -307,7 +307,7 @@ public:
    * @brief Set The intrinsic initialization mode
    * @param[in] initializationMode The intrintrinsic initialization mode enum
    */
-  inline void setInitializationMode(EIntrinsicInitMode initializationMode)
+  inline void setInitializationMode(EInitMode initializationMode)
   {
     _initializationMode = initializationMode;
   }
@@ -523,7 +523,7 @@ public:
 protected:
 
   /// initialization mode
-  EIntrinsicInitMode _initializationMode = EIntrinsicInitMode::NONE;
+  EInitMode _initializationMode = EInitMode::NONE;
   /// intrinsic lock
   bool _locked = false;
   unsigned int _w = 0;

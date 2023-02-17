@@ -472,7 +472,7 @@ int aliceVision_main(int argc, char **argv)
     const double focalIn35mm = hasFocalIn35mmMetadata ? view.getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"}) : -1.0;
     const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
     const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
-    camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
+    camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
 
     std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(view.getImagePath()));
 
@@ -591,7 +591,7 @@ int aliceVision_main(int argc, char **argv)
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
         if(focalLengthmm > 0.0) {
-          intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+          intrinsicInitMode = camera::EInitMode::ESTIMATED;
         }
       }
     }
@@ -619,7 +619,7 @@ int aliceVision_main(int argc, char **argv)
         }
 
         intrinsicsSetFromFocal35mm.emplace(view.getImagePath(), std::make_pair(sensorWidth, focalLengthmm));
-        intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        intrinsicInitMode = camera::EInitMode::ESTIMATED;
       }
       else if(sensorWidth > 0 && focalLengthmm <= 0)
       {
@@ -628,7 +628,7 @@ int aliceVision_main(int argc, char **argv)
         focalLengthmm = (sensorDiag * focalIn35mm) / diag24x36;
 
         intrinsicsSetFromFocal35mm.emplace(view.getImagePath(), std::make_pair(sensorWidth, focalLengthmm));
-        intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        intrinsicInitMode = camera::EInitMode::ESTIMATED;
       }
     }
 
@@ -733,7 +733,7 @@ int aliceVision_main(int argc, char **argv)
               }
           }
           // set disto initialization mode
-          intrinsicDisto->setDistortionInitializationMode(camera::EIntrinsicDistoInitMode::ESTIMATED);
+          intrinsicDisto->setDistortionInitializationMode(camera::EInitMode::ESTIMATED);
         }
 
         if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty)

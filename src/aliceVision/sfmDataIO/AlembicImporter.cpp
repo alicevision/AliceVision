@@ -399,7 +399,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   std::vector<unsigned int> sensorSize_pix = {0, 0};
   std::vector<double> sensorSize_mm = {0, 0};
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
-  std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
+  std::string mvg_intrinsicInitializationMode = EInitMode_enumToString(EInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
   std::vector<IndexT> mvg_ancestorsParams;
   Vec2 initialFocalLengthPix = {-1, -1};
@@ -563,7 +563,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     intrinsic->setSensorWidth(sensorSize_mm.at(0));
     intrinsic->setSensorHeight(sensorSize_mm.at(1));
     intrinsic->importFromParams(mvg_intrinsicParams, abcVersion);
-    intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
+    intrinsic->setInitializationMode(EInitMode_stringToEnum(mvg_intrinsicInitializationMode));
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
     if (intrinsicScale)
