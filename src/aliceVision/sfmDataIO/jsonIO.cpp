@@ -154,7 +154,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
       paramTree.put("", param);
       distParamsTree.push_back(std::make_pair("", paramTree));
     }
-    intrinsicTree.put("distoInitializationMode", camera::EIntrinsicDistoInitMode_enumToString(intrinsicScaleOffsetDisto->getDistoInitializationMode()));
+    intrinsicTree.put("distortionInitializationMode", camera::EIntrinsicDistoInitMode_enumToString(intrinsicScaleOffsetDisto->getDistortionInitializationMode()));
 
     intrinsicTree.add_child("distortionParams", distParamsTree);
   }
@@ -269,9 +269,9 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     distortionParams.resize(intrinsicWithDistoEnabled->getDistortionParams().size(), 0.0);
     intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
 
-    const camera::EIntrinsicDistoInitMode distoInitializationMode = camera::EIntrinsicDistoInitMode_stringToEnum(intrinsicTree.get<std::string>("distoInitializationMode", camera::EIntrinsicDistoInitMode_enumToString(camera::EIntrinsicDistoInitMode::CALIBRATED)));
+    const camera::EIntrinsicDistoInitMode distortionInitializationMode = camera::EIntrinsicDistoInitMode_stringToEnum(intrinsicTree.get<std::string>("distortionInitializationMode", camera::EIntrinsicDistoInitMode_enumToString(camera::EIntrinsicDistoInitMode::CALIBRATED)));
 
-    intrinsicWithDistoEnabled->setDistoInitializationMode(distoInitializationMode);
+    intrinsicWithDistoEnabled->setDistortionInitializationMode(distortionInitializationMode);
   }
 
   // Load EquiDistant params

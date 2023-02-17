@@ -733,7 +733,7 @@ int aliceVision_main(int argc, char **argv)
               }
           }
           // set disto initialization mode
-          intrinsicDisto->setDistoInitializationMode(camera::EIntrinsicDistoInitMode::ESTIMATED);
+          intrinsicDisto->setDistortionInitializationMode(camera::EIntrinsicDistoInitMode::ESTIMATED);
         }
 
         if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty)

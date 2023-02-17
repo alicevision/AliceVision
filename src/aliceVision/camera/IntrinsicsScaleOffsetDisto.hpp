@@ -260,20 +260,20 @@ public:
 
   /**
   * @brief Set The intrinsic disto initialization mode
-  * @param[in] distoInitializationMode The intrintrinsic disto initialization mode enum
+  * @param[in] distortionInitializationMode The intrintrinsic distortion initialization mode enum
   */
-  inline void setDistoInitializationMode(EIntrinsicDistoInitMode distoInitializationMode)
+  inline void setDistortionInitializationMode(EIntrinsicDistoInitMode distortionInitializationMode)
   {
-      _distoInitializationMode = distoInitializationMode;
+      _distortionInitializationMode = distortionInitializationMode;
   }
 
   /**
    * @brief Get the intrinsic disto initialization mode
    * @return The intrinsic disto initialization mode
    */
-  inline EIntrinsicDistoInitMode getDistoInitializationMode() const
+  inline EIntrinsicDistoInitMode getDistortionInitializationMode() const
   {
-      return _distoInitializationMode;
+      return _distortionInitializationMode;
   }
 
   ~IntrinsicsScaleOffsetDisto() override = default;
@@ -291,7 +291,7 @@ protected:
   std::shared_ptr<Distortion> _pDistortion;
 
   // Distortion initialization mode
-  EIntrinsicDistoInitMode _distoInitializationMode = EIntrinsicDistoInitMode::NONE;
+  EIntrinsicDistoInitMode _distortionInitializationMode = EIntrinsicDistoInitMode::NONE;
 };
 
 } // namespace camera
