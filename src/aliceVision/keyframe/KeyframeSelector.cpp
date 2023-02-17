@@ -454,6 +454,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
             inputSpec.extra_attribs = image::readImageMetadata(currentImgName);
             int orientation = inputSpec.get_int_attribute("Orientation", 1);
             float pixelAspectRatio = inputSpec.get_float_attribute("PixelAspectRatio", 1.0f);
+            std::string colorspace = inputSpec.get_string_attribute("oiio:Colorspace", "");
 
             oiio::ParamValueList metadata;
             metadata.push_back(oiio::ParamValue("Make", brands[id]));
@@ -479,6 +480,9 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                 options.fromColorSpace(image::EImageColorSpace::SRGB);
                 options.toColorSpace(image::EImageColorSpace::AUTO);
             } else {  // Otherwise, the frames have been read without any conversion, they should be written as such
+                if (colorspace == "sRGB")
+                        options.fromColorSpace(image::EImageColorSpace::SRGB);
+
                 if (outputExtension == "exr")
                     options.toColorSpace(image::EImageColorSpace::NO_CONVERSION);
                 else
