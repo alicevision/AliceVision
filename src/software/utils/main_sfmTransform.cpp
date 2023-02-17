@@ -202,7 +202,7 @@ IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & 
         std::vector<std::pair<int64_t, IndexT>> sorted_views;
         for (auto v : sfmData.getViews()) {
             int64_t t = v.second->getMetadataDateTimestamp();
-            sorted_views.push_back(std::make_pair(t, v.second->getPoseId()));
+            sorted_views.push_back(std::make_pair(t, v.first));
         }
         std::sort(sorted_views.begin(), sorted_views.end());
 
