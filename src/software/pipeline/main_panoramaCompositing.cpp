@@ -515,7 +515,7 @@ bool processImage(const PanoramaMap & panoramaMap, const sfmData::SfMData & sfmD
 
             // Load mask
             const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getMetadata().at("AliceVision:warpedPath");
-            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+            const std::string maskPath = (fs::path(warpingFolder) / (warpedPath + "_mask.exr")).string();
             ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
             image::Image<unsigned char> mask;
             image::readImageDirect(maskPath, mask);
