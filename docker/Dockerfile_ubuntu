@@ -1,7 +1,8 @@
 ARG AV_VERSION
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
-FROM alicevision/alicevision-deps:${AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+ARG REPO_OWNER
+FROM ${REPO_OWNER}/alicevision-deps:${AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 # use CUDA_VERSION to select the image version to use
