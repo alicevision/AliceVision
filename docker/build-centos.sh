@@ -19,7 +19,7 @@ echo "CENTOS_VERSION: $CENTOS_VERSION"
 docker/fetch.sh
 
 ## DEPENDENCIES
-DOCKER_TAG=${REPO_OWNER}/alicevision-deps:${AV_VERSION}-centos${CENTOS_VERSION}-cuda${CUDA_VERSION} \
+DOCKER_TAG=${REPO_OWNER}/alicevision-deps:${AV_VERSION}-centos${CENTOS_VERSION}-cuda${CUDA_VERSION}
 docker build \
 	--rm \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \
@@ -32,7 +32,7 @@ if [ ! -z "$DOCKER_PUSH" ]; then
 fi
 
 ## ALICEVISION
-DOCKER_TAG=${REPO_OWNER}/alicevision:${AV_VERSION}-centos${CENTOS_VERSION}-cuda${CUDA_VERSION} \
+DOCKER_TAG=${REPO_OWNER}/alicevision:${AV_VERSION}-centos${CENTOS_VERSION}-cuda${CUDA_VERSION}
 docker build \
 	--rm \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \
