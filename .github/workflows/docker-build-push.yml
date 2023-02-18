@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - develop
+      - gh-actions-docker # TODO remove before creating a PR
     # Skip jobs when only documentation files are changed
     paths-ignore:
       - '**.md'
@@ -19,7 +20,7 @@ on:
       - 'docs/**'
 
 env:
-  REPO_OWNER: hammady # comment or remove before creating a PR
+  REPO_OWNER: ${{ github.repository_owner }}
   CUDA_VERSION: "11.3.1"
   DOCKER_PUSH: "true"
 
