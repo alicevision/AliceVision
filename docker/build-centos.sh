@@ -34,6 +34,7 @@ docker build \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \
 	--build-arg CENTOS_VERSION=${CENTOS_VERSION} \
 	--build-arg AV_VERSION=${AV_VERSION} \
+	--build-arg REPO_OWNER=${REPO_OWNER} \
 	--tag ${DOCKER_TAG} \
 	-f docker/Dockerfile_centos .
 
