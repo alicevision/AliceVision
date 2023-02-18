@@ -310,7 +310,7 @@ int aliceVision_main(int argc, char** argv)
             computeLuminanceStatFromSamples(samples, luminanceInfos);
 
             // Check that all views in the group have an associated luminance stat info
-            for (auto& v : group)
+            for (const auto& v : group)
             {
                 if (luminanceInfos.find(v->getViewId()) == luminanceInfos.end())
                 {
