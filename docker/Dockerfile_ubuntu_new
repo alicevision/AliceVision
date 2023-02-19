@@ -1,0 +1,105 @@
+ARG CUDA_VERSION=11.8.0
+ARG UBUNTU_VERSION=22.04
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+LABEL maintainer="Hossam Hammady <github@hammady.net>"
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        git \
+        build-essential \
+        cmake \
+        libboost-all-dev \
+        libeigen3-dev \
+        libflann-dev \
+        libjpeg-dev \
+        libturbojpeg0-dev \
+        libpng-dev \
+        libtiff-dev \
+        libraw-dev \
+        libassimp-dev \
+        libceres-dev \
+        libopenexr-dev \
+        libopenimageio-dev \
+        libxxf86vm1 \
+        libxxf86vm-dev \
+        libxi-dev \
+        libxrandr-dev \
+        graphviz \
+        libapriltag-dev \
+        liblapack-dev \
+        libopencv-dev \
+        libpcl-dev \
+        libsuitesparse-dev \
+        ffmpeg \
+        libvpx-dev \
+        zlib1g-dev
+
+RUN mkdir /home/AliceVision
+WORKDIR /home/AliceVision
+COPY CMakeLists.txt .
+COPY src src
+
+# Install AliceVision dependencies
+RUN mkdir build && cd build && \
+    cmake \
+        -DALICEVISION_BUILD_DEPENDENCIES=ON \
+        -DAV_BUILD_ALICEVISION=OFF \
+        -DAV_BUILD_ZLIB=OFF \
+        -DAV_BUILD_ASSIMP=OFF \
+        -DAV_BUILD_TIFF=OFF \
+        -DAV_BUILD_JPEG=OFF \
+        -DAV_BUILD_PNG=OFF \
+        -DAV_BUILD_LIBRAW=OFF \
+        -DAV_BUILD_APRILTAG=OFF \
+        -DAV_BUILD_OPENCV=OFF \
+        -DAV_BUILD_LAPACK=OFF \
+        -DAV_BUILD_PCL=OFF \
+        -DAV_BUILD_SUITESPARSE=OFF \
+        -DAV_BUILD_FFMPEG=OFF \
+        -DAV_BUILD_VPX=OFF \
+        -DCMAKE_MODULE_PATH:PATH=/usr/share/eigen3/cmake \
+        -DAV_BUILD_DEPENDENCIES_PARALLEL=0 \
+        ../ && \
+    make -j$(nproc)
+
+# Install AliceVision
+RUN cd build && \
+    cmake \
+        -DALICEVISION_BUILD_DEPENDENCIES=OFF \
+        -DAV_BUILD_ALICEVISION=ON \
+        -DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-11.8 \
+        -DTARGET_ARCHITECTURE=core \
+        ../ && \
+    make -j$(nproc)
+
+# RUN rm -rf /home/AliceVision && \
+#     apt-get remove -y \
+#         git \
+#         build-essential \
+#         cmake \
+#         libboost-all-dev \
+#         libeigen3-dev \
+#         libflann-dev \
+#         libjpeg-dev \
+#         libpng-dev \
+#         libtiff-dev \
+#         libraw-dev \
+#         libassimp-dev \
+#         libceres-dev \
+#         libopenexr-dev \
+#         libopenimageio-dev \
+#         libxxf86vm1 \
+#         libxxf86vm-dev \
+#         libxi-dev \
+#         libxrandr-dev \
+#         graphviz \
+#         libapriltag-dev \
+#         liblapack-dev \
+#         libopencv-dev \
+#         libpcl1-dev \
+#         zlib1g-dev && \
+#     apt-get autoremove -y && \
+#     apt-get clean && \
+#     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+
