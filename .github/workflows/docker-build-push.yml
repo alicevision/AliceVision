@@ -22,12 +22,39 @@ on:
 env:
   DOCKER_REGISTRY: "ghcr.io"
   REPO_OWNER: ${{ github.repository_owner }}
-  CUDA_VERSION: "11.3.1"
-  DOCKER_PUSH: "true"
+  CUDA_VERSION: "11.8.0"
+  AV_VERSION: ${{ github.event.release.tag_name || github.sha }}
 
 jobs:
+  ubuntu-new:
+    runs-on: ubuntu-latest
+    env:
+      UBUNTU_VERSION: "22.04"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Login to registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile_ubuntu_new
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.REPO_OWNER }}/alicevision:${{ env.AV_VERSION }}-ubuntu${{ env.UBUNTU_VERSION }}-cuda${{ env.CUDA_VERSION }}
+
   ubuntu:
     runs-on: ubuntu-latest
+    if: false # obsolete
     env:
       UBUNTU_VERSION: "20.04"
 
@@ -47,6 +74,7 @@ jobs:
 
   centos:
     runs-on: ubuntu-latest
+    if: false # obsolete
     env:
       CENTOS_VERSION: "7"
       

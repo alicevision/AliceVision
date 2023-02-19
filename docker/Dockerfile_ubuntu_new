@@ -67,7 +67,7 @@ RUN cd build && \
     cmake \
         -DALICEVISION_BUILD_DEPENDENCIES=OFF \
         -DAV_BUILD_ALICEVISION=ON \
-        -DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-11.8 \
+        -DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-${CUDA_VERSION%.*} \
         -DTARGET_ARCHITECTURE=core \
         ../ && \
     make -j$(nproc)
