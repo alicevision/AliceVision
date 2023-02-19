@@ -19,6 +19,7 @@ option(AV_BUILD_OPENCV "Enable building an embedded OpenCV" ON)
 option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
 option(AV_BUILD_SUITESPARSE "Enable building an embedded SuiteSparse" ON)
 option(AV_BUILD_FFMPEG "Enable building an embedded FFMpeg" ON)
+option(AV_BUILD_VPX "Enable building an embedded libvpx required for ffmpeg" ON)
 option(AV_BUILD_COINUTILS "Enable building an embedded CoinUtils" ON)
 option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
@@ -77,6 +78,7 @@ message(STATUS "AV_BUILD_OPENCV: ${AV_BUILD_OPENCV}")
 message(STATUS "AV_BUILD_LAPACK: ${AV_BUILD_LAPACK}")
 message(STATUS "AV_BUILD_SUITESPARSE: ${AV_BUILD_SUITESPARSE}")
 message(STATUS "AV_BUILD_FFMPEG: ${AV_BUILD_FFMPEG}")
+message(STATUS "AV_BUILD_VPX: ${AV_BUILD_VPX}")
 message(STATUS "AV_USE_CUDA: ${AV_USE_CUDA}")
 message(STATUS "AV_USE_OPENMP: ${AV_USE_OPENMP}")
 message(STATUS "AV_BUILD_COINUTILS: ${AV_BUILD_COINUTILS}")
@@ -653,7 +655,10 @@ if(AV_BUILD_FFMPEG)
 #                  -DCMAKE_PROJECT_NAME=x265 -DENABLE_SHARED:bool=ON -DENABLE_PIC:bool=ON
 #       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
 # )
-ExternalProject_add(libvpx
+
+if(AV_BUILD_VPX)
+set(VPX_TARGET libvpx)
+ExternalProject_add(${VPX_TARGET}
       GIT_REPOSITORY https://chromium.googlesource.com/webm/libvpx.git
       GIT_TAG v1.10.0
       GIT_PROGRESS ON
@@ -666,6 +671,8 @@ ExternalProject_add(libvpx
             --enable-shared --disable-static --disable-examples
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
 )
+
+endif()
 
 set(FFMPEG_TARGET ffmpeg)
 ExternalProject_add(${FFMPEG_TARGET}
@@ -693,7 +700,7 @@ ExternalProject_add(${FFMPEG_TARGET}
             # --enable-libx264 # gpl
             # --enable-libx265 # gpl
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-      DEPENDS libvpx
+      DEPENDS ${VPX_TARGET}
 )
 endif()
 
