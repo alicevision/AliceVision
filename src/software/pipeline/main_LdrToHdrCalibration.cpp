@@ -309,6 +309,17 @@ int aliceVision_main(int argc, char** argv)
             std::map<int, luminanceInfo> luminanceInfos;
             computeLuminanceStatFromSamples(samples, luminanceInfos);
 
+            // Check that all views in the group have an associated luminance stat info
+            for (const auto& v : group)
+            {
+                if (luminanceInfos.find(v->getViewId()) == luminanceInfos.end())
+                {
+                    luminanceInfo lumaInfo;
+                    lumaInfo.exposure = -1.0; // Dummy exposure used later indicating a dummy info
+                    luminanceInfos[v->getViewId()] = lumaInfo;
+                }
+            }
+
             v_luminanceInfos.push_back(luminanceInfos);
 
             ++group_pos;
@@ -452,7 +463,14 @@ int aliceVision_main(int argc, char** argv)
                 // write in file
                 file << srcIdWithMinimalExposure << " ";
                 file << v_luminanceInfos[i][srcIdWithMinimalExposure].exposure << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
-                file << v_luminanceInfos[i][srcIdWithMinimalExposure].meanLum / v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                if (v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb > 0)
+                {
+                    file << v_luminanceInfos[i][srcIdWithMinimalExposure].meanLum / v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                }
+                else
+                {
+                    file << "0.0 ";
+                }
                 file << v_luminanceInfos[i][srcIdWithMinimalExposure].minLum << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].maxLum << std::endl;
                 // erase from map
                 v_luminanceInfos[i].erase(srcIdWithMinimalExposure);
