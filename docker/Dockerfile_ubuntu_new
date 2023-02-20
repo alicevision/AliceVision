@@ -19,6 +19,7 @@ RUN apt-get update && \
         libassimp-dev \
         libceres-dev \
         libopenexr-dev \
+        libimath-dev \
         libopenimageio-dev \
         libxxf86vm1 \
         libxxf86vm-dev \
