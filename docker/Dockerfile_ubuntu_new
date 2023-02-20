@@ -35,10 +35,20 @@ RUN apt-get update && \
         libvpx-dev \
         zlib1g-dev
 
-RUN mkdir /home/AliceVision
-WORKDIR /home/AliceVision
-COPY CMakeLists.txt .
-COPY src src
+RUN mkdir /tmp/AliceVision_build && \
+    mkdir /opt/AliceVision_install && \
+    mkdir /opt/AliceVision_bundle
+
+ENV AV_DEV=/home \
+    AV_BUILD=/tmp/AliceVision_build \
+    AV_INSTALL=/opt/AliceVision_install \
+    AV_BUNDLE=/opt/AliceVision_bundle \
+    PATH="${PATH}:${AV_BUNDLE}"
+
+COPY CMakeLists.txt ${AV_DEV}/
+COPY src ${AV_DEV}/src
+
+WORKDIR ${AV_BUILD}
 
 # Install AliceVision dependencies
 RUN mkdir build && cd build && \
@@ -58,9 +68,10 @@ RUN mkdir build && cd build && \
         -DAV_BUILD_SUITESPARSE=OFF \
         -DAV_BUILD_FFMPEG=OFF \
         -DAV_BUILD_VPX=OFF \
+        -DCMAKE_INSTALL_PREFIX:PATH="${AV_INSTALL}" \
         -DCMAKE_MODULE_PATH:PATH=/usr/share/eigen3/cmake \
         -DAV_BUILD_DEPENDENCIES_PARALLEL=0 \
-        ../ && \
+        ${AV_DEV} && \
     make -j$(nproc)
 
 # Install AliceVision
@@ -70,37 +81,11 @@ RUN cd build && \
         -DAV_BUILD_ALICEVISION=ON \
         -DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-${CUDA_VERSION%.*} \
         -DTARGET_ARCHITECTURE=core \
-        ../ && \
+        -DCMAKE_PREFIX_PATH:PATH="${AV_INSTALL}" \
+        -DCMAKE_INSTALL_PREFIX:PATH="${AV_INSTALL}" \
+        -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}" \
+        ${AV_DEV} && \
     make -j$(nproc)
 
-# RUN rm -rf /home/AliceVision && \
-#     apt-get remove -y \
-#         git \
-#         build-essential \
-#         cmake \
-#         libboost-all-dev \
-#         libeigen3-dev \
-#         libflann-dev \
-#         libjpeg-dev \
-#         libpng-dev \
-#         libtiff-dev \
-#         libraw-dev \
-#         libassimp-dev \
-#         libceres-dev \
-#         libopenexr-dev \
-#         libopenimageio-dev \
-#         libxxf86vm1 \
-#         libxxf86vm-dev \
-#         libxi-dev \
-#         libxrandr-dev \
-#         graphviz \
-#         libapriltag-dev \
-#         liblapack-dev \
-#         libopencv-dev \
-#         libpcl1-dev \
-#         zlib1g-dev && \
-#     apt-get autoremove -y && \
-#     apt-get clean && \
-#     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
