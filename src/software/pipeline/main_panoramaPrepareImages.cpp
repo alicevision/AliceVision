@@ -113,10 +113,10 @@ int aliceVision_main(int argc, char* argv[])
 
     if(sfmData.getIntrinsics().size() > 1)
     {
-        unsigned int refw = sfmData.getIntrinsics().begin()->second->w();
-        unsigned int refh = sfmData.getIntrinsics().begin()->second->h();
+        const unsigned int refw = sfmData.getIntrinsics().begin()->second->w();
+        const unsigned int refh = sfmData.getIntrinsics().begin()->second->h();
 
-        for(auto item : sfmData.getIntrinsics())
+        for(const auto& item : sfmData.getIntrinsics())
         {
             if(item.second->w() == refw && item.second->h() == refh)
             {
@@ -139,7 +139,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // Read the flip values from metadata, or create it if necessary
     std::map<int, size_t> count_flips;
-    for(const auto& v : views)
+    for(auto& v : views)
     {
         if(v.second->hasMetadata({"raw:flip"}))
         {
@@ -175,7 +175,7 @@ int aliceVision_main(int argc, char* argv[])
     // Decide which rotation is the most used
     int max_flip = -1;
     size_t max_count = 0;
-    for(auto item : count_flips)
+    for(const auto& item : count_flips)
     {
         if(item.second > max_count)
         {
@@ -186,7 +186,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // Get the intrinsic of the best flip
     IndexT refIntrinsic = UndefinedIndexT;
-    for(auto& v : views)
+    for(const auto& v : views)
     {
         // Now, all views have "raw:flip"
         std::string str = v.second->getMetadata({"raw:flip"});
@@ -205,6 +205,7 @@ int aliceVision_main(int argc, char* argv[])
         }
     }
 
+    // Remove all other intrinsics
     for(sfmData::Intrinsics::iterator it = sfmData.getIntrinsics().begin(); it != sfmData.getIntrinsics().end(); ++it)
     {
         if(it->first != refIntrinsic)
@@ -216,8 +217,8 @@ int aliceVision_main(int argc, char* argv[])
     for(auto& v : views)
     {
         // Now, all views have raw:flip
-        std::string str = v.second->getMetadata({"raw:flip"});
-        int flip_code = std::stoi(str);
+        const std::string str = v.second->getMetadata({"raw:flip"});
+        const int flip_code = std::stoi(str);
 
         if(flip_code == max_flip)
         {
@@ -229,8 +230,8 @@ int aliceVision_main(int argc, char* argv[])
             v.second->setIntrinsicId(refIntrinsic);
         }
 
-        Eigen::Matrix3d R = getRotationForCode(flip_code) * getRotationForCode(max_flip).transpose();
-        Eigen::AngleAxisd aa(R);
+        const Eigen::Matrix3d R = getRotationForCode(flip_code) * getRotationForCode(max_flip).transpose();
+        const Eigen::AngleAxisd aa(R);
         Eigen::Vector3d axis = aa.axis();
         double angle = aa.angle();
 
@@ -242,9 +243,9 @@ int aliceVision_main(int argc, char* argv[])
 
         // Prepare output file
         image::Image<image::RGBfColor> output;
-        boost::filesystem::path origImgPath(v.second->getImagePath());
-        std::string origFilename = origImgPath.stem().string();
-        std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
+        const boost::filesystem::path origImgPath(v.second->getImagePath());
+        const std::string origFilename = origImgPath.stem().string();
+        const std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
         oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
 
         // Read input file

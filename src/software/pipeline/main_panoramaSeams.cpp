@@ -91,7 +91,7 @@ bool computeGCLabels(image::Image<IndexT>& labels, const std::vector<std::shared
 {
     ALICEVISION_LOG_INFO("Estimating smart seams for panorama");
 
-    int pyramidSize = 1 + std::max(0, smallestViewScale - 1);
+    const int pyramidSize = 1 + std::max(0, smallestViewScale - 1);
     ALICEVISION_LOG_INFO("Graphcut pyramid size is " << pyramidSize);
 
     HierarchicalGraphcutSeams seams(panoramaSize.first / downscale, panoramaSize.second / downscale, pyramidSize);
@@ -152,12 +152,12 @@ size_t getGraphcutOptimalScale(int width, int height)
     x = log2(minsize/5)
     */
 
-    size_t minsize = std::min(width, height);
-    size_t gaussianFilterRadius = 2;
+    const size_t minsize = std::min(width, height);
+    const size_t gaussianFilterRadius = 2;
 
-    int gaussianFilterSize = 1 + 2 * gaussianFilterRadius;
+    const int gaussianFilterSize = 1 + 2 * gaussianFilterRadius;
     
-    size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
+    const size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
     
     return (optimal_scale - 1/*Security*/);
 }
@@ -238,7 +238,8 @@ int aliceVision_main(int argc, char** argv)
     for (auto pv : copyviews)
     {
         std::vector<std::string> & images = paths_per_view[pv.first];
-        if (images.size() == 0) continue;
+        if (images.empty())
+            continue;
 
         for (int idx = 0; idx < images.size(); idx++)
         {
@@ -247,7 +248,7 @@ int aliceVision_main(int argc, char** argv)
             newView->addMetadata("AliceVision:previousViewId", std::to_string(pv.first));
             newView->addMetadata("AliceVision:imageCounter", std::to_string(idx));
             newView->addMetadata("AliceVision:warpedPath", images[idx]);
-            IndexT newIndex = sfmData::computeViewUID(*newView);
+            const IndexT newIndex = sfmData::computeViewUID(*newView);
 
             newView->setViewId(newIndex);
             sfmData.getViews()[newIndex] = newView;
@@ -294,7 +295,7 @@ int aliceVision_main(int argc, char** argv)
                                                           << (panoramaSize.second / downscaleFactor));
     }
 
-    //Get a list of views ordered by their image scale
+    // Get a list of views ordered by their image scale
     int smallestScale = 10000;
     std::vector<std::shared_ptr<sfmData::View>> views;
     for (auto it : sfmData.getViews()) 
@@ -317,7 +318,7 @@ int aliceVision_main(int argc, char** argv)
         width /= downscaleFactor;
         height /= downscaleFactor;
 
-        //Estimate scale
+        // Estimate scale
         int scale = getGraphcutOptimalScale(width, height);
 
         smallestScale = std::min(scale, smallestScale);
