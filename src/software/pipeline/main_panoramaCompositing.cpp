@@ -26,6 +26,9 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
+// Numeric utils
+#include <aliceVision/numeric/numeric.hpp>
+
 // IO
 #include <fstream>
 #include <algorithm>
@@ -642,12 +645,12 @@ int aliceVision_main(int argc, char** argv)
         std::string pvid = pv.second->getMetadata().at("AliceVision:previousViewId");
         uniquePreviousId.insert(pvid);
     }
-    size_t oldViewsCount = uniquePreviousId.size();
+    const int oldViewsCount = uniquePreviousId.size();
 
     ALICEVISION_LOG_TRACE("Previous id loaded");
 
     // Define range to compute
-    int viewsCount = sfmData.getViews().size();
+    const int viewsCount = sfmData.getViews().size();
     if(rangeIteration != -1)
     {
         if(rangeIteration < 0 || rangeSize < 0)
@@ -656,7 +659,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        int countIterations = int(std::ceil(double(oldViewsCount) / double(rangeSize)));
+        const int countIterations = divideRoundUp(oldViewsCount, rangeSize);
        
         if(rangeIteration >= countIterations)
         {
@@ -664,7 +667,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        rangeSize = rangeSize * std::ceil(double(viewsCount) / double(oldViewsCount));
+        rangeSize = rangeSize * divideRoundUp(viewsCount, oldViewsCount);
     }
     else
     {
