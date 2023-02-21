@@ -399,10 +399,14 @@ int aliceVision_main(int argc, char** argv)
                         image::RGBAfColor d12 = f1 * 0.25f + f2 * 0.75f;
                         image::RGBAfColor d22 = f3 * 0.25f + f2 * 0.75f;
 
-                        if (dest(di, dj).a() != 1.0f) dest(di, dj) = d11;
-                        if (dest(di, dj + 1).a() != 1.0f) dest(di, dj + 1) = d12;
-                        if (dest(di + 1, dj).a() != 1.0f) dest(di + 1, dj) = d21;
-                        if (dest(di + 1, dj + 1).a() != 1.0f) dest(di + 1, dj + 1) = d22;
+
+                        //Here we normalize without checking for alpha validity, 
+                        //as we assume it is not possible to have zero alpha if the algorithm did its job.
+
+                        if (dest(di, dj).a() != 1.0f) dest(di, dj) = d11 / d11.a();
+                        if (dest(di, dj + 1).a() != 1.0f) dest(di, dj + 1) = d12 / d12.a();
+                        if (dest(di + 1, dj).a() != 1.0f) dest(di + 1, dj) = d21 / d21.a();
+                        if (dest(di + 1, dj + 1).a() != 1.0f) dest(di + 1, dj + 1) = d22 / d22.a();
                     }
                 }
             }
