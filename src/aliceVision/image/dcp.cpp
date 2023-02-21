@@ -2112,9 +2112,14 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
 
     double x, y;
     getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutralInv, x, y);
+
+    ALICEVISION_LOG_INFO("Chroma Coord (x; y) : (" << x << "; " << y << ")");
+
     double cct, tint;
     setChromaticityCoordinates(x, y, cct, tint);
 
+    ALICEVISION_LOG_INFO("ColorMatrix1 : " << color_matrix_1);
+    ALICEVISION_LOG_INFO("ColorMatrix2 : " << color_matrix_2);
     ALICEVISION_LOG_INFO("Estimated illuminant (cct; tint) : (" << cct << "; " << tint << ")");
 
     Matrix neutral = IdentityMatrix;
@@ -2140,6 +2145,8 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
             xyzToCamera = color_matrix_1;
         }
 
+        ALICEVISION_LOG_INFO("xyzToCameraMatrix : " << xyzToCamera);
+
         Matrix wbInv = IdentityMatrix;
         if (!sourceIsRaw)
         {
@@ -2148,22 +2155,40 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
             wbInv[0][0] = asShotNeutralInv[0];
             wbInv[1][1] = asShotNeutralInv[1];
             wbInv[2][2] = asShotNeutralInv[2];
+            //wbInv[0][0] = asShotNeutral[0];
+            //wbInv[1][1] = asShotNeutral[1];
+            //wbInv[2][2] = asShotNeutral[2];
+            ALICEVISION_LOG_INFO("wbInv : " << wbInv);
         }
-        const Matrix cameraToXyz = matMult(matInv(xyzToCamera), wbInv);
+        //ALICEVISION_LOG_INFO("cameraToXyzMatrix : " << matInv(xyzToCamera));
+
+        //const Matrix cameraToXyz = matMult(matInv(xyzToCamera), wbInv);
+        const Matrix cameraToXyz = matMult(matInv(xyzToCamera), IdentityMatrix);
+
+        ALICEVISION_LOG_INFO("cameraToXyzMatrix : " << cameraToXyz);
 
         const double D50_cct = 5000.706605070579;  //
         const double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
         const Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
-        cameraToXyzD50 = matMult(cat, cameraToXyz);
+
+        ALICEVISION_LOG_INFO("CATmatrix : " << cat);
+
+        cameraToXyzD50 = matMult(matMult(cat, cameraToXyz), wbInv);
+        //cameraToXyzD50 = matMult(cat, cameraToXyz);
     }
     else if ((info.has_forward_matrix_1) && (info.has_forward_matrix_2))
     {
+        ALICEVISION_LOG_INFO("ForwardMatrix1 : " << forward_matrix_1);
+        ALICEVISION_LOG_INFO("ForwardMatrix2 : " << forward_matrix_2);
         cameraToXyzD50 = matMult(getInterpolatedMatrix(cct, "forward"), neutral);
     }
     else if (info.has_forward_matrix_1)
     {
         cameraToXyzD50 = matMult(forward_matrix_1, neutral);
     }
+
+    ALICEVISION_LOG_INFO("cameraToXyzD50Matrix : " << cameraToXyzD50);
+
     Matrix cameraToACES2065 = matMult(xyzD50ToACES2065Matrix, cameraToXyzD50);
 
     return cameraToACES2065;

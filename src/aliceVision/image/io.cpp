@@ -512,7 +512,8 @@ void readImage(const std::string& path,
             }
             ALICEVISION_LOG_INFO("Raw demosaicing algo: " << imageReadOptions.demosaicingAlgo);
             ALICEVISION_LOG_INFO("WB after demosaicing: " << (imageReadOptions.doWBAfterDemosaicing ? "True" : "False"));
-            ALICEVISION_LOG_INFO("Highlight mode: " << (imageReadOptions.highlightMode==0 ? "Clip" : (imageReadOptions.highlightMode == 1 ? "Unclip" : "Blend")));
+            ALICEVISION_LOG_INFO("Highlight mode: " << (imageReadOptions.highlightMode == 0 ? "Clip" : (imageReadOptions.highlightMode == 1 ? "Unclip" : "Blend")));
+            ALICEVISION_LOG_INFO("DCP mode: " << (imageReadOptions.useDCPColorMatrixOnly ? "Color Matrix Only" : "Full"));
 
             float user_mul[4] = { neutral[0],neutral[1],neutral[2],neutral[1] };
             if (imageReadOptions.doWBAfterDemosaicing)
@@ -539,6 +540,7 @@ void readImage(const std::string& path,
             ALICEVISION_LOG_INFO("Raw demosaicing algo: " << imageReadOptions.demosaicingAlgo);
             ALICEVISION_LOG_INFO("WB after demosaicing: " << (imageReadOptions.doWBAfterDemosaicing ? "True" : "False"));
             ALICEVISION_LOG_INFO("Highlight mode: " << (imageReadOptions.highlightMode == 0 ? "Clip" : (imageReadOptions.highlightMode == 1 ? "Unclip" : "Blend")));
+            ALICEVISION_LOG_INFO("DCP mode: " << (imageReadOptions.useDCPColorMatrixOnly ? "Color Matrix Only" : "Full"));
 
             float user_mul[4] = { neutral[0],neutral[1],neutral[2],neutral[1] };
             if (imageReadOptions.doWBAfterDemosaicing)
@@ -603,10 +605,11 @@ void readImage(const std::string& path,
         image::DCPProfile::Triple neutral;
         for (int i = 0; i < 3; i++)
         {
-            neutral[i] = v_mult[1] / v_mult[i];
+            //neutral[i] = v_mult[1] / v_mult[i];
+            neutral[i] = v_mult[i] / v_mult[1];
         }
 
-        ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = {" << neutral[0] << ", " << neutral[1] << ", " << neutral[2] << "}");
+        ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = " << neutral);
 
         dcpProfile.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
     }
