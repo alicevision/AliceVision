@@ -52,6 +52,7 @@ ENV AV_DEV=/home \
 # Copy AliceVision source code
 COPY CMakeLists.txt ${AV_DEV}/
 COPY src ${AV_DEV}/src
+COPY *.md ${AV_DEV}/
 
 # Create build and install directories
 RUN mkdir ${AV_BUILD} ${AV_INSTALL}
