@@ -695,8 +695,33 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
   try
   {
     viewId = boost::lexical_cast<IndexT>(camName);
-    if(!sfmData.getViews().count(viewId))
-      viewId = -1;
+    if (!sfmData.getViews().count(viewId))
+    {   
+        bool found = false;
+        //check if this view is an ancestor of a view
+        for (auto pv : sfmData.getViews())
+        {
+            for (auto ancestor : pv.second->getAncestors())
+            {
+                if (ancestor == viewId)
+                {
+                    viewId = pv.first;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            viewId = -1;
+        }
+    }
   }
   catch(const boost::bad_lexical_cast &)
   {
@@ -936,6 +961,29 @@ bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData, std:
     std::vector<std::size_t> inliers;
     const bool refine{true};
     return aliceVision::geometry::ACRansac_FindRTS(x1, x2, randomNumberGenerator, out_S, out_t, out_R, inliers, refine);
+}
+
+void getRotationNullifyX(Eigen::Matrix3d & out_R, const Eigen::Matrix3d & R)
+{
+    Eigen::Vector3d alignmentVector = R.transpose() * Eigen::Vector3d::UnitZ();
+    getRotationNullifyX(out_R, alignmentVector);
+}
+
+void getRotationNullifyX(Eigen::Matrix3d & out_R, const Eigen::Vector3d & pt)
+{
+    /*
+    0 =  [cos(x) 0 -sin(x)][X]
+    Y' = [0      1 0      ][Y]
+    Z' = [sin(x) 0  cos(x)][Z]
+
+    cos(x)X - sin(x)Z = 0
+    sin(x)/cos(x) = X/Z
+    tan(x) = X/Z
+    x = atan2(X, Z)
+    */
+  
+    double angle = std::atan2(pt(0), pt(2));
+    out_R = Eigen::AngleAxisd(angle, Vec3(0,-1,0)).toRotationMatrix();
 }
 
 } // namespace sfm

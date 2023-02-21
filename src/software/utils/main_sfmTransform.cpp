@@ -184,6 +184,36 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
 
 } // namespace
 
+IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & transform)
+{
+    IndexT refViewId;
+    try
+    {
+        refViewId = sfm::getViewIdFromExpression(sfmData, transform);
+    }
+    catch (...)
+    {
+        refViewId = UndefinedIndexT;
+    }
+
+    if (refViewId == UndefinedIndexT)
+    {
+        // Sort views per timestamps
+        std::vector<std::pair<int64_t, IndexT>> sorted_views;
+        for (auto v : sfmData.getViews()) {
+            int64_t t = v.second->getMetadataDateTimestamp();
+            sorted_views.push_back(std::make_pair(t, v.first));
+        }
+        std::sort(sorted_views.begin(), sorted_views.end());
+
+        // Get the view which was taken at the middle of the sequence 
+        int median = sorted_views.size() / 2;
+        refViewId = sorted_views[sorted_views.size() - 1].second;
+    }
+
+    return refViewId;
+}
+
 int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
@@ -306,8 +336,22 @@ int aliceVision_main(int argc, char **argv)
     break;
 
     case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:
+    {
+        // Align with x axis
         sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, S, R, t);
-        break;
+
+        const IndexT refViewId = getReferenceViewId(sfmData, transform);
+
+        const Eigen::Matrix3d ref_R_world = sfmData.getPose(sfmData.getView(refViewId)).getTransform().rotation();
+
+        // Apply x axis alignment before doing the y alignment
+        const Eigen::Matrix3d refcam_R_updatedWorld = ref_R_world * R.transpose();
+
+        Eigen::Matrix3d zeroX_R_world;
+        sfm::getRotationNullifyX(zeroX_R_world, refcam_R_updatedWorld);
+        R = zeroX_R_world * R;
+    }
+    break;
 
     case EAlignmentMethod::AUTO_FROM_LANDMARKS:
       sfm::computeNewCoordinateSystemFromLandmarks(sfmData, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);
