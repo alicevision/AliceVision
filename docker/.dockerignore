@@ -2,7 +2,6 @@ ci
 docker
 docs
 tmp
-**/*.md
 *.cmd
 .clang*
 *.y?ml
