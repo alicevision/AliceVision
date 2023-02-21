@@ -6,7 +6,7 @@ namespace aliceVision
 bool distanceToCenter(aliceVision::image::Image<float>& _weights, const CoordinatesMap& map, int width, int height)
 {
 
-    const aliceVision::image::Image<Eigen::Vector2d>& coordinates = map.getCoordinates();
+    const aliceVision::image::Image<Eigen::Vector2f>& coordinates = map.getCoordinates();
     const aliceVision::image::Image<unsigned char>& mask = map.getMask();
 
     float cx = width / 2.0f;
@@ -27,7 +27,7 @@ bool distanceToCenter(aliceVision::image::Image<float>& _weights, const Coordina
                 continue;
             }
 
-            const Vec2& coords = coordinates(i, j);
+            const Vec2f& coords = coordinates(i, j);
 
             float x = coords(0);
             float y = coords(1);

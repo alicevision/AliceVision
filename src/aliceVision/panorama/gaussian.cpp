@@ -42,11 +42,6 @@ bool GaussianPyramidNoMask::process(const image::Image<image::RGBfColor>& input)
         return false;
 
     /**
-     * Kernel
-     */
-    oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", 5, 5);
-
-    /**
      * Build pyramid
      */
     _pyramid_color[0] = input;
@@ -56,12 +51,7 @@ bool GaussianPyramidNoMask::process(const image::Image<image::RGBfColor>& input)
         const image::Image<image::RGBfColor>& source = _pyramid_color[lvl];
         image::Image<image::RGBfColor>& dst = _filter_buffer[lvl];
 
-        oiio::ImageSpec spec(source.Width(), source.Height(), 3, oiio::TypeDesc::FLOAT);
-
-        const oiio::ImageBuf inBuf(spec, const_cast<image::RGBfColor*>(source.data()));
-        oiio::ImageBuf outBuf(spec, dst.data());
-        oiio::ImageBufAlgo::convolve(outBuf, inBuf, K);
-
+        convolveGaussian5x5(dst, source);
         downscale(_pyramid_color[lvl + 1], _filter_buffer[lvl]);
     }
 
