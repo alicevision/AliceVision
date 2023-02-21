@@ -188,7 +188,8 @@ int aliceVision_main(int argc, char** argv)
         ("maxWidth", po::value<int>(&maxPanoramaWidth)->required(), "Max Panorama Width.")
         ("useGraphCut,g", po::value<bool>(&useGraphCut)->default_value(useGraphCut), "Enable graphcut algorithm to improve seams.");
 
-    CmdLine cmdline("AliceVision panoramaSeams");
+    CmdLine cmdline("Estimates the ideal path for the transition between images in order to minimize seams artifacts.\n"
+                    "AliceVision panoramaSeams");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

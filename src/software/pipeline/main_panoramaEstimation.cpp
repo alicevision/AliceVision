@@ -105,7 +105,7 @@ int aliceVision_main(int argc, char** argv)
         "randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
 
-    CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
+    CmdLine cmdline("Estimates the orientation of a camera around a nodal point for the creation of a 360° panorama.\n"
                     "AliceVision panoramaEstimation");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);

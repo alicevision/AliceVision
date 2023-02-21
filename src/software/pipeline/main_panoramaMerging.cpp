@@ -47,11 +47,6 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     const size_t tileSize = 256;
 
-    // Program description
-    po::options_description allParams(
-        "Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
-        "AliceVision PanoramaCompositing");
-
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -64,8 +59,9 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str());
 
-    CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
-                    "AliceVision PanoramaCompositing");
+    CmdLine cmdline(
+        "Merges all the image tiles created by the PanoramaCompositing.\n"
+        "AliceVision PanoramaMerging");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

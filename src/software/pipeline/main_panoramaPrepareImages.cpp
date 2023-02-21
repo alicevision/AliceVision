@@ -77,7 +77,8 @@ int aliceVision_main(int argc, char* argv[])
         ("output,o", po::value<std::string>(&sfmOutputDataFilename)->required(),
          "SfMData file output.");
 
-    CmdLine cmdline("This program prepares images set for use in panorama.\n"
+    CmdLine cmdline("Prepares images for use in the panorama pipeline "
+                    "by correcting inconsistent orientations caused by the camera being in zenith or nadir position.\n"
                     "AliceVision panoramaPrepareImages");
     cmdline.add(requiredParams);
     if (!cmdline.execute(argc, argv))
@@ -189,12 +190,12 @@ int aliceVision_main(int argc, char* argv[])
     for(const auto& v : views)
     {
         // Now, all views have "raw:flip"
-        std::string str = v.second->getMetadata({"raw:flip"});
-        int flip_code = std::stoi(str);
+        const std::string str = v.second->getMetadata({"raw:flip"});
+        const int flip_code = std::stoi(str);
 
         if(flip_code == max_flip)
         {
-            IndexT intid = v.second->getIntrinsicId();
+            const IndexT intid = v.second->getIntrinsicId();
             if(refIntrinsic != intid && refIntrinsic != UndefinedIndexT)
             {
                 ALICEVISION_LOG_ERROR("Multiple intrinsics for the correct flip code !");

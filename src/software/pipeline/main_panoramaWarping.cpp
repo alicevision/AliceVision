@@ -129,7 +129,7 @@ int aliceVision_main(int argc, char** argv)
         "rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
         "Range image index start.")("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
 
-    CmdLine cmdline("This program computes the image warping for each input image in the panorama coordinate system.\n"
+    CmdLine cmdline("Warps the input images in the panorama coordinate system.\n"
                     "AliceVision panoramaWarping");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);

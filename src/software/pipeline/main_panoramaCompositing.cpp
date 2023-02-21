@@ -627,7 +627,7 @@ int aliceVision_main(int argc, char** argv)
         "labels,l", po::value<std::string>(&labelsFilepath)->required(), "Labels image from seams estimation.");
 
     CmdLine cmdline(
-        "This program performs panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
+        "Performs the panorama stiching of warped images, with an option to use constraints from precomputed seams maps.\n"
         "AliceVision panoramaCompositing");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
