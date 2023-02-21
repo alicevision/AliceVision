@@ -7,6 +7,7 @@ LABEL maintainer="Hossam Hammady <github@hammady.net>"
 # Install system dependencies
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        wget \
         git \
         build-essential \
         cmake \
@@ -45,7 +46,8 @@ ENV AV_DEV=/home \
     PATH="${PATH}:${AV_INSTALL}/bin" \
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${AV_INSTALL}/lib" \
     ALICEVISION_ROOT="${AV_INSTALL}" \
-    ALICEVISION_SENSOR_DB="${AV_INSTALL}/share/aliceVision/cameraSensors.db"
+    ALICEVISION_SENSOR_DB="${AV_INSTALL}/share/aliceVision/cameraSensors.db" \
+    ALICEVISION_VOCTREE="${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree"
 
 # Copy AliceVision source code
 COPY CMakeLists.txt ${AV_DEV}/
@@ -93,4 +95,5 @@ RUN cmake \
 
 # Clean up
 WORKDIR ${AV_INSTALL}
-RUN rm -rf ${AV_BUILD}/* ${AV_DEV}/*
+RUN rm -rf ${AV_BUILD}/* ${AV_DEV}/* && \
+    wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree -O ${ALICEVISION_VOCTREE}
