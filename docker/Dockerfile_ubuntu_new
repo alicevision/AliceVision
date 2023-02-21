@@ -92,4 +92,5 @@ RUN cmake \
     make -j$(nproc) install
 
 # Clean up
+WORKDIR ${AV_INSTALL}
 RUN rm -rf ${AV_BUILD}/* ${AV_DEV}/*
