@@ -40,9 +40,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
+ENV AV_INSTALL=/opt/AliceVision_install
 ENV AV_DEV=/home \
     AV_BUILD=/tmp/AliceVision_build \
-    AV_INSTALL=/opt/AliceVision_install \
     PATH="${PATH}:${AV_INSTALL}/bin" \
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${AV_INSTALL}/lib" \
     ALICEVISION_ROOT="${AV_INSTALL}" \

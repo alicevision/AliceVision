@@ -49,6 +49,9 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile_ubuntu_new
+          build-args: |
+            CUDA_VERSION=${{ env.CUDA_VERSION }}
+            UBUNTU_VERSION=${{ env.UBUNTU_VERSION }}
           push: true
           tags: ${{ env.DOCKER_REGISTRY }}/${{ env.REPO_OWNER }}/alicevision:${{ env.AV_VERSION }}-ubuntu${{ env.UBUNTU_VERSION }}-cuda${{ env.CUDA_VERSION }}
 
