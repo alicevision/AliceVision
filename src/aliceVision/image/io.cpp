@@ -463,7 +463,6 @@ void readImage(const std::string& path,
 
             for (int i = 0; i < 3; i++)
             {
-                //neutral[i] = v_mult[1] / v_mult[i];
                 neutral[i] = v_mult[i] / v_mult[1];
             }
         }
@@ -494,14 +493,14 @@ void readImage(const std::string& path,
         {
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
             configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing)
         {
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
             configSpec.attribute("raw:use_camera_wb", 1); // white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
@@ -583,13 +582,12 @@ void readImage(const std::string& path,
     {
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
-
         oiio::ParamValueList imgMetadata = readImageMetadata(path);
         std::string cam_mul = "";
         if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
         {
             cam_mul = "{1024, 1024, 1024, 1024}";
-            ALICEVISION_LOG_WARNING("[readImage]: cam_mul metadata not availbale, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
+            ALICEVISION_LOG_WARNING("[readImage]: cam_mul metadata not available, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
         }
 
         std::vector<float> v_mult;
