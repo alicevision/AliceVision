@@ -12,13 +12,13 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Create CUDA mipmapped array from a given frame.
+ * @brief Create CUDA mipmapped array from a given image buffer.
  * @param[out] out_mipmappedArrayPtr The output allocated and initialized CUDA mipmapped array
- * @param[in] in_frame_dmp The given frame in device memory (used at level 0)
+ * @param[in] in_img_dmp The given image buffer in device memory (used at level 0)
  * @param[in] levels The number of levels to generate in the CUDA mipmapped array
  */
-extern void cuda_createMipmappedArrayFromFrame(cudaMipmappedArray_t* out_mipmappedArrayPtr,
-                                               const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_frame_dmp,
+extern void cuda_createMipmappedArrayFromImage(cudaMipmappedArray_t* out_mipmappedArrayPtr,
+                                               const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp,
                                                const unsigned int levels);
 
 /**

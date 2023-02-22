@@ -320,12 +320,13 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     const int nbRcPerBatch = divideRoundUp(nbStreams, nbTilesPerCamera);                // number of R cameras in the same batch
     const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera;                        // number of tiles in the same batch
     const bool hasRcWithoutDownscale = depthMapParams.sgmParams.scale == 1 || (depthMapParams.useRefine && depthMapParams.refineParams.scale == 1);
-    const int nbCamerasPerSgm = (1 + depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1); // number of Sgm cameras per R camera
-    const int nbCamerasPerRefine = depthMapParams.useRefine ? (1 + depthMapParams.maxTCams) : 0; // number of Refine cameras per R camera
-    const int nbCamerasPerBatch = nbRcPerBatch * (nbCamerasPerSgm + nbCamerasPerRefine);         // number of cameras in the same batch
+    const int nbCameraParamsPerSgm = (1 + depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1); // number of Sgm camera parameters per R camera
+    const int nbCameraParamsPerRefine = depthMapParams.useRefine ? (1 + depthMapParams.maxTCams) : 0; // number of Refine camera parameters per R camera
+    const int nbMipmapImagesPerBatch = nbRcPerBatch * (1 + depthMapParams.maxTCams); // number of camera mipmap image in the same batch
+    const int nbCamerasParamsPerBatch = nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine); // number of camera parameters in the same batch
 
     DeviceCache& deviceCache = DeviceCache::getInstance();
-    deviceCache.buildCache(nbCamerasPerBatch);
+    deviceCache.build(nbMipmapImagesPerBatch, nbCamerasParamsPerBatch);
     
     // build tile list
     // order by R camera
@@ -432,28 +433,34 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             const Tile& tile = tiles.at(i);
 
             // add Sgm R camera to Device cache
-            deviceCache.addCamera(tile.rc, depthMapParams.sgmParams.scale, ic, mp);
+            deviceCache.addMipmapImage(tile.rc, depthMapParams.refineParams.scale, depthMapParams.sgmParams.scale, ic, mp);
+            deviceCache.addCameraParams(tile.rc, depthMapParams.sgmParams.scale, mp);
 
             // add Sgm T cameras to Device cache
             for(const int tc : tile.sgmTCams)
-                deviceCache.addCamera(tc, depthMapParams.sgmParams.scale, ic, mp);
+            {
+                deviceCache.addMipmapImage(tc, depthMapParams.refineParams.scale, depthMapParams.sgmParams.scale, ic, mp);
+                deviceCache.addCameraParams(tc, depthMapParams.sgmParams.scale, mp);
+            }
 
             if(depthMapParams.useRefine)
             {
                 // add Refine R camera to Device cache
-                deviceCache.addCamera(tile.rc, depthMapParams.refineParams.scale, ic, mp);
+                deviceCache.addCameraParams(tile.rc, depthMapParams.refineParams.scale, mp);
 
                 // add Refine T cameras to Device cache
                 for(const int tc : tile.refineTCams)
-                    deviceCache.addCamera(tc, depthMapParams.refineParams.scale, ic, mp);
+                {
+                    deviceCache.addMipmapImage(tc, depthMapParams.refineParams.scale, depthMapParams.sgmParams.scale, ic, mp);
+                    deviceCache.addCameraParams(tc, depthMapParams.refineParams.scale, mp);
+                }
             }
 
             if(depthMapParams.sgmParams.scale != 1 && (!depthMapParams.useRefine || depthMapParams.refineParams.scale != 1))
             {
               // add SGM R camera at scale 1 to Device cache.
               // R camera parameters at scale 1 are required for SGM retrieve best depth
-              // TODO: Add only camera parameters to Device cache
-              deviceCache.addCamera(tile.rc, 1, ic, mp);
+              deviceCache.addCameraParams(tile.rc, 1, mp);
             }
         }
 
@@ -607,8 +614,6 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
     const float gammaC = 1.0f;
     const float gammaP = 1.0f;
     const int wsh = 3;
-
-    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(mp, image::EImageColorSpace::LINEAR);
 
     DeviceNormalMapper normalMapper;
 

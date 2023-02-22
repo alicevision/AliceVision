@@ -23,11 +23,16 @@
         throw std::runtime_error(s.str());                                                                             \
     }                                                                                                                  \
 
-#define CHECK_CUDA_ERROR()                                                                                             \
-    if(cudaError_t err = cudaGetLastError())                                                                           \
+#define CHECK_CUDA_RETURN_ERROR_NOEXCEPT(err)                                                                          \
+    if(err != cudaSuccess)                                                                                             \
     {                                                                                                                  \
-        CHECK_CUDA_RETURN_ERROR(err);                                                                                  \
+        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));                                               \
+        fprintf(stderr, "  file:       %s\n", __FILE__);                                                               \
+        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                                                           \
+        fprintf(stderr, "  line:       %d\n\n", __LINE__);                                                             \
     }                                                                                                                  \
+
+#define CHECK_CUDA_ERROR() CHECK_CUDA_RETURN_ERROR(cudaGetLastError());
 
 #define THROW_ON_CUDA_ERROR(rcode, message)                                                                            \
     if(rcode != cudaSuccess)                                                                                           \
@@ -35,7 +40,7 @@
         std::stringstream s;                                                                                           \
         s << message << ": " << cudaGetErrorString(err);                                                               \
         throw std::runtime_error(s.str());                                                                             \
-    }
+    }                                                                                                                  \
 
 namespace aliceVision {
 namespace depthMap {

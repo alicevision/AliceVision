@@ -38,18 +38,15 @@ extern void cuda_createConstantGaussianArray(int cudaDeviceId, int scales);
 
 /**
  * @brief Downscale with Gaussian blur the given frame.
- * @param[out] out_downscaleFrame_dmp the downscaled frame in device memory
- * @param[in] originalFrame_tex the cuda texture object of the full size frame 
- * @param[in] downscaleFrameWidth the downscaled frame width
- * @param[in] downscaleFrameHeight the downscaled frame height
+ * @param[out] out_downscaledImg_dmp the downscaled image in device memory
+ * @param[in] in_img_tex the cuda texture object of the input full size image
+ * @param[in] downscale the downscale factor to apply
  * @param[in] gaussRadius the Gaussian radius
  * @param[in] stream the CUDA stream for gpu execution
  */
-extern void cuda_downscaleWithGaussianBlur(CudaDeviceMemoryPitched<CudaRGBA, 2>& out_downscaleFrame_dmp,
-                                           cudaTextureObject_t originalFrame_tex, 
+extern void cuda_downscaleWithGaussianBlur(CudaDeviceMemoryPitched<CudaRGBA, 2>& out_downscaledImg_dmp,
+                                           cudaTextureObject_t in_img_tex,
                                            int downscale,
-                                           int downscaleFrameWidth, 
-                                           int downscaleFrameHeight, 
                                            int gaussRadius,
                                            cudaStream_t stream);
 

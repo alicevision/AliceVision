@@ -22,39 +22,42 @@ namespace depthMap {
 /**
  * @return (smoothStep, energy)
  */
-__device__ float2 getCellSmoothStepEnergy(int rcDeviceCamId, cudaTextureObject_t depthTex, const int2& cell0, const int2& textureOffset)
+__device__ float2 getCellSmoothStepEnergy(const int rcDeviceCameraParamsId,
+                                          const cudaTextureObject_t in_depth_tex,
+                                          const float2& cell0,
+                                          const float2& offsetRoi)
 {
     float2 out = make_float2(0.0f, 180.0f);
 
-    // Get pixel depth from the depth texture
-    // Note: we do not use 0.5f offset because depthTex use nearest neighbor interpolation
-    const float d0 = tex2D<float>(depthTex, float(cell0.x), float(cell0.y));
+    // get pixel depth from the depth texture
+    // note: we do not use 0.5f offset because in_depth_tex use nearest neighbor interpolation
+    const float d0 = tex2D<float>(in_depth_tex, cell0.x, cell0.y);
 
-    // Early exit: depth is <= 0
+    // early exit: depth is <= 0
     if(d0 <= 0.0f)
         return out;
 
-    // Consider the neighbor pixels
-    const int2 cellL = cell0 + make_int2( 0, -1); // Left
-    const int2 cellR = cell0 + make_int2( 0,  1);	// Right
-    const int2 cellU = cell0 + make_int2(-1,  0); // Up
-    const int2 cellB = cell0 + make_int2( 1,  0);	// Bottom
+    // consider the neighbor pixels
+    const float2 cellL = cell0 + make_float2( 0.f, -1.f); // Left
+    const float2 cellR = cell0 + make_float2( 0.f,  1.f); // Right
+    const float2 cellU = cell0 + make_float2(-1.f,  0.f); // Up
+    const float2 cellB = cell0 + make_float2( 1.f,  0.f); // Bottom
 
-    // Get associated depths from depth texture
-    // Note: we do not use 0.5f offset because depthTex use nearest neighbor interpolation
-    const float dL = tex2D<float>(depthTex, float(cellL.x), float(cellL.y));
-    const float dR = tex2D<float>(depthTex, float(cellR.x), float(cellR.y));
-    const float dU = tex2D<float>(depthTex, float(cellU.x), float(cellU.y));
-    const float dB = tex2D<float>(depthTex, float(cellB.x), float(cellB.y));
+    // get associated depths from depth texture
+    // note: we do not use 0.5f offset because in_depth_tex use nearest neighbor interpolation
+    const float dL = tex2D<float>(in_depth_tex, cellL.x, cellL.y);
+    const float dR = tex2D<float>(in_depth_tex, cellR.x, cellR.y);
+    const float dU = tex2D<float>(in_depth_tex, cellU.x, cellU.y);
+    const float dB = tex2D<float>(in_depth_tex, cellB.x, cellB.y);
 
-    // Get associated 3D points
-    const float3 p0 = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, cell0 + textureOffset, d0);
-    const float3 pL = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, cellL + textureOffset, dL);
-    const float3 pR = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, cellR + textureOffset, dR);
-    const float3 pU = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, cellU + textureOffset, dU);
-    const float3 pB = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, cellB + textureOffset, dB);
+    // get associated 3D points
+    const float3 p0 = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cell0 + offsetRoi, d0);
+    const float3 pL = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cellL + offsetRoi, dL);
+    const float3 pR = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cellR + offsetRoi, dR);
+    const float3 pU = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cellU + offsetRoi, dU);
+    const float3 pB = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cellB + offsetRoi, dB);
 
-    // Compute the average point based on neighbors (cg)
+    // compute the average point based on neighbors (cg)
     float3 cg = make_float3(0.0f, 0.0f, 0.0f);
     float n = 0.0f;
 
@@ -63,16 +66,16 @@ __device__ float2 getCellSmoothStepEnergy(int rcDeviceCamId, cudaTextureObject_t
     if(dU > 0.0f) { cg = cg + pU; n++; }
     if(dB > 0.0f) { cg = cg + pB; n++; }
 
-    // If we have at least one valid depth
+    // if we have at least one valid depth
     if(n > 1.0f)
     {
         cg = cg / n; // average of x, y, depth
-        float3 vcn = constantCameraParametersArray_d[rcDeviceCamId].C - p0;
+        float3 vcn = constantCameraParametersArray_d[rcDeviceCameraParamsId].C - p0;
         normalize(vcn);
         // pS: projection of cg on the line from p0 to camera
         const float3 pS = closestPointToLine3D(cg, p0, vcn);
         // keep the depth difference between pS and p0 as the smoothing step
-        out.x = size(constantCameraParametersArray_d[rcDeviceCamId].C - pS) - d0;
+        out.x = size(constantCameraParametersArray_d[rcDeviceCameraParamsId].C - pS) - d0;
     }
 
     float e = 0.0f;
@@ -80,8 +83,8 @@ __device__ float2 getCellSmoothStepEnergy(int rcDeviceCamId, cudaTextureObject_t
 
     if(dL > 0.0f && dR > 0.0f)
     {
-        // Large angle between neighbors == flat area => low energy
-        // Small angle between neighbors == non-flat area => high energy
+        // large angle between neighbors == flat area => low energy
+        // small angle between neighbors == non-flat area => high energy
         e = fmaxf(e, (180.0f - angleBetwABandAC(p0, pL, pR)));
         n++;
     }
@@ -90,7 +93,7 @@ __device__ float2 getCellSmoothStepEnergy(int rcDeviceCamId, cudaTextureObject_t
         e = fmaxf(e, (180.0f - angleBetwABandAC(p0, pU, pB)));
         n++;
     }
-    // The higher the energy, the less flat the area
+    // the higher the energy, the less flat the area
     if(n > 0.0f)
         out.y = e;
 
@@ -105,12 +108,13 @@ __device__ static inline float orientedPointPlaneDistanceNormalizedNormal(const 
 }
 
 __global__ void depthSimMapCopyDepthOnly_kernel(float2* out_deptSimMap_d, int out_deptSimMap_p,
-                                                const float2* in_depthSimMap_d, int in_depthSimMap_p,
-                                                int width, int height, 
-                                                float defaultSim)
+                                                const float2* in_depthSimMap_d, const int in_depthSimMap_p,
+                                                const unsigned int width,
+                                                const unsigned int height,
+                                                const float defaultSim)
 {
-    const int x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(x >= width || y >= height)
         return;
@@ -127,8 +131,8 @@ __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
                                   const float ratio,
                                   const ROI roi)
 {
-    const int x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(x >= roi.width() || y >= roi.height())
         return;
@@ -149,8 +153,8 @@ __global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknes
                                                       const float maxThiknessInflate,
                                                       const ROI roi)
 {
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
@@ -175,8 +179,8 @@ __global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknes
         for(int xp = -1; xp <= 1; ++xp)
         {
             // compute patch coordinates
-            const int roiXp = roiX + xp;
-            const int roiYp = roiY + yp;
+            const int roiXp = int(roiX) + xp;
+            const int roiYp = int(roiY) + yp;
 
             if((xp == 0 && yp == 0) ||                // avoid pixel center
                roiXp < 0 || roiXp >= roi.width() ||   // avoid pixel outside the ROI
@@ -205,29 +209,33 @@ __global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknes
     // write output smooth thikness
     inout_depthThikness->y = sumCenterDepthDist / nbValidPatchPixels;
 }
-__global__ void computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel(cudaTextureObject_t rcTex,
-                                                                         float2* out_upscaledDepthPixSizeMap_d, int out_upscaledDepthPixSizeMap_p,
-                                                                         const float2* in_sgmDepthThiknessMap_d, int in_sgmDepthThiknessMap_p,
+__global__ void computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel(float2* out_upscaledDepthPixSizeMap_d, int out_upscaledDepthPixSizeMap_p,
+                                                                         const float2* in_sgmDepthThiknessMap_d, const int in_sgmDepthThiknessMap_p,
+                                                                         const int rcDeviceCameraParamsId, // useful for direct pixSize computation
+                                                                         const cudaTextureObject_t rcMipmapImage_tex,
+                                                                         const unsigned int rcLevelWidth,
+                                                                         const unsigned int rcLevelHeight,
+                                                                         const float rcMipmapLevel,
                                                                          const int stepXY,
                                                                          const int halfNbDepths,
                                                                          const float ratio,
                                                                          const ROI roi)
 {
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    // corresponding device image coordinates
-    const int x = (roi.x.begin + roiX) * stepXY;
-    const int y = (roi.y.begin + roiY) * stepXY;
+    // corresponding image coordinates
+    const unsigned int x = (roi.x.begin + roiX) * (unsigned int)(stepXY);
+    const unsigned int y = (roi.y.begin + roiY) * (unsigned int)(stepXY);
 
     // corresponding output upscaled depth/pixSize map
     float2* out_depthPixSize = get2DBufferAt(out_upscaledDepthPixSizeMap_d, out_upscaledDepthPixSizeMap_p, roiX, roiY);
 
     // filter masked pixels (alpha < 0.9f)
-    if(tex2D_float4(rcTex, x + 0.5f, y + 0.5f).w < 0.9f)
+    if(tex2DLod<float4>(rcMipmapImage_tex, (float(x) + 0.5f) / float(rcLevelWidth), (float(y) + 0.5f) / float(rcLevelHeight), rcMipmapLevel).w < 0.9f)
     {
         *out_depthPixSize = make_float2(-2.f, 0.f);
         return;
@@ -248,10 +256,10 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel(cudaTex
 
 #ifdef ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
     // get rc 3d point
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), out_depthThikness.x);
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(float(x), float(y)), out_depthThikness.x);
 
     // compute and write rc 3d point pixSize
-    const float out_pixSize = computePixSize(rcDeviceCamId, p);
+    const float out_pixSize = computePixSize(rcDeviceCameraParamsId, p);
 #else
     // compute pixSize from depth thikness
     const float out_pixSize = out_depthThikness.y / halfNbDepths;
@@ -262,29 +270,33 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel(cudaTex
     out_depthPixSize->y = out_pixSize;
 }
 
-__global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(cudaTextureObject_t rcTex,
-                                                                 float2* out_upscaledDepthPixSizeMap_d, int out_upscaledDepthPixSizeMap_p,
-                                                                 const float2* in_sgmDepthThiknessMap_d, int in_sgmDepthThiknessMap_p,
-                                                                 const int stepXY,
-                                                                 const int halfNbDepths,
-                                                                 const float ratio,
-                                                                 const ROI roi)
+__global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(float2* out_upscaledDepthPixSizeMap_d, int out_upscaledDepthPixSizeMap_p,
+                                                                  const float2* in_sgmDepthThiknessMap_d, const int in_sgmDepthThiknessMap_p,
+                                                                  const int rcDeviceCameraParamsId, // useful for direct pixSize computation
+                                                                  const cudaTextureObject_t rcMipmapImage_tex,
+                                                                  const unsigned int rcLevelWidth,
+                                                                  const unsigned int rcLevelHeight,
+                                                                  const float rcMipmapLevel,
+                                                                  const int stepXY,
+                                                                  const int halfNbDepths,
+                                                                  const float ratio,
+                                                                  const ROI roi)
 {
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    // corresponding device image coordinates
-    const int x = (roi.x.begin + roiX) * stepXY;
-    const int y = (roi.y.begin + roiY) * stepXY;
+    // corresponding image coordinates
+    const unsigned int x = (roi.x.begin + roiX) * (unsigned int)(stepXY);
+    const unsigned int y = (roi.y.begin + roiY) * (unsigned int)(stepXY);
 
     // corresponding output upscaled depth/pixSize map
     float2* out_depthPixSize = get2DBufferAt(out_upscaledDepthPixSizeMap_d, out_upscaledDepthPixSizeMap_p, roiX, roiY);
 
     // filter masked pixels (alpha < 0.9f)
-    if(tex2D_float4(rcTex, x + 0.5f, y + 0.5f).w < 0.9f)
+    if(tex2DLod<float4>(rcMipmapImage_tex, (float(x) + 0.5f) / float(rcLevelWidth), (float(y) + 0.5f) / float(rcLevelHeight), rcMipmapLevel).w < 0.9f)
     {
         *out_depthPixSize = make_float2(-2.f, 0.f);
         return;
@@ -358,10 +370,10 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(cudaTextureObj
 
 #ifdef ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
     // get rc 3d point
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), out_depthThikness.x);
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(float(x), float(y)), out_depthThikness.x);
 
     // compute and write rc 3d point pixSize
-    const float out_pixSize = computePixSize(rcDeviceCamId, p);
+    const float out_pixSize = computePixSize(rcDeviceCameraParamsId, p);
 #else
     // compute pixSize from depth thikness
     const float out_pixSize = out_depthThikness.y / halfNbDepths;
@@ -372,22 +384,22 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(cudaTextureObj
     out_depthPixSize->y = out_pixSize;
 }
 
-__global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
-                                                float3* out_normalMap_d, int out_normalMap_p,
+__global__ void depthSimMapComputeNormal_kernel(float3* out_normalMap_d, int out_normalMap_p,
                                                 const float2* in_depthSimMap_d, int in_depthSimMap_p,
-                                                int wsh,
-                                                int stepXY,
+                                                const int rcDeviceCameraParamsId,
+                                                const int stepXY,
+                                                const int wsh,
                                                 const ROI roi)
 {
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
     // corresponding image coordinates
-    const int x = (roi.x.begin + roiX) * stepXY;
-    const int y = (roi.y.begin + roiY) * stepXY;
+    const unsigned int x = (roi.x.begin + roiX) * (unsigned int)(stepXY);
+    const unsigned int y = (roi.y.begin + roiY) * (unsigned int)(stepXY);
 
     // corresponding input depth
     const float in_depth = get2DBufferAt(in_depthSimMap_d, in_depthSimMap_p, roiX, roiY)->x; // use only depth
@@ -402,21 +414,20 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
         return;
     }
 
-    const int2 pix = make_int2(x, y);
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, in_depth);
-    const float pixSize = size(p - get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x + 1, y), in_depth));
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(float(x), float(y)), in_depth);
+    const float pixSize = size(p - get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(float(x + 1), float(y)), in_depth));
 
     cuda_stat3d s3d = cuda_stat3d();
 
     for(int yp = -wsh; yp <= wsh; ++yp)
     {
-        const int roiYp = roiY + yp;
+        const int roiYp = int(roiY) + yp;
         if(roiYp < 0)
             continue;
 
         for(int xp = -wsh; xp <= wsh; ++xp)
         {
-            const int roiXp = roiX + xp;
+            const int roiXp = int(roiX) + xp;
             if(roiXp < 0)
                 continue;
 
@@ -425,8 +436,8 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
             if((depthP > 0.0f) && (fabs(depthP - in_depth) < 30.0f * pixSize))
             {
                 const float w = 1.0f;
-                const float2 pixP = make_float2(x + xp, y + yp);
-                const float3 pP = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pixP, depthP);
+                const float2 pixP = make_float2(float(int(x) + xp), float(int(y) + yp));
+                const float3 pP = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, pixP, depthP);
                 s3d.update(pP, w);
             }
         }
@@ -441,7 +452,7 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
         return;
     }
 
-    float3 nc = constantCameraParametersArray_d[rcDeviceCamId].C - p;
+    float3 nc = constantCameraParametersArray_d[rcDeviceCameraParamsId].C - p;
     normalize(nc);
 
     if(orientedPointPlaneDistanceNormalizedNormal(pp + nn, pp, nc) < 0.0f)
@@ -454,25 +465,37 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
     *out_normal = nn;
 }
 
-__global__ void optimize_varLofLABtoW_kernel(cudaTextureObject_t rcTex, float* out_varianceMap_d, int out_varianceMap_p, int stepXY, const ROI roi)
+__global__ void optimize_varLofLABtoW_kernel(float* out_varianceMap_d, int out_varianceMap_p,
+                                             const cudaTextureObject_t rcMipmapImage_tex,
+                                             const unsigned int rcLevelWidth,
+                                             const unsigned int rcLevelHeight,
+                                             const float rcMipmapLevel,
+                                             const int stepXY,
+                                             const ROI roi)
 {
     // roi and varianceMap coordinates 
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    // corresponding device image coordinates
-    const int x = (roi.x.begin + roiX) * stepXY;
-    const int y = (roi.y.begin + roiY) * stepXY;
+    // corresponding image coordinates
+    const float x = float(roi.x.begin + roiX) * float(stepXY);
+    const float y = float(roi.y.begin + roiY) * float(stepXY);
+
+    // compute inverse width / height
+    // note: useful to compute p1 / m1 normalized coordinates
+    const float invLevelWidth  = 1.f / float(rcLevelWidth);
+    const float invLevelHeight = 1.f / float(rcLevelHeight);
 
     // compute gradient size of L
     // note: we use 0.5f offset because rcTex texture use interpolation
-    const float xM1 = tex2D_float4(rcTex, float(x - 1) + 0.5f, float(y + 0) + 0.5f).x;
-    const float xP1 = tex2D_float4(rcTex, float(x + 1) + 0.5f, float(y + 0) + 0.5f).x;
-    const float yM1 = tex2D_float4(rcTex, float(x + 0) + 0.5f, float(y - 1) + 0.5f).x;
-    const float yP1 = tex2D_float4(rcTex, float(x + 0) + 0.5f, float(y + 1) + 0.5f).x;
+    const float xM1 = tex2DLod<float4>(rcMipmapImage_tex, ((x - 1.f) + 0.5f) * invLevelWidth, ((y + 0.f) + 0.5f) * invLevelHeight, rcMipmapLevel).x;
+    const float xP1 = tex2DLod<float4>(rcMipmapImage_tex, ((x + 1.f) + 0.5f) * invLevelWidth, ((y + 0.f) + 0.5f) * invLevelHeight, rcMipmapLevel).x;
+    const float yM1 = tex2DLod<float4>(rcMipmapImage_tex, ((x + 0.f) + 0.5f) * invLevelWidth, ((y - 1.f) + 0.5f) * invLevelHeight, rcMipmapLevel).x;
+    const float yP1 = tex2DLod<float4>(rcMipmapImage_tex, ((x + 0.f) + 0.5f) * invLevelWidth, ((y + 1.f) + 0.5f) * invLevelHeight, rcMipmapLevel).x;
+
     const float2 g = make_float2(xM1 - xP1, yM1 - yP1); // TODO: not divided by 2?
     const float grad = size(g);
 
@@ -481,12 +504,12 @@ __global__ void optimize_varLofLABtoW_kernel(cudaTextureObject_t rcTex, float* o
 }
 
 __global__ void optimize_getOptDeptMapFromOptDepthSimMap_kernel(float* out_tmpOptDepthMap_d, int out_tmpOptDepthMap_p,
-                                                                const float2* in_optDepthSimMap_d, int in_optDepthSimMap_p,
+                                                                const float2* in_optDepthSimMap_d, const int in_optDepthSimMap_p,
                                                                 const ROI roi)
 {
     // roi and depth/sim map part coordinates 
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
@@ -494,18 +517,18 @@ __global__ void optimize_getOptDeptMapFromOptDepthSimMap_kernel(float* out_tmpOp
     *get2DBufferAt(out_tmpOptDepthMap_d, out_tmpOptDepthMap_p, roiX, roiY) = get2DBufferAt(in_optDepthSimMap_d, in_optDepthSimMap_p, roiX, roiY)->x; // depth
 }
 
-__global__ void optimize_depthSimMap_kernel(int rcDeviceCamId,
-                                            cudaTextureObject_t imgVarianceTex,
-                                            cudaTextureObject_t depthTex,
-                                            float2* out_optimizeDepthSimMap_d, int out_optimizeDepthSimMap_p,    // output optimized depth/sim map
-                                            const float2* in_sgmDepthPixSizeMap_d, int in_sgmDepthPixSizeMap_p,  // input upscaled rough depth/pixSize map
-                                            const float2* in_refineDepthSimMap_d, int in_refineDepthSimMap_p,    // input fine depth/sim map
-                                            int iter,
+__global__ void optimize_depthSimMap_kernel(float2* out_optimizeDepthSimMap_d, int out_optimizeDepthSimMap_p,         // output optimized depth/sim map
+                                            const float2* in_sgmDepthPixSizeMap_d, const int in_sgmDepthPixSizeMap_p, // input upscaled rough depth/pixSize map
+                                            const float2* in_refineDepthSimMap_d, const int in_refineDepthSimMap_p,   // input fine depth/sim map
+                                            const int rcDeviceCameraParamsId,
+                                            const cudaTextureObject_t imgVariance_tex,
+                                            const cudaTextureObject_t depth_tex,
+                                            const int iter,
                                             const ROI roi)
 {
-    // roi and imgVarianceTex, depthTex coordinates 
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    // roi and imgVariance_tex, depth_tex coordinates
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
@@ -527,7 +550,7 @@ __global__ void optimize_depthSimMap_kernel(int rcDeviceCamId,
 
     if (depthOpt > 0.0f)
     {
-        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rcDeviceCamId, depthTex, {roiX, roiY}, {int(roi.x.begin), int(roi.y.begin)}); // (smoothStep, energy)
+        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rcDeviceCameraParamsId, depth_tex, {float(roiX), float(roiY)}, {float(roi.x.begin), float(roi.y.begin)}); // (smoothStep, energy)
         float stepToSmoothDepth = depthSmoothStepEnergy.x;
         stepToSmoothDepth = copysignf(fminf(fabsf(stepToSmoothDepth), sgmPixSize / 10.0f), stepToSmoothDepth);
         const float depthEnergy = depthSmoothStepEnergy.y; // max angle with neighbors
@@ -535,7 +558,7 @@ __global__ void optimize_depthSimMap_kernel(int rcDeviceCamId,
         stepToFineDM = copysignf(fminf(fabsf(stepToFineDM), sgmPixSize / 10.0f), stepToFineDM);
 
         const float stepToRoughDM = sgmDepth - depthOpt; // distance to smooth/robust input depth map
-        const float imgColorVariance = tex2D<float>(imgVarianceTex, float(roiX), float(roiY)); // do not use 0.5f offset because imgVarianceTex use nearest neighbor interpolation
+        const float imgColorVariance = tex2D<float>(imgVariance_tex, float(roiX), float(roiY)); // do not use 0.5f offset because imgVariance_tex use nearest neighbor interpolation
         const float colorVarianceThresholdForSmoothing = 20.0f;
         const float angleThresholdForSmoothing = 30.0f; // 30
 

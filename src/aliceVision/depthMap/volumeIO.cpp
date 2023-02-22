@@ -27,104 +27,56 @@ namespace depthMap {
 
 void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh, 
                                 const std::vector<float>& in_depths,
-                                int camIndex, 
                                 const std::string& name, 
-                                const std::string& filepath)
+                                const SgmParams& sgmParams,
+                                const std::string& filepath,
+                                const ROI& roi)
 {
-    const auto volDim = in_volumeSim_hmh.getSize();
+    const ROI downscaledRoi = downscaleROI(roi, sgmParams.scale * sgmParams.stepXY);
+
     const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
     const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     const int sampleSize = 3;
 
-    const int xOffset = std::floor(volDim[0] / (sampleSize + 1.0f));
-    const int yOffset = std::floor(volDim[1] / (sampleSize + 1.0f));
+    const int xOffset = std::floor(downscaledRoi.width()  / (sampleSize + 1.0f));
+    const int yOffset = std::floor(downscaledRoi.height() / (sampleSize + 1.0f));
 
+    std::vector<Point2d> ptsCoords(sampleSize*sampleSize);
     std::vector<std::vector<float>> ptsDepths(sampleSize*sampleSize);
 
     for (int iy = 0; iy < sampleSize; ++iy)
     {
         for (int ix = 0; ix < sampleSize; ++ix)
         {
+            const int ptIdx = iy * sampleSize + ix;
             const int x = (ix + 1) * xOffset;
             const int y = (iy + 1) * yOffset;
 
-            std::vector<float>& pDepths = ptsDepths.at(iy * sampleSize + ix);
+            ptsCoords.at(ptIdx) = {x, y};
+            std::vector<float>& pDepths = ptsDepths.at(ptIdx);
+
+            pDepths.reserve(in_depths.size());
 
             for(int iz = 0; iz < in_depths.size(); ++iz)
             {
-                float simValue = *get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, x, y, iz);
+                const float simValue = float(*get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, x, y, iz));
                 pDepths.push_back(simValue);
             }
         }
     }
 
     std::stringstream ss;
+
+    ss << name << "\n";
+
+    for(int i = 0; i < ptsCoords.size(); ++i)
     {
-        ss << name << "\n";
-        int ptId = 1;
-        for (const std::vector<float>& pDepths : ptsDepths)
-        {
-            ss << "p" << ptId << ";";
-            for (const float depth : pDepths)
-                ss << depth << ";";
-            ss << "\n";
-            ++ptId;
-        }
-    }
-
-    std::ofstream file;
-    file.open(filepath, std::ios_base::app);
-    if (file.is_open())
-        file << ss.str();
-}
-
-void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
-                                int camIndex,  
-                                const std::string& name, 
-                                const std::string& filepath)
-{
-    const auto volDim = in_volumeSim_hmh.getSize();
-    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
-
-    const int sampleSize = 3;
-
-    const int xOffset = std::floor(volDim.x() / (sampleSize + 1.0f));
-    const int yOffset = std::floor(volDim.y() / (sampleSize + 1.0f));
-
-    std::vector<std::vector<float>> simPerDepthsPerPts(sampleSize * sampleSize);
-
-    for(int iy = 0; iy < sampleSize; ++iy)
-    {
-        for(int ix = 0; ix < sampleSize; ++ix)
-        {
-            const int x = (ix + 1) * xOffset;
-            const int y = (iy + 1) * yOffset;
-
-            std::vector<float>& simPerDepths = simPerDepthsPerPts.at(iy * sampleSize + ix);
-            simPerDepths.reserve(volDim.z());
-
-            for(int iz = 0; iz < volDim.z(); ++iz)
-            {
-                float sim = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, x, y, iz));
-                simPerDepths.push_back(sim);
-            }
-        }
-    }
-
-    std::stringstream ss;
-    {
-        ss << name << "\n";
-        int ptId = 1;
-        for(const std::vector<float>& simPerDepths : simPerDepthsPerPts)
-        {
-            ss << "p" << ptId << ";";
-            for(const float sim : simPerDepths)
-                ss << sim << ";";
-            ss << "\n";
-            ++ptId;
-        }
+        const Point2d& coord = ptsCoords.at(i);
+        ss << "p" << (i + 1) << " (x: " << coord.x << ", y: " << coord.y <<  ");";
+        for(const float depth : ptsDepths.at(i))
+            ss << depth << ";";
+        ss << "\n";
     }
 
     std::ofstream file;
@@ -132,6 +84,67 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& in_volu
     if(file.is_open())
         file << ss.str();
 }
+
+void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
+                                const std::string& name, 
+                                const RefineParams& refineParams,
+                                const std::string& filepath,
+                                const ROI& roi)
+{
+    const ROI downscaledRoi = downscaleROI(roi, refineParams.scale * refineParams.stepXY);
+
+    const size_t volDimZ = in_volumeSim_hmh.getSize().z();
+    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
+
+    const int sampleSize = 3;
+
+    const int xOffset = std::floor(downscaledRoi.width()  / (sampleSize + 1.0f));
+    const int yOffset = std::floor(downscaledRoi.height() / (sampleSize + 1.0f));
+
+    std::vector<Point2d> ptsCoords(sampleSize*sampleSize);
+    std::vector<std::vector<float>> ptsDepths(sampleSize * sampleSize);
+
+    for(int iy = 0; iy < sampleSize; ++iy)
+    {
+        for(int ix = 0; ix < sampleSize; ++ix)
+        {
+            const int ptIdx = iy * sampleSize + ix;
+            const int x = (ix + 1) * xOffset;
+            const int y = (iy + 1) * yOffset;
+
+            ptsCoords.at(ptIdx) = {x, y};
+            std::vector<float>& pDepths = ptsDepths.at(ptIdx);
+
+            pDepths.reserve(volDimZ);
+
+            for(int iz = 0; iz < volDimZ; ++iz)
+            {
+                const float simValue = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, x, y, iz));
+                pDepths.push_back(simValue);
+            }
+        }
+    }
+
+    std::stringstream ss;
+
+    ss << name << "\n";
+
+    for(int i = 0; i < ptsCoords.size(); ++i)
+    {
+        const Point2d& coord = ptsCoords.at(i);
+        ss << "p" << (i + 1) << " (x: " << coord.x << ", y: " << coord.y <<  ");";
+        for(const float depth : ptsDepths.at(i))
+            ss << depth << ";";
+        ss << "\n";
+    }
+
+    std::ofstream file;
+    file.open(filepath, std::ios_base::app);
+    if(file.is_open())
+        file << ss.str();
+}
+
 void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh, 
                             const std::vector<float>& in_depths,
                             const mvsUtils::MultiViewParams& mp, 

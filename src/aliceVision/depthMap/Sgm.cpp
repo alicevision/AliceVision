@@ -168,12 +168,12 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
         // downscale the region of interest
         const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
 
-        // get R device camera from cache
+        // get R device camera parameters id from cache
         DeviceCache& deviceCache = DeviceCache::getInstance();
-        const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _sgmParams.scale, _mp);
+        const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(tile.rc, _sgmParams.scale, _mp);
 
         ALICEVISION_LOG_INFO(tile << "SGM compute normal map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
-        cuda_depthSimMapComputeNormal(_normalMap_dmp, _depthSimMap_dmp, rcDeviceCamera, _sgmParams.stepXY, downscaledRoi, _stream);
+        cuda_depthSimMapComputeNormal(_normalMap_dmp, _depthSimMap_dmp, rcDeviceCameraParamsId, _sgmParams.stepXY, downscaledRoi, _stream);
 
         // export intermediate normal map (if requested by user)
         if(_sgmParams.exportIntermediateNormalMaps)
@@ -212,8 +212,11 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
     // get device cache instance
     DeviceCache& deviceCache = DeviceCache::getInstance();
 
-    // get R device camera from cache
-    const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _sgmParams.scale, _mp);
+    // get R device camera parameters id from cache
+    const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(tile.rc, _sgmParams.scale, _mp);
+
+    // get R device mipmap image from cache
+    const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp);
 
     // compute similarity volume per Rc Tc
     for(std::size_t tci = 0; tci < tile.sgmTCams.size(); ++tci)
@@ -225,14 +228,17 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
 
         const Range tcDepthRange(firstDepth, lastDepth);
 
-        // get T device camera from cache
-        const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera(tc, _sgmParams.scale, _mp);
+        // get T device camera parameters id from cache
+        const int tcDeviceCameraParamsId = deviceCache.requestCameraParamsId(tc, _sgmParams.scale, _mp);
+
+        // get T device mipmap image from cache
+        const DeviceMipmapImage& tcDeviceMipmapImage = deviceCache.requestMipmapImage(tc, _mp);
 
         ALICEVISION_LOG_DEBUG(tile << "Compute similarity volume:" << std::endl
                                    << "\t- rc: " << tile.rc << std::endl
                                    << "\t- tc: " << tc << " (" << (tci + 1) << "/" << tile.sgmTCams.size() << ")" << std::endl
-                                   << "\t- rc camera device id: " << rcDeviceCamera.getDeviceCamId() << std::endl
-                                   << "\t- tc camera device id: " << tcDeviceCamera.getDeviceCamId() << std::endl
+                                   << "\t- rc camera parameters id: " << rcDeviceCameraParamsId << std::endl
+                                   << "\t- tc camera parameters id: " << tcDeviceCameraParamsId << std::endl
                                    << "\t- tc first depth: " << firstDepth << std::endl
                                    << "\t- tc last depth: " << lastDepth << std::endl
                                    << "\t- tile range x: [" << downscaledRoi.x.begin << " - " << downscaledRoi.x.end << "]" << std::endl
@@ -241,8 +247,10 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
         cuda_volumeComputeSimilarity(_volumeBestSim_dmp, 
                                      _volumeSecBestSim_dmp, 
                                      _depths_dmp, 
-                                     rcDeviceCamera, 
-                                     tcDeviceCamera,
+                                     rcDeviceCameraParamsId,
+                                     tcDeviceCameraParamsId,
+                                     rcDeviceMipmapImage,
+                                     tcDeviceMipmapImage,
                                      _sgmParams, 
                                      tcDepthRange,
                                      downscaledRoi, 
@@ -251,7 +259,7 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
 
     // update second best uninitialized similarity volume values with first best similarity volume values
     // - allows to avoid the particular case with a single tc (second best volume has no valid similarity values)
-    // - usefull if a tc alone contributes to the calculation of a subpart of the similarity volume
+    // - useful if a tc alone contributes to the calculation of a subpart of the similarity volume
     if(_sgmParams.updateUninitializedSim) // should always be true, false for debug purposes
     {
         ALICEVISION_LOG_DEBUG(tile << "SGM Update uninitialized similarity volume values from best similarity volume.");
@@ -269,16 +277,16 @@ void Sgm::optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDep
     // downscale the region of interest
     const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
 
-    // get R device camera from cache
+    // get R device mipmap image from cache
     DeviceCache& deviceCache = DeviceCache::getInstance();
-    const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _sgmParams.scale, _mp);
+    const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp);
     
     cuda_volumeOptimize(_volumeBestSim_dmp,    // output volume (reuse best sim to put optimized similarity)
                         _volumeSliceAccA_dmp,  // slice A accumulation buffer pre-allocate
                         _volumeSliceAccB_dmp,  // slice B accumulation buffer pre-allocate
                         _volumeAxisAcc_dmp,    // axis accumulation buffer pre-allocate
                         _volumeSecBestSim_dmp, // input volume
-                        rcDeviceCamera, 
+                        rcDeviceMipmapImage,
                         _sgmParams, 
                         tileDepthList.getDepths().size(),
                         downscaledRoi,
@@ -297,15 +305,15 @@ void Sgm::retrieveBestDepth(const Tile& tile, const SgmDepthList& tileDepthList)
     // get depth range
     const Range depthRange(0, tileDepthList.getDepths().size());
 
-    // get R device camera from cache
+    // get R device camera parameters id from cache
     DeviceCache& deviceCache = DeviceCache::getInstance();
-    const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, 1, _mp);
+    const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(tile.rc, 1, _mp);
 
     cuda_volumeRetrieveBestDepth(_depthThiknessMap_dmp, // output depth thikness map
                                  _depthSimMap_dmp,      // output depth/sim map (or empty)
                                  _depths_dmp,           // rc depth
                                  _volumeBestSim_dmp,    // second best sim volume optimized in best sim volume
-                                 rcDeviceCamera,
+                                 rcDeviceCameraParamsId,
                                  _sgmParams,
                                  depthRange,
                                  downscaledRoi, 
@@ -380,7 +388,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
 
         const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", tileBeginX, tileBeginY);
 
-        exportSimilaritySamplesCSV(volumeSim_hmh, tileDepthList.getDepths(), tile.rc, name, stats9Path);
+        exportSimilaritySamplesCSV(volumeSim_hmh, tileDepthList.getDepths(), name, _sgmParams, stats9Path, tile.roi);
 
         ALICEVISION_LOG_INFO(tile << "Export similarity volume 9 points CSV (" << name << ") done.");
     }

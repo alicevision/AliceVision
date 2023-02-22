@@ -682,15 +682,10 @@ public:
 
     void deallocate()
     {
-        if( buffer == nullptr ) return;
+        if(buffer == nullptr)
+          return;
 
-        cudaError_t err = cudaFree(buffer);
-        if( err != cudaSuccess )
-        {
-            std::stringstream ss;
-            ss << "CudaDeviceMemory: Device free failed, " << cudaGetErrorString(err);
-            throw std::runtime_error(ss.str());
-        }
+        CHECK_CUDA_RETURN_ERROR(cudaFree(buffer));
 
         buffer = nullptr;
     }
@@ -1298,37 +1293,102 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
 }
 
 /*
- * @notes: use normalized coordinates
+ * @struct CudaTexture
+ * @brief Support class to maintain a buffer texture in gpu memory.
+ *
+ * @tparam Type the buffer type
+ *
+ * @tparam subpixelInterpolation enable subpixel interpolation
+ *   - can have a large performance impact on some graphic cards
+ *   - could be critical for quality during SGM in small resolution
+ *
+ * @tparam normalizedCoords enable normalized coordinates
+ *   - if true  addressed (x,y) in [0, 1]
+ *   - if false addressed (x,y) in [width, height]
  */
-template <class Type>
+template <class Type, bool subpixelInterpolation, bool normalizedCoords>
 struct CudaTexture
 {
     cudaTextureObject_t textureObj = 0;
+
     CudaTexture(CudaDeviceMemoryPitched<Type, 2>& buffer_dmp)
     {
-        cudaTextureDesc  tex_desc;
-        memset(&tex_desc, 0, sizeof(cudaTextureDesc));
-        tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
-        tex_desc.addressMode[0] = cudaAddressModeClamp;
-        tex_desc.addressMode[1] = cudaAddressModeClamp;
-        tex_desc.addressMode[2] = cudaAddressModeClamp;
-        tex_desc.readMode = cudaReadModeElementType;
-        tex_desc.filterMode = cudaFilterModePoint;
+        cudaTextureDesc  texDesc;
+        memset(&texDesc, 0, sizeof(cudaTextureDesc));
+        texDesc.normalizedCoords = normalizedCoords;
+        texDesc.addressMode[0] = cudaAddressModeClamp;
+        texDesc.addressMode[1] = cudaAddressModeClamp;
+        texDesc.addressMode[2] = cudaAddressModeClamp;
+        texDesc.readMode = cudaReadModeElementType;
+        texDesc.filterMode = (subpixelInterpolation) ? cudaFilterModeLinear : cudaFilterModePoint;
 
-        cudaResourceDesc res_desc;
-        res_desc.resType = cudaResourceTypePitch2D;
-        res_desc.res.pitch2D.desc = cudaCreateChannelDesc<Type>();
-        res_desc.res.pitch2D.devPtr = buffer_dmp.getBuffer();
-        res_desc.res.pitch2D.width = buffer_dmp.getSize()[0];
-        res_desc.res.pitch2D.height = buffer_dmp.getSize()[1];
-        res_desc.res.pitch2D.pitchInBytes = buffer_dmp.getPitch();
+        cudaResourceDesc resDesc;
+        resDesc.resType = cudaResourceTypePitch2D;
+        resDesc.res.pitch2D.desc = cudaCreateChannelDesc<Type>();
+        resDesc.res.pitch2D.devPtr = buffer_dmp.getBuffer();
+        resDesc.res.pitch2D.width = buffer_dmp.getSize()[0];
+        resDesc.res.pitch2D.height = buffer_dmp.getSize()[1];
+        resDesc.res.pitch2D.pitchInBytes = buffer_dmp.getPitch();
 
-        // create texture object: we only have to do this once!
-        cudaCreateTextureObject(&textureObj, &res_desc, &tex_desc, NULL);
+        // create texture object
+        // note: we only have to do this once
+        CHECK_CUDA_RETURN_ERROR(cudaCreateTextureObject(&textureObj, &resDesc, &texDesc, nullptr));
     }
+
     ~CudaTexture()
     {
-        cudaDestroyTextureObject(textureObj);
+        CHECK_CUDA_RETURN_ERROR_NOEXCEPT(cudaDestroyTextureObject(textureObj));
+    }
+};
+
+struct CudaRGBATexture
+{
+    cudaTextureObject_t textureObj = 0;
+
+    CudaRGBATexture(CudaDeviceMemoryPitched<CudaRGBA, 2>& buffer_dmp)
+    {
+        cudaTextureDesc  texDesc;
+        memset(&texDesc, 0, sizeof(cudaTextureDesc));
+        texDesc.normalizedCoords = false;
+        texDesc.addressMode[0] = cudaAddressModeClamp;
+        texDesc.addressMode[1] = cudaAddressModeClamp;
+        texDesc.addressMode[2] = cudaAddressModeClamp;
+
+#if defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR) && defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION)
+        texDesc.readMode = cudaReadModeNormalizedFloat; // uchar to float [0:1], see tex2d_float4 function
+
+#else
+        texDesc.readMode = cudaReadModeElementType;
+#endif
+
+#if defined ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
+        texDesc.filterMode = cudaFilterModeLinear;
+#else
+        texDesc.filterMode = cudaFilterModePoint;
+#endif
+
+        cudaResourceDesc resDesc;
+        resDesc.resType = cudaResourceTypePitch2D;
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
+        resDesc.res.pitch2D.desc = cudaCreateChannelDescHalf4();
+#else
+        resDesc.res.pitch2D.desc = cudaCreateChannelDesc<CudaRGBA>();
+#endif
+
+        resDesc.res.pitch2D.devPtr = buffer_dmp.getBuffer();
+        resDesc.res.pitch2D.width = buffer_dmp.getSize()[0];
+        resDesc.res.pitch2D.height = buffer_dmp.getSize()[1];
+        resDesc.res.pitch2D.pitchInBytes = buffer_dmp.getPitch();
+
+        // create texture object
+        // note: we only have to do this once
+        CHECK_CUDA_RETURN_ERROR(cudaCreateTextureObject(&textureObj, &resDesc, &texDesc, nullptr));
+    }
+
+    ~CudaRGBATexture()
+    {
+        CHECK_CUDA_RETURN_ERROR_NOEXCEPT(cudaDestroyTextureObject(textureObj));
     }
 };
 

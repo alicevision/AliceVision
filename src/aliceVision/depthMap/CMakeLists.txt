@@ -35,14 +35,14 @@ set(depthMap_cuda_host_headers
 
 # Cuda Host Sources
 set(depthMap_cuda_host_sources
+  cuda/host/DeviceCache.hpp
+  cuda/host/DeviceCache.cpp
+  cuda/host/DeviceMipmapImage.hpp
+  cuda/host/DeviceMipmapImage.cpp
+  cuda/host/DeviceStreamManager.hpp
+  cuda/host/DeviceStreamManager.cpp
   cuda/host/utils.hpp
   cuda/host/utils.cpp
-  cuda/host/DeviceStreamManager.cpp
-  cuda/host/DeviceStreamManager.hpp
-  cuda/host/DeviceCache.cpp
-  cuda/host/DeviceCache.hpp
-  cuda/host/DeviceCamera.cpp
-  cuda/host/DeviceCamera.hpp
 )
 
 # device CUDA Headers Only

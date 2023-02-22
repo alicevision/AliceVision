@@ -141,12 +141,12 @@ __global__ void createMipmappedArrayDebugFlatImage_kernel(CudaRGBA* out_flatImag
 #endif // ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 }
 
-__host__ void cuda_createMipmappedArrayFromFrame(cudaMipmappedArray_t* out_mipmappedArrayPtr,
-                                                 const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_frame_dmp,
+__host__ void cuda_createMipmappedArrayFromImage(cudaMipmappedArray_t* out_mipmappedArrayPtr,
+                                                 const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp,
                                                  const unsigned int levels)
 {
-    const CudaSize<2>& in_frameSize = in_frame_dmp.getSize();
-    const cudaExtent frameSize = make_cudaExtent(in_frameSize.x(), in_frameSize.y(), 0);
+    const CudaSize<2>& in_imgSize = in_img_dmp.getSize();
+    const cudaExtent imgSize = make_cudaExtent(in_imgSize.x(), in_imgSize.y(), 0);
 
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
     const cudaChannelFormatDesc desc = cudaCreateChannelDescHalf4();
@@ -155,27 +155,27 @@ __host__ void cuda_createMipmappedArrayFromFrame(cudaMipmappedArray_t* out_mipma
 #endif
 
     // allocate CUDA mipmapped array
-    CHECK_CUDA_RETURN_ERROR(cudaMallocMipmappedArray(out_mipmappedArrayPtr, &desc, frameSize, levels));
+    CHECK_CUDA_RETURN_ERROR(cudaMallocMipmappedArray(out_mipmappedArrayPtr, &desc, imgSize, levels));
 
     // get mipmapped array at level 0
     cudaArray_t level0;
     CHECK_CUDA_RETURN_ERROR(cudaGetMipmappedArrayLevel(&level0, *out_mipmappedArrayPtr, 0));
 
-    // copy input frame into mipmapped array at level 0
+    // copy input image buffer into mipmapped array at level 0
     cudaMemcpy3DParms copyParams = {0};
-    copyParams.srcPtr.ptr = (void *)in_frame_dmp.getBytePtr();
-    copyParams.srcPtr.pitch = in_frame_dmp.getPitch();
-    copyParams.srcPtr.xsize = in_frame_dmp.getUnitsInDim(0);
-    copyParams.srcPtr.ysize = in_frame_dmp.getUnitsInDim(1);
+    copyParams.srcPtr.ptr = (void *)in_img_dmp.getBytePtr();
+    copyParams.srcPtr.pitch = in_img_dmp.getPitch();
+    copyParams.srcPtr.xsize = in_img_dmp.getUnitsInDim(0);
+    copyParams.srcPtr.ysize = in_img_dmp.getUnitsInDim(1);
     copyParams.dstArray = level0;
-    copyParams.extent = frameSize;
+    copyParams.extent = imgSize;
     copyParams.extent.depth = 1;
     copyParams.kind = cudaMemcpyDeviceToDevice;
     CHECK_CUDA_RETURN_ERROR(cudaMemcpy3D(&copyParams));
 
     // initialize each mipmapped array level from level 0
-    size_t width  = in_frameSize.x();
-    size_t height = in_frameSize.y();
+    size_t width  = in_imgSize.x();
+    size_t height = in_imgSize.y();
 
     for(size_t l = 1; l < levels; ++l)
     {
@@ -235,7 +235,7 @@ __host__ void cuda_createMipmappedArrayFromFrame(cudaMipmappedArray_t* out_mipma
             CHECK_CUDA_RETURN_ERROR(cudaCreateSurfaceObject(&currentLevel_surf, &surfRes));
         }
 
-        // downscale previous level frame into the current level frame
+        // downscale previous level image into the current level image
         {
             const dim3 block(16, 16, 1);
             const dim3 grid(divUp(width, block.x), divUp(height, block.y), 1);
@@ -243,6 +243,7 @@ __host__ void cuda_createMipmappedArrayFromFrame(cudaMipmappedArray_t* out_mipma
             createMipmappedArrayLevel_kernel<<<grid, block>>>(currentLevel_surf, previousLevel_tex, (unsigned int)(width), (unsigned int)(height));
         }
 
+        // wait for kernel completion
         // device has completed all preceding requested tasks
         CHECK_CUDA_RETURN_ERROR(cudaDeviceSynchronize());
         CHECK_CUDA_ERROR();
@@ -264,7 +265,7 @@ __host__ void cuda_createMipmappedArrayTexture(cudaTextureObject_t* out_mipmappe
 
     cudaTextureDesc texDescr;
     memset(&texDescr, 0, sizeof(cudaTextureDesc));
-    texDescr.normalizedCoords = 1;
+    texDescr.normalizedCoords = 1; // should always be set to 1 for mipmapped array
     texDescr.filterMode = cudaFilterModeLinear;
     texDescr.mipmapFilterMode = cudaFilterModeLinear;
     texDescr.addressMode[0] = cudaAddressModeClamp;

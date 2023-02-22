@@ -19,21 +19,25 @@ __host__ void cuda_depthSimMapCopyDepthOnly(CudaDeviceMemoryPitched<float2, 2>& 
                                             float defaultSim, 
                                             cudaStream_t stream)
 {
-    const CudaSize<2>& depthSimMapSize = out_depthSimMap_dmp.getSize();
+    // get output map dimensions
+    const CudaSize<2>& depthSimMapDim = out_depthSimMap_dmp.getSize();
 
+    // kernel launch parameters
     const int blockSize = 16;
     const dim3 block(blockSize, blockSize, 1);
-    const dim3 grid(divUp(depthSimMapSize.x(), blockSize), divUp(depthSimMapSize.y(), blockSize), 1);
+    const dim3 grid(divUp(depthSimMapDim.x(), blockSize), divUp(depthSimMapDim.y(), blockSize), 1);
 
+    // kernel execution
     depthSimMapCopyDepthOnly_kernel<<<grid, block, 0, stream>>>(
-      out_depthSimMap_dmp.getBuffer(), 
-      out_depthSimMap_dmp.getPitch(), 
-      in_depthSimMap_dmp.getBuffer(), 
-      in_depthSimMap_dmp.getPitch(),
-      depthSimMapSize.x(),
-      depthSimMapSize.y(),
-      defaultSim);
+        out_depthSimMap_dmp.getBuffer(),
+        out_depthSimMap_dmp.getPitch(),
+        in_depthSimMap_dmp.getBuffer(),
+        in_depthSimMap_dmp.getPitch(),
+        (unsigned int)(depthSimMapDim.x()),
+        (unsigned int)(depthSimMapDim.y()),
+        defaultSim);
 
+    // check cuda last error
     CHECK_CUDA_ERROR();
 }
 
@@ -42,23 +46,26 @@ __host__ void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upsc
                                     const ROI& roi,
                                     cudaStream_t stream)
 {
-    const CudaSize<2>& out_mapSize = out_upscaledMap_dmp.getSize();
-    const CudaSize<2>& in_mapSize = in_map_dmp.getSize();
+    // compute upscale ratio
+    const CudaSize<2>& out_mapDim = out_upscaledMap_dmp.getSize();
+    const CudaSize<2>& in_mapDim = in_map_dmp.getSize();
+    const float ratio = float(in_mapDim.x()) / float(out_mapDim.x());
 
-    const float ratio = float(in_mapSize.x()) / float(out_mapSize.x());
-
+    // kernel launch parameters
     const int blockSize = 16;
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
+    // kernel execution
     mapUpscale_kernel<float3><<<grid, block, 0, stream>>>(
-      out_upscaledMap_dmp.getBuffer(),
-      out_upscaledMap_dmp.getPitch(),
-      in_map_dmp.getBuffer(),
-      in_map_dmp.getPitch(),
-      ratio,
-      roi);
+        out_upscaledMap_dmp.getBuffer(),
+        out_upscaledMap_dmp.getPitch(),
+        in_map_dmp.getBuffer(),
+        in_map_dmp.getPitch(),
+        ratio,
+        roi);
 
+    // check cuda last error
     CHECK_CUDA_ERROR();
 }
 
@@ -79,88 +86,110 @@ __host__ void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2
     const float minThiknessInflate = refineParams.halfNbDepths / maxNbRefineSamples;
     const float maxThiknessInflate = refineParams.halfNbDepths / minNbRefineSamples;
 
+    // kernel launch parameters
     const int blockSize = 8;
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
+    // kernel execution
     depthThiknessMapSmoothThikness_kernel<<<grid, block, 0, stream>>>(
-      inout_depthThiknessMap_dmp.getBuffer(),
-      inout_depthThiknessMap_dmp.getPitch(),
-      minThiknessInflate,
-      maxThiknessInflate,
-      roi);
+        inout_depthThiknessMap_dmp.getBuffer(),
+        inout_depthThiknessMap_dmp.getPitch(),
+        minThiknessInflate,
+        maxThiknessInflate,
+        roi);
 
+    // check cuda last error
     CHECK_CUDA_ERROR();
 }
 
 __host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthPixSizeMap_dmp,
                                                      const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThiknessMap_dmp,
-                                                     const DeviceCamera& rcDeviceCamera,
+                                                     const int rcDeviceCameraParamsId,
+                                                     const DeviceMipmapImage& rcDeviceMipmapImage,
                                                      const RefineParams& refineParams,
                                                      const ROI& roi,
                                                      cudaStream_t stream)
 {
-    const CudaSize<2>& out_mapSize = out_upscaledDepthPixSizeMap_dmp.getSize();
-    const CudaSize<2>& in_mapSize = in_sgmDepthThiknessMap_dmp.getSize();
+    // compute upscale ratio
+    const CudaSize<2>& out_mapDim = out_upscaledDepthPixSizeMap_dmp.getSize();
+    const CudaSize<2>& in_mapDim = in_sgmDepthThiknessMap_dmp.getSize();
+    const float ratio = float(in_mapDim.x()) / float(out_mapDim.x());
 
-    const float ratio = float(in_mapSize.x()) / float(out_mapSize.x());
+    // get R mipmap image level and dimensions
+    const float rcMipmapLevel = rcDeviceMipmapImage.getLevel(refineParams.scale);
+    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getLevelDimensions(refineParams.scale);
 
+    // kernel launch parameters
     const int blockSize = 16;
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
+    // kernel execution
     if(refineParams.interpolateMiddleDepth)
     {
         computeSgmUpscaledDepthPixSizeMap_bilinear_kernel<<<grid, block, 0, stream>>>(
-          rcDeviceCamera.getTextureObject(),
-          out_upscaledDepthPixSizeMap_dmp.getBuffer(),
-          out_upscaledDepthPixSizeMap_dmp.getPitch(),
-          in_sgmDepthThiknessMap_dmp.getBuffer(),
-          in_sgmDepthThiknessMap_dmp.getPitch(),
-          refineParams.stepXY,
-          refineParams.halfNbDepths,
-          ratio,
-          roi);
+            out_upscaledDepthPixSizeMap_dmp.getBuffer(),
+            out_upscaledDepthPixSizeMap_dmp.getPitch(),
+            in_sgmDepthThiknessMap_dmp.getBuffer(),
+            in_sgmDepthThiknessMap_dmp.getPitch(),
+            rcDeviceCameraParamsId,
+            rcDeviceMipmapImage.getTextureObject(),
+            (unsigned int)(rcLevelDim.x()),
+            (unsigned int)(rcLevelDim.y()),
+            rcMipmapLevel,
+            refineParams.stepXY,
+            refineParams.halfNbDepths,
+            ratio,
+            roi);
     }
     else
     {
         computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel<<<grid, block, 0, stream>>>(
-          rcDeviceCamera.getTextureObject(),
-          out_upscaledDepthPixSizeMap_dmp.getBuffer(),
-          out_upscaledDepthPixSizeMap_dmp.getPitch(),
-          in_sgmDepthThiknessMap_dmp.getBuffer(),
-          in_sgmDepthThiknessMap_dmp.getPitch(),
-          refineParams.stepXY,
-          refineParams.halfNbDepths,
-          ratio,
-          roi);
+            out_upscaledDepthPixSizeMap_dmp.getBuffer(),
+            out_upscaledDepthPixSizeMap_dmp.getPitch(),
+            in_sgmDepthThiknessMap_dmp.getBuffer(),
+            in_sgmDepthThiknessMap_dmp.getPitch(),
+            rcDeviceCameraParamsId,
+            rcDeviceMipmapImage.getTextureObject(),
+            (unsigned int)(rcLevelDim.x()),
+            (unsigned int)(rcLevelDim.y()),
+            rcMipmapLevel,
+            refineParams.stepXY,
+            refineParams.halfNbDepths,
+            ratio,
+            roi);
     }
 
+    // check cuda last error
     CHECK_CUDA_ERROR();
 }
 
 __host__ void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& out_normalMap_dmp,
                                             const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
-                                            const DeviceCamera& rcDeviceCamera, 
+                                            const int rcDeviceCameraParamsId,
                                             const int stepXY,
                                             const ROI& roi,
                                             cudaStream_t stream)
 {
     const int wsh = 4;
 
+    // kernel launch parameters
     const dim3 block(8, 8, 1);
     const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), 1);
 
+    // kernel execution
     depthSimMapComputeNormal_kernel<<<grid, block, 0, stream>>>(
-      rcDeviceCamera.getDeviceCamId(),
-      out_normalMap_dmp.getBuffer(),
-      out_normalMap_dmp.getPitch(),
-      in_depthSimMap_dmp.getBuffer(),
-      in_depthSimMap_dmp.getPitch(),
-      wsh,
-      stepXY,
-      roi);
+        out_normalMap_dmp.getBuffer(),
+        out_normalMap_dmp.getPitch(),
+        in_depthSimMap_dmp.getBuffer(),
+        in_depthSimMap_dmp.getPitch(),
+        rcDeviceCameraParamsId,
+        stepXY,
+        wsh,
+        roi);
 
+    // check cuda last error
     CHECK_CUDA_ERROR();
 }
 
@@ -169,31 +198,40 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
                                                       CudaDeviceMemoryPitched<float, 2>& inout_tmpOptDepthMap_dmp,
                                                       const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
                                                       const CudaDeviceMemoryPitched<float2, 2>& in_refineDepthSimMap_dmp,
-                                                      const DeviceCamera& rcDeviceCamera, 
+                                                      const int rcDeviceCameraParamsId,
+                                                      const DeviceMipmapImage& rcDeviceMipmapImage,
                                                       const RefineParams& refineParams,
                                                       const ROI& roi,
                                                       cudaStream_t stream)
 {
+    // get R mipmap image level and dimensions
+    const float rcMipmapLevel = rcDeviceMipmapImage.getLevel(refineParams.scale);
+    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getLevelDimensions(refineParams.scale);
+
     // initialize depth/sim map optimized with SGM depth/pixSize map
     out_optimizeDepthSimMap_dmp.copyFrom(in_sgmDepthPixSizeMap_dmp, stream);
 
     {
-        // setup block and grid
+        // kernel launch parameters
         const dim3 lblock(32, 2, 1);
         const dim3 lgrid(divUp(roi.width(), lblock.x), divUp(roi.height(), lblock.y), 1);
 
+        // kernel execution
         optimize_varLofLABtoW_kernel<<<lgrid, lblock, 0, stream>>>(
-            rcDeviceCamera.getTextureObject(), 
             inout_imgVariance_dmp.getBuffer(), 
             inout_imgVariance_dmp.getPitch(),
+            rcDeviceMipmapImage.getTextureObject(),
+            (unsigned int)(rcLevelDim.x()),
+            (unsigned int)(rcLevelDim.y()),
+            rcMipmapLevel,
             refineParams.stepXY,
             roi);
     }
 
-    CudaTexture<float> imgVarianceTex(inout_imgVariance_dmp);
-    CudaTexture<float> depthTex(inout_tmpOptDepthMap_dmp);
+    CudaTexture<float, false, false> imgVarianceTex(inout_imgVariance_dmp); // neighbor interpolation, without normalized coordinates
+    CudaTexture<float, false, false> depthTex(inout_tmpOptDepthMap_dmp);    // neighbor interpolation, without normalized coordinates
 
-    // setup block and grid
+    // kernel launch parameters
     const int blockSize = 16;
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
@@ -204,25 +242,26 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
         optimize_getOptDeptMapFromOptDepthSimMap_kernel<<<grid, block, 0, stream>>>(
             inout_tmpOptDepthMap_dmp.getBuffer(), 
             inout_tmpOptDepthMap_dmp.getPitch(), 
-            out_optimizeDepthSimMap_dmp.getBuffer(), // initialized with SGM depth/sim map
+            out_optimizeDepthSimMap_dmp.getBuffer(), // initialized with SGM depth/pixSize map
             out_optimizeDepthSimMap_dmp.getPitch(),
             roi);
 
         // adjust depth/sim by using previously computed depths
         optimize_depthSimMap_kernel<<<grid, block, 0, stream>>>(
-            rcDeviceCamera.getDeviceCamId(), 
-            imgVarianceTex.textureObj,
-            depthTex.textureObj, 
             out_optimizeDepthSimMap_dmp.getBuffer(),
             out_optimizeDepthSimMap_dmp.getPitch(),
             in_sgmDepthPixSizeMap_dmp.getBuffer(),
             in_sgmDepthPixSizeMap_dmp.getPitch(),
             in_refineDepthSimMap_dmp.getBuffer(),
             in_refineDepthSimMap_dmp.getPitch(),
+            rcDeviceCameraParamsId,
+            imgVarianceTex.textureObj,
+            depthTex.textureObj,
             iter, 
             roi);
     }
 
+    // check cuda last error
     CHECK_CUDA_ERROR();
 }
 
