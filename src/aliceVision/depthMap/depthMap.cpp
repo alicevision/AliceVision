@@ -19,8 +19,7 @@
 #include <aliceVision/depthMap/cuda/host/utils.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceStreamManager.hpp>
-#include <aliceVision/depthMap/cuda/normalMapping/DeviceNormalMapper.hpp>
-#include <aliceVision/depthMap/cuda/normalMapping/deviceNormalMap.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -610,65 +609,79 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
     // set the device to use for GPU executions
     // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
     setCudaDeviceId(cudaDeviceId);
-    
-    const float gammaC = 1.0f;
-    const float gammaP = 1.0f;
-    const int wsh = 3;
 
-    DeviceNormalMapper normalMapper;
+    DeviceCache& deviceCache = DeviceCache::getInstance();
+    deviceCache.build(0, 1); // 0 mipmap image, 1 camera parameters
+
+    // for now downscale is always 1
+    const int downscale = 1;
+
+    // read / write depth map / normal map scale
+    const int depthMapFilterScale = 0; // 0 for depth map filter folder
 
     for(const int rc : cams)
     {
         const std::string normalMapFilepath = getFileNameFromIndex(mp, rc, mvsUtils::EFileType::normalMap, 0);
 
-        if (!fs::exists(normalMapFilepath))
+        if(!fs::exists(normalMapFilepath))
         {
-            const int scale = 1;
-
-            image::Image<float> depthMap;
-            readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), depthMap, image::EImageColorSpace::NO_CONVERSION);
-
-            image::Image<image::RGBfColor> normalMap(mp.getWidth(rc), mp.getHeight(rc));
-
-            const int w = mp.getWidth(rc) / scale;
-            const int h = mp.getHeight(rc) / scale;
-
             const system::Timer timer;
+
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ")");
 
-            // Fill Camera Struct
+            // add R camera parameters to the device cache (device constant memory)
+            deviceCache.addCameraParams(rc, downscale, mp);
 
-            fillHostCameraParameters(*(normalMapper.cameraParameters_h), rc, scale, mp);
-            normalMapper.loadCameraParameters();
-            normalMapper.allocHostMaps(w, h);
-            normalMapper.copyDepthMap(depthMap.data(), depthMap.size());
+            // get R camera parameters id in device constant memory array
+            const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(rc, downscale, mp);
 
-            cuda_computeNormalMap(&normalMapper, w, h, wsh, gammaC, gammaP);
+            // read input depth map
+            image::Image<float> in_depthMap;
+            mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthMap, in_depthMap, depthMapFilterScale);
 
-            float3* normalMapPtr = normalMapper.getNormalMapHst();
+            // get input depth map width / height
+            const int width  = in_depthMap.Width();
+            const int height = in_depthMap.Height();
 
-            constexpr bool q = (sizeof(image::RGBfColor[2]) == sizeof(float3[2]));
-            if(q == true)
+            // default tile parameters, no tiles
+            const mvsUtils::TileParams tileParams;
+
+            // fullsize roi
+            const ROI roi(0, mp.getWidth(rc), 0, mp.getHeight(rc));
+
+            // downscaled roi
+            const ROI downscaledRoi = downscaleROI(roi, downscale);
+
+            // copy input depth map into depth/sim map in device memory
+            // note: we don't need similarity for normal map computation
+            //       we use depth/sim map in order to avoid code duplication
+            CudaDeviceMemoryPitched<float2, 2> in_depthSimMap_dmp({size_t(width), size_t(height)});
             {
-                memcpy(normalMap.data(), normalMapper.getNormalMapHst(), w * h * sizeof(float3));
-            }
-            else
-            {
-                for(int i = 0; i < w * h; i++)
-                {
-                    normalMap(i).r() = normalMapPtr[i].x;
-                    normalMap(i).g() = normalMapPtr[i].y;
-                    normalMap(i).b() = normalMapPtr[i].z;
-                }
+                CudaHostMemoryHeap<float2, 2> in_depthSimMap_hmh(in_depthSimMap_dmp.getSize());
+
+                for(int x = 0; x < width; ++x)
+                    for(int y = 0; y < height; ++y)
+                        in_depthSimMap_hmh(size_t(x), size_t(y)) = make_float2(in_depthMap(y, x), 1.f);
+
+                in_depthSimMap_dmp.copyFrom(in_depthSimMap_hmh);
             }
 
-            image::writeImage(normalMapFilepath, normalMap,
-                              image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
-                                                        .storageDataType(image::EStorageDataType::Float));
+            // allocate normal map buffer in device memory
+            CudaDeviceMemoryPitched<float3, 2> out_normalMap_dmp(in_depthSimMap_dmp.getSize());
+
+            // compute normal map
+            cuda_depthSimMapComputeNormal(out_normalMap_dmp, in_depthSimMap_dmp, rcDeviceCameraParamsId, 1 /*step*/, downscaledRoi, 0 /*stream*/);
+
+            // write output normal map
+            writeNormalMap(rc, mp, tileParams, roi, out_normalMap_dmp, depthMapFilterScale, 1 /*step*/);
 
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
         }
     }
+
+    // device cache countains CUDA objects
+    // this objects should be destroyed before the end of the program (i.e. the end of the CUDA context)
+    DeviceCache::getInstance().clear();
 }
 
 } // namespace depthMap

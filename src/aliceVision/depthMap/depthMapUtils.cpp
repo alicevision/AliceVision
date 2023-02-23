@@ -133,7 +133,7 @@ void writeNormalMap(int rc,
                     int step,
                     const std::string& name)
 {
-  const ROI downscaledROI = downscaleROI(roi, scale * step);
+  const ROI downscaledROI = downscaleROI(roi, std::max(scale, 1) * step); // max avoid 0 special case (reserved for depth map filtering)
   const int width  = int(downscaledROI.width());
   const int height = int(downscaledROI.height());
 
@@ -144,9 +144,9 @@ void writeNormalMap(int rc,
   // copy map from host memory to an Image
   image::Image<image::RGBfColor> map(width, height, true, {0.f,0.f,0.f});
 
-  for(size_t x = 0; x < width; ++x)
+  for(size_t x = 0; x < size_t(width); ++x)
   {
-      for(size_t y = 0; y < height; ++y)
+      for(size_t y = 0; y < size_t(height); ++y)
       {
           const float3& rgba_hmh = map_hmh(x, y);
           image::RGBfColor& rgb = map(int(y), int(x));

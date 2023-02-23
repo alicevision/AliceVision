@@ -72,19 +72,6 @@ set(depthMap_cuda_imageProcessing_sources
   cuda/imageProcessing/deviceMipmappedArray.cu
 )
 
-# normalMapping CUDA Headers Only
-set(depthMap_cuda_normalMapping_headers
-  cuda/normalMapping/deviceNormalMapKernels.cuh
-)
-
-# normalMapping CUDA Sources
-set(depthMap_cuda_normalMapping_sources
-  cuda/normalMapping/deviceNormalMap.hpp
-  cuda/normalMapping/deviceNormalMap.cu
-  cuda/normalMapping/DeviceNormalMapper.hpp
-  cuda/normalMapping/DeviceNormalMapper.cpp
-)
-
 # planeSweeping CUDA Headers Only
 set(depthMap_cuda_planeSweeping_headers
   cuda/planeSweeping/deviceDepthSimilarityMapKernels.cuh
@@ -102,7 +89,6 @@ set(depthMap_cuda_planeSweeping_sources
 
 set_source_files_properties(${depthMap_cuda_host_headers}
 			    ${depthMap_cuda_device_headers} 
-			    ${depthMap_cuda_normalMapping_headers}
 			    ${depthMap_cuda_planeSweeping_headers}
 
   PROPERTIES HEADER_FILE_ONLY true
@@ -111,7 +97,6 @@ set_source_files_properties(${depthMap_cuda_host_headers}
 source_group("aliceVision_depthMap_cuda_host" FILES ${depthMap_cuda_host_headers} ${depthMap_cuda_host_sources})
 source_group("aliceVision_depthMap_cuda_device" FILES ${depthMap_cuda_device_headers} ${depthMap_cuda_device_sources})
 source_group("aliceVision_depthMap_cuda_imageProcessing" FILES ${depthMap_cuda_imageProcessing_sources})
-source_group("aliceVision_depthMap_cuda_normalMapping" FILES ${depthMap_cuda_normalMapping_headers} ${depthMap_cuda_normalMapping_sources})
 source_group("aliceVision_depthMap_cuda_planeSweeping" FILES ${depthMap_cuda_planeSweeping_headers} ${depthMap_cuda_planeSweeping_sources})
 
 # Cuda Sources
@@ -121,8 +106,6 @@ set(depthMap_cuda_files_sources
   ${depthMap_cuda_device_headers} 
   ${depthMap_cuda_device_sources}
   ${depthMap_cuda_imageProcessing_sources}
-  ${depthMap_cuda_normalMapping_headers} 
-  ${depthMap_cuda_normalMapping_sources}
   ${depthMap_cuda_planeSweeping_headers} 
   ${depthMap_cuda_planeSweeping_sources}
 )

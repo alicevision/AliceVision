@@ -10,8 +10,9 @@
 
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
-#include <aliceVision/depthMap/cuda/host/DeviceMipmapImage.hpp>
 #include <aliceVision/depthMap/cuda/host/LRUCameraCache.hpp>
+#include <aliceVision/depthMap/cuda/host/DeviceMipmapImage.hpp>
+#include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -122,15 +123,6 @@ private:
      */
     SingleDeviceCache& getCurrentDeviceCache();
 };
-
-/**
-  * @brief Fill the host-side camera parameters from multi-view parameters.
-  * @param[in,out] cameraParameters_h the host-side camera parameters
-  * @param[in] camId the camera index in the ImagesCache / MultiViewParams
-  * @param[in] downscale the downscale to apply on parameters
-  * @param[in] mp the multi-view parameters
-  */
-void fillHostCameraParameters(DeviceCameraParams& cameraParameters_h, int camId, int downscale, const mvsUtils::MultiViewParams& mp);
 
 } // namespace depthMap
 } // namespace aliceVision

@@ -32,6 +32,13 @@ void normalize(float3& a)
     a.z /= d;
 }
 
+/**
+  * @brief Fill the host-side camera parameters from multi-view parameters.
+  * @param[in,out] cameraParameters_h the host-side camera parameters
+  * @param[in] camId the camera index in the ImagesCache / MultiViewParams
+  * @param[in] downscale the downscale to apply on parameters
+  * @param[in] mp the multi-view parameters
+  */
 void fillHostCameraParameters(DeviceCameraParams& cameraParameters_h, int camId, int downscale, const mvsUtils::MultiViewParams& mp)
 {
     Matrix3x3 scaleM;
