@@ -82,10 +82,12 @@ public:
      * @param[in] sharpnessWindowSize the size of the sliding window used to compute sharpness scores, in pixels
      * @param[in] flowCellSize the size of the cells within a frame that are used to compute the optical flow scores,
      *            in pixels
+     * @param[in] skipSharpnessComputation if true, the sharpness score computations will not be performed and a fixed
+     *            sharpness score will be given to all the input frames
      */
     void processSmart(const float pxDisplacement, const std::size_t rescaledWidthSharpness,
                       const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
-                      const std::size_t flowCellSize);
+                      const std::size_t flowCellSize, const bool skipSharpnessComputation = false);
 
     /**
      * @brief Compute the sharpness and optical flow scores for the input media paths
@@ -96,10 +98,13 @@ public:
      * @param[in] sharpnessWindowSize the size of the sliding window used to compute sharpness scores, in pixels
      * @param[in] flowCellSize the size of the cells within a frame that are used to compute the optical flow scores,
      *            in pixels
+     * @param[in] skipSharpnessComputation if true, the sharpness score computations will not be performed and a fixed
+     *            sharpness score will be given to all the input frames
      * @return true if the scores have been successfully computed for all frames, false otherwise
      */
     bool computeScores(const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
-                       const std::size_t sharpnessWindowSize, const std::size_t flowCellSize);
+                       const std::size_t sharpnessWindowSize, const std::size_t flowCellSize,
+                       const bool skipSharpnessComputation);
 
     /**
      * @brief Write the selected keyframes in the output folder

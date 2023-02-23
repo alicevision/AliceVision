@@ -86,7 +86,9 @@ The weights aim at favouring the selection of keyframes that are as temporally f
 
 Debug options specific to the smart selection method are available:
 - Export scores to CSV: the sharpness and motion scores for all the frames are written to a CSV file;
-- Visualise the optical flow: the computed motion vectors are, for each frame, visualised with HSV images that are written as PNG images.
+- Visualise the optical flow: the computed motion vectors are, for each frame, visualised with HSV images that are written as PNG images;
+- Skip the sharpess score computations: the motion scores are computed normally, but all the sharpness score computations are skipped and replaced by a fixed value (1.0), which allows to assess the impact of the sharpness score computations (and, by extension, of the motion scores) on the global processing time;
+- Skip the frame selection: the scores are computed normally (the sharpness scores can be skipped) but will not be used to perform the final selection. This is mainly useful to determine the processing time solely dedicated to the score computations or, combined with the CSV export export, to evaluate the quality of the scoring without needing to go through the complete selection process.
 
 
 ## API 
@@ -107,14 +109,16 @@ void processSmart(const float pxDisplacement,
                   const std::size_t rescaledWidthSharpness,
                   const std::size_t rescaledWidthFlow,
                   const std::size_t sharpnessWindowSize,
-                  const std::size_t flowCellSize);
+                  const std::size_t flowCellSize,
+                  const bool skipSharpnessComputation = false);
 ```
 - Score computation
 ```cpp
 bool computeScores(const std::size_t rescaledWidthSharpness,
                    const std::size_t rescaledWidthFlow,
                    const std::size_t sharpnessWindowSize,
-                   const std::size_t flowCellSize);
+                   const std::size_t flowCellSize,
+                   const bool skipSharpnessComputation);
 ```
 - Write selected keyframes
 ```cpp

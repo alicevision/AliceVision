@@ -61,6 +61,7 @@ int aliceVision_main(int argc, char** argv)
     bool skipSelection = false;             // only compute the scores and do not proceed with the selection
     bool exportFlowVisualisation = false;   // export optical flow visualisation for all the frames
     bool flowVisualisationOnly = false;     // export optical flow visualisation for all the frames but do not compute scores
+    bool skipSharpnessComputation = false;  // skip sharpness score computations
 
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
@@ -139,7 +140,10 @@ int aliceVision_main(int argc, char** argv)
         ("exportFlowVisualisation", po::value<bool>(&exportFlowVisualisation)->default_value(exportFlowVisualisation),
             "For all frames, export the optical flow visualisation in HSV as PNG images.")
         ("flowVisualisationOnly", po::value<bool>(&flowVisualisationOnly)->default_value(flowVisualisationOnly),
-            "Export the optical flow visualisation in HSV as PNG images for all frames but do not compute scores.");
+            "Export the optical flow visualisation in HSV as PNG images for all frames but do not compute scores.")
+        ("skipSharpnessComputation", po::value<bool>(&skipSharpnessComputation)->default_value(skipSharpnessComputation),
+            "Skip the computations for the sharpness score of each frame. A fixed sharpness score of 1.0 will be "
+            "assigned to each frame.");
 
     aliceVision::CmdLine cmdline("This program is used to extract keyframes from single camera or a camera rig.\n"
                                 "AliceVision keyframeSelection");
@@ -223,7 +227,8 @@ int aliceVision_main(int argc, char** argv)
     }
 
     if (skipSelection) {
-        selector.computeScores(rescaledWidthSharp, rescaledWidthFlow, sharpnessWindowSize, flowCellSize);
+        selector.computeScores(rescaledWidthSharp, rescaledWidthFlow, sharpnessWindowSize, flowCellSize,
+                               skipSharpnessComputation);
         if (exportScores)
             selector.exportScoresToFile(csvFilename);  // Frames have not been selected, ignore 'exportSelectedFrames'
         if (exportFlowVisualisation)
@@ -234,7 +239,8 @@ int aliceVision_main(int argc, char** argv)
 
     // Process media paths with regular or smart method
     if (useSmartSelection)
-        selector.processSmart(pxDisplacement, rescaledWidthSharp, rescaledWidthFlow, sharpnessWindowSize, flowCellSize);
+        selector.processSmart(pxDisplacement, rescaledWidthSharp, rescaledWidthFlow, sharpnessWindowSize, flowCellSize,
+                              skipSharpnessComputation);
     else
         selector.processRegular();
 

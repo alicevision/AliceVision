@@ -137,13 +137,13 @@ void KeyframeSelector::processRegular()
 
 void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_t rescaledWidthSharpness,
                                     const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
-                                    const std::size_t flowCellSize)
+                                    const std::size_t flowCellSize, const bool skipSharpnessComputation)
 {
     _selectedKeyframes.clear();
     _selectedFrames.clear();
 
     // Step 0: compute all the scores
-    computeScores(rescaledWidthSharpness, rescaledWidthFlow, sharpnessWindowSize, flowCellSize);
+    computeScores(rescaledWidthSharpness, rescaledWidthFlow, sharpnessWindowSize, flowCellSize, skipSharpnessComputation);
 
     // Step 1: determine subsequences based on the motion accumulation
     std::vector<unsigned int> subsequenceLimits;
@@ -273,7 +273,8 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
 }
 
 bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
-                                     const std::size_t sharpnessWindowSize, const std::size_t flowCellSize)
+                                     const std::size_t sharpnessWindowSize, const std::size_t flowCellSize,
+                                     const bool skipSharpnessComputation)
 {
     // Reset the computed scores
     _sharpnessScores.clear();
@@ -330,7 +331,7 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
     auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
 
     while (currentFrame < nbFrames) {
-        double minimalSharpness = std::numeric_limits<double>::max();
+        double minimalSharpness = skipSharpnessComputation ? 1.0f : std::numeric_limits<double>::max();
         double minimalFlow = std::numeric_limits<double>::max();
 
         for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
@@ -349,26 +350,29 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
              *   - otherwise (feed not correctly moved to the next frame), throw a runtime error exception as something
              *     is wrong with the video
              */
-            try {
-                currentMatSharpness = readImage(feed, rescaledWidthSharpness);  // Read image for sharpness and rescale it if requested
-            } catch (const std::invalid_argument& ex) {
-                // currentFrame + 1 = currently evaluated frame with indexing starting at 1, for display reasons
-                // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
-                ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
-                                        << ", attempting to read frame " << currentFrame + 2 << ".");
-                bool success = feed.goToFrame(++currentFrame);
-                if (success) {
-                    // Will throw an exception if next frame is also invalid
+            if (!skipSharpnessComputation) {
+                try {
+                    // Read image for sharpness and rescale it if requested
                     currentMatSharpness = readImage(feed, rescaledWidthSharpness);
-                    // If no exception has been thrown, push dummy scores for the frame that was skipped
-                    _sharpnessScores.push_back(-1.f);
-                    _flowScores.push_back(-1.f);
-                } else
-                    ALICEVISION_THROW_ERROR("Could not go to frame " << currentFrame + 1
-                                            << " either. The feed might be corrupted.");
+                } catch (const std::invalid_argument& ex) {
+                    // currentFrame + 1 = currently evaluated frame with indexing starting at 1, for display reasons
+                    // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
+                    ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
+                                            << ", attempting to read frame " << currentFrame + 2 << ".");
+                    bool success = feed.goToFrame(++currentFrame);
+                    if (success) {
+                        // Will throw an exception if next frame is also invalid
+                        currentMatSharpness = readImage(feed, rescaledWidthSharpness);
+                        // If no exception has been thrown, push dummy scores for the frame that was skipped
+                        _sharpnessScores.push_back(-1.f);
+                        _flowScores.push_back(-1.f);
+                    } else
+                        ALICEVISION_THROW_ERROR("Could not go to frame " << currentFrame + 1
+                                                << " either. The feed might be corrupted.");
+                }
             }
 
-            if (rescaledWidthSharpness == rescaledWidthFlow) {
+            if (rescaledWidthSharpness == rescaledWidthFlow && !skipSharpnessComputation) {
                 currentMatFlow = currentMatSharpness;
             } else {
                 currentMatFlow = readImage(feed, rescaledWidthFlow);
@@ -380,8 +384,10 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
             }
 
             // Compute sharpness
-            const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize);
-            minimalSharpness = std::min(minimalSharpness, sharpness);
+            if (!skipSharpnessComputation) {
+                const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize);
+                minimalSharpness = std::min(minimalSharpness, sharpness);
+            }
 
             // Compute optical flow
             if (currentFrame > 0) {
