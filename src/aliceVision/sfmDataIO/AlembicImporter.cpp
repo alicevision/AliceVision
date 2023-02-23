@@ -400,6 +400,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   std::vector<double> sensorSize_mm = {0, 0};
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
   std::string mvg_intrinsicInitializationMode = EInitMode_enumToString(EInitMode::CALIBRATED);
+  std::string mvg_intrinsicDistortionInitializationMode = EInitMode_enumToString(EInitMode::NONE);
   std::vector<double> mvg_intrinsicParams;
   std::vector<IndexT> mvg_ancestorsParams;
   Vec2 initialFocalLengthPix = {-1, -1};
@@ -506,6 +507,10 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       {
         mvg_intrinsicInitializationMode = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicInitializationMode", sampleFrame);
       }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicDistortionInitializationMode"))
+      {
+        mvg_intrinsicDistortionInitializationMode = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicDistortionInitializationMode", sampleFrame);
+      }
       // For compatibility with versions < 1.2 (value was in pixels)
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLengthPix"))
       {
@@ -564,6 +569,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     intrinsic->setSensorHeight(sensorSize_mm.at(1));
     intrinsic->importFromParams(mvg_intrinsicParams, abcVersion);
     intrinsic->setInitializationMode(EInitMode_stringToEnum(mvg_intrinsicInitializationMode));
+    intrinsic->setDistortionInitializationMode(EInitMode_stringToEnum(mvg_intrinsicDistortionInitializationMode));
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
     if (intrinsicScale)

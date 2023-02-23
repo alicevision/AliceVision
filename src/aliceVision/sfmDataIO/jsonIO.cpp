@@ -269,7 +269,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     distortionParams.resize(intrinsicWithDistoEnabled->getDistortionParams().size(), 0.0);
     intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
 
-    const camera::EInitMode distortionInitializationMode = camera::EInitMode_stringToEnum(intrinsicTree.get<std::string>("distortionInitializationMode", camera::EInitMode_enumToString(camera::EInitMode::CALIBRATED)));
+    const camera::EInitMode distortionInitializationMode = camera::EInitMode_stringToEnum(intrinsicTree.get<std::string>("distortionInitializationMode", camera::EInitMode_enumToString(camera::EInitMode::NONE)));
 
     intrinsicWithDistoEnabled->setDistortionInitializationMode(distortionInitializationMode);
   }

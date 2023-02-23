@@ -352,6 +352,12 @@ public:
   virtual std::size_t getParamsSize() const = 0;
 
   /**
+   * @brief Get the initialization mode of the intrinsic parameters
+   * @return The initialization mode of the intrinsic parameters
+   */
+  virtual EInitMode getDistortionInitializationMode() const = 0;
+
+  /**
    * @brief Update intrinsic parameters
    * @param[in] intrinsic parameters
    * @return true if done
@@ -388,6 +394,12 @@ public:
   {
     return false;
   }
+
+  /**
+   * @brief Set The intrinsic disto initialization mode
+   * @param[in] distortionInitializationMode The intrintrinsic distortion initialization mode enum
+   */
+  virtual void setDistortionInitializationMode(EInitMode distortionInitializationMode) = 0;
 
   /**
    * @brief Add the distortion field to a point (that is in normalized camera frame)
