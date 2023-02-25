@@ -4,6 +4,8 @@ ARG UBUNTU_VERSION=22.04
 FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
 LABEL maintainer="Hossam Hammady <github@hammady.net>"
 
+ARG RUN_TESTS=OFF
+
 # Install system dependencies
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -11,14 +13,11 @@ RUN apt-get update && \
         git \
         build-essential \
         cmake \
-        libboost-all-dev \
-        libeigen3-dev \
+        automake \
+        autoconf \
+        libtool \
+        nasm \
         libflann-dev \
-        libjpeg-dev \
-        libturbojpeg0-dev \
-        libpng-dev \
-        libtiff-dev \
-        libraw-dev \
         libassimp-dev \
         libceres-dev \
         libopenexr-dev \
@@ -27,7 +26,6 @@ RUN apt-get update && \
         libxxf86vm-dev \
         libxi-dev \
         libxrandr-dev \
-        graphviz \
         libapriltag-dev \
         liblapack-dev \
         libopencv-dev \
@@ -65,10 +63,6 @@ RUN cmake \
         -DAV_BUILD_ALICEVISION=OFF \
         -DAV_BUILD_ZLIB=OFF \
         -DAV_BUILD_ASSIMP=OFF \
-        -DAV_BUILD_TIFF=OFF \
-        -DAV_BUILD_JPEG=OFF \
-        -DAV_BUILD_PNG=OFF \
-        -DAV_BUILD_LIBRAW=OFF \
         -DAV_BUILD_APRILTAG=OFF \
         -DAV_BUILD_OPENCV=OFF \
         -DAV_BUILD_LAPACK=OFF \
@@ -77,7 +71,6 @@ RUN cmake \
         -DAV_BUILD_FFMPEG=OFF \
         -DAV_BUILD_VPX=OFF \
         -DCMAKE_INSTALL_PREFIX:PATH="${AV_INSTALL}" \
-        -DCMAKE_MODULE_PATH:PATH=/usr/share/eigen3/cmake \
         -DAV_BUILD_DEPENDENCIES_PARALLEL=0 \
         ${AV_DEV} && \
     make -j$(nproc)
@@ -90,9 +83,15 @@ RUN cmake \
         -DTARGET_ARCHITECTURE=core \
         -DCMAKE_PREFIX_PATH:PATH="${AV_INSTALL}" \
         -DCMAKE_INSTALL_PREFIX:PATH="${AV_INSTALL}" \
+        -DALICEVISION_BUILD_TESTS=${RUN_TESTS} \
         ${AV_DEV} && \
     make -j$(nproc) && \
     make -j$(nproc) install
+
+# Optionally Run tests
+RUN if [ "${RUN_TESTS}" = "ON" ]; then \
+        make -j$(nproc) test; \
+    fi
 
 # Clean up
 WORKDIR ${AV_INSTALL}
