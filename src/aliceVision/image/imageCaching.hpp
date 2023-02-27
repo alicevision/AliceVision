@@ -98,7 +98,7 @@ struct CacheInfo
         // Check that max size is higher than capacity
         if (maxSize < capacity)
         {
-            ALICEVISION_THROW_ERROR("[image::ImageCache] Maximum size must be higher than capacity");
+            ALICEVISION_THROW_ERROR("[image] ImageCache: maximum size must be higher than capacity");
         }
     }
 };
@@ -278,7 +278,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
 {
     const std::lock_guard<std::mutex> lock(_mutex);
 
-    ALICEVISION_LOG_DEBUG("[image::ImageCache] reading " << filename 
+    ALICEVISION_LOG_TRACE("[image] ImageCache: reading " << filename 
                          << " with half-sampling level " << halfSampleLevel
                          << " from thread " << std::this_thread::get_id());
 
@@ -298,7 +298,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
 
             _info.nbLoadFromCache++;
 
-            ALICEVISION_LOG_DEBUG("[image::ImageCache] " << toString());
+            ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
             return _imagePtrs.at(keyReq).get<TPix>();
         }
     }
@@ -314,7 +314,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     {
         load<TPix>(keyReq);
 
-        ALICEVISION_LOG_DEBUG("[image::ImageCache] " << toString());
+        ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
         return _imagePtrs.at(keyReq).get<TPix>();
     }
 
@@ -340,7 +340,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
 
                 load<TPix>(keyReq);
 
-                ALICEVISION_LOG_DEBUG("[image::ImageCache] " << toString());
+                ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
                 return _imagePtrs.at(keyReq).get<TPix>();
             }
             ++it;
@@ -377,11 +377,11 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     {
         load<TPix>(keyReq);
 
-        ALICEVISION_LOG_DEBUG("[image::ImageCache] " << toString());
+        ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
         return _imagePtrs.at(keyReq).get<TPix>();
     }
 
-    ALICEVISION_THROW_ERROR("[image::ImageCache] Failed to load image \n" << toString());
+    ALICEVISION_THROW_ERROR("[image] ImageCache: failed to load image \n" << toString());
 
     return nullptr;
 }
