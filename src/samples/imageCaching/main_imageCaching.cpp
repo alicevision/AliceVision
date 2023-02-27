@@ -29,8 +29,8 @@ namespace po = boost::program_options;
 int aliceVision_main(int argc, char **argv)
 {
     // command-line arguments
-    float capacity = 256;
-    float maxSize = 1024;
+    float capacity = 256.f;
+    float maxSize = 1024.f;
     std::vector<std::string> filenames;
     std::vector<int> halfSampleLevels;
     int defaultHalfSampleLevel = 0;

@@ -158,5 +158,5 @@ std::string ImageCache::toString() const
     return description;
 }
 
-}
-}
+} // namespace image
+} // namespace aliceVision

@@ -436,5 +436,5 @@ void ImageCache::load(const CacheKey& key)
     _info.contentSize += value.memorySize();
 }
 
-}
-}
+} // namespace image
+} // namespace aliceVision

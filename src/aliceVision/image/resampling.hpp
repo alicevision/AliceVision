@@ -49,8 +49,8 @@ namespace image {
 
   /**
    ** Half sample an image (ie reduce its size by a factor 2) using bilinear interpolation
-   ** @param src input image
-   ** @param out output image
+   ** @param[in] src input image
+   ** @param[out] out output image
    **/
   template < typename Image >
   void ImageHalfSample( const Image & src , Image & out )
