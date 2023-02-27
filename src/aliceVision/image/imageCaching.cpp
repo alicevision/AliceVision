@@ -116,8 +116,8 @@ unsigned long long int CacheValue::memorySize() const
     return 0;
 }
 
-ImageCache::ImageCache(float capacity_MB, float maxSize_MB, const ImageReadOptions& options) : 
-    _info(capacity_MB, maxSize_MB), 
+ImageCache::ImageCache(float capacity_MiB, float maxSize_MiB, const ImageReadOptions& options) : 
+    _info(capacity_MiB, maxSize_MiB), 
     _options(options)
 {
 }

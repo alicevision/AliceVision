@@ -91,9 +91,9 @@ struct CacheInfo
     int nbLoadFromHigherScale = 0;
     int nbRemoveUnused = 0;
 
-    CacheInfo(float capacity_MB, float maxSize_MB) : 
-        capacity(capacity_MB * 1000000), 
-        maxSize(maxSize_MB * 1000000)
+    CacheInfo(float capacity_MiB, float maxSize_MiB) : 
+        capacity(capacity_MiB * 1024 * 1024), 
+        maxSize(maxSize_MiB * 1024 * 1024)
     {
         // Check that max size is higher than capacity
         if (maxSize < capacity)
@@ -204,11 +204,11 @@ class ImageCache
 public:
     /**
      * @brief Create a new image cache by defining memory usage limits and image reading options.
-     * @param[in] capacity_MB the cache capacity (in MB)
-     * @param[in] maxSize_MB the cache maximal size (in MB)
+     * @param[in] capacity_MiB the cache capacity (in MiB)
+     * @param[in] maxSize_MiB the cache maximal size (in MiB)
      * @param[in] options the reading options that will be used when loading images through this cache
      */
-    ImageCache(float capacity_MB, float maxSize_MB, const ImageReadOptions& options);
+    ImageCache(float capacity_MiB, float maxSize_MiB, const ImageReadOptions& options);
 
     /**
      * @brief Destroy the cache and the unused images it contains.
