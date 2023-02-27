@@ -78,12 +78,12 @@ struct CacheKeyHasher
 struct CacheInfo
 {
     /// memory usage limits
-    const int capacity;
-    const int maxSize;
+    const unsigned long long int capacity;
+    const unsigned long long int maxSize;
 
     /// current state of the cache
     int nbImages = 0;
-    int contentSize = 0;
+    unsigned long long int contentSize = 0;
 
     /// usage statistics
     int nbLoadFromDisk = 0;
@@ -95,6 +95,11 @@ struct CacheInfo
         capacity(capacity_MB * 1000000), 
         maxSize(maxSize_MB * 1000000)
     {
+        // Check that max size is higher than capacity
+        if (maxSize < capacity)
+        {
+            ALICEVISION_THROW_ERROR("[image::ImageCache] Maximum size must be higher than capacity");
+        }
     }
 };
 
@@ -141,7 +146,7 @@ public:
      * @brief Retrieve the memory size (in bytes) of the wrapped image.
      * @return the memory size of the wrapped image if there is one, otherwise 0
      */
-    int memorySize() const;
+    unsigned long long int memorySize() const;
 
 private:
     std::shared_ptr<Image<unsigned char>> imgUChar;
@@ -302,7 +307,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     int width, height;
     readImageSize(filename, width, height);
     int downscale = 1 << halfSampleLevel;
-    int memSize = (width / downscale) * (height / downscale) * sizeof(TPix);
+    unsigned long long int memSize = (width / downscale) * (height / downscale) * sizeof(TPix);
  
     // add image to cache if it fits in capacity
     if (memSize + _info.contentSize <= _info.capacity) 
@@ -314,7 +319,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     }
 
     // retrieve missing capacity
-    int missingCapacity = memSize + _info.contentSize - _info.capacity;
+    unsigned long long int missingCapacity = memSize + _info.contentSize - _info.capacity;
 
     // find unused image with size bigger than missing capacity
     // remove it and add image to cache

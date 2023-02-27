@@ -146,10 +146,13 @@ namespace aliceVision
       /**
        * @brief Retrieve the size in byte of the image 
        * @return size of the image (in byte)
+       * @note We use unsigned long long integers to avoid issues with large images, which can exceed several GB.
        */
-      inline int MemorySize() const
+      inline unsigned long long int MemorySize() const
       {
-        return Width() * Height() * Depth();
+        return static_cast<unsigned long long int>(Width()) *
+               static_cast<unsigned long long int>(Height()) *
+               static_cast<unsigned long long int>(Depth());
       }
 
 

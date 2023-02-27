@@ -87,7 +87,7 @@ int CacheValue::useCount() const
     return 0;
 }
 
-int CacheValue::memorySize() const
+unsigned long long int CacheValue::memorySize() const
 {
     if (imgUChar)
     {
