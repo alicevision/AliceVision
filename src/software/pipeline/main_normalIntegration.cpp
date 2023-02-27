@@ -40,6 +40,8 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
+using namespace aliceVision;
+
 int aliceVision_main(int argc, char **argv)
 {
     namespace po = boost::program_options;
@@ -96,17 +98,17 @@ int aliceVision_main(int argc, char **argv)
 
     if(sfmDataFile.compare("") == 0)
     {
-        normalIntegration(inputPath, isPerspective, downscale, outputFolder);
+        photometricStereo::normalIntegration(inputPath, isPerspective, downscale, outputFolder);
     }
     else
     {
-      aliceVision::sfmData::SfMData sfmData;
-      if(!aliceVision::sfmDataIO::Load(sfmData, sfmDataFile, aliceVision::sfmDataIO::ESfMData::ALL))
+      sfmData::SfMData sfmData;
+      if(!sfmDataIO::Load(sfmData, sfmDataFile, sfmDataIO::ESfMData::ALL))
       {
           ALICEVISION_LOG_ERROR("The input file '" + sfmDataFile + "' cannot be read");
           return EXIT_FAILURE;
       }
-      normalIntegration(sfmData, inputPath, isPerspective, downscale, outputFolder);
+      photometricStereo::normalIntegration(sfmData, inputPath, isPerspective, downscale, outputFolder);
     }
 
     return 0;

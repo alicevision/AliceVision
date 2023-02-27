@@ -39,11 +39,14 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
+// Namespaces
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+
+using namespace aliceVision;
+
 int aliceVision_main(int argc, char **argv)
 {
-    namespace po = boost::program_options;
-    namespace fs = boost::filesystem;
-
     std::string inputPath;
     std::string inputJSON;
     std::string ouputJSON;
@@ -71,13 +74,13 @@ int aliceVision_main(int argc, char **argv)
         }
         po::notify(vm);
     }
-    catch(boost::program_options::required_option& e)
+    catch(po::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what());
       ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
+    catch(po::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what());
       ALICEVISION_COUT("Usage:\n\n" << allParams);
@@ -87,19 +90,19 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_COUT("Program called with the following parameters:");
     ALICEVISION_COUT(vm);
 
-    if(boost::filesystem::is_directory(inputPath))
+    if(fs::is_directory(inputPath))
     {
         std::cout << "Directory input : WIP" << std::endl;
     }
     else
     {
-        aliceVision::sfmData::SfMData sfmData;
-        if(!aliceVision::sfmDataIO::Load(sfmData, inputPath, aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS|aliceVision::sfmDataIO::INTRINSICS)))
+        sfmData::SfMData sfmData;
+        if(!sfmDataIO::Load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
         {
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
             return EXIT_FAILURE;
         }
-        lightCalibration(sfmData, inputJSON, ouputJSON);
+        lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON);
     }
 
     return 0;

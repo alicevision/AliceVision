@@ -23,28 +23,28 @@
 #include "photometricDataIO.hpp"
 #include "normalIntegration.hpp"
 
-using namespace aliceVision;
+namespace aliceVision {
+namespace photometricStereo {
 
 void normalIntegration(const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler)
 {
-
     std::string normalMapPath = inputPath + "/normals.png";
     std::string pathToK = inputPath + "/K.txt";
 
-    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG;
-    aliceVision::image::readImage(normalMapPath, normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+    image::Image<image::RGBColor> normalsImPNG;
+    image::readImage(normalMapPath, normalsImPNG, image::EImageColorSpace::NO_CONVERSION);
 
     Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
     readMatrix(pathToK, K);
 
-    aliceVision::image::Image<float> normalsMask;
+    image::Image<float> normalsMask;
     std::string maskName = inputPath + "/mask.png";
     loadMask(maskName, normalsMask);
 
     int nbCols = normalsImPNG.cols();
     int nbRows = normalsImPNG.rows();
 
-    aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
+    image::Image<image::RGBfColor> normalsImPNG2(nbCols, nbRows);
     loadNormalMap(normalsImPNG, normalsMask, normalsImPNG2);
 
     if(downscale > 1)
@@ -59,8 +59,8 @@ void normalIntegration(const std::string& inputPath, const bool& perspective, co
         nbRows = normalsImPNG2.rows();
     }
 
-    aliceVision::image::Image<float> depthMap(nbCols, nbRows);
-    aliceVision::image::Image<float> distanceMap(nbCols, nbRows);
+    image::Image<float> depthMap(nbCols, nbRows);
+    image::Image<float> distanceMap(nbCols, nbRows);
     DCT_integration(normalsImPNG2, depthMap, perspective, K, normalsMask);
 
     // AliceVision uses distance-to-origin convention
@@ -68,13 +68,12 @@ void normalIntegration(const std::string& inputPath, const bool& perspective, co
 
     std::string pathToDM = outputFodler + "/output.exr";
 
-    aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
-
+    image::writeImage(pathToDM, distanceMap, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }
 
-void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler)
+void normalIntegration(const sfmData::SfMData& sfmData, const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler)
 {
-    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG;
+    image::Image<image::RGBColor> normalsImPNG;
 
     Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
     IndexT viewId;
@@ -86,7 +85,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         for(auto& poseIt: sfmData.getPoses())
         {
             // Read associated normal map :
-            aliceVision::image::readImage(inputPath + "/" + std::to_string(poseIt.first) + "_normals.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+            image::readImage(inputPath + "/" + std::to_string(poseIt.first) + "_normals.png", normalsImPNG, image::EImageColorSpace::NO_CONVERSION);
 
             int nbCols = normalsImPNG.cols();
             int nbRows = normalsImPNG.rows();
@@ -116,8 +115,8 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
             }
 
             // PNG to real normal map
-            aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
-            aliceVision::image::Image<float> normalsMask(nbCols, nbRows);
+            image::Image<image::RGBfColor> normalsImPNG2(nbCols, nbRows);
+            image::Image<float> normalsMask(nbCols, nbRows);
 
             for (int j = 0; j < nbCols; ++j)
             {
@@ -161,12 +160,12 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
                 nbRows = normalsImPNG2.rows();
             }
             // Main fonction
-            aliceVision::image::Image<float> depthMap;
+            image::Image<float> depthMap;
 
             aliceVision::image::Image<float> distanceMap;
             DCT_integration(normalsImPNG2, depthMap, perspective, K, normalsMask);
-            aliceVision::image::Image<float> z0(nbCols, nbRows);
-            aliceVision::image::Image<float> maskZ0(nbCols, nbRows);
+            image::Image<float> z0(nbCols, nbRows);
+            image::Image<float> maskZ0(nbCols, nbRows);
                 getZ0FromLandmarks(sfmData, z0, maskZ0, viewId, normalsMask);
 
             // AliceVision uses distance-to-origin convention
@@ -181,9 +180,9 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
             Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
             oiio::ParamValueList metadata;
-            metadata.attribute("AliceypeDesc::DOUBLE, oiio::TypeDesVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
+            metadata.attribute("AliceypeDesc::DOUBLE, oiio::TypeDesVision:storageDataType", image::EStorageDataType_enumToString(image::EStorageDataType::Float));
             metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, P.data()));
-            aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float), metadata);
+            image::writeImage(pathToDM, distanceMap, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float), metadata);
         }
     }
     else
@@ -193,7 +192,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         poseId = sfmData.getViews().begin()->second->getPoseId();
 
         // Read associated normal map :
-        aliceVision::image::readImage(inputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+        image::readImage(inputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, image::EImageColorSpace::NO_CONVERSION);
 
         int nbCols = normalsImPNG.cols();
         int nbRows = normalsImPNG.rows();
@@ -223,12 +222,12 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
             K(2,2) = 1;
         }
 
-        aliceVision::image::Image<float> normalsMask(nbCols, nbRows);
+        image::Image<float> normalsMask(nbCols, nbRows);
         std::string maskName = inputPath + "/" + std::to_string(poseId) + "_mask.png";
         loadMask(maskName, normalsMask);
 
         // Float normal map
-        aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
+        image::Image<image::RGBfColor> normalsImPNG2(nbCols, nbRows);
         loadNormalMap(normalsImPNG, normalsMask, normalsImPNG2);
 
         if(downscale > 1)
@@ -244,11 +243,11 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         }
 
         // Main fonction
-        aliceVision::image::Image<float> depthMap(nbCols, nbRows);
+        image::Image<float> depthMap(nbCols, nbRows);
         DCT_integration(normalsImPNG2, depthMap, perspective, K, normalsMask);
 
         // AliceVision uses distance-to-origin convention
-        aliceVision::image::Image<float> distanceMap(nbCols, nbRows);
+        image::Image<float> distanceMap(nbCols, nbRows);
         convertZtoDistance(depthMap, distanceMap, K);
 
         // TODO : Add fake metadata for display
@@ -285,12 +284,12 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, C.m));          //C.data()));
         metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, iP.m));  // iP.data()));*/
         std::string pathToDM = outputFodler + "/" + std::to_string(poseId) + "_depthMap.exr";
-        aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
+        image::writeImage(pathToDM, distanceMap, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     }
 }
 
 
-void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const aliceVision::image::Image<float>& normalsMask)
+void DCT_integration(const image::Image<image::RGBfColor>& normals, image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const image::Image<float>& normalsMask)
 {
 
     int nbCols = normals.cols();
@@ -369,12 +368,11 @@ void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfCol
     }
 }
 
+void normal2PQ(const image::Image<image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K, const image::Image<float>& normalsMask){
 
-void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K, const aliceVision::image::Image<float>& normalsMask){
-
-	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
-	aliceVision::image::Image<float> normalsY(p.cols(), p.rows());
-	aliceVision::image::Image<float> normalsZ(p.cols(), p.rows());
+    image::Image<float> normalsX(p.cols(), p.rows());
+    image::Image<float> normalsY(p.cols(), p.rows());
+    image::Image<float> normalsZ(p.cols(), p.rows());
 
     bool hasMask = !((normalsMask.rows() == 1) && (normalsMask.cols() == 1));
 
@@ -486,27 +484,27 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
     f(nbRows-1,0) = f(nbRows-1,0)-sqrt(2)*b(nbRows-1,0);
 }
 
-void adjustScale(const aliceVision::sfmData::SfMData& sfmData, aliceVision::image::Image<float>& initDepth, size_t viewID)
+void adjustScale(const sfmData::SfMData& sfmData, image::Image<float>& initDepth, size_t viewID)
 {
-    const aliceVision::sfmData::Landmarks& landmarks = sfmData.getLandmarks();
-    const aliceVision::sfmData::LandmarksPerView landmarksPerView = aliceVision::sfmData::getLandmarksPerViews(sfmData);
-    const aliceVision::sfmData::LandmarkIdSet& visibleLandmarks = landmarksPerView.at(viewID);
+    const sfmData::Landmarks& landmarks = sfmData.getLandmarks();
+    const sfmData::LandmarksPerView landmarksPerView = sfmData::getLandmarksPerViews(sfmData);
+    const sfmData::LandmarkIdSet& visibleLandmarks = landmarksPerView.at(viewID);
 
     size_t numberOf3dPoints = visibleLandmarks.size();
 
     Eigen::VectorXf knownDepths(numberOf3dPoints);
     Eigen::VectorXf estimatedDepths(numberOf3dPoints);
 
-    const aliceVision::sfmData::CameraPose& currentPose = sfmData.getPose(sfmData.getView(viewID));
+    const sfmData::CameraPose& currentPose = sfmData.getPose(sfmData.getView(viewID));
     const geometry::Pose3& pose = currentPose.getTransform();
 
     for (int i = 0; i < numberOf3dPoints; ++i)
     {
         size_t currentLandmarkIndex = visibleLandmarks.at(i);
-        const aliceVision::sfmData::Landmark& currentLandmark = landmarks.at(currentLandmarkIndex);
+        const sfmData::Landmark& currentLandmark = landmarks.at(currentLandmarkIndex);
         knownDepths(i) = pose.depth(currentLandmark.X);
 
-        aliceVision::sfmData::Observation observationInCurrentPicture = currentLandmark.observations.at(viewID);
+        sfmData::Observation observationInCurrentPicture = currentLandmark.observations.at(viewID);
 
         int rowInd = observationInCurrentPicture.x(1);
         int colInd = observationInCurrentPicture.x(0);
@@ -521,22 +519,22 @@ void adjustScale(const aliceVision::sfmData::SfMData& sfmData, aliceVision::imag
 }
 
 
-void getZ0FromLandmarks(const aliceVision::sfmData::SfMData& sfmData, aliceVision::image::Image<float>& z0, aliceVision::image::Image<float>& mask_z0, const size_t viewID, const aliceVision::image::Image<float>& mask)
+void getZ0FromLandmarks(const sfmData::SfMData& sfmData, image::Image<float>& z0, image::Image<float>& mask_z0, const size_t viewID, const image::Image<float>& mask)
 {
-    const aliceVision::sfmData::Landmarks& landmarks = sfmData.getLandmarks();
-    const aliceVision::sfmData::LandmarksPerView landmarksPerView = aliceVision::sfmData::getLandmarksPerViews(sfmData);
-    const aliceVision::sfmData::LandmarkIdSet& visibleLandmarks = landmarksPerView.at(viewID);
+    const sfmData::Landmarks& landmarks = sfmData.getLandmarks();
+    const sfmData::LandmarksPerView landmarksPerView = sfmData::getLandmarksPerViews(sfmData);
+    const sfmData::LandmarkIdSet& visibleLandmarks = landmarksPerView.at(viewID);
 
     size_t numberOf3dPoints = visibleLandmarks.size();
 
-    const aliceVision::sfmData::CameraPose& currentPose = sfmData.getPose(sfmData.getView(viewID));
+    const sfmData::CameraPose& currentPose = sfmData.getPose(sfmData.getView(viewID));
     const geometry::Pose3& pose = currentPose.getTransform();
 
     for (int i = 0; i < numberOf3dPoints; ++i)
     {
         size_t currentLandmarkIndex = visibleLandmarks.at(i);
-        const aliceVision::sfmData::Landmark& currentLandmark = landmarks.at(currentLandmarkIndex);
-        aliceVision::sfmData::Observation observationInCurrentPicture = currentLandmark.observations.at(viewID);
+        const sfmData::Landmark& currentLandmark = landmarks.at(currentLandmarkIndex);
+        sfmData::Observation observationInCurrentPicture = currentLandmark.observations.at(viewID);
 
         int rowInd = observationInCurrentPicture.x(1);
         int colInd = observationInCurrentPicture.x(0);
@@ -549,7 +547,7 @@ void getZ0FromLandmarks(const aliceVision::sfmData::SfMData& sfmData, aliceVisio
     }
 }
 
-void smoothIntegration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const aliceVision::image::Image<float>& mask, const aliceVision::image::Image<float>& z0, const aliceVision::image::Image<float>& mask_z0)
+void smoothIntegration(const image::Image<image::RGBfColor>& normals, image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const image::Image<float>& mask, const image::Image<float>& z0, const image::Image<float>& mask_z0)
 {
     std::cout << "WIP" << std::endl;
 }
@@ -618,4 +616,6 @@ void loadNormalMap(aliceVision::image::Image<aliceVision::image::RGBColor> input
             }
         }
     }
+}
+}
 }

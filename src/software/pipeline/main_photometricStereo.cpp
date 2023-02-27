@@ -40,11 +40,13 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+
+using namespace aliceVision;
+
 int aliceVision_main(int argc, char **argv)
 {
-    namespace po = boost::program_options;
-    namespace fs = boost::filesystem;
-
     std::string inputPath;
     std::string maskPath;
     std::string outputPath;
@@ -85,13 +87,13 @@ int aliceVision_main(int argc, char **argv)
         }
         po::notify(vm);
     }
-    catch(boost::program_options::required_option& e)
+    catch(po::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what());
       ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
+    catch(po::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what());
       ALICEVISION_COUT("Usage:\n\n" << allParams);
@@ -102,29 +104,29 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_COUT(vm);
 
     // If the path to light data is empty, set it to inputPath :
-    if(pathToLightData.compare("") && boost::filesystem::is_directory(inputPath))
+    if(pathToLightData.compare("") && fs::is_directory(inputPath))
     {
         std::cout << "Warning : path to light data has been set to inputpath folder" << std::endl;
         pathToLightData = inputPath;
     }
 
-    aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm;
-    aliceVision::image::Image<aliceVision::image::RGBfColor> albedoIm;
+    image::Image<image::RGBfColor> normalsIm;
+    image::Image<image::RGBfColor> albedoIm;
 
-    if(boost::filesystem::is_directory(inputPath))
+    if(fs::is_directory(inputPath))
     {
-        photometricStereo(inputPath, pathToLightData, outputPath, HS_order, removeAmbiant, isRobust, downscale, normalsIm, albedoIm);
+        photometricStereo::photometricStereo(inputPath, pathToLightData, outputPath, HS_order, removeAmbiant, isRobust, downscale, normalsIm, albedoIm);
     }
     else
     {
-      aliceVision::sfmData::SfMData sfmData;
-      if(!aliceVision::sfmDataIO::Load(sfmData, inputPath, aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS|aliceVision::sfmDataIO::INTRINSICS)))
+      sfmData::SfMData sfmData;
+      if(!sfmDataIO::Load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
       {
           ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
           return EXIT_FAILURE;
       }
 
-      photometricStereo(sfmData, pathToLightData, maskPath, outputPath, HS_order, removeAmbiant, isRobust, downscale, normalsIm, albedoIm);
+      photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, outputPath, HS_order, removeAmbiant, isRobust, downscale, normalsIm, albedoIm);
     }
 
     return 0;

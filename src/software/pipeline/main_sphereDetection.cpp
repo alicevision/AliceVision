@@ -29,6 +29,8 @@
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
+using namespace aliceVision;
+
 int aliceVision_main(int argc, char** argv)
 {
 
@@ -71,13 +73,13 @@ int aliceVision_main(int argc, char** argv)
         }
         po::notify(variable_map);
     }
-    catch(boost::program_options::required_option& e)
+    catch(po::required_option& e)
     {
         ALICEVISION_CERR("ERROR: " << e.what());
         ALICEVISION_COUT("Usage:\n\n" << all_parameters);
         return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
+    catch(po::error& e)
     {
         ALICEVISION_CERR("ERROR: " << e.what());
         ALICEVISION_COUT("Usage:\n\n" << all_parameters);
@@ -88,8 +90,8 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_COUT(variable_map);
 
     // load SFMData file
-    aliceVision::sfmData::SfMData sfmData;
-    if(!aliceVision::sfmDataIO::Load(sfmData, input_sfmdata_path, aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS | aliceVision::sfmDataIO::INTRINSICS)))
+    sfmData::SfMData sfmData;
+    if(!sfmDataIO::Load(sfmData, input_sfmdata_path, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + input_sfmdata_path + "' cannot be read");
         return EXIT_FAILURE;
@@ -106,11 +108,10 @@ int aliceVision_main(int argc, char** argv)
         Ort::Session session(env, input_model_path.c_str(), session_options);
 
         // DEBUG: print model I/O
-        model_explore(session);
+        sphereDetection::model_explore(session);
 
         // neural network magic
-        sphereDetection(sfmData, session, fs_output_path, input_min_score);
-        //std::cout << "WIP" << std::endl;
+        sphereDetection::sphereDetection(sfmData, session, fs_output_path, input_min_score);
     }
     else
     {
@@ -119,7 +120,7 @@ int aliceVision_main(int argc, char** argv)
         sphereParam[1] = sphereCenterOffset(1);
         sphereParam[2] = sphereRadius;
 
-        writeManualSphereJSON(sfmData, sphereParam, fs_output_path);
+        sphereDetection::writeManualSphereJSON(sfmData, sphereParam, fs_output_path);
     }
     return 0;
 }

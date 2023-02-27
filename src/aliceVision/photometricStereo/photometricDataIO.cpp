@@ -1,3 +1,5 @@
+#include "photometricDataIO.hpp"
+
 #include <aliceVision/image/io.hpp>
 
 #include <boost/property_tree/ptree.hpp>
@@ -10,10 +12,11 @@
 #include <sstream>
 #include <fstream>
 
-#include "photometricDataIO.hpp"
-
 namespace bpt = boost::property_tree;
 namespace fs = boost::filesystem;
+
+namespace aliceVision {
+namespace photometricStereo {
 
 void loadLightIntensities(const std::string& intFileName, std::vector<std::array<float, 3>>& intList)
 {
@@ -151,11 +154,11 @@ void buildLigtMatFromJSON(const std::string& fileName, const std::vector<std::st
     }
 }
 
-void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask)
+void loadMask(std::string const& maskName, image::Image<float>& mask)
 {
     if(fs::exists(maskName))
     {
-        aliceVision::image::readImage(maskName, mask, aliceVision::image::EImageColorSpace::SRGB);
+        image::readImage(maskName, mask, image::EImageColorSpace::SRGB);
     }
     else
     {
@@ -167,7 +170,7 @@ void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mas
 
 }
 
-void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& indexes)
+void getIndMask(image::Image<float> const& mask, std::vector<int>& indexes)
 {
     const int nbRows = mask.rows();
     const int nbCols = mask.cols();
@@ -185,7 +188,7 @@ void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& 
     }
 }
 
-void intensityScaling(std::array<float, 3> const& intensities, aliceVision::image::Image<aliceVision::image::RGBfColor>& imageToScale)
+void intensityScaling(std::array<float, 3> const& intensities, image::Image<image::RGBfColor>& imageToScale)
 {
     int nbRows = imageToScale.rows();
     int nbCols = imageToScale.cols();
@@ -202,7 +205,7 @@ void intensityScaling(std::array<float, 3> const& intensities, aliceVision::imag
     }
 }
 
-void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColor>& imageIn, const aliceVision::image::Image<float>& mask, Eigen::MatrixXf& imageOut)
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::Image<float>& mask, Eigen::MatrixXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -226,7 +229,7 @@ void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColo
     }
 }
 
-void image2PsMatrix(const aliceVision::image::Image<float>& imageIn, const aliceVision::image::Image<float>& mask, Eigen::VectorXf& imageOut)
+void image2PsMatrix(const image::Image<float>& imageIn, const image::Image<float>& mask, Eigen::VectorXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -259,7 +262,7 @@ void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskI
     }
 }
 
-void reshapeInImage(const Eigen::MatrixXf& matrixIn, aliceVision::image::Image<aliceVision::image::RGBfColor>& imageOut)
+void reshapeInImage(const Eigen::MatrixXf& matrixIn, image::Image<image::RGBfColor>& imageOut)
 {
     int nbRows = imageOut.rows();
     int nbCols = imageOut.cols();
@@ -277,7 +280,7 @@ void reshapeInImage(const Eigen::MatrixXf& matrixIn, aliceVision::image::Image<a
     }
 }
 
-void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm, aliceVision::image::Image<aliceVision::image::RGBColor>& normalsImPNG)
+void convertNormalMap2png(const image::Image<image::RGBfColor>& normalsIm, image::Image<image::RGBColor>& normalsImPNG)
 {
     int nbRows = normalsIm.rows();
     int nbCols = normalsIm.cols();
@@ -325,27 +328,31 @@ void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix)
     matFile.close();
 }
 
-void writePSResults(const std::string& outputPath, const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, const aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo)
 {
     int pictCols = normals.Width();
     int pictRows = normals.Height();
 
-    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG(pictCols,pictRows);
+    image::Image<image::RGBColor> normalsImPNG(pictCols,pictRows);
     convertNormalMap2png(normals, normalsImPNG);
-    aliceVision::image::writeImage(outputPath + "/normals.png", normalsImPNG, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
+    image::writeImage(outputPath + "/normals.png", normalsImPNG, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 
-    aliceVision::image::writeImage(outputPath + "/albedo.exr", albedo, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
+    //image::writeImage(outputPath + "/albedo.exr", albedo, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::SRGB).storageDataType(image::EStorageDataType::Float));
+    image::writeImage(outputPath + "/albedo.exr", albedo, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }
 
-void writePSResults(const std::string& outputPath, const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, const aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo, const aliceVision::IndexT& poseId)
+void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo, const IndexT poseId)
 {
     int pictCols = normals.Width();
     int pictRows = normals.Height();
 
-    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG(pictCols,pictRows);
+    image::Image<image::RGBColor> normalsImPNG(pictCols,pictRows);
     convertNormalMap2png(normals, normalsImPNG);
-    aliceVision::image::writeImage(outputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::NO_CONVERSION).storageDataType(aliceVision::image::EStorageDataType::Float));
+    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 
-    aliceVision::image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.png", albedo, aliceVision::image::ImageWriteOptions().toColorSpace(aliceVision::image::EImageColorSpace::SRGB).storageDataType(aliceVision::image::EStorageDataType::Float));
+    //image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.png", albedo, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::SRGB).storageDataType(image::EStorageDataType::Float));
+    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.png", albedo, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+}
 
+}
 }

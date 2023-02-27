@@ -45,6 +45,9 @@
 namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 
+namespace aliceVision {
+namespace sphereDetection {
+
 /**
  * @brief Prints inputs and outputs of neural network, and checks the requirements.
  *
@@ -104,8 +107,8 @@ void model_explore(Ort::Session& session)
 prediction predict(Ort::Session& session, const fs::path image_path, const fs::path output_path, const float min_score)
 {
     // read image
-    aliceVision::image::Image<aliceVision::image::RGBColor> image_alice;
-    aliceVision::image::readImage(image_path.string(), image_alice, aliceVision::image::EImageColorSpace::SRGB);
+    image::Image<image::RGBColor> image_alice;
+    image::readImage(image_path.string(), image_alice, image::EImageColorSpace::SRGB);
 
     // Eigen -> OpenCV
     cv::Mat image_opencv;
@@ -187,7 +190,7 @@ prediction predict(Ort::Session& session, const fs::path image_path, const fs::p
     return prediction{bboxes, scores, masks, image_opencv_shape};
 }
 
-void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path,
+void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path,
                      const float min_score)
 {
     // main tree
@@ -236,7 +239,7 @@ void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session&
     bpt::write_json(output_path.append("detection.json").string(), fileTree);
 }
 
-void writeManualSphereJSON(const aliceVision::sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path output_path)
+void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path output_path)
 {
     // main tree
     bpt::ptree fileTree;
@@ -260,4 +263,7 @@ void writeManualSphereJSON(const aliceVision::sfmData::SfMData& sfmData, const s
         fileTree.add_child(sphereName, spheres_node);
     }
     bpt::write_json(output_path.append("detection.json").string(), fileTree);
+}
+
+}
 }

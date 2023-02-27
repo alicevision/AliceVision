@@ -21,6 +21,9 @@
 // namespaces
 namespace fs = boost::filesystem;
 
+namespace aliceVision {
+namespace sphereDetection {
+
 struct prediction
 {
     std::vector<std::vector<float>> bboxes;
@@ -31,6 +34,9 @@ struct prediction
 
 void model_explore(Ort::Session& session);
 
-void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path, const float min_score);
+void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path, const float min_score);
 
-void writeManualSphereJSON(const aliceVision::sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path output_path);
+void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path output_path);
+
+}
+}
