@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/image/caching.hpp>
+#include <aliceVision/image/imageCaching.hpp>
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
