@@ -44,20 +44,23 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * PCL (Point Cloud Library) >= 1.12.1 for the registration module
 * PopSift (feature extraction on GPU)
 * UncertaintyTE (Uncertainty computation)
+* CoinUtils >= 2.9.3 (if you need to build it use [our fork](https://github.com/alicevision/CoinUtils) with a CMake build system)
+* Coin-or linear programming (Clp) (if you need to build it use [our fork](https://github.com/alicevision/Clp) with a CMake build system)
+* Open Solver Interface (Osi) >= 0.106.10 (if you need to build it use [our fork](https://github.com/alicevision/osi_clp) with a CMake build system)
+
 
 AliceVision also depends on some embedded libraries:
 
-* CoinUtils >= 2.9.3 (internal)
-* Coin-or linear programming (Clp) (internal)
 * Flann >= 1.8.4 (internal)
 * Lemon >= 1.3 (internal)
 * MeshSDFilter (internal)
 * OpenMesh (internal)
-* Open Solver Interface (Osi) >= 0.106.10 (internal)
+
+
 
 Building the project using vcpkg (recommended on Windows)
 --------------------------------
-[Vcpkg](https://github.com/alicevision/vcpkg) is a tool that helps in acquiring, building, and managing C/C++ libraries.
+[Vcpkg](https://github.com/alicevision/vcpkg) is a package manager that helps in acquiring, building, and managing C/C++ libraries.
 AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
 
 ```bash
@@ -192,9 +195,6 @@ At the end of the cmake process, a report shows for each library which version (
 -- EIGEN: 3.3.4
 -- CERES: 1.10.0
 -- FLANN: 1.8.4 (external)
--- CLP: 1.15.11 (internal)
--- COINUTILS: 2.9.3 (internal)
--- OSI: 0.106.10 (internal)
 -- LEMON: 1.3 (internal)
 ```
 
