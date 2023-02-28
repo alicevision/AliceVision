@@ -46,7 +46,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * UncertaintyTE (Uncertainty computation)
 * CoinUtils >= 2.9.3 (if you need to build it use [our fork](https://github.com/alicevision/CoinUtils) with a CMake build system)
 * Coin-or linear programming (Clp) (if you need to build it use [our fork](https://github.com/alicevision/Clp) with a CMake build system)
-* Open Solver Interface (Osi) >= 0.106.10 (if you need to build it use [our fork](https://github.com/alicevision/osi_clp) with a CMake build system)
+* Open Solver Interface (Osi) >= 0.106.10 (if you need to build it use [our fork](https://github.com/alicevision/Osi)
 
 
 AliceVision also depends on some embedded libraries:
