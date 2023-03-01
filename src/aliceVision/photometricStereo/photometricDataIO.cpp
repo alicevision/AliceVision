@@ -27,9 +27,13 @@ void loadLightIntensities(const std::string& intFileName, std::vector<std::array
     std::fstream intFile;
     intFile.open(intFileName, std::ios::in);
 
-    if (intFile.is_open())
+    if (!intFile.is_open())
     {
-
+        ALICEVISION_LOG_ERROR("Unable to load intensities");
+        throw std::runtime_error("Can't open '" + intFileName + "' !");
+    }
+    else
+    {
         while(!intFile.eof())
         {
             std::getline(intFile,line);
@@ -54,7 +58,12 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
     std::fstream dirFile;
     dirFile.open(dirFileName, std::ios::in);
 
-    if (dirFile.is_open())
+    if (!dirFile.is_open())
+    {
+        ALICEVISION_LOG_ERROR("Unable to load lightings");
+        throw std::runtime_error("Can't open '" + dirFileName + "' !");
+    }
+    else
     {
         int lineNumber = 0;
 
@@ -87,7 +96,12 @@ void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
     std::fstream dirFile;
     dirFile.open(dirFileName, std::ios::in);
 
-    if (dirFile.is_open())
+    if (!dirFile.is_open())
+    {
+        ALICEVISION_LOG_ERROR("Unable to load lightings");
+        throw std::runtime_error("Can't open '" + dirFileName + "' !");
+    }
+    else
     {
         int lineNumber = 0;
 
@@ -156,16 +170,16 @@ void buildLigtMatFromJSON(const std::string& fileName, const std::vector<std::st
 
 void loadMask(std::string const& maskName, image::Image<float>& mask)
 {
-    if(fs::exists(maskName))
-    {
-        image::readImage(maskName, mask, image::EImageColorSpace::SRGB);
-    }
-    else
+    if(!fs::exists(maskName))
     {
         std::cout << "Can not open mask.png. Every pixel will be used !" << std::endl;
         Eigen::MatrixXf mask_aux(1,1);
         mask_aux(0,0) = 1;
         mask = mask_aux;
+    }
+    else
+    {
+        image::readImage(maskName, mask, image::EImageColorSpace::SRGB);
     }
 
 }

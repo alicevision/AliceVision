@@ -7,6 +7,7 @@
 
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/types.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
