@@ -32,10 +32,28 @@ struct prediction
     cv::Size size;
 };
 
+/**
+ * @brief Prints inputs and outputs of neural network, and checks the requirements.
+ * @param session the ONNXRuntime session
+ */
 void model_explore(Ort::Session& session);
 
+/**
+ * @brief Use ONNXRuntime to make a prediction
+ *
+ * @param session
+ * @param image_path the path to the input image
+ * @return cv::Mat, the prediction
+ */
 void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path, const float min_score);
 
+/**
+ * @brief Write json for a hand-detected sphere
+ *
+ * @param sfmData - Input .sfm file
+ * @param sphereParam - Parameters of the hand-detected sphere
+ * @return output_path - Path to the json file
+ */
 void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path output_path);
 
 }

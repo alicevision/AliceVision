@@ -48,11 +48,6 @@ namespace bpt = boost::property_tree;
 namespace aliceVision {
 namespace sphereDetection {
 
-/**
- * @brief Prints inputs and outputs of neural network, and checks the requirements.
- *
- * @param session the ONNXRuntime session
- */
 void model_explore(Ort::Session& session)
 {
     // define allocator
@@ -97,13 +92,6 @@ void model_explore(Ort::Session& session)
     }
 }
 
-/**
- * @brief Use ONNXRuntime to make a prediction
- *
- * @param session
- * @param image_path the path to the input image
- * @return cv::Mat, the prediction
- */
 prediction predict(Ort::Session& session, const fs::path image_path, const fs::path output_path, const float min_score)
 {
     // read image
