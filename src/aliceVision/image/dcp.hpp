@@ -201,6 +201,7 @@ public:
      * param[in] image The OIIO image on which the profile must be applied
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
+     * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */
     void applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
 
@@ -209,8 +210,9 @@ public:
      * param[in] image The aliceVision image on which the profile must be applied
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
+     * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */
-    void applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw = false) const;
+    void applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
 
     /**
      * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer

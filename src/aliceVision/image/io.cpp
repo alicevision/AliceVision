@@ -603,11 +603,10 @@ void readImage(const std::string& path,
         image::DCPProfile::Triple neutral;
         for (int i = 0; i < 3; i++)
         {
-            //neutral[i] = v_mult[1] / v_mult[i];
             neutral[i] = v_mult[i] / v_mult[1];
         }
 
-        ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = " << neutral);
+        ALICEVISION_LOG_INFO("Apply DCP Linear processing with neutral = " << neutral);
 
         dcpProfile.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
     }

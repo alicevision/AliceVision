@@ -2118,7 +2118,6 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
     ALICEVISION_LOG_INFO("Estimated illuminant (cct; tint) : (" << cct << "; " << tint << ")");
 
     Matrix neutral = IdentityMatrix;
-
     if (sourceIsRaw)
     {
         neutral[0][0] = asShotNeutral[0];
@@ -2310,9 +2309,11 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const
         }
 }
 
-void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw) const
+void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw, useColorMatrixOnly);
+
+    ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
 
     #pragma omp parallel for
     for (int i = 0; i < image.Height(); ++i)
