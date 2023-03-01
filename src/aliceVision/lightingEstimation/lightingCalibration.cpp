@@ -92,26 +92,6 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
     lightCalibration(imageList, allSpheresParams, outputPath, focals);
 }
 
-void lightCalibration(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, const std::string& outputPath)
-{
-    std::vector<std::string> imageList;
-    for(auto& viewIt: sfmData.getViews())
-    {
-        ALICEVISION_LOG_INFO("View Id: " << viewIt.first);
-        const fs::path imagePath = fs::path(sfmData.getView(viewIt.first).getImagePath());
-        if(!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
-        {
-                ALICEVISION_LOG_INFO("  - " << imagePath.string());
-                imageList.push_back(imagePath.string());
-        }
-    }
-
-    IndexT intrinsicId = sfmData.getViews().begin()->second->getIntrinsicId();
-    const float focal = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
-
-    lightCalibration(imageList, sphereParam, outputPath, focal);
-}
-
 void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals)
 {
     Eigen::MatrixXf lightMat(imageList.size(), 3);
@@ -141,30 +121,8 @@ void lightCalibration(const std::vector<std::string>& imageList, const std::arra
     for (size_t i = 0; i < imageList.size(); ++i)
     {
         std::string picturePath = imageList.at(i);
-
-        // Read picture :
-        image::Image<float> imageFloat;
-        image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
-
-        // Detect brightest point :
-        Eigen::Vector2f brigthestPoint;
-        detectBrightestPoint(sphereParam, imageFloat, brigthestPoint);
-
-        Eigen::Vector3f normalBrightestPoint;
-        getNormalOnSphere(brigthestPoint(0), brigthestPoint(1), sphereParam, normalBrightestPoint);
-
-        // Observation direction :
-        Eigen::Vector3f observationRay;
-
-        // orthographic approximation :
-        observationRay(0) = 0.0;
-        observationRay(1) = 0.0;
-        observationRay(2) = -1.0;
-
-        // Evaluate lighting direction :
         Eigen::Vector3f lightingDirection;
-        lightingDirection = 2 * normalBrightestPoint.dot(observationRay) * normalBrightestPoint - observationRay;
-        lightingDirection = lightingDirection/lightingDirection.norm();
+        lightCalibrationOneImage(picturePath, sphereParam, focal, "brightestPoint", lightingDirection);
         lightMat.row(i) = lightingDirection;
     }
 

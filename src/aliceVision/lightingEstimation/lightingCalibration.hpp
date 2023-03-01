@@ -20,8 +20,6 @@ void lightCalibration(const std::string& inputPath, const std::string& outputPat
 
 void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath);
 
-void lightCalibration(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, const std::string& outputPath);
-
 void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals);
 
 void lightCalibration(const std::vector<std::string>& imageList, const std::array<float, 3>& sphereParam, const std::string& jsonName, const float focal);
