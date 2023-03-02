@@ -341,8 +341,14 @@ int aliceVision_main(int argc, char** argv)
         {
             targetMetadata.add_or_replace(oiio::ParamValue(meta.first, meta.second));
         }
-        targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(image::EImageColorSpace::LINEAR)));
-        image::writeImage(hdrImagePath, HDRimage, image::ImageWriteOptions().storageDataType(storageDataType), targetMetadata);
+        targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(workingColorSpace)));
+
+        image::ImageWriteOptions writeOptions;
+        writeOptions.fromColorSpace(workingColorSpace);
+        writeOptions.toColorSpace(workingColorSpace);
+        writeOptions.storageDataType(storageDataType);
+
+        image::writeImage(hdrImagePath, HDRimage, writeOptions, targetMetadata);
     }
 
     return EXIT_SUCCESS;

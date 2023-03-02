@@ -509,11 +509,6 @@ void readImage(const std::string& path,
             {
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
-            ALICEVISION_LOG_INFO("Raw demosaicing algo: " << imageReadOptions.demosaicingAlgo);
-            ALICEVISION_LOG_INFO("WB after demosaicing: " << (imageReadOptions.doWBAfterDemosaicing ? "True" : "False"));
-            ALICEVISION_LOG_INFO("Highlight mode: " << (imageReadOptions.highlightMode == 0 ? "Clip" : (imageReadOptions.highlightMode == 1 ? "Unclip" : "Blend")));
-            ALICEVISION_LOG_INFO("DCP mode: " << (imageReadOptions.useDCPColorMatrixOnly ? "Color Matrix Only" : "Full"));
-
             float user_mul[4] = { neutral[0],neutral[1],neutral[2],neutral[1] };
             if (imageReadOptions.doWBAfterDemosaicing)
             {
@@ -536,11 +531,6 @@ void readImage(const std::string& path,
             {
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
-            ALICEVISION_LOG_INFO("Raw demosaicing algo: " << imageReadOptions.demosaicingAlgo);
-            ALICEVISION_LOG_INFO("WB after demosaicing: " << (imageReadOptions.doWBAfterDemosaicing ? "True" : "False"));
-            ALICEVISION_LOG_INFO("Highlight mode: " << (imageReadOptions.highlightMode == 0 ? "Clip" : (imageReadOptions.highlightMode == 1 ? "Unclip" : "Blend")));
-            ALICEVISION_LOG_INFO("DCP mode: " << (imageReadOptions.useDCPColorMatrixOnly ? "Color Matrix Only" : "Full"));
-
             float user_mul[4] = { neutral[0],neutral[1],neutral[2],neutral[1] };
             if (imageReadOptions.doWBAfterDemosaicing)
             {

@@ -2,6 +2,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/stl/mapUtils.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -1292,6 +1293,63 @@ void DCPProfile::Load(const std::string& filename)
     }
     gammatab_srgb.Set(gammatab_srgb_data);
     igammatab_srgb.Set(igammatab_srgb_data);
+}
+
+void DCPProfile::Load(const std::map<std::string, std::string>& metadata)
+{
+    bool dcpMetadataOK = aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:Temp1") &&
+        aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:Temp2") &&
+        aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ForwardMatrixNumber") &&
+        aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ColorMatrixNumber");
+
+    int colorMatrixNb;
+    int fwdMatrixNb;
+
+    if (dcpMetadataOK)
+    {
+        colorMatrixNb = std::stoi(metadata.at("AliceVision:DCP:ColorMatrixNumber"));
+        fwdMatrixNb = std::stoi(metadata.at("AliceVision:DCP:ForwardMatrixNumber"));
+
+        ALICEVISION_LOG_INFO("Matrix Number : " << colorMatrixNb << " ; " << fwdMatrixNb);
+
+        dcpMetadataOK = !((colorMatrixNb == 0) ||
+            ((colorMatrixNb > 0) && !aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ColorMat1")) ||
+            ((colorMatrixNb > 1) && !aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ColorMat2")) ||
+            ((fwdMatrixNb > 0) && !aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ForwardMat1")) ||
+            ((fwdMatrixNb > 1) && !aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ForwardMat2")));
+    }
+
+    if (!dcpMetadataOK)
+    {
+        ALICEVISION_THROW_ERROR("Image Processing: All required DCP metadata cannot be found.\n" << metadata);
+    }
+
+    info.temperature_1 = std::stof(metadata.at("AliceVision:DCP:Temp1"));
+    info.temperature_2 = std::stof(metadata.at("AliceVision:DCP:Temp2"));
+    info.has_color_matrix_1 = colorMatrixNb > 0;
+    info.has_color_matrix_2 = colorMatrixNb > 1;
+    info.has_forward_matrix_1 = fwdMatrixNb > 0;
+    info.has_forward_matrix_2 = fwdMatrixNb > 1;
+
+    std::vector<std::string> v_str;
+
+    v_str.push_back(metadata.at("AliceVision:DCP:ColorMat1"));
+    if (colorMatrixNb > 1)
+    {
+        v_str.push_back(metadata.at("AliceVision:DCP:ColorMat2"));
+    }
+    setMatricesFromStrings("color", v_str);
+
+    v_str.clear();
+    if (fwdMatrixNb > 0)
+    {
+        v_str.push_back(metadata.at("AliceVision:DCP:ForwardMat1"));
+        if (fwdMatrixNb > 1)
+        {
+            v_str.push_back(metadata.at("AliceVision:DCP:ForwardMat2"));
+        }
+        setMatricesFromStrings("forward", v_str);
+    }
 }
 
 void DCPProfile::apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params)

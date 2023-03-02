@@ -169,6 +169,12 @@ public:
     void Load(const std::string& filename);
 
     /**
+    * @brief DCPProfile loader
+    * @param[in] map of metadata
+    */
+    void Load(const std::map<std::string, std::string>& metadata);
+
+    /**
      * @brief getMatrices gets some matrices contained in the profile
      * param[in] type The matrices to get, "color" or "forward"
      * param[in] v_Mat A vector of matrices to be populated
