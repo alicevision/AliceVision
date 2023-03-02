@@ -28,21 +28,21 @@ namespace aliceVision {
 namespace image {
 
 /**
- * @brief A struct used to identify a cached image using its file description, color type info and half-sampling level.
+ * @brief A struct used to identify a cached image using its file description, color type info and downscale level.
  */
 struct CacheKey 
 {
     std::string filename;
     int nbChannels;
     oiio::TypeDesc::BASETYPE typeDesc;
-    int halfSampleLevel;
+    int downscaleLevel;
     std::time_t lastWriteTime;
 
     CacheKey(const std::string& path, int nchannels, oiio::TypeDesc::BASETYPE baseType, int level, std::time_t time) : 
         filename(path), 
         nbChannels(nchannels), 
         typeDesc(baseType),  
-        halfSampleLevel(level), 
+        downscaleLevel(level), 
         lastWriteTime(time)
     {
     }
@@ -52,7 +52,7 @@ struct CacheKey
         return (filename == other.filename &&
                 nbChannels == other.nbChannels &&
                 typeDesc == other.typeDesc &&
-                halfSampleLevel == other.halfSampleLevel &&
+                downscaleLevel == other.downscaleLevel &&
                 lastWriteTime == other.lastWriteTime);
     }
 };
@@ -65,7 +65,7 @@ struct CacheKeyHasher
         boost::hash_combine(seed, key.filename);
         boost::hash_combine(seed, key.nbChannels);
         boost::hash_combine(seed, key.typeDesc);
-        boost::hash_combine(seed, key.halfSampleLevel);
+        boost::hash_combine(seed, key.downscaleLevel);
         boost::hash_combine(seed, key.lastWriteTime);
         return seed;
     }
@@ -88,7 +88,6 @@ struct CacheInfo
     /// usage statistics
     int nbLoadFromDisk = 0;
     int nbLoadFromCache = 0;
-    int nbLoadFromHigherScale = 0;
     int nbRemoveUnused = 0;
 
     CacheInfo(float capacity_MiB, float maxSize_MiB) : 
@@ -193,11 +192,6 @@ inline std::shared_ptr<Image<RGBAfColor>> CacheValue::get<RGBAfColor>() { return
  * or until there is nothing to remove
  * 5. if the image fits in the maximal size, load it, store it and return it
  * 6. the image is too big for the cache, throw an error.
- * 
- * In the process described above, we also take advantage of the cache content when loading an image: 
- * if the same image with a lower half-sampling level (i.e. higher resolution) exists in the cache, 
- * we take the high-resolution version of the image from the cache and create and new downscaled version of it
- * instead of loading the image from disk.
  */
 class ImageCache 
 {
@@ -220,15 +214,15 @@ public:
     ImageCache& operator=(const ImageCache&) = delete;
 
     /**
-     * @brief Retrieve a cached image at a given half-sampling level.
+     * @brief Retrieve a cached image at a given downscale level.
      * @note This method is thread-safe.
      * @param[in] filename the image's filename on disk
-     * @param[in] halfSampleLevel the half-sampling level
+     * @param[in] downscaleLevel the downscale level
      * @return a shared pointer to the cached image
      * @throws std::runtime_error if the image does not fit in the maximal size of the cache
      */
     template<typename TPix>
-    std::shared_ptr<Image<TPix>> get(const std::string& filename, int halfSampleLevel);
+    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel);
 
     /**
      * @return information on the current cache state and usage
@@ -274,18 +268,18 @@ private:
 // their definition must be given in this header file
 
 template<typename TPix>
-std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int halfSampleLevel)
+std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel)
 {
     const std::lock_guard<std::mutex> lock(_mutex);
 
     ALICEVISION_LOG_TRACE("[image] ImageCache: reading " << filename 
-                         << " with half-sampling level " << halfSampleLevel
+                         << " with downscale level " << downscaleLevel
                          << " from thread " << std::this_thread::get_id());
 
     using TInfo = ColorTypeInfo<TPix>;
 
     auto lastWriteTime = boost::filesystem::last_write_time(filename);
-    CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, halfSampleLevel, lastWriteTime);
+    CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, downscaleLevel, lastWriteTime);
 
     // find the requested image in the cached images
     {
@@ -306,8 +300,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     // retrieve image size
     int width, height;
     readImageSize(filename, width, height);
-    int downscale = 1 << halfSampleLevel;
-    unsigned long long int memSize = (width / downscale) * (height / downscale) * sizeof(TPix);
+    unsigned long long int memSize = (width / downscaleLevel) * (height / downscaleLevel) * sizeof(TPix);
  
     // add image to cache if it fits in capacity
     if (memSize + _info.contentSize <= _info.capacity) 
@@ -391,38 +384,13 @@ void ImageCache::load(const CacheKey& key)
 {
     auto img = std::make_shared<Image<TPix>>();
 
-    // find the same image with a higher scale
-    auto it = std::find_if(_keys.begin(), _keys.end(), [&key](const CacheKey& k){
-        return k.filename == key.filename &&
-               k.nbChannels == key.nbChannels &&
-               k.typeDesc == key.typeDesc &&
-               k.halfSampleLevel < key.halfSampleLevel &&
-               k.lastWriteTime == key.lastWriteTime;
-    });
+    // load image from disk
+    readImage(key.filename, *img, _options);
 
-    if (it != _keys.end())
-    {
-        // retrieve high-scale image from cache
-        const CacheKey& keyHighScale = *it;
-        CacheValue& valueHighScale = _imagePtrs.at(keyHighScale);
+    // apply downscale
+    imageAlgo::resizeImage(key.downscaleLevel, *img);
 
-        // apply downscale
-        int downscale = 1 << (key.halfSampleLevel - keyHighScale.halfSampleLevel);
-        imageAlgo::resizeImage(downscale, *(valueHighScale.get<TPix>()), *img);
-
-        _info.nbLoadFromHigherScale++;
-    }
-    else 
-    {
-        // load image from disk
-        readImage(key.filename, *img, _options);
-
-        // apply downscale
-        int downscale = 1 << key.halfSampleLevel;
-        imageAlgo::resizeImage(downscale, *img);
-
-        _info.nbLoadFromDisk++;
-    }
+    _info.nbLoadFromDisk++;
 
     // create wrapper around shared pointer
     CacheValue value = CacheValue::wrap(img);

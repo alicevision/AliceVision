@@ -135,7 +135,7 @@ std::string ImageCache::toString() const
         std::string keyDesc = key.filename + 
                               ", nbChannels: " + std::to_string(key.nbChannels) + 
                               ", typeDesc: " + std::to_string(key.typeDesc) + 
-                              ", halfSampleLevel: " + std::to_string(key.halfSampleLevel) + 
+                              ", downscaleLevel: " + std::to_string(key.downscaleLevel) + 
                               ", usages: " + std::to_string(_imagePtrs.at(key).useCount()) + 
                               ", size: " + std::to_string(_imagePtrs.at(key).memorySize());
         description += "\n * " + keyDesc;
@@ -151,7 +151,6 @@ std::string ImageCache::toString() const
     std::string statsDesc = "\nUsage statistics: "
                             "\n * nb load from disk: " + std::to_string(_info.nbLoadFromDisk) + 
                             "\n * nb load from cache: " + std::to_string(_info.nbLoadFromCache) + 
-                            "\n * nb load from higher scale: " + std::to_string(_info.nbLoadFromHigherScale) + 
                             "\n * nb remove unused: " + std::to_string(_info.nbRemoveUnused);
     description += statsDesc;
  

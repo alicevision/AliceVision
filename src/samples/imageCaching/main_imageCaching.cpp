@@ -32,8 +32,8 @@ int aliceVision_main(int argc, char **argv)
     float capacity = 256.f;
     float maxSize = 1024.f;
     std::vector<std::string> filenames;
-    std::vector<int> halfSampleLevels;
-    int defaultHalfSampleLevel = 0;
+    std::vector<int> downscaleLevels;
+    int defaultDownscaleLevel = 1;
     std::vector<int> pixelTypes;
     int defaultPixelType = 5;
     int nbThreads = 1;
@@ -50,10 +50,10 @@ int aliceVision_main(int argc, char **argv)
         "Cache capacity")
         ("maxSize", po::value<float>(&maxSize)->default_value(maxSize), 
         "Cache max size")
-        ("halfSampleLevels", po::value<std::vector<int>>(&halfSampleLevels)->multitoken()->default_value(halfSampleLevels), 
-        "Half-sampling levels")
-        ("defaultHalfSampleLevel", po::value<int>(&defaultHalfSampleLevel)->default_value(defaultHalfSampleLevel), 
-        "Default half-sampling level")
+        ("downscaleLevels", po::value<std::vector<int>>(&downscaleLevels)->multitoken()->default_value(downscaleLevels), 
+        "Downscale levels")
+        ("defaultDownscaleLevel", po::value<int>(&defaultDownscaleLevel)->default_value(defaultDownscaleLevel), 
+        "Default downscale level")
         ("pixelTypes", po::value<std::vector<int>>(&pixelTypes)->multitoken()->default_value(pixelTypes), 
         "Pixel types:"
         "\n * 0: unsigned char"
@@ -90,7 +90,7 @@ int aliceVision_main(int argc, char **argv)
             for (int j = 0; j < filenames.size(); j++)
             {
                 const std::string& filename = filenames[j];
-                const int level = (j < halfSampleLevels.size()) ? halfSampleLevels[j] : defaultHalfSampleLevel;
+                const int level = (j < downscaleLevels.size()) ? downscaleLevels[j] : defaultDownscaleLevel;
                 const int pixelType = (j < pixelTypes.size()) ? pixelTypes[j] : defaultPixelType;
                 switch (pixelType)
                 {

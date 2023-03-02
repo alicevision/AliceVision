@@ -40,19 +40,6 @@ BOOST_AUTO_TEST_CASE(load_image_twice) {
     BOOST_CHECK_EQUAL(cache.info().nbLoadFromCache, 1);
 }
 
-BOOST_AUTO_TEST_CASE(reload_lower_scale) {
-    ImageCache cache(256, 1024, EImageColorSpace::LINEAR);
-    const std::string filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
-    auto img1 = cache.get<RGBAfColor>(filename, 0);
-    auto img2 = cache.get<RGBAfColor>(filename, 1);
-    BOOST_CHECK_EQUAL(img1->Width() / 2, img2->Width());
-    BOOST_CHECK_EQUAL(img1->Height() / 2, img2->Height());
-    BOOST_CHECK_EQUAL(cache.info().nbImages, 2);
-    BOOST_CHECK_EQUAL(cache.info().contentSize, img1->MemorySize() + img2->MemorySize());
-    BOOST_CHECK_EQUAL(cache.info().nbLoadFromDisk, 1);
-    BOOST_CHECK_EQUAL(cache.info().nbLoadFromHigherScale, 1);
-}
-
 BOOST_AUTO_TEST_CASE(load_all_pixel_types) {
     ImageCache cache(256, 1024, EImageColorSpace::LINEAR);
     const std::string filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
