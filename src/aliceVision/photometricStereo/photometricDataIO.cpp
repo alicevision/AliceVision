@@ -264,18 +264,6 @@ void image2PsMatrix(const image::Image<float>& imageIn, const image::Image<float
     }
 }
 
-void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskIndexes, Eigen::MatrixXf& maskedMatrix)
-{
-    for (int j = 0; j < maskedMatrix.cols(); ++j)
-    {
-        int indexInMask = maskIndexes.at(j);
-        for (int i = 0; i < maskedMatrix.rows(); ++i)
-        {
-            maskedMatrix(i,j) = inputMatrix(i, indexInMask);
-        }
-    }
-}
-
 void reshapeInImage(const Eigen::MatrixXf& matrixIn, image::Image<image::RGBfColor>& imageOut)
 {
     int nbRows = imageOut.rows();
