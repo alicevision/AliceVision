@@ -373,12 +373,13 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
     // Load metadata to get image color space
     std::string colorSpace = "Linear";
+    oiio::ParamValueList srcMetadata;
     if(!overlappingViews.empty())
     {
         const std::string warpedPath =
             sfmData.getViews().at(overlappingViews[0])->getMetadata().at("AliceVision:warpedPath");
         const std::string firstImagePath = (fs::path(warpingFolder) / (warpedPath + ".exr")).string();
-        oiio::ParamValueList srcMetadata = image::readImageMetadata(firstImagePath);
+        srcMetadata = image::readImageMetadata(firstImagePath);
         colorSpace = srcMetadata.get_string("AliceVision:ColorSpace", "Linear");
     }
 
@@ -576,12 +577,15 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                   globalUnionBoundingBox.top - referenceBoundingBox.top);
     }
 
-    oiio::ParamValueList metadata;
+    oiio::ParamValueList metadata = srcMetadata;
+    metadata.remove("orientation", oiio::TypeDesc::UNKNOWN, false);
+    metadata.remove("crop", oiio::TypeDesc::UNKNOWN, false);
+    metadata.remove("width", oiio::TypeDesc::UNKNOWN, false);
+    metadata.remove("height", oiio::TypeDesc::UNKNOWN, false);
     metadata.push_back(oiio::ParamValue("AliceVision:offsetX", int(referenceBoundingBox.left)));
     metadata.push_back(oiio::ParamValue("AliceVision:offsetY", int(referenceBoundingBox.top)));
     metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", int(panoramaMap.getWidth())));
     metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", int(panoramaMap.getHeight())));
-    metadata.push_back(oiio::ParamValue("AliceVision:ColorSpace", colorSpace));
 
     image::writeImage(outputFilePath, output,
                       image::ImageWriteOptions()
