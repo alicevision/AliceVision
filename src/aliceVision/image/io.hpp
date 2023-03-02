@@ -183,7 +183,7 @@ struct ImageReadOptions
 {
     ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
         ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawWhiteBalancing,
-        const std::string& colorProfile = "", const bool useDCPColorMatrixOnly = false, const oiio::ROI& roi = oiio::ROI()) :
+        const std::string& colorProfile = "", const bool useDCPColorMatrixOnly = true, const oiio::ROI& roi = oiio::ROI()) :
         workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), useDCPColorMatrixOnly(useDCPColorMatrixOnly),
         doWBAfterDemosaicing(false), demosaicingAlgo("AHD"), highlightMode(0), subROI(roi)
     {

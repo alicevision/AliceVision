@@ -203,7 +203,7 @@ public:
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */
-    void applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
+    void applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = true) const;
 
     /**
      * @brief applyLinear applies the linear part of a DCP profile on an aliceVision image
