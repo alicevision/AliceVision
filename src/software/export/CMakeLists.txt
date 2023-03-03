@@ -209,4 +209,16 @@ alicevision_add_software(aliceVision_exportCameraFrustums
         Boost::program_options
         Boost::filesystem
 )
+
+# Export distortion to be used in external tools
+alicevision_add_software(aliceVision_exportDistortion
+  SOURCE main_exportDistortion.cpp
+  FOLDER ${FOLDER_SOFTWARE_EXPORT}
+  LINKS aliceVision_system
+        aliceVision_camera
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+        Boost::filesystem
+)
 endif()
