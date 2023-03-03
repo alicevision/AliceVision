@@ -143,6 +143,8 @@ int aliceVision_main(int argc, char* argv[])
     std::string checkerBoardsPath;
     std::string sfmOutputDataFilepath;
 
+    std::string cameraModelName = "3deanamorphic4";
+
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(),
@@ -151,10 +153,16 @@ int aliceVision_main(int argc, char* argv[])
         "Checkerboards json files directory.")
         ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
         "SfMData file output.");
+    
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("cameraModel", po::value<std::string>(&cameraModelName)->default_value(cameraModelName),
+        "Camera model used for estimating distortion.");
 
     CmdLine cmdline("This program calibrates camera distortion.\n"
                     "AliceVision distortionCalibration");
     cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
@@ -189,23 +197,38 @@ int aliceVision_main(int argc, char* argv[])
         boardsAllImages[viewId] = detector;
     }
 
-    // Calibrate each intrinsic independently
-    for (auto& pi : sfmData.getIntrinsics())
-    {
-        IndexT intrinsicId = pi.first;
+    // Retrieve camera model
+    camera::EINTRINSIC cameraModel = camera::EINTRINSIC_stringToEnum(cameraModelName);
 
+    // Calibrate each intrinsic independently
+    for (auto& [intrinsicId, intrinsicPtr] : sfmData.getIntrinsics())
+    {
         // Convert to pinhole
-        std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = pi.second;
-        std::shared_ptr<camera::Pinhole> cameraPinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);
-        if (!cameraPinhole)
+        std::shared_ptr<camera::Pinhole> cameraIn
+            = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);
+
+        // Create new camera corresponding to given model
+        std::shared_ptr<camera::Pinhole> cameraOut
+            = std::dynamic_pointer_cast<camera::Pinhole>(
+                camera::createIntrinsic(cameraModel, cameraIn->w(), cameraIn->h()));
+
+        if (!cameraIn || !cameraOut)
         {
             ALICEVISION_LOG_ERROR("Only work for pinhole cameras");
             return EXIT_FAILURE;
         }
+
         ALICEVISION_LOG_INFO("Processing Intrinsic " << intrinsicId);
 
+        // Copy internal data from input camera to output camera
+        cameraOut->setSensorWidth(cameraIn->sensorWidth());
+        cameraOut->setSensorHeight(cameraIn->sensorHeight());
+        cameraOut->setSerialNumber(cameraIn->serialNumber());
+        cameraOut->setScale(cameraIn->getScale());
+        cameraOut->setOffset(cameraIn->getOffset());
+
         // Retrieve undistortion object
-        std::shared_ptr<camera::Undistortion> undistortion = cameraPinhole->getUndistortion();
+        std::shared_ptr<camera::Undistortion> undistortion = cameraOut->getUndistortion();
         if (!undistortion)
         {
             ALICEVISION_LOG_ERROR("Only work for cameras that support undistortion");
@@ -231,28 +254,34 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         calibration::Statistics statistics;
+        std::vector<double> initialParams;
+        std::vector<std::vector<bool>> lockSteps;
 
-        if (cameraPinhole->getType() == camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4)
+        if (cameraModel == camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4)
         {
-            std::vector<double> initialParams = {
+            initialParams = {
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0
             };
-            std::vector<std::vector<bool>> lockSteps = {
+            lockSteps = {
                 {true, true, true, true, true, true, true, true, true, true, true, true, true, true},
                 {false, false, false, false, true, true, true, true, true, true, true, true, true, true},
                 {false, false, false, false, false, false, false, false, false, false, true, true, true, true}
             };
-            if (!estimateDistortionMultiStep(undistortion, statistics, allLinesWithPoints, initialParams, lockSteps))
-            {
-                ALICEVISION_LOG_ERROR("Error estimating distortion");
-                continue;
-            }
         }
         else
         {
-            ALICEVISION_LOG_ERROR("The only currently supported undistortion model is 3DEAnamorphic4");
+            ALICEVISION_LOG_ERROR("Unsupported camera model for undistortion.");
             return EXIT_FAILURE;
         }
+
+        if (!estimateDistortionMultiStep(undistortion, statistics, allLinesWithPoints, initialParams, lockSteps))
+        {
+            ALICEVISION_LOG_ERROR("Error estimating distortion");
+            return EXIT_FAILURE;
+        }
+
+        // Override input intrinsic with output camera
+        intrinsicPtr = cameraOut;
 
         ALICEVISION_LOG_INFO("Result quality of calibration: ");
         ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
