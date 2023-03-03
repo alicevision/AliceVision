@@ -339,7 +339,14 @@ int aliceVision_main(int argc, char** argv)
         oiio::ParamValueList targetMetadata;
         for (const auto& meta : viewMetadata)
         {
-            targetMetadata.add_or_replace(oiio::ParamValue(meta.first, meta.second));
+            if (meta.first.compare(0, 3, "raw") == 0)
+            {
+                targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:" + meta.first, meta.second));
+            }
+            else
+            {
+                targetMetadata.add_or_replace(oiio::ParamValue(meta.first, meta.second));
+            }
         }
         targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(workingColorSpace)));
 

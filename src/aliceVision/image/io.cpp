@@ -15,6 +15,7 @@
 #include <OpenImageIO/color.h>
 
 #include <aliceVision/half.hpp>
+#include <aliceVision/stl/mapUtils.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -606,12 +607,48 @@ void readImage(const std::string& path,
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
-    const std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ? "aces2065-1" :
-                                            (isRawImage ? "linear" :
-                                             inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB")));
+    std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ? "aces2065-1" :
+                                       (isRawImage ? "linear" :
+                                        inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB")));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
-  
+
+    DCPProfile dcpProf;
+    if ((fromColorSpaceName == "no_conversion") && (imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION))
+    {
+        ALICEVISION_LOG_INFO("Source image is in a raw color space and must be converted into " << imageReadOptions.workingColorSpace << ".");
+        ALICEVISION_LOG_INFO("Check if a DCP profile is available in the metadata to be applied.");
+        if (inBuf.spec().nchannels < 3)
+        {
+            ALICEVISION_THROW_ERROR("A DCP profile cannot be applied on an image containing less than 3 channels.");
+        }
+
+        int width, height;
+        std::map<std::string, std::string> imageMetadata = getMapFromMetadata(readImageMetadata(path, width, height));
+
+        // load DCP metadata from metadata. An error will be thrown if all required metadata are not there.
+        dcpProf.Load(imageMetadata);
+
+        std::string cam_mul = map_has_non_empty_value(imageMetadata, "raw:cam_mul") ? imageMetadata.at("raw:cam_mul") : imageMetadata.at("AliceVision:raw:cam_mul");
+        std::vector<float> v_mult;
+        size_t last = 0;
+        size_t next = 1;
+        while ((next = cam_mul.find(",", last)) != std::string::npos)
+        {
+            v_mult.push_back(std::stof(cam_mul.substr(last, next - last)));
+            last = next + 1;
+        }
+        v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last)));
+
+        for (int i = 0; i < 3; i++)
+        {
+            neutral[i] = v_mult[i] / v_mult[1];
+        }
+
+        dcpProf.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
+        fromColorSpaceName = "aces2065-1";
+    }
+
     if ((imageReadOptions.workingColorSpace == EImageColorSpace::NO_CONVERSION) ||
         (imageReadOptions.workingColorSpace == EImageColorSpace_stringToEnum(fromColorSpaceName)))
     {
