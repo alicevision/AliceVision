@@ -499,7 +499,17 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         return false;
     }
 
-    const std::string warpedPath = sfmData.getViews().at(viewReference)->getMetadata().at("AliceVision:warpedPath");
+    std::string warpedPath;
+    
+    if (viewReference==UndefinedIndexT) 
+    {
+        warpedPath = "panorama";
+    }
+    else 
+    {
+        warpedPath = sfmData.getViews().at(viewReference)->getMetadata().at("AliceVision:warpedPath");
+    }
+
     const std::string outputFilePath = (fs::path(outputFolder) / (warpedPath + ".exr")).string();
     image::Image<image::RGBAfColor>& output = compositer->getOutput();
 
@@ -609,6 +619,7 @@ int aliceVision_main(int argc, char** argv)
     int maxThreads = 1;
     bool showBorders = false;
     bool showSeams = false;
+    bool useTiling = true;
 
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
@@ -626,9 +637,10 @@ int aliceVision_main(int argc, char** argv)
         "storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
         ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
         "rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration),
-        "Range chunk id.")("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")(
-        "maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads), "max number of threads to use.")(
-        "labels,l", po::value<std::string>(&labelsFilepath)->required(), "Labels image from seams estimation.");
+        "Range chunk id.")("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
+        ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads), "max number of threads to use.")
+        ("labels,l", po::value<std::string>(&labelsFilepath)->required(), "Labels image from seams estimation.")
+        ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling), "use tiling for compositing.");
 
     CmdLine cmdline(
         "Performs the panorama stiching of warped images, with an option to use constraints from precomputed seams maps.\n"
@@ -684,6 +696,11 @@ int aliceVision_main(int argc, char** argv)
 
     // Define range to compute
     const int viewsCount = sfmData.getViews().size();
+    if (!useTiling)
+    {
+        rangeIteration = 0;
+        rangeSize = 1;
+    }
     if(rangeIteration != -1)
     {
         if(rangeIteration < 0 || rangeSize < 0)
@@ -749,26 +766,43 @@ int aliceVision_main(int argc, char** argv)
 
     bool succeeded = true;
 
-    for(std::size_t posReference = 0; posReference < chunk.size(); posReference++)
+    if (useTiling)
     {
-        ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());
-
-        const IndexT viewReference = chunk[posReference];
-        if(!sfmData.isPoseAndIntrinsicDefined(viewReference))
-            continue;
-
-        BoundingBox referenceBoundingBox;
-        if(!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference))
+        for(std::size_t posReference = 0; posReference < chunk.size(); posReference++)
         {
-            ALICEVISION_LOG_ERROR("Invalid view ID as reference");
-            return EXIT_FAILURE;
-        }
+            ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());
 
+            const IndexT viewReference = chunk[posReference];
+            if(!sfmData.isPoseAndIntrinsicDefined(viewReference))
+                continue;
+
+            BoundingBox referenceBoundingBox;
+            if(!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference))
+            {
+                ALICEVISION_LOG_ERROR("Invalid view ID as reference");
+                return EXIT_FAILURE;
+            }
+
+            if(!processImage(*panoramaMap, sfmData, compositerType, warpingFolder, labelsFilepath, outputFolder,
+                            storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams))
+            {
+                succeeded = false;
+                continue;
+            }
+        }
+    }
+    else 
+    {
+        BoundingBox referenceBoundingBox;
+        referenceBoundingBox.left = 0;
+        referenceBoundingBox.top = 0;
+        referenceBoundingBox.width = panoramaMap->getWidth();
+        referenceBoundingBox.height = panoramaMap->getHeight();
+        
         if(!processImage(*panoramaMap, sfmData, compositerType, warpingFolder, labelsFilepath, outputFolder,
-                         storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams))
+                            storageDataType, UndefinedIndexT, referenceBoundingBox, showBorders, showSeams))
         {
             succeeded = false;
-            continue;
         }
     }
 
