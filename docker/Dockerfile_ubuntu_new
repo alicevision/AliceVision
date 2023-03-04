@@ -18,7 +18,6 @@ RUN apt-get update && \
         libtool \
         nasm \
         libflann-dev \
-        libassimp-dev \
         libceres-dev \
         libopenexr-dev \
         libopenimageio-dev \
@@ -62,7 +61,6 @@ RUN cmake \
         -DALICEVISION_BUILD_DEPENDENCIES=ON \
         -DAV_BUILD_ALICEVISION=OFF \
         -DAV_BUILD_ZLIB=OFF \
-        -DAV_BUILD_ASSIMP=OFF \
         -DAV_BUILD_APRILTAG=OFF \
         -DAV_BUILD_OPENCV=OFF \
         -DAV_BUILD_LAPACK=OFF \
