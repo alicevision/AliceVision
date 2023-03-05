@@ -46,6 +46,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputPanoramaPath;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     const size_t tileSize = 256;
+    bool useTiling = true;
 
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -57,7 +58,8 @@ int aliceVision_main(int argc, char** argv)
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str());
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling), "use tiling for compositing.");
 
     CmdLine cmdline(
         "Merges all the image tiles created by the PanoramaCompositing.\n"
@@ -89,45 +91,52 @@ int aliceVision_main(int argc, char** argv)
     } 
 
 
+    std::vector<std::pair<IndexT, std::string>> sourcesList;
+    if (useTiling)
+    {
+        for (auto viewItem : sfmData.getViews())
+        {
+            IndexT viewId = viewItem.first;
+            if(!sfmData.isPoseAndIntrinsicDefined(viewId))
+            {
+                continue;
+            }
+
+            const std::string warpedPath = viewItem.second->getMetadata().at("AliceVision:warpedPath");
+
+            // Get composited image path
+            const std::string imagePath = (fs::path(compositingFolder) / (warpedPath + ".exr")).string();
+
+            sourcesList.push_back(std::make_pair(viewId, imagePath));
+        }
+    }
+    else
+    {
+        sourcesList.push_back(std::make_pair(0, (fs::path(compositingFolder) / "panorama.exr").string()));
+    }
+
+    if (sourcesList.size() == 0)
+    {
+        ALICEVISION_LOG_ERROR("Invalid number of sources");
+        return EXIT_FAILURE;
+    }
+
     int panoramaWidth = 0;
     int panoramaHeight = 0;
     oiio::ParamValueList metadata;
 
-    for (auto viewItem : sfmData.getViews())
-    {
-        IndexT viewId = viewItem.first;
-        if(!sfmData.isPoseAndIntrinsicDefined(viewId))
-            continue;
-
-        const std::string warpedPath = viewItem.second->getMetadata().at("AliceVision:warpedPath");
-
-        // Get composited image path
-        const std::string imagePath = (fs::path(compositingFolder) / (warpedPath + ".exr")).string();
-
-        // Get offset
-        metadata = image::readImageMetadata(imagePath);
-        panoramaWidth = metadata.find("AliceVision:panoramaWidth")->get_int();
-        panoramaHeight = metadata.find("AliceVision:panoramaHeight")->get_int();
-        break;
-    }
+    auto sourceInput = sourcesList[0];
+    metadata = image::readImageMetadata(sourceInput.second);
+    panoramaWidth = metadata.find("AliceVision:panoramaWidth")->get_int();
+    panoramaHeight = metadata.find("AliceVision:panoramaHeight")->get_int();
 
     int tileCountWidth = std::ceil(double(panoramaWidth) / double(tileSize));
     int tileCountHeight = std::ceil(double(panoramaHeight) / double(tileSize));
 
-
     std::map<std::pair<int, int>, IndexT> fullTiles;
-    for (auto viewItem : sfmData.getViews())
+    for (auto sourceItem : sourcesList)
     {
-        IndexT viewId = viewItem.first;
-        if(!sfmData.isPoseAndIntrinsicDefined(viewId))
-        {
-            continue;
-        }
-
-        const std::string warpedPath = viewItem.second->getMetadata().at("AliceVision:warpedPath");
-
-        // Get composited image path
-        const std::string imagePath = (fs::path(compositingFolder) / (warpedPath + ".exr")).string();
+        std::string imagePath = sourceItem.second;
 
         // Get offset
         int width = 0;
@@ -167,7 +176,7 @@ int aliceVision_main(int argc, char** argv)
 
                 if (fullTiles.find(pos) == fullTiles.end())
                 {
-                    fullTiles[pos] = viewId;
+                    fullTiles[pos] = sourceItem.first;
                 }
             }
         }
@@ -194,18 +203,9 @@ int aliceVision_main(int argc, char** argv)
     };    
     image::Image<TileInfo> tiles(tileCountWidth, tileCountHeight, true, {false, 0, nullptr});
 
-    for (auto viewItem : sfmData.getViews())
+    for (auto sourceItem : sourcesList)
     {
-        IndexT viewId = viewItem.first;
-        if(!sfmData.isPoseAndIntrinsicDefined(viewId))
-        {
-            continue;
-        }
-
-        const std::string warpedPath = viewItem.second->getMetadata().at("AliceVision:warpedPath");
-
-        // Get composited image path
-        const std::string imagePath = (fs::path(compositingFolder) / (warpedPath + ".exr")).string();
+        std::string imagePath = sourceItem.second;
 
         // Get offset
         int width = 0;
@@ -260,7 +260,7 @@ int aliceVision_main(int argc, char** argv)
                 pos.second = ty;
                 if (fullTiles.find(pos) != fullTiles.end())
                 {
-                    if (fullTiles[pos] != viewId)
+                    if (fullTiles[pos] != sourceItem.first)
                     {
                         continue;
                     }
