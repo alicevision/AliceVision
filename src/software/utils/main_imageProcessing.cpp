@@ -661,7 +661,7 @@ int aliceVision_main(int argc, char * argv[])
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
     std::string colorProfileDatabaseDirPath = "";
     bool errorOnMissingColorProfile = true;
-    bool useDCPColorMatrixOnly = false;
+    bool useDCPColorMatrixOnly = true;
     bool doWBAfterDemosaicing = false;
     std::string demosaicingAlgo = "AHD";
     int highlightMode = 0;
