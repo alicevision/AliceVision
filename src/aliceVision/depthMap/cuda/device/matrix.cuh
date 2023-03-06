@@ -15,56 +15,52 @@
 namespace aliceVision {
 namespace depthMap {
 
-__device__ static inline uchar4 float4_to_uchar4(const float4& a)
+__device__ inline uchar4 float4_to_uchar4(const float4& a)
 {
     return make_uchar4((unsigned char)a.x, (unsigned char)a.y, (unsigned char)a.z, (unsigned char)a.w);
 }
 
-__device__ static inline float4 uchar4_to_float4(const uchar4& a)
+__device__ inline float4 uchar4_to_float4(const uchar4& a)
 {
     return make_float4((float)a.x, (float)a.y, (float)a.z, (float)a.w);
 }
 
-__device__ static inline float dot(const float3& a, const float3& b)
+__device__ inline float dot(const float3& a, const float3& b)
 {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-__device__ static inline float dot(const float2& a, const float2& b)
+__device__ inline float dot(const float2& a, const float2& b)
 {
     return a.x * b.x + a.y * b.y;
 }
 
-__device__ static inline float size(const float3& a)
+__device__ inline float size(const float3& a)
 {
     return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
-__device__ static inline float size(const float2& a)
+__device__ inline float size(const float2& a)
 {
     return sqrtf(a.x * a.x + a.y * a.y);
 }
 
-__device__ static inline float dist(const float3& a, const float3& b)
+__device__ inline float dist(const float3& a, const float3& b)
 {
-    float3 ab = a - b;
-    return size(ab);
+    return size(a - b);
 }
 
-__device__ static inline float dist(const float2& a, const float2& b)
+__device__ inline float dist(const float2& a, const float2& b)
 {
-    float2 ab;
-    ab.x = a.x - b.x;
-    ab.y = a.y - b.y;
-    return size(ab);
+    return size(a - b);
 }
 
-__device__ static inline float3 cross(const float3& a, const float3& b)
+__device__ inline float3 cross(const float3& a, const float3& b)
 {
     return make_float3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
 
-__device__ static inline void normalize(float3& a)
+__device__ inline void normalize(float3& a)
 {
     float d = sqrtf(dot(a, a));
     a.x /= d;
@@ -72,46 +68,46 @@ __device__ static inline void normalize(float3& a)
     a.z /= d;
 }
 
-__device__ static inline void normalize(float2& a)
+__device__ inline void normalize(float2& a)
 {
     float d = sqrtf(dot(a, a));
     a.x /= d;
     a.y /= d;
 }
 
-__device__ static inline float3 M3x3mulV3( const float* M3x3, const float3& V)
+__device__ inline float3 M3x3mulV3( const float* M3x3, const float3& V)
 {
     return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z, M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
 }
 
-__device__ static inline float3 M3x3mulV2( const float* M3x3, const float2& V)
+__device__ inline float3 M3x3mulV2( const float* M3x3, const float2& V)
 {
     return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6], M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7],
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8]);
 }
 
-__device__ static inline float3 M3x4mulV3(const float* M3x4, const float3& V)
+__device__ inline float3 M3x4mulV3(const float* M3x4, const float3& V)
 {
     return make_float3(M3x4[0] * V.x + M3x4[3] * V.y + M3x4[6] * V.z + M3x4[9],
                        M3x4[1] * V.x + M3x4[4] * V.y + M3x4[7] * V.z + M3x4[10],
                        M3x4[2] * V.x + M3x4[5] * V.y + M3x4[8] * V.z + M3x4[11]);
 }
 
-__device__ static inline float2 V2M3x3mulV2(float* M3x3, float2& V)
+__device__ inline float2 V2M3x3mulV2(float* M3x3, float2& V)
 {
     float d = M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8];
     return make_float2((M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6]) / d, (M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7]) / d);
 }
 
 
-__device__ static inline float2 project3DPoint(const float* M3x4, const float3& V)
+__device__ inline float2 project3DPoint(const float* M3x4, const float3& V)
 {
-    float3 p = M3x4mulV3(M3x4, V);
+    const float3 p = M3x4mulV3(M3x4, V);
     return make_float2(p.x / p.z, p.y / p.z);
 }
 
-__device__ static void M3x3mulM3x3(float* O3x3, const float* A3x3, const float* B3x3)
+__device__ inline void M3x3mulM3x3(float* O3x3, const float* A3x3, const float* B3x3)
 {
     O3x3[0] = A3x3[0] * B3x3[0] + A3x3[3] * B3x3[1] + A3x3[6] * B3x3[2];
     O3x3[3] = A3x3[0] * B3x3[3] + A3x3[3] * B3x3[4] + A3x3[6] * B3x3[5];
@@ -126,7 +122,7 @@ __device__ static void M3x3mulM3x3(float* O3x3, const float* A3x3, const float* 
     O3x3[8] = A3x3[2] * B3x3[6] + A3x3[5] * B3x3[7] + A3x3[8] * B3x3[8];
 }
 
-__device__ static inline void M3x3minusM3x3(float* O3x3, float* A3x3, float* B3x3)
+__device__ inline void M3x3minusM3x3(float* O3x3, float* A3x3, float* B3x3)
 {
     for(int i = 0; i < 9; i++)
     {
@@ -134,7 +130,7 @@ __device__ static inline void M3x3minusM3x3(float* O3x3, float* A3x3, float* B3x
     };
 }
 
-__device__ static void M3x3transpose(float* O3x3, const float* A3x3)
+__device__ inline void M3x3transpose(float* O3x3, const float* A3x3)
 {
     O3x3[0] = A3x3[0];
     O3x3[1] = A3x3[3];
@@ -147,7 +143,7 @@ __device__ static void M3x3transpose(float* O3x3, const float* A3x3)
     O3x3[8] = A3x3[8];
 }
 
-__device__ static void outerMultiply(float* O3x3, const float3& a, const float3& b)
+__device__ inline void outerMultiply(float* O3x3, const float3& a, const float3& b)
 {
     O3x3[0] = a.x * b.x;
     O3x3[3] = a.x * b.y;
@@ -160,7 +156,7 @@ __device__ static void outerMultiply(float* O3x3, const float3& a, const float3&
     O3x3[8] = a.z * b.z;
 }
 
-__device__ static inline float3 linePlaneIntersect(const float3& linePoint, 
+__device__ inline float3 linePlaneIntersect(const float3& linePoint,
                                                    const float3& lineVect, 
                                                    const float3& planePoint,
                                                    const float3& planeNormal)
@@ -169,34 +165,34 @@ __device__ static inline float3 linePlaneIntersect(const float3& linePoint,
     return linePoint + lineVect * k;
 }
 
-__device__ static inline float3 closestPointOnPlaneToPoint(const float3& point, const float3& planePoint, const float3& planeNormalNormalized)
+__device__ inline float3 closestPointOnPlaneToPoint(const float3& point, const float3& planePoint, const float3& planeNormalNormalized)
 {
     return point - planeNormalNormalized * dot(planeNormalNormalized, point - planePoint);
 }
 
-__device__ static inline float3 closestPointToLine3D(const float3& point, const float3& linePoint, const float3& lineVectNormalized)
+__device__ inline float3 closestPointToLine3D(const float3& point, const float3& linePoint, const float3& lineVectNormalized)
 {
     return linePoint + lineVectNormalized * dot(lineVectNormalized, point - linePoint);
 }
 
-__device__ static inline float pointLineDistance3D(const float3& point, const float3& linePoint, const float3& lineVectNormalized)
+__device__ inline float pointLineDistance3D(const float3& point, const float3& linePoint, const float3& lineVectNormalized)
 {
     return size(cross(lineVectNormalized, linePoint - point));
 }
 
 // v1,v2 dot not have to be normalized
-__device__ static float angleBetwV1andV2(const float3& iV1, const float3& iV2)
+__device__ inline float angleBetwV1andV2(const float3& iV1, const float3& iV2)
 {
-    float3 V1, V2;
-    V1 = iV1;
+    float3 V1 = iV1;
     normalize(V1);
-    V2 = iV2;
+
+    float3 V2 = iV2;
     normalize(V2);
 
     return fabsf(acosf(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (CUDART_PI_F / 180.0f));
 }
 
-__device__ static float angleBetwABandAC(const float3& A, const float3& B, const float3& C)
+__device__ inline float angleBetwABandAC(const float3& A, const float3& B, const float3& C)
 {
     float3 V1 = B - A;
     float3 V2 = C - A;
@@ -210,7 +206,7 @@ __device__ static float angleBetwABandAC(const float3& A, const float3& B, const
     return float(fabs(a) / (CUDART_PI / 180.0));
 }
 
-__device__ static float3 lineLineIntersect(float* k, 
+__device__ inline float3 lineLineIntersect(float* k,
                                                   float* l, 
                                                   float3* lli1,
                                                   float3* lli2, 
@@ -317,7 +313,7 @@ __device__ static float3 lineLineIntersect(float* k,
  * f(x) = min + (max-min) * \frac{1}{1 + e^{10 * (x - mid) / width}}
  * https://www.desmos.com/calculator/1qvampwbyx
  */
-__device__ static inline float sigmoid(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
+__device__ inline float sigmoid(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
 {
     return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((xval - sigMid) / sigwidth))));
 }
@@ -325,7 +321,7 @@ __device__ static inline float sigmoid(float zeroVal, float endVal, float sigwid
 /**
  * f(x) = min + (max-min) * \frac{1}{1 + e^{10 * (mid - x) / width}}
  */
-__device__ static inline float sigmoid2(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
+__device__ inline float sigmoid2(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
 {
     return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((sigMid - xval) / sigwidth))));
 }
