@@ -31,6 +31,14 @@ public:
         return _distortionParams == other._distortionParams;
     }
 
+    void setParameters(const std::vector<double>& params)
+    {
+        for (int i = 0; i < _distortionParams.size(); i++)
+        {
+            _distortionParams[i] = params[i];
+        }
+    }
+
     inline std::vector<double>& getParameters() 
     {
         return _distortionParams;

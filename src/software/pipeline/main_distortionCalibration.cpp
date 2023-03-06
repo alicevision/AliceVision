@@ -227,6 +227,9 @@ int aliceVision_main(int argc, char* argv[])
         cameraOut->setScale(cameraIn->getScale());
         cameraOut->setOffset(cameraIn->getOffset());
 
+        // Remove distortion object
+        cameraOut->setDistortionObject(nullptr);
+
         // Retrieve undistortion object
         std::shared_ptr<camera::Undistortion> undistortion = cameraOut->getUndistortion();
         if (!undistortion)

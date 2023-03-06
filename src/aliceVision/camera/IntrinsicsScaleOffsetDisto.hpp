@@ -53,23 +53,40 @@ public:
         return _pDistortion != nullptr;
     }
 
+    /**
+     * @brief Create a new point from a given point by adding distortion.
+     * @param[in] p Point in the camera plane.
+     * @return Distorted point in the camera plane.
+     */
     Vec2 addDistortion(const Vec2& p) const override
     {
-        if (_pDistortion == nullptr)
+        if (_pDistortion)
         {
-            return p;
+            return _pDistortion->addDistortion(p);
         }
-        return _pDistortion->addDistortion(p);
+        else if (_pUndistortion)
+        {
+            return ima2cam(_pUndistortion->inverse(cam2ima(p)));
+        }
+        return p;
     }
   
-
+    /**
+     * @brief Create a new point from a given point by removing distortion.
+     * @param[in] p Point in the camera plane.
+     * @return Undistorted point in the camera plane.
+     */
     Vec2 removeDistortion(const Vec2& p) const override
     {
-        if (_pDistortion == nullptr)
+        if (_pUndistortion)
         {
-            return p;
+            return ima2cam(_pUndistortion->undistort(cam2ima(p)));
         }
-        return _pDistortion->removeDistortion(p);
+        else if (_pDistortion)
+        {
+            return _pDistortion->removeDistortion(p);
+        }
+        return p;
     }
 
     /// Return the un-distorted pixel (with removed distortion)
@@ -80,9 +97,11 @@ public:
 
     std::size_t getDistortionParamsSize() const
     {
-        if (_pDistortion == nullptr)
-            return 0;
-        return _pDistortion->getParameters().size();
+        if (_pDistortion)
+        {
+            return _pDistortion->getParameters().size();
+        }
+        return 0;
     }
 
     std::vector<double> getDistortionParams() const

@@ -148,22 +148,26 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   {
     bpt::ptree distParamsTree;
 
-    for(double param : intrinsicScaleOffsetDisto->getDistortionParams())
+    std::shared_ptr<camera::Distortion> distortionObject = intrinsicScaleOffsetDisto->getDistortion();
+    if (distortionObject)
     {
-      bpt::ptree paramTree;
-      paramTree.put("", param);
-      distParamsTree.push_back(std::make_pair("", paramTree));
+        for (double param : distortionObject->getParameters())
+        {
+            bpt::ptree paramTree;
+            paramTree.put("", param);
+            distParamsTree.push_back(std::make_pair("", paramTree));
+        }
     }
     intrinsicTree.put("distortionInitializationMode", camera::EInitMode_enumToString(intrinsicScaleOffsetDisto->getDistortionInitializationMode()));
 
     intrinsicTree.add_child("distortionParams", distParamsTree);
 
+    bpt::ptree undistParamsTree;
+
     std::shared_ptr<camera::Undistortion> undistortionObject = intrinsicScaleOffsetDisto->getUndistortion();
     if (undistortionObject)
     {
         saveMatrix("undistortionOffset", undistortionObject->getOffset(), intrinsicTree);
-
-        bpt::ptree undistParamsTree;
 
         for (double param : undistortionObject->getParameters())
         {
@@ -171,9 +175,13 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
             paramTree.put("", param);
             undistParamsTree.push_back(std::make_pair("", paramTree));
         }
-
-        intrinsicTree.add_child("undistortionParams", undistParamsTree);
     }
+    else
+    {
+        saveMatrix("undistortionOffset", Vec2{0.0, 0.0}, intrinsicTree);
+    }
+
+    intrinsicTree.add_child("undistortionParams", undistParamsTree);
   }
 
   std::shared_ptr<camera::EquiDistant> intrinsicEquidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
@@ -284,16 +292,24 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
 
     intrinsicWithDistoEnabled->setDistortionInitializationMode(distortionInitializationMode);
 
-    std::vector<double> distortionParams;
-    for (bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
+    std::shared_ptr<camera::Distortion> distortionObject = intrinsicWithDistoEnabled->getDistortion();
+    if (distortionObject)
     {
-        distortionParams.emplace_back(paramNode.second.get_value<double>());
-    }
+        std::vector<double> distortionParams;
+        for (bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
+        {
+            distortionParams.emplace_back(paramNode.second.get_value<double>());
+        }
 
-    // ensure that we have the right number of params
-    if (distortionParams.size() == intrinsicWithDistoEnabled->getDistortionParams().size())
-    {
-        intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
+        // ensure that we have the right number of params
+        if (distortionParams.size() == distortionObject->getParameters().size())
+        {
+            distortionObject->setParameters(distortionParams);
+        }
+        else
+        {
+            intrinsicWithDistoEnabled->setDistortionObject(nullptr);
+        }
     }
 
     std::shared_ptr<camera::Undistortion> undistortionObject = intrinsicWithDistoEnabled->getUndistortion();
@@ -309,11 +325,14 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
         if (undistortionParams.size() == undistortionObject->getParameters().size())
         {
             undistortionObject->setParameters(undistortionParams);
+            Vec2 offset;
+            loadMatrix("undistortionOffset", offset, intrinsicTree);
+            undistortionObject->setOffset(offset);
         }
-
-        Vec2 offset;
-        loadMatrix("undistortionOffset", offset, intrinsicTree);
-        undistortionObject->setOffset(offset);
+        else
+        {
+            intrinsicWithDistoEnabled->setUndistortionObject(nullptr);
+        }
     }
   }
 
