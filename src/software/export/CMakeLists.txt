@@ -218,6 +218,7 @@ alicevision_add_software(aliceVision_exportDistortion
         aliceVision_camera
         aliceVision_sfmData
         aliceVision_sfmDataIO
+        aliceVision_image
         Boost::program_options
         Boost::filesystem
 )

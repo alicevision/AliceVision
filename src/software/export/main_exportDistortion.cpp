@@ -10,6 +10,7 @@
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -67,6 +68,46 @@ std::string toNuke(std::shared_ptr<Undistortion> undistortion, EINTRINSIC intrin
     return ss.str();
 }
 
+void toSTMap(image::Image<image::RGBAfColor>& stmap,
+             std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsic,
+             bool distort,
+             const oiio::ROI& roi = oiio::ROI())
+{
+    int widthRoi = intrinsic->w();
+    int heightRoi = intrinsic->h();
+    int xOffset = 0;
+    int yOffset = 0;
+    if (roi.defined())
+    {
+        widthRoi = roi.width();
+        heightRoi = roi.height();
+        xOffset = roi.xbegin;
+        yOffset = roi.ybegin;
+    }
+
+    stmap.resize(widthRoi, heightRoi, true, image::RGBAfColor(0.0f));
+    
+    #pragma omp parallel for
+    for (int i = 0; i < heightRoi; ++i)
+    {
+        for (int j = 0; j < widthRoi; ++j)
+        {
+            const Vec2 pix((j + xOffset), (i + yOffset));
+
+            const Vec2 disto_pix
+                = distort ? intrinsic->get_ud_pixel(pix) : intrinsic->get_d_pixel(pix);
+            
+            stmap(i, j).b()
+                = disto_pix[0] / (static_cast<float>(intrinsic->w()) - 1.0f);
+            stmap(i, j).a()
+                = (static_cast<float>(intrinsic->h()) - 1.0f - disto_pix[1])
+                / (static_cast<float>(intrinsic->h()) - 1.0f);
+            stmap(i, j).r() = stmap(i, j).b();
+            stmap(i, j).g() = stmap(i, j).a();
+        }
+    }
+}
+
 int aliceVision_main(int argc, char* argv[])
 {
     std::string sfmInputDataFilepath;
@@ -97,22 +138,48 @@ int aliceVision_main(int argc, char* argv[])
 
     for (const auto& [intrinsicId, intrinsicPtr] : sfmData.getIntrinsics())
     {
+        ALICEVISION_LOG_INFO("Exporting distortion for intrinsic " << intrinsicId);
+
         auto intrinsicDisto = std::dynamic_pointer_cast<IntrinsicsScaleOffsetDisto>(intrinsicPtr);
-        
         if (!intrinsicDisto) continue;
 
         auto undistortion = intrinsicDisto->getUndistortion();
-
         if (!undistortion) continue;
+
+        ALICEVISION_LOG_INFO("Computing Nuke LensDistortion node");
 
         std::string nukeNodeStr = toNuke(undistortion, intrinsicDisto->getType());
 
-        ALICEVISION_LOG_INFO("Writing Nuke LensDistortion node in " << intrinsicId << ".nk");
-        std::stringstream ss;
-        ss << outputFilePath << "/" << intrinsicId << ".nk";
-        std::ofstream of(ss.str());
-        of << nukeNodeStr;
-        of.close();
+        {
+            ALICEVISION_LOG_INFO("Writing Nuke LensDistortion node in " << intrinsicId << ".nk");
+            std::stringstream ss;
+            ss << outputFilePath << "/" << intrinsicId << ".nk";
+            std::ofstream of(ss.str());
+            of << nukeNodeStr;
+            of.close();
+        }
+
+        ALICEVISION_LOG_INFO("Computing STMaps");
+
+        image::Image<image::RGBAfColor> stmap_distort;
+        toSTMap(stmap_distort, intrinsicDisto, true);
+
+        image::Image<image::RGBAfColor> stmap_undistort;
+        toSTMap(stmap_undistort, intrinsicDisto, false);
+
+        {
+            ALICEVISION_LOG_INFO("Writing distortion STMap in " << intrinsicId << "_distort.exr");
+            std::stringstream ss;
+            ss << outputFilePath << "/" << intrinsicId << "_distort.exr";
+            image::writeImage(ss.str(), stmap_distort, image::ImageWriteOptions());
+        }
+
+        {
+            ALICEVISION_LOG_INFO("Writing distortion STMap in " << intrinsicId << "_distort.exr");
+            std::stringstream ss;
+            ss << outputFilePath << "/" << intrinsicId << "_undistort.exr";
+            image::writeImage(ss.str(), stmap_undistort, image::ImageWriteOptions());
+        }
     }
 
     return EXIT_SUCCESS;
