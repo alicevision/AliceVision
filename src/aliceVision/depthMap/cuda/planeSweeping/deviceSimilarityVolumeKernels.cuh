@@ -39,14 +39,11 @@ __device__ float depthPlaneToDepth(const int deviceCameraParamsId,
                                    const float2& pix)
 {
     const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCameraParamsId];
-    float3 planen = M3x3mulV3(deviceCamParams.iR, make_float3(0.0f, 0.0f, 1.0f));
-    normalize(planen);
-    float3 planep = deviceCamParams.C + planen * fpPlaneDepth;
+    const float3 planep = deviceCamParams.C + deviceCamParams.ZVect * fpPlaneDepth;
     float3 v = M3x3mulV2(deviceCamParams.iP, pix);
     normalize(v);
-    float3 p = linePlaneIntersect(deviceCamParams.C, v, planep, planen);
-    float depth = size(deviceCamParams.C - p);
-    return depth;
+    float3 p = linePlaneIntersect(deviceCamParams.C, v, planep, deviceCamParams.ZVect);
+    return size(deviceCamParams.C - p);
 }
 
 template <typename T>
