@@ -11,13 +11,13 @@
 namespace aliceVision {
 namespace depthMap {
 
-__device__ static inline float Euclidean(const float3 x1, const float3 x2)
+__device__ inline float Euclidean(const float3 x1, const float3 x2)
 {
     // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
     return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
-__device__ static inline float Euclidean3(const float4 x1, const float4 x2)
+__device__ inline float Euclidean3(const float4 x1, const float4 x2)
 {
     // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
     return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
@@ -30,7 +30,7 @@ __device__ static inline float Euclidean3(const float4 x1, const float4 x2)
  * @param[in] c the float3 sRGB
  * @return float3 linear RGB
  */
-__device__ static inline float3 srgb2rgb(const float3 c)
+__device__ inline float3 srgb2rgb(const float3 c)
 {
     return make_float3(c.x <= 0.04045f ? c.x / 12.92f : __powf((c.x + 0.055f) / 1.055f, 2.4f),
                        c.y <= 0.04045f ? c.y / 12.92f : __powf((c.y + 0.055f) / 1.055f, 2.4f),
@@ -42,7 +42,7 @@ __device__ static inline float3 srgb2rgb(const float3 c)
  * @param[in] c the float3 Linear RGB
  * @return float3 XYZ
  */
-__device__ static inline float3 rgb2xyz(const float3 c)
+__device__ inline float3 rgb2xyz(const float3 c)
 {
     return make_float3(0.4124564f * c.x + 0.3575761f * c.y + 0.1804375f * c.z,
                        0.2126729f * c.x + 0.7151522f * c.y + 0.0721750f * c.z,
@@ -54,7 +54,7 @@ __device__ static inline float3 rgb2xyz(const float3 c)
  * @param[in] c the float3 Linear RGB
  * @return float3 HSL
  */
-__device__ static float3 rgb2hsl(const float3& c)
+__device__ inline float3 rgb2hsl(const float3& c)
 {
     const float cmin = fminf(c.x, fminf(c.y, c.z));
     const float cmax = fmaxf(c.x, fmaxf(c.y, c.z));
@@ -101,7 +101,7 @@ __device__ static float3 rgb2hsl(const float3& c)
  * @param[in] c the float3 XYZ
  * @return float3 CIELAB
  */
-__device__ static inline float3 xyz2lab(const float3 c)
+__device__ inline float3 xyz2lab(const float3 c)
 {
     // assuming whitepoint D65, XYZ=(0.95047, 1.00000, 1.08883)
     float3 r = make_float3(c.x / 0.95047f, c.y, c.z / 1.08883f);
@@ -125,7 +125,7 @@ __device__ static inline float3 xyz2lab(const float3 c)
  * @param[in] c the uchar4 RGB
  * @return float gray
  */
-__device__ static inline float rgb2gray(const uchar4 c)
+__device__ inline float rgb2gray(const uchar4 c)
 {
     return 0.2989f * (float)c.x + 0.5870f * (float)c.y + 0.1140f * (float)c.z;
 }
@@ -144,7 +144,7 @@ __device__ static inline float rgb2gray(const uchar4 c)
  * @param[in] gammaP Strength of Grouping by Proximity          8 / 4
  * @return distance value
  */
-__device__ static float CostYKfromLab(const int dx, const int dy, 
+__device__ inline float CostYKfromLab(const int dx, const int dy,
                                       const float4 c1, const float4 c2, 
                                       const float gammaC, const float gammaP)
 {
@@ -186,7 +186,7 @@ __device__ static float CostYKfromLab(const int dx, const int dy,
 }
 
 /*
- __device__ static inline float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
+ __device__ inline float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
 {
     // Euclidean distance in Lab, assuming linear RGB
     const float deltaC = Euclidean3(c1, c2);
