@@ -658,12 +658,12 @@ int aliceVision_main(int argc, char * argv[])
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
-    image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+    image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::DcpLinearProcessing;
     std::string colorProfileDatabaseDirPath = "";
     bool errorOnMissingColorProfile = true;
     bool useDCPColorMatrixOnly = true;
     bool doWBAfterDemosaicing = false;
-    std::string demosaicingAlgo = "AHD";
+    std::string demosaicingAlgo = "DHT";
     int highlightMode = 0;
 
     ProcessingParams pParams;
@@ -754,7 +754,7 @@ int aliceVision_main(int argc, char * argv[])
             ("Output color space: " + image::EImageColorSpace_informations()).c_str())
 
         ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
-            ("RAW color interpretation: " + image::ERawColorInterpretation_informations() + "\ndefault : librawnowhitebalancing").c_str())
+            ("RAW color interpretation: " + image::ERawColorInterpretation_informations() + "\ndefault : DcpLinearProcessing").c_str())
 
         ("applyDcpMetadata", po::value<bool>(&pParams.applyDcpMetadata)->default_value(pParams.applyDcpMetadata),
          "Apply after all processings a linear dcp profile generated from the image DCP metadata if any")
@@ -774,7 +774,7 @@ int aliceVision_main(int argc, char * argv[])
 
         ("demosaicingAlgo", po::value<std::string>(&demosaicingAlgo)->default_value(demosaicingAlgo),
          "Demosaicing algorithm (see libRaw documentation).\n"
-         "Possible algos are: linear, VNG, PPG, AHD (default), DCB, AHD-Mod, AFD, VCD, Mixed, LMMSE, AMaZE, DHT, AAHD, none.")
+         "Possible algos are: linear, VNG, PPG, AHD, DCB, AHD-Mod, AFD, VCD, Mixed, LMMSE, AMaZE, DHT (default), AAHD, none.")
 
         ("highlightMode", po::value<int>(&highlightMode)->default_value(highlightMode),
          "Highlight management (see libRaw documentation).\n"
