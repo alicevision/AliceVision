@@ -26,8 +26,8 @@ class PinholeFisheye : public Pinhole
 {
   public:
 
-  explicit PinholeFisheye(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0)
-  :Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new DistortionFisheye(k1, k2, k3, k4)))
+  explicit PinholeFisheye(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0, EInitMode distortionInitializationMode = EInitMode::NONE)
+  :Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new DistortionFisheye(k1, k2, k3, k4)), distortionInitializationMode)
   {
   }
 

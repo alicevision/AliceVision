@@ -23,10 +23,10 @@ class IntrinsicsScaleOffsetDisto : public IntrinsicsScaleOffset
 public:
   IntrinsicsScaleOffsetDisto() = default;
 
-  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY, std::shared_ptr<Distortion> distortion = nullptr, std::string distortionInitializationMode = "none")
+  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY, std::shared_ptr<Distortion> distortion = nullptr, EInitMode distortionInitializationMode = EInitMode::NONE)
   : IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY)
   , _pDistortion(distortion)
-  , _distortionInitializationMode(EInitMode_stringToEnum(distortionInitializationMode))
+  , _distortionInitializationMode(distortionInitializationMode)
   {}
 
   void assign(const IntrinsicBase& other) override
