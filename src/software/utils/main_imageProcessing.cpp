@@ -663,7 +663,7 @@ int aliceVision_main(int argc, char * argv[])
     bool errorOnMissingColorProfile = true;
     bool useDCPColorMatrixOnly = true;
     bool doWBAfterDemosaicing = false;
-    std::string demosaicingAlgo = "DHT";
+    std::string demosaicingAlgo = "AHD";
     int highlightMode = 0;
 
     ProcessingParams pParams;
@@ -774,7 +774,7 @@ int aliceVision_main(int argc, char * argv[])
 
         ("demosaicingAlgo", po::value<std::string>(&demosaicingAlgo)->default_value(demosaicingAlgo),
          "Demosaicing algorithm (see libRaw documentation).\n"
-         "Possible algos are: linear, VNG, PPG, AHD, DCB, AHD-Mod, AFD, VCD, Mixed, LMMSE, AMaZE, DHT (default), AAHD, none.")
+         "Possible algos are: linear, VNG, PPG, AHD (default), DCB, AHD-Mod, AFD, VCD, Mixed, LMMSE, AMaZE, DHT, AAHD, none.")
 
         ("highlightMode", po::value<int>(&highlightMode)->default_value(highlightMode),
          "Highlight management (see libRaw documentation).\n"

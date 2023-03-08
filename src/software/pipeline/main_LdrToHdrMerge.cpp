@@ -348,11 +348,15 @@ int aliceVision_main(int argc, char** argv)
                 targetMetadata.add_or_replace(oiio::ParamValue(meta.first, meta.second));
             }
         }
-        targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(workingColorSpace)));
+
+        // Fusion always produces linear image. sRGB is the only non linear color space that must be changed to linear (sRGB linear). 
+        image::EImageColorSpace mergedColorSpace = (workingColorSpace == image::EImageColorSpace::SRGB) ? image::EImageColorSpace::LINEAR : workingColorSpace;
+
+        targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace)));
 
         image::ImageWriteOptions writeOptions;
-        writeOptions.fromColorSpace(workingColorSpace);
-        writeOptions.toColorSpace(workingColorSpace);
+        writeOptions.fromColorSpace(mergedColorSpace);
+        writeOptions.toColorSpace(mergedColorSpace);
         writeOptions.storageDataType(storageDataType);
 
         image::writeImage(hdrImagePath, HDRimage, writeOptions, targetMetadata);

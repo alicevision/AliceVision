@@ -185,7 +185,7 @@ struct ImageReadOptions
         ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawWhiteBalancing,
         const std::string& colorProfile = "", const bool useDCPColorMatrixOnly = true, const oiio::ROI& roi = oiio::ROI()) :
         workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), useDCPColorMatrixOnly(useDCPColorMatrixOnly),
-        doWBAfterDemosaicing(false), demosaicingAlgo("DHT"), highlightMode(0), subROI(roi)
+        doWBAfterDemosaicing(false), demosaicingAlgo("AHD"), highlightMode(0), subROI(roi)
     {
     }
 
