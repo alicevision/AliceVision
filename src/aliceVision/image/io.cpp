@@ -457,10 +457,10 @@ void readImage(const std::string& path,
             size_t next = 1;
             while ((next = cam_mul.find(",", last)) != std::string::npos)
             {
-                v_mult.push_back(std::stof(cam_mul.substr(last, next - last).c_str()));
+                v_mult.push_back(std::stof(cam_mul.substr(last, next - last)));
                 last = next + 1;
             }
-            v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last).c_str()));
+            v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last)));
 
             for (int i = 0; i < 3; i++)
             {
@@ -493,15 +493,15 @@ void readImage(const std::string& path,
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawNoWhiteBalancing)
         {
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any except for dng files
+            configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing)
         {
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
             configSpec.attribute("raw:use_camera_wb", 1); // white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any except for dng files
+            configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
@@ -624,7 +624,7 @@ void readImage(const std::string& path,
         }
 
         int width, height;
-        std::map<std::string, std::string> imageMetadata = getMapFromMetadata(readImageMetadata(path, width, height));
+        const std::map<std::string, std::string> imageMetadata = getMapFromMetadata(readImageMetadata(path, width, height));
 
         // load DCP metadata from metadata. An error will be thrown if all required metadata are not there.
         dcpProf.Load(imageMetadata);
