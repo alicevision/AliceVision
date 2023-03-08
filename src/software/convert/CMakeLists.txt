@@ -71,4 +71,18 @@ alicevision_add_software(aliceVision_convertMesh
         ${Boost_LIBRARIES}
 )
 
+# Convert DepthMap 
+alicevision_add_software(aliceVision_convertDepthMap
+  SOURCE main_convertDepthMap.cpp
+  FOLDER ${FOLDER_SOFTWARE_CONVERT}
+  LINKS aliceVision_system
+        aliceVision_numeric
+        aliceVision_image
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_mvsUtils
+        assimp::assimp
+        ${Boost_LIBRARIES}
+)
+
 endif() # ALICEVISION_BUILD_MVS
