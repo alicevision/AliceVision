@@ -21,7 +21,7 @@ set(image_files_headers
   Rgb.hpp
   Sampler.hpp
   cache.hpp
-  imageCaching.hpp
+  ImageCache.hpp
 )
 
 # Sources
@@ -33,7 +33,7 @@ set(image_files_sources
   io.cpp
   imageAlgo.cpp
   cache.cpp
-  imageCaching.cpp
+  ImageCache.cpp
 )
 
 alicevision_add_library(aliceVision_image
