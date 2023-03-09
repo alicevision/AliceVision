@@ -273,45 +273,47 @@ void ReconstructionEngine_panorama::filterMatches()
 
 bool ReconstructionEngine_panorama::process()
 {
-  aliceVision::rotationAveraging::RelativeRotations relatives_R;
-  Compute_Relative_Rotations(relatives_R);
+    _rotationPriors = _sfmData.getPoses();
 
-  HashMap<IndexT, Mat3> global_rotations;
-  if(!Compute_Global_Rotations(relatives_R, global_rotations))
-  {
-    ALICEVISION_LOG_WARNING("Panorama:: Rotation Averaging failure!");
-    return false;
-  }
+    aliceVision::rotationAveraging::RelativeRotations relatives_R;
+    Compute_Relative_Rotations(relatives_R);
 
-  // we set translation vector to zero
-  for(const auto& gR: global_rotations)
-  {
-    const Vec3 t(0.0, 0.0, 0.0);
-    const IndexT poseId = gR.first;
-    const Mat3 & Ri = gR.second;
-    _sfmData.setAbsolutePose(poseId, CameraPose(Pose3(Ri, t)));
-  }
+    HashMap<IndexT, Mat3> global_rotations;
+    if(!Compute_Global_Rotations(relatives_R, global_rotations))
+    {
+        ALICEVISION_LOG_WARNING("Panorama:: Rotation Averaging failure!");
+        return false;
+    }
 
-  //-- Export statistics about the SfM process
-  if (!_loggingFile.empty())
-  {
-    using namespace htmlDocument;
-    std::ostringstream os;
-    os << "Structure from Motion statistics.";
-    _htmlDocStream->pushInfo("<hr>");
-    _htmlDocStream->pushInfo(htmlMarkup("h1",os.str()));
+    // we set translation vector to zero
+    for(const auto& gR: global_rotations)
+    {
+        const Vec3 t(0.0, 0.0, 0.0);
+        const IndexT poseId = gR.first;
+        const Mat3 & Ri = gR.second;
+        _sfmData.setAbsolutePose(poseId, CameraPose(Pose3(Ri, t)));
+    }
 
-    os.str("");
-    os << "-------------------------------" << "<br>"
-      << "-- View count: " << _sfmData.getViews().size() << "<br>"
-      << "-- Intrinsic count: " << _sfmData.getIntrinsics().size() << "<br>"
-      << "-- Pose count: " << _sfmData.getPoses().size() << "<br>"
-      << "-- Track count: "  << _sfmData.getLandmarks().size() << "<br>"
-      << "-------------------------------" << "<br>";
-    _htmlDocStream->pushInfo(os.str());
-  }
+    //-- Export statistics about the SfM process
+    if (!_loggingFile.empty())
+    {
+        using namespace htmlDocument;
+        std::ostringstream os;
+        os << "Structure from Motion statistics.";
+        _htmlDocStream->pushInfo("<hr>");
+        _htmlDocStream->pushInfo(htmlMarkup("h1",os.str()));
 
-  return true;
+        os.str("");
+        os << "-------------------------------" << "<br>"
+        << "-- View count: " << _sfmData.getViews().size() << "<br>"
+        << "-- Intrinsic count: " << _sfmData.getIntrinsics().size() << "<br>"
+        << "-- Pose count: " << _sfmData.getPoses().size() << "<br>"
+        << "-- Track count: "  << _sfmData.getLandmarks().size() << "<br>"
+        << "-------------------------------" << "<br>";
+        _htmlDocStream->pushInfo(os.str());
+    }
+
+    return true;
 }
 
 /// Compute from relative rotations the global rotations of the camera poses
@@ -438,7 +440,93 @@ bool ReconstructionEngine_panorama::Adjust()
       return false;
   }
 
+  //Assuming only a small number of views have outliers due to motion
+  if (cleanWithPriors())
+  {
+    // Minimize Rotation
+    success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION);
+    if(success)
+    {
+        ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation after cleaning outliers");
+    }
+    else
+    {
+        ALICEVISION_LOG_INFO("Failed to refine: Rotation");
+        return false;
+    }
+  }
+
   return true;
+}
+
+bool ReconstructionEngine_panorama::cleanWithPriors()
+{
+    if (_rotationPriors.size() != _sfmData.getViews().size())
+    {
+        return false;
+    }
+
+    //Remove all matches in sfm
+    sfm::Constraints2D & constraints2d = _sfmData.getConstraints2D();
+    constraints2d.clear();
+
+    //Put back the rotations
+    _sfmData.getPoses() = _rotationPriors;
+
+    //Check all matches
+    for (const auto & matchesForView : *_pairwiseMatches)
+    {
+        IndexT viewI = matchesForView.first.first;
+        IndexT viewJ = matchesForView.first.second;
+
+        const sfmData::View & vI = _sfmData.getView(viewI);
+        const sfmData::View & vJ = _sfmData.getView(viewJ);
+
+        sfmData::CameraPose iTo = _sfmData.getAbsolutePose(vI.getPoseId());
+        sfmData::CameraPose jTo = _sfmData.getAbsolutePose(vJ.getPoseId());
+
+        std::shared_ptr<camera::IntrinsicBase> intrinsicI = _sfmData.getIntrinsicsharedPtr(vI.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> intrinsicJ = _sfmData.getIntrinsicsharedPtr(vJ.getIntrinsicId());
+
+        Mat3 iRo = iTo.getTransform().rotation();
+        Mat3 jRo = jTo.getTransform().rotation();
+
+        Mat3 iRj = iRo * jRo.transpose();
+
+        for (const auto & matchesPerDesc : matchesForView.second)
+        {
+            const feature::EImageDescriberType descType = matchesPerDesc.first;
+            const feature::PointFeatures& feats_I = _featuresPerView->getFeatures(viewI, descType);
+            const feature::PointFeatures& feats_J = _featuresPerView->getFeatures(viewJ, descType);
+
+            for (const auto & indMatch : matchesPerDesc.second)
+            {
+                const feature::PointFeature & feat_I = feats_I[indMatch._i];
+                const feature::PointFeature & feat_J = feats_J[indMatch._j];
+
+                Vec2 ptViewI = feats_I[indMatch._i].coords().cast<double>();
+                Vec2 ptViewJ = feats_J[indMatch._j].coords().cast<double>();
+
+                //Compute vectors in 3D
+                const Vec3 bearingVector_I = intrinsicI->toUnitSphere(intrinsicI->removeDistortion(intrinsicI->ima2cam(feat_I.coords().cast<double>())));
+                const Vec3 bearingVector_J = intrinsicJ->toUnitSphere(intrinsicJ->removeDistortion(intrinsicJ->ima2cam(feat_J.coords().cast<double>())));
+
+                //Check angular difference
+                double cangle = (iRj * bearingVector_J).dot(bearingVector_I);
+                double angle = acos(cangle);
+                if (angle > _params.maxAngleToPriorRefined * M_PI / 180.0)
+                {
+                    continue;
+                }
+
+
+                const sfm::Constraint2D constraint(viewI, sfm::Observation(ptViewI, indMatch._i, feat_I.scale()), viewJ, sfm::Observation(ptViewJ, indMatch._j, feat_J.scale()), descType);
+                constraints2d.push_back(constraint);
+            }
+        }
+    }
+
+    return true;
 }
 
 void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging::RelativeRotations& vec_relatives_R)

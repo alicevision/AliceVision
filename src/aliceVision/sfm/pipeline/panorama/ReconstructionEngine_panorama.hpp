@@ -156,7 +156,8 @@ public:
       ERelativeRotationMethod eRelativeRotationMethod = RELATIVE_ROTATION_FROM_E;
       bool lockAllIntrinsics = false;
       bool rotationAveragingWeighting = true;
-      double maxAngleToPrior = 5.0;  //< max angle to input prior in degree
+      double maxAngleToPrior = 5.0;  //< max angle to input prior before refinement in degree
+      double maxAngleToPriorRefined = 2.0;  //< max angle to input prior after refinement in degree
       double maxAngularError = 100.0;  //< max angular error in degree (in global rotation averaging)
       bool intermediateRefineWithFocal = false; //< intermediate refine with rotation+focal
       bool intermediateRefineWithFocalDist = false; //< intermediate refine with rotation+focal+distortion
@@ -191,7 +192,8 @@ public:
 private:
   /// Compute relative rotations
   void Compute_Relative_Rotations(aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R);
-
+  bool cleanWithPriors();
+  
   // Logger
   std::shared_ptr<htmlDocument::htmlDocumentStream> _htmlDocStream;
   std::string _loggingFile;
@@ -203,6 +205,7 @@ private:
   feature::FeaturesPerView* _featuresPerView;
   matching::PairwiseMatches* _pairwiseMatches;
 
+  sfmData::Poses _rotationPriors;
 };
 
 } // namespace sfm
