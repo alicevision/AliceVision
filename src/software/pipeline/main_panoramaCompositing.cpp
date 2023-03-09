@@ -57,18 +57,23 @@ size_t getCompositingOptimalScale(int width, int height)
     x = log2(minsize/5)
     */
 
-    size_t minsize = std::min(width, height);
-    size_t gaussianFilterRadius = 2;
+    const size_t minsize = std::min(width, height);
+    const size_t gaussianFilterRadius = 2;
+    const int gaussianFilterSize = 1 + 2 * 2;
 
-    int gaussianFilterSize = 1 + 2 * 2;
+    //Avoid negative values on scale
+    if (minsize < gaussianFilterSize)
+    {
+        return 0;
+    }
+    
+    const size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
 
-    size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
-
-    return (optimal_scale);
+    return optimal_scale;
 }
 
 std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std::string& inputPath,
-                                      const size_t borderSize)
+                                      const size_t borderSize, size_t forceMinPyramidLevels)
 {
     if(sfmData.getViews().empty())
     {
@@ -113,6 +118,14 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
         {
             min_scale = scale;
         }
+    }
+
+    ALICEVISION_LOG_INFO("Estimated pyramid levels count: " << min_scale);
+
+    if (forceMinPyramidLevels > min_scale)
+    {
+        min_scale = forceMinPyramidLevels;
+        ALICEVISION_LOG_INFO("Forced pyramid levels count: " << min_scale);
     }
 
     std::unique_ptr<PanoramaMap> ret(new PanoramaMap(panoramaSize.first, panoramaSize.second, min_scale, borderSize));
@@ -617,6 +630,7 @@ int aliceVision_main(int argc, char** argv)
     int rangeIteration = -1;
     int rangeSize = 1;
     int maxThreads = 1;
+    int forceMinPyramidLevels = 0;
     bool showBorders = false;
     bool showSeams = false;
     bool useTiling = true;
@@ -631,13 +645,14 @@ int aliceVision_main(int argc, char** argv)
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()("compositerType,c", po::value<std::string>(&compositerType)->required(),
-                                 "Compositer Type [replace, alpha, multiband].")(
-        "overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams, all].")(
-        "storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-        ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
-        "rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration),
-        "Range chunk id.")("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
+    optionalParams.add_options()
+        ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
+        ("forceMinPyramidLevels,f", po::value<int>(&forceMinPyramidLevels)->default_value(forceMinPyramidLevels), "For multiband compositer, force a minimum number of levels in the image pyramid.")
+        ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams, all].")
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+        ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Range chunk id.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
         ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads), "max number of threads to use.")
         ("labels,l", po::value<std::string>(&labelsFilepath)->required(), "Labels image from seams estimation.")
         ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling), "use tiling for compositing.");
@@ -665,6 +680,12 @@ int aliceVision_main(int argc, char** argv)
     if(overlayType == "seams" || overlayType == "all")
     {
         showSeams = true;
+    }
+
+    if (forceMinPyramidLevels > 16)
+    {
+        ALICEVISION_LOG_ERROR("forceMinPyramidLevels parameter has a value which is too large.");
+        return EXIT_FAILURE;
     }
 
     // load input scene
@@ -741,7 +762,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Build the map of inputs in the final panorama
     // This is mostly meant to compute overlaps between inputs
-    std::unique_ptr<PanoramaMap> panoramaMap = buildMap(sfmData, warpingFolder, borderSize);
+    std::unique_ptr<PanoramaMap> panoramaMap = buildMap(sfmData, warpingFolder, borderSize, forceMinPyramidLevels);
     if(viewsCount == 0)
     {
         ALICEVISION_LOG_ERROR("No valid views");
