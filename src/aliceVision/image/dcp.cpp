@@ -2,6 +2,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/stl/mapUtils.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -1294,6 +1295,63 @@ void DCPProfile::Load(const std::string& filename)
     igammatab_srgb.Set(igammatab_srgb_data);
 }
 
+void DCPProfile::Load(const std::map<std::string, std::string>& metadata)
+{
+    bool dcpMetadataOK = aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:Temp1") &&
+        aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:Temp2") &&
+        aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ForwardMatrixNumber") &&
+        aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ColorMatrixNumber");
+
+    int colorMatrixNb;
+    int fwdMatrixNb;
+
+    if (dcpMetadataOK)
+    {
+        colorMatrixNb = std::stoi(metadata.at("AliceVision:DCP:ColorMatrixNumber"));
+        fwdMatrixNb = std::stoi(metadata.at("AliceVision:DCP:ForwardMatrixNumber"));
+
+        ALICEVISION_LOG_INFO("Matrix Number : " << colorMatrixNb << " ; " << fwdMatrixNb);
+
+        dcpMetadataOK = !((colorMatrixNb == 0) ||
+            ((colorMatrixNb > 0) && !aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ColorMat1")) ||
+            ((colorMatrixNb > 1) && !aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ColorMat2")) ||
+            ((fwdMatrixNb > 0) && !aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ForwardMat1")) ||
+            ((fwdMatrixNb > 1) && !aliceVision::map_has_non_empty_value(metadata, "AliceVision:DCP:ForwardMat2")));
+    }
+
+    if (!dcpMetadataOK)
+    {
+        ALICEVISION_THROW_ERROR("Image Processing: All required DCP metadata cannot be found.\n" << metadata);
+    }
+
+    info.temperature_1 = std::stof(metadata.at("AliceVision:DCP:Temp1"));
+    info.temperature_2 = std::stof(metadata.at("AliceVision:DCP:Temp2"));
+    info.has_color_matrix_1 = colorMatrixNb > 0;
+    info.has_color_matrix_2 = colorMatrixNb > 1;
+    info.has_forward_matrix_1 = fwdMatrixNb > 0;
+    info.has_forward_matrix_2 = fwdMatrixNb > 1;
+
+    std::vector<std::string> v_str;
+
+    v_str.push_back(metadata.at("AliceVision:DCP:ColorMat1"));
+    if (colorMatrixNb > 1)
+    {
+        v_str.push_back(metadata.at("AliceVision:DCP:ColorMat2"));
+    }
+    setMatricesFromStrings("color", v_str);
+
+    v_str.clear();
+    if (fwdMatrixNb > 0)
+    {
+        v_str.push_back(metadata.at("AliceVision:DCP:ForwardMat1"));
+        if (fwdMatrixNb > 1)
+        {
+            v_str.push_back(metadata.at("AliceVision:DCP:ForwardMat2"));
+        }
+        setMatricesFromStrings("forward", v_str);
+    }
+}
+
 void DCPProfile::apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params)
 {
     // Compute matrices to and from selected working space
@@ -2106,27 +2164,28 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const
     return cameraToSrgbLinear;
 }
 
-DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw) const
+DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
+    const Triple asShotNeutralInv = { 1.0 / asShotNeutral[0] , 1.0 / asShotNeutral[1] , 1.0 / asShotNeutral[2] };
+
     double x, y;
-    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutral, x, y);
+    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutralInv, x, y);
     double cct, tint;
     setChromaticityCoordinates(x, y, cct, tint);
 
     ALICEVISION_LOG_INFO("Estimated illuminant (cct; tint) : (" << cct << "; " << tint << ")");
 
     Matrix neutral = IdentityMatrix;
-
     if (sourceIsRaw)
     {
-        neutral[0][0] = 1.0 / asShotNeutral[0];
-        neutral[1][1] = 1.0 / asShotNeutral[1];
-        neutral[2][2] = 1.0 / asShotNeutral[2];
+        neutral[0][0] = asShotNeutral[0];
+        neutral[1][1] = asShotNeutral[1];
+        neutral[2][2] = asShotNeutral[2];
     }
 
     Matrix cameraToXyzD50 = IdentityMatrix;
 
-    if ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2))
+    if (useColorMatrixOnly || ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2)))
     {
         Matrix xyzToCamera = IdentityMatrix;
         if (info.has_color_matrix_1 && info.has_color_matrix_2)
@@ -2137,11 +2196,22 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         {
             xyzToCamera = color_matrix_1;
         }
-        const Matrix cameraToXyz = matInv(xyzToCamera);
+
+        Matrix wbInv = IdentityMatrix;
+        if (!sourceIsRaw)
+        {
+            // White balancing has been applied before demosaicing but color matrix is supposed to work on non white balanced data
+            // The white balance operation must be reversed
+            wbInv[0][0] = asShotNeutralInv[0];
+            wbInv[1][1] = asShotNeutralInv[1];
+            wbInv[2][2] = asShotNeutralInv[2];
+        }
+        const Matrix cameraToXyz = matMult(matInv(xyzToCamera), wbInv);
 
         const double D50_cct = 5000.706605070579;  //
         const double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
         const Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
+
         cameraToXyzD50 = matMult(cat, cameraToXyz);
     }
     else if ((info.has_forward_matrix_1) && (info.has_forward_matrix_2))
@@ -2152,6 +2222,9 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
     {
         cameraToXyzD50 = matMult(forward_matrix_1, neutral);
     }
+
+    ALICEVISION_LOG_INFO("cameraToXyzD50Matrix : " << cameraToXyzD50);
+
     Matrix cameraToACES2065 = matMult(xyzD50ToACES2065Matrix, cameraToXyzD50);
 
     return cameraToACES2065;
@@ -2268,9 +2341,11 @@ void DCPProfile::setMatricesFromStrings(const std::string& type, std::vector<std
     setMatrices(type, v_Mat);
 }
 
-void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw) const
+void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw, useColorMatrixOnly);
+
+    ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
 
     #pragma omp parallel for
     for (int i = 0; i < image.spec().height; ++i)
@@ -2292,9 +2367,11 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const
         }
 }
 
-void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw) const
+void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw, useColorMatrixOnly);
+
+    ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
 
     #pragma omp parallel for
     for (int i = 0; i < image.Height(); ++i)

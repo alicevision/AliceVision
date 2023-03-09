@@ -17,6 +17,8 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
+#include <aliceVision/stl/mapUtils.hpp>
+
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
@@ -142,12 +144,58 @@ bool readFullTile(image::Image<image::RGBAfColor> & output, std::unique_ptr<oiio
     return true;
 }
 
+void colorSpaceTransform(image::Image<image::RGBAfColor>& inputImage, image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace, image::DCPProfile dcpProf, image::DCPProfile::Triple neutral)
+{
+    const int width = inputImage.Width();
+    const int tileSize = inputImage.Height();
+    oiio::ImageBuf inBuf = oiio::ImageBuf(oiio::ImageSpec(width, tileSize, 4, oiio::TypeDesc::FLOAT), const_cast<image::RGBAfColor*>(inputImage.data()));
+    oiio::ImageBuf* outBuf = &inBuf;
+
+    if (fromColorSpace == image::EImageColorSpace::NO_CONVERSION)
+    {
+        dcpProf.applyLinear(inBuf, neutral, true, true);
+        fromColorSpace = image::EImageColorSpace::ACES2065_1;
+    }
+
+    oiio::ImageBuf colorspaceBuf = oiio::ImageBuf(oiio::ImageSpec(width, tileSize, 4, oiio::TypeDesc::FLOAT), const_cast<image::RGBAfColor*>(inputImage.data())); // buffer for image colorspace modification
+    if ((fromColorSpace == toColorSpace) || (toColorSpace == image::EImageColorSpace::NO_CONVERSION))
+    {
+        // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
+        // even if no conversion is needed.
+    }
+    else if ((toColorSpace == image::EImageColorSpace::ACES2065_1) || (toColorSpace == image::EImageColorSpace::ACEScg) ||
+        (fromColorSpace == image::EImageColorSpace::ACES2065_1) || (fromColorSpace == image::EImageColorSpace::ACEScg))
+    {
+        const auto colorConfigPath = image::getAliceVisionOCIOConfig();
+        if (colorConfigPath.empty())
+        {
+            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
+        }
+        oiio::ColorConfig colorConfig(colorConfigPath);
+        oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf,
+            EImageColorSpace_enumToOIIOString(fromColorSpace),
+            EImageColorSpace_enumToOIIOString(toColorSpace), true, "", "", &colorConfig);
+        outBuf = &colorspaceBuf;
+    }
+    else
+    {
+        oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToOIIOString(fromColorSpace), EImageColorSpace_enumToOIIOString(toColorSpace));
+        outBuf = &colorspaceBuf;
+    }
+
+    oiio::ROI exportROI = outBuf->roi();
+    exportROI.chbegin = 0;
+    exportROI.chend = inputImage.Channels();
+    outBuf->get_pixels(exportROI, outBuf->pixeltype(), inputImage.data());
+}
+
 int aliceVision_main(int argc, char** argv)
 {
     std::string inputPanoramaPath;
     std::string outputPanoramaPath;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
-    const size_t maxProcessingSize = 2000;  
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
+    const size_t maxProcessingSize = 2000;
     bool fillHoles = false;  
 
     // Description of mandatory parameters
@@ -160,7 +208,8 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
-        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm");
+        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.");
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
                     "AliceVision PanoramaPostProcessing");
@@ -182,10 +231,39 @@ int aliceVision_main(int argc, char** argv)
     const oiio::ImageSpec &inputSpec = panoramaInput->spec();
     const int tileWidth = inputSpec.tile_width;    
     const int tileHeight = inputSpec.tile_height;
+    image::EImageColorSpace fromColorSpace = image::EImageColorSpace_stringToEnum(inputSpec.get_string_attribute("AliceVision:ColorSpace", "linear"));
+
     if (tileWidth != tileHeight)
     {
         ALICEVISION_LOG_ERROR("non square tiles !");
         return EXIT_FAILURE;
+    }
+
+    int tmpWidth, tmpHeight;
+    std::map<std::string, std::string> imageMetadata = image::getMapFromMetadata(image::readImageMetadata(inputPanoramaPath, tmpWidth, tmpHeight));
+
+    image::DCPProfile dcpProf;
+    image::DCPProfile::Triple neutral = { 1.0,1.0,1.0 };
+    if (fromColorSpace == image::EImageColorSpace::NO_CONVERSION)
+    {
+        // load DCP metadata
+        dcpProf.Load(imageMetadata);
+
+        std::string cam_mul = map_has_non_empty_value(imageMetadata, "raw:cam_mul") ? imageMetadata.at("raw:cam_mul") : imageMetadata.at("AliceVision:raw:cam_mul");
+        std::vector<float> v_mult;
+        size_t last = 0;
+        size_t next = 1;
+        while ((next = cam_mul.find(",", last)) != std::string::npos)
+        {
+            v_mult.push_back(std::stof(cam_mul.substr(last, next - last)));
+            last = next + 1;
+        }
+        v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last)));
+
+        for (int i = 0; i < 3; i++)
+        {
+            neutral[i] = v_mult[i] / v_mult[1];
+        }
     }
 
     //Create output panorama
@@ -195,6 +273,8 @@ int aliceVision_main(int argc, char** argv)
     outputSpec.tile_height = 0;
 	outputSpec.attribute("compression", "zip");
     outputSpec.extra_attribs.remove("openexr:lineOrder");
+    outputSpec.attribute("AliceVision:ColorSpace",image::EImageColorSpace_enumToString(outputColorSpace));
+
     if (!panoramaOutput->open(outputPanoramaPath, outputSpec))
     {
         ALICEVISION_LOG_ERROR("Impossible to write to destination path");
@@ -208,7 +288,6 @@ int aliceVision_main(int argc, char** argv)
     const int countWidth = std::ceil(double(width) / double(tileSize));
     const int countHeight = std::ceil(double(height) / double(tileSize));
     const int rowSize = countWidth + 2;
-
 
     if (fillHoles)
     {
@@ -349,7 +428,6 @@ int aliceVision_main(int argc, char** argv)
                 cs = ns;
             }
 
-                
             pyramid[pyramid.size() - 1] = subFiled;  
 
             for (int level = pyramid.size() - 2; level >= 0; level--)
@@ -415,6 +493,8 @@ int aliceVision_main(int argc, char** argv)
             
             final.block(0, 0, tileSize, width) = finalTile.block(tileSize, tileSize, tileSize, width);
 
+            colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
+
             panoramaOutput->write_scanlines(ty * tileSize, (ty + 1) * tileSize, 0, oiio::TypeDesc::FLOAT, final.data());
         }
     }
@@ -437,7 +517,6 @@ int aliceVision_main(int argc, char** argv)
                     ALICEVISION_LOG_ERROR("Error reading from image");
                 }
 
-
                 int available = width - tx*tileSize;
                 if (available < tileSize)
                 {
@@ -448,6 +527,8 @@ int aliceVision_main(int argc, char** argv)
                     final.block(0, tx * tileSize, tileSize, tileSize) = tile;
                 }
             }
+
+            colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
 
             panoramaOutput->write_scanlines(ybegin, yend, 0, oiio::TypeDesc::FLOAT, final.data());
         }

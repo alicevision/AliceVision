@@ -265,6 +265,7 @@ struct ProcessingParams
     bool fillHoles = false;
     bool fixNonFinite = false;
     bool applyDcpMetadata = false;
+    bool useDCPColorMatrixOnly = false;
 
     SharpenParams sharpen = 
     {
@@ -490,10 +491,10 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
             ALICEVISION_LOG_INFO("Matrix Number : " << colorMatrixNb << " ; " << fwdMatrixNb);
 
             dcpMetadataOK = !((colorMatrixNb == 0) ||
-                              ((colorMatrixNb > 0) && map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ColorMat1")) ||
-                              ((colorMatrixNb > 1) && map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ColorMat2")) ||
-                              ((fwdMatrixNb > 0) && map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ForwardMat1")) ||
-                              ((fwdMatrixNb > 1) && map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ForwardMat2")));
+                              ((colorMatrixNb > 0) && !map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ColorMat1")) ||
+                              ((colorMatrixNb > 1) && !map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ColorMat2")) ||
+                              ((fwdMatrixNb > 0) && !map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ForwardMat1")) ||
+                              ((fwdMatrixNb > 1) && !map_has_non_empty_value(imageMetadata, "AliceVision:DCP:ForwardMat2")));
         }
 
         if (!dcpMetadataOK)
@@ -530,7 +531,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
             dcpProf.setMatricesFromStrings("forward", v_str);
         }
 
-        std::string cam_mul = imageMetadata.at("raw:cam_mul");
+        std::string cam_mul = map_has_non_empty_value(imageMetadata, "raw:cam_mul") ? imageMetadata.at("raw:cam_mul") : imageMetadata.at("AliceVision:raw:cam_mul");
         std::vector<float> v_mult;
         size_t last = 0;
         size_t next = 1;
@@ -544,10 +545,10 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         image::DCPProfile::Triple neutral;
         for (int i = 0; i < 3; i++)
         {
-            neutral[i] = v_mult[1] / v_mult[i];
+            neutral[i] = v_mult[i] / v_mult[1];
         }
 
-        dcpProf.applyLinear(image, neutral, true);
+        dcpProf.applyLinear(image, neutral, true, pParams.useDCPColorMatrixOnly);
     }
 }
 
@@ -657,9 +658,13 @@ int aliceVision_main(int argc, char * argv[])
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
-    image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+    image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::DcpLinearProcessing;
     std::string colorProfileDatabaseDirPath = "";
     bool errorOnMissingColorProfile = true;
+    bool useDCPColorMatrixOnly = true;
+    bool doWBAfterDemosaicing = false;
+    std::string demosaicingAlgo = "AHD";
+    int highlightMode = 0;
 
     ProcessingParams pParams;
 
@@ -749,16 +754,31 @@ int aliceVision_main(int argc, char * argv[])
             ("Output color space: " + image::EImageColorSpace_informations()).c_str())
 
         ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
-            ("RAW color interpretation: " + image::ERawColorInterpretation_informations() + "\ndefault : librawnowhitebalancing").c_str())
+            ("RAW color interpretation: " + image::ERawColorInterpretation_informations() + "\ndefault : DcpLinearProcessing").c_str())
 
         ("applyDcpMetadata", po::value<bool>(&pParams.applyDcpMetadata)->default_value(pParams.applyDcpMetadata),
          "Apply after all processings a linear dcp profile generated from the image DCP metadata if any")
 
         ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
-            "DNG Color Profiles (DCP) database path.")
+         "DNG Color Profiles (DCP) database path.")
 
         ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
-            "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
+         "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
+
+        ("useDCPColorMatrixOnly", po::value<bool>(&useDCPColorMatrixOnly)->default_value(useDCPColorMatrixOnly),
+         "Use only Color matrices of DCP profile, ignoring Forward matrices if any.  Default: False.\n"
+         "In case white balancing has been done before demosaicing, the reverse operation is done before applying the color matrix.")
+
+        ("doWBAfterDemosaicing", po::value<bool>(&doWBAfterDemosaicing)->default_value(doWBAfterDemosaicing),
+         "Do not use libRaw white balancing. White balancing is applied just before DCP profile if useDCPColorMatrixOnly is set to False. Default: False.")
+
+        ("demosaicingAlgo", po::value<std::string>(&demosaicingAlgo)->default_value(demosaicingAlgo),
+         "Demosaicing algorithm (see libRaw documentation).\n"
+         "Possible algos are: linear, VNG, PPG, AHD (default), DCB, AHD-Mod, AFD, VCD, Mixed, LMMSE, AMaZE, DHT, AAHD, none.")
+
+        ("highlightMode", po::value<int>(&highlightMode)->default_value(highlightMode),
+         "Highlight management (see libRaw documentation).\n"
+         "0 = clip (default), 1 = unclip, 2 = blend, 3+ = rebuild.")
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
@@ -869,17 +889,38 @@ int aliceVision_main(int argc, char * argv[])
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
 
+            auto metadata = view.getMetadata();
+
+            if (pParams.applyDcpMetadata && metadata["AliceVision:ColorSpace"] != "no_conversion")
+            {
+                ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+            }
+
             image::ImageReadOptions options;
-            options.workingColorSpace = workingColorSpace;           
+            options.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
             if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
             {
                 options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
+                if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+                {
+                    options.useDCPColorMatrixOnly = false;
+                    options.doWBAfterDemosaicing = true;
+                }
+                else
+                {
+                    options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                    options.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                }
             }
             else
             {
                 options.rawColorInterpretation = rawColorInterpretation;
+                options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                options.doWBAfterDemosaicing = doWBAfterDemosaicing;
             }
             options.colorProfileFileName = view.getColorProfileFileName();
+            options.demosaicingAlgo = demosaicingAlgo;
+            options.highlightMode = highlightMode;
 
             // Read original image
             image::Image<image::RGBAfColor> image;
@@ -902,6 +943,11 @@ int aliceVision_main(int argc, char * argv[])
             // Image processing
             processImage(image, pParams, view.getMetadata());
 
+            if (pParams.applyDcpMetadata)
+            {
+                workingColorSpace = image::EImageColorSpace::ACES2065_1;
+            }
+
             // Save the image
             saveImage(image, viewPath, outputfilePath, view.getMetadata(), metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
 
@@ -909,6 +955,7 @@ int aliceVision_main(int argc, char * argv[])
             view.setImagePath(outputfilePath);
             view.setWidth(image.Width());
             view.setHeight(image.Height());
+            view.addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
         }
 
         if (pParams.scaleFactor != 1.0f)
@@ -1012,6 +1059,10 @@ int aliceVision_main(int argc, char * argv[])
 
             image::DCPProfile dcpProf;
             sfmData::View view; // used to extract and complete metadata
+            view.setImagePath(inputFilePath);
+            int width, height;
+            const auto metadata = image::readImageMetadata(inputFilePath, width, height);
+            view.setMetadata(image::getMapFromMetadata(metadata));
 
             if (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
                 rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
@@ -1019,12 +1070,7 @@ int aliceVision_main(int argc, char * argv[])
                 // Load DCP color profiles database if not already loaded
                 dcpDatabase.load(colorProfileDatabaseDirPath.empty() ? getColorProfileDatabaseFolder() : colorProfileDatabaseDirPath, false);
 
-                // Get DSLR maker and model by creating a view and picking values up in it.
-                view.setImagePath(inputFilePath);
-                int width, height;
-                const auto metadata = image::readImageMetadata(inputFilePath, width, height);
-                view.setMetadata(image::getMapFromMetadata(metadata));
-
+                // Get DSLR maker and model in view metadata.
                 const std::string& make = view.getMetadataMake();
                 const std::string& model = view.getMetadataModel();
 
@@ -1060,19 +1106,36 @@ int aliceVision_main(int argc, char * argv[])
             {
                 readOptions.rawColorInterpretation = rawColorInterpretation;
             }
-            readOptions.workingColorSpace = workingColorSpace;
+
+            std::map<std::string,std::string> md = view.getMetadata();
+
+            if (pParams.applyDcpMetadata && md["AliceVision::ColorSpace"] != "no_conversion")
+            {
+                ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+            }
+
+            readOptions.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
+            readOptions.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+            readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
+            readOptions.demosaicingAlgo = demosaicingAlgo;
+            readOptions.highlightMode = highlightMode;
 
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, readOptions);
 
-            std::map<std::string,std::string> metadata = view.getMetadata();
+            pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
 
             // Image processing
-            processImage(image, pParams,metadata);
+            processImage(image, pParams, md);
+
+            if (pParams.applyDcpMetadata)
+            {
+                workingColorSpace = image::EImageColorSpace::ACES2065_1;
+            }
 
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, metadata, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
         }
     }
 

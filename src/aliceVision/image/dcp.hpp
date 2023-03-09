@@ -169,6 +169,12 @@ public:
     void Load(const std::string& filename);
 
     /**
+    * @brief DCPProfile loader
+    * @param[in] map of metadata
+    */
+    void Load(const std::map<std::string, std::string>& metadata);
+
+    /**
      * @brief getMatrices gets some matrices contained in the profile
      * param[in] type The matrices to get, "color" or "forward"
      * param[in] v_Mat A vector of matrices to be populated
@@ -201,16 +207,18 @@ public:
      * param[in] image The OIIO image on which the profile must be applied
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
+     * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */
-    void applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw = false) const;
+    void applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = true) const;
 
     /**
      * @brief applyLinear applies the linear part of a DCP profile on an aliceVision image
      * param[in] image The aliceVision image on which the profile must be applied
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
+     * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */
-    void applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw = false) const;
+    void applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
 
     /**
      * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer
@@ -270,7 +278,7 @@ private:
     Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget) const;
     Matrix getCameraToXyzD50Matrix(const double x, const double y) const;
     Matrix getCameraToSrgbLinearMatrix(const double x, const double y) const;
-    Matrix getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw = false) const;
+    Matrix getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
 
     Matrix ws_sRGB; // working color space to sRGB
     Matrix sRGB_ws; // sRGB to working color space
