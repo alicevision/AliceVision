@@ -260,7 +260,7 @@ void resizeImage(int downscale, image::Image<unsigned char>& inoutImage,
 {
     if (downscale <= 1)
     {
-        return;
+        ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
     const int outWidth = inoutImage.Width() / downscale;
@@ -289,7 +289,7 @@ void resizeImage(int downscale, image::Image<float>& inoutImage,
 {
     if (downscale <= 1)
     {
-        return;
+        ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
     const int outWidth = inoutImage.Width() / downscale;
@@ -319,7 +319,7 @@ void resizeImage(int downscale, image::Image<image::RGBColor>& inoutImage,
 {
     if (downscale <= 1)
     {
-        return;
+        ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
     const int outWidth = inoutImage.Width() / downscale;
@@ -349,7 +349,7 @@ void resizeImage(int downscale, image::Image<image::RGBfColor>& inoutImage,
 {
     if (downscale <= 1)
     {
-        return;
+        ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
     const int outWidth = inoutImage.Width() / downscale;
@@ -379,7 +379,7 @@ void resizeImage(int downscale, image::Image<image::RGBAColor>& inoutImage,
 {
     if (downscale <= 1)
     {
-        return;
+        ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
     const int outWidth = inoutImage.Width() / downscale;
@@ -409,7 +409,7 @@ void resizeImage(int downscale, image::Image<image::RGBAfColor>& inoutImage,
 {
     if (downscale <= 1)
     {
-        return;
+        ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
     const int outWidth = inoutImage.Width() / downscale;

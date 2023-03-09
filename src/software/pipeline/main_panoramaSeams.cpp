@@ -60,7 +60,10 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImageDirect(maskPath, mask);
-        imageAlgo::resizeImage(downscale, mask);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, mask);
+        }
 
         // Get offset
         oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
@@ -72,7 +75,10 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
         image::Image<float> weights;
         image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
-        imageAlgo::resizeImage(downscale, weights);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, weights);
+        }
 
         if (!seams.appendWithLoop(mask, weights, viewId, offsetX, offsetY)) 
         {
@@ -111,14 +117,20 @@ bool computeGCLabels(image::Image<IndexT>& labels, const std::vector<std::shared
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImageDirect(maskPath, mask);
-        imageAlgo::resizeImage(downscale, mask);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, mask);
+        }
 
         // Load Color
         const std::string colorsPath = (fs::path(inputPath) / (warpedPath + ".exr")).string();
         ALICEVISION_LOG_TRACE("Load colors with path " << colorsPath);
         image::Image<image::RGBfColor> colors;
         image::readImage(colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
-        imageAlgo::resizeImage(downscale, colors);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, colors);
+        }
 
         // Get offset
         oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
