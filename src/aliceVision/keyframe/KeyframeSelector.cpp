@@ -128,11 +128,14 @@ void KeyframeSelector::processRegular()
     }
 
     for (unsigned int id = 0; id < nbFrames; id += step) {
-        ALICEVISION_LOG_DEBUG("Selecting frame with ID " << id);
+        ALICEVISION_LOG_INFO("Selecting frame with ID " << id);
         _selectedKeyframes.push_back(id);
         if (_maxOutFrames > 0 && _selectedKeyframes.size() >= _maxOutFrames)
             break;
     }
+
+    ALICEVISION_LOG_INFO("Finished selecting all the keyframes! " << _selectedKeyframes.size() << "/" <<
+                         nbFrames << " frames have been selected.");
 }
 
 void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_t rescaledWidthSharpness,
@@ -171,14 +174,17 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
 
     // Step 2: check whether the min/max output frames constraints are respected
     if (!(subsequenceLimits.size() - 1 >= _minOutFrames && subsequenceLimits.size() - 1 <= _maxOutFrames)) {
-        ALICEVISION_LOG_DEBUG("Preliminary selection does not provide enough frames (" << subsequenceLimits.size() - 1
-                              << " keyframes, should be between " << _minOutFrames << " and " << _maxOutFrames << ")");
+        ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
+                             << subsequenceLimits.size() - 1 << " keyframes, should be between " << _minOutFrames
+                             << " and " << _maxOutFrames << ").");
 
         std::vector<unsigned int> newLimits = subsequenceLimits;  // Prevents first 'newLimits.size() - 1' from overflowing
         const double displacementDiff = 0.5;  // The displacement must be 0.5px smaller/bigger than the previous one
 
         if (subsequenceLimits.size() - 1 < _minOutFrames) {
             // Not enough frames, reduce the motion step
+            ALICEVISION_LOG_INFO("Not enough keyframes, the motion step will be reduced of " << displacementDiff
+                                 << "%.");
             bool sampleRegularly = false;
             while (newLimits.size() - 1 < _minOutFrames) {
                 newLimits.clear();
@@ -203,6 +209,8 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
 
             if (sampleRegularly) {
                 // Sample regularly the whole sequence to get minOutFrames subsequences
+                ALICEVISION_LOG_INFO("The motion step has been reduced to 0 and cannot be used anymore. Keyframes will "
+                                     "be sampled regularly instead.");
                 newLimits.clear();
                 newLimits.push_back(0);
                 std::size_t stepSize = (sequenceSize / _minOutFrames) + 1;
@@ -213,6 +221,8 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
             }
         } else {
             // Too many frames, increase the motion step
+            ALICEVISION_LOG_INFO("Too many keyframes, the motion step will be increased of " << displacementDiff
+                                 << "%.");
             while (newLimits.size() - 1 > _maxOutFrames) {
                 newLimits.clear();
                 newLimits.push_back(0);
@@ -264,12 +274,13 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                 bestSharpness = sharpness;
             }
         }
-        ALICEVISION_LOG_DEBUG("Selecting frame with ID " << bestIndex);
+        ALICEVISION_LOG_INFO("Selecting frame with ID " << bestIndex);
         _selectedKeyframes.push_back(bestIndex);
         _selectedFrames.at(bestIndex) = '1';  // The frame has been selected, flip it to 1
     }
 
-    ALICEVISION_LOG_INFO("Finished selecting all the keyframes!");
+    ALICEVISION_LOG_INFO("Finished selecting all the keyframes! " << _selectedKeyframes.size() << "/" <<
+                         sequenceSize << " frames have been selected.");
 }
 
 bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
