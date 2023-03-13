@@ -93,42 +93,31 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
   image::Image<image::RGBfColor> imageSource;
   image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
-  oiio::ImageBuf buffer;
-  image::getBufferFromImage(imageSource, buffer);
-
   // all image need to be horizontal
   if(imageSource.Height() > imageSource.Width())
-    throw std::runtime_error(std::string("Cannot split dual fisheye from the vertical image '") + imagePath + "'.");
+  {
+    ALICEVISION_THROW_ERROR("Cannot split dual fisheye from the vertical image " << imagePath);
+  }
 
   const int outSide = std::min(imageSource.Height(), imageSource.Width() / 2);
   const int offset = std::abs((imageSource.Width() / 2) - imageSource.Height());
   const int halfOffset = offset / 2;
 
-  image::Image<image::RGBfColor> imageOut(outSide, outSide, false);
-  oiio::ImageBuf bufferOut;
-  image::getBufferFromImage(imageOut, bufferOut);
-
-  for(std::size_t i = 0; i < 2; ++i)
+  for (std::size_t i = 0; i < 2; ++i)
   {
     const int xbegin = i * outSide;
-    const int xend = xbegin + outSide;
     int ybegin = 0;
-    int yend = outSide;
 
-    if(splitPreset == "bottom")
+    if (splitPreset == "bottom")
     {
       ybegin += offset;
-      yend += offset;
     }
-    else if(splitPreset == "center")
+    else if (splitPreset == "center")
     {
       ybegin += halfOffset;
-      yend += halfOffset;
     }
 
-    const oiio::ROI subImageROI(xbegin, xend, ybegin, yend);
-
-    oiio::ImageBufAlgo::cut(bufferOut, buffer, subImageROI);
+    image::Image<image::RGBfColor> imageOut(imageSource.block(ybegin, xbegin, outSide, outSide));
 
     boost::filesystem::path path(imagePath);
     image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(i) + path.extension().string(),
