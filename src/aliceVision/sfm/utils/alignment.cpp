@@ -633,58 +633,48 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
   Mat3X vCamCenter(3,nbCameras);
 
   // Compute the mean of the point cloud
-  Vec3 meanCameraCenter = Vec3::Zero(3, 1);
-  std::size_t i = 0;
+  Vec3 meanCameraCenter = Vec3::Zero();
 
-  for(const auto & pose : sfmData.getPoses())
+  Vec3::Index ncol = 0;
+  for (const auto & pose : sfmData.getPoses())
   {
     const Vec3 center = pose.second.getTransform().center();
-    vCamCenter.col(i) = center;
+    vCamCenter.col(ncol) = center;
     meanCameraCenter +=  center;
-    ++i;
+    ++ncol;
   }
-
   meanCameraCenter /= nbCameras;
 
-  std::vector<Mat3> vCamRotation; // Camera rotations
-  vCamRotation.reserve(nbCameras);
-  i=0;
-  double rms = 0;
-  for(const auto & pose : sfmData.getPoses())
+  
+  // Compute standard deviation
+  double stddev = 0;
+  for (Vec3::Index i = 0; i < vCamCenter.cols(); ++i)
   {
     Vec3 camCenterMean = vCamCenter.col(i) - meanCameraCenter;
-    rms += camCenterMean.transpose() * camCenterMean; // squared dist to the mean of camera centers
-
-    vCamRotation.push_back(pose.second.getTransform().rotation().transpose()); // Rotation in the world coordinate system
-    ++i;
+    stddev += camCenterMean.transpose() * camCenterMean; 
   }
-  rms /= nbCameras;
-  rms = std::sqrt(rms);
-
-  // Perform an svd over vX*vXT (var-covar)
-  Mat3 dum = vCamCenter * vCamCenter.transpose();
-  Eigen::JacobiSVD<Mat3> svd(dum,Eigen::ComputeFullV|Eigen::ComputeFullU);
-  Mat3 U = svd.matrixU();
-
-  // Check whether the determinant is positive in order to keep
-  // a direct coordinate system
-  if(U.determinant() < 0)
+  stddev /= nbCameras;
+  
+  // Make sure the point cloud is centered and scaled to unit deviation
+  for (Vec3::Index i = 0; i < vCamCenter.cols(); ++i)
   {
-    U.col(2) = -U.col(2);
+    vCamCenter.col(i) = (vCamCenter.col(i) - meanCameraCenter) / stddev;
   }
 
-  out_R = U.transpose();
+  // Plane fitting of the centered point cloud
+  // using Singular Value Decomposition (SVD)
+  Eigen::JacobiSVD<Mat> svd(vCamCenter.transpose(), Eigen::ComputeFullV);
+  Eigen::Vector3d n = svd.matrixV().col(2);
 
-  // TODO: take the median instead of the first camera
-  if((out_R * vCamRotation[0])(2,2) > 0)
+  // Normal vector sign can't really be estimated. Just make sure it's the positive Y half sphere
+  if (n(1) < 0)
   {
-    out_S = -out_S;
+    n = -n;
   }
-
-  out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(1,0,0)) * out_R;
-  out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * out_R; // Y UP
-  out_S = 1.0 / rms;
-
+  
+  // We want ideal normal to be the Y axis
+  out_R = Matrix3d(Quaterniond().setFromTwoVectors(n,  Eigen::Vector3d::UnitY()));
+  out_S = 1.0 / sqrt(stddev);
   out_t = - out_S * out_R * meanCameraCenter;
 }
 

@@ -210,12 +210,12 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
 void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t);
 
 /**
- * @brief Compute the new coordinate system in the given reconstruction so that the mean
- * of the camera centers is the origin of the world coordinate system, a
- * dominant plane P is fitted to the set of the optical centers and the scene
- * aligned so that P roughly define the (x,y) plane, and the scale is set so
- * that the optical centers RMS is "1.0".
- * (Hartley-like normalization, p.180)
+ * @brief Compute the new coordinate system in the given reconstruction
+ * so that the mean of the camera centers is the origin of the world coordinate system,
+ * a dominant plane P is fitted to the set of the optical centers
+ * and the scene aligned so that P roughly define the (x,y) plane,
+ * and the scale is set so that the optical centers standard deviation is "1.0".
+ * @see https://www.ltu.se/cms_fs/1.51590!/svd-fitting.pdf
  *
  * @param[in] sfmData
  * @param[out] out_S scale
