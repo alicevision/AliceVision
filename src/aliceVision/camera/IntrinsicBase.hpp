@@ -93,7 +93,7 @@ public:
    * @brief Get the intrinsic initialization mode
    * @return The intrinsic initialization mode
    */
-  inline EIntrinsicInitMode getInitializationMode() const
+  inline EInitMode getInitializationMode() const
   {
     return _initializationMode;
   }
@@ -305,9 +305,9 @@ public:
 
   /**
    * @brief Set The intrinsic initialization mode
-   * @param[in] initializationMode THe intrintrinsic initialization mode enum
+   * @param[in] initializationMode The intrintrinsic initialization mode enum
    */
-  inline void setInitializationMode(EIntrinsicInitMode initializationMode)
+  inline void setInitializationMode(EInitMode initializationMode)
   {
     _initializationMode = initializationMode;
   }
@@ -352,6 +352,12 @@ public:
   virtual std::size_t getParamsSize() const = 0;
 
   /**
+   * @brief Get the initialization mode of the intrinsic parameters
+   * @return The initialization mode of the intrinsic parameters
+   */
+  virtual EInitMode getDistortionInitializationMode() const = 0;
+
+  /**
    * @brief Update intrinsic parameters
    * @param[in] intrinsic parameters
    * @return true if done
@@ -388,6 +394,12 @@ public:
   {
     return false;
   }
+
+  /**
+   * @brief Set The intrinsic disto initialization mode
+   * @param[in] distortionInitializationMode The intrintrinsic distortion initialization mode enum
+   */
+  virtual void setDistortionInitializationMode(EInitMode distortionInitializationMode) = 0;
 
   /**
    * @brief Add the distortion field to a point (that is in normalized camera frame)
@@ -523,7 +535,7 @@ public:
 protected:
 
   /// initialization mode
-  EIntrinsicInitMode _initializationMode = EIntrinsicInitMode::NONE;
+  EInitMode _initializationMode = EInitMode::NONE;
   /// intrinsic lock
   bool _locked = false;
   unsigned int _w = 0;

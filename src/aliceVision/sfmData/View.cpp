@@ -127,9 +127,18 @@ double View::readRealNumber(const std::string& str) const
 double View::getDoubleMetadata(const std::vector<std::string>& names) const
 {
     const std::string value = getMetadata(names);
-    if(value.empty())
+    if (value.empty())
         return -1.0;
     return readRealNumber(value);
+}
+
+bool View::getDoubleMetadata(const std::vector<std::string>& names, double& val) const
+{
+    const std::string value = getMetadata(names);
+    if (value.empty())
+        return false;
+    val = readRealNumber(value);
+    return true;
 }
 
 int View::getIntMetadata(const std::vector<std::string>& names) const

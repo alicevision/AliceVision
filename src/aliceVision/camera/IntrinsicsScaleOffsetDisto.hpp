@@ -8,6 +8,7 @@
 #pragma once
 
 #include "IntrinsicsScaleOffset.hpp"
+#include "IntrinsicInitMode.hpp"
 #include "Distortion.hpp"
 #include <memory>
 
@@ -22,9 +23,10 @@ class IntrinsicsScaleOffsetDisto : public IntrinsicsScaleOffset
 public:
   IntrinsicsScaleOffsetDisto() = default;
 
-  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY, std::shared_ptr<Distortion> distortion = nullptr)
+  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY, std::shared_ptr<Distortion> distortion = nullptr, EInitMode distortionInitializationMode = EInitMode::NONE)
   : IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY)
   , _pDistortion(distortion)
+  , _distortionInitializationMode(distortionInitializationMode)
   {}
 
   void assign(const IntrinsicBase& other) override
@@ -39,6 +41,9 @@ public:
       if(typeid(*this) != typeid(otherBase))
           return false;
       const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
+
+      if (_distortionInitializationMode != other._distortionInitializationMode)
+          return false;
 
       if(_pDistortion != nullptr && other._pDistortion != nullptr)
           return (*_pDistortion) == (*other._pDistortion);
@@ -257,6 +262,24 @@ public:
       return _pDistortion;
   }
 
+  /**
+  * @brief Set The intrinsic disto initialization mode
+  * @param[in] distortionInitializationMode The intrintrinsic distortion initialization mode enum
+  */
+  inline void setDistortionInitializationMode(EInitMode distortionInitializationMode) override
+  {
+      _distortionInitializationMode = distortionInitializationMode;
+  }
+
+  /**
+   * @brief Get the intrinsic disto initialization mode
+   * @return The intrinsic disto initialization mode
+   */
+  inline EInitMode getDistortionInitializationMode() const override
+  {
+      return _distortionInitializationMode;
+  }
+
   ~IntrinsicsScaleOffsetDisto() override = default;
 
 protected:
@@ -270,6 +293,9 @@ protected:
   }
 
   std::shared_ptr<Distortion> _pDistortion;
+
+  // Distortion initialization mode
+  EInitMode _distortionInitializationMode = EInitMode::NONE;
 };
 
 } // namespace camera

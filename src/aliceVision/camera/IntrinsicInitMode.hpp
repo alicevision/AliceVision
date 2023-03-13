@@ -17,7 +17,7 @@ namespace camera {
 /**
  * @brief Camera Intrinsic initialization mode
  */
-enum class EIntrinsicInitMode : std::uint8_t
+enum class EInitMode : std::uint8_t
 {
   NONE = 0, //< Value not set
   CALIBRATED, //< External calibration
@@ -26,51 +26,51 @@ enum class EIntrinsicInitMode : std::uint8_t
 };
 
 /**
- * @brief convert an enum EIntrinsicInitMode to its corresponding string
- * @param EIntrinsicInitMode
+ * @brief convert an enum EInitMode to its corresponding string
+ * @param EInitMode
  * @return String
  */
-inline std::string EIntrinsicInitMode_enumToString(EIntrinsicInitMode intrinsicInitMode)
+inline std::string EInitMode_enumToString(EInitMode intrinsicInitMode)
 {
   switch(intrinsicInitMode)
   {
-    case EIntrinsicInitMode::CALIBRATED: return "calibrated";
-    case EIntrinsicInitMode::ESTIMATED:  return "estimated";
-    case EIntrinsicInitMode::UNKNOWN:    return "unknown";
-    case EIntrinsicInitMode::NONE:       return "none";
+    case EInitMode::CALIBRATED: return "calibrated";
+    case EInitMode::ESTIMATED:  return "estimated";
+    case EInitMode::UNKNOWN:    return "unknown";
+    case EInitMode::NONE:       return "none";
   }
   throw std::out_of_range("Invalid Intrinsic init mode enum: " + std::to_string(int(intrinsicInitMode)));
 }
 
 /**
- * @brief convert a string Intrinsic init mode to its corresponding enum EIntrinsicInitMode
+ * @brief convert a string Intrinsic init mode to its corresponding enum EInitMode
  * @param String
- * @return EIntrinsicInitMode
+ * @return EInitMode
  */
-inline EIntrinsicInitMode EIntrinsicInitMode_stringToEnum(const std::string& intrinsicInitMode)
+inline EInitMode EInitMode_stringToEnum(const std::string& intrinsicInitMode)
 {
   std::string mode = intrinsicInitMode;
   std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
 
-  if(mode == "calibrated") return EIntrinsicInitMode::CALIBRATED;
-  if(mode == "estimated")  return EIntrinsicInitMode::ESTIMATED;
-  if(mode == "unknown")    return EIntrinsicInitMode::UNKNOWN;
-  if(mode == "none")       return EIntrinsicInitMode::NONE;
+  if(mode == "calibrated") return EInitMode::CALIBRATED;
+  if(mode == "estimated")  return EInitMode::ESTIMATED;
+  if(mode == "unknown")    return EInitMode::UNKNOWN;
+  if(mode == "none")       return EInitMode::NONE;
 
   throw std::out_of_range("Invalid Intrinsic init mode: " + intrinsicInitMode);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const EIntrinsicInitMode intrinsicInitMode)
+inline std::ostream& operator<<(std::ostream& os, const EInitMode intrinsicInitMode)
 {
-  os << EIntrinsicInitMode_enumToString(intrinsicInitMode);
+  os << EInitMode_enumToString(intrinsicInitMode);
   return os;
 }
 
-inline std::istream& operator>>(std::istream& in, EIntrinsicInitMode &intrinsicInitMode)
+inline std::istream& operator>>(std::istream& in, EInitMode &intrinsicInitMode)
 {
   std::string token;
   in >> token;
-  intrinsicInitMode = EIntrinsicInitMode_stringToEnum(token);
+  intrinsicInitMode = EInitMode_stringToEnum(token);
   return in;
 }
 

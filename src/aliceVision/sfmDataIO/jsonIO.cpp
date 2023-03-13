@@ -125,7 +125,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("sensorHeight", intrinsic->sensorHeight());
   intrinsicTree.put("serialNumber", intrinsic->serialNumber());
   intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
-  intrinsicTree.put("initializationMode", camera::EIntrinsicInitMode_enumToString(intrinsic->getInitializationMode()));
+  intrinsicTree.put("initializationMode", camera::EInitMode_enumToString(intrinsic->getInitializationMode()));
 
   std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
   if (intrinsicScaleOffset)
@@ -154,6 +154,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
       paramTree.put("", param);
       distParamsTree.push_back(std::make_pair("", paramTree));
     }
+    intrinsicTree.put("distortionInitializationMode", camera::EInitMode_enumToString(intrinsicScaleOffsetDisto->getDistortionInitializationMode()));
 
     intrinsicTree.add_child("distortionParams", distParamsTree);
   }
@@ -169,6 +170,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("locked", intrinsic->isLocked());
 
   parentTree.push_back(std::make_pair(name, intrinsicTree));
+ 
 }
 
 void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic,
@@ -180,7 +182,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
   const double sensorWidth = intrinsicTree.get<double>("sensorWidth", 36.0);
   const double sensorHeight = intrinsicTree.get<double>("sensorHeight", 24.0);
   const camera::EINTRINSIC intrinsicType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
-  const camera::EIntrinsicInitMode initializationMode = camera::EIntrinsicInitMode_stringToEnum(intrinsicTree.get<std::string>("initializationMode", camera::EIntrinsicInitMode_enumToString(camera::EIntrinsicInitMode::CALIBRATED)));
+  const camera::EInitMode initializationMode = camera::EInitMode_stringToEnum(intrinsicTree.get<std::string>("initializationMode", camera::EInitMode_enumToString(camera::EInitMode::CALIBRATED)));
 
   // principal point
   Vec2 principalPoint;
@@ -266,6 +268,10 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     //ensure that we have the right number of params
     distortionParams.resize(intrinsicWithDistoEnabled->getDistortionParams().size(), 0.0);
     intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
+
+    const camera::EInitMode distortionInitializationMode = camera::EInitMode_stringToEnum(intrinsicTree.get<std::string>("distortionInitializationMode", camera::EInitMode_enumToString(camera::EInitMode::NONE)));
+
+    intrinsicWithDistoEnabled->setDistortionInitializationMode(distortionInitializationMode);
   }
 
   // Load EquiDistant params

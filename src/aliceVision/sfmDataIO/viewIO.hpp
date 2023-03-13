@@ -81,6 +81,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 					const sfmData::View& view, double mmFocalLength = -1.0, double sensorWidth = -1,
 					double defaultFocalLength = -1, double defaultFieldOfView = -1,
                     double defaultFocalRatio = 1.0, double defaultOffsetX = 0.0, double defaultOffsetY = 0.0,
+                    camera::EINTRINSIC lcpIntrinsicType = camera::EINTRINSIC::UNKNOWN,
 					camera::EINTRINSIC defaultIntrinsicType = camera::EINTRINSIC::UNKNOWN,
 					camera::EINTRINSIC allowedEintrinsics = camera::EINTRINSIC::VALID_CAMERA_MODEL);
 

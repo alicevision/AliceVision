@@ -9,9 +9,11 @@
 #include <aliceVision/sfmDataIO/jsonIO.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
+#include <aliceVision/lensCorrectionProfile/lcp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/image/io.cpp>
 #include <aliceVision/image/dcp.hpp>
 
 #include <boost/atomic/atomic_ref.hpp>
@@ -29,6 +31,7 @@
 #include <vector>
 #include <cstdlib>
 #include <stdexcept>
+#include <cmath>
 #include <algorithm>
 #include <iterator>
 
@@ -51,9 +54,9 @@ namespace fs = boost::filesystem;
  * @param[out] outFiles A list of output image paths
  * @return true if folderOrFile have been load successfully
  */
-bool listFiles(const std::string& folderOrFile,
+bool listFiles(const fs::path& folderOrFile,
                const std::vector<std::string>& extensions,
-               std::vector<std::string>& resources)
+               std::vector<fs::path>& resources)
 {
   if(fs::is_regular_file(folderOrFile))
   {
@@ -143,6 +146,7 @@ int aliceVision_main(int argc, char **argv)
   std::string sfmFilePath;
   std::string imageFolder;
   std::string sensorDatabasePath;
+  std::string lensCorrectionProfileInfo;
   std::string outputFilePath;
 
   // user optional parameters
@@ -163,6 +167,7 @@ int aliceVision_main(int argc, char **argv)
   bool allowSingleView = false;
   bool errorOnMissingColorProfile = true;
   image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
+  bool lensCorrectionProfileSearchIgnoreCameraModel = true;
 
 
   po::options_description requiredParams("Required parameters");
@@ -180,6 +185,10 @@ int aliceVision_main(int argc, char **argv)
       "Camera sensor width database path.")
     ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
       "DNG Color Profiles (DCP) database path.")
+    ("lensCorrectionProfileInfo", po::value<std::string>(&lensCorrectionProfileInfo)->default_value(""),
+      "Lens Correction Profile filepath or database directory path.")
+    ("lensCorrectionProfileSearchIgnoreCameraModel", po::value<bool>(&lensCorrectionProfileSearchIgnoreCameraModel)->default_value(lensCorrectionProfileSearchIgnoreCameraModel),
+      "Automatic LCP Search considers only the camera maker and the lens name")
     ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
       "Focal length in mm. (or '-1' to unset)")
     ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
@@ -325,6 +334,10 @@ int aliceVision_main(int argc, char **argv)
 
   // number of views with an initialized intrinsic
   std::size_t completeViewCount = 0;
+  // number of views with LCP data used to initialize intrinsics
+  std::size_t lcpGeometryViewCount = 0;
+  // number of views with LCP data used to add vignetting params in metadata
+  std::size_t lcpVignettingViewCount = 0;
 
   // load known informations
   if(imageFolder.empty())
@@ -336,7 +349,7 @@ int aliceVision_main(int argc, char **argv)
   {
     // fill SfMData with the images in the input folder
     sfmData::Views& views = sfmData.getViews();
-    std::vector<std::string> imagePaths;
+    std::vector<fs::path> imagePaths;
 
     if(listFiles(imageFolder, image::getSupportedExtensions(), imagePaths))
     {
@@ -346,7 +359,7 @@ int aliceVision_main(int argc, char **argv)
       for(int i = 0; i < incompleteViews.size(); ++i)
       {
         sfmData::View& view = incompleteViews.at(i);
-        view.setImagePath(imagePaths.at(i));
+        view.setImagePath(imagePaths.at(i).string());
         updateIncompleteView(view, viewIdMethod, viewIdRegex);
       }
 
@@ -371,9 +384,22 @@ int aliceVision_main(int argc, char **argv)
   boost::regex extractNumberRegex("\\d+");
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
+
+  ALICEVISION_LOG_DEBUG("List files in the DCP database: " << colorProfileDatabaseDirPath);
   char allColorProfilesFound = 1; // char type instead of bool to support usage of atomic
   image::DCPDatabase dcpDatabase(colorProfileDatabaseDirPath);
+  if (!colorProfileDatabaseDirPath.empty())
+  {
+      ALICEVISION_LOG_INFO(dcpDatabase.size() << " profile(s) stored in the DCP database.");
+  }
   int viewsWithDCPMetadata = 0;
+
+  ALICEVISION_LOG_DEBUG("List files in the LCP database: " << lensCorrectionProfileInfo);
+  LCPdatabase lcpStore(lensCorrectionProfileInfo, lensCorrectionProfileSearchIgnoreCameraModel);
+  if (!lensCorrectionProfileInfo.empty())
+  {
+    ALICEVISION_LOG_INFO(lcpStore.size() << " profile(s) stored in the LCP database.");
+  }
 
   #pragma omp parallel for
   for (int i = 0; i < sfmData.getViews().size(); ++i)
@@ -397,7 +423,7 @@ int aliceVision_main(int argc, char **argv)
         std::hash<std::string> hash; // TODO use boost::hash_combine
         view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
 
-        #pragma omp critical
+        #pragma omp critical (rig)
         detectedRigs[view.getRigId()][view.getSubPoseId()]++;
       }
       catch(std::exception& e)
@@ -423,7 +449,7 @@ int aliceVision_main(int argc, char **argv)
         std::hash<std::string> hash;
         IndexT tmpPoseID = hash(parentPath.string()); // use a temporary pose Id to group the images
 
-#pragma omp critical
+        #pragma omp critical (poseGroups)
         {
             poseGroups[tmpPoseID].push_back(view.getViewId());
         }
@@ -446,7 +472,7 @@ int aliceVision_main(int argc, char **argv)
     const double focalIn35mm = hasFocalIn35mmMetadata ? view.getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"}) : -1.0;
     const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
     const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
-    camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
+    camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
 
     std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(view.getImagePath()));
 
@@ -471,35 +497,59 @@ int aliceVision_main(int argc, char **argv)
         {
             image::DCPProfile dcpProf;
 
-            if (!dcpDatabase.empty() && dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
+            #pragma omp critical (dcp)
             {
-                view.addDCPMetadata(dcpProf);
+                if (!dcpDatabase.empty() && dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
+                {
+                    view.addDCPMetadata(dcpProf);
 
-                #pragma omp critical
-                viewsWithDCPMetadata++;
+                    viewsWithDCPMetadata++;
 
-                dcpError = false;
-            }
-            else if (allColorProfilesFound)
-            {
-                // there is a missing color profile for at least one image
-                boost::atomic_ref<char>{allColorProfilesFound} = 0;
+                    dcpError = false;
+                }
+                else if (allColorProfilesFound)
+                {
+                    // there is a missing color profile for at least one image
+                    boost::atomic_ref<char>{allColorProfilesFound} = 0;
+                }
             }
 
         }
     }
 
-    // Store the color interpretation mode choosed for raw images in metadata,
-    // so all future loads of this image will be interpreted in the same way.
-    if (!dcpError)
+    if (imgFormat.compare("raw") == 0)
     {
-        view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
+        // Store the color interpretation mode choosed for raw images in metadata,
+        // so all future loads of this image will be interpreted in the same way.
+        if (!dcpError)
+        {
+            view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
+        }
+        else
+        {
+            view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(image::ERawColorInterpretation::LibRawWhiteBalancing));
+            if (!dcpDatabase.empty())
+                ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
+        }
     }
-    else
+
+    // try to find an appropriate Lens Correction Profile
+    LCPinfo* lcpData = nullptr;
+    if (lcpStore.size() == 1)
     {
-        view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(image::ERawColorInterpretation::LibRawWhiteBalancing));
-        if (!dcpDatabase.empty())
-            ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
+        lcpData = lcpStore.retrieveLCP();
+    }
+    else if (!lcpStore.empty())
+    {
+        // Find an LCP file that matches the camera model and the lens model.
+        const std::string& lensModel = view.getMetadataLensModel();
+        const int lensID = view.getMetadataLensID();
+
+        if (!make.empty() && !lensModel.empty())
+        {
+            #pragma omp critical (lcp)
+            lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
+        }
     }
 
     // check if the view intrinsic is already defined
@@ -541,7 +591,7 @@ int aliceVision_main(int argc, char **argv)
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
         if(focalLengthmm > 0.0) {
-          intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+          intrinsicInitMode = camera::EInitMode::ESTIMATED;
         }
       }
     }
@@ -569,7 +619,7 @@ int aliceVision_main(int argc, char **argv)
         }
 
         intrinsicsSetFromFocal35mm.emplace(view.getImagePath(), std::make_pair(sensorWidth, focalLengthmm));
-        intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        intrinsicInitMode = camera::EInitMode::ESTIMATED;
       }
       else if(sensorWidth > 0 && focalLengthmm <= 0)
       {
@@ -578,28 +628,29 @@ int aliceVision_main(int argc, char **argv)
         focalLengthmm = (sensorDiag * focalIn35mm) / diag24x36;
 
         intrinsicsSetFromFocal35mm.emplace(view.getImagePath(), std::make_pair(sensorWidth, focalLengthmm));
-        intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        intrinsicInitMode = camera::EInitMode::ESTIMATED;
       }
     }
 
     // error handling
     if(sensorWidth == -1.0)
     {
-  #pragma omp critical
       if(hasCameraMetadata)
       {
         // sensor is not in the database
+  #pragma omp critical (unknownSensors)
         unknownSensors.emplace(std::make_pair(make, model), view.getImagePath()); // will throw a warning at the end
       }
       else
       {
         // no metadata 'Make' and 'Model' can't find sensor width
+  #pragma omp critical (noMetadataImagePaths)
         noMetadataImagePaths.emplace_back(view.getImagePath()); // will throw a warning message at the end
       }
     }
     else
     {
-      // we have a valid sensorWidth information, so se store it into the metadata (where it would have been nice to have it in the first place)
+      // we have a valid sensorWidth information, so we store it into the metadata (where it would have been nice to have it in the first place)
       if(sensorWidthSource == ESensorWidthSource::FROM_DB) {
         view.addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
       }
@@ -615,11 +666,90 @@ int aliceVision_main(int argc, char **argv)
       sensorWidth = 36.0;
     }
 
+    float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
+    float focusDistance = 0.f;
+
+    camera::EINTRINSIC lcpCameraModel = camera::EINTRINSIC::UNKNOWN;
+
+    LensParam lensParam;
+    if ((lcpData != nullptr) && !(lcpData->isEmpty()))
+    {
+        lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
+        lcpData->getVignettingParams(focalLengthmm, focusDistance, lensParam);
+
+        lcpCameraModel = lensParam.isFisheye() ? camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE : camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
+    }
+
     // build intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(
         view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView, 
         defaultFocalRatio, defaultOffsetX, defaultOffsetY, 
-        defaultCameraModel, allowedCameraModels);
+        lcpCameraModel, defaultCameraModel, allowedCameraModels);
+
+    if (lcpData != nullptr)
+    {
+        std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
+        if (intrinsicDisto)
+        {
+          std::shared_ptr<camera::Distortion> distortion = intrinsicDisto->getDistortion();
+
+          if (!lensParam.isFisheye())
+          {
+              std::shared_ptr<camera::DistortionRadialK3> distoRadialK3 = std::dynamic_pointer_cast<camera::DistortionRadialK3>(distortion);
+              if (distoRadialK3)
+              {
+                  const int Dmax = std::max<int>(lcpData->getImageWidth(), lcpData->getImageLength());
+
+                  const aliceVision::Vec2 offset((lensParam.perspParams.ImageXCenter - 0.5f) * Dmax, (lensParam.perspParams.ImageYCenter - 0.5f) * Dmax);
+                  intrinsicDisto->setOffset(offset);
+
+                  std::vector<double> p;
+                  p.push_back(lensParam.perspParams.RadialDistortParam1);
+                  p.push_back(lensParam.perspParams.RadialDistortParam2);
+                  p.push_back(lensParam.perspParams.RadialDistortParam3);
+                  intrinsicDisto->setDistortionParams(p);
+
+                  ++lcpGeometryViewCount;
+              }
+          }
+          else
+          {
+              std::shared_ptr<camera::DistortionFisheye> DistortionFisheye = std::dynamic_pointer_cast<camera::DistortionFisheye>(distortion);
+              if (DistortionFisheye)
+              {
+                  const int Dmax = std::max<int>(lcpData->getImageWidth(), lcpData->getImageLength());
+
+                  const aliceVision::Vec2 offset((lensParam.perspParams.ImageXCenter - 0.5f) * Dmax, (lensParam.perspParams.ImageYCenter - 0.5f) * Dmax);
+                  intrinsicDisto->setOffset(offset);
+
+                  std::vector<double> p;
+                  p.push_back(lensParam.fisheyeParams.RadialDistortParam1);
+                  p.push_back(lensParam.fisheyeParams.RadialDistortParam2);
+                  p.push_back(0.0);
+                  p.push_back(0.0);
+                  intrinsicDisto->setDistortionParams(p);
+
+                  ++lcpGeometryViewCount;
+              }
+          }
+          // set disto initialization mode
+          intrinsicDisto->setDistortionInitializationMode(camera::EInitMode::ESTIMATED);
+        }
+
+        if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty)
+        {
+            view.addMetadata("AliceVision:VignParamFocX", std::to_string(lensParam.vignParams.FocalLengthX));
+            view.addMetadata("AliceVision:VignParamFocY", std::to_string(lensParam.vignParams.FocalLengthY));
+            view.addMetadata("AliceVision:VignParamCenterX", std::to_string(lensParam.vignParams.ImageXCenter));
+            view.addMetadata("AliceVision:VignParamCenterY", std::to_string(lensParam.vignParams.ImageYCenter));
+            view.addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
+            view.addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
+            view.addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
+
+            ++lcpVignettingViewCount;
+        }
+    }
+
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
 
     // set initialization mode
@@ -664,7 +794,7 @@ int aliceVision_main(int argc, char **argv)
       else
       {
         // We have no way to identify a camera device correctly.
-#pragma omp critical
+#pragma omp critical (missingDeviceUID)
         {
           missingDeviceUID.emplace_back(view.getImagePath()); // will throw a warning message at the end
         }
@@ -715,7 +845,7 @@ int aliceVision_main(int argc, char **argv)
       intrinsicId = intrinsic->hashValue();
     }
 
-    #pragma omp critical
+    #pragma omp critical (intrinsics)
     {
       view.setIntrinsicId(intrinsicId);
       sfmData.getIntrinsics().emplace(intrinsicId, intrinsicBase);
@@ -874,11 +1004,13 @@ int aliceVision_main(int argc, char **argv)
 
   // print report
   ALICEVISION_LOG_INFO("CameraInit report:"
-                   << "\n\t- # views listed: " << sfmData.getViews().size()
-                   << "\n\t   - # views with an initialized intrinsic listed: " << completeViewCount
-                   << "\n\t   - # views without metadata (with a default intrinsic): " << noMetadataImagePaths.size()
-                   << "\n\t   - # views with DCP metadata (raw images only): " << viewsWithDCPMetadata
-                   << "\n\t- # intrinsics listed: " << sfmData.getIntrinsics().size());
+                   << "\n\t- # Views: " << sfmData.getViews().size()
+                   << "\n\t   - # with focal length initialization (from metadata): " << completeViewCount
+                   << "\n\t   - # without metadata: " << noMetadataImagePaths.size()
+                   << "\n\t   - # with DCP color calibration (raw images only): " << viewsWithDCPMetadata
+                   << "\n\t   - # with LCP lens distortion initialization: " << lcpGeometryViewCount
+                   << "\n\t   - # with LCP vignetting calibration: " << lcpVignettingViewCount
+                   << "\n\t- # Cameras Intrinsics: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;
 }

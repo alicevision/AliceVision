@@ -89,6 +89,7 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 #RUN make -j"$(nproc)" popsift
 #RUN make -j"$(nproc)" opencv
 #RUN make -j"$(nproc)" cctag
+#RUN make -j"$(nproc)" expat
 
 RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
 	cmake --build . -j${CPU_CORES} && \
