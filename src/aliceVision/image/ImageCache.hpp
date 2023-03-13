@@ -222,7 +222,7 @@ public:
      * @throws std::runtime_error if the image does not fit in the maximal size of the cache
      */
     template<typename TPix>
-    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel);
+    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1);
 
     /**
      * @return information on the current cache state and usage
@@ -270,6 +270,12 @@ private:
 template<typename TPix>
 std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel)
 {
+    if (downscaleLevel < 1)
+    {
+        ALICEVISION_THROW_ERROR("[image] ImageCache: cannot load image with downscale level < 1, "
+                                << "request was made with downscale level " << downscaleLevel);
+    }
+
     const std::lock_guard<std::mutex> lock(_mutex);
 
     ALICEVISION_LOG_TRACE("[image] ImageCache: reading " << filename 
