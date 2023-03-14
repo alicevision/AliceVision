@@ -105,6 +105,7 @@ int aliceVision_main(int argc, char** argv)
     int maxPanoramaWidth = 0;
 
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
 
     int rangeStart = -1;
     int rangeSize = 1;
@@ -124,6 +125,8 @@ int aliceVision_main(int argc, char** argv)
         "Max Panorama Width in pixels.")("percentUpscale",
                                          po::value<int>(&percentUpscale)->default_value(percentUpscale),
                                          "Percentage of upscaled pixels.")(
+        "outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
+        ("Output color space: " + image::EImageColorSpace_informations()).c_str())(
         "storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
         ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
         "rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
@@ -288,7 +291,7 @@ int aliceVision_main(int argc, char** argv)
         const std::string imagePath = view.getImagePath();
         ALICEVISION_LOG_INFO("Load image with path " << imagePath);
         image::Image<image::RGBfColor> source;
-        image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
+        image::readImage(imagePath, source, outputColorSpace);
 
         for(int idsub = 0; idsub < coarsesBbox.size(); idsub++)
         {
@@ -503,6 +506,10 @@ int aliceVision_main(int argc, char** argv)
             metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));
             metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", panoramaSize.second));
             metadata.push_back(oiio::ParamValue("AliceVision:tileSize", tileSize));
+            if (outputColorSpace != image::EImageColorSpace::NO_CONVERSION)
+            {
+                metadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace)));
+            }
 
             // Images will be converted in Panorama coordinate system, so there will be no more extra orientation.
             metadata.remove("Orientation");
