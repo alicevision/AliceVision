@@ -74,6 +74,15 @@ bool IntrinsicBase::isVisible(const Vec2 & pix) const
     return true;
 }
 
+bool IntrinsicBase::isVisible(const Vec2f & pix) const
+{
+    if (pix(0) < 0 || pix(0) >= _w || pix(1) < 0 || pix(1) >= _h) {
+        return false;
+    }
+
+    return true;
+}
+
 float IntrinsicBase::getMaximalDistortion(double min_radius, double max_radius) const
 {
     /*Without distortion, obvious*/

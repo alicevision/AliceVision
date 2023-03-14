@@ -32,6 +32,7 @@ public:
                             EInitMode distortionInitializationMode = EInitMode::NONE) :
         Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
                 std::shared_ptr<Distortion>(new DistortionFisheye(k1, k2, k3, k4)),
+                nullptr,
                 distortionInitializationMode)
     {
     }

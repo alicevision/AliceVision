@@ -30,6 +30,7 @@ public:
                                EInitMode distortionInitializationMode = EInitMode::NONE) :
     Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
             std::shared_ptr<Distortion>(new Distortion3DERadial4(c2, c4, u1, v1, u2, v2)),
+            nullptr,
             distortionInitializationMode)
     {
     }
@@ -80,6 +81,7 @@ public:
                                  EInitMode distortionInitializationMode = EInitMode::NONE) :
     Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
             std::shared_ptr<Distortion>(new Distortion3DEClassicLD(delta, epsilon, mux, muy, q)),
+            nullptr,
             distortionInitializationMode)
     {
     }

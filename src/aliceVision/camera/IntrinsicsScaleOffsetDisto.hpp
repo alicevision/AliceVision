@@ -321,3 +321,4 @@ protected:
 };
 
 } // namespace camera
+} // namespace aliceVision

@@ -75,7 +75,7 @@ public:
      * @brief Get the intrinsic initialization mode
      * @return The intrinsic initialization mode
      */
-    inline EIntrinsicInitMode getInitializationMode() const { return _initializationMode; }
+    inline EInitMode getInitializationMode() const { return _initializationMode; }
 
     /**
      * @brief operator ==
@@ -212,7 +212,7 @@ public:
      * @brief Set The intrinsic initialization mode
      * @param[in] initializationMode The intrintrinsic initialization mode enum
      */
-    inline void setInitializationMode(EIntrinsicInitMode initializationMode) { _initializationMode = initializationMode; }
+    inline void setInitializationMode(EInitMode initializationMode) { _initializationMode = initializationMode; }
 
     // Virtual members
 
@@ -315,6 +315,18 @@ public:
     virtual Vec2 get_d_pixel(const Vec2& p) const = 0;
 
     /**
+     * @brief Set The intrinsic disto initialization mode
+     * @param[in] distortionInitializationMode The intrintrinsic distortion initialization mode enum
+     */
+    virtual void setDistortionInitializationMode(EInitMode distortionInitializationMode) = 0;
+
+    /**
+     * @brief Get the intrinsic disto initialization mode
+     * @return The intrinsic disto initialization mode
+     */
+    virtual EInitMode getDistortionInitializationMode() const = 0;
+
+    /**
      * @brief Normalize a given unit pixel error to the camera plane
      * @param[in] value Given unit pixel error
      * @return Normalized unit pixel error to the camera plane
@@ -340,6 +352,13 @@ public:
      * @return true if visible
      */
     virtual bool isVisible(const Vec2 & pix) const;
+
+    /**
+     * @brief Return true if these pixel coordinates should be visible in the image
+     * @param pix input pixel coordinates to check for visibility
+     * @return true if visible
+     */
+    virtual bool isVisible(const Vec2f & pix) const;
 
     /**
      * @brief Assuming the distortion is a function of radius, estimate the 
@@ -371,7 +390,7 @@ public:
 
 protected:
     /// initialization mode
-    EIntrinsicInitMode _initializationMode = EIntrinsicInitMode::NONE;
+    EInitMode _initializationMode = EInitMode::NONE;
     /// intrinsic lock
     bool _locked = false;
     unsigned int _w = 0;
