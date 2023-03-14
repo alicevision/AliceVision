@@ -90,21 +90,28 @@ double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0)
 
 bool splitDualFisheye(const std::string& imagePath, const std::string& outputFolder, const std::string& splitPreset)
 {
+  // Load source image from disk
   image::Image<image::RGBfColor> imageSource;
   image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
-  // all image need to be horizontal
+  // Make sure image is horizontal
   if(imageSource.Height() > imageSource.Width())
   {
     ALICEVISION_THROW_ERROR("Cannot split dual fisheye from the vertical image " << imagePath);
   }
 
+  // Retrieve useful dimensions for cropping
   const int outSide = std::min(imageSource.Height(), imageSource.Width() / 2);
   const int offset = std::abs((imageSource.Width() / 2) - imageSource.Height());
   const int halfOffset = offset / 2;
 
+  // Make sure rig folder exists
+  std::string rigFolder = outputFolder + "/rig";
+  fs::create_directory(rigFolder);
+
   for (std::size_t i = 0; i < 2; ++i)
   {
+    // Retrieve corner position of cropping area
     const int xbegin = i * outSide;
     int ybegin = 0;
 
@@ -117,12 +124,20 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
       ybegin += halfOffset;
     }
 
+    // Create new image containing the cropped area
     image::Image<image::RGBfColor> imageOut(imageSource.block(ybegin, xbegin, outSide, outSide));
 
-    boost::filesystem::path path(imagePath);
-    image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(i) + path.extension().string(),
+    // Make sure sub-folder exists for complete rig structure
+    std::string subFolder = rigFolder + std::string("/") + std::to_string(i);
+    fs::create_directory(subFolder);
+
+    // Save new image on disk
+    fs::path path(imagePath);
+    image::writeImage(subFolder + std::string("/") + path.filename().string(),
                       imageOut, image::ImageWriteOptions(), image::readImageMetadata(imagePath));
   }
+
+  // Success
   ALICEVISION_LOG_INFO(imagePath + " successfully split");
   return true;
 }
