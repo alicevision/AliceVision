@@ -230,6 +230,9 @@ int aliceVision_main(int argc, char* argv[])
         // Remove distortion object
         cameraOut->setDistortionObject(nullptr);
 
+        // Change distortion initialization mode to calibrated
+        cameraOut->setDistortionInitializationMode(camera::EInitMode::CALIBRATED);
+
         // Retrieve undistortion object
         std::shared_ptr<camera::Undistortion> undistortion = cameraOut->getUndistortion();
         if (!undistortion)
