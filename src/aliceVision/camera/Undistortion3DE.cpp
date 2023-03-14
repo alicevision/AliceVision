@@ -36,8 +36,8 @@ Vec2 Undistortion3DEAnamorphic4::undistortNormalized(const Vec2& p) const
     
     const double cy_xx = cy02 + cy22;
     const double cy_yy = cy02 - cy22;
-    const double cy_xxyy = cy04 + cy24 + cy44;
-    const double cy_xxxx = 2 * cy04 - 6 * cy44;
+    const double cy_xxyy = 2 * cy04 - 6 * cy44;
+    const double cy_xxxx = cy04 + cy24 + cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
     const double& x = p.x();
@@ -96,8 +96,8 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNo
     
     const double cy_xx = cy02 + cy22;
     const double cy_yy = cy02 - cy22;
-    const double cy_xxyy = cy04 + cy24 + cy44;
-    const double cy_xxxx = 2 * cy04 - 6 * cy44;
+    const double cy_xxyy = 2 * cy04 - 6 * cy44;
+    const double cy_xxxx = cy04 + cy24 + cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
     const double& x = p.x();
@@ -175,10 +175,11 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivati
     const double cx_xxyy = 2 * cx04 - 6 * cx44;
     const double cx_xxxx = cx04 + cx24 + cx44;
     const double cx_yyyy = cx04 - cx24 + cx44;
+
     const double cy_xx = cy02 + cy22;
     const double cy_yy = cy02 - cy22;
-    const double cy_xxyy = cy04 + cy24 + cy44;
-    const double cy_xxxx = 2 * cy04 - 6 * cy44;
+    const double cy_xxyy = 2 * cy04 - 6 * cy44;
+    const double cy_xxxx = cy04 + cy24 + cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
     const double& x = p.x();

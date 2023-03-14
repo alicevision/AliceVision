@@ -210,7 +210,7 @@ public:
 
     /**
      * @brief Set The intrinsic initialization mode
-     * @param[in] initializationMode THe intrintrinsic initialization mode enum
+     * @param[in] initializationMode The intrintrinsic initialization mode enum
      */
     inline void setInitializationMode(EIntrinsicInitMode initializationMode) { _initializationMode = initializationMode; }
 
