@@ -15,12 +15,13 @@
 #include <cassert>
 #include <cstdlib>
 #include <iomanip>
+#include <fstream>
+
 
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace keyframe {
-
 
 /**
  * @brief Get a random int in order to generate uid.
