@@ -21,7 +21,7 @@ public:
    * @brief Empty constructor
    */	
   ImageFeed();
-  
+
   /**
    * @brief Set up an image based feed from a choice of different sources:
    * 1) a directory containing images
@@ -44,7 +44,7 @@ public:
    * @see readCalibrationFromFile()
    */
   ImageFeed(const std::string& imagePath, const std::string& calibPath);
-  
+
   /**
    * @brief Provide a new RGB image from the feed
    * 
@@ -89,13 +89,13 @@ public:
             camera::PinholeRadialK3 &camIntrinsics,
             std::string &mediaPath,
             bool &hasIntrinsics);
-  
+
   std::size_t nbFrames() const;
-  
+
   bool goToFrame(const unsigned int frame);
 
   bool goToNextFrame();
-  
+
   /**
    * @brief Return true if the feed is correctly initialized.
    * 
@@ -104,7 +104,7 @@ public:
   bool isInit() const;
 
   virtual ~ImageFeed( );
-  
+
   /**
    * @brief For a given extension, return true if that file can be used as input
    * for the feed. ImageFeed supports .json, .txt, and the most common image files. 
@@ -113,13 +113,13 @@ public:
    * @return True if the file is supported.
    */
   static bool isSupported(const std::string &extension);
-  
+
 private:
   class FeederImpl;
   std::unique_ptr<FeederImpl> _imageFeed;
 };
 
-}//namespace dataio 
+}//namespace dataio
 }//namespace aliceVision
 
 

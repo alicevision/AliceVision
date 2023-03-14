@@ -6,18 +6,19 @@
 
 #pragma once
 
-#include <aliceVision/keyframe/SharpnessSelectionPreset.hpp>
-#include <aliceVision/feature/feature.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
-#include <aliceVision/voctree/VocabularyTree.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <OpenImageIO/imageio.h>
+#include <opencv2/optflow.hpp>
+#include <opencv2/imgcodecs.hpp>
 
 #include <string>
+#include <deque>
+#include <map>
 #include <vector>
 #include <memory>
 #include <limits>
-
 namespace aliceVision {
 namespace image {
 
@@ -32,334 +33,247 @@ namespace oiio = OIIO;
 
 class KeyframeSelector
 {
-private:
-  // SIFT descriptor definition
-  const static std::size_t _dimension = 128;
-  using DescriptorFloat = aliceVision::feature::Descriptor<float, _dimension>;
-  
 public:
-
-  /**
-   * @brief Camera informations
-   */
-  struct CameraInfo {
-    /// Camera brand
-    std::string brand = "Custom";
-    /// Camera model
-    std::string model = "radial3";
-    /// Focal length in mm or px
-    float focalLength = 1.2f;
-    /// Camera frame offset
-    unsigned int frameOffset = 0;
-    /// If focalIsMM is false, focalLength is in px
-    bool focalIsMM = true;
-  };
-    
-  /**
-   * @brief KeyframeSelector constructor
-   * @param[in] mediaPath video file path or image sequence directory
-   * @param[in] sensorDbPath camera sensor width database path
-   * @param[in] voctreeFilePath vocabulary tree path
-   * @param[in] outputFolder output keyframes directory
-   */
-  KeyframeSelector(const std::vector<std::string>& mediaPaths,
-                   const std::string& sensorDbPath,
-                   const std::string& voctreeFilePath,
-                   const std::string& outputFolder);
-
-  /**
-   * @brief KeyframeSelector copy constructor - NO COPY
-   * @param[in] copy keyframeSelector
-   */
-  KeyframeSelector(const KeyframeSelector& copy) = delete;
-
-  /**
-   * @brief Process media paths and extract keyframes
-   */
-  void process();
-
-  /**
-   * @brief Set if selector use keyframe sparse distance selection
-   * @param[in] useSparseDistanceSelection True or False
-   */
-  void useSparseDistanceSelection(bool useSparseDistanceSelection)
-  {
-    _hasSparseDistanceSelection = useSparseDistanceSelection;
-  }
-
-  /**
-   * @brief Set if selector use keyframe sharpness selection
-   * @param[in] useSharpnessSelection True or False
-   */
-  void useSharpnessSelection(bool useSharpnessSelection)
-  {
-    _hasSharpnessSelection = useSharpnessSelection;
-  }
-
-  /**
-   * @brief Set cameras informations for output keyframes
-   * @param[in] cameras informations
-   */
-  void setCameraInfos(const std::vector<CameraInfo>& cameraInfos)
-  {
-    _cameraInfos = cameraInfos;
-  }
-
-  /**
-   * @brief Set sparse distance max score
-   * @param[in] distScoreMax max strong common points
-   */
-  void setSparseDistanceMaxScore(float distScoreMax)
-  {
-    _distScoreMax = distScoreMax;
-  }
-
-  /**
-   * @brief Set Sharpness selection preset
-   * @param[in] sharpnessPreset enum
-   */
-  void setSharpnessSelectionPreset(ESharpnessSelectionPreset sharpnessPreset)
-  {
-    switch(sharpnessPreset)
-    {
-      // arbitrary thresholds
-      case ESharpnessSelectionPreset::ULTRA:    _sharpnessThreshold = 20.0f;  break;
-      case ESharpnessSelectionPreset::HIGH:     _sharpnessThreshold = 17.0f;  break;
-      case ESharpnessSelectionPreset::NORMAL:   _sharpnessThreshold = 15.0f;  break;
-      case ESharpnessSelectionPreset::MEDIUM:   _sharpnessThreshold = 10.0f;  break;
-      case ESharpnessSelectionPreset::LOW:      _sharpnessThreshold =  8.0f;  break;
-      case ESharpnessSelectionPreset::VERY_LOW: _sharpnessThreshold =  6.0f;  break;
-      case ESharpnessSelectionPreset::NONE:     _sharpnessThreshold =   .0f;  break;
-      default: throw std::out_of_range("Invalid sharpnessPreset enum");
-    }
-  }
-
-  /**
-   * @brief Set sharp subset size for process algorithm
-   * @param[in] subset sharp part of the image (1 = all, 2 = size/2, ...)
-   */
-  void setSharpSubset(unsigned int subset)
-  {
-      _sharpSubset = subset;
-  }
-
-  /**
-   * @brief Set min frame step for process algorithm
-   * @param[in] frameStep minimum number of frames between two keyframes
-   */
-  void setMinFrameStep(unsigned int frameStep)
-  {
-      _minFrameStep = frameStep;
-  }
-
-  /**
-   * @brief Set max frame step for process algorithm
-   * @param[in] frameStep maximum number of frames after which a keyframe can be taken
-   */
-  void setMaxFrameStep(unsigned int frameStep)
-  {
-      _maxFrameStep = frameStep;
-  }
-
-  /**
-   * @brief Set max output frame number for process algorithm
-   * @param[in] nbFrame maximum number of output frames (if 0, no limit)
-   */
-  void setMaxOutFrame(unsigned int nbFrame)
-  {
-      _maxOutFrame = nbFrame;
-  }
-
-  /**
-   * @brief Get sharp subset size for process algorithm
-   * @return sharp part of the image (1 = all, 2 = size/2, ...)
-   */
-  unsigned int getSharpSubset() const 
-  {
-      return _sharpSubset;
-  }
-
-  /**
-   * @brief Get min frame step for process algorithm
-   * @return minimum number of frames between two keyframes
-   */
-  unsigned int getMinFrameStep() const 
-  {
-      return _minFrameStep;
-  }
-
-  /**
-   * @brief Get max output frame number for process algorithm
-   * @return maximum number of frames for trying to select a keyframe
-   */
-  unsigned int getMaxFrameStep() const 
-  {
-      return _maxFrameStep;
-  }
-
-  /**
-   * @brief Get max output frame number for process algorithm
-   * @return maximum number of output frames (if 0, no limit)
-   */
-  unsigned int getMaxOutFrame() const 
-  {
-      return _maxOutFrame;
-  }
-    
-private:
-
-  // Paths
-
-  /// Media paths
-  std::vector<std::string> _mediaPaths;
-  /// Camera sensor width database
-  std::string _sensorDbPath;
-  /// Voctree file path
-  std::string _voctreeFilePath;
-  /// Output folder for keyframes
-  std::string _outputFolder;
-
-  // Algorithm variables
-
-  /// Sharp part of the image (1 = all, 2 = size/2, ...)
-  unsigned int _sharpSubset = 4; 
-  /// Minimum number of frame between two keyframes
-  unsigned int _minFrameStep = 12;
-  /// Maximum number of frame for evaluation
-  unsigned int _maxFrameStep = 36;
-  /// Maximum number of output frame (0 = no limit)
-  unsigned int _maxOutFrame = 0;
-  /// Number of tiles per side
-  unsigned int _nbTileSide = 20;
-  /// Number of previous keyframe distances in order to evaluate distance score
-  unsigned int _nbKeyFrameDist = 10;
-  /// Use padding on digits for exported frames
-  unsigned int _padding = 7;
-  /// Sharpness threshold (image with higher sharpness will be selected)
-  float _sharpnessThreshold = 15.0f;
-  /// Distance max score (image with smallest distance from the last keyframe will be selected)
-  float _distScoreMax = 100.0f;
-  /// Use sharpness selection
-  bool _hasSharpnessSelection = true;
-  /// Use sparseDistance selection
-  bool _hasSparseDistanceSelection = true;
-
-  /// Camera metadatas
-  std::vector<CameraInfo> _cameraInfos;
-
-  // Tools
-
-  /// Image describer in order to extract describer
-  std::unique_ptr<feature::ImageDescriber> _imageDescriber;
-  /// Voctree in order to compute sparseHistogram
-  std::unique_ptr< aliceVision::voctree::VocabularyTree<DescriptorFloat> > _voctree;
-  /// Feed provider for media paths images extraction
-  std::vector< std::unique_ptr<dataio::FeedProvider> > _feeds;
-
-  // Process structures
-
-  /**
-   * @brief Process media global informations
-   */
-  struct MediaInfo
-  {
-    /// height of the tile
-    unsigned int tileHeight = 0;
-    /// width of the tile
-    unsigned int tileWidth = 0;
-    /// openImageIO image spec
-    oiio::ImageSpec spec;
-  };
-
-  /**
-   * @brief Process media informations at a specific frame
-   */
-  struct MediaData
-  {
-    /// sharpness score
-    float sharpness = 0;
-    /// maximum distance score with keyframe media histograms
-    float distScore = 0;
-    /// sparseHistogram
-    voctree::SparseHistogram histogram;
-  };
-
-  /**
-   * @brief Process frame (or set of frames) informations
-   */
-  struct FrameData
-  {
-    /// average sharpness score of all media
-    float avgSharpness = 0;
-    /// maximum voctree distance score of all media
-    float maxDistScore = 0;
-    /// frame (or set of frames) selected for evaluation
-    bool selected = false;
-    /// frame is a keyframe
-    bool keyframe = false;
-    /// medias process data
-    std::vector<MediaData> mediasData;
+    /**
+     * @brief KeyframeSelector constructor
+     * @param[in] mediaPath video file path or image sequence directory
+     * @param[in] sensorDbPath camera sensor width database path
+     * @param[in] outputFolder output keyframes directory
+     */
+    KeyframeSelector(const std::vector<std::string>& mediaPaths,
+                    const std::string& sensorDbPath,
+                    const std::string& outputFolder);
 
     /**
-     * @brief Compute average sharpness score
+     * @brief KeyframeSelector copy constructor - NO COPY
+     * @param[in] copy keyframeSelector
      */
-    void computeAvgSharpness()
+    KeyframeSelector(const KeyframeSelector& copy) = delete;
+
+    /**
+     * @brief Process media paths and build a list of selected keyframes using a regular sampling over time
+     */
+    void processRegular();
+
+    /**
+     * @brief Process media paths and build a list of selected keyframes using a smart method based on sharpness
+     * and optical flow estimation. The whole process can be described as follows:
+     *        - Step 0: compute the sharpness and optical flow scores for all the frames in all the sequences
+     *        - Step 1: split the whole sequence into subsequences depending on the accumulated movement ("motion step")
+     *        - Step 2: check whether the number of subsequences corresponds to what we want
+     *                  - if we do not have enough frames, we reduce the motion step until we get the required
+     *                    number of frames
+     *                  - if we have too many frames, we increase the motion step until we get the required number of
+     *                    frames
+     *        - Step 3: for each subsequence, find the frame that best fit both a sharpness criteria (as sharp as
+     *                  possible) and a temporal criteria (as in the middle of the subsequence as possible); the goal
+     *                  of these criteria is to avoid the following cases:
+     *                  - the selected frame is well located temporally but is blurry
+     *                  - the selected frame is very sharp but is located at the very beginning or very end of the
+     *                    subsequence, meaning that it is likely adjacent to another very sharp frame in another
+     *                    subsequence; in that case, we might select two very sharp frames that are consecutive with no
+     *                    significant differences in their motion
+     *        - Step 4: push the selected frames' IDs
+     * @param[in] pxDisplacement in percent, the minimum of displaced pixels in the image since the last selected frame
+     * @param[in] rescaledWidthSharpness to resize the input frames to before using them to compute the
+     *            sharpness scores (if equal to 0, no rescale will be performed)
+     * @param[in] rescaledWidthFlow the width to resize the input frames to before using them to compute the
+     *            motion scores (if equal to 0, no rescale will be performed)
+     * @param[in] sharpnessWindowSize the size of the sliding window used to compute sharpness scores, in pixels
+     * @param[in] flowCellSize the size of the cells within a frame that are used to compute the optical flow scores,
+     *            in pixels
+     * @param[in] skipSharpnessComputation if true, the sharpness score computations will not be performed and a fixed
+     *            sharpness score will be given to all the input frames
+     */
+    void processSmart(const float pxDisplacement, const std::size_t rescaledWidthSharpness,
+                      const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
+                      const std::size_t flowCellSize, const bool skipSharpnessComputation = false);
+
+    /**
+     * @brief Compute the sharpness and optical flow scores for the input media paths
+     * @param[in] rescaledWidthSharpness the width to resize the input frames to before using them to compute the
+     *            sharpness scores (if equal to 0, no rescale will be performed)
+     * @param[in] rescaledWidthFlow the width to resize the input frames to before using them to compute the
+     *            motion scores (if equal to 0, no rescale will be performed)
+     * @param[in] sharpnessWindowSize the size of the sliding window used to compute sharpness scores, in pixels
+     * @param[in] flowCellSize the size of the cells within a frame that are used to compute the optical flow scores,
+     *            in pixels
+     * @param[in] skipSharpnessComputation if true, the sharpness score computations will not be performed and a fixed
+     *            sharpness score will be given to all the input frames
+     * @return true if the scores have been successfully computed for all frames, false otherwise
+     */
+    bool computeScores(const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
+                       const std::size_t sharpnessWindowSize, const std::size_t flowCellSize,
+                       const bool skipSharpnessComputation);
+
+    /**
+     * @brief Write the selected keyframes in the output folder
+     * @param[in] brands brand name for each camera
+     * @param[in] models model name for each camera
+     * @param[in] mmFocals focal in millimeters for each camera
+     * @param[in] renameKeyframes name output keyframes as consecutive frames instead of using their index as a name
+     * @param[in] outputExtension file extension of the written keyframes
+     * @param[in] storageDataType EXR storage data type for the output keyframes (ignored when the extension is not EXR)
+     * @return true if all the selected keyframes were successfully written, false otherwise
+     */
+    bool writeSelection(const std::vector<std::string>& brands, const std::vector<std::string>& models,
+                    const std::vector<float>& mmFocals, const bool renameKeyframes, const std::string& outputExtension,
+                    const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined) const;
+
+    /**
+     * @brief Export the computed sharpness and optical flow scores to a CSV file
+     * @param[in] filename the name of the CSV file (e.g. "scores.csv"), which will be written in the output folder
+     * @param[in] exportSelectedFrames add a column with 1s and 0s depending on whether the frame has been selected
+     * @return true if the CSV was correctly written to disk, false otherwise
+     */
+    bool exportScoresToFile(const std::string& filename, const bool exportSelectedFrames = false) const;
+
+    /**
+     * @brief Export optical flow HSV visualisation for each frame as a PNG image
+     * @param[in] rescaledWidth the width to resize the input frames to before computing the optical flow (if equal
+     *            to 0, no rescale will be performed)
+     * @return true if the frames have been correctly exported, false otherwise
+     */
+    bool exportFlowVisualisation(const std::size_t rescaledWidth);
+
+    /**
+     * @brief Set the minimum frame step parameter for the processing algorithm
+     * @param[in] frameStep minimum number of frames between two keyframes
+     */
+    void setMinFrameStep(unsigned int frameStep)
     {
-      for(const auto& media : mediasData)
-        avgSharpness += media.sharpness;
-      avgSharpness /= mediasData.size();
+        _minFrameStep = frameStep;
     }
-  };
 
-  /// MediaInfo structure per input medias
-  std::vector<MediaInfo> _mediasInfo;
-  /// FrameData structure per frame
-  std::vector<FrameData> _framesData;
-  /// Keyframe indexes container
-  std::vector<std::size_t> _keyframeIndexes;
+    /**
+     * @brief Set the maximum frame step parameter for the processing algorithm
+     * @param[in] frameStep maximum number of frames between two keyframes
+     */
+    void setMaxFrameStep(unsigned int frameStep)
+    {
+        _maxFrameStep = frameStep;
+    }
 
-  /**
-   * @brief Compute sharpness score of a given image
-   * @param[in] imageGray given image in grayscale
-   * @param[in] tileHeight height of tile
-   * @param[in] tileWidth width of tile
-   * @param[in] tileSharpSubset number of sharp tiles
-   * @return sharpness score
-   */
-  float computeSharpness(const image::Image<float>& imageGray,
-                         const unsigned int tileHeight,
-                         const unsigned int tileWidth,
-                         const unsigned int tileSharpSubset) const;
+    /**
+     * @brief Set the minimum output frame number parameter for the processing algorithm
+     * @param[in] nbFrames minimum number of output frames
+     */
+    void setMinOutFrames(unsigned int nbFrames)
+    {
+        _minOutFrames = nbFrames;
+    }
 
-  /**
-   * @brief Compute sharpness and distance score for a given image
-   * @param[in] image an image of the media
-   * @param[in] frameIndex the image index in the media sequence
-   * @param[in] mediaIndex the media index
-   * @param[in] tileSharpSubset number of sharp tiles
-   * @return true if the frame is selected
-   */
-  bool computeFrameData(const image::Image<image::RGBColor>& image,
-                        std::size_t frameIndex,
-                        std::size_t mediaIndex,
-                        unsigned int tileSharpSubset);
+    /**
+     * @brief Set the maximum output frame number parameter for the processing algorithm
+     * @param[in] nbFrames maximum number of output frames (if 0, no limit for the regular algorithm)
+     */
+    void setMaxOutFrames(unsigned int nbFrames)
+    {
+        _maxOutFrames = nbFrames;
+    }
 
-  /**
-   * @brief Write a keyframe and metadata
-   * @param[in] image an image of the media
-   * @param[in] frameIndex the image index in the media sequence
-   * @param[in] mediaIndex the media index
-   */
-  void writeKeyframe(const image::Image<image::RGBColor>& image, 
-                     std::size_t frameIndex,
-                     std::size_t mediaIndex);
+    /**
+     * @brief Get the minimum frame step parameter for the processing algorithm
+     * @return minimum number of frames between two keyframes
+     */
+    unsigned int getMinFrameStep() const
+    {
+        return _minFrameStep;
+    }
 
-  /**
-   * @brief Convert focal length from px to mm using sensor width database
-   * @param[in] camera informations
-   * @param[in] imageWidth media image width in px
-   */
-  void convertFocalLengthInMM(CameraInfo& cameraInfo, int imageWidth);
+    /**
+     * @brief Get the maximum output frame number parameter for the processing algorithm
+     * @return maximum number of frames between two keyframes
+     */
+    unsigned int getMaxFrameStep() const
+    {
+        return _maxFrameStep;
+    }
+
+    /**
+     * @brief Get the minimum output frame for the processing algorithm
+     * @return minimum number of output frames
+     */
+    unsigned int getMinOutFrames() const
+    {
+        return _minOutFrames;
+    }
+
+    /**
+     * @brief Get the maximum output frame number for the processing algorithm
+     * @return maximum number of output frames (if 0, no limit for the regular algorithm)
+     */
+    unsigned int getMaxOutFrames() const
+    {
+        return _maxOutFrames;
+    }
+    
+private:
+    /**
+     * @brief Read an image from a feed provider into a grayscale OpenCV matrix, and rescale it if a size is provided.
+     * @param[in] feed The feed provider
+     * @param[in] width The width to resize the input image to. The height will be adjusted with respect to the size ratio.
+     *                  There will be no resizing if this parameter is set to 0
+     * @return An OpenCV Mat object containing the image
+     */
+    cv::Mat readImage(dataio::FeedProvider &feed, std::size_t width = 0);
+
+    /**
+     * @brief Compute the sharpness scores for an input grayscale frame with a sliding window
+     * @param[in] grayscaleImage the input grayscale matrix of the frame
+     * @param[in] windowSize the size of the sliding window
+     * @return a double value representing the sharpness score of the sharpest tile in the image
+     */
+    double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize);
+
+    /**
+     * @brief Estimate the optical flow score for an input grayscale frame based on its previous frame cell by cell
+     * @param[in] ptrFlow the OpenCV's DenseOpticalFlow object
+     * @param[in] grayscaleImage the grayscale matrix of the current frame
+     * @param[in] previousGrayscaleImage the grayscale matrix of the previous frame
+     * @param[in] cellSize the size of the evaluated cells within the frame
+     * @return a double value representing the median motion of all the image's cells
+     */
+    double estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
+                        const cv::Mat& previousGrayscaleImage, const std::size_t cellSize);
+
+    /// Selected keyframes IDs
+    std::vector<unsigned int> _selectedKeyframes;
+
+    /// Media paths
+    std::vector<std::string> _mediaPaths;
+    /// Camera sensor width database
+    std::string _sensorDbPath;
+    /// Output folder for keyframes
+    std::string _outputFolder;
+
+    // Parameters common to both the regular and smart methods
+    /// Maximum number of output frames (0 = no limit)
+    unsigned int _maxOutFrames = 0;
+
+    // Regular algorithm parameters
+    /// Minimum number of frames between two keyframes
+    unsigned int _minFrameStep = 12;
+    /// Maximum number of frames between two keyframes
+    unsigned int _maxFrameStep = 36;
+
+    // Smart algorithm parameters
+    /// Minimum number of output frames
+    unsigned int _minOutFrames = 10;
+
+    /// Sharpness scores for each frame
+    std::vector<double> _sharpnessScores;
+    /// Optical flow scores for each frame
+    std::vector<double> _flowScores;
+    /// Vector containing 1s for frames that have been selected, 0 for those which have not
+    std::vector<char> _selectedFrames;
+
+    /// Size of the frame (afer rescale, if any is applied)
+    unsigned int _frameWidth = 0;
+    unsigned int _frameHeight = 0;
+
+    /// Map score vectors with names for export
+    std::map<const std::string, const std::vector<double>*> scoresMap;
 };
 
 } // namespace keyframe 

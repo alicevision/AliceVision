@@ -28,13 +28,11 @@ namespace dataio{
 class ImageFeed::FeederImpl
 {
 public:
-  
-  static bool isSupported(const std::string &ext);
-  
+
   FeederImpl() : _isInit(false) {}
-  
+
   FeederImpl(const std::string& imagePath, const std::string& calibPath);
-  
+
   template<typename T>
   bool readImage(image::Image<T> &image,
                    camera::PinholeRadialK3 &camIntrinsics,
@@ -78,17 +76,17 @@ public:
     }
     return true;
   }
-  
+
   std::size_t nbFrames() const;
-  
+
   bool goToFrame(const unsigned int frame);
-  
+
   bool goToNextFrame();
-  
-  bool isInit() const {return _isInit;} 
-  
+
+  bool isInit() const {return _isInit;}
+
 private:
-  
+
   template<typename T>
   bool feedWithJson(image::Image<T> &image,
                      camera::PinholeRadialK3 &camIntrinsics,
@@ -124,7 +122,7 @@ private:
       }
       else
       {
-        const camera::PinholeRadialK3 * intrinsics = dynamic_cast<const camera::PinholeRadialK3*>(cam) ;
+        const camera::PinholeRadialK3 * intrinsics = dynamic_cast<const camera::PinholeRadialK3*>(cam);
 
         // simply copy values
         camIntrinsics = *intrinsics;
@@ -134,33 +132,21 @@ private:
     ++_viewIterator;
     return true;
   }
-  
-private:
-  static const std::vector<std::string> supportedExtensions;
-  
+
 private:
   bool _isInit;
   bool _withCalibration;
   // It contains the images to be fed
   std::vector<std::string> _images;
   camera::PinholeRadialK3 _camIntrinsics;
-  
+
   bool _sfmMode = false;
   sfmData::SfMData _sfmdata;
   sfmData::Views::const_iterator _viewIterator;
   unsigned int _currentImageIndex = 0;
 };
 
-const std::vector<std::string> ImageFeed::FeederImpl::supportedExtensions = {".jpg", ".jpeg", ".png", ".ppm", ".tif", ".tiff", ".exr"};
-
-bool ImageFeed::FeederImpl::isSupported(const std::string &ext)
-{
-  const auto start = FeederImpl::supportedExtensions.begin();
-  const auto end = FeederImpl::supportedExtensions.end();
-  return(std::find(start, end, boost::to_lower_copy(ext)) != end);
-}
-
-ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::string& calibPath) 
+ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::string& calibPath)
 : _isInit(false)
 , _withCalibration(false)
 {
@@ -179,7 +165,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
       _sfmMode = true;
     }
     // if it is an image file
-    else if(FeederImpl::isSupported(ext))
+    else if(image::isSupported(ext) && !image::isVideoExtension(ext))
     {
       _images.push_back(imagePath);
       _withCalibration = !calibPath.empty();
@@ -189,7 +175,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     // if it is an image file
     else if(ext == ".txt")
     {
-      // we expect a simple txt file with a list of path to images relative to the 
+      // we expect a simple txt file with a list of path to images relative to the
       // location of the txt file itself
       std::fstream fs(imagePath, std::ios::in);
       std::string line;
@@ -237,20 +223,24 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     // since some OS will provide the files in a random order, first store them
     // in a priority queue and then fill the _image queue with the alphabetical
     // order from the priority queue
-    std::priority_queue<std::string, 
-                    std::vector<std::string>, 
+    std::priority_queue<std::string,
+                    std::vector<std::string>,
                     std::greater<std::string> > tmpSorter;
     for(; iterator != bf::directory_iterator(); ++iterator)
     {
       // get the extension of the current file to check whether it is an image
       const std::string ext = iterator->path().extension().string();
-      if(FeederImpl::isSupported(ext))
+      if(image::isSupported(ext) && !image::isVideoExtension(ext))
       {
         const std::string filepath = iterator->path().string();
         const std::string filename = iterator->path().filename().string();
         // If we have a filePattern (a sequence of images), we have to match the regex.
         if(filePattern.empty() || std::regex_match(filename, re))
           tmpSorter.push(filepath);
+      }
+      else
+      {
+        ALICEVISION_LOG_WARNING("Unsupported file extension " << ext << " for " << iterator->path().string() << ".");
       }
     }
     // put all the retrieve files inside the queue
@@ -259,7 +249,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
       _images.push_back(tmpSorter.top());
       tmpSorter.pop();
     }
-    
+
     _withCalibration = !calibPath.empty();
     _sfmMode = false;
     _isInit = true;
@@ -268,7 +258,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
   {
     throw std::invalid_argument("File or mode not yet implemented");
   }
-  
+
   // last thing: if _withCalibration is true it means that it is not a json and
   // a path to a calibration file has been passed
   // then load the calibration
@@ -283,10 +273,10 @@ std::size_t ImageFeed::FeederImpl::nbFrames() const
 {
   if(!_isInit)
     return 0;
-  
+
   if(_sfmMode)
     return _sfmdata.getViews().size();
-  
+
   return _images.size();
 }
 
@@ -295,10 +285,10 @@ bool ImageFeed::FeederImpl::goToFrame(const unsigned int frame)
   if(!_isInit)
   {
     _currentImageIndex = frame;
-    ALICEVISION_LOG_WARNING("Image feed is not initialized ");
+    ALICEVISION_LOG_WARNING("Image feed is not initialized");
     return false;
   }
-  
+
   // Reconstruction mode
   if(_sfmMode)
   {
@@ -352,10 +342,10 @@ bool ImageFeed::FeederImpl::goToNextFrame()
 
 ImageFeed::ImageFeed() : _imageFeed(new FeederImpl()) { }
 
-ImageFeed::ImageFeed(const std::string& imagePath, const std::string& calibPath)  
+ImageFeed::ImageFeed(const std::string& imagePath, const std::string& calibPath)
     : _imageFeed( new FeederImpl(imagePath, calibPath) ) { }
 
-bool ImageFeed::readImage(image::Image<image::RGBColor> &imageRGB, 
+bool ImageFeed::readImage(image::Image<image::RGBColor> &imageRGB,
                      camera::PinholeRadialK3 &camIntrinsics,
                      std::string &mediaPath,
                      bool &hasIntrinsics)
@@ -371,7 +361,7 @@ bool ImageFeed::readImage(image::Image<float> &imageGray,
   return(_imageFeed->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool ImageFeed::readImage(image::Image<unsigned char> &imageGray, 
+bool ImageFeed::readImage(image::Image<unsigned char> &imageGray,
                      camera::PinholeRadialK3 &camIntrinsics,
                      std::string &mediaPath,
                      bool &hasIntrinsics)
@@ -408,11 +398,11 @@ bool ImageFeed::isSupported(const std::string &extension)
   }
   else
   {
-    return FeederImpl::isSupported(ext);
+    return (image::isSupported(ext) && !image::isVideoExtension(ext));
   }
 }
 
 ImageFeed::~ImageFeed() { }
 
-}//namespace dataio 
+}//namespace dataio
 }//namespace aliceVision

@@ -22,7 +22,7 @@
 namespace aliceVision{
 namespace dataio{
 
-FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calibPath) 
+FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calibPath)
 : _isVideo(false), _isLiveFeed(false)
 {
   namespace bf = boost::filesystem;
@@ -30,7 +30,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
   {
     throw std::invalid_argument("Empty filepath.");
   }
-  if(bf::is_regular_file(bf::path(feedPath))) 
+  if(bf::is_regular_file(bf::path(feedPath)))
   {
     // Image or video file
     const std::string extension = bf::path(feedPath).extension().string();
@@ -38,16 +38,23 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
     {
       _feeder.reset(new ImageFeed(feedPath, calibPath));
     }
-    else 
+    else
     {
+      if(VideoFeed::isSupported(extension))
+      {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-      // let's try it with a video
-      _feeder.reset(new VideoFeed(feedPath, calibPath));
-      _isVideo = true;
+        // let's try it with a video
+        _feeder.reset(new VideoFeed(feedPath, calibPath));
+        _isVideo = true;
 #else
-      throw std::invalid_argument("Unsupported mode! If you intended to use a video"
+        throw std::invalid_argument("Unsupported mode! If you intended to use a video"
                                   " please add OpenCV support");
 #endif
+      }
+      else
+      {
+        throw std::invalid_argument("Unsupported file format: " + feedPath);
+      }
     }
   }
   // parent_path() returns "/foo/bar/" when input path equals to "/foo/bar/"
@@ -96,12 +103,12 @@ bool FeedProvider::readImage(image::Image<unsigned char> &imageGray,
 {
   return(_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
-  
+
 std::size_t FeedProvider::nbFrames() const
 {
   if(_isLiveFeed)
     return std::numeric_limits<std::size_t>::infinity();
-  
+
   return _feeder->nbFrames();
 }
 
@@ -122,5 +129,5 @@ bool FeedProvider::isInit() const
 
 FeedProvider::~FeedProvider( ) { }
 
-}//namespace dataio 
+}//namespace dataio
 }//namespace aliceVision
