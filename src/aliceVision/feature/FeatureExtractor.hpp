@@ -94,11 +94,11 @@ public:
       _imageDescribers.push_back(imageDescriber);
     }
 
-    void process(const HardwareContext & hcontext);
+    void process(const HardwareContext & hcontext, const image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB);
 
 private:
 
-    void computeViewJob(const FeatureExtractorViewJob& job, bool useGPU);
+    void computeViewJob(const FeatureExtractorViewJob& job, bool useGPU, const image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB);
 
     const sfmData::SfMData& _sfmData;
     std::vector<std::shared_ptr<feature::ImageDescriber>> _imageDescribers;
