@@ -52,7 +52,8 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string outputFolder;
     std::string imagesFolder;
-    std::string processColorspaceName = image::EImageColorSpace_enumToString(image::EImageColorSpace::SRGB);
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     bool flipNormals = false;
     bool correctEV = false;
 
@@ -117,8 +118,10 @@ int aliceVision_main(int argc, char* argv[])
             "(0.0 to disable filtering based on threshold to relative best score).")
         ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
             "(0.0 to disable angle hard threshold filtering).")
-        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
-            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+            "Color space for the texturing internal computation (does not impact the output file color space).")
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
+            "Output file colorspace.")
         ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
             "Option to uniformize images exposure.")
         ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
@@ -147,7 +150,8 @@ int aliceVision_main(int argc, char* argv[])
     GEO::initialize();
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
-    texParams.processColorspace = image::EImageColorSpace_stringToEnum(processColorspaceName);
+    texParams.workingColorSpace = workingColorSpace;
+    texParams.outputColorSpace = outputColorSpace;
 
     texParams.correctEV = mvsUtils::ECorrectEV::NO_CORRECTION;
     if(correctEV) { texParams.correctEV = mvsUtils::ECorrectEV::APPLY_CORRECTION; }
