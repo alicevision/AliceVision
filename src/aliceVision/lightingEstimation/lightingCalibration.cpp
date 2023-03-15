@@ -49,7 +49,7 @@ void lightCalibration(const std::string& inputPath, const std::string& outputPat
     // lightCalibration(imageList, sphereParam, outputPath);
 }
 
-void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath)
+void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath, const std::string& method)
 {
 
     std::vector<std::string> imageList;
@@ -89,15 +89,13 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
             focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
         }
     }
-    lightCalibration(imageList, allSpheresParams, outputPath, focals);
+    lightCalibration(imageList, allSpheresParams, outputPath, focals, method);
 }
 
-void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals)
+void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals, const std::string& method)
 {
     Eigen::MatrixXf lightMat(imageList.size(), 3);
-    std::vector<std::array<float, 3>> intList;
-
-    Eigen::Vector3f lightingDirection;
+    std::vector<float> intList;
 
     for (size_t i = 0; i < imageList.size(); ++i)
     {
@@ -105,25 +103,28 @@ void lightCalibration(const std::vector<std::string>& imageList, const std::vect
         std::array<float,3> sphereParam = allSpheresParams.at(i);
         float focal = focals.at(i);
 
-        lightCalibrationOneImage(picturePath, sphereParam, focal, "brightestPoint", lightingDirection);
+        Eigen::Vector3f lightingDirection;
+        lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection);
         lightMat.row(i) = lightingDirection;
+        intList.push_back(lightingDirection.norm());
     }
 
     // Write in JSON file :
     writeJSON(jsonName, imageList, lightMat, intList);
 }
 
-void lightCalibration(const std::vector<std::string>& imageList, const std::array<float, 3>& sphereParam, const std::string& jsonName, const float focal)
+void lightCalibration(const std::vector<std::string>& imageList, const std::array<float, 3>& sphereParam, const std::string& jsonName, const float focal, const std::string& method)
 {
     Eigen::MatrixXf lightMat(imageList.size(), 3);
-    std::vector<std::array<float, 3>> intList;
+    std::vector<float> intList;
 
     for (size_t i = 0; i < imageList.size(); ++i)
     {
         std::string picturePath = imageList.at(i);
         Eigen::Vector3f lightingDirection;
-        lightCalibrationOneImage(picturePath, sphereParam, focal, "brightestPoint", lightingDirection);
+        lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection);
         lightMat.row(i) = lightingDirection;
+        intList.push_back(lightingDirection.norm());
     }
 
     // Write in JSON file :
@@ -160,12 +161,47 @@ void lightCalibrationOneImage(const std::string& picturePath, const std::array<f
         lightingDirection = lightingDirection/lightingDirection.norm();
     }
     // if method = HS :
-    else if(!method.compare("HS"))
+    else if(!method.compare("whiteSphere"))
     {
-        std::cout << "WIP" << std::endl;
-        // Evaluate HS by pseudo-inverse
-        // createSphere(sphereParam, sphereNormals);
-        // estimateHS(sphereNormals, imageFloat, lightingDirection);
+        // Evaluate light direction and intensity by pseudo-inverse
+        int minISphere = floor(sphereParam[1] - sphereParam[2] + imageFloat.rows()/2);
+        int minJSphere = floor(sphereParam[0] - sphereParam[2] + imageFloat.cols()/2);
+
+        float radius = sphereParam[2];
+
+        image::Image<float> patch;
+        patch = imageFloat.block(minISphere, minJSphere, 2*radius, 2*radius);
+
+        int nbPixelsPatch = 4*radius*radius;
+        Eigen::VectorXf imSphere(nbPixelsPatch);
+        Eigen::MatrixXf normalSphere(nbPixelsPatch,3);
+
+        int currentIndex = 0;
+
+        for (size_t j = 0; j < patch.cols(); ++j)
+        {
+            for (size_t i = 0; i < patch.rows(); ++i)
+            {
+                float distanceToCenter = (i - radius)*(i - radius) + (j - radius)*(j - radius);
+                if((distanceToCenter < (radius*radius - 0.05*radius) ) && (patch(i,j) > 0.3) && (patch(i,j) < 0.8))
+                {
+                    // imSphere = normalSphere.s
+                    imSphere(currentIndex) = patch(i,j);
+
+                    normalSphere(currentIndex,0) = (float(j) - radius)/radius;
+                    normalSphere(currentIndex,1) = (float(i) - radius)/radius;
+                    normalSphere(currentIndex,2) = -sqrt(1 - normalSphere(currentIndex,0)*normalSphere(currentIndex,0) - normalSphere(currentIndex,1)*normalSphere(currentIndex,1));
+
+                    ++currentIndex;
+                }
+            }
+        }
+        Eigen::MatrixXf normalSphereMasked(currentIndex,3);
+        normalSphereMasked = normalSphere.block(0, 0, currentIndex,3);
+
+        Eigen::VectorXf imSphereMasked(currentIndex);
+        imSphereMasked = imSphere.head(currentIndex);
+        lightingDirection = normalSphere.colPivHouseholderQr().solve(imSphere);
     }
 
 
@@ -243,7 +279,7 @@ void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>&
     }
 }
 
-void writeJSON(const std::string& fileName, const std::vector<std::string>& imageList, const Eigen::MatrixXf& lightMat, const std::vector<std::array<float, 3>>& intList)
+void writeJSON(const std::string& fileName, const std::vector<std::string>& imageList, const Eigen::MatrixXf& lightMat, const std::vector<float>& intList)
 {
     // main tree
     bpt::ptree fileTree;
@@ -269,17 +305,17 @@ void writeJSON(const std::string& fileName, const std::vector<std::string>& imag
             direction_node.push_back(std::make_pair("", cell));
          }
          currentLight_node.add_child("direction", direction_node);
-         imgCpt++;
 
         // Light intensity
         bpt::ptree intensity_node;
         for (int i = 0; i < 3; i++)
         {
             bpt::ptree cell;
-            cell.put_value(1.0);
+            cell.put_value<float>(intList.at(imgCpt));
             intensity_node.push_back(std::make_pair("", cell));
          }
          currentLight_node.add_child("intensity", intensity_node);
+         imgCpt++;
 
         lights_node.add_child(lightName, currentLight_node);
     }

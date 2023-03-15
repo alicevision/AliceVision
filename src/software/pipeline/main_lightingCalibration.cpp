@@ -50,8 +50,7 @@ int aliceVision_main(int argc, char **argv)
     std::string inputPath;
     std::string inputJSON;
     std::string ouputJSON;
-    Eigen::Vector2f sphereCenterOffset(0, 0);
-    double sphereRadius = 1.0;
+    std::string method;
 
     po::options_description allParams("AliceVision lighting calibration");
     po::options_description requiredParams("Required parameters");
@@ -59,6 +58,13 @@ int aliceVision_main(int argc, char **argv)
     ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
     ("inputJSON, j", po::value<std::string>(&inputJSON)->required(), "Path to JSON which describes sphere positions and radius")
     ("outputFile, o", po::value<std::string>(&ouputJSON)->required(), "Path to JSON output file");
+
+    po::options_description optionalParams("Optional parameters");
+
+    optionalParams.add_options()
+    ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"), "Method for light estimation");
+
+    allParams.add(requiredParams).add(optionalParams);
 
     allParams.add(requiredParams);
 
@@ -102,7 +108,7 @@ int aliceVision_main(int argc, char **argv)
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
             return EXIT_FAILURE;
         }
-        lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON);
+        lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method);
     }
 
     return 0;
