@@ -41,6 +41,8 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
  */
 void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
 
+void buildLigtMatFromModel(const std::string& fileName, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList);
+
 /**
  * @brief Load light data from a json file to an eigen matrix
  * @param[in] fileName - Path to the json file

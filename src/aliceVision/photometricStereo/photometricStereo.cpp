@@ -450,5 +450,36 @@ void median(const Eigen::MatrixXf& d, float& median){
         median = aux(middle);
 }
 
+void RTI(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+{
+    std::vector<std::string> imageList;
+
+    for(auto& viewIt: sfmData.getViews())
+    {
+        const fs::path imagePath = fs::path(viewIt.second->getImagePath());
+        if(!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+        {
+            ALICEVISION_LOG_INFO("  - " << imagePath.string());
+            imageList.push_back(imagePath.string());
+        }
+    }
+
+    // Sort pictures by name : PICTURES ARE SUPPOSED TO BE IN THE SAME ORDER THAN THE LIGHTS !
+    std::sort(imageList.begin(), imageList.end());
+
+    std::vector<std::array<float, 3>> intList; // Light intensities
+    Eigen::MatrixXf lightMat(imageList.size(), 3); //Light directions
+
+    buildLigtMatFromModel(lightData, lightMat, intList);
+
+    image::Image<float> mask;
+    loadMask(maskPath, mask);
+
+    std::string pathToAmbiant = "";
+    photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, false, 1, normals, albedo);
+    writePSResults(outputPath, normals, albedo);
+}
+
 }
 }
+
