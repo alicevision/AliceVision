@@ -331,6 +331,17 @@ if(ALICEVISION_HAVE_OPENCV_CONTRIB)
           ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
           opencv_mcc
 )
+
+# Apply calibration
+alicevision_add_software(aliceVision_applyCalibration
+  SOURCE main_applyCalibration.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_camera
+        Boost::program_options
+)
 endif()
 
 
