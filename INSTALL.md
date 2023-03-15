@@ -30,7 +30,7 @@ AliceVision depends on external libraries:
 * [Geogram >= 1.7.5](https://github.com/BrunoLevy/geogram)
 * [Expat >= 2.4.8](https://libexpat.github.io/)
 * [OpenEXR >= 2.5](https://github.com/AcademySoftwareFoundation/openexr)
-* [OpenImageIO >= 2.1.0](https://github.com/OpenImageIO/oiio)
+* [OpenImageIO >= 2.1.0 (recommended >= 2.4.6)](https://github.com/OpenImageIO/oiio)
 * [zlib](https://www.zlib.net)
 
 Other optional libraries can enable specific features (check "CMake Options" for enabling them):
@@ -48,7 +48,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * UncertaintyTE (Uncertainty computation)
 * CoinUtils >= 2.9.3 (if you need to build it use [our fork](https://github.com/alicevision/CoinUtils) with a CMake build system)
 * Coin-or linear programming (Clp) (if you need to build it use [our fork](https://github.com/alicevision/Clp) with a CMake build system)
-* Open Solver Interface (Osi) >= 0.106.10 (if you need to build it use [our fork](https://github.com/alicevision/Osi)
+* Open Solver Interface (Osi) >= 0.106.10 (if you need to build it use [our fork](https://github.com/alicevision/Osi))
 
 
 AliceVision also depends on some embedded libraries:
