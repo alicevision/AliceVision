@@ -91,7 +91,7 @@ double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0)
     return f;
 }
 
-bool splitDualFisheye(const std::string& imagePath, const std::string& outputFolder,
+bool splitDualFisheye(const std::string& imagePath, const std::string& outputFolder, const std::string& extension,
                       const std::string& splitPreset)
 {
     // Load source image from disk
@@ -137,7 +137,9 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
 
         // Save new image on disk
         fs::path path(imagePath);
-        image::writeImage(subFolder + std::string("/") + path.filename().string(),
+        std::string filename = extension.empty() ?
+            path.filename().string() : path.stem().string() + "." + extension;
+        image::writeImage(subFolder + std::string("/") + filename,
                           imageOut, image::ImageWriteOptions(), image::readImageMetadata(imagePath));
     }
 
@@ -146,7 +148,7 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
     return true;
 }
 
-bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder,
+bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder, const std::string& extension,
                           std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
     // Load source image from disk
@@ -196,7 +198,6 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
         }
 
         // Retrieve image specs and metadata
-
         oiio::ImageBuf bufferOut;
         image::getBufferFromImage(imageSource, bufferOut);
 
@@ -214,8 +215,11 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
         std::string subFolder = rigFolder + std::string("/") + std::to_string(index);
         fs::create_directory(subFolder);
 
+        // Save new image on disk
         fs::path path(imagePath);
-        image::writeImage(subFolder + std::string("/") + path.filename().string(),
+        std::string filename = extension.empty() ?
+            path.filename().string() : path.stem().string() + "." + extension;
+        image::writeImage(subFolder + std::string("/") + filename,
                           imaOut, image::ImageWriteOptions(), outMetadataSpec.extra_attribs);
 
         ++index;
@@ -311,6 +315,7 @@ int aliceVision_main(int argc, char** argv)
     bool equirectangularPreviewMode = false;
     double fov = 110.0;                         // Field of View in degree
     int nbThreads = 3;
+    std::string extension;
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -334,7 +339,9 @@ int aliceVision_main(int argc, char** argv)
         ("fov", po::value<double>(&fov)->default_value(fov),
         "Field of View to extract (in degree).")
         ("nbThreads", po::value<int>(&nbThreads)->default_value(nbThreads),
-        "Number of threads.");
+        "Number of threads.")
+        ("extension", po::value<std::string>(&extension)->default_value(extension),
+         "Output image extension (empty to keep the source file format).");
 
     CmdLine cmdline("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder.\n"
                     "AliceVision split360Images");
@@ -416,13 +423,23 @@ int aliceVision_main(int argc, char** argv)
         if (splitMode == "equirectangular")
         {
             if(equirectangularPreviewMode)
-                hasCorrectPath = splitEquirectangularPreview(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
+            {
+                hasCorrectPath =
+                    splitEquirectangularPreview(imagePath, outputFolder,
+                                                equirectangularNbSplits, equirectangularSplitResolution, fov);
+            }
             else
-                hasCorrectPath = splitEquirectangular(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
+            {
+                hasCorrectPath =
+                    splitEquirectangular(imagePath, outputFolder, extension,
+                                         equirectangularNbSplits, equirectangularSplitResolution, fov);
+            }
         }
         else if(splitMode == "dualfisheye")
         {
-            hasCorrectPath = splitDualFisheye(imagePath, outputFolder, dualFisheyeSplitPreset);
+            hasCorrectPath =
+                splitDualFisheye(imagePath, outputFolder, extension,
+                                 dualFisheyeSplitPreset);
         }
         else //exif
         {
