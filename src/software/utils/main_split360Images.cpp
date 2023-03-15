@@ -16,7 +16,8 @@
 #include <aliceVision/panorama/sphericalMapping.hpp>
 
 #include <boost/filesystem.hpp>
-#include <boost/program_options.hpp> 
+#include <boost/program_options.hpp>
+#include <boost/math/constants/constants.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -148,6 +149,7 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
 bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder,
                           std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
+    // Load source image from disk
     image::Image<image::RGBColor> imageSource;
     image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
@@ -156,7 +158,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 
     std::vector<PinholeCameraR> cameras;
 
-    const double twoPi = M_PI * 2.0;
+    const double twoPi = boost::math::constants::pi<double>() * 2.0;
     const double alpha = twoPi / static_cast<double>(nbSplits);
 
     const double fov = degreeToRadian(fovDegree);
@@ -171,6 +173,10 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 
     const image::Sampler2d<image::SamplerLinear> sampler;
     image::Image<image::RGBColor> imaOut(splitResolution, splitResolution, image::BLACK);
+
+    // Make sure rig folder exists
+    std::string rigFolder = outputFolder + "/rig";
+    fs::create_directory(rigFolder);
 
     size_t index = 0;
     for(const PinholeCameraR& camera : cameras)
@@ -198,14 +204,18 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 
         outMetadataSpec.extra_attribs = image::readImageMetadata(imagePath);
 
-        // Ooerride make and model in order to force camera model in SfM
+        // Override make and model in order to force camera model in SfM
         outMetadataSpec.attribute("Make",  "Custom");
         outMetadataSpec.attribute("Model", "Pinhole");
         const float focal_mm = focal_px / splitResolution; // muliplied by sensorWidth (which is 1 for "Custom")
         outMetadataSpec.attribute("Exif:FocalLength", focal_mm);
 
+        // Make sure sub-folder exists for complete rig structure
+        std::string subFolder = rigFolder + std::string("/") + std::to_string(index);
+        fs::create_directory(subFolder);
+
         boost::filesystem::path path(imagePath);
-        image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string(),
+        image::writeImage(subFolder + std::string("/") + path.filename().string(),
                           imaOut, image::ImageWriteOptions(), outMetadataSpec.extra_attribs);
 
         ++index;
