@@ -106,6 +106,8 @@ vcpkg install ^
           alembic ^
           geogram ^
           eigen3 ^
+          expat ^
+          onnxruntime-gpu ^
           opencv[eigen,ffmpeg,webp,contrib,nonFree,cuda] ^
           openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
           ceres[suitesparse,cxsparse] ^
