@@ -160,6 +160,9 @@ int aliceVision_main(int argc, char** argv)
 
     const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
+    // Fusion always produces linear image. sRGB is the only non linear color space that must be changed to linear (sRGB linear). 
+    image::EImageColorSpace mergedColorSpace = (workingColorSpace == image::EImageColorSpace::SRGB) ? image::EImageColorSpace::LINEAR : workingColorSpace;
+
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
     if (!hdr::estimateBracketsFromSfmData(groupedViews, sfmData, nbBrackets))
@@ -271,6 +274,7 @@ int aliceVision_main(int argc, char** argv)
                 const std::string hdrImagePath = getHdrImagePath(outputPath, g, keepSourceImageName ? p.stem().string() : "");
                 hdrView->setImagePath(hdrImagePath);
             }
+            hdrView->addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace));
             outputSfm.getViews()[hdrView->getViewId()] = hdrView;
         }
 
@@ -313,6 +317,10 @@ int aliceVision_main(int argc, char** argv)
             options.workingColorSpace = workingColorSpace;
             options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getRawColorInterpretation());
             options.colorProfileFileName = group[i]->getColorProfileFileName();
+            if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+            {
+                options.doWBAfterDemosaicing = true;
+            }
             image::readImage(filepath, images[i], options);
 
             exposuresSetting[i] = group[i]->getCameraExposureSetting(/*targetView->getMetadataISO(), targetView->getMetadataFNumber()*/);
@@ -360,9 +368,6 @@ int aliceVision_main(int argc, char** argv)
                 targetMetadata.add_or_replace(oiio::ParamValue(meta.first, meta.second));
             }
         }
-
-        // Fusion always produces linear image. sRGB is the only non linear color space that must be changed to linear (sRGB linear). 
-        image::EImageColorSpace mergedColorSpace = (workingColorSpace == image::EImageColorSpace::SRGB) ? image::EImageColorSpace::LINEAR : workingColorSpace;
 
         targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace)));
 
