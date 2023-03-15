@@ -195,7 +195,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
             }
         }
 
-        // save image
+        // Retrieve image specs and metadata
 
         oiio::ImageBuf bufferOut;
         image::getBufferFromImage(imageSource, bufferOut);
@@ -214,7 +214,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
         std::string subFolder = rigFolder + std::string("/") + std::to_string(index);
         fs::create_directory(subFolder);
 
-        boost::filesystem::path path(imagePath);
+        fs::path path(imagePath);
         image::writeImage(subFolder + std::string("/") + path.filename().string(),
                           imaOut, image::ImageWriteOptions(), outMetadataSpec.extra_attribs);
 
@@ -225,9 +225,10 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 }
 
 
-bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder,
-                              std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
+bool splitEquirectangularPreview(const std::string& imagePath, const std::string& outputFolder,
+                                 std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
+    // Load source image from disk
     image::Image<image::RGBColor> imageSource;
     image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
@@ -236,7 +237,7 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
 
     std::vector<PinholeCameraR> cameras;
 
-    const double twoPi = M_PI * 2.0;
+    const double twoPi = boost::math::constants::pi<double>() * 2.0;
     const double alpha = twoPi / static_cast<double>(nbSplits);
 
     const double fov = degreeToRadian(fovDegree);
@@ -255,15 +256,15 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
     svgStream.drawLine(0,0,inWidth, inHeight, svg::svgStyle().stroke("white"));
     svgStream.drawLine(inWidth,0, 0, inHeight, svg::svgStyle().stroke("white"));
 
-    //for each cam, reproject the image borders onto the panoramic image
+    // For each cam, reproject the image borders onto the panoramic image
 
     for (const PinholeCameraR& camera : cameras)
     {
-        //draw the shot border with the givenStep:
+        // Draw the shot border with the given step
         const int step = 10;
         Vec3 ray;
 
-        // Vertical rectilinear image border:
+        // Vertical rectilinear image border
         for (double j = 0; j <= splitResolution; j += splitResolution/(double)step)
         {
             Vec2 pt(0.,j);
@@ -277,7 +278,7 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
             svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("magenta").stroke("white", 4));
         }
 
-        // Horizontal rectilinear image border:
+        // Horizontal rectilinear image border
         for (double j = 0; j <= splitResolution; j += splitResolution/(double)step)
         {
             Vec2 pt(j,0.);
@@ -292,7 +293,7 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
         }
     }
 
-    boost::filesystem::path path(imagePath);
+    fs::path path(imagePath);
     std::ofstream svgFile(outputFolder + std::string("/") + path.stem().string() + std::string(".svg"));
     svgFile << svgStream.closeSvgFile().str();
     return true;
@@ -307,7 +308,7 @@ int aliceVision_main(int argc, char** argv)
     std::string dualFisheyeSplitPreset;         // dual-fisheye split type preset
     std::size_t equirectangularNbSplits;        // nb splits for equirectangular image
     std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
-    bool equirectangularDemoMode = false;
+    bool equirectangularPreviewMode = false;
     double fov = 110.0;                         // Field of View in degree
     int nbThreads = 3;
 
@@ -328,7 +329,7 @@ int aliceVision_main(int argc, char** argv)
         "Equirectangular number of splits")
         ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
         "Equirectangular split resolution")
-        ("equirectangularDemoMode", po::value<bool>(&equirectangularDemoMode)->default_value(equirectangularDemoMode),
+        ("equirectangularPreviewMode", po::value<bool>(&equirectangularPreviewMode)->default_value(equirectangularPreviewMode),
         "Export a SVG file that simulate the split")
         ("fov", po::value<double>(&fov)->default_value(fov),
         "Field of View to extract (in degree).")
@@ -391,7 +392,7 @@ int aliceVision_main(int argc, char** argv)
         if (fs::exists(path) && fs::is_directory(path))
         {
             for (fs::directory_entry& entry : boost::make_iterator_range(fs::directory_iterator(path), {}))
-            imagePaths.push_back(entry.path().string());
+                imagePaths.push_back(entry.path().string());
 
             ALICEVISION_LOG_INFO("Find " << imagePaths.size() << " file paths.");
         }
@@ -414,8 +415,8 @@ int aliceVision_main(int argc, char** argv)
 
         if (splitMode == "equirectangular")
         {
-            if(equirectangularDemoMode)
-                hasCorrectPath = splitEquirectangularDemo(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
+            if(equirectangularPreviewMode)
+                hasCorrectPath = splitEquirectangularPreview(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
             else
                 hasCorrectPath = splitEquirectangular(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
         }
