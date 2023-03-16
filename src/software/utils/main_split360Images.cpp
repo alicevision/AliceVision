@@ -8,6 +8,8 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/Sampler.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
@@ -320,9 +322,9 @@ int aliceVision_main(int argc, char** argv)
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputPath)->required(),
-        "Input image file or image folder.")
+        "Input image file, image folder or SfMData.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
-        "Output keyframes folder for .jpg");
+        "Output folder for extracted images.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -396,16 +398,39 @@ int aliceVision_main(int argc, char** argv)
 
     {
         const fs::path path = fs::absolute(inputPath);
-        if (fs::exists(path) && fs::is_directory(path))
+        if (fs::exists(path))
         {
-            for (fs::directory_entry& entry : boost::make_iterator_range(fs::directory_iterator(path), {}))
-                imagePaths.push_back(entry.path().string());
+            if (fs::is_directory(path))
+            {
+                for (fs::directory_entry& entry : boost::make_iterator_range(fs::directory_iterator(path), {}))
+                {
+                    imagePaths.push_back(entry.path().string());
+                }
 
-            ALICEVISION_LOG_INFO("Find " << imagePaths.size() << " file paths.");
-        }
-        else if (fs::exists(path))
-        {
-            imagePaths.push_back(path.string());
+                ALICEVISION_LOG_INFO("Find " << imagePaths.size() << " file paths.");
+            }
+            else
+            {
+                const std::string inputExt = boost::to_lower_copy(path.extension().string());
+                if (inputExt == ".sfm" || inputExt == ".abc")
+                {
+                    sfmData::SfMData sfmData;
+                    if (!sfmDataIO::Load(sfmData, path.string(), sfmDataIO::VIEWS))
+                    {
+                        ALICEVISION_LOG_ERROR("The input SfMData file '" << inputPath << "' cannot be read.");
+                        return EXIT_FAILURE;
+                    }
+
+                    for (const auto& [_, view] : sfmData.getViews())
+                    {
+                        imagePaths.push_back(view->getImagePath());
+                    }
+                }
+                else
+                {
+                    imagePaths.push_back(path.string());
+                }
+            }
         }
         else
         {
