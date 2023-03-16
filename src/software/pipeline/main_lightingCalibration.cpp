@@ -66,8 +66,6 @@ int aliceVision_main(int argc, char **argv)
 
     allParams.add(requiredParams).add(optionalParams);
 
-    allParams.add(requiredParams);
-
     po::variables_map vm;
     try
     {
