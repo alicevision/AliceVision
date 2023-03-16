@@ -1003,31 +1003,39 @@ int aliceVision_main(int argc, char * argv[])
                 ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
             }
 
+            const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(viewPath));
+            const std::string imgFormat = in->format_name();
+            const bool isRAW = imgFormat.compare("raw") == 0;
+
             image::ImageReadOptions options;
             options.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
-            if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
+
+            if (isRAW)
             {
-                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
-                if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+                if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
                 {
-                    options.useDCPColorMatrixOnly = false;
-                    options.doWBAfterDemosaicing = true;
+                    options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
+                    if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+                    {
+                        options.useDCPColorMatrixOnly = false;
+                        options.doWBAfterDemosaicing = true;
+                    }
+                    else
+                    {
+                        options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                        options.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                    }
                 }
                 else
                 {
+                    options.rawColorInterpretation = rawColorInterpretation;
                     options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                     options.doWBAfterDemosaicing = doWBAfterDemosaicing;
                 }
+                options.colorProfileFileName = view.getColorProfileFileName();
+                options.demosaicingAlgo = demosaicingAlgo;
+                options.highlightMode = highlightMode;
             }
-            else
-            {
-                options.rawColorInterpretation = rawColorInterpretation;
-                options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-                options.doWBAfterDemosaicing = doWBAfterDemosaicing;
-            }
-            options.colorProfileFileName = view.getColorProfileFileName();
-            options.demosaicingAlgo = demosaicingAlgo;
-            options.highlightMode = highlightMode;
 
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
             {
@@ -1183,8 +1191,12 @@ int aliceVision_main(int argc, char * argv[])
             const auto metadata = image::readImageMetadata(inputFilePath, width, height);
             view.setMetadata(image::getMapFromMetadata(metadata));
 
-            if (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
-                rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+            const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(inputFilePath));
+            const std::string imgFormat = in->format_name();
+            const bool isRAW = imgFormat.compare("raw") == 0;
+
+            if (isRAW && (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+                          rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
             {
                 // Load DCP color profiles database if not already loaded
                 dcpDatabase.load(colorProfileDatabaseDirPath.empty() ? getColorProfileDatabaseFolder() : colorProfileDatabaseDirPath, false);
@@ -1211,47 +1223,51 @@ int aliceVision_main(int argc, char * argv[])
                 view.addDCPMetadata(dcpProf);
             }
 
+            std::map<std::string, std::string> md = view.getMetadata();
+
             // set readOptions
             image::ImageReadOptions readOptions;
-            readOptions.colorProfileFileName = dcpProf.info.filename;
-            if (dcpProf.info.filename.empty() &&
-                ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
-                 (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
-            {
-                // Fallback case of missing profile but no error requested
-                readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
-            }
-            else
-            {
-                readOptions.rawColorInterpretation = rawColorInterpretation;
-            }
 
-            std::map<std::string,std::string> md = view.getMetadata();
-
-            if (pParams.applyDcpMetadata && md["AliceVision::ColorSpace"] != "no_conversion")
+            if (isRAW)
             {
-                ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+                readOptions.colorProfileFileName = dcpProf.info.filename;
+                if (dcpProf.info.filename.empty() &&
+                    ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
+                        (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
+                {
+                    // Fallback case of missing profile but no error requested
+                    readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+                }
+                else
+                {
+                    readOptions.rawColorInterpretation = rawColorInterpretation;
+                }
+
+                if (pParams.applyDcpMetadata && md["AliceVision::ColorSpace"] != "no_conversion")
+                {
+                    ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+                }
+
+                readOptions.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                readOptions.demosaicingAlgo = demosaicingAlgo;
+                readOptions.highlightMode = highlightMode;
+
+                pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                if (pParams.applyDcpMetadata)
+                {
+                    workingColorSpace = image::EImageColorSpace::ACES2065_1;
+                }
             }
 
             readOptions.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
-            readOptions.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-            readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
-            readOptions.demosaicingAlgo = demosaicingAlgo;
-            readOptions.highlightMode = highlightMode;
 
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, readOptions);
 
-            pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-
             // Image processing
             processImage(image, pParams, md);
-
-            if (pParams.applyDcpMetadata)
-            {
-                workingColorSpace = image::EImageColorSpace::ACES2065_1;
-            }
 
             // Save the image
             saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
