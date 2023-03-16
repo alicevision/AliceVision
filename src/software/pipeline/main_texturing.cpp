@@ -53,7 +53,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string outputFolder;
     std::string imagesFolder;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
-    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO;
     bool flipNormals = false;
     bool correctEV = false;
 

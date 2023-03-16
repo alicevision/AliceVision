@@ -90,7 +90,7 @@ struct TexturingParams
 
     image::EImageFileType textureFileType = image::EImageFileType::NONE;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB; // color space for the texturing internal computation
-    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR; // output file color space
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO; // output file color space
     mvsUtils::ECorrectEV correctEV{mvsUtils::ECorrectEV::NO_CORRECTION};
 
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
