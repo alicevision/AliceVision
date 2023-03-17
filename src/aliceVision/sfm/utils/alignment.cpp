@@ -782,18 +782,17 @@ IndexT getCenterCameraView(const sfmData::SfMData& sfmData)
     return centerViewId;
 }
 
-void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData, const IndexT viewId,
-                                                double& out_S, Mat3& out_R, Vec3& out_t)
+void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData, const IndexT viewId, double& out_S, Mat3& out_R, Vec3& out_t)
 {
-  sfmData::EEXIFOrientation orientation = sfmData.getView(viewId).getMetadataOrientation();
-  ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: " << int(orientation));
+    sfmData::EEXIFOrientation orientation = sfmData.getView(viewId).getMetadataOrientation();
+    ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: " << int(orientation));
 
-  out_R = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)) *
-          sfmData.getAbsolutePose(viewId).getTransform().rotation();
+    Mat3 R_image = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
 
-  out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * out_R; // Y UP
-  out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();
-  out_S = 1.0;
+    out_R = R_image.transpose() * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+
+    out_t = -out_R * sfmData.getAbsolutePose(viewId).getTransform().center();
+    out_S = 1.0;
 }
 
 void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
