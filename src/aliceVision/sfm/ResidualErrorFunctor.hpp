@@ -12,6 +12,8 @@
 
 #include <ceres/rotation.h>
 
+#include <memory>
+
 // Define ceres Cost_functor for each AliceVision camera model
 
 namespace aliceVision {
@@ -1294,6 +1296,220 @@ struct ResidualErrorFunctor_Pinhole3DERadial4
 
   /**
    * @param[in] cam_K: Camera intrinsics( focal, principal point [x,y], k1, k2, k3 )
+   * @param[in] cam_Rt: Camera parameterized using one block of 6 parameters [R;t]:
+   *   - 3 for rotation(angle axis), 3 for translation
+   * @param[in] pos_3dpoint
+   * @param[out] out_residuals
+   */
+  template <typename T>
+  bool operator()(
+    const T* const cam_K,
+    const T* const cam_Rt,
+    const T* const pos_3dpoint,
+    T* out_residuals) const
+  {
+    //--
+    // Apply external parameters (Pose)
+    //--
+
+    const T * cam_R = cam_Rt;
+    const T * cam_t = &cam_Rt[3];
+
+    T pos_proj[3];
+    // Rotate the point according the camera rotation
+    ceres::AngleAxisRotatePoint(cam_R, pos_3dpoint, pos_proj);
+
+    // Apply the camera translation
+    pos_proj[0] += cam_t[0];
+    pos_proj[1] += cam_t[1];
+    pos_proj[2] += cam_t[2];
+
+    // Transform the point from homogeneous to euclidean (undistorted point)
+    const T x_u = pos_proj[0] / pos_proj[2];
+    const T y_u = pos_proj[1] / pos_proj[2];
+
+    //--
+    // Apply intrinsic parameters
+    //--
+
+    applyIntrinsicParameters(cam_K, x_u, y_u, out_residuals);
+
+    return true;
+  }
+
+  const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
+};
+
+/**
+ * @brief Ceres functor to use a ResidualErrorFunctor_Pinhole3DEAnamorphic4
+ *
+ *  Data parameter blocks are the following <2,18,6,3>
+ *  - 2 => dimension of the residuals,
+ *  - 18 => the intrinsic data block [focal, principal point, distortion parameters],
+ *  - 6 => the camera extrinsic data block (camera orientation and position) [R;t],
+ *         - rotation(angle axis), and translation [rX,rY,rZ,tx,ty,tz].
+ *  - 3 => a 3D point data block.
+ *
+ */
+struct ResidualErrorFunctor_Pinhole3DEAnamorphic4
+{
+  explicit ResidualErrorFunctor_Pinhole3DEAnamorphic4(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5), _obs(obs)
+  {
+  }
+
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
+  enum {
+    OFFSET_FOCAL_LENGTH_X = 0,
+    OFFSET_FOCAL_LENGTH_Y = 1,
+    OFFSET_PRINCIPAL_POINT_X = 2,
+    OFFSET_PRINCIPAL_POINT_Y = 3,
+    OFFSET_DISTO_CX02 = 4,
+    OFFSET_DISTO_CY02 = 5,
+    OFFSET_DISTO_CX22 = 6,
+    OFFSET_DISTO_CY22 = 7,
+    OFFSET_DISTO_CX04 = 8,
+    OFFSET_DISTO_CY04 = 9,
+    OFFSET_DISTO_CX24 = 10,
+    OFFSET_DISTO_CY24 = 11,
+    OFFSET_DISTO_CX44 = 12,
+    OFFSET_DISTO_CY44 = 13,
+    OFFSET_DISTO_PHI = 14,
+    OFFSET_DISTO_SQX = 15,
+    OFFSET_DISTO_SQY = 16,
+    OFFSET_DISTO_PS = 17
+  };
+
+  template <typename T>
+  void applyIntrinsicParameters(const T* const cam_K,
+                                const T x_u,
+                                const T y_u,
+                                T* out_residuals) const
+  {
+    const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
+    const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
+
+    // Apply distortion (xd,yd) = disto(x_u,y_u)
+    const T& cx02 = cam_K[OFFSET_DISTO_CX02];
+    const T& cy02 = cam_K[OFFSET_DISTO_CY02];
+    const T& cx22 = cam_K[OFFSET_DISTO_CX22];
+    const T& cy22 = cam_K[OFFSET_DISTO_CY22];
+    const T& cx04 = cam_K[OFFSET_DISTO_CX04];
+    const T& cy04 = cam_K[OFFSET_DISTO_CY04];
+    const T& cx24 = cam_K[OFFSET_DISTO_CX24];
+    const T& cy24 = cam_K[OFFSET_DISTO_CY24];
+    const T& cx44 = cam_K[OFFSET_DISTO_CX44];
+    const T& cy44 = cam_K[OFFSET_DISTO_CY44];
+    const T& phi = cam_K[OFFSET_DISTO_PHI];
+    const T& sqx = cam_K[OFFSET_DISTO_SQX];
+    const T& sqy = cam_K[OFFSET_DISTO_SQY];
+
+    const T cphi = cos(phi);
+    const T sphi = sin(phi);
+
+    const T cx_xx = cx02 + cx22;
+    const T cx_yy = cx02 - cx22;
+    const T cx_xxyy = 2.0 * cx04 - 6.0 * cx44;
+    const T cx_xxxx = cx04 + cx24 + cx44;
+    const T cx_yyyy = cx04 - cx24 + cx44;
+
+    const T cy_xx = cy02 + cy22;
+    const T cy_yy = cy02 - cy22;
+    const T cy_xxyy = 2.0 * cy04 - 6.0 * cy44;
+    const T cy_xxxx = cy04 + cy24 + cy44;
+    const T cy_yyyy = cy04 - cy24 + cy44;
+
+    const T x = x_u;
+    const T y = y_u;
+
+    const T xr = cphi* x + sphi * y;
+    const T yr = -sphi * x + cphi * y;
+
+    const T xx = xr * xr;
+    const T yy = yr * yr;
+    const T xxxx = xx * xx;
+    const T yyyy = yy * yy;
+    const T xxyy = xx * yy;
+
+    const T xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
+    const T yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
+
+    const T squizzed_x = xd * sqx;
+    const T squizzed_y = yd * sqy;
+
+    const T np_x = cphi* squizzed_x - sphi * squizzed_y;
+    const T np_y = sphi* squizzed_x + cphi * squizzed_y;
+
+    // Apply focal length and principal point to get the final image coordinates
+    const T projected_x = principal_point_x + focalX * np_x;
+    const T projected_y = principal_point_y + focalY * np_y;
+
+    // Compute and return the error is the difference between the predicted
+    //  and observed position
+    const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
+    out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
+    out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+  }
+
+  template <typename T>
+  bool operator()(
+    const T* const cam_K,
+    const T* const cam_Rt,
+    const T* const subpose_Rt,
+    const T* const pos_3dpoint,
+    T* out_residuals) const
+  {
+    //--
+    // Apply external parameters (Pose)
+    //--
+
+    T pos_proj[3];
+
+    {
+      const T* cam_R = cam_Rt;
+      const T* cam_t = &cam_Rt[3];
+
+      // Rotate the point according the camera rotation
+      ceres::AngleAxisRotatePoint(cam_R, pos_3dpoint, pos_proj);
+
+      // Apply the camera translation
+      pos_proj[0] += cam_t[0];
+      pos_proj[1] += cam_t[1];
+      pos_proj[2] += cam_t[2];
+    }
+
+    {
+      const T* cam_R = subpose_Rt;
+      const T* cam_t = &subpose_Rt[3];
+
+      // Rotate the point according to the camera rotation
+      T pos_proj_tmp[3] = { pos_proj[0], pos_proj[1], pos_proj[2] };
+      ceres::AngleAxisRotatePoint(cam_R, pos_proj_tmp, pos_proj);
+
+      // Apply the camera translation
+      pos_proj[0] += cam_t[0];
+      pos_proj[1] += cam_t[1];
+      pos_proj[2] += cam_t[2];
+    }
+
+    // Transform the point from homogeneous to euclidean (undistorted point)
+    const T x_u = pos_proj[0] / pos_proj[2];
+    const T y_u = pos_proj[1] / pos_proj[2];
+
+    //--
+    // Apply intrinsic parameters
+    //--
+
+    applyIntrinsicParameters(cam_K, x_u, y_u, out_residuals);
+
+    return true;
+  }
+
+  /**
+   * @param[in] cam_K: Camera intrinsics( focal, principal point [x,y] )
    * @param[in] cam_Rt: Camera parameterized using one block of 6 parameters [R;t]:
    *   - 3 for rotation(angle axis), 3 for translation
    * @param[in] pos_3dpoint
