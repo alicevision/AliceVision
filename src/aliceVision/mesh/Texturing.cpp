@@ -304,9 +304,9 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     }
     std::partial_sum(m.begin(), m.end(), m.begin());
 
-    ALICEVISION_LOG_INFO("Texturing in " + image::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
+    ALICEVISION_LOG_INFO("Texturing in " + image::EImageColorSpace_enumToString(texParams.workingColorSpace) + " colorspace.");
     mvsUtils::ImagesCache<image::Image<image::RGBfColor>> imageCache(
-                mp, texParams.processColorspace, texParams.correctEV);
+                mp, texParams.workingColorSpace, texParams.correctEV);
 
     imageCache.setCacheSize(2);
     ALICEVISION_LOG_INFO("Images loaded from cache with: " + ECorrectEV_enumToString(texParams.correctEV));
@@ -906,8 +906,8 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     image::writeImage(texturePath.string(), atlasTexture.img,
-                      image::ImageWriteOptions().fromColorSpace(texParams.processColorspace)
-                                                .toColorSpace(image::EImageColorSpace::AUTO)
+                      image::ImageWriteOptions().fromColorSpace(texParams.workingColorSpace)
+                                                .toColorSpace(texParams.outputColorSpace)
                                                 .storageDataType(image::EStorageDataType::Half));
 }
 
