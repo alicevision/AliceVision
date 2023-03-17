@@ -186,25 +186,41 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
 
 IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & transform)
 {
-    IndexT refViewId;
+    IndexT refViewId; 
     try
     {
         refViewId = sfm::getViewIdFromExpression(sfmData, transform);
+        if (!sfmData.isPoseAndIntrinsicDefined(refViewId))
+        {   
+            return UndefinedIndexT;
+        }
     }
     catch (...)
     {
         refViewId = UndefinedIndexT;
     }
 
+    //Default to select the view given timestamp
     if (refViewId == UndefinedIndexT)
     {
-        // Sort views per timestamps
+        // Sort views with poses per timestamps
         std::vector<std::pair<int64_t, IndexT>> sorted_views;
         for (auto v : sfmData.getViews()) {
+            if (!sfmData.isPoseAndIntrinsicDefined(v.first))
+            {   
+                continue;
+            }
+            
             int64_t t = v.second->getMetadataDateTimestamp();
             sorted_views.push_back(std::make_pair(t, v.first));
         }
         std::sort(sorted_views.begin(), sorted_views.end());
+
+        if (sorted_views.size() == 0)
+        {
+            return UndefinedIndexT;
+        }
+
 
         // Get the view which was taken at the middle of the sequence 
         int median = sorted_views.size() / 2;
@@ -296,6 +312,22 @@ int aliceVision_main(int argc, char **argv)
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
+    return EXIT_FAILURE;
+  }
+
+  //Check that at least one view has a defined pose
+  int count = 0;
+  for (const auto p : sfmData.getViews())
+  {
+    if(sfmData.isPoseAndIntrinsicDefined(p.first))
+    {
+        count++;
+    }
+  }
+
+  if (count == 0)
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' has no valid views with estimated poses");
     return EXIT_FAILURE;
   }
 
