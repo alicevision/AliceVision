@@ -5,7 +5,7 @@ option(ALICEVISION_BUILD_DEPENDENCIES "Build all AliceVision dependencies" OFF)
 set(AV_BUILD_DEPENDENCIES_PARALLEL 1
     CACHE STRING "Number of cores to use when building dependencies (0 - use the number of cores of the processor)")
 option(AV_BUILD_CUDA "Enable building an embedded Cuda" OFF)
-option(AV_BUILD_ZLIB "Enable building an embedded ZLIB" ON)
+option(AV_BUILD_ZLIB "Enable building an embedded ZLIB" OFF)
 option(AV_BUILD_ASSIMP "Enable building an embedded ASSIMP" ON)
 option(AV_BUILD_TIFF "Enable building an embedded Tiff" ON)
 option(AV_BUILD_JPEG "Enable building an embedded Jpeg" ON)
@@ -160,10 +160,12 @@ ExternalProject_Add(${ASSIMP_TARGET}
       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
       CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
           ${ASSIMP_BUILD_OPTIONS}
+          ${ZLIB_CMAKE_FLAGS}
           -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
           -DASSIMP_WARNINGS_AS_ERRORS=OFF
           -DASSIMP_BUILD_TESTS=OFF
           <SOURCE_DIR>
+      DEPENDS ${ZLIB_TARGET}
       )
 set(ASSIMP_CMAKE_FLAGS -DAssimp_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/assimp-${ASSIMP_AV_VERSION})
 endif()
