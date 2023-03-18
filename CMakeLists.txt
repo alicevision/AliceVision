@@ -179,8 +179,8 @@ elseif(UNIX)
 endif()
 set(GEOGRAM_TARGET geogram)
 ExternalProject_Add(${GEOGRAM_TARGET}
-       URL https://github.com/BrunoLevy/geogram/archive/v1.8.2.tar.gz
-       URL_HASH MD5=ae1c0e93a783bd46d1298649bb3f92e1
+       URL https://github.com/BrunoLevy/geogram/releases/download/v1.8.3/geogram_1.8.3.tar.gz
+       URL_HASH MD5=06fa5a70c05830d103ff71c55da5bb53
        DOWNLOAD_DIR ${BUILD_DIR}/download/geogram
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
