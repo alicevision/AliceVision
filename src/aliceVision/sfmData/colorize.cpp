@@ -65,7 +65,8 @@ void colorizeTracks(SfMData& sfmData)
   std::vector<LMColorAccumulator> landmarkInfo(sfmData.getLandmarks().size());
   const Views& views = sfmData.getViews();
 
-  #pragma omp parallel for
+  omp_set_nested(1);
+  #pragma omp parallel for num_threads(3)
   for( int viewIndex = 0; viewIndex < views.size(); ++viewIndex)
   {
       image::Image<image::RGBColor> image;
@@ -91,7 +92,7 @@ void colorizeTracks(SfMData& sfmData)
                 uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
                 const image::RGBColor obsColor = image(uv.y(), uv.x());
                 image::RGBfColor rgbf(obsColor.r(), obsColor.g(), obsColor.b());
-                #pragma omp critical
+                #pragma omp critical (i)
                 {
                     landmarkInfo.at(i).addRGB(rgbf, eucd);
                 }   
