@@ -58,7 +58,7 @@ cmake -P "external/src/suitesparse-stamp/download-suitesparse.cmake"
 cmake -P "external/src/tbb-stamp/download-tbb.cmake"
 cmake -P "external/src/tiff-stamp/download-tiff.cmake"
 cmake -P "external/src/turbojpeg-stamp/download-turbojpeg.cmake"
-cmake -P "external/src/zlib-stamp/download-zlib.cmake"
+# cmake -P "external/src/zlib-stamp/download-zlib.cmake"
 
 popd
 
