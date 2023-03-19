@@ -149,9 +149,8 @@ if(AV_BUILD_ASSIMP)
 set(ASSIMP_TARGET assimp)
 set(ASSIMP_BUILD_OPTIONS -DASSIMP_BUILD_ASSIMP_TOOLS:BOOL=OFF -DASSIMP_BUILD_TESTS:BOOL=OFF -DASSIMP_BUILD_DRACO:BOOL=ON)
 set(ASSIMP_AV_VERSION 5.2.5)
-set(ASSIMP_FILENAME v${ASSIMP_AV_VERSION}.tar.gz)
 ExternalProject_Add(${ASSIMP_TARGET}
-      URL https://github.com/assimp/assimp/archive/refs/tags/${ASSIMP_FILENAME}
+      URL https://github.com/assimp/assimp/archive/refs/tags/v5.2.5.tar.gz
       URL_HASH MD5=0b5a5a2714f1126b9931cdb95f512c91
       DOWNLOAD_DIR ${BUILD_DIR}/download/assimp
       PREFIX ${BUILD_DIR}
