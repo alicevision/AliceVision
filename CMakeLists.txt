@@ -663,7 +663,7 @@ if(AV_BUILD_VPX)
 set(VPX_TARGET libvpx)
 ExternalProject_add(${VPX_TARGET}
       GIT_REPOSITORY https://chromium.googlesource.com/webm/libvpx.git
-      GIT_TAG v1.12.0
+      GIT_TAG v1.13.0
       GIT_PROGRESS ON
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
