@@ -578,7 +578,7 @@ ExternalProject_Add(libraw_cmake
       )
 ExternalProject_Add(${LIBRAW_TARGET}
       GIT_REPOSITORY https://github.com/LibRaw/LibRaw
-      GIT_TAG 979160ff13c89e1158b1995975c23ed7497b6b62 # 0.21 released
+      GIT_TAG 0.21.1
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
