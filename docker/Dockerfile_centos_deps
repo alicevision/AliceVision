@@ -62,10 +62,11 @@ ENV PATH="/opt/rh/devtoolset-10/root/usr/bin:${PATH}" \
     MAKE=/opt/rh/devtoolset-10/root/usr/bin/make \
     CMAKE_VERSION=3.26.0
 
-
-
 COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
+
+COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
+RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh` && echo "Build multithreading number of cores: ${CPU_CORES}"
 
 # Manually install cmake
 WORKDIR /opt
@@ -73,13 +74,11 @@ COPY dl/cmake-${CMAKE_VERSION}.tar.gz /tmp
 RUN tar zxf /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
     rm /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
     cd cmake-${CMAKE_VERSION} && \
-    ./bootstrap --parallel="$(nproc)" --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && \
-    make -j"$(nproc)" && \
+    ./bootstrap --parallel=${CPU_CORES} --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && \
+    make -j ${CPU_CORES} && \
     make install
 
-
 COPY CMakeLists.txt ${AV_DEV}/
-COPY docker ${AV_DEV}/docker
 
 COPY dl/deps ${AV_BUILD}/external/download/
 
@@ -96,31 +95,31 @@ RUN mkdir -p "${AV_INSTALL}/lib" && \
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
-# RUN make -j"$(nproc)" cctag
-# RUN make -j"$(nproc)" openexr
-# RUN make -j"$(nproc)" tbb
-# RUN make -j"$(nproc)" assimp
-# RUN make -j"$(nproc)" zlib
-# RUN make -j"$(nproc)" geogram
-# RUN make -j"$(nproc)" eigen
-# RUN make -j"$(nproc)" opengv
-# RUN make -j"$(nproc)" lapack
-# RUN make -j"$(nproc)" suitesparse
-# RUN make -j"$(nproc)" ceres
-# RUN make -j"$(nproc)" tiff
-# RUN make -j"$(nproc)" png
-# RUN make -j"$(nproc)" turbojpeg
-# RUN make -j"$(nproc)" libraw
-# RUN make -j"$(nproc)" boost
-# RUN make -j"$(nproc)" openimageio
-# RUN make -j"$(nproc)" alembic
-# RUN make -j"$(nproc)" popsift
-# RUN make -j"$(nproc)" ffmpeg
-# RUN make -j"$(nproc)" opencv
-# RUN make -j"$(nproc)" expat
+# RUN make -j ${CPU_CORES} turbojpeg
+# RUN make -j ${CPU_CORES} boost
+# RUN make -j ${CPU_CORES} openexr
+# RUN make -j ${CPU_CORES} tbb
+# RUN make -j ${CPU_CORES} assimp
+# RUN make -j ${CPU_CORES} geogram
+# RUN make -j ${CPU_CORES} eigen
+# RUN make -j ${CPU_CORES} opengv
+# RUN make -j ${CPU_CORES} lapack
+# RUN make -j ${CPU_CORES} suitesparse
+# RUN make -j ${CPU_CORES} ceres
+# RUN make -j ${CPU_CORES} tiff
+# RUN make -j ${CPU_CORES} png
+# RUN make -j ${CPU_CORES} libraw
+# RUN make -j ${CPU_CORES} boost
+# RUN make -j ${CPU_CORES} openimageio
+# RUN make -j ${CPU_CORES} alembic
+# RUN make -j ${CPU_CORES} ffmpeg
+# RUN make -j ${CPU_CORES} opencv
+# RUN make -j ${CPU_CORES} expat
 
-RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
-    cmake --build . -j "${CPU_CORES}" && \
+# RUN make -j ${CPU_CORES} cctag
+# RUN make -j ${CPU_CORES} popsift
+
+RUN cmake --build . -j ${CPU_CORES} && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
     rm -rf "${AV_BUILD}"
 
