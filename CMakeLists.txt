@@ -537,8 +537,8 @@ if(AV_BUILD_JPEG)
 set(JPEG_TARGET turbojpeg)
 # Add turbojpeg
 ExternalProject_Add(${JPEG_TARGET}
-       URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.1.4.tar.gz
-       URL_HASH MD5=357dc26a802c34387512a42697846d16
+       URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.1.5.1.tar.gz
+       URL_HASH MD5=33f72421d83ba487ff7b5c81e8765185
        DOWNLOAD_DIR ${BUILD_DIR}/download/libjpeg-turbo
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
