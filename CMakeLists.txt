@@ -240,8 +240,8 @@ endif()
 # Add Tbb
 set(TBB_TARGET tbb)
 ExternalProject_Add(${TBB_TARGET}
-       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.7.0.tar.gz
-       URL_HASH MD5=68e617448f71df02d8688c84d53778f6
+       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
+       URL_HASH MD5=392421c6f33ebd00edb57eba36054da9
        DOWNLOAD_DIR ${BUILD_DIR}/download/tbb
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
