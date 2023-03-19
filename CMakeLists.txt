@@ -564,7 +564,7 @@ set(LIBRAW_TARGET libraw)
 # Add libraw
 ExternalProject_Add(libraw_cmake
       GIT_REPOSITORY https://github.com/LibRaw/LibRaw-cmake
-      GIT_TAG master
+      GIT_TAG 6e26c9e73677dc04f9eb236a97c6a4dc225ba7e8
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
