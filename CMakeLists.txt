@@ -679,8 +679,8 @@ endif()
 
 set(FFMPEG_TARGET ffmpeg)
 ExternalProject_add(${FFMPEG_TARGET}
-      URL http://ffmpeg.org/releases/ffmpeg-5.1.tar.bz2
-      URL_HASH MD5=0e5091837a9b950c81e1d5aaba281e51
+      URL http://ffmpeg.org/releases/ffmpeg-5.1.2.tar.bz2
+      URL_HASH MD5=53ce2a391fe1db4b5ce5c43b9ea9a814
       DOWNLOAD_DIR ${BUILD_DIR}/download/ffmpeg
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
