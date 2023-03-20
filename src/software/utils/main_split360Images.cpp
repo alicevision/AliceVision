@@ -251,7 +251,7 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
         // Override make and model in order to force camera model in SfM
         outMetadataSpec.attribute("Make",  "Custom");
         outMetadataSpec.attribute("Model", "Pinhole");
-        const float focal_mm = focal_px / splitResolution; // muliplied by sensorWidth (which is 1 for "Custom")
+        const float focal_mm = focal_px * (36.0 / splitResolution); // muliplied by sensorWidth (36mm by default)
         outMetadataSpec.attribute("Exif:FocalLength", focal_mm);
 
         // Make sure sub-folder exists for complete rig structure
@@ -308,12 +308,12 @@ bool splitEquirectangularPreview(const std::string& imagePath, const std::string
     const double alpha = twoPi / static_cast<double>(nbSplits);
 
     const double fov = degreeToRadian(fovDegree);
-    const double focal = (splitResolution / 2.0) / tan(fov / 2.0);
+    const double focal_px = (splitResolution / 2.0) / tan(fov / 2.0);
 
     double angle = 0.0;
     for(std::size_t i = 0; i < nbSplits; ++i)
     {
-        cameras.emplace_back(focal, splitResolution, splitResolution, RotationAroundY(angle));
+        cameras.emplace_back(focal_px, splitResolution, splitResolution, RotationAroundY(angle));
         angle += alpha;
     }
 
@@ -593,17 +593,17 @@ int aliceVision_main(int argc, char** argv)
     {
         // Initialize with dimensions, focal and camera model
         unsigned int width, height;
-        double focal;
+        double focal_px;
         camera::EINTRINSIC cameraModel;
         if (splitMode == "equirectangular")
         {
             // In this case, dimensions and field of view are user provided
             width = equirectangularSplitResolution;
             height = equirectangularSplitResolution;
-            focal = (equirectangularSplitResolution / 2.0) / tan(degreeToRadian(fov) / 2.0);
+            focal_px = (equirectangularSplitResolution / 2.0) / tan(degreeToRadian(fov) / 2.0);
 
             // By default, use a 3-parameter radial distortion model
-            cameraModel = camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3;
+            cameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
         }
         else if (splitMode == "dualfisheye")
         {
@@ -612,13 +612,22 @@ int aliceVision_main(int argc, char** argv)
             const auto& view = views.begin()->second;
             width = view->getWidth();
             height = view->getHeight();
-            focal = view->getMetadataFocalLength();
+            focal_px = view->getMetadataFocalLength() * (width / 36.0);
+            if (focal_px < 0)
+            {
+                // If there is no focal metadata, use a default field of view of 170 degrees
+                focal_px = (width / 2.0) / tan(degreeToRadian(170.0) / 2.0);
+            }
 
             // Use either a pinhole fisheye model or an equidistant model depending on user choice
             cameraModel = camera::EINTRINSIC_stringToEnum(dualFisheyeCameraModel);
         }
 
-        auto intrinsic = camera::createIntrinsic(cameraModel, width, height, focal, focal);
+        auto intrinsic = camera::createIntrinsic(cameraModel, width, height, focal_px, focal_px);
+
+        // Default sensor dimensions
+        intrinsic->setSensorWidth(36.0);
+        intrinsic->setSensorHeight(36.0);
 
         // Add intrinsic to SfMData
         // Note: intrinsic ID is 0, this convention is used in several places in this file
