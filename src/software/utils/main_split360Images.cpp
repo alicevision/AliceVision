@@ -97,7 +97,7 @@ double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0)
 
 bool splitDualFisheye(sfmData::SfMData& outSfmData,
                       const std::string& imagePath, const std::string& outputFolder, const std::string& extension,
-                      const std::string& splitPreset)
+                      const std::string& offsetPresetX, const std::string& offsetPresetY)
 {
     // Load source image from disk
     image::Image<image::RGBfColor> imageSource;
@@ -111,10 +111,12 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
     const int outSide = vertical
         ? std::min(imageSource.Height() / 2, imageSource.Width())
         : std::min(imageSource.Height(), imageSource.Width() / 2);
-    const int offset = vertical
-        ? std::abs(imageSource.Width() - (imageSource.Height() / 2))
-        : std::abs((imageSource.Width() / 2) - imageSource.Height());
-    const int halfOffset = offset / 2;
+    const int offset_x = vertical
+        ? (imageSource.Width() - outSide)
+        : ((imageSource.Width() / 2) - outSide);
+    const int offset_y = vertical
+        ? ((imageSource.Height() / 2) - outSide)
+        : (imageSource.Height() - outSide);
 
     // Make sure rig folder exists
     std::string rigFolder = outputFolder + "/rig";
@@ -123,32 +125,25 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
     for (std::size_t i = 0; i < 2; ++i)
     {
         // Retrieve corner position of cropping area
-        int xbegin, ybegin;
-        if (vertical)
+        int xbegin = vertical ? 0 : i * outSide;
+        int ybegin = vertical ? i * outSide : 0;
+
+        // Apply offset presets
+        if (offsetPresetX == "center")
         {
-            xbegin = 0;
-            ybegin = i * outSide;
-            if (splitPreset == "bottom")
-            {
-                xbegin += offset;
-            }
-            else if (splitPreset == "center")
-            {
-                xbegin += halfOffset;
-            }
+            xbegin += (offset_x / 2);
         }
-        else
+        else if (offsetPresetX == "right")
         {
-            xbegin = i * outSide;
-            ybegin = 0;
-            if (splitPreset == "bottom")
-            {
-                ybegin += offset;
-            }
-            else if (splitPreset == "center")
-            {
-                ybegin += halfOffset;
-            }
+            xbegin += offset_x;
+        }
+        if (offsetPresetY == "center")
+        {
+            ybegin += (offset_y / 2);
+        }
+        else if (offsetPresetY == "bottom")
+        {
+            ybegin += offset_y;
         }
 
         // Create new image containing the cropped area
@@ -373,7 +368,8 @@ int aliceVision_main(int argc, char** argv)
     std::string outputFolder;                   // output folder for splited images
     std::string outSfmDataFilepath;             // output SfMData file
     std::string splitMode;                      // split mode (dualfisheye, equirectangular)
-    std::string dualFisheyeSplitPreset;         // dual-fisheye split type preset
+    std::string dualFisheyeOffsetPresetX;       // dual-fisheye offset preset on X axis
+    std::string dualFisheyeOffsetPresetY;       // dual-fisheye offset preset on Y axis
     std::string dualFisheyeCameraModel;         // camera model (fisheye4 or equidistant_r3)
     std::size_t equirectangularNbSplits;        // nb splits for equirectangular image
     std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
@@ -395,8 +391,10 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("splitMode,m", po::value<std::string>(&splitMode)->default_value("equirectangular"),
         "Split mode (equirectangular, dualfisheye)")
-        ("dualFisheyeSplitPreset", po::value<std::string>(&dualFisheyeSplitPreset)->default_value("center"),
-        "Dual-Fisheye split type preset (center, top, bottom)")
+        ("dualFisheyeOffsetPresetX", po::value<std::string>(&dualFisheyeOffsetPresetX)->default_value("center"),
+        "Dual-Fisheye offset preset on X axis (left, center, right)")
+        ("dualFisheyeOffsetPresetY", po::value<std::string>(&dualFisheyeOffsetPresetY)->default_value("center"),
+        "Dual-Fisheye offset preset on Y axis (top, center, left)")
         ("dualFisheyeCameraModel", po::value<std::string>(&dualFisheyeCameraModel)->default_value("fisheye4"),
         "Dual-Fisheye camera model (fisheye4 or equidistant_r3)")
         ("equirectangularNbSplits", po::value<std::size_t>(&equirectangularNbSplits)->default_value(2),
@@ -445,16 +443,27 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    // Check dual-fisheye split preset
+    // Check dual-fisheye offset presets
     {
-        // dualFisheyeSplitPreset to lower
-        std::transform(dualFisheyeSplitPreset.begin(), dualFisheyeSplitPreset.end(), dualFisheyeSplitPreset.begin(), ::tolower);
+        // dualFisheyeOffsetPresetX to lower
+        std::transform(dualFisheyeOffsetPresetX.begin(), dualFisheyeOffsetPresetX.end(), dualFisheyeOffsetPresetX.begin(), ::tolower);
 
-        if (dualFisheyeSplitPreset != "top" &&
-            dualFisheyeSplitPreset != "bottom" &&
-            dualFisheyeSplitPreset != "center")
+        if (dualFisheyeOffsetPresetX != "left" &&
+            dualFisheyeOffsetPresetX != "right" &&
+            dualFisheyeOffsetPresetX != "center")
         {
-            ALICEVISION_LOG_ERROR("Invalid dual-fisheye split preset : " << dualFisheyeSplitPreset);
+            ALICEVISION_LOG_ERROR("Invalid dual-fisheye X offset preset : " << dualFisheyeOffsetPresetX);
+            return EXIT_FAILURE;
+        }
+
+        // dualFisheyeOffsetPresetY to lower
+        std::transform(dualFisheyeOffsetPresetY.begin(), dualFisheyeOffsetPresetY.end(), dualFisheyeOffsetPresetY.begin(), ::tolower);
+
+        if (dualFisheyeOffsetPresetY != "top" &&
+            dualFisheyeOffsetPresetY != "bottom" &&
+            dualFisheyeOffsetPresetY != "center")
+        {
+            ALICEVISION_LOG_ERROR("Invalid dual-fisheye Y offset preset : " << dualFisheyeOffsetPresetY);
             return EXIT_FAILURE;
         }
     }
@@ -557,7 +566,7 @@ int aliceVision_main(int argc, char** argv)
             hasCorrectPath =
                 splitDualFisheye(outSfmData,
                                  imagePath, outputFolder, extension,
-                                 dualFisheyeSplitPreset);
+                                 dualFisheyeOffsetPresetX, dualFisheyeOffsetPresetY);
         }
 
         if (!hasCorrectPath)
