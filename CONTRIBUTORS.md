@@ -6,6 +6,7 @@ The project is released under [MPLv2](LICENSE-MPL2.md).
 Individuals
 -----------
 
+- Candice Bentejac
 - Carsten Griwodz
 - Cenek Albl
 - Clement Aymard
@@ -19,6 +20,7 @@ Individuals
 - Jean Melou
 - Julien Haudegond
 - Lilian Calvet
+- Loic Vital
 - Michal Polic
 - Nicolas Rondaud
 - Pierre Gurdjos
