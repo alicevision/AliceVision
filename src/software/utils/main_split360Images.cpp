@@ -106,15 +106,14 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
     // Retrieve its metadata
     auto metadataSource = image::readImageMetadata(imagePath);
 
-    // Make sure image is horizontal
-    if(imageSource.Height() > imageSource.Width())
-    {
-        ALICEVISION_THROW_ERROR("Cannot split dual fisheye from the vertical image " << imagePath);
-    }
-
     // Retrieve useful dimensions for cropping
-    const int outSide = std::min(imageSource.Height(), imageSource.Width() / 2);
-    const int offset = std::abs((imageSource.Width() / 2) - imageSource.Height());
+    bool vertical = (imageSource.Height() > imageSource.Width());
+    const int outSide = vertical
+        ? std::min(imageSource.Height() / 2, imageSource.Width())
+        : std::min(imageSource.Height(), imageSource.Width() / 2);
+    const int offset = vertical
+        ? std::abs(imageSource.Width() - (imageSource.Height() / 2))
+        : std::abs((imageSource.Width() / 2) - imageSource.Height());
     const int halfOffset = offset / 2;
 
     // Make sure rig folder exists
@@ -124,16 +123,32 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
     for (std::size_t i = 0; i < 2; ++i)
     {
         // Retrieve corner position of cropping area
-        const int xbegin = i * outSide;
-        int ybegin = 0;
-
-        if (splitPreset == "bottom")
+        int xbegin, ybegin;
+        if (vertical)
         {
-            ybegin += offset;
+            xbegin = 0;
+            ybegin = i * outSide;
+            if (splitPreset == "bottom")
+            {
+                xbegin += offset;
+            }
+            else if (splitPreset == "center")
+            {
+                xbegin += halfOffset;
+            }
         }
-        else if (splitPreset == "center")
+        else
         {
-            ybegin += halfOffset;
+            xbegin = i * outSide;
+            ybegin = 0;
+            if (splitPreset == "bottom")
+            {
+                ybegin += offset;
+            }
+            else if (splitPreset == "center")
+            {
+                ybegin += halfOffset;
+            }
         }
 
         // Create new image containing the cropped area
