@@ -5,7 +5,7 @@ option(ALICEVISION_BUILD_DEPENDENCIES "Build all AliceVision dependencies" OFF)
 set(AV_BUILD_DEPENDENCIES_PARALLEL 1
     CACHE STRING "Number of cores to use when building dependencies (0 - use the number of cores of the processor)")
 option(AV_BUILD_CUDA "Enable building an embedded Cuda" OFF)
-option(AV_BUILD_ZLIB "Enable building an embedded ZLIB" ON)
+option(AV_BUILD_ZLIB "Enable building an embedded ZLIB" OFF)
 option(AV_BUILD_ASSIMP "Enable building an embedded ASSIMP" ON)
 option(AV_BUILD_TIFF "Enable building an embedded Tiff" ON)
 option(AV_BUILD_JPEG "Enable building an embedded Jpeg" ON)
@@ -19,6 +19,7 @@ option(AV_BUILD_OPENCV "Enable building an embedded OpenCV" ON)
 option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
 option(AV_BUILD_SUITESPARSE "Enable building an embedded SuiteSparse" ON)
 option(AV_BUILD_FFMPEG "Enable building an embedded FFMpeg" ON)
+option(AV_BUILD_VPX "Enable building an embedded libvpx required for ffmpeg" ON)
 option(AV_BUILD_COINUTILS "Enable building an embedded CoinUtils" ON)
 option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
@@ -77,6 +78,7 @@ message(STATUS "AV_BUILD_OPENCV: ${AV_BUILD_OPENCV}")
 message(STATUS "AV_BUILD_LAPACK: ${AV_BUILD_LAPACK}")
 message(STATUS "AV_BUILD_SUITESPARSE: ${AV_BUILD_SUITESPARSE}")
 message(STATUS "AV_BUILD_FFMPEG: ${AV_BUILD_FFMPEG}")
+message(STATUS "AV_BUILD_VPX: ${AV_BUILD_VPX}")
 message(STATUS "AV_USE_CUDA: ${AV_USE_CUDA}")
 message(STATUS "AV_USE_OPENMP: ${AV_USE_OPENMP}")
 message(STATUS "AV_BUILD_COINUTILS: ${AV_BUILD_COINUTILS}")
@@ -146,11 +148,10 @@ endif()
 if(AV_BUILD_ASSIMP)
 set(ASSIMP_TARGET assimp)
 set(ASSIMP_BUILD_OPTIONS -DASSIMP_BUILD_ASSIMP_TOOLS:BOOL=OFF -DASSIMP_BUILD_TESTS:BOOL=OFF -DASSIMP_BUILD_DRACO:BOOL=ON)
-set(ASSIMP_AV_VERSION 5.0.1)
-set(ASSIMP_FILENAME v${ASSIMP_AV_VERSION}.tar.gz)
+set(ASSIMP_AV_VERSION 5.2.5)
 ExternalProject_Add(${ASSIMP_TARGET}
-      URL https://github.com/assimp/assimp/archive/refs/tags/${ASSIMP_FILENAME}
-      URL_HASH MD5=eb7b7385a5c3194ab46d7f869d7ac6cf
+      URL https://github.com/assimp/assimp/archive/refs/tags/v5.2.5.tar.gz
+      URL_HASH MD5=0b5a5a2714f1126b9931cdb95f512c91
       DOWNLOAD_DIR ${BUILD_DIR}/download/assimp
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -160,8 +161,12 @@ ExternalProject_Add(${ASSIMP_TARGET}
       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
       CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
           ${ASSIMP_BUILD_OPTIONS}
+          ${ZLIB_CMAKE_FLAGS}
           -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+          -DASSIMP_WARNINGS_AS_ERRORS=OFF
+          -DASSIMP_BUILD_TESTS=OFF
           <SOURCE_DIR>
+      DEPENDS ${ZLIB_TARGET}
       )
 set(ASSIMP_CMAKE_FLAGS -DAssimp_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/assimp-${ASSIMP_AV_VERSION})
 endif()
@@ -177,8 +182,8 @@ elseif(UNIX)
 endif()
 set(GEOGRAM_TARGET geogram)
 ExternalProject_Add(${GEOGRAM_TARGET}
-       URL https://github.com/alicevision/geogram/archive/v1.7.9.tar.gz
-       URL_HASH MD5=dbdb9c1fd48ce277b570b0a23af3b518
+       URL https://github.com/BrunoLevy/geogram/releases/download/v1.8.3/geogram_1.8.3.tar.gz
+       URL_HASH MD5=06fa5a70c05830d103ff71c55da5bb53
        DOWNLOAD_DIR ${BUILD_DIR}/download/geogram
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -205,9 +210,11 @@ set(GEOGRAM_CMAKE_FLAGS -DGEOGRAM_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DGEOGR
 # Add Cuda
 if(AV_USE_CUDA AND AV_BUILD_CUDA)
 set(CUDA_TARGET cuda)
+set(CUDA_EXE cuda_12.0.0_525.60.13_linux.run)
 ExternalProject_Add(${CUDA_TARGET}
        # URL https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
-       URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
+       # URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
+       URL https://developer.download.nvidia.com/compute/cuda/12.0.0/local_installers/${CUDA_EXE}
        DOWNLOAD_NO_EXTRACT 1
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -218,7 +225,7 @@ ExternalProject_Add(${CUDA_TARGET}
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
        CONFIGURE_COMMAND ""
        BUILD_COMMAND ""
-       INSTALL_COMMAND sh ${BUILD_DIR}/src/cuda_9.2.88_396.26_linux --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
+       INSTALL_COMMAND sh ${BUILD_DIR}/src/${CUDA_EXE} --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
        )
 set(CUDA_CUDART_LIBRARY "")
 set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${CMAKE_INSTALL_PREFIX})
@@ -232,8 +239,8 @@ endif()
 # Add Tbb
 set(TBB_TARGET tbb)
 ExternalProject_Add(${TBB_TARGET}
-       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.5.0.tar.gz
-       URL_HASH MD5=5e5f2ee22a0d19c0abbe7478f1c7ccf6
+       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
+       URL_HASH MD5=392421c6f33ebd00edb57eba36054da9
        DOWNLOAD_DIR ${BUILD_DIR}/download/tbb
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -299,10 +306,11 @@ set(EIGEN_CMAKE_FLAGS
     -DEigen_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include/eigen3
     )
 
+# Add Expat: XML parser
 set(EXPAT_TARGET expat)
 ExternalProject_Add(${EXPAT_TARGET}
        GIT_REPOSITORY https://github.com/libexpat/libexpat.git
-       GIT_TAG R_2_4_8
+       GIT_TAG R_2_5_0
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -344,8 +352,8 @@ endif()
 if(AV_BUILD_LAPACK)
 set(LAPACK_TARGET lapack)
 ExternalProject_Add(${LAPACK_TARGET}
-       URL https://github.com/Reference-LAPACK/lapack/archive/v3.10.0.tar.gz
-       URL_HASH MD5=d70fc27a8bdebe00481c97c728184f09
+       URL https://github.com/Reference-LAPACK/lapack/archive/v3.11.0.tar.gz
+       URL_HASH MD5=595b064fd448b161cd711fe346f498a7
        DOWNLOAD_DIR ${BUILD_DIR}/download/lapack
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -380,8 +388,8 @@ ExternalProject_add(gmp
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
 )
 ExternalProject_add(mpfr
-      URL https://ftp.gnu.org/gnu/mpfr/mpfr-4.1.0.tar.gz
-      URL_HASH MD5=81a97a9ba03590f83a30d26d4400ce39
+      URL https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.0.tar.gz
+      URL_HASH MD5=279b527503118a22bd0022e0d64807cb
       DOWNLOAD_DIR ${BUILD_DIR}/download/mpfr
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -395,16 +403,14 @@ ExternalProject_add(mpfr
 
 set(SUITESPARSE_TARGET suitesparse)
 if(APPLE)
-    set(SUITESPARSE_INTERNAL_MAKE_CMD MPFR_ROOT=${CMAKE_INSTALL_PREFIX} GMP_ROOT=${CMAKE_INSTALL_PREFIX} DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
+    set(SUITESPARSE_INTERNAL_MAKE_CMD MPFR_ROOT=${CMAKE_INSTALL_PREFIX} GMP_ROOT=${CMAKE_INSTALL_PREFIX} DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}" ${LAPACK_CMAKE_FLAGS})
 else()
-    set(SUITESPARSE_INTERNAL_MAKE_CMD MPFR_ROOT=${CMAKE_INSTALL_PREFIX} GMP_ROOT=${CMAKE_INSTALL_PREFIX} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
+    set(SUITESPARSE_INTERNAL_MAKE_CMD VERBOSE=1 MPFR_ROOT=${CMAKE_INSTALL_PREFIX} GMP_ROOT=${CMAKE_INSTALL_PREFIX} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} BLAS_LIBRARIES="${BLAS_LIBRARIES}" BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}" LAPACK_LIBRARIES="${LAPACK_LIBRARIES}")
 endif()
 ExternalProject_Add(${SUITESPARSE_TARGET}
-       # URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.10.1.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
-       # URL_HASH MD5=1
-       GIT_REPOSITORY https://github.com/alicevision/SuiteSparse
-       GIT_TAG fix/gmp_mpfr  # based on v5.8.1
-       # DOWNLOAD_DIR ${BUILD_DIR}/download/suitesparse
+       URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v7.0.1.tar.gz
+       URL_HASH MD5=d31bbe2a26dced338b23e71f7c9b541a
+       DOWNLOAD_DIR ${BUILD_DIR}/download/suitesparse
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -413,9 +419,8 @@ ExternalProject_Add(${SUITESPARSE_TARGET}
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/suitesparse
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
        CONFIGURE_COMMAND ""
-       PATCH_COMMAND sh -c "test `nvcc --version | grep -o 'release [0-9]*' | grep -o '[0-9]*'` -gt 10" && sed -i /compute_30/d ${CMAKE_CURRENT_BINARY_DIR}/suitesparse/SuiteSparse_config/SuiteSparse_config.mk || true
-       BUILD_COMMAND   cd <BINARY_DIR> && ${SUITESPARSE_INTERNAL_MAKE_CMD} library CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
-       INSTALL_COMMAND cd <BINARY_DIR> && ${SUITESPARSE_INTERNAL_MAKE_CMD} install library INSTALL=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
+       BUILD_COMMAND   cd <BINARY_DIR> && ${SUITESPARSE_INTERNAL_MAKE_CMD} library CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CMAKE_OPTIONS=-DBLAS_LIBRARIES=${BLAS_LIBRARIES}\ -DLAPACK_LIBRARIES=${LAPACK_LIBRARIES}\ -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+       INSTALL_COMMAND cd <BINARY_DIR> && ${SUITESPARSE_INTERNAL_MAKE_CMD} install library INSTALL=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CMAKE_OPTIONS=-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
        DEPENDS ${LAPACK_TARGET} mpfr
        )
 set(SUITESPARSE_CMAKE_FLAGS ${LAPACK_CMAKE_FLAGS} -DSUITESPARSE_INCLUDE_DIR_HINTS=${CMAKE_INSTALL_PREFIX}/include -DSUITESPARSE_LIBRARY_DIR_HINTS=${CMAKE_INSTALL_PREFIX}/lib)
@@ -425,7 +430,7 @@ endif()
 set(CERES_TARGET ceres)
 ExternalProject_Add(${CERES_TARGET}
        GIT_REPOSITORY https://github.com/ceres-solver/ceres-solver
-       GIT_TAG 31008453fe979f947e594df15a7e254d6631881b  # 2021/10/06
+       GIT_TAG a3a062d72cc8c0f5f1f09b36d8b7c1ea3bef4d73  # 2022/12/19
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -451,8 +456,8 @@ set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} -DCeres_DIR=${CMAKE_INSTALL_PRE
 set(OPENEXR_TARGET openexr)
 ExternalProject_Add(${OPENEXR_TARGET}
       # vfxplatform CY2022: 3.1.x
-      URL https://github.com/AcademySoftwareFoundation/openexr/archive/v3.1.2.tar.gz
-      URL_HASH MD5=2e976f5fb610abb6f75d8f20014cf72a
+      URL https://github.com/AcademySoftwareFoundation/openexr/archive/v3.1.6.tar.gz
+      URL_HASH MD5=da5daf4d7954c034921e7201bf815938
       DOWNLOAD_DIR ${BUILD_DIR}/download/openexr
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -479,8 +484,8 @@ set(OPENEXR_CMAKE_FLAGS ${ILMBASE_CMAKE_FLAGS} -DOPENEXR_ROOT=${CMAKE_INSTALL_PR
 if(AV_BUILD_TIFF)
 set(TIFF_TARGET tiff)
 ExternalProject_Add(${TIFF_TARGET}
-       URL http://download.osgeo.org/libtiff/tiff-4.3.0.tar.gz
-       URL_HASH MD5=0a2e4744d1426a8fc8211c0cdbc3a1b3
+       URL http://download.osgeo.org/libtiff/tiff-4.5.0.tar.gz
+       URL_HASH MD5=db9e220a1971acc64487f1d51a20dcaa
        DOWNLOAD_DIR ${BUILD_DIR}/download/tiff
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -505,8 +510,8 @@ if(AV_BUILD_PNG)
     endif()
     set(PNG_TARGET png)
     ExternalProject_Add(${PNG_TARGET}
-           URL https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
-           URL_HASH MD5=6c7519f6c75939efa0ed3053197abd54
+           URL https://download.sourceforge.net/libpng/libpng-1.6.39.tar.gz
+           URL_HASH MD5=93b8e79a008747e70f7704f600349559
            DOWNLOAD_DIR ${BUILD_DIR}/download/libpng
            PREFIX ${BUILD_DIR}
            BUILD_IN_SOURCE 0
@@ -531,8 +536,8 @@ if(AV_BUILD_JPEG)
 set(JPEG_TARGET turbojpeg)
 # Add turbojpeg
 ExternalProject_Add(${JPEG_TARGET}
-       URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.1.1.tar.gz
-       URL_HASH MD5=167d52e2348b6f1af33c70f63197edd8
+       URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.1.5.1.tar.gz
+       URL_HASH MD5=33f72421d83ba487ff7b5c81e8765185
        DOWNLOAD_DIR ${BUILD_DIR}/download/libjpeg-turbo
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -558,7 +563,7 @@ set(LIBRAW_TARGET libraw)
 # Add libraw
 ExternalProject_Add(libraw_cmake
       GIT_REPOSITORY https://github.com/LibRaw/LibRaw-cmake
-      GIT_TAG master
+      GIT_TAG 6e26c9e73677dc04f9eb236a97c6a4dc225ba7e8
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -571,9 +576,8 @@ ExternalProject_Add(libraw_cmake
       INSTALL_COMMAND ""
       )
 ExternalProject_Add(${LIBRAW_TARGET}
-      #URL https://github.com/LibRaw/LibRaw/archive/0.20.0.tar.gz
       GIT_REPOSITORY https://github.com/LibRaw/LibRaw
-      GIT_TAG 9c861fd72f3961167ef55b037d7ce16056dd32d8 # specific commit on the 2021.09.16
+      GIT_TAG 0.21.1
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -653,9 +657,12 @@ if(AV_BUILD_FFMPEG)
 #                  -DCMAKE_PROJECT_NAME=x265 -DENABLE_SHARED:bool=ON -DENABLE_PIC:bool=ON
 #       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
 # )
-ExternalProject_add(libvpx
+
+if(AV_BUILD_VPX)
+set(VPX_TARGET libvpx)
+ExternalProject_add(${VPX_TARGET}
       GIT_REPOSITORY https://chromium.googlesource.com/webm/libvpx.git
-      GIT_TAG v1.10.0
+      GIT_TAG v1.13.0
       GIT_PROGRESS ON
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -667,10 +674,12 @@ ExternalProject_add(libvpx
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
 )
 
+endif()
+
 set(FFMPEG_TARGET ffmpeg)
 ExternalProject_add(${FFMPEG_TARGET}
-      URL http://ffmpeg.org/releases/ffmpeg-4.4.tar.bz2
-      URL_HASH MD5=aa46d2168f30becd4fd3b22d2e8a91ec
+      URL http://ffmpeg.org/releases/ffmpeg-5.1.2.tar.bz2
+      URL_HASH MD5=53ce2a391fe1db4b5ce5c43b9ea9a814
       DOWNLOAD_DIR ${BUILD_DIR}/download/ffmpeg
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -693,15 +702,15 @@ ExternalProject_add(${FFMPEG_TARGET}
             # --enable-libx264 # gpl
             # --enable-libx265 # gpl
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-      DEPENDS libvpx
+      DEPENDS ${VPX_TARGET}
 )
 endif()
 
 # Add OpenImageIO
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
-      URL https://github.com/OpenImageIO/oiio/archive/refs/tags/v2.3.7.2.tar.gz
-      URL_HASH MD5=3a6fe4e0b45e611dad378f99b44a696b
+      URL https://github.com/OpenImageIO/oiio/archive/refs/tags/v2.4.9.0.tar.gz
+      URL_HASH MD5=7da92a7d6029921a8599a977ff1efa2a
       DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -739,8 +748,8 @@ set(OPENIMAGEIO_CMAKE_FLAGS -DOpenImageIO_DIR=${CMAKE_INSTALL_PREFIX})
 set(ALEMBIC_TARGET alembic)
 ExternalProject_Add(${ALEMBIC_TARGET}
       # vfxplatform CY2022 1.8.x
-      URL https://github.com/alembic/alembic/archive/1.8.3.tar.gz
-      URL_HASH MD5=2cd8d6e5a3ac4a014e24a4b04f4fadf9
+      URL https://github.com/alembic/alembic/archive/1.8.5.tar.gz
+      URL_HASH MD5=fcd5b5492a005057e11b601b60ac9a49
       DOWNLOAD_DIR ${BUILD_DIR}/download/alembic
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -762,8 +771,8 @@ set(ALEMBIC_CMAKE_FLAGS -DAlembic_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/Ale
 if(AV_BUILD_OPENCV)
 set(OPENCV_TARGET opencv)
 ExternalProject_Add(opencv_contrib
-  URL https://github.com/opencv/opencv_contrib/archive/4.5.3.zip
-  URL_MD5 bdf41b61fbb998e118ffd2e81437d44f
+  URL https://github.com/opencv/opencv_contrib/archive/4.7.0.zip
+  URL_HASH MD5=a3969f1db6732340e492c0323178f6f1
   DOWNLOAD_DIR ${BUILD_DIR}/download/opencv_contrib
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
   BUILD_ALWAYS 0
@@ -774,8 +783,8 @@ ExternalProject_Add(opencv_contrib
 )
 ExternalProject_Add(${OPENCV_TARGET}
   DEPENDS opencv_contrib ${TBB_TARGET} ${ZLIB_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${FFMPEG_TARGET}
-  URL https://github.com/opencv/opencv/archive/4.5.3.zip
-  URL_MD5 e4e25de494ba3dfb676c9f51d7c853fb
+  URL https://github.com/opencv/opencv/archive/4.7.0.zip
+  URL_HASH MD5=481a9ee5b0761978832d02d8861b8156
   DOWNLOAD_DIR ${BUILD_DIR}/download/opencv
   UPDATE_COMMAND ""
   BUILD_IN_SOURCE 0
@@ -848,10 +857,8 @@ endif()
 if(AV_BUILD_APRILTAG)
 set(APRILTAG_TARGET apriltag)
 ExternalProject_Add(${APRILTAG_TARGET}
-      # GIT_REPOSITORY https://github.com/AprilRobotics/apriltag
-      # GIT_TAG v3.1.7
-      GIT_REPOSITORY https://github.com/alicevision/apriltag.git
-      GIT_TAG 25ccfab4230a35fb000814c9c1749d9902173012  # commit 2021/10/26
+      GIT_REPOSITORY https://github.com/AprilRobotics/apriltag
+      GIT_TAG v3.2.0
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -893,26 +900,6 @@ ExternalProject_Add(${POPSIFT_TARGET}
       )
 set(POPSIFT_CMAKE_FLAGS -DPopSift_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/PopSift)
 endif()
-
-# Add Expat: XML parser
-set(EXPAT_TARGET expat)
-ExternalProject_Add(${EXPAT_TARGET}
-      # vfxplatform CY2022 1.8.x
-      URL https://github.com/libexpat/libexpat/releases/tag/R_2_4_8/expat-2.4.8.tar.gz
-      URL_HASH MD5=CE5FA3FA4D866D83AB0CFB00BB95B77A
-      DOWNLOAD_DIR ${BUILD_DIR}/download/expat
-      PREFIX ${BUILD_DIR}
-      BUILD_IN_SOURCE 0
-      BUILD_ALWAYS 0
-      UPDATE_COMMAND ""
-      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/expat
-      BINARY_DIR ${BUILD_DIR}/expat_build
-      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-      CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
-      BUILD_COMMAND $(MAKE)
-      #DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${ZLIB_TARGET}
-      )
-set(EXPAT_CMAKE_FLAGS -DExpat_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/Expat)
 
 if(AV_BUILD_COINUTILS)
 set(COINUTILS_TARGET coinutils)
@@ -1028,8 +1015,8 @@ if(AV_BUILD_PCL)
     # add point cloud library
     set(PCL_TARGET pcl)
     ExternalProject_Add(${PCL_TARGET}
-            URL https://github.com/PointCloudLibrary/pcl/archive/refs/tags/pcl-1.12.1.tar.gz
-            URL_MD5 eb1be79330872f9674c9850bb35023bf
+            URL https://github.com/PointCloudLibrary/pcl/archive/refs/tags/pcl-1.13.0.tar.gz
+            URL_HASH MD5=987a5f6e440407a2bcae10c1022568b0
             DOWNLOAD_DIR ${BUILD_DIR}/download/${PCL_TARGET}
             PREFIX ${BUILD_DIR}
             BUILD_IN_SOURCE 0

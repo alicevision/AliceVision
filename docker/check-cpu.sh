@@ -10,9 +10,9 @@
 
 NPROC=$(nproc)
 
-FREE_RAM=$(awk '/^MemAvailable:/{printf("%d",$2/1024/1024)}' /proc/meminfo)
+FREE_MEM=$(awk '/^MemAvailable:/{printf("%d",$2/1024/1024)}' /proc/meminfo)
 
->&2 echo "THe amount of available memory on the system is ${FREE_MEM} GB" 
+>&2 echo "The amount of available memory on the system is ${FREE_MEM} GB" 
 
 # Arbitrary minimum of RAM per process
 MIN_RAM_PER_CORE=2

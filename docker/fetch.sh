@@ -18,8 +18,8 @@ test -d dl || \
         mkdir dl
 test -f dl/vlfeat_K80L3.SIFT.tree || \
         wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree -O dl/vlfeat_K80L3.SIFT.tree
-export CMAKE_VERSION=3.21.3
-export CMAKE_VERSION_MM=3.21
+export CMAKE_VERSION=3.26.0
+export CMAKE_VERSION_MM=3.26
 test -f dl/cmake-${CMAKE_VERSION}.tar.gz || \
         wget https://cmake.org/files/v${CMAKE_VERSION_MM}/cmake-${CMAKE_VERSION}.tar.gz -O dl/cmake-${CMAKE_VERSION}.tar.gz
 test -d  dl/deps || \
@@ -52,12 +52,13 @@ cmake -P "external/src/mpfr-stamp/download-mpfr.cmake"
 cmake -P "external/src/openexr-stamp/download-openexr.cmake"
 # cmake -P "external/src/opengv-stamp/download-opengv.cmake"
 cmake -P "external/src/openimageio-stamp/download-openimageio.cmake"
+cmake -P "external/src/pcl-stamp/download-pcl.cmake"
 cmake -P "external/src/png-stamp/download-png.cmake"
-# cmake -P "external/src/suitesparse-stamp/download-suitesparse.cmake"
+cmake -P "external/src/suitesparse-stamp/download-suitesparse.cmake"
 cmake -P "external/src/tbb-stamp/download-tbb.cmake"
 cmake -P "external/src/tiff-stamp/download-tiff.cmake"
 cmake -P "external/src/turbojpeg-stamp/download-turbojpeg.cmake"
-cmake -P "external/src/zlib-stamp/download-zlib.cmake"
+# cmake -P "external/src/zlib-stamp/download-zlib.cmake"
 
 popd
 
