@@ -469,9 +469,8 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    // Gather filepaths of all images to process
     std::vector<std::string> imagePaths;
-    std::vector<std::string> badPaths;
-
     {
         const fs::path path = fs::absolute(inputPath);
         if (fs::exists(path))
@@ -563,17 +562,8 @@ int aliceVision_main(int argc, char** argv)
 
         if (!hasCorrectPath)
         {
-            #pragma omp critical (split360Images_badPaths)
-            badPaths.push_back(imagePath);
+            ALICEVISION_LOG_ERROR("Error: Failed to process image " << imagePath);
         }
-    }
-
-    // Log filepath for images that could not be split
-    if (!badPaths.empty())
-    {
-        ALICEVISION_LOG_ERROR("Error: Can't open image file(s) below");
-        for (const std::string& imagePath : imagePaths)
-            ALICEVISION_LOG_ERROR("\t - " << imagePath);
     }
 
 
