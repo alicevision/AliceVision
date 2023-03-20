@@ -10,6 +10,7 @@
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
@@ -157,7 +158,7 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
             auto view = std::make_shared<sfmData::View>(
                 /* image path */  subFolder + std::string("/") + filename,
                 /* viewId */      viewId,
-                /* intrinsicId */ UndefinedIndexT,
+                /* intrinsicId */ 0,
                 /* poseId */      UndefinedIndexT,
                 /* width */       outSide,
                 /* height */      outSide,
@@ -257,7 +258,7 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
             auto view = std::make_shared<sfmData::View>(
                 /* image path */  subFolder + std::string("/") + filename,
                 /* viewId */      viewId,
-                /* intrinsicId */ UndefinedIndexT,
+                /* intrinsicId */ 0,
                 /* poseId */      UndefinedIndexT,
                 /* width */       splitResolution,
                 /* height */      splitResolution,
@@ -356,8 +357,9 @@ int aliceVision_main(int argc, char** argv)
     std::string inputPath;                      // media file path list or SfMData file
     std::string outputFolder;                   // output folder for splited images
     std::string outSfmDataFilepath;             // output SfMData file
-    std::string splitMode;                      // split mode (exif, dualfisheye, equirectangular)
+    std::string splitMode;                      // split mode (dualfisheye, equirectangular)
     std::string dualFisheyeSplitPreset;         // dual-fisheye split type preset
+    std::string dualFisheyeCameraModel;         // camera model (fisheye4 or equidistant_r3)
     std::size_t equirectangularNbSplits;        // nb splits for equirectangular image
     std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
     bool equirectangularPreviewMode = false;
@@ -380,6 +382,8 @@ int aliceVision_main(int argc, char** argv)
         "Split mode (equirectangular, dualfisheye)")
         ("dualFisheyeSplitPreset", po::value<std::string>(&dualFisheyeSplitPreset)->default_value("center"),
         "Dual-Fisheye split type preset (center, top, bottom)")
+        ("dualFisheyeCameraModel", po::value<std::string>(&dualFisheyeCameraModel)->default_value("fisheye4"),
+        "Dual-Fisheye camera model (fisheye4 or equidistant_r3)")
         ("equirectangularNbSplits", po::value<std::size_t>(&equirectangularNbSplits)->default_value(2),
         "Equirectangular number of splits")
         ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
@@ -418,8 +422,7 @@ int aliceVision_main(int argc, char** argv)
         // splitMode to lower
         std::transform(splitMode.begin(), splitMode.end(), splitMode.begin(), ::tolower);
 
-        if (splitMode != "exif" &&
-            splitMode != "equirectangular" &&
+        if (splitMode != "equirectangular" &&
             splitMode != "dualfisheye")
         {
             ALICEVISION_LOG_ERROR("Invalid split mode : " << splitMode);
@@ -437,6 +440,16 @@ int aliceVision_main(int argc, char** argv)
             dualFisheyeSplitPreset != "center")
         {
             ALICEVISION_LOG_ERROR("Invalid dual-fisheye split preset : " << dualFisheyeSplitPreset);
+            return EXIT_FAILURE;
+        }
+    }
+
+    // Check dual-fisheye camera model
+    {
+        if (dualFisheyeCameraModel != "fisheye4" &&
+            dualFisheyeCameraModel != "equidistant_r3")
+        {
+            ALICEVISION_LOG_ERROR("Invalid dual-fisheye camera model : " << dualFisheyeCameraModel);
             return EXIT_FAILURE;
         }
     }
@@ -491,24 +504,18 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+
     // Output SfMData is constituted of:
     // - a rig
+    // - an intrinsic
     // - a view for each extracted image
     // - all views are part of the rig
     // - their sub-pose ID corresponds to the extraction order
+    // - all views have the same intrinsic
     sfmData::SfMData outSfmData;
 
-    // Initialize rig
-    const unsigned int nbSubPoses =
-        (splitMode == "equirectangular") ? equirectangularNbSplits : 2;
-    sfmData::Rig rig(nbSubPoses);
 
-    // Add rig to SfMData
-    // Note: rig ID is 0, this convention is used in several places in this file
-    auto& rigs = outSfmData.getRigs();
-    rigs[0] = rig;
-
-    // Process images
+    // Split images to create views
     #pragma omp parallel for num_threads(nbThreads)
     for (int i = 0; i < imagePaths.size(); ++i)
     {
@@ -538,10 +545,6 @@ int aliceVision_main(int argc, char** argv)
                                  imagePath, outputFolder, extension,
                                  dualFisheyeSplitPreset);
         }
-        else //exif
-        {
-            ALICEVISION_LOG_ERROR("Exif mode not implemented yet !");
-        }
 
         if (!hasCorrectPath)
         {
@@ -557,6 +560,67 @@ int aliceVision_main(int argc, char** argv)
         for (const std::string& imagePath : imagePaths)
             ALICEVISION_LOG_ERROR("\t - " << imagePath);
     }
+
+
+    // Rig
+    {
+        // Initialize with number of sub-poses
+        unsigned int nbSubPoses;
+        if (splitMode == "equirectangular")
+        {
+            nbSubPoses = equirectangularNbSplits;
+        }
+        else if (splitMode == "dualfisheye")
+        {
+            nbSubPoses = 2;
+        }
+
+        sfmData::Rig rig(nbSubPoses);
+
+        // Add rig to SfMData
+        // Note: rig ID is 0, this convention is used in several places in this file
+        auto& rigs = outSfmData.getRigs();
+        rigs[0] = rig;
+    }
+
+
+    // Intrinsic
+    {
+        // Initialize with dimensions, focal and camera model
+        unsigned int width, height;
+        double focal;
+        camera::EINTRINSIC cameraModel;
+        if (splitMode == "equirectangular")
+        {
+            // In this case, dimensions and field of view are user provided
+            width = equirectangularSplitResolution;
+            height = equirectangularSplitResolution;
+            focal = (equirectangularSplitResolution / 2.0) / tan(degreeToRadian(fov) / 2.0);
+
+            // By default, use a 3-parameter radial distortion model
+            cameraModel = camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3;
+        }
+        else if (splitMode == "dualfisheye")
+        {
+            // Retrieve dimensions and focal length from the views metadata as they are not user provided
+            const auto& views = outSfmData.getViews();
+            const auto& view = views.begin()->second;
+            width = view->getWidth();
+            height = view->getHeight();
+            focal = view->getMetadataFocalLength();
+
+            // Use either a pinhole fisheye model or an equidistant model depending on user choice
+            cameraModel = camera::EINTRINSIC_stringToEnum(dualFisheyeCameraModel);
+        }
+
+        auto intrinsic = camera::createIntrinsic(cameraModel, width, height, focal, focal);
+
+        // Add intrinsic to SfMData
+        // Note: intrinsic ID is 0, this convention is used in several places in this file
+        auto& intrinsics = outSfmData.getIntrinsics();
+        intrinsics[0] = intrinsic;
+    }
+
 
     // Save sfmData with modified path to images
     if(!sfmDataIO::Save(outSfmData, outSfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
