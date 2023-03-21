@@ -151,7 +151,7 @@ int aliceVision_main(int argc, char* argv[])
         "SfMData file input.")
         ("checkerboards", po::value<std::string>(&checkerBoardsPath)->required(),
         "Checkerboards json files directory.")
-        ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
+        ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
         "SfMData file output.");
     
     po::options_description optionalParams("Optional parameters");
