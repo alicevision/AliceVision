@@ -226,16 +226,16 @@ Vec2 Distortion3DEAnamorphic4::addDistortion(const Vec2 & p) const
 
     const double cy_xx = cy02 + cy22;
     const double cy_yy = cy02 - cy22;
-    const double cy_xxyy = cy04 + cy24 + cy44;
-    const double cy_xxxx = 2 * cy04 - 6 * cy44;
+    const double cy_xxyy = 2 * cy04 - 6 * cy44;
+    const double cy_xxxx = cy04 + cy24 + cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
     const double& x = p.x();
     const double& y = p.y();
 
     // First rotate axis
-    double xr = cphi* x + sphi * y;
-    double yr = -sphi * x + cphi * y;
+    const double xr = cphi* x + sphi * y;
+    const double yr = -sphi * x + cphi * y;
 
     const double xx = xr * xr;
     const double yy = yr * yr;
