@@ -131,7 +131,80 @@ __device__ static void computeRotCSEpip(int rcDeviceCamId, int tcDeviceCamId, Pa
     normalize(ptch.x);
 }
 
-__device__ static inline int angleBetwUnitV1andUnitV2(float3& V1, float3& V2)
+__device__ inline float computePixSize(int deviceCameraParamsId, const float3& p)
+{
+    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCameraParamsId];
+
+    float2 rp = project3DPoint(deviceCamParams.P, p);
+    float2 rp1 = rp + make_float2(1.0f, 0.0f);
+
+    float3 refvect = M3x3mulV2(deviceCamParams.iP, rp1);
+    normalize(refvect);
+    return pointLineDistance3D(p, deviceCamParams.C, refvect);
+}
+
+__device__ inline void computeRcTcMipmapLevels(float& out_rcMipmapLevel,
+                                               float& out_tcMipmapLevel,
+                                               const float mipmapLevel,
+                                               const DeviceCameraParams& rcDeviceCamParams,
+                                               const DeviceCameraParams& tcDeviceCamParams,
+                                               const float2& rp0,
+                                               const float2& tp0,
+                                               const float3& p0)
+{
+    // get p0 depth from the R camera
+    const float rcDepth = size(rcDeviceCamParams.C - p0);
+
+    // get p0 depth from the T camera
+    const float tcDepth = size(tcDeviceCamParams.C - p0);
+
+    // get R p0 corresponding pixel + 1x
+    const float2 rp1 = rp0 + make_float2(1.f, 0.f);
+
+    // get T p0 corresponding pixel + 1x
+    const float2 tp1 = tp0 + make_float2(1.f, 0.f);
+
+    // get rp1 3d point
+    float3 rpv = M3x3mulV2(rcDeviceCamParams.iP, rp1);
+    normalize(rpv);
+    const float3 prp1 = rcDeviceCamParams.C + rpv * rcDepth;
+
+    // get tp1 3d point
+    float3 tpv = M3x3mulV2(tcDeviceCamParams.iP, tp1);
+    normalize(tpv);
+    const float3 ptp1 = tcDeviceCamParams.C + tpv * tcDepth;
+
+    // compute 3d distance between p0 and rp1 3d point
+    const float rcDist = dist(p0, prp1);
+
+    // compute 3d distance between p0 and tp1 3d point
+    const float tcDist = dist(p0, ptp1);
+
+    // compute Rc/Tc distance factor
+    const float distFactor = rcDist / tcDist;
+
+    // set output R and T mipmap level
+    if(distFactor < 1.f)
+    {
+        // T camera has a lower resolution (1 Rc pixSize < 1 Tc pixSize)
+        out_tcMipmapLevel = mipmapLevel - log2(1.f / distFactor);
+
+        if(out_tcMipmapLevel < 0.f)
+        {
+          out_rcMipmapLevel = mipmapLevel + abs(out_tcMipmapLevel);
+          out_tcMipmapLevel = 0.f;
+        }
+
+    }
+    else
+    {
+        // T camera has a higher resolution (1 Rc pixSize > 1 Tc pixSize)
+        out_rcMipmapLevel = mipmapLevel;
+        out_tcMipmapLevel = mipmapLevel + log2(distFactor);
+    }
+}
+
+__device__ inline int angleBetwUnitV1andUnitV2(float3& V1, float3& V2)
 {
     return (int)fabs(acos(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (CUDART_PI_F / 180.0f));
 }
@@ -272,18 +345,18 @@ __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
                                          const unsigned int rcLevelHeight,
                                          const unsigned int tcLevelWidth,
                                          const unsigned int tcLevelHeight,
-                                         const float rcMipmapLevel,
+                                         const float mipmapLevel,
                                          const int wsh,
                                          const float gammaC,
                                          const float gammaP,
+                                         const bool useMultiScalePatch,
                                          const Patch& patch)
 {
     const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
     const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
 
-    float3 p = patch.p;
-    const float2 rp = project3DPoint(rcDeviceCamParams.P, p);
-    const float2 tp = project3DPoint(tcDeviceCamParams.P, p);
+    const float2 rp = project3DPoint(rcDeviceCamParams.P, patch.p);
+    const float2 tp = project3DPoint(tcDeviceCamParams.P, patch.p);
 
     const float dd = wsh + 2.0f; // TODO FACA
     if((rp.x < dd) || (rp.x > float(rcLevelWidth - 1) - dd) || (rp.y < dd) || (rp.y > float(rcLevelHeight - 1) - dd) ||
@@ -299,12 +372,16 @@ __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
     const float tcInvLevelWidth  = 1.f / float(tcLevelWidth);
     const float tcInvLevelHeight = 1.f / float(tcLevelHeight);
 
+    // compute R and T mipmap image level
+    float rcMipmapLevel = mipmapLevel;
+    float tcMipmapLevel = mipmapLevel;
+
+    // multi scale patch comparison
+    if(useMultiScalePatch)
+      computeRcTcMipmapLevels(rcMipmapLevel, tcMipmapLevel, mipmapLevel, rcDeviceCamParams, tcDeviceCamParams, rp, tp, patch.p);
+
     const float4 gcr = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel);
-    const float4 gct = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, rcMipmapLevel);
-
-    assert(gcr.x < 256.f);
-    assert(gct.x < 256.f);
-
+    const float4 gct = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel);
 
     // check the alpha values of the patch pixel center of R and T cameras
     // for the R camera, alpha should be at least 0.9f (computation area)
@@ -319,12 +396,13 @@ __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
     {
         for(int xp = -wsh; xp <= wsh; xp++)
         {
-            p = patch.p + patch.x * float(patch.d * float(xp)) + patch.y * float(patch.d * float(yp));
+            float3 p = patch.p + patch.x * float(patch.d * float(xp)) + patch.y * float(patch.d * float(yp));
+
             const float2 rp1 = project3DPoint(rcDeviceCamParams.P, p);
             const float2 tp1 = project3DPoint(tcDeviceCamParams.P, p);
 
             const float4 gcr1 = tex2DLod<float4>(rcMipmapImage_tex, (rp1.x + 0.5f) * rcInvLevelWidth, (rp1.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel);
-            const float4 gct1 = tex2DLod<float4>(tcMipmapImage_tex, (tp1.x + 0.5f) * tcInvLevelWidth, (tp1.y + 0.5f) * tcInvLevelHeight, rcMipmapLevel);
+            const float4 gct1 = tex2DLod<float4>(tcMipmapImage_tex, (tp1.x + 0.5f) * tcInvLevelWidth, (tp1.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel);
 
             // TODO: Does it make a difference to accurately test it for each pixel of the patch?
             // if (gcr1.w == 0.0f || gct1.w == 0.0f)
@@ -402,18 +480,6 @@ __device__ static float3 triangulateMatchRef(int rcDeviceCameraParamsId, int tcD
     lineLineIntersect(&k, &l, &lli1, &lli2, rcDeviceCamParams.C, refpoint, tcDeviceCamParams.C, tarpoint);
 
     return rcDeviceCamParams.C + refvect * k;
-}
-
-__device__ static float computePixSize(int deviceCameraParamsId, const float3& p)
-{
-    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCameraParamsId];
-
-    float2 rp = project3DPoint(deviceCamParams.P, p);
-    float2 rp1 = rp + make_float2(1.0f, 0.0f);
-
-    float3 refvect = M3x3mulV2(deviceCamParams.iP, rp1);
-    normalize(refvect);
-    return pointLineDistance3D(p, deviceCamParams.C, refvect);
 }
 
 __device__ static float refineDepthSubPixel(const float3& depths, const float3& sims)

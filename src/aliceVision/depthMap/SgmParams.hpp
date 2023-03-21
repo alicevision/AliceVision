@@ -34,6 +34,7 @@ struct SgmParams
   std::string filteringAxes = "YX";
   bool useSfmSeeds = true;
   bool depthListPerTile = false;
+  bool useMultiScalePatch = false;
 
   // intermediate results export parameters
 

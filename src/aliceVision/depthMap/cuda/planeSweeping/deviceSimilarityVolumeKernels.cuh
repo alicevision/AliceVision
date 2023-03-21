@@ -123,6 +123,7 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
                                                 const int wsh,
                                                 const float gammaC,
                                                 const float gammaP,
+                                                const bool useMultiScalePatch,
                                                 const Range depthRange,
                                                 const ROI roi)
 {
@@ -162,6 +163,7 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
                                   wsh,
                                   gammaC,
                                   gammaP,
+                                  useMultiScalePatch,
                                   patch);
 
     if(fsim == CUDART_INF_F) // invalid similarity
@@ -219,6 +221,7 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
                                                const int wsh,
                                                const float gammaC,
                                                const float gammaP,
+                                               const bool useMultiScalePatch,
                                                const Range depthRange,
                                                const ROI roi)
 {
@@ -309,6 +312,7 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
                                   wsh,
                                   gammaC,
                                   gammaP,
+                                  useMultiScalePatch,
                                   patch);
 
     if(fsim == 1.f || fsim == CUDART_INF_F) // infinite or invalid similarity

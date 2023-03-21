@@ -225,6 +225,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.filteringAxes = mp.userParams.get<std::string>("sgm.filteringAxes", sgmParams.filteringAxes);
     sgmParams.useSfmSeeds = mp.userParams.get<bool>("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
     sgmParams.depthListPerTile = mp.userParams.get<bool>("sgm.depthListPerTile", sgmParams.depthListPerTile);
+    sgmParams.useMultiScalePatch = mp.userParams.get<bool>("sgm.useMultiScalePatch", sgmParams.useMultiScalePatch);
     sgmParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("sgm.exportIntermediateDepthSimMaps", sgmParams.exportIntermediateDepthSimMaps);
     sgmParams.exportIntermediateNormalMaps = mp.userParams.get<bool>("sgm.exportIntermediateNormalMaps", sgmParams.exportIntermediateNormalMaps);
     sgmParams.exportIntermediateVolumes = mp.userParams.get<bool>("sgm.exportIntermediateVolumes", sgmParams.exportIntermediateVolumes);
@@ -246,6 +247,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     refineParams.gammaC = mp.userParams.get<double>("refine.gammaC", refineParams.gammaC);
     refineParams.gammaP = mp.userParams.get<double>("refine.gammaP", refineParams.gammaP);
     refineParams.interpolateMiddleDepth = mp.userParams.get<bool>("refine.interpolateMiddleDepth", refineParams.interpolateMiddleDepth);
+    refineParams.useMultiScalePatch = mp.userParams.get<bool>("refine.useMultiScalePatch", refineParams.useMultiScalePatch);
     refineParams.useRefineFuse = mp.userParams.get<bool>("refine.useRefineFuse", refineParams.useRefineFuse);
     refineParams.useColorOptimization = mp.userParams.get<bool>("refine.useColorOptimization", refineParams.useColorOptimization);
     refineParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("refine.exportIntermediateDepthSimMaps", refineParams.exportIntermediateDepthSimMaps);
@@ -418,6 +420,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     // compute number of batches
     const int nbBatches = divideRoundUp(int(tiles.size()), nbTilesPerBatch);
+    const int minMipmapDownscale = std::min(depthMapParams.refineParams.scale, depthMapParams.sgmParams.scale);
+    const int maxMipmapDownscale = std::max(depthMapParams.refineParams.scale, depthMapParams.sgmParams.scale) * std::pow(2,6); // we add 6 downscale levels
 
     // compute each batch of R cameras
     for(int b = 0; b < nbBatches; ++b)
@@ -432,13 +436,13 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             const Tile& tile = tiles.at(i);
 
             // add Sgm R camera to Device cache
-            deviceCache.addMipmapImage(tile.rc, depthMapParams.refineParams.scale, depthMapParams.sgmParams.scale, ic, mp);
+            deviceCache.addMipmapImage(tile.rc, minMipmapDownscale, maxMipmapDownscale, ic, mp);
             deviceCache.addCameraParams(tile.rc, depthMapParams.sgmParams.scale, mp);
 
             // add Sgm T cameras to Device cache
             for(const int tc : tile.sgmTCams)
             {
-                deviceCache.addMipmapImage(tc, depthMapParams.refineParams.scale, depthMapParams.sgmParams.scale, ic, mp);
+                deviceCache.addMipmapImage(tc, minMipmapDownscale, maxMipmapDownscale, ic, mp);
                 deviceCache.addCameraParams(tc, depthMapParams.sgmParams.scale, mp);
             }
 
@@ -450,7 +454,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
                 // add Refine T cameras to Device cache
                 for(const int tc : tile.refineTCams)
                 {
-                    deviceCache.addMipmapImage(tc, depthMapParams.refineParams.scale, depthMapParams.sgmParams.scale, ic, mp);
+                    deviceCache.addMipmapImage(tc, minMipmapDownscale, maxMipmapDownscale, ic, mp);
                     deviceCache.addCameraParams(tc, depthMapParams.refineParams.scale, mp);
                 }
             }
