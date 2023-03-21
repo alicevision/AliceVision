@@ -9,12 +9,85 @@
 #include <aliceVision/depthMap/cuda/host/divUp.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/device/buffer.cuh>
+#include <aliceVision/depthMap/cuda/device/operators.cuh>
+#include <aliceVision/depthMap/cuda/imageProcessing/deviceGaussianFilter.hpp>
 
 #include <cuda_runtime.h>
 
 namespace aliceVision {
 namespace depthMap {
 
+__global__ void createMipmappedArrayLevel_kernel(cudaSurfaceObject_t out_currentLevel_surf,
+                                                 cudaTextureObject_t in_previousLevel_tex,
+                                                 unsigned int width,
+                                                 unsigned int height)
+{
+    const unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(x >= width || y >= height)
+        return;
+
+    const float px = 1.f / float(width);
+    const float py = 1.f / float(height);
+
+    float4 sumColor = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float sumFactor = 0.0f;
+
+    for(int i = -2; i <= 2; i++)
+    {
+        for(int j = -2; j <= 2; j++)
+        {
+            // domain factor
+            const float factor = getGauss(1, i + 2) * getGauss(1, j + 2);
+
+            // normalized coordinates
+            const float u = (x + j + 0.5f) * px;
+            const float v = (y + i + 0.5f) * py;
+
+            // current pixel color
+            const float4 color = tex2D_float4(in_previousLevel_tex, u, v);
+
+            // sum color
+            sumColor = sumColor + color * factor;
+
+            // sum factor
+            sumFactor += factor;
+        }
+    }
+
+    const float4 color = sumColor / sumFactor;
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+    // convert color to unsigned char
+    CudaRGBA out;
+    out.x = CudaColorBaseType(color.x);
+    out.y = CudaColorBaseType(color.y);
+    out.z = CudaColorBaseType(color.z);
+    out.w = CudaColorBaseType(color.w);
+
+    // write output color
+    surf2Dwrite(out, out_currentLevel_surf, int(x * sizeof(CudaRGBA)), int(y));
+#else // texture use float4 or half4
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
+    // convert color to half
+    CudaRGBA out;
+    out.x = __float2half(color.x);
+    out.y = __float2half(color.y);
+    out.z = __float2half(color.z);
+    out.w = __float2half(color.w);
+
+    // write output color
+    // note: surf2Dwrite cannot write half directly
+    surf2Dwrite(*(reinterpret_cast<ushort4*>(&(out))), out_currentLevel_surf, int(x * sizeof(ushort4)), int(y));
+#else // texture use float4
+     // write output color
+    surf2Dwrite(color, out_currentLevel_surf, int(x * sizeof(float4)), int(y));
+#endif // ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
+#endif // ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+}
+
+/*
 __global__ void createMipmappedArrayLevel_kernel(cudaSurfaceObject_t out_currentLevel_surf,
                                                  cudaTextureObject_t in_previousLevel_tex,
                                                  unsigned int width,
@@ -61,6 +134,7 @@ __global__ void createMipmappedArrayLevel_kernel(cudaSurfaceObject_t out_current
 #endif // ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
 #endif // ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 }
+*/
 
 __global__ void createMipmappedArrayDebugFlatImage_kernel(CudaRGBA* out_flatImage_d, int out_flatImage_p,
                                                           cudaTextureObject_t in_mipmappedArray_tex,
