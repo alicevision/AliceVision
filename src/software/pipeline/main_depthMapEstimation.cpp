@@ -137,6 +137,8 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Define axes for the filtering of the similarity volume.")
         ("sgmDepthListPerTile", po::value<bool>(&sgmParams.depthListPerTile)->default_value(sgmParams.depthListPerTile),
             "Semi Global Matching: Select the list of depth planes per tile or globally to the image.")
+        ("sgmUseMultiScalePatch", po::value<bool>(&sgmParams.useMultiScalePatch)->default_value(sgmParams.useMultiScalePatch),
+            "Semi Global Matching: Use multiple downscale to compute similarity volume patch comparison.")
         ("refineScale", po::value<int>(&refineParams.scale)->default_value(refineParams.scale),
             "Refine: Downscale factor applied on source images for the Refine step (in addition to the global downscale).")
         ("refineStepXY", po::value<int>(&refineParams.stepXY)->default_value(refineParams.stepXY),
@@ -158,7 +160,9 @@ int aliceVision_main(int argc, char* argv[])
         ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
             "Refine: GammaP threshold used for similarity computation.")
         ("refineInterpolateMiddleDepth", po::value<bool>(&refineParams.interpolateMiddleDepth)->default_value(refineParams.interpolateMiddleDepth),
-            "Enable/Disable middle depth bilinear interpolation for the refinement process.")
+            "Refine: Enable/Disable middle depth bilinear interpolation for the refinement process.")
+        ("refineUseMultiScalePatch", po::value<bool>(&refineParams.useMultiScalePatch)->default_value(refineParams.useMultiScalePatch),
+            "Refine: Use multiple downscale to compute similarity volume patch comparison.")
         ("colorOptimizationNbIterations", po::value<int>(&refineParams.optimizationNbIterations)->default_value(refineParams.optimizationNbIterations),
             "Color Optimization: Number of iterations of the optimization.")
         ("refineEnabled", po::value<bool>(&refineParams.useRefineFuse)->default_value(refineParams.useRefineFuse),
@@ -298,6 +302,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
     mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
     mp.userParams.put("sgm.depthListPerTile", sgmParams.depthListPerTile);
+    mp.userParams.put("sgm.useMultiScalePatch", sgmParams.useMultiScalePatch);
     mp.userParams.put("sgm.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
     mp.userParams.put("sgm.exportIntermediateNormalMaps", exportIntermediateNormalMaps);
     mp.userParams.put("sgm.exportIntermediateVolumes", exportIntermediateVolumes);
@@ -317,6 +322,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.halfNbDepths", refineParams.halfNbDepths);
     mp.userParams.put("refine.optimizationNbIterations", refineParams.optimizationNbIterations);
     mp.userParams.put("refine.interpolateMiddleDepth", refineParams.interpolateMiddleDepth);
+    mp.userParams.put("refine.useMultiScalePatch", refineParams.useMultiScalePatch);
     mp.userParams.put("refine.useRefineFuse", refineParams.useRefineFuse);
     mp.userParams.put("refine.useColorOptimization", refineParams.useColorOptimization);
     mp.userParams.put("refine.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
