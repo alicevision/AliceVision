@@ -757,7 +757,8 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     }
 
     // lens distortion
-    if(!refineIntrinsicsDistortion)
+    if (!refineIntrinsicsDistortion ||
+        intrinsicPtr->getDistortionInitializationMode() == camera::EInitMode::CALIBRATED)
     {
       lockDistortion = true;
     }
