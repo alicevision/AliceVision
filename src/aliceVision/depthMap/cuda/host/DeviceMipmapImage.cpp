@@ -43,25 +43,25 @@ void DeviceMipmapImage::fill(const CudaHostMemoryHeap<CudaRGBA, 2>& in_img_hmh, 
       CHECK_CUDA_RETURN_ERROR(cudaFreeMipmappedArray(_mipmappedArray));
 
     // allocate the device-sided full-size input image buffer
-    CudaDeviceMemoryPitched<CudaRGBA, 2> img_dmp(in_img_hmh.getSize());
+    auto img_dmpPtr = std::make_shared<CudaDeviceMemoryPitched<CudaRGBA, 2>>(in_img_hmh.getSize());
 
     // copy the host-sided full-size input image buffer onto the device-sided image buffer
-    img_dmp.copyFrom(in_img_hmh);
+    img_dmpPtr->copyFrom(in_img_hmh);
 
     // downscale device-sided full-size input iamge buffer to min downscale
     if(minDownscale > 1)
     {
         // create full-size input image buffer texture
-        CudaRGBATexture fullSizeImg(img_dmp);
+        CudaRGBATexture fullSizeImg(*img_dmpPtr);
 
         // create downscaled image buffer
         const size_t downscaledWidth  = size_t(divideRoundUp(int(_width),  int(minDownscale)));
         const size_t downscaledHeight = size_t(divideRoundUp(int(_height), int(minDownscale)));
-        CudaDeviceMemoryPitched<CudaRGBA, 2> downscaledImg_dmp(CudaSize<2>(downscaledWidth, downscaledHeight));
+        auto downscaledImg_dmpPtr = std::make_shared<CudaDeviceMemoryPitched<CudaRGBA, 2>>(CudaSize<2>(downscaledWidth, downscaledHeight));
 
         // downscale with gaussian blur the full-size image texture
         const int gaussianFilterRadius = minDownscale;
-        cuda_downscaleWithGaussianBlur(downscaledImg_dmp, fullSizeImg.textureObj, minDownscale, gaussianFilterRadius, 0 /*stream*/);
+        cuda_downscaleWithGaussianBlur(*downscaledImg_dmpPtr, fullSizeImg.textureObj, minDownscale, gaussianFilterRadius, 0 /*stream*/);
 
         // wait for downscale kernel completion
         CHECK_CUDA_RETURN_ERROR(cudaDeviceSynchronize());
@@ -70,7 +70,7 @@ void DeviceMipmapImage::fill(const CudaHostMemoryHeap<CudaRGBA, 2>& in_img_hmh, 
         CHECK_CUDA_ERROR();
 
         // use downscaled image buffer as input full-size image buffer
-        std::swap(img_dmp, downscaledImg_dmp);
+        img_dmpPtr.swap(downscaledImg_dmpPtr);
 
         // update private members
         _width  = downscaledWidth;
@@ -78,13 +78,13 @@ void DeviceMipmapImage::fill(const CudaHostMemoryHeap<CudaRGBA, 2>& in_img_hmh, 
     }
 
     // in-place color conversion into CIELAB
-    cuda_rgb2lab(img_dmp, 0 /*stream*/);
+    cuda_rgb2lab(*img_dmpPtr, 0 /*stream*/);
 
     // wait for color conversion kernel completion
     CHECK_CUDA_RETURN_ERROR(cudaDeviceSynchronize());
 
     // create CUDA mipmapped array from device-sided input image buffer
-    cuda_createMipmappedArrayFromImage(&_mipmappedArray, img_dmp, _levels);
+    cuda_createMipmappedArrayFromImage(&_mipmappedArray, *img_dmpPtr, _levels);
 
     // create CUDA mipmapped array texture object with normalized coordinates
     cuda_createMipmappedArrayTexture(&_textureObject, _mipmappedArray, _levels);
