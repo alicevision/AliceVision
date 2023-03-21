@@ -195,7 +195,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputPanoramaPath;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
-    const size_t maxProcessingSize = 2000;
+    size_t previewSize = 1000;
     bool fillHoles = false;  
 
     // Description of mandatory parameters
@@ -209,6 +209,7 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
         ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
+        ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.");
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
@@ -292,9 +293,15 @@ int aliceVision_main(int argc, char** argv)
     const int countHeight = std::ceil(double(height) / double(tileSize));
     const int rowSize = countWidth + 2;
 
-    const int previewWidth = 2000;
-    const double ratioPreview = double(width) / double(previewWidth);
-    image::Image<image::RGBAfColor> previewImage(previewWidth, previewWidth / 2);
+    if (previewSize > width)
+    {
+        ALICEVISION_LOG_INFO("Preview size must be inferior to the original panorama size");
+        ALICEVISION_LOG_INFO("Falling back to recommended size of 1000");
+        previewSize = 1000;
+    }
+
+    const double ratioPreview = double(width) / double(previewSize);
+    image::Image<image::RGBAfColor> previewImage(previewSize, previewSize / 2);
     int previewCurrentRow = 0;
 
     if (fillHoles)
