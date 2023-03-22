@@ -91,7 +91,7 @@ RUN cmake "${AV_DEV}" \
 
 # Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
 RUN mkdir -p "${AV_INSTALL}/lib" && \
-	ln -s lib "${AV_INSTALL}/lib64"
+    ln -s lib "${AV_INSTALL}/lib64"
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
