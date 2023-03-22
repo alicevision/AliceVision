@@ -44,6 +44,15 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
+struct Contact
+{
+    int rank;
+    std::string path;
+    int width;
+    int height;
+    sfmData::EEXIFOrientation orientation;
+};
+
 /**
  * A simple class for gaussian pyramid
  */
@@ -655,6 +664,107 @@ private:
     size_t _minimal_size;
 };
 
+void resample(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> &input)
+{
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),  const_cast<image::RGBfColor*>(input.data()));
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT), (image::RGBfColor*)output.data());
+
+    oiio::ImageBufAlgo::resample(outBuf, inBuf, false);
+}
+
+bool buildContactSheetImage(image::Image<image::RGBfColor> & output, const std::map<int, std::map<int, Contact>> & contactSheetInfo, int contactSheetItemMaxSize)
+{
+    const int space = 10;
+
+    //Compute ratio for resizing inputs
+    int maxdim = 0;
+    for (auto & rowpair : contactSheetInfo)
+    {
+        for (auto & item : rowpair.second)
+        {
+            maxdim = std::max(maxdim, item.second.width);
+            maxdim = std::max(maxdim, item.second.height);
+        }
+    }
+    double ratioResize = double(contactSheetItemMaxSize) / double(maxdim);
+
+    //compute output size
+    int totalHeight = space;
+    int maxWidth = 0;
+    for (auto & rowpair : contactSheetInfo)
+    {
+        int rowHeight = 0;
+        int rowWidth = space;
+
+        for (auto & item : rowpair.second)
+        {
+            int resizedHeight = int(ratioResize * double(item.second.height));
+            int resizedWidth = int(ratioResize * double(item.second.width));
+
+            rowHeight = std::max(rowHeight, resizedHeight);
+            rowWidth += resizedWidth + space;
+        }
+
+        totalHeight += rowHeight + space;
+        maxWidth = std::max(maxWidth, rowWidth);
+    }
+    
+    if (totalHeight == 0 || maxWidth == 0)
+    {
+        return false;
+    }
+
+    int rowCount = 0;
+    int posY = space;
+    output = image::Image<image::RGBfColor>(maxWidth, totalHeight, true);
+    for (auto & rowpair : contactSheetInfo)
+    {
+        ALICEVISION_LOG_INFO("Build contact sheet row " <<rowCount +1<< "/" <<  contactSheetInfo.size());
+        int rowHeight = 0;
+        int rowWidth = space;
+
+        for (auto & item : rowpair.second)
+        {
+            int resizedHeight = int(ratioResize * double(item.second.height));
+            int resizedWidth = int(ratioResize * double(item.second.width));
+
+            rowHeight = std::max(rowHeight, resizedHeight);
+            rowWidth += resizedWidth + space;
+        }
+
+        //Create row thumbnails
+        image::Image<image::RGBfColor> rowOutput(rowWidth, rowHeight, true);
+
+        int posX = space;
+        for (auto & item : rowpair.second)
+        {
+            int resizedHeight = int(ratioResize * double(item.second.height));
+            int resizedWidth = int(ratioResize * double(item.second.width));
+            
+            image::Image<image::RGBfColor> input;
+            image::Image<image::RGBfColor> thumbnail(resizedWidth, resizedHeight);
+
+            image::readImage(item.second.path, input, image::EImageColorSpace::SRGB);
+
+            resample(thumbnail, input);
+
+            rowOutput.block(0, posX, resizedHeight, resizedWidth) = thumbnail; 
+            posX += resizedWidth + space;
+        }
+
+        int centeredX = (maxWidth - rowWidth) / 2;
+
+
+        //Concatenate
+        output.block(posY, centeredX, rowOutput.Height(), rowOutput.Width()) = rowOutput;
+
+        posY += rowHeight + space;
+        rowCount++;
+    }
+
+    return true;
+}
+
 int main(int argc, char* argv[])
 {
     using namespace aliceVision;
@@ -673,6 +783,8 @@ int main(int argc, char* argv[])
     double fisheyeRadius = 96.0;
     float additionalAngle = 0.0f;
     bool debugFisheyeCircleEstimation = false;
+    bool buildContactSheet = true;
+    int contactSheetItemMaxSize = 256;
 
     // Command line parameters
 
@@ -688,7 +800,8 @@ int main(int argc, char* argv[])
         "yawCW", po::value<bool>(&yawCW), "Yaw rotation is ClockWise or ConterClockWise.")(
         "initializeCameras", po::value<std::string>(&initializeCameras), "Initialization type for the cameras poses.")(
         "nbViewsPerLine", po::value<std::string>(&nbViewsPerLineString),
-        "Number of views per line splitted by comma. For instance, \"2,4,*,4,2\".");
+        "Number of views per line splitted by comma. For instance, \"2,4,*,4,2\".")
+        ("buildContactSheet", po::value<bool>(&buildContactSheet)->default_value(buildContactSheet), "Build a contact sheet");
 
     po::options_description fisheyeParams("Fisheye parameters");
     fisheyeParams.add_options()("useFisheye", po::value<bool>(&useFisheye),
@@ -726,6 +839,10 @@ int main(int argc, char* argv[])
         additionalAngle = M_PI_2;
     }
 
+    
+
+    std::map<int, std::map<int, Contact>> contactSheetInfo;
+
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
@@ -762,16 +879,56 @@ int main(int argc, char* argv[])
             }
 
             pt::ptree shoot = tree.get_child("papywizard.shoot");
+
+            //Get a set of unique ids
+            std::set<int> unique_ids;
             for(auto it : shoot)
             {
                 int id = it.second.get<double>("<xmlattr>.id");
-                int bracket = it.second.get<double>("<xmlattr>.bracket");
-
-                if(rotations.find(id) != rotations.end())
+                if(unique_ids.find(id) != unique_ids.end())
                 {
                     ALICEVISION_CERR("Multiple xml attributes with a same id: " << id);
                     return EXIT_FAILURE;
                 }
+
+                unique_ids.insert(id);
+            }
+
+            //Make sure a map of id is available to get rank (position in ascending order)
+            //note that set is ordered automatically.
+            int pos = 0;
+            std::map<int, int> id_to_rank;
+            for (auto id : unique_ids)
+            {
+                id_to_rank[id] = pos;
+                pos++;
+            }
+
+            //Group shoots by "rows" (common pitch) assuming they are acquired row by row with a common pitch
+            if (buildContactSheet)
+            {
+                for(auto it : shoot)
+                {
+                    int id = it.second.get<double>("<xmlattr>.id");
+                    int bracket = it.second.get<double>("<xmlattr>.bracket");
+                    int rank = id_to_rank[id];
+
+                    const double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
+                    const double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
+
+                    int ipitch_degree = - int(pitch_degree);  //minus to be sure rows are going top to bottom
+                    int iyaw_degree = int(yaw_degree);
+
+                    //Store also the yaw to be able to sort left to right
+                    contactSheetInfo[ipitch_degree][iyaw_degree].rank = rank;
+                }
+            }
+
+            for(auto it : shoot)
+            {
+                int id = it.second.get<double>("<xmlattr>.id");
+                int bracket = it.second.get<double>("<xmlattr>.bracket");
+                int rank = id_to_rank[id];
 
                 const double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
                 const double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
@@ -789,7 +946,7 @@ int main(int argc, char* argv[])
                 const Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *
                                             Mroll.toRotationMatrix() * Mimage.toRotationMatrix();
 
-                rotations[id] = cRo.transpose();
+                rotations[rank] = cRo.transpose();
             }
 
             if(sfmData.getViews().size() != rotations.size())
@@ -936,6 +1093,10 @@ int main(int argc, char* argv[])
             }
         }
 
+        
+
+        std::map<int, Contact> contacts;
+
         if(!rotations.empty())
         {
             ALICEVISION_LOG_TRACE("Apply rotations from nbViewsPerLine expressions: " << nbViewsPerLineString << ".");
@@ -951,18 +1112,45 @@ int main(int argc, char* argv[])
             // HEURISTIC:
             // The xml file describe rotations for views which are not correlated with AliceVision views.
             // We assume that the order of the xml view ids correspond to the lexicographic order of the image names.
-            std::vector<std::pair<std::string, int>> names_with_id;
+            std::vector<std::pair<std::string, int>> names_with_rank;
             for(const auto& v : sfmData.getViews())
             {
                 boost::filesystem::path path_image(v.second->getImagePath());
-                names_with_id.push_back(std::make_pair(path_image.stem().string(), v.first));
+                names_with_rank.push_back(std::make_pair(path_image.stem().string(), v.first));
             }
-            std::sort(names_with_id.begin(), names_with_id.end());
+            std::sort(names_with_rank.begin(), names_with_rank.end());
+
+            //If we are trying to build a contact sheet
+            if (contactSheetInfo.size() > 0)
+            {
+                //Fill information in contact sheet
+                for (auto & rowpair : contactSheetInfo)
+                {
+                    for (auto & item : rowpair.second)
+                    {
+                        int rank = item.second.rank;
+                        IndexT viewId = names_with_rank[rank].second;
+
+                        const sfmData::View & v = sfmData.getView(viewId);
+
+                        item.second.path = v.getImagePath();
+                        item.second.width = v.getWidth();
+                        item.second.height = v.getHeight();
+                        item.second.orientation = v.getMetadataOrientation();
+                    }
+                }
+
+                image::Image<image::RGBfColor> contactSheetImage;
+                if (buildContactSheetImage(contactSheetImage, contactSheetInfo, contactSheetItemMaxSize))
+                {
+                    image::writeImage((fs::path(sfmOutputDataFilepath).parent_path() / "contactSheetImage.jpg").string(), contactSheetImage, image::ImageWriteOptions());
+                }
+            }
 
             size_t index = 0;
             for(const auto& item_rotation : rotations)
             {
-                IndexT viewIdx = names_with_id[index].second;
+                IndexT viewIdx = names_with_rank[index].second;
                 if(item_rotation.second.trace() != 0)
                 {
                     sfmData::CameraPose pose(geometry::Pose3(item_rotation.second, Eigen::Vector3d::Zero()));
