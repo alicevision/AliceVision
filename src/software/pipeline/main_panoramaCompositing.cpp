@@ -59,7 +59,7 @@ size_t getCompositingOptimalScale(int width, int height)
 
     const size_t minsize = std::min(width, height);
     const size_t gaussianFilterRadius = 2;
-    const int gaussianFilterSize = 1 + 2 * 2;
+    const int gaussianFilterSize = 1/* + 2 * 2*/;
 
     //Avoid negative values on scale
     if (minsize < gaussianFilterSize)
@@ -80,7 +80,7 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
         return nullptr;
     }
 
-    size_t min_scale = std::numeric_limits<size_t>::max();
+    size_t max_scale = 0;
     std::vector<std::pair<IndexT, BoundingBox>> listBoundingBox;
     std::pair<std::size_t, std::size_t> panoramaSize;
 
@@ -114,21 +114,21 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
 
         listBoundingBox.push_back(std::make_pair(viewIt.first, bb));
         size_t scale = getCompositingOptimalScale(width, height);
-        if(scale < min_scale)
+        if(scale > max_scale)
         {
-            min_scale = scale;
+            max_scale = scale;
         }
     }
 
-    ALICEVISION_LOG_INFO("Estimated pyramid levels count: " << min_scale);
+    ALICEVISION_LOG_INFO("Estimated pyramid levels count: " << max_scale);
 
-    if (forceMinPyramidLevels > min_scale)
+    if (forceMinPyramidLevels > max_scale)
     {
-        min_scale = forceMinPyramidLevels;
-        ALICEVISION_LOG_INFO("Forced pyramid levels count: " << min_scale);
+        max_scale = forceMinPyramidLevels;
+        ALICEVISION_LOG_INFO("Forced pyramid levels count: " << max_scale);
     }
 
-    std::unique_ptr<PanoramaMap> ret(new PanoramaMap(panoramaSize.first, panoramaSize.second, min_scale, borderSize));
+    std::unique_ptr<PanoramaMap> ret(new PanoramaMap(panoramaSize.first, panoramaSize.second, max_scale, borderSize));
     for(const auto& bbitem : listBoundingBox)
     {
         ret->append(bbitem.first, bbitem.second);
