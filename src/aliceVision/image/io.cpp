@@ -607,7 +607,7 @@ void readImage(const std::string& path,
             neutral[i] = v_mult[i] / v_mult[1];
         }
 
-        ALICEVISION_LOG_INFO("Apply DCP Linear processing with neutral = " << neutral);
+        ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = " << neutral);
 
         dcpProfile.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
     }
