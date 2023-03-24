@@ -317,6 +317,10 @@ int aliceVision_main(int argc, char** argv)
             options.workingColorSpace = workingColorSpace;
             options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getRawColorInterpretation());
             options.colorProfileFileName = group[i]->getColorProfileFileName();
+            // Whatever the raw color interpretation mode, the default read processing for raw images is to apply white balancing in libRaw, before demosaicing.
+            // The DcpMetadata mode allows to not apply color management after demosaicing.
+            // Because if requested after demosaicing, white balancing is done at color management stage, we can set this option to true to get real raw data,
+            // without any white balancing, when the DcpMetadata mode is selected.
             if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
             {
                 options.doWBAfterDemosaicing = true;
