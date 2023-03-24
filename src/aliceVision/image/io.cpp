@@ -478,7 +478,7 @@ void readImage(const std::string& path,
             }
         }
 
-        ALICEVISION_LOG_INFO("Neutral from camera = {" << neutral[0] << ", " << neutral[1] << ", " << neutral[2] << "}");
+        ALICEVISION_LOG_TRACE("Neutral from camera = {" << neutral[0] << ", " << neutral[1] << ", " << neutral[2] << "}");
 
         // libRAW configuration
         // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
