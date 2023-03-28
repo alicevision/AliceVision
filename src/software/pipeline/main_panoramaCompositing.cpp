@@ -58,8 +58,12 @@ size_t getCompositingOptimalScale(int width, int height)
     */
 
     const size_t minsize = std::min(width, height);
-    const size_t gaussianFilterRadius = 2;
-    const int gaussianFilterSize = 1/* + 2 * 2*/;
+
+    /*
+     * Ideally, should be gaussianFilterSize = 1 + 2 * gaussianFilterRadius with:
+     * const size_t gaussianFilterRadius = 2;
+     */
+    const int gaussianFilterSize = 1;
 
     //Avoid negative values on scale
     if (minsize < gaussianFilterSize)
