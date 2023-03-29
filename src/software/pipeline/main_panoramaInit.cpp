@@ -22,7 +22,8 @@
 
 using namespace aliceVision;
 
-namespace std {
+namespace std
+{
 std::ostream& operator<<(std::ostream& os, const std::pair<double, double>& v)
 {
     os << v.first << " " << v.second;
@@ -38,7 +39,7 @@ std::istream& operator>>(std::istream& in, std::pair<double, double>& v)
     v.second = boost::lexical_cast<double>(token);
     return in;
 }
-}
+} // namespace std
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -664,23 +665,26 @@ private:
     size_t _minimal_size;
 };
 
-void resample(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> &input)
+void resample(image::Image<image::RGBfColor>& output, const image::Image<image::RGBfColor>& input)
 {
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),  const_cast<image::RGBfColor*>(input.data()));
-    oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT), (image::RGBfColor*)output.data());
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),
+                               const_cast<image::RGBfColor*>(input.data()));
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                          (image::RGBfColor*)output.data());
 
     oiio::ImageBufAlgo::resample(outBuf, inBuf, false);
 }
 
-bool buildContactSheetImage(image::Image<image::RGBfColor> & output, const std::map<int, std::map<int, Contact>> & contactSheetInfo, int contactSheetItemMaxSize)
+bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
+                            const std::map<int, std::map<int, Contact>>& contactSheetInfo, int contactSheetItemMaxSize)
 {
     const int space = 10;
 
-    //Compute ratio for resizing inputs
+    // Compute ratio for resizing inputs
     int maxdim = 0;
-    for (const auto & rowpair : contactSheetInfo)
+    for(const auto& rowpair : contactSheetInfo)
     {
-        for (const auto & item : rowpair.second)
+        for(const auto& item : rowpair.second)
         {
             maxdim = std::max(maxdim, item.second.width);
             maxdim = std::max(maxdim, item.second.height);
@@ -688,15 +692,15 @@ bool buildContactSheetImage(image::Image<image::RGBfColor> & output, const std::
     }
     double ratioResize = double(contactSheetItemMaxSize) / double(maxdim);
 
-    //Compute output size
+    // Compute output size
     int totalHeight = space;
     int maxWidth = 0;
-    for (const auto & rowpair : contactSheetInfo)
+    for(const auto& rowpair : contactSheetInfo)
     {
         int rowHeight = 0;
         int rowWidth = space;
 
-        for (const auto & item : rowpair.second)
+        for(const auto& item : rowpair.second)
         {
             int resizedHeight = int(ratioResize * double(item.second.height));
             int resizedWidth = int(ratioResize * double(item.second.width));
@@ -708,8 +712,8 @@ bool buildContactSheetImage(image::Image<image::RGBfColor> & output, const std::
         totalHeight += rowHeight + space;
         maxWidth = std::max(maxWidth, rowWidth);
     }
-    
-    if (totalHeight == 0 || maxWidth == 0)
+
+    if(totalHeight == 0 || maxWidth == 0)
     {
         return false;
     }
@@ -717,13 +721,13 @@ bool buildContactSheetImage(image::Image<image::RGBfColor> & output, const std::
     int rowCount = 0;
     int posY = space;
     output = image::Image<image::RGBfColor>(maxWidth, totalHeight, true);
-    for (const auto & rowpair : contactSheetInfo)
+    for(const auto& rowpair : contactSheetInfo)
     {
-        ALICEVISION_LOG_INFO("Build contact sheet row " << rowCount + 1 << "/" <<  contactSheetInfo.size());
+        ALICEVISION_LOG_INFO("Build contact sheet row " << rowCount + 1 << "/" << contactSheetInfo.size());
         int rowHeight = 0;
         int rowWidth = space;
 
-        for (const auto & item : rowpair.second)
+        for(const auto& item : rowpair.second)
         {
             int resizedHeight = int(ratioResize * double(item.second.height));
             int resizedWidth = int(ratioResize * double(item.second.width));
@@ -732,15 +736,15 @@ bool buildContactSheetImage(image::Image<image::RGBfColor> & output, const std::
             rowWidth += resizedWidth + space;
         }
 
-        //Create row thumbnails
+        // Create row thumbnails
         image::Image<image::RGBfColor> rowOutput(rowWidth, rowHeight, true);
 
         int posX = space;
-        for (const auto & item : rowpair.second)
+        for(const auto& item : rowpair.second)
         {
             int resizedHeight = int(ratioResize * double(item.second.height));
             int resizedWidth = int(ratioResize * double(item.second.width));
-            
+
             image::Image<image::RGBfColor> input;
             image::Image<image::RGBfColor> thumbnail(resizedWidth, resizedHeight);
 
@@ -748,14 +752,13 @@ bool buildContactSheetImage(image::Image<image::RGBfColor> & output, const std::
 
             resample(thumbnail, input);
 
-            rowOutput.block(0, posX, resizedHeight, resizedWidth) = thumbnail; 
+            rowOutput.block(0, posX, resizedHeight, resizedWidth) = thumbnail;
             posX += resizedWidth + space;
         }
 
         int centeredX = (maxWidth - rowWidth) / 2;
 
-
-        //Concatenate
+        // Concatenate
         output.block(posY, centeredX, rowOutput.Height(), rowOutput.Width()) = rowOutput;
 
         posY += rowHeight + space;
@@ -817,7 +820,8 @@ int main(int argc, char* argv[])
         "debugFisheyeCircleEstimation", po::value<bool>(&debugFisheyeCircleEstimation),
         "Debug fisheye circle detection.");
 
-    CmdLine cmdline("Initialize information on the panorama pipeline's input images, specifically from a file generated by a motorized head system.\n"
+    CmdLine cmdline("Initialize information on the panorama pipeline's input images, specifically from a file "
+                    "generated by a motorized head system.\n"
                     "AliceVision panoramaInit");
     cmdline.add(requiredParams);
     cmdline.add(motorizedHeadParams);
@@ -839,7 +843,6 @@ int main(int argc, char* argv[])
     {
         additionalAngle = M_PI_2;
     }
-
 
     std::map<int, std::map<int, Contact>> contactSheetInfo;
 
@@ -880,7 +883,7 @@ int main(int argc, char* argv[])
 
             pt::ptree shoot = tree.get_child("papywizard.shoot");
 
-            //Get a set of unique ids
+            // Get a set of unique ids
             std::set<int> uniqueIds;
             for(const auto it : shoot)
             {
@@ -894,18 +897,18 @@ int main(int argc, char* argv[])
                 uniqueIds.insert(id);
             }
 
-            //Make sure a map of id is available to get rank (position in ascending order)
-            //note that set is ordered automatically.
+            // Make sure a map of id is available to get rank (position in ascending order)
+            // note that set is ordered automatically.
             int pos = 0;
             std::map<int, int> idToRank;
-            for (const auto id : uniqueIds)
+            for(const auto id : uniqueIds)
             {
                 idToRank[id] = pos;
                 pos++;
             }
 
-            //Group shoots by "rows" (common pitch) assuming they are acquired row by row with a common pitch
-            if (buildContactSheet)
+            // Group shoots by "rows" (common pitch) assuming they are acquired row by row with a common pitch
+            if(buildContactSheet)
             {
                 for(const auto it : shoot)
                 {
@@ -916,10 +919,10 @@ int main(int argc, char* argv[])
                     const double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
                     const double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
 
-                    int ipitch_degree = - int(pitch_degree);  //minus to be sure rows are going top to bottom
+                    int ipitch_degree = -int(pitch_degree); // minus to be sure rows are going top to bottom
                     int iyaw_degree = int(yaw_degree);
 
-                    //Store also the yaw to be able to sort left to right
+                    // Store also the yaw to be able to sort left to right
                     contactSheetInfo[ipitch_degree][iyaw_degree].rank = rank;
                 }
             }
@@ -1093,8 +1096,6 @@ int main(int argc, char* argv[])
             }
         }
 
-        
-
         std::map<int, Contact> contacts;
 
         if(!rotations.empty())
@@ -1108,7 +1109,7 @@ int main(int argc, char* argv[])
                                       << sfmData.getViews().size() << ", nb rotations: " << rotations.size() << ").");
                 return EXIT_FAILURE;
             }
-            
+
             // HEURISTIC:
             // The xml file describe rotations for views which are not correlated with AliceVision views.
             // We assume that the order of the xml view ids correspond to the lexicographic order of the image names.
@@ -1120,18 +1121,18 @@ int main(int argc, char* argv[])
             }
             std::sort(namesWithRank.begin(), namesWithRank.end());
 
-            //If we are trying to build a contact sheet
-            if (contactSheetInfo.size() > 0)
+            // If we are trying to build a contact sheet
+            if(contactSheetInfo.size() > 0)
             {
-                //Fill information in contact sheet
-                for (auto & rowpair : contactSheetInfo)
+                // Fill information in contact sheet
+                for(auto& rowpair : contactSheetInfo)
                 {
-                    for (auto & item : rowpair.second)
+                    for(auto& item : rowpair.second)
                     {
                         int rank = item.second.rank;
                         IndexT viewId = namesWithRank[rank].second;
 
-                        const sfmData::View & v = sfmData.getView(viewId);
+                        const sfmData::View& v = sfmData.getView(viewId);
 
                         item.second.path = v.getImagePath();
                         item.second.width = v.getWidth();
@@ -1141,9 +1142,11 @@ int main(int argc, char* argv[])
                 }
 
                 image::Image<image::RGBfColor> contactSheetImage;
-                if (buildContactSheetImage(contactSheetImage, contactSheetInfo, contactSheetItemMaxSize))
+                if(buildContactSheetImage(contactSheetImage, contactSheetInfo, contactSheetItemMaxSize))
                 {
-                    image::writeImage((fs::path(sfmOutputDataFilepath).parent_path() / "contactSheetImage.jpg").string(), contactSheetImage, image::ImageWriteOptions());
+                    image::writeImage(
+                        (fs::path(sfmOutputDataFilepath).parent_path() / "contactSheetImage.jpg").string(),
+                        contactSheetImage, image::ImageWriteOptions());
                 }
             }
 
