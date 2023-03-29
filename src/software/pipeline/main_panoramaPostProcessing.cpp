@@ -193,6 +193,7 @@ int aliceVision_main(int argc, char** argv)
 {
     std::string inputPanoramaPath;
     std::string outputPanoramaPath;
+    std::string outputPanoramaPreviewPath;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     size_t previewSize = 1000;
@@ -202,7 +203,8 @@ int aliceVision_main(int argc, char** argv)
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPanorama,i", po::value<std::string>(&inputPanoramaPath)->required(), "Input Panorama.")
-        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");;
+        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.")
+        ("outputPanoramaPreview,o", po::value<std::string>(&outputPanoramaPreviewPath)->required(), "Path of the output panorama preview.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
@@ -593,7 +595,7 @@ int aliceVision_main(int argc, char** argv)
     panoramaInput->close();
     panoramaOutput->close();
 
-    image::writeImage(previewPath.string(), previewImage, image::ImageWriteOptions());
+    image::writeImage(outputPanoramaPreviewPath, previewImage, image::ImageWriteOptions());
 
     return EXIT_SUCCESS;
 }
