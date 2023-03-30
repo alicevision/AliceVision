@@ -295,9 +295,9 @@ int aliceVision_main(int argc, char** argv)
     const int countHeight = std::ceil(double(height) / double(tileSize));
     const int rowSize = countWidth + 2;
 
-    if (previewSize > width)
+    if (previewSize > width || previewSize <= 0)
     {
-        ALICEVISION_LOG_INFO("Preview size must be inferior to the original panorama size");
+        ALICEVISION_LOG_INFO("Preview size must be inferior to the original panorama size and superior to 0");
         ALICEVISION_LOG_INFO("Falling back to recommended size of 1000");
         previewSize = 1000;
     }
