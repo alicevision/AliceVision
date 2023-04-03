@@ -7,6 +7,7 @@
 #include "FeedProvider.hpp"
 #include <aliceVision/config.hpp>
 #include "ImageFeed.hpp"
+#include "SfMDataFeed.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #include "VideoFeed.hpp"
 #endif
@@ -27,6 +28,7 @@ namespace dataio
 FeedProvider::FeedProvider(const std::string& feedPath, const std::string& calibPath)
     : _isVideo(false)
     , _isLiveFeed(false)
+    , _isSfmData(false)
 {
     namespace bf = boost::filesystem;
     if(feedPath.empty())
@@ -37,7 +39,12 @@ FeedProvider::FeedProvider(const std::string& feedPath, const std::string& calib
     {
         // Image or video file
         const std::string extension = bf::path(feedPath).extension().string();
-        if(ImageFeed::isSupported(extension))
+        if(SfMDataFeed::isSupported(extension))
+        {
+            _feeder.reset(new SfMDataFeed(feedPath, calibPath));
+            _isSfmData = true;
+        }
+        else if(ImageFeed::isSupported(extension))
         {
             _feeder.reset(new ImageFeed(feedPath, calibPath));
         }
