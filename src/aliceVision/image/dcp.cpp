@@ -270,8 +270,19 @@ const DCPProfile::Matrix CAT02_MATRIX = {0.7328, 0.4296, -0.1624, -0.7036, 1.697
 const DCPProfile::Matrix xyzD50ToSrgbD65LinearMatrix = { 3.2404542, -1.5371385, -0.4985314, -0.9692660, 1.8760108, 0.0415560, 0.0556434, -0.2040259, 1.0572252 };
 const DCPProfile::Matrix xyzD50ToSrgbD50LinearMatrix = { 3.1338561, -1.6168667, -0.4906146, -0.9787684, 1.9161415, 0.0334540, 0.0719453, -0.2289914, 1.4052427 };
 
-// xyzD50ToACES2065Matrix = xyzD60ToACES2065 * xyzD50ToXyzD60
+
+//constexpr double xyz_prophoto[3][3] = {
+//    {0.7976749,  0.1351917,  0.0313534},
+//    {0.2880402,  0.7118741,  0.0000857},
+//    {0.0000000,  0.0000000,  0.8252100}
+//};
+
+// xyzD50ToCSMatrix = xyzD60ToCS * xyzD50ToXyzD60 using Bradford Method for chromatic adaptation
 const DCPProfile::Matrix xyzD50ToACES2065Matrix = { 1.019573375, -0.022815668, 0.048147546, -0.503070253, 1.384421764, 0.121965628, 0.000961591, 0.003054793, 1.207019111 };
+const DCPProfile::Matrix xyzD50ToProPhotoMatrix = { 1.3459433, -0.2556075, -0.0511118, -0.5445989,  1.5081673,  0.0205351, 0.0000000,  0.0000000,  1.2118128 };
+
+const DCPProfile::Matrix ProPhotoToSrgbD50Matrix = { 2.034075744, -0.727334193, -0.306741596, -0.228813205, 1.231730142, -0.002916928, -0.008569769, -0.153286639, 1.161856434 };
+const DCPProfile::Matrix ProPhotoToSrgbD65Matrix = { 2.142148028, -0.656162552, -0.309926714, -0.232799019, 1.204468357, 0.00407523, -0.014389757, -0.13769572, 0.873679484 };
 
 const double TINT_SCALE = -3000.0;
 } // namespace
@@ -688,6 +699,293 @@ const Tag* findTag(TagKey tagID, const std::vector<Tag>& v_Tags)
 }
 
 
+hsvLUT::hsvLUT(hsvLUT lut1, double w1, hsvLUT lut2)
+{
+    hueDivisions = (lut1.hueDivisions == lut2.hueDivisions) ? lut1.hueDivisions : -1;
+    satDivisions = (lut1.satDivisions == lut2.satDivisions) ? lut1.satDivisions : -1;
+    valDivisions = (lut1.valDivisions == lut2.valDivisions) ? lut1.valDivisions : -1;
+    array_count = (lut1.array_count == lut2.array_count) ? lut1.array_count : 0;
+    srgb_gamma = (lut1.srgb_gamma == lut2.srgb_gamma) ? lut1.srgb_gamma : false;
+
+    if ((hueDivisions != -1) && (satDivisions != -1) && (valDivisions != -1) && (array_count > 0) && (lut1.srgb_gamma == lut2.srgb_gamma))
+    {
+        if (w1 >= 1.0)
+        {
+            table = lut1.table;
+        }
+        if (w1 <= 0.0)
+        {
+            table = lut2.table;
+        }
+
+        // Interpolate between the tables.
+
+        double w2 = 1.0 - w1;
+
+        table.resize(array_count);
+
+        for (int i = 0; i < array_count; ++i)
+        {
+            table[i].hue_shift = static_cast<float>(w1 * lut1.table[i].hue_shift + w2 * lut2.table[i].hue_shift);
+            table[i].sat_scale = static_cast<float>(w1 * lut1.table[i].sat_scale + w2 * lut2.table[i].sat_scale);
+            table[i].val_scale = static_cast<float>(w1 * lut1.table[i].val_scale + w2 * lut2.table[i].val_scale);
+        }
+
+        this->setConstants();
+    }
+}
+
+void hsvLUT::setConstants()
+{
+    hScale = hueDivisions < 2 ? 0.0f : static_cast<float>(hueDivisions) / 6.0f;
+    sScale = satDivisions - 1;
+    vScale = valDivisions - 1;
+    maxHueIndex0 = hueDivisions - 1;
+    maxSatIndex0 = satDivisions - 2;
+    maxValIndex0 = valDivisions - 2;
+    hueStep = satDivisions;
+    valStep = hueDivisions * hueStep;
+
+    if (srgb_gamma)
+    {
+        std::vector<double> gammatab_srgb_data;
+        std::vector<double> igammatab_srgb_data;
+        for (int i = 0; i < 65536; i++)
+        {
+            double x = i / 65535.0;
+            gammatab_srgb_data.push_back((x <= 0.003040) ? (x * 12.92310) : (1.055 * exp(log(x) / 2.4) - 0.055)); // from RT
+            igammatab_srgb_data.push_back((x <= 0.039286) ? (x / 12.92310) : (exp(log((x + 0.055) / 1.055) * 2.4))); // from RT
+        }
+        gammatab_srgb.Set(gammatab_srgb_data);
+        igammatab_srgb.Set(igammatab_srgb_data);
+    }
+}
+
+// Converts from RGB values (range 0.0 to 1.0) to HSV values (range 0.0 to
+// 6.0 for hue, and 0.0 to 1.0 for saturation and value).
+// Ported from the Adobe reference implementation available in the DNG SDK.
+inline void DNG_RGBtoHSV(float r, float g, float b, float& h, float& s, float& v)
+{
+    v = std::max<float>(r, std::max<float>(g, b));
+    float gap = v - std::min<float>(r, std::min<float>(g, b));
+
+    if (gap > 0.0f)
+    {
+        if (r == v)
+        {
+            h = (g - b) / gap;
+
+            if (h < 0.0f)
+            {
+                h += 6.0f;
+            }
+        }
+        else if (g == v)
+        {
+            h = 2.0f + (b - r) / gap;
+        }
+        else
+        {
+            h = 4.0f + (r - g) / gap;
+        }
+        s = gap / v;
+    }
+    else
+    {
+        h = 0.0f;
+        s = 0.0f;
+    }
+}
+
+/*****************************************************************************/
+
+// Converts from HSV values (range 0.0 to 6.0 for hue, and 0.0 to 1.0 for
+// saturation and value) to RGB values (range 0.0 to 1.0).
+// Ported from the Adobe reference implementation available in the DNG SDK.
+inline void DNG_HSVtoRGB(float h, float s, float v, float& r, float& g, float& b)
+{
+    if (s > 0.0f)
+    {
+        if (!std::isfinite(h))
+            ALICEVISION_THROW_ERROR("Unexpected NaN or Inf");
+
+        h = std::fmod(h, 6.0f);
+
+        if (h < 0.0f)
+            h += 6.0f;
+
+        int  i = static_cast<int>(h);
+        float f = h - static_cast<float>(i);
+        float p = v * (1.0f - s);
+
+#define q	(v * (1.0f - s * f))
+#define t	(v * (1.0f - s * (1.0f - f)))
+
+        switch (i)
+        {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+        }
+
+#undef q
+#undef t
+
+    }
+    else
+    {
+        r = v;
+        g = v;
+        b = v;
+    }
+}
+
+void hsvLUT::applyOnRGB(float& r, float& g, float& b) const
+{
+    // Ported from the Adobe reference implementation available in the DNG SDK.
+
+    const hsvUpdate* tableBase = table.data();
+
+    float h, s, v;
+
+    DNG_RGBtoHSV(r, g, b, h, s, v);
+
+    float vEncoded = v;
+
+    float hueShift;
+    float satScale;
+    float valScale;
+
+    if (valDivisions < 2) // Optimize most common case of "2.5D" table.
+    {
+        const float hScaled = h * hScale;
+        const float sScaled = s * sScale;
+
+        int hIndex0 = (int)hScaled;
+        int sIndex0 = (int)sScaled;
+
+        sIndex0 = std::min<int>(sIndex0, maxSatIndex0);
+
+        int hIndex1 = hIndex0 + 1;
+
+        if (hIndex0 >= maxHueIndex0)
+        {
+            hIndex0 = maxHueIndex0;
+            hIndex1 = 0;
+        }
+
+        const float hFract1 = hScaled - (float)hIndex0;
+        const float sFract1 = sScaled - (float)sIndex0;
+
+        const float hFract0 = 1.0f - hFract1;
+        const float sFract0 = 1.0f - sFract1;
+
+        const hsvUpdate* entry00 = tableBase + hIndex0 * hueStep + sIndex0;
+        const hsvUpdate* entry01 = entry00 + (hIndex1 - hIndex0) * hueStep;
+
+        const float hueShift0 = hFract0 * entry00->hue_shift + hFract1 * entry01->hue_shift;
+        const float satScale0 = hFract0 * entry00->sat_scale + hFract1 * entry01->sat_scale;
+        const float valScale0 = hFract0 * entry00->val_scale + hFract1 * entry01->val_scale;
+
+        entry00++;
+        entry01++;
+
+        const float hueShift1 = hFract0 * entry00->hue_shift + hFract1 * entry01->hue_shift;
+        const float satScale1 = hFract0 * entry00->sat_scale + hFract1 * entry01->sat_scale;
+        const float valScale1 = hFract0 * entry00->val_scale + hFract1 * entry01->val_scale;
+
+        hueShift = sFract0 * hueShift0 + sFract1 * hueShift1;
+        satScale = sFract0 * satScale0 + sFract1 * satScale1;
+        valScale = sFract0 * valScale0 + sFract1 * valScale1;
+    }
+    else
+    {
+        if (srgb_gamma)
+        {
+            vEncoded = gammatab_srgb[v * 65535.f];
+        }
+
+        const float hScaled = h * hScale;
+        const float sScaled = s * sScale;
+        const float vScaled = vEncoded * vScale;
+
+        int hIndex0 = (int)hScaled;
+        int sIndex0 = (int)sScaled;
+        int vIndex0 = (int)vScaled;
+
+        sIndex0 = std::min<int>(sIndex0, maxSatIndex0);
+        vIndex0 = std::min<int>(vIndex0, maxValIndex0);
+
+        int hIndex1 = hIndex0 + 1;
+
+        if (hIndex0 >= maxHueIndex0)
+        {
+            hIndex0 = maxHueIndex0;
+            hIndex1 = 0;
+        }
+
+        const float hFract1 = hScaled - (float)hIndex0;
+        const float sFract1 = sScaled - (float)sIndex0;
+        const float vFract1 = vScaled - (float)vIndex0;
+
+        const float hFract0 = 1.0f - hFract1;
+        const float sFract0 = 1.0f - sFract1;
+        const float vFract0 = 1.0f - vFract1;
+
+        const hsvUpdate* entry00 = tableBase + vIndex0 * valStep + hIndex0 * hueStep + sIndex0;
+        const hsvUpdate* entry01 = entry00 + (hIndex1 - hIndex0) * hueStep;
+        const hsvUpdate* entry10 = entry00 + valStep;
+        const hsvUpdate* entry11 = entry01 + valStep;
+
+        const float hueShift0 = vFract0 * (hFract0 * entry00->hue_shift + hFract1 * entry01->hue_shift) +
+                                vFract1 * (hFract0 * entry10->hue_shift + hFract1 * entry11->hue_shift);
+
+        const float satScale0 = vFract0 * (hFract0 * entry00->sat_scale + hFract1 * entry01->sat_scale) +
+                                vFract1 * (hFract0 * entry10->sat_scale + hFract1 * entry11->sat_scale);
+
+        const float valScale0 = vFract0 * (hFract0 * entry00->val_scale + hFract1 * entry01->val_scale) +
+                                vFract1 * (hFract0 * entry10->val_scale + hFract1 * entry11->val_scale);
+
+        entry00++;
+        entry01++;
+        entry10++;
+        entry11++;
+
+        const float hueShift1 = vFract0 * (hFract0 * entry00->hue_shift + hFract1 * entry01->hue_shift) +
+                                vFract1 * (hFract0 * entry10->hue_shift + hFract1 * entry11->hue_shift);
+
+        const float satScale1 = vFract0 * (hFract0 * entry00->sat_scale + hFract1 * entry01->sat_scale) +
+                                vFract1 * (hFract0 * entry10->sat_scale + hFract1 * entry11->sat_scale);
+
+        const float valScale1 = vFract0 * (hFract0 * entry00->val_scale + hFract1 * entry01->val_scale) +
+                                vFract1 * (hFract0 * entry10->val_scale + hFract1 * entry11->val_scale);
+
+        hueShift = sFract0 * hueShift0 + sFract1 * hueShift1;
+        satScale = sFract0 * satScale0 + sFract1 * satScale1;
+        valScale = sFract0 * valScale0 + sFract1 * valScale1;
+    }
+
+    hueShift *= (6.0f / 360.0f); // Convert to internal hue range.
+
+    h += hueShift;
+
+    s = std::min<float>(s * satScale, 1.0f);
+
+    if (srgb_gamma)
+    {
+        v = igammatab_srgb[vEncoded * valScale * 65535.f];
+    }
+    else
+    {
+        v *= valScale;
+    }
+
+    DNG_HSVtoRGB(h, s, v, r, g, b);
+}
+
 
 // Spline interpolation from user data to get the internal tone curve with 65536 values
 // https://en.wikipedia.org/wiki/Spline_interpolation
@@ -853,7 +1151,7 @@ DCPProfile::~DCPProfile() = default;
 
 void DCPProfile::Load(const std::string& filename)
 {
-    delta_info.hue_step = delta_info.val_step = look_info.hue_step = look_info.val_step = 0;
+    //delta_info.hue_step = delta_info.val_step = look_info.hue_step = look_info.val_step = 0;
     constexpr int tiff_float_size = 4;
 
     static const float adobe_camera_raw_default_curve[] = {
@@ -1023,8 +1321,8 @@ void DCPProfile::Load(const std::string& filename)
     info.temperature_1 = calibrationIlluminantToTemperature(LightSource(info.light_source_1));
     info.temperature_2 = calibrationIlluminantToTemperature(LightSource(info.light_source_2));
 
-    const bool has_second_hue_sat =
-        findTag(TagKey::PROFILE_HUE_SAT_MAP_DATA_2, v_tag); // Some profiles have two matrices, but just one huesat
+    // Some profiles have two matrices, but just one huesat
+    const bool has_second_hue_sat = findTag(TagKey::PROFILE_HUE_SAT_MAP_DATA_2, v_tag);
 
     // Fetch Forward Matrices, if any
     tag = findTag(TagKey::FORWARD_MATRIX_1, v_tag);
@@ -1095,34 +1393,27 @@ void DCPProfile::Load(const std::string& filename)
 
     if (tag)
     {
-        look_info.hue_divisions = tag->toInt(0);
-        look_info.sat_divisions = tag->toInt(4);
-        look_info.val_divisions = tag->toInt(8);
+        hsvLook.hueDivisions = tag->toInt(0);
+        hsvLook.satDivisions = tag->toInt(4);
+        hsvLook.valDivisions = tag->toInt(8);
 
         tag = findTag(TagKey::PROFILE_LOOK_TABLE_ENCODING, v_tag);
-        look_info.srgb_gamma = tag && tag->toInt(0);
+        hsvLook.srgb_gamma = tag && tag->toInt(0);
 
         tag = findTag(TagKey::PROFILE_LOOK_TABLE_DATA, v_tag);
-        look_info.array_count = tag->datasize / 3;
+        hsvLook.array_count = tag->datasize / 3;
 
-        look_table.resize(look_info.array_count);
+        hsvLook.table.resize(hsvLook.array_count);
 
-        for (unsigned int i = 0; i < look_info.array_count; i++)
+        for (unsigned int i = 0; i < hsvLook.array_count; i++)
         {
-            look_table[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
-            look_table[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
-            look_table[i].val_scale = tag->toDouble((i * 3 + 2) * tiff_float_size);
+            hsvLook.table[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
+            hsvLook.table[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
+            hsvLook.table[i].val_scale = tag->toDouble((i * 3 + 2) * tiff_float_size);
         }
 
         // Precalculated constants for table application
-        look_info.pc.h_scale = look_info.hue_divisions < 2 ? 0.0f : static_cast<float>(look_info.hue_divisions) / 6.0f;
-        look_info.pc.s_scale = look_info.sat_divisions - 1;
-        look_info.pc.v_scale = look_info.val_divisions - 1;
-        look_info.pc.max_hue_index0 = look_info.hue_divisions - 1;
-        look_info.pc.max_sat_index0 = look_info.sat_divisions - 2;
-        look_info.pc.max_val_index0 = look_info.val_divisions - 2;
-        look_info.pc.hue_step = look_info.sat_divisions;
-        look_info.pc.val_step = look_info.hue_divisions * look_info.pc.hue_step;
+        hsvLook.setConstants();
 
         info.has_look_table = true;
     }
@@ -1131,34 +1422,26 @@ void DCPProfile::Load(const std::string& filename)
 
     if (tag)
     {
-        delta_info.hue_divisions = tag->toInt(0);
-        delta_info.sat_divisions = tag->toInt(4);
-        delta_info.val_divisions = tag->toInt(8);
+        hsvDelta_1.hueDivisions = tag->toInt(0);
+        hsvDelta_1.satDivisions = tag->toInt(4);
+        hsvDelta_1.valDivisions = tag->toInt(8);
 
         tag = findTag(TagKey::PROFILE_HUE_SAT_MAP_ENCODING, v_tag);
-        delta_info.srgb_gamma = tag && tag->toInt(0);
+        hsvDelta_1.srgb_gamma = tag && tag->toInt(0);
 
         tag = findTag(TagKey::PROFILE_HUE_SAT_MAP_DATA_1, v_tag);
-        delta_info.array_count = tag->datasize / 3;
+        hsvDelta_1.array_count = tag->datasize / 3;
 
-        deltas_1.resize(delta_info.array_count);
+        hsvDelta_1.table.resize(hsvDelta_1.array_count);
 
-        for (unsigned int i = 0; i < delta_info.array_count; ++i)
+        for (unsigned int i = 0; i < hsvDelta_1.array_count; ++i)
         {
-            deltas_1[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
-            deltas_1[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
-            deltas_1[i].val_scale = tag->toDouble((i * 3 + 2) * tiff_float_size);
+            hsvDelta_1.table[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
+            hsvDelta_1.table[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
+            hsvDelta_1.table[i].val_scale = tag->toDouble((i * 3 + 2) * tiff_float_size);
         }
 
-        delta_info.pc.h_scale =
-            delta_info.hue_divisions < 2 ? 0.0f : static_cast<float>(delta_info.hue_divisions) / 6.0f;
-        delta_info.pc.s_scale = delta_info.sat_divisions - 1;
-        delta_info.pc.v_scale = delta_info.val_divisions - 1;
-        delta_info.pc.max_hue_index0 = delta_info.hue_divisions - 1;
-        delta_info.pc.max_sat_index0 = delta_info.sat_divisions - 2;
-        delta_info.pc.max_val_index0 = delta_info.val_divisions - 2;
-        delta_info.pc.hue_step = delta_info.sat_divisions;
-        delta_info.pc.val_step = delta_info.hue_divisions * delta_info.pc.hue_step;
+        hsvDelta_1.setConstants();
 
         info.has_hue_sat_map = true;
     }
@@ -1198,17 +1481,24 @@ void DCPProfile::Load(const std::string& filename)
         // Second huesatmap
         if (has_second_hue_sat)
         {
-            deltas_2.resize(delta_info.array_count);
+            hsvDelta_2.hueDivisions = hsvDelta_1.hueDivisions;
+            hsvDelta_2.satDivisions = hsvDelta_1.satDivisions;
+            hsvDelta_2.valDivisions = hsvDelta_1.valDivisions;
+            hsvDelta_2.srgb_gamma   = hsvDelta_1.srgb_gamma;
+            hsvDelta_2.array_count  = hsvDelta_1.array_count;
+
+            hsvDelta_2.table.resize(hsvDelta_2.array_count);
 
             // Saturation maps. Need to be unwinded.
             tag = findTag(TagKey::PROFILE_HUE_SAT_MAP_DATA_2, v_tag);
 
-            for (unsigned int i = 0; i < delta_info.array_count; ++i)
+            for (unsigned int i = 0; i < hsvDelta_2.array_count; ++i)
             {
-                deltas_2[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
-                deltas_2[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
-                deltas_2[i].val_scale = tag->toDouble((i * 3 + 2) * tiff_float_size);
+                hsvDelta_2.table[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
+                hsvDelta_2.table[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
+                hsvDelta_2.table[i].val_scale = tag->toDouble((i * 3 + 2) * tiff_float_size);
             }
+            hsvDelta_2.setConstants();
         }
     }
 
@@ -1283,16 +1573,16 @@ void DCPProfile::Load(const std::string& filename)
         info.profileCalibrationSignature = tag->valueToString();
     }
 
-    std::vector<double> gammatab_srgb_data;
-    std::vector<double> igammatab_srgb_data;
-    for (int i = 0; i < 65536; i++)
-    {
-        double x = i / 65535.0;
-        gammatab_srgb_data.push_back((x <= 0.003040) ? (x * 12.92310) : (1.055 * exp(log(x) / 2.4) - 0.055)); // from RT
-        igammatab_srgb_data.push_back((x <= 0.039286) ? (x / 12.92310) : (exp(log((x + 0.055) / 1.055) * 2.4))); // from RT
-    }
-    gammatab_srgb.Set(gammatab_srgb_data);
-    igammatab_srgb.Set(igammatab_srgb_data);
+    //std::vector<double> gammatab_srgb_data;
+    //std::vector<double> igammatab_srgb_data;
+    //for (int i = 0; i < 65536; i++)
+    //{
+    //    double x = i / 65535.0;
+    //    gammatab_srgb_data.push_back((x <= 0.003040) ? (x * 12.92310) : (1.055 * exp(log(x) / 2.4) - 0.055)); // from RT
+    //    igammatab_srgb_data.push_back((x <= 0.039286) ? (x / 12.92310) : (exp(log((x + 0.055) / 1.055) * 2.4))); // from RT
+    //}
+    //gammatab_srgb.Set(gammatab_srgb_data);
+    //igammatab_srgb.Set(igammatab_srgb_data);
 }
 
 void DCPProfile::Load(const std::map<std::string, std::string>& metadata)
@@ -1352,291 +1642,291 @@ void DCPProfile::Load(const std::map<std::string, std::string>& metadata)
     }
 }
 
-void DCPProfile::apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params)
-{
-    // Compute matrices to and from selected working space
-    ws_sRGB = { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 };
-    sRGB_ws = { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 };
+//void DCPProfile::apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params)
+//{
+//    // Compute matrices to and from selected working space
+//    ws_sRGB = { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 };
+//    sRGB_ws = { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 };
+//
+//    if (params.working_space.compare("sRGB"))
+//    {
+//        if (params.working_space.compare("prophoto"))
+//        {
+//            for (int i = 0; i < 3; i++)
+//            {
+//                for (int j = 0; j < 3; j++)
+//                {
+//                    double to_ws = 0.0;
+//                    double from_ws = 0.0;
+//                    for (int k = 0; k < 3; k++)
+//                    {
+//                        to_ws += prophoto_xyz[i][k] * xyz_sRGB[k][j];
+//                        from_ws += sRGB_xyz[i][k] * xyz_prophoto[k][j];
+//                    }
+//                    ws_sRGB[i][j] = to_ws;
+//                    sRGB_ws[i][j] = from_ws;
+//                }
+//            }
+//        }
+//        else if (params.working_space.compare("AdobeRGB"))
+//        {
+//            for (int i = 0; i < 3; i++)
+//            {
+//                for (int j = 0; j < 3; j++)
+//                {
+//                    double to_ws = 0.0;
+//                    double from_ws = 0.0;
+//                    for (int k = 0; k < 3; k++)
+//                    {
+//                        to_ws += AdobeRGB_xyz[i][k] * xyz_sRGB[k][j];
+//                        from_ws += sRGB_xyz[i][k] * xyz_AdobeRGB[k][j];
+//                    }
+//                    ws_sRGB[i][j] = to_ws;
+//                    sRGB_ws[i][j] = from_ws;
+//                }
+//            }
+//        }
+//    }
+//
+//    // Apply DCP profile
+//#pragma omp parallel for
+//    for (int i = 0; i < image.spec().height; ++i)
+//        for (int j = 0; j < image.spec().width; ++j)
+//        {
+//            float rgb[3];
+//            image.getpixel(j, i, rgb, 3);
+//            for (int c = 0; c < 3; ++c)
+//            {
+//                rgb[c] *= 65535.0;
+//            }
+//            apply(rgb, params);
+//            for (int c = 0; c < 3; ++c)
+//            {
+//                rgb[c] /= 65535.0;
+//            }
+//            image.setpixel(j, i, rgb, 3);
+//        }
+//}
+//
+//void DCPProfile::apply(float* rgb, const DCPProfileApplyParams& params) const
+//{
+//    const float exp_scale = (params.apply_baseline_exposure_offset && info.has_baseline_exposure_offset)
+//        ? std::pow(2.0, baseline_exposure_offset)
+//        : 1.0f;
+//
+//    if (!params.useToneCurve && !params.applyLookTable)
+//    {
+//        if (exp_scale == 1.f)
+//        {
+//            return;
+//        }
+//
+//        for (int c = 0; c < 3; ++c)
+//        {
+//            rgb[c] *= exp_scale;
+//        }
+//    }
+//    else
+//    {
+//
+//        for (int c = 0; c < 3; ++c)
+//        {
+//            rgb[c] *= exp_scale;
+//        }
+//
+//        float ws_rgb[3] = { 0.0, 0.0, 0.0 };
+//        for (int i = 0; i < 3; i++)
+//        {
+//            for (int j = 0; j < 3; ++j)
+//            {
+//                ws_rgb[i] += ws_sRGB[i][j] * rgb[j];
+//            }
+//            if (params.applyLookTable || params.useToneCurve)
+//            {
+//                ws_rgb[i] = std::max<float>(ws_rgb[i], 0.f);
+//            }
+//        }
+//
+//        if (params.applyLookTable)
+//        {
+//            float clipped_ws_rgb[3];
+//            for (int i = 0; i < 3; ++i)
+//            {
+//                clipped_ws_rgb[i] = clamp(ws_rgb[i], 0.f, 65535.5f);
+//            }
+//
+//            float h, s, v;
+//            rgb2hsvtc(clipped_ws_rgb[0], clipped_ws_rgb[1], clipped_ws_rgb[2], h, s, v);
+//
+//            hsdApply(look_info, look_table, h, s, v);
+//            s = clamp(s, 0.f, 1.f);
+//            v = clamp(v, 0.f, 1.f);
+//
+//            h += (h < 0.0f ? 6.0f : (h >= 6.0f ? -6.0f : 0.0f));
+//
+//            hsv2rgbdcp(h, s, v, clipped_ws_rgb[0], clipped_ws_rgb[1], clipped_ws_rgb[2]);
+//
+//            if (!(ws_rgb[0] < 0.0 || ws_rgb[0] > 65535.0) ||
+//                !(ws_rgb[1] < 0.0 || ws_rgb[1] > 65535.0) ||
+//                !(ws_rgb[2] < 0.0 || ws_rgb[2] > 65535.0))
+//            {
+//                ws_rgb[0] = clipped_ws_rgb[0];
+//                ws_rgb[1] = clipped_ws_rgb[1];
+//                ws_rgb[2] = clipped_ws_rgb[2];
+//            }
+//        }
+//
+//        if (params.useToneCurve)
+//        {
+//            AS_tone_curve.Apply(ws_rgb[0], ws_rgb[1], ws_rgb[2]);
+//        }
+//
+//        for (int i = 0; i < 3; i++)
+//        {
+//            rgb[i] = 0.0;
+//            for (int j = 0; j < 3; j++)
+//            {
+//                rgb[i] += sRGB_ws[i][j] * ws_rgb[j];
+//            }
+//        }
+//    }
+//}
 
-    if (params.working_space.compare("sRGB"))
-    {
-        if (params.working_space.compare("prophoto"))
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    double to_ws = 0.0;
-                    double from_ws = 0.0;
-                    for (int k = 0; k < 3; k++)
-                    {
-                        to_ws += prophoto_xyz[i][k] * xyz_sRGB[k][j];
-                        from_ws += sRGB_xyz[i][k] * xyz_prophoto[k][j];
-                    }
-                    ws_sRGB[i][j] = to_ws;
-                    sRGB_ws[i][j] = from_ws;
-                }
-            }
-        }
-        else if (params.working_space.compare("AdobeRGB"))
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    double to_ws = 0.0;
-                    double from_ws = 0.0;
-                    for (int k = 0; k < 3; k++)
-                    {
-                        to_ws += AdobeRGB_xyz[i][k] * xyz_sRGB[k][j];
-                        from_ws += sRGB_xyz[i][k] * xyz_AdobeRGB[k][j];
-                    }
-                    ws_sRGB[i][j] = to_ws;
-                    sRGB_ws[i][j] = from_ws;
-                }
-            }
-        }
-    }
-
-    // Apply DCP profile
-#pragma omp parallel for
-    for (int i = 0; i < image.spec().height; ++i)
-        for (int j = 0; j < image.spec().width; ++j)
-        {
-            float rgb[3];
-            image.getpixel(j, i, rgb, 3);
-            for (int c = 0; c < 3; ++c)
-            {
-                rgb[c] *= 65535.0;
-            }
-            apply(rgb, params);
-            for (int c = 0; c < 3; ++c)
-            {
-                rgb[c] /= 65535.0;
-            }
-            image.setpixel(j, i, rgb, 3);
-        }
-}
-
-void DCPProfile::apply(float* rgb, const DCPProfileApplyParams& params) const
-{
-    const float exp_scale = (params.apply_baseline_exposure_offset && info.has_baseline_exposure_offset)
-        ? std::pow(2.0, baseline_exposure_offset)
-        : 1.0f;
-
-    if (!params.use_tone_curve && !params.apply_look_table)
-    {
-        if (exp_scale == 1.f)
-        {
-            return;
-        }
-
-        for (int c = 0; c < 3; ++c)
-        {
-            rgb[c] *= exp_scale;
-        }
-    }
-    else
-    {
-
-        for (int c = 0; c < 3; ++c)
-        {
-            rgb[c] *= exp_scale;
-        }
-
-        float ws_rgb[3] = { 0.0, 0.0, 0.0 };
-        for (int i = 0; i < 3; i++)
-        {
-            for (int j = 0; j < 3; ++j)
-            {
-                ws_rgb[i] += ws_sRGB[i][j] * rgb[j];
-            }
-            if (params.apply_look_table || params.use_tone_curve)
-            {
-                ws_rgb[i] = std::max<float>(ws_rgb[i], 0.f);
-            }
-        }
-
-        if (params.apply_look_table)
-        {
-            float clipped_ws_rgb[3];
-            for (int i = 0; i < 3; ++i)
-            {
-                clipped_ws_rgb[i] = clamp(ws_rgb[i], 0.f, 65535.5f);
-            }
-
-            float h, s, v;
-            rgb2hsvtc(clipped_ws_rgb[0], clipped_ws_rgb[1], clipped_ws_rgb[2], h, s, v);
-
-            hsdApply(look_info, look_table, h, s, v);
-            s = clamp(s, 0.f, 1.f);
-            v = clamp(v, 0.f, 1.f);
-
-            h += (h < 0.0f ? 6.0f : (h >= 6.0f ? -6.0f : 0.0f));
-
-            hsv2rgbdcp(h, s, v, clipped_ws_rgb[0], clipped_ws_rgb[1], clipped_ws_rgb[2]);
-
-            if (!(ws_rgb[0] < 0.0 || ws_rgb[0] > 65535.0) ||
-                !(ws_rgb[1] < 0.0 || ws_rgb[1] > 65535.0) ||
-                !(ws_rgb[2] < 0.0 || ws_rgb[2] > 65535.0))
-            {
-                ws_rgb[0] = clipped_ws_rgb[0];
-                ws_rgb[1] = clipped_ws_rgb[1];
-                ws_rgb[2] = clipped_ws_rgb[2];
-            }
-        }
-
-        if (params.use_tone_curve)
-        {
-            AS_tone_curve.Apply(ws_rgb[0], ws_rgb[1], ws_rgb[2]);
-        }
-
-        for (int i = 0; i < 3; i++)
-        {
-            rgb[i] = 0.0;
-            for (int j = 0; j < 3; j++)
-            {
-                rgb[i] += sRGB_ws[i][j] * ws_rgb[j];
-            }
-        }
-    }
-}
-
-inline void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vector<HsbModify>& table_base, float& h,
-    float& s, float& v) const
-{
-    // Apply the HueSatMap. Ported from Adobes reference implementation.
-    float hue_shift;
-    float sat_scale;
-    float val_scale;
-    float v_encoded = v;
-
-    if (table_info.val_divisions < 2)
-    {
-        // Optimize most common case of "2.5D" table
-        const float h_scaled = h * table_info.pc.h_scale;
-        const float s_scaled = s * table_info.pc.s_scale;
-
-        int h_index0 = std::max<int>(h_scaled, 0);
-        const int s_index0 = std::max(std::min<int>(s_scaled, table_info.pc.max_sat_index0), 0);
-
-        int h_index1 = h_index0 + 1;
-
-        if (h_index0 >= table_info.pc.max_hue_index0)
-        {
-            h_index0 = table_info.pc.max_hue_index0;
-            h_index1 = 0;
-        }
-
-        const float h_fract1 = h_scaled - static_cast<float>(h_index0);
-        const float s_fract1 = s_scaled - static_cast<float>(s_index0);
-
-        const float h_fract0 = 1.0f - h_fract1;
-        const float s_fract0 = 1.0f - s_fract1;
-
-        std::vector<HsbModify>::size_type e00_index = h_index0 * table_info.pc.hue_step + s_index0;
-        std::vector<HsbModify>::size_type e01_index = e00_index + (h_index1 - h_index0) * table_info.pc.hue_step;
-
-        const float hue_shift0 =
-            h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift;
-        const float sat_scale0 =
-            h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale;
-        const float val_scale0 =
-            h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale;
-
-        ++e00_index;
-        ++e01_index;
-
-        const float hueShift1 = h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift;
-        const float satScale1 = h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale;
-        const float valScale1 = h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale;
-
-        hue_shift = s_fract0 * hue_shift0 + s_fract1 * hueShift1;
-        sat_scale = s_fract0 * sat_scale0 + s_fract1 * satScale1;
-        val_scale = s_fract0 * val_scale0 + s_fract1 * valScale1;
-    }
-    else
-    {
-        const float h_scaled = h * table_info.pc.h_scale;
-        const float s_scaled = s * table_info.pc.s_scale;
-
-        if (table_info.srgb_gamma)
-        {
-            v_encoded = gammatab_srgb[v * 65535.f];
-        }
-
-        const float v_scaled = v_encoded * table_info.pc.v_scale;
-
-        int h_index0 = h_scaled;
-        const int s_index0 = std::max(std::min<int>(s_scaled, table_info.pc.max_sat_index0), 0);
-        const int v_index0 = std::max(std::min<int>(v_scaled, table_info.pc.max_val_index0), 0);
-
-        int h_index1 = h_index0 + 1;
-
-        if (h_index0 >= table_info.pc.max_hue_index0)
-        {
-            h_index0 = table_info.pc.max_hue_index0;
-            h_index1 = 0;
-        }
-
-        const float h_fract1 = h_scaled - static_cast<float>(h_index0);
-        const float s_fract1 = s_scaled - static_cast<float>(s_index0);
-        const float v_fract1 = v_scaled - static_cast<float>(v_index0);
-
-        const float h_fract0 = 1.0f - h_fract1;
-        const float s_fract0 = 1.0f - s_fract1;
-        const float v_fract0 = 1.0f - v_fract1;
-
-        std::vector<HsbModify>::size_type e00_index =
-            v_index0 * table_info.pc.val_step + h_index0 * table_info.pc.hue_step + s_index0;
-        std::vector<HsbModify>::size_type e01_index = e00_index + (h_index1 - h_index0) * table_info.pc.hue_step;
-        std::vector<HsbModify>::size_type e10_index = e00_index + table_info.pc.val_step;
-        std::vector<HsbModify>::size_type e11_index = e01_index + table_info.pc.val_step;
-
-        const float hueShift0 =
-            v_fract0 * (h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift) +
-            v_fract1 * (h_fract0 * table_base[e10_index].hue_shift + h_fract1 * table_base[e11_index].hue_shift);
-        const float satScale0 =
-            v_fract0 * (h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale) +
-            v_fract1 * (h_fract0 * table_base[e10_index].sat_scale + h_fract1 * table_base[e11_index].sat_scale);
-        const float valScale0 =
-            v_fract0 * (h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale) +
-            v_fract1 * (h_fract0 * table_base[e10_index].val_scale + h_fract1 * table_base[e11_index].val_scale);
-
-        ++e00_index;
-        ++e01_index;
-        ++e10_index;
-        ++e11_index;
-
-        const float hueShift1 =
-            v_fract0 * (h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift) +
-            v_fract1 * (h_fract0 * table_base[e10_index].hue_shift + h_fract1 * table_base[e11_index].hue_shift);
-        const float satScale1 =
-            v_fract0 * (h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale) +
-            v_fract1 * (h_fract0 * table_base[e10_index].sat_scale + h_fract1 * table_base[e11_index].sat_scale);
-        const float valScale1 =
-            v_fract0 * (h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale) +
-            v_fract1 * (h_fract0 * table_base[e10_index].val_scale + h_fract1 * table_base[e11_index].val_scale);
-
-        hue_shift = s_fract0 * hueShift0 + s_fract1 * hueShift1;
-        sat_scale = s_fract0 * satScale0 + s_fract1 * satScale1;
-        val_scale = s_fract0 * valScale0 + s_fract1 * valScale1;
-    }
-
-    hue_shift *= 6.0f / 360.0f; // Convert to internal hue range.
-
-    h += hue_shift;
-    s *= sat_scale; // No clipping here, we are RT float :-)
-
-    if (table_info.srgb_gamma)
-    {
-        v = igammatab_srgb[v_encoded * val_scale * 65535.f];
-    }
-    else
-    {
-        v *= val_scale;
-    }
-}
+//inline void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vector<HsbModify>& table_base, float& h,
+//    float& s, float& v) const
+//{
+//    // Apply the HueSatMap. Ported from Adobes reference implementation.
+//    float hue_shift;
+//    float sat_scale;
+//    float val_scale;
+//    float v_encoded = v;
+//
+//    if (table_info.val_divisions < 2)
+//    {
+//        // Optimize most common case of "2.5D" table
+//        const float h_scaled = h * table_info.pc.h_scale;
+//        const float s_scaled = s * table_info.pc.s_scale;
+//
+//        int h_index0 = std::max<int>(h_scaled, 0);
+//        const int s_index0 = std::max(std::min<int>(s_scaled, table_info.pc.max_sat_index0), 0);
+//
+//        int h_index1 = h_index0 + 1;
+//
+//        if (h_index0 >= table_info.pc.max_hue_index0)
+//        {
+//            h_index0 = table_info.pc.max_hue_index0;
+//            h_index1 = 0;
+//        }
+//
+//        const float h_fract1 = h_scaled - static_cast<float>(h_index0);
+//        const float s_fract1 = s_scaled - static_cast<float>(s_index0);
+//
+//        const float h_fract0 = 1.0f - h_fract1;
+//        const float s_fract0 = 1.0f - s_fract1;
+//
+//        std::vector<HsbModify>::size_type e00_index = h_index0 * table_info.pc.hue_step + s_index0;
+//        std::vector<HsbModify>::size_type e01_index = e00_index + (h_index1 - h_index0) * table_info.pc.hue_step;
+//
+//        const float hue_shift0 =
+//            h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift;
+//        const float sat_scale0 =
+//            h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale;
+//        const float val_scale0 =
+//            h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale;
+//
+//        ++e00_index;
+//        ++e01_index;
+//
+//        const float hueShift1 = h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift;
+//        const float satScale1 = h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale;
+//        const float valScale1 = h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale;
+//
+//        hue_shift = s_fract0 * hue_shift0 + s_fract1 * hueShift1;
+//        sat_scale = s_fract0 * sat_scale0 + s_fract1 * satScale1;
+//        val_scale = s_fract0 * val_scale0 + s_fract1 * valScale1;
+//    }
+//    else
+//    {
+//        const float h_scaled = h * table_info.pc.h_scale;
+//        const float s_scaled = s * table_info.pc.s_scale;
+//
+//        if (table_info.srgb_gamma)
+//        {
+//            v_encoded = gammatab_srgb[v * 65535.f];
+//        }
+//
+//        const float v_scaled = v_encoded * table_info.pc.v_scale;
+//
+//        int h_index0 = h_scaled;
+//        const int s_index0 = std::max(std::min<int>(s_scaled, table_info.pc.max_sat_index0), 0);
+//        const int v_index0 = std::max(std::min<int>(v_scaled, table_info.pc.max_val_index0), 0);
+//
+//        int h_index1 = h_index0 + 1;
+//
+//        if (h_index0 >= table_info.pc.max_hue_index0)
+//        {
+//            h_index0 = table_info.pc.max_hue_index0;
+//            h_index1 = 0;
+//        }
+//
+//        const float h_fract1 = h_scaled - static_cast<float>(h_index0);
+//        const float s_fract1 = s_scaled - static_cast<float>(s_index0);
+//        const float v_fract1 = v_scaled - static_cast<float>(v_index0);
+//
+//        const float h_fract0 = 1.0f - h_fract1;
+//        const float s_fract0 = 1.0f - s_fract1;
+//        const float v_fract0 = 1.0f - v_fract1;
+//
+//        std::vector<HsbModify>::size_type e00_index =
+//            v_index0 * table_info.pc.val_step + h_index0 * table_info.pc.hue_step + s_index0;
+//        std::vector<HsbModify>::size_type e01_index = e00_index + (h_index1 - h_index0) * table_info.pc.hue_step;
+//        std::vector<HsbModify>::size_type e10_index = e00_index + table_info.pc.val_step;
+//        std::vector<HsbModify>::size_type e11_index = e01_index + table_info.pc.val_step;
+//
+//        const float hueShift0 =
+//            v_fract0 * (h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift) +
+//            v_fract1 * (h_fract0 * table_base[e10_index].hue_shift + h_fract1 * table_base[e11_index].hue_shift);
+//        const float satScale0 =
+//            v_fract0 * (h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale) +
+//            v_fract1 * (h_fract0 * table_base[e10_index].sat_scale + h_fract1 * table_base[e11_index].sat_scale);
+//        const float valScale0 =
+//            v_fract0 * (h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale) +
+//            v_fract1 * (h_fract0 * table_base[e10_index].val_scale + h_fract1 * table_base[e11_index].val_scale);
+//
+//        ++e00_index;
+//        ++e01_index;
+//        ++e10_index;
+//        ++e11_index;
+//
+//        const float hueShift1 =
+//            v_fract0 * (h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift) +
+//            v_fract1 * (h_fract0 * table_base[e10_index].hue_shift + h_fract1 * table_base[e11_index].hue_shift);
+//        const float satScale1 =
+//            v_fract0 * (h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale) +
+//            v_fract1 * (h_fract0 * table_base[e10_index].sat_scale + h_fract1 * table_base[e11_index].sat_scale);
+//        const float valScale1 =
+//            v_fract0 * (h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale) +
+//            v_fract1 * (h_fract0 * table_base[e10_index].val_scale + h_fract1 * table_base[e11_index].val_scale);
+//
+//        hue_shift = s_fract0 * hueShift0 + s_fract1 * hueShift1;
+//        sat_scale = s_fract0 * satScale0 + s_fract1 * satScale1;
+//        val_scale = s_fract0 * valScale0 + s_fract1 * valScale1;
+//    }
+//
+//    hue_shift *= 6.0f / 360.0f; // Convert to internal hue range.
+//
+//    h += hue_shift;
+//    s *= sat_scale; // No clipping here, we are RT float :-)
+//
+//    if (table_info.srgb_gamma)
+//    {
+//        v = igammatab_srgb[v_encoded * val_scale * 65535.f];
+//    }
+//    else
+//    {
+//        v *= val_scale;
+//    }
+//}
 
 DCPProfile::Matrix DCPProfile::getInterpolatedMatrix(const double cct, const std::string& type) const
 {
@@ -2230,6 +2520,76 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
     return cameraToACES2065;
 }
 
+DCPProfile::Matrix DCPProfile::getCameraToWorkingColorSpaceMatrix(const Triple& asShotNeutral, const bool sourceIsRaw, const bool useColorMatrixOnly, const std::string& workingColorSpace, double& colorTemp) const
+{
+    const Triple asShotNeutralInv = { 1.0 / asShotNeutral[0] , 1.0 / asShotNeutral[1] , 1.0 / asShotNeutral[2] };
+
+    double x, y;
+    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutralInv, x, y);
+    double cct, tint;
+    setChromaticityCoordinates(x, y, cct, tint);
+
+    colorTemp = cct;
+
+    ALICEVISION_LOG_INFO("Estimated illuminant (cct; tint) : (" << cct << "; " << tint << ")");
+
+    Matrix neutral = IdentityMatrix;
+    if (sourceIsRaw)
+    {
+        neutral[0][0] = asShotNeutral[0];
+        neutral[1][1] = asShotNeutral[1];
+        neutral[2][2] = asShotNeutral[2];
+    }
+
+    Matrix cameraToXyzD50 = IdentityMatrix;
+
+    if (useColorMatrixOnly || ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2)))
+    {
+        Matrix xyzToCamera = IdentityMatrix;
+        if (info.has_color_matrix_1 && info.has_color_matrix_2)
+        {
+            xyzToCamera = getInterpolatedMatrix(cct, "color");
+        }
+        else if (info.has_color_matrix_1)
+        {
+            xyzToCamera = color_matrix_1;
+        }
+
+        Matrix wbInv = IdentityMatrix;
+        if (!sourceIsRaw)
+        {
+            // White balancing has been applied before demosaicing but color matrix is supposed to work on non white balanced data
+            // The white balance operation must be reversed
+            wbInv[0][0] = asShotNeutralInv[0];
+            wbInv[1][1] = asShotNeutralInv[1];
+            wbInv[2][2] = asShotNeutralInv[2];
+        }
+        const Matrix cameraToXyz = matMult(matInv(xyzToCamera), wbInv);
+
+        const double D50_cct = 5000.706605070579;  //
+        const double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
+        const Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
+
+        cameraToXyzD50 = matMult(cat, cameraToXyz);
+    }
+    else if ((info.has_forward_matrix_1) && (info.has_forward_matrix_2))
+    {
+        cameraToXyzD50 = matMult(getInterpolatedMatrix(cct, "forward"), neutral);
+    }
+    else if (info.has_forward_matrix_1)
+    {
+        cameraToXyzD50 = matMult(forward_matrix_1, neutral);
+    }
+
+    if (workingColorSpace == "aces2065-1")
+    {
+        return matMult(xyzD50ToACES2065Matrix, cameraToXyzD50);
+    }
+    else
+    {
+        return matMult(xyzD50ToProPhotoMatrix, cameraToXyzD50);
+    }
+}
 
 void DCPProfile::getMatrices(const std::string& type, std::vector<Matrix>& v_Mat) const
 {
@@ -2391,6 +2751,197 @@ void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neut
             image(i, j) = rgbOut;
         }
 }
+
+void DCPProfile::applyFull(OIIO::ImageBuf& image, const DCPProfileApplyParams& params) const
+{
+    std::string working_space = (params.applyHueShift || params.applyLookTable || params.useToneCurve) ? "prophoto" : "aces2065-1";
+
+    double cct;
+    const Matrix cameraToWorkingSpaceMatrix = getCameraToWorkingColorSpaceMatrix(params.neutral, params.applyWhiteBalance, params.useColorMatrixOnly, working_space, cct);
+
+    #pragma omp parallel for
+    for (int i = 0; i < image.spec().height; ++i)
+        for (int j = 0; j < image.spec().width; ++j)
+        {
+            float rgb[3];
+            image.getpixel(j, i, rgb, 3);
+
+            float rgbOut[3];
+            for (int r = 0; r < 3; ++r)
+            {
+                rgbOut[r] = 0.0;
+                for (int c = 0; c < 3; ++c)
+                {
+                    rgbOut[r] += cameraToWorkingSpaceMatrix[r][c] * rgb[c];
+                }
+            }
+            image.setpixel(j, i, rgbOut, 3);
+        }
+
+    if (params.applyHueShift)
+    {
+        const double a = 1.e6 / info.temperature_1;
+        const double b = 1.e6 / info.temperature_2;
+        const double c = 1.e6 / cct;
+        const double w1 = (b - c) / (b - a);
+
+        hsvLUT hsvDelta(hsvDelta_1, w1, hsvDelta_2);
+
+        #pragma omp parallel for
+        for (int i = 0; i < image.spec().height; ++i)
+            for (int j = 0; j < image.spec().width; ++j)
+            {
+                float rgb[3];
+                image.getpixel(j, i, rgb, 3);
+                hsvDelta.applyOnRGB(rgb[0], rgb[1], rgb[2]);
+                image.setpixel(j, i, rgb, 3);
+            }
+    }
+
+    if (params.applyLookTable)
+    {
+        #pragma omp parallel for
+        for (int i = 0; i < image.spec().height; ++i)
+            for (int j = 0; j < image.spec().width; ++j)
+            {
+                float rgb[3];
+                image.getpixel(j, i, rgb, 3);
+                hsvLook.applyOnRGB(rgb[0], rgb[1], rgb[2]);
+                image.setpixel(j, i, rgb, 3);
+            }
+    }
+
+    if (params.useToneCurve)
+    {
+        #pragma omp parallel for
+        for (int i = 0; i < image.spec().height; ++i)
+            for (int j = 0; j < image.spec().width; ++j)
+            {
+                float rgb[3];
+                image.getpixel(j, i, rgb, 3);
+                for (int k = 0; k < 3; ++k)
+                {
+                    rgb[k] *= 65535.f;
+                }
+                AS_tone_curve.Apply(rgb[0], rgb[1], rgb[2]);
+                for (int k = 0; k < 3; ++k)
+                {
+                    rgb[k] /= 65535.f;
+                }
+                image.setpixel(j, i, rgb, 3);
+            }
+    }
+
+    if (params.applyHueShift || params.applyLookTable || params.useToneCurve)
+    {
+        #pragma omp parallel for
+        for (int i = 0; i < image.spec().height; ++i)
+            for (int j = 0; j < image.spec().width; ++j)
+            {
+                float rgb[3];
+                image.getpixel(j, i, rgb, 3);
+
+                float rgbOut[3];
+                for (int r = 0; r < 3; ++r)
+                {
+                    rgbOut[r] = 0.0;
+                    for (int c = 0; c < 3; ++c)
+                    {
+                        rgbOut[r] += ProPhotoToSrgbD65Matrix[r][c] * rgb[c];
+                    }
+                }
+                image.setpixel(j, i, rgbOut, 3);
+            }
+    }
+}
+
+void DCPProfile::applyFull(Image<image::RGBAfColor>& image, const DCPProfileApplyParams& params) const
+{
+    std::string working_space = (params.applyHueShift || params.applyLookTable || params.useToneCurve) ? "prophoto" : "aces2065-1";
+
+    double cct;
+    const Matrix cameraToWorkingSpaceMatrix = getCameraToWorkingColorSpaceMatrix(params.neutral, params.applyWhiteBalance, params.useColorMatrixOnly, working_space, cct);
+
+    #pragma omp parallel for
+    for (int i = 0; i < image.Height(); ++i)
+        for (int j = 0; j < image.Width(); ++j)
+        {
+            const RGBAfColor rgb = image(i, j);
+
+            RGBAfColor rgbOut = rgb;
+            for (int r = 0; r < 3; ++r)
+            {
+                rgbOut[r] = 0.0;
+                for (int c = 0; c < 3; ++c)
+                {
+                    rgbOut[r] += cameraToWorkingSpaceMatrix[r][c] * rgb[c];
+                }
+            }
+            image(i, j) = rgbOut;
+        }
+
+    if (params.applyHueShift)
+    {
+        const double a = 1.e6 / info.temperature_1;
+        const double b = 1.e6 / info.temperature_2;
+        const double c = 1.e6 / cct;
+        const double w1 = (b - c) / (b - a);
+
+        hsvLUT hsvDelta(hsvDelta_1, w1, hsvDelta_2);
+
+        #pragma omp parallel for
+        for (int i = 0; i < image.Height(); ++i)
+            for (int j = 0; j < image.Width(); ++j)
+            {
+                RGBAfColor& rgb = image(i, j);
+                hsvDelta.applyOnRGB(rgb[0], rgb[1], rgb[2]);
+            }
+    }
+
+    if (params.applyLookTable)
+    {
+        #pragma omp parallel for
+        for (int i = 0; i < image.Height(); ++i)
+            for (int j = 0; j < image.Width(); ++j)
+            {
+                RGBAfColor& rgb = image(i, j);
+                hsvLook.applyOnRGB(rgb[0], rgb[1], rgb[2]);
+            }
+    }
+
+    if (params.useToneCurve)
+    {
+        #pragma omp parallel for
+        for (int i = 0; i < image.Height(); ++i)
+            for (int j = 0; j < image.Width(); ++j)
+            {
+                RGBAfColor& rgb = image(i, j);
+                AS_tone_curve.Apply(rgb[0], rgb[1], rgb[2]);
+            }
+    }
+
+    if (params.applyHueShift || params.applyLookTable || params.useToneCurve)
+    {
+        #pragma omp parallel for
+        for (int i = 0; i < image.Height(); ++i)
+            for (int j = 0; j < image.Width(); ++j)
+            {
+                const RGBAfColor rgb = image(i, j);
+
+                RGBAfColor rgbOut = rgb;
+                for (int r = 0; r < 3; ++r)
+                {
+                    rgbOut[r] = 0.0;
+                    for (int c = 0; c < 3; ++c)
+                    {
+                        rgbOut[r] += ProPhotoToSrgbD65Matrix[r][c] * rgb[c];
+                    }
+                }
+                image(i, j) = rgbOut;
+            }
+    }
+}
+
 
 DCPDatabase::DCPDatabase(const std::string& databaseDirPath)
 {

@@ -104,14 +104,71 @@ private:
 };
 
 /**
+* @brief hsvLUT represents a lookup table in a color space encoded with Hue-Saturation-Value coordinates and that can be embedded with a DCP color profile
+*/
+class hsvLUT final
+{
+public:
+
+    hsvLUT() = default;
+    ~hsvLUT() = default;
+
+    /**
+    * @brief hsvLUT constructor as interpolator of two existing LUTs of same size.
+    * @param[in] lut1 The first hsvLUT.
+    * @param[in] w1 The weight associated to the first hsvLUT ranged in [0.0; 1.0].
+    * @param[in] lut2 The second hsvLUT. Associated weight is (1.0 - w1).
+    */
+    hsvLUT(hsvLUT lut1, double w1, hsvLUT lut2);
+
+    struct hsvUpdate
+    {
+        float hue_shift;
+        float sat_scale;
+        float val_scale;
+    };
+
+    int hueDivisions = -1;
+    int satDivisions = -1;
+    int valDivisions = -1;
+    unsigned int array_count = 0;
+    bool srgb_gamma = false;
+
+    std::vector<hsvUpdate> table;
+
+    void setConstants();
+
+    void applyOnRGB(float& r, float& g, float& b) const;
+
+private:
+
+    float hScale;
+    float sScale;
+    float vScale;
+    int maxHueIndex0;
+    int maxSatIndex0;
+    int maxValIndex0;
+    int hueStep;
+    int valStep;
+
+    SplineToneCurve gammatab_srgb;
+    SplineToneCurve igammatab_srgb;
+};
+
+/**
  * @brief Aggregate all DCP color profile application options (non linear part)
  */
 struct DCPProfileApplyParams
 {
-    bool apply_hue_shift = true;
+    std::array<double, 3> neutral;
+    bool applyWhiteBalance = false;
+    bool useColorMatrixOnly = true;
+
+
+    bool applyHueShift = true;
     bool apply_baseline_exposure_offset = true;
-    bool use_tone_curve = true;
-    bool apply_look_table = true;
+    bool useToneCurve = true;
+    bool applyLookTable = true;
     std::string working_space = "sRGB";
 };
 
@@ -220,49 +277,53 @@ public:
      */
     void applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
 
+    void applyFull(OIIO::ImageBuf& image, const DCPProfileApplyParams& params) const;
+
+    void applyFull(Image<image::RGBAfColor>& image, const DCPProfileApplyParams& params) const;
+
     /**
      * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer
      * param[in] image The OIIO image on which the profile must be applied
      * param[in] params contains the application parameters indicating which parts of the profile must be applied
      */
-    void apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params);
+    //void apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params);
     /**
      * @brief apply applies the non linear part of a DCP profile on a rgb pixel
      * param[in] rgb The pixel values on which the profile must be applied
      * param[in] params contains the application parameters indicating which parts of the profile must be applied
      */
-    void apply(float* rgb, const DCPProfileApplyParams& params) const;
+    //void apply(float* rgb, const DCPProfileApplyParams& params) const;
 
 private:
-    struct HsbModify
-    {
-        float hue_shift;
-        float sat_scale;
-        float val_scale;
-    };
+    //struct HsbModify
+    //{
+    //    float hue_shift;
+    //    float sat_scale;
+    //    float val_scale;
+    //};
 
-    struct HsdTableInfo
-    {
-        int hue_divisions;
-        int sat_divisions;
-        int val_divisions;
-        int hue_step;
-        int val_step;
-        unsigned int array_count;
-        bool srgb_gamma;
-        struct {
-            float h_scale;
-            float s_scale;
-            float v_scale;
-            int max_hue_index0;
-            int max_sat_index0;
-            int max_val_index0;
-            int hue_step;
-            int val_step;
-        } pc;
-    };
+    //struct HsdTableInfo
+    //{
+    //    int hue_divisions;
+    //    int sat_divisions;
+    //    int val_divisions;
+    //    int hue_step;
+    //    int val_step;
+    //    unsigned int array_count;
+    //    bool srgb_gamma;
+    //    struct {
+    //        float h_scale;
+    //        float s_scale;
+    //        float v_scale;
+    //        int max_hue_index0;
+    //        int max_sat_index0;
+    //        int max_val_index0;
+    //        int hue_step;
+    //        int val_step;
+    //    } pc;
+    //};
 
-    void hsdApply(const HsdTableInfo& table_info, const std::vector<HsbModify>& table_base, float& h, float& s, float& v) const;
+    //void hsdApply(const HsdTableInfo& table_info, const std::vector<HsbModify>& table_base, float& h, float& s, float& v) const;
 
     Matrix matMult(const Matrix& A, const Matrix& B) const;
     Triple matMult(const Matrix& M, const Triple& V) const;
@@ -279,6 +340,7 @@ private:
     Matrix getCameraToXyzD50Matrix(const double x, const double y) const;
     Matrix getCameraToSrgbLinearMatrix(const double x, const double y) const;
     Matrix getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
+    Matrix getCameraToWorkingColorSpaceMatrix(const Triple& asShotNeutral, const bool sourceIsRaw, const bool useColorMatrixOnly, const std::string& workingColorSpace, double& colorTemp) const;
 
     Matrix ws_sRGB; // working color space to sRGB
     Matrix sRGB_ws; // sRGB to working color space
@@ -290,11 +352,17 @@ private:
     Matrix forward_matrix_1; // white balanced raw to xyzD50 for illumimant 1
     Matrix forward_matrix_2; // white balanced raw to xyzD50 for illumimant 2
     double baseline_exposure_offset;
-    std::vector<HsbModify> deltas_1; // Basic Hue Sat update table for illumimant 1
-    std::vector<HsbModify> deltas_2; // Basic Hue Sat update table for illumimant 2
-    std::vector<HsbModify> look_table; // Hue Sat update table for look modification
-    HsdTableInfo delta_info; // Information for basic Hue Sat updates
-    HsdTableInfo look_info;  // Information for look modification 
+    //std::vector<HsbModify> deltas_1; // Basic Hue Sat update table for illumimant 1
+    //std::vector<HsbModify> deltas_2; // Basic Hue Sat update table for illumimant 2
+    //std::vector<HsbModify> look_table; // Hue Sat update table for look modification
+
+    hsvLUT hsvDelta_1;
+    hsvLUT hsvDelta_2;
+    hsvLUT hsvLook;
+
+
+    //HsdTableInfo delta_info; // Information for basic Hue Sat updates
+    //HsdTableInfo look_info;  // Information for look modification 
 
     SplineToneCurve AS_tone_curve; // Adobe standard tone curve
 
@@ -368,8 +436,6 @@ private:
     std::map<std::string, DCPProfile> dcpStore;
 
 };
-
-
 
 }
 }

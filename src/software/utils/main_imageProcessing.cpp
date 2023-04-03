@@ -763,6 +763,9 @@ int aliceVision_main(int argc, char * argv[])
     bool errorOnMissingColorProfile = true;
     bool useDCPColorMatrixOnly = true;
     bool doWBAfterDemosaicing = false;
+    bool applyDCPHSMap = true;
+    bool applyDCPLookMap = true;
+    bool applyDCPToneCurve = true;
     std::string demosaicingAlgo = "AHD";
     int highlightMode = 0;
 
@@ -878,6 +881,15 @@ int aliceVision_main(int argc, char * argv[])
 
         ("doWBAfterDemosaicing", po::value<bool>(&doWBAfterDemosaicing)->default_value(doWBAfterDemosaicing),
          "Do not use libRaw white balancing. White balancing is applied just before DCP profile if useDCPColorMatrixOnly is set to False. Default: False.")
+
+        ("applyDCPHSMap", po::value<bool>(&applyDCPHSMap)->default_value(applyDCPHSMap),
+         "Apply DCP Hue-Sat map if available. Default: True. Only considered if rawColorInterpretation is set to dcpFullProcessing.")
+
+        ("applyDCPLookMap", po::value<bool>(&applyDCPLookMap)->default_value(applyDCPLookMap),
+         "Apply DCP Look map if available. Default: True. Only considered if rawColorInterpretation is set to dcpFullProcessing.")
+
+        ("applyDCPToneCurve", po::value<bool>(&applyDCPToneCurve)->default_value(applyDCPToneCurve),
+         "Apply tone curve. Default: True. Only considered if rawColorInterpretation is set to dcpFullProcessing.")
 
         ("demosaicingAlgo", po::value<std::string>(&demosaicingAlgo)->default_value(demosaicingAlgo),
          "Demosaicing algorithm (see libRaw documentation).\n"
@@ -1033,6 +1045,9 @@ int aliceVision_main(int argc, char * argv[])
                     options.doWBAfterDemosaicing = doWBAfterDemosaicing;
                 }
                 options.colorProfileFileName = view.getColorProfileFileName();
+                options.applyDCPHSMap = applyDCPHSMap;
+                options.applyDCPLookMap = applyDCPLookMap;
+                options.applyDCPToneCurve = applyDCPToneCurve;
                 options.demosaicingAlgo = demosaicingAlgo;
                 options.highlightMode = highlightMode;
             }
@@ -1196,6 +1211,7 @@ int aliceVision_main(int argc, char * argv[])
             view.setMetadata(image::getMapFromMetadata(metadata));
 
             if (isRAW && (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+                          rawColorInterpretation == image::ERawColorInterpretation::DcpFullProcessing ||
                           rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
             {
                 // Load DCP color profiles database if not already loaded
@@ -1233,7 +1249,8 @@ int aliceVision_main(int argc, char * argv[])
                 readOptions.colorProfileFileName = dcpProf.info.filename;
                 if (dcpProf.info.filename.empty() &&
                     ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
-                        (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
+                     (rawColorInterpretation == image::ERawColorInterpretation::DcpFullProcessing) ||
+                     (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
                 {
                     // Fallback case of missing profile but no error requested
                     readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
@@ -1250,6 +1267,9 @@ int aliceVision_main(int argc, char * argv[])
 
                 readOptions.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                 readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                readOptions.applyDCPHSMap = applyDCPHSMap;
+                readOptions.applyDCPLookMap = applyDCPLookMap;
+                readOptions.applyDCPToneCurve = applyDCPToneCurve;
                 readOptions.demosaicingAlgo = demosaicingAlgo;
                 readOptions.highlightMode = highlightMode;
 

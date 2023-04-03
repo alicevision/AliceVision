@@ -269,6 +269,7 @@ std::string ERawColorInterpretation_informations()
            "* none : None \n"
            "* librawnowhitebalancing : libRaw whithout white balancing \n"
            "* librawwhitebalancing : libRaw whith white balancing \n"
+           "* dcpfullprocessing : DCP full processing \n"
            "* dcplinearprocessing : DCP linear processing \n"
            "* dcpmetadata : None but DCP info embedded in metadata";
 }
@@ -284,6 +285,8 @@ ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& 
         return ERawColorInterpretation::LibRawNoWhiteBalancing;
     if (type == "librawwhitebalancing")
         return ERawColorInterpretation::LibRawWhiteBalancing;
+    if (type == "dcpfullprocessing")
+        return ERawColorInterpretation::DcpFullProcessing;
     if (type == "dcplinearprocessing")
         return ERawColorInterpretation::DcpLinearProcessing;
     if (type == "dcpmetadata")
@@ -302,6 +305,7 @@ std::string ERawColorInterpretation_enumToString(const ERawColorInterpretation r
         case ERawColorInterpretation::None: return "none";
         case ERawColorInterpretation::LibRawNoWhiteBalancing: return "librawnowhitebalancing";
         case ERawColorInterpretation::LibRawWhiteBalancing: return "librawwhitebalancing";
+        case ERawColorInterpretation::DcpFullProcessing: return "dcpfullprocessing";
         case ERawColorInterpretation::DcpLinearProcessing: return "dcpLinearprocessing";
         case ERawColorInterpretation::DcpMetadata: return "dcpmetadata";
         case ERawColorInterpretation::Auto: return "auto";
@@ -451,7 +455,8 @@ void readImage(const std::string& path,
 
     if (isRawImage)
     {
-        if ((imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ||
+        if ((imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpFullProcessing) ||
+            (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ||
             (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata))
         {
             oiio::ParamValueList imgMetadata = readImageMetadata(path);
@@ -514,7 +519,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
         }
-        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+        else if ((imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ||
+                 (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpFullProcessing))
         {
             if (imageReadOptions.colorProfileFileName.empty())
             {
@@ -579,7 +585,8 @@ void readImage(const std::string& path,
 
     // Apply DCP profile
     if (!imageReadOptions.colorProfileFileName.empty() &&
-        imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+        (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ||
+        (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpFullProcessing))
     {
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
@@ -609,17 +616,34 @@ void readImage(const std::string& path,
 
         ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = " << neutral);
 
-        dcpProfile.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
+        if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+        {
+            dcpProfile.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
+        }
+        else
+        {
+            DCPProfileApplyParams dcpParams;
+            dcpParams.neutral = neutral;
+            dcpParams.applyWhiteBalance = imageReadOptions.doWBAfterDemosaicing;
+            dcpParams.useColorMatrixOnly = imageReadOptions.useDCPColorMatrixOnly;
+            dcpParams.applyHueShift = imageReadOptions.applyDCPHSMap;
+            dcpParams.applyLookTable = imageReadOptions.applyDCPLookMap;
+            dcpParams.useToneCurve = imageReadOptions.applyDCPToneCurve;
+            dcpProfile.applyFull(inBuf, dcpParams);
+        }
     }
 
     // color conversion
     if(imageReadOptions.workingColorSpace == EImageColorSpace::AUTO)
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
+    bool dcpFullButOnlyLinear = imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpFullProcessing &&
+                                !imageReadOptions.applyDCPHSMap && !imageReadOptions.applyDCPLookMap && !imageReadOptions.applyDCPToneCurve;
+
     // Get color space name. Default image color space is sRGB
-    std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ? "aces2065-1" :
-                                       (isRawImage ? "linear" :
-                                        inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB")));
+    std::string fromColorSpaceName = (isRawImage && (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing || dcpFullButOnlyLinear)) ? "aces2065-1" :
+                                      (isRawImage ? "linear" :
+                                       inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB")));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
 

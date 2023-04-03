@@ -38,6 +38,8 @@ enum class ERawColorInterpretation
     /// Use internal white balancing from libraw
     LibRawWhiteBalancing,
     /// If DCP file is not available throw an exception
+    DcpFullProcessing,
+    /// If DCP file is not available throw an exception
     DcpLinearProcessing,
     /// If DCP file is not available throw an exception
     DcpMetadata,
@@ -195,7 +197,7 @@ struct ImageReadOptions
         ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawWhiteBalancing,
         const std::string& colorProfile = "", const bool useDCPColorMatrixOnly = true, const oiio::ROI& roi = oiio::ROI()) :
         workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), useDCPColorMatrixOnly(useDCPColorMatrixOnly),
-        doWBAfterDemosaicing(false), demosaicingAlgo("AHD"), highlightMode(0), subROI(roi)
+        doWBAfterDemosaicing(false), applyDCPHSMap(true), applyDCPLookMap(true), applyDCPToneCurve(true), demosaicingAlgo("AHD"), highlightMode(0), subROI(roi)
     {
     }
 
@@ -204,6 +206,9 @@ struct ImageReadOptions
     std::string colorProfileFileName;
     bool useDCPColorMatrixOnly;
     bool doWBAfterDemosaicing;
+    bool applyDCPHSMap;
+    bool applyDCPLookMap;
+    bool applyDCPToneCurve;
     std::string demosaicingAlgo;
     int highlightMode;
     //ROI for this image.
