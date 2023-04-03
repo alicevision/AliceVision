@@ -78,6 +78,8 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         dim = 9;
     }
 
+    sfmData::SfMData newSfmData = sfmData;
+
     std::string pathToAmbiant = "";
     std::map<IndexT, std::vector<IndexT>> viewsPerPoseId;
 
@@ -128,6 +130,34 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         writePSResults(outputPath, normals, albedo, posesIt.first);
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
     }
+
+
+    std::set<IndexT> viewIdsToRemove;
+
+    for(auto& viewIt: sfmData.getViews())
+    {
+        const IndexT viewId = viewIt.first;
+        std::cout << "viewId_1 : " << viewId << std::endl;
+        IndexT poseId = viewIt.second->getPoseId();
+        std::cout << "poseId_1 : " << poseId << std::endl;
+
+        if(viewId == poseId)
+        {
+            std::cout << "viewId_OK : " << viewId << std::endl;
+            sfmData::View * view = sfmData.getViews().at(viewId).get();
+            std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.png";
+            view->setImagePath(imagePath);
+        }
+        else
+        {
+            std::cout << "viewId_pasOk : " << viewId << std::endl;
+            viewIdsToRemove.insert(viewId);
+        }
+    }
+    for (auto r : viewIdsToRemove)
+        newSfmData.getViews().erase(r);
+
+    sfmDataIO::Save(newSfmData, outputPath + "/sfmData.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
 }
 
 void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const bool isRobust, const int downscale, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
