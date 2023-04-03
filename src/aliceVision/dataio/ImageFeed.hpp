@@ -27,11 +27,10 @@ public:
     /**
      * @brief Set up an image based feed from a choice of different sources:
      * 1) a directory containing images
-     * 2) a json file containing a sfm data reconstruction (in that case \p calibPath is ignored)
      * 3) a txt file containing a list of images to use
      * 4) a regex for an image sequence
      *
-     * @param[in] imagePath The source of images, it could be a file (json, txt) or a directory.
+     * @param[in] imagePath The source of images, it could be a txt file or a directory.
      * @param[in] calibPath The source for the camera intrinsics common to each image.
      * The format for the file is
      * int #image width
@@ -103,7 +102,7 @@ public:
 
     /**
      * @brief For a given extension, return true if that file can be used as input
-     * for the feed. ImageFeed supports .json, .txt, and the most common image files.
+     * for the feed. ImageFeed supports .txt and the most common image files.
      *
      * @param extension The file extension to check in ".ext" format (case insensitive)
      * @return True if the file is supported.

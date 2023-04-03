@@ -5,8 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ImageFeed.hpp"
-#include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
@@ -47,35 +45,26 @@ public:
             return false;
         }
 
-        // dealing with SFM mode
-        if(_sfmMode)
+        if(_images.empty())
+            return false;
+        if(_currentImageIndex >= _images.size())
+            return false;
+
+        if(_withCalibration)
         {
-            return feedWithJson(image, camIntrinsics, imageName, hasIntrinsics);
+            // get the calibration
+            camIntrinsics = _camIntrinsics;
+            hasIntrinsics = true;
         }
         else
         {
-            if(_images.empty())
-                return false;
-            if(_currentImageIndex >= _images.size())
-                return false;
-
-            if(_withCalibration)
-            {
-                // get the calibration
-                camIntrinsics = _camIntrinsics;
-                hasIntrinsics = true;
-            }
-            else
-            {
-                hasIntrinsics = false;
-            }
-            imageName = _images[_currentImageIndex];
-
-            ALICEVISION_LOG_DEBUG(imageName);
-
-            image::readImage(imageName, image, image::EImageColorSpace::NO_CONVERSION);
-            return true;
+            hasIntrinsics = false;
         }
+
+        imageName = _images[_currentImageIndex];
+        ALICEVISION_LOG_DEBUG(imageName);
+        image::readImage(imageName, image, image::EImageColorSpace::NO_CONVERSION);
+
         return true;
     }
 
@@ -88,60 +77,12 @@ public:
     bool isInit() const { return _isInit; }
 
 private:
-    template <typename T>
-    bool feedWithJson(image::Image<T>& image, camera::PinholeRadialK3& camIntrinsics, std::string& imageName,
-                      bool& hasIntrinsics)
-    {
-        // if there are no more images to process
-        if(_viewIterator == _sfmdata.getViews().end())
-        {
-            return false;
-        }
-
-        namespace bf = boost::filesystem;
-
-        // get the image
-        const sfmData::View* view = _viewIterator->second.get();
-        imageName = view->getImagePath();
-        image::readImage(imageName, image, image::EImageColorSpace::NO_CONVERSION);
-
-        // get the associated Intrinsics
-        if((view->getIntrinsicId() == UndefinedIndexT) || (!_sfmdata.getIntrinsics().count(view->getIntrinsicId())))
-        {
-            ALICEVISION_LOG_DEBUG("Image " << imageName << " does not have associated intrinsics");
-            hasIntrinsics = false;
-        }
-        else
-        {
-            const camera::IntrinsicBase* cam = _sfmdata.getIntrinsics().at(view->getIntrinsicId()).get();
-            if(cam->getType() != camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
-            {
-                ALICEVISION_LOG_WARNING("Only PinholeRadialK3 is supported");
-                hasIntrinsics = false;
-            }
-            else
-            {
-                const camera::PinholeRadialK3* intrinsics = dynamic_cast<const camera::PinholeRadialK3*>(cam);
-
-                // simply copy values
-                camIntrinsics = *intrinsics;
-                hasIntrinsics = true;
-            }
-        }
-        ++_viewIterator;
-        return true;
-    }
-
-private:
     bool _isInit;
     bool _withCalibration;
     // It contains the images to be fed
     std::vector<std::string> _images;
     camera::PinholeRadialK3 _camIntrinsics;
 
-    bool _sfmMode = false;
-    sfmData::SfMData _sfmdata;
-    sfmData::Views::const_iterator _viewIterator;
     unsigned int _currentImageIndex = 0;
 };
 
@@ -155,21 +96,11 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     if(bf::is_regular_file(imagePath))
     {
         const std::string ext = bf::path(imagePath).extension().string();
-        // if it is a sfmdata.json
-        if(ext == ".json")
-        {
-            // load the json
-            _isInit = sfmDataIO::Load(
-                _sfmdata, imagePath, sfmDataIO::ESfMData(sfmDataIO::ESfMData::VIEWS | sfmDataIO::ESfMData::INTRINSICS));
-            _viewIterator = _sfmdata.getViews().begin();
-            _sfmMode = true;
-        }
         // if it is an image file
-        else if(image::isSupported(ext) && !image::isVideoExtension(ext))
+        if(image::isSupported(ext) && !image::isVideoExtension(ext))
         {
             _images.push_back(imagePath);
             _withCalibration = !calibPath.empty();
-            _sfmMode = false;
             _isInit = true;
         }
         // if it is an image file
@@ -190,7 +121,6 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
             // Close file
             fs.close();
             _withCalibration = !calibPath.empty();
-            _sfmMode = false;
             _isInit = true;
         }
         else
@@ -250,7 +180,6 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
         }
 
         _withCalibration = !calibPath.empty();
-        _sfmMode = false;
         _isInit = true;
     }
     else
@@ -258,8 +187,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
         throw std::invalid_argument("File or mode not yet implemented");
     }
 
-    // last thing: if _withCalibration is true it means that it is not a json and
-    // a path to a calibration file has been passed
+    // last thing: if _withCalibration is true it means that a path to a calibration file has been passed
     // then load the calibration
     if(_withCalibration)
     {
@@ -273,9 +201,6 @@ std::size_t ImageFeed::FeederImpl::nbFrames() const
     if(!_isInit)
         return 0;
 
-    if(_sfmMode)
-        return _sfmdata.getViews().size();
-
     return _images.size();
 }
 
@@ -288,50 +213,24 @@ bool ImageFeed::FeederImpl::goToFrame(const unsigned int frame)
         return false;
     }
 
-    // Reconstruction mode
-    if(_sfmMode)
+    _currentImageIndex = frame;
+    // Image list mode
+    if(frame >= _images.size())
     {
-        if(frame >= _sfmdata.getViews().size())
-        {
-            _viewIterator = _sfmdata.getViews().end();
-            ALICEVISION_LOG_WARNING("The current frame is out of the range.");
-            return false;
-        }
-
-        _viewIterator = _sfmdata.getViews().begin();
-        std::advance(_viewIterator, frame);
+        ALICEVISION_LOG_WARNING("The current frame is out of the range.");
+        return false;
     }
-    else
-    {
-        _currentImageIndex = frame;
-        // Image list mode
-        if(frame >= _images.size())
-        {
-            ALICEVISION_LOG_WARNING("The current frame is out of the range.");
-            return false;
-        }
-        ALICEVISION_LOG_DEBUG("frame " << frame);
-    }
+    ALICEVISION_LOG_DEBUG("frame " << frame);
     return true;
 }
 
 bool ImageFeed::FeederImpl::goToNextFrame()
 {
-    if(_sfmMode)
-    {
-        if(_viewIterator == _sfmdata.getViews().end())
-            return false;
-        ++_viewIterator;
-        if(_viewIterator == _sfmdata.getViews().end())
-            return false;
-    }
-    else
-    {
-        ++_currentImageIndex;
-        ALICEVISION_LOG_DEBUG("next frame " << _currentImageIndex);
-        if(_currentImageIndex >= _images.size())
-            return false;
-    }
+    ++_currentImageIndex;
+    ALICEVISION_LOG_DEBUG("next frame " << _currentImageIndex);
+    if(_currentImageIndex >= _images.size())
+        return false;
+
     return true;
 }
 
@@ -390,7 +289,7 @@ bool ImageFeed::isInit() const
 bool ImageFeed::isSupported(const std::string& extension)
 {
     std::string ext = boost::to_lower_copy(extension);
-    if(ext == ".json" || ext == ".txt")
+    if(ext == ".txt")
     {
         return true;
     }
