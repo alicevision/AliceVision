@@ -86,6 +86,7 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
 void KeyframeSelector::processRegular()
 {
     _selectedKeyframes.clear();
+    _selectedFrames.clear();
 
     std::size_t nbFrames = std::numeric_limits<unsigned int>::max();
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
@@ -111,6 +112,10 @@ void KeyframeSelector::processRegular()
         ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or empty!");
     }
 
+    // All frames are unselected so far
+    _selectedFrames.resize(nbFrames);
+    std::fill(_selectedFrames.begin(), _selectedFrames.end(), '0');
+
     unsigned int step = _minFrameStep;
     if (_maxFrameStep > 0) {
         // By default, if _maxFrameStep is set, set the step to be right between _minFrameStep and _maxFrameStep
@@ -135,6 +140,7 @@ void KeyframeSelector::processRegular()
     for (unsigned int id = 0; id < nbFrames; id += step) {
         ALICEVISION_LOG_INFO("Selecting frame with ID " << id);
         _selectedKeyframes.push_back(id);
+        _selectedFrames.at(id) = '1';
         if (_maxOutFrames > 0 && _selectedKeyframes.size() >= _maxOutFrames)
             break;
     }
