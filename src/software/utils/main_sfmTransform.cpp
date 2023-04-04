@@ -37,6 +37,7 @@ enum class EAlignmentMethod : unsigned char
 {
     TRANSFORMATION = 0,
     MANUAL,
+    AUTO,
     AUTO_FROM_CAMERAS,
     AUTO_FROM_CAMERAS_X_AXIS,
     AUTO_FROM_LANDMARKS,
@@ -57,6 +58,7 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
   {
     case EAlignmentMethod::TRANSFORMATION:      return "transformation";
     case EAlignmentMethod::MANUAL:              return "manual";
+    case EAlignmentMethod::AUTO:              return "auto";
     case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
     case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:   return "auto_from_cameras_x_axis";
     case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
@@ -80,6 +82,7 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
 
   if(method == "transformation")      return EAlignmentMethod::TRANSFORMATION;
   if(method == "manual")              return EAlignmentMethod::MANUAL;
+  if(method == "auto")              return EAlignmentMethod::AUTO;
   if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
   if(method == "auto_from_cameras_x_axis")   return EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS;
   if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
@@ -262,6 +265,7 @@ int aliceVision_main(int argc, char **argv)
         "Transform Method:\n"
         "\t- transformation: Apply a given transformation\n"
         "\t- manual: Apply the gizmo transformation\n"
+        "\t- auto: Use cameras X axis, Zero centering, automatic scaling\n"
         "\t- auto_from_cameras: Use cameras\n"
         "\t- auto_from_cameras_x_axis: Use cameras X axis\n"
         "\t- auto_from_landmarks: Use landmarks\n"
@@ -364,7 +368,13 @@ int aliceVision_main(int argc, char **argv)
     break;
 
     case EAlignmentMethod::AUTO_FROM_CAMERAS:
-      sfm::computeNewCoordinateSystemFromCameras(sfmData, S, R, t);
+        sfm::computeNewCoordinateSystemFromCameras(sfmData, S, R, t);
+    break;
+
+    case EAlignmentMethod::AUTO:
+    {
+        sfm::computeNewCoordinateSystemAuto(sfmData, S, R, t);
+    }
     break;
 
     case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:

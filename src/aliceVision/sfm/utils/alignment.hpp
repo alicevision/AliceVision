@@ -197,6 +197,19 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
                                                 Vec3& out_t);
 
 /**
+ * @brief Compute the new coordinate system in the given SfM so that the mean
+ * of the camera centers is the origin of the world coordinate system,
+ * a dominant Y axis is defined based on the X axis of all cameras,
+ * and the scale is set so that the variance is 1 or the true scale if gps data is given and valid
+ *
+ * @param[in] sfmData
+ * @param[out] out_S scale
+ * @param[out] out_R rotation
+ * @param[out] out_t translation
+ */
+void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t);
+
+/**
  * @brief Compute the new coordinate system in the given reconstruction so that the mean
  * of the camera centers is the origin of the world coordinate system, a
  * dominant plane P is fitted to the set of the optical centers and the scene
@@ -276,6 +289,24 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
                                                 double& out_S,
                                                 Mat3& out_R,
                                                 Vec3& out_t);
+
+/**
+ * @brief Compute the cameras centers mean
+ *
+ * @param[in] sfmData
+ * @param[out] mean output mean of centers
+ */
+void computeCentersMean(const sfmData::SfMData& sfmData, Vec3 & center);
+
+/**
+ * @brief Compute the cameras centers standard deviation
+ *
+ * @param[in] sfmData 
+ * @param[in] mean input mean of the poses centers
+ * @param[out] varCov variance covariance of the poses centers
+ * @param[out] count poses centers count
+ */
+void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3 & mean, Eigen::Matrix3d & varCov, size_t & count);
 
 struct MarkerWithCoord
 {
