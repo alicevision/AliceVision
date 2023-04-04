@@ -97,7 +97,9 @@ Debug options specific to the smart selection method are available:
 ```cpp
 KeyframeSelector(const std::vector<std::string>& mediaPaths,
                  const std::string& sensorDbPath,
-                 const std::string& outputFolder);
+                 const std::string& outputFolder,
+                 const std::string& outputSfmKeyframes,
+                 const std::string& outputSfmFrames);
 ```
 - Selection with regular method
 ```cpp

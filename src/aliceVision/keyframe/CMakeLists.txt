@@ -15,6 +15,8 @@ alicevision_add_library(aliceVision_keyframe
     OpenImageIO::OpenImageIO
   PRIVATE_LINKS
     aliceVision_sensorDB
+    aliceVision_sfmData
+    aliceVision_sfmDataIO
     aliceVision_system
     Boost::filesystem
 )

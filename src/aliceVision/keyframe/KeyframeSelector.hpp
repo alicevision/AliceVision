@@ -19,6 +19,7 @@
 #include <vector>
 #include <memory>
 #include <limits>
+
 namespace aliceVision {
 namespace image {
 
@@ -36,13 +37,17 @@ class KeyframeSelector
 public:
     /**
      * @brief KeyframeSelector constructor
-     * @param[in] mediaPath video file path or image sequence directory
+     * @param[in] mediaPath video file path, image sequence directory or SfMData file
      * @param[in] sensorDbPath camera sensor width database path
      * @param[in] outputFolder output keyframes directory
+     * @param[in] outputSfmKeyframes output SfMData file containing the keyframes
+     * @param[in] outputSfmFrames output SfMData file containing all the non-selected frames
      */
     KeyframeSelector(const std::vector<std::string>& mediaPaths,
-                    const std::string& sensorDbPath,
-                    const std::string& outputFolder);
+                     const std::string& sensorDbPath,
+                     const std::string& outputFolder,
+                     const std::string& outputSfmKeyframes,
+                     const std::string& outputSfmFrames);
 
     /**
      * @brief KeyframeSelector copy constructor - NO COPY
@@ -246,6 +251,10 @@ private:
     std::string _sensorDbPath;
     /// Output folder for keyframes
     std::string _outputFolder;
+    /// Path of the output SfMData with keyframes
+    std::string _outputSfmKeyframesPath;
+    /// Path of the output SfMData with non-selected frames
+    std::string _outputSfmFramesPath;
 
     // Parameters common to both the regular and smart methods
     /// Maximum number of output frames (0 = no limit)
