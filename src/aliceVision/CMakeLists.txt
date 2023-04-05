@@ -65,7 +65,9 @@ endif()
 
 if(ALICEVISION_HAVE_OPENCV)
   add_subdirectory(photometricStereo)
-  add_subdirectory(sphereDetection)
+  if(ALICEVISION_HAVE_ONNX)
+    add_subdirectory(sphereDetection)
+  endif()
 endif()
 
 # Install rules

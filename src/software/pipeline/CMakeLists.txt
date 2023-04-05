@@ -613,7 +613,7 @@ alicevision_add_software(aliceVision_LdrToHdrMerge
 
 endif()
 
-if(ALICEVISION_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV AND ALICEVISION_HAVE_ONNX)
     # SphereDetection
     alicevision_add_software(aliceVision_sphereDetection
     SOURCE main_sphereDetection.cpp
@@ -624,6 +624,5 @@ if(ALICEVISION_HAVE_OPENCV)
           aliceVision_sfmDataIO
           Boost::program_options
           ${OpenCV_LIBRARIES}
-          ${onnxruntime_LIBRARY}
     )
 endif()
