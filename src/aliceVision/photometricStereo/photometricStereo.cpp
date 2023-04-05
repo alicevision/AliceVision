@@ -137,20 +137,16 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
     for(auto& viewIt: sfmData.getViews())
     {
         const IndexT viewId = viewIt.first;
-        std::cout << "viewId_1 : " << viewId << std::endl;
         IndexT poseId = viewIt.second->getPoseId();
-        std::cout << "poseId_1 : " << poseId << std::endl;
 
         if(viewId == poseId)
         {
-            std::cout << "viewId_OK : " << viewId << std::endl;
             sfmData::View * view = sfmData.getViews().at(viewId).get();
             std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.png";
             view->setImagePath(imagePath);
         }
         else
         {
-            std::cout << "viewId_pasOk : " << viewId << std::endl;
             viewIdsToRemove.insert(viewId);
         }
     }
