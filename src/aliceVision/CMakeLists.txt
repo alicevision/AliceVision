@@ -63,7 +63,10 @@ if(ALICEVISION_BUILD_SFM AND ALICEVISION_BUILD_MVS)
   add_subdirectory(sfmMvsUtils)
 endif()
 
-add_subdirectory(photometricStereo)
+if(ALICEVISION_HAVE_OPENCV)
+  add_subdirectory(photometricStereo)
+  add_subdirectory(sphereDetection)
+endif()
 
 # Install rules
 

@@ -608,6 +608,7 @@ if(ALICEVISION_HAVE_OPENCV)
     SOURCE main_sphereDetection.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_image
+          aliceVision_sphereDetection
           Boost::program_options
           ${OpenCV_LIBRARIES}
           onnxruntime
