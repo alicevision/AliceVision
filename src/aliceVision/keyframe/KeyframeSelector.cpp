@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "KeyframeSelector.hpp"
-#include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
@@ -155,6 +154,8 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
 {
     _selectedKeyframes.clear();
     _selectedFrames.clear();
+    _outputSfmKeyframes.clear();
+    _outputSfmFrames.clear();
 
     // Step 0: compute all the scores
     computeScores(rescaledWidthSharpness, rescaledWidthFlow, sharpnessWindowSize, flowCellSize, skipSharpnessComputation);
@@ -434,7 +435,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                                       const std::vector<float>& mmFocals,
                                       const bool renameKeyframes,
                                       const std::string& outputExtension,
-                                      const image::EStorageDataType storageDataType) const
+                                      const image::EStorageDataType storageDataType)
 {
     image::Image<image::RGBColor> image;
     camera::PinholeRadialK3 queryIntrinsics;
@@ -524,6 +525,9 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
             image::writeImage(filepath, image, options, metadata);
             ALICEVISION_LOG_DEBUG("Wrote selected keyframe " << pos);
         }
+
+        if (!writeSfMData(path, feed.isSfMData()))
+            ALICEVISION_LOG_ERROR("Failed to write the output SfMData files.");
     }
 
     return true;
@@ -802,6 +806,60 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
     }
 
     return findMedian(motionByCell);
+}
+
+bool KeyframeSelector::writeSfMData(const std::string& mediaPath, const bool isSfmInput)
+{
+    if (!isSfmInput) {
+        ALICEVISION_LOG_INFO("The input was not an SfMData file: no output SfMData file will be written.");
+        return true;
+    }
+
+    sfmData::SfMData inputSfm;
+    std::vector<std::shared_ptr<sfmData::View>> views;
+    if (!sfmDataIO::Load(inputSfm, mediaPath, sfmDataIO::ESfMData::ALL)) {
+        ALICEVISION_THROW_ERROR("Could not open input SfMData file " << mediaPath << ".");
+    }
+
+    auto& keyframesViews = _outputSfmKeyframes.getViews();
+    auto& framesViews = _outputSfmFrames.getViews();
+
+    auto& keyframesIntrinsics = _outputSfmKeyframes.getIntrinsics();
+    auto& framesIntrinsics = _outputSfmFrames.getIntrinsics();
+
+    // Sort input SfMData file according to the frame IDs for the views to be correctly ordered
+    for (auto it = inputSfm.getViews().begin(); it != inputSfm.getViews().end(); ++it) {
+        views.push_back(it->second);
+    }
+    std::sort(views.begin(), views.end(),
+            [](std::shared_ptr<sfmData::View> v1, std::shared_ptr<sfmData::View> v2)
+            { return (v1->getFrameId() < v2->getFrameId()); });
+
+    IndexT viewId;
+    IndexT intrinsicId;
+    for (int i = 0; i < views.size(); ++i) {
+        viewId = views[i]->getViewId();
+        intrinsicId = views[i]->getIntrinsicId();
+        if (_selectedFrames[i] == '1') {
+            keyframesViews[viewId] = views[i];
+            keyframesIntrinsics[intrinsicId] = inputSfm.getIntrinsics()[intrinsicId];
+        } else {
+            framesViews[viewId] = views[i];
+            framesIntrinsics[intrinsicId] = inputSfm.getIntrinsics()[intrinsicId];
+        }
+    }
+
+    if (!sfmDataIO::Save(_outputSfmKeyframes, _outputSfmKeyframesPath, sfmDataIO::ESfMData::ALL)) {
+        ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmKeyframesPath << "' could not be written.");
+        return false;
+    }
+
+    if (!sfmDataIO::Save(_outputSfmFrames, _outputSfmFramesPath, sfmDataIO::ESfMData::ALL)) {
+        ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmFramesPath << "' could not be written.");
+        return false;
+    }
+
+    return true;
 }
 
 } // namespace keyframe 

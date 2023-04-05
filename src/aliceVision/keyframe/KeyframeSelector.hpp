@@ -8,6 +8,8 @@
 
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <opencv2/optflow.hpp>
@@ -122,8 +124,9 @@ public:
      * @return true if all the selected keyframes were successfully written, false otherwise
      */
     bool writeSelection(const std::vector<std::string>& brands, const std::vector<std::string>& models,
-                    const std::vector<float>& mmFocals, const bool renameKeyframes, const std::string& outputExtension,
-                    const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined) const;
+                        const std::vector<float>& mmFocals, const bool renameKeyframes,
+                        const std::string& outputExtension,
+                        const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined);
 
     /**
      * @brief Export the computed sharpness and optical flow scores to a CSV file
@@ -242,6 +245,14 @@ private:
     double estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
                         const cv::Mat& previousGrayscaleImage, const std::size_t cellSize);
 
+    /**
+     * @brief Write the output SfMData files with the selected and non-selected keyframes information.
+     * @param[in] mediaPath input video file path, image sequence directory or SfMData file
+     * @param[in] isSfmInput true if the input file is an SfMData file, false otherwise
+     * @return true if the output SfMData files were written as expected, false otherwise
+     */
+    bool writeSfMData(const std::string& mediaPath, const bool isSfmInput);
+
     /// Selected keyframes IDs
     std::vector<unsigned int> _selectedKeyframes;
 
@@ -276,6 +287,11 @@ private:
     std::vector<double> _flowScores;
     /// Vector containing 1s for frames that have been selected, 0 for those which have not
     std::vector<char> _selectedFrames;
+
+    /// Output SfMData containing the keyframes
+    sfmData::SfMData _outputSfmKeyframes;
+    /// Output SfMData containing the non-selected frames
+    sfmData::SfMData _outputSfmFrames;
 
     /// Size of the frame (afer rescale, if any is applied)
     unsigned int _frameWidth = 0;
