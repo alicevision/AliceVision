@@ -47,6 +47,8 @@ using namespace aliceVision;
 
 int aliceVision_main(int argc, char **argv)
 {
+    system::Timer timer;
+
     std::string inputPath;
     std::string maskPath;
     std::string outputPath;
@@ -129,5 +131,6 @@ int aliceVision_main(int argc, char **argv)
       photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, outputPath, HS_order, removeAmbiant, isRobust, downscale, normalsIm, albedoIm);
     }
 
-    return 0;
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
+    return EXIT_SUCCESS;
 }
