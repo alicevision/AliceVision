@@ -57,8 +57,13 @@ void model_explore(Ort::Session& session)
     size_t input_count = session.GetInputCount();
     for(size_t i = 0; i < input_count; i++)
     {
+#if ORT_API_VERSION >= 14
+        const Ort::AllocatedStringPtr input_name = session.GetInputNameAllocated(i, allocator);
+        ALICEVISION_LOG_DEBUG("Input[" << i << "]: " << input_name.get());
+#else
         const char* input_name = session.GetInputName(i, allocator);
         ALICEVISION_LOG_DEBUG("Input[" << i << "]: " << input_name);
+#endif
 
         Ort::TypeInfo input_info = session.GetInputTypeInfo(i);
         auto input_info2 = input_info.GetTensorTypeAndShapeInfo();
@@ -76,8 +81,13 @@ void model_explore(Ort::Session& session)
     size_t output_count = session.GetOutputCount();
     for(size_t i = 0; i < output_count; i++)
     {
+#if ORT_API_VERSION >= 14
+        const Ort::AllocatedStringPtr output_name = session.GetOutputNameAllocated(i, allocator);
+        ALICEVISION_LOG_DEBUG("Output[" << i << "]: " << output_name.get());
+#else
         const char* output_name = session.GetOutputName(i, allocator);
         ALICEVISION_LOG_DEBUG("Output[" << i << "]: " << output_name);
+#endif
 
         Ort::TypeInfo output_info = session.GetOutputTypeInfo(i);
         auto output_info2 = output_info.GetTensorTypeAndShapeInfo();
