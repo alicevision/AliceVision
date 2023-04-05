@@ -371,11 +371,11 @@ endif()
 # ==============================================================================
 # onnxruntime
 # ==============================================================================
-find_package(onnxruntime)
-if(onnxruntime_FOUND)
-  message(STATUS " ONNXRUNTIME FOUND: ${onnxruntime_LIBRARIES}")
+find_package(ONNXRuntime REQUIRED)
+if(TARGET ONNXRuntime::ONNXRuntime)
+  message(STATUS " ONNXRuntime FOUND: ${ONNXRuntime_LIBRARY}")
 else()
-  message(FATAL_ERROR " ONNXRUNTIME NOT FOUND.")
+  message(FATAL_ERROR " ONNXRuntime NOT FOUND.")
 endif()
 
 # ==============================================================================
