@@ -80,6 +80,11 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
 
     scoresMap["Sharpness"] = &_sharpnessScores;
     scoresMap["OpticalFlow"] = &_flowScores;
+
+    // Parse the sensor database if the path is not empty
+    if (!_sensorDbPath.empty() && sensorDB::parseDatabase(_sensorDbPath, _sensorDatabase)) {
+        _parsedSensorDb = true;
+    }
 }
 
 void KeyframeSelector::processRegular()

@@ -8,6 +8,7 @@
 
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
@@ -296,6 +297,10 @@ private:
     /// Size of the frame (afer rescale, if any is applied)
     unsigned int _frameWidth = 0;
     unsigned int _frameHeight = 0;
+
+    /// Parsed sensor database
+    std::vector<sensorDB::Datasheet> _sensorDatabase;
+    bool _parsedSensorDb = false;
 
     /// Map score vectors with names for export
     std::map<const std::string, const std::vector<double>*> scoresMap;
