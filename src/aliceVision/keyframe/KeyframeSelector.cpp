@@ -832,13 +832,23 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath, const bool isS
     auto& keyframesIntrinsics = _outputSfmKeyframes.getIntrinsics();
     auto& framesIntrinsics = _outputSfmFrames.getIntrinsics();
 
-    // Sort input SfMData file according to the frame IDs for the views to be correctly ordered
-    for (auto it = inputSfm.getViews().begin(); it != inputSfm.getViews().end(); ++it) {
-        views.push_back(it->second);
+    // Order the views according to the frame ID and the intrinsics serial number
+    std::map<std::string, std::vector<std::shared_ptr<sfmData::View>>> viewSequences;
+    auto& intrinsics = inputSfm.getIntrinsics();
+    for(auto it = inputSfm.getViews().begin(); it != inputSfm.getViews().end(); ++it) {
+        auto view = it->second;
+        auto serialNumber = intrinsics[view->getIntrinsicId()]->serialNumber();
+        viewSequences[serialNumber].push_back(view);
     }
-    std::sort(views.begin(), views.end(),
-            [](std::shared_ptr<sfmData::View> v1, std::shared_ptr<sfmData::View> v2)
-            { return (v1->getFrameId() < v2->getFrameId()); });
+
+    // Sort the views with the same intrinsics together based on their frame ID and add them to the final global vector
+    for(auto& view : viewSequences) {
+        std::sort(view.second.begin(), view.second.end(),
+                  [](std::shared_ptr<sfmData::View> v1, std::shared_ptr<sfmData::View> v2) {
+                    return v1->getFrameId() < v2->getFrameId();
+                  });
+        views.insert(views.end(), view.second.begin(), view.second.end());
+    }
 
     IndexT viewId;
     IndexT intrinsicId;
