@@ -76,13 +76,25 @@ SfMDataFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::str
     _isInit = sfmDataIO::Load(_sfmData, imagePath,
                               sfmDataIO::ESfMData(sfmDataIO::ESfMData::VIEWS | sfmDataIO::ESfMData::INTRINSICS));
 
-    // Order the views according to the frame ID
+    // Order the views according to the frame ID and the intrinsics serial number
+    std::map<std::string, std::vector<const sfmData::View*>> viewSequences;
+
+    // Separate the views depending on their intrinsics' serial number
+    auto& intrinsics = _sfmData.getIntrinsics();
     for(auto it = _sfmData.getViews().begin(); it != _sfmData.getViews().end(); ++it)
     {
-        _views.push_back(it->second.get());
+        auto view = it->second.get();
+        auto serialNumber = intrinsics[view->getIntrinsicId()]->serialNumber();
+        viewSequences[serialNumber].push_back(view);
     }
-    std::sort(_views.begin(), _views.end(),
-              [](const sfmData::View* v1, const sfmData::View* v2) { return (v1->getFrameId() < v2->getFrameId()); });
+
+    // Sort the views with the same intrinsics together based on their frame ID and add them to the final global vector
+    for(auto& view : viewSequences)
+    {
+        std::sort(view.second.begin(), view.second.end(),
+                  [](const sfmData::View* v1, const sfmData::View* v2) { return v1->getFrameId() < v2->getFrameId(); });
+        _views.insert(_views.end(), view.second.begin(), view.second.end());
+    }
 }
 
 std::size_t SfMDataFeed::FeederImpl::nbFrames() const
