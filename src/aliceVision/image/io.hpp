@@ -142,6 +142,30 @@ std::ostream& operator<<(std::ostream& os, EStorageDataType dataType);
 std::istream& operator>>(std::istream& in, EStorageDataType& dataType);
 
 /**
+* @brief Compression method use to write an exr image
+*/
+enum class EImageExrCompression
+{
+    None,
+    Auto,
+    RLE,
+    ZIP,
+    ZIPS,
+    PIZ,
+    PXR24,
+    B44,
+    B44A,
+    DWAA,
+    DWAB
+};
+
+std::string EImageExrCompression_informations();
+EImageExrCompression EImageExrCompression_stringToEnum(const std::string& dataType);
+std::string EImageExrCompression_enumToString(const EImageExrCompression dataType);
+std::ostream& operator<<(std::ostream& os, EImageExrCompression dataType);
+std::istream& operator>>(std::istream& in, EImageExrCompression& dataType);
+
+/**
  * @brief Available image qualities for pipeline output
  */
 enum class EImageQuality
@@ -224,6 +248,8 @@ public:
     EImageColorSpace getFromColorSpace() const { return _fromColorSpace; }
     EImageColorSpace getToColorSpace() const { return _toColorSpace; }
     EStorageDataType getStorageDataType() const { return _storageDataType; }
+    EImageExrCompression getCompressionMethod() const { return _compressionMethod; }
+    int getCompressionLevel() const { return _compressionLevel; }
 
     ImageWriteOptions& fromColorSpace(EImageColorSpace colorSpace)
     {
@@ -243,10 +269,24 @@ public:
         return *this;
     }
 
+    ImageWriteOptions& compressionMethod(EImageExrCompression compressionMethod)
+    {
+        _compressionMethod = compressionMethod;
+        return *this;
+    }
+
+    ImageWriteOptions& compressionLevel(int compressionLevel)
+    {
+        _compressionLevel = compressionLevel;
+        return *this;
+    }
+
 private:
     EImageColorSpace _fromColorSpace{EImageColorSpace::LINEAR};
     EImageColorSpace _toColorSpace{EImageColorSpace::AUTO};
     EStorageDataType _storageDataType{EStorageDataType::Undefined};
+    EImageExrCompression _compressionMethod{EImageExrCompression::Auto};
+    int _compressionLevel{0};
 };
 
 /**

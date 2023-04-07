@@ -665,8 +665,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 }
 
 void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath, std::map<std::string, std::string> inputMetadata,
-               const std::vector<std::string>& metadataFolders, const image::EImageColorSpace workingColorSpace, const EImageFormat outputFormat,
-               const image::EImageColorSpace outputColorSpace, const image::EStorageDataType storageDataType)
+               const std::vector<std::string>& metadataFolders, const EImageFormat outputFormat, const image::ImageWriteOptions options)
 {
     // Read metadata path
     std::string metadataFilePath;
@@ -727,16 +726,6 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
         metadata = image::readImageMetadata(inputPath);
     }
 
-    image::ImageWriteOptions options;
-    options.fromColorSpace(workingColorSpace);
-    options.toColorSpace(outputColorSpace);
-
-    if(isEXR)
-    {
-        // Select storage data type
-        options.storageDataType(storageDataType);
-    }
-
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
     
@@ -769,6 +758,8 @@ int aliceVision_main(int argc, char * argv[])
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::LINEAR;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+    image::EImageExrCompression compressionMethod = image::EImageExrCompression::Auto;
+    int compressionLevel = 0;
     std::string extension;
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::DcpLinearProcessing;
     std::string colorProfileDatabaseDirPath = "";
@@ -913,6 +904,15 @@ int aliceVision_main(int argc, char * argv[])
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+
+        ("compressionMethod", po::value<image::EImageExrCompression>(&compressionMethod)->default_value(compressionMethod),
+         ("Compression Method: " + image::EImageExrCompression_informations()).c_str())
+
+        ("compressionLevel", po::value<int>(&compressionLevel)->default_value(compressionLevel),
+         "Compression Level (must be strictly positive to be considered)\n"
+         "Apply only on jpg and exr extensions.\n"
+         "Act as \"Quality\" in range from 1 to 100 for jpeg.\n"
+         "Only dwaa, dwab, zip and zips compression methods are concerned for exr.")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
@@ -1105,8 +1105,21 @@ int aliceVision_main(int argc, char * argv[])
                 workingColorSpace = image::EImageColorSpace::ACES2065_1;
             }
 
+            image::ImageWriteOptions writeOptions;
+
+            writeOptions.fromColorSpace(workingColorSpace);
+            writeOptions.toColorSpace(outputColorSpace);
+            writeOptions.compressionMethod(compressionMethod);
+            writeOptions.compressionLevel(compressionLevel);
+
+            if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
+            {
+                // Select storage data type
+                writeOptions.storageDataType(storageDataType);
+            }
+
             // Save the image
-            saveImage(image, viewPath, outputfilePath, view.getMetadata(), metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, viewPath, outputfilePath, view.getMetadata(), metadataFolders, outputFormat, writeOptions);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -1301,8 +1314,21 @@ int aliceVision_main(int argc, char * argv[])
             // Image processing
             processImage(image, pParams, md);
 
+            image::ImageWriteOptions writeOptions;
+
+            writeOptions.fromColorSpace(workingColorSpace);
+            writeOptions.toColorSpace(outputColorSpace);
+            writeOptions.compressionMethod(compressionMethod);
+            writeOptions.compressionLevel(compressionLevel);
+
+            if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
+            {
+                // Select storage data type
+                writeOptions.storageDataType(storageDataType);
+            }
+
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, outputFormat, writeOptions);
         }
     }
 

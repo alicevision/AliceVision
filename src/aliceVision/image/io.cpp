@@ -211,6 +211,73 @@ std::istream& operator>>(std::istream& in, EStorageDataType& dataType)
     return in;
 }
 
+std::string EImageExrCompression_informations()
+{
+    return EImageExrCompression_enumToString(EImageExrCompression::None) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::Auto) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::RLE) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::ZIP) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::ZIPS) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::PIZ) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::PXR24) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::B44) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::B44A) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::DWAA) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::DWAB);
+}
+
+EImageExrCompression EImageExrCompression_stringToEnum(const std::string& exrCompression)
+{
+    std::string type = exrCompression;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+
+    if (type == "none")  return EImageExrCompression::None;
+    if (type == "auto")  return EImageExrCompression::Auto;
+    if (type == "rle")   return EImageExrCompression::RLE;
+    if (type == "zip")   return EImageExrCompression::ZIP;
+    if (type == "zips")  return EImageExrCompression::ZIPS;
+    if (type == "piz")   return EImageExrCompression::PIZ;
+    if (type == "pxr24") return EImageExrCompression::PXR24;
+    if (type == "b44")   return EImageExrCompression::B44;
+    if (type == "b44a")  return EImageExrCompression::B44A;
+    if (type == "dwaa")  return EImageExrCompression::DWAA;
+    if (type == "dwab")  return EImageExrCompression::DWAB;
+
+    throw std::out_of_range("Invalid EImageExrCompression: " + exrCompression);
+}
+
+std::string EImageExrCompression_enumToString(const EImageExrCompression exrCompression)
+{
+    switch (exrCompression)
+    {
+    case EImageExrCompression::None:  return "none";
+    case EImageExrCompression::Auto:  return "auto";
+    case EImageExrCompression::RLE:   return "rle";
+    case EImageExrCompression::ZIP:   return "zip";
+    case EImageExrCompression::ZIPS:  return "zips";
+    case EImageExrCompression::PIZ:   return "piz";
+    case EImageExrCompression::PXR24: return "pxr24";
+    case EImageExrCompression::B44:   return "b44";
+    case EImageExrCompression::B44A:  return "b44a";
+    case EImageExrCompression::DWAA:  return "dwaa";
+    case EImageExrCompression::DWAB:  return "dwab";
+    }
+    throw std::out_of_range("Invalid EImageExrCompression enum");
+}
+
+std::ostream& operator<<(std::ostream& os, EImageExrCompression exrCompression)
+{
+    return os << EImageExrCompression_enumToString(exrCompression);
+}
+
+std::istream& operator>>(std::istream& in, EImageExrCompression& exrCompression)
+{
+    std::string token;
+    in >> token;
+    exrCompression = EImageExrCompression_stringToEnum(token);
+    return in;
+}
+
 std::string EImageQuality_informations()
 {
     return "Image quality :\n"
@@ -843,7 +910,38 @@ void writeImage(const std::string& path,
     imageSpec.extra_attribs = metadata; // add custom metadata
 
     imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
-    imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
+
+    std::string compressionMethod = "none";
+
+    if (options.getCompressionMethod() == EImageExrCompression::Auto)
+    {
+        compressionMethod = isEXR ? "zips" : "none";
+    }
+    else if (options.getCompressionMethod() != EImageExrCompression::None)
+    {
+        compressionMethod = EImageExrCompression_enumToString(options.getCompressionMethod());
+        if (isEXR)
+        {
+            const int compressionLevel = std::max<int>(options.getCompressionLevel(), 0);
+            if (compressionLevel > 0)
+            {
+                if ((options.getCompressionMethod() == EImageExrCompression::DWAA || options.getCompressionMethod() == EImageExrCompression::DWAB))
+                {
+                    compressionMethod += ":" + std::to_string(compressionLevel);
+                }
+                else if ((options.getCompressionMethod() == EImageExrCompression::ZIP || options.getCompressionMethod() == EImageExrCompression::ZIPS))
+                {
+                    compressionMethod += ":" + std::to_string(std::min<int>(compressionLevel, 9));
+                }
+            }
+        }
+        else if (isJPG)
+        {
+            compressionMethod = "jpeg:" + std::to_string(std::min<int>(std::max<int>(options.getCompressionLevel(), 0), 100));
+        }
+    }
+
+    imageSpec.attribute("compression", compressionMethod);
 
     if(displayRoi.defined() && isEXR)
     {
