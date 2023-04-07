@@ -247,12 +247,63 @@ private:
                         const cv::Mat& previousGrayscaleImage, const std::size_t cellSize);
 
     /**
-     * @brief Write the output SfMData files with the selected and non-selected keyframes information.
+     * @brief Write the output SfMData files with the selected and non-selected keyframes information
      * @param[in] mediaPath input video file path, image sequence directory or SfMData file
-     * @param[in] isSfmInput true if the input file is an SfMData file, false otherwise
+     * @param[in] feed the feed provider
+     * @param[in] brands brand name for each camera
+     * @param[in] models model name for each camera
+     * @param[in] mmFocals focal in millimeters for each camera
      * @return true if the output SfMData files were written as expected, false otherwise
      */
-    bool writeSfMData(const std::string& mediaPath, const bool isSfmInput);
+    bool writeSfMData(const std::string& mediaPath, dataio::FeedProvider &feed, const std::vector<std::string>& brands,
+                      const std::vector<std::string>& models, const std::vector<float>& mmFocals);
+
+    /**
+     * @brief Copy the relevant information from the input SfMData file and fill the output SfMData files that will
+     *        contain the selected and non-selected keyframes information (rigs are not supported)
+     * @param[in] mediaPath input SfMData file
+     * @return true if the output SfMData files have successfully been filled, false otherwise
+     */
+    bool writeSfMDataFromSfMData(const std::string& mediaPath);
+
+    /**
+     * @brief Fill the output SfMData files with the information about the selected keyframes and the non-selected
+     *        frames (rigs are supported, but non-selected frames will not be written in the corresponding output
+     *        SfMData file if the input is a video)
+     * @param mediaPath input video file path or image sequence directory
+     * @param feed the feed provider
+     * @param brands brand name for each camera
+     * @param models model name for each camera
+     * @param mmFocals focal in millimiters for each camera
+     * @return true if the output SfMData files have successfully been filled, false otherwise
+     */
+    bool writeSfMDataFromSequences(const std::string& mediaPath, dataio::FeedProvider &feed,
+                                   const std::vector<std::string>& brands, const std::vector<std::string>& models,
+                                   const std::vector<float>& mmFocals);
+
+    /**
+     * @brief Create a View object for the SfMData files
+     * @param imagePath the path of the image corresponding to the view to create
+     * @param intrinsicId the intrinsic ID for the view to create
+     * @param previousFrameId the frame ID of the last created view
+     * @param imageWidth the width of the image corresponding to the view to create
+     * @param imageHeight the height of the image corresponding to the view to create
+     * @return a shared pointer to the created View
+     */
+    std::shared_ptr<sfmData::View> createView(const std::string& imagePath, IndexT intrinsicId, IndexT previousFrameId,
+                    std::size_t imageWidth, std::size_t imageHeight);
+
+    /**
+     * @brief Create an Intrinsic object associated to a specific View
+     * @param view the View that the intrinsic will be associated to
+     * @param focalLength the focal length in millimiter (if 0, default value will be used)
+     * @param sensorWidth the sensor width
+     * @param imageRatio the width over height ratio for the View's image
+     * @param mediaIndex the media index
+     * @return a shared pointer to the created Intrinsic
+     */
+    std::shared_ptr<camera::IntrinsicBase> createIntrinsic(const sfmData::View& view, const double focalLength, const double sensorWidth,
+                        const double imageRatio, std::size_t mediaIndex);
 
     /// Selected keyframes IDs
     std::vector<unsigned int> _selectedKeyframes;
@@ -301,6 +352,9 @@ private:
     /// Parsed sensor database
     std::vector<sensorDB::Datasheet> _sensorDatabase;
     bool _parsedSensorDb = false;
+
+    /// Map media path index with names of the output images (used when the input medias are videos)
+    std::map<std::size_t, std::vector<std::string>> _keyframesPaths;
 
     /// Map score vectors with names for export
     std::map<const std::string, const std::vector<double>*> scoresMap;

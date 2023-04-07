@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "KeyframeSelector.hpp"
+#include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
@@ -91,6 +92,9 @@ void KeyframeSelector::processRegular()
 {
     _selectedKeyframes.clear();
     _selectedFrames.clear();
+    _keyframesPaths.clear();
+    _outputSfmKeyframes.clear();
+    _outputSfmFrames.clear();
 
     std::size_t nbFrames = std::numeric_limits<unsigned int>::max();
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
@@ -159,6 +163,7 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
 {
     _selectedKeyframes.clear();
     _selectedFrames.clear();
+    _keyframesPaths.clear();
     _outputSfmKeyframes.clear();
     _outputSfmFrames.clear();
 
@@ -529,9 +534,11 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
 
             image::writeImage(filepath, image, options, metadata);
             ALICEVISION_LOG_DEBUG("Wrote selected keyframe " << pos);
+
+            _keyframesPaths[id].push_back(filepath);
         }
 
-        if (!writeSfMData(path, feed.isSfMData()))
+        if (!writeSfMData(path, feed, brands, models, mmFocals))
             ALICEVISION_LOG_ERROR("Failed to write the output SfMData files.");
     }
 
@@ -718,7 +725,7 @@ cv::Mat KeyframeSelector::readImage(dataio::FeedProvider &feed, std::size_t widt
     cv::Mat cvRescaled;
     if (cvGrayscale.cols > width && width > 0) {
         cv::resize(cvGrayscale, cvRescaled,
-                   cv::Size(width,double(cvGrayscale.rows) * double(width) / double(cvGrayscale.cols)));
+                   cv::Size(width, double(cvGrayscale.rows) * double(width) / double(cvGrayscale.cols)));
     }
 
     return cvRescaled;
@@ -813,24 +820,58 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
     return findMedian(motionByCell);
 }
 
-bool KeyframeSelector::writeSfMData(const std::string& mediaPath, const bool isSfmInput)
+bool KeyframeSelector::writeSfMData(const std::string& mediaPath, dataio::FeedProvider &feed,
+                                    const std::vector<std::string>& brands, const std::vector<std::string>& models,
+                                    const std::vector<float>& mmFocals)
 {
-    if (!isSfmInput) {
-        ALICEVISION_LOG_INFO("The input was not an SfMData file: no output SfMData file will be written.");
-        return true;
+    bool filledOutputs = false;
+
+    if (!feed.isSfMData()) {
+        filledOutputs = writeSfMDataFromSequences(mediaPath, feed, brands, models, mmFocals);
+    } else {
+        filledOutputs = writeSfMDataFromSfMData(mediaPath);
     }
 
-    sfmData::SfMData inputSfm;
-    std::vector<std::shared_ptr<sfmData::View>> views;
-    if (!sfmDataIO::Load(inputSfm, mediaPath, sfmDataIO::ESfMData::ALL)) {
-        ALICEVISION_THROW_ERROR("Could not open input SfMData file " << mediaPath << ".");
+    if (!filledOutputs) {
+        ALICEVISION_LOG_ERROR("Error while filling the output SfMData files.");
+        return false;
     }
 
+    if (!sfmDataIO::Save(_outputSfmKeyframes, _outputSfmKeyframesPath, sfmDataIO::ESfMData::ALL)) {
+        ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmKeyframesPath << "' could not be written.");
+        return false;
+    }
+
+    if (!feed.isVideo()) {
+        if (!sfmDataIO::Save(_outputSfmFrames, _outputSfmFramesPath, sfmDataIO::ESfMData::ALL)) {
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmFramesPath << "' could not be written.");
+            return false;
+        }
+    } else {
+        ALICEVISION_LOG_DEBUG("The input feed is a video. The SfMData file containing the unselected frames will not"
+                              " be written.");
+    }
+
+    return true;
+}
+
+bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
+{
     auto& keyframesViews = _outputSfmKeyframes.getViews();
     auto& framesViews = _outputSfmFrames.getViews();
 
     auto& keyframesIntrinsics = _outputSfmKeyframes.getIntrinsics();
     auto& framesIntrinsics = _outputSfmFrames.getIntrinsics();
+
+    IndexT viewId;
+    IndexT intrinsicId;
+
+    sfmData::SfMData inputSfm;
+    std::vector<std::shared_ptr<sfmData::View>> views;
+    if (!sfmDataIO::Load(inputSfm, mediaPath, sfmDataIO::ESfMData::ALL)) {
+        ALICEVISION_LOG_ERROR("Could not open input SfMData file " << mediaPath << ".");
+        return false;
+    }
 
     // Order the views according to the frame ID and the intrinsics serial number
     std::map<std::string, std::vector<std::shared_ptr<sfmData::View>>> viewSequences;
@@ -850,8 +891,6 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath, const bool isS
         views.insert(views.end(), view.second.begin(), view.second.end());
     }
 
-    IndexT viewId;
-    IndexT intrinsicId;
     for (int i = 0; i < views.size(); ++i) {
         viewId = views[i]->getViewId();
         intrinsicId = views[i]->getIntrinsicId();
@@ -864,17 +903,179 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath, const bool isS
         }
     }
 
-    if (!sfmDataIO::Save(_outputSfmKeyframes, _outputSfmKeyframesPath, sfmDataIO::ESfMData::ALL)) {
-        ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmKeyframesPath << "' could not be written.");
-        return false;
+    return true;
+}
+
+bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, dataio::FeedProvider &feed,
+                                                 const std::vector<std::string>& brands,
+                                                 const std::vector<std::string>& models,
+                                                 const std::vector<float>& mmFocals)
+{
+    static std::size_t mediaIndex = 0;
+    static IndexT intrinsicId = 0;
+
+    auto& keyframesViews = _outputSfmKeyframes.getViews();
+    auto& framesViews = _outputSfmFrames.getViews();
+
+    auto& keyframesIntrinsics = _outputSfmKeyframes.getIntrinsics();
+    auto& framesIntrinsics = _outputSfmFrames.getIntrinsics();
+
+    auto& keyframesRigs = _outputSfmKeyframes.getRigs();
+    auto& framesRigs = _outputSfmFrames.getRigs();
+
+    const IndexT rigId = 0;   // 0 by convention
+    IndexT viewId = 0;  // Will be used to distinguish frames coming from videos
+    IndexT previousFrameId = UndefinedIndexT;
+
+    feed.goToFrame(0);
+
+    // Feed provider variables
+    image::Image<image::RGBColor> image;
+    camera::PinholeRadialK3 queryIntrinsics;
+    bool hasIntrinsics = false;
+    std::string currentImgName;
+
+    std::size_t selectedKeyframesCounter = 0;  // Used to find the path of the written images when the feed is video
+    std::shared_ptr<camera::IntrinsicBase> previousIntrinsic = nullptr;
+
+    // Create rig structure if it is needed and does not already exist
+    // A rig structure is needed when there is more than one input path
+    if (_mediaPaths.size() > 1 && keyframesRigs.size() == 0 && framesRigs.size() == 0) {
+        sfmData::Rig rig(_mediaPaths.size());
+        keyframesRigs[rigId] = rig;
+        framesRigs[rigId] = rig;
     }
 
-    if (!sfmDataIO::Save(_outputSfmFrames, _outputSfmFramesPath, sfmDataIO::ESfMData::ALL)) {
-        ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmFramesPath << "' could not be written.");
-        return false;
+    for (std::size_t i = 0; i < feed.nbFrames(); ++i) {
+        // Need to read the image to get its size and path
+        if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
+            ALICEVISION_LOG_ERROR("Error reading image");
+            return false;
+        }
+
+        // Create the view
+        auto view = createView(currentImgName, intrinsicId, previousFrameId, image.Width(), image.Height());
+        previousFrameId = view->getFrameId();
+
+        // If there is a rig, the view's rig and sub-pose IDs need to be set once it has been completed
+        if (keyframesRigs.size() > 0 && framesRigs.size() > 0) {
+            view->setRigAndSubPoseId(rigId, mediaIndex);
+        }
+
+        // Prepare settings for the intrinsics
+        double focalLength = view->getMetadataFocalLength();
+        if (focalLength == -1 && mmFocals[mediaIndex] != 0)
+            focalLength = mmFocals[mediaIndex];
+        std::string make = view->getMetadataMake();
+        if (make.empty() && !brands[mediaIndex].empty())
+            make = brands[mediaIndex];
+        std::string model = view->getMetadataModel();
+        if (model.empty() && !models[mediaIndex].empty())
+            model = models[mediaIndex];
+
+        const double imageRatio = static_cast<double>(image.Width()) / static_cast<double>(image.Height());
+        double sensorWidth = -1.0;
+        sensorDB::Datasheet datasheet;
+
+        if (_parsedSensorDb && !make.empty() && !model.empty() &&
+            sensorDB::getInfo(make, model, _sensorDatabase, datasheet)) {
+            sensorWidth = datasheet._sensorWidth;
+        }
+
+        // Create the intrinsic for the view
+        auto intrinsic = createIntrinsic(*view, focalLength == -1.0 ? 0 : focalLength, sensorWidth, mediaIndex,
+                                         imageRatio);
+
+        // Update intrinsics ID if this is a new one
+        if (previousIntrinsic != nullptr && *previousIntrinsic != *intrinsic)
+            view->setIntrinsicId(++intrinsicId);
+
+        // Fill the SfMData files
+        if (_selectedFrames[i] == '1') {
+            if (feed.isVideo()) {
+                // If the feed is a video, all views will have the same view ID by default, this needs to be fixed
+                view->setViewId(view->getViewId() + viewId++);
+                view->setPoseId(view->getViewId());
+                // The path for the view will be the video's; it needs to be replaced with the corresponding keyframe's
+                view->setImagePath(_keyframesPaths[mediaIndex][selectedKeyframesCounter++]);
+            }
+            keyframesViews[view->getViewId()] = view;
+            keyframesIntrinsics[intrinsicId] = intrinsic;
+        } else {
+            // No rejected frames if the feed is a video one, as they are not written on disk
+            if (!feed.isVideo()) {
+                framesViews[view->getViewId()] = view;
+                framesIntrinsics[intrinsicId] = intrinsic;
+            }
+        }
+
+        previousIntrinsic = intrinsic;
+        feed.goToNextFrame();
     }
+
+    ++mediaIndex;
+    ++intrinsicId;
 
     return true;
+}
+
+std::shared_ptr<sfmData::View> KeyframeSelector::createView(const std::string& imagePath, IndexT intrinsicId,
+                                IndexT previousFrameId, std::size_t imageWidth, std::size_t imageHeight)
+{
+    // Create the View object: most attributes are set with default values and will be updated later on
+    auto view = std::make_shared<sfmData::View>(
+        imagePath,                           // filepath
+        UndefinedIndexT,                     // view ID
+        intrinsicId,                         // intrinsics ID
+        UndefinedIndexT,                     // pose ID
+        imageWidth,                          // image width
+        imageHeight,                         // image height
+        UndefinedIndexT,                     // rig ID
+        UndefinedIndexT,                     // sub-pose ID
+        std::map<std::string, std::string>() // metadata
+    );
+
+    // Complete the View attributes
+    sfmDataIO::EViewIdMethod viewIdMethod = sfmDataIO::EViewIdMethod::METADATA;
+    std::string viewIdRegex = ".*?(\\d+)";
+    sfmDataIO::updateIncompleteView(*(view.get()), viewIdMethod, viewIdRegex);
+
+    // Set the frame ID
+    IndexT frameId;
+    std::string prefix;
+    std::string suffix;
+    // Use the filename to determine the frame ID (if available)
+    if (sfmDataIO::extractNumberFromFileStem(fs::path(view->getImagePath()).stem().string(), frameId, prefix, suffix)) {
+        view->setFrameId(frameId);
+    }
+    // Otherwise, set it fully manually
+    if (view->getFrameId() == 1 && previousFrameId != UndefinedIndexT) {
+        view->setFrameId(previousFrameId + 1);
+    }
+
+    return view;
+}
+
+std::shared_ptr<camera::IntrinsicBase> KeyframeSelector::createIntrinsic(const sfmData::View& view, const double focalLength,
+                const double sensorWidth, const double imageRatio, const std::size_t mediaIndex)
+{
+    auto intrinsic = sfmDataIO::getViewIntrinsic(view, focalLength, sensorWidth);
+    if (imageRatio > 1.0 && sensorWidth > -1.0) {
+        intrinsic->setSensorWidth(sensorWidth);
+        intrinsic->setSensorHeight(sensorWidth / imageRatio);
+    } else if (imageRatio <= 1.0 && sensorWidth > -1.0) {
+        intrinsic->setSensorWidth(sensorWidth);
+        intrinsic->setSensorHeight(sensorWidth * imageRatio);
+    } else {
+        // Set default values for the sensor width and sensor height
+        intrinsic->setSensorWidth(36.0);
+        intrinsic->setSensorHeight(24.0);
+    }
+
+    if (intrinsic->serialNumber().empty())  // Likely to happen with video feeds
+        intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string() + std::to_string(mediaIndex));
+
+    return intrinsic;
 }
 
 } // namespace keyframe 
