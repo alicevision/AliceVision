@@ -136,16 +136,6 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_CMakePredefinedTargets"
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# There was a bug in FindCUDA fixed in cmake 3.10 that creates empty strings on the nvcc command line.
-# The solution merged in cmake 3.10 use the command COMMAND_EXPAND_LISTS only available from cmake >= 3.8
-# https://gitlab.kitware.com/cmake/cmake/merge_requests/1008
-# So we use another solution compatible with cmake >= 3.4 proposed here:
-# https://gitlab.kitware.com/cmake/cmake/issues/16411
-# if cmake version < 3.10 use our hacked version of FindCUDA:
-if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.10)
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compatibilityCUDA)
-endif()
-
 if(BUILD_SHARED_LIBS)
   if(WIN32)
     # Export all symbols from the dynamic libraries by default (avoid dllexport markup)
