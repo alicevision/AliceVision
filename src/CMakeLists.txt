@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
+message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 
 # ==============================================================================
 # AliceVision version
@@ -19,9 +20,6 @@ project(aliceVisionSrc LANGUAGES C CXX VERSION ${ALICEVISION_VERSION})
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed.")
 endif()
-
-message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
-cmake_minimum_required(VERSION 3.4)
 
 if(NOT ALICEVISION_ROOT)
   message(FATAL_ERROR "Should build from the CMakeLists.txt in the root folder.")
