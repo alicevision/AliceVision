@@ -48,7 +48,7 @@ void DeviceMipmapImage::fill(const CudaHostMemoryHeap<CudaRGBA, 2>& in_img_hmh, 
     // copy the host-sided full-size input image buffer onto the device-sided image buffer
     img_dmpPtr->copyFrom(in_img_hmh);
 
-    // downscale device-sided full-size input iamge buffer to min downscale
+    // downscale device-sided full-size input image buffer to min downscale
     if(minDownscale > 1)
     {
         // create full-size input image buffer texture

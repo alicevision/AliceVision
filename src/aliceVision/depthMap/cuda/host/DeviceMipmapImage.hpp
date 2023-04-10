@@ -14,7 +14,6 @@ namespace depthMap {
 /*
  * @class DeviceMipmapImage
  * @brief Support class to maintain an image pyramid in gpu memory.
- *
  */
 class DeviceMipmapImage
 {
@@ -67,9 +66,9 @@ public:
     inline unsigned int getMaxDownscale() const { return _maxDownscale; }
 
     /**
-     * @brief Get device mipmap image texture object without normalized coordinates.
+     * @brief Get device mipmap image texture object with normalized coordinates.
      * @note Normalized coordinates: texture coordinates (x,y) in [0, 1]
-     * @return CUDA mipmapped array texture object without normalized coordinates
+     * @return CUDA mipmapped array texture object with normalized coordinates
      */
     inline cudaTextureObject_t getTextureObject() const { return _textureObject; }
 
