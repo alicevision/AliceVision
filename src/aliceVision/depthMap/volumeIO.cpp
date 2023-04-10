@@ -335,6 +335,8 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim,3>& in_v
         }
     }
 
+    const float simNorm = (maxSim == minSim) ? 0.f : (1.f / (maxSim - minSim));
+
     // compute each point color and position
     IndexT landmarkId = 0;
 
@@ -351,7 +353,7 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim,3>& in_v
             if(simValue > 254.f) // invalid similarity
               continue;
 
-            const float simValueNorm = (simValue - minSim) / (maxSim - minSim);
+            const float simValueNorm = (simValue - minSim) * simNorm;
 
             const double planeDepth = in_depths[vz];
             const Point3d planep = mp.CArr[camIndex] + planen * planeDepth;
