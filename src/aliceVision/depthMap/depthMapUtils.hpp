@@ -28,7 +28,7 @@ namespace depthMap {
 void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
 
 /**
- * @brief Write a normal map on disk from device memory.
+ * @brief Write a normal map (depth map estimation) on disk from device memory.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
  * @param[in] tileParams tile workflow parameters
@@ -46,6 +46,26 @@ void writeNormalMap(int rc,
                     int scale,
                     int step,
                     const std::string& name = "");
+
+/**
+ * @brief Write a normal map (depth map filtering) on disk from device memory.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] in_normalMap_dmp the normal map in device memory
+ * @param[in] scale the map downscale factor
+ * @param[in] step the map step factor
+ * @param[in] name the export filename suffix
+ */
+void writeNormalMapFiltered(int rc,
+                            const mvsUtils::MultiViewParams& mp,
+                            const mvsUtils::TileParams& tileParams,
+                            const ROI& roi,
+                            const CudaDeviceMemoryPitched<float3, 2>& in_normalMap_dmp,
+                            int scale = 1,
+                            int step = 1,
+                            const std::string& name = "");
 
 /**
  * @brief Write a depth/thikness map on disk from device memory.

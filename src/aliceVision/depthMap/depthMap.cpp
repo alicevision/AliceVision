@@ -617,15 +617,9 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
     DeviceCache& deviceCache = DeviceCache::getInstance();
     deviceCache.build(0, 1); // 0 mipmap image, 1 camera parameters
 
-    // for now downscale is always 1
-    const int downscale = 1;
-
-    // read / write depth map / normal map scale
-    const int depthMapFilterScale = 0; // 0 for depth map filter folder
-
     for(const int rc : cams)
     {
-        const std::string normalMapFilepath = getFileNameFromIndex(mp, rc, mvsUtils::EFileType::normalMap, 0);
+        const std::string normalMapFilepath = getFileNameFromIndex(mp, rc, mvsUtils::EFileType::normalMapFiltered);
 
         if(!fs::exists(normalMapFilepath))
         {
@@ -634,14 +628,15 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ")");
 
             // add R camera parameters to the device cache (device constant memory)
-            deviceCache.addCameraParams(rc, downscale, mp);
+            // no aditional downscale applied, we are working at input depth map resolution
+            deviceCache.addCameraParams(rc, 1 /*downscale*/, mp);
 
             // get R camera parameters id in device constant memory array
-            const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(rc, downscale, mp);
+            const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(rc, 1 /*downscale*/, mp);
 
             // read input depth map
             image::Image<float> in_depthMap;
-            mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthMap, in_depthMap, depthMapFilterScale);
+            mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthMapFiltered, in_depthMap);
 
             // get input depth map width / height
             const int width  = in_depthMap.Width();
@@ -652,9 +647,6 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
 
             // fullsize roi
             const ROI roi(0, mp.getWidth(rc), 0, mp.getHeight(rc));
-
-            // downscaled roi
-            const ROI downscaledRoi = downscaleROI(roi, downscale);
 
             // copy input depth map into depth/sim map in device memory
             // note: we don't need similarity for normal map computation
@@ -674,10 +666,10 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
             CudaDeviceMemoryPitched<float3, 2> out_normalMap_dmp(in_depthSimMap_dmp.getSize());
 
             // compute normal map
-            cuda_depthSimMapComputeNormal(out_normalMap_dmp, in_depthSimMap_dmp, rcDeviceCameraParamsId, 1 /*step*/, downscaledRoi, 0 /*stream*/);
+            cuda_depthSimMapComputeNormal(out_normalMap_dmp, in_depthSimMap_dmp, rcDeviceCameraParamsId, 1 /*step*/, roi, 0 /*stream*/);
 
             // write output normal map
-            writeNormalMap(rc, mp, tileParams, roi, out_normalMap_dmp, depthMapFilterScale, 1 /*step*/);
+            writeNormalMapFiltered(rc, mp, tileParams, roi, out_normalMap_dmp);
 
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
         }

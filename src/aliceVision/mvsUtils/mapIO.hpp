@@ -44,20 +44,20 @@ void addTileMapWeighted(int rc,
  * @param[in] customSuffix the map filename custom suffix
  */
 void readMap(int rc,
-              const MultiViewParams& mp,
-              const EFileType fileType,
-              image::Image<float>& out_map,
-              int scale = 1,
-              int step = 1,
-              const std::string& customSuffix = "");
+             const MultiViewParams& mp,
+             const EFileType fileType,
+             image::Image<float>& out_map,
+             int scale = 1,
+             int step = 1,
+             const std::string& customSuffix = "");
 
 void readMap(int rc,
-              const MultiViewParams& mp,
-              const EFileType fileType,
-              image::Image<image::RGBfColor>& out_map,
-              int scale = 1,
-              int step = 1,
-              const std::string& customSuffix = "");
+             const MultiViewParams& mp,
+             const EFileType fileType,
+             image::Image<image::RGBfColor>& out_map,
+             int scale = 1,
+             int step = 1,
+             const std::string& customSuffix = "");
 
 /**
  * @brief Write a fullsize or tile map in a file.
@@ -146,15 +146,11 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
  * @param[in] fileType the map fileType enum
- * @param[in] scale the map downscale factor
- * @param[in] step the map step factor
  * @param[in] customSuffix the filename custom suffix
  */
 void deleteMapTiles(int rc,
                     const MultiViewParams& mp,
                     const EFileType fileType,
-                    int scale = 1,
-                    int step = 1,
                     const std::string& customSuffix = "");
 
 } // namespace mvsUtils

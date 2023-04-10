@@ -353,7 +353,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume (" << name << ").");
 
-        const std::string volumePath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volume, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
+        const std::string volumePath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volume, "_" + name, tileBeginX, tileBeginY);
         
         exportSimilarityVolume(volumeSim_hmh, tileDepthList.getDepths(), _mp, tile.rc, _sgmParams, volumePath, tile.roi);
 
@@ -364,7 +364,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ").");
 
-        const std::string volumeCrossPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeCross, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
+        const std::string volumeCrossPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeCross, "_" + name, tileBeginX, tileBeginY);
 
         exportSimilarityVolumeCross(volumeSim_hmh, tileDepthList.getDepths(), _mp, tile.rc, _sgmParams, volumeCrossPath, tile.roi);
 
@@ -375,7 +375,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume topographic cut (" << name << ").");
 
-        const std::string volumeCutPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeTopographicCut, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
+        const std::string volumeCutPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeTopographicCut, "_" + name, tileBeginX, tileBeginY);
 
         exportSimilarityVolumeTopographicCut(volumeSim_hmh, tileDepthList.getDepths(), _mp, tile.rc, _sgmParams, volumeCutPath, tile.roi);
 
@@ -386,7 +386,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume 9 points CSV (" << name << ").");
 
-        const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", tileBeginX, tileBeginY);
+        const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, "_sgm", tileBeginX, tileBeginY);
 
         exportSimilaritySamplesCSV(volumeSim_hmh, tileDepthList.getDepths(), name, _sgmParams, stats9Path, tile.roi);
 

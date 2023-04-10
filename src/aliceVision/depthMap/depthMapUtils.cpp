@@ -97,6 +97,43 @@ void writeFloat2Map(int rc,
     mvsUtils::writeMap(rc, mp, fileTypeY, tileParams, roi, mapY, scale, step, customSuffix);
 }
 
+void writeFloat3Map(int rc,
+                    const mvsUtils::MultiViewParams& mp,
+                    const mvsUtils::TileParams& tileParams,
+                    const ROI& roi,
+                    const CudaDeviceMemoryPitched<float3, 2>& in_map_dmp,
+                    const mvsUtils::EFileType fileType,
+                    int scale,
+                    int step,
+                    const std::string& name)
+{
+  const ROI downscaledROI = downscaleROI(roi, scale * step);
+  const int width  = int(downscaledROI.width());
+  const int height = int(downscaledROI.height());
+
+  // copy map from device pitched memory to host memory
+  CudaHostMemoryHeap<float3, 2> map_hmh(in_map_dmp.getSize());
+  map_hmh.copyFrom(in_map_dmp);
+
+  // copy map from host memory to an Image
+  image::Image<image::RGBfColor> map(width, height, true, {0.f,0.f,0.f});
+
+  for(size_t x = 0; x < size_t(width); ++x)
+  {
+      for(size_t y = 0; y < size_t(height); ++y)
+      {
+          const float3& rgba_hmh = map_hmh(x, y);
+          image::RGBfColor& rgb = map(int(y), int(x));
+          rgb.r() = rgba_hmh.x;
+          rgb.g() = rgba_hmh.y;
+          rgb.b() = rgba_hmh.z;
+      }
+  }
+
+  // write map from the image buffer
+  mvsUtils::writeMap(rc, mp, fileType, tileParams, roi, map, scale, step, (name.empty()) ? "" : "_" + name);
+}
+
 void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path) 
 {
     const CudaSize<2>& imgSize = in_img_dmp.getSize();
@@ -133,31 +170,19 @@ void writeNormalMap(int rc,
                     int step,
                     const std::string& name)
 {
-  const ROI downscaledROI = downscaleROI(roi, std::max(scale, 1) * step); // max avoid 0 special case (reserved for depth map filtering)
-  const int width  = int(downscaledROI.width());
-  const int height = int(downscaledROI.height());
+    writeFloat3Map(rc, mp, tileParams, roi, in_normalMap_dmp, mvsUtils::EFileType::normalMap, scale, step, name);
+}
 
-  // copy map from device pitched memory to host memory
-  CudaHostMemoryHeap<float3, 2> map_hmh(in_normalMap_dmp.getSize());
-  map_hmh.copyFrom(in_normalMap_dmp);
-
-  // copy map from host memory to an Image
-  image::Image<image::RGBfColor> map(width, height, true, {0.f,0.f,0.f});
-
-  for(size_t x = 0; x < size_t(width); ++x)
-  {
-      for(size_t y = 0; y < size_t(height); ++y)
-      {
-          const float3& rgba_hmh = map_hmh(x, y);
-          image::RGBfColor& rgb = map(int(y), int(x));
-          rgb.r() = rgba_hmh.x;
-          rgb.g() = rgba_hmh.y;
-          rgb.b() = rgba_hmh.z;
-      }
-  }
-
-  // write map from the image buffer
-  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::normalMap, tileParams, roi, map, scale, step, (name.empty()) ? "" : "_" + name);
+void writeNormalMapFiltered(int rc,
+                    const mvsUtils::MultiViewParams& mp,
+                    const mvsUtils::TileParams& tileParams,
+                    const ROI& roi,
+                    const CudaDeviceMemoryPitched<float3, 2>& in_normalMap_dmp,
+                    int scale,
+                    int step,
+                    const std::string& name)
+{
+    writeFloat3Map(rc, mp, tileParams, roi, in_normalMap_dmp, mvsUtils::EFileType::normalMapFiltered, scale, step, name);
 }
 
 
@@ -279,7 +304,7 @@ void mergeNormalMapTiles(int rc,
 
     mvsUtils::readMap(rc, mp, mvsUtils::EFileType::normalMap, normalMap, scale, step, customSuffix);  // read and merge normal map tiles
     mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::normalMap, normalMap, scale, step, customSuffix); // write the merged normal map
-    mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::normalMap, scale, step, customSuffix);      // delete normal map tile files
+    mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::normalMap, customSuffix);                   // delete normal map tile files
 }
 
 void mergeFloatMapTiles(int rc,
@@ -295,7 +320,7 @@ void mergeFloatMapTiles(int rc,
 
     mvsUtils::readMap(rc, mp, fileType, map, scale, step, customSuffix);   // read and merge depth map tiles
     mvsUtils::writeMap(rc, mp, fileType, map, scale, step, customSuffix);  // write the merged depth map
-    mvsUtils::deleteMapTiles(rc, mp, fileType, scale, step, customSuffix); // delete depth map tile files
+    mvsUtils::deleteMapTiles(rc, mp, fileType, customSuffix);              // delete depth map tile files
 
 }
 
@@ -335,7 +360,7 @@ void exportDepthSimMapTilePatternObj(int rc,
                                      const std::vector<ROI>& tileRoiList,
                                      const std::vector<std::pair<float, float>>& tileMinMaxDepthsList)
 {
-  const std::string filepath = mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::tilePattern, 1);
+  const std::string filepath = mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::tilePattern);
 
   const int nbRoiCornerVertices = 6;                 // 6 vertices per ROI corner
   const int nbRoiCornerFaces = 4;                    // 4 faces per ROI corner

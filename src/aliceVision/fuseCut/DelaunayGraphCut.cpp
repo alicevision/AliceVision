@@ -301,7 +301,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         const int height = mp.getHeight(c);
 
         // read depth map
-        mvsUtils::readMap(c, mp, mvsUtils::EFileType::depthMap, depthMap, 0); // scale 0 -> depth maps filter folder
+        mvsUtils::readMap(c, mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
 
         if(depthMap.size() <= 0)
         {
@@ -312,7 +312,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         // read similarity map
         try
         {
-            mvsUtils::readMap(c, mp, mvsUtils::EFileType::simMap, simMap, 0); // scale 0 -> depth maps filter folder
+            mvsUtils::readMap(c, mp, mvsUtils::EFileType::simMapFiltered, simMap);
             image::Image<float> simMapTmp(simMap.Width(), simMap.Height());
             imageAlgo::convolveImage(simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
             simMap.swap(simMapTmp);
@@ -940,7 +940,7 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
         for(int c = 0; c < cams.size(); c++)
         {
             image::Image<float> depthMap;
-            mvsUtils::readMap(c, _mp, mvsUtils::EFileType::depthMap, depthMap, 0); // scale 0 -> depth maps filter folder
+            mvsUtils::readMap(c, _mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
 
             if(depthMap.size() <= 0)
             {
@@ -1087,7 +1087,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
             {
                 // read depth map
-                mvsUtils::readMap(c, _mp, mvsUtils::EFileType::depthMap, depthMap, 0); // scale 0 -> depth maps filter folder
+                mvsUtils::readMap(c, _mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
 
                 if(depthMap.size() <= 0)
                 {
@@ -1098,7 +1098,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 // read similarity map
                 try
                 {
-                    mvsUtils::readMap(c, _mp, mvsUtils::EFileType::simMap, simMap, 0); // scale 0 -> depth maps filter folder
+                    mvsUtils::readMap(c, _mp, mvsUtils::EFileType::simMapFiltered, simMap);
                     image::Image<float> simMapTmp;
                     imageAlgo::convolveImage(simMap, simMapTmp, "gaussian",
                                              params.simGaussianSizeInit,
@@ -1113,7 +1113,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
                 // read nmod map
                 int wTmp, hTmp;
-                const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap, 0);
+                const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap);
                 // If we have an nModMap in input (from depthmapfilter) use it,
                 // else init with a constant value.
                 if(boost::filesystem::exists(nmodMapFilepath))

@@ -327,7 +327,7 @@ void Refine::exportVolumeInformation(const Tile& tile, const std::string& name) 
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ").");
 
-        const std::string volumeCrossPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeCross, _refineParams.scale, "_" + name, tileBeginX, tileBeginY);
+        const std::string volumeCrossPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeCross, "_" + name, tileBeginX, tileBeginY);
 
         exportSimilarityVolumeCross(volumeSim_hmh, depthPixSizeMapSgmUpscale_hmh, _mp, tile.rc, _refineParams, volumeCrossPath, tile.roi);
 
@@ -338,7 +338,7 @@ void Refine::exportVolumeInformation(const Tile& tile, const std::string& name) 
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume topographic cut (" << name << ").");
 
-        const std::string volumeCutPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeTopographicCut, _refineParams.scale, "_" + name, tileBeginX, tileBeginY);
+        const std::string volumeCutPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeTopographicCut, "_" + name, tileBeginX, tileBeginY);
 
         exportSimilarityVolumeTopographicCut(volumeSim_hmh, depthPixSizeMapSgmUpscale_hmh, _mp, tile.rc, _refineParams, volumeCutPath, tile.roi);
 
@@ -349,7 +349,7 @@ void Refine::exportVolumeInformation(const Tile& tile, const std::string& name) 
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume 9 points CSV (" << name << ").");
 
-        const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, _refineParams.scale, "_refine", tileBeginX, tileBeginY);
+        const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, "_refine", tileBeginX, tileBeginY);
 
         exportSimilaritySamplesCSV(volumeSim_hmh, name, _refineParams, stats9Path, tile.roi);
 

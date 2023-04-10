@@ -146,8 +146,9 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
     image::Image<float> depthMap;
     image::Image<float> simMap;
 
-    mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMap, depthMap, 1); // scale 1
-    mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::simMap, simMap, 1); // scale 1
+    // read depth/sim maps from depthMapEstimation folder
+    mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMap, depthMap);
+    mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::simMap, simMap);
 
     image::Image<unsigned char> numOfModalsMap(w, h, true, 0);
 
@@ -172,7 +173,8 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
 
         image::Image<float> tcdepthMap;
 
-        mvsUtils::readMap(tc, _mp, mvsUtils::EFileType::depthMap, tcdepthMap, 1); // scale 1
+        // read Tc depth map from depthMapEstimation folder
+        mvsUtils::readMap(tc, _mp, mvsUtils::EFileType::depthMap, tcdepthMap);
 
         if (tcdepthMap.Height() > 0 && tcdepthMap.Width() > 0)
         {
@@ -235,8 +237,9 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     image::Image<float> simMap;
     image::Image<unsigned char> numOfModalsMap;
 
-    mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMap, depthMap, 1); // scale 1
-    mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::simMap, simMap, 1); // scale 1
+    // read depth/sim maps from depthMapEstimation folder
+    mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMap, depthMap);
+    mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::simMap, simMap);
 
     image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap),
                      numOfModalsMap,
@@ -277,8 +280,8 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
         }
     }
 
-    mvsUtils::writeMap(rc, _mp, mvsUtils::EFileType::depthMap, depthMap, 0); // scale 0 -> depth maps filter folder
-    mvsUtils::writeMap(rc, _mp, mvsUtils::EFileType::simMap, simMap, 0); // scale 0 -> depth maps filter folder
+    mvsUtils::writeMap(rc, _mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
+    mvsUtils::writeMap(rc, _mp, mvsUtils::EFileType::simMapFiltered, simMap);
 
     ALICEVISION_LOG_DEBUG(rc << " solved.");
     mvsUtils::printfElapsedTime(t1);
@@ -288,7 +291,7 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
 
 float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale)
 {
-    int scaleuse = std::max(1, scale);
+    const int scaleuse = std::max(1, scale);
 
     StaticVector<int> cams = _mp.findCamsWhichIntersectsHexahedron(hexah);
     int j = 0;
@@ -400,7 +403,7 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
         int w = _mp.getWidth(rc);
 
         image::Image<float> depthMap;
-        mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMap, depthMap, scale);
+        mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
 
         for(int i = 0; i < depthMap.size(); i += stepPts)
         {
@@ -440,7 +443,7 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
         int w = _mp.getWidth(rc);
 
         image::Image<float> depthMap;
-        mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMap, depthMap, scale);
+        mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
 
         for(int i = 0; i < depthMap.size(); i += stepPts)
         {
@@ -689,8 +692,7 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
     {
         bfs::create_directory(depthMapsPtsSimsTmpDir);
 
-        int scale = 0;
-        int scaleuse = std::max(1, scale);
+        const int scaleuse = 1;
 
         StaticVector<Point2d>* minMaxDepths = new StaticVector<Point2d>();
         minMaxDepths->reserve(mp.ncams);
@@ -711,8 +713,8 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
             image::Image<float> depthMap;
             image::Image<float> simMap;
 
-            mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthMap, depthMap, scale);
-            mvsUtils::readMap(rc, mp, mvsUtils::EFileType::simMap, simMap, scale);
+            mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
+            mvsUtils::readMap(rc, mp, mvsUtils::EFileType::simMapFiltered, simMap);
 
             if (depthMap.size() != (w * h) || simMap.size() != (w * h))
             {
