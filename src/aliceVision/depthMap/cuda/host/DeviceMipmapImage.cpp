@@ -71,10 +71,6 @@ void DeviceMipmapImage::fill(const CudaHostMemoryHeap<CudaRGBA, 2>& in_img_hmh, 
 
         // use downscaled image buffer as input full-size image buffer
         img_dmpPtr.swap(downscaledImg_dmpPtr);
-
-        // update private members
-        _width  = downscaledWidth;
-        _height = downscaledHeight;
     }
 
     // in-place color conversion into CIELAB
@@ -96,7 +92,7 @@ void DeviceMipmapImage::fill(const CudaHostMemoryHeap<CudaRGBA, 2>& in_img_hmh, 
 
 float DeviceMipmapImage::getLevel(unsigned int downscale) const
 {
-  // check given level
+  // check given downscale
   if(downscale < _minDownscale || downscale > _maxDownscale)
     ALICEVISION_THROW_ERROR("Cannot get device mipmap image level (downscale: " << downscale << ")");
 
@@ -106,7 +102,7 @@ float DeviceMipmapImage::getLevel(unsigned int downscale) const
 
 CudaSize<2> DeviceMipmapImage::getLevelDimensions(unsigned int downscale) const
 {
-  // check given level
+  // check given downscale
   if(downscale < _minDownscale || downscale > _maxDownscale)
     ALICEVISION_THROW_ERROR("Cannot get device mipmap image level dimensions (downscale: " << downscale << ")");
 
