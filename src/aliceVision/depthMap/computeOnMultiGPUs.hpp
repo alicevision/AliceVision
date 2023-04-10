@@ -11,9 +11,29 @@
 namespace aliceVision {
 namespace depthMap {
 
-typedef void (*GPUJob)(int cudaDeviceNo, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams);
+/**
+ * @class IGPUJob
+ * @brief Interface for multi-GPUs computation.
+ */
+class IGPUJob
+{
+public:
 
-void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, GPUJob gpujob, int nbGPUsToUse);
+    /**
+     * @brief Perform computation from the given cameras.
+     * @param[in] cudaDeviceId the CUDA device id
+     * @param[in] cams the list of cameras
+     */
+    virtual void compute(int cudaDeviceId, const std::vector<int>& cams) = 0;
+};
+
+/**
+ * @brief Perform computation from the given cameras on multiple GPUs.
+ * @param[in] cams the given list of cameras
+ * @param[in,out] gpujob the object that wrap computation (should use IGPUJob interface)
+ * @param[in] nbGPUsToUse the number of GPUs to use
+ */
+void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPUsToUse);
 
 } // namespace depthMap
 } // namespace aliceVision

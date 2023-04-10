@@ -15,8 +15,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
-#include <aliceVision/depthMap/depthMap.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
+#include <aliceVision/depthMap/NormalMapEstimator.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -143,10 +143,15 @@ int aliceVision_main(int argc, char* argv[])
         fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
 
-    if (computeNormalMaps)
+    if(computeNormalMaps)
     {
         int nbGPUs = 0;
-        depthMap::computeOnMultiGPUs(mp, cams, depthMap::computeNormalMaps, nbGPUs);
+
+        // initialize depth map estimator
+        depthMap::NormalMapEstimator normalMapEstimator(mp);
+
+        // estimate normal maps
+        depthMap::computeOnMultiGPUs(cams, normalMapEstimator, nbGPUs);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

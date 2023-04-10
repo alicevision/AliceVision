@@ -2,9 +2,10 @@
 set(depthMap_files_headers
   BufPtr.hpp
   computeOnMultiGPUs.hpp
-  depthMap.hpp
-  depthMapUtils.hpp
+  DepthMapEstimator.hpp
   DepthMapParams.hpp
+  depthMapUtils.hpp
+  NormalMapEstimator.hpp
   Refine.hpp
   RefineParams.hpp
   Sgm.hpp
@@ -17,8 +18,9 @@ set(depthMap_files_headers
 # Sources
 set(depthMap_files_sources
   computeOnMultiGPUs.cpp
-  depthMap.cpp
+  DepthMapEstimator.cpp
   depthMapUtils.cpp
+  NormalMapEstimator.cpp
   Refine.cpp
   Sgm.cpp
   SgmDepthList.cpp

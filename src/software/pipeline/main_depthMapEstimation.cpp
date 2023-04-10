@@ -11,8 +11,10 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
-#include <aliceVision/depthMap/depthMap.hpp>
+#include <aliceVision/depthMap/DepthMapEstimator.hpp>
 #include <aliceVision/depthMap/DepthMapParams.hpp>
+#include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
 #include <boost/program_options.hpp>
@@ -26,6 +28,25 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
+
+int computeDownscale(const mvsUtils::MultiViewParams& mp, int scale, int maxWidth, int maxHeight)
+{
+    const int maxImageWidth = mp.getMaxImageWidth() / scale;
+    const int maxImageHeight = mp.getMaxImageHeight() / scale;
+
+    int downscale = 1;
+    int downscaleWidth = mp.getMaxImageWidth() / scale;
+    int downscaleHeight = mp.getMaxImageHeight() / scale;
+
+    while((downscaleWidth > maxWidth) || (downscaleHeight > maxHeight))
+    {
+        downscale++;
+        downscaleWidth = maxImageWidth / downscale;
+        downscaleHeight = maxImageHeight / downscale;
+    }
+
+    return downscale;
+}
 
 int aliceVision_main(int argc, char* argv[])
 {
@@ -46,17 +67,17 @@ int aliceVision_main(int argc, char* argv[])
     float minViewAngle = 2.0f;
     float maxViewAngle = 70.0f;
 
-    // DepthMap parameters
+    // Tiling parameters
+    mvsUtils::TileParams tileParams;
+
+    // DepthMap (global) parameters
     depthMap::DepthMapParams depthMapParams;
 
-    // Tiling parameters
-    auto& tileParams = depthMapParams.tileParams;
-
     // Semi Global Matching Parameters
-    auto& sgmParams = depthMapParams.sgmParams;
+    depthMap::SgmParams sgmParams;
 
     // Refine Parameters
-    auto& refineParams = depthMapParams.refineParams;
+    depthMap::RefineParams refineParams;
 
     // intermediate results
     bool exportIntermediateDepthSimMaps = false;
@@ -198,6 +219,20 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // intermediate results
+    sgmParams.exportIntermediateDepthSimMaps = exportIntermediateDepthSimMaps;
+    sgmParams.exportIntermediateNormalMaps = exportIntermediateNormalMaps;
+    sgmParams.exportIntermediateVolumes = exportIntermediateVolumes;
+    sgmParams.exportIntermediateCrossVolumes = exportIntermediateCrossVolumes;
+    sgmParams.exportIntermediateTopographicCutVolumes = exportIntermediateTopographicCutVolumes;
+    sgmParams.exportIntermediateVolume9pCsv = exportIntermediateVolume9pCsv;
+
+    refineParams.exportIntermediateDepthSimMaps = exportIntermediateDepthSimMaps;
+    refineParams.exportIntermediateNormalMaps = exportIntermediateNormalMaps;
+    refineParams.exportIntermediateCrossVolumes = exportIntermediateCrossVolumes;
+    refineParams.exportIntermediateTopographicCutVolumes = exportIntermediateTopographicCutVolumes;
+    refineParams.exportIntermediateVolume9pCsv = exportIntermediateVolume9pCsv;
+
     // print GPU Information
     ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
 
@@ -276,67 +311,87 @@ int aliceVision_main(int argc, char* argv[])
 
     // check if tile size > max image size
     if(tileParams.bufferWidth > mp.getMaxImageWidth() || tileParams.bufferHeight > mp.getMaxImageHeight())
-      ALICEVISION_LOG_WARNING("Tile buffer size (width: "  << tileParams.bufferWidth << ", height: " << tileParams.bufferHeight << ") is larger than the maximum image size (width: " << mp.getMaxImageWidth() << ", height: " << mp.getMaxImageHeight() <<  ").");
+    {
+        ALICEVISION_LOG_WARNING("Tile buffer size (width: "  << tileParams.bufferWidth << ", height: " << tileParams.bufferHeight
+                                << ") is larger than the maximum image size (width: " << mp.getMaxImageWidth() << ", height: " << mp.getMaxImageHeight() <<  ").");
+    }
 
-    // set params in bpt
+    // check if SGM scale and step are set to -1
+    bool autoSgmScaleStep = false;
 
-    // Tile Parameters
-    mp.userParams.put("tile.bufferWidth", tileParams.bufferWidth);
-    mp.userParams.put("tile.bufferHeight", tileParams.bufferHeight);
-    mp.userParams.put("tile.padding", tileParams.padding);
+    // compute SGM scale and step
+    if(sgmParams.scale == -1 || sgmParams.stepXY == -1)
+    {
+        const int fileScale = 1; // input images scale (should be one)
+        const int maxSideXY = 700 / mp.getProcessDownscale(); // max side in order to fit in device memory
+        const int maxImageW = mp.getMaxImageWidth();
+        const int maxImageH = mp.getMaxImageHeight();
 
-    // SGM Parameters
-    mp.userParams.put("sgm.scale", sgmParams.scale);
-    mp.userParams.put("sgm.stepXY", sgmParams.stepXY);
-    mp.userParams.put("sgm.stepZ", sgmParams.stepZ);
-    mp.userParams.put("sgm.wsh", sgmParams.wsh);
-    mp.userParams.put("sgm.seedsRangeInflate", sgmParams.seedsRangeInflate);
-    mp.userParams.put("sgm.depthThiknessInflate", sgmParams.depthThiknessInflate);
-    mp.userParams.put("sgm.maxSimilarity", sgmParams.maxSimilarity);
-    mp.userParams.put("sgm.gammaC", sgmParams.gammaC);
-    mp.userParams.put("sgm.gammaP", sgmParams.gammaP);
-    mp.userParams.put("sgm.p1", sgmParams.p1);
-    mp.userParams.put("sgm.p2Weighting", sgmParams.p2Weighting);
-    mp.userParams.put("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
-    mp.userParams.put("sgm.maxDepths", sgmParams.maxDepths);
-    mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
-    mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
-    mp.userParams.put("sgm.depthListPerTile", sgmParams.depthListPerTile);
-    mp.userParams.put("sgm.useMultiScalePatch", sgmParams.useMultiScalePatch);
-    mp.userParams.put("sgm.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
-    mp.userParams.put("sgm.exportIntermediateNormalMaps", exportIntermediateNormalMaps);
-    mp.userParams.put("sgm.exportIntermediateVolumes", exportIntermediateVolumes);
-    mp.userParams.put("sgm.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
-    mp.userParams.put("sgm.exportIntermediateTopographicCutVolumes", exportIntermediateTopographicCutVolumes);
-    mp.userParams.put("sgm.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
+        int maxW = maxSideXY;
+        int maxH = maxSideXY * 0.8;
 
-    // Refine Parameters
-    mp.userParams.put("refine.scale", refineParams.scale);
-    mp.userParams.put("refine.stepXY", refineParams.stepXY);
-    mp.userParams.put("refine.wsh", refineParams.wsh);
-    mp.userParams.put("refine.sigma", refineParams.sigma);
-    mp.userParams.put("refine.gammaC", refineParams.gammaC);
-    mp.userParams.put("refine.gammaP", refineParams.gammaP);
-    mp.userParams.put("refine.maxTCamsPerTile", refineParams.maxTCamsPerTile);
-    mp.userParams.put("refine.nbSubsamples", refineParams.nbSubsamples);
-    mp.userParams.put("refine.halfNbDepths", refineParams.halfNbDepths);
-    mp.userParams.put("refine.optimizationNbIterations", refineParams.optimizationNbIterations);
-    mp.userParams.put("refine.interpolateMiddleDepth", refineParams.interpolateMiddleDepth);
-    mp.userParams.put("refine.useMultiScalePatch", refineParams.useMultiScalePatch);
-    mp.userParams.put("refine.useRefineFuse", refineParams.useRefineFuse);
-    mp.userParams.put("refine.useColorOptimization", refineParams.useColorOptimization);
-    mp.userParams.put("refine.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
-    mp.userParams.put("refine.exportIntermediateNormalMaps", exportIntermediateNormalMaps);
-    mp.userParams.put("refine.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
-    mp.userParams.put("refine.exportIntermediateTopographicCutVolumes", exportIntermediateTopographicCutVolumes);
-    mp.userParams.put("refine.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
+        if(maxImageW < maxImageH)
+            std::swap(maxW, maxH);
 
-    // Workflow Parameters
-    mp.userParams.put("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
-    mp.userParams.put("depthMap.maxTCams", depthMapParams.maxTCams);
-    mp.userParams.put("depthMap.exportTilePattern", depthMapParams.exportTilePattern);
-    mp.userParams.put("depthMap.autoAdjustSmallImage", depthMapParams.autoAdjustSmallImage);
+        if(sgmParams.scale == -1)
+        {
+            // compute the number of scales that will be used in the plane sweeping.
+            // the highest scale should have a resolution close to 700x550 (or less).
+            const int scaleTmp = computeDownscale(mp, fileScale, maxW, maxH);
+            sgmParams.scale = std::min(2, scaleTmp);
+        }
 
+        if(sgmParams.stepXY == -1)
+        {
+            sgmParams.stepXY = computeDownscale(mp, fileScale * sgmParams.scale, maxW, maxH);
+        }
+
+        autoSgmScaleStep = true;
+    }
+
+    // single tile case, update parameters
+    if(depthMapParams.autoAdjustSmallImage && mvsUtils::hasOnlyOneTile(tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight()))
+    {
+        // update SGM maxTCamsPerTile
+        if(sgmParams.maxTCamsPerTile < depthMapParams.maxTCams)
+        {
+          ALICEVISION_LOG_WARNING("Single tile computation, override SGM maximum number of T cameras per tile (before: " << sgmParams.maxTCamsPerTile << ", now: " << depthMapParams.maxTCams << ").");
+          sgmParams.maxTCamsPerTile = depthMapParams.maxTCams;
+        }
+
+        // update Refine maxTCamsPerTile
+        if(refineParams.maxTCamsPerTile < depthMapParams.maxTCams)
+        {
+          ALICEVISION_LOG_WARNING("Single tile computation, override Refine maximum number of T cameras per tile (before: " << refineParams.maxTCamsPerTile << ", now: " << depthMapParams.maxTCams << ").");
+          refineParams.maxTCamsPerTile = depthMapParams.maxTCams;
+        }
+
+        const int maxSgmBufferWidth  = divideRoundUp(mp.getMaxImageWidth() , sgmParams.scale * sgmParams.stepXY);
+        const int maxSgmBufferHeight = divideRoundUp(mp.getMaxImageHeight(), sgmParams.scale * sgmParams.stepXY);
+
+        // update SGM step XY
+        if(!autoSgmScaleStep && // user define SGM scale & stepXY
+           (sgmParams.stepXY == 2) && // default stepXY
+           (maxSgmBufferWidth  < tileParams.bufferWidth  * 0.5) &&
+           (maxSgmBufferHeight < tileParams.bufferHeight * 0.5))
+        {
+          ALICEVISION_LOG_WARNING("Single tile computation, override SGM step XY (before: " << sgmParams.stepXY  << ", now: 1).");
+          sgmParams.stepXY = 1;
+        }
+    }
+
+    // compute the maximum downscale factor
+    const int maxDownscale = std::max(sgmParams.scale * sgmParams.stepXY, refineParams.scale * refineParams.stepXY);
+
+    // check padding
+    if(tileParams.padding % maxDownscale != 0)
+    {
+      const int padding = divideRoundUp(tileParams.padding, maxDownscale) * maxDownscale;
+      ALICEVISION_LOG_WARNING("Override tiling padding parameter (before: " << tileParams.padding << ", now: " << padding << ").");
+      tileParams.padding = padding;
+    }
+
+    // camera list
     std::vector<int> cams;
     cams.reserve(mp.ncams);
 
@@ -361,8 +416,11 @@ int aliceVision_main(int argc, char* argv[])
       }
     }
 
-    ALICEVISION_LOG_INFO("Create depth maps.");
-    depthMap::computeOnMultiGPUs(mp, cams, depthMap::estimateAndRefineDepthMaps, nbGPUs);
+    // initialize depth map estimator
+    depthMap::DepthMapEstimator depthMapEstimator(mp, tileParams, depthMapParams, sgmParams, refineParams);
+
+    // estimate depth maps
+    depthMap::computeOnMultiGPUs(cams, depthMapEstimator, nbGPUs);
 
     ALICEVISION_COMMANDLINE_END
 }
