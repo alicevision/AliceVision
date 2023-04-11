@@ -12,6 +12,7 @@
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
+#include <aliceVision/depthMap/Tile.hpp>
 
 #include <vector>
 
@@ -66,6 +67,13 @@ private:
      */
     int getNbSimultaneousTiles() const;
 
+    /**
+     * @brief Build tile list from the given cameras.
+     * @param[in] cams the list of cameras
+     * @param[in,out] tiles the output tiles list
+     */
+   void getTilesList(const std::vector<int>& cams, std::vector<Tile>& tiles) const;
+
     // private members
 
     const mvsUtils::MultiViewParams& _mp;      //< multi-view parameters
@@ -73,8 +81,7 @@ private:
     const DepthMapParams& _depthMapParams;     //< depth map estimation parameters
     const SgmParams& _sgmParams;               //< parameters of Sgm process
     const RefineParams& _refineParams;         //< parameters of Refine process
-
-    std::vector<ROI> _tileRoiList;
+    std::vector<ROI> _tileRoiList;             //< depth maps region-of-interest list
 };
 
 } // namespace depthMap

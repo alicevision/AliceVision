@@ -62,12 +62,23 @@ DepthMapEstimator::DepthMapEstimator(const mvsUtils::MultiViewParams& mp,
 int DepthMapEstimator::getNbSimultaneousTiles() const
 {
     const int nbTilesPerCamera = _tileRoiList.size();
-    const int maxImageSize = _mp.getMaxImageWidth() * _mp.getMaxImageHeight(); // process downscale apply
 
-    const double sgmFrameCostMB = ((maxImageSize / _sgmParams.scale) * sizeof(CudaRGBA)) / (1024.0 * 1024.0); // SGM RGBA
-    const double refineFrameCostMB = ((maxImageSize / _refineParams.scale) * sizeof(CudaRGBA)) / (1024.0 * 1024.0); // Refine RGBA
-    const double cameraFrameCostMB = sgmFrameCostMB + (_depthMapParams.useRefine ? refineFrameCostMB : 0.0); // SGM + Refine single frame cost
+    // mipmap image cost
+    // mipmap image should not exceed (1.5 * max_width) * max_height
+    // TODO: special case first mipmap level != 1
+    const double mipmapCostMB = ((_mp.getMaxImageWidth() * 1.5) * _mp.getMaxImageHeight() * sizeof(CudaRGBA)) / (1024.0 * 1024.0); // process downscale apply
 
+    // cameras cost per R camera computation
+    // Rc mipmap + Tcs mipmaps
+    const double rcCamsCostMB = mipmapCostMB + _depthMapParams.maxTCams * mipmapCostMB;
+
+    // number of camera parameters in device constant memory
+    // (Rc + Tcs) * 2 (SGM + Refine downscale) + 1 (SGM needs downscale 1)
+    // note: special case SGM downsccale = Refine downscale not handle
+    const int rcNbCameraParams = (_depthMapParams.useRefine) ? 2 : 1;
+    const int rcCamParams = ( 1 /* rc */ + _depthMapParams.maxTCams) * rcNbCameraParams + ((_refineParams.scale > 1) ? 1 : 0);
+
+    // single tile SGM cost
     double sgmTileCostMB = 0.0;
     double sgmTileCostUnpaddedMB = 0.0;
 
@@ -80,6 +91,7 @@ int DepthMapEstimator::getNbSimultaneousTiles() const
       sgmTileCostUnpaddedMB = sgm.getDeviceMemoryConsumptionUnpadded();
     }
 
+    // single tile Refine cost
     double refineTileCostMB = 0.0;
     double refineTileCostUnpaddedMB = 0.0;
 
@@ -90,14 +102,18 @@ int DepthMapEstimator::getNbSimultaneousTiles() const
       refineTileCostUnpaddedMB = refine.getDeviceMemoryConsumptionUnpadded();
     }
 
+    // tile computation cost
+    // SGM tile cost + Refine tile cost
     const double tileCostMB = sgmTileCostMB + refineTileCostMB;
     const double tileCostUnpaddedMB = sgmTileCostUnpaddedMB + refineTileCostUnpaddedMB;
 
-    const double rcCamsCost = cameraFrameCostMB + _depthMapParams.maxTCams * cameraFrameCostMB;
-    const double rcMinCostMB = rcCamsCost + tileCostMB;
-    const double rcMaxCostMB = rcCamsCost + nbTilesPerCamera * tileCostMB;
-    const int rcCamParams = (1 + _depthMapParams.maxTCams) * 2; // number of camera parameters in device constant memory
+    // min/max cost of an R camera computation
+    // min cost for a single tile computation
+    // max cost for all tiles computation
+    const double rcMinCostMB = rcCamsCostMB + tileCostMB;
+    const double rcMaxCostMB = rcCamsCostMB + nbTilesPerCamera * tileCostMB;
 
+    // available device memory
     double deviceMemoryMB;
     {
         double availableMB, usedMB, totalMB;
@@ -105,88 +121,75 @@ int DepthMapEstimator::getNbSimultaneousTiles() const
         deviceMemoryMB = availableMB * 0.8; // available memory margin
     }
 
-    int nbAllowedSimultaneousRc = int(deviceMemoryMB / rcMaxCostMB);
-    int nbRemainingTiles = 0;
+    // number of full R camera computation that can be done simultaneously
+    int nbSimultaneousFullRc = int(deviceMemoryMB / rcMaxCostMB);
 
+    // try to add a part of an R camera computation
+    int nbRemainingTiles = 0;
     {
-        const double remainingMemoryMB = deviceMemoryMB - (nbAllowedSimultaneousRc * rcMaxCostMB);
-        nbRemainingTiles = int(std::max(0.0, remainingMemoryMB - rcCamsCost) / tileCostMB);
+        const double remainingMemoryMB = deviceMemoryMB - (nbSimultaneousFullRc * rcMaxCostMB);
+        nbRemainingTiles = int(std::max(0.0, remainingMemoryMB - rcCamsCostMB) / tileCostMB);
     }
 
     // check that we do not need more constant camera parameters than the ones in device constant memory
-    if(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS < (nbAllowedSimultaneousRc * rcCamParams))
+    if(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS < (nbSimultaneousFullRc + ((nbRemainingTiles > 0) ? 1 : 0) * rcCamParams))
     {
-      nbAllowedSimultaneousRc = int(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS / rcCamParams);
+      nbSimultaneousFullRc = int(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS / rcCamParams);
       nbRemainingTiles = 0;
     }
 
-    const int out_nbAllowedStreams = nbAllowedSimultaneousRc * nbTilesPerCamera + nbRemainingTiles;
+    // compute number of simultaneous tiles
+    const int out_nbSimultaneousTiles = nbSimultaneousFullRc * nbTilesPerCamera + nbRemainingTiles;
 
+    // log memory information
     ALICEVISION_LOG_INFO("Device memory:" << std::endl
                          << "\t- available: " << deviceMemoryMB << " MB" << std::endl
                          << "\t- requirement for the first tile: " << rcMinCostMB << " MB" << std::endl
                          << "\t- # computation buffers per tile: " << tileCostMB << " MB" << " (Sgm: " << sgmTileCostMB << " MB" << ", Refine: " << refineTileCostMB << " MB)" << std::endl
-                         << "\t- # input images (R + " << _depthMapParams.maxTCams << " Ts): " << rcCamsCost << " MB (single multi-res image size: " << cameraFrameCostMB << " MB)");
+                         << "\t- # input images (R + " << _depthMapParams.maxTCams << " Ts): " << rcCamsCostMB << " MB (single mipmap image size: " << mipmapCostMB << " MB)");
 
     ALICEVISION_LOG_DEBUG( "Theoretical device memory cost for a tile without padding: " << tileCostUnpaddedMB << " MB" << " (Sgm: " << sgmTileCostUnpaddedMB << " MB" << ", Refine: " << refineTileCostUnpaddedMB << " MB)");
 
     ALICEVISION_LOG_INFO("Parallelization:" << std::endl
                          << "\t- # tiles per image: " << nbTilesPerCamera << std::endl
-                         << "\t- # simultaneous depth maps computation: " << ((nbRemainingTiles < 1) ? nbAllowedSimultaneousRc : (nbAllowedSimultaneousRc + 1)) << std::endl
-                         << "\t- # streams: " << out_nbAllowedStreams);
+                         << "\t- # simultaneous depth maps computation: " << ((nbRemainingTiles < 1) ? nbSimultaneousFullRc : (nbSimultaneousFullRc + 1)) << std::endl
+                         << "\t- # simultaneous tiles computation: " << out_nbSimultaneousTiles);
 
-    if(out_nbAllowedStreams < 1 || rcCamParams > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
+    // check at least one single tile computation
+    if(rcCamParams > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS || out_nbSimultaneousTiles < 1)
+    {
         ALICEVISION_THROW_ERROR("Not enough GPU memory to compute a single tile.");
+    }
 
-    return out_nbAllowedStreams;
+    return out_nbSimultaneousTiles;
 }
 
-void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
+void DepthMapEstimator::getTilesList(const std::vector<int>& cams, std::vector<Tile>& tiles) const
 {
-    // set the device to use for GPU executions
-    // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
-    setCudaDeviceId(cudaDeviceId);
-
-    // initialize RAM image cache
-    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(_mp, image::EImageColorSpace::LINEAR);
-
     const int nbTilesPerCamera = _tileRoiList.size();
 
-    // get maximum number of stream (simultaneous tiles)
-    const int nbStreams = getNbSimultaneousTiles();
-    DeviceStreamManager deviceStreamManager(nbStreams);
+    // tiles list should be empty
+    assert(tiles.empty());
 
-    // build device cache
-    const int nbRcPerBatch = divideRoundUp(nbStreams, nbTilesPerCamera);                // number of R cameras in the same batch
-    const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera;                        // number of tiles in the same batch
-    const bool hasRcWithoutDownscale = _sgmParams.scale == 1 || (_depthMapParams.useRefine && _refineParams.scale == 1);
-    const int nbCameraParamsPerSgm = (1 + _depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1); // number of Sgm camera parameters per R camera
-    const int nbCameraParamsPerRefine = _depthMapParams.useRefine ? (1 + _depthMapParams.maxTCams) : 0; // number of Refine camera parameters per R camera
-    const int nbMipmapImagesPerBatch = nbRcPerBatch * (1 + _depthMapParams.maxTCams); // number of camera mipmap image in the same batch
-    const int nbCamerasParamsPerBatch = nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine); // number of camera parameters in the same batch
-
-    DeviceCache& deviceCache = DeviceCache::getInstance();
-    deviceCache.build(nbMipmapImagesPerBatch, nbCamerasParamsPerBatch);
-    
-    // build tile list
-    // order by R camera
-    std::vector<Tile> tiles;
-    tiles.reserve(cams.size() * _tileRoiList.size());
+    // reserve memory
+    tiles.reserve(cams.size() * nbTilesPerCamera);
 
     for(int rc : cams)
     {
-        // compute T cameras list per R camera
+        // get R camera Tcs list
         const std::vector<int> tCams = _mp.findNearestCamsFromLandmarks(rc, _depthMapParams.maxTCams).getDataWritable();
+
+        // get R camera ROI
         const ROI rcImageRoi(Range(0, _mp.getWidth(rc)), Range(0, _mp.getHeight(rc)));
 
-        for(std::size_t ti = 0;  ti < _tileRoiList.size(); ++ti)
+        for(std::size_t i = 0;  i < nbTilesPerCamera; ++i)
         {
             Tile t;
 
-            t.id = ti;
+            t.id = i;
             t.nbTiles = nbTilesPerCamera;
             t.rc = rc;
-            t.roi = intersect(_tileRoiList.at(ti), rcImageRoi);
+            t.roi = intersect(_tileRoiList.at(i), rcImageRoi);
 
             if(t.roi.isEmpty())
             {
@@ -210,6 +213,39 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             tiles.push_back(t);
         }
     }
+}
+
+void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
+{
+    // set the device to use for GPU executions
+    // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
+    setCudaDeviceId(cudaDeviceId);
+
+    // initialize RAM image cache
+    // note: maybe move it as class member in order to share it across multiple GPUs
+    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(_mp, image::EImageColorSpace::LINEAR);
+
+    // get maximum number of simultaneous tiles
+    // for now, we use one CUDA stream per tile (SGM + Refine)
+    const int nbStreams = getNbSimultaneousTiles();
+    DeviceStreamManager deviceStreamManager(nbStreams);
+
+    // build device cache
+    const int nbTilesPerCamera = _tileRoiList.size();
+    const int nbRcPerBatch = divideRoundUp(nbStreams, nbTilesPerCamera); // number of R cameras in the same batch
+    const bool hasRcSameDownscale = _sgmParams.scale ==  _refineParams.scale; // we only need one camera params per image
+    const bool hasRcWithoutDownscale = _sgmParams.scale == 1 || (_depthMapParams.useRefine && _refineParams.scale == 1); // we need R camera params SGM (downscale = 1)
+    const int nbCameraParamsPerSgm = (1 + _depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1); // number of Sgm camera parameters per R camera
+    const int nbCameraParamsPerRefine = (_depthMapParams.useRefine || hasRcSameDownscale) ? (1 + _depthMapParams.maxTCams) : 0; // number of Refine camera parameters per R camera
+    const int nbMipmapImagesPerBatch = nbRcPerBatch * (1 + _depthMapParams.maxTCams); // number of camera mipmap image in the same batch
+    const int nbCamerasParamsPerBatch = nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine); // number of camera parameters in the same batch
+
+    DeviceCache& deviceCache = DeviceCache::getInstance();
+    deviceCache.build(nbMipmapImagesPerBatch, nbCamerasParamsPerBatch);
+    
+    // build tile list order by R camera
+    std::vector<Tile> tiles;
+    getTilesList(cams, tiles);
 
     // allocate Sgm and Refine per stream in device memory
     std::vector<Sgm> sgmPerStream;
@@ -258,7 +294,7 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     logDeviceMemoryInfo();
 
     // compute number of batches
-    const int nbBatches = divideRoundUp(int(tiles.size()), nbTilesPerBatch);
+    const int nbBatches = divideRoundUp(int(tiles.size()), nbStreams);
     const int minMipmapDownscale = std::min(_refineParams.scale, _sgmParams.scale);
     const int maxMipmapDownscale = std::max(_refineParams.scale, _sgmParams.scale) * std::pow(2,6); // we add 6 downscale levels
 
@@ -266,8 +302,8 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     for(int b = 0; b < nbBatches; ++b)
     {
         // find first/last tile to compute
-        const int firstTileIndex = b * nbTilesPerBatch;
-        const int lastTileIndex = std::min((b + 1) * nbTilesPerBatch, int(tiles.size()));
+        const int firstTileIndex = b * nbStreams;
+        const int lastTileIndex = std::min((b + 1) * nbStreams, int(tiles.size()));
         
         // load tile R and corresponding T cameras in device cache  
         for(int i = firstTileIndex; i < lastTileIndex; ++i)
