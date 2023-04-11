@@ -53,7 +53,7 @@ public:
                                    double offsetX = 0, double offsetY = 0,
                                    EInitMode distortionInitializationMode = EInitMode::NONE) :
     Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
-            std::make_shared<Distortion3DEAnamorphic4>(),
+            nullptr,
             std::make_shared<Undistortion3DEAnamorphic4>(w, h),
             distortionInitializationMode)
     {

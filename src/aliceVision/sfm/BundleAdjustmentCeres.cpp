@@ -232,8 +232,8 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 3>(
         new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEAnamorphic4, 2, 18, 6, 3>(
-        new ResidualErrorFunctor_Pinhole3DEAnamorphic4(w, h, obsUndistorted));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(
+        new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 3>(
         new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
