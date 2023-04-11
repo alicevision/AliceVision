@@ -66,6 +66,11 @@ public:
 
     void setParameters(const std::vector<double>& params)
     {
+        if (_undistortionParams.size() != params.size())
+        {
+            return;
+        }
+
         for (int i = 0; i < _undistortionParams.size(); i++)
         {
             _undistortionParams[i] = params[i];

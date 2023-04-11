@@ -176,7 +176,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   OUInt32ArrayProperty(userProps, "mvg_ancestorsParams").set(view.getAncestors());
 
   // set intrinsic properties
-  std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
   if(intrinsicCasted)
   {
     CameraSample camSample;
@@ -214,11 +214,33 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     ODoubleArrayProperty(userProps, "mvg_sensorSizeMm").set(sensorSize_mm);
     OStringProperty(userProps, "mvg_intrinsicType").set(intrinsicCasted->getTypeStr());
     OStringProperty(userProps, "mvg_intrinsicInitializationMode").set(camera::EInitMode_enumToString(intrinsicCasted->getInitializationMode()));
-    OStringProperty(userProps, "mvg_intrinsicDistortionInitializationMode").set(camera::EInitMode_enumToString(intrinsicCasted->getDistortionInitializationMode()));
     ODoubleProperty(userProps, "mvg_initialFocalLength").set(initialFocalLength);
-    ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(intrinsicCasted->getParams());
     OBoolProperty(userProps, "mvg_intrinsicLocked").set(intrinsicCasted->isLocked());
     OBoolProperty(userProps, "mvg_intrinsicPixelRatioLocked").set(intrinsicCasted->isRatioLocked());
+    OStringProperty(userProps, "mvg_intrinsicDistortionInitializationMode").set(
+        camera::EInitMode_enumToString(intrinsicCasted->getDistortionInitializationMode()));
+
+    // Intrinsic parameters
+    {
+        Vec2 scale = intrinsicCasted->getScale();
+        Vec2 offset = intrinsicCasted->getOffset();
+        std::vector<double> params = {scale(0), scale(1), offset(0), offset(1)};
+        ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(params);
+    }
+    // Distortion parameters
+    std::shared_ptr<camera::Distortion> distortion = intrinsicCasted->getDistortion();
+    if (distortion)
+    {
+        ODoubleArrayProperty(userProps, "mvg_distortionParams").set(distortion->getParameters());
+    }
+    // Undistortion parameters and offset
+    std::shared_ptr<camera::Undistortion> undistortion = intrinsicCasted->getUndistortion();
+    if (undistortion)
+    {
+        ODoubleArrayProperty(userProps, "mvg_undistortionParams").set(undistortion->getParameters());
+        ODoubleProperty(userProps, "mvg_undistortionOffsetX").set(undistortion->getOffset().x());
+        ODoubleProperty(userProps, "mvg_undistortionOffsetY").set(undistortion->getOffset().y());
+    }
 
     camObj.getSchema().set(camSample);
   }
