@@ -11,19 +11,33 @@
 namespace aliceVision {
 namespace depthMap {
 
-__device__ inline float Euclidean(const float3 x1, const float3 x2)
+// color Euclidean distance
+
+/**
+ * @brief Euclidean distance (float3)
+ * @param[in] x1 the first pixel color
+ * @param[in] x2 the second pixel color
+ * @return distance
+ */
+__device__ inline float euclideanDist3(const float3 x1, const float3 x2)
 {
     // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
     return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
-__device__ inline float Euclidean3(const float4 x1, const float4 x2)
+/**
+ * @brief Euclidean distance (float4, XYZ ignore W)
+ * @param[in] x1 the first pixel color
+ * @param[in] x2 the second pixel color
+ * @return distance
+ */
+__device__ inline float euclideanDist3(const float4 x1, const float4 x2)
 {
     // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
     return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
-// colour conversion utils
+// color conversion utils
 
 /**
  * @brief sRGB (0..1) to linear RGB (0..1)
@@ -160,19 +174,19 @@ __device__ inline float CostYKfromLab(const int dx,
     //    fabsf(float(c1.z) - float(c2.z));
 
     //// euclidean distance in RGB
-    // const float deltaC = Euclidean(
+    // const float deltaC = euclideanDist3(
     //    uchar4_to_float3(c1),
     //    uchar4_to_float3(c2)
     //);
 
     //// euclidean distance in Lab, assuming sRGB
-    // const float deltaC = Euclidean(
+    // const float deltaC = euclideanDist3(
     //    xyz2lab(rgb2xyz(srgb2rgb(uchar4_to_float3(c1)))),
     //    xyz2lab(rgb2xyz(srgb2rgb(uchar4_to_float3(c2))))
     //);
 
     // euclidean distance in Lab, assuming linear RGB
-    float deltaC = Euclidean3(c1, c2);
+    float deltaC = euclideanDist3(c1, c2);
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
     deltaC /= gammaC;
@@ -203,7 +217,7 @@ __device__ inline float CostYKfromLab(const int dx,
  __device__ inline float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
 {
     // euclidean distance in Lab, assuming linear RGB
-    const float deltaC = Euclidean3(c1, c2);
+    const float deltaC = euclideanDist3(c1, c2);
 
     return __expf(-(deltaC / gammaC)); // Yoon & Kweon
 }

@@ -658,7 +658,7 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(const cudaTextureObj
 
           const float4 gcr0 = tex2DLod<float4>(rcMipmapImage_tex, (float(imX0) + 0.5f) / float(rcSgmLevelWidth), (float(imY0) + 0.5f) / float(rcSgmLevelHeight), rcMipmapLevel);
           const float4 gcr1 = tex2DLod<float4>(rcMipmapImage_tex, (float(imX1) + 0.5f) / float(rcSgmLevelWidth), (float(imY1) + 0.5f) / float(rcSgmLevelHeight), rcMipmapLevel);
-          const float deltaC = Euclidean3(gcr0, gcr1);
+          const float deltaC = euclideanDist3(gcr0, gcr1);
 
           // sigmoid f(x) = i + (a - i) * (1 / ( 1 + e^(10 * (x - P2) / w)))
           // see: https://www.desmos.com/calculator/1qvampwbyx
