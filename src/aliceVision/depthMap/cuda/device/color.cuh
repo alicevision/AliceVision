@@ -131,22 +131,25 @@ __device__ inline float rgb2gray(const uchar4 c)
 }
 
 /**
- * @brief 
+ * @brief Adaptive support-weight approach for correspondence search
  * 
- * "Adaptive Support-Weight Approach for Correspondence Search", Kuk-Jin Yoon, In So Kweon
- * http://koasas.kaist.ac.kr/bitstream/10203/21048/1/000235253300014.pdf
+ * @note "Adaptive Support-Weight Approach for Correspondence Search", Kuk-Jin Yoon, In So Kweon
+ * @see http://koasas.kaist.ac.kr/bitstream/10203/21048/1/000235253300014.pdf
  * 
- * @param[in] dx
- * @param[in] dy
- * @param[in] c1
- * @param[in] c2
- * @param[in] gammaC Strength of Grouping by Color similarity 5.5 / 105.5
- * @param[in] gammaP Strength of Grouping by Proximity          8 / 4
+ * @param[in] dx x-axis distance beetween the two pixels
+ * @param[in] dy y-axis distance beetween the two pixels
+ * @param[in] c1 the first patch pixel color (Lab 0..255)
+ * @param[in] c2 the second patch pixel color (Lab 0..255)
+ * @param[in] gammaC the strength of grouping by color similarity (5.5 / 105.5)
+ * @param[in] gammaP the strength of grouping by proximity (8 / 4)
  * @return distance value
  */
-__device__ inline float CostYKfromLab(const int dx, const int dy,
-                                      const float4 c1, const float4 c2, 
-                                      const float gammaC, const float gammaP)
+__device__ inline float CostYKfromLab(const int dx,
+                                      const int dy,
+                                      const float4 c1,
+                                      const float4 c2,
+                                      const float gammaC,
+                                      const float gammaP)
 {
     // const float deltaC = 0; // ignore colour difference
 
@@ -156,19 +159,19 @@ __device__ inline float CostYKfromLab(const int dx, const int dy,
     //    fabsf(float(c1.y) - float(c2.y)) +
     //    fabsf(float(c1.z) - float(c2.z));
 
-    //// Euclidean distance in RGB
+    //// euclidean distance in RGB
     // const float deltaC = Euclidean(
     //    uchar4_to_float3(c1),
     //    uchar4_to_float3(c2)
     //);
 
-    //// Euclidean distance in Lab, assuming sRGB
+    //// euclidean distance in Lab, assuming sRGB
     // const float deltaC = Euclidean(
     //    xyz2lab(rgb2xyz(srgb2rgb(uchar4_to_float3(c1)))),
     //    xyz2lab(rgb2xyz(srgb2rgb(uchar4_to_float3(c2))))
     //);
 
-    // Euclidean distance in Lab, assuming linear RGB
+    // euclidean distance in Lab, assuming linear RGB
     float deltaC = Euclidean3(c1, c2);
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
@@ -185,16 +188,25 @@ __device__ inline float CostYKfromLab(const int dx, const int dy,
     // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
 }
 
-/*
+
+/**
+ * @brief Adaptive support-weight approach for correspondence search
+ *
+ * @note "Adaptive Support-Weight Approach for Correspondence Search", Kuk-Jin Yoon, In So Kweon
+ * @see http://koasas.kaist.ac.kr/bitstream/10203/21048/1/000235253300014.pdf
+ *
+ * @param[in] c1 the first patch pixel color (Lab 0..255)
+ * @param[in] c2 the second patch pixel color (Lab 0..255)
+ * @param[in] gammaC the strength of grouping by color similarity (5.5 / 105.5)
+ * @return distance value
+ */
  __device__ inline float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
 {
-    // Euclidean distance in Lab, assuming linear RGB
+    // euclidean distance in Lab, assuming linear RGB
     const float deltaC = Euclidean3(c1, c2);
-    // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
     return __expf(-(deltaC / gammaC)); // Yoon & Kweon
 }
-*/
 
 } // namespace depthMap
 } // namespace aliceVision
