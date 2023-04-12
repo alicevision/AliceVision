@@ -27,6 +27,7 @@ enum class EImageColorSpace
   SRGB,
   ACES2065_1,
   ACEScg,
+  REC709,
   LAB,
   XYZ,
   NO_CONVERSION

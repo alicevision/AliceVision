@@ -1,17 +1,9 @@
 ocio_profile_version: 2
 
-#
-# Note: this is not intended to be a complete production-ready config, its purpose is to
-# introduce many of the new features in OCIO v2.
-#
-
 description: A config to convert color space in AliceVision.
 name:        OCIOv2-AliceVision
 
-#
-# This config does not require any external files.
-#
-search_path: ""
+search_path: luts
 
 #
 # Defining the environment (even if empty) in the config can be a performance boost.
@@ -68,7 +60,8 @@ displays:
     - !<View> {name: Lin, colorspace: ACEScg}
   log:
     - !<View> {name: Log, colorspace: sRGB}
-
+  ACES:
+    - !<View> {name: Rec.709, colorspace: Rec709}
 # 
 # The next config section is the traditional section for colorspaces that are defined relative to a
 # scene-referred connection space.  This section may be placed either before or after the display
@@ -142,3 +135,25 @@ colorspaces:
       children:
         - !<MatrixTransform> {matrix: [2.52140088857822, -1.13399574938275, -0.387561856768867, 0, -0.276214061561748, 1.37259556630409, -0.0962823557364663, 0, -0.0153202000774786, -0.152992561800699, 1.16838719961932, 0, 0, 0, 0, 1]}
         - !<ExponentWithLinearTransform> {gamma: 2.4, offset: 0.055, direction: inverse}
+
+  - !<ColorSpace>
+    name: Rec709
+    family: Output
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      ACES 1.0 Output - Rec.709 Output Transform
+      
+      ACES Transform ID : urn:ampas:aces:transformId:v1.5:ODT.Academy.Rec709_100nits_dim.a1.0.3
+    isdata: false
+    allocation: uniform
+    allocationvars: [0, 1]
+    to_reference: !<GroupTransform>
+      children:
+        - !<FileTransform> {src: InvRRT.Rec.709.Log2_48_nits_Shaper.spi3d, interpolation: tetrahedral}
+        - !<FileTransform> {src: Log2_48_nits_Shaper_to_linear.spi1d, interpolation: linear}
+    from_reference: !<GroupTransform>
+      children:
+        - !<FileTransform> {src: Log2_48_nits_Shaper_to_linear.spi1d, interpolation: linear, direction: inverse}
+        - !<FileTransform> {src: Log2_48_nits_Shaper.RRT.Rec.709.spi3d, interpolation: tetrahedral}
+

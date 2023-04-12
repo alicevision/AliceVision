@@ -50,6 +50,7 @@ alicevision_add_library(aliceVision_image
 
 # Install config.ocio
 install(FILES ./share/aliceVision/config.ocio DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision)
+install(DIRECTORY ./share/aliceVision/luts DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision)
 
 # Unit tests
 alicevision_add_test(image_test.cpp      NAME "image"            LINKS aliceVision_image)

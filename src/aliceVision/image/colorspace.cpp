@@ -151,6 +151,7 @@ std::string EImageColorSpace_informations()
            EImageColorSpace_enumToString(EImageColorSpace::SRGB) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::ACES2065_1) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::ACEScg) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::REC709) + " (ODT.Academy.Rec709_100nits), " +
            EImageColorSpace_enumToString(EImageColorSpace::LAB) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::XYZ) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::NO_CONVERSION);
@@ -168,8 +169,10 @@ EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
         return EImageColorSpace::SRGB;
     if(type == "aces2065-1")
         return EImageColorSpace::ACES2065_1;
-    if(type == "acescg")
+    if (type == "acescg")
         return EImageColorSpace::ACEScg;
+    if ((type == "aces_lut") || (type == "rec709"))
+        return EImageColorSpace::REC709;
     if(type == "lab")
         return EImageColorSpace::LAB;
     if(type == "xyz")
@@ -194,6 +197,8 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace dataType)
             return "aces2065-1";
         case EImageColorSpace::ACEScg:
             return "acescg";
+        case EImageColorSpace::REC709:
+            return "rec709";
         case EImageColorSpace::LAB:
             return "lab";
         case EImageColorSpace::XYZ:
@@ -212,6 +217,7 @@ std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
         case EImageColorSpace::LINEAR: return "Linear";
         case EImageColorSpace::ACES2065_1: return "aces2065-1";
         case EImageColorSpace::ACEScg: return "ACEScg";
+        case EImageColorSpace::REC709: return "rec709";
         default: ;
     }
     throw std::out_of_range("No string defined for EImageColorSpace to OIIO conversion: " +
@@ -224,6 +230,7 @@ EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace
     if (colorspace == "sRGB") return EImageColorSpace::SRGB;
     if (colorspace == "aces2065-1") return EImageColorSpace::ACES2065_1;
     if (colorspace == "ACEScg") return EImageColorSpace::ACEScg;
+    if ((colorspace == "REC709") || (colorspace == "ACES_LUT")) return EImageColorSpace::REC709;
 
     throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
 }
@@ -236,6 +243,7 @@ bool EImageColorSpace_isSupportedOIIOEnum(const EImageColorSpace& colorspace)
         case EImageColorSpace::LINEAR: return true;
         case EImageColorSpace::ACES2065_1: return true;
         case EImageColorSpace::ACEScg: return true;
+        case EImageColorSpace::REC709: return true;
         default: return false;
     }
 }
@@ -246,6 +254,7 @@ bool EImageColorSpace_isSupportedOIIOstring(const std::string& colorspace)
     if (colorspace == "sRGB") return true;
     if (colorspace == "aces2065-1") return true;
     if (colorspace == "ACEScg") return true;
+    if (colorspace == "REC709") return true;
     return false;
 }
 

@@ -666,7 +666,8 @@ void readImage(const std::string& path,
         // even if no conversion is needed.
     }
     else if ((imageReadOptions.workingColorSpace == EImageColorSpace::ACES2065_1) || (imageReadOptions.workingColorSpace == EImageColorSpace::ACEScg) ||
-             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACES2065_1) || (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACEScg))
+             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACES2065_1) || (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACEScg) ||
+             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::REC709))
     {
         const auto colorConfigPath = getAliceVisionOCIOConfig();
         if (colorConfigPath.empty())
@@ -829,19 +830,18 @@ void writeImage(const std::string& path,
     oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
     imageSpec.extra_attribs = metadata; // add custom metadata
 
-  imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
-  imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
+    imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
+    imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
 
-  if(displayRoi.defined() && isEXR)
-  {
-      imageSpec.set_roi_full(displayRoi);
-  }
+    if(displayRoi.defined() && isEXR)
+    {
+        imageSpec.set_roi_full(displayRoi);
+    }
 
-  if(pixelRoi.defined() && isEXR)
-  {
-      imageSpec.set_roi(pixelRoi);
-  }
-
+    if(pixelRoi.defined() && isEXR)
+    {
+        imageSpec.set_roi(pixelRoi);
+    }
 
     imageSpec.attribute("AliceVision:ColorSpace",
                         (toColorSpace == EImageColorSpace::NO_CONVERSION)
@@ -857,7 +857,8 @@ void writeImage(const std::string& path,
         // even if no conversion is needed.
     }
     else if ((toColorSpace == EImageColorSpace::ACES2065_1) || (toColorSpace == EImageColorSpace::ACEScg) ||
-             (fromColorSpace == EImageColorSpace::ACES2065_1) || (fromColorSpace == EImageColorSpace::ACEScg))
+             (fromColorSpace == EImageColorSpace::ACES2065_1) || (fromColorSpace == EImageColorSpace::ACEScg) ||
+             (fromColorSpace == EImageColorSpace::REC709))
     {
         const auto colorConfigPath = getAliceVisionOCIOConfig();
         if (colorConfigPath.empty())
