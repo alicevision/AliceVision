@@ -194,6 +194,18 @@ alicevision_add_software(aliceVision_sfmTransform
         Boost::program_options
 )
 
+# SfM split reconstructed
+alicevision_add_software(aliceVision_sfmSplitReconstructed
+  SOURCE main_sfmSplitReconstructed.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_feature
+        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+)
+
 # SfM color harmonize
 alicevision_add_software(aliceVision_sfmColorHarmonize
   SOURCE main_sfmColorHarmonize.cpp
