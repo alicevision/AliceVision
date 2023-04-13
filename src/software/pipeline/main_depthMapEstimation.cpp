@@ -145,9 +145,9 @@ int aliceVision_main(int argc, char* argv[])
         ("sgmMaxSimilarity", po::value<double>(&sgmParams.maxSimilarity)->default_value(sgmParams.maxSimilarity),
             "Semi Global Matching: Maximum similarity threshold (between 0 and 1) used to filter out poorly supported depth values.")
         ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
-            "Semi Global Matching: GammaC threshold used for similarity computation.")
+            "Semi Global Matching: GammaC threshold used for similarity computation, strength of grouping by color similarity.")
         ("sgmGammaP", po::value<double>(&sgmParams.gammaP)->default_value(sgmParams.gammaP),
-            "Semi Global Matching: GammaP threshold used for similarity computation.")
+            "Semi Global Matching: GammaP threshold used for similarity computation, strength of grouping by proximity.")
         ("sgmP1", po::value<double>(&sgmParams.p1)->default_value(sgmParams.p1),
             "Semi Global Matching: P1 parameter for SGM filtering.")
         ("sgmP2Weighting", po::value<double>(&sgmParams.p2Weighting)->default_value(sgmParams.p2Weighting),
