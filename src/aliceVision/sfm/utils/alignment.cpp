@@ -170,7 +170,7 @@ bool computeSimilarityFromCommonCameras_poseId(
     Mat xB(3, commonPoseIds.size());
     for (std::size_t i = 0; i < commonPoseIds.size(); ++i)
     {
-        IndexT poseId = commonPoseIds[i];
+        const IndexT poseId = commonPoseIds[i];
         xA.col(i) = sfmDataA.getAbsolutePose(poseId).getTransform().center();
         xB.col(i) = sfmDataB.getAbsolutePose(poseId).getTransform().center();
     }
@@ -988,10 +988,10 @@ void getRotationNullifyX(Eigen::Matrix3d & out_R, const Eigen::Vector3d & pt)
     out_R = Eigen::AngleAxisd(angle, Vec3(0,-1,0)).toRotationMatrix();
 }
 
-void computeCentersMean(const sfmData::SfMData& sfmData, Vec3 & center)
+Vec3 computeCameraCentersMean(const sfmData::SfMData& sfmData)
 {
     // Compute the mean of the point cloud
-    center = Vec3::Zero();
+    Vec3 center = Vec3::Zero();
     size_t count = 0;
     const auto & poses = sfmData.getPoses();
 
@@ -1002,7 +1002,7 @@ void computeCentersMean(const sfmData::SfMData& sfmData, Vec3 & center)
             continue;
         }
 
-        IndexT poseId = v.second->getPoseId();
+        const IndexT poseId = v.second->getPoseId();
         const auto & pose = poses.at(poseId);
 
         center +=  pose.getTransform().center();
@@ -1010,6 +1010,7 @@ void computeCentersMean(const sfmData::SfMData& sfmData, Vec3 & center)
     }
 
     center /= count;
+    return center;
 }
 
 void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3 & mean, Eigen::Matrix3d & varCov, size_t & count)
@@ -1026,7 +1027,7 @@ void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3 & mean, Ei
             continue;
         }
 
-        IndexT poseId = v.second->getPoseId();
+        const IndexT poseId = v.second->getPoseId();
         const auto & pose = poses.at(poseId);
 
         Vec3 centered  = pose.getTransform().center() - mean;
@@ -1035,8 +1036,6 @@ void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3 & mean, Ei
         count++;
     }
 }
-
-
 
 void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t)
 {
@@ -1047,28 +1046,27 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
     //Align with Xaxis, only modify out_R
     sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, out_S, out_R, out_t);
 
-    ALICEVISION_LOG_INFO("X axis rotation :");
-    ALICEVISION_LOG_INFO(out_R);
+    ALICEVISION_LOG_INFO("X axis rotation:" << std::endl
+            << out_R
+            );
 
     //Compute camera statistics
-    Vec3 mean;
+    
     Eigen::Matrix3d covCamBase;
     size_t count;
-    computeCentersMean(sfmData, mean);
+    const Vec3 mean = computeCameraCentersMean(sfmData);
     computeCentersVarCov(sfmData, mean, covCamBase, count);
 
-    ALICEVISION_LOG_INFO("Initial point cloud center :");
-    ALICEVISION_LOG_INFO(mean);
+    ALICEVISION_LOG_INFO("Initial point cloud center: " << mean.transpose());
 
     //By default, scale to get unit rms
-    double rms = sqrt(covCamBase.trace() / double(count));
+    const double rms = sqrt(covCamBase.trace() / double(count));
     out_S = 1.0 / rms;
 
-    ALICEVISION_LOG_INFO("Initial point cloud scale :" << rms);
+    ALICEVISION_LOG_INFO("Initial point cloud scale: " << rms);
 
     //By default, center all the camera such that their mean is 0
     out_t = - out_S * out_R * mean;
-
 
     //Get pairs of gps/camera positions
     const size_t minimalGpsMeasuresCount = 10;
@@ -1077,7 +1075,7 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
 
     const auto & poses = sfmData.getPoses();
     std::list<std::pair<Vec3, Vec3>> list_pairs;
-    for (auto v : sfmData.getViews())
+    for (const auto v : sfmData.getViews())
     {
         if (!sfmData.isPoseAndIntrinsicDefined(v.first))
         {
@@ -1089,20 +1087,25 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
             continue;
         }
 
-        IndexT poseId = v.second->getPoseId();
+        const IndexT poseId = v.second->getPoseId();
         const auto & pose = poses.at(poseId);
 
-        Vec3 camCoordinates = pose.getTransform().center();
-        Vec3 gpsCoordinates = v.second->getGpsPositionFromMetadata();
+        const Vec3 camCoordinates = pose.getTransform().center();
+        const Vec3 gpsCoordinates = v.second->getGpsPositionFromMetadata();
 
         list_pairs.push_back(std::make_pair(camCoordinates, gpsCoordinates));
     }
 
+    if (list_pairs.empty())
+    {
+        ALICEVISION_LOG_INFO("No GPS information available to use it.");
+        return;
+    }
 
     if (list_pairs.size() < minimalGpsMeasuresCount)
     {
-        ALICEVISION_LOG_INFO("No/Not enough GPS information available to use it");
-        //Nothing can be done with the gps
+        ALICEVISION_LOG_INFO("Not enough GPS information available to use it "
+            "(GPS image pairs: " << list_pairs.size() << ", minimal GPS measures count: " << minimalGpsMeasuresCount << ").");
         return;
     }
     
@@ -1128,19 +1131,19 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
     }
 
     //Make sure that gps  
-    double var = gpsCov.trace();
+    const double var = gpsCov.trace();
     if (var < distVariance)
     {
-        ALICEVISION_LOG_INFO("Scene is too small to use GPS information");
+        ALICEVISION_LOG_INFO("Scene is too small to use GPS information "
+            "(dataset variance: " << var << ", min variance: " << distVariance << ").");
         return;
     }
         
-    ALICEVISION_LOG_INFO("GPS point cloud scale :" << gpsCov.trace());
-    ALICEVISION_LOG_INFO("Linked cameras centers scale :" << camCov.trace());
+    ALICEVISION_LOG_INFO("GPS point cloud scale: " << gpsCov.trace());
+    ALICEVISION_LOG_INFO("Linked cameras centers scale: " << camCov.trace());
     out_S = sqrt(gpsCov.trace()) / sqrt(camCov.trace());
     out_t = - out_S * out_R * mean;
 
-    
     //Try to align gps and camera point
     double gpsS;
     Vec3 gpst;
@@ -1151,12 +1154,10 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
         return;
     }
 
-
     //Rotate to align north with Z=1
-    Vec3 northPole = WGS84ToCartesian({90.0, 0.0, 0.0});
-    Vec3 camera_northpole = gpsR.transpose()*(northPole - gpst) * (1.0 / gpsS);
+    const Vec3 northPole = WGS84ToCartesian({90.0, 0.0, 0.0});
+    const Vec3 camera_northpole = gpsR.transpose()*(northPole - gpst) * (1.0 / gpsS);
     Vec3 aligned_camera_northpole = out_R * camera_northpole;
-
 
     Mat3 nullifyX;
     aligned_camera_northpole(1) = 0;
@@ -1169,3 +1170,4 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
 
 } // namespace sfm
 } // namespace aliceVision
+
