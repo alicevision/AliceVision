@@ -294,8 +294,11 @@ struct ProcessingParams
     bool reconstructedViewsOnly = false;
     bool keepImageFilename = false;
     bool exposureCompensation = false;
+    float exposureAdjust = 0.0;
     EImageFormat outputFormat = EImageFormat::RGBA;
     float scaleFactor = 1.0f;
+    unsigned int maxWidth = 0;
+    unsigned int maxHeight = 0;
     float contrast = 1.0f;
     int medianFilter = 0;
     bool fillHoles = false;
@@ -423,12 +426,24 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         }
     }
 
-    if (pParams.scaleFactor != 1.0f)
+    if ((pParams.scaleFactor != 1.0f) || (pParams.maxWidth != 0) || (pParams.maxHeight != 0))
     {
         const unsigned int w = image.Width();
         const unsigned int h = image.Height();
-        const unsigned int nw = (unsigned int)(floor(float(w) * pParams.scaleFactor));
-        const unsigned int nh = (unsigned int)(floor(float(h) * pParams.scaleFactor));
+        unsigned int nw = (unsigned int)(floor(float(w) * pParams.scaleFactor));
+        unsigned int nh = (unsigned int)(floor(float(h) * pParams.scaleFactor));
+
+        if ((pParams.maxWidth != 0) && (nw > pParams.maxWidth))
+        {
+            nh = (unsigned int)(floor(float(nh) * (float(pParams.maxWidth) / float(nw))));
+            nw = pParams.maxWidth;
+        }
+
+        if ((pParams.maxHeight != 0) && (nh > pParams.maxHeight))
+        {
+            nw = (unsigned int)(floor(float(nw) * (float(pParams.maxHeight) / float(nh))));
+            nh = pParams.maxHeight;
+        }
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
@@ -795,8 +810,17 @@ int aliceVision_main(int argc, char * argv[])
         ("scaleFactor", po::value<float>(&pParams.scaleFactor)->default_value(pParams.scaleFactor),
          "Scale Factor (1.0: no change).")
 
-        ("exposureCompensation", po::value<bool>(& pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
-         "Exposure Compensation.")
+        ("maxWidth", po::value<unsigned int>(&pParams.maxWidth)->default_value(pParams.maxWidth),
+         "Max width (0: no change).")
+
+        ("maxHeight", po::value<unsigned int>(&pParams.maxHeight)->default_value(pParams.maxHeight),
+         "Max height (0: no change).")
+
+        ("exposureCompensation", po::value<bool>(&pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
+         "Exposure Compensation. Valid only if a sfmdata is set as input.")
+
+        ("exposureAdjust", po::value<float>(&pParams.exposureAdjust)->default_value(pParams.exposureAdjust),
+         "Exposure Adjustment in fstops.")
 
         ("lensCorrection", po::value<LensCorrectionParams>(&pParams.lensCorrection)->default_value(pParams.lensCorrection),
             "Lens Correction parameters:\n"
@@ -1050,18 +1074,32 @@ int aliceVision_main(int argc, char * argv[])
             image::Image<image::RGBAfColor> image;
             image::readImage(viewPath, image, options);
 
+            float exposureAdjustment = 1.0;
+
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
             {
                 const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
                 const double cameraExposure = view.getCameraExposureSetting().getExposure();
                 const double ev = std::log2(1.0 / cameraExposure);
-                const float exposureCompensation = float(medianCameraExposure / cameraExposure);
+                const float exposureAdjustment = float(medianCameraExposure / cameraExposure);
 
-                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
+                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureAdjustment);
+            }
 
+            if (pParams.exposureAdjust != 0.0)
+            {
+                exposureAdjustment *= std::powf(2.0, pParams.exposureAdjust);
+            }
+
+            if (pParams.exposureCompensation || pParams.exposureAdjust != 0.0)
+            {
                 for (int i = 0; i < image.Width() * image.Height(); ++i)
-                    image(i) = image(i) * exposureCompensation;
+                {
+                    image(i)[0] *= exposureAdjustment;
+                    image(i)[1] *= exposureAdjustment;
+                    image(i)[2] *= exposureAdjustment;
+                }
             }
 
             sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
@@ -1265,6 +1303,17 @@ int aliceVision_main(int argc, char * argv[])
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, readOptions);
+
+            if (pParams.exposureAdjust != 0.0)
+            {
+                const float exposureAdjustment = std::powf(2.0, pParams.exposureAdjust);
+                for (int i = 0; i < image.Width() * image.Height(); ++i)
+                {
+                    image(i)[0] *= exposureAdjustment;
+                    image(i)[1] *= exposureAdjustment;
+                    image(i)[2] *= exposureAdjustment;
+                }
+            }
 
             // Image processing
             processImage(image, pParams, md);
