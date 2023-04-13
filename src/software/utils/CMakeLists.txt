@@ -10,6 +10,7 @@ alicevision_add_software(aliceVision_hardwareResources
   SOURCE main_hardwareResources.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_gpu
         Boost::program_options
 )
@@ -23,6 +24,7 @@ if(ALICEVISION_HAVE_UNCERTAINTYTE)
       FOLDER ${FOLDER_SOFTWARE_UTILS}
       LINKS aliceVision_sfm
             aliceVision_system
+            aliceVision_cmdline
             ${CUDA_LIBRARIES}
             ${CUDA_CUBLAS_LIBRARIES}
             ${CUDA_cusparse_LIBRARY}
@@ -40,6 +42,7 @@ alicevision_add_software(aliceVision_imageProcessing
     SOURCE main_imageProcessing.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
     LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfm
@@ -61,6 +64,7 @@ alicevision_add_software(aliceVision_importMiddlebury
         aliceVision_sfmData
         aliceVision_sfmDataIO
         aliceVision_system
+        aliceVision_cmdline
         ${Boost_LIBRARIES}
         )
 
@@ -73,6 +77,7 @@ alicevision_add_software(aliceVision_voctreeCreation
         aliceVision_sfmData
         aliceVision_sfmDataIO
         aliceVision_system
+        aliceVision_cmdline
         Boost::program_options
 )
 
@@ -85,6 +90,7 @@ alicevision_add_software(aliceVision_voctreeQueryUtility
         aliceVision_sfmData
         aliceVision_sfmDataIO
         aliceVision_system
+        aliceVision_cmdline
         Boost::program_options
         Boost::boost
         Boost::timer
@@ -97,6 +103,7 @@ alicevision_add_software(aliceVision_voctreeStatistics
   LINKS aliceVision_voctree
         aliceVision_sfmData
         aliceVision_system
+        aliceVision_cmdline
         aliceVision_sfmDataIO
         Boost::program_options
         Boost::boost
@@ -107,6 +114,7 @@ alicevision_add_software(aliceVision_frustumFiltering
   SOURCE main_frustumFiltering.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_matchingImageCollection
         aliceVision_sfm
@@ -127,6 +135,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
           aliceVision_dataio
           aliceVision_rig
           aliceVision_system
+          aliceVision_cmdline
           Boost::program_options
           Boost::filesystem
   )
@@ -138,6 +147,7 @@ alicevision_add_software(aliceVision_qualityEvaluation
   SOURCE main_qualityEvaluation.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
@@ -150,6 +160,7 @@ alicevision_add_software(aliceVision_sfmAlignment
   SOURCE main_sfmAlignment.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
@@ -162,6 +173,7 @@ alicevision_add_software(aliceVision_sfmTransfer
   SOURCE main_sfmTransfer.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
@@ -174,6 +186,7 @@ alicevision_add_software(aliceVision_sfmTransform
   SOURCE main_sfmTransform.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
@@ -187,6 +200,7 @@ alicevision_add_software(aliceVision_sfmColorHarmonize
          sfmColorHarmonize/colorHarmonizeEngineGlobal.cpp # TODO
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_kvld
@@ -208,6 +222,7 @@ alicevision_add_software(aliceVision_sfmLocalization
   SOURCE main_sfmLocalization.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
@@ -223,6 +238,7 @@ if(ALICEVISION_HAVE_OPENCV)
     SOURCE main_keyframeSelection.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_keyframe
           ${OPENIMAGEIO_LIBRARIES}
@@ -240,6 +256,7 @@ alicevision_add_software(aliceVision_sfmDistances
         aliceVision_sfmData
         aliceVision_sfmDataIO
         aliceVision_system
+        aliceVision_cmdline
         ${Boost_LIBRARIES}
 )
 
@@ -248,6 +265,7 @@ alicevision_add_software(aliceVision_split360Images
   SOURCE main_split360Images.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_numeric
         aliceVision_image
         aliceVision_panorama
@@ -262,6 +280,7 @@ alicevision_add_software(aliceVision_fisheyeProjection
   SOURCE main_fisheyeProjection.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_numeric
         aliceVision_image
         ${OPENIMAGEIO_LIBRARIES}
@@ -273,6 +292,7 @@ alicevision_add_software(aliceVision_lightingEstimation
   SOURCE main_lightingEstimation.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_numeric
         aliceVision_sfmData
         aliceVision_sfmDataIO
@@ -288,6 +308,7 @@ alicevision_add_software(aliceVision_generateSampleScene
   SOURCE main_generateSampleScene.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_numeric
         aliceVision_sfmData
         aliceVision_sfmDataIO
@@ -302,6 +323,7 @@ if(ALICEVISION_HAVE_OPENCV_CONTRIB)
     SOURCE main_colorCheckerDetection.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_sfmData
           aliceVision_sfmDataIO
           Boost::program_options
@@ -318,6 +340,7 @@ if(ALICEVISION_HAVE_OPENCV_CONTRIB)
     SOURCE main_colorCheckerCorrection.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_sfmData
           aliceVision_sfmDataIO
           Boost::program_options
@@ -336,6 +359,7 @@ alicevision_add_software(aliceVision_mergeMeshes
   SOURCE main_mergeMeshes.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_numeric
 	Geogram::geogram
         ${Boost_LIBRARIES}

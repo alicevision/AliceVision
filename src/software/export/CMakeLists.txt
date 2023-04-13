@@ -11,6 +11,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
     SOURCE main_exportAnimatedCamera.cpp
     FOLDER ${FOLDER_SOFTWARE_EXPORT}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_sfmData
           aliceVision_sfmDataIO
           Boost::program_options
@@ -25,6 +26,7 @@ alicevision_add_software(aliceVision_exportKeypoints
   SOURCE main_exportKeypoints.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
@@ -40,6 +42,7 @@ alicevision_add_software(aliceVision_exportMatches
   SOURCE main_exportMatches.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
@@ -55,6 +58,7 @@ alicevision_add_software(aliceVision_exportTracks
   SOURCE main_exportTracks.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
@@ -70,6 +74,7 @@ alicevision_add_software(aliceVision_exportPMVS
   SOURCE main_exportPMVS.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfmData
@@ -85,6 +90,7 @@ alicevision_add_software(aliceVision_exportColmap
         SOURCE main_exportColmap.cpp
         FOLDER ${FOLDER_SOFTWARE_EXPORT}
         LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfmData
@@ -101,6 +107,7 @@ alicevision_add_software(aliceVision_exportColoredPointCloud
   SOURCE main_exportColoredPointCloud.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfmData
@@ -114,6 +121,7 @@ if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
     SOURCE main_exportMeshroomMaya.cpp
     FOLDER ${FOLDER_SOFTWARE_EXPORT}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_feature
           aliceVision_sfmData
@@ -131,6 +139,7 @@ alicevision_add_software(aliceVision_exportMVE2
   SOURCE main_exportMVE2.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfmData
@@ -146,6 +155,7 @@ alicevision_add_software(aliceVision_exportMeshlab
   SOURCE main_exportMeshlab.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfmData
@@ -161,6 +171,7 @@ alicevision_add_software(aliceVision_exportMVSTexturing
   SOURCE main_exportMVSTexturing.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfmData
@@ -174,6 +185,7 @@ alicevision_add_software(aliceVision_exportMatlab
   SOURCE main_exportMatlab.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfmData
@@ -189,6 +201,7 @@ alicevision_add_software(aliceVision_exportCameraFrustums
   SOURCE main_exportCameraFrustums.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData

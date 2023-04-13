@@ -7,7 +7,7 @@
 
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
 #include <software/utils/sfmColorHarmonize/colorHarmonizeEngineGlobal.hpp>

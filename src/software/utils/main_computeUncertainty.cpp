@@ -7,7 +7,7 @@
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 

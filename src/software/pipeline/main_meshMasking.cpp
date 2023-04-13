@@ -9,7 +9,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/sfmMvsUtils/visibility.hpp>

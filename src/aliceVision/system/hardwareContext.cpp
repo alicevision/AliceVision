@@ -6,12 +6,6 @@
 
 namespace aliceVision {
 
-void HardwareContext::setupFromCommandLine(boost::program_options::options_description & options)
-{
-    options.add_options()
-        ("maxMemoryAvailable", boost::program_options::value<size_t>(&_maxUserMemoryAvailable)->default_value(_maxUserMemoryAvailable), "User specified available RAM")
-        ("maxCoresAvailable", boost::program_options::value<unsigned int>(&_maxUserCoresAvailable)->default_value(_maxUserCoresAvailable), "User specified available number of cores");
-}
 
 void HardwareContext::displayHardware()
 {

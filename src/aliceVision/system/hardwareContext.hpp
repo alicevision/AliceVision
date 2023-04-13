@@ -9,7 +9,6 @@
 #include "Logger.hpp"
 #include "Timer.hpp"
 
-#include <boost/program_options/options_description.hpp>
 
 namespace aliceVision {
 
@@ -23,17 +22,25 @@ public:
         return _maxUserMemoryAvailable;
     }
 
+    void setUserMaxMemoryAvailable(size_t val)
+    {
+        _maxUserCoresAvailable = val;
+    }
+
     unsigned int getUserMaxCoresAvailable() const
     {
         return _maxUserCoresAvailable;
+    }
+
+    void setUserMaxCoresAvailable(unsigned int val)
+    {
+        _maxUserCoresAvailable = val;
     }
 
     void setUserCoresLimit(unsigned int coresLimit)
     {
         _limitUserCores = coresLimit;
     }
-
-    void setupFromCommandLine(boost::program_options::options_description & options);
 
     unsigned int getMaxThreads() const;
 

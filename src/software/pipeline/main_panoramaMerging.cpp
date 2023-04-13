@@ -18,7 +18,7 @@
 
 // Reading command line options
 #include <boost/program_options.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
 // IO
