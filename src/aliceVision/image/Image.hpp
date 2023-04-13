@@ -143,6 +143,18 @@ namespace aliceVision
         return sizeof( Tpixel );
       }
 
+      /**
+       * @brief Retrieve the size in byte of the image 
+       * @return size of the image (in byte)
+       * @note We use unsigned long long integers to avoid issues with large images, which can exceed several GB.
+       */
+      inline unsigned long long int MemorySize() const
+      {
+        return static_cast<unsigned long long int>(Width()) *
+               static_cast<unsigned long long int>(Height()) *
+               static_cast<unsigned long long int>(Depth());
+      }
+
 
       /**
       * @brief Return the number of channels

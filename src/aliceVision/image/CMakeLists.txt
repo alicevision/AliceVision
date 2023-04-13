@@ -21,6 +21,7 @@ set(image_files_headers
   Rgb.hpp
   Sampler.hpp
   cache.hpp
+  ImageCache.hpp
 )
 
 # Sources
@@ -32,6 +33,7 @@ set(image_files_sources
   io.cpp
   imageAlgo.cpp
   cache.cpp
+  ImageCache.cpp
 )
 
 alicevision_add_library(aliceVision_image
@@ -52,8 +54,9 @@ alicevision_add_library(aliceVision_image
 install(FILES ./share/aliceVision/config.ocio DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision)
 
 # Unit tests
-alicevision_add_test(image_test.cpp      NAME "image"            LINKS aliceVision_image)
-alicevision_add_test(io_test.cpp         NAME "image_io"         LINKS aliceVision_image)
-alicevision_add_test(drawing_test.cpp    NAME "image_drawing"    LINKS aliceVision_image)
-alicevision_add_test(filtering_test.cpp  NAME "image_filtering"  LINKS aliceVision_image)
-alicevision_add_test(resampling_test.cpp NAME "image_resampling" LINKS aliceVision_image)
+alicevision_add_test(image_test.cpp        NAME "image"            LINKS aliceVision_image)
+alicevision_add_test(io_test.cpp           NAME "image_io"         LINKS aliceVision_image)
+alicevision_add_test(drawing_test.cpp      NAME "image_drawing"    LINKS aliceVision_image)
+alicevision_add_test(filtering_test.cpp    NAME "image_filtering"  LINKS aliceVision_image)
+alicevision_add_test(resampling_test.cpp   NAME "image_resampling" LINKS aliceVision_image)
+alicevision_add_test(imageCaching_test.cpp NAME "image_caching"    LINKS aliceVision_image)
