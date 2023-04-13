@@ -123,7 +123,8 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
                                                 const int wsh,
                                                 const float gammaC,
                                                 const float gammaP,
-                                                const bool useMultiScalePatch,
+                                                const bool useConsistentScale,
+                                                const bool useCustomPatchPattern,
                                                 const Range depthRange,
                                                 const ROI roi)
 {
@@ -150,21 +151,45 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
     Patch patch;
     volume_computePatch(patch, rcDeviceCameraParamsId, tcDeviceCameraParamsId, depthPlane, make_float2(x, y));
 
+    // we do not need positive and filtered similarity values
+    constexpr bool invertAndFilter = false;
+
+    float fsim = CUDART_INF_F;
+
     // compute patch similarity
-    float fsim = compNCCby3DptsYK(rcDeviceCameraParamsId,
-                                  tcDeviceCameraParamsId,
-                                  rcMipmapImage_tex,
-                                  tcMipmapImage_tex,
-                                  rcSgmLevelWidth,
-                                  rcSgmLevelHeight,
-                                  tcSgmLevelWidth,
-                                  tcSgmLevelHeight,
-                                  rcMipmapLevel,
-                                  wsh,
-                                  gammaC,
-                                  gammaP,
-                                  useMultiScalePatch,
-                                  patch);
+    if(useCustomPatchPattern)
+    {
+        fsim = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcDeviceCameraParamsId,
+                                                                    tcDeviceCameraParamsId,
+                                                                    rcMipmapImage_tex,
+                                                                    tcMipmapImage_tex,
+                                                                    rcSgmLevelWidth,
+                                                                    rcSgmLevelHeight,
+                                                                    tcSgmLevelWidth,
+                                                                    tcSgmLevelHeight,
+                                                                    rcMipmapLevel,
+                                                                    gammaC,
+                                                                    gammaP,
+                                                                    useConsistentScale,
+                                                                    patch);
+    }
+    else
+    {
+        fsim = compNCCby3DptsYK<invertAndFilter>(rcDeviceCameraParamsId,
+                                                 tcDeviceCameraParamsId,
+                                                 rcMipmapImage_tex,
+                                                 tcMipmapImage_tex,
+                                                 rcSgmLevelWidth,
+                                                 rcSgmLevelHeight,
+                                                 tcSgmLevelWidth,
+                                                 tcSgmLevelHeight,
+                                                 rcMipmapLevel,
+                                                 wsh,
+                                                 gammaC,
+                                                 gammaP,
+                                                 useConsistentScale,
+                                                 patch);
+    }
 
     if(fsim == CUDART_INF_F) // invalid similarity
     {
@@ -221,7 +246,8 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
                                                const int wsh,
                                                const float gammaC,
                                                const float gammaP,
-                                               const bool useMultiScalePatch,
+                                               const bool useConsistentScale,
+                                               const bool useCustomPatchPattern,
                                                const Range depthRange,
                                                const ROI roi)
 {
@@ -297,35 +323,51 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
       normalize(patch.x);
     }
 
-    // compute similarity
-    // TODO: this function should return a similarity value between -1 and 0 or 1 for infinite.
-    //       in practice this function return value between -1 and 1.
-    float fsim = compNCCby3DptsYK(rcDeviceCameraParamsId,
-                                  tcDeviceCameraParamsId,
-                                  rcMipmapImage_tex,
-                                  tcMipmapImage_tex,
-                                  rcRefineLevelWidth,
-                                  rcRefineLevelHeight,
-                                  tcRefineLevelWidth,
-                                  tcRefineLevelHeight,
-                                  rcMipmapLevel,
-                                  wsh,
-                                  gammaC,
-                                  gammaP,
-                                  useMultiScalePatch,
-                                  patch);
+    // we need positive and filtered similarity values
+    constexpr bool invertAndFilter = true;
 
-    if(fsim == 1.f || fsim == CUDART_INF_F) // infinite or invalid similarity
+    float fsimInvertedFiltered = CUDART_INF_F;
+
+    // compute similarity
+    if(useCustomPatchPattern)
+    {
+        fsimInvertedFiltered = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcDeviceCameraParamsId,
+                                                                                    tcDeviceCameraParamsId,
+                                                                                    rcMipmapImage_tex,
+                                                                                    tcMipmapImage_tex,
+                                                                                    rcRefineLevelWidth,
+                                                                                    rcRefineLevelHeight,
+                                                                                    tcRefineLevelWidth,
+                                                                                    tcRefineLevelHeight,
+                                                                                    rcMipmapLevel,
+                                                                                    gammaC,
+                                                                                    gammaP,
+                                                                                    useConsistentScale,
+                                                                                    patch);
+    }
+    else
+    {
+        fsimInvertedFiltered = compNCCby3DptsYK<invertAndFilter>(rcDeviceCameraParamsId,
+                                                                 tcDeviceCameraParamsId,
+                                                                 rcMipmapImage_tex,
+                                                                 tcMipmapImage_tex,
+                                                                 rcRefineLevelWidth,
+                                                                 rcRefineLevelHeight,
+                                                                 tcRefineLevelWidth,
+                                                                 tcRefineLevelHeight,
+                                                                 rcMipmapLevel,
+                                                                 wsh,
+                                                                 gammaC,
+                                                                 gammaP,
+                                                                 useConsistentScale,
+                                                                 patch);
+    }
+
+    if(fsimInvertedFiltered == CUDART_INF_F) // invalid similarity
     {
         // do nothing
         return;
     }
-
-    // invert and filter similarity between 0 and 1
-    // apply sigmoid see: https://www.desmos.com/calculator/skmhf1gpyf
-    // best similarity value was -1, worst was 0
-    // best similarity value is 1, worst is still 0
-    const float fsimInvertedFiltered = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, fsim);
 
     // get output similarity pointer
     TSimRefine* outSimPtr = get3DBufferAt(inout_volSim_d, inout_volSim_s, inout_volSim_p, vx, vy, vz);

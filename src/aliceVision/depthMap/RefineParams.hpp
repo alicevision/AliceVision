@@ -27,7 +27,8 @@ struct RefineParams
   double gammaC = 15.5;
   double gammaP = 8.0;
   bool interpolateMiddleDepth = false;
-  bool useMultiScalePatch = false;
+  bool useConsistentScale = false;
+  bool useCustomPatchPattern = false;
   bool useRefineFuse = true;
   bool useColorOptimization = true;
 

@@ -17,6 +17,7 @@
 #include <aliceVision/depthMap/Sgm.hpp>
 #include <aliceVision/depthMap/Refine.hpp>
 #include <aliceVision/depthMap/cuda/host/utils.hpp>
+#include <aliceVision/depthMap/cuda/host/patchPattern.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceStreamManager.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
@@ -242,6 +243,10 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
 
     DeviceCache& deviceCache = DeviceCache::getInstance();
     deviceCache.build(nbMipmapImagesPerBatch, nbCamerasParamsPerBatch);
+
+    // build custom patch pattern in CUDA constant memory
+    if(_sgmParams.useCustomPatchPattern || _refineParams.useCustomPatchPattern)
+        buildCustomPatchPattern(_depthMapParams.customPatchPattern);
     
     // build tile list order by R camera
     std::vector<Tile> tiles;

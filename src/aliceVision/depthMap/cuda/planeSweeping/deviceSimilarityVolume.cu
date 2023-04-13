@@ -156,7 +156,8 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out
         sgmParams.wsh,
         float(sgmParams.gammaC),
         float(sgmParams.gammaP),
-        sgmParams.useMultiScalePatch,
+        sgmParams.useConsistentScale,
+        sgmParams.useCustomPatchPattern,
         depthRange,
         roi);
 
@@ -208,7 +209,8 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
         refineParams.wsh, 
         float(refineParams.gammaC), 
         float(refineParams.gammaP), 
-        refineParams.useMultiScalePatch,
+        refineParams.useConsistentScale,
+        refineParams.useCustomPatchPattern,
         depthRange,
         roi);
 

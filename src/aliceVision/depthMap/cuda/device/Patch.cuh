@@ -11,6 +11,7 @@
 #include <aliceVision/depthMap/cuda/device/matrix.cuh>
 #include <aliceVision/depthMap/cuda/device/SimStat.cuh>
 #include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
+#include <aliceVision/depthMap/cuda/device/DevicePatchPattern.hpp>
 
 #include <math_constants.h>
 
@@ -325,18 +326,32 @@ wsh)
 */
 
 /**
- * @brief Compute Normalized Cross-Correlation
+ * @brief Compute Normalized Cross-Correlation of a full square patch at given half-width.
  *
- * @param[inout] ptch
- * @param[in] wsh half-width of the similarity homography matrix (width = wsh*2+1)
- * @param[in] width image width
- * @param[in] height image height
- * @param[in] _gammaC
- * @param[in] _gammaP
+ * @tparam TInvertAndFilter invert and filter output similarity value
  *
- * @return similarity value
- *         or invalid similarity (CUDART_INF_F) if uninitialized or masked
+ * @param[in] rcDeviceCameraParamsId the R camera parameters id in device constant memory array
+ * @param[in] tcDeviceCameraParamsId the T camera parameters id in device constant memory array
+ * @param[in] rcMipmapImage_tex the R camera mipmap image texture
+ * @param[in] tcMipmapImage_tex the T camera mipmap image texture
+ * @param[in] rcLevelWidth the R camera image width at given mipmapLevel
+ * @param[in] rcLevelHeight the R camera image height at given mipmapLevel
+ * @param[in] tcLevelWidth the T camera image width at given mipmapLevel
+ * @param[in] tcLevelHeight the T camera image height at given mipmapLevel
+ * @param[in] mipmapLevel the workflow current mipmap level (e.g. SGM=1.f, Refine=0.f)
+ * @param[in] wsh the half-width of the patch
+ * @param[in] gammaC the strength of grouping by color similarity
+ * @param[in] gammaP the strength of grouping by proximity
+ * @param[in] useConsistentScale enable consistent scale patch comparison
+ * @param[in] tcLevelWidth the T camera image width at given mipmapLevel
+ * @param[in] patch the input patch struct
+ *
+ * @return similarity value in range (-1.f, 0.f) or (0.f, 1.f) if TinvertAndFilter enabled
+ *         special cases:
+ *          -> infinite similarity value: 1
+ *          -> invalid/uninitialized/masked similarity: CUDART_INF_F
  */
+template<bool TInvertAndFilter>
 __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
                                          const int tcDeviceCameraParamsId,
                                          const cudaTextureObject_t rcMipmapImage_tex,
@@ -349,18 +364,25 @@ __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
                                          const int wsh,
                                          const float gammaC,
                                          const float gammaP,
-                                         const bool useMultiScalePatch,
+                                         const bool useConsistentScale,
                                          const Patch& patch)
 {
+    // get R and T camera parameters
     const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
     const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
 
+    // get R and T image 2d coordinates from patch center 3d point
     const float2 rp = project3DPoint(rcDeviceCamParams.P, patch.p);
     const float2 tp = project3DPoint(tcDeviceCamParams.P, patch.p);
 
-    const float dd = wsh + 2.0f; // TODO FACA
-    if((rp.x < dd) || (rp.x > float(rcLevelWidth - 1) - dd) || (rp.y < dd) || (rp.y > float(rcLevelHeight - 1) - dd) ||
-       (tp.x < dd) || (tp.x > float(tcLevelWidth - 1) - dd) || (tp.y < dd) || (tp.y > float(tcLevelHeight - 1) - dd))
+    // image 2d coordinates margin
+    const float dd = wsh + 2.0f; // TODO: FACA
+
+    // check R and T image 2d coordinates
+    if((rp.x < dd) || (rp.x > float(rcLevelWidth  - 1) - dd) ||
+       (tp.x < dd) || (tp.x > float(tcLevelWidth  - 1) - dd) ||
+       (rp.y < dd) || (rp.y > float(rcLevelHeight - 1) - dd) ||
+       (tp.y < dd) || (tp.y > float(tcLevelHeight - 1) - dd))
     {
         return CUDART_INF_F; // uninitialized
     }
@@ -372,60 +394,291 @@ __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
     const float tcInvLevelWidth  = 1.f / float(tcLevelWidth);
     const float tcInvLevelHeight = 1.f / float(tcLevelHeight);
 
-    // compute R and T mipmap image level
-    float rcMipmapLevel = mipmapLevel;
-    float tcMipmapLevel = mipmapLevel;
-
-    // multi scale patch comparison
-    if(useMultiScalePatch)
-      computeRcTcMipmapLevels(rcMipmapLevel, tcMipmapLevel, mipmapLevel, rcDeviceCamParams, tcDeviceCamParams, rp, tp, patch.p);
-
-    const float4 gcr = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel);
-    const float4 gct = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel);
+    // get patch center pixel alpha at the given mipmap image level
+    const float rcAlpha = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, mipmapLevel).w; // alpha only
+    const float tcAlpha = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, mipmapLevel).w; // alpha only
 
     // check the alpha values of the patch pixel center of R and T cameras
     // for the R camera, alpha should be at least 0.9f (computation area)
     // for the T camera, alpha should be at least 0.4f (masking)
-    if(gcr.w < 0.9f || gct.w < 0.4f)
+    // TODO: check alpha in range (0, 1)
+    if(rcAlpha < 0.9f || tcAlpha < 0.4f)
+    {
+        return CUDART_INF_F; // masked
+    }
+
+    // initialize R and T mipmap image level at the given mipmap image level
+    float rcMipmapLevel = mipmapLevel;
+    float tcMipmapLevel = mipmapLevel;
+
+    // update R and T mipmap image level in order to get consistent scale patch comparison
+    if(useConsistentScale)
+    {
+        computeRcTcMipmapLevels(rcMipmapLevel, tcMipmapLevel, mipmapLevel, rcDeviceCamParams, tcDeviceCamParams, rp, tp, patch.p);
+    }
+
+    // create and initialize SimStat struct
+    simStat sst;
+
+    // compute patch center color (CIELAB) at R and T mipmap image level
+    const float4 rcCenterColor = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel);
+    const float4 tcCenterColor = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel);
+
+    // compute patch (wsh*2+1)x(wsh*2+1)
+    for(int yp = -wsh; yp <= wsh; ++yp)
+    {
+        for(int xp = -wsh; xp <= wsh; ++xp)
+        {
+            // get 3d point
+            const float3 p = patch.p + patch.x * float(patch.d * float(xp)) + patch.y * float(patch.d * float(yp));
+
+            // get R and T image 2d coordinates from 3d point
+            const float2 rpc = project3DPoint(rcDeviceCamParams.P, p);
+            const float2 tpc = project3DPoint(tcDeviceCamParams.P, p);
+
+            // get R and T image color (CIELAB) from 2d coordinates
+            const float4 rcPatchCoordColor = tex2DLod<float4>(rcMipmapImage_tex, (rpc.x + 0.5f) * rcInvLevelWidth, (rpc.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel);
+            const float4 tcPatchCoordColor = tex2DLod<float4>(tcMipmapImage_tex, (tpc.x + 0.5f) * tcInvLevelWidth, (tpc.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel);
+
+            // compute weighting based on:
+            // - color difference to the center pixel of the patch:
+            //    - low value (close to 0) means that the color is different from the center pixel (ie. strongly supported surface)
+            //    - high value (close to 1) means that the color is close the center pixel (ie. uniform color)
+            // - distance in image to the center pixel of the patch:
+            //    - low value (close to 0) means that the pixel is close to the center of the patch
+            //    - high value (close to 1) means that the pixel is far from the center of the patch
+            const float w = CostYKfromLab(xp, yp, rcCenterColor, rcPatchCoordColor, gammaC, gammaP) * CostYKfromLab(xp, yp, tcCenterColor, tcPatchCoordColor, gammaC, gammaP);
+
+            // update simStat
+            sst.update(rcPatchCoordColor.x, tcPatchCoordColor.x, w);
+        }
+    }
+
+    if(TInvertAndFilter)
+    {
+        // compute patch similarity
+        const float fsim = sst.computeWSim();
+
+        // invert and filter similarity
+        // apply sigmoid see: https://www.desmos.com/calculator/skmhf1gpyf
+        // best similarity value was -1, worst was 0
+        // best similarity value is 1, worst is still 0
+        return sigmoid(0.0f, 1.0f, 0.7f, -0.7f, fsim);
+    }
+
+    // compute output patch similarity
+    return sst.computeWSim();
+}
+
+/**
+ * @brief Compute Normalized Cross-Correlation of a patch with an user custom patch pattern.
+ *
+ * @tparam TInvertAndFilter invert and filter output similarity value
+ *
+ * @param[in] rcDeviceCameraParamsId the R camera parameters id in device constant memory array
+ * @param[in] tcDeviceCameraParamsId the T camera parameters id in device constant memory array
+ * @param[in] rcMipmapImage_tex the R camera mipmap image texture
+ * @param[in] tcMipmapImage_tex the T camera mipmap image texture
+ * @param[in] rcLevelWidth the R camera image width at given mipmapLevel
+ * @param[in] rcLevelHeight the R camera image height at given mipmapLevel
+ * @param[in] tcLevelWidth the T camera image width at given mipmapLevel
+ * @param[in] tcLevelHeight the T camera image height at given mipmapLevel
+ * @param[in] mipmapLevel the workflow current mipmap level (e.g. SGM=1.f, Refine=0.f)
+ * @param[in] gammaC the strength of grouping by color similarity
+ * @param[in] gammaP the strength of grouping by proximity
+ * @param[in] useConsistentScale enable consistent scale patch comparison
+ * @param[in] patch the input patch struct
+ *
+ * @return similarity value in range (-1.f, 0.f) or (0.f, 1.f) if TinvertAndFilter enabled
+ *         special cases:
+ *          -> infinite similarity value: 1
+ *          -> invalid/uninitialized/masked similarity: CUDART_INF_F
+ */
+template<bool TInvertAndFilter>
+__device__ static float compNCCby3DptsYK_customPatchPattern(const int rcDeviceCameraParamsId,
+                                                            const int tcDeviceCameraParamsId,
+                                                            const cudaTextureObject_t rcMipmapImage_tex,
+                                                            const cudaTextureObject_t tcMipmapImage_tex,
+                                                            const unsigned int rcLevelWidth,
+                                                            const unsigned int rcLevelHeight,
+                                                            const unsigned int tcLevelWidth,
+                                                            const unsigned int tcLevelHeight,
+                                                            const float mipmapLevel,
+                                                            const float gammaC,
+                                                            const float gammaP,
+                                                            const bool useConsistentScale,
+                                                            const Patch& patch)
+{
+    // get R and T camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
+
+    // get R and T image 2d coordinates from patch center 3d point
+    const float2 rp = project3DPoint(rcDeviceCamParams.P, patch.p);
+    const float2 tp = project3DPoint(tcDeviceCamParams.P, patch.p);
+
+    // image 2d coordinates margin
+    const float dd = 2.f; // TODO: proper wsh handling
+
+    // check R and T image 2d coordinates
+    if((rp.x < dd) || (rp.x > float(rcLevelWidth  - 1) - dd) ||
+       (tp.x < dd) || (tp.x > float(tcLevelWidth  - 1) - dd) ||
+       (rp.y < dd) || (rp.y > float(rcLevelHeight - 1) - dd) ||
+       (tp.y < dd) || (tp.y > float(tcLevelHeight - 1) - dd))
     {
         return CUDART_INF_F; // uninitialized
     }
 
-    simStat sst;
-    for(int yp = -wsh; yp <= wsh; yp++)
+    // compute inverse width / height
+    // note: useful to compute normalized coordinates
+    const float rcInvLevelWidth  = 1.f / float(rcLevelWidth);
+    const float rcInvLevelHeight = 1.f / float(rcLevelHeight);
+    const float tcInvLevelWidth  = 1.f / float(tcLevelWidth);
+    const float tcInvLevelHeight = 1.f / float(tcLevelHeight);
+
+    // get patch center pixel alpha at the given mipmap image level
+    const float rcAlpha = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, mipmapLevel).w; // alpha only
+    const float tcAlpha = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, mipmapLevel).w; // alpha only
+
+    // check the alpha values of the patch pixel center of R and T cameras
+    // for the R camera, alpha should be at least 0.9f (computation area)
+    // for the T camera, alpha should be at least 0.4f (masking)
+    // TODO: check alpha in range (0, 1)
+    if(rcAlpha < 0.9f || tcAlpha < 0.4f)
     {
-        for(int xp = -wsh; xp <= wsh; xp++)
+        return CUDART_INF_F; // uninitialized
+    }
+
+    // initialize R and T mipmap image level at the given mipmap image level
+    float rcMipmapLevel = mipmapLevel;
+    float tcMipmapLevel = mipmapLevel;
+
+    // update R and T mipmap image level in order to get consistent scale patch comparison
+    if(useConsistentScale)
+    {
+        computeRcTcMipmapLevels(rcMipmapLevel, tcMipmapLevel, mipmapLevel, rcDeviceCamParams, tcDeviceCamParams, rp, tp, patch.p);
+    }
+
+    // output similarity initialization
+    float fsim = 0.f;
+    float wsum = 0.f;
+
+    for(int s = 0; s < constantPatchPattern_d.nbSubparts; ++s)
+    {
+        // create and initialize patch subpart SimStat
+        simStat sst;
+
+        // get patch pattern subpart
+        const DevicePatchPatternSubpart& subpart = constantPatchPattern_d.subparts[s];
+
+        // compute patch center color (CIELAB) at subpart level resolution
+        const float4 rcCenterColor = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel + subpart.level);
+        const float4 tcCenterColor = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel + subpart.level);
+
+        if(subpart.isCircle)
         {
-            float3 p = patch.p + patch.x * float(patch.d * float(xp)) + patch.y * float(patch.d * float(yp));
+            for(int c = 0; c < subpart.nbCoordinates; ++c)
+            {
+                // get patch relative coordinates
+                const float2& relativeCoord = subpart.coordinates[c];
 
-            const float2 rp1 = project3DPoint(rcDeviceCamParams.P, p);
-            const float2 tp1 = project3DPoint(tcDeviceCamParams.P, p);
+                // get 3d point from relative coordinates
+                const float3 p = patch.p + patch.x * float(patch.d * relativeCoord.x) + patch.y * float(patch.d * relativeCoord.y);
 
-            const float4 gcr1 = tex2DLod<float4>(rcMipmapImage_tex, (rp1.x + 0.5f) * rcInvLevelWidth, (rp1.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel);
-            const float4 gct1 = tex2DLod<float4>(tcMipmapImage_tex, (tp1.x + 0.5f) * tcInvLevelWidth, (tp1.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel);
+                // get R and T image 2d coordinates from 3d point
+                const float2 rpc = project3DPoint(rcDeviceCamParams.P, p);
+                const float2 tpc = project3DPoint(tcDeviceCamParams.P, p);
 
-            // TODO: Does it make a difference to accurately test it for each pixel of the patch?
-            // if (gcr1.w == 0.0f || gct1.w == 0.0f)
-            //     continue;
+                // get R and T image color (CIELAB) from 2d coordinates
+                const float4 rcPatchCoordColor = tex2DLod<float4>(rcMipmapImage_tex, (rpc.x + 0.5f) * rcInvLevelWidth, (rpc.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel + subpart.level);
+                const float4 tcPatchCoordColor = tex2DLod<float4>(tcMipmapImage_tex, (tpc.x + 0.5f) * tcInvLevelWidth, (tpc.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel + subpart.level);
 
-            // Weighting is based on:
-            //  * color difference to the center pixel of the patch:
-            //    ** low value (close to 0) means that the color is different from the center pixel (ie. strongly
-            //    supported surface)
-            //    ** high value (close to 1) means that the color is close the center pixel (ie. uniform color)
-            //  * distance in image to the center pixel of the patch:
-            //    ** low value (close to 0) means that the pixel is close to the center of the patch
-            //    ** high value (close to 1) means that the pixel is far from the center of the patch
-            const float w =
-                CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
+                // compute weighting based on color difference to the center pixel of the patch:
+                // - low value (close to 0) means that the color is different from the center pixel (ie. strongly supported surface)
+                // - high value (close to 1) means that the color is close the center pixel (ie. uniform color)
+                const float w = CostYKfromLab(rcCenterColor, rcPatchCoordColor, gammaC) * CostYKfromLab(tcCenterColor, tcPatchCoordColor, gammaC);
 
-            assert(w >= 0.f);
-            assert(w <= 1.f);
+                // update simStat
+                sst.update(rcPatchCoordColor.x, tcPatchCoordColor.x, w);
+            }
+        }
+        else // full patch pattern
+        {
+            // scale patch size if needed
+            const float wshSize = powf(2.f, subpart.level);
 
-            sst.update(gcr1.x, gct1.x, w);
+            for(int yp = -subpart.wsh; yp <= subpart.wsh; ++yp)
+            {
+                for(int xp = -subpart.wsh; xp <= subpart.wsh; ++xp)
+                {
+                    // get 3d point
+                    const float3 p = patch.p + patch.x * float(patch.d * float(xp) * wshSize) + patch.y * float(patch.d * float(yp) * wshSize);
+
+                    // get R and T image 2d coordinates from 3d point
+                    const float2 rpc = project3DPoint(rcDeviceCamParams.P, p);
+                    const float2 tpc = project3DPoint(tcDeviceCamParams.P, p);
+
+                    // get R and T image color (CIELAB) from 2d coordinates
+                    const float4 rcPatchCoordColor = tex2DLod<float4>(rcMipmapImage_tex, (rpc.x + 0.5f) * rcInvLevelWidth, (rpc.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel + subpart.level);
+                    const float4 tcPatchCoordColor = tex2DLod<float4>(tcMipmapImage_tex, (tpc.x + 0.5f) * tcInvLevelWidth, (tpc.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel + subpart.level);
+
+                    // compute weighting based on:
+                    // - color difference to the center pixel of the patch:
+                    //    - low value (close to 0) means that the color is different from the center pixel (ie. strongly supported surface)
+                    //    - high value (close to 1) means that the color is close the center pixel (ie. uniform color)
+                    // - distance in image to the center pixel of the patch:
+                    //    - low value (close to 0) means that the pixel is close to the center of the patch
+                    //    - high value (close to 1) means that the pixel is far from the center of the patch
+                    const float w = CostYKfromLab(xp, yp, rcCenterColor, rcPatchCoordColor, gammaC, gammaP) * CostYKfromLab(xp, yp, tcCenterColor, tcPatchCoordColor, gammaC, gammaP);
+
+                    // update simStat
+                    sst.update(rcPatchCoordColor.x, tcPatchCoordColor.x, w);
+                }
+            }
+        }
+
+        // compute patch subpart similarity
+        const float fsimSubpart = sst.computeWSim();
+
+        // similarity value in range (-1.f, 0.f) or invalid
+        if(fsimSubpart < 0.f)
+        {
+            // add patch pattern subpart similarity to patch similarity
+            if(TInvertAndFilter)
+            {
+                // invert and filter similarity
+                // apply sigmoid see: https://www.desmos.com/calculator/skmhf1gpyf
+                // best similarity value was -1, worst was 0
+                // best similarity value is 1, worst is still 0
+                const float fsimInverted = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, fsimSubpart);
+                fsim += fsimInverted * subpart.weight;
+
+            }
+            else
+            {
+                // weight and add similarity
+                fsim += fsimSubpart * subpart.weight;
+            }
+
+            // sum subpart weight
+            wsum += subpart.weight;
         }
     }
-    return sst.computeWSim();
+
+    // invalid patch similarity
+    if(wsum == 0.f)
+    {
+        return CUDART_INF_F;
+    }
+
+    if(TInvertAndFilter)
+    {
+        // for now, we do not average
+        return fsim;
+    }
+
+    // output average similarity
+    return (fsim / wsum);
 }
 
 __device__ static void getPixelFor3DPoint(int deviceCameraParamsId, float2& out, float3& X)
@@ -482,13 +735,22 @@ __device__ static float3 triangulateMatchRef(int rcDeviceCameraParamsId, int tcD
     return rcDeviceCamParams.C + refvect * k;
 }
 
+/**
+ * @brief Subpixel refine by Stereo Matching with Color-Weighted Correlation, Hierarchical Belief Propagation,
+ *        and Occlusion Handling Qingxiong pami08.
+ *
+ * @note Quadratic polynomial interpolation is used to approximate the cost function between
+ *       three discrete depth candidates: d, dA, and dB.
+ *
+ * @see https://pubmed.ncbi.nlm.nih.gov/19147877/
+ *
+ * @param[in] depths the 3 depths candidates (depth-1, depth, depth+1)
+ * @param[in] sims the similarity of the 3 depths candidates
+ *
+ * @return refined depth value
+ */
 __device__ static float refineDepthSubPixel(const float3& depths, const float3& sims)
 {
-    // subpixel refinement
-    // subpixel refine by Stereo Matching with Color-Weighted Correlation, Hierarchical Belief Propagation, and
-    // Occlusion Handling Qingxiong pami08
-    // quadratic polynomial interpolation is used to approximate the cost function between three discrete depth
-    // candidates: d, dA, and dB.
     // TODO: get formula back from paper as it has been lost by encoding.
     // d is the discrete depth with the minimal cost, dA ? d A 1, and dB ? d B 1. The cost function is approximated as
     // f?x? ? ax2 B bx B c.

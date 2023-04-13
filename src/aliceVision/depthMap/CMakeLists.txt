@@ -2,6 +2,7 @@
 set(depthMap_files_headers
   BufPtr.hpp
   computeOnMultiGPUs.hpp
+  CustomPatchPatternParams.hpp
   DepthMapEstimator.hpp
   DepthMapParams.hpp
   depthMapUtils.hpp
@@ -18,6 +19,7 @@ set(depthMap_files_headers
 # Sources
 set(depthMap_files_sources
   computeOnMultiGPUs.cpp
+  CustomPatchPatternParams.cpp
   DepthMapEstimator.cpp
   depthMapUtils.cpp
   NormalMapEstimator.cpp
@@ -43,6 +45,8 @@ set(depthMap_cuda_host_sources
   cuda/host/DeviceMipmapImage.cpp
   cuda/host/DeviceStreamManager.hpp
   cuda/host/DeviceStreamManager.cpp
+  cuda/host/patchPattern.hpp
+  cuda/host/patchPattern.cpp
   cuda/host/utils.hpp
   cuda/host/utils.cpp
 )
@@ -62,6 +66,8 @@ set(depthMap_cuda_device_headers
 set(depthMap_cuda_device_sources
   cuda/device/DeviceCameraParams.hpp
   cuda/device/DeviceCameraParams.cu
+  cuda/device/DevicePatchPattern.hpp
+  cuda/device/DevicePatchPattern.cu
 )
 
 # imageProcessing CUDA Sources

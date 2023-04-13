@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/depthMap/CustomPatchPatternParams.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 
@@ -24,7 +25,13 @@ struct DepthMapParams
   bool chooseTCamsPerTile = true;     //< choose T cameras per R tile or for the entire R image
   bool exportTilePattern = false;     //< export tile pattern obj
   bool autoAdjustSmallImage = true;   //< allow program to override parameters for the single tile case
-  bool useRefine = true;              //< enable or disable Refine process (for debug purposes)
+
+  /// user custom patch pattern for similarity volume computation (both SGM & Refine)
+  CustomPatchPatternParams customPatchPattern;
+
+  // constant parameters
+
+  const bool useRefine = true;        //< for debug purposes: enable or disable Refine process
 };
 
 } // namespace depthMap
