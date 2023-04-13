@@ -226,9 +226,13 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     // note: maybe move it as class member in order to share it across multiple GPUs
     mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(_mp, image::EImageColorSpace::LINEAR);
 
+    // build tile list order by R camera
+    std::vector<Tile> tiles;
+    getTilesList(cams, tiles);
+
     // get maximum number of simultaneous tiles
     // for now, we use one CUDA stream per tile (SGM + Refine)
-    const int nbStreams = getNbSimultaneousTiles();
+    const int nbStreams = std::min(getNbSimultaneousTiles(), int(tiles.size()));
     DeviceStreamManager deviceStreamManager(nbStreams);
 
     // build device cache
@@ -249,10 +253,6 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     if(_sgmParams.useCustomPatchPattern || _refineParams.useCustomPatchPattern)
         buildCustomPatchPattern(_depthMapParams.customPatchPattern);
     
-    // build tile list order by R camera
-    std::vector<Tile> tiles;
-    getTilesList(cams, tiles);
-
     // allocate Sgm and Refine per stream in device memory
     std::vector<Sgm> sgmPerStream;
     std::vector<Refine> refinePerStream;
