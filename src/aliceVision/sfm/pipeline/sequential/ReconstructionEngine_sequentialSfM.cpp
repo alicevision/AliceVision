@@ -1089,33 +1089,24 @@ bool ReconstructionEngine_sequentialSfM::findNextBestViews(
     }
   }
 
-  // The beginning of the incremental SfM is a well known risky and
-  // unstable step which has a big impact on the final result.
-  // The Bundle Adjustment is an intensive computing step so we only use it
-  // every N cameras.
-  // We make an exception for the first 'nbFirstUnstableCameras' cameras
-  // and perform a BA for each camera because it makes the results
-  // more stable and it's quite cheap because we have few data.
-  static const std::size_t nbFirstUnstableCameras = 30;
-
-  if(_sfmData.getPoses().size() < nbFirstUnstableCameras &&
+  // If the number of cameras is less than nbFirstUnstableCameras, then the bundle adjustment should be performed
+  // every time a new camera is added: it is not expensive as there is very little data and it gives more stable results.
+  if(_sfmData.getPoses().size() < _params.nbFirstUnstableCameras &&
      !out_selectedViewIds.empty())
   {
     // add images one by one to reconstruct the first cameras
     ALICEVISION_LOG_DEBUG("findNextBestViews: beginning of the incremental SfM" << std::endl
       << "Only the first image of the resection group is used." << std::endl
       << "\t- image view id : " << out_selectedViewIds.front() << std::endl
-      << "\t- # unstable poses : " << _sfmData.getPoses().size() << " / " << nbFirstUnstableCameras << std::endl);
+      << "\t- # unstable poses : " << _sfmData.getPoses().size() << " / " << _params.nbFirstUnstableCameras << std::endl);
 
     out_selectedViewIds.resize(1);
   }
 
-  // Limit to a maximum number of cameras added to ensure that
-  // we don't add too much data in one step without bundle adjustment.
-  static const std::size_t maxImagesPerGroup = 30;
-
-  if(out_selectedViewIds.size() > maxImagesPerGroup)
-    out_selectedViewIds.resize(maxImagesPerGroup);
+  // No more than maxImagesPerGroup cameras should be added at once without performing the bundle adjustment (if set to
+  // 0, then there is no limit on the number of views that can be added at once)
+  if(_params.maxImagesPerGroup > 0 && out_selectedViewIds.size() > _params.maxImagesPerGroup)
+    out_selectedViewIds.resize(_params.maxImagesPerGroup);
 
   ALICEVISION_LOG_DEBUG(
     "Find next best views took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec\n"
