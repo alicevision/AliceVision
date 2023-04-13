@@ -22,7 +22,7 @@ namespace depthMap {
 /**
  * @return (smoothStep, energy)
  */
-__device__ float2 getCellSmoothStepEnergy(const int rcDeviceCameraParamsId,
+__device__ float2 getCellSmoothStepEnergy(const DeviceCameraParams& rcDeviceCamParams,
                                           const cudaTextureObject_t in_depth_tex,
                                           const float2& cell0,
                                           const float2& offsetRoi)
@@ -51,11 +51,11 @@ __device__ float2 getCellSmoothStepEnergy(const int rcDeviceCameraParamsId,
     const float dB = tex2D<float>(in_depth_tex, cellB.x, cellB.y);
 
     // get associated 3D points
-    const float3 p0 = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cell0 + offsetRoi, d0);
-    const float3 pL = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cellL + offsetRoi, dL);
-    const float3 pR = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cellR + offsetRoi, dR);
-    const float3 pU = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cellU + offsetRoi, dU);
-    const float3 pB = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, cellB + offsetRoi, dB);
+    const float3 p0 = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, cell0 + offsetRoi, d0);
+    const float3 pL = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, cellL + offsetRoi, dL);
+    const float3 pR = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, cellR + offsetRoi, dR);
+    const float3 pU = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, cellU + offsetRoi, dU);
+    const float3 pB = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, cellB + offsetRoi, dB);
 
     // compute the average point based on neighbors (cg)
     float3 cg = make_float3(0.0f, 0.0f, 0.0f);
@@ -70,12 +70,12 @@ __device__ float2 getCellSmoothStepEnergy(const int rcDeviceCameraParamsId,
     if(n > 1.0f)
     {
         cg = cg / n; // average of x, y, depth
-        float3 vcn = constantCameraParametersArray_d[rcDeviceCameraParamsId].C - p0;
+        float3 vcn = rcDeviceCamParams.C - p0;
         normalize(vcn);
         // pS: projection of cg on the line from p0 to camera
         const float3 pS = closestPointToLine3D(cg, p0, vcn);
         // keep the depth difference between pS and p0 as the smoothing step
-        out.x = size(constantCameraParametersArray_d[rcDeviceCameraParamsId].C - pS) - d0;
+        out.x = size(rcDeviceCamParams.C - pS) - d0;
     }
 
     float e = 0.0f;
@@ -255,11 +255,14 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel(float2*
     const float2 out_depthThikness = *get2DBufferAt(in_sgmDepthThiknessMap_d, in_sgmDepthThiknessMap_p, xp, yp);
 
 #ifdef ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
+    // R camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+
     // get rc 3d point
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(float(x), float(y)), out_depthThikness.x);
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(float(x), float(y)), out_depthThikness.x);
 
     // compute and write rc 3d point pixSize
-    const float out_pixSize = computePixSize(rcDeviceCameraParamsId, p);
+    const float out_pixSize = computePixSize(rcDeviceCamParams, p);
 #else
     // compute pixSize from depth thikness
     const float out_pixSize = out_depthThikness.y / halfNbDepths;
@@ -369,11 +372,14 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(float2* out_up
     }
 
 #ifdef ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
+    // R camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+
     // get rc 3d point
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(float(x), float(y)), out_depthThikness.x);
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(float(x), float(y)), out_depthThikness.x);
 
     // compute and write rc 3d point pixSize
-    const float out_pixSize = computePixSize(rcDeviceCameraParamsId, p);
+    const float out_pixSize = computePixSize(rcDeviceCamParams, p);
 #else
     // compute pixSize from depth thikness
     const float out_pixSize = out_depthThikness.y / halfNbDepths;
@@ -397,6 +403,9 @@ __global__ void depthSimMapComputeNormal_kernel(float3* out_normalMap_d, int out
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
+    // R camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+
     // corresponding image coordinates
     const unsigned int x = (roi.x.begin + roiX) * (unsigned int)(stepXY);
     const unsigned int y = (roi.y.begin + roiY) * (unsigned int)(stepXY);
@@ -414,8 +423,8 @@ __global__ void depthSimMapComputeNormal_kernel(float3* out_normalMap_d, int out
         return;
     }
 
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(float(x), float(y)), in_depth);
-    const float pixSize = size(p - get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(float(x + 1), float(y)), in_depth));
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(float(x), float(y)), in_depth);
+    const float pixSize = size(p - get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(float(x + 1), float(y)), in_depth));
 
     cuda_stat3d s3d = cuda_stat3d();
 
@@ -437,7 +446,7 @@ __global__ void depthSimMapComputeNormal_kernel(float3* out_normalMap_d, int out
             {
                 const float w = 1.0f;
                 const float2 pixP = make_float2(float(int(x) + xp), float(int(y) + yp));
-                const float3 pP = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, pixP, depthP);
+                const float3 pP = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, pixP, depthP);
                 s3d.update(pP, w);
             }
         }
@@ -452,7 +461,7 @@ __global__ void depthSimMapComputeNormal_kernel(float3* out_normalMap_d, int out
         return;
     }
 
-    float3 nc = constantCameraParametersArray_d[rcDeviceCameraParamsId].C - p;
+    float3 nc = rcDeviceCamParams.C - p;
     normalize(nc);
 
     if(orientedPointPlaneDistanceNormalizedNormal(pp + nn, pp, nc) < 0.0f)
@@ -533,6 +542,9 @@ __global__ void optimize_depthSimMap_kernel(float2* out_optimizeDepthSimMap_d, i
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
+    // R camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+
     // SGM upscale (rough) depth/pixSize
     const float2 sgmDepthPixSize = *get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, roiX, roiY);
     const float sgmDepth = sgmDepthPixSize.x;
@@ -550,7 +562,7 @@ __global__ void optimize_depthSimMap_kernel(float2* out_optimizeDepthSimMap_d, i
 
     if (depthOpt > 0.0f)
     {
-        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rcDeviceCameraParamsId, depth_tex, {float(roiX), float(roiY)}, {float(roi.x.begin), float(roi.y.begin)}); // (smoothStep, energy)
+        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rcDeviceCamParams, depth_tex, {float(roiX), float(roiY)}, {float(roi.x.begin), float(roi.y.begin)}); // (smoothStep, energy)
         float stepToSmoothDepth = depthSmoothStepEnergy.x;
         stepToSmoothDepth = copysignf(fminf(fabsf(stepToSmoothDepth), sgmPixSize / 10.0f), stepToSmoothDepth);
         const float depthEnergy = depthSmoothStepEnergy.y; // max angle with neighbors

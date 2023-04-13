@@ -108,12 +108,14 @@ __device__ static void computeRotCS(float3& xax, float3& yax, float3& n)
     yax = cross(n, xax);
 }
 
-__device__ static void computeRotCSEpip(int rcDeviceCamId, int tcDeviceCamId, Patch& ptch)
+__device__ inline void computeRotCSEpip(Patch& ptch,
+                                        const DeviceCameraParams& rcDeviceCamParams,
+                                        const DeviceCameraParams& tcDeviceCamParams)
 {
     // Vector from the reference camera to the 3d point
-    float3 v1 = constantCameraParametersArray_d[rcDeviceCamId].C - ptch.p;
+    float3 v1 = rcDeviceCamParams.C - ptch.p;
     // Vector from the target camera to the 3d point
-    float3 v2 = constantCameraParametersArray_d[tcDeviceCamId].C - ptch.p;
+    float3 v2 = tcDeviceCamParams.C - ptch.p;
     normalize(v1);
     normalize(v2);
 
@@ -132,12 +134,10 @@ __device__ static void computeRotCSEpip(int rcDeviceCamId, int tcDeviceCamId, Pa
     normalize(ptch.x);
 }
 
-__device__ inline float computePixSize(int deviceCameraParamsId, const float3& p)
+__device__ inline float computePixSize(const DeviceCameraParams& deviceCamParams, const float3& p)
 {
-    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCameraParamsId];
-
-    float2 rp = project3DPoint(deviceCamParams.P, p);
-    float2 rp1 = rp + make_float2(1.0f, 0.0f);
+    const float2 rp = project3DPoint(deviceCamParams.P, p);
+    const float2 rp1 = rp + make_float2(1.0f, 0.0f);
 
     float3 refvect = M3x3mulV2(deviceCamParams.iP, rp1);
     normalize(refvect);
@@ -257,27 +257,27 @@ __device__ static float getPatchPixSize(Patch &ptch)
 }
 */
 
-__device__ static void computeHomography(int rcDeviceCamId, int tcDeviceCamId, float* _H, const float3& _p,
-                                        const float3& _n)
+__device__ static void computeHomography(float* out_H,
+                                         const DeviceCameraParams& rcDeviceCamParams,
+                                         const DeviceCameraParams& tcDeviceCamParams,
+                                         const float3& in_p,
+                                         const float3& in_n)
 {
-    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCamId];
-    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCamId];
-
     // hartley zisserman second edition p.327 (13.2)
-    float3 _tl = make_float3(0.0, 0.0, 0.0) - M3x3mulV3(rcDeviceCamParams.R, rcDeviceCamParams.C);
-    float3 _tr = make_float3(0.0, 0.0, 0.0) - M3x3mulV3(tcDeviceCamParams.R, tcDeviceCamParams.C);
+    const float3 _tl = make_float3(0.0, 0.0, 0.0) - M3x3mulV3(rcDeviceCamParams.R, rcDeviceCamParams.C);
+    const float3 _tr = make_float3(0.0, 0.0, 0.0) - M3x3mulV3(tcDeviceCamParams.R, tcDeviceCamParams.C);
 
-    float3 p = M3x3mulV3(rcDeviceCamParams.R, (_p - rcDeviceCamParams.C));
-    float3 n = M3x3mulV3(rcDeviceCamParams.R, _n);
+    const float3 p = M3x3mulV3(rcDeviceCamParams.R, (in_p - rcDeviceCamParams.C));
+    float3 n = M3x3mulV3(rcDeviceCamParams.R, in_n);
     normalize(n);
-    float d = -dot(n, p);
+    const float d = -dot(n, p);
 
     float RrT[9];
     M3x3transpose(RrT, rcDeviceCamParams.R);
 
     float tmpRr[9];
     M3x3mulM3x3(tmpRr, tcDeviceCamParams.R, RrT);
-    float3 tr = _tr - M3x3mulV3(tmpRr, _tl);
+    const float3 tr = _tr - M3x3mulV3(tmpRr, _tl);
 
     float tmp[9];
     float tmp1[9];
@@ -286,39 +286,49 @@ __device__ static void computeHomography(int rcDeviceCamId, int tcDeviceCamId, f
     M3x3mulM3x3(tmp1, tcDeviceCamParams.K, tmp);
     M3x3mulM3x3(tmp, tmp1, rcDeviceCamParams.iK);
 
-    for(int i = 0; i < 9; i++)
-    {
-        _H[i] = tmp[i];
-    }
+    out_H[0] = tmp[0];
+    out_H[1] = tmp[1];
+    out_H[2] = tmp[2];
+    out_H[3] = tmp[3];
+    out_H[4] = tmp[4];
+    out_H[5] = tmp[5];
+    out_H[6] = tmp[6];
+    out_H[7] = tmp[7];
+    out_H[8] = tmp[8];
 }
 
 /*
-__device__ static float compNCCbyH(const DeviceCameraParams& rc_cam, const DeviceCameraParams& tc_cam, const Patch& ptch, int
-wsh)
+__device__ static float compNCCbyH(const DeviceCameraParams& rcDeviceCamParams,
+                                   const DeviceCameraParams& tcDeviceCamParams,
+                                   const Patch& ptch,
+                                   int wsh)
 {
-    float2 rpix = project3DPoint(sg_s_r.P, ptch.p);
-    float2 tpix = project3DPoint(sg_s_t.P, ptch.p);
+    // get R and T image 2d coordinates from patch center 3d point
+    const float2 rp = project3DPoint(rcDeviceCamParams.P, patch.p);
+    //const float2 tp = project3DPoint(tcDeviceCamParams.P, patch.p);
 
     float H[9];
-    computeHomography(rc_cam, tc_cam, H, ptch.p, ptch.n);
+    computeHomography(H, rcDeviceCamParams, tcDeviceCamParams, ptch.p, ptch.n);
 
     simStat sst = simStat();
-    for(int xp = -wsh; xp <= wsh; xp++)
+
+    for(int xp = -wsh; xp <= wsh; ++xp)
     {
-        for(int yp = -wsh; yp <= wsh; yp++)
+        for(int yp = -wsh; yp <= wsh; ++yp)
         {
-            float2 rp;
-            float2 tp;
-            rp.x = rpix.x + (float)xp;
-            rp.y = rpix.y + (float)yp;
-            tp = V2M3x3mulV2(H, rp);
+            float2 rpc;
+            float2 tpc;
+            rpc.x = rp.x + (float)xp;
+            rpc.y = rp.y + (float)yp;
+            tpc = V2M3x3mulV2(H, rpc);
 
             float2 g;
-            g.x = 255.0f * tex2D(rtex, rp.x + 0.5f, rp.y + 0.5f);
-            g.y = 255.0f * tex2D(ttex, tp.x + 0.5f, tp.y + 0.5f);
+            g.x = 255.0f * tex2D(rtex, rpc.x + 0.5f, rpc.y + 0.5f);
+            g.y = 255.0f * tex2D(ttex, tpc.x + 0.5f, tpc.y + 0.5f);
             sst.update(g);
         }
     }
+
     sst.computeSim();
 
     return sst.sim;
@@ -330,8 +340,8 @@ wsh)
  *
  * @tparam TInvertAndFilter invert and filter output similarity value
  *
- * @param[in] rcDeviceCameraParamsId the R camera parameters id in device constant memory array
- * @param[in] tcDeviceCameraParamsId the T camera parameters id in device constant memory array
+ * @param[in] rcDeviceCameraParamsId the R camera parameters in device constant memory array
+ * @param[in] tcDeviceCameraParamsId the T camera parameters in device constant memory array
  * @param[in] rcMipmapImage_tex the R camera mipmap image texture
  * @param[in] tcMipmapImage_tex the T camera mipmap image texture
  * @param[in] rcLevelWidth the R camera image width at given mipmapLevel
@@ -352,8 +362,8 @@ wsh)
  *          -> invalid/uninitialized/masked similarity: CUDART_INF_F
  */
 template<bool TInvertAndFilter>
-__device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
-                                         const int tcDeviceCameraParamsId,
+__device__ static float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamParams,
+                                         const DeviceCameraParams& tcDeviceCamParams,
                                          const cudaTextureObject_t rcMipmapImage_tex,
                                          const cudaTextureObject_t tcMipmapImage_tex,
                                          const unsigned int rcLevelWidth,
@@ -367,10 +377,6 @@ __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
                                          const bool useConsistentScale,
                                          const Patch& patch)
 {
-    // get R and T camera parameters
-    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
-    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
-
     // get R and T image 2d coordinates from patch center 3d point
     const float2 rp = project3DPoint(rcDeviceCamParams.P, patch.p);
     const float2 tp = project3DPoint(tcDeviceCamParams.P, patch.p);
@@ -475,8 +481,8 @@ __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
  *
  * @tparam TInvertAndFilter invert and filter output similarity value
  *
- * @param[in] rcDeviceCameraParamsId the R camera parameters id in device constant memory array
- * @param[in] tcDeviceCameraParamsId the T camera parameters id in device constant memory array
+ * @param[in] rcDeviceCameraParamsId the R camera parameters in device constant memory array
+ * @param[in] tcDeviceCameraParamsId the T camera parameters in device constant memory array
  * @param[in] rcMipmapImage_tex the R camera mipmap image texture
  * @param[in] tcMipmapImage_tex the T camera mipmap image texture
  * @param[in] rcLevelWidth the R camera image width at given mipmapLevel
@@ -495,8 +501,8 @@ __device__ static float compNCCby3DptsYK(const int rcDeviceCameraParamsId,
  *          -> invalid/uninitialized/masked similarity: CUDART_INF_F
  */
 template<bool TInvertAndFilter>
-__device__ static float compNCCby3DptsYK_customPatchPattern(const int rcDeviceCameraParamsId,
-                                                            const int tcDeviceCameraParamsId,
+__device__ static float compNCCby3DptsYK_customPatchPattern(const DeviceCameraParams& rcDeviceCamParams,
+                                                            const DeviceCameraParams& tcDeviceCamParams,
                                                             const cudaTextureObject_t rcMipmapImage_tex,
                                                             const cudaTextureObject_t tcMipmapImage_tex,
                                                             const unsigned int rcLevelWidth,
@@ -509,10 +515,6 @@ __device__ static float compNCCby3DptsYK_customPatchPattern(const int rcDeviceCa
                                                             const bool useConsistentScale,
                                                             const Patch& patch)
 {
-    // get R and T camera parameters
-    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
-    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
-
     // get R and T image 2d coordinates from patch center 3d point
     const float2 rp = project3DPoint(rcDeviceCamParams.P, patch.p);
     const float2 tp = project3DPoint(tcDeviceCamParams.P, patch.p);
@@ -681,51 +683,43 @@ __device__ static float compNCCby3DptsYK_customPatchPattern(const int rcDeviceCa
     return (fsim / wsum);
 }
 
-__device__ static void getPixelFor3DPoint(int deviceCameraParamsId, float2& out, float3& X)
+__device__ inline void getPixelFor3DPoint(float2& out, const DeviceCameraParams& deviceCamParams, const float3& X)
 {
-    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCameraParamsId];
-
-    float3 p = M3x4mulV3(deviceCamParams.P, X);
+    const float3 p = M3x4mulV3(deviceCamParams.P, X);
 
     if(p.z <= 0.0f)
-    {
         out = make_float2(-1.0f, -1.0f);
-    }
     else
-    {
         out = make_float2(p.x / p.z, p.y / p.z);
-    }
 }
 
-__device__ static float3 get3DPointForPixelAndFrontoParellePlaneRC(int deviceCameraParamsId, const float2& pix, float fpPlaneDepth)
+__device__ inline float3 get3DPointForPixelAndFrontoParellePlaneRC(const DeviceCameraParams& deviceCamParams, const float2& pix, float fpPlaneDepth)
 {
-    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCameraParamsId];
     const float3 planep = deviceCamParams.C + deviceCamParams.ZVect * fpPlaneDepth;
     float3 v = M3x3mulV2(deviceCamParams.iP, pix);
     normalize(v);
     return linePlaneIntersect(deviceCamParams.C, v, planep, deviceCamParams.ZVect);
 }
 
-__device__ static float3 get3DPointForPixelAndDepthFromRC(int deviceCameraParamsId, const float2& pix, float depth)
+__device__ inline float3 get3DPointForPixelAndDepthFromRC(const DeviceCameraParams& deviceCamParams, const float2& pix, float depth)
 {
-    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCameraParamsId];
     float3 rpv = M3x3mulV2(deviceCamParams.iP, pix);
     normalize(rpv);
     return deviceCamParams.C + rpv * depth;
 }
 
-__device__ static float3 triangulateMatchRef(int rcDeviceCameraParamsId, int tcDeviceCameraParamsId, float2& refpix, float2& tarpix)
+__device__ inline float3 triangulateMatchRef(const DeviceCameraParams& rcDeviceCamParams,
+                                             const DeviceCameraParams& tcDeviceCamParams,
+                                             const float2& refpix,
+                                             const float2& tarpix)
 {
-    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
-    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
-
     float3 refvect = M3x3mulV2(rcDeviceCamParams.iP, refpix);
     normalize(refvect);
-    float3 refpoint = refvect + rcDeviceCamParams.C;
+    const float3 refpoint = refvect + rcDeviceCamParams.C;
 
     float3 tarvect = M3x3mulV2(tcDeviceCamParams.iP, tarpix);
     normalize(tarvect);
-    float3 tarpoint = tarvect + tcDeviceCamParams.C;
+    const float3 tarpoint = tarvect + tcDeviceCamParams.C;
 
     float k, l;
     float3 lli1, lli2;

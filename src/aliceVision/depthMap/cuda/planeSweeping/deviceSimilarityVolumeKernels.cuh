@@ -15,30 +15,29 @@ namespace aliceVision {
 namespace depthMap {
 
 inline __device__ void move3DPointByRcPixSize(float3& p,
-                                              const int rcDeviceCameraParamsId,
+                                              const DeviceCameraParams& rcDeviceCamParams,
                                               const float rcPixSize)
 {
-    float3 rpv = p - constantCameraParametersArray_d[rcDeviceCameraParamsId].C;
+    float3 rpv = p - rcDeviceCamParams.C;
     normalize(rpv);
     p = p + rpv * rcPixSize;
 }
 
 inline __device__ void volume_computePatch(Patch& patch,
-                                           const int rcDeviceCameraParamsId,
-                                           const int tcDeviceCameraParamsId,
+                                           const DeviceCameraParams& rcDeviceCamParams,
+                                           const DeviceCameraParams& tcDeviceCamParams,
                                            const float fpPlaneDepth,
                                            const float2& pix)
 {
-    patch.p = get3DPointForPixelAndFrontoParellePlaneRC(rcDeviceCameraParamsId, pix, fpPlaneDepth);
-    patch.d = computePixSize(rcDeviceCameraParamsId, patch.p);
-    computeRotCSEpip(rcDeviceCameraParamsId, tcDeviceCameraParamsId, patch);
+    patch.p = get3DPointForPixelAndFrontoParellePlaneRC(rcDeviceCamParams, pix, fpPlaneDepth);
+    patch.d = computePixSize(rcDeviceCamParams, patch.p);
+    computeRotCSEpip(patch, rcDeviceCamParams, tcDeviceCamParams);
 }
 
-__device__ float depthPlaneToDepth(const int deviceCameraParamsId,
-                                   const float fpPlaneDepth,
-                                   const float2& pix)
+inline __device__ float depthPlaneToDepth(const DeviceCameraParams& deviceCamParams,
+                                          const float fpPlaneDepth,
+                                          const float2& pix)
 {
-    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCameraParamsId];
     const float3 planep = deviceCamParams.C + deviceCamParams.ZVect * fpPlaneDepth;
     float3 v = M3x3mulV2(deviceCamParams.iP, pix);
     normalize(v);
@@ -135,6 +134,10 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
     if(roiX >= roi.width() || roiY >= roi.height()) // no need to check roiZ
         return;
 
+    // R and T camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
+
     // corresponding volume coordinates
     const unsigned int vx = roiX;
     const unsigned int vy = roiY;
@@ -149,7 +152,7 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
 
     // compute patch
     Patch patch;
-    volume_computePatch(patch, rcDeviceCameraParamsId, tcDeviceCameraParamsId, depthPlane, make_float2(x, y));
+    volume_computePatch(patch, rcDeviceCamParams, tcDeviceCamParams, depthPlane, make_float2(x, y));
 
     // we do not need positive and filtered similarity values
     constexpr bool invertAndFilter = false;
@@ -159,8 +162,8 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
     // compute patch similarity
     if(useCustomPatchPattern)
     {
-        fsim = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcDeviceCameraParamsId,
-                                                                    tcDeviceCameraParamsId,
+        fsim = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcDeviceCamParams,
+                                                                    tcDeviceCamParams,
                                                                     rcMipmapImage_tex,
                                                                     tcMipmapImage_tex,
                                                                     rcSgmLevelWidth,
@@ -175,8 +178,8 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
     }
     else
     {
-        fsim = compNCCby3DptsYK<invertAndFilter>(rcDeviceCameraParamsId,
-                                                 tcDeviceCameraParamsId,
+        fsim = compNCCby3DptsYK<invertAndFilter>(rcDeviceCamParams,
+                                                 tcDeviceCamParams,
                                                  rcMipmapImage_tex,
                                                  tcMipmapImage_tex,
                                                  rcSgmLevelWidth,
@@ -258,6 +261,10 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
     if(roiX >= roi.width() || roiY >= roi.height()) // no need to check roiZ
         return;
 
+    // R and T camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
+
     // corresponding volume and depth/sim map coordinates
     const unsigned int vx = roiX;
     const unsigned int vy = roiY;
@@ -275,7 +282,7 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
         return; 
 
     // initialize rc 3d point at sgm depth (middle depth)
-    float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCameraParamsId, make_float2(x, y), in_sgmDepthPixSize.x);
+    float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(x, y), in_sgmDepthPixSize.x);
 
     // compute relative depth index offset from z center
     const int relativeDepthIndexOffset = vz - ((volDimZ - 1) / 2);
@@ -285,20 +292,20 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
         // not z center
         // move rc 3d point by relative depth index offset * sgm pixSize
         const float pixSizeOffset = relativeDepthIndexOffset * in_sgmDepthPixSize.y; // input sgm pixSize
-        move3DPointByRcPixSize(p, rcDeviceCameraParamsId, pixSizeOffset);
+        move3DPointByRcPixSize(p, rcDeviceCamParams, pixSizeOffset);
     }
 
     // compute patch
     Patch patch;
     patch.p = p;
-    patch.d = computePixSize(rcDeviceCameraParamsId, p);
+    patch.d = computePixSize(rcDeviceCamParams, p);
 
     // computeRotCSEpip
     {
       // vector from the reference camera to the 3d point
-      float3 v1 = constantCameraParametersArray_d[rcDeviceCameraParamsId].C - patch.p;
+      float3 v1 = rcDeviceCamParams.C - patch.p;
       // vector from the target camera to the 3d point
-      float3 v2 = constantCameraParametersArray_d[tcDeviceCameraParamsId].C - patch.p;
+      float3 v2 = tcDeviceCamParams.C - patch.p;
       normalize(v1);
       normalize(v2);
 
@@ -331,8 +338,8 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
     // compute similarity
     if(useCustomPatchPattern)
     {
-        fsimInvertedFiltered = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcDeviceCameraParamsId,
-                                                                                    tcDeviceCameraParamsId,
+        fsimInvertedFiltered = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcDeviceCamParams,
+                                                                                    tcDeviceCamParams,
                                                                                     rcMipmapImage_tex,
                                                                                     tcMipmapImage_tex,
                                                                                     rcRefineLevelWidth,
@@ -347,8 +354,8 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
     }
     else
     {
-        fsimInvertedFiltered = compNCCby3DptsYK<invertAndFilter>(rcDeviceCameraParamsId,
-                                                                 tcDeviceCameraParamsId,
+        fsimInvertedFiltered = compNCCby3DptsYK<invertAndFilter>(rcDeviceCamParams,
+                                                                 tcDeviceCamParams,
                                                                  rcMipmapImage_tex,
                                                                  tcMipmapImage_tex,
                                                                  rcRefineLevelWidth,
@@ -400,6 +407,9 @@ __global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThiknessMap_
 
     if(vx >= roi.width() || vy >= roi.height())
         return;
+
+    // R camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
 
     // corresponding image coordinates
     const float2 pix{float((roi.x.begin + vx) * scaleStep), float((roi.y.begin + vy) * scaleStep)};
@@ -455,9 +465,9 @@ __global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThiknessMap_
     depthPlanes.y = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx, 0);     // best depth plane
     depthPlanes.z = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_p1, 0);  // best depth next plane
 
-    const float bestDepth    = depthPlaneToDepth(rcDeviceCameraParamsId, depthPlanes.y, pix); // best depth
-    const float bestDepth_m1 = depthPlaneToDepth(rcDeviceCameraParamsId, depthPlanes.x, pix); // previous best depth
-    const float bestDepth_p1 = depthPlaneToDepth(rcDeviceCameraParamsId, depthPlanes.z, pix); // next best depth
+    const float bestDepth    = depthPlaneToDepth(rcDeviceCamParams, depthPlanes.y, pix); // best depth
+    const float bestDepth_m1 = depthPlaneToDepth(rcDeviceCamParams, depthPlanes.x, pix); // previous best depth
+    const float bestDepth_p1 = depthPlaneToDepth(rcDeviceCamParams, depthPlanes.z, pix); // next best depth
 
 #ifdef ALICEVISION_DEPTHMAP_RETRIEVE_BEST_Z_INTERPOLATION
     // with depth/sim interpolation
@@ -476,7 +486,7 @@ __global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThiknessMap_
     // interpolation between the 3 depth planes candidates
     const float refinedDepthPlane = refineDepthSubPixel(depthPlanes, sims);
 
-    const float out_bestDepth = depthPlaneToDepth(rcDeviceCameraParamsId, refinedDepthPlane, pix);
+    const float out_bestDepth = depthPlaneToDepth(rcDeviceCamParams, refinedDepthPlane, pix);
     const float out_bestSim = sims.y;
 #else
     // without depth interpolation
