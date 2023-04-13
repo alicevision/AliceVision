@@ -172,21 +172,18 @@ __host__ void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& 
                                             const ROI& roi,
                                             cudaStream_t stream)
 {
-    const int wsh = 4;
-
     // kernel launch parameters
     const dim3 block(8, 8, 1);
     const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), 1);
 
     // kernel execution
-    depthSimMapComputeNormal_kernel<<<grid, block, 0, stream>>>(
+    depthSimMapComputeNormal_kernel<3 /* wsh */><<<grid, block, 0, stream>>>(
         out_normalMap_dmp.getBuffer(),
         out_normalMap_dmp.getPitch(),
         in_depthSimMap_dmp.getBuffer(),
         in_depthSimMap_dmp.getPitch(),
         rcDeviceCameraParamsId,
         stepXY,
-        wsh,
         roi);
 
     // check cuda last error

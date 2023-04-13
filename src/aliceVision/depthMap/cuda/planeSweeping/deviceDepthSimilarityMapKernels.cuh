@@ -390,11 +390,11 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(float2* out_up
     out_depthPixSize->y = out_pixSize;
 }
 
+template<int WSH, int UNROLL_Y = 1, int UNROLL_X = 2*WSH+1>
 __global__ void depthSimMapComputeNormal_kernel(float3* out_normalMap_d, int out_normalMap_p,
                                                 const float2* in_depthSimMap_d, int in_depthSimMap_p,
                                                 const int rcDeviceCameraParamsId,
                                                 const int stepXY,
-                                                const int wsh,
                                                 const ROI roi)
 {
     const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -428,13 +428,15 @@ __global__ void depthSimMapComputeNormal_kernel(float3* out_normalMap_d, int out
 
     cuda_stat3d s3d = cuda_stat3d();
 
-    for(int yp = -wsh; yp <= wsh; ++yp)
+#pragma unroll UNROLL_Y
+    for(int yp = -WSH; yp <= WSH; ++yp)
     {
         const int roiYp = int(roiY) + yp;
         if(roiYp < 0)
             continue;
 
-        for(int xp = -wsh; xp <= wsh; ++xp)
+#pragma unroll UNROLL_X
+        for(int xp = -WSH; xp <= WSH; ++xp)
         {
             const int roiXp = int(roiX) + xp;
             if(roiXp < 0)
