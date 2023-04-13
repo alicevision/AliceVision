@@ -120,8 +120,8 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
                                                 const float rcMipmapLevel,
                                                 const int stepXY,
                                                 const int wsh,
-                                                const float gammaC,
-                                                const float gammaP,
+                                                const float invGammaC,
+                                                const float invGammaP,
                                                 const bool useConsistentScale,
                                                 const bool useCustomPatchPattern,
                                                 const Range depthRange,
@@ -171,8 +171,8 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
                                                                     tcSgmLevelWidth,
                                                                     tcSgmLevelHeight,
                                                                     rcMipmapLevel,
-                                                                    gammaC,
-                                                                    gammaP,
+                                                                    invGammaC,
+                                                                    invGammaP,
                                                                     useConsistentScale,
                                                                     patch);
     }
@@ -188,8 +188,8 @@ __global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_v
                                                  tcSgmLevelHeight,
                                                  rcMipmapLevel,
                                                  wsh,
-                                                 gammaC,
-                                                 gammaP,
+                                                 invGammaC,
+                                                 invGammaP,
                                                  useConsistentScale,
                                                  patch);
     }
@@ -247,8 +247,8 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
                                                const int volDimZ,
                                                const int stepXY,
                                                const int wsh,
-                                               const float gammaC,
-                                               const float gammaP,
+                                               const float invGammaC,
+                                               const float invGammaP,
                                                const bool useConsistentScale,
                                                const bool useCustomPatchPattern,
                                                const Range depthRange,
@@ -347,8 +347,8 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
                                                                                     tcRefineLevelWidth,
                                                                                     tcRefineLevelHeight,
                                                                                     rcMipmapLevel,
-                                                                                    gammaC,
-                                                                                    gammaP,
+                                                                                    invGammaC,
+                                                                                    invGammaP,
                                                                                     useConsistentScale,
                                                                                     patch);
     }
@@ -364,8 +364,8 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
                                                                  tcRefineLevelHeight,
                                                                  rcMipmapLevel,
                                                                  wsh,
-                                                                 gammaC,
-                                                                 gammaP,
+                                                                 invGammaC,
+                                                                 invGammaP,
                                                                  useConsistentScale,
                                                                  patch);
     }

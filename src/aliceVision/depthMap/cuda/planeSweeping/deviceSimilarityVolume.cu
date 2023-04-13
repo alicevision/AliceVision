@@ -154,8 +154,8 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out
         rcMipmapLevel,
         sgmParams.stepXY,
         sgmParams.wsh,
-        float(sgmParams.gammaC),
-        float(sgmParams.gammaP),
+        (1.f / float(sgmParams.gammaC)), // inverted gammaC
+        (1.f / float(sgmParams.gammaP)), // inverted gammaP
         sgmParams.useConsistentScale,
         sgmParams.useCustomPatchPattern,
         depthRange,
@@ -207,8 +207,8 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
         int(inout_volSim_dmp.getSize().z()), 
         refineParams.stepXY,
         refineParams.wsh, 
-        float(refineParams.gammaC), 
-        float(refineParams.gammaP), 
+        (1.f / float(refineParams.gammaC)), // inverted gammaC
+        (1.f / float(refineParams.gammaP)), // inverted gammaP
         refineParams.useConsistentScale,
         refineParams.useCustomPatchPattern,
         depthRange,

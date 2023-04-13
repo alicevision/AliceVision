@@ -154,16 +154,16 @@ __device__ inline float rgb2gray(const uchar4 c)
  * @param[in] dy y-axis distance beetween the two pixels
  * @param[in] c1 the first patch pixel color (Lab 0..255)
  * @param[in] c2 the second patch pixel color (Lab 0..255)
- * @param[in] gammaC the strength of grouping by color similarity (5.5 / 105.5)
- * @param[in] gammaP the strength of grouping by proximity (8 / 4)
+ * @param[in] invGammaC the inverted strength of grouping by color similarity (gammaC: 5.5 / 105.5)
+ * @param[in] invGammaP the inverted strength of grouping by proximity (gammaP: 8 / 4)
  * @return distance value
  */
 __device__ inline float CostYKfromLab(const int dx,
                                       const int dy,
                                       const float4 c1,
                                       const float4 c2,
-                                      const float gammaC,
-                                      const float gammaP)
+                                      const float invGammaC,
+                                      const float invGammaP)
 {
     // const float deltaC = 0; // ignore colour difference
 
@@ -189,17 +189,20 @@ __device__ inline float CostYKfromLab(const int dx,
     float deltaC = euclideanDist3(c1, c2);
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
-    deltaC /= gammaC;
+    deltaC *= invGammaC;
 
     // spatial distance to the center of the patch (in pixels)
-    float deltaP = sqrtf(float(dx * dx + dy * dy));
+    // without optimization
+    // float deltaP = sqrtf(float(dx * dx + dy * dy));
+    float deltaP = __fsqrt_rn(float(dx * dx + dy * dy));
 
-    deltaP /= gammaP;
+    deltaP *= invGammaP;
 
     deltaC += deltaP;
 
     return __expf(-deltaC); // Yoon & Kweon
     // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
+    // return __expf(-((deltaC * deltaC / 2) * (invGammaC * invGammaC))) * sqrtf(__expf(-(((deltaP * deltaP / 2) * (invGammaP * invGammaP)))); // DCB
 }
 
 
@@ -211,15 +214,15 @@ __device__ inline float CostYKfromLab(const int dx,
  *
  * @param[in] c1 the first patch pixel color (Lab 0..255)
  * @param[in] c2 the second patch pixel color (Lab 0..255)
- * @param[in] gammaC the strength of grouping by color similarity (5.5 / 105.5)
+ * @param[in] invGammaC the inverted strength of grouping by color similarity (gammaC: 5.5 / 105.5)
  * @return distance value
  */
- __device__ inline float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
+ __device__ inline float CostYKfromLab(const float4 c1, const float4 c2, const float invGammaC)
 {
     // euclidean distance in Lab, assuming linear RGB
     const float deltaC = euclideanDist3(c1, c2);
 
-    return __expf(-(deltaC / gammaC)); // Yoon & Kweon
+    return __expf(-(deltaC * invGammaC)); // Yoon & Kweon
 }
 
 } // namespace depthMap

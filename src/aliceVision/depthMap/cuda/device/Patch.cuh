@@ -452,8 +452,8 @@ __device__ static float compNCCbyH(const DeviceCameraParams& rcDeviceCamParams,
  * @param[in] tcLevelHeight the T camera image height at given mipmapLevel
  * @param[in] mipmapLevel the workflow current mipmap level (e.g. SGM=1.f, Refine=0.f)
  * @param[in] wsh the half-width of the patch
- * @param[in] gammaC the strength of grouping by color similarity
- * @param[in] gammaP the strength of grouping by proximity
+ * @param[in] invGammaC the inverted strength of grouping by color similarity
+ * @param[in] invGammaP the inverted strength of grouping by proximity
  * @param[in] useConsistentScale enable consistent scale patch comparison
  * @param[in] tcLevelWidth the T camera image width at given mipmapLevel
  * @param[in] patch the input patch struct
@@ -474,8 +474,8 @@ __device__ static float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamPa
                                          const unsigned int tcLevelHeight,
                                          const float mipmapLevel,
                                          const int wsh,
-                                         const float gammaC,
-                                         const float gammaP,
+                                         const float invGammaC,
+                                         const float invGammaP,
                                          const bool useConsistentScale,
                                          const Patch& patch)
 {
@@ -555,7 +555,7 @@ __device__ static float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamPa
             // - distance in image to the center pixel of the patch:
             //    - low value (close to 0) means that the pixel is close to the center of the patch
             //    - high value (close to 1) means that the pixel is far from the center of the patch
-            const float w = CostYKfromLab(xp, yp, rcCenterColor, rcPatchCoordColor, gammaC, gammaP) * CostYKfromLab(xp, yp, tcCenterColor, tcPatchCoordColor, gammaC, gammaP);
+            const float w = CostYKfromLab(xp, yp, rcCenterColor, rcPatchCoordColor, invGammaC, invGammaP) * CostYKfromLab(xp, yp, tcCenterColor, tcPatchCoordColor, invGammaC, invGammaP);
 
             // update simStat
             sst.update(rcPatchCoordColor.x, tcPatchCoordColor.x, w);
@@ -592,8 +592,8 @@ __device__ static float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamPa
  * @param[in] tcLevelWidth the T camera image width at given mipmapLevel
  * @param[in] tcLevelHeight the T camera image height at given mipmapLevel
  * @param[in] mipmapLevel the workflow current mipmap level (e.g. SGM=1.f, Refine=0.f)
- * @param[in] gammaC the strength of grouping by color similarity
- * @param[in] gammaP the strength of grouping by proximity
+ * @param[in] invGammaC the inverted strength of grouping by color similarity
+ * @param[in] invGammaP the inverted strength of grouping by proximity
  * @param[in] useConsistentScale enable consistent scale patch comparison
  * @param[in] patch the input patch struct
  *
@@ -612,8 +612,8 @@ __device__ static float compNCCby3DptsYK_customPatchPattern(const DeviceCameraPa
                                                             const unsigned int tcLevelWidth,
                                                             const unsigned int tcLevelHeight,
                                                             const float mipmapLevel,
-                                                            const float gammaC,
-                                                            const float gammaP,
+                                                            const float invGammaC,
+                                                            const float invGammaP,
                                                             const bool useConsistentScale,
                                                             const Patch& patch)
 {
@@ -700,7 +700,7 @@ __device__ static float compNCCby3DptsYK_customPatchPattern(const DeviceCameraPa
                 // compute weighting based on color difference to the center pixel of the patch:
                 // - low value (close to 0) means that the color is different from the center pixel (ie. strongly supported surface)
                 // - high value (close to 1) means that the color is close the center pixel (ie. uniform color)
-                const float w = CostYKfromLab(rcCenterColor, rcPatchCoordColor, gammaC) * CostYKfromLab(tcCenterColor, tcPatchCoordColor, gammaC);
+                const float w = CostYKfromLab(rcCenterColor, rcPatchCoordColor, invGammaC) * CostYKfromLab(tcCenterColor, tcPatchCoordColor, invGammaC);
 
                 // update simStat
                 sst.update(rcPatchCoordColor.x, tcPatchCoordColor.x, w);
@@ -733,7 +733,7 @@ __device__ static float compNCCby3DptsYK_customPatchPattern(const DeviceCameraPa
                     // - distance in image to the center pixel of the patch:
                     //    - low value (close to 0) means that the pixel is close to the center of the patch
                     //    - high value (close to 1) means that the pixel is far from the center of the patch
-                    const float w = CostYKfromLab(xp, yp, rcCenterColor, rcPatchCoordColor, gammaC, gammaP) * CostYKfromLab(xp, yp, tcCenterColor, tcPatchCoordColor, gammaC, gammaP);
+                    const float w = CostYKfromLab(xp, yp, rcCenterColor, rcPatchCoordColor, invGammaC, invGammaP) * CostYKfromLab(xp, yp, tcCenterColor, tcPatchCoordColor, invGammaC, invGammaP);
 
                     // update simStat
                     sst.update(rcPatchCoordColor.x, tcPatchCoordColor.x, w);
