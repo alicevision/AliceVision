@@ -158,8 +158,10 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Define axes for the filtering of the similarity volume.")
         ("sgmDepthListPerTile", po::value<bool>(&sgmParams.depthListPerTile)->default_value(sgmParams.depthListPerTile),
             "Semi Global Matching: Select the list of depth planes per tile or globally to the image.")
-        ("sgmUseMultiScalePatch", po::value<bool>(&sgmParams.useMultiScalePatch)->default_value(sgmParams.useMultiScalePatch),
-            "Semi Global Matching: Use multiple downscale to compute similarity volume patch comparison.")
+        ("sgmUseConsistentScale", po::value<bool>(&sgmParams.useConsistentScale)->default_value(sgmParams.useConsistentScale),
+            "Semi Global Matching: Compare patch with consistent scale for similarity volume computation.")
+        ("sgmUseCustomPatchPattern", po::value<bool>(&sgmParams.useCustomPatchPattern)->default_value(sgmParams.useCustomPatchPattern),
+            "Semi Global Matching: Use user custom patch pattern for similarity volume computation.")
         ("refineScale", po::value<int>(&refineParams.scale)->default_value(refineParams.scale),
             "Refine: Downscale factor applied on source images for the Refine step (in addition to the global downscale).")
         ("refineStepXY", po::value<int>(&refineParams.stepXY)->default_value(refineParams.stepXY),
@@ -182,8 +184,10 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: GammaP threshold used for similarity computation.")
         ("refineInterpolateMiddleDepth", po::value<bool>(&refineParams.interpolateMiddleDepth)->default_value(refineParams.interpolateMiddleDepth),
             "Refine: Enable/Disable middle depth bilinear interpolation for the refinement process.")
-        ("refineUseMultiScalePatch", po::value<bool>(&refineParams.useMultiScalePatch)->default_value(refineParams.useMultiScalePatch),
-            "Refine: Use multiple downscale to compute similarity volume patch comparison.")
+        ("refineUseConsistentScale", po::value<bool>(&refineParams.useConsistentScale)->default_value(refineParams.useConsistentScale),
+            "Refine: Compare patch with consistent scale for similarity volume computation.")
+        ("refineUseCustomPatchPattern", po::value<bool>(&refineParams.useCustomPatchPattern)->default_value(refineParams.useCustomPatchPattern),
+            "Refine: Use user custom patch pattern for similarity volume computation.")
         ("colorOptimizationNbIterations", po::value<int>(&refineParams.optimizationNbIterations)->default_value(refineParams.optimizationNbIterations),
             "Color Optimization: Number of iterations of the optimization.")
         ("refineEnabled", po::value<bool>(&refineParams.useRefineFuse)->default_value(refineParams.useRefineFuse),
@@ -192,6 +196,10 @@ int aliceVision_main(int argc, char* argv[])
             "Enable/Disable depth/similarity map post-process color optimization.")
         ("autoAdjustSmallImage", po::value<bool>(&depthMapParams.autoAdjustSmallImage)->default_value(depthMapParams.autoAdjustSmallImage),
             "Automatically adjust depth map parameters if images are smaller than one tile (maxTCamsPerTile=maxTCams, adjust step if needed).")
+        ("customPatchPatternSubparts", po::value<std::vector<depthMap::CustomPatchPatternParams::SubpartParams>>(&depthMapParams.customPatchPattern.subpartsParams)->multitoken()->default_value(depthMapParams.customPatchPattern.subpartsParams),
+            "User custom patch pattern subparts for similarity volume computation.")
+        ("customPatchPatternGroupSubpartsPerLevel", po::value<bool>(&depthMapParams.customPatchPattern.groupSubpartsPerLevel)->default_value(depthMapParams.customPatchPattern.groupSubpartsPerLevel),
+            "Group all custom patch pattern subparts with the same image level.")
         ("exportIntermediateDepthSimMaps", po::value<bool>(&exportIntermediateDepthSimMaps)->default_value(exportIntermediateDepthSimMaps),
             "Export intermediate depth/similarity maps from the SGM and Refine steps.")
         ("exportIntermediateNormalMaps", po::value<bool>(&exportIntermediateNormalMaps)->default_value(exportIntermediateNormalMaps),
