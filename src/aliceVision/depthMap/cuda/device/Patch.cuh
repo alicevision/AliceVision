@@ -65,7 +65,7 @@ __device__ static void rotPointAroundVect(float3& out, float3& X, float3& vect, 
     out.z = z * sizeX;
 }
 
-__device__ static void rotatePatch(Patch& ptch, int rx, int ry)
+__device__ inline void rotatePatch(Patch& ptch, int rx, int ry)
 {
     float3 n, y, x;
 
@@ -82,7 +82,7 @@ __device__ static void rotatePatch(Patch& ptch, int rx, int ry)
     ptch.x = x;
 }
 
-__device__ static void movePatch(Patch& ptch, int pt)
+__device__ inline void movePatch(Patch& ptch, int pt)
 {
     // float3 v = ptch.p-rC;
     // normalize(v);
@@ -93,7 +93,7 @@ __device__ static void movePatch(Patch& ptch, int pt)
     ptch.p = p;
 }
 
-__device__ static void computeRotCS(float3& xax, float3& yax, float3& n)
+__device__ inline void computeRotCS(float3& xax, float3& yax, float3& n)
 {
     xax.x = -n.y + n.z; // get any cross product
     xax.y = +n.x + n.z;
@@ -142,6 +142,109 @@ __device__ inline float computePixSize(const DeviceCameraParams& deviceCamParams
     float3 refvect = M3x3mulV2(deviceCamParams.iP, rp1);
     normalize(refvect);
     return pointLineDistance3D(p, deviceCamParams.C, refvect);
+}
+
+__device__ inline void getPixelFor3DPoint(float2& out, const DeviceCameraParams& deviceCamParams, const float3& X)
+{
+    const float3 p = M3x4mulV3(deviceCamParams.P, X);
+
+    if(p.z <= 0.0f)
+        out = make_float2(-1.0f, -1.0f);
+    else
+        out = make_float2(p.x / p.z, p.y / p.z);
+}
+
+__device__ inline float3 get3DPointForPixelAndFrontoParellePlaneRC(const DeviceCameraParams& deviceCamParams, const float2& pix, float fpPlaneDepth)
+{
+    const float3 planep = deviceCamParams.C + deviceCamParams.ZVect * fpPlaneDepth;
+    float3 v = M3x3mulV2(deviceCamParams.iP, pix);
+    normalize(v);
+    return linePlaneIntersect(deviceCamParams.C, v, planep, deviceCamParams.ZVect);
+}
+
+__device__ inline float3 get3DPointForPixelAndDepthFromRC(const DeviceCameraParams& deviceCamParams, const float2& pix, float depth)
+{
+    float3 rpv = M3x3mulV2(deviceCamParams.iP, pix);
+    normalize(rpv);
+    return deviceCamParams.C + rpv * depth;
+}
+
+__device__ inline float3 triangulateMatchRef(const DeviceCameraParams& rcDeviceCamParams,
+                                             const DeviceCameraParams& tcDeviceCamParams,
+                                             const float2& refpix,
+                                             const float2& tarpix)
+{
+    float3 refvect = M3x3mulV2(rcDeviceCamParams.iP, refpix);
+    normalize(refvect);
+    const float3 refpoint = refvect + rcDeviceCamParams.C;
+
+    float3 tarvect = M3x3mulV2(tcDeviceCamParams.iP, tarpix);
+    normalize(tarvect);
+    const float3 tarpoint = tarvect + tcDeviceCamParams.C;
+
+    float k, l;
+    float3 lli1, lli2;
+
+    lineLineIntersect(&k, &l, &lli1, &lli2, rcDeviceCamParams.C, refpoint, tcDeviceCamParams.C, tarpoint);
+
+    return rcDeviceCamParams.C + refvect * k;
+}
+
+/**
+ * @brief Subpixel refine by Stereo Matching with Color-Weighted Correlation, Hierarchical Belief Propagation,
+ *        and Occlusion Handling Qingxiong pami08.
+ *
+ * @note Quadratic polynomial interpolation is used to approximate the cost function between
+ *       three discrete depth candidates: d, dA, and dB.
+ *
+ * @see https://pubmed.ncbi.nlm.nih.gov/19147877/
+ *
+ * @param[in] depths the 3 depths candidates (depth-1, depth, depth+1)
+ * @param[in] sims the similarity of the 3 depths candidates
+ *
+ * @return refined depth value
+ */
+__device__ static float refineDepthSubPixel(const float3& depths, const float3& sims)
+{
+    // TODO: get formula back from paper as it has been lost by encoding.
+    // d is the discrete depth with the minimal cost, dA ? d A 1, and dB ? d B 1. The cost function is approximated as
+    // f?x? ? ax2 B bx B c.
+
+    float simM1 = sims.x;
+    float sim = sims.y;
+    float simP1 = sims.z;
+    simM1 = (simM1 + 1.0f) / 2.0f;
+    sim = (sim + 1.0f) / 2.0f;
+    simP1 = (simP1 + 1.0f) / 2.0f;
+
+    // sim is supposed to be the best one (so the smallest one)
+    if((simM1 < sim) || (simP1 < sim))
+        return depths.y; // return the input
+
+    float dispStep = -((simP1 - simM1) / (2.0f * (simP1 + simM1 - 2.0f * sim)));
+
+    float floatDepthM1 = depths.x;
+    float floatDepthP1 = depths.z;
+
+    //-1 : floatDepthM1
+    // 0 : floatDepth
+    //+1 : floatDepthP1
+    // linear function fit
+    // f(x)=a*x+b
+    // floatDepthM1=-a+b
+    // floatDepthP1= a+b
+    // a = b - floatDepthM1
+    // floatDepthP1=2*b-floatDepthM1
+    float b = (floatDepthP1 + floatDepthM1) / 2.0f;
+    float a = b - floatDepthM1;
+
+    float interpDepth = a * dispStep + b;
+
+    // Ensure that the interpolated value is isfinite  (i.e. neither infinite nor NaN)
+    if(!isfinite(interpDepth) || interpDepth <= 0.0f)
+        return depths.y; // return the input
+
+    return interpDepth;
 }
 
 __device__ inline void computeRcTcMipmapLevels(float& out_rcMipmapLevel,
@@ -195,7 +298,6 @@ __device__ inline void computeRcTcMipmapLevels(float& out_rcMipmapLevel,
           out_rcMipmapLevel = mipmapLevel + abs(out_tcMipmapLevel);
           out_tcMipmapLevel = 0.f;
         }
-
     }
     else
     {
@@ -681,109 +783,6 @@ __device__ static float compNCCby3DptsYK_customPatchPattern(const DeviceCameraPa
 
     // output average similarity
     return (fsim / wsum);
-}
-
-__device__ inline void getPixelFor3DPoint(float2& out, const DeviceCameraParams& deviceCamParams, const float3& X)
-{
-    const float3 p = M3x4mulV3(deviceCamParams.P, X);
-
-    if(p.z <= 0.0f)
-        out = make_float2(-1.0f, -1.0f);
-    else
-        out = make_float2(p.x / p.z, p.y / p.z);
-}
-
-__device__ inline float3 get3DPointForPixelAndFrontoParellePlaneRC(const DeviceCameraParams& deviceCamParams, const float2& pix, float fpPlaneDepth)
-{
-    const float3 planep = deviceCamParams.C + deviceCamParams.ZVect * fpPlaneDepth;
-    float3 v = M3x3mulV2(deviceCamParams.iP, pix);
-    normalize(v);
-    return linePlaneIntersect(deviceCamParams.C, v, planep, deviceCamParams.ZVect);
-}
-
-__device__ inline float3 get3DPointForPixelAndDepthFromRC(const DeviceCameraParams& deviceCamParams, const float2& pix, float depth)
-{
-    float3 rpv = M3x3mulV2(deviceCamParams.iP, pix);
-    normalize(rpv);
-    return deviceCamParams.C + rpv * depth;
-}
-
-__device__ inline float3 triangulateMatchRef(const DeviceCameraParams& rcDeviceCamParams,
-                                             const DeviceCameraParams& tcDeviceCamParams,
-                                             const float2& refpix,
-                                             const float2& tarpix)
-{
-    float3 refvect = M3x3mulV2(rcDeviceCamParams.iP, refpix);
-    normalize(refvect);
-    const float3 refpoint = refvect + rcDeviceCamParams.C;
-
-    float3 tarvect = M3x3mulV2(tcDeviceCamParams.iP, tarpix);
-    normalize(tarvect);
-    const float3 tarpoint = tarvect + tcDeviceCamParams.C;
-
-    float k, l;
-    float3 lli1, lli2;
-
-    lineLineIntersect(&k, &l, &lli1, &lli2, rcDeviceCamParams.C, refpoint, tcDeviceCamParams.C, tarpoint);
-
-    return rcDeviceCamParams.C + refvect * k;
-}
-
-/**
- * @brief Subpixel refine by Stereo Matching with Color-Weighted Correlation, Hierarchical Belief Propagation,
- *        and Occlusion Handling Qingxiong pami08.
- *
- * @note Quadratic polynomial interpolation is used to approximate the cost function between
- *       three discrete depth candidates: d, dA, and dB.
- *
- * @see https://pubmed.ncbi.nlm.nih.gov/19147877/
- *
- * @param[in] depths the 3 depths candidates (depth-1, depth, depth+1)
- * @param[in] sims the similarity of the 3 depths candidates
- *
- * @return refined depth value
- */
-__device__ static float refineDepthSubPixel(const float3& depths, const float3& sims)
-{
-    // TODO: get formula back from paper as it has been lost by encoding.
-    // d is the discrete depth with the minimal cost, dA ? d A 1, and dB ? d B 1. The cost function is approximated as
-    // f?x? ? ax2 B bx B c.
-
-    float simM1 = sims.x;
-    float sim = sims.y;
-    float simP1 = sims.z;
-    simM1 = (simM1 + 1.0f) / 2.0f;
-    sim = (sim + 1.0f) / 2.0f;
-    simP1 = (simP1 + 1.0f) / 2.0f;
-
-    // sim is supposed to be the best one (so the smallest one)
-    if((simM1 < sim) || (simP1 < sim))
-        return depths.y; // return the input
-
-    float dispStep = -((simP1 - simM1) / (2.0f * (simP1 + simM1 - 2.0f * sim)));
-
-    float floatDepthM1 = depths.x;
-    float floatDepthP1 = depths.z;
-
-    //-1 : floatDepthM1
-    // 0 : floatDepth
-    //+1 : floatDepthP1
-    // linear function fit
-    // f(x)=a*x+b
-    // floatDepthM1=-a+b
-    // floatDepthP1= a+b
-    // a = b - floatDepthM1
-    // floatDepthP1=2*b-floatDepthM1
-    float b = (floatDepthP1 + floatDepthM1) / 2.0f;
-    float a = b - floatDepthM1;
-
-    float interpDepth = a * dispStep + b;
-
-    // Ensure that the interpolated value is isfinite  (i.e. neither infinite nor NaN)
-    if(!isfinite(interpDepth) || interpDepth <= 0.0f)
-        return depths.y; // return the input
-
-    return interpDepth;
 }
 
 } // namespace depthMap
