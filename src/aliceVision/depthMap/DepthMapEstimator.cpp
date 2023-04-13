@@ -234,10 +234,11 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     // build device cache
     const int nbTilesPerCamera = _tileRoiList.size();
     const int nbRcPerBatch = divideRoundUp(nbStreams, nbTilesPerCamera); // number of R cameras in the same batch
-    const bool hasRcSameDownscale = _sgmParams.scale ==  _refineParams.scale; // we only need one camera params per image
+    const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera; // number of tiles in the same batch
+    const bool hasRcSameDownscale = (_sgmParams.scale ==  _refineParams.scale); // we only need one camera params per image
     const bool hasRcWithoutDownscale = _sgmParams.scale == 1 || (_depthMapParams.useRefine && _refineParams.scale == 1); // we need R camera params SGM (downscale = 1)
     const int nbCameraParamsPerSgm = (1 + _depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1); // number of Sgm camera parameters per R camera
-    const int nbCameraParamsPerRefine = (_depthMapParams.useRefine || hasRcSameDownscale) ? (1 + _depthMapParams.maxTCams) : 0; // number of Refine camera parameters per R camera
+    const int nbCameraParamsPerRefine = (_depthMapParams.useRefine && !hasRcSameDownscale) ? (1 + _depthMapParams.maxTCams) : 0; // number of Refine camera parameters per R camera
     const int nbMipmapImagesPerBatch = nbRcPerBatch * (1 + _depthMapParams.maxTCams); // number of camera mipmap image in the same batch
     const int nbCamerasParamsPerBatch = nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine); // number of camera parameters in the same batch
 
@@ -299,7 +300,7 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     logDeviceMemoryInfo();
 
     // compute number of batches
-    const int nbBatches = divideRoundUp(int(tiles.size()), nbStreams);
+    const int nbBatches = divideRoundUp(int(tiles.size()), nbTilesPerBatch);
     const int minMipmapDownscale = std::min(_refineParams.scale, _sgmParams.scale);
     const int maxMipmapDownscale = std::max(_refineParams.scale, _sgmParams.scale) * std::pow(2,6); // we add 6 downscale levels
 
@@ -307,8 +308,8 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     for(int b = 0; b < nbBatches; ++b)
     {
         // find first/last tile to compute
-        const int firstTileIndex = b * nbStreams;
-        const int lastTileIndex = std::min((b + 1) * nbStreams, int(tiles.size()));
+        const int firstTileIndex = b * nbTilesPerBatch;
+        const int lastTileIndex = std::min((b + 1) * nbTilesPerBatch, int(tiles.size()));
         
         // load tile R and corresponding T cameras in device cache  
         for(int i = firstTileIndex; i < lastTileIndex; ++i)
@@ -339,11 +340,11 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
                 }
             }
 
-            if(_sgmParams.scale != 1 && (!_depthMapParams.useRefine || _refineParams.scale != 1))
+            if(!hasRcWithoutDownscale)
             {
-              // add SGM R camera at scale 1 to Device cache.
-              // R camera parameters at scale 1 are required for SGM retrieve best depth
-              deviceCache.addCameraParams(tile.rc, 1, _mp);
+                // add SGM R camera at scale 1 to Device cache.
+                // R camera parameters at scale 1 are required for SGM retrieve best depth
+                deviceCache.addCameraParams(tile.rc, 1, _mp);
             }
         }
 
