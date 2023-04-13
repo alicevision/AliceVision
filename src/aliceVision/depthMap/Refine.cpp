@@ -241,11 +241,11 @@ void Refine::refineAndFuseDepthSimMap(const Tile& tile)
     // retrieve the best depth/sim in the volume
     // compute sub-pixel sample using a sliding gaussian 
     cuda_volumeRefineBestDepth(_refinedDepthSimMap_dmp, 
-                                _sgmDepthPixSizeMap_dmp, 
-                                _volumeRefineSim_dmp,
-                                _refineParams,
-                                downscaledRoi, 
-                                _stream);
+                               _sgmDepthPixSizeMap_dmp,
+                               _volumeRefineSim_dmp,
+                               _refineParams,
+                               downscaledRoi,
+                               _stream);
     
     ALICEVISION_LOG_INFO(tile << "Refine and fuse depth/sim map volume done.");
 }
