@@ -11,8 +11,8 @@
 namespace aliceVision {
 namespace depthMap {
 
-/*
- * @class DeviceMipmapImage
+/**
+ * @class Device mipmap image
  * @brief Support class to maintain an image pyramid in gpu memory.
  */
 class DeviceMipmapImage

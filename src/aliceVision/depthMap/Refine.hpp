@@ -21,7 +21,8 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Depth Map Estimation Refine
+ * @class Depth map estimation Refine
+ * @brief Manages the calculation of the Refine step.
  */
 class Refine
 {

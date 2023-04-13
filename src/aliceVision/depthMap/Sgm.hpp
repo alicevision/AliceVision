@@ -23,7 +23,8 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Depth Map Estimation Semi-Global Matching
+ * @class Depth map estimation Semi-Global Matching
+ * @brief Manages the calculation of the Semi-Global Matching step.
  */
 class Sgm
 {

@@ -17,8 +17,8 @@
 namespace aliceVision {
 namespace depthMap {
 
-/*
- * @class DeviceCache
+/**
+ * @class Device cache
  * @brief This singleton allows to access the current gpu cache.
  */
 class DeviceCache

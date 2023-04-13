@@ -13,8 +13,8 @@
 namespace aliceVision {
 namespace depthMap {
 
-/*
- * @class DeviceStreamManager
+/**
+ * @class Device stream manager
  * @brief Small class allowing a simple management of gpu streams
  */
 class DeviceStreamManager

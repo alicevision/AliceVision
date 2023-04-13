@@ -20,7 +20,9 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Depth Map Estimator (IGPUJob)
+ * @class Depth Map Estimator
+ * @brief Wrap depth maps estimation computation.
+ * @note Allows muli-GPUs computation (interface IGPUJob)
  */
 class DepthMapEstimator : public IGPUJob
 {
