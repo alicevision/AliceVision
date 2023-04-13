@@ -104,7 +104,7 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
   if(featFilename.empty())
     throw std::runtime_error("Can't find view " + basename + " features file");
 
-  ALICEVISION_LOG_TRACE("Features filename: " << featFilename);
+  ALICEVISION_LOG_DEBUG("Features filename: " << featFilename);
 
   std::unique_ptr<feature::Regions> regionsPtr;
   imageDescriber.allocate(regionsPtr);
@@ -240,6 +240,14 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
 {
   std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(); // add sfm features folders
   featuresFolders.insert(featuresFolders.end(), folders.begin(), folders.end()); // add user features folders
+
+  ALICEVISION_LOG_DEBUG("List of provided feature folders:");
+  for (auto it = folders.begin(); it != folders.end(); ++it)
+    ALICEVISION_LOG_DEBUG("\t - " << *it);
+
+  ALICEVISION_LOG_DEBUG("List of feature folders to load:");
+  for (auto it = featuresFolders.begin(); it != featuresFolders.end(); ++it)
+    ALICEVISION_LOG_DEBUG("\t - " << *it);
 
   auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,
                                                               "Loading features\n");
