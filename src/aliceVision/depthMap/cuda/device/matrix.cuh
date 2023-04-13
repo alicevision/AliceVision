@@ -62,17 +62,28 @@ __device__ inline float3 cross(const float3& a, const float3& b)
 
 __device__ inline void normalize(float3& a)
 {
-    float d = sqrtf(dot(a, a));
-    a.x /= d;
-    a.y /= d;
-    a.z /= d;
+    // without optimization
+    // float d = sqrtf(dot(a, a));
+    // a.x /= d;
+    // a.y /= d;
+    // a.z /= d;
+
+    const float dInv = __fdividef(1.0f, sqrtf(dot(a, a)));
+    a.x *= dInv;
+    a.y *= dInv;
+    a.z *= dInv;
 }
 
 __device__ inline void normalize(float2& a)
 {
-    float d = sqrtf(dot(a, a));
-    a.x /= d;
-    a.y /= d;
+    // without optimization
+    // float d = sqrtf(dot(a, a));
+    // a.x /= d;
+    // a.y /= d;
+
+    const float dInv = __fdividef(1.0f, sqrtf(dot(a, a)));
+    a.x *= dInv;
+    a.y *= dInv;
 }
 
 __device__ inline float3 M3x3mulV3( const float* M3x3, const float3& V)
@@ -105,8 +116,13 @@ __device__ inline float2 V2M3x3mulV2(float* M3x3, float2& V)
 
 __device__ inline float2 project3DPoint(const float* M3x4, const float3& V)
 {
-    const float3 p = M3x4mulV3(M3x4, V);
-    return make_float2(p.x / p.z, p.y / p.z);
+    // without optimization
+    // const float3 p = M3x4mulV3(M3x4, V);
+    // return make_float2(p.x / p.z, p.y / p.z);
+
+    float3 p = M3x4mulV3(M3x4, V);
+    const float pzInv =  __fdividef(1.0f, p.z);
+    return make_float2(p.x * pzInv, p.y * pzInv);
 }
 
 __device__ inline void M3x3mulM3x3(float* O3x3, const float* A3x3, const float* B3x3)
