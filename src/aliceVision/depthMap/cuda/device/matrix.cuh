@@ -77,13 +77,15 @@ __device__ inline void normalize(float2& a)
 
 __device__ inline float3 M3x3mulV3( const float* M3x3, const float3& V)
 {
-    return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z, M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
+    return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z,
+                       M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
 }
 
 __device__ inline float3 M3x3mulV2( const float* M3x3, const float2& V)
 {
-    return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6], M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7],
+    return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6],
+                       M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7],
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8]);
 }
 
@@ -96,7 +98,7 @@ __device__ inline float3 M3x4mulV3(const float* M3x4, const float3& V)
 
 __device__ inline float2 V2M3x3mulV2(float* M3x3, float2& V)
 {
-    float d = M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8];
+    const float d = M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8];
     return make_float2((M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6]) / d, (M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7]) / d);
 }
 
@@ -124,10 +126,15 @@ __device__ inline void M3x3mulM3x3(float* O3x3, const float* A3x3, const float* 
 
 __device__ inline void M3x3minusM3x3(float* O3x3, float* A3x3, float* B3x3)
 {
-    for(int i = 0; i < 9; i++)
-    {
-        O3x3[i] = A3x3[i] - B3x3[i];
-    };
+    O3x3[0] = A3x3[0] - B3x3[0];
+    O3x3[1] = A3x3[1] - B3x3[1];
+    O3x3[2] = A3x3[2] - B3x3[2];
+    O3x3[3] = A3x3[3] - B3x3[3];
+    O3x3[4] = A3x3[4] - B3x3[4];
+    O3x3[5] = A3x3[5] - B3x3[5];
+    O3x3[6] = A3x3[6] - B3x3[6];
+    O3x3[7] = A3x3[7] - B3x3[7];
+    O3x3[8] = A3x3[8] - B3x3[8];
 }
 
 __device__ inline void M3x3transpose(float* O3x3, const float* A3x3)
@@ -157,11 +164,11 @@ __device__ inline void outerMultiply(float* O3x3, const float3& a, const float3&
 }
 
 __device__ inline float3 linePlaneIntersect(const float3& linePoint,
-                                                   const float3& lineVect, 
-                                                   const float3& planePoint,
-                                                   const float3& planeNormal)
+                                            const float3& lineVect,
+                                            const float3& planePoint,
+                                            const float3& planeNormal)
 {
-    float k = (dot(planePoint, planeNormal) - dot(planeNormal, linePoint)) / dot(planeNormal, lineVect);
+    const float k = (dot(planePoint, planeNormal) - dot(planeNormal, linePoint)) / dot(planeNormal, lineVect);
     return linePoint + lineVect * k;
 }
 
@@ -206,33 +213,27 @@ __device__ inline float angleBetwABandAC(const float3& A, const float3& B, const
     return float(fabs(a) / (CUDART_PI / 180.0));
 }
 
+/**
+ * @brief Calculate the line segment PaPb that is the shortest route between two lines p1-p2 and p3-p4.
+ *        Calculate also the values of mua and mub where:
+ *          -> pa = p1 + mua (p2 - p1)
+ *          -> pb = p3 + mub (p4 - p3)
+ *
+ * @note This a simple conversion to MATLAB of the C code posted by Paul Bourke at:
+ *       http://astronomy.swin.edu.au/~pbourke/geometry/lineline3d/
+ *       The author of this all too imperfect translation is Cristian Dima (csd@cmu.edu).
+ *
+ * @see https://web.archive.org/web/20060422045048/http://astronomy.swin.edu.au/~pbourke/geometry/lineline3d/
+ */
 __device__ inline float3 lineLineIntersect(float* k,
-                                                  float* l, 
-                                                  float3* lli1,
-                                                  float3* lli2, 
-                                                  const float3& p1,
-                                                  const float3& p2,
-                                                  const float3& p3, 
-                                                  const float3& p4)
+                                           float* l,
+                                           float3* lli1,
+                                           float3* lli2,
+                                           const float3& p1,
+                                           const float3& p2,
+                                           const float3& p3,
+                                           const float3& p4)
 {
-    /*
-    %  [pa, pb, mua, mub] = LineLineIntersect(p1,p2,p3,p4)
-    %
-    %   Calculates the line segment pa_pb that is the shortest route
-    %   between two lines p1_p2 and p3_p4. Calculates also the values of
-    %   mua and mub where
-    %        pa = p1 + mua (p2 - p1)
-    %        pb = p3 + mub (p4 - p3)
-    %
-    %   Returns a MATLAB error if no solution exists.
-    %
-    %   This a simple conversion to MATLAB of the C code posted by Paul
-    %   Bourke at
-    %   http://astronomy.swin.edu.au/~pbourke/geometry/lineline3d/. The
-    %   author of this all too imperfect translation is Cristian Dima
-    %   (csd@cmu.edu)
-    */
-
     float d1343, d4321, d1321, d4343, d2121, denom, numer, p13[3], p43[3], p21[3], pa[3], pb[3], muab[2];
 
     p13[0] = p1.x - p3.x;
@@ -310,8 +311,9 @@ __device__ inline float3 lineLineIntersect(float* k,
 }
 
 /**
- * f(x) = min + (max-min) * \frac{1}{1 + e^{10 * (x - mid) / width}}
- * https://www.desmos.com/calculator/1qvampwbyx
+ * @brief Sigmoid function filtering
+ * @note f(x) = min + (max-min) * \frac{1}{1 + e^{10 * (x - mid) / width}}
+ * @see https://www.desmos.com/calculator/1qvampwbyx
  */
 __device__ inline float sigmoid(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
 {
@@ -319,7 +321,8 @@ __device__ inline float sigmoid(float zeroVal, float endVal, float sigwidth, flo
 }
 
 /**
- * f(x) = min + (max-min) * \frac{1}{1 + e^{10 * (mid - x) / width}}
+ * @brief Sigmoid function filtering
+ * @note f(x) = min + (max-min) * \frac{1}{1 + e^{10 * (mid - x) / width}}
  */
 __device__ inline float sigmoid2(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
 {
