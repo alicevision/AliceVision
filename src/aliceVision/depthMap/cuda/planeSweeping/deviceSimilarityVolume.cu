@@ -14,6 +14,46 @@
 namespace aliceVision {
 namespace depthMap {
 
+/**
+ * @brief Get maximum potential block size for the given kernel function.
+ *        Provides optimal block size based on the capacity of the device.
+ *
+ * @see https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__OCCUPANCY.html
+ *
+ * @param[in] kernelFuction the given kernel function
+ *
+ * @return recommended or default block size for kernel execution
+ */
+template<class T>
+__host__ dim3 getMaxPotentialBlockSize(T kernelFuction)
+{
+    const dim3 defaultBlock(32, 1, 1); // minimal default settings
+
+    int recommendedMinGridSize;
+    int recommendedBlockSize;
+
+    cudaError_t err;
+    err = cudaOccupancyMaxPotentialBlockSize(&recommendedMinGridSize,
+                                             &recommendedBlockSize,
+                                             kernelFuction,
+                                             0, // dynamic shared mem size: none used
+                                             0); // no block size limit, 1 thread OK
+
+    if(err != cudaSuccess)
+    {
+        ALICEVISION_LOG_WARNING( "cudaOccupancyMaxPotentialBlockSize failed, using default block settings.");
+        return defaultBlock;
+    }
+
+    if(recommendedBlockSize > 32)
+    {
+        const dim3 recommendedBlock(32, divUp(recommendedBlockSize, 32), 1);
+        return recommendedBlock;
+    }
+
+    return defaultBlock;
+}
+
 __host__ void cuda_volumeInitialize(CudaDeviceMemoryPitched<TSim, 3>& inout_volume_dmp, TSim value, cudaStream_t stream)
 {
     // get input/output volume dimensions
@@ -94,7 +134,7 @@ __host__ void cuda_volumeUpdateUninitializedSimilarity(const CudaDeviceMemoryPit
     const CudaSize<3>& volDim = inout_volSecBestSim_dmp.getSize();
 
     // kernel launch parameters
-    const dim3 block(32, 4, 1);
+    const dim3 block = getMaxPotentialBlockSize(volume_updateUninitialized_kernel);
     const dim3 grid(divUp(volDim.x(), block.x), divUp(volDim.y(), block.y), volDim.z());
 
     // kernel execution
@@ -130,7 +170,7 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out
     const CudaSize<2> tcLevelDim = tcDeviceMipmapImage.getLevelDimensions(sgmParams.scale);
 
     // kernel launch parameters
-    const dim3 block(32, 1, 1); // minimal default settings
+    const dim3 block = getMaxPotentialBlockSize(volume_computeSimilarity_kernel);
     const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), depthRange.size());
 
     // kernel execution
@@ -183,7 +223,7 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
     const CudaSize<2> tcLevelDim = tcDeviceMipmapImage.getLevelDimensions(refineParams.scale);
 
     // kernel launch parameters
-    const dim3 block(32, 1, 1); // minimal default settings
+    const dim3 block = getMaxPotentialBlockSize(volume_refineSimilarity_kernel);
     const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), depthRange.size());
 
     // kernel execution
@@ -400,9 +440,8 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
     const float maxSimilarity = float(sgmParams.maxSimilarity) * 254.f; // convert from (0, 1) to (0, 254)
 
     // kernel launch parameters
-    const int blockSize = 8;
-    const dim3 block(blockSize, blockSize, 1);
-    const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
+    const dim3 block = getMaxPotentialBlockSize(volume_retrieveBestDepth_kernel);
+    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), 1);
     
     // kernel execution
     volume_retrieveBestDepth_kernel<<<grid, block, 0, stream>>>(
@@ -439,9 +478,8 @@ extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_r
     const float twoTimesSigmaPowerTwo = float(2.0 * refineParams.sigma * refineParams.sigma);
 
     // kernel launch parameters
-    const int blockSize = 8;
-    const dim3 block(blockSize, blockSize, 1);
-    const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
+    const dim3 block = getMaxPotentialBlockSize(volume_refineBestDepth_kernel);
+    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), 1);
 
     // kernel execution
     volume_refineBestDepth_kernel<<<grid, block, 0, stream>>>(
