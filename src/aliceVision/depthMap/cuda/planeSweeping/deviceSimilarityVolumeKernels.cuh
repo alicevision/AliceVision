@@ -556,12 +556,12 @@ __global__ void volume_refineBestDepth_kernel(float2* out_refineDepthSimMap_d, i
             const int rz = (vz - halfNbDepths);    // relative depth index offset
             const int zs = rz * samplesPerPixSize; // relative sample offset
 
-            // get the inversed similarity sum value
+            // get the inverted similarity sum value
             // best value is the HIGHEST
             // worst value is 0
             const float invSimSum = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, vz);
 
-            // reverse the inversed similarity sum value
+            // reverse the inverted similarity sum value
             // best value is the LOWEST
             // worst value is 0
             const float simSum = -invSimSum;
@@ -590,7 +590,7 @@ __global__ void volume_refineBestDepth_kernel(float2* out_refineDepthSimMap_d, i
 
     // write output best depth/sim
     out_bestDepthSimPtr->x = bestDepth;
-    out_bestDepthSimPtr->y = bestSampleSim; // TODO: should we convert best sample sim from (-x, 0) to (-x+1, +1) ?
+    out_bestDepthSimPtr->y = bestSampleSim;
 }
 
 template <typename T>
