@@ -17,6 +17,7 @@
 namespace aliceVision {
 namespace depthMap {
 
+template<int TRadius>
 __global__ void createMipmappedArrayLevel_kernel(cudaSurfaceObject_t out_currentLevel_surf,
                                                  cudaTextureObject_t in_previousLevel_tex,
                                                  unsigned int width,
@@ -34,12 +35,15 @@ __global__ void createMipmappedArrayLevel_kernel(cudaSurfaceObject_t out_current
     float4 sumColor = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
     float sumFactor = 0.0f;
 
-    for(int i = -2; i <= 2; i++)
+#pragma unroll
+    for(int i = -TRadius; i <= TRadius; i++)
     {
-        for(int j = -2; j <= 2; j++)
+
+#pragma unroll
+        for(int j = -TRadius; j <= TRadius; j++)
         {
             // domain factor
-            const float factor = getGauss(1, i + 2) * getGauss(1, j + 2);
+            const float factor = getGauss(1, i + TRadius) * getGauss(1, j + TRadius);
 
             // normalized coordinates
             const float u = (x + j + 0.5f) * px;
@@ -314,7 +318,7 @@ __host__ void cuda_createMipmappedArrayFromImage(cudaMipmappedArray_t* out_mipma
             const dim3 block(16, 16, 1);
             const dim3 grid(divUp(width, block.x), divUp(height, block.y), 1);
 
-            createMipmappedArrayLevel_kernel<<<grid, block>>>(currentLevel_surf, previousLevel_tex, (unsigned int)(width), (unsigned int)(height));
+            createMipmappedArrayLevel_kernel<2 /* radius */><<<grid, block>>>(currentLevel_surf, previousLevel_tex, (unsigned int)(width), (unsigned int)(height));
         }
 
         // wait for kernel completion
