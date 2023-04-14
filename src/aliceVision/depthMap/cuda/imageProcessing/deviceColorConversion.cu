@@ -24,13 +24,18 @@ __global__ void rgb2lab_kernel(CudaRGBA* inout_img_d,
     if((x >= width) || (y >= height))
         return;
 
-    // corresponding input RGB
+    // corresponding input CudaRGBA
     CudaRGBA* rgb = get2DBufferAt(inout_img_d, inout_img_p, x, y);
 
-    // compute output LAB
-    float3 flab = xyz2lab(rgb2xyz(make_float3(float(rgb->x) / 255.f, float(rgb->y) / 255.f, float(rgb->z) / 255.f)));
+    // CudaRGBA (uchar4 or float4) in range (0, 255)
+    // rgb2xyz needs RGB in range (0, 1)
+    constexpr float d = 1 / 255.f;
 
-    // write output LAB
+    // compute output CIELAB
+    // RGB(0, 255) to XYZ(0, 1) to CIELAB(0, 255)
+    float3 flab = xyz2lab(rgb2xyz(make_float3(float(rgb->x) * d, float(rgb->y) * d, float(rgb->z) * d)));
+
+    // write output CIELAB
     rgb->x = flab.x;
     rgb->y = flab.y;
     rgb->z = flab.z;
