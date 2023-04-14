@@ -124,10 +124,10 @@ __device__ inline void computeRotCSEpip(Patch& ptch,
     // x has to be on the epipolar plane
 
     ptch.y = cross(v1, v2);
-    normalize(ptch.y);
+    normalize(ptch.y); // TODO: v1 & v2 are already normalized
 
     ptch.n = (v1 + v2) / 2.0f; // IMPORTANT !!!
-    normalize(ptch.n);
+    normalize(ptch.n); // TODO: v1 & v2 are already normalized
     // ptch.n = sg_s_r.ZVect; //IMPORTANT !!!
 
     ptch.x = cross(ptch.y, ptch.n);
@@ -698,15 +698,12 @@ __device__ static float compNCCby3DptsYK_customPatchPattern(const DeviceCameraPa
         }
         else // full patch pattern
         {
-            // scale patch size if needed
-            const float wshSize = powf(2.f, subpart.level);
-
             for(int yp = -subpart.wsh; yp <= subpart.wsh; ++yp)
             {
                 for(int xp = -subpart.wsh; xp <= subpart.wsh; ++xp)
                 {
                     // get 3d point
-                    const float3 p = patch.p + patch.x * float(patch.d * float(xp) * wshSize) + patch.y * float(patch.d * float(yp) * wshSize);
+                    const float3 p = patch.p + patch.x * float(patch.d * float(xp) * subpart.downscale) + patch.y * float(patch.d * float(yp) * subpart.downscale);
 
                     // get R and T image 2d coordinates from 3d point
                     const float2 rpc = project3DPoint(rcDeviceCamParams.P, p);

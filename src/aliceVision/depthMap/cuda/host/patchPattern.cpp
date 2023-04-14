@@ -152,6 +152,7 @@ void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams)
             }
 
             subpart.level = subpartParams.level;
+            subpart.downscale = std::pow(2.f, subpart.level);
             subpart.weight = subpartParams.weight;
             subpart.isCircle = subpartParams.isCircle;
         }
@@ -190,6 +191,7 @@ void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams)
             }
 
             subpart.level = subpartParams.level;
+            subpart.downscale = std::pow(2.f, subpart.level);
             subpart.weight = subpartParams.weight;
             subpart.isCircle = subpartParams.isCircle;
         }
@@ -208,6 +210,7 @@ void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams)
 
             ss << "\t    - subpart " << i << ":" << std::endl
                << "\t        - level: " << subpart.level << std::endl
+               << "\t        - downscale: " << subpart.downscale << std::endl
                << "\t        - weight: " << subpart.weight << std::endl
                << "\t        - wsh: " << subpart.wsh << std::endl;
 
