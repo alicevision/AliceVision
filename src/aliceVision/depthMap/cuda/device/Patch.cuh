@@ -502,19 +502,6 @@ __device__ static float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamPa
     const float tcInvLevelWidth  = 1.f / float(tcLevelWidth);
     const float tcInvLevelHeight = 1.f / float(tcLevelHeight);
 
-    // get patch center pixel alpha at the given mipmap image level
-    const float rcAlpha = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, mipmapLevel).w; // alpha only
-    const float tcAlpha = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, mipmapLevel).w; // alpha only
-
-    // check the alpha values of the patch pixel center of R and T cameras
-    // for the R camera, alpha should be at least 0.9f (computation area)
-    // for the T camera, alpha should be at least 0.4f (masking)
-    // TODO: check alpha in range (0, 1)
-    if(rcAlpha < 0.9f || tcAlpha < 0.4f)
-    {
-        return CUDART_INF_F; // masked
-    }
-
     // initialize R and T mipmap image level at the given mipmap image level
     float rcMipmapLevel = mipmapLevel;
     float tcMipmapLevel = mipmapLevel;
@@ -531,6 +518,12 @@ __device__ static float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamPa
     // compute patch center color (CIELAB) at R and T mipmap image level
     const float4 rcCenterColor = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, rcMipmapLevel);
     const float4 tcCenterColor = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, tcMipmapLevel);
+
+    // check the alpha values of the patch pixel center of the R and T cameras
+    if(rcCenterColor.w < ALICEVISION_DEPTHMAP_RC_MIN_ALPHA || tcCenterColor.w < ALICEVISION_DEPTHMAP_TC_MIN_ALPHA)
+    {
+        return CUDART_INF_F; // masked
+    }
 
     // compute patch (wsh*2+1)x(wsh*2+1)
     for(int yp = -wsh; yp <= wsh; ++yp)
@@ -644,13 +637,10 @@ __device__ static float compNCCby3DptsYK_customPatchPattern(const DeviceCameraPa
     const float rcAlpha = tex2DLod<float4>(rcMipmapImage_tex, (rp.x + 0.5f) * rcInvLevelWidth, (rp.y + 0.5f) * rcInvLevelHeight, mipmapLevel).w; // alpha only
     const float tcAlpha = tex2DLod<float4>(tcMipmapImage_tex, (tp.x + 0.5f) * tcInvLevelWidth, (tp.y + 0.5f) * tcInvLevelHeight, mipmapLevel).w; // alpha only
 
-    // check the alpha values of the patch pixel center of R and T cameras
-    // for the R camera, alpha should be at least 0.9f (computation area)
-    // for the T camera, alpha should be at least 0.4f (masking)
-    // TODO: check alpha in range (0, 1)
-    if(rcAlpha < 0.9f || tcAlpha < 0.4f)
+    // check the alpha values of the patch pixel center of the R and T cameras
+    if(rcAlpha < ALICEVISION_DEPTHMAP_RC_MIN_ALPHA || tcAlpha < ALICEVISION_DEPTHMAP_TC_MIN_ALPHA)
     {
-        return CUDART_INF_F; // uninitialized
+        return CUDART_INF_F; // masked
     }
 
     // initialize R and T mipmap image level at the given mipmap image level

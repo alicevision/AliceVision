@@ -298,8 +298,8 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(float2* out_up
     // corresponding output upscaled depth/pixSize map
     float2* out_depthPixSize = get2DBufferAt(out_upscaledDepthPixSizeMap_d, out_upscaledDepthPixSizeMap_p, roiX, roiY);
 
-    // filter masked pixels (alpha < 0.9f)
-    if(tex2DLod<float4>(rcMipmapImage_tex, (float(x) + 0.5f) / float(rcLevelWidth), (float(y) + 0.5f) / float(rcLevelHeight), rcMipmapLevel).w < 0.9f)
+    // filter masked pixels with alpha
+    if(tex2DLod<float4>(rcMipmapImage_tex, (float(x) + 0.5f) / float(rcLevelWidth), (float(y) + 0.5f) / float(rcLevelHeight), rcMipmapLevel).w < ALICEVISION_DEPTHMAP_RC_MIN_ALPHA)
     {
         *out_depthPixSize = make_float2(-2.f, 0.f);
         return;
