@@ -27,7 +27,7 @@ struct Patch
     float d;  //< pixel size
 };
 
-__device__ static void rotPointAroundVect(float3& out, float3& X, float3& vect, int angle)
+__device__ inline void rotPointAroundVect(float3& out, float3& X, float3& vect, int angle)
 {
     double ux, uy, uz, vx, vy, vz, wx, wy, wz, sa, ca, x, y, z, u, v, w;
 
@@ -204,7 +204,7 @@ __device__ inline float3 triangulateMatchRef(const DeviceCameraParams& rcDeviceC
  *
  * @return refined depth value
  */
-__device__ static float refineDepthSubPixel(const float3& depths, const float3& sims)
+__device__ inline float refineDepthSubPixel(const float3& depths, const float3& sims)
 {
     // TODO: get formula back from paper as it has been lost by encoding.
     // d is the discrete depth with the minimal cost, dA ? d A 1, and dB ? d B 1. The cost function is approximated as
@@ -313,7 +313,7 @@ __device__ inline int angleBetwUnitV1andUnitV2(float3& V1, float3& V2)
 }
 
 /*
-__device__ static float getRefCamPixSize(Patch &ptch)
+__device__ inline float getRefCamPixSize(Patch &ptch)
 {
         float2 rp = project3DPoint(sg_s_r.P,ptch.p);
 
@@ -333,7 +333,7 @@ __device__ static float getRefCamPixSize(Patch &ptch)
         return minstep;
 }
 
-__device__ static float getTarCamPixSize(Patch &ptch)
+__device__ inline float getTarCamPixSize(Patch &ptch)
 {
         float2 tp = project3DPoint(sg_s_t.P,ptch.p);
 
@@ -353,13 +353,13 @@ __device__ static float getTarCamPixSize(Patch &ptch)
         return minstep;
 }
 
-__device__ static float getPatchPixSize(Patch &ptch)
+__device__ inline float getPatchPixSize(Patch &ptch)
 {
         return fmaxf(getTarCamPixSize(ptch),getRefCamPixSize(ptch));
 }
 */
 
-__device__ static void computeHomography(float* out_H,
+__device__ inline void computeHomography(float* out_H,
                                          const DeviceCameraParams& rcDeviceCamParams,
                                          const DeviceCameraParams& tcDeviceCamParams,
                                          const float3& in_p,
@@ -464,7 +464,7 @@ __device__ static float compNCCbyH(const DeviceCameraParams& rcDeviceCamParams,
  *          -> invalid/uninitialized/masked similarity: CUDART_INF_F
  */
 template<bool TInvertAndFilter>
-__device__ static float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamParams,
+__device__ inline float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamParams,
                                          const DeviceCameraParams& tcDeviceCamParams,
                                          const cudaTextureObject_t rcMipmapImage_tex,
                                          const cudaTextureObject_t tcMipmapImage_tex,
@@ -596,7 +596,7 @@ __device__ static float compNCCby3DptsYK(const DeviceCameraParams& rcDeviceCamPa
  *          -> invalid/uninitialized/masked similarity: CUDART_INF_F
  */
 template<bool TInvertAndFilter>
-__device__ static float compNCCby3DptsYK_customPatchPattern(const DeviceCameraParams& rcDeviceCamParams,
+__device__ inline float compNCCby3DptsYK_customPatchPattern(const DeviceCameraParams& rcDeviceCamParams,
                                                             const DeviceCameraParams& tcDeviceCamParams,
                                                             const cudaTextureObject_t rcMipmapImage_tex,
                                                             const cudaTextureObject_t tcMipmapImage_tex,
