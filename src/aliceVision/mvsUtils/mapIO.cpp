@@ -499,11 +499,22 @@ void writeMapToFileOrTile(int rc,
         metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", maxDepth));
     }
 
-    // write map
+
+    // set colorspace
     image::ImageWriteOptions mapWriteOptions;
     mapWriteOptions.toColorSpace(image::EImageColorSpace::NO_CONVERSION);
-    mapWriteOptions.storageDataType((fileType == EFileType::depthMap) ? image::EStorageDataType::Float : image::EStorageDataType::Half);
 
+    // set storage type
+    if((fileType == EFileType::depthMap) || (fileType == EFileType::depthMapFiltered))
+    {
+        mapWriteOptions.storageDataType(image::EStorageDataType::Float);
+    }
+    else
+    {
+        mapWriteOptions.storageDataType(image::EStorageDataType::Half);
+    }
+
+    // write map
     image::writeImage(mapPath,
                       in_map,
                       mapWriteOptions,
