@@ -195,7 +195,7 @@ struct ImageReadOptions
         ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawWhiteBalancing,
         const std::string& colorProfile = "", const bool useDCPColorMatrixOnly = true, const oiio::ROI& roi = oiio::ROI()) :
         workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), useDCPColorMatrixOnly(useDCPColorMatrixOnly),
-        doWBAfterDemosaicing(false), demosaicingAlgo("AHD"), highlightMode(0), subROI(roi)
+        doWBAfterDemosaicing(false), demosaicingAlgo("AHD"), highlightMode(0), rawAutoBright(false), rawExposureAdjustment(1.0), subROI(roi)
     {
     }
 
@@ -206,6 +206,8 @@ struct ImageReadOptions
     bool doWBAfterDemosaicing;
     std::string demosaicingAlgo;
     int highlightMode;
+    bool rawAutoBright;
+    float rawExposureAdjustment;
     //ROI for this image.
     //If the image contains an roi, this is the roi INSIDE the roi.
     oiio::ROI subROI;

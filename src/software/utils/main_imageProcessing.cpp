@@ -294,7 +294,8 @@ struct ProcessingParams
     bool reconstructedViewsOnly = false;
     bool keepImageFilename = false;
     bool exposureCompensation = false;
-    float exposureAdjust = 0.0;
+    bool rawAutoBright = false;
+    float rawExposureAdjust = 0.0;
     EImageFormat outputFormat = EImageFormat::RGBA;
     float scaleFactor = 1.0f;
     unsigned int maxWidth = 0;
@@ -819,8 +820,11 @@ int aliceVision_main(int argc, char * argv[])
         ("exposureCompensation", po::value<bool>(&pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
          "Exposure Compensation. Valid only if a sfmdata is set as input.")
 
-        ("exposureAdjust", po::value<float>(&pParams.exposureAdjust)->default_value(pParams.exposureAdjust),
-         "Exposure Adjustment in fstops.")
+        ("rawExposureAdjust", po::value<float>(&pParams.rawExposureAdjust)->default_value(pParams.rawExposureAdjust),
+         "Exposure Adjustment in fstops limited to the range from -2 to +3 fstops.")
+
+        ("rawAutoBright", po::value<bool>(&pParams.rawAutoBright)->default_value(pParams.rawAutoBright),
+         "Enable automatic exposure adjustment for raw images.")
 
         ("lensCorrection", po::value<LensCorrectionParams>(&pParams.lensCorrection)->default_value(pParams.lensCorrection),
             "Lens Correction parameters:\n"
@@ -1059,6 +1063,8 @@ int aliceVision_main(int argc, char * argv[])
                 options.colorProfileFileName = view.getColorProfileFileName();
                 options.demosaicingAlgo = demosaicingAlgo;
                 options.highlightMode = highlightMode;
+                options.rawExposureAdjustment = powf(2.f, pParams.rawExposureAdjust);
+                options.rawAutoBright = pParams.rawAutoBright;
             }
 
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
@@ -1074,8 +1080,6 @@ int aliceVision_main(int argc, char * argv[])
             image::Image<image::RGBAfColor> image;
             image::readImage(viewPath, image, options);
 
-            float exposureAdjustment = 1.0;
-
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
             {
@@ -1085,15 +1089,7 @@ int aliceVision_main(int argc, char * argv[])
                 const float exposureAdjustment = float(medianCameraExposure / cameraExposure);
 
                 ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureAdjustment);
-            }
 
-            if (pParams.exposureAdjust != 0.0)
-            {
-                exposureAdjustment *= powf(2.f, pParams.exposureAdjust);
-            }
-
-            if (pParams.exposureCompensation || pParams.exposureAdjust != 0.0)
-            {
                 for (int i = 0; i < image.Width() * image.Height(); ++i)
                 {
                     image(i)[0] *= exposureAdjustment;
@@ -1290,6 +1286,8 @@ int aliceVision_main(int argc, char * argv[])
                 readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
                 readOptions.demosaicingAlgo = demosaicingAlgo;
                 readOptions.highlightMode = highlightMode;
+                readOptions.rawExposureAdjustment = powf(2.f, pParams.rawExposureAdjust);
+                readOptions.rawAutoBright = pParams.rawAutoBright;
 
                 pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                 if (pParams.applyDcpMetadata)
@@ -1303,17 +1301,6 @@ int aliceVision_main(int argc, char * argv[])
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, readOptions);
-
-            if (pParams.exposureAdjust != 0.0)
-            {
-                const float exposureAdjustment = powf(2.f, pParams.exposureAdjust);
-                for (int i = 0; i < image.Width() * image.Height(); ++i)
-                {
-                    image(i)[0] *= exposureAdjustment;
-                    image(i)[1] *= exposureAdjustment;
-                    image(i)[2] *= exposureAdjustment;
-                }
-            }
 
             // Image processing
             processImage(image, pParams, md);
