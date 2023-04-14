@@ -1089,7 +1089,7 @@ int aliceVision_main(int argc, char * argv[])
 
             if (pParams.exposureAdjust != 0.0)
             {
-                exposureAdjustment *= std::powf(2.0, pParams.exposureAdjust);
+                exposureAdjustment *= std::powf(static_cast<float>(2.0), pParams.exposureAdjust);
             }
 
             if (pParams.exposureCompensation || pParams.exposureAdjust != 0.0)
@@ -1306,7 +1306,7 @@ int aliceVision_main(int argc, char * argv[])
 
             if (pParams.exposureAdjust != 0.0)
             {
-                const float exposureAdjustment = std::powf(2.0, pParams.exposureAdjust);
+                const float exposureAdjustment = std::powf(static_cast<float>(2.0), pParams.exposureAdjust);
                 for (int i = 0; i < image.Width() * image.Height(); ++i)
                 {
                     image(i)[0] *= exposureAdjustment;
