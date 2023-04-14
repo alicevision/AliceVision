@@ -118,7 +118,7 @@ __host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<flo
 
     // get R mipmap image level and dimensions
     const float rcMipmapLevel = rcDeviceMipmapImage.getLevel(refineParams.scale);
-    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getLevelDimensions(refineParams.scale);
+    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getDimensions(refineParams.scale);
 
     // kernel launch parameters
     const int blockSize = 16;
@@ -203,7 +203,7 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
 {
     // get R mipmap image level and dimensions
     const float rcMipmapLevel = rcDeviceMipmapImage.getLevel(refineParams.scale);
-    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getLevelDimensions(refineParams.scale);
+    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getDimensions(refineParams.scale);
 
     // initialize depth/sim map optimized with SGM depth/pixSize map
     out_optimizeDepthSimMap_dmp.copyFrom(in_sgmDepthPixSizeMap_dmp, stream);

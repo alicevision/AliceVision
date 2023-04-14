@@ -51,7 +51,7 @@ public:
      * @note throw if the given downscale is not contained in the mipmap image
      * @return corresponding mipmap image downscale level dimensions
      */
-    CudaSize<2> getLevelDimensions(unsigned int downscale) const;
+    CudaSize<2> getDimensions(unsigned int downscale) const;
 
     /**
      * @brief Get device mipmap image minimum (first) downscale level.

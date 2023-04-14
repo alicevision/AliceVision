@@ -100,7 +100,7 @@ float DeviceMipmapImage::getLevel(unsigned int downscale) const
 }
 
 
-CudaSize<2> DeviceMipmapImage::getLevelDimensions(unsigned int downscale) const
+CudaSize<2> DeviceMipmapImage::getDimensions(unsigned int downscale) const
 {
   // check given downscale
   if(downscale < _minDownscale || downscale > _maxDownscale)

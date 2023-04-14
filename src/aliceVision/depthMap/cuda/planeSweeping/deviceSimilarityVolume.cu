@@ -166,8 +166,8 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out
 {
     // get mipmap images level and dimensions
     const float rcMipmapLevel = rcDeviceMipmapImage.getLevel(sgmParams.scale);
-    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getLevelDimensions(sgmParams.scale);
-    const CudaSize<2> tcLevelDim = tcDeviceMipmapImage.getLevelDimensions(sgmParams.scale);
+    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getDimensions(sgmParams.scale);
+    const CudaSize<2> tcLevelDim = tcDeviceMipmapImage.getDimensions(sgmParams.scale);
 
     // kernel launch parameters
     const dim3 block = getMaxPotentialBlockSize(volume_computeSimilarity_kernel);
@@ -219,8 +219,8 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
 {
     // get mipmap images level and dimensions
     const float rcMipmapLevel = rcDeviceMipmapImage.getLevel(refineParams.scale);
-    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getLevelDimensions(refineParams.scale);
-    const CudaSize<2> tcLevelDim = tcDeviceMipmapImage.getLevelDimensions(refineParams.scale);
+    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getDimensions(refineParams.scale);
+    const CudaSize<2> tcLevelDim = tcDeviceMipmapImage.getDimensions(refineParams.scale);
 
     // kernel launch parameters
     const dim3 block = getMaxPotentialBlockSize(volume_refineSimilarity_kernel);
@@ -386,7 +386,7 @@ __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFi
 {
     // get R mipmap image level and dimensions
     const float rcMipmapLevel = rcDeviceMipmapImage.getLevel(sgmParams.scale);
-    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getLevelDimensions(sgmParams.scale);
+    const CudaSize<2> rcLevelDim = rcDeviceMipmapImage.getDimensions(sgmParams.scale);
 
     // update aggregation volume
     int npaths = 0;
