@@ -306,7 +306,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
         int w = _mp.getWidth(rc) / scaleuse;
 
         image::Image<float> rcdepthMap;
-        mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMap, rcdepthMap, scale);
+        mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMapFiltered, rcdepthMap, scale);
 
         if (rcdepthMap.size() < w * h)
             throw std::runtime_error("Invalid image size");
