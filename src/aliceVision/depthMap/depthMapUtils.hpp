@@ -68,21 +68,21 @@ void writeNormalMapFiltered(int rc,
                             const std::string& name = "");
 
 /**
- * @brief Write a depth/thikness map on disk from device memory.
+ * @brief Write a depth/thickness map on disk from device memory.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
  * @param[in] tileParams tile workflow parameters
  * @param[in] roi the 2d region of interest without any downscale apply
- * @param[in] in_depthThiknessMap_dmp the depth/thikness map in device memory
- * @param[in] scale the depth/thikness map downscale factor
- * @param[in] step the depth/thikness map step factor
+ * @param[in] in_depthThicknessMap_dmp the depth/thickness map in device memory
+ * @param[in] scale the depth/thickness map downscale factor
+ * @param[in] step the depth/thickness map step factor
  * @param[in] name the export filename suffix
  */
-void writeDepthThiknessMap(int rc,
+void writeDepthThicknessMap(int rc,
                            const mvsUtils::MultiViewParams& mp,
                            const mvsUtils::TileParams& tileParams,
                            const ROI& roi,
-                           const CudaDeviceMemoryPitched<float2, 2>& in_depthThiknessMap_dmp,
+                           const CudaDeviceMemoryPitched<float2, 2>& in_depthThicknessMap_dmp,
                            int scale,
                            int step,
                            const std::string& name = "");
@@ -170,14 +170,14 @@ void mergeNormalMapTiles(int rc,
                          const std::string& name = "");
 
 /**
- * @brief Merge depth/thikness map tiles on disk.
+ * @brief Merge depth/thickness map tiles on disk.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[in] scale the depth/thikness map downscale factor
- * @param[in] step the depth/thikness map step factor
+ * @param[in] scale the depth/thickness map downscale factor
+ * @param[in] step the depth/thickness map step factor
  * @param[in] name the export filename suffix
  */
-void mergeDepthThiknessMapTiles(int rc,
+void mergeDepthThicknessMapTiles(int rc,
                                 const mvsUtils::MultiViewParams& mp,
                                 int scale,
                                 int step,

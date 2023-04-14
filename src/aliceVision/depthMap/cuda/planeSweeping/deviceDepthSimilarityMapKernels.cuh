@@ -13,7 +13,7 @@
 #include <aliceVision/depthMap/cuda/device/eig33.cuh>
 #include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
 
-// compute per pixel pixSize instead of using Sgm depth thikness
+// compute per pixel pixSize instead of using Sgm depth thickness
 //#define ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
 
 namespace aliceVision {
@@ -148,9 +148,9 @@ __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
     *get2DBufferAt(out_upscaledMap_d, out_upscaledMap_p, x, y) = *get2DBufferAt(in_map_d, in_map_p, xp, yp);
 }
 
-__global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknessMap_d, int inout_depthThiknessMap_p,
-                                                      const float minThiknessInflate,
-                                                      const float maxThiknessInflate,
+__global__ void depthThicknessMapSmoothThickness_kernel(float2* inout_depthThicknessMap_d, int inout_depthThicknessMap_p,
+                                                      const float minThicknessInflate,
+                                                      const float maxThicknessInflate,
                                                       const ROI roi)
 {
     const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -159,15 +159,15 @@ __global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknes
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    // corresponding output depth/thikness (depth unchanged)
-    float2* inout_depthThikness = get2DBufferAt(inout_depthThiknessMap_d, inout_depthThiknessMap_p, roiX, roiY);
+    // corresponding output depth/thickness (depth unchanged)
+    float2* inout_depthThickness = get2DBufferAt(inout_depthThicknessMap_d, inout_depthThicknessMap_p, roiX, roiY);
 
     // depth invalid or masked
-    if(inout_depthThikness->x <= 0.0f)
+    if(inout_depthThickness->x <= 0.0f)
         return;
 
-    const float minThikness = minThiknessInflate * inout_depthThikness->y;
-    const float maxThikness = maxThiknessInflate * inout_depthThikness->y;
+    const float minThickness = minThicknessInflate * inout_depthThickness->y;
+    const float maxThickness = maxThicknessInflate * inout_depthThickness->y;
 
     // compute average depth distance to the center pixel
     float sumCenterDepthDist = 0.f;
@@ -189,14 +189,14 @@ __global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknes
                 continue;
             }
 
-            // corresponding path depth/thikness
-            const float2 in_depthThiknessPatch = *get2DBufferAt(inout_depthThiknessMap_d, inout_depthThiknessMap_p, roiXp, roiYp);
+            // corresponding path depth/thickness
+            const float2 in_depthThicknessPatch = *get2DBufferAt(inout_depthThicknessMap_d, inout_depthThicknessMap_p, roiXp, roiYp);
 
             // patch depth valid
-            if(in_depthThiknessPatch.x > 0.0f)
+            if(in_depthThicknessPatch.x > 0.0f)
             {
-                const float depthDistance = abs(inout_depthThikness->x - in_depthThiknessPatch.x);
-                sumCenterDepthDist += max(minThikness, min(maxThikness, depthDistance)); // clamp (minThikness, maxThikness)
+                const float depthDistance = abs(inout_depthThickness->x - in_depthThicknessPatch.x);
+                sumCenterDepthDist += max(minThickness, min(maxThickness, depthDistance)); // clamp (minThickness, maxThickness)
                 ++nbValidPatchPixels;
             }
         }
@@ -206,11 +206,11 @@ __global__ void depthThiknessMapSmoothThikness_kernel(float2* inout_depthThiknes
     if(nbValidPatchPixels < 3)
         return;
 
-    // write output smooth thikness
-    inout_depthThikness->y = sumCenterDepthDist / nbValidPatchPixels;
+    // write output smooth thickness
+    inout_depthThickness->y = sumCenterDepthDist / nbValidPatchPixels;
 }
 __global__ void computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel(float2* out_upscaledDepthPixSizeMap_d, int out_upscaledDepthPixSizeMap_p,
-                                                                         const float2* in_sgmDepthThiknessMap_d, const int in_sgmDepthThiknessMap_p,
+                                                                         const float2* in_sgmDepthThicknessMap_d, const int in_sgmDepthThicknessMap_p,
                                                                          const int rcDeviceCameraParamsId, // useful for direct pixSize computation
                                                                          const cudaTextureObject_t rcMipmapImage_tex,
                                                                          const unsigned int rcLevelWidth,
@@ -241,7 +241,7 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel(float2*
         return;
     }
 
-    // find corresponding depth/thikness
+    // find corresponding depth/thickness
     // nearest neighbor, no interpolation
     const float oy = (float(roiY) - 0.5f) * ratio;
     const float ox = (float(roiX) - 0.5f) * ratio;
@@ -252,29 +252,29 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel(float2*
     xp = min(xp, int(roi.width()  * ratio) - 1);
     yp = min(yp, int(roi.height() * ratio) - 1);
 
-    const float2 out_depthThikness = *get2DBufferAt(in_sgmDepthThiknessMap_d, in_sgmDepthThiknessMap_p, xp, yp);
+    const float2 out_depthThickness = *get2DBufferAt(in_sgmDepthThicknessMap_d, in_sgmDepthThicknessMap_p, xp, yp);
 
 #ifdef ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
     // R camera parameters
     const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
 
     // get rc 3d point
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(float(x), float(y)), out_depthThikness.x);
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(float(x), float(y)), out_depthThickness.x);
 
     // compute and write rc 3d point pixSize
     const float out_pixSize = computePixSize(rcDeviceCamParams, p);
 #else
-    // compute pixSize from depth thikness
-    const float out_pixSize = out_depthThikness.y / halfNbDepths;
+    // compute pixSize from depth thickness
+    const float out_pixSize = out_depthThickness.y / halfNbDepths;
 #endif
 
     // write output depth/pixSize
-    out_depthPixSize->x = out_depthThikness.x;
+    out_depthPixSize->x = out_depthThickness.x;
     out_depthPixSize->y = out_pixSize;
 }
 
 __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(float2* out_upscaledDepthPixSizeMap_d, int out_upscaledDepthPixSizeMap_p,
-                                                                  const float2* in_sgmDepthThiknessMap_d, const int in_sgmDepthThiknessMap_p,
+                                                                  const float2* in_sgmDepthThicknessMap_d, const int in_sgmDepthThicknessMap_p,
                                                                   const int rcDeviceCameraParamsId, // useful for direct pixSize computation
                                                                   const cudaTextureObject_t rcMipmapImage_tex,
                                                                   const unsigned int rcLevelWidth,
@@ -315,44 +315,44 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(float2* out_up
     xp = min(xp, int(roi.width()  * ratio) - 2);
     yp = min(yp, int(roi.height() * ratio) - 2);
 
-    const float2 lu = *get2DBufferAt(in_sgmDepthThiknessMap_d, in_sgmDepthThiknessMap_p, xp, yp);
-    const float2 ru = *get2DBufferAt(in_sgmDepthThiknessMap_d, in_sgmDepthThiknessMap_p, xp + 1, yp);
-    const float2 rd = *get2DBufferAt(in_sgmDepthThiknessMap_d, in_sgmDepthThiknessMap_p, xp + 1, yp + 1);
-    const float2 ld = *get2DBufferAt(in_sgmDepthThiknessMap_d, in_sgmDepthThiknessMap_p, xp, yp + 1);
+    const float2 lu = *get2DBufferAt(in_sgmDepthThicknessMap_d, in_sgmDepthThicknessMap_p, xp, yp);
+    const float2 ru = *get2DBufferAt(in_sgmDepthThicknessMap_d, in_sgmDepthThicknessMap_p, xp + 1, yp);
+    const float2 rd = *get2DBufferAt(in_sgmDepthThicknessMap_d, in_sgmDepthThicknessMap_p, xp + 1, yp + 1);
+    const float2 ld = *get2DBufferAt(in_sgmDepthThicknessMap_d, in_sgmDepthThicknessMap_p, xp, yp + 1);
 
-    // find corresponding depth/thikness
-    float2 out_depthThikness;
+    // find corresponding depth/thickness
+    float2 out_depthThickness;
 
     if(lu.x <= 0.0f || ru.x <= 0.0f || rd.x <= 0.0f || ld.x <= 0.0f)
     {
         // at least one corner depth is invalid
-        // average the other corners to get a proper depth/thikness
-        float2 sumDepthThikness = {0.0f, 0.0f};
+        // average the other corners to get a proper depth/thickness
+        float2 sumDepthThickness = {0.0f, 0.0f};
         int count = 0;
 
         if(lu.x > 0.0f)
         {
-            sumDepthThikness = sumDepthThikness + lu;
+            sumDepthThickness = sumDepthThickness + lu;
             ++count;
         }
         if(ru.x > 0.0f)
         {
-            sumDepthThikness = sumDepthThikness + ru;
+            sumDepthThickness = sumDepthThickness + ru;
             ++count;
         }
         if(rd.x > 0.0f)
         {
-            sumDepthThikness = sumDepthThikness + rd;
+            sumDepthThickness = sumDepthThickness + rd;
             ++count;
         }
         if(ld.x > 0.0f)
         {
-            sumDepthThikness = sumDepthThikness + ld;
+            sumDepthThickness = sumDepthThickness + ld;
             ++count;
         }
         if(count != 0)
         {
-            out_depthThikness = {sumDepthThikness.x / float(count), sumDepthThikness.y / float(count)};
+            out_depthThickness = {sumDepthThickness.x / float(count), sumDepthThickness.y / float(count)};
         }
         else
         {
@@ -368,7 +368,7 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(float2* out_up
         const float vi = oy - float(yp);
         const float2 u = lu + (ru - lu) * ui;
         const float2 d = ld + (rd - ld) * ui;
-        out_depthThikness = u + (d - u) * vi;
+        out_depthThickness = u + (d - u) * vi;
     }
 
 #ifdef ALICEVISION_DEPTHMAP_COMPUTE_PIXSIZEMAP
@@ -376,17 +376,17 @@ __global__ void computeSgmUpscaledDepthPixSizeMap_bilinear_kernel(float2* out_up
     const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
 
     // get rc 3d point
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(float(x), float(y)), out_depthThikness.x);
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(float(x), float(y)), out_depthThickness.x);
 
     // compute and write rc 3d point pixSize
     const float out_pixSize = computePixSize(rcDeviceCamParams, p);
 #else
-    // compute pixSize from depth thikness
-    const float out_pixSize = out_depthThikness.y / halfNbDepths;
+    // compute pixSize from depth thickness
+    const float out_pixSize = out_depthThickness.y / halfNbDepths;
 #endif
 
     // write output depth/pixSize
-    out_depthPixSize->x = out_depthThikness.x;
+    out_depthPixSize->x = out_depthThickness.x;
     out_depthPixSize->y = out_pixSize;
 }
 

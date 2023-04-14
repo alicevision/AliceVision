@@ -68,7 +68,7 @@ enum class EFileType
     simMapFiltered = 38,
     normalMap = 39,
     normalMapFiltered = 40,
-    thiknessMap = 41,
+    thicknessMap = 41,
     pixSizeMap = 42,
     mapPtsTmp = 43,
     camMap = 44,

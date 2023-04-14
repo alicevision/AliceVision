@@ -97,7 +97,7 @@ double Refine::getDeviceMemoryConsumptionUnpadded() const
     return (double(bytes) / (1024.0 * 1024.0));
 }
 
-void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThiknessMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp)
+void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp)
 {
     const IndexT viewId = _mp.getViewId(tile.rc);
 
@@ -119,11 +119,11 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
         const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp);
 
         // compute upscaled SGM depth/pixSize map
-        // - upscale SGM depth/thikness map
+        // - upscale SGM depth/thickness map
         // - filter masked pixels (alpha)
-        // - compute pixSize from SGM thikness
+        // - compute pixSize from SGM thickness
         cuda_computeSgmUpscaledDepthPixSizeMap(_sgmDepthPixSizeMap_dmp,
-                                               in_sgmDepthThiknessMap_dmp,
+                                               in_sgmDepthThicknessMap_dmp,
                                                rcDeviceCameraParamsId,
                                                rcDeviceMipmapImage,
                                                _refineParams,

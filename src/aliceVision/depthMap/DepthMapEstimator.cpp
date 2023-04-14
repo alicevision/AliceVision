@@ -405,13 +405,13 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
 
             if(_depthMapParams.useRefine)
             {
-              // smooth SGM thikness map
+              // smooth SGM thickness map
               // in order to be a proper Refine input parameter
-              sgm.smoothThiknessMap(tile, _refineParams);
+              sgm.smoothThicknessMap(tile, _refineParams);
 
               // compute Refine
               Refine& refine = refinePerStream.at(streamIndex);
-              refine.refineRc(tile, sgm.getDeviceDepthThiknessMap(), sgm.getDeviceNormalMap());
+              refine.refineRc(tile, sgm.getDeviceDepthThicknessMap(), sgm.getDeviceNormalMap());
 
               // copy Refine depth/similarity map from device to host
               tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));

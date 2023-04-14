@@ -254,10 +254,10 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           ext = "exr";
           break;
       }
-      case EFileType::thiknessMap:
+      case EFileType::thicknessMap:
       {
           folder = mp.getDepthMapsFolder();
-          suffix = "_thiknessMap";
+          suffix = "_thicknessMap";
           ext = "exr";
           break;
       }

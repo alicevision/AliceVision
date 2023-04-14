@@ -34,7 +34,7 @@ std::string getMapNameFromFileType(EFileType fileType)
         case EFileType::simMapFiltered:      return "filtered similarity map";  break;
         case EFileType::normalMap:           return "normal map";               break;
         case EFileType::normalMapFiltered:   return "filtered normal map";      break;
-        case EFileType::thiknessMap:         return "thikness map";             break;
+        case EFileType::thicknessMap:         return "thickness map";             break;
         case EFileType::pixSizeMap:          return "pixSize map";              break;
         default: break;
     }

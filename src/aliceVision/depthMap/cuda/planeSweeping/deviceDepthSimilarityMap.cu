@@ -69,7 +69,7 @@ __host__ void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upsc
     CHECK_CUDA_ERROR();
 }
 
-__host__ void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThiknessMap_dmp,
+__host__ void cuda_depthThicknessSmoothThickness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThicknessMap_dmp,
                                                const SgmParams& sgmParams,
                                                const RefineParams& refineParams,
                                                const ROI& roi,
@@ -78,13 +78,13 @@ __host__ void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2
     const int sgmScaleStep = sgmParams.scale * sgmParams.stepXY;
     const int refineScaleStep = refineParams.scale * refineParams.stepXY;
 
-    // min/max number of Refine samples in SGM thikness area
+    // min/max number of Refine samples in SGM thickness area
     const float minNbRefineSamples = 2.f;
     const float maxNbRefineSamples = max(sgmScaleStep / float(refineScaleStep), minNbRefineSamples);
 
-    // min/max SGM thikness inflate factor
-    const float minThiknessInflate = refineParams.halfNbDepths / maxNbRefineSamples;
-    const float maxThiknessInflate = refineParams.halfNbDepths / minNbRefineSamples;
+    // min/max SGM thickness inflate factor
+    const float minThicknessInflate = refineParams.halfNbDepths / maxNbRefineSamples;
+    const float maxThicknessInflate = refineParams.halfNbDepths / minNbRefineSamples;
 
     // kernel launch parameters
     const int blockSize = 8;
@@ -92,11 +92,11 @@ __host__ void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
     // kernel execution
-    depthThiknessMapSmoothThikness_kernel<<<grid, block, 0, stream>>>(
-        inout_depthThiknessMap_dmp.getBuffer(),
-        inout_depthThiknessMap_dmp.getPitch(),
-        minThiknessInflate,
-        maxThiknessInflate,
+    depthThicknessMapSmoothThickness_kernel<<<grid, block, 0, stream>>>(
+        inout_depthThicknessMap_dmp.getBuffer(),
+        inout_depthThicknessMap_dmp.getPitch(),
+        minThicknessInflate,
+        maxThicknessInflate,
         roi);
 
     // check cuda last error
@@ -104,7 +104,7 @@ __host__ void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2
 }
 
 __host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthPixSizeMap_dmp,
-                                                     const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThiknessMap_dmp,
+                                                     const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp,
                                                      const int rcDeviceCameraParamsId,
                                                      const DeviceMipmapImage& rcDeviceMipmapImage,
                                                      const RefineParams& refineParams,
@@ -113,7 +113,7 @@ __host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<flo
 {
     // compute upscale ratio
     const CudaSize<2>& out_mapDim = out_upscaledDepthPixSizeMap_dmp.getSize();
-    const CudaSize<2>& in_mapDim = in_sgmDepthThiknessMap_dmp.getSize();
+    const CudaSize<2>& in_mapDim = in_sgmDepthThicknessMap_dmp.getSize();
     const float ratio = float(in_mapDim.x()) / float(out_mapDim.x());
 
     // get R mipmap image level and dimensions
@@ -131,8 +131,8 @@ __host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<flo
         computeSgmUpscaledDepthPixSizeMap_bilinear_kernel<<<grid, block, 0, stream>>>(
             out_upscaledDepthPixSizeMap_dmp.getBuffer(),
             out_upscaledDepthPixSizeMap_dmp.getPitch(),
-            in_sgmDepthThiknessMap_dmp.getBuffer(),
-            in_sgmDepthThiknessMap_dmp.getPitch(),
+            in_sgmDepthThicknessMap_dmp.getBuffer(),
+            in_sgmDepthThicknessMap_dmp.getPitch(),
             rcDeviceCameraParamsId,
             rcDeviceMipmapImage.getTextureObject(),
             (unsigned int)(rcLevelDim.x()),
@@ -148,8 +148,8 @@ __host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<flo
         computeSgmUpscaledDepthPixSizeMap_nearestNeighbor_kernel<<<grid, block, 0, stream>>>(
             out_upscaledDepthPixSizeMap_dmp.getBuffer(),
             out_upscaledDepthPixSizeMap_dmp.getPitch(),
-            in_sgmDepthThiknessMap_dmp.getBuffer(),
-            in_sgmDepthThiknessMap_dmp.getPitch(),
+            in_sgmDepthThicknessMap_dmp.getBuffer(),
+            in_sgmDepthThicknessMap_dmp.getPitch(),
             rcDeviceCameraParamsId,
             rcDeviceMipmapImage.getTextureObject(),
             (unsigned int)(rcLevelDim.x()),

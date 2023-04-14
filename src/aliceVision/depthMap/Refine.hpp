@@ -64,10 +64,10 @@ public:
     /**
      * @brief Refine for a single R camera the Semi-Global Matching depth/sim map.
      * @param[in] tile The given tile for Refine computation
-     * @param[in] in_sgmDepthThiknessMap_dmp the SGM result depth/thikness map in device memory
+     * @param[in] in_sgmDepthThicknessMap_dmp the SGM result depth/thickness map in device memory
      * @param[in] in_sgmNormalMap_dmp the SGM result normal map in device memory (or empty)
      */
-    void refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThiknessMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
+    void refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
 
 private:
 

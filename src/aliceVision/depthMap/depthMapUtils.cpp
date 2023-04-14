@@ -186,19 +186,19 @@ void writeNormalMapFiltered(int rc,
 }
 
 
-void writeDepthThiknessMap(int rc,
+void writeDepthThicknessMap(int rc,
                            const mvsUtils::MultiViewParams& mp,
                            const mvsUtils::TileParams& tileParams,
                            const ROI& roi,
-                           const CudaDeviceMemoryPitched<float2, 2>& in_depthThiknessMap_dmp,
+                           const CudaDeviceMemoryPitched<float2, 2>& in_depthThicknessMap_dmp,
                            int scale,
                            int step,
                            const std::string& name)
 {
     const mvsUtils::EFileType fileTypeX = mvsUtils::EFileType::depthMap;
-    const mvsUtils::EFileType fileTypeY = mvsUtils::EFileType::thiknessMap;
+    const mvsUtils::EFileType fileTypeY = mvsUtils::EFileType::thicknessMap;
 
-    writeFloat2Map(rc, mp, tileParams, roi, in_depthThiknessMap_dmp, fileTypeX, fileTypeY, scale, step, name);
+    writeFloat2Map(rc, mp, tileParams, roi, in_depthThicknessMap_dmp, fileTypeX, fileTypeY, scale, step, name);
 }
 
 
@@ -324,14 +324,14 @@ void mergeFloatMapTiles(int rc,
 
 }
 
-void mergeDepthThiknessMapTiles(int rc,
+void mergeDepthThicknessMapTiles(int rc,
                                 const mvsUtils::MultiViewParams& mp,
                                 int scale,
                                 int step,
                                 const std::string& name)
 {
   mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::depthMap, scale, step, name);
-  mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::thiknessMap, scale, step, name);
+  mergeFloatMapTiles(rc, mp, mvsUtils::EFileType::thicknessMap, scale, step, name);
 }
 
 void mergeDepthPixSizeMapTiles(int rc,

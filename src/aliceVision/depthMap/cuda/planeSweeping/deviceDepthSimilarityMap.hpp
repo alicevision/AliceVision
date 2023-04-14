@@ -40,23 +40,23 @@ extern void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upscal
                                   cudaStream_t stream);
 
 /**
- * @brief Smooth thikness map with adjacent pixels.
- * @param[in,out] inout_depthThiknessMap_dmp the depth/thikness map
+ * @brief Smooth thickness map with adjacent pixels.
+ * @param[in,out] inout_depthThicknessMap_dmp the depth/thickness map
  * @param[in] sgmParams the Semi Global Matching parameters
  * @param[in] refineParams the Refine parameters
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThiknessMap_dmp,
+extern void cuda_depthThicknessSmoothThickness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThicknessMap_dmp,
                                              const SgmParams& sgmParams,
                                              const RefineParams& refineParams,
                                              const ROI& roi,
                                              cudaStream_t stream);
 
 /**
- * @brief Upscale the given depth/thikness map, filter masked pixels and compute pixSize from thikness.
+ * @brief Upscale the given depth/thickness map, filter masked pixels and compute pixSize from thickness.
  * @param[out] out_upscaledDepthPixSizeMap_dmp the output upscaled depth/pixSize map
- * @param[in] in_sgmDepthThiknessMap_dmp the input SGM depth/thikness map
+ * @param[in] in_sgmDepthThicknessMap_dmp the input SGM depth/thickness map
  * @param[in] rcDeviceCameraParamsId the R camera parameters id for array in device constant memory
  * @param[in] rcDeviceMipmapImage the R mipmap image in device memory container
  * @param[in] refineParams the Refine parameters
@@ -64,7 +64,7 @@ extern void cuda_depthThiknessSmoothThikness(CudaDeviceMemoryPitched<float2, 2>&
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthPixSizeMap_dmp,
-                                                   const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThiknessMap_dmp,
+                                                   const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp,
                                                    const int rcDeviceCameraParamsId,
                                                    const DeviceMipmapImage& rcDeviceMipmapImage,
                                                    const RefineParams& refineParams,

@@ -25,7 +25,7 @@ struct SgmParams
   int maxDepths = 1500;
   int maxTCamsPerTile = 4;
   double seedsRangeInflate = 0.2;
-  double depthThiknessInflate = 0.0;
+  double depthThicknessInflate = 0.0;
   double maxSimilarity = 1.0;
   double gammaC = 5.5;
   double gammaP = 8.0;

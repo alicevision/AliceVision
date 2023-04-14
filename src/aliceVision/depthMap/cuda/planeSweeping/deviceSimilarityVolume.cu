@@ -424,7 +424,7 @@ __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFi
     }
 }
 
-__host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthThiknessMap_dmp,
+__host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthThicknessMap_dmp,
                                            CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthSimMap_dmp,
                                            const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp, 
                                            const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
@@ -436,7 +436,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
 {
     // constant kernel inputs
     const int scaleStep = sgmParams.scale * sgmParams.stepXY;
-    const float thiknessMultFactor = 1.f + float(sgmParams.depthThiknessInflate);
+    const float thicknessMultFactor = 1.f + float(sgmParams.depthThicknessInflate);
     const float maxSimilarity = float(sgmParams.maxSimilarity) * 254.f; // convert from (0, 1) to (0, 254)
 
     // kernel launch parameters
@@ -445,8 +445,8 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
     
     // kernel execution
     volume_retrieveBestDepth_kernel<<<grid, block, 0, stream>>>(
-        out_sgmDepthThiknessMap_dmp.getBuffer(),
-        out_sgmDepthThiknessMap_dmp.getBytesPaddedUpToDim(0),
+        out_sgmDepthThicknessMap_dmp.getBuffer(),
+        out_sgmDepthThicknessMap_dmp.getBytesPaddedUpToDim(0),
         out_sgmDepthSimMap_dmp.getBuffer(),
         out_sgmDepthSimMap_dmp.getBytesPaddedUpToDim(0),
         in_depths_dmp.getBuffer(),
@@ -457,7 +457,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
         rcDeviceCameraParamsId,
         int(in_volSim_dmp.getSize().z()),
         scaleStep,
-        thiknessMultFactor,
+        thicknessMultFactor,
         maxSimilarity,
         depthRange,
         roi);

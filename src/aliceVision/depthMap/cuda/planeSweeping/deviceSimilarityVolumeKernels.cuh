@@ -390,14 +390,14 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
 #endif
 }
 
-__global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThiknessMap_d, int out_sgmDepthThiknessMap_p,
+__global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThicknessMap_d, int out_sgmDepthThicknessMap_p,
                                                 float2* out_sgmDepthSimMap_d, int out_sgmDepthSimMap_p, // output depth/sim map is optional (nullptr)
                                                 const float* in_depths_d, const int in_depths_p,
                                                 const TSim* in_volSim_d, const int in_volSim_s, const int in_volSim_p,
                                                 const int rcDeviceCameraParamsId,
                                                 const int volDimZ, // useful for depth/sim interpolation
                                                 const int scaleStep,
-                                                const float thiknessMultFactor, // default 1
+                                                const float thicknessMultFactor, // default 1
                                                 const float maxSimilarity,
                                                 const Range depthRange,
                                                 const ROI roi)
@@ -414,8 +414,8 @@ __global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThiknessMap_
     // corresponding image coordinates
     const float2 pix{float((roi.x.begin + vx) * scaleStep), float((roi.y.begin + vy) * scaleStep)};
 
-    // corresponding output depth/thikness pointer
-    float2* out_bestDepthThiknessPtr = get2DBufferAt(out_sgmDepthThiknessMap_d, out_sgmDepthThiknessMap_p, vx, vy);
+    // corresponding output depth/thickness pointer
+    float2* out_bestDepthThicknessPtr = get2DBufferAt(out_sgmDepthThicknessMap_d, out_sgmDepthThicknessMap_p, vx, vy);
 
     // corresponding output depth/sim pointer or nullptr
     float2* out_bestDepthSimPtr = (out_sgmDepthSimMap_d == nullptr) ? nullptr : get2DBufferAt(out_sgmDepthSimMap_d, out_sgmDepthSimMap_p, vx, vy);
@@ -443,8 +443,8 @@ __global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThiknessMap_
     // note: this helps to reduce following calculations and also the storage volume of the depth maps.
     if((bestZIdx == -1) || (bestSim > maxSimilarity))
     {
-        out_bestDepthThiknessPtr->x = -1.f; // invalid depth
-        out_bestDepthThiknessPtr->y = -1.f; // invalid thikness
+        out_bestDepthThicknessPtr->x = -1.f; // invalid depth
+        out_bestDepthThicknessPtr->y = -1.f; // invalid thickness
 
         if(out_bestDepthSimPtr != nullptr)
         {
@@ -494,14 +494,14 @@ __global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThiknessMap_
     const float out_bestSim = (bestSim / 255.0f) * 2.0f - 1.0f; // convert from (0, 255) to (-1, +1)
 #endif
 
-    // compute output best depth thikness
-    // thikness is the maximum distance between output best depth and previous or next depth
-    // thikness can be inflate with thiknessMultFactor
-    const float out_bestDepthThikness = max(bestDepth_p1 - out_bestDepth, out_bestDepth - bestDepth_m1) * thiknessMultFactor;
+    // compute output best depth thickness
+    // thickness is the maximum distance between output best depth and previous or next depth
+    // thickness can be inflate with thicknessMultFactor
+    const float out_bestDepthThickness = max(bestDepth_p1 - out_bestDepth, out_bestDepth - bestDepth_m1) * thicknessMultFactor;
 
-    // write output depth/thikness
-    out_bestDepthThiknessPtr->x = out_bestDepth;
-    out_bestDepthThiknessPtr->y = out_bestDepthThikness;
+    // write output depth/thickness
+    out_bestDepthThicknessPtr->x = out_bestDepth;
+    out_bestDepthThicknessPtr->y = out_bestDepthThickness;
 
     if(out_sgmDepthSimMap_d != nullptr)
     {

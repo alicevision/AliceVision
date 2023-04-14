@@ -140,8 +140,8 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Use landmarks from Structure-from-Motion as input seeds to define min/max depth ranges.")
         ("sgmSeedsRangeInflate", po::value<double>(&sgmParams.seedsRangeInflate)->default_value(sgmParams.seedsRangeInflate),
             "Semi Global Matching: Inflate factor to add margins around SfM seeds.")
-        ("sgmDepthThiknessInflate", po::value<double>(&sgmParams.depthThiknessInflate)->default_value(sgmParams.depthThiknessInflate),
-            "Semi Global Matching: Inflate factor to add margins to the depth thikness.")
+        ("sgmDepthThicknessInflate", po::value<double>(&sgmParams.depthThicknessInflate)->default_value(sgmParams.depthThicknessInflate),
+            "Semi Global Matching: Inflate factor to add margins to the depth thickness.")
         ("sgmMaxSimilarity", po::value<double>(&sgmParams.maxSimilarity)->default_value(sgmParams.maxSimilarity),
             "Semi Global Matching: Maximum similarity threshold (between 0 and 1) used to filter out poorly supported depth values.")
         ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
