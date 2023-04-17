@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "Logger.hpp"
-#include "Timer.hpp"
-#include "hardwareContext.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/hardwareContext.hpp>
 
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/option.hpp>

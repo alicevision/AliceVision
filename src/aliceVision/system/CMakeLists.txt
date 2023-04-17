@@ -19,7 +19,6 @@ set(system_files_sources
   Logger.cpp
   ProgressDisplay.cpp
   nvtx.cpp
-  cmdline.cpp
   hardwareContext.cpp
 )
 
@@ -31,7 +30,6 @@ alicevision_add_library(aliceVision_system
     Boost::thread
     Boost::system
     Boost::date_time
-    Boost::program_options
     ${ALICEVISION_NVTX_LIBRARY}
   PRIVATE_LINKS
     Boost::boost

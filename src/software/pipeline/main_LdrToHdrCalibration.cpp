@@ -7,7 +7,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <OpenImageIO/imagebufalgo.h>
 
@@ -93,7 +93,7 @@ void computeLuminanceStatFromSamples(const std::vector<hdr::ImageSample>& sample
 
 void computeLuminanceInfoFromImage(image::Image<image::RGBfColor>& image, luminanceInfo& lumaInfo)
 {
-    // Luminance statistics are calculated from a subsampled square, centered and rotated by 45°.
+    // Luminance statistics are calculated from a subsampled square, centered and rotated by 45 degree.
     // 2 vertices of this square are the centers of the longest sides of the image.
     // Such a shape is suitable for both fisheye and classic images.
 

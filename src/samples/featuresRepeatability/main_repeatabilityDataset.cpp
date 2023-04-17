@@ -14,7 +14,7 @@
 #include <aliceVision/matching/RegionsMatcher.hpp>
 
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 

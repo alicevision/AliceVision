@@ -9,7 +9,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision//mvsData/Color.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 
 #include <boost/program_options.hpp>
 

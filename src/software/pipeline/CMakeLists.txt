@@ -12,6 +12,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_cameraInit.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_sensorDB
           aliceVision_image
           aliceVision_feature
@@ -31,6 +32,7 @@ if(ALICEVISION_BUILD_SFM)
       LINKS aliceVision_image
             aliceVision_imageMasking
             aliceVision_system
+            aliceVision_cmdline
             aliceVision_sfmData
             aliceVision_sfmDataIO
             ${OpenCV_LIBRARIES}
@@ -43,6 +45,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaPrepareImages.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_sensorDB
           aliceVision_image
           aliceVision_feature
@@ -58,6 +61,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_featureExtraction.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_gpu
           aliceVision_image
           aliceVision_feature
@@ -77,6 +81,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_imageMatching.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_imageMatching
           aliceVision_matchingImageCollection
           aliceVision_sfm
@@ -93,6 +98,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_featureMatching.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_feature
           aliceVision_multiview
           aliceVision_matchingImageCollection
@@ -108,6 +114,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_incrementalSfM.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_feature
           aliceVision_sfm
@@ -122,6 +129,7 @@ if(ALICEVISION_BUILD_SFM)
   SOURCE main_sfmTriangulation.cpp
   FOLDER ${FOLDER_SOFTWARE_PIPELINE}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_feature
         aliceVision_sfm
@@ -136,6 +144,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_globalSfM.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_feature
           aliceVision_sfm
@@ -150,6 +159,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaEstimation.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_feature
           aliceVision_sfm
@@ -161,6 +171,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaWarping.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_feature
           aliceVision_sfm
@@ -173,6 +184,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaMerging.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_sfmData
           aliceVision_sfmDataIO
@@ -183,6 +195,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaPostProcessing.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           ${Boost_LIBRARIES}
   )
@@ -190,6 +203,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaCompositing.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_sfmData
           aliceVision_sfmDataIO
@@ -200,6 +214,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaSeams.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_sfmData
           aliceVision_sfmDataIO
@@ -210,6 +225,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaInit.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_feature
           aliceVision_sfm
@@ -222,6 +238,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_computeStructureFromKnownPoses.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_feature
           aliceVision_sfm
           aliceVision_sfmData
@@ -239,6 +256,7 @@ if(ALICEVISION_BUILD_SFM)
             aliceVision_image
             aliceVision_calibration
             aliceVision_system
+            aliceVision_cmdline
             Boost::program_options
             Boost::filesystem
             Boost::boost
@@ -252,6 +270,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_image
           aliceVision_calibration
           aliceVision_system
+          aliceVision_cmdline
           aliceVision_sfmDataIO
           Boost::program_options
           Boost::filesystem
@@ -267,6 +286,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_dataio
           aliceVision_image
           aliceVision_feature
+          aliceVision_cmdline
           Boost::program_options
           Boost::filesystem
           Boost::boost
@@ -281,6 +301,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_calibration
           aliceVision_system
           aliceVision_sfmDataIO
+          aliceVision_cmdline
           Boost::program_options
           Boost::filesystem
           Boost::boost
@@ -299,6 +320,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_dataio
           aliceVision_image
           aliceVision_feature
+          aliceVision_cmdline
           Boost::program_options
           Boost::filesystem
           Boost::boost
@@ -318,6 +340,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_rig
           aliceVision_image
           aliceVision_feature
+          aliceVision_cmdline
           Boost::program_options
           Boost::filesystem
           Boost::boost
@@ -333,6 +356,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_prepareDenseScene.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_image
           aliceVision_feature
           aliceVision_sfmData
@@ -353,6 +377,7 @@ if(ALICEVISION_BUILD_MVS)
       SOURCE main_depthMapEstimation.cpp
       FOLDER ${FOLDER_SOFTWARE_PIPELINE}
       LINKS aliceVision_system
+          aliceVision_cmdline
             aliceVision_gpu
             aliceVision_mvsData
             aliceVision_mvsUtils
@@ -368,6 +393,7 @@ if(ALICEVISION_BUILD_MVS)
       SOURCE main_depthMapFiltering.cpp
       FOLDER ${FOLDER_SOFTWARE_PIPELINE}
       LINKS aliceVision_system
+            aliceVision_cmdline
             aliceVision_mvsData
             aliceVision_mvsUtils
             aliceVision_fuseCut
@@ -384,6 +410,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_meshing.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_mvsData
           aliceVision_mvsUtils
           aliceVision_mesh
@@ -401,6 +428,7 @@ if(ALICEVISION_BUILD_MVS)
       SOURCE main_meshDenoising.cpp
       FOLDER ${FOLDER_SOFTWARE_PIPELINE}
       LINKS aliceVision_system
+            aliceVision_cmdline
             aliceVision_mvsUtils
             MeshSDLibrary
             Eigen3::Eigen
@@ -413,6 +441,7 @@ if(ALICEVISION_BUILD_MVS)
       SOURCE main_meshDecimate.cpp
       FOLDER ${FOLDER_SOFTWARE_PIPELINE}
       LINKS aliceVision_system
+            aliceVision_cmdline
             aliceVision_mvsUtils
             OpenMesh
             Boost::program_options
@@ -425,6 +454,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_meshFiltering.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_mvsUtils
           aliceVision_mesh
           Boost::program_options
@@ -436,6 +466,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_meshMasking.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_sfmMvsUtils
           aliceVision_mvsUtils
           aliceVision_mesh
@@ -450,6 +481,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_meshResampling.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_mvsUtils
           Geogram::geogram
           Boost::program_options
@@ -461,6 +493,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_texturing.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_cmdline
           aliceVision_mvsData
           aliceVision_sfmMvsUtils
           aliceVision_mvsUtils
@@ -479,6 +512,7 @@ alicevision_add_software(aliceVision_LdrToHdrSampling
   SOURCE main_LdrToHdrSampling.cpp
   FOLDER ${FOLDER_SOFTWARE_PIPELINE}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_hdr
         aliceVision_sfmData
@@ -492,6 +526,7 @@ alicevision_add_software(aliceVision_LdrToHdrCalibration
   SOURCE main_LdrToHdrCalibration.cpp
   FOLDER ${FOLDER_SOFTWARE_PIPELINE}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_hdr
         aliceVision_sfmData
@@ -504,6 +539,7 @@ alicevision_add_software(aliceVision_LdrToHdrMerge
   SOURCE main_LdrToHdrMerge.cpp
   FOLDER ${FOLDER_SOFTWARE_PIPELINE}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_image
         aliceVision_hdr
         aliceVision_sfmData

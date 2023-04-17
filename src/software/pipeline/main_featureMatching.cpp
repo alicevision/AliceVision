@@ -29,7 +29,7 @@
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/stl/stl.hpp>
 

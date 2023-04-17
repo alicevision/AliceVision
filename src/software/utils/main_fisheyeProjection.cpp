@@ -10,7 +10,7 @@
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/image/convertion.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/camera/camera.hpp>
 

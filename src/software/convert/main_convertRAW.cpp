@@ -7,7 +7,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>

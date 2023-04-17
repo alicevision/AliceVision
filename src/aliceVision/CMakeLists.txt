@@ -3,6 +3,7 @@
 add_subdirectory(image)
 add_subdirectory(numeric)
 add_subdirectory(system)
+add_subdirectory(cmdline)
 add_subdirectory(stl)
 add_subdirectory(utils)
 add_subdirectory(panorama)
