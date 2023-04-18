@@ -22,6 +22,7 @@
 #include <list>
 #include <mutex>
 #include <thread>
+#include <algorithm>
 
 
 namespace aliceVision {
@@ -225,6 +226,16 @@ public:
     std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1);
 
     /**
+     * @brief Check if an image at a given downscale level is currently in the cache.
+     * @note This method is thread-safe.
+     * @param[in] filename the image's filename on disk
+     * @param[in] downscaleLevel the downscale level
+     * @return whether or not the cache currently contains the image
+     */
+    template<typename TPix>
+    bool contains(const std::string& filename, int downscaleLevel = 1) const;
+
+    /**
      * @return information on the current cache state and usage
      */
     inline const CacheInfo& info() const
@@ -411,6 +422,27 @@ void ImageCache::load(const CacheKey& key)
     // update memory usage
     _info.nbImages++;
     _info.contentSize += value.memorySize();
+}
+
+template<typename TPix>
+bool ImageCache::contains(const std::string& filename, int downscaleLevel) const
+{
+    if (downscaleLevel < 1)
+    {
+        ALICEVISION_THROW_ERROR("[image] ImageCache: cannot contain image with downscale level < 1, "
+                                << "request was made with downscale level " << downscaleLevel);
+    }
+
+    const std::lock_guard<std::mutex> lock(_mutex);
+
+    using TInfo = ColorTypeInfo<TPix>;
+
+    auto lastWriteTime = boost::filesystem::last_write_time(filename);
+    CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, downscaleLevel, lastWriteTime);
+
+    auto it = std::find(_keys.begin(), _keys.end(), keyReq);
+    
+    return it != _keys.end();
 }
 
 } // namespace image
