@@ -20,7 +20,7 @@
 
 #include <Eigen/Core>
 
-#include <boost/program_options.hpp> 
+#include <boost/program_options.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/tail.hpp>
 
@@ -75,6 +75,7 @@ static const std::string programDescription =
         "As a further output option (--outdir), it is possible to specify a folder in which it will create, for each query image (be it a query image of querylist or an image of keylist)\n"
         "it creates a folder with the same name of the image, inside which it creates a list of symbolic links to all the similar images found. The symbolic link naming convention\n"
         "is matchNumber.filename, where matchNumber is the relevant position of the image in the list of matches ([0-r]) and filename is its image file (eg image.jpg)\n";
+
 /*
  * This program is used to create a database with a provided dataset of image descriptors using a trained vocabulary tree
  * The database is then queried with the same images in order to retrieve for each image the set of most similar images in the dataset
@@ -104,7 +105,7 @@ int aliceVision_main(int argc, char** argv)
   bool withOutput = false;
   /// flag for the optional output folder to save the symlink of the similar images
   bool withOutDir = false;
-  /// it produces an output readable by matlab
+  /// flag for the optional path to the SfMData file to use for querying the database
   bool withQuery = false;
   /// it produces an output readable by matlab
   bool matlabOutput = false;
@@ -116,91 +117,60 @@ int aliceVision_main(int argc, char** argv)
   aliceVision::sfmData::SfMData sfmData;
   aliceVision::sfmData::SfMData *querySfmData;
 
-  po::options_description allParams(programDescription + "AliceVision voctreeQueryUtility");
-
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-     "a SfMData file.")
+     "A SfMData file.")
     ("tree,t", po::value<std::string>(&treeName)->required(),
-     "Input name for the tree file")
+     "Input name for the tree file.")
     ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.");
+     "Path to folder(s) containing the extracted features.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("weights,w", po::value<std::string>(&weightsName),
-        "Input name for the weight file, if not provided the weights will be computed on the database built with the provided set")
+    ("weights,w", po::value<std::string>(&(weightsName)),
+     "Input name for the weight file, if not provided the weights will be computed on the database built with the provided set.")
     ("querySfmDataFilename,q", po::value<std::string>(&querySfmDataFilename),
-        "Path to the SfMData file to be used for querying the database")
+     "Path to the SfMData file to be used for querying the database.")
     ("saveDocumentMap", po::value<std::string>(&documentMapFile),
-        "A matlab file .m where to save the document map of the created database.")
+     "A Matlab file .m where to save the document map of the created database.")
     ("outdir", po::value<std::string>(&outDir),
-        "Path to the folder in which save the symlinks of the similar images (it will be create if it does not exist)")
+     "Path to the folder in which save the symlinks of the similar images (it will be created if it does not exist).")
     ("describerMethod,m", po::value<std::string>(&describerMethod)->default_value(describerMethod),
-        "method to use to describe an image")
+     "Method to use to describe an image.")
     ("results,r", po::value<std::size_t>(&numImageQuery)->default_value(numImageQuery),
-        "The number of matches to retrieve for each image, 0 to retrieve all the images")
+     "The number of matches to retrieve for each image, 0 to retrieve all the images.")
     ("matlab,", po::value<bool>(&matlabOutput)->default_value(matlabOutput),
-        "It produces an output readable by matlab")
+     "It produces an output readable by Matlab.")
     ("outfile,o", po::value<std::string>(&outfile),
-        "Name of the output file")
+     "Name of the output file.")
     ("Nmax,n", po::value<int>(&Nmax)->default_value(Nmax),
-        "Number of features extracted from the .feat files")
+     "Number of features extracted from the .feat files.")
     ("distance,d",po::value<std::string>(&distance)->default_value("strongCommonPoints"),
-      "Distance used");
+     "Distance used.");
 
-  po::options_description logParams("Log parameters");
-  logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal, error, warning, info, debug, trace).");
+  aliceVision::CmdLine cmdline(programDescription + "AliceVision voctreeQueryUtility");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
 
-  allParams.add(requiredParams).add(optionalParams).add(logParams);
-
-  po::variables_map vm;
-  try
+  if(!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
-  }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
-
-  // set verbose level
-  system::Logger::get()->setLogLevel(verboseLevel);
-
-  if(vm.count("weights"))
+  if(!weightsName.empty())
   {
     withWeights = true;
   }
-  if(vm.count("outfile"))
+  if(!outfile.empty())
   {
     withOutput = true;
   }
-  if(vm.count("querylist"))
+  if(!querySfmDataFilename.empty())
   {
     withQuery = true;
   }
-  if(vm.count("outdir"))
+  if(!outDir.empty())
   {
     withOutDir = true;
   }
@@ -291,7 +261,7 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_LOG_INFO("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
   ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec");
 
-  if(vm.count("saveDocumentMap"))
+  if(!documentMapFile.empty())
   {
     saveSparseHistogramPerImage(documentMapFile, db.getSparseHistogramPerImage());
   }
