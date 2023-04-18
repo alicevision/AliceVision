@@ -153,6 +153,13 @@ int aliceVision_main(int argc, char **argv)
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
     ("localBAGraphDistance", po::value<int>(&sfmParams.localBundelAdjustementGraphDistanceLimit)->default_value(sfmParams.localBundelAdjustementGraphDistanceLimit),
       "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
+    ("nbFirstUnstableCameras", po::value<std::size_t>(&sfmParams.nbFirstUnstableCameras)->default_value(sfmParams.nbFirstUnstableCameras),
+      "Number of cameras for which the bundle adjustment is performed every single time a camera is added, leading to more stable "
+      "results while the computations are not too expensive since there is not much data. Past this number, the bundle adjustment "
+      "will only be performed once for N added cameras.")
+    ("maxImagesPerGroup", po::value<std::size_t>(&sfmParams.maxImagesPerGroup)->default_value(sfmParams.maxImagesPerGroup),
+      "Maximum number of cameras that can be added before the bundle adjustment is performed. This prevents adding too much data "
+      "at once without performing the bundle adjustment.")
     ("localizerEstimator", po::value<robustEstimation::ERobustEstimator>(&sfmParams.localizerEstimator)->default_value(sfmParams.localizerEstimator),
       "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)")
     ("localizerEstimatorError", po::value<double>(&sfmParams.localizerEstimatorError)->default_value(0.0),
