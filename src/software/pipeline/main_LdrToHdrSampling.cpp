@@ -211,7 +211,7 @@ int aliceVision_main(int argc, char** argv)
             rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(rawColorInterpretation_str);
             colorProfileFileName = v->getColorProfileFileName();
 
-            ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back() << ", raw color interpretation: " << rawColorInterpretation_str);
+            ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back() << ", raw color interpretation: " << ERawColorInterpretation_enumToString(rawColorInterpretation));
         }
         if(!sfmData::hasComparableExposures(exposuresSetting))
         {
