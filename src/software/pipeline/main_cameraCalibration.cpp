@@ -66,88 +66,86 @@ int aliceVision_main(int argc, char** argv)
     double squareSize = 1.0;
     double maxTotalAvgErr = 0.1;
 
-    po::options_description desc("\n\nThis program is used to calibrate a camera from a dataset of images.\n");
-    desc.add_options()("help,h", "Produce help message.\n")("input,i", po::value<bfs::path>(&inputPath)->required(),
-                                                            "Input images in one of the following form:\n"
-                                                            " - folder containing images\n"
-                                                            " - image sequence like /path/to/seq.@.jpg\n"
-                                                            " - video file\n")(
-        "output,o", po::value<std::string>(&outputFilename)->required(),
-        "Output filename for intrinsic [and extrinsic] parameters.\n")(
-        "pattern,p", po::value<aliceVision::calibration::Pattern>(&patternType)->default_value(patternType),
-        "Type of pattern (CHESSBOARD, CIRCLES, ASYMMETRIC_CIRCLES"
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<bfs::path>(&inputPath)->required(),
+         "Input images in one of the following form:\n"
+         " - folder containing images\n"
+         " - image sequence like /path/to/seq.@.jpg\n"
+         " - video file.")
+        ("output,o", po::value<std::string>(&outputFilename)->required(),
+         "Output filename for intrinsic [and extrinsic] parameters.");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("pattern,p", po::value<aliceVision::calibration::Pattern>(&patternType)->default_value(patternType),
+         "Type of pattern (CHESSBOARD, CIRCLES, ASYMMETRIC_CIRCLES"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-        ", ASYMMETRIC_CCTAG"
+         ", ASYMMETRIC_CCTAG"
 #endif
-        ").\n")("size,s", po::value<std::vector<std::size_t>>(&checkerboardSize)->multitoken(),
-                "Number of inner corners per one of board dimension like W H.\n")(
-        "squareSize", po::value<double>(&squareSize)->default_value(squareSize),
-        "Size of the grid's square cells (mm).\n")(
-        "nbDistortionCoef,r", po::value<std::size_t>(&nbDistortionCoef)->default_value(nbDistortionCoef),
-        "Number of distortion coefficient.\n")("maxFrames",
-                                               po::value<std::size_t>(&maxNbFrames)->default_value(maxNbFrames),
-                                               "Maximal number of frames to extract from the video file.\n")(
-        "maxCalibFrames", po::value<std::size_t>(&maxCalibFrames)->default_value(maxCalibFrames),
-        "Maximal number of frames to use to calibrate from the selected frames.\n")(
-        "calibGridSize", po::value<std::size_t>(&calibGridSize)->default_value(calibGridSize),
-        "Define the number of cells per edge.\n")(
-        "minInputFrames", po::value<std::size_t>(&minInputFrames)->default_value(minInputFrames),
-        "Minimal number of frames to limit the refinement loop.\n")(
-        "maxTotalAvgErr,e", po::value<double>(&maxTotalAvgErr)->default_value(maxTotalAvgErr),
-        "Max Total Average Error.\n")("debugRejectedImgFolder",
-                                      po::value<std::string>(&debugRejectedImgFolder)->default_value(""),
-                                      "Folder to export delete images during the refinement loop.\n")(
-        "debugSelectedImgFolder,d", po::value<std::string>(&debugSelectedImgFolder)->default_value(""),
-        "Folder to export debug images.\n");
+        ").")
+        ("size,s", po::value<std::vector<std::size_t>>(&checkerboardSize)->multitoken(),
+         "Number of inner corners per one of board dimension like W H.")
+        ("squareSize", po::value<double>(&squareSize)->default_value(squareSize),
+         "Size of the grid's square cells (in mm).")
+        ("nbDistortionCoef,r", po::value<std::size_t>(&nbDistortionCoef)->default_value(nbDistortionCoef),
+         "Number of distortion coefficients.")
+        ("maxFrames", po::value<std::size_t>(&maxNbFrames)->default_value(nbDistortionCoef),
+         "Maximum number of frames to extract from the video file.")
+        ("maxCalibFrames", po::value<std::size_t>(&maxCalibFrames)->default_value(maxCalibFrames),
+         "Maximum number of frames to use to calibrate from the selected frames.")
+        ("calibGridSize", po::value<std::size_t>(&calibGridSize)->default_value(calibGridSize),
+         "Define the number of cells per edge.")
+        ("minInputFrames", po::value<std::size_t>(&minInputFrames)->default_value(minInputFrames),
+         "Minimum number of frames to limit the refinement loop.")
+        ("maxTotalAvgErr,e", po::value<double>(&maxTotalAvgErr)->default_value(maxTotalAvgErr),
+         "Max Total Average Error.")
+        ("debugRejectedImgFolder", po::value<std::string>(&debugRejectedImgFolder)->default_value(""),
+         "Folder to export images that were deleted during the refinement loop.")
+        ("debugSelectedImgFolder,d", po::value<std::string>(&debugSelectedImgFolder)->default_value(""),
+         "Folder to export debug images.");
 
-    po::variables_map vm;
-    int cvCalibFlags = 0;
-
-    try
+    aliceVision::CmdLine cmdline("This program is used to calibrate a camera from a dataset of images.\n"
+                                 "AliceVision cameraCalibration");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if(!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
-
-        if(vm.count("help") || (argc == 1))
-        {
-            ALICEVISION_COUT(desc);
-            return EXIT_SUCCESS;
-        }
-
-        cvCalibFlags |= cv::CALIB_ZERO_TANGENT_DIST;
-        if(nbDistortionCoef < 1 || nbDistortionCoef > 6)
-            throw boost::program_options::invalid_option_value(std::string("Only supports 2 or 3 radial coefs: ") +
-                                                               std::to_string(nbDistortionCoef));
-        const std::array<int, 6> fixDistortionCoefs = {cv::CALIB_FIX_K1, cv::CALIB_FIX_K2, cv::CALIB_FIX_K3,
-                                                       cv::CALIB_FIX_K4, cv::CALIB_FIX_K5, cv::CALIB_FIX_K6};
-        for(int i = nbDistortionCoef; i < 6; ++i)
-            cvCalibFlags |= fixDistortionCoefs[i];
-
-        po::notify(vm);
-    }
-    catch(boost::program_options::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_CERR("Usage:\n\n" << desc);
         return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
+
+    int cvCalibFlags = 0 | cv::CALIB_ZERO_TANGENT_DIST;
+    if(nbDistortionCoef < 1 || nbDistortionCoef > 6)
     {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_CERR("Usage:\n\n" << desc);
+        ALICEVISION_LOG_ERROR("Only 2 or 3 radial coefficients are supported. "
+                              "Provided number of distortion coefficients: " << std::to_string(nbDistortionCoef));
         return EXIT_FAILURE;
     }
+
+    const std::array<int, 6> fixDistortionCoefs = {
+        cv::CALIB_FIX_K1,
+        cv::CALIB_FIX_K2,
+        cv::CALIB_FIX_K3,
+        cv::CALIB_FIX_K4,
+        cv::CALIB_FIX_K5,
+        cv::CALIB_FIX_K6
+    };
+    for(int i = nbDistortionCoef; i < 6; i++)
+    {
+        cvCalibFlags |= fixDistortionCoefs[i];
+    }
+
 
     if(checkerboardSize.size() != 2)
-        throw std::logic_error("The size of the checkerboard is not defined");
+    {
+        ALICEVISION_THROW(std::logic_error, "The size of the checkerboard is not defined.");
+    }
 
     if((maxNbFrames != 0 && maxCalibFrames > maxNbFrames) || minInputFrames > maxCalibFrames)
     {
-        throw std::logic_error(
-            "Check the value for maxFrames, maxCalibFrames & minInputFrames. It must be decreasing.");
+        ALICEVISION_THROW(std::logic_error, "Check the value for maxFrames, maxCalibFrames and minInputFrames. "
+                          "They must be decreasing.");
     }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
 
     bool writeExtrinsics = false;
     bool writePoints = false;
@@ -162,13 +160,14 @@ int aliceVision_main(int argc, char** argv)
 
     std::clock_t start = std::clock();
 
-    // create the feedProvider
+    // Create the feedProvider
     aliceVision::dataio::FeedProvider feed(inputPath.string());
     if(!feed.isInit())
     {
-        ALICEVISION_CERR("ERROR while initializing the FeedProvider!");
+        ALICEVISION_LOG_ERROR("Error while initializing the FeedProvider!");
         return EXIT_FAILURE;
     }
+
     aliceVision::image::Image<uchar> imageGrey;
     aliceVision::camera::PinholeRadialK3 queryIntrinsics;
     bool hasIntrinsics = false;
@@ -290,7 +289,7 @@ int aliceVision_main(int argc, char** argv)
         maxTotalAvgErr, minInputFrames, calibInputFrames, calibImagePoints, calibObjectPoints, calibImageScore,
         rejectInputFrames);
 
-    ALICEVISION_COUT("Calibration duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
+    ALICEVISION_LOG_INFO("Calibration duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
 
     aliceVision::calibration::saveCameraParams(
         outputFilename, imageSize, boardSize, squareSize, aspectRatio, cvCalibFlags, cameraMatrix, distCoeffs,
@@ -302,7 +301,7 @@ int aliceVision_main(int argc, char** argv)
                                           rejectInputFrames, remainingImagesIndexes, cameraMatrix, distCoeffs,
                                           imageSize);
 
-    ALICEVISION_COUT("Total duration: " << aliceVision::system::prettyTime(durationAlgo.elapsedMs()));
+    ALICEVISION_LOG_INFO("Total duration: " << aliceVision::system::prettyTime(durationAlgo.elapsedMs()));
 
     return EXIT_SUCCESS;
 }
