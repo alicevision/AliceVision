@@ -279,7 +279,7 @@ ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& 
     std::string type = rawColorInterpretation;
     std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
 
-    if (type == "none")
+    if (type == "none" || type == "")
         return ERawColorInterpretation::None;
     if (type == "librawnowhitebalancing")
         return ERawColorInterpretation::LibRawNoWhiteBalancing;
