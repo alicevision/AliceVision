@@ -219,11 +219,12 @@ public:
      * @note This method is thread-safe.
      * @param[in] filename the image's filename on disk
      * @param[in] downscaleLevel the downscale level
+     * @param[in] cachedOnly if true, only return images that are already in the cache
      * @return a shared pointer to the cached image
      * @throws std::runtime_error if the image does not fit in the maximal size of the cache
      */
     template<typename TPix>
-    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1);
+    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1, bool cachedOnly = false);
 
     /**
      * @brief Check if an image at a given downscale level is currently in the cache.
@@ -279,7 +280,7 @@ private:
 // their definition must be given in this header file
 
 template<typename TPix>
-std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel)
+std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel, bool cachedOnly)
 {
     if (downscaleLevel < 1)
     {
@@ -311,6 +312,10 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
 
             ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
             return _imagePtrs.at(keyReq).get<TPix>();
+        }
+        else if (cachedOnly)
+        {
+            return nullptr;
         }
     }
 
