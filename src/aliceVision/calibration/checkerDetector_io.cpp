@@ -73,8 +73,6 @@ CheckerDetector tag_invoke(boost::json::value_to_tag<CheckerDetector>, boost::js
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, CheckerDetector const& t)
 {
-    
-
     std::vector<boost::json::value> jvs;
 
     for(auto b : t.getBoards())
@@ -88,15 +86,17 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, Chec
             }
         }
 
-        boost::json::value sjv = { 
-            {"rows", b.rows()}, {"cols", b.cols()}, {"data", values}
+        boost::json::value sjv = {
+            {"rows", b.rows()}, {"cols", b.cols()}, {"data", boost::json::value_from(values)}
         };
-
 
         jvs.push_back(sjv);
     }
 
-    jv = {{"corners", t.getCorners()}, {"boards", jvs}};
+    jv = {
+        {"corners", boost::json::value_from(t.getCorners())},
+        {"boards", boost::json::value_from(jvs)}
+    };
 }
 
 } // namespace calibration
