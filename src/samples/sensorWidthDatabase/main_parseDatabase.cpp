@@ -21,43 +21,43 @@ namespace po = boost::program_options;
 
 int main(int argc, char ** argv)
 {
-  std::string sensorDatabasePath;
-  std::string brandName;
-  std::string modelName;
+    std::string sensorDatabasePath;
+    std::string brandName;
+    std::string modelName;
 
-  po::options_description requiredParams;
-  requiredParams.add_options()
-    ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
-      "Camera sensor width database path.")
-    ("brand,b", po::value<std::string>(&brandName)->required(),
-      "Camera brand.")
-    ("model,m", po::value<std::string>(&modelName)->required(),
-      "Camera model.");
+    po::options_description requiredParams;
+    requiredParams.add_options()
+        ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
+         "Camera sensor width database path.")
+        ("brand,b", po::value<std::string>(&brandName)->required(),
+         "Camera brand.")
+        ("model,m", po::value<std::string>(&modelName)->required(),
+         "Camera model.");
 
-  aliceVision::CmdLine cmdline("AliceVision Sample parseDatabase");
-  cmdline.add(requiredParams);
-  if(!cmdline.execute(argc, argv))
-  {
-    return EXIT_FAILURE;
-  }
+    aliceVision::CmdLine cmdline("AliceVision Sample parseDatabase");
+    cmdline.add(requiredParams);
+    if(!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
-  std::vector<aliceVision::sensorDB::Datasheet> vec_database;
-  aliceVision::sensorDB::Datasheet datasheet;
+    std::vector<aliceVision::sensorDB::Datasheet> vec_database;
+    aliceVision::sensorDB::Datasheet datasheet;
 
-  if ( !aliceVision::sensorDB::parseDatabase( sensorDatabasePath, vec_database ) )
-  {
-    std::cout << "Database creation failure from the file : " << sensorDatabasePath  << std::endl;
-    return EXIT_FAILURE;
-  }
+    if (!aliceVision::sensorDB::parseDatabase(sensorDatabasePath, vec_database))
+    {
+        std::cout << "Database creation failure from the file : " << sensorDatabasePath  << std::endl;
+        return EXIT_FAILURE;
+    }
 
-  if ( !aliceVision::sensorDB::getInfo( brandName, modelName, vec_database, datasheet ) )
-  {
-    ALICEVISION_LOG_ERROR("The camera " << modelName << " doesn't exist in the database.");
-    return EXIT_FAILURE;
-  }
+    if (!aliceVision::sensorDB::getInfo(brandName, modelName, vec_database, datasheet))
+    {
+        ALICEVISION_LOG_ERROR("The camera " << modelName << " doesn't exist in the database.");
+        return EXIT_FAILURE;
+    }
 
-  ALICEVISION_LOG_INFO("Result: " << std::endl
-                       << datasheet._brand << "\t" << datasheet._model << "\t" << datasheet._sensorWidth);
+    ALICEVISION_LOG_INFO("Result: " << std::endl
+                                    << datasheet._brand << "\t" << datasheet._model << "\t" << datasheet._sensorWidth);
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

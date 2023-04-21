@@ -40,10 +40,10 @@ int main(int argc, char **argv)
  
     po::options_description requiredParams("Required parameters"); 
     requiredParams.add_options() 
-            ("input,i", po::value<std::string>(&inputFolderPath)->required(), 
-             "Input file path.") 
-            ("output,o", po::value<std::string>(&outputFilePath)->required(), 
-             "Path to save files in."); 
+        ("input,i", po::value<std::string>(&inputFolderPath)->required(), 
+         "Input file path.") 
+        ("output,o", po::value<std::string>(&outputFilePath)->required(), 
+         "Path to save files in."); 
 
     aliceVision::CmdLine cmdline("AliceVision Sample evCorrection");
     cmdline.add(requiredParams);
