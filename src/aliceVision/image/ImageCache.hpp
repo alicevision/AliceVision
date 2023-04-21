@@ -220,11 +220,12 @@ public:
      * @param[in] filename the image's filename on disk
      * @param[in] downscaleLevel the downscale level
      * @param[in] cachedOnly if true, only return images that are already in the cache
+     * @param[in] lazyCleaning if true, will try lazy cleaning heuristic before LRU cleaning
      * @return a shared pointer to the cached image
      * @throws std::runtime_error if the image does not fit in the maximal size of the cache
      */
     template<typename TPix>
-    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1, bool cachedOnly = false);
+    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1, bool cachedOnly = false, bool lazyCleaning = true);
 
     /**
      * @brief Check if an image at a given downscale level is currently in the cache.
@@ -280,7 +281,7 @@ private:
 // their definition must be given in this header file
 
 template<typename TPix>
-std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel, bool cachedOnly)
+std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel, bool cachedOnly, bool lazyCleaning)
 {
     if (downscaleLevel < 1)
     {
@@ -338,6 +339,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
 
     // find unused image with size bigger than missing capacity
     // remove it and add image to cache
+    if (lazyCleaning)
     {
         auto it = _keys.begin();
         while (it != _keys.end())
@@ -380,6 +382,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
             _keys.erase(it);
 
             _info.nbRemoveUnused++;
+
+            missingCapacity = memSize + _info.contentSize - _info.capacity;
         }
         else 
         {
