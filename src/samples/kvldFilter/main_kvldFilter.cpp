@@ -5,6 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
@@ -43,8 +44,8 @@ int main(int argc, char **argv)
   std::string imageBFilename;
   std::string outputFolder;
 
-  po::options_description allParams("AliceVision Sample kvldFilter");
-  allParams.add_options()
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
     ("imageAFilename,a", po::value<std::string>(&imageAFilename)->required(),
       "Left image.")
     ("imageBFilename,b", po::value<std::string>(&imageBFilename)->required(),
@@ -52,32 +53,16 @@ int main(int argc, char **argv)
     ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output folder.");
 
-  po::variables_map vm;
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
+  aliceVision::CmdLine cmdline("AliceVision Sample kvldFilter");
+  cmdline.add(requiredParams);
 
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
-  }
-  catch(boost::program_options::required_option& e)
+  if(!cmdline.execute(argc, argv))
   {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
-  if (outputFolder.empty())  {
+  if (outputFolder.empty())
+  {
     std::cerr << "\nIt is an invalid output folder" << std::endl;
     return EXIT_FAILURE;
   }

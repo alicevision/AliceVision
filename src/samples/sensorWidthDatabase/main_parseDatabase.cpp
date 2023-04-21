@@ -5,6 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
@@ -24,8 +25,8 @@ int main(int argc, char ** argv)
   std::string brandName;
   std::string modelName;
 
-  po::options_description allParams("AliceVision Sample parseDatabase");
-  allParams.add_options()
+  po::options_description requiredParams;
+  requiredParams.add_options()
     ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
       "Camera sensor width database path.")
     ("brand,b", po::value<std::string>(&brandName)->required(),
@@ -33,28 +34,10 @@ int main(int argc, char ** argv)
     ("model,m", po::value<std::string>(&modelName)->required(),
       "Camera model.");
 
-  po::variables_map vm;
-  try
+  aliceVision::CmdLine cmdline("AliceVision Sample parseDatabase");
+  cmdline.add(requiredParams);
+  if(!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
-  }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
@@ -78,4 +61,3 @@ int main(int argc, char ** argv)
 
   return EXIT_SUCCESS;
 }
-

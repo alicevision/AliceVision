@@ -129,13 +129,15 @@ int main(int argc, char **argv)
   feature::ConfigurationPreset featDescPreset;
   float ratioThreshold{0.8f};
 
-  po::options_description allParams("AliceVision Sample robustHomographyGrowing: it shows how "
-                                    "to match the feature robustly using the growing homography algorithm.");
-  allParams.add_options()
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
           ("imgLeft,l", po::value<std::string>(&filenameLeft)->required(),
            "Left image.")
           ("imgRight,r", po::value<std::string>(&filenameRight)->required(),
-           "Right image.")
+           "Right image.");
+
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
           ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
            feature::EImageDescriberType_informations().c_str())
           ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
@@ -144,27 +146,15 @@ int main(int argc, char **argv)
           ("distanceRatio", po::value<float>(&ratioThreshold)->default_value(ratioThreshold),
            "The distance ratio threshold for the feature matching.");
 
-  po::variables_map vm;
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
+  aliceVision::CmdLine cmdline("AliceVision Sample robustHomographyGrowing: it shows how "
+                               "to match the feature robustly using the growing homography algorithm.");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
 
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
-  }
-  catch(std::exception& e)
+  if(!cmdline.execute(argc, argv))
   {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
-
-  ALICEVISION_COUT("Program called with:");
-  ALICEVISION_COUT(vm);
 
   Image<RGBColor> image;
   std::mt19937 randomNumberGenerator;

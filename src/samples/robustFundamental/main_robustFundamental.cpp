@@ -13,6 +13,7 @@
 #include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/multiview/RelativePoseKernel.hpp"
+#include <aliceVision/cmdline/cmdline.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -39,39 +40,25 @@ int main(int argc, char **argv)
   std::string jpgFilenameL;
   std::string jpgFilenameR;
   feature::ConfigurationPreset featDescPreset;
-  
-  po::options_description allParams("AliceVision Sample robustFundamental");
-  allParams.add_options()
+
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
     ("jpgFilenameL,l", po::value<std::string>(&jpgFilenameL)->required(),
-      "Left image.")
+     "Left image.")
     ("jpgFilenameR,r", po::value<std::string>(&jpgFilenameR)->required(),
-      "Right image.")
+     "Right image.");
+
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
     ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
-      "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
-      "Configuration 'ultra' can take long time !");
+     "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
+     "Configuration 'ultra' can take a long time!");
 
-  po::variables_map vm;
-  try
+  aliceVision::CmdLine cmdline("AliceVision Sample robustFundamental");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
+  if(!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
-  }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 

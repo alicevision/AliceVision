@@ -5,6 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
@@ -38,49 +39,36 @@ int main(int argc, char **argv)
   double f; // Focal
   std::string suffix = "jpg";
 
-  po::options_description allParams("AliceVision Sample undistoBrown");
-  allParams.add_options()
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
     ("input,i", po::value<std::string>(&inputImagePath)->required(),
-      "An image.")
+     "An image.")
     ("output,o", po::value<std::string>(&outputImagePath)->required(),
-      "An image.")
+     "An image.")
     ("cx", po::value<double>(&c(0))->required(),
-      "Distortion center (x).")
+     "Distortion center (x).")
     ("cy", po::value<double>(&c(1))->required(),
-      "Distortion center (y).")
+     "Distortion center (y).")
     ("k1", po::value<double>(&k(0))->required(),
-      "Distortion factors (1).")
+     "Distortion factors (1).")
     ("k2", po::value<double>(&k(1))->required(),
-      "Distortion factors (2).")
+     "Distortion factors (2).")
     ("k3", po::value<double>(&k(2))->required(),
-      "Distortion factors (3).")
+     "Distortion factors (3).")
     ("focal", po::value<double>(&f)->required(),
-      "Focal length.")
+     "Focal length.");
+    
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
     ("suffix", po::value<std::string>(&suffix)->default_value(suffix),
       "Suffix of the input files.");
 
-  po::variables_map vm;
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
+  aliceVision::CmdLine cmdline("AliceVision Sample undistoBrown");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
 
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
-  }
-  catch(boost::program_options::required_option& e)
+  if(!cmdline.execute(argc, argv))
   {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
