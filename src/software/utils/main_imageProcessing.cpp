@@ -427,24 +427,16 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         }
     }
 
-    if ((pParams.scaleFactor != 1.0f) || (pParams.maxWidth != 0) || (pParams.maxHeight != 0))
+    float sfw = (pParams.maxWidth != 0 && pParams.maxWidth < image.Width()) ? float(pParams.maxWidth) / float(image.Width()) : 1.0;
+    float sfh = (pParams.maxHeight != 0 && pParams.maxHeight < image.Height()) ? float(pParams.maxHeight) / float(image.Height()) : 1.0;
+    float scaleFactor = std::min<float>(pParams.scaleFactor, std::min<float>(sfw, sfh));
+
+    if (scaleFactor != 1.0f)
     {
         const unsigned int w = image.Width();
         const unsigned int h = image.Height();
-        unsigned int nw = (unsigned int)(floor(float(w) * pParams.scaleFactor));
-        unsigned int nh = (unsigned int)(floor(float(h) * pParams.scaleFactor));
-
-        if ((pParams.maxWidth != 0) && (nw > pParams.maxWidth))
-        {
-            nh = (unsigned int)(floor(float(nh) * (float(pParams.maxWidth) / float(nw))));
-            nw = pParams.maxWidth;
-        }
-
-        if ((pParams.maxHeight != 0) && (nh > pParams.maxHeight))
-        {
-            nw = (unsigned int)(floor(float(nw) * (float(pParams.maxHeight) / float(nh))));
-            nh = pParams.maxHeight;
-        }
+        const unsigned int nw = (unsigned int)(floor(float(image.Width()) * scaleFactor));
+        const unsigned int nh = (unsigned int)(floor(float(image.Height()) * scaleFactor));
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
