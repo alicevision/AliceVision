@@ -36,11 +36,18 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-std::string getHdrImagePath(const std::string& outputPath, std::size_t g)
+std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const std::string& rootname="")
 {
     // Output image file path
     std::stringstream sstream;
-    sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
+    if (rootname == "")
+    {
+        sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
+    }
+    else
+    {
+        sstream << rootname << ".exr";
+    }
     const std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
     return hdrImagePath;
 }
@@ -53,6 +60,7 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmOutputDataFilepath;
     int nbBrackets = 3;
     bool byPass = false;
+    bool keepSourceImageName = false;
     int channelQuantizationPower = 10;
     int offsetRefBracketIndex = 1000; // By default, use the automatic selection
     double meanTargetedLumaForMerging = 0.4;
@@ -83,6 +91,8 @@ int aliceVision_main(int argc, char** argv)
          "bracket count per HDR image (0 means automatic).")
         ("byPass", po::value<bool>(&byPass)->default_value(byPass),
          "bypass HDR creation and use medium bracket as input for next steps")
+        ("keepSourceImageName", po::value<bool>(&keepSourceImageName)->default_value(keepSourceImageName),
+         "Keep the filename of the input image selected as central image for the output image filename")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
@@ -257,7 +267,8 @@ int aliceVision_main(int argc, char** argv)
             }
             if(!byPass)
             {
-                const std::string hdrImagePath = getHdrImagePath(outputPath, g);
+                boost::filesystem::path p(targetViews[g]->getImagePath());
+                const std::string hdrImagePath = getHdrImagePath(outputPath, g, keepSourceImageName ? p.stem().string() : "");
                 hdrView->setImagePath(hdrImagePath);
             }
             outputSfm.getViews()[hdrView->getViewId()] = hdrView;
@@ -331,7 +342,8 @@ int aliceVision_main(int argc, char** argv)
             HDRimage = images[0];
         }
 
-        const std::string hdrImagePath = getHdrImagePath(outputPath, g);
+        boost::filesystem::path p(targetView->getImagePath());
+        const std::string hdrImagePath = getHdrImagePath(outputPath, g, keepSourceImageName ? p.stem().string() : "");
 
         // Write an image with parameters from the target view
         std::map<std::string, std::string> viewMetadata = targetView->getMetadata();
