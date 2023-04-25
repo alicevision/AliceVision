@@ -335,7 +335,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
     }
 
     // retrieve missing capacity
-    unsigned long long int missingCapacity = memSize + _info.contentSize - _info.capacity;
+    long long int missingCapacity = memSize + _info.contentSize - _info.capacity;
 
     // find unused image with size bigger than missing capacity
     // remove it and add image to cache
