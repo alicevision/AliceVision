@@ -18,7 +18,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -31,12 +31,14 @@ const std::string supportedExtensions = "exr, jpg, png";
 int aliceVision_main(int argc, char** argv)
 {
     // Command-line parameters
-    std::vector<std::string> mediaPaths;    // media file path list
+    std::vector<std::string> inputPaths;    // media or SfMData file path list
     std::vector<std::string> brands;        // media brand list
     std::vector<std::string> models;        // media model list
     std::vector<float> mmFocals;            // media focal (mm) list
     std::string sensorDbPath;               // camera sensor width database
     std::string outputFolder;               // output folder for keyframes
+    std::string outputSfMDataKeyframes;     // output SfMData file containing the selected keyframes
+    std::string outputSfMDataFrames;        // output SfMData file containing the rejected frames
 
     // Algorithm variables
     bool useSmartSelection = true;          // enable the smart selection instead of the regular one
@@ -65,12 +67,16 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
-        ("mediaPaths", po::value<std::vector<std::string>>(&mediaPaths)->required()->multitoken(),
+        ("inputPaths", po::value<std::vector<std::string>>(&inputPaths)->required()->multitoken(),
             "Input video files or image sequence directories.")
         ("sensorDbPath", po::value<std::string>(&sensorDbPath)->required(),
             "Camera sensor width database path.")
         ("outputFolder", po::value<std::string>(&outputFolder)->required(),
-            "Output folder in which the selected keyframes are written.");
+            "Output folder in which the selected keyframes are written.")
+        ("outputSfMDataKeyframes", po::value<std::string>(&outputSfMDataKeyframes)->required(),
+            "Output SfMData file containing all the selected keyframes.")
+        ("outputSfMDataFrames", po::value<std::string>(&outputSfMDataFrames)->required(),
+            "Output SfMData file containing all the rejected frames.");
 
     po::options_description metadataParams("Metadata parameters");
     metadataParams.add_options()
@@ -157,7 +163,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    const std::size_t nbCameras = mediaPaths.size();
+    const std::size_t nbCameras = inputPaths.size();
 
     // Check output folder and update to its absolute path
     {
@@ -202,7 +208,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("Camera rig of " << nbCameras << " cameras.");
 
         for (std::size_t i = 0; i < nbCameras; ++i) {
-            ALICEVISION_LOG_INFO("Camera: "              << mediaPaths.at(i)   << std::endl
+            ALICEVISION_LOG_INFO("Camera: "              << inputPaths.at(i)   << std::endl
                                 << "\t - brand: "        << brands.at(i)       << std::endl
                                 << "\t - model: "        << models.at(i)       << std::endl
                                 << "\t - focal (mm): "   << mmFocals.at(i)     << std::endl);
@@ -210,7 +216,8 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Initialize KeyframeSelector
-    keyframe::KeyframeSelector selector(mediaPaths, sensorDbPath, outputFolder);
+    keyframe::KeyframeSelector selector(inputPaths, sensorDbPath, outputFolder, outputSfMDataKeyframes,
+                                        outputSfMDataFrames);
 
     // Set frame-related algorithm parameters
     selector.setMinFrameStep(minFrameStep);

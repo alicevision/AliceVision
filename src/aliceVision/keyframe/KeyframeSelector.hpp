@@ -8,6 +8,9 @@
 
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <opencv2/optflow.hpp>
@@ -19,6 +22,7 @@
 #include <vector>
 #include <memory>
 #include <limits>
+
 namespace aliceVision {
 namespace image {
 
@@ -36,13 +40,17 @@ class KeyframeSelector
 public:
     /**
      * @brief KeyframeSelector constructor
-     * @param[in] mediaPath video file path or image sequence directory
+     * @param[in] mediaPath video file path, image sequence directory or SfMData file
      * @param[in] sensorDbPath camera sensor width database path
      * @param[in] outputFolder output keyframes directory
+     * @param[in] outputSfmKeyframes output SfMData file containing the keyframes
+     * @param[in] outputSfmFrames output SfMData file containing all the non-selected frames
      */
     KeyframeSelector(const std::vector<std::string>& mediaPaths,
-                    const std::string& sensorDbPath,
-                    const std::string& outputFolder);
+                     const std::string& sensorDbPath,
+                     const std::string& outputFolder,
+                     const std::string& outputSfmKeyframes,
+                     const std::string& outputSfmFrames);
 
     /**
      * @brief KeyframeSelector copy constructor - NO COPY
@@ -117,8 +125,9 @@ public:
      * @return true if all the selected keyframes were successfully written, false otherwise
      */
     bool writeSelection(const std::vector<std::string>& brands, const std::vector<std::string>& models,
-                    const std::vector<float>& mmFocals, const bool renameKeyframes, const std::string& outputExtension,
-                    const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined) const;
+                        const std::vector<float>& mmFocals, const bool renameKeyframes,
+                        const std::string& outputExtension,
+                        const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined);
 
     /**
      * @brief Export the computed sharpness and optical flow scores to a CSV file
@@ -237,6 +246,65 @@ private:
     double estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
                         const cv::Mat& previousGrayscaleImage, const std::size_t cellSize);
 
+    /**
+     * @brief Write the output SfMData files with the selected and non-selected keyframes information
+     * @param[in] mediaPath input video file path, image sequence directory or SfMData file
+     * @param[in] feed the feed provider
+     * @param[in] brands brand name for each camera
+     * @param[in] models model name for each camera
+     * @param[in] mmFocals focal in millimeters for each camera
+     * @return true if the output SfMData files were written as expected, false otherwise
+     */
+    bool writeSfMData(const std::string& mediaPath, dataio::FeedProvider &feed, const std::vector<std::string>& brands,
+                      const std::vector<std::string>& models, const std::vector<float>& mmFocals);
+
+    /**
+     * @brief Copy the relevant information from the input SfMData file and fill the output SfMData files that will
+     *        contain the selected and non-selected keyframes information (rigs are not supported)
+     * @param[in] mediaPath input SfMData file
+     * @return true if the output SfMData files have successfully been filled, false otherwise
+     */
+    bool writeSfMDataFromSfMData(const std::string& mediaPath);
+
+    /**
+     * @brief Fill the output SfMData files with the information about the selected keyframes and the non-selected
+     *        frames (rigs are supported, but non-selected frames will not be written in the corresponding output
+     *        SfMData file if the input is a video)
+     * @param mediaPath input video file path or image sequence directory
+     * @param feed the feed provider
+     * @param brands brand name for each camera
+     * @param models model name for each camera
+     * @param mmFocals focal in millimiters for each camera
+     * @return true if the output SfMData files have successfully been filled, false otherwise
+     */
+    bool writeSfMDataFromSequences(const std::string& mediaPath, dataio::FeedProvider &feed,
+                                   const std::vector<std::string>& brands, const std::vector<std::string>& models,
+                                   const std::vector<float>& mmFocals);
+
+    /**
+     * @brief Create a View object for the SfMData files
+     * @param imagePath the path of the image corresponding to the view to create
+     * @param intrinsicId the intrinsic ID for the view to create
+     * @param previousFrameId the frame ID of the last created view
+     * @param imageWidth the width of the image corresponding to the view to create
+     * @param imageHeight the height of the image corresponding to the view to create
+     * @return a shared pointer to the created View
+     */
+    std::shared_ptr<sfmData::View> createView(const std::string& imagePath, IndexT intrinsicId, IndexT previousFrameId,
+                    std::size_t imageWidth, std::size_t imageHeight);
+
+    /**
+     * @brief Create an Intrinsic object associated to a specific View
+     * @param view the View that the intrinsic will be associated to
+     * @param focalLength the focal length in millimiter (if 0, default value will be used)
+     * @param sensorWidth the sensor width
+     * @param imageRatio the width over height ratio for the View's image
+     * @param mediaIndex the media index
+     * @return a shared pointer to the created Intrinsic
+     */
+    std::shared_ptr<camera::IntrinsicBase> createIntrinsic(const sfmData::View& view, const double focalLength, const double sensorWidth,
+                        const double imageRatio, std::size_t mediaIndex);
+
     /// Selected keyframes IDs
     std::vector<unsigned int> _selectedKeyframes;
 
@@ -246,6 +314,10 @@ private:
     std::string _sensorDbPath;
     /// Output folder for keyframes
     std::string _outputFolder;
+    /// Path of the output SfMData with keyframes
+    std::string _outputSfmKeyframesPath;
+    /// Path of the output SfMData with non-selected frames
+    std::string _outputSfmFramesPath;
 
     // Parameters common to both the regular and smart methods
     /// Maximum number of output frames (0 = no limit)
@@ -268,9 +340,21 @@ private:
     /// Vector containing 1s for frames that have been selected, 0 for those which have not
     std::vector<char> _selectedFrames;
 
+    /// Output SfMData containing the keyframes
+    sfmData::SfMData _outputSfmKeyframes;
+    /// Output SfMData containing the non-selected frames
+    sfmData::SfMData _outputSfmFrames;
+
     /// Size of the frame (afer rescale, if any is applied)
     unsigned int _frameWidth = 0;
     unsigned int _frameHeight = 0;
+
+    /// Parsed sensor database
+    std::vector<sensorDB::Datasheet> _sensorDatabase;
+    bool _parsedSensorDb = false;
+
+    /// Map media path index with names of the output images (used when the input medias are videos)
+    std::map<std::size_t, std::vector<std::string>> _keyframesPaths;
 
     /// Map score vectors with names for export
     std::map<const std::string, const std::vector<double>*> scoresMap;

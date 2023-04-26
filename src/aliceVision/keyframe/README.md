@@ -2,9 +2,9 @@
 
 This module provides several methods to perform a keyframe selection.
 
-The goal of the keyframe selection is to extract, from an input video or an input sequence of images, keyframes.
+The goal of the keyframe selection is to extract, from an input video, an input sequence of images or an SfMData file, keyframes.
 Two methods are currently supported:
-- a **regular** selection method, which selects keyframes regularly across the input video / sequence according to a set of parameters;
+- a **regular** selection method, which selects keyframes regularly across the input video / sequence / SfMData according to a set of parameters;
 - a **smart** selection method, which analyses the sharpness and motion of all the frames to select those which are deemed the most relevant (a frame is considered relevant if it contains significant motion in comparison to the last selected keyframe while being as sharp as possible).
 
 The selected keyframes can be written as JPG, PNG or EXR images, and the storage data type can be specified when the EXR file extension is selected.
@@ -13,8 +13,15 @@ The keyframe selection module supports the following inputs:
 - a path to a video file (e.g. "/path/to/video.mp4")
 - a path to a folder containing images (e.g. "/path/to/folder/")
 - a path to a folder containing images with a regular expression (e.g. "/path/to/folder/*.exr")
+- a path to an SfMData file (e.g. "/path/to/sfmData.sfm")
 
-Camera rigs are also supported.
+Camera rigs are also supported for all the inputs except the SfMData file.
+
+In addition to writing the selected keyframes on disk, two SfMData files are written:
+- one that contains all the selected keyframes
+- one that contains all the frames that were not selected as keyframes
+
+_N.B: If the input is a video file, the SfMData file which contains the rejected frames will not be written at all, since none of these frames is available on disk. As the selected keyframes will be written at the end of the selection, the SfMData file containing the keyframes **will** be written._
 
 ## Regular selection method
 
@@ -97,7 +104,9 @@ Debug options specific to the smart selection method are available:
 ```cpp
 KeyframeSelector(const std::vector<std::string>& mediaPaths,
                  const std::string& sensorDbPath,
-                 const std::string& outputFolder);
+                 const std::string& outputFolder,
+                 const std::string& outputSfmKeyframes,
+                 const std::string& outputSfmFrames);
 ```
 - Selection with regular method
 ```cpp
