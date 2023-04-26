@@ -193,7 +193,7 @@ int aliceVision_main(int argc, char** argv)
 {
     std::string inputPanoramaPath;
     std::string outputPanoramaPath;
-    std::string outputPanoramaPreviewPath;
+    std::string outputPanoramaPreviewPath = "";
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     size_t previewSize = 1000;
@@ -203,8 +203,7 @@ int aliceVision_main(int argc, char** argv)
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPanorama,i", po::value<std::string>(&inputPanoramaPath)->required(), "Input Panorama.")
-        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.")
-        ("outputPanoramaPreview,o", po::value<std::string>(&outputPanoramaPreviewPath)->required(), "Path of the output panorama preview.");
+        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
@@ -212,7 +211,8 @@ int aliceVision_main(int argc, char** argv)
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
         ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
         ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
-        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.");
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.")
+        ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath), "Path of the output panorama preview.");
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
                     "AliceVision PanoramaPostProcessing");
@@ -595,7 +595,10 @@ int aliceVision_main(int argc, char** argv)
     panoramaInput->close();
     panoramaOutput->close();
 
-    image::writeImage(outputPanoramaPreviewPath, previewImage, image::ImageWriteOptions());
+    if (outputPanoramaPreviewPath != "")
+    {
+        image::writeImage(outputPanoramaPreviewPath, previewImage, image::ImageWriteOptions());
+    }
 
     return EXIT_SUCCESS;
 }
