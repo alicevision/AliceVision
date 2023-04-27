@@ -192,32 +192,7 @@ public:
     }
 
     // Data wrapper for non linear optimization (update from data)
-    bool updateFromParams(const std::vector<double>& params) override
-    {
-        if (_pDistortion == nullptr)
-        {
-            if (params.size() != 4)
-            {
-            return false;
-            }
-        }
-        else
-        {
-            if (params.size() != (4 + _pDistortion->getDistortionParametersCount()))
-            {
-            return false;
-            }
-        }
-
-        _scale(0) = params[0];
-        _scale(1) = params[1];
-        _offset(0) = params[2];
-        _offset(1) = params[3];
-
-        setDistortionParams({params.begin() + 4, params.end()});
-
-        return true;
-    }
+    bool updateFromParams(const std::vector<double>& params) override;
 
     float getMaximalDistortion(double min_radius, double max_radius) const override
     {

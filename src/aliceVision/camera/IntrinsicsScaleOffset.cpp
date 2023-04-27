@@ -14,10 +14,17 @@ namespace camera {
 bool IntrinsicsScaleOffset::operator==(const IntrinsicBase& otherBase) const
 {
     if (!IntrinsicBase::operator==(otherBase))
+    {
         return false;
+    }
+    
     if (typeid(*this) != typeid(otherBase))
+    {
         return false;
+    }
+    
     const IntrinsicsScaleOffset& other = static_cast<const IntrinsicsScaleOffset&>(otherBase);
+
     return _scale.isApprox(other._scale) && _offset.isApprox(other._offset);
 }
 
@@ -105,7 +112,7 @@ void IntrinsicsScaleOffset::rescale(float factor)
 
 bool IntrinsicsScaleOffset::updateFromParams(const std::vector<double>& params)
 {
-    if (params.size() != 4)
+    if (params.size() < 4)
     {
         return false;
     }

@@ -13,17 +13,6 @@ namespace camera {
 
 bool IntrinsicBase::operator==(const IntrinsicBase& other) const
 {
-    if (getParams().size() != other.getParams().size())
-    {
-        return false;
-    }
-    for (std::size_t i = 0; i < getParams().size(); ++i)
-    {
-        if (!isSimilar(getParams()[i], other.getParams()[i]))
-        {
-            return false;
-        }
-    }
     return _w == other._w &&
             _h == other._h &&
             _sensorWidth == other._sensorWidth &&

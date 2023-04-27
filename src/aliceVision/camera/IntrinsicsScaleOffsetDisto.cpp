@@ -12,17 +12,34 @@ namespace camera {
 bool IntrinsicsScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) const
 {
     if (!IntrinsicsScaleOffset::operator==(otherBase))
+    {
         return false;
+    }
+
     if (typeid(*this) != typeid(otherBase))
+    {
         return false;
+    }
+
     const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
 
     if (_distortionInitializationMode != other._distortionInitializationMode)
+    {
         return false;
+    }
 
-    if (_pDistortion != nullptr && other._pDistortion != nullptr)
+    if (_pDistortion && other._pDistortion)
+    {
         return (*_pDistortion) == (*other._pDistortion);
-    return _pDistortion == other._pDistortion;
+    }
+
+    if (_pUndistortion && other._pUndistortion)
+    {
+        return (*_pUndistortion) == (*other._pUndistortion);
+    }
+
+    return _pDistortion == nullptr && other._pDistortion == nullptr
+        && _pUndistortion == nullptr && other._pUndistortion == nullptr;
 }
 
 Vec2 IntrinsicsScaleOffsetDisto::get_ud_pixel(const Vec2& p) const
@@ -33,6 +50,21 @@ Vec2 IntrinsicsScaleOffsetDisto::get_ud_pixel(const Vec2& p) const
 Vec2 IntrinsicsScaleOffsetDisto::get_d_pixel(const Vec2& p) const
 {
     return cam2ima(addDistortion(ima2cam(p)));
+}
+
+bool IntrinsicsScaleOffsetDisto::updateFromParams(const std::vector<double>& params)
+{
+    if (!IntrinsicsScaleOffset::updateFromParams(params))
+    {
+        return false;
+    }
+
+    if (_pDistortion && params.size() == 4 + _pDistortion->getParameters().size())
+    {
+        setDistortionParams({params.begin() + 4, params.end()});
+    }
+
+    return true;
 }
 
 } // namespace camera
