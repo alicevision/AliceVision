@@ -193,23 +193,26 @@ int aliceVision_main(int argc, char** argv)
 {
     std::string inputPanoramaPath;
     std::string outputPanoramaPath;
+    std::string outputPanoramaPreviewPath = "";
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
-    const size_t maxProcessingSize = 2000;
+    size_t previewSize = 1000;
     bool fillHoles = false;  
 
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPanorama,i", po::value<std::string>(&inputPanoramaPath)->required(), "Input Panorama.")
-        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");;
+        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
         ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
-        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.");
+        ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.")
+        ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath), "Path of the output panorama preview.");
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
                     "AliceVision PanoramaPostProcessing");
@@ -226,6 +229,9 @@ int aliceVision_main(int argc, char** argv)
     {
         return EXIT_FAILURE;
     }
+
+    
+    fs::path previewPath = fs::path(outputPanoramaPath).parent_path() / "preview.jpg";
 
     //Get information about input panorama
     const oiio::ImageSpec &inputSpec = panoramaInput->spec();
@@ -288,6 +294,17 @@ int aliceVision_main(int argc, char** argv)
     const int countWidth = std::ceil(double(width) / double(tileSize));
     const int countHeight = std::ceil(double(height) / double(tileSize));
     const int rowSize = countWidth + 2;
+
+    if (previewSize > width || previewSize <= 0)
+    {
+        ALICEVISION_LOG_INFO("Preview size must be inferior to the original panorama size and superior to 0");
+        ALICEVISION_LOG_INFO("Falling back to recommended size of 1000");
+        previewSize = 1000;
+    }
+
+    const double ratioPreview = double(width) / double(previewSize);
+    image::Image<image::RGBAfColor> previewImage(previewSize, previewSize / 2);
+    int previewCurrentRow = 0;
 
     if (fillHoles)
     {
@@ -367,6 +384,9 @@ int aliceVision_main(int argc, char** argv)
         //Process one full row of tiles each iteration
         for (int ty = 0; ty < countHeight; ty++)
         {
+            int ybegin = ty * tileSize;
+            int yend = (ty + 1) * tileSize - 1;
+            
             //Build subimage
             image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);          
             image::Image<image::RGBAfColor> subFiled(rowSize, 3, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
@@ -493,6 +513,25 @@ int aliceVision_main(int argc, char** argv)
             
             final.block(0, 0, tileSize, width) = finalTile.block(tileSize, tileSize, tileSize, width);
 
+            //Fill preview image
+            while (previewCurrentRow < previewImage.rows())
+            {
+                double finalY = ratioPreview * double(previewCurrentRow) - ybegin;
+                if (finalY < 0 || finalY >= tileSize)
+                {
+                    break;
+                }
+
+                int by = int(finalY);
+                for (int px = 0; px < previewImage.cols(); px++)
+                {
+                    int bx = int(ratioPreview * double(px));
+                    previewImage(previewCurrentRow, px) = final(by, bx);
+                }
+
+                previewCurrentRow++;
+            }
+
             colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
 
             panoramaOutput->write_scanlines(ty * tileSize, (ty + 1) * tileSize, 0, oiio::TypeDesc::FLOAT, final.data());
@@ -504,7 +543,7 @@ int aliceVision_main(int argc, char** argv)
         for (int ty = 0; ty < countHeight; ty++)
         {
             int ybegin = ty * tileSize;
-            int yend = (ty + 1) * tileSize;
+            int yend = (ty + 1) * tileSize - 1;
 
             image::Image<image::RGBAfColor> final(width, tileSize, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
             
@@ -528,6 +567,25 @@ int aliceVision_main(int argc, char** argv)
                 }
             }
 
+            //Fill preview image
+            while (previewCurrentRow < previewImage.rows())
+            {
+                double finalY = ratioPreview * double(previewCurrentRow) - ybegin;
+                if (finalY < 0 || finalY >= tileSize)
+                {
+                    break;
+                }
+
+                int by = int(finalY);
+                for (int px = 0; px < previewImage.cols(); px++)
+                {
+                    int bx = int(ratioPreview * double(px));
+                    previewImage(previewCurrentRow, px) = final(by, bx);
+                }
+
+                previewCurrentRow++;
+            }
+
             colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
 
             panoramaOutput->write_scanlines(ybegin, yend, 0, oiio::TypeDesc::FLOAT, final.data());
@@ -536,6 +594,11 @@ int aliceVision_main(int argc, char** argv)
 
     panoramaInput->close();
     panoramaOutput->close();
+
+    if (outputPanoramaPreviewPath != "")
+    {
+        image::writeImage(outputPanoramaPreviewPath, previewImage, image::ImageWriteOptions());
+    }
 
     return EXIT_SUCCESS;
 }
