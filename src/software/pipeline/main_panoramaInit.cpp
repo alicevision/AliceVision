@@ -786,7 +786,7 @@ int main(int argc, char* argv[])
     double fisheyeRadius = 96.0;
     float additionalAngle = 0.0f;
     bool debugFisheyeCircleEstimation = false;
-    bool buildContactSheet = true;
+    bool buildContactSheet = false;
     int contactSheetItemMaxSize = 256;
 
     // Command line parameters
