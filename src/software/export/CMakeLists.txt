@@ -215,6 +215,7 @@ alicevision_add_software(aliceVision_exportDistortion
   SOURCE main_exportDistortion.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_camera
         aliceVision_sfmData
         aliceVision_sfmDataIO

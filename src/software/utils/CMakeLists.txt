@@ -337,6 +337,7 @@ alicevision_add_software(aliceVision_applyCalibration
   SOURCE main_applyCalibration.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_cmdline
         aliceVision_sfmData
         aliceVision_sfmDataIO
         aliceVision_camera
