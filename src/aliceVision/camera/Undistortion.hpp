@@ -30,10 +30,8 @@ public:
 
     Undistortion(int width, int height)
     {
-        _size = { width, height };
-        _diagonal = sqrt(width * width + height * height) * 0.5;
-        _center = {width / 2, height / 2};
-        _offset = { 0.0, 0.0 };
+        setSize(width, height);
+        setOffset({ 0.0, 0.0 });
     }
 
     virtual Undistortion* clone() const = 0;
@@ -47,6 +45,13 @@ public:
     void setOffset(const Vec2& offset)
     {
         _offset = offset;
+    }
+
+    void setSize(int width, int height)
+    {
+        _size = { width, height };
+        _diagonal = sqrt(width * width + height * height) * 0.5;
+        _center = {width / 2, height / 2};
     }
 
     inline Vec2 getOffset() const

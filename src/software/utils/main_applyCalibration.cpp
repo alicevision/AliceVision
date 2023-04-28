@@ -15,6 +15,8 @@
 #include <boost/program_options.hpp>
 
 #include <string>
+#include <cmath>
+#include <memory>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -77,7 +79,9 @@ int aliceVision_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    const auto& calibratedIntrinsic = calibratedIntrinsics.begin()->second;
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> calibratedIntrinsic
+        = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(calibratedIntrinsics.begin()->second);
+
     if (calibratedIntrinsic->getDistortionInitializationMode() != camera::EInitMode::CALIBRATED)
     {
         ALICEVISION_LOG_ERROR("Intrinsic from calibrated SfMData is not calibrated");
@@ -86,9 +90,41 @@ int aliceVision_main(int argc, char **argv)
 
     // Overwrite input SfMData intrinsics with calibrated one
     auto& intrinsics = sfmData.getIntrinsics();
-    for (const auto& [intrinsicId, _] : intrinsics)
+    for (const auto& [intrinsicId, intrinsic] : intrinsics)
     {
-        intrinsics[intrinsicId] = calibratedIntrinsic;
+        // Aspect ratio of input intrinsic
+        const unsigned int width = intrinsic->w();
+        const unsigned int height = intrinsic->h();
+        const double aspect = static_cast<double>(height) / static_cast<double>(width);
+
+        // Aspect ratio of calibrated intrinsic
+        const unsigned int calibrationWidth = calibratedIntrinsic->w();
+        const unsigned int calibrationHeight = calibratedIntrinsic->h();
+        const double calibrationAspect = static_cast<double>(calibrationHeight) / static_cast<double>(calibrationWidth);
+
+        // Check that aspect ratios are approximately equal
+        if (std::abs(aspect - calibrationAspect) > 1e-2)
+        {
+            ALICEVISION_LOG_ERROR("Intrinsic from input SfMData and calibrated SfMData are incompatible.");
+            return EXIT_FAILURE;
+        }
+
+        // Create copy of calibrated intrinsic
+        std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> newIntrinsic
+            = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(camera::createIntrinsic(calibratedIntrinsic->getType()));
+        newIntrinsic->assign(*calibratedIntrinsic);
+
+        // Apply dimensions of input intrinsic
+        newIntrinsic->setWidth(width);
+        newIntrinsic->setHeight(height);
+        auto undistortion = newIntrinsic->getUndistortion();
+        if (undistortion)
+        {
+            undistortion->setSize(width, height);
+        }
+
+        // Overwrite intrinsic with new one
+        intrinsics[intrinsicId] = newIntrinsic;
     }
 
     // Save sfmData to disk
