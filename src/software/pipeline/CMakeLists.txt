@@ -546,17 +546,6 @@ if(ALICEVISION_HAVE_OPENCV)
             aliceVision_sfmDataIO
             Boost::program_options
     )
-    alicevision_add_software(aliceVision_rti_PS
-      SOURCE main_RTI_PS.cpp
-      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-      LINKS aliceVision_photometricStereo
-            aliceVision_system
-            aliceVision_mvsData
-            aliceVision_mvsUtils
-            aliceVision_sfmData
-            aliceVision_sfmDataIO
-            Boost::program_options
-    )
 endif()
 
 alicevision_add_software(aliceVision_lightingCalibration
