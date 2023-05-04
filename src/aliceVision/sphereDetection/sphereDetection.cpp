@@ -200,6 +200,10 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
 
         std::string sphereName = std::to_string(viewID.second->getViewId());
         const fs::path image_path = fs::path(sfmData.getView(viewID.second->getViewId()).getImagePath());
+
+        if(boost::algorithm::icontains(image_path.stem().string(), "ambiant"))
+            continue;
+
         auto pred = predict(session, image_path, output_path, min_score);
 
         bpt::ptree spheres_node;
