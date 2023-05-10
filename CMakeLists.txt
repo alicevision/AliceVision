@@ -25,7 +25,7 @@ option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
 option(AV_BUILD_PCL "Enable building an embedded PointCloud library" ON)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
-option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" OFF)
+option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" ON)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
 # disable by default for AppleClang
@@ -256,23 +256,10 @@ ExternalProject_Add(${TBB_TARGET}
 set(TBB_CMAKE_FLAGS -DTBB_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/TBB)
 
 # Eigen requires overaligned buffers for maximum efficiency (e.g. on AVX512 buffers may need to
-# be aligned to 64 bytes). AliceVision currently does not support this. Fortunately this is fixed
-# in C++17. While we can't upgrade to C++17 just yet, some compilers support overaligned
-# allocation feature with a separate flag, so use it if alignment is enabled in Eigen.
+# be aligned to 64 bytes). Fortunately this is fixed in C++17.
 # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
-if(AV_EIGEN_MEMORY_ALIGNMENT)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
-    set(EIGEN_CMAKE_ALIGNMENT_FLAGS "-DCMAKE_CXX_FLAGS:STRING=-faligned-new")
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0)
-    set(EIGEN_CMAKE_ALIGNMENT_FLAGS "-DCMAKE_CXX_FLAGS:STRING=-faligned-new")
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
-    set(EIGEN_CMAKE_ALIGNMENT_FLAGS "-DCMAKE_CXX_FLAGS:STRING=-faligned-new")
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.12)
-    set(EIGEN_CMAKE_ALIGNMENT_FLAGS "-DCMAKE_CXX_FLAGS:STRING=/Zc:alignedNew")
-  else()
-    message(FATAL_ERROR "AV_EIGEN_MEMORY_ALIGNMENT is only supported starting GCC 7.1, Clang 6.0 and MSVC 2017 15.5")
-  endif()
-else()
+# Only change this option to disable it for older compilers or for debug purposes.
+if(NOT AV_EIGEN_MEMORY_ALIGNMENT)
   set(EIGEN_CMAKE_ALIGNMENT_FLAGS
       "-DCMAKE_CXX_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0"
       "-DCMAKE_C_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0")
