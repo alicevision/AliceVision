@@ -240,8 +240,6 @@ int aliceVision_main(int argc, char** argv)
     int randomSeed = std::mt19937::default_seed;
     system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
 
-    po::options_description allParams("AliceVision Sample repeatabilityDataset");
-
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input", po::value<std::string>(&datasetPath)->required(), "Path to the datasets.")
@@ -250,67 +248,35 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-        feature::EImageDescriberType_informations().c_str())
-
+         feature::EImageDescriberType_informations().c_str())
         ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescConfig.descPreset)->default_value(featDescConfig.descPreset),
-        "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
-        "Configuration 'ultra' can take long time !")
+         "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
+         "Configuration 'ultra' can take long time !")
         ("describerQuality", po::value<feature::EFeatureQuality>(&featDescConfig.quality)->default_value(featDescConfig.quality),
-        feature::EFeatureQuality_information().c_str())
+         feature::EFeatureQuality_information().c_str())
         ("gridFiltering", po::value<bool>(&featDescConfig.gridFiltering)->default_value(featDescConfig.gridFiltering),
-        "Enable grid filtering. Highly recommended to ensure usable number of features.")
+         "Enable grid filtering. Highly recommended to ensure usable number of features.")
         ("contrastFiltering", po::value<feature::EFeatureConstrastFiltering>(&featDescConfig.contrastFiltering)->default_value(featDescConfig.contrastFiltering),
-        feature::EFeatureConstrastFiltering_information().c_str())
+         feature::EFeatureConstrastFiltering_information().c_str())
         ("relativePeakThreshold", po::value<float>(&featDescConfig.relativePeakThreshold)->default_value(featDescConfig.relativePeakThreshold),
-        "Peak Threshold relative to median of gradiants.")
+         "Peak Threshold relative to median of gradiants.")
         ("forceCpuExtraction", po::value<bool>(&forceCpuExtraction)->default_value(forceCpuExtraction),
          "Use only CPU feature extraction methods.")
-
         ("featureRepeatability", po::value<bool>(&featureRepeatability)->default_value(featureRepeatability),
-        "Feature repeatability.")
+         "Feature repeatability.")
         ("matchingRepeatability", po::value<bool>(&matchingRepeatability)->default_value(matchingRepeatability),
-        "MatchingRepeatability.")
+         "MatchingRepeatability.")
         ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
-          "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
-        ;
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
 
-    po::options_description logParams("Log parameters");
-    logParams.add_options()("verboseLevel,v",
-                            po::value<system::EVerboseLevel>(&verboseLevel)->default_value(verboseLevel),
-                            "verbosity level (fatal, error, warning, info, debug, trace).");
+    aliceVision::CmdLine cmdline("AliceVision Sample repeatabilityDataset");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
 
-    allParams.add(requiredParams).add(optionalParams).add(logParams);
-
-    po::variables_map vm;
-    try
+    if(!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-        if(vm.count("help") || (argc == 1))
-        {
-            ALICEVISION_COUT(allParams);
-            return EXIT_SUCCESS;
-        }
-        po::notify(vm);
-    }
-    catch(boost::program_options::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
         return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
-        return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
-
-    // set verbose level
-    system::Logger::get()->setLogLevel(verboseLevel);
 
     std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 

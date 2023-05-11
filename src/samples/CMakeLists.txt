@@ -4,8 +4,6 @@
 # Samples PROPERTY FOLDER
 set(FOLDER_SAMPLES "Samples")
 
-# add_subdirectory(accv12Demo)
-# add_subdirectory(featuresAKAZEDemo)
 add_subdirectory(featuresRepeatability)
 # add_subdirectory(imageData)
 add_subdirectory(imageDescriberMatches)
