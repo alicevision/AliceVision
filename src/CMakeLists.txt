@@ -38,7 +38,7 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
-# C++14
+# C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -631,26 +631,17 @@ if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
   endif()
 
-  find_package(CUDA 7.0)
+  find_package(CUDA 11.0)
 
   if(CUDA_FOUND)
     set(ALICEVISION_HAVE_CUDA 1)
     message(STATUS "CUDA found.")
   elseif(ALICEVISION_USE_CUDA STREQUAL "ON")
-    message(SEND_ERROR "Failed to find CUDA (>= 7.0).")
+    message(SEND_ERROR "Failed to find CUDA (>= 11.0).")
   endif()
 endif()
 
 if(ALICEVISION_HAVE_CUDA)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0")
-      if(CUDA_VERSION VERSION_LESS "8.0")
-        MESSAGE(STATUS "Found gcc >=5 and CUDA <= 7.5, adding workaround C++ flags")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORCE_INLINES -D_MWAITXINTRIN_H_INCLUDED -D__STRICT_ANSI__")
-      endif()
-    endif()
-  endif()
-
   set(CUDA_SEPARABLE_COMPILATION ON)
   message("Build Mode: ${CMAKE_BUILD_TYPE}")
 
@@ -666,14 +657,8 @@ if(ALICEVISION_HAVE_CUDA)
     set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80 86)
   elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 11)
     set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 10)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62 70 72 75)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 9)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62 70)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 8)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 60 61 62)
   else()
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 )
+    message(SEND_ERROR "Requires CUDA >= 11.0.")
   endif()
   set(ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CUDA_CC_LIST_BASIC}
       CACHE STRING "CUDA CC versions to compile")
@@ -690,28 +675,23 @@ if(ALICEVISION_HAVE_CUDA)
   list(GET ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CC_LIST_LEN} ALICEVISION_CUDA_CC_LIST_LAST)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CUDA_CC_LIST_LAST},code=compute_${ALICEVISION_CUDA_CC_LIST_LAST}")
 
-
-  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
-  endif()
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++17")
 
   # default stream legacy implies that the 0 stream synchronizes all streams
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;legacy")
   # default stream per-thread implies that each host thread has one non-synchronizing 0-stream
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
   # print local memory usage per kernel: -Xptxas;-v
-  # CUDA >= 7.5: -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
+  #   -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
   message(STATUS "CUDA Version is ${CUDA_VERSION}")
-  if(NOT CUDA_VERSION VERSION_LESS 7.5) # cuda >= 7.5
-    if(UNIX)
-      set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
-    endif()
-    if(ALICEVISION_NVCC_WARNINGS)
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
-    endif()
+  if(UNIX)
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
+  endif()
+  if(ALICEVISION_NVCC_WARNINGS)
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
   endif()
 
   # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
