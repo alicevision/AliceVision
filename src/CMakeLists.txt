@@ -625,8 +625,6 @@ if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
     # Need to declare CUDA_USE_STATIC_CUDA_RUNTIME as an option to ensure that it is not overwritten in FindCUDA.
     option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
     set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
-    # Workaround to force deactivation of cuda static runtime for cmake < 3.10
-    set(CUDA_cudart_static_LIBRARY 0)
   else()
     message(STATUS "BUILD_SHARED_LIBS OFF")
     option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" ON)
