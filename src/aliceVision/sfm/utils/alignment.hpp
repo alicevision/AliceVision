@@ -17,32 +17,32 @@ inline void getCommonViews(const sfmData::SfMData& sfmDataA,
                            const sfmData::SfMData& sfmDataB,
                            std::vector<IndexT>& outIndexes)
 {
-  for(const auto& viewA: sfmDataA.getViews())
-  {
-    if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end())
+    for(const auto& viewA: sfmDataA.getViews())
     {
-      outIndexes.push_back(viewA.first);
+        if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end())
+        {
+            outIndexes.push_back(viewA.first);
+        }
     }
-  }
 }
 
 inline void getCommonViewsWithPoses(const sfmData::SfMData& sfmDataA,
                                     const sfmData::SfMData& sfmDataB,
                                     std::vector<IndexT>& outIndexes)
 {
-  for(const auto& viewA: sfmDataA.getViews())
-  {
-    // check there is a view with the same ID and both of them have pose and 
-    // intrinsics defined
-    if(!sfmDataA.isPoseAndIntrinsicDefined(viewA.second.get()))
-      continue;
-
-    if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end() &&
-       sfmDataB.isPoseAndIntrinsicDefined(viewA.first))
+    for(const auto& viewA: sfmDataA.getViews())
     {
-      outIndexes.push_back(viewA.first);
+        // check there is a view with the same ID and both of them have pose and 
+        // intrinsics defined
+        if(!sfmDataA.isPoseAndIntrinsicDefined(viewA.second.get()))
+            continue;
+
+        if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end() &&
+            sfmDataB.isPoseAndIntrinsicDefined(viewA.first))
+        {
+            outIndexes.push_back(viewA.first);
+        }
     }
-  }
 }
 
 inline void getCommonPoseId(const sfmData::SfMData& sfmDataA,
@@ -153,32 +153,33 @@ inline void applyTransform(sfmData::SfMData& sfmData,
                            const Vec3& t,
                            bool transformControlPoints = false)
 {
-  for(auto& poseIt: sfmData.getPoses())
-  {
-    geometry::Pose3 pose = poseIt.second.getTransform();
-    pose = pose.transformSRt(S, R, t);
-    poseIt.second.setTransform(pose);
-  }
-  for (auto& rigIt : sfmData.getRigs())
-  {
-      for (auto& subPose : rigIt.second.getSubPoses())
-      {
-          subPose.pose.center() *= S;
-      }
-  }
+    for(auto& poseIt: sfmData.getPoses())
+    {
+        geometry::Pose3 pose = poseIt.second.getTransform();
+        pose = pose.transformSRt(S, R, t);
+        poseIt.second.setTransform(pose);
+    }
 
-  for(auto& landmark: sfmData.structure)
-  {
-    landmark.second.X = S * R * landmark.second.X + t;
-  }
-  
-  if(!transformControlPoints)
-    return;
-  
-  for(auto& controlPts: sfmData.control_points)
-  {
-    controlPts.second.X = S * R * controlPts.second.X + t;
-  }
+    for (auto& rigIt : sfmData.getRigs())
+    {
+        for (auto& subPose : rigIt.second.getSubPoses())
+        {
+            subPose.pose.center() *= S;
+        }
+    }
+
+    for(auto& landmark: sfmData.structure)
+    {
+        landmark.second.X = S * R * landmark.second.X + t;
+    }
+
+    if(!transformControlPoints)
+        return;
+
+    for(auto& controlPts: sfmData.control_points)
+    {
+        controlPts.second.X = S * R * controlPts.second.X + t;
+    }
 }
 
 /**

@@ -128,20 +128,20 @@ bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
                        Mat3* out_R,
                        Vec3* out_t)
 {
-  assert(out_S != nullptr);
-  assert(out_R != nullptr);
-  assert(out_t != nullptr);
-  
-  std::vector<IndexT> commonViewIds;
-  getCommonViewsWithPoses(sfmDataA, sfmDataB, commonViewIds);
-  ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
+    assert(out_S != nullptr);
+    assert(out_R != nullptr);
+    assert(out_t != nullptr);
 
-  std::vector<std::pair<IndexT, IndexT>> commonViewIds_pairs;
-  for (IndexT id : commonViewIds)
-  {
-      commonViewIds_pairs.push_back(std::make_pair(id, id));
-  }
-  return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds_pairs, randomNumberGenerator, out_S, out_R, out_t);
+    std::vector<IndexT> commonViewIds;
+    getCommonViewsWithPoses(sfmDataA, sfmDataB, commonViewIds);
+    ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
+
+    std::vector<std::pair<IndexT, IndexT>> commonViewIds_pairs;
+    for (IndexT id : commonViewIds)
+    {
+        commonViewIds_pairs.push_back(std::make_pair(id, id));
+    }
+    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds_pairs, randomNumberGenerator, out_S, out_R, out_t);
 }
 
 bool computeSimilarityFromCommonCameras_poseId(
@@ -629,116 +629,116 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
                                            Mat3& out_R,
                                            Vec3& out_t)
 {
-  const std::size_t nbCameras = sfmData.getPoses().size();
-  Mat3X vCamCenter(3,nbCameras);
+    const std::size_t nbCameras = sfmData.getPoses().size();
+    Mat3X vCamCenter(3,nbCameras);
 
-  // Compute the mean of the point cloud
-  Vec3 meanCameraCenter = Vec3::Zero();
+    // Compute the mean of the point cloud
+    Vec3 meanCameraCenter = Vec3::Zero();
 
-  Vec3::Index ncol = 0;
-  for (const auto & pose : sfmData.getPoses())
-  {
-    const Vec3 center = pose.second.getTransform().center();
-    vCamCenter.col(ncol) = center;
-    meanCameraCenter +=  center;
-    ++ncol;
-  }
-  meanCameraCenter /= nbCameras;
+    Vec3::Index ncol = 0;
+    for (const auto & pose : sfmData.getPoses())
+    {
+        const Vec3 center = pose.second.getTransform().center();
+        vCamCenter.col(ncol) = center;
+        meanCameraCenter +=  center;
+        ++ncol;
+    }
+    meanCameraCenter /= nbCameras;
 
-  
-  // Compute standard deviation
-  double stddev = 0;
-  for (Vec3::Index i = 0; i < vCamCenter.cols(); ++i)
-  {
-    Vec3 camCenterMean = vCamCenter.col(i) - meanCameraCenter;
-    stddev += camCenterMean.transpose() * camCenterMean; 
-  }
-  stddev /= nbCameras;
-  
-  // Make sure the point cloud is centered and scaled to unit deviation
-  for (Vec3::Index i = 0; i < vCamCenter.cols(); ++i)
-  {
-    vCamCenter.col(i) = (vCamCenter.col(i) - meanCameraCenter) / stddev;
-  }
 
-  // Plane fitting of the centered point cloud
-  // using Singular Value Decomposition (SVD)
-  Eigen::JacobiSVD<Mat> svd(vCamCenter.transpose(), Eigen::ComputeFullV);
-  Eigen::Vector3d n = svd.matrixV().col(2);
+    // Compute standard deviation
+    double stddev = 0;
+    for (Vec3::Index i = 0; i < vCamCenter.cols(); ++i)
+    {
+        Vec3 camCenterMean = vCamCenter.col(i) - meanCameraCenter;
+        stddev += camCenterMean.transpose() * camCenterMean; 
+    }
+    stddev /= nbCameras;
 
-  // Normal vector sign can't really be estimated. Just make sure it's the positive Y half sphere
-  if (n(1) < 0)
-  {
-    n = -n;
-  }
-  
-  // We want ideal normal to be the Y axis
-  out_R = Matrix3d(Quaterniond().setFromTwoVectors(n,  Eigen::Vector3d::UnitY()));
-  out_S = 1.0 / sqrt(stddev);
-  out_t = - out_S * out_R * meanCameraCenter;
+    // Make sure the point cloud is centered and scaled to unit deviation
+    for (Vec3::Index i = 0; i < vCamCenter.cols(); ++i)
+    {
+        vCamCenter.col(i) = (vCamCenter.col(i) - meanCameraCenter) / stddev;
+    }
+
+    // Plane fitting of the centered point cloud
+    // using Singular Value Decomposition (SVD)
+    Eigen::JacobiSVD<Mat> svd(vCamCenter.transpose(), Eigen::ComputeFullV);
+    Eigen::Vector3d n = svd.matrixV().col(2);
+
+    // Normal vector sign can't really be estimated. Just make sure it's the positive Y half sphere
+    if (n(1) < 0)
+    {
+        n = -n;
+    }
+
+    // We want ideal normal to be the Y axis
+    out_R = Matrix3d(Quaterniond().setFromTwoVectors(n,  Eigen::Vector3d::UnitY()));
+    out_S = 1.0 / sqrt(stddev);
+    out_t = - out_S * out_R * meanCameraCenter;
 }
 
 IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::string & camName)
 {
-  IndexT viewId = -1;
+    IndexT viewId = -1;
 
-  std::regex cameraRegex = simpleFilterToRegex_noThrow(camName);
+    std::regex cameraRegex = simpleFilterToRegex_noThrow(camName);
 
-  try
-  {
-    viewId = boost::lexical_cast<IndexT>(camName);
-    if (!sfmData.getViews().count(viewId))
-    {   
-        bool found = false;
-        //check if this view is an ancestor of a view
-        for (auto pv : sfmData.getViews())
-        {
-            for (auto ancestor : pv.second->getAncestors())
+    try
+    {
+        viewId = boost::lexical_cast<IndexT>(camName);
+        if (!sfmData.getViews().count(viewId))
+        {   
+            bool found = false;
+            //check if this view is an ancestor of a view
+            for (auto pv : sfmData.getViews())
             {
-                if (ancestor == viewId)
+                for (auto ancestor : pv.second->getAncestors())
                 {
-                    viewId = pv.first;
-                    found = true;
+                    if (ancestor == viewId)
+                    {
+                        viewId = pv.first;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                {
                     break;
                 }
             }
 
-            if (found)
+            if (!found)
             {
+                viewId = -1;
+            }
+        }
+    }
+    catch(const boost::bad_lexical_cast &)
+    {
+        viewId = -1;
+    }
+
+    if(viewId == -1)
+    {
+        for(const auto & view : sfmData.getViews())
+        {
+            const std::string path = view.second->getImagePath();
+            if(std::regex_match(path, cameraRegex))
+            {
+                viewId = view.second->getViewId();
                 break;
             }
         }
-
-        if (!found)
-        {
-            viewId = -1;
-        }
     }
-  }
-  catch(const boost::bad_lexical_cast &)
-  {
-    viewId = -1;
-  }
 
-  if(viewId == -1)
-  {
-    for(const auto & view : sfmData.getViews())
-    {
-      const std::string path = view.second->getImagePath();
-      if(std::regex_match(path, cameraRegex))
-      {
-          viewId = view.second->getViewId();
-          break;
-      }
-    }
-  }
-
-  if(viewId == -1)
+    if(viewId == -1)
     throw std::invalid_argument("The camera name \"" + camName + "\" is not found in the sfmData.");
-  else if(!sfmData.isPoseAndIntrinsicDefined(viewId))
+    else if(!sfmData.isPoseAndIntrinsicDefined(viewId))
     throw std::invalid_argument("The camera \"" + camName + "\" exists in the sfmData but is not reconstructed.");
 
-  return viewId;
+    return viewId;
 }
 
 IndexT getCenterCameraView(const sfmData::SfMData& sfmData)
@@ -824,8 +824,8 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
     // Center the point cloud in [0;0;0]
     for(int i = 0; i < landmarksCount; ++i)
     {
-      vX.col(i) -= meanPoints;
-      accDist(vX.col(i).norm());
+        vX.col(i) -= meanPoints;
+        accDist(vX.col(i).norm());
     }
 
     // Perform an svd over vX*vXT (var-covar)
@@ -837,7 +837,7 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
     // a direct coordinate system
     if(U.determinant() < 0)
     {
-      U.col(2) = -U.col(2);
+        U.col(2) = -U.col(2);
     }
 
     const double distMax = quantile(accDist, quantile_probability = percentile);
