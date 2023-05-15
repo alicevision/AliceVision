@@ -76,11 +76,24 @@ BOOST_AUTO_TEST_CASE(Fundamental10PSolver_8_solutions)
   if(resF.size() != models.size())
     BOOST_CHECK(false);
 
+  //Results may not be in the same order
   for(Eigen::Index i = 0; i < resF.size(); ++i)
   {
     relativePose::Fundamental10PModel model = models.at(i);
-    BOOST_CHECK(resF.at(i).isApprox(model.getMatrix(), 1e-1));
-    BOOST_CHECK(resL.at(i).isApprox(model.getRadialDistortion(), 1e-1));
+
+    bool oneEqual = false;
+    for (int j = 0; j < resF.size(); j++)
+    {
+        bool testF = resF.at(j).isApprox(model.getMatrix(), 1e-1);
+        bool testL = resL.at(j).isApprox(model.getRadialDistortion(), 1e-1);
+
+        if (testF && testL)
+        {
+            oneEqual = true;
+        }
+    }
+    
+    BOOST_CHECK(oneEqual);
   }
 }
 
