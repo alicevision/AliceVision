@@ -141,6 +141,8 @@ bool rigHasUniqueFrameIds(const sfmData::SfMData & sfmData)
     std::set<std::tuple<IndexT, IndexT, IndexT>> unique_ids;
     for (auto vitem : sfmData.getViews())
     {
+        if (!(vitem.second->isPartOfRig())) continue;
+
         std::tuple<IndexT, IndexT, IndexT> tuple = { vitem.second->getRigId(), vitem.second->getSubPoseId(), vitem.second->getFrameId() };
 
         if (unique_ids.find(tuple) != unique_ids.end())
