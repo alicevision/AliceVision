@@ -113,7 +113,7 @@ bool getFeatureIdInViewPerTrack(const TracksMap& allTracks,
                                        std::vector<FeatureId>* out_featId);
 
 
-struct FunctorMapFirstEqual : public std::unary_function <TracksMap , bool>
+struct FunctorMapFirstEqual
 {
   std::size_t id;
 
