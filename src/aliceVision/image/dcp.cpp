@@ -2176,6 +2176,7 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
     if (cct <= 0.0)
     {
         getColorTemperatureAndTintFromNeutral(asShotNeutral, cctLocal, tintLocal);
+        getChromaticityCoordinates(cctLocal, tintLocal, x, y);
         cct = cctLocal;
         ALICEVISION_LOG_TRACE("Estimated illuminant (cct; tint) : (" << cctLocal << "; " << tintLocal << ")");
         if (sourceIsRaw)
