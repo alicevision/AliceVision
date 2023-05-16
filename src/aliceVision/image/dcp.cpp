@@ -2164,10 +2164,8 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const
     return cameraToSrgbLinear;
 }
 
-DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw, const bool useColorMatrixOnly, const double cct) const
+DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, double& cct, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Triple asShotNeutralInv = { 1.0 / asShotNeutral[0] , 1.0 / asShotNeutral[1] , 1.0 / asShotNeutral[2] };
-
     Triple cctNeutral = { 1.0, 1.0, 1.0 };
 
     double cctLocal, tintLocal;
@@ -2177,8 +2175,8 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
 
     if (cct <= 0.0)
     {
-        getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutralInv, x, y);
-        setChromaticityCoordinates(x, y, cctLocal, tintLocal);
+        getColorTemperatureAndTintFromNeutral(asShotNeutral, cctLocal, tintLocal);
+        cct = cctLocal;
         ALICEVISION_LOG_TRACE("Estimated illuminant (cct; tint) : (" << cctLocal << "; " << tintLocal << ")");
         if (sourceIsRaw)
         {
@@ -2240,9 +2238,9 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         {
             // White balancing has been applied before demosaicing but color matrix is supposed to work on non white balanced data
             // The white balance operation must be reversed
-            wbInv[0][0] = asShotNeutralInv[0];
-            wbInv[1][1] = asShotNeutralInv[1];
-            wbInv[2][2] = asShotNeutralInv[2];
+            wbInv[0][0] = 1.0 / asShotNeutral[0];
+            wbInv[1][1] = 1.0 / asShotNeutral[1];
+            wbInv[2][2] = 1.0 / asShotNeutral[2];
         }
         const Matrix cameraToXyz = matMult(matInv(xyzToCamera), wbInv);
 
@@ -2261,7 +2259,7 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         cameraToXyzD50 = matMult(forward_matrix_1, neutral);
     }
 
-    ALICEVISION_LOG_INFO("cameraToXyzD50Matrix : " << cameraToXyzD50);
+    ALICEVISION_LOG_TRACE("cameraToXyzD50Matrix : " << cameraToXyzD50);
 
     Matrix cameraToACES2065 = matMult(xyzD50ToACES2065Matrix, cameraToXyzD50);
 
@@ -2379,9 +2377,9 @@ void DCPProfile::setMatricesFromStrings(const std::string& type, std::vector<std
     setMatrices(type, v_Mat);
 }
 
-void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw, const bool useColorMatrixOnly, const double cct) const
+void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, double& cct, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw, useColorMatrixOnly, cct);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, cct, sourceIsRaw, useColorMatrixOnly);
 
     ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
 
@@ -2405,9 +2403,9 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const
         }
 }
 
-void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw, const bool useColorMatrixOnly, const double cct) const
+void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, double& cct, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw, useColorMatrixOnly, cct);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, cct, sourceIsRaw, useColorMatrixOnly);
 
     ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
 
@@ -2428,6 +2426,14 @@ void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neut
             }
             image(i, j) = rgbOut;
         }
+}
+
+void DCPProfile::getColorTemperatureAndTintFromNeutral(const Triple& neutral, double& cct, double& tint) const
+{
+    const Triple invNeutral = { 1.0/neutral[0], 1.0/neutral[1], 1.0/neutral[2]};
+    double x, y;
+    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, invNeutral, x, y);
+    setChromaticityCoordinates(x, y, cct, tint);
 }
 
 DCPDatabase::DCPDatabase(const std::string& databaseDirPath)
