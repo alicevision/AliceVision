@@ -124,6 +124,21 @@ if(ALICEVISION_BUILD_SFM)
           Boost::json
   )
 
+  # Relative pose
+  alicevision_add_software(aliceVision_relativePoseEstimating
+    SOURCE main_relativePoseEstimating.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_cmdline
+          aliceVision_feature
+          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_track
+          Boost::program_options
+          Boost::filesystem
+          Boost::json
+  )
+
   # Incremental / Sequential SfM
   alicevision_add_software(aliceVision_incrementalSfM
     SOURCE main_incrementalSfM.cpp
