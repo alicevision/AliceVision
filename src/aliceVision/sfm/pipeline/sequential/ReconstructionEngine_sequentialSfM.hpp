@@ -87,7 +87,8 @@ public:
 
     /// Threshold for the maximum number of outliers allowed at the end of a BA iteration.
     /// If the limit is not met, another BA iteration is performed.
-    std::size_t bundleAdjustmentMaxOutliers = 50;
+    /// Using a negative value for this threshold will disable BA iterations.
+    int bundleAdjustmentMaxOutliers = 50;
 
     // Local Bundle Adjustment data
 
