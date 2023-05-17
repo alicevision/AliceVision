@@ -700,7 +700,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
   const int nbOutliersThreshold =
-    (isInitialPair && _params.bundleAdjustmentMaxOutliers >= 0) ? 0 : _params.bundleAdjustmentMaxOutliers;
+    (isInitialPair) ? 0 : _params.bundleAdjustmentMaxOutliers;
   std::size_t iteration = 0;
   std::size_t nbOutliers = 0;
   bool enableLocalStrategy = false;
