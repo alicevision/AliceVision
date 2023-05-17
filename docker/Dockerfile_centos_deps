@@ -36,7 +36,7 @@ ENV AV_DEV=/opt/AliceVisionDeps_git \
 RUN $YUM_INSTALL centos-release-scl-rh && \
     $YUM_INSTALL yum-utils && \
     yum clean all && \
-    $YUM_INSTALL devtoolset-10-toolchain devtoolset-10-libatomic-devel --nogpgcheck && \
+    $YUM_INSTALL devtoolset-11-toolchain devtoolset-11-libatomic-devel --nogpgcheck && \
     $YUM_INSTALL --enablerepo=extras epel-release && \
     $YUM_INSTALL file \
 		git \
@@ -56,10 +56,10 @@ RUN $YUM_INSTALL centos-release-scl-rh && \
 #
 # See also `scl` man page for enabling multiple packages if desired:
 # https://linux.die.net/man/1/scl
-# SHELL [ "/usr/bin/scl", "enable", "devtoolset-10" ]
-ENV PATH="/opt/rh/devtoolset-10/root/usr/bin:${PATH}" \
-    LD_LIBRARY_PATH="/opt/rh/devtoolset-10/root/usr/lib:/opt/rh/devtoolset-10/root/usr/lib64:/opt/rh/devtoolset-10/root/usr/lib64/dyninst:${LD_LIBRARY_PATH}" \
-    MAKE=/opt/rh/devtoolset-10/root/usr/bin/make \
+# SHELL [ "/usr/bin/scl", "enable", "devtoolset-11" ]
+ENV PATH="/opt/rh/devtoolset-11/root/usr/bin:${PATH}" \
+    LD_LIBRARY_PATH="/opt/rh/devtoolset-11/root/usr/lib:/opt/rh/devtoolset-11/root/usr/lib64:/opt/rh/devtoolset-11/root/usr/lib64/dyninst:${LD_LIBRARY_PATH}" \
+    MAKE=/opt/rh/devtoolset-11/root/usr/bin/make \
     CMAKE_VERSION=3.26.0
 
 COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
