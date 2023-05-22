@@ -511,12 +511,18 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
 
 bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfmData::Landmark& landmark, float minObservationAngle)
 {
+  ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.");
   for(const auto& observationPairI : landmark.observations)
   {
+    ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.1");
     const IndexT I = observationPairI.first;
+    ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.2" << I);
     const sfmData::View& viewI = *(sfmData.getViews().at(I));
+    ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.3");
     const geometry::Pose3 poseI = sfmData.getPose(viewI).getTransform();
+    ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.4");
     const camera::IntrinsicBase* intrinsicPtrI = sfmData.getIntrinsicPtr(viewI.getIntrinsicId());
+    ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.5");
 
     for(const auto& observationPairJ : landmark.observations)
     {
@@ -526,7 +532,9 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
       if(I == J)
         continue;
 
+      ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.6" << J);
       const sfmData::View& viewJ = *(sfmData.getViews().at(J));
+      ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.7" << J);
       const geometry::Pose3 poseJ = sfmData.getPose(viewJ).getTransform();
       const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
 
@@ -538,6 +546,8 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
 
       return true;
     }
+
+    ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.8" << J);
   }
 
   return false;
