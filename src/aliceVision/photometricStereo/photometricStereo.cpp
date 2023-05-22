@@ -142,18 +142,19 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     }
 
+    sfmData::SfMData AlbedoSfmData = sfmData;
 
     std::set<IndexT> viewIdsToRemove;
-
-    for(auto& viewIt: sfmData.getViews())
+    // Create Albedo SfmData :
+    for(auto& viewIt: AlbedoSfmData.getViews())
     {
         const IndexT viewId = viewIt.first;
         IndexT poseId = viewIt.second->getPoseId();
 
         if(viewId == poseId)
         {
-            sfmData::View * view = sfmData.getViews().at(viewId).get();
-            std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.png";
+            sfmData::View * view = AlbedoSfmData.getViews().at(viewId).get();
+            std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.exr";
             view->setImagePath(imagePath);
         }
         else
@@ -162,9 +163,23 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         }
     }
     for (auto r : viewIdsToRemove)
-        newSfmData.getViews().erase(r);
+        AlbedoSfmData.getViews().erase(r);
 
-    sfmDataIO::Save(newSfmData, outputPath + "/sfmData.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
+    sfmDataIO::Save(AlbedoSfmData, outputPath + "/albedoMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
+
+    // Create Normal SfmData
+    sfmData::SfMData NormalSfmData = AlbedoSfmData;
+    for(auto& viewIt: NormalSfmData.getViews())
+    {
+        const IndexT viewId = viewIt.first;
+        IndexT poseId = viewIt.second->getPoseId();
+
+        sfmData::View * view = NormalSfmData.getViews().at(viewId).get();
+        std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_normals_w.exr";
+        view->setImagePath(imagePath);
+    }
+
+    sfmDataIO::Save(NormalSfmData, outputPath + "/normalMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
 }
 
 void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
