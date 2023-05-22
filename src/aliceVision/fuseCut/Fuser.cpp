@@ -562,7 +562,7 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
 
   for (auto & pl : sfmData.getLandmarks())
   {
-    ALICEVISION_LOG("Landmark");
+    ALICEVISION_LOG_INFO("Landmark");
     for (auto & pobs : pl.second.getObservations())
     {
         ALICEVISION_LOG_INFO(pobs.first);
