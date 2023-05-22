@@ -53,27 +53,24 @@ int aliceVision_main(int argc, char **argv)
     std::string maskPath;
     std::string outputPath;
     std::string pathToLightData;
-    size_t HS_order;
-    bool removeAmbiant;
-    bool  isRobust;
 
-    // image downscale factor during process
-    int downscale = 1;
+    // PhotometricStereo parameters
+    photometricStereo::PhotometricSteroParameters PSParameters;
 
     po::options_description allParams("AliceVision photometricStereo");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input; could be SfMData file or folder with pictures");
+    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input; could be SfMData file or folder with pictures")
+    ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
     ("maskPath,m", po::value<std::string>(&maskPath)->default_value(""), "Path to mask folder/file.")
     ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"), "Path to light file (JSON). If empty, expects txt files in picture folder")
-    ("HSOrder,h", po::value<size_t>(&HS_order)->default_value(0), "HS order, 0 = directional, 1 = directional + ambiant")
-    ("removeAmbiant,a", po::value<bool>(&removeAmbiant)->default_value(false), "Do we need to remove ambiant light on PS pictures ?")
-    ("isRobust,r", po::value<bool>(&isRobust)->default_value(false), "Robust algorithm ?")
-    ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path")
-    ("downscale, d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results" );
+    ("SHOrder,s", po::value<size_t>(&PSParameters.SHOrder)->default_value(0), "SH order, 0 = directional, 1 = directional + ambiant, 2 = second order SH")
+    ("removeAmbiant,a", po::value<bool>(&PSParameters.removeAmbiant)->default_value(false), "Do we need to remove ambiant light on PS pictures ?")
+    ("isRobust,r", po::value<bool>(&PSParameters.isRobust)->default_value(false), "Robust algorithm ?")
+    ("downscale, d", po::value<int>(&PSParameters.downscale)->default_value(1), "Downscale factor for faster results" );
 
     allParams.add(requiredParams).add(optionalParams);
 
@@ -117,7 +114,7 @@ int aliceVision_main(int argc, char **argv)
 
     if(fs::is_directory(inputPath))
     {
-        photometricStereo::photometricStereo(inputPath, pathToLightData, outputPath, HS_order, removeAmbiant, isRobust, downscale, normalsIm, albedoIm);
+        photometricStereo::photometricStereo(inputPath, pathToLightData, outputPath, PSParameters, normalsIm, albedoIm);
     }
     else
     {
@@ -128,7 +125,7 @@ int aliceVision_main(int argc, char **argv)
           return EXIT_FAILURE;
       }
 
-      photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, outputPath, HS_order, removeAmbiant, isRobust, downscale, normalsIm, albedoIm);
+      photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, outputPath, PSParameters, normalsIm, albedoIm);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

@@ -21,10 +21,11 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace photometricStereo {
 
-void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const size_t HS_order, const bool removeAmbiant, const bool isRobust, const int downscale, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
+
     size_t dim = 3;
-    if(HS_order == 2)
+    if(PSParameters.SHOrder == 2)
     {
         dim = 9;
     }
@@ -38,7 +39,7 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
 
     if(fs::is_directory(lightData))
     {
-        loadPSData(lightData, HS_order, intList, lightMat);
+        loadPSData(lightData, PSParameters.SHOrder, intList, lightMat);
     }
     else
     {
@@ -52,7 +53,7 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
 
     std::string pathToAmbiant = "";
 
-    if(removeAmbiant)
+    if(PSParameters.removeAmbiant)
     {
         for (auto& currentPath : imageList)
         {
@@ -64,16 +65,16 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
         }
     }
 
-    photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, isRobust, downscale, normals, albedo);
+    photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, PSParameters, normals, albedo);
 
     writePSResults(outputPath, normals, albedo);
     image::writeImage(outputPath + "/mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 }
 
-void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const size_t HS_order, const bool removeAmbiant, const bool isRobust, const int downscale, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
     size_t dim = 3;
-    if(HS_order == 2)
+    if(PSParameters.SHOrder == 2)
     {
         dim = 9;
     }
@@ -102,7 +103,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
                 ALICEVISION_LOG_INFO("  - " << imagePath.string());
                 imageList.push_back(imagePath.string());
             }
-            else if(removeAmbiant)
+            else if(PSParameters.removeAmbiant)
             {
                 pathToAmbiant = imagePath.string();
             }
@@ -113,7 +114,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
 
         if(fs::is_directory(lightData))    // #pragma omp parallel for
         {
-            loadPSData(lightData, HS_order, intList, lightMat);
+            loadPSData(lightData, PSParameters.SHOrder, intList, lightMat);
         }
         else
         {
@@ -125,7 +126,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         std::string currentMaskPath = maskPath + "/" + pictureFolderName.erase(0,3) + ".png";
         loadMask(currentMaskPath, mask);
 
-        photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, isRobust, downscale, normals, albedo);
+        photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, PSParameters, normals, albedo);
 
         writePSResults(outputPath, normals, albedo, posesIt.first);
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
@@ -156,7 +157,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
     sfmDataIO::Save(newSfmData, outputPath + "/sfmData.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
 }
 
-void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const bool isRobust, const int downscale, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
     size_t maskSize;
     int pictRows;
@@ -171,9 +172,9 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
     if(hasMask)
     {
-        if(downscale > 1)
+        if(PSParameters.downscale > 1)
         {
-            downscaleImageInplace(mask,downscale);
+            downscaleImageInplace(mask,PSParameters.downscale);
         }
 
         getIndMask(mask, indexes);
@@ -188,9 +189,9 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         image::Image<image::RGBfColor> imageFloat;
         image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
 
-        if(downscale > 1)
+        if(PSParameters.downscale > 1)
         {
-            downscaleImageInplace(imageFloat,downscale);
+            downscaleImageInplace(imageFloat,PSParameters.downscale);
         }
 
         pictRows = imageFloat.rows();
@@ -212,9 +213,9 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
         image::readImage(pathToAmbiant, imageAmbiant, image::EImageColorSpace::NO_CONVERSION);
 
-        if(downscale > 1)
+        if(PSParameters.downscale > 1)
         {
-            downscaleImageInplace(imageAmbiant,downscale);
+            downscaleImageInplace(imageAmbiant,PSParameters.downscale);
         }
     }
 
@@ -225,9 +226,9 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         image::Image<image::RGBfColor> imageFloat;
         image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
 
-        if(downscale > 1)
+        if(PSParameters.downscale > 1)
         {
-            downscaleImageInplace(imageFloat,downscale);
+            downscaleImageInplace(imageFloat,PSParameters.downscale);
         }
 
         if(boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
@@ -268,8 +269,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         }
         normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
     }
-
-    if(isRobust)
+    if(PSParameters.isRobust)
     {
         float mu = 0.1;
         int max_iterations = 1000;

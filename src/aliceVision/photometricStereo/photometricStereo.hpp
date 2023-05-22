@@ -15,20 +15,25 @@
 namespace aliceVision {
 namespace photometricStereo {
 
+struct PhotometricSteroParameters
+{
+    size_t SHOrder; // Order of spherical harmonics (lighting)
+    bool removeAmbiant; // Do we remove ambiant light ? (currently tested)
+    bool isRobust; // Do we use the robust version of the algorithm ? (currently tested)
+    int downscale; // Downscale factor
+};
+
+
 /**
  * @brief Load data from a given folder and prepare PS algorithm parameters
  * @param[in] inputPath - Folder path
  * @param[in] lightData - Path to light data (see loadLightData in photometricDataIO.hpp)
  * @param[in] outputPath - Path to output folder
- * @param[in] HS_order - Order of spherical harmonics (lighting)
- * @param[in] removeAmbiant - Do we remove ambiant light ? (currently tested)
- * @param[in] isRobust - Do we use the robust version of the algorithm ? (currently tested)
- * @param[in] downscale - Factor of downscale
+ * @param[in] PSParameters - Parameters for the PS algorithm
  * @param[out] normals - Normal map of the scene
  * @param[out] albedo - Albedo map of the scene
  */
-
-void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const size_t HS_order, const bool removeAmbiant, const bool isRobust, const int downscale, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo);
+void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo);
 
 /**
  * @brief Load data from a .sfm file and prepare PS algorithm parameters
@@ -37,14 +42,11 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
  * @param[in] lightData - Path to light data (see loadLightData in photometricDataIO.hpp)
  * @param[in] maskPath - Path to mask folders (one for each pose)
  * @param[in] outputPath - Path to output folder
- * @param[in] HS_order - Order of spherical harmonics (lighting)
- * @param[in] removeAmbiant - Do we remove ambiant light ? (currently tested)
- * @param[in] isRobust - Do we use the robust version of the algorithm ? (currently tested)
- * @param[in] downscale - Factor of downscale
+ * @param[in] PSParameters - Parameters for the PS algorithm
  * @param[out] normals - Normal map of the scene
  * @param[out] albedo - Albedo map of the scene
  */
-void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const size_t HS_order, const bool removeAmbiant, const bool isRobust, const int downscale, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo);
+void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo);
 
 /**
  * @brief Apply PS algoritm for a given set of pictures sharing the same pose
@@ -53,12 +55,11 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
  * @param[in] lightMat - List of light direction/coefficients (SH)
  * @param[in] mask - Mask that defines region of interest
  * @param[in] pathToAmbiant - path to picture without any additional lighting
- * @param[in] isRobust - Do we use the robust version of the algorithm ? (currently tested)
- * @param[in] downscale - Factor of downscale
+ * @param[in] PSParameters - Parameters for the PS algorithm
  * @param[out] normals - Normal map of the scene
  * @param[out] albedo - Albedo map of the scene
  */
-void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const bool isRobust, const int downscale, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo);
+void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo);
 
 /**
  * @brief Load data used in PS algorithm
