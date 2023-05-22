@@ -560,6 +560,15 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   const std::size_t cacheSize =  10000;
   const double percentile = _mp.userParams.get<double>("LargeScale.universePercentile", 0.999);
 
+  for (auto & pl : sfmData.getLandmarks())
+  {
+    ALICEVISION_LOG("Landmark");
+    for (auto & pobs : pl.second.getObservations())
+    {
+        ALICEVISION_LOG_INFO(pobs.first);
+    }
+  }
+
   using namespace boost::accumulators;
   using AccumulatorMin = accumulator_set<double, stats<tag::tail_quantile<left>>>;
   using AccumulatorMax = accumulator_set<double, stats<tag::tail_quantile<right>>>;
