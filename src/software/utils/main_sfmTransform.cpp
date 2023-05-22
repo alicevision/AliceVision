@@ -510,6 +510,13 @@ int aliceVision_main(int argc, char **argv)
   }
 
   sfm::applyTransform(sfmData, S, R, t);
+ 
+  // Ground detection requires the scene to have a correct Y axis
+  if (alignmentMethod == EAlignmentMethod::AUTO)
+  {
+    sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
+    sfm::applyTransform(sfmData, 1.0, Eigen::Matrix3d::Identity(), t);
+  }
 
   ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
   

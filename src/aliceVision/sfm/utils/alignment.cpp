@@ -1026,6 +1026,56 @@ void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3 & mean, Ei
     }
 }
 
+void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3& out_t)
+{
+    out_t.fill(0.0);
+
+    std::vector<Vec3> points;
+
+    //Align with ground
+    for (auto & plandmark: sfmData.getLandmarks())
+    {
+        Vec3 X = plandmark.second.X;
+        bool foundUnder = false;
+
+        if (plandmark.second.observations.size() < 3)
+        {
+            continue;
+        }
+
+        for (const auto & pObs : plandmark.second.observations)
+        {
+            IndexT viewId = pObs.first;
+            Vec3 camCenter = sfmData.getPose(sfmData.getView(viewId)).getTransform().center();
+
+            if (X(1) > camCenter(1))
+            {
+                foundUnder = true;
+                break;
+            }
+        }
+
+        if (foundUnder)
+        {
+            points.push_back(X);
+        }
+    }
+
+    if (points.size() == 0)
+    {
+        ALICEVISION_LOG_DEBUG("Ground detection failed as there is no valid point");
+    }
+    
+    
+    const double noiseRatio = 1e-4;
+    int idxGround = double(points.size()) * noiseRatio;
+    std::nth_element(points.begin(), points.begin() + idxGround, points.end(), [](const Vec3 & pt1, const Vec3 & pt2) { return (pt1(1) > pt2(1)); });
+    double Yground = points[idxGround](1);
+    Vec3 groundAlign = {0.0, Yground, 0.0};
+
+    out_t = - groundAlign;
+}
+
 void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t)
 {
     //For reference, the update is
