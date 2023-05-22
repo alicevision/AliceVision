@@ -79,8 +79,6 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         dim = 9;
     }
 
-    sfmData::SfMData newSfmData = sfmData;
-
     std::string pathToAmbiant = "";
     std::map<IndexT, std::vector<IndexT>> viewsPerPoseId;
 
@@ -130,6 +128,18 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
 
         writePSResults(outputPath, normals, albedo, posesIt.first);
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
+
+        if(sfmData.getPoses().size() > 0)
+        {
+            const Mat3 rotation = sfmData.getPose(sfmData.getView(viewIds[0])).getTransform().rotation().transpose();
+            applyRotation(rotation, normals);
+        }
+
+        image::Image<image::RGBColor> normalsImPNG(normals.cols(),normals.rows());
+        convertNormalMap2png(normals, normalsImPNG);
+
+        image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.png", normalsImPNG, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+        image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     }
 
 
@@ -507,5 +517,18 @@ void RTI(const sfmData::SfMData& sfmData, const std::string& lightData, const st
 }
 
 }
+void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColor>& normals)
+{
+    for (int i = 0; i < normals.rows(); ++i)
+    {
+        for (int j = 0; j < normals.cols(); ++j)
+        {
+            normals(i,j)(0) = rotation(0,0)*normals(i,j)(0) + rotation(0,1)*normals(i,j)(1) + rotation(0,2)*normals(i,j)(2);
+            normals(i,j)(1) = rotation(1,0)*normals(i,j)(0) + rotation(1,1)*normals(i,j)(1) + rotation(1,2)*normals(i,j)(2);
+            normals(i,j)(2) = rotation(2,0)*normals(i,j)(0) + rotation(2,1)*normals(i,j)(1) + rotation(2,2)*normals(i,j)(2);
+        }
+    }
+
 }
 
+}
