@@ -89,11 +89,7 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
             focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
         }
     }
-    lightCalibration(imageList, allSpheresParams, outputPath, focals, method);
-}
 
-void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals, const std::string& method)
-{
     Eigen::MatrixXf lightMat(imageList.size(), 3);
     std::vector<float> intList;
 
@@ -110,10 +106,11 @@ void lightCalibration(const std::vector<std::string>& imageList, const std::vect
     }
 
     // Write in JSON file :
-    writeJSON(jsonName, imageList, lightMat, intList);
+    writeJSON(outputPath, sfmData, lightMat, intList);
+
 }
 
-void lightCalibration(const std::vector<std::string>& imageList, const std::array<float, 3>& sphereParam, const std::string& jsonName, const float focal, const std::string& method)
+void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals, const std::string& method)
 {
     Eigen::MatrixXf lightMat(imageList.size(), 3);
     std::vector<float> intList;
@@ -121,6 +118,9 @@ void lightCalibration(const std::vector<std::string>& imageList, const std::arra
     for (size_t i = 0; i < imageList.size(); ++i)
     {
         std::string picturePath = imageList.at(i);
+        std::array<float,3> sphereParam = allSpheresParams.at(i);
+        float focal = focals.at(i);
+
         Eigen::Vector3f lightingDirection;
         lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection);
         lightMat.row(i) = lightingDirection;

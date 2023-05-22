@@ -41,15 +41,6 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
 void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals, const std::string& method);
 
 /**
- * @brief Calibrates lighting direction for a set of images sharing same intrinsics and sphere parameters
- * @param[in] imageList - List of pictures on which we want to calibrate lighting
- * @param[in] sphereParam - An array of 3 floating-point: the coordinates of the sphere center in the picture frame and the radius of the sphere.
- * @param[in] jsonName - The json file in which we write lights directions
- * @param[in] focal  - Focal length of the camera
- */
-void lightCalibration(const std::vector<std::string>& imageList, const std::array<float, 3>& sphereParam, const std::string& jsonName, const float focal, const std::string& method);
-
-/**
  * @brief Calibrates lighting direction of an image containing a sphere
  * @param[in] picturePath - Path of the image file
  * @param[in] sphereParam - An array of 3 floating-point: the coordinates of the sphere center in the picture frame and the radius of the sphere.
