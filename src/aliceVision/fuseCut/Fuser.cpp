@@ -534,7 +534,7 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
 
       ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.6" << J);
       const sfmData::View& viewJ = *(sfmData.getViews().at(J));
-      ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.7" << J);
+      ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.7");
       const geometry::Pose3 poseJ = sfmData.getPose(viewJ).getTransform();
       const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
 
@@ -547,7 +547,7 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
       return true;
     }
 
-    ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.8" << J);
+    ALICEVISION_LOG_INFO("checkLandmarkMinObservationAngle 1.8");
   }
 
   return false;
