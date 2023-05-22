@@ -561,8 +561,11 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   AccumulatorMax accMaxY(tag::tail<right>::cache_size = cacheSize);
   AccumulatorMax accMaxZ(tag::tail<right>::cache_size = cacheSize);
 
+  ALICEVISION_LOG_INFO("Estimate space from SfM 1.");
+
   for(const auto& landmarkPair : sfmData.getLandmarks())
   {
+    ALICEVISION_LOG_INFO("Estimate space from SfM 2.");
     const sfmData::Landmark& landmark = landmarkPair.second;
 
     // check number of observations
@@ -573,6 +576,7 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
     if(!checkLandmarkMinObservationAngle(sfmData, landmark, minObservationAngle))
       continue;
 
+    ALICEVISION_LOG_INFO("Estimate space from SfM 3");
     const double x = landmark.X(0);
     const double y = landmark.X(1);
     const double z = landmark.X(2);
@@ -612,7 +616,8 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   hexah[5] = Point3d(xMin, yMax, zMin);
   hexah[6] = Point3d(xMin, yMin, zMin);
   hexah[7] = Point3d(xMax, yMin, zMin);
-
+    
+  ALICEVISION_LOG_INFO("Estimate space from SfM 4.");
   const double volume = mvsUtils::computeHexahedronVolume(hexah);
 
   if(std::isnan(volume) || volume < std::numeric_limits<double>::epsilon())
