@@ -279,6 +279,24 @@ void intensityScaling(std::array<float, 3> const& intensities, image::Image<imag
     }
 }
 
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::vector<int>& indexes, Eigen::MatrixXf& imageOut)
+{
+    int nbRows = imageIn.rows();
+    int nbCols = imageIn.cols();
+
+    for (int iterator = 0; iterator < indexes.size(); ++iterator)
+    {
+        int currentIdx = indexes.at(iterator);
+        int j = floor(currentIdx/nbRows);
+        int i = currentIdx - j*nbRows;
+
+        for(int ch = 0; ch < 3; ++ch)
+        {
+            imageOut(ch, iterator) = imageIn(i,j)(ch);
+        }
+    }
+}
+
 void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::Image<float>& mask, Eigen::MatrixXf& imageOut)
 {
     int nbRows = imageIn.rows();

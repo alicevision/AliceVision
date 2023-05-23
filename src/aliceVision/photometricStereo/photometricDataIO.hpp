@@ -76,6 +76,14 @@ void intensityScaling(std::array<float, 3> const& intensities, image::Image<imag
 /**
  * @brief Rearrange (masked) values of color pictures in an Eigen matrix
  * @param[in] imageIn
+ * @param[in] indexes - The absolute indexes of pixels in mask
+ * @param[out] imageOut - The resulting matrix that can be used in PS solver
+ */
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::vector<int>& indexes, Eigen::MatrixXf& imageOut);
+
+/**
+ * @brief Rearrange (masked) values of color pictures in an Eigen matrix
+ * @param[in] imageIn
  * @param[in] mask
  * @param[out] imageOut - The resulting matrix that can be used in PS solver
  */
