@@ -27,7 +27,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 3
 
 using namespace aliceVision;
 
@@ -160,6 +160,9 @@ int aliceVision_main(int argc, char **argv)
     ("maxImagesPerGroup", po::value<std::size_t>(&sfmParams.maxImagesPerGroup)->default_value(sfmParams.maxImagesPerGroup),
       "Maximum number of cameras that can be added before the bundle adjustment is performed. This prevents adding too much data "
       "at once without performing the bundle adjustment.")
+    ("bundleAdjustmentMaxOutliers", po::value<int>(&sfmParams.bundleAdjustmentMaxOutliers)->default_value(sfmParams.bundleAdjustmentMaxOutliers),
+      "Threshold for the maximum number of outliers allowed at the end of a bundle adjustment iteration."
+      "Using a negative value for this threshold will disable BA iterations.")
     ("localizerEstimator", po::value<robustEstimation::ERobustEstimator>(&sfmParams.localizerEstimator)->default_value(sfmParams.localizerEstimator),
       "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)")
     ("localizerEstimatorError", po::value<double>(&sfmParams.localizerEstimatorError)->default_value(0.0),

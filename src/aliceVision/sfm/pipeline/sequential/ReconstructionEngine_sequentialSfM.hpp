@@ -85,6 +85,11 @@ public:
     /// we don't add too much data in one step without bundle adjustment.
     std::size_t maxImagesPerGroup = 30;
 
+    /// Threshold for the maximum number of outliers allowed at the end of a BA iteration.
+    /// If the limit is not met, another BA iteration is performed.
+    /// Using a negative value for this threshold will disable BA iterations.
+    int bundleAdjustmentMaxOutliers = 50;
+
     // Local Bundle Adjustment data
 
     /// The minimum number of shared matches to create an edge between two views (nodes)

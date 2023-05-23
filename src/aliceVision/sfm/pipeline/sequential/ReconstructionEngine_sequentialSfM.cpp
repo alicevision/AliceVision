@@ -699,7 +699,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
   if(!isInitialPair && !_params.lockAllIntrinsics)
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
-  const std::size_t nbOutliersThreshold = (isInitialPair) ? 0 : 50;
+  const int nbOutliersThreshold =
+    (isInitialPair) ? 0 : _params.bundleAdjustmentMaxOutliers;
   std::size_t iteration = 0;
   std::size_t nbOutliers = 0;
   bool enableLocalStrategy = false;
@@ -794,7 +795,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     ALICEVISION_LOG_INFO("Bundle adjustment iteration: " << iteration << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chronoItStart).count() << " msec.");
     ++iteration;
   }
-  while(nbOutliers > nbOutliersThreshold);
+  while(nbOutliersThreshold >= 0 && nbOutliers > nbOutliersThreshold);
 
   ALICEVISION_LOG_INFO("Bundle adjustment with " << iteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chronoStart).count() << " msec.");
   return true;
