@@ -555,6 +555,16 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
 
 void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations, float minObservationAngle) const
 {
+  ALICEVISION_LOG_INFO("!!!!");
+  for (auto & pl : sfmData.getLandmarks())
+  {
+    ALICEVISION_LOG_INFO("Landmark");
+    for (auto & pobs : pl.second.observations)
+    {
+        ALICEVISION_LOG_INFO(pobs.first);
+    }
+  }
+
   ALICEVISION_LOG_INFO("Estimate space from SfM.");
 
   const std::size_t cacheSize =  10000;

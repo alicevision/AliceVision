@@ -93,6 +93,16 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     Fuser fs(mp);
     const size_t minObservations = 2;
     const float minObservationsAngle = 0.01f;
+
+    ALICEVISION_LOG_INFO("?????");
+    for (auto & pl : sfmData.getLandmarks())
+    {
+        ALICEVISION_LOG_INFO("Landmark");
+        for (auto & pobs : pl.second.observations)
+        {
+            ALICEVISION_LOG_INFO(pobs.first);
+        }
+    }
     fs.divideSpaceFromSfM(sfmData, &hexah[0], minObservations, minObservationsAngle);
 
     StaticVector<int> cams;
