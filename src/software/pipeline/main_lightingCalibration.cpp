@@ -51,6 +51,7 @@ int aliceVision_main(int argc, char **argv)
     std::string inputJSON;
     std::string ouputJSON;
     std::string method;
+    bool saveAsModel;
 
     po::options_description allParams("AliceVision lighting calibration");
     po::options_description requiredParams("Required parameters");
@@ -62,6 +63,7 @@ int aliceVision_main(int argc, char **argv)
     po::options_description optionalParams("Optional parameters");
 
     optionalParams.add_options()
+    ("saveAsModel, s", po::value<bool>(&saveAsModel)->default_value(false), "Calibration used for several datasets")
     ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"), "Method for light estimation");
 
     allParams.add(requiredParams).add(optionalParams);
@@ -106,7 +108,7 @@ int aliceVision_main(int argc, char **argv)
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
             return EXIT_FAILURE;
         }
-        lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method);
+        lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method, saveAsModel);
     }
 
     return 0;
