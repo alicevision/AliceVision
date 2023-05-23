@@ -26,6 +26,7 @@ set(fuseCut_files_sources
 alicevision_add_library(aliceVision_fuseCut
   SOURCES ${fuseCut_files_headers} ${fuseCut_files_sources}
   PUBLIC_LINKS
+    aliceVision_sfmData
     aliceVision_mvsData
     aliceVision_mvsUtils
     aliceVision_mesh
@@ -46,6 +47,7 @@ alicevision_add_test(DelaunayGraphCut_test.cpp
     aliceVision_sfm
     aliceVision_multiview
     aliceVision_multiview_test_data
+    aliceVision_sfmData
 )
 
 alicevision_add_test(LargeScale_test.cpp
@@ -53,4 +55,5 @@ alicevision_add_test(LargeScale_test.cpp
   LINKS
     aliceVision_fuseCut
     aliceVision_sfm
+    aliceVision_sfmData
 )
