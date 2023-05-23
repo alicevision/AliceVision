@@ -389,9 +389,6 @@ void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix)
     int nbRows = matrix.rows();
     int nbCols = matrix.cols();
 
-    std::stringstream stream;
-    std::string line;
-
     std::fstream matFile;
     matFile.open(fileName, std::ios::in);
 
