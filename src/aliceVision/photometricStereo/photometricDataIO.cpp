@@ -407,24 +407,12 @@ void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix)
 
 void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo)
 {
-    int pictCols = normals.Width();
-    int pictRows = normals.Height();
-
-    image::Image<image::RGBColor> normalsImPNG(pictCols,pictRows);
-    convertNormalMap2png(normals, normalsImPNG);
-    image::writeImage(outputPath + "/normals.png", normalsImPNG, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     image::writeImage(outputPath + "/normals.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     image::writeImage(outputPath + "/albedo.exr", albedo, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }
 
 void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo, const IndexT poseId)
 {
-    int pictCols = normals.Width();
-    int pictRows = normals.Height();
-
-    image::Image<image::RGBColor> normalsImPNG(pictCols,pictRows);
-    convertNormalMap2png(normals, normalsImPNG);
-    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     image::writeImage(outputPath + "/" + std::to_string(poseId) + "_normals.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.exr", albedo, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }

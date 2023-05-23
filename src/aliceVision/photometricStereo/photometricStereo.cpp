@@ -150,10 +150,6 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
             applyRotation(rotation, normals);
         }
 
-        image::Image<image::RGBColor> normalsImPNG(normals.cols(),normals.rows());
-        convertNormalMap2png(normals, normalsImPNG);
-
-        image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.png", normalsImPNG, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     }
 
