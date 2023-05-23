@@ -100,7 +100,7 @@ void shrink(const Eigen::MatrixXf& mat, const float rho, Eigen::MatrixXf& E);
  */
 void median(const Eigen::MatrixXf& d, float& median);
 
-
+void slice(const std::vector<int>& inputVector, int start, int numberOfElements, std::vector<int>& currentMaskIndexes);
 
 void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColor>& normals);
 }

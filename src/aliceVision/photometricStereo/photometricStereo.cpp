@@ -206,9 +206,9 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     bool hasMask = !((mask.rows() == 1) && (mask.cols() == 1));
 
     std::string picturePath;
-    std::string pictureName;
-
     std::vector<int> indexes;
+
+    const float sizeMax = 3e9;
 
     if(hasMask)
     {
@@ -238,12 +238,13 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         pictCols = imageFloat.cols();
 
         maskSize = pictRows*pictCols;
+
+        for (int i = 0; i < maskSize; ++i)
+            indexes.push_back(i);
+
     }
 
-    Eigen::MatrixXf imMat(3*imageList.size(), maskSize);
-    Eigen::MatrixXf imMat_gray(imageList.size(), maskSize);
-
-    // Read pictures :
+    // Read ambiant :
     image::Image<image::RGBfColor> imageAmbiant;
 
     if(boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
@@ -259,119 +260,122 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         }
     }
 
-    for (size_t i = 0; i < imageList.size(); ++i)
+    // Tuilage :
+    int auxMaskSize = maskSize;
+    int numberOfPixels = auxMaskSize*imageList.size()*3;
+    int numberOfMasks = 1;
+
+    while(numberOfPixels > sizeMax)
     {
-        picturePath = imageList.at(i);
-
-        image::Image<image::RGBfColor> imageFloat;
-        image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
-
-        if(PSParameters.downscale > 1)
-        {
-            downscaleImageInplace(imageFloat,PSParameters.downscale);
-        }
-
-        if(boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
-        {
-            imageFloat = imageFloat - imageAmbiant;
-        }
-
-        intensityScaling(intList.at(i), imageFloat);
-
-        Eigen::MatrixXf currentPicture(3,maskSize);
-        image2PsMatrix(imageFloat, mask, currentPicture);
-
-
-        imMat.block(3*i,0,3,maskSize) = currentPicture;
-        imMat_gray.block(i,0,1,maskSize) = currentPicture.block(0,0,1,maskSize) * 0.2126 + currentPicture.block(1,0,1,maskSize) * 0.7152 + currentPicture.block(2,0,1,maskSize) * 0.0722;
+        numberOfMasks = numberOfMasks*2;
+        auxMaskSize = floor(auxMaskSize/4);
+        numberOfPixels = auxMaskSize*imageList.size()*3;
     }
-
-    imMat = imMat/imMat.maxCoeff();
-    imMat_gray = imMat_gray/imMat_gray.maxCoeff();
 
     Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(),pictRows*pictCols);
     Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
-    Eigen::MatrixXf M_channel(3, maskSize);
 
-    // Normal estimation :
-    M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
-    int currentIdx;
+    int remainingPixels = maskSize;
+    std::vector<int> currentMaskIndexes;
 
-    for (size_t i = 0; i < maskSize; ++i)
+    for (int currentMaskIndex = 0; currentMaskIndex < numberOfMasks; ++currentMaskIndex)
     {
-        if(hasMask)
+        int currentMaskSize;
+
+        if(numberOfMasks == 1)
         {
-            currentIdx = indexes.at(i); // index in picture
+            currentMaskSize = maskSize;
+            currentMaskIndexes.resize(currentMaskSize);
+            currentMaskIndexes = indexes;
         }
         else
         {
-            currentIdx = i;
-        }
-        normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
-    }
-    if(PSParameters.isRobust)
-    {
-        float mu = 0.1;
-        int max_iterations = 1000;
-        float epsilon = 0.001;
-
-        // Errors (E) and Lagrange multiplicators (W) initialisation
-        Eigen::MatrixXf E = lightMat*M_channel - imMat_gray;
-        Eigen::MatrixXf W = Eigen::MatrixXf::Zero(E.rows(), E.cols());
-
-        Eigen::MatrixXf M_kminus1;
-        Eigen::MatrixXf newImMat;
-
-        for (size_t k = 0; k < max_iterations; ++k)
-        {
-            // Copy for convergence test :
-            M_kminus1 = M_channel;
-
-            // M update :
-            newImMat = imMat_gray + E - W/mu;
-            M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(newImMat);
-
-            // E update :
-            Eigen::MatrixXf E_before = E;
-            shrink(lightMat*M_channel-imMat_gray + W/mu, 1.0/mu, E);
-
-            // W update :
-            W = W + mu*(lightMat*M_channel-imMat_gray-E);
-
-            // Convergence test :
-            Eigen::MatrixXf ecart = M_kminus1 - M_channel;
-            float ecart_relatif = ecart.norm()/M_channel.norm();
-
-            if (k > 10 && ecart_relatif < epsilon)
+            if(currentMaskIndex == numberOfMasks-1)
             {
-                std::cout << k << std::endl;
-                std::cout << "Convergence" << std::endl;
-                break;
-            }
-        }
-
-        for (size_t i = 0; i < maskSize; ++i)
-        {
-            if(hasMask)
-            {
-                currentIdx = indexes.at(i); // index in picture
+                currentMaskIndexes.resize(remainingPixels);
+                slice(indexes, currentMaskIndex*auxMaskSize, remainingPixels, currentMaskIndexes);
+                currentMaskSize = remainingPixels;
             }
             else
             {
-                currentIdx = i;
+                currentMaskIndexes.resize(auxMaskSize);
+                slice(indexes, currentMaskIndex*auxMaskSize, auxMaskSize, currentMaskIndexes);
+                remainingPixels = remainingPixels-auxMaskSize;
+                currentMaskSize = auxMaskSize;
             }
-            normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
         }
 
+        Eigen::MatrixXf imMat(3*imageList.size(), currentMaskSize);
+        Eigen::MatrixXf imMat_gray(imageList.size(), currentMaskSize);
 
+        for (size_t i = 0; i < imageList.size(); ++i)
+        {
+            picturePath = imageList.at(i);
+
+            image::Image<image::RGBfColor> imageFloat;
+            image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
+
+            if(PSParameters.downscale > 1)
+            {
+                downscaleImageInplace(imageFloat,PSParameters.downscale);
+            }
+
+            if(boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
+            {
+                imageFloat = imageFloat - imageAmbiant;
+            }
+
+            intensityScaling(intList.at(i), imageFloat);
+
+            Eigen::MatrixXf currentPicture(3,currentMaskSize);
+            image2PsMatrix(imageFloat, currentMaskIndexes, currentPicture);
+
+            imMat.block(3*i,0,3,currentMaskSize) = currentPicture;
+            imMat_gray.block(i,0,1,currentMaskSize) = currentPicture.block(0,0,1,currentMaskSize) * 0.2126 + currentPicture.block(1,0,1,currentMaskSize) * 0.7152 + currentPicture.block(2,0,1,currentMaskSize) * 0.0722;
+        }
+
+        Eigen::MatrixXf M_channel(3, currentMaskSize);
         int currentIdx;
-        for (size_t ch = 0; ch < 3; ++ch)
+
+        if(PSParameters.isRobust)
         {
-            // Create I matrix for current pixel :
-            Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
-            for (size_t i = 0; i < imageList.size(); ++i)
+            float mu = 0.1;
+            int max_iterations = 1000;
+            float epsilon = 0.001;
+
+            // Errors (E) and Lagrange multiplicators (W) initialisation
+            Eigen::MatrixXf E = lightMat*M_channel - imMat_gray;
+            Eigen::MatrixXf W = Eigen::MatrixXf::Zero(E.rows(), E.cols());
+
+            Eigen::MatrixXf M_kminus1;
+            Eigen::MatrixXf newImMat;
+
+            for (size_t k = 0; k < max_iterations; ++k)
             {
-                pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3*i, 0, 1, maskSize);
+                // Copy for convergence test :
+                M_kminus1 = M_channel;
+
+                // M update :
+                newImMat = imMat_gray + E - W/mu;
+                M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(newImMat);
+
+                // E update :
+                Eigen::MatrixXf E_before = E;
+                shrink(lightMat*M_channel-imMat_gray + W/mu, 1.0/mu, E);
+
+                // W update :
+                W = W + mu*(lightMat*M_channel-imMat_gray-E);
+
+                // Convergence test :
+                Eigen::MatrixXf ecart = M_kminus1 - M_channel;
+                float ecart_relatif = ecart.norm()/M_channel.norm();
+
+                if (k > 10 && ecart_relatif < epsilon)
+                {
+                    std::cout << k << std::endl;
+                    std::cout << "Convergence" << std::endl;
+                    break;
+                }
             }
 
             for (size_t i = 0; i < maskSize; ++i)
@@ -384,51 +388,92 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
                 {
                     currentIdx = i;
                 }
-                Eigen::VectorXf currentI = pixelValues_channel.col(i);
-                Eigen::VectorXf currentShading = lightMat*normalsVect.col(currentIdx);
-                Eigen::VectorXf result = currentI.cwiseProduct(currentShading.cwiseInverse());
-                median(result, albedoVect(ch, currentIdx));
+                normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
+            }
+
+
+            int currentIdx;
+            for (size_t ch = 0; ch < 3; ++ch)
+            {
+                // Create I matrix for current pixel :
+                Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
+                for (size_t i = 0; i < imageList.size(); ++i)
+                {
+                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3*i, 0, 1, maskSize);
+                }
+
+                for (size_t i = 0; i < maskSize; ++i)
+                {
+                    if(hasMask)
+                    {
+                        currentIdx = indexes.at(i); // index in picture
+                    }
+                    else
+                    {
+                        currentIdx = i;
+                    }
+                    Eigen::VectorXf currentI = pixelValues_channel.col(i);
+                    Eigen::VectorXf currentShading = lightMat*normalsVect.col(currentIdx);
+                    Eigen::VectorXf result = currentI.cwiseProduct(currentShading.cwiseInverse());
+                    median(result, albedoVect(ch, currentIdx));
+                }
             }
         }
-    }
-    else
-    {
-        // Channelwise albedo estimation :
-        for (size_t ch = 0; ch < 3; ++ch)
+        else
         {
-            // Create I matrix for current pixel :
-            Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
-            for (size_t i = 0; i < imageList.size(); ++i)
-            {
-                pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3*i, 0, 1, maskSize);
-            }
+            // Normal estimation :
+            M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
 
-            M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(pixelValues_channel);
-
-            for (size_t i = 0; i < maskSize; ++i)
+            for (size_t i = 0; i < currentMaskSize; ++i)
             {
                 if(hasMask)
                 {
-                    currentIdx = indexes.at(i); // index in picture
+                    currentIdx = currentMaskIndexes.at(i); // index in picture
                 }
                 else
                 {
                     currentIdx = i;
                 }
-                albedoVect(ch, currentIdx) = M_channel.col(i).norm();
+                normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
+            }
+
+            // Channelwise albedo estimation :
+            for (size_t ch = 0; ch < 3; ++ch)
+            {
+                // Create I matrix for current pixel :
+                Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
+                for (size_t i = 0; i < imageList.size(); ++i)
+                {
+                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3*i, 0, 1, maskSize);
+                }
+
+                M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(pixelValues_channel);
+
+                for (size_t i = 0; i < currentMaskSize; ++i)
+                {
+                    if(hasMask)
+                    {
+                        currentIdx = currentMaskIndexes.at(i); // index in picture
+                    }
+                    else
+                    {
+                        currentIdx = i;
+                    }
+                    albedoVect(ch, currentIdx) = M_channel.col(i).norm();
+                }
             }
         }
     }
 
-    albedoVect = albedoVect/albedoVect.maxCoeff();
     image::Image<image::RGBfColor> normalsIm(pictCols,pictRows);
     reshapeInImage(normalsVect, normalsIm);
     normals = normalsIm;
 
     image::Image<image::RGBfColor> albedoIm(pictCols,pictRows);
+    albedoVect = albedoVect/albedoVect.maxCoeff();
     reshapeInImage(albedoVect, albedoIm);
-    albedo = albedoIm;
 
+    albedo = albedoIm;
 }
 
 void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat)
@@ -516,8 +561,12 @@ void median(const Eigen::MatrixXf& d, float& median){
         median = aux(middle);
 }
 
+ void slice(const std::vector<int>& inputVector, int start, int numberOfElements, std::vector<int>& currentMaskIndexes) {
 
+    auto first = inputVector.begin() + start;
+    auto last = first + numberOfElements;
 
+    copy(first, last, currentMaskIndexes.begin());
 }
 
 void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColor>& normals)
@@ -534,4 +583,5 @@ void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColo
 
 }
 
+}
 }
