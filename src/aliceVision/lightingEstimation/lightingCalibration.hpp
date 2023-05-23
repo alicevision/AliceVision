@@ -29,16 +29,7 @@ void lightCalibration(const std::string& inputPath, const std::string& outputPat
  * @param[in] inputJSON - Path to the json file containing the spheres parameters (see sphereDetection)
  * @param[out] outputPath - Path to the json file in which we write lights directions
  */
-void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath, const std::string& method);
-
-/**
- * @brief Calibrates lighting direction for a set of images
- * @param[in] imageList - List of pictures on which we want to calibrate lighting
- * @param[in] allSpheresParams - A vector of array. Each one contains 3 floating-point: the coordinates of the sphere center in the picture frame and the radius of the sphere.
- * @param[in] jsonName - The json file in which we write lights directions
- * @param[in] focals  - Focal length of the cameras
- */
-void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals, const std::string& method);
+void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath, const std::string& method, const bool saveAsModel);
 
 /**
  * @brief Calibrates lighting direction of an image containing a sphere
@@ -91,7 +82,7 @@ void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>&
  * @param[in] lightMat - A matrix containing the directions of the light sources.
  * @param[in] intList - A vector of arrays containing the intensity of the light sources.
  */
-void writeJSON(const std::string& fileName, const std::vector<std::string>& imageList, const Eigen::MatrixXf& lightMat, const std::vector<float>& intList);
+void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, const Eigen::MatrixXf& lightMat, const std::vector<float>& intList, const bool saveAsModel);
 
 }
 }

@@ -100,7 +100,6 @@ void shrink(const Eigen::MatrixXf& mat, const float rho, Eigen::MatrixXf& E);
  */
 void median(const Eigen::MatrixXf& d, float& median);
 
-void RTI(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo);
 
 
 void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColor>& normals);

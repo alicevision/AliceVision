@@ -49,7 +49,7 @@ void lightCalibration(const std::string& inputPath, const std::string& outputPat
     // lightCalibration(imageList, sphereParam, outputPath);
 }
 
-void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath, const std::string& method)
+void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath, const std::string& method, const bool saveAsModel)
 {
 
     std::vector<std::string> imageList;
@@ -63,17 +63,24 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
     // read the json file and initialize the tree
     bpt::read_json(inputJSONFullName, fileTree);
 
+    std::map<std::string, sfmData::View> viewMap;
     for(auto& viewIt: sfmData.getViews())
     {
-        ALICEVISION_LOG_INFO("View Id: " << viewIt.first);
-        const fs::path imagePath = fs::path(sfmData.getView(viewIt.first).getImagePath());
+        std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getMetadata();
+        viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
+    }
+
+    for(const auto& [currentTime, currentView] : viewMap)
+    {
+        ALICEVISION_LOG_INFO("View Id: " << currentView.getViewId());
+        const fs::path imagePath = fs::path(currentView.getImagePath());
 
         if(!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
         {
             ALICEVISION_LOG_INFO("  - " << imagePath.string());
             imageList.push_back(imagePath.string());
 
-            std::string sphereName = std::to_string(viewIt.second->getViewId());
+            std::string sphereName = std::to_string(currentView.getViewId());
             std::array<float,3> currentSphereParams;
 
             for (auto& currentSphere : fileTree.get_child(sphereName))
@@ -85,7 +92,7 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
 
             allSpheresParams.push_back(currentSphereParams);
 
-            IndexT intrinsicId = viewIt.second->getIntrinsicId();
+            IndexT intrinsicId = currentView.getIntrinsicId();
             focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
         }
     }
@@ -106,29 +113,8 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
     }
 
     // Write in JSON file :
-    writeJSON(outputPath, sfmData, lightMat, intList);
+    writeJSON(outputPath, sfmData, lightMat, intList, saveAsModel);
 
-}
-
-void lightCalibration(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& allSpheresParams, const std::string& jsonName, const std::vector<float>& focals, const std::string& method)
-{
-    Eigen::MatrixXf lightMat(imageList.size(), 3);
-    std::vector<float> intList;
-
-    for (size_t i = 0; i < imageList.size(); ++i)
-    {
-        std::string picturePath = imageList.at(i);
-        std::array<float,3> sphereParam = allSpheresParams.at(i);
-        float focal = focals.at(i);
-
-        Eigen::Vector3f lightingDirection;
-        lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection);
-        lightMat.row(i) = lightingDirection;
-        intList.push_back(lightingDirection.norm());
-    }
-
-    // Write in JSON file :
-    writeJSON(jsonName, imageList, lightMat, intList);
 }
 
 void lightCalibrationOneImage(const std::string& picturePath, const std::array<float, 3>& sphereParam, const float focal, const std::string& method, Eigen::Vector3f& lightingDirection)
@@ -279,48 +265,67 @@ void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>&
     }
 }
 
-void writeJSON(const std::string& fileName, const std::vector<std::string>& imageList, const Eigen::MatrixXf& lightMat, const std::vector<float>& intList)
+void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, const Eigen::MatrixXf& lightMat, const std::vector<float>& intList, const bool saveAsModel)
 {
-    // main tree
+    bpt::ptree lightsTree;
     bpt::ptree fileTree;
-    bpt::ptree lights_node;
 
     int imgCpt = 0;
-
-    for(auto& currentImPath: imageList)
+    std::map<std::string, sfmData::View> viewMap;
+    for(auto& viewIt: sfmData.getViews())
     {
-        // get lights name
-        fs::path imagePathFS = fs::path(currentImPath);
-        std::string lightName = imagePathFS.stem().string();
-
-        bpt::ptree currentLight_node;
-        currentLight_node.put("type", "directionnal");
-
-        // Light direction
-        bpt::ptree direction_node;
-        for (int i = 0; i < 3; i++)
-        {
-            bpt::ptree cell;
-            cell.put_value<float>(lightMat(imgCpt, i));
-            direction_node.push_back(std::make_pair("", cell));
-         }
-         currentLight_node.add_child("direction", direction_node);
-
-        // Light intensity
-        bpt::ptree intensity_node;
-        for (int i = 0; i < 3; i++)
-        {
-            bpt::ptree cell;
-            cell.put_value<float>(intList.at(imgCpt));
-            intensity_node.push_back(std::make_pair("", cell));
-         }
-         currentLight_node.add_child("intensity", intensity_node);
-         imgCpt++;
-
-        lights_node.add_child(lightName, currentLight_node);
+        std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getMetadata();
+        viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
     }
 
-    fileTree.add_child("lights", lights_node);
+
+    for(const auto& [currentTime, viewId] : viewMap)
+    {
+        const fs::path imagePath = fs::path(viewId.getImagePath());
+
+        if(!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+        {
+            bpt::ptree lightTree;
+            if(saveAsModel)
+            {
+                lightTree.put("lightId", imgCpt);
+                lightTree.put("type", "directionnal");
+            }
+            else
+            {
+                IndexT index = viewId.getViewId();
+
+                lightTree.put("viewId", index);
+                lightTree.put("type", "directionnal");
+            }
+
+
+            // Light direction
+            bpt::ptree direction_node;
+            for (int i = 0; i < 3; i++)
+            {
+                bpt::ptree cell;
+                cell.put_value<float>(lightMat(imgCpt, i));
+                direction_node.push_back(std::make_pair("", cell));
+            }
+            lightTree.add_child("direction", direction_node);
+
+            // Light intensity
+            bpt::ptree intensity_node;
+            for (int i = 0; i < 3; i++)
+            {
+                bpt::ptree cell;
+                cell.put_value<float>(intList.at(imgCpt));
+                intensity_node.push_back(std::make_pair("", cell));
+            }
+            lightTree.add_child("intensity", intensity_node);
+            imgCpt++;
+
+            lightsTree.push_back(std::make_pair("", lightTree));
+        }
+    }
+
+    fileTree.add_child("lights", lightsTree);
     bpt::write_json(fileName, fileTree);
 }
 

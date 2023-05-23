@@ -168,8 +168,7 @@ void buildLigtMatFromJSON(const std::string& fileName, const std::vector<std::st
     }
 }
 
-
-void buildLigtMatFromModel(const std::string& fileName, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
+void buildLigtMatFromJSON(const std::string& fileName, const std::vector<IndexT>& indexes, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
 {
     // main tree
     bpt::ptree fileTree;
@@ -178,24 +177,16 @@ void buildLigtMatFromModel(const std::string& fileName, Eigen::MatrixXf& lightMa
     bpt::read_json(fileName, fileTree);
 
     int lineNumber = 0;
-    int numberOfLights = fileTree.get_child("lights").size();
-
-    for(int i = 1; i <= numberOfLights; ++i)
+    for(auto& currentIndex: indexes)
     {
-        std::string str = std::to_string(i);
-        size_t n = 4;
-
-        int precision = n - std::min(n, str.size());
-        std::string s = std::string(precision, '0').append(str);
-
-        for(auto& lightsName: fileTree.get_child("lights"))
+        int cpt = 0;
+        for(auto& light: fileTree.get_child("lights"))
         {
-            int cpt = 0;
-            if(boost::algorithm::icontains(s, lightsName.first))
+            IndexT lightIndex = light.second.get<IndexT>("lightId",UndefinedIndexT);
+            if(lightIndex != UndefinedIndexT)
             {
-
                 std::array<float, 3> currentIntensities;
-                for(auto& intensities: lightsName.second.get_child("intensity"))
+                for(auto& intensities: light.second.get_child("intensity"))
                 {
                     currentIntensities[cpt] = intensities.second.get_value<float>();
                     ++cpt;
@@ -204,12 +195,34 @@ void buildLigtMatFromModel(const std::string& fileName, Eigen::MatrixXf& lightMa
 
                 cpt = 0;
 
-                for(auto& direction: lightsName.second.get_child("direction"))
+               for(auto& direction: light.second.get_child("direction"))
+               {
+                   lightMat(lightIndex,cpt)  = direction.second.get_value<float>();
+                   ++cpt;
+               }
+            }
+            else
+            {
+                IndexT lightIndex = light.second.get<IndexT>("viewId",UndefinedIndexT);
+                if(lightIndex == currentIndex)
                 {
-                    lightMat(lineNumber,cpt)  = direction.second.get_value<float>();
-                    ++cpt;
+                    std::array<float, 3> currentIntensities;
+                    for(auto& intensities: light.second.get_child("intensity"))
+                    {
+                        currentIntensities[cpt] = intensities.second.get_value<float>();
+                        ++cpt;
+                    }
+                    intList.push_back(currentIntensities);
+
+                    cpt = 0;
+
+                   for(auto& direction: light.second.get_child("direction"))
+                   {
+                       lightMat(lineNumber,cpt)  = direction.second.get_value<float>();
+                       ++cpt;
+                   }
+                   ++lineNumber;
                 }
-                ++lineNumber;
             }
         }
     }

@@ -41,8 +41,6 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
  */
 void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
 
-void buildLigtMatFromModel(const std::string& fileName, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList);
-
 /**
  * @brief Load light data from a json file to an eigen matrix
  * @param[in] fileName - Path to the json file
@@ -51,6 +49,8 @@ void buildLigtMatFromModel(const std::string& fileName, Eigen::MatrixXf& lightMa
  * @param[out] intList - Intensities of lights (for each picture, intensity in each channel)
  */
 void buildLigtMatFromJSON(const std::string& fileName, const std::vector<std::string>& imageList, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList);
+
+void buildLigtMatFromJSON(const std::string& fileName, const std::vector<IndexT>& indexes, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList);
 
 /**
  * @brief Load a mask
