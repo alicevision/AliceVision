@@ -560,6 +560,7 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   const std::size_t cacheSize =  10000;
   const double percentile = _mp.userParams.get<double>("LargeScale.universePercentile", 0.999);
 
+  ALICEVISION_LOG_INFO("****");
   for (auto & pl : sfmData.getLandmarks())
   {
     ALICEVISION_LOG_INFO("Landmark");

@@ -63,12 +63,31 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     const NViewDatasetConfigurator config(1000, 1000, 500, 500, 1, 0);
     SfMData sfmData = generateSfm(config, 6);
 
+    ALICEVISION_LOG_INFO("****");
+    for (auto & pl : sfmData.getLandmarks())
+    {
+        ALICEVISION_LOG_INFO("Landmark");
+        for (auto & pobs : pl.second.observations)
+        {
+            ALICEVISION_LOG_INFO(pobs.first);
+        }
+    }
+
     mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
 
     mp.userParams.put("LargeScale.universePercentile", 0.999);
     mp.userParams.put("delaunaycut.forceTEdgeDelta", 0.1f);
     mp.userParams.put("delaunaycut.seed", 1);
 
+    ALICEVISION_LOG_INFO("****");
+    for (auto & pl : sfmData.getLandmarks())
+    {
+        ALICEVISION_LOG_INFO("Landmark");
+        for (auto & pobs : pl.second.observations)
+        {
+            ALICEVISION_LOG_INFO(pobs.first);
+        }
+    }
     std::array<Point3d, 8> hexah;
 
     Fuser fs(mp);
