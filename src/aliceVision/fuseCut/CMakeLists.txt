@@ -29,6 +29,7 @@ alicevision_add_library(aliceVision_fuseCut
     aliceVision_mvsData
     aliceVision_mvsUtils
     aliceVision_mesh
+    aliceVision_sfmData
     aliceVision_system
     Geogram::geogram
     Boost::filesystem

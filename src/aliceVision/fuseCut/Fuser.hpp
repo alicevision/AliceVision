@@ -12,12 +12,9 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
 namespace aliceVision {
-
-namespace sfmData {
-class SfMData;
-}
 
 namespace fuseCut {
 
