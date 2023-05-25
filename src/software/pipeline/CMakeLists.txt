@@ -561,6 +561,17 @@ alicevision_add_software(aliceVision_lightingCalibration
         aliceVision_sfmDataIO
         Boost::program_options
 )
+if(ALICEVISION_BUILD_REGISTRATION)
+  alicevision_add_software(aliceVision_3d3dRegistration
+    SOURCE main_3d3dRegistration.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_registration
+          aliceVision_cmdline
+          Boost::program_options
+          Boost::filesystem
+  )
+endif()
 
 if(ALICEVISION_BUILD_HDR)
 
