@@ -14,7 +14,7 @@ find_library(ONNXRuntime_LIBRARY
 find_path(ONNXRuntime_INCLUDE_DIR
   NAMES onnxruntime_cxx_api.h
   HINTS ${CMAKE_PREFIX_PATH} ${CMAKE_INSTALL_PREFIX}
-  PATH_SUFFIXES include
+  PATH_SUFFIXES include include/onnxruntime  include/onnxruntime/core/session
 )
 
 # Check that we found everything we need
