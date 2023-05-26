@@ -81,6 +81,7 @@ alicevision_add_software(aliceVision_convertDepthMap
         aliceVision_sfmData
         aliceVision_sfmDataIO
         aliceVision_mvsUtils
+        aliceVision_cmdline
         assimp::assimp
         ${Boost_LIBRARIES}
 )
