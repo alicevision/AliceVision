@@ -154,6 +154,9 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmDataFilename;
     std::string depthMapsFolder;
     std::string outputFolder;
+    // program range
+    int rangeStart = -1;
+    int rangeSize = -1;
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -164,10 +167,18 @@ int aliceVision_main(int argc, char** argv)
         ("output,o", po::value<std::string>(&outputFolder)->required(),
             "Output folder for depth maps meshes.");
 
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+            "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+            "Compute a sub-range of N images (N=rangeSize).");
+
     CmdLine cmdline("The program allows to convert depth maps to mesh format.\n"
                     "AliceVision convertDepthMap");
 
     cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
 
     // check command-line execution
     if(!cmdline.execute(argc, argv))
@@ -191,7 +202,7 @@ int aliceVision_main(int argc, char** argv)
     cams.reserve(mp.ncams);
 
     // TODO: chunks / multithreading
-    for(int rc = 0; rc < mp.ncams; rc++)
+    for(int rc = 0; rc < std::min(rangeStart + rangeSize, mp.ncams); rc++)
         cams.push_back(rc);
 
     // we do not need mtl file
