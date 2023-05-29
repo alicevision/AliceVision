@@ -7,7 +7,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
@@ -149,8 +148,7 @@ void createAssimpSceneFromDepthMap(int rc,
  */
 int aliceVision_main(int argc, char** argv)
 {
-    // timer initialization
-    system::Timer timer;
+    ALICEVISION_COMMANDLINE_START
 
     // command-line parameters
     std::string sfmDataFilename;
@@ -253,6 +251,5 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Convert depth map to obj (rc: " << rc << ") done.");
     }
 
-    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
-    return EXIT_SUCCESS;
+    ALICEVISION_COMMANDLINE_END
 }
