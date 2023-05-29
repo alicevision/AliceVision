@@ -186,7 +186,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // initialize multi-view parameters
-    mvsUtils::MultiViewParams mp(sfmData, "", depthMapsFolder, "");
+    mvsUtils::MultiViewParams mp(sfmData, "", depthMapsFolder, "", true);
 
     // build camera indexes list
     std::vector<int> cams;
