@@ -15,11 +15,6 @@
 // ONNX Runtime
 #include <onnxruntime_cxx_api.h>
 
-// Command line parameters
-#include <aliceVision/system/main.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
-
 // Helper to convert Eigen Matrix to OpenCV image
 #include <aliceVision/imageMasking/eigen2cvHelpers.hpp>
 
