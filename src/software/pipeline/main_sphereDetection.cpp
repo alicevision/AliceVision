@@ -81,11 +81,15 @@ int aliceVision_main(int argc, char** argv)
 
     if(autoDetect)
     {
-        // onnxruntime session setup
-        Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "Sphere detector onnx model environment");
-        Ort::SessionOptions session_options;
-        Ort::Session session(env, input_model_path.c_str(), session_options);
-
+        // ONNXRuntime session setup
+        Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "Sphere detector ONNX model environment");
+        Ort::SessionOptions sessionOptions;
+#if defined(_WIN32) || defined(_WIN64)
+        std::wstring modelPath(inputModelPath.begin(), inputModelPath.end());
+        Ort::Session session(env, modelPath.c_str(), sessionOptions);
+#else
+        Ort::Session session(env, inputModelPath.c_str(), sessionOptions);
+#endif
         // DEBUG: print model I/O
         sphereDetection::model_explore(session);
 
