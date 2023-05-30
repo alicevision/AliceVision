@@ -1,7 +1,7 @@
 // Command line parameters
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
 
 #include <aliceVision/sphereDetection/sphereDetection.hpp>
 
@@ -43,8 +43,8 @@ int aliceVision_main(int argc, char** argv)
     Eigen::Vector2f sphereCenterOffset(0, 0);
     double sphereRadius = 1.0;
 
-    po::options_description required_parameters("Required parameters");
-    required_parameters.add_options()                                                                           //
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
         ("input_sfmdata_path,i", po::value<std::string>(&input_sfmdata_path)->required(), "SFMData input path") //
         ("input_model_path,m", po::value<std::string>(&input_model_path)->required(), "model input path")       //
         ("autoDetect,a", po::value<bool>(&autoDetect)->required(), "Is the sphere automaticaly detected ?")     //
@@ -59,35 +59,14 @@ int aliceVision_main(int argc, char** argv)
     ("sphereRadius,r", po::value<double>(&sphereRadius)->default_value(1.0), "Sphere's radius (pixels).");
 
 
-    po::options_description all_parameters("AliceVision sphereDetection");
-    all_parameters.add(required_parameters).add(optionalParams);
+    CmdLine cmdline("AliceVision sphereDetection");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
 
-    po::variables_map variable_map;
-    try
+    if (!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, all_parameters), variable_map);
-        if(variable_map.count("help") || (argc == 1))
-        {
-            ALICEVISION_COUT(all_parameters);
-            return EXIT_SUCCESS;
-        }
-        po::notify(variable_map);
-    }
-    catch(po::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << all_parameters);
         return EXIT_FAILURE;
     }
-    catch(po::error& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << all_parameters);
-        return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(variable_map);
 
     // load SFMData file
     sfmData::SfMData sfmData;

@@ -10,9 +10,9 @@
 #include <aliceVision/photometricStereo/normalIntegration.hpp>
 
 // Command line parameters
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
@@ -56,7 +56,6 @@ int aliceVision_main(int argc, char **argv)
     // image downscale factor during process
     int downscale = 1;
 
-    po::options_description allParams("AliceVision normal integration");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input : a folder containing the normal map and the mask")
@@ -67,34 +66,14 @@ int aliceVision_main(int argc, char **argv)
     ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""), "Path to SfmData file")
     ("downscale,d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results" );
 
-    allParams.add(requiredParams).add(optionalParams);
-    po::variables_map vm;
-    try
-    {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
+    CmdLine cmdline("AliceVision normalIntegration");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
 
-        if(vm.count("help") || (argc == 1))
-        {
-          ALICEVISION_COUT(allParams);
-          return EXIT_SUCCESS;
-        }
-        po::notify(vm);
-    }
-    catch(boost::program_options::required_option& e)
+    if (!cmdline.execute(argc, argv))
     {
-      ALICEVISION_CERR("ERROR: " << e.what());
-      ALICEVISION_COUT("Usage:\n\n" << allParams);
-      return EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
-    {
-      ALICEVISION_CERR("ERROR: " << e.what());
-      ALICEVISION_COUT("Usage:\n\n" << allParams);
-      return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
 
     if(sfmDataFile.compare("") == 0)
     {

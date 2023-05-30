@@ -9,9 +9,9 @@
 #include <aliceVision/lightingEstimation/lightingCalibration.hpp>
 
 // Command line parameters
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
@@ -53,7 +53,6 @@ int aliceVision_main(int argc, char **argv)
     std::string method;
     bool saveAsModel;
 
-    po::options_description allParams("AliceVision lighting calibration");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
@@ -61,40 +60,18 @@ int aliceVision_main(int argc, char **argv)
     ("outputFile, o", po::value<std::string>(&ouputJSON)->required(), "Path to JSON output file");
 
     po::options_description optionalParams("Optional parameters");
-
     optionalParams.add_options()
     ("saveAsModel, s", po::value<bool>(&saveAsModel)->default_value(false), "Calibration used for several datasets")
     ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"), "Method for light estimation");
 
-    allParams.add(requiredParams).add(optionalParams);
+    CmdLine cmdline("AliceVision lightingCalibration");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
 
-    po::variables_map vm;
-    try
+    if (!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-        if(vm.count("help") || (argc == 1))
-        {
-          ALICEVISION_COUT(allParams);
-          return EXIT_SUCCESS;
-        }
-        po::notify(vm);
+        return EXIT_FAILURE;
     }
-    catch(po::required_option& e)
-    {
-      ALICEVISION_CERR("ERROR: " << e.what());
-      ALICEVISION_COUT("Usage:\n\n" << allParams);
-      return EXIT_FAILURE;
-    }
-    catch(po::error& e)
-    {
-      ALICEVISION_CERR("ERROR: " << e.what());
-      ALICEVISION_COUT("Usage:\n\n" << allParams);
-      return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
 
     if(fs::is_directory(inputPath))
     {
