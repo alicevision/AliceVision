@@ -661,13 +661,33 @@ void readImage(const std::string& path,
     if (inBuf.spec().nchannels == 2)
         ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
+    oiio::ParamValueList imgMetadata = readImageMetadata(path);
+
+    if (isRawImage)
+    {
+        // Check orientation metadata. If image is mirrored, mirror it back and update orientation metadata
+        int orientation = imgMetadata.get_int("orientation", -1);
+
+        float red[] = {1, 0, 0, 1};
+        oiio::ImageBufAlgo::render_text(inBuf, 1000, 1000, std::to_string(orientation), 200, "Arial", red);
+
+        if (orientation == 2 || orientation == 4 || orientation == 5 || orientation == 7)
+        {
+            // horizontal mirroring
+            oiio::ImageBuf inBufMirrored = oiio::ImageBufAlgo::flop(inBuf);
+            inBuf = inBufMirrored;
+
+            orientation += (orientation == 2 || orientation == 4) ? -1 : 1;
+        }
+    }
+
     // Apply DCP profile
     if (!imageReadOptions.colorProfileFileName.empty() &&
         imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
     {
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
-        oiio::ParamValueList imgMetadata = readImageMetadata(path);
+        //oiio::ParamValueList imgMetadata = readImageMetadata(path);
         std::string cam_mul = "";
         if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
         {
