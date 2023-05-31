@@ -127,11 +127,10 @@ int aliceVision_main(int argc, char **argv)
             "Transfer poses.")
         ("transferIntrinsics", po::value<bool>(&transferIntrinsics)->default_value(transferIntrinsics),
             "Transfer intrinsics.")
-        ("transferLandmarkss", po::value<bool>(&transferLandmarks)->default_value(transferLandmarks),
-                "Transfer landmarks.")
+        ("transferLandmarks", po::value<bool>(&transferLandmarks)->default_value(transferLandmarks),
+            "Transfer landmarks.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-            "Path of the output SfMData file.")
-        ;
+            "Path of the output SfMData file.");
 
     CmdLine cmdline("AliceVision sfmTransfer");
     cmdline.add(requiredParams);
