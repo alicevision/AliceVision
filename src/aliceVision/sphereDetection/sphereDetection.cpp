@@ -43,223 +43,213 @@ namespace bpt = boost::property_tree;
 namespace aliceVision {
 namespace sphereDetection {
 
-void model_explore(Ort::Session& session)
+void modelExplore(Ort::Session& session)
 {
-    // define allocator
+    // Define allocator
     Ort::AllocatorWithDefaultOptions allocator;
 
-    // print infos of inputs
-    size_t input_count = session.GetInputCount();
-    for(size_t i = 0; i < input_count; i++)
+    // Print infos of inputs
+    size_t inputCount = session.GetInputCount();
+    for (size_t i = 0; i < inputCount; i++)
     {
 #if ORT_API_VERSION >= 14
-        const Ort::AllocatedStringPtr input_name = session.GetInputNameAllocated(i, allocator);
-        ALICEVISION_LOG_DEBUG("Input[" << i << "]: " << input_name.get());
+        const Ort::AllocatedStringPtr inputName = session.GetInputNameAllocated(i, allocator);
+        ALICEVISION_LOG_DEBUG("Input[" << i << "]: " << inputName.get());
 #else
-        const char* input_name = session.GetInputName(i, allocator);
-        ALICEVISION_LOG_DEBUG("Input[" << i << "]: " << input_name);
+        const char* inputName = session.GetInputName(i, allocator);
+        ALICEVISION_LOG_DEBUG("Input[" << i << "]: " << inputName);
 #endif
 
-        Ort::TypeInfo input_info = session.GetInputTypeInfo(i);
-        auto input_info2 = input_info.GetTensorTypeAndShapeInfo();
+        Ort::TypeInfo inputInfo = session.GetInputTypeInfo(i);
+        auto inputInfo2 = inputInfo.GetTensorTypeAndShapeInfo();
 
-        ONNXTensorElementDataType input_type = input_info2.GetElementType();
+        ONNXTensorElementDataType input_type = inputInfo2.GetElementType();
         ALICEVISION_LOG_DEBUG("  Type : " << input_type);
 
-        std::vector<int64_t> input_shape = input_info2.GetShape();
+        std::vector<int64_t> input_shape = inputInfo2.GetShape();
         size_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<float>());
         ALICEVISION_LOG_DEBUG("  Shape: " << input_shape);
         ALICEVISION_LOG_DEBUG("  Size : " << input_size);
     }
 
-    // print infos of outputs
-    size_t output_count = session.GetOutputCount();
-    for(size_t i = 0; i < output_count; i++)
+    // Print infos of outputs
+    size_t outputCount = session.GetOutputCount();
+    for(size_t i = 0; i < outputCount; i++)
     {
 #if ORT_API_VERSION >= 14
-        const Ort::AllocatedStringPtr output_name = session.GetOutputNameAllocated(i, allocator);
-        ALICEVISION_LOG_DEBUG("Output[" << i << "]: " << output_name.get());
+        const Ort::AllocatedStringPtr outputName = session.GetOutputNameAllocated(i, allocator);
+        ALICEVISION_LOG_DEBUG("Output[" << i << "]: " << outputName.get());
 #else
-        const char* output_name = session.GetOutputName(i, allocator);
-        ALICEVISION_LOG_DEBUG("Output[" << i << "]: " << output_name);
+        const char* outputName = session.GetOutputName(i, allocator);
+        ALICEVISION_LOG_DEBUG("Output[" << i << "]: " << outputName);
 #endif
 
-        Ort::TypeInfo output_info = session.GetOutputTypeInfo(i);
-        auto output_info2 = output_info.GetTensorTypeAndShapeInfo();
+        Ort::TypeInfo outputInfo = session.GetOutputTypeInfo(i);
+        auto outputInfo2 = outputInfo.GetTensorTypeAndShapeInfo();
 
-        ONNXTensorElementDataType output_type = output_info2.GetElementType();
-        ALICEVISION_LOG_DEBUG("  Type : " << output_type);
+        ONNXTensorElementDataType outputType = outputInfo2.GetElementType();
+        ALICEVISION_LOG_DEBUG("  Type: " << outputType);
 
-        std::vector<int64_t> output_shape = output_info2.GetShape();
-        size_t output_size = std::accumulate(begin(output_shape), end(output_shape), 1, std::multiplies<float>());
-        ALICEVISION_LOG_DEBUG("  Shape: " << output_shape);
-        ALICEVISION_LOG_DEBUG("  Size : " << output_size);
+        std::vector<int64_t> outputShape = outputInfo2.GetShape();
+        size_t outputSize = std::accumulate(begin(outputShape), end(outputShape), 1, std::multiplies<float>());
+        ALICEVISION_LOG_DEBUG("  Shape: " << outputShape);
+        ALICEVISION_LOG_DEBUG("  Size: " << outputSize);
     }
 }
 
-prediction predict(Ort::Session& session, const fs::path image_path, const fs::path output_path, const float min_score)
+prediction predict(Ort::Session& session, const fs::path imagePath, const fs::path outputPath, const float minScore)
 {
-    // read image
-    image::Image<image::RGBColor> image_alice;
-    image::readImage(image_path.string(), image_alice, image::EImageColorSpace::SRGB);
+    // Read image
+    image::Image<image::RGBColor> imageAlice;
+    image::readImage(imagePath.string(), imageAlice, image::EImageColorSpace::SRGB);
 
     // Eigen -> OpenCV
-    cv::Mat image_opencv;
-    cv::eigen2cv(image_alice.GetMat(), image_opencv);
-    cv::Size image_opencv_shape = image_opencv.size();
+    cv::Mat imageOpencv;
+    cv::eigen2cv(imageAlice.GetMat(), imageOpencv);
+    cv::Size imageOpencvShape = imageOpencv.size();
 
     // uint8 -> float32
-    image_opencv.convertTo(image_opencv, CV_32FC3, 1 / 255.0);
+    imageOpencv.convertTo(imageOpencv, CV_32FC3, 1 / 255.0);
 
     // HWC to CHW
-    cv::dnn::blobFromImage(image_opencv, image_opencv);
+    cv::dnn::blobFromImage(imageOpencv, imageOpencv);
 
-    // inference on cpu TODO: use gpu
-    Ort::MemoryInfo memory_info =
+    // Inference on cpu TODO: use gpu
+    Ort::MemoryInfo memoryInfo =
         Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
-    // intialize input tensor
-    std::vector<int64_t> input_shape = {1, 3, image_alice.Height(), image_alice.Width()};
-    size_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<size_t>());
-    std::vector<float> input_tensor(input_size);
-    input_tensor.assign(image_opencv.begin<float>(), image_opencv.end<float>());
+    // Initialize input tensor
+    std::vector<int64_t> inputShape = {1, 3, imageAlice.Height(), imageAlice.Width()};
+    size_t inputSize = std::accumulate(begin(inputShape), end(inputShape), 1, std::multiplies<size_t>());
+    std::vector<float> inputTensor(inputSize);
+    inputTensor.assign(imageOpencv.begin<float>(), imageOpencv.end<float>());
 
-    // create input data
-    std::vector<Ort::Value> input_data;
-    input_data.push_back(                                                                        //
-        Ort::Value::CreateTensor<float>(                                                         //
-            memory_info, input_tensor.data(), input_size, input_shape.data(), input_shape.size() //
-            )                                                                                    //
-    );                                                                                           //
+    // Create input data
+    std::vector<Ort::Value> inputData;
+    inputData.push_back(
+        Ort::Value::CreateTensor<float>(
+            memoryInfo, inputTensor.data(), inputSize, inputShape.data(), inputShape.size()
+            )
+    );
 
-    // select inputs and outputs
-    std::vector<const char*> input_names{"input"};
-    std::vector<const char*> output_names{"boxes", "scores", "masks"};
+    // Select inputs and outputs
+    std::vector<const char*> inputNames{"input"};
+    std::vector<const char*> outputNames{"boxes", "scores", "masks"};
 
-    // run the inference
-    auto output = session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_data.data(), input_names.size(),
-                              output_names.data(), output_names.size());
+    // Run the inference
+    auto output = session.Run(Ort::RunOptions{nullptr}, inputNames.data(), inputData.data(), inputNames.size(),
+                              outputNames.data(), outputNames.size());
 
-    // get pointers to outputs
-    float* bboxes_ptr = output.at(0).GetTensorMutableData<float>();
-    float* scores_ptr = output.at(1).GetTensorMutableData<float>();
-    float* masks_ptr = output.at(2).GetTensorMutableData<float>();
+    // Get pointers to outputs
+    float* bboxesPtr = output.at(0).GetTensorMutableData<float>();
+    float* scoresPtr = output.at(1).GetTensorMutableData<float>();
+    float* masksPtr = output.at(2).GetTensorMutableData<float>();
 
-    // get output shape
+    // Get output shape
     auto infos = output.at(2).GetTensorTypeAndShapeInfo();
     auto shape = infos.GetShape();
 
-    // get scores of detections
-    std::vector<float> all_scores = {scores_ptr, scores_ptr + shape[0]};
+    // Get scores of detections
+    std::vector<float> allScores = {scoresPtr, scoresPtr + shape[0]};
 
-    // initialize arrays
+    // Initialize arrays
     std::vector<std::vector<float>> bboxes;
     std::vector<std::string> masks;
     std::vector<float> scores;
 
-    // filter detections and fill arrays
-    for(size_t i = 0; i < shape[0]; i++)
+    // Filter detections and fill arrays
+    for (size_t i = 0; i < shape[0]; i++)
     {
-        float score = all_scores.at(i);
-        if(score > min_score)
+        float score = allScores.at(i);
+        if (score > minScore)
         {
-            // extract bboxe
-            std::vector<float> bboxe(bboxes_ptr + 4 * i, bboxes_ptr + 4 * (i + 1));
+            // Extract bboxe
+            std::vector<float> bboxe(bboxesPtr + 4 * i, bboxesPtr + 4 * (i + 1));
             bboxes.push_back(bboxe);
 
-            // extract mask
-            float* mask_ptr = masks_ptr + shape[2] * shape[3] * i;
-            cv::Mat mask = cv::Mat(shape[2], shape[3], CV_32FC1, mask_ptr);
-            std::string filename = fmt::format("{}_mask_{}.png", image_path.stem().string(), i);
-            std::string filepath = std::string(output_path.string()).append(filename);
+            // Rxtract mask
+            float* maskPtr = masksPtr + shape[2] * shape[3] * i;
+            cv::Mat mask = cv::Mat(shape[2], shape[3], CV_32FC1, maskPtr);
+            std::string filename = fmt::format("{}_mask_{}.png", imagePath.stem().string(), i);
+            std::string filepath = std::string(outputPath.string()).append(filename);
             masks.push_back(filepath);
             cv::imwrite(filepath, mask);
 
-            // extract score
+            // Extract score
             scores.push_back(score);
         }
     }
 
-    return prediction{bboxes, scores, masks, image_opencv_shape};
+    return prediction{bboxes, scores, masks, imageOpencvShape};
 }
 
-void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path,
-                     const float min_score)
+void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath, const float minScore)
 {
-    // main tree
+    // Main tree
     bpt::ptree fileTree;
 
-    for(auto& viewID : sfmData.getViews())
+    for (auto& viewID : sfmData.getViews())
     {
         ALICEVISION_LOG_DEBUG("View Id: " << viewID);
 
         std::string sphereName = std::to_string(viewID.second->getViewId());
-        const fs::path image_path = fs::path(sfmData.getView(viewID.second->getViewId()).getImagePath());
+        const fs::path imagePath = fs::path(sfmData.getView(viewID.second->getViewId()).getImagePath());
 
-        if(boost::algorithm::icontains(image_path.stem().string(), "ambiant"))
+        if (boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
             continue;
 
-        auto pred = predict(session, image_path, output_path, min_score);
+        auto pred = predict(session, imagePath, outputPath, minScore);
 
-        bpt::ptree spheres_node;
+        bpt::ptree spheresNode;
 
-        //for(size_t i = 0; i < pred.scores.size(); i++)
-        //{
-        //We only take the best sphere in the picture
+        // We only take the best sphere in the picture
         int i = 0;
-        // compute sphere coords from bboxe coords
+        // Compute sphere coords from bboxe coords
         auto bboxe = pred.bboxes.at(i);
         float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
         float x = bboxe.at(0) + r - pred.size.width / 2;
         float y = bboxe.at(1) + r - pred.size.height / 2;
 
-        // create an unnamed node containing the sphere
-        bpt::ptree sphere_node;
-        sphere_node.put("x", x);
-        sphere_node.put("y", y);
-        sphere_node.put("r", r);
-        sphere_node.put("score", pred.scores.at(i));
-        sphere_node.put("mask", pred.masks.at(i));
+        // Create an unnamed node containing the sphere
+        bpt::ptree sphereNode;
+        sphereNode.put("x", x);
+        sphereNode.put("y", y);
+        sphereNode.put("r", r);
+        sphereNode.put("score", pred.scores.at(i));
+        sphereNode.put("mask", pred.masks.at(i));
 
-        // add sphere to array
-        spheres_node.push_back(std::make_pair("", sphere_node));
-        //}
+        // Add sphere to array
+        spheresNode.push_back(std::make_pair("", sphereNode));
 
-        // add spheres (array) to view
-        //view.add_child("spheres", spheres_node);
-
-        // add view n°i to array of views
-        //views.push_back(std::make_pair("", view));
-
-        fileTree.add_child(sphereName, spheres_node);
+        fileTree.add_child(sphereName, spheresNode);
     }
-    bpt::write_json(output_path.append("detection.json").string(), fileTree);
+    bpt::write_json(outputPath.append("detection.json").string(), fileTree);
 }
 
-void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path output_path)
+void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath)
 {
-    // main tree
+    // Main tree
     bpt::ptree fileTree;
 
-    for(auto& viewID : sfmData.getViews())
+    for (auto& viewID : sfmData.getViews())
     {
         ALICEVISION_LOG_DEBUG("View Id: " << viewID);
 
         std::string sphereName = std::to_string(viewID.second->getViewId());
 
-        bpt::ptree spheres_node;
+        bpt::ptree spheresNode;
         // Create an unnamed node containing the sphere
-        bpt::ptree sphere_node;
-        sphere_node.put("x", sphereParam[0]);
-        sphere_node.put("y", sphereParam[1]);
-        sphere_node.put("r", sphereParam[2]);
+        bpt::ptree sphereNode;
+        sphereNode.put("x", sphereParam[0]);
+        sphereNode.put("y", sphereParam[1]);
+        sphereNode.put("r", sphereParam[2]);
 
-        // add sphere to array
-        spheres_node.push_back(std::make_pair("", sphere_node));
+        // Add sphere to array
+        spheresNode.push_back(std::make_pair("", sphereNode));
 
-        fileTree.add_child(sphereName, spheres_node);
+        fileTree.add_child(sphereName, spheresNode);
     }
-    bpt::write_json(output_path.append("detection.json").string(), fileTree);
+    bpt::write_json(outputPath.append("detection.json").string(), fileTree);
 }
 
 }
