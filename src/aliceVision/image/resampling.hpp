@@ -47,6 +47,37 @@ namespace image {
       }
   }
 
+  template <typename ImageType>
+  void downscaleImageInplace(ImageType& inout, int downscale)
+  {
+      if(downscale <= 1)
+          return;
+      ALICEVISION_LOG_TRACE("downscaleImageInplace in: " << inout.Width() << "x" << inout.Height());
+
+      {
+          // Rely on OpenImageIO to do the downscaling
+          const unsigned int w = inout.Width();
+          const unsigned int h = inout.Height();
+          const unsigned int nchannels = inout.Channels();
+
+          const unsigned int nw = (unsigned int)(floor(float(w) / downscale));
+          const unsigned int nh = (unsigned int)(floor(float(h) / downscale));
+
+          ImageType rescaled(nw, nh);
+
+          const oiio::ImageSpec imageSpecOrigin(w, h, nchannels, ColorTypeInfo<typename ImageType::Tpixel>::typeDesc);
+          const oiio::ImageSpec imageSpecResized(nw, nh, nchannels, ColorTypeInfo<typename ImageType::Tpixel>::typeDesc);
+
+          const oiio::ImageBuf inBuf(imageSpecOrigin, inout.data());
+          oiio::ImageBuf outBuf(imageSpecResized, rescaled.data());
+
+          oiio::ImageBufAlgo::resize(outBuf, inBuf);
+
+          inout.swap(rescaled);
+      }
+      ALICEVISION_LOG_TRACE("downscaleImageInplace out: " << inout.Width() << "x" << inout.Height());
+  }
+
   /**
    ** Half sample an image (ie reduce its size by a factor 2) using bilinear interpolation
    ** @param[in] src input image
