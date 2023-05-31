@@ -17,15 +17,6 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
-// Eigen
-//#include <Eigen/Dense>
-//#include <Eigen/Core>
-
-//OpenCV
-// #include <opencv2/core/core.hpp>
-// #include <opencv2/core/eigen.hpp>
-// #include <opencv2/imgproc/imgproc.hpp>
-
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -36,8 +27,8 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 // Namespaces
 namespace po = boost::program_options;
@@ -55,14 +46,14 @@ int aliceVision_main(int argc, char **argv)
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
-    ("inputJSON, j", po::value<std::string>(&inputJSON)->required(), "Path to JSON which describes sphere positions and radius")
-    ("outputFile, o", po::value<std::string>(&ouputJSON)->required(), "Path to JSON output file");
+        ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures.")
+        ("inputJSON, j", po::value<std::string>(&inputJSON)->required(), "Path to JSON which describes sphere positions and radius.")
+        ("outputFile, o", po::value<std::string>(&ouputJSON)->required(), "Path to JSON output file.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-    ("saveAsModel, s", po::value<bool>(&saveAsModel)->default_value(false), "Calibration used for several datasets")
-    ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"), "Method for light estimation");
+        ("saveAsModel, s", po::value<bool>(&saveAsModel)->default_value(false), "Calibration used for several datasets.")
+        ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"), "Method for light estimation.");
 
     CmdLine cmdline("AliceVision lightingCalibration");
     cmdline.add(requiredParams);
@@ -73,16 +64,16 @@ int aliceVision_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    if(fs::is_directory(inputPath))
+    if (fs::is_directory(inputPath))
     {
         std::cout << "Directory input : WIP" << std::endl;
     }
     else
     {
         sfmData::SfMData sfmData;
-        if(!sfmDataIO::Load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+        if (!sfmDataIO::Load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
         {
-            ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
+            ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read.");
             return EXIT_FAILURE;
         }
         lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method, saveAsModel);

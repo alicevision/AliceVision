@@ -37,8 +37,8 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
 
@@ -53,18 +53,18 @@ int aliceVision_main(int argc, char **argv)
     std::string inputPath;
     std::string sfmDataFile;
 
-    // image downscale factor during process
+    // Image downscale factor during process
     int downscale = 1;
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input : a folder containing the normal map and the mask")
-    ("outputPath,o", po::value<std::string>(&outputFolder)->required(), "outputFolder.");
+        ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to the input: a folder containing the normal maps and the masks.")
+        ("outputPath,o", po::value<std::string>(&outputFolder)->required(), "Path to the output folder.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-    ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""), "Path to SfmData file")
-    ("downscale,d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results" );
+        ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""), "Path to the input SfMData file.")
+        ("downscale,d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results.");
 
     CmdLine cmdline("AliceVision normalIntegration");
     cmdline.add(requiredParams);
@@ -75,19 +75,19 @@ int aliceVision_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    if(sfmDataFile.compare("") == 0)
+    if (sfmDataFile.compare("") == 0)
     {
         photometricStereo::normalIntegration(inputPath, isPerspective, downscale, outputFolder);
     }
     else
     {
-      sfmData::SfMData sfmData;
-      if(!sfmDataIO::Load(sfmData, sfmDataFile, sfmDataIO::ESfMData::ALL))
-      {
-          ALICEVISION_LOG_ERROR("The input file '" + sfmDataFile + "' cannot be read");
-          return EXIT_FAILURE;
-      }
-      photometricStereo::normalIntegration(sfmData, inputPath, isPerspective, downscale, outputFolder);
+        sfmData::SfMData sfmData;
+        if (!sfmDataIO::Load(sfmData, sfmDataFile, sfmDataIO::ESfMData::ALL))
+        {
+            ALICEVISION_LOG_ERROR("The input file '" + sfmDataFile + "' cannot be read.");
+            return EXIT_FAILURE;
+        }
+        photometricStereo::normalIntegration(sfmData, inputPath, isPerspective, downscale, outputFolder);
     }
 
     return 0;

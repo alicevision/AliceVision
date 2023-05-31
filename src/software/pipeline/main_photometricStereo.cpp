@@ -37,8 +37,8 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -59,17 +59,17 @@ int aliceVision_main(int argc, char **argv)
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input; could be SfMData file or folder with pictures")
-    ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path");
+        ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to the input: could be an SfMData file or a folder with images.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-    ("maskPath,m", po::value<std::string>(&maskPath)->default_value(""), "Path to mask folder/file.")
-    ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"), "Path to light file (JSON). If empty, expects txt files in picture folder")
-    ("SHOrder,s", po::value<size_t>(&PSParameters.SHOrder)->default_value(0), "SH order, 0 = directional, 1 = directional + ambiant, 2 = second order SH")
-    ("removeAmbiant,a", po::value<bool>(&PSParameters.removeAmbiant)->default_value(false), "Do we need to remove ambiant light on PS pictures ?")
-    ("isRobust,r", po::value<bool>(&PSParameters.isRobust)->default_value(false), "Robust algorithm ?")
-    ("downscale, d", po::value<int>(&PSParameters.downscale)->default_value(1), "Downscale factor for faster results" );
+        ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "Output path.")
+        ("maskPath,m", po::value<std::string>(&maskPath)->default_value(""), "Path to mask folder/file.")
+        ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"), "Path to light file (JSON). If empty, .txt files are expected in the image folder.")
+        ("SHOrder,s", po::value<size_t>(&PSParameters.SHOrder)->default_value(0), "Spherical harmonics order, 0 = directional, 1 = directional + ambiant, 2 = second order SH.")
+        ("removeAmbiant,a", po::value<bool>(&PSParameters.removeAmbiant)->default_value(false), "True if the ambiant light is to be removed on PS images, false otherwise.")
+        ("isRobust,r", po::value<bool>(&PSParameters.isRobust)->default_value(false), "True to use the robust algorithm, false otherwise.")
+        ("downscale, d", po::value<int>(&PSParameters.downscale)->default_value(1), "Downscale factor for faster results.");
 
     CmdLine cmdline("AliceVision photometricStereo");
     cmdline.add(requiredParams);
@@ -81,7 +81,7 @@ int aliceVision_main(int argc, char **argv)
     }
 
     // If the path to light data is empty, set it to inputPath :
-    if(pathToLightData.compare("") && fs::is_directory(inputPath))
+    if (pathToLightData.compare("") && fs::is_directory(inputPath))
     {
         std::cout << "Warning : path to light data has been set to inputpath folder" << std::endl;
         pathToLightData = inputPath;
@@ -90,20 +90,20 @@ int aliceVision_main(int argc, char **argv)
     image::Image<image::RGBfColor> normalsIm;
     image::Image<image::RGBfColor> albedoIm;
 
-    if(fs::is_directory(inputPath))
+    if (fs::is_directory(inputPath))
     {
         photometricStereo::photometricStereo(inputPath, pathToLightData, outputPath, PSParameters, normalsIm, albedoIm);
     }
     else
     {
-      sfmData::SfMData sfmData;
-      if(!sfmDataIO::Load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
-      {
-          ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
-          return EXIT_FAILURE;
-      }
+        sfmData::SfMData sfmData;
+        if (!sfmDataIO::Load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+        {
+            ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
+            return EXIT_FAILURE;
+        }
 
-      photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, outputPath, PSParameters, normalsIm, albedoIm);
+       photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, outputPath, PSParameters, normalsIm, albedoIm);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
