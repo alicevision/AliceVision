@@ -23,9 +23,8 @@ namespace photometricStereo {
 
 void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
-
     size_t dim = 3;
-    if(PSParameters.SHOrder == 2)
+    if (PSParameters.SHOrder == 2)
     {
         dim = 9;
     }
@@ -35,15 +34,15 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
     getPicturesNames(pictureFolder, imageList);
 
     std::vector<std::array<float, 3>> intList; // Light intensities
-    Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
+    Eigen::MatrixXf lightMat(imageList.size(), dim); // Light directions
 
-    if(fs::is_directory(lightData))
+    if (fs::is_directory(lightData))
     {
         loadPSData(lightData, PSParameters.SHOrder, intList, lightMat);
     }
     else
     {
-        buildLigtMatFromJSON(lightData, imageList, lightMat, intList);
+        buildLightMatFromJSON(lightData, imageList, lightMat, intList);
     }
 
     image::Image<float> mask;
@@ -53,12 +52,12 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
 
     std::string pathToAmbiant = "";
 
-    if(PSParameters.removeAmbiant)
+    if (PSParameters.removeAmbiant)
     {
         for (auto& currentPath : imageList)
         {
             const fs::path imagePath = fs::path(currentPath);
-            if(boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+            if (boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
             {
                 pathToAmbiant = imagePath.string();
             }
@@ -74,7 +73,7 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
 void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
     size_t dim = 3;
-    if(PSParameters.SHOrder == 2)
+    if (PSParameters.SHOrder == 2)
     {
         dim = 9;
     }
@@ -82,12 +81,12 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
     std::string pathToAmbiant = "";
     std::map<IndexT, std::vector<IndexT>> viewsPerPoseId;
 
-    for(auto& viewIt: sfmData.getViews())
+    for (auto& viewIt: sfmData.getViews())
     {
         viewsPerPoseId[viewIt.second->getPoseId()].push_back(viewIt.second->getViewId());
     }
 
-    for(auto& posesIt: viewsPerPoseId)
+    for (auto& posesIt: viewsPerPoseId)
     {
         std::vector<std::string> imageList;
 
@@ -95,43 +94,43 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         std::vector<IndexT>& initViewIds = posesIt.second;
 
         std::map<std::string, IndexT> idMap;
-        for(auto& viewId: initViewIds)
+        for (auto& viewId: initViewIds)
         {
             std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getMetadata();
             idMap[currentMetadata.at("Exif:DateTimeDigitized")] = viewId;
         }
 
         std::vector<IndexT> viewIds;
-        for(const auto& [currentTime, viewId] : idMap)
+        for (const auto& [currentTime, viewId]: idMap)
         {
             viewIds.push_back(viewId);
         }
 
 
-        for(auto& viewId: viewIds)
+        for (auto& viewId: viewIds)
         {
             const fs::path imagePath = fs::path(sfmData.getView(viewId).getImagePath());
-            if(!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
             {
-                ALICEVISION_LOG_INFO("  - " << imagePath.string());
+                ALICEVISION_LOG_INFO(" - " << imagePath.string());
                 imageList.push_back(imagePath.string());
             }
-            else if(PSParameters.removeAmbiant)
+            else if (PSParameters.removeAmbiant)
             {
                 pathToAmbiant = imagePath.string();
             }
         }
 
         std::vector<std::array<float, 3>> intList; // Light intensities
-        Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
+        Eigen::MatrixXf lightMat(imageList.size(), dim); // Light directions
 
-        if(fs::is_directory(lightData))    // #pragma omp parallel for
+        if (fs::is_directory(lightData))    // #pragma omp parallel for
         {
             loadPSData(lightData, PSParameters.SHOrder, intList, lightMat);
         }
         else
         {
-            buildLigtMatFromJSON(lightData, viewIds, lightMat, intList);
+            buildLightMatFromJSON(lightData, viewIds, lightMat, intList);
         }
 
         image::Image<float> mask;
@@ -144,7 +143,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         writePSResults(outputPath, normals, albedo, posesIt.first);
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 
-        if(sfmData.getPoses().size() > 0)
+        if (sfmData.getPoses().size() > 0)
         {
             const Mat3 rotation = sfmData.getPose(sfmData.getView(viewIds[0])).getTransform().rotation().transpose();
             applyRotation(rotation, normals);
@@ -153,18 +152,18 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     }
 
-    sfmData::SfMData AlbedoSfmData = sfmData;
+    sfmData::SfMData albedoSfmData = sfmData;
 
     std::set<IndexT> viewIdsToRemove;
-    // Create Albedo SfmData :
-    for(auto& viewIt: AlbedoSfmData.getViews())
+    // Create Albedo SfmData
+    for (auto& viewIt: albedoSfmData.getViews())
     {
         const IndexT viewId = viewIt.first;
         IndexT poseId = viewIt.second->getPoseId();
 
-        if(viewId == poseId)
+        if (viewId == poseId)
         {
-            sfmData::View * view = AlbedoSfmData.getViews().at(viewId).get();
+            sfmData::View * view = albedoSfmData.getViews().at(viewId).get();
             std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.exr";
             view->setImagePath(imagePath);
         }
@@ -173,24 +172,24 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
             viewIdsToRemove.insert(viewId);
         }
     }
-    for (auto r : viewIdsToRemove)
-        AlbedoSfmData.getViews().erase(r);
+    for (auto r: viewIdsToRemove)
+        albedoSfmData.getViews().erase(r);
 
-    sfmDataIO::Save(AlbedoSfmData, outputPath + "/albedoMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
+    sfmDataIO::Save(albedoSfmData, outputPath + "/albedoMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
 
     // Create Normal SfmData
-    sfmData::SfMData NormalSfmData = AlbedoSfmData;
-    for(auto& viewIt: NormalSfmData.getViews())
+    sfmData::SfMData normalSfmData = albedoSfmData;
+    for(auto& viewIt: normalSfmData.getViews())
     {
         const IndexT viewId = viewIt.first;
         IndexT poseId = viewIt.second->getPoseId();
 
-        sfmData::View * view = NormalSfmData.getViews().at(viewId).get();
+        sfmData::View * view = normalSfmData.getViews().at(viewId).get();
         std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_normals_w.exr";
         view->setImagePath(imagePath);
     }
 
-    sfmDataIO::Save(NormalSfmData, outputPath + "/normalMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
+    sfmDataIO::Save(normalSfmData, outputPath + "/normalMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
 }
 
 void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
@@ -202,19 +201,19 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     bool hasMask = !((mask.rows() == 1) && (mask.cols() == 1));
 
     std::string picturePath;
-    std::vector<int> indexes;
+    std::vector<int> indices;
 
     const float sizeMax = 3e9;
 
-    if(hasMask)
+    if (hasMask)
     {
-        if(PSParameters.downscale > 1)
+        if (PSParameters.downscale > 1)
         {
-            downscaleImageInplace(mask,PSParameters.downscale);
+            downscaleImageInplace(mask, PSParameters.downscale);
         }
 
-        getIndMask(mask, indexes);
-        maskSize = indexes.size();
+        getIndMask(mask, indices);
+        maskSize = indices.size();
         pictRows = mask.rows();
         pictCols = mask.cols();
     }
@@ -225,83 +224,82 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         image::Image<image::RGBfColor> imageFloat;
         image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
 
-        if(PSParameters.downscale > 1)
+        if (PSParameters.downscale > 1)
         {
-            downscaleImageInplace(imageFloat,PSParameters.downscale);
+            downscaleImageInplace(imageFloat, PSParameters.downscale);
         }
 
         pictRows = imageFloat.rows();
         pictCols = imageFloat.cols();
 
-        maskSize = pictRows*pictCols;
+        maskSize = pictRows * pictCols;
 
         for (int i = 0; i < maskSize; ++i)
-            indexes.push_back(i);
-
+            indices.push_back(i);
     }
 
-    // Read ambiant :
+    // Read ambiant
     image::Image<image::RGBfColor> imageAmbiant;
 
-    if(boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
+    if (boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
     {
-        std::cout << "Removing ambiant light" << std::endl;
-        std::cout << pathToAmbiant << std::endl;
+        ALICEVISION_LOG_INFO("Removing ambiant light");
+        ALICEVISION_LOG_INFO(pathToAmbiant);
 
         image::readImage(pathToAmbiant, imageAmbiant, image::EImageColorSpace::NO_CONVERSION);
 
-        if(PSParameters.downscale > 1)
+        if (PSParameters.downscale > 1)
         {
             downscaleImageInplace(imageAmbiant,PSParameters.downscale);
         }
     }
 
-    // Tuilage :
+    // Tiling
     int auxMaskSize = maskSize;
-    int numberOfPixels = auxMaskSize*imageList.size()*3;
+    int numberOfPixels = auxMaskSize * imageList.size() * 3;
     int numberOfMasks = 1;
 
-    while(numberOfPixels > sizeMax)
+    while (numberOfPixels > sizeMax)
     {
-        numberOfMasks = numberOfMasks*2;
-        auxMaskSize = floor(auxMaskSize/4);
-        numberOfPixels = auxMaskSize*imageList.size()*3;
+        numberOfMasks = numberOfMasks * 2;
+        auxMaskSize = floor(auxMaskSize / 4);
+        numberOfPixels = auxMaskSize * imageList.size() * 3;
     }
 
-    Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(),pictRows*pictCols);
-    Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
+    Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(), pictRows * pictCols);
+    Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3, pictRows * pictCols);
 
     int remainingPixels = maskSize;
-    std::vector<int> currentMaskIndexes;
+    std::vector<int> currentMaskIndices;
 
     for (int currentMaskIndex = 0; currentMaskIndex < numberOfMasks; ++currentMaskIndex)
     {
         int currentMaskSize;
 
-        if(numberOfMasks == 1)
+        if (numberOfMasks == 1)
         {
             currentMaskSize = maskSize;
-            currentMaskIndexes.resize(currentMaskSize);
-            currentMaskIndexes = indexes;
+            currentMaskIndices.resize(currentMaskSize);
+            currentMaskIndices = indices;
         }
         else
         {
-            if(currentMaskIndex == numberOfMasks-1)
+            if (currentMaskIndex == numberOfMasks - 1)
             {
-                currentMaskIndexes.resize(remainingPixels);
-                slice(indexes, currentMaskIndex*auxMaskSize, remainingPixels, currentMaskIndexes);
+                currentMaskIndices.resize(remainingPixels);
+                slice(indices, currentMaskIndex * auxMaskSize, remainingPixels, currentMaskIndices);
                 currentMaskSize = remainingPixels;
             }
             else
             {
-                currentMaskIndexes.resize(auxMaskSize);
-                slice(indexes, currentMaskIndex*auxMaskSize, auxMaskSize, currentMaskIndexes);
-                remainingPixels = remainingPixels-auxMaskSize;
+                currentMaskIndices.resize(auxMaskSize);
+                slice(indices, currentMaskIndex * auxMaskSize, auxMaskSize, currentMaskIndices);
+                remainingPixels = remainingPixels - auxMaskSize;
                 currentMaskSize = auxMaskSize;
             }
         }
 
-        Eigen::MatrixXf imMat(3*imageList.size(), currentMaskSize);
+        Eigen::MatrixXf imMat(3 * imageList.size(), currentMaskSize);
         Eigen::MatrixXf imMat_gray(imageList.size(), currentMaskSize);
 
         for (size_t i = 0; i < imageList.size(); ++i)
@@ -311,29 +309,29 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
             image::Image<image::RGBfColor> imageFloat;
             image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
 
-            if(PSParameters.downscale > 1)
+            if (PSParameters.downscale > 1)
             {
                 downscaleImageInplace(imageFloat,PSParameters.downscale);
             }
 
-            if(boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
+            if (boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
             {
                 imageFloat = imageFloat - imageAmbiant;
             }
 
             intensityScaling(intList.at(i), imageFloat);
 
-            Eigen::MatrixXf currentPicture(3,currentMaskSize);
-            image2PsMatrix(imageFloat, currentMaskIndexes, currentPicture);
+            Eigen::MatrixXf currentPicture(3, currentMaskSize);
+            image2PsMatrix(imageFloat, currentMaskIndices, currentPicture);
 
-            imMat.block(3*i,0,3,currentMaskSize) = currentPicture;
-            imMat_gray.block(i,0,1,currentMaskSize) = currentPicture.block(0,0,1,currentMaskSize) * 0.2126 + currentPicture.block(1,0,1,currentMaskSize) * 0.7152 + currentPicture.block(2,0,1,currentMaskSize) * 0.0722;
+            imMat.block(3 * i, 0, 3, currentMaskSize) = currentPicture;
+            imMat_gray.block(i, 0, 1, currentMaskSize) = currentPicture.block(0, 0, 1, currentMaskSize) * 0.2126 + currentPicture.block(1, 0, 1, currentMaskSize) * 0.7152 + currentPicture.block(2, 0, 1, currentMaskSize) * 0.0722;
         }
 
         Eigen::MatrixXf M_channel(3, currentMaskSize);
         int currentIdx;
 
-        if(PSParameters.isRobust)
+        if (PSParameters.isRobust)
         {
             float mu = 0.1;
             int max_iterations = 1000;
@@ -348,68 +346,68 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
             for (size_t k = 0; k < max_iterations; ++k)
             {
-                // Copy for convergence test :
+                // Copy for convergence test
                 M_kminus1 = M_channel;
 
-                // M update :
-                newImMat = imMat_gray + E - W/mu;
+                // M update
+                newImMat = imMat_gray + E - W / mu;
                 M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(newImMat);
 
-                // E update :
+                // E update
                 Eigen::MatrixXf E_before = E;
-                shrink(lightMat*M_channel-imMat_gray + W/mu, 1.0/mu, E);
+                shrink(lightMat * M_channel - imMat_gray + W / mu, 1.0 / mu, E);
 
-                // W update :
-                W = W + mu*(lightMat*M_channel-imMat_gray-E);
+                // W update
+                W = W + mu * (lightMat * M_channel - imMat_gray - E);
 
-                // Convergence test :
-                Eigen::MatrixXf ecart = M_kminus1 - M_channel;
-                float ecart_relatif = ecart.norm()/M_channel.norm();
+                // Convergence test
+                Eigen::MatrixXf dev = M_kminus1 - M_channel;
+                float relativeDev = dev.norm() / M_channel.norm();
 
-                if (k > 10 && ecart_relatif < epsilon)
+                if (k > 10 && relativeDev < epsilon)
                 {
-                    std::cout << k << std::endl;
-                    std::cout << "Convergence" << std::endl;
+                    ALICEVISION_LOG_INFO(k);
+                    ALICEVISION_LOG_INFO("Convergence");
                     break;
                 }
             }
 
             for (size_t i = 0; i < maskSize; ++i)
             {
-                if(hasMask)
+                if (hasMask)
                 {
-                    currentIdx = indexes.at(i); // index in picture
+                    currentIdx = indices.at(i); // Index in picture
                 }
                 else
                 {
                     currentIdx = i;
                 }
-                normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
+                normalsVect.col(currentIdx) = M_channel.col(i) / M_channel.col(i).norm();
             }
 
 
             int currentIdx;
             for (size_t ch = 0; ch < 3; ++ch)
             {
-                // Create I matrix for current pixel :
+                // Create I matrix for current pixel
                 Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
                 for (size_t i = 0; i < imageList.size(); ++i)
                 {
-                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3*i, 0, 1, maskSize);
+                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3 * i, 0, 1, maskSize);
                 }
 
                 for (size_t i = 0; i < maskSize; ++i)
                 {
-                    if(hasMask)
+                    if (hasMask)
                     {
-                        currentIdx = indexes.at(i); // index in picture
+                        currentIdx = indices.at(i); // Index in picture
                     }
                     else
                     {
                         currentIdx = i;
                     }
                     Eigen::VectorXf currentI = pixelValues_channel.col(i);
-                    Eigen::VectorXf currentShading = lightMat*normalsVect.col(currentIdx);
+                    Eigen::VectorXf currentShading = lightMat * normalsVect.col(currentIdx);
                     Eigen::VectorXf result = currentI.cwiseProduct(currentShading.cwiseInverse());
                     median(result, albedoVect(ch, currentIdx));
                 }
@@ -417,39 +415,39 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         }
         else
         {
-            // Normal estimation :
+            // Normal estimation
             M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
 
             for (size_t i = 0; i < currentMaskSize; ++i)
             {
-                if(hasMask)
+                if (hasMask)
                 {
-                    currentIdx = currentMaskIndexes.at(i); // index in picture
+                    currentIdx = currentMaskIndices.at(i); // Index in picture
                 }
                 else
                 {
                     currentIdx = i;
                 }
-                normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
+                normalsVect.col(currentIdx) = M_channel.col(i) / M_channel.col(i).norm();
             }
 
-            // Channelwise albedo estimation :
+            // Channelwise albedo estimation
             for (size_t ch = 0; ch < 3; ++ch)
             {
-                // Create I matrix for current pixel :
+                // Create I matrix for current pixel
                 Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
                 for (size_t i = 0; i < imageList.size(); ++i)
                 {
-                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3*i, 0, 1, maskSize);
+                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3 * i, 0, 1, maskSize);
                 }
 
                 M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(pixelValues_channel);
 
                 for (size_t i = 0; i < currentMaskSize; ++i)
                 {
-                    if(hasMask)
+                    if (hasMask)
                     {
-                        currentIdx = currentMaskIndexes.at(i); // index in picture
+                        currentIdx = currentMaskIndices.at(i); // Index in picture
                     }
                     else
                     {
@@ -466,7 +464,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     normals = normalsIm;
 
     image::Image<image::RGBfColor> albedoIm(pictCols,pictRows);
-    albedoVect = albedoVect/albedoVect.maxCoeff();
+    albedoVect = albedoVect / albedoVect.maxCoeff();
     reshapeInImage(albedoVect, albedoIm);
 
     albedo = albedoIm;
@@ -478,24 +476,26 @@ void loadPSData(const std::string& folderPath, const size_t HS_order, std::vecto
     std::string pathToCM;
     std::string dirFileName;
 
-    // Light instensities :
+    // Light instensities
     intFileName = folderPath + "/light_intensities.txt";
     loadLightIntensities(intFileName, intList);
 
-    // Convertion matrix :
+    // Convertion matrix
     Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity();
     pathToCM = folderPath + "/convertionMatrix.txt";
-    if(fs::exists(pathToCM))
+    if (fs::exists(pathToCM))
     {
         readMatrix(pathToCM, convertionMatrix);
     }
 
-    // Light directions :
-    if(HS_order == 0)
+    // Light directions
+    if (HS_order == 0)
     {
         dirFileName = folderPath + "/light_directions.txt";
         loadLightDirections(dirFileName, convertionMatrix, lightMat);
-    } else if (HS_order == 2) {
+    }
+    else if (HS_order == 2)
+    {
         dirFileName = folderPath + "/light_directions_HS.txt";
         loadLightHS(dirFileName, lightMat);
     }
@@ -506,18 +506,18 @@ void getPicturesNames(const std::string& folderPath, std::vector<std::string>& i
     const std::vector<std::string>& extensions = image::getSupportedExtensions();
 
     fs::directory_iterator endItr;
-    for(fs::directory_iterator itr(folderPath); itr != endItr; ++itr)
+    for (fs::directory_iterator itr(folderPath); itr != endItr; ++itr)
     {
         fs::path currentFilePath = itr->path();
 
         std::string fileExtension = fs::extension(currentFilePath.string());
         std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
 
-        if(!boost::algorithm::icontains(currentFilePath.stem().string(), "mask") && !boost::algorithm::icontains(currentFilePath.stem().string(), "ambiant"))
+        if (!boost::algorithm::icontains(currentFilePath.stem().string(), "mask") && !boost::algorithm::icontains(currentFilePath.stem().string(), "ambiant"))
         {
-            for(const std::string& extension: extensions)
+            for (const std::string& extension: extensions)
             {
-                if(fileExtension == extension)
+                if (fileExtension == extension)
                 {
                     imageList.push_back(currentFilePath.string());
                 }
@@ -525,10 +525,13 @@ void getPicturesNames(const std::string& folderPath, std::vector<std::string>& i
         }
     }
 
-    std::sort(imageList.begin(),imageList.end(),compareFunction); //sort the vector
+    std::sort(imageList.begin(),imageList.end(),compareFunction); // Sort the vector
 }
 
-bool compareFunction(std::string a, std::string b) {return a<b;}
+bool compareFunction(std::string a, std::string b)
+{ 
+    return a < b;
+}
 
 void shrink(const Eigen::MatrixXf& mat, const float rho, Eigen::MatrixXf& E)
 {
@@ -536,33 +539,34 @@ void shrink(const Eigen::MatrixXf& mat, const float rho, Eigen::MatrixXf& E)
     {
         for (size_t j = 0; j < E.cols(); ++j)
         {
-            if(mat(i,j) > 0)
+            if (mat(i, j) > 0)
             {
-                E(i,j) = std::max(std::abs(mat(i,j))-rho, float(0.0));
+                E(i, j) = std::max(std::abs(mat(i, j)) - rho, float(0.0));
             }
             else
             {
-                E(i,j) = -std::max(std::abs(mat(i,j))-rho, float(0.0));
+                E(i, j) = -std::max(std::abs(mat(i, j)) - rho, float(0.0));
             }
         }
     }
 }
 
-void median(const Eigen::MatrixXf& d, float& median){
+void median(const Eigen::MatrixXf& d, float& median)
+{
     Eigen::MatrixXf aux = d;
-    std::sort(aux.data(),aux.data()+aux.size());
-    size_t middle = aux.size()/2;
+    std::sort(aux.data(), aux.data() + aux.size());
+    size_t middle = aux.size() / 2;
     aux.size() % 2 == 0 ?
-        median = aux((aux.size()-1)/2) + aux((aux.size()+1)/2) :
+        median = aux((aux.size() - 1) / 2) + aux((aux.size() + 1) / 2) :
         median = aux(middle);
 }
 
- void slice(const std::vector<int>& inputVector, int start, int numberOfElements, std::vector<int>& currentMaskIndexes) {
-
+void slice(const std::vector<int>& inputVector, int start, int numberOfElements, std::vector<int>& currentMaskIndices)
+{
     auto first = inputVector.begin() + start;
     auto last = first + numberOfElements;
 
-    copy(first, last, currentMaskIndexes.begin());
+    copy(first, last, currentMaskIndices.begin());
 }
 
 void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColor>& normals)
@@ -571,12 +575,11 @@ void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColo
     {
         for (int j = 0; j < normals.cols(); ++j)
         {
-            normals(i,j)(0) = rotation(0,0)*normals(i,j)(0) + rotation(0,1)*normals(i,j)(1) + rotation(0,2)*normals(i,j)(2);
-            normals(i,j)(1) = rotation(1,0)*normals(i,j)(0) + rotation(1,1)*normals(i,j)(1) + rotation(1,2)*normals(i,j)(2);
-            normals(i,j)(2) = rotation(2,0)*normals(i,j)(0) + rotation(2,1)*normals(i,j)(1) + rotation(2,2)*normals(i,j)(2);
+            normals(i, j)(0) = rotation(0, 0) * normals(i, j)(0) + rotation(0, 1) * normals(i, j)(1) + rotation(0, 2) * normals(i, j)(2);
+            normals(i, j)(1) = rotation(1, 0) * normals(i, j)(0) + rotation(1, 1) * normals(i, j)(1) + rotation(1, 2) * normals(i, j)(2);
+            normals(i, j)(2) = rotation(2, 0) * normals(i, j)(0) + rotation(2, 1) * normals(i, j)(1) + rotation(2, 2) * normals(i, j)(2);
         }
     }
-
 }
 
 }

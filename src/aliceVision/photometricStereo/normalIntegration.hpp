@@ -16,11 +16,11 @@
 namespace aliceVision {
 namespace photometricStereo {
 
-void normalIntegration(const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler);
+void normalIntegration(const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFolder);
 
-void normalIntegration(const sfmData::SfMData& sfmData, const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler);
+void normalIntegration(const sfmData::SfMData& sfmData, const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFolder);
 
-void DCT_integration(const image::Image<image::RGBfColor>& normals, image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const image::Image<float>& normalsMask);
+void DCTIntegration(const image::Image<image::RGBfColor>& normals, image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const image::Image<float>& normalsMask);
 
 void normal2PQ(const image::Image<image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K, const image::Image<float>& normalsMask);
 
@@ -30,9 +30,9 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
 
 void adjustScale(const sfmData::SfMData& sfmData, image::Image<float>& initDepth, size_t viewID);
 
-void getZ0FromLandmarks(const sfmData::SfMData& sfmData, image::Image<float>& z0, image::Image<float>& mask_z0, const size_t viewID, const image::Image<float>& mask);
+void getZ0FromLandmarks(const sfmData::SfMData& sfmData, image::Image<float>& z0, image::Image<float>& maskZ0, const size_t viewID, const image::Image<float>& mask);
 
-void smoothIntegration(const image::Image<image::RGBfColor>& normals, image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const image::Image<float>& mask, const image::Image<float>& z0, const image::Image<float>& mask_z0);
+void smoothIntegration(const image::Image<image::RGBfColor>& normals, image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const image::Image<float>& mask, const image::Image<float>& z0, const image::Image<float>& maskZ0);
 
 void convertZtoDistance(const image::Image<float>& zMap, image::Image<float>& distanceMap, const Eigen::Matrix3f& K);
 
