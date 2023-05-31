@@ -379,7 +379,7 @@ if(NOT ALICEVISION_USE_ONNX STREQUAL "OFF")
 
   if(TARGET ONNXRuntime::ONNXRuntime)
     set(ALICEVISION_HAVE_ONNX 1)
-    message(STATUS " ONNXRuntime FOUND: ${ONNXRuntime_LIBRARY}")
+    message(STATUS "ONNXRuntime FOUND: ${ONNXRuntime_LIBRARY}")
   elseif(ALICEVISION_USE_ONNX STREQUAL "ON")
     message(SEND_ERROR "Failed to find ONNX Runtime.")
   endif()
