@@ -624,6 +624,14 @@ void readImage(const std::string& path,
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
 
+    // Manage oiio GammaX.Y color space assuming that the gamma correction has been applied on an image with sRGB primaries.
+    if (fromColorSpaceName.substr(0, 5) == "Gamma")
+    {
+        // Reverse gamma correction
+        oiio::ImageBufAlgo::pow(inBuf, inBuf, std::stof(fromColorSpaceName.substr(5)));
+        fromColorSpaceName = "linear";
+    }
+
     DCPProfile dcpProf;
     if ((fromColorSpaceName == "no_conversion") && (imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION))
     {
