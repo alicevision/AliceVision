@@ -95,6 +95,8 @@ RUN mkdir -p "${AV_INSTALL}/lib" && \
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
+# RUN make -j ${CPU_CORES} onnxruntime
+# RUN make -j ${CPU_CORES} pcl
 # RUN make -j ${CPU_CORES} turbojpeg
 # RUN make -j ${CPU_CORES} boost
 # RUN make -j ${CPU_CORES} openexr
@@ -115,7 +117,7 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 # RUN make -j ${CPU_CORES} ffmpeg
 # RUN make -j ${CPU_CORES} opencv
 # RUN make -j ${CPU_CORES} expat
-
+# 
 # RUN make -j ${CPU_CORES} cctag
 # RUN make -j ${CPU_CORES} popsift
 

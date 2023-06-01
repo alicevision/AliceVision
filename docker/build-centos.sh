@@ -20,9 +20,13 @@ echo "AV_DEPS_VERSION: $AV_DEPS_VERSION"
 echo "CUDA_VERSION: $CUDA_VERSION"
 echo "CENTOS_VERSION: $CENTOS_VERSION"
 
+echo "--== FETCH DEPENDENCIES ==--"
+
 docker/fetch.sh
 
 DEPS_DOCKER_TAG=${REPO_OWNER}/alicevision-deps:${AV_DEPS_VERSION}-centos${CENTOS_VERSION}-cuda${CUDA_VERSION}
+
+echo "--== BUILD DEPENDENCIES ==--"
 
 ## DEPENDENCIES
 docker build \
@@ -39,6 +43,8 @@ echo ""
 
 
 DOCKER_TAG=${REPO_OWNER}/alicevision:${AV_VERSION}-centos${CENTOS_VERSION}-cuda${CUDA_VERSION}
+
+echo "--== BUILD ALICEVISION ==--"
 
 ## ALICEVISION
 docker build \
