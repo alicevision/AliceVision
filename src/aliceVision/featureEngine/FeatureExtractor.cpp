@@ -178,6 +178,30 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
 
     image::readImage(job.view().getImagePath(), imageGrayFloat, workingColorSpace);
 
+    double pixelRatio = 1.0;
+    job.view().getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
+
+    if (pixelRatio != 1.0)
+    {
+        // Resample input image in order to work with square pixels
+        const int w = imageGrayFloat.Width();
+        const int h = imageGrayFloat.Height();
+
+        const int nw = static_cast<int>(static_cast<double>(w) * pixelRatio);
+        const int nh = h;
+
+        image::Image<float> resizedInput(nw, nh);
+
+        const oiio::ImageSpec imageSpecResized(nw, nh, 1, oiio::TypeDesc::FLOAT);
+        const oiio::ImageSpec imageSpecOrigin(w, h, 1, oiio::TypeDesc::FLOAT);
+
+        const oiio::ImageBuf inBuf(imageSpecOrigin, imageGrayFloat.data());
+        oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
+
+        oiio::ImageBufAlgo::resize(outBuf, inBuf);
+        imageGrayFloat.swap(resizedInput);
+    }
+
     if (!_masksFolder.empty() && fs::exists(_masksFolder))
     {
         const auto masksFolder = fs::path(_masksFolder);
@@ -219,6 +243,15 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
             if (imageGrayUChar.Width() == 0) // the first time, convert the float buffer to uchar
                 imageGrayUChar = (imageGrayFloat.GetMat() * 255.f).cast<unsigned char>();
             imageDescriber->describe(imageGrayUChar, regions);
+        }
+
+        if (pixelRatio != 1.0)
+        {
+            // Re-position point features on input image
+            for (auto & feat : regions->Features())
+            {
+                feat.x() /= pixelRatio;
+            }
         }
 
         if (mask.Height() > 0)
