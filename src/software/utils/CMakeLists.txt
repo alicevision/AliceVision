@@ -43,11 +43,13 @@ alicevision_add_software(aliceVision_imageProcessing
     FOLDER ${FOLDER_SOFTWARE_UTILS}
     LINKS aliceVision_system
         aliceVision_cmdline
+        aliceVision_sensorDB
         aliceVision_image
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
+		aliceVision_lensCorrectionProfile
         ${Boost_LIBRARIES}
 )
 

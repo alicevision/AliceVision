@@ -11,11 +11,13 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
-#include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
+#include <aliceVision/lensCorrectionProfile/lcp.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -404,13 +406,13 @@ void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColo
     }
 }
 
-void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, std::map<std::string, std::string>& imageMetadata, const camera::IntrinsicBase* cam = NULL)
+void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, const std::map<std::string, std::string>& imageMetadata, std::shared_ptr<camera::IntrinsicBase> cam)
 {
     const unsigned int nchannels = 4;
 
     // Fix non-finite pixels
     // Note: fill holes needs to fix non-finite values first
-    if(pParams.fixNonFinite || pParams.fillHoles)
+    if (pParams.fixNonFinite || pParams.fillHoles)
     {
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         int pixelsFixed = 0;
@@ -430,7 +432,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         {
             const image::RGBAfColor FBLACK_A(.0f, .0f, .0f, 1.0f);
             image::Image<image::RGBAfColor> image_ud;
-            camera::UndistortImage(image, cam, image_ud, FBLACK_A);
+            camera::UndistortImage(image, cam.get(), image_ud, FBLACK_A);
             image = image_ud;
         }
         else if (cam != NULL && !cam->hasDistortion())
@@ -489,7 +491,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image.swap(filtered);
     }
-    if(pParams.sharpen.enabled)
+    if (pParams.sharpen.enabled)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
@@ -517,7 +519,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     }
 
     // Contrast Limited Adaptive Histogram Equalization
-    if(pParams.claheFilter.enabled)
+    if (pParams.claheFilter.enabled)
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         // Convert alicevision::image to BGR openCV Mat
@@ -561,7 +563,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         throw std::invalid_argument( "Unsupported mode! If you intended to use a Clahe filter, please add OpenCV support.");
 #endif
     }
-    if(pParams.fillHoles)
+    if (pParams.fillHoles)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
@@ -574,13 +576,13 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         image.swap(filtered);
     }
 
-    if(pParams.noise.enabled)
+    if (pParams.noise.enabled)
     {   
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBufAlgo::noise(inBuf, ENoiseMethod_enumToString(pParams.noise.method), pParams.noise.A, pParams.noise.B, pParams.noise.mono);
     }
 
-    if(pParams.nlmFilter.enabled)
+    if (pParams.nlmFilter.enabled)
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         // Create temporary OpenCV Mat (keep only 3 channels) to handle Eigen data of our image
@@ -803,6 +805,9 @@ int aliceVision_main(int argc, char * argv[])
     std::string demosaicingAlgo = "AHD";
     int highlightMode = 0;
     double correlatedColorTemperature = -1;
+    std::string lensCorrectionProfileInfo;
+    bool lensCorrectionProfileSearchIgnoreCameraModel = true;
+    std::string sensorDatabasePath;
 
     ProcessingParams pParams;
 
@@ -857,6 +862,7 @@ int aliceVision_main(int argc, char * argv[])
 
         ("contrast", po::value<float>(&pParams.contrast)->default_value(pParams.contrast),
          "Contrast Factor (1.0: no change).")
+
         ("medianFilter", po::value<int>(&pParams.medianFilter)->default_value(pParams.medianFilter),
          "Median Filter (0: no filter).")
 
@@ -936,10 +942,19 @@ int aliceVision_main(int argc, char * argv[])
         ("highlightMode", po::value<int>(&highlightMode)->default_value(highlightMode),
          "Highlight management (see libRaw documentation).\n"
          "0 = clip (default), 1 = unclip, 2 = blend, 3+ = rebuild.")
+            
+        ("lensCorrectionProfileInfo", po::value<std::string>(&lensCorrectionProfileInfo)->default_value(""),
+         "Lens Correction Profile filepath or database directory path.")
+            
+        ("lensCorrectionProfileSearchIgnoreCameraModel", po::value<bool>(&lensCorrectionProfileSearchIgnoreCameraModel)->default_value(lensCorrectionProfileSearchIgnoreCameraModel),
+         "Automatic LCP Search considers only the camera maker and the lens name")
 
         ("correlatedColorTemperature", po::value<double>(&correlatedColorTemperature)->default_value(correlatedColorTemperature),
          "Correlated Color Temperature in Kelvin of scene illuminant.\n"
          "If less than or equal to 0.0, the value extracted from the metadata will be used.")
+
+        ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
+         "Camera sensor width database path.")
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
@@ -1143,7 +1158,7 @@ int aliceVision_main(int argc, char * argv[])
             }
 
             sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
-            const camera::IntrinsicBase* cam = iterIntrinsic->second.get();
+            std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
 
             std::map<std::string, std::string> viewMetadata = view.getMetadata();
 
@@ -1249,6 +1264,33 @@ int aliceVision_main(int argc, char * argv[])
         }
 
         image::DCPDatabase dcpDatabase;
+        LCPdatabase lcpStore(lensCorrectionProfileInfo, lensCorrectionProfileSearchIgnoreCameraModel);
+
+        // check sensor database
+        std::vector<sensorDB::Datasheet> sensorDatabase;
+        if (pParams.lensCorrection.enabled && pParams.lensCorrection.geometry)
+        {
+            if (sensorDatabasePath.empty())
+            {
+                const auto root = image::getAliceVisionRoot();
+                if (root.empty())
+                {
+                    ALICEVISION_LOG_WARNING(
+                        "ALICEVISION_ROOT is not defined, default sensor database cannot be accessed.");
+                }
+                else
+                {
+                    sensorDatabasePath = root + "/share/aliceVision/cameraSensors.db";
+                }
+            }
+            if (!sensorDatabasePath.empty() && !sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
+            {
+                ALICEVISION_LOG_ERROR("Invalid input sensor database '" << sensorDatabasePath
+                                                                        << "', please specify a valid file.");
+                return EXIT_FAILURE;
+            }
+        }
+
         int i = 0;
         for (const std::string& inputFilePath : filesStrPaths)
         {
@@ -1289,16 +1331,16 @@ int aliceVision_main(int argc, char * argv[])
             int width, height;
             const auto metadata = image::readImageMetadata(inputFilePath, width, height);
             view.setMetadata(image::getMapFromMetadata(metadata));
+            std::shared_ptr<camera::IntrinsicBase> intrinsicBase;
+            // Get DSLR maker and model in view metadata.
+            const std::string& make = view.getMetadataMake();
+            const std::string& model = view.getMetadataModel();
 
             if (isRAW && (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
                           rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
             {
                 // Load DCP color profiles database if not already loaded
                 dcpDatabase.load(colorProfileDatabaseDirPath.empty() ? getColorProfileDatabaseFolder() : colorProfileDatabaseDirPath, false);
-
-                // Get DSLR maker and model in view metadata.
-                const std::string& make = view.getMetadataMake();
-                const std::string& model = view.getMetadataModel();
 
                 // Get DCP profile
                 if (!dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
@@ -1316,6 +1358,277 @@ int aliceVision_main(int argc, char * argv[])
 
                 // Add color profile info in metadata
                 view.addDCPMetadata(dcpProf);
+            }
+
+            if(isRAW && pParams.lensCorrection.enabled &&
+                (pParams.lensCorrection.geometry || pParams.lensCorrection.vignetting || pParams.lensCorrection.chromaticAberration))
+            {
+                // try to find an appropriate Lens Correction Profile
+                LCPinfo* lcpData = nullptr;
+                if (lcpStore.size() == 1)
+                {
+                    lcpData = lcpStore.retrieveLCP();
+                }
+                else if (!lcpStore.empty())
+                {
+                    // Find an LCP file that matches the camera model and the lens model.
+                    const std::string& lensModel = view.getMetadataLensModel();
+                    const int lensID = view.getMetadataLensID();
+
+                    if (!make.empty() && !lensModel.empty())
+                    {
+                        #pragma omp critical(lcp)
+                        lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
+                    }
+                }
+
+                double sensorWidth = -1;
+                double sensorHeight = -1;
+                enum class ESensorWidthSource
+                {
+                    FROM_DB,
+                    FROM_METADATA_ESTIMATION,
+                    UNKNOWN
+                } sensorWidthSource = ESensorWidthSource::UNKNOWN;
+
+                double focalLengthmm = view.getMetadataFocalLength();
+                const bool hasCameraMetadata = (!make.empty() || !model.empty());
+                const bool hasFocalIn35mmMetadata = view.hasDigitMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"});
+                const double focalIn35mm = hasFocalIn35mmMetadata ? view.getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"}) : -1.0;
+                const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
+                const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
+                camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
+                camera::EINTRINSIC lcpCameraModel = camera::EINTRINSIC::UNKNOWN;
+                LensParam lensParam;
+
+                if ((lcpData != nullptr) && !(lcpData->isEmpty()))
+                {
+                    float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
+                    float focusDistance = 0.f;
+
+                    lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
+                    lcpData->getVignettingParams(focalLengthmm, focusDistance, lensParam);
+
+                    lcpCameraModel = lensParam.isFisheye() ? camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE
+                                                           : camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
+                }
+
+                if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty && pParams.lensCorrection.vignetting)
+                {
+                    view.addMetadata("AliceVision:VignParamFocX", std::to_string(lensParam.vignParams.FocalLengthX));
+                    view.addMetadata("AliceVision:VignParamFocY", std::to_string(lensParam.vignParams.FocalLengthY));
+                    view.addMetadata("AliceVision:VignParamCenterX", std::to_string(lensParam.vignParams.ImageXCenter));
+                    view.addMetadata("AliceVision:VignParamCenterY", std::to_string(lensParam.vignParams.ImageYCenter));
+                    view.addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
+                    view.addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
+                    view.addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
+
+                    pParams.lensCorrection.vParams;
+                    if (!view.getVignettingParams(pParams.lensCorrection.vParams))
+                    {
+                        pParams.lensCorrection.vParams.clear();
+                    }
+                }
+
+                if (pParams.lensCorrection.geometry && (lcpData != nullptr))
+                {
+
+                    // try to find in the sensor width in the database
+                    if (hasCameraMetadata)
+                    {
+                        sensorDB::Datasheet datasheet;
+                        if (sensorDB::getInfo(make, model, sensorDatabase, datasheet))
+                        {
+                            // sensor is in the database
+                            ALICEVISION_LOG_TRACE("Sensor width found in sensor database: "
+                                                  << std::endl
+                                                  << "\t- brand: " << make << std::endl
+                                                  << "\t- model: " << model << std::endl
+                                                  << "\t- sensor width: " << datasheet._sensorWidth << " mm");
+
+                            if (datasheet._model != model)
+                            {
+                                // the camera model in sensor database is slightly different
+                                ALICEVISION_LOG_WARNING(
+                                    "The camera found in the sensor database is slightly different for image "
+                                    << inputFilePath);
+                                ALICEVISION_LOG_WARNING(
+                                    "\t- image camera brand: "
+                                    << make << std::endl
+                                    << "\t- image camera model: " << model << std::endl
+                                    << "\t- sensor database camera brand: " << datasheet._brand << std::endl
+                                    << "\t- sensor database camera model: " << datasheet._model << std::endl
+                                    << "\t- sensor database camera sensor width: " << datasheet._sensorWidth << " mm");
+                                ALICEVISION_LOG_WARNING(
+                                    "Please check and correct camera model(s) name in the sensor database."
+                                    << std::endl);
+                            }
+
+                            sensorWidth = datasheet._sensorWidth;
+                            sensorWidthSource = ESensorWidthSource::FROM_DB;
+
+                            if (focalLengthmm > 0.0)
+                            {
+                                intrinsicInitMode = camera::EInitMode::ESTIMATED;
+                            }
+                        }
+                    }
+
+                    // try to find / compute with 'FocalLengthIn35mmFilm' metadata
+                    if (hasFocalIn35mmMetadata)
+                    {
+                        if (sensorWidth == -1.0)
+                        {
+                            const double invRatio = 1.0 / imageRatio;
+
+                            if (focalLengthmm > 0.0)
+                            {
+                                // no sensorWidth but valid focalLength and valid focalLengthIn35mm, so deduce
+                                // sensorWith approximation
+                                const double sensorDiag =
+                                    (focalLengthmm * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
+                                sensorWidth = sensorDiag * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+                                sensorWidthSource = ESensorWidthSource::FROM_METADATA_ESTIMATION;
+                            }
+                            else
+                            {
+                                // no sensorWidth and no focalLength but valid focalLengthIn35mm, so consider sensorWith
+                                // as 35mm
+                                sensorWidth = diag24x36 * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+                                focalLengthmm = sensorWidth * (focalIn35mm) / 36.0;
+                                sensorWidthSource = ESensorWidthSource::UNKNOWN;
+                            }
+
+                            std::stringstream ss;
+                            ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image "
+                               << inputFilePath << "\n";
+                            ss << "\t- sensor width: " << sensorWidth << "\n";
+                            ss << "\t- focal length: " << focalLengthmm << "\n";
+                            ALICEVISION_LOG_DEBUG(ss.str());
+
+                            intrinsicInitMode = camera::EInitMode::ESTIMATED;
+                        }
+                        else if (sensorWidth > 0 && focalLengthmm <= 0)
+                        {
+                            // valid sensorWidth and valid focalLengthIn35mm but no focalLength, so convert
+                            // focalLengthIn35mm to the actual width of the sensor
+                            const double sensorDiag =
+                                std::sqrt(std::pow(sensorWidth, 2) + std::pow(sensorWidth / imageRatio, 2));
+                            focalLengthmm = (sensorDiag * focalIn35mm) / diag24x36;
+
+                            std::stringstream ss;
+                            ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image "
+                               << inputFilePath << "\n";
+                            ss << "\t- sensor width: " << sensorWidth << "\n";
+                            ss << "\t- focal length: " << focalLengthmm << "\n";
+                            ALICEVISION_LOG_DEBUG(ss.str());
+
+                            intrinsicInitMode = camera::EInitMode::ESTIMATED;
+                        }
+                    }
+
+                    // error handling
+                    if (sensorWidth == -1.0)
+                    {
+                        if (hasCameraMetadata)
+                        {
+                            // sensor is not in the database
+                            std::stringstream ss;
+                            ss << "Sensor width doesn't exist in the sensor database for image " << inputFilePath
+                               << "\n";
+                            ss << "\t- camera brand: " << make << "\n";
+                            ss << "\t- camera model: " << model << "\n";
+                            ss << "Please add camera model and sensor width in the database.";
+                            ALICEVISION_LOG_WARNING(ss.str());
+                        }
+                        else
+                        {
+                            // no metadata 'Make' and 'Model' can't find sensor width
+                            std::stringstream ss;
+                            ss << "No metadata in image " << inputFilePath << "\n";
+                            ALICEVISION_LOG_DEBUG(ss.str());
+                        }
+                    }
+                    else
+                    {
+                        // we have a valid sensorWidth information, so we store it into the metadata (where it would
+                        // have been nice to have it in the first place)
+                        if (sensorWidthSource == ESensorWidthSource::FROM_DB)
+                        {
+                            view.addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
+                        }
+                        else if (sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION)
+                        {
+                            view.addMetadata("AliceVision:SensorWidthEstimation", std::to_string(sensorWidth));
+                        }
+                    }
+
+                    if (sensorWidth < 0)
+                    {
+                        ALICEVISION_LOG_WARNING("Sensor size is unknown");
+                        ALICEVISION_LOG_WARNING("Use default sensor size (36 mm)");
+                        sensorWidth = 36.0;
+                    }
+
+                    // set user camera model
+                    const camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
+                    const camera::EINTRINSIC allowedCameraModels =
+                        camera::EINTRINSIC_parseStringToBitmask("radial3,fisheye4");
+                    const double defaultFocalLength = -1.0;
+                    const double defaultFieldOfView = -1.0;
+                    const double defaultFocalRatio = 1.0;
+                    const double defaultOffsetX = 0.0;
+                    const double defaultOffsetY = 0.0;
+
+                    // build intrinsic
+                    intrinsicBase = sfmDataIO::getViewIntrinsic(
+                        view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView, defaultFocalRatio,
+                        defaultOffsetX, defaultOffsetY, lcpCameraModel, defaultCameraModel, allowedCameraModels);
+
+                    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
+                    if (intrinsicDisto)
+                    {
+                        std::shared_ptr<camera::Distortion> distortion = intrinsicDisto->getDistortion();
+
+                        if (!lensParam.isFisheye())
+                        {
+                            std::shared_ptr<camera::DistortionRadialK3> distoRadialK3 = std::dynamic_pointer_cast<camera::DistortionRadialK3>(distortion);
+                            if (distoRadialK3)
+                            {
+                                const int Dmax = std::max<int>(lcpData->getImageWidth(), lcpData->getImageLength());
+
+                                const aliceVision::Vec2 offset((lensParam.perspParams.ImageXCenter - 0.5f) * Dmax, (lensParam.perspParams.ImageYCenter - 0.5f) * Dmax);
+                                intrinsicDisto->setOffset(offset);
+
+                                std::vector<double> p;
+                                p.push_back(lensParam.perspParams.RadialDistortParam1);
+                                p.push_back(lensParam.perspParams.RadialDistortParam2);
+                                p.push_back(lensParam.perspParams.RadialDistortParam3);
+                                intrinsicDisto->setDistortionParams(p);
+                            }
+                        }
+                        else
+                        {
+                            std::shared_ptr<camera::DistortionFisheye> DistortionFisheye = std::dynamic_pointer_cast<camera::DistortionFisheye>(distortion);
+                            if (DistortionFisheye)
+                            {
+                                const int Dmax = std::max<int>(lcpData->getImageWidth(), lcpData->getImageLength());
+
+                                const aliceVision::Vec2 offset((lensParam.perspParams.ImageXCenter - 0.5f) * Dmax, (lensParam.perspParams.ImageYCenter - 0.5f) * Dmax);
+                                intrinsicDisto->setOffset(offset);
+
+                                std::vector<double> p;
+                                p.push_back(lensParam.fisheyeParams.RadialDistortParam1);
+                                p.push_back(lensParam.fisheyeParams.RadialDistortParam2);
+                                p.push_back(0.0);
+                                p.push_back(0.0);
+                                intrinsicDisto->setDistortionParams(p);
+                            }
+                        }
+                        // set disto initialization mode
+                        intrinsicDisto->setDistortionInitializationMode(camera::EInitMode::ESTIMATED);
+                    }
+                }
             }
 
             std::map<std::string, std::string> md = view.getMetadata();
@@ -1367,7 +1680,7 @@ int aliceVision_main(int argc, char * argv[])
             image::readImage(inputFilePath, image, readOptions);
 
             // Image processing
-            processImage(image, pParams, md);
+            processImage(image, pParams, md, intrinsicBase);
 
             image::ImageWriteOptions writeOptions;
 
