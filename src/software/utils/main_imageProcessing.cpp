@@ -29,7 +29,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 namespace po = boost::program_options;
@@ -427,16 +427,20 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         }
     }
 
-    float sfw = (pParams.maxWidth != 0 && pParams.maxWidth < image.Width()) ? float(pParams.maxWidth) / float(image.Width()) : 1.0;
-    float sfh = (pParams.maxHeight != 0 && pParams.maxHeight < image.Height()) ? float(pParams.maxHeight) / float(image.Height()) : 1.0;
-    float scaleFactor = std::min<float>(pParams.scaleFactor, std::min<float>(sfw, sfh));
+    const float sfw =
+        (pParams.maxWidth != 0 && pParams.maxWidth < image.Width()) ?
+            static_cast<float>(pParams.maxWidth) / static_cast<float>(image.Width()) : 1.0;
+    const float sfh =
+        (pParams.maxHeight != 0 && pParams.maxHeight < image.Height()) ?
+            static_cast<float>(pParams.maxHeight) / static_cast<float>(image.Height()) : 1.0;
+    const float scaleFactor = std::min(pParams.scaleFactor, std::min(sfw, sfh));
 
     if (scaleFactor != 1.0f)
     {
         const unsigned int w = image.Width();
         const unsigned int h = image.Height();
-        const unsigned int nw = (unsigned int)(floor(float(image.Width()) * scaleFactor));
-        const unsigned int nh = (unsigned int)(floor(float(image.Height()) * scaleFactor));
+        const unsigned int nw = static_cast<unsigned int>(floor(static_cast<float>(image.Width()) * scaleFactor));
+        const unsigned int nh = static_cast<unsigned int>(floor(static_cast<float>(image.Height()) * scaleFactor));
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
@@ -1078,15 +1082,15 @@ int aliceVision_main(int argc, char * argv[])
                 const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
                 const double cameraExposure = view.getCameraExposureSetting().getExposure();
                 const double ev = std::log2(1.0 / cameraExposure);
-                const float exposureAdjustment = float(medianCameraExposure / cameraExposure);
+                const float compensationFactor = static_cast<float>(medianCameraExposure / cameraExposure);
 
-                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureAdjustment);
+                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << compensationFactor);
 
                 for (int i = 0; i < image.Width() * image.Height(); ++i)
                 {
-                    image(i)[0] *= exposureAdjustment;
-                    image(i)[1] *= exposureAdjustment;
-                    image(i)[2] *= exposureAdjustment;
+                    image(i)[0] *= compensationFactor;
+                    image(i)[1] *= compensationFactor;
+                    image(i)[2] *= compensationFactor;
                 }
             }
 
