@@ -103,7 +103,7 @@ void modelExplore(Ort::Session& session)
     }
 }
 
-prediction predict(Ort::Session& session, const fs::path imagePath, const fs::path outputPath, const float minScore)
+prediction predict(Ort::Session& session, const fs::path imagePath, const float minScore)
 {
     // Read image
     image::Image<image::RGBColor> imageAlice;
@@ -149,7 +149,6 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const fs::pa
     // Get pointers to outputs
     float* bboxesPtr = output.at(0).GetTensorMutableData<float>();
     float* scoresPtr = output.at(1).GetTensorMutableData<float>();
-    float* masksPtr = output.at(2).GetTensorMutableData<float>();
 
     // Get output shape
     auto infos = output.at(2).GetTensorTypeAndShapeInfo();
@@ -160,7 +159,6 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const fs::pa
 
     // Initialize arrays
     std::vector<std::vector<float>> bboxes;
-    std::vector<std::string> masks;
     std::vector<float> scores;
 
     // Filter detections and fill arrays
@@ -173,20 +171,12 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const fs::pa
             std::vector<float> bboxe(bboxesPtr + 4 * i, bboxesPtr + 4 * (i + 1));
             bboxes.push_back(bboxe);
 
-            // Rxtract mask
-            float* maskPtr = masksPtr + shape[2] * shape[3] * i;
-            cv::Mat mask = cv::Mat(shape[2], shape[3], CV_32FC1, maskPtr);
-            std::string filename = fmt::format("{}_mask_{}.png", imagePath.stem().string(), i);
-            std::string filepath = std::string(outputPath.string()).append(filename);
-            masks.push_back(filepath);
-            cv::imwrite(filepath, mask);
-
             // Extract score
             scores.push_back(score);
         }
     }
 
-    return prediction{bboxes, scores, masks, imageOpencvShape};
+    return prediction{bboxes, scores, imageOpencvShape};
 }
 
 void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath, const float minScore)
@@ -204,7 +194,7 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
         if (boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
             continue;
 
-        auto pred = predict(session, imagePath, outputPath, minScore);
+        auto pred = predict(session, imagePath, minScore);
 
         bpt::ptree spheresNode;
 
@@ -222,7 +212,7 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
         sphereNode.put("y", y);
         sphereNode.put("r", r);
         sphereNode.put("score", pred.scores.at(i));
-        sphereNode.put("mask", pred.masks.at(i));
+        sphereNode.put("type", "matte");
 
         // Add sphere to array
         spheresNode.push_back(std::make_pair("", sphereNode));
@@ -249,6 +239,7 @@ void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<flo
         sphereNode.put("x", sphereParam[0]);
         sphereNode.put("y", sphereParam[1]);
         sphereNode.put("r", sphereParam[2]);
+        sphereNode.put("type", "matte");
 
         // Add sphere to array
         spheresNode.push_back(std::make_pair("", sphereNode));

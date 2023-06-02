@@ -29,7 +29,6 @@ struct prediction
 {
     std::vector<std::vector<float>> bboxes;
     std::vector<float> scores;
-    std::vector<std::string> masks;
     cv::Size size;
 };
 
