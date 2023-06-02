@@ -29,7 +29,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 namespace po = boost::program_options;
@@ -294,8 +294,12 @@ struct ProcessingParams
     bool reconstructedViewsOnly = false;
     bool keepImageFilename = false;
     bool exposureCompensation = false;
+    bool rawAutoBright = false;
+    float rawExposureAdjust = 0.0;
     EImageFormat outputFormat = EImageFormat::RGBA;
     float scaleFactor = 1.0f;
+    unsigned int maxWidth = 0;
+    unsigned int maxHeight = 0;
     float contrast = 1.0f;
     int medianFilter = 0;
     bool fillHoles = false;
@@ -423,12 +427,20 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         }
     }
 
-    if (pParams.scaleFactor != 1.0f)
+    const float sfw =
+        (pParams.maxWidth != 0 && pParams.maxWidth < image.Width()) ?
+            static_cast<float>(pParams.maxWidth) / static_cast<float>(image.Width()) : 1.0;
+    const float sfh =
+        (pParams.maxHeight != 0 && pParams.maxHeight < image.Height()) ?
+            static_cast<float>(pParams.maxHeight) / static_cast<float>(image.Height()) : 1.0;
+    const float scaleFactor = std::min(pParams.scaleFactor, std::min(sfw, sfh));
+
+    if (scaleFactor != 1.0f)
     {
         const unsigned int w = image.Width();
         const unsigned int h = image.Height();
-        const unsigned int nw = (unsigned int)(floor(float(w) * pParams.scaleFactor));
-        const unsigned int nh = (unsigned int)(floor(float(h) * pParams.scaleFactor));
+        const unsigned int nw = static_cast<unsigned int>(floor(static_cast<float>(image.Width()) * scaleFactor));
+        const unsigned int nh = static_cast<unsigned int>(floor(static_cast<float>(image.Height()) * scaleFactor));
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
@@ -795,8 +807,20 @@ int aliceVision_main(int argc, char * argv[])
         ("scaleFactor", po::value<float>(&pParams.scaleFactor)->default_value(pParams.scaleFactor),
          "Scale Factor (1.0: no change).")
 
-        ("exposureCompensation", po::value<bool>(& pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
-         "Exposure Compensation.")
+        ("maxWidth", po::value<unsigned int>(&pParams.maxWidth)->default_value(pParams.maxWidth),
+         "Max width (0: no change).")
+
+        ("maxHeight", po::value<unsigned int>(&pParams.maxHeight)->default_value(pParams.maxHeight),
+         "Max height (0: no change).")
+
+        ("exposureCompensation", po::value<bool>(&pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
+         "Exposure Compensation. Valid only if a sfmdata is set as input.")
+
+        ("rawExposureAdjust", po::value<float>(&pParams.rawExposureAdjust)->default_value(pParams.rawExposureAdjust),
+         "Exposure Adjustment in fstops limited to the range from -2 to +3 fstops.")
+
+        ("rawAutoBright", po::value<bool>(&pParams.rawAutoBright)->default_value(pParams.rawAutoBright),
+         "Enable automatic exposure adjustment for raw images.")
 
         ("lensCorrection", po::value<LensCorrectionParams>(&pParams.lensCorrection)->default_value(pParams.lensCorrection),
             "Lens Correction parameters:\n"
@@ -1035,6 +1059,8 @@ int aliceVision_main(int argc, char * argv[])
                 options.colorProfileFileName = view.getColorProfileFileName();
                 options.demosaicingAlgo = demosaicingAlgo;
                 options.highlightMode = highlightMode;
+                options.rawExposureAdjustment = powf(2.f, pParams.rawExposureAdjust);
+                options.rawAutoBright = pParams.rawAutoBright;
             }
 
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
@@ -1056,12 +1082,16 @@ int aliceVision_main(int argc, char * argv[])
                 const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
                 const double cameraExposure = view.getCameraExposureSetting().getExposure();
                 const double ev = std::log2(1.0 / cameraExposure);
-                const float exposureCompensation = float(medianCameraExposure / cameraExposure);
+                const float compensationFactor = static_cast<float>(medianCameraExposure / cameraExposure);
 
-                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
+                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << compensationFactor);
 
                 for (int i = 0; i < image.Width() * image.Height(); ++i)
-                    image(i) = image(i) * exposureCompensation;
+                {
+                    image(i)[0] *= compensationFactor;
+                    image(i)[1] *= compensationFactor;
+                    image(i)[2] *= compensationFactor;
+                }
             }
 
             sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
@@ -1252,6 +1282,8 @@ int aliceVision_main(int argc, char * argv[])
                 readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
                 readOptions.demosaicingAlgo = demosaicingAlgo;
                 readOptions.highlightMode = highlightMode;
+                readOptions.rawExposureAdjustment = powf(2.f, pParams.rawExposureAdjust);
+                readOptions.rawAutoBright = pParams.rawAutoBright;
 
                 pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                 if (pParams.applyDcpMetadata)
