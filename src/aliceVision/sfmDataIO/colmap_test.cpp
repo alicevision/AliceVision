@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
     intrTest.emplace(14, std::make_shared<camera::PinholeFisheye>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134));
     intrTest.emplace(15, std::make_shared<camera::PinholeFisheye1>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.000542));
     // add some incompatible intrinsics
-    intrTest.emplace(20, std::make_shared<camera::Pinhole3DEAnamorphic4>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134));
+    intrTest.emplace(20, std::make_shared<camera::Pinhole3DEAnamorphic4>(1920, 1080));
     intrTest.emplace(21, std::make_shared<camera::Pinhole3DEClassicLD>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134, -0.000542));
     intrTest.emplace(22, std::make_shared<camera::Pinhole3DERadial4>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134, -0.00714, 0.00134));
     intrTest.emplace(23, std::make_shared<camera::EquiDistant>(1920, 1080, 1548.76, 992.36, 549.54, -0.02078));

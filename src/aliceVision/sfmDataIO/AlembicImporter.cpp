@@ -399,7 +399,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   std::vector<unsigned int> sensorSize_pix = {0, 0};
   std::vector<double> sensorSize_mm = {0, 0};
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
-  std::string mvg_intrinsicInitializationMode = EInitMode_enumToString(EInitMode::CALIBRATED);
+  std::string mvg_intrinsicInitializationMode = EInitMode_enumToString(EInitMode::NONE);
   std::string mvg_intrinsicDistortionInitializationMode = EInitMode_enumToString(EInitMode::NONE);
   std::vector<double> mvg_intrinsicParams;
   std::vector<IndexT> mvg_ancestorsParams;
@@ -419,6 +419,9 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   bool poseLocked = false;
   bool poseIndependant = true;
   bool lockRatio = true;
+  std::vector<double> distortionParams;
+  std::vector<double> undistortionParams;
+  Vec2 undistortionOffset = {0, 0};
 
   if(userProps)
   {
@@ -546,6 +549,31 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
         prop.get(sample, ISampleSelector(sampleFrame));
         mvg_ancestorsParams.assign(sample->get(), sample->get()+sample->size());
       }
+      if(userProps.getPropertyHeader("mvg_distortionParams"))
+      {
+        // Distortion parameters
+        Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_distortionParams");
+        Alembic::Abc::IDoubleArrayProperty::sample_ptr_type sample;
+        prop.get(sample, ISampleSelector(sampleFrame));
+        distortionParams.assign(sample->get(), sample->get()+sample->size());
+      }
+      if(userProps.getPropertyHeader("mvg_undistortionParams"))
+      {
+        // Undistortion parameters
+        Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_undistortionParams");
+        Alembic::Abc::IDoubleArrayProperty::sample_ptr_type sample;
+        prop.get(sample, ISampleSelector(sampleFrame));
+        undistortionParams.assign(sample->get(), sample->get()+sample->size());
+        // Undistortion offset
+        if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_undistortionOffsetX"))
+        {
+            undistortionOffset(0) = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_undistortionOffsetX", sampleFrame);
+        }
+        if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_undistortionOffsetY"))
+        {
+            undistortionOffset(1) = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_undistortionOffsetY", sampleFrame);
+        }
+      }
     }
   }
 
@@ -571,13 +599,24 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     intrinsic->setInitializationMode(EInitMode_stringToEnum(mvg_intrinsicInitializationMode));
     intrinsic->setDistortionInitializationMode(EInitMode_stringToEnum(mvg_intrinsicDistortionInitializationMode));
 
-    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
-    if (intrinsicScale)
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+    if (intrinsicCasted)
     {
       // fy_pix = fx_pix * fy/fx
       initialFocalLengthPix(1) = (initialFocalLengthPix(0) > 0)? initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0] : -1;
-      intrinsicScale->setInitialScale(initialFocalLengthPix);
-      intrinsicScale->setRatioLocked(lockRatio);
+      intrinsicCasted->setInitialScale(initialFocalLengthPix);
+      intrinsicCasted->setRatioLocked(lockRatio);
+      std::shared_ptr<camera::Distortion> distortion = intrinsicCasted->getDistortion();
+      if (distortion)
+      {
+        distortion->setParameters(distortionParams);
+      }
+      std::shared_ptr<camera::Undistortion> undistortion = intrinsicCasted->getUndistortion();
+      if (undistortion)
+      {
+        undistortion->setParameters(undistortionParams);
+        undistortion->setOffset(undistortionOffset);
+      }
     }
 
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);

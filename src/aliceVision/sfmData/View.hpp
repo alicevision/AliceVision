@@ -296,6 +296,7 @@ public:
     return _intrinsicId;
   }
 
+
   /**
    * @brief Get the pose id
    * @return pose id

@@ -1,15 +1,26 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2016 AliceVision contributors.
+// Copyright (c) 2012 openMVG contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #pragma once
 
-#include <vector>
 #include <aliceVision/numeric/numeric.hpp>
 
-namespace aliceVision{
-namespace camera{
+#include <vector>
 
+namespace aliceVision {
+namespace camera {
+
+/**
+ * @brief Abstract class to model the distortion of a camera-lense couple using a set of parameters.
+ * @note Distortion models are expressed in terms of the camera's focal length.
+ */
 class Distortion
 {
 public:
-
     Distortion() = default;
 
     virtual Distortion* clone() const = 0;
@@ -20,12 +31,30 @@ public:
         return _distortionParams == other._distortionParams;
     }
 
-    std::vector<double>& getParameters()
+    void setParameters(const std::vector<double>& params)
+    {
+        if (_distortionParams.size() != params.size())
+        {
+            return;
+        }
+        
+        for (int i = 0; i < _distortionParams.size(); i++)
+        {
+            _distortionParams[i] = params[i];
+        }
+    }
+
+    inline std::vector<double>& getParameters()
     {
         return _distortionParams;
     }
 
-    size_t getDistortionParametersCount()
+    inline const std::vector<double>& getParameters() const
+    {
+        return _distortionParams;
+    }
+
+    inline std::size_t getDistortionParametersCount() const
     {
         return _distortionParams.size();
     }

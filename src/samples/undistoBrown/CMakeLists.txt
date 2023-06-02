@@ -5,6 +5,7 @@ alicevision_add_software(aliceVision_samples_undistoBrown
         aliceVision_system
         aliceVision_image
         aliceVision_multiview
+        aliceVision_camera
         ${CERES_LIBRARIES}
         Boost::program_options
         Boost::filesystem
