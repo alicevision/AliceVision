@@ -423,7 +423,7 @@ oiio::ImageSpec readImageSpec(const std::string& path)
 #if OIIO_VERSION > (10000 * 2 + 100 * 4 + 5) // OIIO_VERSION > 2.4.5
     // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
     // so we can disable the auto orientation and keep the metadata.
-    configSpec.attribute("raw:user_flip", 1); // set flip to 1 to disable auto rotation of the image buffer
+    configSpec.attribute("raw:user_flip", 0); // disable auto rotation of the image buffer but keep exif metadata orientation valid  
 #endif 
 
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
@@ -561,7 +561,7 @@ void readImage(const std::string& path,
 #if OIIO_VERSION > (10000 * 2 + 100 * 4 + 5) // OIIO_VERSION > 2.4.5
 	    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
 	    // so we can disable the auto orientation and keep the metadata.
-        configSpec.attribute("raw:user_flip", 1); // set flip to 1 to disable auto rotation of the image buffer
+        configSpec.attribute("raw:user_flip", 0); // disable auto rotation of the image buffer but keep exif metadata orientation valid 
 #endif
 
         if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::None)
@@ -667,9 +667,6 @@ void readImage(const std::string& path,
     {
         // Check orientation metadata. If image is mirrored, mirror it back and update orientation metadata
         int orientation = imgMetadata.get_int("orientation", -1);
-
-        float red[] = {1, 0, 0, 1};
-        oiio::ImageBufAlgo::render_text(inBuf, 1000, 1000, std::to_string(orientation), 200, "Arial", red);
 
         if (orientation == 2 || orientation == 4 || orientation == 5 || orientation == 7)
         {
