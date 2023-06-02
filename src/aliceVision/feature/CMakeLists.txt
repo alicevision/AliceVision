@@ -14,7 +14,6 @@ set(features_files_headers
   sift/SIFT.hpp
   Descriptor.hpp
   feature.hpp
-  FeatureExtractor.hpp
   FeaturesPerView.hpp
   Hamming.hpp
   ImageDescriber.hpp
@@ -35,7 +34,6 @@ set(features_files_sources
   akaze/ImageDescriber_AKAZE.cpp
   sift/SIFT.cpp
   sift/ImageDescriber_DSPSIFT_vlfeat.cpp
-  FeatureExtractor.cpp
   FeaturesPerView.cpp
   ImageDescriber.cpp
   imageDescriberCommon.cpp

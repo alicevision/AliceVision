@@ -14,7 +14,7 @@
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
-namespace feature {
+namespace featureEngine {
 
 FeatureExtractorViewJob::FeatureExtractorViewJob(const sfmData::View& view,
                                                  const std::string& outputFolder) :
@@ -259,5 +259,5 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
     }
 }
 
-} // namespace feature
+} // namespace featureEngine
 } // namespace aliceVision
