@@ -269,6 +269,9 @@ alicevision_add_software(aliceVision_split360Images
         aliceVision_numeric
         aliceVision_image
         aliceVision_panorama
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_camera
         ${OPENIMAGEIO_LIBRARIES}
         Boost::program_options
         Boost::filesystem
