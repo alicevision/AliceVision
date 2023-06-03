@@ -335,8 +335,12 @@ ExternalProject_Add(${ONNXRUNTIME_TARGET}
 if(AV_BUILD_OPENGV)
 set(OPENGV_TARGET opengv)
 ExternalProject_Add(${OPENGV_TARGET}
-       GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
-       GIT_TAG 91f4b19c73450833a40e463ad3648aae80b3a7f3
+       # Official repository
+       # GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
+       # Our fork, with a fix:
+       GIT_REPOSITORY https://github.com/alicevision/opengv.git
+       # Use a custom commit with a fix to override the cxx standard from cmake command line
+       GIT_TAG cb0a3f16456a8661782b8d814bc2726e2018c428
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
