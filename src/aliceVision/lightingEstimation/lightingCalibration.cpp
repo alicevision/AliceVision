@@ -34,19 +34,6 @@ namespace bpt = boost::property_tree;
 namespace aliceVision {
 namespace lightingEstimation {
 
-void lightCalibration(const std::string& inputPath, const std::string& outputPath)
-{
-    std::vector<std::string> imageList;
-    std::string pictureFolder = inputPath + "PS_Pictures/";
-    // getPicturesNames(pictureFolder, imageList);  ???
-
-    // std::array<float, 3> sphereParam;
-    // image::Image<float> sphereMask;
-
-    // detectSphere(imageList, sphereParam, sphereMask);
-    // lightCalibration(imageList, sphereParam, outputPath);
-}
-
 void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath, const std::string& method, const bool saveAsModel)
 {
     std::vector<std::string> imageList;
