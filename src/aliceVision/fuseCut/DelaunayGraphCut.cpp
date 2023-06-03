@@ -2721,36 +2721,7 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8], const std:
         }
         ALICEVISION_LOG_WARNING("Declare empty around camera centers: " << nbModifiedCells << " cells changed to empty within " << _cellIsFull.size() << " cells.");
     }
-
-
-    // Set cells that have a point outside hexahedron as empty
-    if(hexah != nullptr)
-    {
-        int nbModifiedCells = 0;
-        Point3d hexahinf[8];
-        mvsUtils::inflateHexahedron(hexah, hexahinf, 1.001);
-        for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
-        {
-            if(isInvalidOrInfiniteCell(ci) || !_cellIsFull[ci])
-                continue;
-
-            const Point3d& pa = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
-            const Point3d& pb = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
-            const Point3d& pc = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
-            const Point3d& pd = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
-
-            if((!mvsUtils::isPointInHexahedron(pa, hexahinf)) ||
-               (!mvsUtils::isPointInHexahedron(pb, hexahinf)) ||
-               (!mvsUtils::isPointInHexahedron(pc, hexahinf)) ||
-               (!mvsUtils::isPointInHexahedron(pd, hexahinf)))
-            {
-                _cellIsFull[ci] = false;
-                ++nbModifiedCells;
-            }
-        }
-        ALICEVISION_LOG_WARNING("Full cells with a vertex outside the BBox are changed to empty: " << nbModifiedCells << " cells changed to empty.");
-    }
-
+    
     if(doRemoveDust)
     {
         removeDust(minSegmentSize);
