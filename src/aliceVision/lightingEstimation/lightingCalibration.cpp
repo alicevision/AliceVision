@@ -280,14 +280,14 @@ void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, con
             if (saveAsModel)
             {
                 lightTree.put("lightId", imgCpt);
-                lightTree.put("type", "directionnal");
+                lightTree.put("type", "directional");
             }
             else
             {
                 IndexT index = viewId.getViewId();
 
                 lightTree.put("viewId", index);
-                lightTree.put("type", "directionnal");
+                lightTree.put("type", "directional");
             }
 
             // Light direction
