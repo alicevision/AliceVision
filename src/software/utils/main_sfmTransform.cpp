@@ -268,14 +268,14 @@ int aliceVision_main(int argc, char **argv)
         "Transform Method:\n"
         "\t- transformation: Apply a given transformation\n"
         "\t- manual: Apply the gizmo transformation\n"
-        "\t- auto: Use cameras X axis, automatic scaling, ground alignment\n"
-        "\t- auto_from_cameras: Use cameras\n"
-        "\t- auto_from_cameras_x_axis: Use cameras X axis\n"
-        "\t- auto_from_landmarks: Use landmarks\n"
-        "\t- from_single_camera: Use camera specified by --tranformation\n"
-        "\t- from_markers: Use markers specified by --markers\n"
-        "\t- from_gps: Use gps metadata\n"
-        "\t- align_ground: Detect ground level and align to it\n")
+        "\t- auto: Determines scene orientation from the cameras' X axis, auto-scaling from GPS information if available, and defines ground level from the point cloud.\n"
+        "\t- auto_from_cameras: Defines coordinate system from cameras.\n"
+        "\t- auto_from_cameras_x_axis: Determines scene orientation from the cameras' X axis.\n"
+        "\t- auto_from_landmarks: Defines coordinate system from landmarks.\n"
+        "\t- from_single_camera: Refines the coordinate system from the camera specified by --tranformation\n"
+        "\t- from_markers: Refines the coordinate system from markers specified by --markers\n"
+        "\t- from_gps: Redefines coordinate system from GPS metadata\n"
+        "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n")
     ("transformation", po::value<std::string>(&transform)->default_value(transform),
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
