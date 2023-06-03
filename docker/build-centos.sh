@@ -30,6 +30,7 @@ echo "--== BUILD DEPENDENCIES ==--"
 
 ## DEPENDENCIES
 docker build \
+    --progress plain \
 	--rm \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \
 	--build-arg CENTOS_VERSION=${CENTOS_VERSION} \
@@ -48,6 +49,7 @@ echo "--== BUILD ALICEVISION ==--"
 
 ## ALICEVISION
 docker build \
+    --progress plain \
 	--rm \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \
 	--build-arg CENTOS_VERSION=${CENTOS_VERSION} \
