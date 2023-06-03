@@ -211,6 +211,14 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
 void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t);
 
 /**
+ * @brief Compute the new coordinate system in the given SfM so that the ground is at Y=0
+ *
+ * @param[in] sfmData
+ * @param[out] out_t translation
+ */
+void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3& out_t);
+
+/**
  * @brief Compute the new coordinate system in the given reconstruction
  * so that the mean of the camera centers is the origin of the world coordinate system,
  * a dominant plane P is fitted to the set of the optical centers

@@ -1026,6 +1026,62 @@ void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3 & mean, Ei
     }
 }
 
+void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3& out_t)
+{
+    out_t.fill(0.0);
+
+    // Collect landmark positions for ground detection
+    // Note: the Y axis is pointing down, therefore +Y is the direction to the ground
+    std::vector<Vec3> points;
+    for (auto & plandmark: sfmData.getLandmarks())
+    {
+        // Filter out landmarks with not enough observations
+        if (plandmark.second.observations.size() < 3)
+        {
+            continue;
+        }
+
+        // Filter out landmarks that lie above all the cameras that observe them
+        // This filtering step assumes that cameras should not be underneath the ground level
+        const Vec3 X = plandmark.second.X;
+        bool foundUnder = false;
+        for (const auto & pObs : plandmark.second.observations)
+        {
+            const IndexT viewId = pObs.first;
+            const Vec3 camCenter = sfmData.getPose(sfmData.getView(viewId)).getTransform().center();
+
+            if (X(1) > camCenter(1))
+            {
+                foundUnder = true;
+                break;
+            }
+        }
+
+        // Store landmark position
+        if (foundUnder)
+        {
+            points.push_back(X);
+        }
+    }
+
+    if (points.empty())
+    {
+        ALICEVISION_LOG_WARNING("Ground detection failed as there is no valid point");
+        return;
+    }
+    
+    // Filter out statistical noise
+    // and take lowest point as the ground level
+    const double noiseRatio = 1e-4;
+    std::size_t idxGround = static_cast<std::size_t>(static_cast<double>(points.size()) * noiseRatio);
+    std::nth_element(
+        points.begin(), points.begin() + idxGround, points.end(),
+        [](const Vec3 & pt1, const Vec3 & pt2) { return (pt1(1) > pt2(1)); });
+    const double Yground = points[idxGround](1);
+
+    out_t = {0.0, -Yground, 0.0};
+}
+
 void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t)
 {
     //For reference, the update is
