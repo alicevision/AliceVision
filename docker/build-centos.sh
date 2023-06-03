@@ -3,8 +3,8 @@
 set -ex
 
 test -e docker/fetch.sh || {
-	echo This script must be run from the top level of the AliceVision tree
-	exit 1
+    echo This script must be run from the top level of the AliceVision tree
+    exit 1
 }
 
 test -z "$AV_DEPS_VERSION" && AV_DEPS_VERSION=2023.06.01
@@ -31,11 +31,11 @@ echo "--== BUILD DEPENDENCIES ==--"
 ## DEPENDENCIES
 docker build \
     --progress plain \
-	--rm \
-	--build-arg CUDA_VERSION=${CUDA_VERSION} \
-	--build-arg CENTOS_VERSION=${CENTOS_VERSION} \
-	--tag ${DEPS_DOCKER_TAG} \
-	-f docker/Dockerfile_centos_deps .
+    --rm \
+    --build-arg CUDA_VERSION=${CUDA_VERSION} \
+    --build-arg CENTOS_VERSION=${CENTOS_VERSION} \
+    --tag ${DEPS_DOCKER_TAG} \
+    -f docker/Dockerfile_centos_deps .
 
 echo ""
 echo "  To upload results:"
@@ -50,13 +50,13 @@ echo "--== BUILD ALICEVISION ==--"
 ## ALICEVISION
 docker build \
     --progress plain \
-	--rm \
-	--build-arg CUDA_VERSION=${CUDA_VERSION} \
-	--build-arg CENTOS_VERSION=${CENTOS_VERSION} \
-	--build-arg AV_DEPS_VERSION=${AV_DEPS_VERSION} \
-	--build-arg AV_VERSION=${AV_VERSION} \
-	--tag ${DOCKER_TAG} \
-	-f docker/Dockerfile_centos .
+    --rm \
+    --build-arg CUDA_VERSION=${CUDA_VERSION} \
+    --build-arg CENTOS_VERSION=${CENTOS_VERSION} \
+    --build-arg AV_DEPS_VERSION=${AV_DEPS_VERSION} \
+    --build-arg AV_VERSION=${AV_VERSION} \
+    --tag ${DOCKER_TAG} \
+    -f docker/Dockerfile_centos .
 
 echo ""
 echo "  To upload results:"
