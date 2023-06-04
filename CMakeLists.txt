@@ -121,7 +121,7 @@ include(ExternalProject)
 
 set(BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
 
-set(CMAKE_CORE_BUILD_FLAGS -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS} -DCMAKE_INSTALL_DO_STRIP:BOOL=${CMAKE_INSTALL_DO_STRIP} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+set(CMAKE_CORE_BUILD_FLAGS -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS} -DCMAKE_INSTALL_DO_STRIP:BOOL=${CMAKE_INSTALL_DO_STRIP} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_CXX_STANDARD=17)
 
 if(AV_BUILD_ZLIB)
 set(ZLIB_TARGET zlib)
@@ -314,11 +314,33 @@ ExternalProject_Add(${EXPAT_TARGET}
        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
        )
 
+# Add ONNXRuntime
+set(ONNXRUNTIME_TARGET onnxruntime)
+ExternalProject_Add(${ONNXRUNTIME_TARGET}
+      URL https://github.com/microsoft/onnxruntime/releases/download/v1.12.0/onnxruntime-linux-x64-1.12.0.tgz
+      URL_HASH SHA256=5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5
+      DOWNLOAD_DIR ${BUILD_DIR}/download/onnxruntime
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/onnxruntime
+      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+      PREFIX ${BUILD_DIR}
+      INSTALL_COMMAND sh -c "mkdir -p <INSTALL_DIR>/include <INSTALL_DIR>/lib && cp -r <SOURCE_DIR>/lib/* <INSTALL_DIR>/lib && cp -r <SOURCE_DIR>/include/* <INSTALL_DIR>/include"
+      CONFIGURE_COMMAND ""
+      UPDATE_COMMAND ""
+      BUILD_COMMAND ""
+      BUILD_ALWAYS 0
+      BUILD_IN_SOURCE 0
+)
+
+
 if(AV_BUILD_OPENGV)
 set(OPENGV_TARGET opengv)
 ExternalProject_Add(${OPENGV_TARGET}
-       GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
-       GIT_TAG 91f4b19c73450833a40e463ad3648aae80b3a7f3
+       # Official repository
+       # GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
+       # Our fork, with a fix:
+       GIT_REPOSITORY https://github.com/alicevision/opengv.git
+       # Use a custom commit with a fix to override the cxx standard from cmake command line
+       GIT_TAG cb0a3f16456a8661782b8d814bc2726e2018c428
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -1041,6 +1063,7 @@ set(AV_DEPS
   ${CUDA_TARGET}
   ${TBB_TARGET}
   ${EIGEN_TARGET}
+  ${ONNXRUNTIME_TARGET}
   ${OPENGV_TARGET}
   ${OPENCV_TARGET}
   ${LAPACK_TARGET}

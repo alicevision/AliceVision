@@ -39,7 +39,7 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
 endfunction()
 
 # C++17
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard used by the project")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ==============================================================================
@@ -60,6 +60,7 @@ trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
 trilean_option(ALICEVISION_USE_OPENGV "Enable use of OpenGV algorithms" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
+trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
@@ -366,6 +367,22 @@ if(Eigen3_FOUND OR EIGEN3_FOUND)
   endif()
 else()
   message(FATAL_ERROR " EIGEN NOT FOUND. EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
+endif()
+
+# ==============================================================================
+# onnxruntime
+# ==============================================================================
+set(ALICEVISION_HAVE_ONNX 0)
+
+if(NOT ALICEVISION_USE_ONNX STREQUAL "OFF")
+  find_package(ONNXRuntime)
+
+  if(TARGET ONNXRuntime::ONNXRuntime)
+    set(ALICEVISION_HAVE_ONNX 1)
+    message(STATUS "ONNXRuntime FOUND: ${ONNXRuntime_LIBRARY}")
+  elseif(ALICEVISION_USE_ONNX STREQUAL "ON")
+    message(SEND_ERROR "Failed to find ONNX Runtime.")
+  endif()
 endif()
 
 # ==============================================================================

@@ -1,13 +1,15 @@
 # Headers
 set(lightingEstimation_files_headers
-	augmentedNormals.hpp
-	lightingEstimation.hpp
+    augmentedNormals.hpp
+    lightingEstimation.hpp
+    lightingCalibration.hpp
 )
 
 # Sources
 set(lightingEstimation_files_sources
-	augmentedNormals.cpp
-	lightingEstimation.cpp
+    augmentedNormals.cpp
+    lightingEstimation.cpp
+    lightingCalibration.cpp
 )
 
 alicevision_add_library(aliceVision_lightingEstimation
