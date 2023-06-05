@@ -27,7 +27,9 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace photometricStereo {
 
-void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath,
+                       const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals,
+                       image::Image<image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if (PSParameters.SHOrder == 2)
@@ -76,7 +78,9 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
     image::writeImage(outputPath + "/mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 }
 
-void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath,
+                       const std::string& outputPath, const PhotometricSteroParameters& PSParameters,
+                       image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
     bool skipAll = true;
     bool groupedImages = false;
@@ -239,7 +243,10 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
     sfmDataIO::Save(normalSfmData, outputPath + "/normalMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
 }
 
-void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList,
+                       const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant,
+                       const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals,
+                       image::Image<image::RGBfColor>& albedo)
 {
     size_t maskSize;
     int pictRows;
@@ -432,7 +439,6 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
                 normalsVect.col(currentIdx) = M_channel.col(i) / M_channel.col(i).norm();
             }
 
-
             int currentIdx;
             for (size_t ch = 0; ch < 3; ++ch)
             {
@@ -517,7 +523,8 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     albedo = albedoIm;
 }
 
-void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat)
+void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList,
+                Eigen::MatrixXf& lightMat)
 {
     std::string intFileName;
     std::string pathToCM;

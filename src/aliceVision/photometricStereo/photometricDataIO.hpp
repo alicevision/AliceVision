@@ -33,7 +33,8 @@ void loadLightIntensities(const std::string& intFileName, std::vector<std::array
  * @param[in] convertionMatrix Matrix describing the optional change of frame
  * @param[out] lightMat Matrix of directions of light
  */
-void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat);
+void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix,
+                         Eigen::MatrixXf& lightMat);
 
 /**
  * @brief Load light directions from a file to an Eigen matrix when using spherical harmonics
@@ -49,7 +50,8 @@ void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
  * @param[out] lightMat Matrix of directions of light
  * @param[out] intList Intensities of lights (for each image, intensity in each channel)
  */
-void buildLightMatFromJSON(const std::string& fileName, const std::vector<std::string>& imageList, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList);
+void buildLightMatFromJSON(const std::string& fileName, const std::vector<std::string>& imageList,
+                           Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList);
 
 /**
  * @brief Load light data from a JSON file to an Eigen matrix (with a list of indices)
@@ -58,7 +60,8 @@ void buildLightMatFromJSON(const std::string& fileName, const std::vector<std::s
  * @param[out] lightMat Matrix of directions of light
  * @param[out] intList Intensities of lights (for each image, intensity in each channel)
  */
-void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT>& indices, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList);
+void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT>& indices, Eigen::MatrixXf& lightMat,
+                           std::vector<std::array<float, 3>>& intList);
 
 /**
  * @brief Load a mask
@@ -87,7 +90,8 @@ void intensityScaling(std::array<float, 3> const& intensities, image::Image<imag
  * @param[in] indices The absolute indices of pixels in mask
  * @param[out] imageOut The resulting matrix that can be used in PS solver
  */
-void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::vector<int>& indices, Eigen::MatrixXf& imageOut);
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::vector<int>& indices,
+                    Eigen::MatrixXf& imageOut);
 
 /**
  * @brief Rearrange (masked) values of color images in an Eigen matrix
@@ -95,7 +99,8 @@ void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::ve
  * @param[in] mask Input mask
  * @param[out] imageOut The resulting matrix that can be used in PS solver
  */
-void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::Image<float>& mask, Eigen::MatrixXf& imageOut);
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::Image<float>& mask,
+                    Eigen::MatrixXf& imageOut);
 
 /**
  * @brief Rearrange (masked) values of gray-level images in an Eigen matrix
@@ -133,7 +138,8 @@ void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix);
  * @param[in] normals The normal map to save
  * @param[in] albedo The albedo map to save
  */
-void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo);
+void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals,
+                    const image::Image<image::RGBfColor>& albedo);
 
 /**
  * @brief Write the PS results in a given folder, using pose ID in the name (multi-view context only)
@@ -142,7 +148,8 @@ void writePSResults(const std::string& outputPath, const image::Image<image::RGB
  * @param[in] albedo The albedo map to save
  * @param[in] poseId The UID associated with the pose of the camera
  */
-void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo, const IndexT poseId);
+void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals,
+                    const image::Image<image::RGBfColor>& albedo, const IndexT poseId);
 
 }
 }
