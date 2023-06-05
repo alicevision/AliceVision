@@ -25,7 +25,7 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace sphereDetection {
 
-struct prediction
+struct Prediction
 {
     std::vector<std::vector<float>> bboxes;
     std::vector<float> scores;

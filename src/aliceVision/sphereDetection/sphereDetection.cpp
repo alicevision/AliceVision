@@ -105,7 +105,7 @@ void modelExplore(Ort::Session& session)
     }
 }
 
-prediction predict(Ort::Session& session, const fs::path imagePath, const float minScore)
+Prediction predict(Ort::Session& session, const fs::path imagePath, const float minScore)
 {
     // Read image
     image::Image<image::RGBColor> imageAlice;
@@ -179,7 +179,7 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const float 
         }
     }
 
-    return prediction{bboxes, scores, imageOpencvShape};
+    return Prediction{bboxes, scores, imageOpencvShape};
 }
 
 void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath,
