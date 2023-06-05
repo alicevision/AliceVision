@@ -9,7 +9,7 @@
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/image/resampling.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -215,7 +215,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     {
         if (PSParameters.downscale > 1)
         {
-            downscaleImageInplace(mask, PSParameters.downscale);
+            imageAlgo::resizeImage(PSParameters.downscale, mask);
         }
 
         getIndMask(mask, indices);
@@ -232,7 +232,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
         if (PSParameters.downscale > 1)
         {
-            downscaleImageInplace(imageFloat, PSParameters.downscale);
+            imageAlgo::resizeImage(PSParameters.downscale, imageFloat);
         }
 
         pictRows = imageFloat.rows();
@@ -256,7 +256,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
         if (PSParameters.downscale > 1)
         {
-            downscaleImageInplace(imageAmbiant,PSParameters.downscale);
+            imageAlgo::resizeImage(PSParameters.downscale, imageAmbiant);
         }
     }
 
@@ -317,7 +317,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
             if (PSParameters.downscale > 1)
             {
-                downscaleImageInplace(imageFloat,PSParameters.downscale);
+                imageAlgo::resizeImage(PSParameters.downscale, imageFloat);
             }
 
             if (boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))

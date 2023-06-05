@@ -20,7 +20,7 @@
 #include <Eigen/Dense>
 
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/image/resampling.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -55,8 +55,8 @@ void normalIntegration(const std::string& inputPath, const bool& perspective, co
 
     if (downscale > 1)
     {
-        downscaleImageInplace(normalsImPNG2, downscale);
-        downscaleImageInplace(normalsMask, downscale);
+        imageAlgo::resizeImage(downscale, normalsImPNG2);
+        imageAlgo::resizeImage(downscale, normalsMask);
 
         K = K / downscale;
         K(2, 2) = 1;
@@ -156,8 +156,8 @@ void normalIntegration(const sfmData::SfMData& sfmData, const std::string& input
 
             if (downscale > 1)
             {
-                downscaleImageInplace(normalsImPNG2, downscale);
-                downscaleImageInplace(normalsMask, downscale);
+                imageAlgo::resizeImage(downscale, normalsImPNG2);
+                imageAlgo::resizeImage(downscale, normalsMask);
 
                 K = K / downscale;
                 K(2, 2) = 1;
@@ -238,8 +238,8 @@ void normalIntegration(const sfmData::SfMData& sfmData, const std::string& input
 
         if (downscale > 1)
         {
-            downscaleImageInplace(normalsImPNG2, downscale);
-            downscaleImageInplace(normalsMask, downscale);
+            imageAlgo::resizeImage(downscale, normalsImPNG2);
+            imageAlgo::resizeImage(downscale, normalsMask);
 
             K = K / downscale;
             K(2, 2) = 1;
