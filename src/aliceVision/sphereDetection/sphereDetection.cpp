@@ -120,7 +120,8 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const float 
     // HWC to CHW
     cv::dnn::blobFromImage(imageOpencv, imageOpencv);
 
-    // Inference on cpu TODO: use gpu
+    // Inference on CPU
+    // TODO: use GPU
     Ort::MemoryInfo memoryInfo =
         Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
@@ -155,7 +156,7 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const float 
     auto shape = infos.GetShape();
 
     // Get scores of detections
-    std::vector<float> allScores = {scoresPtr, scoresPtr + shape[0]};
+    std::vector<float> allScores = { scoresPtr, scoresPtr + shape[0] };
 
     // Initialize arrays
     std::vector<std::vector<float>> bboxes;
@@ -196,28 +197,36 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
 
         auto pred = predict(session, imagePath, minScore);
 
-        bpt::ptree spheresNode;
+        // If there is no bounding box, then no sphere has been detected
+        if (pred.bboxes.size() > 0)
+        {
+            bpt::ptree spheresNode;
 
-        // We only take the best sphere in the picture
-        int i = 0;
-        // Compute sphere coords from bboxe coords
-        auto bboxe = pred.bboxes.at(i);
-        float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
-        float x = bboxe.at(0) + r - pred.size.width / 2;
-        float y = bboxe.at(1) + r - pred.size.height / 2;
+            // We only take the best sphere in the picture
+            int i = 0;
+            // Compute sphere coords from bboxe coords
+            auto bboxe = pred.bboxes.at(i);
+            float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
+            float x = bboxe.at(0) + r - pred.size.width / 2;
+            float y = bboxe.at(1) + r - pred.size.height / 2;
 
-        // Create an unnamed node containing the sphere
-        bpt::ptree sphereNode;
-        sphereNode.put("x", x);
-        sphereNode.put("y", y);
-        sphereNode.put("r", r);
-        sphereNode.put("score", pred.scores.at(i));
-        sphereNode.put("type", "matte");
+            // Create an unnamed node containing the sphere
+            bpt::ptree sphereNode;
+            sphereNode.put("x", x);
+            sphereNode.put("y", y);
+            sphereNode.put("r", r);
+            sphereNode.put("score", pred.scores.at(i));
+            sphereNode.put("type", "matte");
 
-        // Add sphere to array
-        spheresNode.push_back(std::make_pair("", sphereNode));
+            // Add sphere to array
+            spheresNode.push_back(std::make_pair("", sphereNode));
 
-        fileTree.add_child(sphereName, spheresNode);
+            fileTree.add_child(sphereName, spheresNode);
+        }
+        else
+        {
+            ALICEVISION_LOG_WARNING("No sphere detected for '" << imagePath << "'.");
+        }
     }
     bpt::write_json(outputPath.append("detection.json").string(), fileTree);
 }
