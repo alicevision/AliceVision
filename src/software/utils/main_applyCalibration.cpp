@@ -58,6 +58,21 @@ int aliceVision_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    // Special case to handle:
+    // If calibrated SfMData filename is an empty string
+    // simply copy the input SfMData
+    if (sfmDataCalibratedFilename.empty())
+    {
+        // Save sfmData to disk
+        if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        {
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfMDataFilename << "' cannot be written.");
+            return EXIT_FAILURE;
+        }
+
+        return EXIT_SUCCESS;
+    }
+
     // Load calibrated scene
     sfmData::SfMData sfmDataCalibrated;
     if (!sfmDataIO::Load(sfmDataCalibrated, sfmDataCalibratedFilename, sfmDataIO::ESfMData::INTRINSICS))
