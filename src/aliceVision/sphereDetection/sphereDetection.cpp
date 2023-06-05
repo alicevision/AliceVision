@@ -73,7 +73,8 @@ void modelExplore(Ort::Session& session)
         ALICEVISION_LOG_DEBUG("  Type : " << input_type);
 
         std::vector<int64_t> input_shape = inputInfo2.GetShape();
-        size_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<float>());
+        size_t input_size =
+            std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<float>());
         ALICEVISION_LOG_DEBUG("  Shape: " << input_shape);
         ALICEVISION_LOG_DEBUG("  Size : " << input_size);
     }
@@ -97,7 +98,8 @@ void modelExplore(Ort::Session& session)
         ALICEVISION_LOG_DEBUG("  Type: " << outputType);
 
         std::vector<int64_t> outputShape = outputInfo2.GetShape();
-        size_t outputSize = std::accumulate(begin(outputShape), end(outputShape), 1, std::multiplies<float>());
+        size_t outputSize =
+            std::accumulate(begin(outputShape), end(outputShape), 1, std::multiplies<float>());
         ALICEVISION_LOG_DEBUG("  Shape: " << outputShape);
         ALICEVISION_LOG_DEBUG("  Size: " << outputSize);
     }
@@ -180,7 +182,8 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const float 
     return prediction{bboxes, scores, imageOpencvShape};
 }
 
-void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath, const float minScore)
+void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath,
+                     const float minScore)
 {
     // Main tree
     bpt::ptree fileTree;
@@ -231,7 +234,8 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
     bpt::write_json(outputPath.append("detection.json").string(), fileTree);
 }
 
-void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath)
+void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam,
+                           fs::path outputPath)
 {
     // Main tree
     bpt::ptree fileTree;
