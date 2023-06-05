@@ -28,7 +28,6 @@ AliceVision depends on external libraries:
 * CoinUtils >= 2.9.3 use [our fork](https://github.com/alicevision/CoinUtils) with a CMake build system so that it can be easily found
 * Coin-or linear programming (Clp) use [our fork](https://github.com/alicevision/Clp) with a CMake build system
 * [Eigen >= 3.3.4](https://gitlab.com/libeigen/eigen)
-* [Geogram >= 1.7.5](https://gforge.inria.fr/frs/?group_id=5833)
 * [Geogram >= 1.7.5](https://github.com/BrunoLevy/geogram)
 * [Expat >= 2.4.8](https://libexpat.github.io/)
 * [OpenEXR >= 2.5](https://github.com/AcademySoftwareFoundation/openexr)
