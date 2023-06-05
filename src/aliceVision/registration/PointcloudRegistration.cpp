@@ -195,6 +195,7 @@ Eigen::Matrix4d PointcloudRegistration::align(EAlignmentMethod mode)
         case EAlignmentMethod::GICP:
         {
             transform = alignGICP(mutableSourceCloud, mutableTargetCloud);
+            break;
         }
         case EAlignmentMethod::ICP:
         {
