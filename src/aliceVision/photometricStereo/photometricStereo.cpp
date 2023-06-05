@@ -141,7 +141,9 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
 
         image::Image<float> mask;
         std::string pictureFolderName = fs::path(sfmData.getView(viewIds[0]).getImagePath()).parent_path().filename().string();
-        std::string currentMaskPath = maskPath + "/" + pictureFolderName.erase(0,3) + ".png";
+        // If no mask folder was provided, do not make up a path anyway
+        std::string currentMaskPath = maskPath.empty() ? maskPath : maskPath + "/" + pictureFolderName.erase(0, 3) + ".png";
+
         loadMask(currentMaskPath, mask);
 
         photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, PSParameters, normals, albedo);

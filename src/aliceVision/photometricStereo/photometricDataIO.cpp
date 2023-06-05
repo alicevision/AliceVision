@@ -236,9 +236,16 @@ void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT
 
 void loadMask(std::string const& maskName, image::Image<float>& mask)
 {
-    if (!fs::exists(maskName))
+    if (!fs::exists(maskName) || maskName.empty())
     {
-        std::cout << "Cannot open '" << maskName << "'. Every pixel will be used!" << std::endl;
+        if (maskName.empty())
+        {
+            ALICEVISION_LOG_INFO("No mask folder was provided. Every pixel will be used.");
+        }
+        else
+        {
+            ALICEVISION_LOG_WARNING("Could not open '" << maskName << "'. Every pixel will be used.");
+        }
         Eigen::MatrixXf maskAux(1, 1);
         maskAux(0, 0) = 1;
         mask = maskAux;
