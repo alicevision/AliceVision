@@ -79,6 +79,7 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
 void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
     bool skipAll = true;
+    bool groupedImages = false;
     size_t dim = 3;
     if (PSParameters.SHOrder == 2)
     {
@@ -159,6 +160,8 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
             continue;
         }
         skipAll = false;
+        groupedImages = imageList.size() > 1 ? true : false;
+
         image::Image<float> mask;
         std::string pictureFolderName = fs::path(sfmData.getView(viewIds[0]).getImagePath()).parent_path().filename().string();
         // If no mask folder was provided, do not make up a path anyway
@@ -186,6 +189,14 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
             "All images were skipped and no photometric stereo could be processed. This might happen if no sphere has "
             "been detected in any of the input images, or if the light could not be calibrated.");
         ALICEVISION_THROW(std::invalid_argument, "No image was processed for the photometric stereo.");
+    }
+
+    if (!groupedImages)
+    {
+        ALICEVISION_LOG_WARNING(
+            "No images shared the same pose ID. "
+            << "Input images need to be located in a folder that starts with 'ps_' to be grouped together using their "
+               "pose ID. The photometric stereo cannot run otherwise.");
     }
 
     sfmData::SfMData albedoSfmData = sfmData;
