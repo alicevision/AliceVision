@@ -39,6 +39,8 @@ using namespace aliceVision;
 
 int aliceVision_main(int argc, char** argv)
 {
+    system::Timer timer;
+
     std::string inputSfMDataPath;
     std::string inputModelPath;
     std::string outputPath;
@@ -117,5 +119,6 @@ int aliceVision_main(int argc, char** argv)
         sphereDetection::writeManualSphereJSON(sfmData, sphereParam, fsOutputPath);
     }
 
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

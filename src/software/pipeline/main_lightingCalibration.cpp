@@ -44,6 +44,8 @@ using namespace aliceVision;
 
 int aliceVision_main(int argc, char **argv)
 {
+    system::Timer timer;
+
     std::string inputPath;
     std::string inputJSON;
     std::string ouputJSON;
@@ -91,5 +93,6 @@ int aliceVision_main(int argc, char **argv)
         lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method, saveAsModel);
     }
 
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

@@ -53,6 +53,8 @@ int aliceVision_main(int argc, char **argv)
     namespace po = boost::program_options;
     namespace fs = boost::filesystem;
 
+    system::Timer timer;
+
     bool isPerspective(true);
     std::string outputFolder;
     std::string pathToK;
@@ -100,6 +102,7 @@ int aliceVision_main(int argc, char **argv)
         photometricStereo::normalIntegration(sfmData, inputPath, isPerspective, downscale, outputFolder);
     }
 
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 };
 
