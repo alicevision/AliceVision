@@ -97,7 +97,7 @@ int aliceVision_main(int argc, char **argv)
     // If the path to light data is empty, set it to inputPath :
     if (pathToLightData.compare("") && fs::is_directory(inputPath))
     {
-        std::cout << "Warning : path to light data has been set to inputpath folder" << std::endl;
+        ALICEVISION_LOG_WARNING("Warning: path to light data has been set to inputpath folder");
         pathToLightData = inputPath;
     }
 
@@ -113,7 +113,7 @@ int aliceVision_main(int argc, char **argv)
         sfmData::SfMData sfmData;
         if (!sfmDataIO::Load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
         {
-            ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
+            ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read.");
             return EXIT_FAILURE;
         }
 

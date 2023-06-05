@@ -77,7 +77,8 @@ int aliceVision_main(int argc, char **argv)
 
     if (fs::is_directory(inputPath))
     {
-        std::cout << "Directory input : WIP" << std::endl;
+        ALICEVISION_LOG_ERROR("Directory input: WIP");
+        ALICEVISION_THROW(std::invalid_argument, "Input directories are not yet supported");
     }
     else
     {
@@ -90,5 +91,5 @@ int aliceVision_main(int argc, char **argv)
         lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method, saveAsModel);
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

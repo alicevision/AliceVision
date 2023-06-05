@@ -100,6 +100,6 @@ int aliceVision_main(int argc, char **argv)
         photometricStereo::normalIntegration(sfmData, inputPath, isPerspective, downscale, outputFolder);
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 };
 

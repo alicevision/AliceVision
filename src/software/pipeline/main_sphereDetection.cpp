@@ -116,5 +116,6 @@ int aliceVision_main(int argc, char** argv)
 
         sphereDetection::writeManualSphereJSON(sfmData, sphereParam, fsOutputPath);
     }
-    return 0;
+
+    return EXIT_SUCCESS;
 }
