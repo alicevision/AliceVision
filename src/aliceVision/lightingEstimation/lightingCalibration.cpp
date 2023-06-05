@@ -34,6 +34,7 @@ namespace bpt = boost::property_tree;
 namespace aliceVision {
 namespace lightingEstimation {
 
+
 void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath, const std::string& method, const bool saveAsModel)
 {
     std::vector<std::string> imageList;
@@ -61,23 +62,31 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
 
         if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
         {
-            ALICEVISION_LOG_INFO("  - " << imagePath.string());
-            imageList.push_back(imagePath.string());
-
             std::string sphereName = std::to_string(currentView.getViewId());
-            std::array<float,3> currentSphereParams;
-
-            for (auto& currentSphere : fileTree.get_child(sphereName))
+            auto sphereExists = (fileTree.get_child_optional(sphereName)).is_initialized();
+            if (sphereExists)
             {
-                currentSphereParams[0] = currentSphere.second.get_child("").get("x",0.0);
-                currentSphereParams[1] = currentSphere.second.get_child("").get("y",0.0);
-                currentSphereParams[2] = currentSphere.second.get_child("").get("r",0.0);
+                ALICEVISION_LOG_INFO ("  - " << imagePath.string ());
+                imageList.push_back (imagePath.string ());
+
+                std::array<float, 3> currentSphereParams;
+
+                for (auto& currentSphere: fileTree.get_child(sphereName))
+                {
+                    currentSphereParams[0] = currentSphere.second.get_child("").get("x", 0.0);
+                    currentSphereParams[1] = currentSphere.second.get_child("").get("y", 0.0);
+                    currentSphereParams[2] = currentSphere.second.get_child("").get("r", 0.0);
+                }
+
+                allSpheresParams.push_back(currentSphereParams);
+
+                IndexT intrinsicId = currentView.getIntrinsicId();
+                focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
             }
-
-            allSpheresParams.push_back(currentSphereParams);
-
-            IndexT intrinsicId = currentView.getIntrinsicId();
-            focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
+            else
+            {
+                ALICEVISION_LOG_WARNING ("No detected sphere found for '" << imagePath << "'.");
+            }
         }
     }
 
@@ -96,11 +105,12 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
         intList.push_back(lightingDirection.norm());
     }
 
-    // Write in JSON file :
-    writeJSON(outputPath, sfmData, lightMat, intList, saveAsModel);
+    // Write in JSON file
+    writeJSON(outputPath, sfmData, imageList, lightMat, intList, saveAsModel);
 }
 
-void lightCalibrationOneImage(const std::string& picturePath, const std::array<float, 3>& sphereParam, const float focal, const std::string& method, Eigen::Vector3f& lightingDirection)
+void lightCalibrationOneImage(const std::string& picturePath, const std::array<float, 3>& sphereParam,
+                              const float focal, const std::string& method, Eigen::Vector3f& lightingDirection)
 {
     // Read picture :
     image::Image<float> imageFloat;
@@ -173,7 +183,8 @@ void lightCalibrationOneImage(const std::string& picturePath, const std::array<f
     }
 }
 
-void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint)
+void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::Image<float>& imageFloat,
+                          Eigen::Vector2f& brigthestPoint)
 {
     image::Image<float> patch;
     std::array<float, 2> patchOrigin;
@@ -212,14 +223,16 @@ void createTriangleKernel(const size_t kernelSize, Eigen::VectorXf& kernel)
     }
 }
 
-void getNormalOnSphere(const float x_picture, const float y_picture, const std::array<float, 3>& sphereParam, Eigen::Vector3f& currentNormal)
+void getNormalOnSphere(const float x_picture, const float y_picture, const std::array<float, 3>& sphereParam,
+                       Eigen::Vector3f& currentNormal)
 {
     currentNormal(0) = (x_picture - sphereParam[0]) / sphereParam[2];
     currentNormal(1) = (y_picture - sphereParam[1]) / sphereParam[2];
     currentNormal(2) = -sqrt(1 - currentNormal(0) * currentNormal(0) - currentNormal(1) * currentNormal(1));
 }
 
-void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>& sphereParam, image::Image<float>& patch, std::array<float, 2>& patchOrigin)
+void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>& sphereParam,
+              image::Image<float>& patch, std::array<float, 2>& patchOrigin)
 {
     int minISphere = floor(sphereParam[1] - sphereParam[2] + imageFloat.rows()/2);
     int minJSphere = floor(sphereParam[0] - sphereParam[2] + imageFloat.cols()/2);
@@ -244,7 +257,8 @@ void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>&
     }
 }
 
-void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, const Eigen::MatrixXf& lightMat, const std::vector<float>& intList, const bool saveAsModel)
+void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, const std::vector<std::string>& imageList,
+               const Eigen::MatrixXf& lightMat, const std::vector<float>& intList, const bool saveAsModel)
 {
     bpt::ptree lightsTree;
     bpt::ptree fileTree;
@@ -261,7 +275,11 @@ void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, con
     {
         const fs::path imagePath = fs::path(viewId.getImagePath());
 
-        if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+        // The file may be in the input SfMData but may not have been calibrated: in that case, it is not in imageList
+        bool calibratedFile = (std::find(imageList.begin(), imageList.end(), viewId.getImagePath()) != imageList.end());
+
+        // Only write images that were actually used for the lighting calibration, instead of all the input images
+        if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant") && calibratedFile)
         {
             bpt::ptree lightTree;
             if (saveAsModel)
@@ -278,27 +296,32 @@ void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, con
             }
 
             // Light direction
-            bpt::ptree direction_node;
+            bpt::ptree directionNode;
             for (int i = 0; i < 3; i++)
             {
                 bpt::ptree cell;
                 cell.put_value<float>(lightMat(imgCpt, i));
-                direction_node.push_back(std::make_pair("", cell));
+                directionNode.push_back(std::make_pair("", cell));
             }
-            lightTree.add_child("direction", direction_node);
+            lightTree.add_child("direction", directionNode);
 
             // Light intensity
-            bpt::ptree intensity_node;
+            bpt::ptree intensityNode;
             for (unsigned int i = 0; i < 3; i++)
             {
                 bpt::ptree cell;
                 cell.put_value<float>(intList.at(imgCpt));
-                intensity_node.push_back(std::make_pair("", cell));
+                intensityNode.push_back(std::make_pair("", cell));
             }
-            lightTree.add_child("intensity", intensity_node);
+            lightTree.add_child("intensity", intensityNode);
             imgCpt++;
 
             lightsTree.push_back(std::make_pair("", lightTree));
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("'" << imagePath << "' is in the input SfMData but has not been used for the lighting " <<
+                                 "calibration or contains 'ambiant' in its filename.");
         }
     }
 
