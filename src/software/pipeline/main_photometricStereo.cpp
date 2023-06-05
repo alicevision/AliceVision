@@ -65,17 +65,25 @@ int aliceVision_main(int argc, char **argv)
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to the input: could be an SfMData file or a folder with images.");
+        ("inputPath,i", po::value<std::string>(&inputPath)->required(),
+         "Path to the input: could be an SfMData file or a folder with images.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "Output path.")
-        ("maskPath,m", po::value<std::string>(&maskPath)->default_value(""), "Path to mask folder/file.")
-        ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"), "Path to light file (JSON). If empty, .txt files are expected in the image folder.")
-        ("SHOrder,s", po::value<size_t>(&PSParameters.SHOrder)->default_value(0), "Spherical harmonics order, 0 = directional, 1 = directional + ambiant, 2 = second order SH.")
-        ("removeAmbiant,a", po::value<bool>(&PSParameters.removeAmbiant)->default_value(false), "True if the ambiant light is to be removed on PS images, false otherwise.")
-        ("isRobust,r", po::value<bool>(&PSParameters.isRobust)->default_value(false), "True to use the robust algorithm, false otherwise.")
-        ("downscale, d", po::value<int>(&PSParameters.downscale)->default_value(1), "Downscale factor for faster results.");
+        ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""),
+         "Output path.")
+        ("maskPath,m", po::value<std::string>(&maskPath)->default_value(""),
+         "Path to mask folder/file.")
+        ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"),
+         "Path to light file (JSON). If empty, .txt files are expected in the image folder.")
+        ("SHOrder,s", po::value<size_t>(&PSParameters.SHOrder)->default_value(0),
+         "Spherical harmonics order, 0 = directional, 1 = directional + ambiant, 2 = second order SH.")
+        ("removeAmbiant,a", po::value<bool>(&PSParameters.removeAmbiant)->default_value(false),
+         "True if the ambiant light is to be removed on PS images, false otherwise.")
+        ("isRobust,r", po::value<bool>(&PSParameters.isRobust)->default_value(false),
+         "True to use the robust algorithm, false otherwise.")
+        ("downscale, d", po::value<int>(&PSParameters.downscale)->default_value(1),
+         "Downscale factor for faster results.");
 
     CmdLine cmdline("AliceVision photometricStereo");
     cmdline.add(requiredParams);

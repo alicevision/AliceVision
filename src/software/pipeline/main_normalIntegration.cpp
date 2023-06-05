@@ -64,13 +64,17 @@ int aliceVision_main(int argc, char **argv)
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to the input: a folder containing the normal maps and the masks.")
-        ("outputPath,o", po::value<std::string>(&outputFolder)->required(), "Path to the output folder.");
+        ("inputPath,i", po::value<std::string>(&inputPath)->required(),
+         "Path to the input: a folder containing the normal maps and the masks.")
+        ("outputPath,o", po::value<std::string>(&outputFolder)->required(),
+         "Path to the output folder.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""), "Path to the input SfMData file.")
-        ("downscale,d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results.");
+        ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""),
+         "Path to the input SfMData file.")
+        ("downscale,d", po::value<int>(&downscale)->default_value(downscale),
+         "Downscale factor for faster results.");
 
     CmdLine cmdline("AliceVision normalIntegration");
     cmdline.add(requiredParams);
