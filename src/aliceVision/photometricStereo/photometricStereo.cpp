@@ -78,6 +78,7 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
 
 void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
+    bool skipAll = true;
     size_t dim = 3;
     if (PSParameters.SHOrder == 2)
     {
@@ -112,7 +113,6 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
             viewIds.push_back(viewId);
         }
 
-
         for (auto& viewId: viewIds)
         {
             const fs::path imagePath = fs::path(sfmData.getView(viewId).getImagePath());
@@ -139,6 +139,26 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
             buildLightMatFromJSON(lightData, viewIds, lightMat, intList);
         }
 
+        /* Ensure that there are as many images as light calibrations, and that the list of input images is not empty.
+         * If there is a mismatch between the sizes of the list of images and the list of intensities, this means that there was
+         * no light calibration for some images. Either the image had no sphere, or something went wrong during the sphere detection
+         * or light calibration stages. */
+        if (imageList.size() != intList.size() || imageList.size() < 1)
+        {
+            if (imageList.size() != intList.size())
+            {
+                ALICEVISION_LOG_WARNING("Mismatch between the number of images and the number of light intensities ("
+                                        << imageList.size() << " images, " << intList.size() << " light intensities). This might happen "
+                                        << "when no sphere was detected for an image in the list, and thus light was not calibrated for it.");
+                ALICEVISION_LOG_WARNING("Skipping iteration.");
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("Empty list, skipping iteration.");
+            }
+            continue;
+        }
+        skipAll = false;
         image::Image<float> mask;
         std::string pictureFolderName = fs::path(sfmData.getView(viewIds[0]).getImagePath()).parent_path().filename().string();
         // If no mask folder was provided, do not make up a path anyway
@@ -158,6 +178,14 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         }
 
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+    }
+
+    if (skipAll)
+    {
+        ALICEVISION_LOG_ERROR(
+            "All images were skipped and no photometric stereo could be processed. This might happen if no sphere has "
+            "been detected in any of the input images, or if the light could not be calibrated.");
+        ALICEVISION_THROW(std::invalid_argument, "No image was processed for the photometric stereo.");
     }
 
     sfmData::SfMData albedoSfmData = sfmData;
