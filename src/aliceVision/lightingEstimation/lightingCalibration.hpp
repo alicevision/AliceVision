@@ -57,12 +57,12 @@ void createTriangleKernel(const size_t kernelSize, Eigen::VectorXf& kernel);
 
 /**
  * @brief Compute the normal on a given point on a sphere
- * @param[in] x_picture The x coordinates of the point in the picture frame
- * @param[in] y_picture The y coordinates of the point in the picture frame
+ * @param[in] xPicture The x coordinates of the point in the picture frame
+ * @param[in] yPicture The y coordinates of the point in the picture frame
  * @param[in] sphereParam An array of 3 floating-point: the coordinates of the sphere center in the picture frame and the radius of the sphere
  * @param[out] currentNormal The normal vector
  */
-void getNormalOnSphere(const float x_picture, const float y_picture, const std::array<float, 3>& sphereParam,
+void getNormalOnSphere(const float xPicture, const float yPicture, const std::array<float, 3>& sphereParam,
                        Eigen::Vector3f& currentNormal);
 
 /**
