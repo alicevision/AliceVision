@@ -35,7 +35,8 @@ namespace aliceVision {
 namespace lightingEstimation {
 
 
-void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath, const std::string& method, const bool saveAsModel)
+void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath,
+                      const std::string& method, const bool saveAsModel)
 {
     std::vector<std::string> imageList;
     std::vector<std::array<float, 3>> allSpheresParams;
@@ -168,7 +169,9 @@ void lightCalibrationOneImage(const std::string& picturePath, const std::array<f
 
                     normalSphere(currentIndex,0) = (float(j) - radius) / radius;
                     normalSphere(currentIndex,1) = (float(i) - radius) / radius;
-                    normalSphere(currentIndex,2) = -sqrt(1 - normalSphere(currentIndex, 0) * normalSphere(currentIndex, 0) - normalSphere(currentIndex, 1) * normalSphere(currentIndex, 1));
+                    normalSphere(currentIndex, 2) =
+                        -sqrt(1 - normalSphere(currentIndex, 0) * normalSphere(currentIndex, 0) -
+                              normalSphere(currentIndex, 1) * normalSphere(currentIndex, 1));
 
                     ++currentIndex;
                 }
@@ -248,7 +251,8 @@ void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>&
     {
         for (size_t j = 0; j < patch.cols(); ++j)
         {
-            float distanceToCenter = (i - patch.rows() / 2) * (i - patch.rows() / 2) + (j - patch.cols() / 2) * (j - patch.cols() / 2);
+            float distanceToCenter = (i - patch.rows() / 2) * (i - patch.rows() / 2) +
+                                     (j - patch.cols() / 2) * (j - patch.cols() / 2);
             if (distanceToCenter > radius * radius + 2)
             {
                 patch(i, j) = 0;
