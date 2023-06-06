@@ -210,6 +210,23 @@ alicevision_add_software(aliceVision_exportCameraFrustums
         Boost::filesystem
 )
 
+# Export geometry and textures as USD
+if(ALICEVISION_HAVE_USD)
+  alicevision_add_software(aliceVision_exportUSD
+    SOURCE main_exportUSD.cpp
+    FOLDER ${FOLDER_SOFTWARE_EXPORT}
+    LINKS aliceVision_system
+          aliceVision_cmdline
+          aliceVision_mesh
+          Boost::filesystem
+          Boost::program_options
+          usd
+          usdGeom
+          usdImaging
+          usdShade
+  )
+endif()
+
 # Export distortion to be used in external tools
 alicevision_add_software(aliceVision_exportDistortion
   SOURCE main_exportDistortion.cpp

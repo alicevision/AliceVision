@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <map>
+#include <unordered_set>
 
 namespace aliceVision {
 namespace mesh {
@@ -1280,7 +1281,7 @@ void Mesh::laplacianSmoothPts(StaticVector<StaticVector<int>>& ptsNeighPts, doub
     }
 }
 
-Point3d Mesh::computeTriangleNormal(int idTri)
+Point3d Mesh::computeTriangleNormal(int idTri) const
 {
     const Mesh::triangle& t = tris[idTri];
     return cross((pts[t.v[1]] - pts[t.v[0]]).normalize(),
@@ -1310,14 +1311,14 @@ double Mesh::computeTriangleMinEdgeLength(int idTri) const
                      (pts[t.v[2]] - pts[t.v[0]]).size()});
 }
 
-void Mesh::computeNormalsForPts(StaticVector<Point3d>& out_nms)
+void Mesh::computeNormalsForPts(StaticVector<Point3d>& out_nms) const
 {
     StaticVector<StaticVector<int>> ptsNeighTris;
     getPtsNeighborTriangles(ptsNeighTris);
     computeNormalsForPts(ptsNeighTris, out_nms);
 }
 
-void Mesh::computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, StaticVector<Point3d>& out_nms)
+void Mesh::computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, StaticVector<Point3d>& out_nms) const
 {
     out_nms.reserve(pts.size());
     out_nms.resize_with(pts.size(), Point3d(0.0f, 0.0f, 0.0f));
@@ -1333,7 +1334,7 @@ void Mesh::computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, S
             {
                 Point3d n1 = computeTriangleNormal(triTmp[j]);
                 n1 = n1.normalize();
-                if(!std::isnan(n1.x) && !std::isnan(n1.y) && std::isnan(n1.z)) // check if is not NaN
+                if(!std::isnan(n1.x) && !std::isnan(n1.y) && !std::isnan(n1.z)) // check if is not NaN
                 {
                     n = n + computeTriangleNormal(triTmp[j]);
                     nn += 1.0f;
@@ -2350,7 +2351,7 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
     }
 }
 
-void Mesh::load(const std::string& filepath)
+void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material* material)
 {
     Assimp::Importer importer;
 
@@ -2419,6 +2420,11 @@ void Mesh::load(const std::string& filepath)
         ALICEVISION_THROW_ERROR("Failed loading mesh from file: " << filepath);
     }
 
+    // Assimp creates a default material on import, so if we load an mtl with custom materials
+    // we need to offset the triangle material ids by 1 to match atlas ids used elsewhere
+    const aiString defMatMame(AI_DEFAULT_MATERIAL_NAME);
+    const int materialIdOffset = scene->mNumMaterials > 1 && scene->mMaterials[0]->GetName() == defMatMame ? 1 : 0;
+
     std::list<aiNode *> nodes;
     nodes.push_back(scene->mRootNode);
 
@@ -2476,7 +2482,7 @@ void Mesh::load(const std::string& filepath)
                 if (mesh->HasNormals())
                 {
                     const aiVector3D n = mesh->mNormals[idPoint];
-                    normals.push_back(Point3d(n.x, -n.y, -n.z));      
+                    normals.push_back(Point3d(n.x, -n.y, -n.z));
                 }
             }
 
@@ -2514,7 +2520,7 @@ void Mesh::load(const std::string& filepath)
                 }
 
                 tris.push_back(triangle);
-                _trisMtlIds.push_back(mesh->mMaterialIndex);
+                _trisMtlIds.push_back(mesh->mMaterialIndex - materialIdOffset);
                 trisUvIds.push_back(uvids);
 
                 if (mesh->HasNormals())
@@ -2529,9 +2535,82 @@ void Mesh::load(const std::string& filepath)
             nodes.push_back(node->mChildren[idChild]);
         }
     }
+
+    // merge coincident verts and update triangle ids
+    // keep uvs and normals as is to allow for face varying data
+    if (mergeCoincidentVerts)
+    {
+        std::map<int, int> oldToNewMap;
+        StaticVector<Point3d> uniquePoints;
+        for(int i = 0; i < pts.size(); ++i)
+        {
+            const Point3d& p = pts[i];
+            const auto it = std::find(uniquePoints.begin(), uniquePoints.end(), p);
+            if(it == uniquePoints.end())
+            {
+                oldToNewMap[i] = uniquePoints.size();
+                uniquePoints.push_back(p);
+            }
+            else
+            {
+                oldToNewMap[i] = static_cast<int>(std::distance(uniquePoints.begin(), it));
+            }
+        }
+
+        pts = uniquePoints;
+        for(triangle& f : tris)
+        {
+            f.v[0] = oldToNewMap[f.v[0]];
+            f.v[1] = oldToNewMap[f.v[1]];
+            f.v[2] = oldToNewMap[f.v[2]];
+        }
+    }
+
+    // set number of materials used
+    const std::unordered_set<int> materialIds = std::unordered_set<int>(_trisMtlIds.begin(), _trisMtlIds.end());
+    nmtls = static_cast<int>(materialIds.size());
+
+    // store textures per atlas
+    if (material != nullptr)
+    {
+        // get material properties from the first material as they are shared across all others
+        scene->mMaterials[1]->Get(AI_MATKEY_COLOR_AMBIENT, material->ambient);
+        scene->mMaterials[1]->Get(AI_MATKEY_COLOR_DIFFUSE, material->diffuse);
+        scene->mMaterials[1]->Get(AI_MATKEY_COLOR_SPECULAR, material->specular);
+        scene->mMaterials[1]->Get(AI_MATKEY_SHININESS, material->shininess);
+
+        for (int id : materialIds)
+        {
+            aiString diffuse;
+            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), diffuse) == aiReturn_SUCCESS)
+            {
+                material->addTexture(Material::TextureType::DIFFUSE, std::string(diffuse.C_Str()));
+            }
+
+            aiString displacement;
+            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_DISPLACEMENT(0), displacement) == aiReturn_SUCCESS)
+            {
+                material->addTexture(Material::TextureType::DISPLACEMENT, std::string(displacement.C_Str()));
+            }
+
+            aiString normal;
+            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_NORMALS(0), normal) == aiReturn_SUCCESS)
+            {
+                material->addTexture(Material::TextureType::NORMAL, std::string(normal.C_Str()));
+            }
+
+            aiString height;
+            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_HEIGHT(0), height) == aiReturn_SUCCESS)
+            {
+                material->addTexture(Material::TextureType::BUMP, std::string(height.C_Str()));
+            }
+        }
+    }
+
     ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
     ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
     ALICEVISION_LOG_DEBUG("UVs: " << uvCoords.size());
+    ALICEVISION_LOG_DEBUG("Num Materials: " + std::to_string(nmtls));
 }
 
 bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat,
