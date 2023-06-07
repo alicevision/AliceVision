@@ -142,7 +142,7 @@ std::ostream& operator<<(std::ostream& os, EStorageDataType dataType);
 std::istream& operator>>(std::istream& in, EStorageDataType& dataType);
 
 /**
-* @brief Compression method use to write an exr image
+* @brief Compression method used to write an exr image
 */
 enum class EImageExrCompression
 {
@@ -248,8 +248,10 @@ public:
     EImageColorSpace getFromColorSpace() const { return _fromColorSpace; }
     EImageColorSpace getToColorSpace() const { return _toColorSpace; }
     EStorageDataType getStorageDataType() const { return _storageDataType; }
-    EImageExrCompression getCompressionMethod() const { return _compressionMethod; }
-    int getCompressionLevel() const { return _compressionLevel; }
+    EImageExrCompression getExrCompressionMethod() const { return _exrCompressionMethod; }
+    int getExrCompressionLevel() const { return _exrCompressionLevel; }
+    bool getJpegCompress() const { return _jpegCompress; }
+    int getJpegQuality() const { return _jpegQuality; }
 
     ImageWriteOptions& fromColorSpace(EImageColorSpace colorSpace)
     {
@@ -269,15 +271,27 @@ public:
         return *this;
     }
 
-    ImageWriteOptions& compressionMethod(EImageExrCompression compressionMethod)
+    ImageWriteOptions& exrCompressionMethod(EImageExrCompression compressionMethod)
     {
-        _compressionMethod = compressionMethod;
+        _exrCompressionMethod = compressionMethod;
         return *this;
     }
 
-    ImageWriteOptions& compressionLevel(int compressionLevel)
+    ImageWriteOptions& exrCompressionLevel(int compressionLevel)
     {
-        _compressionLevel = compressionLevel;
+        _exrCompressionLevel = compressionLevel;
+        return *this;
+    }
+
+    ImageWriteOptions& jpegCompress(bool compress)
+    {
+        _jpegCompress = compress;
+        return *this;
+    }
+
+    ImageWriteOptions& jpegQuality(int quality)
+    {
+        _jpegQuality = quality;
         return *this;
     }
 
@@ -285,8 +299,10 @@ private:
     EImageColorSpace _fromColorSpace{EImageColorSpace::LINEAR};
     EImageColorSpace _toColorSpace{EImageColorSpace::AUTO};
     EStorageDataType _storageDataType{EStorageDataType::Undefined};
-    EImageExrCompression _compressionMethod{EImageExrCompression::Auto};
-    int _compressionLevel{0};
+    EImageExrCompression _exrCompressionMethod{EImageExrCompression::Auto};
+    int _exrCompressionLevel{0};
+    bool _jpegCompress{true};
+    int _jpegQuality{90};
 };
 
 /**

@@ -912,32 +912,36 @@ void writeImage(const std::string& path,
     imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
 
     std::string compressionMethod = "none";
-
-    if (options.getCompressionMethod() == EImageExrCompression::Auto)
+    if (isEXR)
     {
-        compressionMethod = isEXR ? "zips" : "none";
-    }
-    else if (options.getCompressionMethod() != EImageExrCompression::None)
-    {
-        compressionMethod = EImageExrCompression_enumToString(options.getCompressionMethod());
-        if (isEXR)
+        const std::string methodName = EImageExrCompression_enumToString(options.getExrCompressionMethod());
+        const int compressionLevel = options.getExrCompressionLevel();
+        std::string suffix = "";
+        switch (options.getExrCompressionMethod())
         {
-            const int compressionLevel = std::max<int>(options.getCompressionLevel(), 0);
-            if (compressionLevel > 0)
-            {
-                if ((options.getCompressionMethod() == EImageExrCompression::DWAA || options.getCompressionMethod() == EImageExrCompression::DWAB))
-                {
-                    compressionMethod += ":" + std::to_string(compressionLevel);
-                }
-                else if ((options.getCompressionMethod() == EImageExrCompression::ZIP || options.getCompressionMethod() == EImageExrCompression::ZIPS))
-                {
-                    compressionMethod += ":" + std::to_string(std::min<int>(compressionLevel, 9));
-                }
-            }
+            case EImageExrCompression::Auto:
+                compressionMethod = "zips";
+                break;
+            case EImageExrCompression::DWAA:
+            case EImageExrCompression::DWAB:
+                if (compressionLevel > 0) suffix = ":" + std::to_string(compressionLevel);
+                compressionMethod = methodName + suffix;
+                break;
+            case EImageExrCompression::ZIP:
+            case EImageExrCompression::ZIPS:
+                if (compressionLevel > 0) suffix = ":" + std::to_string(std::min(compressionLevel, 9));
+                compressionMethod = methodName + suffix;
+                break;
+            default:
+                compressionMethod = methodName;
+                break;
         }
-        else if (isJPG)
+    }
+    else if (isJPG)
+    {
+        if (options.getJpegCompress())
         {
-            compressionMethod = "jpeg:" + std::to_string(std::min<int>(std::max<int>(options.getCompressionLevel(), 0), 100));
+            compressionMethod = "jpeg:" + std::to_string(std::clamp(options.getJpegQuality(), 0, 100));
         }
     }
 
