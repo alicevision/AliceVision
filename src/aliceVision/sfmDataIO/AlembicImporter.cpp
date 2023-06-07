@@ -589,10 +589,11 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     // imgHeight = vaperture_cm * 10.0 * mm2pix;
 
     // create intrinsic parameters object
-    std::shared_ptr<camera::IntrinsicBase> intrinsic = createIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = createIntrinsic(
+        /*intrinsic type*/ EINTRINSIC_stringToEnum(mvg_intrinsicType),
+        /*width*/          sensorSize_pix.at(0),
+        /*height*/         sensorSize_pix.at(1));
 
-    intrinsic->setWidth(sensorSize_pix.at(0));
-    intrinsic->setHeight(sensorSize_pix.at(1));
     intrinsic->setSensorWidth(sensorSize_mm.at(0));
     intrinsic->setSensorHeight(sensorSize_mm.at(1));
     intrinsic->importFromParams(mvg_intrinsicParams, abcVersion);
