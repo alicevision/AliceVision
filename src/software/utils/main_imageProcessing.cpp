@@ -32,6 +32,14 @@
 #include <OpenImageIO/imagebufalgo.h>
 #include <OpenImageIO/color.h>
 
+#include <string>
+#include <cmath>
+#include <vector>
+#include <map>
+#include <iostream>
+#include <algorithm>
+
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
@@ -1073,7 +1081,7 @@ int aliceVision_main(int argc, char * argv[])
                 options.colorProfileFileName = view.getColorProfileFileName();
                 options.demosaicingAlgo = demosaicingAlgo;
                 options.highlightMode = highlightMode;
-                options.rawExposureAdjustment = powf(2.f, pParams.rawExposureAdjust);
+                options.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
                 options.rawAutoBright = pParams.rawAutoBright;
             }
 
@@ -1311,7 +1319,7 @@ int aliceVision_main(int argc, char * argv[])
                 readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
                 readOptions.demosaicingAlgo = demosaicingAlgo;
                 readOptions.highlightMode = highlightMode;
-                readOptions.rawExposureAdjustment = powf(2.f, pParams.rawExposureAdjust);
+                readOptions.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
                 readOptions.rawAutoBright = pParams.rawAutoBright;
 
                 pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
