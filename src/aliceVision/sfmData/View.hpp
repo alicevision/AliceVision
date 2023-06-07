@@ -14,6 +14,9 @@
 #include <utility>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/dcp.hpp>
+#include <aliceVision/sensorDB/Datasheet.hpp>
+#include <aliceVision/camera/intrinsicInitMode.hpp>
+#include <aliceVision/lensCorrectionProfile/lcp.hpp>
 
 namespace aliceVision {
 namespace sfmData {
@@ -295,7 +298,6 @@ public:
   {
     return _intrinsicId;
   }
-
 
   /**
    * @brief Get the pose id
@@ -846,6 +848,35 @@ public:
           addMetadata("AliceVision:DCP:CameraCalibrationMat" + std::to_string(k + 1), v_strCalibMatrix[k]);
       }
   }
+
+
+  /**
+   * @brief Add vignetting model parameters in metadata
+   * @param[in] The lens data extracted from a LCP file
+   */
+  void addVignettingMetadata(LensParam& lensParam)
+  {
+      addMetadata("AliceVision:VignParamFocX", std::to_string(lensParam.vignParams.FocalLengthX));
+      addMetadata("AliceVision:VignParamFocY", std::to_string(lensParam.vignParams.FocalLengthY));
+      addMetadata("AliceVision:VignParamCenterX", std::to_string(lensParam.vignParams.ImageXCenter));
+      addMetadata("AliceVision:VignParamCenterY", std::to_string(lensParam.vignParams.ImageYCenter));
+      addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
+      addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
+      addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
+  }
+
+  /**
+   * @brief Get sensor size by combining info in metadata and in sensor database
+   * @param[in] sensorDatabase The sensor database
+   * @param[out] sensorWidth The sensor width
+   * @param[out] sensorHeight The sensor height
+   * @param[out] focalLengthmm The focal length
+   * @param[out] intrinsicInitMode The intrinsic init mode
+   * @param[in] verbose Enable verbosity
+   * @return A Error or Warning code: 1 - Unkwnown sensor, 2 - No metadata, 3 - Unsure sensor, 4 - Computation from 35mm Focal
+   */
+  int getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, double& sensorWidth, double& sensorHeight, double& focalLengthmm, camera::EInitMode& intrinsicInitMode,
+                    bool verbose = false);
 
 private:
 

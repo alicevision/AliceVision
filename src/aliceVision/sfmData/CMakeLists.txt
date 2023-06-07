@@ -26,6 +26,7 @@ alicevision_add_library(aliceVision_sfmData
     aliceVision_feature
     aliceVision_geometry
     aliceVision_camera
+    aliceVision_sensorDB
     aliceVision_stl
     Boost::filesystem
   PRIVATE_LINKS

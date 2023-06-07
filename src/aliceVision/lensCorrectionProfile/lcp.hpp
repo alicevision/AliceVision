@@ -182,6 +182,12 @@ public:
     void clear();
 
     /**
+     * @brief Indicate that no geometric model is available
+     * @return true if no geometric model is available
+     */
+    bool isEmpty() const { return perspParams.isEmpty && fisheyeParams.isEmpty; }
+
+    /**
      * @brief Indicate that paramaters apply for a fisheye lens
      * @return true if the fisheye model is the valid one
      */

@@ -13,9 +13,10 @@
 #include <utility>
 #include <regex>
 
-
 #include <iostream>
 #include <aliceVision/numeric/gps.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
 
 namespace aliceVision {
 namespace sfmData {
@@ -192,6 +193,187 @@ Vec3 View::getGpsPositionWGS84FromMetadata() const
     getGpsPositionWGS84FromMetadata(lat, lon, alt);
 
     return {lat, lon, alt};
+}
+
+int View::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, double& sensorWidth, double& sensorHeight,
+                        double& focalLengthmm, camera::EInitMode& intrinsicInitMode, bool verbose)
+{
+    int errCode = 0;
+
+    enum class ESensorWidthSource
+    {
+        FROM_DB,
+        FROM_METADATA_ESTIMATION,
+        UNKNOWN
+    } sensorWidthSource = ESensorWidthSource::UNKNOWN;
+
+    const std::string& make = getMetadataMake();
+    const std::string& model = getMetadataModel();
+    focalLengthmm = getMetadataFocalLength();
+    const bool hasCameraMetadata = (!make.empty() || !model.empty());
+
+    if (hasCameraMetadata)
+    {
+        intrinsicInitMode = camera::EInitMode::UNKNOWN;
+        sensorDB::Datasheet datasheet;
+        if (sensorDB::getInfo(make, model, sensorDatabase, datasheet))
+        {
+            if (verbose)
+            {
+                // sensor is in the database
+                ALICEVISION_LOG_TRACE("Sensor width found in sensor database: " << std::endl
+                                                                                << "\t- brand: " << make << std::endl
+                                                                                << "\t- model: " << model << std::endl
+                                                                                << "\t- sensor width: " << datasheet._sensorWidth << " mm");
+            }
+
+            if ((datasheet._model != model) && (datasheet._model != make + " " + model))
+            {
+                // the camera model in sensor database is slightly different
+                errCode = 3;
+
+                if (verbose)
+                {
+                    ALICEVISION_LOG_WARNING("The camera found in the sensor database is slightly different for image " << getImagePath());
+                    ALICEVISION_LOG_WARNING("\t- image camera brand: " << make << std::endl
+                                                                       << "\t- image camera model: " << model << std::endl
+                                                                       << "\t- sensor database camera brand: " << datasheet._brand << std::endl
+                                                                       << "\t- sensor database camera model: " << datasheet._model << std::endl
+                                                                       << "\t- sensor database camera sensor width: " << datasheet._sensorWidth << " mm");
+                    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the sensor database." << std::endl);
+                }
+            }
+
+            sensorWidth = datasheet._sensorWidth;
+            sensorWidthSource = ESensorWidthSource::FROM_DB;
+
+            if (focalLengthmm > 0.0)
+            {
+                intrinsicInitMode = camera::EInitMode::ESTIMATED;
+            }
+        }
+    }
+
+    // try to find / compute with 'FocalLengthIn35mmFilm' metadata
+    const bool hasFocalIn35mmMetadata = hasDigitMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"});
+    if (hasFocalIn35mmMetadata)
+    {
+        const double imageRatio = static_cast<double>(getWidth()) / static_cast<double>(getHeight());
+        const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
+        const double focalIn35mm = hasFocalIn35mmMetadata ? getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"}) : -1.0;
+
+        if (sensorWidth == -1.0)
+        {
+            const double invRatio = 1.0 / imageRatio;
+
+            if (focalLengthmm > 0.0)
+            {
+                // no sensorWidth but valid focalLength and valid focalLengthIn35mm, so deduce
+                // sensorWith approximation
+                const double sensorDiag = (focalLengthmm * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
+                sensorWidth = sensorDiag * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+                sensorWidthSource = ESensorWidthSource::FROM_METADATA_ESTIMATION;
+            }
+            else
+            {
+                // no sensorWidth and no focalLength but valid focalLengthIn35mm, so consider sensorWith
+                // as 35mm
+                sensorWidth = diag24x36 * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+                focalLengthmm = sensorWidth * (focalIn35mm) / 36.0;
+                sensorWidthSource = ESensorWidthSource::UNKNOWN;
+            }
+            errCode = 4;
+
+            if (verbose)
+            {
+                std::stringstream ss;
+                ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image " << getImagePath() << "\n";
+                ss << "\t- sensor width: " << sensorWidth << "\n";
+                ss << "\t- focal length: " << focalLengthmm << "\n";
+                ALICEVISION_LOG_DEBUG(ss.str());
+            }
+
+            sensorHeight = (imageRatio > 1.0) ? sensorWidth / imageRatio : sensorWidth * imageRatio;
+
+            intrinsicInitMode = camera::EInitMode::ESTIMATED;
+        }
+        else if (sensorWidth > 0 && focalLengthmm <= 0)
+        {
+            // valid sensorWidth and valid focalLengthIn35mm but no focalLength, so convert
+            // focalLengthIn35mm to the actual width of the sensor
+            const double sensorDiag = std::sqrt(std::pow(sensorWidth, 2) + std::pow(sensorWidth / imageRatio, 2));
+            focalLengthmm = (sensorDiag * focalIn35mm) / diag24x36;
+
+            errCode = 4;
+
+            if (verbose)
+            {
+                std::stringstream ss;
+                ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image " << getImagePath() << "\n";
+                ss << "\t- sensor width: " << sensorWidth << "\n";
+                ss << "\t- focal length: " << focalLengthmm << "\n";
+                ALICEVISION_LOG_DEBUG(ss.str());
+            }
+
+            intrinsicInitMode = camera::EInitMode::ESTIMATED;
+        }
+    }
+
+    // error handling
+    if (sensorWidth == -1.0)
+    {
+        if (hasCameraMetadata)
+        {
+            // sensor is not in the database
+            errCode = 1;
+            if (verbose)
+            {
+                std::stringstream ss;
+                ss << "Sensor width doesn't exist in the sensor database for image " << getImagePath() << "\n";
+                ss << "\t- camera brand: " << make << "\n";
+                ss << "\t- camera model: " << model << "\n";
+                ss << "Please add camera model and sensor width in the database.";
+                ALICEVISION_LOG_WARNING(ss.str());
+            }
+        }
+        else
+        {
+            // no metadata 'Make' and 'Model' can't find sensor width
+            errCode = 2;
+            if (verbose)
+            {
+                std::stringstream ss;
+                ss << "No metadata in image " << getImagePath() << "\n";
+                ALICEVISION_LOG_DEBUG(ss.str());
+            }
+        }
+    }
+    else
+    {
+        // we have a valid sensorWidth information, so we store it into the metadata (where it would
+        // have been nice to have it in the first place)
+        if (sensorWidthSource == ESensorWidthSource::FROM_DB)
+        {
+            addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
+        }
+        else if (sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION)
+        {
+            addMetadata("AliceVision:SensorWidthEstimation", std::to_string(sensorWidth));
+        }
+    }
+
+    if (sensorWidth < 0)
+    {
+        if (verbose)
+        {
+            ALICEVISION_LOG_WARNING("Sensor size is unknown");
+            ALICEVISION_LOG_WARNING("Use default sensor size (24x36 mm)");
+        }
+        sensorWidth = 36.0;
+        sensorHeight = 24.0;
+    }
+
+    return errCode;
 }
 
 std::string GPSExifTags::latitude()
