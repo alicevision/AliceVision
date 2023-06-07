@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2020 AliceVision contributors.
+// Copyright (c) 2023 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -195,6 +195,8 @@ int aliceVision_main(int argc, char** argv)
     std::string outputPanoramaPath;
     std::string outputPanoramaPreviewPath = "";
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+    image::EImageExrCompression compressionMethod = image::EImageExrCompression::Auto;
+    int compressionLevel = 0;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     size_t previewSize = 1000;
     bool fillHoles = false;  
@@ -209,6 +211,14 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+
+        ("compressionMethod", po::value<image::EImageExrCompression>(&compressionMethod)->default_value(compressionMethod),
+         ("Compression Method: " + image::EImageExrCompression_informations()).c_str())
+
+        ("compressionLevel", po::value<int>(&compressionLevel)->default_value(compressionLevel),
+         "Compression Level (must be strictly positive to be considered)\n"
+         "Only dwaa, dwab, zip and zips compression methods are concerned.")
+
         ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
         ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.")
@@ -277,7 +287,30 @@ int aliceVision_main(int argc, char** argv)
     oiio::ImageSpec outputSpec(inputSpec);
     outputSpec.tile_width = 0;
     outputSpec.tile_height = 0;
-	outputSpec.attribute("compression", "zip");
+
+    std::string compressionMethod_str = "none";
+
+    if (compressionMethod == image::EImageExrCompression::Auto)
+    {
+        compressionMethod_str = "zip";
+    }
+    else if (compressionMethod != image::EImageExrCompression::None)
+    {
+        compressionMethod_str = EImageExrCompression_enumToString(compressionMethod);
+        if (compressionLevel > 0)
+        {
+            if ((compressionMethod == image::EImageExrCompression::DWAA || compressionMethod == image::EImageExrCompression::DWAB))
+            {
+                compressionMethod_str += ":" + std::to_string(compressionLevel);
+            }
+            else if ((compressionMethod == image::EImageExrCompression::ZIP || compressionMethod == image::EImageExrCompression::ZIPS))
+            {
+                compressionMethod_str += ":" + std::to_string(std::min<int>(compressionLevel, 9));
+            }
+        }
+    }
+	outputSpec.attribute("compression", compressionMethod_str);
+
     outputSpec.extra_attribs.remove("openexr:lineOrder");
     outputSpec.attribute("AliceVision:ColorSpace",image::EImageColorSpace_enumToString(outputColorSpace));
 

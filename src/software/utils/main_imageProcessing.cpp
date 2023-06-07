@@ -1,3 +1,9 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -25,6 +31,14 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 #include <OpenImageIO/color.h>
+
+#include <string>
+#include <cmath>
+#include <vector>
+#include <map>
+#include <iostream>
+#include <algorithm>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -665,8 +679,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 }
 
 void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath, std::map<std::string, std::string> inputMetadata,
-               const std::vector<std::string>& metadataFolders, const image::EImageColorSpace workingColorSpace, const EImageFormat outputFormat,
-               const image::EImageColorSpace outputColorSpace, const image::EStorageDataType storageDataType)
+               const std::vector<std::string>& metadataFolders, const EImageFormat outputFormat, const image::ImageWriteOptions options)
 {
     // Read metadata path
     std::string metadataFilePath;
@@ -727,16 +740,6 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
         metadata = image::readImageMetadata(inputPath);
     }
 
-    image::ImageWriteOptions options;
-    options.fromColorSpace(workingColorSpace);
-    options.toColorSpace(outputColorSpace);
-
-    if(isEXR)
-    {
-        // Select storage data type
-        options.storageDataType(storageDataType);
-    }
-
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
     
@@ -769,6 +772,10 @@ int aliceVision_main(int argc, char * argv[])
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::LINEAR;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+    image::EImageExrCompression exrCompressionMethod = image::EImageExrCompression::Auto;
+    int exrCompressionLevel = 0;
+    bool jpegCompress = true;
+    int jpegQuality = 90;
     std::string extension;
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::DcpLinearProcessing;
     std::string colorProfileDatabaseDirPath = "";
@@ -913,6 +920,21 @@ int aliceVision_main(int argc, char * argv[])
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+
+        ("exrCompressionMethod", po::value<image::EImageExrCompression>(&exrCompressionMethod)->default_value(exrCompressionMethod),
+         ("Compression method for EXR images: " + image::EImageExrCompression_informations()).c_str())
+
+        ("exrCompressionLevel", po::value<int>(&exrCompressionLevel)->default_value(exrCompressionLevel),
+         "Compression Level for EXR images.\n"
+         "Only dwaa, dwab, zip and zips compression methods are concerned.\n"
+         "dwaa/dwab: value must be strictly positive.\n"
+         "zip/zips: value must be between 1 and 9.")
+        
+        ("jpegCompress", po::value<bool>(&jpegCompress)->default_value(jpegCompress),
+         "Compress JPEG images.")
+        
+        ("jpegQuality", po::value<int>(&jpegQuality)->default_value(jpegQuality),
+         "JPEG quality after compression (between 0 and 100).")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
@@ -1059,7 +1081,7 @@ int aliceVision_main(int argc, char * argv[])
                 options.colorProfileFileName = view.getColorProfileFileName();
                 options.demosaicingAlgo = demosaicingAlgo;
                 options.highlightMode = highlightMode;
-                options.rawExposureAdjustment = powf(2.f, pParams.rawExposureAdjust);
+                options.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
                 options.rawAutoBright = pParams.rawAutoBright;
             }
 
@@ -1105,8 +1127,23 @@ int aliceVision_main(int argc, char * argv[])
                 workingColorSpace = image::EImageColorSpace::ACES2065_1;
             }
 
+            image::ImageWriteOptions writeOptions;
+
+            writeOptions.fromColorSpace(workingColorSpace);
+            writeOptions.toColorSpace(outputColorSpace);
+            writeOptions.exrCompressionMethod(exrCompressionMethod);
+            writeOptions.exrCompressionLevel(exrCompressionLevel);
+            writeOptions.jpegCompress(jpegCompress);
+            writeOptions.jpegQuality(jpegQuality);
+
+            if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
+            {
+                // Select storage data type
+                writeOptions.storageDataType(storageDataType);
+            }
+
             // Save the image
-            saveImage(image, viewPath, outputfilePath, view.getMetadata(), metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, viewPath, outputfilePath, view.getMetadata(), metadataFolders, outputFormat, writeOptions);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -1282,7 +1319,7 @@ int aliceVision_main(int argc, char * argv[])
                 readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
                 readOptions.demosaicingAlgo = demosaicingAlgo;
                 readOptions.highlightMode = highlightMode;
-                readOptions.rawExposureAdjustment = powf(2.f, pParams.rawExposureAdjust);
+                readOptions.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
                 readOptions.rawAutoBright = pParams.rawAutoBright;
 
                 pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
@@ -1301,8 +1338,21 @@ int aliceVision_main(int argc, char * argv[])
             // Image processing
             processImage(image, pParams, md);
 
+            image::ImageWriteOptions writeOptions;
+
+            writeOptions.fromColorSpace(workingColorSpace);
+            writeOptions.toColorSpace(outputColorSpace);
+            writeOptions.exrCompressionMethod(exrCompressionMethod);
+            writeOptions.exrCompressionLevel(exrCompressionLevel);
+
+            if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
+            {
+                // Select storage data type
+                writeOptions.storageDataType(storageDataType);
+            }
+
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, outputFormat, writeOptions);
         }
     }
 
