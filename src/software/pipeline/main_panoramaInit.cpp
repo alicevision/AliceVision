@@ -1154,9 +1154,32 @@ int main(int argc, char* argv[])
             for(const auto& item_rotation : rotations)
             {
                 IndexT viewIdx = namesWithRank[index].second;
-                if(item_rotation.second.trace() != 0)
+                const sfmData::View& v = sfmData.getView(viewIdx);
+
+                sfmData::EEXIFOrientation orientation = v.getMetadataOrientation();
+                double orientationAngle = 0.;
+                switch (orientation)
                 {
-                    sfmData::CameraPose pose(geometry::Pose3(item_rotation.second, Eigen::Vector3d::Zero()));
+                    case sfmData::EEXIFOrientation::UPSIDEDOWN:
+                        orientationAngle = boost::math::constants::pi<double>();
+                        break;
+                    case sfmData::EEXIFOrientation::LEFT:
+                        orientationAngle = boost::math::constants::pi<double>() * .5;
+                        break;
+                    case sfmData::EEXIFOrientation::RIGHT:
+                        orientationAngle = boost::math::constants::pi<double>() * -.5;
+                        break;
+                    default:
+                        break;
+                }
+
+                const Eigen::AngleAxis<double> Morientation(orientationAngle, Eigen::Vector3d::UnitZ());
+
+                const Eigen::Matrix3d viewRotation = Morientation.toRotationMatrix().transpose() * item_rotation.second;
+
+                if(viewRotation.trace() != 0)
+                {
+                    sfmData::CameraPose pose(geometry::Pose3(viewRotation, Eigen::Vector3d::Zero()));
                     sfmData.setAbsolutePose(viewIdx, pose);
                 }
                 ++index;
