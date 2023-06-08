@@ -188,7 +188,7 @@ bool prepareDenseScene(const SfMData& sfmData,
                 projectionMatrix << P(0, 0), P(0, 1), P(0, 2), P(0, 3),
                                     P(1, 0), P(1, 1), P(1, 2), P(1, 3),
                                     P(2, 0), P(2, 1), P(2, 2), P(2, 3),
-                                            0,       0,       0,       1;
+                                         0,       0,       0,       1;
 
                 // convert matrices to rowMajor
                 std::vector<double> vP(projectionMatrix.size());
@@ -346,8 +346,7 @@ int aliceVision_main(int argc, char *argv[])
     // set range
     if(rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0 ||
-            rangeStart > sfmData.getViews().size())
+        if(rangeStart < 0 || rangeSize < 0)
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
@@ -357,6 +356,12 @@ int aliceVision_main(int argc, char *argv[])
             rangeSize = sfmData.views.size() - rangeStart;
 
         rangeEnd = rangeStart + rangeSize;
+
+        if(rangeSize <= 0)
+        {
+            ALICEVISION_LOG_WARNING("Nothing to compute.");
+            return EXIT_SUCCESS;
+        }
     }
     else
     {
@@ -364,7 +369,8 @@ int aliceVision_main(int argc, char *argv[])
     }
 
     // export
-    if(prepareDenseScene(sfmData, imagesFolders, masksFolders, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
+    if(prepareDenseScene(sfmData, imagesFolders, masksFolders, rangeStart, rangeEnd,
+                         outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
         return EXIT_SUCCESS;
 
     return EXIT_FAILURE;

@@ -142,8 +142,7 @@ int aliceVision_main(int argc, char **argv)
     // set extraction range
     if(rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0 ||
-           rangeStart > sfmData.getViews().size())
+        if(rangeStart < 0 || rangeSize < 0)
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
@@ -152,6 +151,11 @@ int aliceVision_main(int argc, char **argv)
         if(rangeStart + rangeSize > sfmData.views.size())
             rangeSize = sfmData.views.size() - rangeStart;
 
+        if(rangeSize <= 0)
+        {
+            ALICEVISION_LOG_WARNING("Nothing to compute.");
+            return EXIT_SUCCESS;
+        }
 
         extractor.setRange(rangeStart, rangeSize);
     }
