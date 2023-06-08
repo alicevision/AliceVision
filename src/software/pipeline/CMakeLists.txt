@@ -620,3 +620,17 @@ if(ALICEVISION_HAVE_OPENCV AND ALICEVISION_HAVE_ONNX)
           ${OpenCV_LIBRARIES}
     )
 endif()
+
+if(ALICEVISION_HAVE_ONNX)
+    # SphereDetection
+    alicevision_add_software(aliceVision_imageSegmentation
+    SOURCE main_imageSegmentation.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_image
+          aliceVision_cmdline
+          aliceVision_system
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          ONNXRuntime::ONNXRuntime
+    )
+endif()
