@@ -340,7 +340,7 @@ ExternalProject_Add(${OPENGV_TARGET}
        # Our fork, with a fix:
        GIT_REPOSITORY https://github.com/alicevision/opengv.git
        # Use a custom commit with a fix to override the cxx standard from cmake command line
-       GIT_TAG cb0a3f16456a8661782b8d814bc2726e2018c428
+       GIT_TAG 65f7edccf5044d445d305580f79c50c2efcbd438
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -854,6 +854,8 @@ ExternalProject_Add(${CCTAG_TARGET}
           -DCCTAG_WITH_CUDA:BOOL=${AV_USE_CUDA}
           -DCCTAG_BUILD_TESTS=OFF
           -DCCTAG_BUILD_APPS=OFF
+          -DCCTAG_EIGEN_MEMORY_ALIGNMENT=ON
+          -DCCTAG_CXX_STANDARD=17
           -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
           <SOURCE_DIR>
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
