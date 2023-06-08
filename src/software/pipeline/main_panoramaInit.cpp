@@ -45,15 +45,6 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
-struct Contact
-{
-    int rank;
-    std::string path;
-    int width;
-    int height;
-    sfmData::EEXIFOrientation orientation;
-};
-
 /**
  * A simple class for gaussian pyramid
  */
@@ -665,14 +656,91 @@ private:
     size_t _minimal_size;
 };
 
-void resample(image::Image<image::RGBfColor>& output, const image::Image<image::RGBfColor>& input)
+/**
+ * @brief Utility function for resizing an image.
+ */
+void resample(image::Image<image::RGBfColor>& output,
+              const image::Image<image::RGBfColor>& input)
 {
     const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),
                                const_cast<image::RGBfColor*>(input.data()));
+    
     oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
                           (image::RGBfColor*)output.data());
 
     oiio::ImageBufAlgo::resample(outBuf, inBuf, false);
+}
+
+/**
+ * @brief Utility function for rotating an image given its orientation metadata.
+ */
+void applyOrientation(image::Image<image::RGBfColor>& output,
+                      const image::Image<image::RGBfColor>& input,
+                      sfmData::EEXIFOrientation orientation)
+{
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),
+                               const_cast<image::RGBfColor*>(input.data()));
+    
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                          (image::RGBfColor*)output.data());
+
+    switch (orientation)
+    {
+        case sfmData::EEXIFOrientation::UPSIDEDOWN:
+            oiio::ImageBufAlgo::rotate180(outBuf, inBuf);
+            break;
+        case sfmData::EEXIFOrientation::LEFT:
+            oiio::ImageBufAlgo::rotate90(outBuf, inBuf);
+            break;
+        case sfmData::EEXIFOrientation::RIGHT:
+            oiio::ImageBufAlgo::rotate270(outBuf, inBuf);
+            break;
+        default:
+            outBuf.copy(inBuf);
+            break;
+    }
+}
+
+/**
+ * @brief Utility struct for contact sheet elements.
+ */
+struct Contact
+{
+    int rank;
+    std::string path;
+    int width;
+    int height;
+    sfmData::EEXIFOrientation orientation;
+};
+
+/**
+ * @brief Width of contact sheet element, taking into account orientation metadata.
+ */
+int orientedWidth(const Contact& contact)
+{
+    switch (contact.orientation)
+    {
+        case sfmData::EEXIFOrientation::LEFT:
+        case sfmData::EEXIFOrientation::RIGHT:
+            return contact.height;
+        default:
+            return contact.width;
+    }
+}
+
+/**
+ * @brief Height of contact sheet element, taking into account orientation metadata.
+ */
+int orientedHeight(const Contact& contact)
+{
+    switch (contact.orientation)
+    {
+        case sfmData::EEXIFOrientation::LEFT:
+        case sfmData::EEXIFOrientation::RIGHT:
+            return contact.width;
+        default:
+            return contact.height;
+    }
 }
 
 bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
@@ -686,8 +754,8 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
     {
         for(const auto& item : rowpair.second)
         {
-            maxdim = std::max(maxdim, item.second.width);
-            maxdim = std::max(maxdim, item.second.height);
+            maxdim = std::max(maxdim, orientedWidth(item.second));
+            maxdim = std::max(maxdim, orientedHeight(item.second));
         }
     }
     double ratioResize = double(contactSheetItemMaxSize) / double(maxdim);
@@ -702,8 +770,8 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
 
         for(const auto& item : rowpair.second)
         {
-            int resizedHeight = int(ratioResize * double(item.second.height));
-            int resizedWidth = int(ratioResize * double(item.second.width));
+            int resizedHeight = int(ratioResize * double(orientedHeight(item.second)));
+            int resizedWidth = int(ratioResize * double(orientedWidth(item.second)));
 
             rowHeight = std::max(rowHeight, resizedHeight);
             rowWidth += resizedWidth + space;
@@ -729,8 +797,8 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
 
         for(const auto& item : rowpair.second)
         {
-            int resizedHeight = int(ratioResize * double(item.second.height));
-            int resizedWidth = int(ratioResize * double(item.second.width));
+            int resizedHeight = int(ratioResize * double(orientedHeight(item.second)));
+            int resizedWidth = int(ratioResize * double(orientedWidth(item.second)));
 
             rowHeight = std::max(rowHeight, resizedHeight);
             rowWidth += resizedWidth + space;
@@ -742,15 +810,20 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
         int posX = space;
         for(const auto& item : rowpair.second)
         {
-            int resizedHeight = int(ratioResize * double(item.second.height));
-            int resizedWidth = int(ratioResize * double(item.second.width));
+            int rawResizedHeight = int(ratioResize * double(item.second.height));
+            int rawResizedWidth = int(ratioResize * double(item.second.width));
+
+            int resizedHeight = int(ratioResize * double(orientedHeight(item.second)));
+            int resizedWidth = int(ratioResize * double(orientedWidth(item.second)));
 
             image::Image<image::RGBfColor> input;
+            image::Image<image::RGBfColor> rawThumbnail(rawResizedWidth, rawResizedHeight);
             image::Image<image::RGBfColor> thumbnail(resizedWidth, resizedHeight);
 
             image::readImage(item.second.path, input, image::EImageColorSpace::SRGB);
 
-            resample(thumbnail, input);
+            resample(rawThumbnail, input);
+            applyOrientation(thumbnail, rawThumbnail, item.second.orientation);
 
             rowOutput.block(0, posX, resizedHeight, resizedWidth) = thumbnail;
             posX += resizedWidth + space;
