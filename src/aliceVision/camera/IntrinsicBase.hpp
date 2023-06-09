@@ -26,8 +26,6 @@ namespace camera {
 class IntrinsicBase
 {
 public:
-    IntrinsicBase() = default;
-
     explicit IntrinsicBase(unsigned int width, unsigned int height, const std::string& serialNumber = "") :
         _w(width), _h(height), _serialNumber(serialNumber)
     {

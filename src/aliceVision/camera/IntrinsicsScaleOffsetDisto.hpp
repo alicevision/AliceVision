@@ -23,7 +23,6 @@ namespace camera {
 class IntrinsicsScaleOffsetDisto : public IntrinsicsScaleOffset
 {
 public:
-    IntrinsicsScaleOffsetDisto() = default;
 
     IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h,
                                 double scaleX, double scaleY,

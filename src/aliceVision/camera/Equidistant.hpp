@@ -28,7 +28,10 @@ namespace camera {
 class EquiDistant : public IntrinsicsScaleOffsetDisto
 {
 public:
-    EquiDistant() = default;
+    EquiDistant() :
+    EquiDistant(1, 1, 1.0, 0.0, 0.0)
+    {
+    }
 
     EquiDistant(unsigned int w, unsigned int h,
                 double focalLengthPix,
