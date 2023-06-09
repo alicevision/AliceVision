@@ -43,7 +43,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 namespace po = boost::program_options;
@@ -320,6 +320,8 @@ struct ProcessingParams
     bool fixNonFinite = false;
     bool applyDcpMetadata = false;
     bool useDCPColorMatrixOnly = false;
+    bool sourceIsRaw = false;
+    double correlatedColorTemperature = -1.0;
 
     LensCorrectionParams lensCorrection =
     {
@@ -402,7 +404,7 @@ void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColo
     }
 }
 
-void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, const std::map<std::string, std::string>& imageMetadata, const camera::IntrinsicBase* cam = NULL)
+void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, std::map<std::string, std::string>& imageMetadata, const camera::IntrinsicBase* cam = NULL)
 {
     const unsigned int nchannels = 4;
 
@@ -598,8 +600,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 #endif
     }
 
-
-    if (pParams.applyDcpMetadata)
+    if (pParams.applyDcpMetadata || (pParams.sourceIsRaw && pParams.correlatedColorTemperature <= 0.0))
     {
         bool dcpMetadataOK = map_has_non_empty_value(imageMetadata, "AliceVision:DCP:Temp1") &&
                              map_has_non_empty_value(imageMetadata, "AliceVision:DCP:Temp2") &&
@@ -674,7 +675,24 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
             neutral[i] = v_mult[i] / v_mult[1];
         }
 
-        dcpProf.applyLinear(image, neutral, true, pParams.useDCPColorMatrixOnly);
+        double cct = pParams.correlatedColorTemperature;
+        double tint;
+
+        if (pParams.sourceIsRaw)
+        {
+            dcpProf.getColorTemperatureAndTintFromNeutral(neutral, cct, tint);
+        }
+
+        if (pParams.applyDcpMetadata)
+        {
+            dcpProf.applyLinear(image, neutral, cct, true, pParams.useDCPColorMatrixOnly);
+        }
+
+        imageMetadata["AliceVision:ColorTemperature"] = std::to_string(cct);
+    }
+    else if (pParams.sourceIsRaw && pParams.correlatedColorTemperature > 0.0)
+    {
+        imageMetadata["AliceVision:ColorTemperature"] = std::to_string(pParams.correlatedColorTemperature);
     }
 }
 
@@ -784,6 +802,7 @@ int aliceVision_main(int argc, char * argv[])
     bool doWBAfterDemosaicing = false;
     std::string demosaicingAlgo = "AHD";
     int highlightMode = 0;
+    double correlatedColorTemperature = -1;
 
     ProcessingParams pParams;
 
@@ -917,6 +936,10 @@ int aliceVision_main(int argc, char * argv[])
         ("highlightMode", po::value<int>(&highlightMode)->default_value(highlightMode),
          "Highlight management (see libRaw documentation).\n"
          "0 = clip (default), 1 = unclip, 2 = blend, 3+ = rebuild.")
+
+        ("correlatedColorTemperature", po::value<double>(&correlatedColorTemperature)->default_value(correlatedColorTemperature),
+         "Correlated Color Temperature in Kelvin of scene illuminant.\n"
+         "If less than or equal to 0.0, the value extracted from the metadata will be used.")
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
@@ -1083,6 +1106,9 @@ int aliceVision_main(int argc, char * argv[])
                 options.highlightMode = highlightMode;
                 options.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
                 options.rawAutoBright = pParams.rawAutoBright;
+                options.correlatedColorTemperature = correlatedColorTemperature;
+                pParams.correlatedColorTemperature = correlatedColorTemperature;
+                pParams.sourceIsRaw = true;
             }
 
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
@@ -1119,8 +1145,10 @@ int aliceVision_main(int argc, char * argv[])
             sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
             const camera::IntrinsicBase* cam = iterIntrinsic->second.get();
 
+            std::map<std::string, std::string> viewMetadata = view.getMetadata();
+
             // Image processing
-            processImage(image, pParams, view.getMetadata(), cam);
+            processImage(image, pParams, viewMetadata, cam);
 
             if (pParams.applyDcpMetadata)
             {
@@ -1143,7 +1171,7 @@ int aliceVision_main(int argc, char * argv[])
             }
 
             // Save the image
-            saveImage(image, viewPath, outputfilePath, view.getMetadata(), metadataFolders, outputFormat, writeOptions);
+            saveImage(image, viewPath, outputfilePath, viewMetadata, metadataFolders, outputFormat, writeOptions);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -1321,6 +1349,9 @@ int aliceVision_main(int argc, char * argv[])
                 readOptions.highlightMode = highlightMode;
                 readOptions.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
                 readOptions.rawAutoBright = pParams.rawAutoBright;
+                readOptions.correlatedColorTemperature = correlatedColorTemperature;
+                pParams.correlatedColorTemperature = correlatedColorTemperature;
+                pParams.sourceIsRaw = true;
 
                 pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                 if (pParams.applyDcpMetadata)

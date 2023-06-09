@@ -153,7 +153,8 @@ void colorSpaceTransform(image::Image<image::RGBAfColor>& inputImage, image::EIm
 
     if (fromColorSpace == image::EImageColorSpace::NO_CONVERSION)
     {
-        dcpProf.applyLinear(inBuf, neutral, true, true);
+        double cct;
+        dcpProf.applyLinear(inBuf, neutral, cct, true, true);
         fromColorSpace = image::EImageColorSpace::ACES2065_1;
     }
 
