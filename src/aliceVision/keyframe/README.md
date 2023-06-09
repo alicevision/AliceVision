@@ -7,7 +7,7 @@ Two methods are currently supported:
 - a **regular** selection method, which selects keyframes regularly across the input video / sequence / SfMData according to a set of parameters;
 - a **smart** selection method, which analyses the sharpness and motion of all the frames to select those which are deemed the most relevant (a frame is considered relevant if it contains significant motion in comparison to the last selected keyframe while being as sharp as possible).
 
-The selected keyframes can be written as JPG, PNG or EXR images, and the storage data type can be specified when the EXR file extension is selected.
+The selected keyframes can be written as JPG, PNG or EXR images, and the storage data type can be specified when the EXR file extension is selected. The selected keyframes will not be written on disk if the selected output extension is `NONE`.
 
 The keyframe selection module supports the following inputs:
 - a path to a video file (e.g. "/path/to/video.mp4")
@@ -21,7 +21,7 @@ In addition to writing the selected keyframes on disk, two SfMData files are wri
 - one that contains all the selected keyframes
 - one that contains all the frames that were not selected as keyframes
 
-_N.B: If the input is a video file, the SfMData file which contains the rejected frames will not be written at all, since none of these frames is available on disk. As the selected keyframes will be written at the end of the selection, the SfMData file containing the keyframes **will** be written._
+_N.B: If the input is a video file, the SfMData file which contains the rejected frames will not be written at all, since none of these frames is available on disk. As the selected keyframes will be written at the end of the selection, the SfMData file containing the keyframes **will** be written. However, if the output extension is set to `NONE`, no SfMData file will be written as even the keyframes will not be available on disk._
 
 ## Regular selection method
 
