@@ -63,7 +63,7 @@ size_t getCompositingOptimalScale(int width, int height)
      * Ideally, should be gaussianFilterSize = 1 + 2 * gaussianFilterRadius with:
      * const size_t gaussianFilterRadius = 2;
      */
-    const int gaussianFilterSize = 1;
+    const int gaussianFilterSize = 5;
 
     //Avoid negative values on scale
     if (minsize < gaussianFilterSize)
@@ -163,6 +163,10 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         panoramaBoundingBox = referenceBoundingBox.divide(panoramaMap.getScale())
                                   .dilate(panoramaMap.getBorderSize())
                                   .multiply(panoramaMap.getScale());
+
+        panoramaBoundingBox.clampTop();
+        panoramaBoundingBox.clampBottom(panoramaMap.getHeight());
+
         compositer = std::unique_ptr<Compositer>(
             new LaplacianCompositer(panoramaBoundingBox.width, panoramaBoundingBox.height, panoramaMap.getScale()));
     }
