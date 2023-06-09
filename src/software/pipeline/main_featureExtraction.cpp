@@ -43,143 +43,148 @@ namespace fs = boost::filesystem;
 /// - Export computed data
 int aliceVision_main(int argc, char **argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string masksFolder;
-  std::string outputFolder;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string masksFolder;
+    std::string outputFolder;
 
-  // user optional parameters
+    // user optional parameters
 
-  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  feature::ConfigurationPreset featDescConfig;
-  int rangeStart = -1;
-  int rangeSize = 1;
-  int maxThreads = 0;
-  bool forceCpuExtraction = false;
+    std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+    feature::ConfigurationPreset featDescConfig;
+    int rangeStart = -1;
+    int rangeSize = 1;
+    int maxThreads = 0;
+    bool forceCpuExtraction = false;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for the features and descriptors files (*.feat, *.desc).");
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for the features and descriptors files (*.feat, *.desc).");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str())
-    ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescConfig.descPreset)->default_value(featDescConfig.descPreset),
-      "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
-      "Configuration 'ultra' can take long time !")
-    ("describerQuality", po::value<feature::EFeatureQuality>(&featDescConfig.quality)->default_value(featDescConfig.quality),
-      feature::EFeatureQuality_information().c_str())
-    ("gridFiltering", po::value<bool>(&featDescConfig.gridFiltering)->default_value(featDescConfig.gridFiltering),
-      "Enable grid filtering. Highly recommended to ensure usable number of features.")
-    ("maxNbFeatures", po::value<int>(&featDescConfig.maxNbFeatures)->default_value(featDescConfig.maxNbFeatures),
-      "Max number of features extracted (0 means default value based on describerPreset).")
-    ("contrastFiltering", po::value<feature::EFeatureConstrastFiltering>(&featDescConfig.contrastFiltering)->default_value(featDescConfig.contrastFiltering),
-      feature::EFeatureConstrastFiltering_information().c_str())
-    ("relativePeakThreshold", po::value<float>(&featDescConfig.relativePeakThreshold)->default_value(featDescConfig.relativePeakThreshold),
-       "Peak Threshold relative to median of gradiants.")
-    ("forceCpuExtraction", po::value<bool>(&forceCpuExtraction)->default_value(forceCpuExtraction),
-      "Use only CPU feature extraction methods.")
-    ("masksFolder", po::value<std::string>(&masksFolder),
-      "Masks folder.")
-    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-      "Range image index start.")
-    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-      "Range size.")
-    ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads),
-      "Specifies the maximum number of threads to run simultaneously (0 for automatic mode).");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescConfig.descPreset)->default_value(featDescConfig.descPreset),
+         "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
+         "Configuration 'ultra' can take long time !")
+        ("describerQuality", po::value<feature::EFeatureQuality>(&featDescConfig.quality)->default_value(featDescConfig.quality),
+         feature::EFeatureQuality_information().c_str())
+        ("gridFiltering", po::value<bool>(&featDescConfig.gridFiltering)->default_value(featDescConfig.gridFiltering),
+         "Enable grid filtering. Highly recommended to ensure usable number of features.")
+        ("maxNbFeatures", po::value<int>(&featDescConfig.maxNbFeatures)->default_value(featDescConfig.maxNbFeatures),
+         "Max number of features extracted (0 means default value based on describerPreset).")
+        ("contrastFiltering", po::value<feature::EFeatureConstrastFiltering>(&featDescConfig.contrastFiltering)->default_value(featDescConfig.contrastFiltering),
+         feature::EFeatureConstrastFiltering_information().c_str())
+        ("relativePeakThreshold", po::value<float>(&featDescConfig.relativePeakThreshold)->default_value(featDescConfig.relativePeakThreshold),
+         "Peak Threshold relative to median of gradiants.")
+        ("forceCpuExtraction", po::value<bool>(&forceCpuExtraction)->default_value(forceCpuExtraction),
+         "Use only CPU feature extraction methods.")
+        ("masksFolder", po::value<std::string>(&masksFolder),
+         "Masks folder.")
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+         "Range image index start.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+         "Range size.")
+        ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads),
+         "Specifies the maximum number of threads to run simultaneously (0 for automatic mode).");
 
-  CmdLine cmdline("AliceVision featureExtraction");
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
-
-  if(describerTypesName.empty())
-  {
-    ALICEVISION_LOG_ERROR("--describerTypes option is empty.");
-    return EXIT_FAILURE;
-  }
-
-  // create output folder
-  if(!fs::exists(outputFolder))
-  {
-    if(!fs::create_directory(outputFolder))
+    CmdLine cmdline("AliceVision featureExtraction");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-      ALICEVISION_LOG_ERROR("Cannot create output folder");
-      return EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
-  }
+
+    if(describerTypesName.empty())
+    {
+        ALICEVISION_LOG_ERROR("--describerTypes option is empty.");
+        return EXIT_FAILURE;
+    }
+
+    // create output folder
+    if(!fs::exists(outputFolder))
+    {
+        if(!fs::create_directory(outputFolder))
+        {
+            ALICEVISION_LOG_ERROR("Cannot create output folder");
+            return EXIT_FAILURE;
+        }
+    }
 
 #ifdef ALICEVISION_HAVE_GPU_FEATURES
-  // Print GPU Information
-  ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
+    // Print GPU Information
+    ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
 #endif
 
-  // load input scene
-  sfmData::SfMData sfmData;
-  std::cout << sfmData.getViews().size()  << std::endl;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
-  {
-    ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");
-    return EXIT_FAILURE;
-  }
-
-  // create feature extractor
-  feature::FeatureExtractor extractor(sfmData);
-  extractor.setMasksFolder(masksFolder);
-  extractor.setOutputFolder(outputFolder);
-
-  // set maxThreads
-  HardwareContext hwc = cmdline.getHardwareContext();
-  hwc.setUserCoresLimit(maxThreads);
-
-  // set extraction range
-  if(rangeStart != -1)
-  {
-    if(rangeStart < 0 || rangeSize < 0 ||
-       rangeStart > sfmData.getViews().size())
+    // load input scene
+    sfmData::SfMData sfmData;
+    std::cout << sfmData.getViews().size()  << std::endl;
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
     {
-      ALICEVISION_LOG_ERROR("Range is incorrect");
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");
+        return EXIT_FAILURE;
     }
 
-    if(rangeStart + rangeSize > sfmData.views.size())
-      rangeSize = sfmData.views.size() - rangeStart;
+    // create feature extractor
+    feature::FeatureExtractor extractor(sfmData);
+    extractor.setMasksFolder(masksFolder);
+    extractor.setOutputFolder(outputFolder);
 
-    extractor.setRange(rangeStart, rangeSize);
-  }
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    hwc.setUserCoresLimit(maxThreads);
 
-  // initialize feature extractor imageDescribers
-  {
-    std::vector<feature::EImageDescriberType> imageDescriberTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
-
-    for(const auto& imageDescriberType: imageDescriberTypes)
+    // set extraction range
+    if(rangeStart != -1)
     {
-      std::shared_ptr<feature::ImageDescriber> imageDescriber = feature::createImageDescriber(imageDescriberType);
-      imageDescriber->setConfigurationPreset(featDescConfig);
-      if(forceCpuExtraction)
-        imageDescriber->setUseCuda(false);
+        if(rangeStart < 0 || rangeSize < 0)
+        {
+            ALICEVISION_LOG_ERROR("Range is incorrect");
+            return EXIT_FAILURE;
+        }
 
-      extractor.addImageDescriber(imageDescriber);
+        if(rangeStart + rangeSize > sfmData.views.size())
+            rangeSize = sfmData.views.size() - rangeStart;
+
+        if(rangeSize <= 0)
+        {
+            ALICEVISION_LOG_WARNING("Nothing to compute.");
+            return EXIT_SUCCESS;
+        }
+
+        extractor.setRange(rangeStart, rangeSize);
     }
-  }
+
+    // initialize feature extractor imageDescribers
+    {
+        std::vector<feature::EImageDescriberType> imageDescriberTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
+
+        for(const auto& imageDescriberType: imageDescriberTypes)
+        {
+            std::shared_ptr<feature::ImageDescriber> imageDescriber = feature::createImageDescriber(imageDescriberType);
+            imageDescriber->setConfigurationPreset(featDescConfig);
+            if(forceCpuExtraction)
+                imageDescriber->setUseCuda(false);
+
+            extractor.addImageDescriber(imageDescriber);
+        }
+    }
 
   // feature extraction routines
   // for each View of the SfMData container:
   // - if regions file exist continue,
   // - if no file, compute features
-  {
-    system::Timer timer;
+    {
+        system::Timer timer;
 
-    extractor.process(hwc);
+        extractor.process(hwc);
 
-    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
-  }
-  return EXIT_SUCCESS;
+        ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
+    }
+    return EXIT_SUCCESS;
 }
