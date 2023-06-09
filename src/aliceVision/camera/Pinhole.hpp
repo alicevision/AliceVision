@@ -25,7 +25,10 @@ namespace camera {
 class Pinhole : public IntrinsicsScaleOffsetDisto
 {
 public:
-    Pinhole() = default;
+    Pinhole() :
+    Pinhole(1, 1, 1.0, 1.0, 0.0, 0.0)
+    {
+    }
 
     Pinhole(unsigned int w, unsigned int h, const Mat3& K) :
     IntrinsicsScaleOffsetDisto(w, h, K(0, 0), K(1, 1), K(0, 2), K(1, 2))

@@ -18,8 +18,6 @@ namespace camera {
 class IntrinsicsScaleOffset: public IntrinsicBase
 {
 public:
-    IntrinsicsScaleOffset() = default;
-
     IntrinsicsScaleOffset(unsigned int w, unsigned int h,
                           double scaleX, double scaleY,
                           double offsetX, double offsetY) :

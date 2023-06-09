@@ -23,7 +23,6 @@ namespace camera {
 class IntrinsicsScaleOffsetDisto : public IntrinsicsScaleOffset
 {
 public:
-    IntrinsicsScaleOffsetDisto() = default;
 
     IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h,
                                 double scaleX, double scaleY,
@@ -34,6 +33,30 @@ public:
         IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
         _pDistortion(distortion), _pUndistortion(undistortion), _distortionInitializationMode(distortionInitializationMode)
     {
+    }
+
+    IntrinsicsScaleOffsetDisto(const IntrinsicsScaleOffsetDisto &other) 
+    : 
+        IntrinsicsScaleOffset(other),
+        _distortionInitializationMode(other._distortionInitializationMode)
+    {
+        if (other._pDistortion)
+        {
+            _pDistortion = std::shared_ptr<Distortion>(other._pDistortion->clone());
+        }
+        else 
+        {
+            _pDistortion = nullptr;
+        }
+
+        if (other._pUndistortion)
+        {
+            _pUndistortion = std::shared_ptr<Undistortion>(other._pUndistortion->clone());
+        }
+        else 
+        {
+            _pUndistortion = nullptr;
+        }
     }
 
     void assign(const IntrinsicBase& other) override

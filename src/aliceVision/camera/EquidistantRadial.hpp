@@ -26,8 +26,6 @@ namespace camera {
 class EquiDistantRadialK3 : public EquiDistant
 {
 public:
-    EquiDistantRadialK3() = default;
-
     explicit EquiDistantRadialK3(int w, int h,
                                  double focalLengthPix,
                                  double offsetX, double offsetY,
