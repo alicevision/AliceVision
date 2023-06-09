@@ -35,6 +35,30 @@ public:
     {
     }
 
+    IntrinsicsScaleOffsetDisto(const IntrinsicsScaleOffsetDisto &other) 
+    : 
+        IntrinsicsScaleOffset(other),
+        _distortionInitializationMode(other._distortionInitializationMode)
+    {
+        if (other._pDistortion)
+        {
+            _pDistortion = std::shared_ptr<Distortion>(other._pDistortion->clone());
+        }
+        else 
+        {
+            _pDistortion = nullptr;
+        }
+
+        if (other._pUndistortion)
+        {
+            _pUndistortion = std::shared_ptr<Undistortion>(other._pUndistortion->clone());
+        }
+        else 
+        {
+            _pUndistortion = nullptr;
+        }
+    }
+
     void assign(const IntrinsicBase& other) override
     {
         *this = dynamic_cast<const IntrinsicsScaleOffsetDisto&>(other);
