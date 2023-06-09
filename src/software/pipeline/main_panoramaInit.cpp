@@ -1181,7 +1181,9 @@ int main(int argc, char* argv[])
                                                           << intrinsic->getTypeStr()
                                                           << " to an EquiDistant camera model.");
                 // convert non-EquiDistant intrinsics to EquiDistant
-                std::shared_ptr<camera::EquiDistantRadialK3> newEquidistant(new camera::EquiDistantRadialK3());
+                std::shared_ptr<camera::EquiDistantRadialK3> newEquidistant =
+                    std::dynamic_pointer_cast<camera::EquiDistantRadialK3>(
+                        camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3));
 
                 newEquidistant->copyFrom(*intrinsicSO);
                 // "radius" and "center" will be set later from the input parameters in another loop
