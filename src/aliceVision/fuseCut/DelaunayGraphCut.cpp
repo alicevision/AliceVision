@@ -46,6 +46,8 @@ namespace bfs = boost::filesystem;
 // #define USE_GEOGRAM_KDTREE 1
 
 #ifdef USE_GEOGRAM_KDTREE
+
+typedef GEO::AdaptiveKdTree KdTree;
 #else
 
 // static const std::size_t MAX_LEAF_ELEMENTS = 64;
@@ -147,6 +149,49 @@ public:
 };
 #endif
 
+class Tree
+{
+    std::unique_ptr<KdTree> _tree;
+    std::unique_ptr<PointVectorAdaptator> _pointCloudRef;
+
+public:
+    Tree(const std::vector<Point3d>& verticesCoords) { initKdTree(verticesCoords); }
+
+    void initKdTree(const std::vector<Point3d>& verticesCoords)
+    {
+#ifdef USE_GEOGRAM_KDTREE
+        ALICEVISION_LOG_INFO("Build geogram KdTree index.");
+        _tree = std::make_unique<KdTree>(3);
+        _tree->set_exact(false);
+        _tree->set_points(verticesCoords.size(), verticesCoords.front().m);
+#else
+        ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
+        _pointCloudRef = std::make_unique<PointVectorAdaptator>(verticesCoords);
+        _tree = std::make_unique<KdTree>(3 /*dim*/, *_pointCloudRef.get(),
+                                                   nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+        _tree->buildIndex();
+#endif
+        ALICEVISION_LOG_INFO("KdTree created for " << verticesCoords.size() << " points.");
+    }
+
+    bool locateNearestVertex(const Point3d& p, std::size_t& index, double& sq_dist) const
+    {
+        index = std::numeric_limits<std::size_t>::max();
+        sq_dist = std::numeric_limits<double>::max();
+#ifdef USE_GEOGRAM_KDTREE
+        _tree->get_nearest_neighbors(1, p.m, &index, &sq_dist);
+        return true;
+#else
+        nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
+        resultSet.init(&index, &sq_dist);
+        if(!_tree->findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
+        {
+            return false;
+        }
+        return true;
+#endif
+    }
+};
 
 /// Filter by pixSize
 void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare, std::vector<double>& pixSizePrepare, double pixSizeMarginCoef, std::vector<float>& simScorePrepare)
@@ -750,14 +795,18 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
 void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist)
 {
     int addedPoints = 0;
+    float minDist2 = minDist * minDist;
+    Tree kdTree(_verticesCoords);
     for(int camid = 0; camid < cams.size(); camid++)
     {
         int rc = cams[camid];
         {
             const Point3d p(_mp.CArr[rc].x, _mp.CArr[rc].y, _mp.CArr[rc].z);
-            const GEO::index_t vi = locateNearestVertex(p);
+            std::size_t vi;
+            double sq_dist;
 
-            if((vi == GEO::NO_VERTEX) || ((_verticesCoords[vi] - _mp.CArr[rc]).size() > minDist))
+            // if there is no nearest vertex or the nearest vertex is not too close
+            if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
             {
                 const GEO::index_t nvi = _verticesCoords.size();
                 _verticesCoords.push_back(p);
@@ -797,12 +846,16 @@ void DelaunayGraphCut::addPointsToPreventSingularities(const Point3d voxel[8], f
     fcg = (voxel[3] + voxel[2] + voxel[6] + voxel[7]) / 4.0f;
     extrPts[5] = fcg + (fcg - vcg) / 10.0f;
     int addedPoints = 0;
+    float minDist2 = minDist * minDist;
+    Tree kdTree(_verticesCoords);
     for(int i = 0; i < 6; i++)
     {
         const Point3d p(extrPts[i].x, extrPts[i].y, extrPts[i].z);
-        const GEO::index_t vi = locateNearestVertex(p);
+        std::size_t vi;
+        double sq_dist;
 
-        if((vi == GEO::NO_VERTEX) || ((_verticesCoords[vi] - extrPts[i]).size() > minDist))
+        // if there is no nearest vertex or the nearest vertex is not too close
+        if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
         {
             _verticesCoords.push_back(p);
             GC_vertexInfo newv;
@@ -885,6 +938,8 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
     auto rand = std::bind(std::uniform_real_distribution<float>{0.0, 1.0}, generator);
 
     int addedPoints = 0;
+    float minDist2 = minDist * minDist;
+    Tree kdTree(_verticesCoords);
     for(int x = 0; x <= ns; ++x)
     {
         for(int y = 0; y <= ns; ++y)
@@ -896,10 +951,11 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
                 pt = pt + (CG - pt).normalize() * (maxSize * rand());
 
                 const Point3d p(pt.x, pt.y, pt.z);
-                const GEO::index_t vi = locateNearestVertex(p);
+                std::size_t vi;
+                double sq_dist;
 
                 // if there is no nearest vertex or the nearest vertex is not too close
-                if((vi == GEO::NO_VERTEX) || ((_verticesCoords[vi] - pt).size() > minDist))
+                if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
                 {
                     _verticesCoords.push_back(p);
                     GC_vertexInfo newv;
@@ -912,7 +968,8 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
         }
     }
 
-    ALICEVISION_LOG_WARNING("Add " << addedPoints << " new helper points for a 3D grid of " << ns << "x" << ns << "x" << ns <<".");
+    ALICEVISION_LOG_WARNING("Add " << addedPoints << " new helper points for a 3D grid of " << ns << "x" << ns << "x"
+                                   << ns << " (" << std::pow(float(ns + 1), 3.f) << " points).");
 }
 
 void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticVector<int>& cams, const FuseParams& params)
