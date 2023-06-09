@@ -206,7 +206,7 @@ public:
      * @brief applyLinear applies the linear part of a DCP profile on an OIIO image buffer
      * param[in] image The OIIO image on which the profile must be applied
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
-     * param[in] cct indicates the scene illuminant Correlated Color Temperature in Kelvin (if <=0.0, the value extracted from metadata is used)
+     * param[in] cct indicates the scene illuminant Correlated Color Temperature in Kelvin (if <= 0.0, the value extracted from metadata is used)
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */
@@ -216,7 +216,7 @@ public:
      * @brief applyLinear applies the linear part of a DCP profile on an aliceVision image
      * param[in] image The aliceVision image on which the profile must be applied
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
-     * param[in] cct indicates the scene illuminant Correlated Color Temperature in Kelvin (if <=0.0, the value extracted from metadata is used)
+     * param[in] cct indicates the scene illuminant Correlated Color Temperature in Kelvin (if <= 0.0, the value extracted from metadata is used)
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */

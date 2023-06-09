@@ -2178,7 +2178,7 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         getColorTemperatureAndTintFromNeutral(asShotNeutral, cctLocal, tintLocal);
         getChromaticityCoordinates(cctLocal, tintLocal, x, y);
         cct = cctLocal;
-        ALICEVISION_LOG_TRACE("Estimated illuminant (cct; tint) : (" << cctLocal << "; " << tintLocal << ")");
+        ALICEVISION_LOG_TRACE("Estimated illuminant (cct; tint): (" << cctLocal << "; " << tintLocal << ")");
         if (sourceIsRaw)
         {
             // set neutral value from asShot metadata
@@ -2201,7 +2201,7 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
             cctNeutral[0] = cctNeutral[1] / cctNeutral[0];
             cctNeutral[1] = 1.0;
             cctNeutral[2] = cctNeutral[1] / cctNeutral[2];
-            ALICEVISION_LOG_TRACE("Estimated neutral from cct : " << cctNeutral);
+            ALICEVISION_LOG_TRACE("Estimated neutral from cct: " << cctNeutral);
             // The forward matrix will be used. Data must be white balanced before applying the matrix.
             if (sourceIsRaw)
             {
@@ -2260,7 +2260,7 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         cameraToXyzD50 = matMult(forward_matrix_1, neutral);
     }
 
-    ALICEVISION_LOG_TRACE("cameraToXyzD50Matrix : " << cameraToXyzD50);
+    ALICEVISION_LOG_TRACE("cameraToXyzD50Matrix: " << cameraToXyzD50);
 
     Matrix cameraToACES2065 = matMult(xyzD50ToACES2065Matrix, cameraToXyzD50);
 
@@ -2382,7 +2382,7 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, doubl
 {
     const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, cct, sourceIsRaw, useColorMatrixOnly);
 
-    ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
+    ALICEVISION_LOG_INFO("cameraToACES2065Matrix: " << cameraToACES2065Matrix);
 
     #pragma omp parallel for
     for (int i = 0; i < image.spec().height; ++i)
@@ -2408,7 +2408,7 @@ void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neut
 {
     const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, cct, sourceIsRaw, useColorMatrixOnly);
 
-    ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
+    ALICEVISION_LOG_INFO("cameraToACES2065Matrix: " << cameraToACES2065Matrix);
 
     #pragma omp parallel for
     for (int i = 0; i < image.Height(); ++i)
