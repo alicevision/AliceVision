@@ -56,7 +56,7 @@ void modelExplore(Ort::Session& session)
 
     // Print infos of inputs
     size_t inputCount = session.GetInputCount();
-    for (size_t i = 0; i < inputCount; i++)
+    for (size_t i = 0; i < inputCount; ++i)
     {
 #if ORT_API_VERSION >= 14
         const Ort::AllocatedStringPtr inputName = session.GetInputNameAllocated(i, allocator);
@@ -69,18 +69,19 @@ void modelExplore(Ort::Session& session)
         Ort::TypeInfo inputInfo = session.GetInputTypeInfo(i);
         auto inputInfo2 = inputInfo.GetTensorTypeAndShapeInfo();
 
-        ONNXTensorElementDataType input_type = inputInfo2.GetElementType();
-        ALICEVISION_LOG_DEBUG("  Type : " << input_type);
+        ONNXTensorElementDataType inputType = inputInfo2.GetElementType();
+        ALICEVISION_LOG_DEBUG("  Type : " << inputType);
 
-        std::vector<int64_t> input_shape = inputInfo2.GetShape();
-        size_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<float>());
-        ALICEVISION_LOG_DEBUG("  Shape: " << input_shape);
-        ALICEVISION_LOG_DEBUG("  Size : " << input_size);
+        std::vector<int64_t> inputShape = inputInfo2.GetShape();
+        size_t inputSize =
+            std::accumulate(begin(inputShape), end(inputShape), 1, std::multiplies<float>());
+        ALICEVISION_LOG_DEBUG("  Shape: " << inputShape);
+        ALICEVISION_LOG_DEBUG("  Size : " << inputSize);
     }
 
     // Print infos of outputs
-    size_t outputCount = session.GetOutputCount();
-    for(size_t i = 0; i < outputCount; i++)
+    const size_t outputCount = session.GetOutputCount();
+    for (size_t i = 0; i < outputCount; ++i)
     {
 #if ORT_API_VERSION >= 14
         const Ort::AllocatedStringPtr outputName = session.GetOutputNameAllocated(i, allocator);
@@ -97,13 +98,14 @@ void modelExplore(Ort::Session& session)
         ALICEVISION_LOG_DEBUG("  Type: " << outputType);
 
         std::vector<int64_t> outputShape = outputInfo2.GetShape();
-        size_t outputSize = std::accumulate(begin(outputShape), end(outputShape), 1, std::multiplies<float>());
+        const size_t outputSize =
+            std::accumulate(begin(outputShape), end(outputShape), 1, std::multiplies<float>());
         ALICEVISION_LOG_DEBUG("  Shape: " << outputShape);
         ALICEVISION_LOG_DEBUG("  Size: " << outputSize);
     }
 }
 
-prediction predict(Ort::Session& session, const fs::path imagePath, const float minScore)
+Prediction predict(Ort::Session& session, const fs::path imagePath, const float minScore)
 {
     // Read image
     image::Image<image::RGBColor> imageAlice;
@@ -120,13 +122,14 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const float 
     // HWC to CHW
     cv::dnn::blobFromImage(imageOpencv, imageOpencv);
 
-    // Inference on cpu TODO: use gpu
+    // Inference on CPU
+    // TODO: use GPU
     Ort::MemoryInfo memoryInfo =
         Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
     // Initialize input tensor
     std::vector<int64_t> inputShape = {1, 3, imageAlice.Height(), imageAlice.Width()};
-    size_t inputSize = std::accumulate(begin(inputShape), end(inputShape), 1, std::multiplies<size_t>());
+    const size_t inputSize = std::accumulate(begin(inputShape), end(inputShape), 1, std::multiplies<size_t>());
     std::vector<float> inputTensor(inputSize);
     inputTensor.assign(imageOpencv.begin<float>(), imageOpencv.end<float>());
 
@@ -151,18 +154,18 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const float 
     float* scoresPtr = output.at(1).GetTensorMutableData<float>();
 
     // Get output shape
-    auto infos = output.at(2).GetTensorTypeAndShapeInfo();
-    auto shape = infos.GetShape();
+    const auto infos = output.at(2).GetTensorTypeAndShapeInfo();
+    const auto shape = infos.GetShape();
 
     // Get scores of detections
-    std::vector<float> allScores = {scoresPtr, scoresPtr + shape[0]};
+    std::vector<float> allScores = { scoresPtr, scoresPtr + shape[0] };
 
     // Initialize arrays
     std::vector<std::vector<float>> bboxes;
     std::vector<float> scores;
 
     // Filter detections and fill arrays
-    for (size_t i = 0; i < shape[0]; i++)
+    for (size_t i = 0; i < shape[0]; ++i)
     {
         float score = allScores.at(i);
         if (score > minScore)
@@ -176,10 +179,11 @@ prediction predict(Ort::Session& session, const fs::path imagePath, const float 
         }
     }
 
-    return prediction{bboxes, scores, imageOpencvShape};
+    return Prediction { bboxes, scores, imageOpencvShape };
 }
 
-void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath, const float minScore)
+void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath,
+                     const float minScore)
 {
     // Main tree
     bpt::ptree fileTree;
@@ -188,41 +192,50 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
     {
         ALICEVISION_LOG_DEBUG("View Id: " << viewID);
 
-        std::string sphereName = std::to_string(viewID.second->getViewId());
+        const std::string sphereName = std::to_string(viewID.second->getViewId());
         const fs::path imagePath = fs::path(sfmData.getView(viewID.second->getViewId()).getImagePath());
 
         if (boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
             continue;
 
-        auto pred = predict(session, imagePath, minScore);
+        const auto pred = predict(session, imagePath, minScore);
 
-        bpt::ptree spheresNode;
+        // If there is no bounding box, then no sphere has been detected
+        if (pred.bboxes.size() > 0)
+        {
+            bpt::ptree spheresNode;
 
-        // We only take the best sphere in the picture
-        int i = 0;
-        // Compute sphere coords from bboxe coords
-        auto bboxe = pred.bboxes.at(i);
-        float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
-        float x = bboxe.at(0) + r - pred.size.width / 2;
-        float y = bboxe.at(1) + r - pred.size.height / 2;
+            // We only take the best sphere in the picture
+            const int i = 0;
+            // Compute sphere coords from bbox coords
+            const auto bbox = pred.bboxes.at(i);
+            const float r = std::min(bbox.at(3) - bbox.at(1), bbox.at(2) - bbox.at(0)) / 2;
+            const float x = bbox.at(0) + r - pred.size.width / 2;
+            const float y = bbox.at(1) + r - pred.size.height / 2;
 
-        // Create an unnamed node containing the sphere
-        bpt::ptree sphereNode;
-        sphereNode.put("x", x);
-        sphereNode.put("y", y);
-        sphereNode.put("r", r);
-        sphereNode.put("score", pred.scores.at(i));
-        sphereNode.put("type", "matte");
+            // Create an unnamed node containing the sphere
+            bpt::ptree sphereNode;
+            sphereNode.put("x", x);
+            sphereNode.put("y", y);
+            sphereNode.put("r", r);
+            sphereNode.put("score", pred.scores.at(i));
+            sphereNode.put("type", "matte");
 
-        // Add sphere to array
-        spheresNode.push_back(std::make_pair("", sphereNode));
+            // Add sphere to array
+            spheresNode.push_back(std::make_pair("", sphereNode));
 
-        fileTree.add_child(sphereName, spheresNode);
+            fileTree.add_child(sphereName, spheresNode);
+        }
+        else
+        {
+            ALICEVISION_LOG_WARNING("No sphere detected for '" << imagePath << "'.");
+        }
     }
     bpt::write_json(outputPath.append("detection.json").string(), fileTree);
 }
 
-void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath)
+void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam,
+                           fs::path outputPath)
 {
     // Main tree
     bpt::ptree fileTree;
@@ -231,7 +244,7 @@ void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<flo
     {
         ALICEVISION_LOG_DEBUG("View Id: " << viewID);
 
-        std::string sphereName = std::to_string(viewID.second->getViewId());
+        const std::string sphereName = std::to_string(viewID.second->getViewId());
 
         bpt::ptree spheresNode;
         // Create an unnamed node containing the sphere

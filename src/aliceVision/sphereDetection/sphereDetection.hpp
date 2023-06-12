@@ -25,7 +25,7 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace sphereDetection {
 
-struct prediction
+struct Prediction
 {
     std::vector<std::vector<float>> bboxes;
     std::vector<float> scores;
@@ -46,7 +46,8 @@ void modelExplore(Ort::Session& session);
  * @param outputPath The path to write the JSON with the detected spheres to
  * @return minScore The minimum score for the predictions
  */
-void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath, const float minScore);
+void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath,
+                     const float minScore);
 
 /**
  * @brief Write JSON for a hand-detected sphere
@@ -55,7 +56,8 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
  * @param sphereParam Parameters of the hand-detected sphere
  * @return outputPath Path to the JSON file
  */
-void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath);
+void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam,
+                           fs::path outputPath);
 
 }
 }

@@ -9,7 +9,7 @@
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/image/resampling.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -27,7 +27,9 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace photometricStereo {
 
-void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath,
+                       const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals,
+                       image::Image<image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if (PSParameters.SHOrder == 2)
@@ -76,8 +78,12 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
     image::writeImage(outputPath + "/mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 }
 
-void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath,
+                       const std::string& outputPath, const PhotometricSteroParameters& PSParameters,
+                       image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
 {
+    bool skipAll = true;
+    bool groupedImages = false;
     size_t dim = 3;
     if (PSParameters.SHOrder == 2)
     {
@@ -112,7 +118,6 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
             viewIds.push_back(viewId);
         }
 
-
         for (auto& viewId: viewIds)
         {
             const fs::path imagePath = fs::path(sfmData.getView(viewId).getImagePath());
@@ -139,9 +144,33 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
             buildLightMatFromJSON(lightData, viewIds, lightMat, intList);
         }
 
+        /* Ensure that there are as many images as light calibrations, and that the list of input images is not empty.
+         * If there is a mismatch between the sizes of the list of images and the list of intensities, this means that there was
+         * no light calibration for some images. Either the image had no sphere, or something went wrong during the sphere detection
+         * or light calibration stages. */
+        if (imageList.size() != intList.size() || imageList.size() < 1)
+        {
+            if (imageList.size() != intList.size())
+            {
+                ALICEVISION_LOG_WARNING("Mismatch between the number of images and the number of light intensities ("
+                                        << imageList.size() << " images, " << intList.size() << " light intensities). This might happen "
+                                        << "when no sphere was detected for an image in the list, and thus light was not calibrated for it.");
+                ALICEVISION_LOG_WARNING("Skipping iteration.");
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("Empty list, skipping iteration.");
+            }
+            continue;
+        }
+        skipAll = false;
+        groupedImages = imageList.size() > 1 ? true : false;
+
         image::Image<float> mask;
         std::string pictureFolderName = fs::path(sfmData.getView(viewIds[0]).getImagePath()).parent_path().filename().string();
-        std::string currentMaskPath = maskPath + "/" + pictureFolderName.erase(0,3) + ".png";
+        // If no mask folder was provided, do not make up a path anyway
+        std::string currentMaskPath = maskPath.empty() ? maskPath : maskPath + "/" + pictureFolderName.erase(0, 3) + ".png";
+
         loadMask(currentMaskPath, mask);
 
         photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, PSParameters, normals, albedo);
@@ -156,6 +185,22 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         }
 
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+    }
+
+    if (skipAll)
+    {
+        ALICEVISION_LOG_ERROR(
+            "All images were skipped and no photometric stereo could be processed. This might happen if no sphere has "
+            "been detected in any of the input images, or if the light could not be calibrated.");
+        ALICEVISION_THROW(std::invalid_argument, "No image was processed for the photometric stereo.");
+    }
+
+    if (!groupedImages)
+    {
+        ALICEVISION_LOG_WARNING(
+            "No images shared the same pose ID. "
+            << "Input images need to be located in a folder that starts with 'ps_' to be grouped together using their "
+               "pose ID. The photometric stereo cannot run otherwise.");
     }
 
     sfmData::SfMData albedoSfmData = sfmData;
@@ -198,7 +243,10 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
     sfmDataIO::Save(normalSfmData, outputPath + "/normalMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));
 }
 
-void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant, const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo)
+void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList,
+                       const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant,
+                       const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals,
+                       image::Image<image::RGBfColor>& albedo)
 {
     size_t maskSize;
     int pictRows;
@@ -215,7 +263,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     {
         if (PSParameters.downscale > 1)
         {
-            downscaleImageInplace(mask, PSParameters.downscale);
+            imageAlgo::resizeImage(PSParameters.downscale, mask);
         }
 
         getIndMask(mask, indices);
@@ -232,7 +280,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
         if (PSParameters.downscale > 1)
         {
-            downscaleImageInplace(imageFloat, PSParameters.downscale);
+            imageAlgo::resizeImage(PSParameters.downscale, imageFloat);
         }
 
         pictRows = imageFloat.rows();
@@ -256,7 +304,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
         if (PSParameters.downscale > 1)
         {
-            downscaleImageInplace(imageAmbiant,PSParameters.downscale);
+            imageAlgo::resizeImage(PSParameters.downscale, imageAmbiant);
         }
     }
 
@@ -317,7 +365,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
             if (PSParameters.downscale > 1)
             {
-                downscaleImageInplace(imageFloat,PSParameters.downscale);
+                imageAlgo::resizeImage(PSParameters.downscale, imageFloat);
             }
 
             if (boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
@@ -390,7 +438,6 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
                 }
                 normalsVect.col(currentIdx) = M_channel.col(i) / M_channel.col(i).norm();
             }
-
 
             int currentIdx;
             for (size_t ch = 0; ch < 3; ++ch)
@@ -476,7 +523,8 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     albedo = albedoIm;
 }
 
-void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat)
+void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList,
+                Eigen::MatrixXf& lightMat)
 {
     std::string intFileName;
     std::string pathToCM;

@@ -55,7 +55,8 @@ void loadLightIntensities(const std::string& intFileName, std::vector<std::array
     }
 }
 
-void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat)
+void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix,
+                         Eigen::MatrixXf& lightMat)
 {
     std::stringstream stream;
     std::string line;
@@ -136,7 +137,8 @@ void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
     }
 }
 
-void buildLightMatFromJSON(const std::string& fileName, const std::vector<std::string>& imageList, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
+void buildLightMatFromJSON(const std::string& fileName, const std::vector<std::string>& imageList,
+                           Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
 {
     // Main tree
     bpt::ptree fileTree;
@@ -174,7 +176,8 @@ void buildLightMatFromJSON(const std::string& fileName, const std::vector<std::s
     }
 }
 
-void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT>& indices, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
+void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT>& indices,
+                           Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
 {
     // Main tree
     bpt::ptree fileTree;
@@ -236,9 +239,16 @@ void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT
 
 void loadMask(std::string const& maskName, image::Image<float>& mask)
 {
-    if (!fs::exists(maskName))
+    if (maskName.empty() || !fs::exists(maskName))
     {
-        std::cout << "Cannot open '" << maskName << "'. Every pixel will be used!" << std::endl;
+        if (maskName.empty())
+        {
+            ALICEVISION_LOG_INFO("No mask folder was provided. Every pixel will be used.");
+        }
+        else
+        {
+            ALICEVISION_LOG_WARNING("Could not open '" << maskName << "'. Every pixel will be used.");
+        }
         Eigen::MatrixXf maskAux(1, 1);
         maskAux(0, 0) = 1;
         mask = maskAux;
@@ -285,7 +295,8 @@ void intensityScaling(std::array<float, 3> const& intensities, image::Image<imag
     }
 }
 
-void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::vector<int>& indices, Eigen::MatrixXf& imageOut)
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::vector<int>& indices,
+                    Eigen::MatrixXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -303,7 +314,8 @@ void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::ve
     }
 }
 
-void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::Image<float>& mask, Eigen::MatrixXf& imageOut)
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::Image<float>& mask,
+                    Eigen::MatrixXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -327,7 +339,8 @@ void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::
     }
 }
 
-void image2PsMatrix(const image::Image<float>& imageIn, const image::Image<float>& mask, Eigen::VectorXf& imageOut)
+void image2PsMatrix(const image::Image<float>& imageIn, const image::Image<float>& mask,
+                    Eigen::VectorXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -366,7 +379,8 @@ void reshapeInImage(const Eigen::MatrixXf& matrixIn, image::Image<image::RGBfCol
     }
 }
 
-void convertNormalMap2png(const image::Image<image::RGBfColor>& normalsIm, image::Image<image::RGBColor>& normalsImPNG)
+void convertNormalMap2png(const image::Image<image::RGBfColor>& normalsIm,
+                          image::Image<image::RGBColor>& normalsImPNG)
 {
     int nbRows = normalsIm.rows();
     int nbCols = normalsIm.cols();
@@ -375,7 +389,8 @@ void convertNormalMap2png(const image::Image<image::RGBfColor>& normalsIm, image
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            if (normalsIm(i, j)(0) * normalsIm(i, j)(0) + normalsIm(i, j)(1) * normalsIm(i, j)(1) + normalsIm(i, j)(2) * normalsIm(i, j)(2) == 0)
+            if (normalsIm(i, j)(0) * normalsIm(i, j)(0) + normalsIm(i, j)(1) * normalsIm(i, j)(1) +
+                    normalsIm(i, j)(2) * normalsIm(i, j)(2) == 0)
             {
                 normalsImPNG(i, j)(0) = 0;
                 normalsImPNG(i, j)(1) = 0;
@@ -414,16 +429,30 @@ void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix)
     matFile.close();
 }
 
-void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo)
+void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals,
+                    const image::Image<image::RGBfColor>& albedo)
 {
-    image::writeImage(outputPath + "/normals.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
-    image::writeImage(outputPath + "/albedo.exr", albedo, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+    image::writeImage(outputPath + "/normals.exr", normals,
+                      image::ImageWriteOptions()
+                          .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
+                          .storageDataType(image::EStorageDataType::Float));
+    image::writeImage(outputPath + "/albedo.exr", albedo,
+                      image::ImageWriteOptions()
+                          .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
+                          .storageDataType(image::EStorageDataType::Float));
 }
 
-void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo, const IndexT poseId)
+void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals,
+                    const image::Image<image::RGBfColor>& albedo, const IndexT poseId)
 {
-    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_normals.exr", normals, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
-    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.exr", albedo, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_normals.exr", normals,
+                      image::ImageWriteOptions()
+                          .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
+                          .storageDataType(image::EStorageDataType::Float));
+    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.exr", albedo,
+                      image::ImageWriteOptions()
+                          .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
+                          .storageDataType(image::EStorageDataType::Float));
 }
 
 }

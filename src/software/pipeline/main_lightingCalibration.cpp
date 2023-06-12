@@ -44,6 +44,8 @@ using namespace aliceVision;
 
 int aliceVision_main(int argc, char **argv)
 {
+    system::Timer timer;
+
     std::string inputPath;
     std::string inputJSON;
     std::string ouputJSON;
@@ -52,14 +54,19 @@ int aliceVision_main(int argc, char **argv)
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures.")
-        ("inputJSON, j", po::value<std::string>(&inputJSON)->required(), "Path to JSON which describes sphere positions and radius.")
-        ("outputFile, o", po::value<std::string>(&ouputJSON)->required(), "Path to JSON output file.");
+        ("inputPath,i", po::value<std::string>(&inputPath)->required(),
+         "Path to the SfMData input.")
+        ("inputJSON, j", po::value<std::string>(&inputJSON)->required(),
+         "Path to the folder containing the JSON file that describes spheres' positions and radius.")
+        ("outputFile, o", po::value<std::string>(&ouputJSON)->required(),
+         "Path to JSON output file.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("saveAsModel, s", po::value<bool>(&saveAsModel)->default_value(false), "Calibration used for several datasets.")
-        ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"), "Method for light estimation.");
+        ("saveAsModel, s", po::value<bool>(&saveAsModel)->default_value(false),
+         "Calibration used for several datasets.")
+        ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"),
+         "Method for light estimation.");
 
     CmdLine cmdline("AliceVision lightingCalibration");
     cmdline.add(requiredParams);
@@ -72,7 +79,8 @@ int aliceVision_main(int argc, char **argv)
 
     if (fs::is_directory(inputPath))
     {
-        std::cout << "Directory input : WIP" << std::endl;
+        ALICEVISION_LOG_ERROR("Directory input: WIP");
+        ALICEVISION_THROW(std::invalid_argument, "Input directories are not yet supported");
     }
     else
     {
@@ -85,5 +93,6 @@ int aliceVision_main(int argc, char **argv)
         lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method, saveAsModel);
     }
 
-    return 0;
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
+    return EXIT_SUCCESS;
 }

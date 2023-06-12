@@ -39,6 +39,8 @@ using namespace aliceVision;
 
 int aliceVision_main(int argc, char** argv)
 {
+    system::Timer timer;
+
     std::string inputSfMDataPath;
     std::string inputModelPath;
     std::string outputPath;
@@ -50,17 +52,25 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&inputSfMDataPath)->required(), "SfMData input path.")
-        ("modelPath,m", po::value<std::string>(&inputModelPath)->required(), "Model input path.")
-        ("autoDetect,a", po::value<bool>(&autoDetect)->required(), "True if the sphere is to be automatically detected, false otherwise.")
-        ("output,o", po::value<std::string>(&outputPath)->required(), "Output path.");
+        ("input,i", po::value<std::string>(&inputSfMDataPath)->required(),
+         "SfMData input path.")
+        ("modelPath,m", po::value<std::string>(&inputModelPath)->required(),
+         "Model input path.")
+        ("autoDetect,a", po::value<bool>(&autoDetect)->required(),
+         "True if the sphere is to be automatically detected, false otherwise.")
+        ("output,o", po::value<std::string>(&outputPath)->required(),
+         "Output path.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("minScore,s", po::value<float>(&inputMinScore)->default_value(0.0), "Minimum detection score.")
-        ("x,x", po::value<float>(&sphereCenterOffset(0))->default_value(0.0), "Sphere's center offset X (pixels).")
-        ("y,y", po::value<float>(&sphereCenterOffset(1))->default_value(0.0), "Sphere's center offset Y (pixels).")
-        ("sphereRadius,r", po::value<double>(&sphereRadius)->default_value(1.0), "Sphere's radius (pixels).");
+        ("minScore,s", po::value<float>(&inputMinScore)->default_value(0.0),
+         "Minimum detection score.")
+        ("x,x", po::value<float>(&sphereCenterOffset(0))->default_value(0.0),
+         "Sphere's center offset X (pixels).")
+        ("y,y", po::value<float>(&sphereCenterOffset(1))->default_value(0.0),
+         "Sphere's center offset Y (pixels).")
+        ("sphereRadius,r", po::value<double>(&sphereRadius)->default_value(1.0),
+         "Sphere's radius (pixels).");
 
     CmdLine cmdline("AliceVision sphereDetection");
     cmdline.add(requiredParams);
@@ -108,5 +118,7 @@ int aliceVision_main(int argc, char** argv)
 
         sphereDetection::writeManualSphereJSON(sfmData, sphereParam, fsOutputPath);
     }
-    return 0;
+
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
+    return EXIT_SUCCESS;
 }

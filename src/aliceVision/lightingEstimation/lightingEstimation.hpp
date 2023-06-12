@@ -36,30 +36,38 @@ using LightingVector = Eigen::Matrix<float, 9, 3>;
 class LighthingEstimator
 {
 public:
+    /**
+     * @brief Aggregate image data
+     * @param[in] albedo the corresponding albedo image (float image)
+     * @param[in] picture the corresponding picture (float image)
+     * @param[in] normals the corresponding normals image
+     */
+    void addImage(const image::Image<float>& albedo, const image::Image<float>& picture,
+                  const image::Image<image::RGBfColor>& normals);
 
-  /**
-   * @brief Aggregate image data
-   * @param albedo[in] the corresponding albedo image
-   * @param picture[in] the corresponding picture
-   * @param normals[in] the corresponding normals image
-   */
-  void addImage(const image::Image<float>& albedo, const image::Image<float>& picture, const image::Image<image::RGBfColor>& normals);
-  void addImage(const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals);
+    /**
+     * @brief Aggregate image data
+     * @param[in] albedo the corresponding albedo image (RGBf image)
+     * @param[in] picture the corresponding picture (RGBf image)
+     * @param[in] normals the corresponding normals image
+     */
+    void addImage(const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture,
+                  const image::Image<image::RGBfColor>& normals);
 
-  /**
-   * @brief Estimate ligthing from the aggregate image(s) data
-   * @param[out] lighting Estimate ligthing @see LightingVector
-   */
-  void estimateLigthing(LightingVector& lighting) const;
+    /**
+     * @brief Estimate ligthing from the aggregate image(s) data
+     * @param[out] lighting Estimate ligthing @see LightingVector
+     */
+    void estimateLigthing(LightingVector& lighting) const;
 
-  /**
-   * @brief Clear all the aggregate image(s) data
-   */
-  void clear();
+    /**
+     * @brief Clear all the aggregate image(s) data
+     */
+    void clear();
 
 private:
-  std::array<std::vector<MatrixXf>, 3> _all_rhoTimesN;
-  std::array<std::vector<MatrixXf>, 3> _all_pictureChannel;
+    std::array<std::vector<MatrixXf>, 3> _all_rhoTimesN;
+    std::array<std::vector<MatrixXf>, 3> _all_pictureChannel;
 };
 
 } // namespace lightingEstimation
