@@ -620,6 +620,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
     image::writeImage(outputFilePath, output,
                       image::ImageWriteOptions()
+                          .fromColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
                           .toColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
                           .storageDataType(storageDataType),
                       metadata);

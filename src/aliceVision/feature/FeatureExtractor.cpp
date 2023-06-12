@@ -55,7 +55,7 @@ FeatureExtractor::FeatureExtractor(const sfmData::SfMData& sfmData) :
 
 FeatureExtractor::~FeatureExtractor() = default;
 
-void FeatureExtractor::process(const HardwareContext & hContext)
+void FeatureExtractor::process(const HardwareContext & hContext, const image::EImageColorSpace workingColorSpace)
 {
     size_t maxAvailableMemory = hContext.getUserMaxMemoryAvailable();
     unsigned int maxAvailableCores = hContext.getMaxThreads();
@@ -160,23 +160,23 @@ void FeatureExtractor::process(const HardwareContext & hContext)
 
 #pragma omp parallel for num_threads(nbThreads)
         for (int i = 0; i < cpuJobs.size(); ++i)
-            computeViewJob(cpuJobs.at(i), false);
+            computeViewJob(cpuJobs.at(i), false, workingColorSpace);
     }
 
     if (!gpuJobs.empty())
     {
         for (const auto& job : gpuJobs)
-            computeViewJob(job, true);
+            computeViewJob(job, true, workingColorSpace);
     }
 }
 
-void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool useGPU)
+void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool useGPU, const image::EImageColorSpace workingColorSpace)
 {
     image::Image<float> imageGrayFloat;
     image::Image<unsigned char> imageGrayUChar;
     image::Image<unsigned char> mask;
 
-    image::readImage(job.view().getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
+    image::readImage(job.view().getImagePath(), imageGrayFloat, workingColorSpace);
 
     if (!_masksFolder.empty() && fs::exists(_masksFolder))
     {
