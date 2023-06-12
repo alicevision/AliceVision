@@ -419,7 +419,14 @@ oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int&
 
 oiio::ImageSpec readImageSpec(const std::string& path)
 {
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+  oiio::ImageSpec configSpec;
+#if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12) // OIIO_VERSION >= 2.4.12
+    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
+    // so we can disable the auto orientation and keep the metadata.
+    configSpec.attribute("raw:user_flip", 0); // disable auto rotation of the image buffer but keep exif metadata orientation valid  
+#endif 
+
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
   oiio::ImageSpec spec = in->spec();
 
   if(!in)
@@ -551,6 +558,12 @@ void readImage(const std::string& path,
         // libRAW configuration
         // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
 
+#if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12) // OIIO_VERSION >= 2.4.12
+	    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
+	    // so we can disable the auto orientation and keep the metadata.
+        configSpec.attribute("raw:user_flip", 0); // disable auto rotation of the image buffer but keep exif metadata orientation valid 
+#endif
+
         if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::None)
         {
             if (imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION)
@@ -648,13 +661,30 @@ void readImage(const std::string& path,
     if (inBuf.spec().nchannels == 2)
         ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
+    oiio::ParamValueList imgMetadata = readImageMetadata(path);
+
+    if (isRawImage)
+    {
+        // Check orientation metadata. If image is mirrored, mirror it back and update orientation metadata
+        int orientation = imgMetadata.get_int("orientation", -1);
+
+        if (orientation == 2 || orientation == 4 || orientation == 5 || orientation == 7)
+        {
+            // horizontal mirroring
+            oiio::ImageBuf inBufMirrored = oiio::ImageBufAlgo::flop(inBuf);
+            inBuf = inBufMirrored;
+
+            orientation += (orientation == 2 || orientation == 4) ? -1 : 1;
+        }
+    }
+
     // Apply DCP profile
     if (!imageReadOptions.colorProfileFileName.empty() &&
         imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
     {
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
-        oiio::ParamValueList imgMetadata = readImageMetadata(path);
+        //oiio::ParamValueList imgMetadata = readImageMetadata(path);
         std::string cam_mul = "";
         if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
         {
