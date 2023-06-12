@@ -127,7 +127,9 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     return true;
 }
 
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex, const std::string& lumaStatFilepath, const double meanTargetedLuma)
+void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
+                       std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex,
+                       const std::string& lumaStatFilepath, const double meanTargetedLuma, const double minLuma)
 {
     // If targetIndexesFilename cannot be opened or is not valid an error is thrown
     // For odd number, there is no ambiguity on the middle image.
@@ -196,6 +198,7 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
 
         double minDiffWithLumaTarget = 1000.0;
         targetIndex = 0;
+        int firstValidIndex = 0; // A valid index corresponds to a mean luminance higher than minLuma
 
         for (int k = 0; k < lastIdx; ++k)
         {
@@ -205,8 +208,25 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
                 minDiffWithLumaTarget = diffWithLumaTarget;
                 targetIndex = k;
             }
+            if (v_lumaMeanMean[k] < minLuma)
+            {
+                ++firstValidIndex;
+            }
         }
         ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automaticaly set to " << targetIndex - middleIndex);
+
+        firstValidIndex = std::min<int>(firstValidIndex, targetIndex - 1);
+
+        ALICEVISION_LOG_INFO("Index of first image to be considered for merging: " << firstValidIndex);
+
+        if (firstValidIndex > 0)
+        {
+            for (auto& group : groups)
+            {
+                group.erase(group.begin(), group.begin() + firstValidIndex);
+            }
+            targetIndex -= firstValidIndex;
+        }
     }
 
     for (auto& group : groups)

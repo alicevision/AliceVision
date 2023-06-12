@@ -64,6 +64,7 @@ int aliceVision_main(int argc, char** argv)
     int channelQuantizationPower = 10;
     int offsetRefBracketIndex = 1000; // By default, use the automatic selection
     double meanTargetedLumaForMerging = 0.4;
+    double minLumaForMerging = 0.25;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
@@ -103,6 +104,8 @@ int aliceVision_main(int argc, char** argv)
          "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed backet.")
         ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
          "Mean expected luminance after merging step when input LDR images are decoded in sRGB color space. Must be in the range [0, 1].")
+        ("minLumaForMerging", po::value<double>(&minLumaForMerging)->default_value(minLumaForMerging),
+         "Minimum mean luminance of LDR images for merging. Must be in the range [0, 1].")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
@@ -214,8 +217,9 @@ int aliceVision_main(int argc, char** argv)
         if (workingColorSpace != image::EImageColorSpace::SRGB)
         {
             meanTargetedLumaForMerging = std::pow((meanTargetedLumaForMerging + 0.055) / 1.055, 2.2);
+            minLumaForMerging = std::pow((minLumaForMerging + 0.055) / 1.055, 2.2);
         }
-        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
+        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging, minLumaForMerging);
 
         if ((targetViews.empty() || targetViews.size() != groupedViews.size()) && !isOffsetRefBracketIndexValid)
         {
