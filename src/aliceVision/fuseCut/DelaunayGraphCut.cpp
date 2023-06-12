@@ -3064,11 +3064,16 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
 
   ALICEVISION_LOG_INFO("Creating dense point cloud.");
 
-  const float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
   const int helperPointsGridSize = _mp.userParams.get<int>("LargeScale.helperPointsGridSize", 10);
   const int densifyNbFront = _mp.userParams.get<int>("LargeScale.densifyNbFront", 0);
   const int densifyNbBack = _mp.userParams.get<int>("LargeScale.densifyNbBack", 0);
   const double densifyScale = _mp.userParams.get<double>("LargeScale.densifyScale", 1.0);
+
+  const float minDist =
+      hexah && (helperPointsGridSize >= 0)
+          ? ((hexah[0] - hexah[1]).size() + (hexah[0] - hexah[3]).size() + (hexah[0] - hexah[4]).size()) /
+                (3. * helperPointsGridSize)
+          : 0.00001f;
 
   // add points from depth maps
   if(depthMapsFuseParams != nullptr)
