@@ -12,33 +12,35 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @struct CameraSelection
- * @brief Support class for operating an LRU cache of cameras
+ * @struct CameraPair
+ * @brief Support class for operating an LRU cache of downscaled cameras
+ * @note The CameraPair (camera id, downscale) give a unique key for LRU cache.
  */
-struct CameraSelection : public std::pair<int, int>
+struct CameraPair : public std::pair<int, int>
 {
-    CameraSelection() : std::pair<int, int>(0, 0) {}
-    CameraSelection(int i) : std::pair<int, int>(i, i) {}
-    CameraSelection(int i, int j) : std::pair<int, int>(i, j) {}
+    CameraPair() : std::pair<int, int>(0, 0) {}
+    CameraPair(int i) : std::pair<int, int>(i, i) {}
+    CameraPair(int i, int j) : std::pair<int, int>(i, j) {}
 
-    CameraSelection& operator=(int i)
+    CameraPair& operator=(int i)
     {
         this->first = this->second = i;
         return *this;
     }
 };
 
-inline bool operator==(const CameraSelection& l, const CameraSelection& r)
+inline bool operator==(const CameraPair& l, const CameraPair& r)
 {
     return (l.first == r.first && l.second == r.second);
 }
 
-inline bool operator<(const CameraSelection& l, const CameraSelection& r)
+inline bool operator<(const CameraPair& l, const CameraPair& r)
 {
     return (l.first < r.first || (l.first == r.first && l.second < r.second));
 }
 
-using LRUCameraCache = LRUCache<CameraSelection>;
+using LRUCameraCache = LRUCache<CameraPair>;
+using LRUCameraIdCache = LRUCache<int>;
 
 } // namespace depthMap
 } // namespace aliceVision

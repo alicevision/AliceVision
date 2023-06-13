@@ -14,39 +14,46 @@
 namespace aliceVision {
 namespace depthMap {
 
-inline __device__ void move3DPointByRcPixSize(int deviceCamId, float3& p, float rcPixSize)
+inline __device__ void move3DPointByRcPixSize(float3& p,
+                                              const DeviceCameraParams& rcDeviceCamParams,
+                                              const float rcPixSize)
 {
-    float3 rpv = p - constantCameraParametersArray_d[deviceCamId].C;
+    float3 rpv = p - rcDeviceCamParams.C;
     normalize(rpv);
     p = p + rpv * rcPixSize;
 }
 
-inline __device__ void volume_computePatch(int rcDeviceCamId, int tcDeviceCamId, Patch& ptch, const float fpPlaneDepth, const int2& pix)
+inline __device__ void volume_computePatch(Patch& patch,
+                                           const DeviceCameraParams& rcDeviceCamParams,
+                                           const DeviceCameraParams& tcDeviceCamParams,
+                                           const float fpPlaneDepth,
+                                           const float2& pix)
 {
-    ptch.p = get3DPointForPixelAndFrontoParellePlaneRC(rcDeviceCamId, pix, fpPlaneDepth); // no texture use
-    ptch.d = computePixSize(rcDeviceCamId, ptch.p);                                       // no texture use
-    computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);                                 // no texture use
+    patch.p = get3DPointForPixelAndFrontoParellePlaneRC(rcDeviceCamParams, pix, fpPlaneDepth);
+    patch.d = computePixSize(rcDeviceCamParams, patch.p);
+    computeRotCSEpip(patch, rcDeviceCamParams, tcDeviceCamParams);
 }
 
-__device__ float depthPlaneToDepth(int deviceCamId, const float2& pix, float fpPlaneDepth)
+inline __device__ float depthPlaneToDepth(const DeviceCameraParams& deviceCamParams,
+                                          const float fpPlaneDepth,
+                                          const float2& pix)
 {
-    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCamId];
-    float3 planen = M3x3mulV3(deviceCamParams.iR, make_float3(0.0f, 0.0f, 1.0f));
-    normalize(planen);
-    float3 planep = deviceCamParams.C + planen * fpPlaneDepth;
+    const float3 planep = deviceCamParams.C + deviceCamParams.ZVect * fpPlaneDepth;
     float3 v = M3x3mulV2(deviceCamParams.iP, pix);
     normalize(v);
-    float3 p = linePlaneIntersect(deviceCamParams.C, v, planep, planen);
-    float depth = size(deviceCamParams.C - p);
-    return depth;
+    float3 p = linePlaneIntersect(deviceCamParams.C, v, planep, deviceCamParams.ZVect);
+    return size(deviceCamParams.C - p);
 }
 
 template <typename T>
-__global__ void volume_init_kernel(T* inout_volume_d, int inout_volume_s, int inout_volume_p, int volDimX, int volDimY, T value)
+__global__ void volume_init_kernel(T* inout_volume_d, int inout_volume_s, int inout_volume_p,
+                                   const unsigned int volDimX,
+                                   const unsigned int volDimY,
+                                   const T value)
 {
-    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z;
+    const unsigned int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int vz = blockIdx.z;
 
     if(vx >= volDimX || vy >= volDimY)
         return;
@@ -55,12 +62,13 @@ __global__ void volume_init_kernel(T* inout_volume_d, int inout_volume_s, int in
 }
 
 __global__ void volume_add_kernel(TSimRefine* inout_volume_d, int inout_volume_s, int inout_volume_p, 
-                                  const TSimRefine* in_volume_d, int in_volume_s, int in_volume_p, 
-                                  int volDimX, int volDimY)
+                                  const TSimRefine* in_volume_d, const int in_volume_s, const int in_volume_p,
+                                  const unsigned int volDimX,
+                                  const unsigned int volDimY)
 {
-    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z;
+    const unsigned int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int vz = blockIdx.z;
 
     if(vx >= volDimX || vy >= volDimY)
         return;
@@ -77,12 +85,13 @@ __global__ void volume_add_kernel(TSimRefine* inout_volume_d, int inout_volume_s
 }
 
 __global__ void volume_updateUninitialized_kernel(TSim* inout_volume2nd_d, int inout_volume2nd_s, int inout_volume2nd_p, 
-                                                  const TSim* in_volume1st_d, int in_volume1st_s, int in_volume1st_p, 
-                                                  int volDimX, int volDimY)
+                                                  const TSim* in_volume1st_d, const int in_volume1st_s, const int in_volume1st_p,
+                                                  const unsigned int volDimX,
+                                                  const unsigned int volDimY)
 {
-    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z;
+    const unsigned int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int vz = blockIdx.z;
 
     if(vx >= volDimX || vy >= volDimY)
         return;
@@ -97,47 +106,93 @@ __global__ void volume_updateUninitialized_kernel(TSim* inout_volume2nd_d, int i
     }
 }
 
-__global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
-                                    cudaTextureObject_t tcTex,
-                                    int rcDeviceCamId,
-                                    int tcDeviceCamId,
-                                    int rcWidth, int rcHeight,
-                                    int tcWidth, int tcHeight,
-                                    const float gammaC, 
-                                    const float gammaP, 
-                                    const int wsh,
-                                    const int stepXY,
-                                    const float* in_depths_d, int in_depths_p, 
-                                    TSim* out_volume_1st_d, int out_volume1st_s, int out_volume1st_p,
-                                    TSim* out_volume_2nd_d, int out_volume2nd_s, int out_volume2nd_p,
-                                    const Range depthRange,
-                                    const ROI roi)
+__global__ void volume_computeSimilarity_kernel(TSim* out_volume1st_d, int out_volume1st_s, int out_volume1st_p,
+                                                TSim* out_volume2nd_d, int out_volume2nd_s, int out_volume2nd_p,
+                                                const float* in_depths_d, const int in_depths_p,
+                                                const int rcDeviceCameraParamsId,
+                                                const int tcDeviceCameraParamsId,
+                                                const cudaTextureObject_t rcMipmapImage_tex,
+                                                const cudaTextureObject_t tcMipmapImage_tex,
+                                                const unsigned int rcSgmLevelWidth,
+                                                const unsigned int rcSgmLevelHeight,
+                                                const unsigned int tcSgmLevelWidth,
+                                                const unsigned int tcSgmLevelHeight,
+                                                const float rcMipmapLevel,
+                                                const int stepXY,
+                                                const int wsh,
+                                                const float invGammaC,
+                                                const float invGammaP,
+                                                const bool useConsistentScale,
+                                                const bool useCustomPatchPattern,
+                                                const Range depthRange,
+                                                const ROI roi)
 {
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
-    const int roiZ = blockIdx.z;
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int roiZ = blockIdx.z;
 
     if(roiX >= roi.width() || roiY >= roi.height()) // no need to check roiZ
         return;
 
-    // corresponding volume coordinates
-    const int vx = roiX;
-    const int vy = roiY;
-    const int vz = depthRange.begin + roiZ;
+    // R and T camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
 
-    // corresponding device image coordinates
-    const int x = (roi.x.begin + vx) * stepXY;
-    const int y = (roi.y.begin + vy) * stepXY;
+    // corresponding volume coordinates
+    const unsigned int vx = roiX;
+    const unsigned int vy = roiY;
+    const unsigned int vz = depthRange.begin + roiZ;
+
+    // corresponding image coordinates
+    const float x = float(roi.x.begin + vx) * float(stepXY);
+    const float y = float(roi.y.begin + vy) * float(stepXY);
 
     // corresponding depth plane
-    const float depthPlane = *get2DBufferAt(in_depths_d, in_depths_p, vz, 0);
+    const float depthPlane = *get2DBufferAt(in_depths_d, in_depths_p, size_t(vz), 0);
 
     // compute patch
-    Patch ptcho;
-    volume_computePatch(rcDeviceCamId, tcDeviceCamId, ptcho, depthPlane, make_int2(x, y)); // no texture use
+    Patch patch;
+    volume_computePatch(patch, rcDeviceCamParams, tcDeviceCamParams, depthPlane, make_float2(x, y));
+
+    // we do not need positive and filtered similarity values
+    constexpr bool invertAndFilter = false;
+
+    float fsim = CUDART_INF_F;
 
     // compute patch similarity
-    float fsim = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptcho, rcWidth, rcHeight, tcWidth, tcHeight, wsh, gammaC, gammaP);
+    if(useCustomPatchPattern)
+    {
+        fsim = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcDeviceCamParams,
+                                                                    tcDeviceCamParams,
+                                                                    rcMipmapImage_tex,
+                                                                    tcMipmapImage_tex,
+                                                                    rcSgmLevelWidth,
+                                                                    rcSgmLevelHeight,
+                                                                    tcSgmLevelWidth,
+                                                                    tcSgmLevelHeight,
+                                                                    rcMipmapLevel,
+                                                                    invGammaC,
+                                                                    invGammaP,
+                                                                    useConsistentScale,
+                                                                    patch);
+    }
+    else
+    {
+        fsim = compNCCby3DptsYK<invertAndFilter>(rcDeviceCamParams,
+                                                 tcDeviceCamParams,
+                                                 rcMipmapImage_tex,
+                                                 tcMipmapImage_tex,
+                                                 rcSgmLevelWidth,
+                                                 rcSgmLevelHeight,
+                                                 tcSgmLevelWidth,
+                                                 tcSgmLevelHeight,
+                                                 rcMipmapLevel,
+                                                 wsh,
+                                                 invGammaC,
+                                                 invGammaP,
+                                                 useConsistentScale,
+                                                 patch);
+    }
 
     if(fsim == CUDART_INF_F) // invalid similarity
     {
@@ -163,82 +218,94 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
       fsim *= 254.0f;
     }
 
-    TSim* fsim_1st = get3DBufferAt(out_volume_1st_d, out_volume1st_s, out_volume1st_p, vx, vy, vz);
-    TSim* fsim_2nd = get3DBufferAt(out_volume_2nd_d, out_volume2nd_s, out_volume2nd_p, vx, vy, vz);
+    TSim* fsim_1st = get3DBufferAt(out_volume1st_d, out_volume1st_s, out_volume1st_p, size_t(vx), size_t(vy), size_t(vz));
+    TSim* fsim_2nd = get3DBufferAt(out_volume2nd_d, out_volume2nd_s, out_volume2nd_p, size_t(vx), size_t(vy), size_t(vz));
 
-    if (fsim < *fsim_1st)
+    if(fsim < *fsim_1st)
     {
         *fsim_2nd = *fsim_1st;
         *fsim_1st = TSim(fsim);
     }
-    else if (fsim < *fsim_2nd)
+    else if(fsim < *fsim_2nd)
     {
         *fsim_2nd = TSim(fsim);
     }
 }
 
-__global__ void volume_refine_kernel(cudaTextureObject_t rcTex, 
-                                     cudaTextureObject_t tcTex, 
-                                     int rcDeviceCamId,
-                                     int tcDeviceCamId, 
-                                     int rcWidth, int rcHeight, 
-                                     int tcWidth, int tcHeight,
-                                     int volDimZ,
-                                     int stepXY,
-                                     int wsh, 
-                                     float gammaC, 
-                                     float gammaP, 
-                                     const float2* in_sgmDepthPixSizeMap_d, int in_sgmDepthPixSizeMap_p,
-                                     const float3* in_sgmNormalMap_d, int in_sgmNormalMap_p,
-                                     TSimRefine* inout_volSim_d, int inout_volSim_s, int inout_volSim_p, 
-                                     const Range depthRange,
-                                     const ROI roi)
+__global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int inout_volSim_s, int inout_volSim_p,
+                                               const float2* in_sgmDepthPixSizeMap_d, const int in_sgmDepthPixSizeMap_p,
+                                               const float3* in_sgmNormalMap_d, const int in_sgmNormalMap_p,
+                                               const int rcDeviceCameraParamsId,
+                                               const int tcDeviceCameraParamsId,
+                                               const cudaTextureObject_t rcMipmapImage_tex,
+                                               const cudaTextureObject_t tcMipmapImage_tex,
+                                               const unsigned int rcRefineLevelWidth,
+                                               const unsigned int rcRefineLevelHeight,
+                                               const unsigned int tcRefineLevelWidth,
+                                               const unsigned int tcRefineLevelHeight,
+                                               const float rcMipmapLevel,
+                                               const int volDimZ,
+                                               const int stepXY,
+                                               const int wsh,
+                                               const float invGammaC,
+                                               const float invGammaP,
+                                               const bool useConsistentScale,
+                                               const bool useCustomPatchPattern,
+                                               const Range depthRange,
+                                               const ROI roi)
 {
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
-    const int roiZ = blockIdx.z;
+    const unsigned int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int roiZ = blockIdx.z;
 
     if(roiX >= roi.width() || roiY >= roi.height()) // no need to check roiZ
         return;
 
+    // R and T camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+    const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCameraParamsId];
+
     // corresponding volume and depth/sim map coordinates
-    const int vx = roiX;
-    const int vy = roiY;
-    const int vz = depthRange.begin + roiZ;
+    const unsigned int vx = roiX;
+    const unsigned int vy = roiY;
+    const unsigned int vz = depthRange.begin + roiZ;
 
-    // corresponding device image coordinates
-    const int x = (roi.x.begin + vx) * stepXY;
-    const int y = (roi.y.begin + vy) * stepXY;
+    // corresponding image coordinates
+    const float x = float(roi.x.begin + vx) * float(stepXY);
+    const float y = float(roi.y.begin + vy) * float(stepXY);
 
-    // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
+    // corresponding input sgm depth/pixSize (middle depth)
+    const float2 in_sgmDepthPixSize = *get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy);
 
-    // original depth invalid or masked, similarity value remain at 255
-    if(originalDepth <= 0.0f)
+    // sgm depth (middle depth) invalid or masked
+    if(in_sgmDepthPixSize.x <= 0.0f)
         return; 
 
-    // get rc 3d point at original depth (z center)
-    float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), originalDepth);
+    // initialize rc 3d point at sgm depth (middle depth)
+    float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, make_float2(x, y), in_sgmDepthPixSize.x);
 
-    // move rc 3d point according to the relative depth
+    // compute relative depth index offset from z center
     const int relativeDepthIndexOffset = vz - ((volDimZ - 1) / 2);
+
     if(relativeDepthIndexOffset != 0)
     {
-        const float pixSizeOffset = relativeDepthIndexOffset * computePixSize(rcDeviceCamId, p);
-        move3DPointByRcPixSize(rcDeviceCamId, p, pixSizeOffset);
+        // not z center
+        // move rc 3d point by relative depth index offset * sgm pixSize
+        const float pixSizeOffset = relativeDepthIndexOffset * in_sgmDepthPixSize.y; // input sgm pixSize
+        move3DPointByRcPixSize(p, rcDeviceCamParams, pixSizeOffset);
     }
 
     // compute patch
-    Patch ptch;
-    ptch.p = p;
-    ptch.d = computePixSize(rcDeviceCamId, p);
+    Patch patch;
+    patch.p = p;
+    patch.d = computePixSize(rcDeviceCamParams, p);
 
     // computeRotCSEpip
     {
-      // Vector from the reference camera to the 3d point
-      float3 v1 = constantCameraParametersArray_d[rcDeviceCamId].C - ptch.p;
-      // Vector from the target camera to the 3d point
-      float3 v2 = constantCameraParametersArray_d[tcDeviceCamId].C - ptch.p;
+      // vector from the reference camera to the 3d point
+      float3 v1 = rcDeviceCamParams.C - patch.p;
+      // vector from the target camera to the 3d point
+      float3 v2 = tcDeviceCamParams.C - patch.p;
       normalize(v1);
       normalize(v2);
 
@@ -246,38 +313,68 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
       // n has to be on the epipolar plane
       // x has to be on the epipolar plane
 
-      ptch.y = cross(v1, v2);
-      normalize(ptch.y);
+      patch.y = cross(v1, v2);
+      normalize(patch.y);
 
       if(in_sgmNormalMap_d != nullptr) // initialize patch normal from input normal map
       {
-        ptch.n = *get2DBufferAt(in_sgmNormalMap_d, in_sgmNormalMap_p, vx, vy);
+        patch.n = *get2DBufferAt(in_sgmNormalMap_d, in_sgmNormalMap_p, vx, vy);
       }
       else // initialize patch normal from v1 & v2
       {
-        ptch.n = (v1 + v2) / 2.0f;
-        normalize(ptch.n);
+        patch.n = (v1 + v2) / 2.0f;
+        normalize(patch.n);
       }
 
-      ptch.x = cross(ptch.y, ptch.n);
-      normalize(ptch.x);
+      patch.x = cross(patch.y, patch.n);
+      normalize(patch.x);
     }
+
+    // we need positive and filtered similarity values
+    constexpr bool invertAndFilter = true;
+
+    float fsimInvertedFiltered = CUDART_INF_F;
 
     // compute similarity
-    // TODO: this function should return a similarity value between -1 and 0 or 1 for infinite.
-    //       in practice this function return value between -1 and 1.
-    float fsim = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptch, rcWidth, rcHeight, tcWidth, tcHeight, wsh, gammaC, gammaP);
-
-    if(fsim == 1.f || fsim == CUDART_INF_F) // infinite or invalid similarity
+    if(useCustomPatchPattern)
     {
-        fsim = 0.0f; // 0 is the worst similarity value at this point
+        fsimInvertedFiltered = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcDeviceCamParams,
+                                                                                    tcDeviceCamParams,
+                                                                                    rcMipmapImage_tex,
+                                                                                    tcMipmapImage_tex,
+                                                                                    rcRefineLevelWidth,
+                                                                                    rcRefineLevelHeight,
+                                                                                    tcRefineLevelWidth,
+                                                                                    tcRefineLevelHeight,
+                                                                                    rcMipmapLevel,
+                                                                                    invGammaC,
+                                                                                    invGammaP,
+                                                                                    useConsistentScale,
+                                                                                    patch);
+    }
+    else
+    {
+        fsimInvertedFiltered = compNCCby3DptsYK<invertAndFilter>(rcDeviceCamParams,
+                                                                 tcDeviceCamParams,
+                                                                 rcMipmapImage_tex,
+                                                                 tcMipmapImage_tex,
+                                                                 rcRefineLevelWidth,
+                                                                 rcRefineLevelHeight,
+                                                                 tcRefineLevelWidth,
+                                                                 tcRefineLevelHeight,
+                                                                 rcMipmapLevel,
+                                                                 wsh,
+                                                                 invGammaC,
+                                                                 invGammaP,
+                                                                 useConsistentScale,
+                                                                 patch);
     }
 
-    // invert and filter similarity between 0 and 1
-    // apply sigmoid see: https://www.desmos.com/calculator/skmhf1gpyf
-    // best similarity value was -1, worst was 0
-    // best similarity value is 1, worst is still 0
-    const float fsimInvertedFiltered = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, fsim);
+    if(fsimInvertedFiltered == CUDART_INF_F) // invalid similarity
+    {
+        // do nothing
+        return;
+    }
 
     // get output similarity pointer
     TSimRefine* outSimPtr = get3DBufferAt(inout_volSim_d, inout_volSim_s, inout_volSim_p, vx, vy, vz);
@@ -293,59 +390,88 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
 #endif
 }
 
-__global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int out_sgmDepthSimMap_p,
-                                            const float* in_depths_d, int in_depths_p, 
-                                            const TSim* in_volSim_d, int in_volSim_s, int in_volSim_p,
-                                            int volDimZ, // useful for depth/sim interpolation
-                                            int rcDeviceCamId,
-                                            int scaleStep, 
-                                            const Range depthRange,
-                                            const ROI roi)
+__global__ void volume_retrieveBestDepth_kernel(float2* out_sgmDepthThicknessMap_d, int out_sgmDepthThicknessMap_p,
+                                                float2* out_sgmDepthSimMap_d, int out_sgmDepthSimMap_p, // output depth/sim map is optional (nullptr)
+                                                const float* in_depths_d, const int in_depths_p,
+                                                const TSim* in_volSim_d, const int in_volSim_s, const int in_volSim_p,
+                                                const int rcDeviceCameraParamsId,
+                                                const int volDimZ, // useful for depth/sim interpolation
+                                                const int scaleStep,
+                                                const float thicknessMultFactor, // default 1
+                                                const float maxSimilarity,
+                                                const Range depthRange,
+                                                const ROI roi)
 {
-    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(vx >= roi.width() || vy >= roi.height())
         return;
 
-    // corresponding device image coordinates
+    // R camera parameters
+    const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCameraParamsId];
+
+    // corresponding image coordinates
     const float2 pix{float((roi.x.begin + vx) * scaleStep), float((roi.y.begin + vy) * scaleStep)};
 
-    // corresponding output depth/sim pointer
-    float2* out_bestDepthSimPtr = get2DBufferAt(out_sgmDepthSimMap_d, out_sgmDepthSimMap_p, vx, vy);
+    // corresponding output depth/thickness pointer
+    float2* out_bestDepthThicknessPtr = get2DBufferAt(out_sgmDepthThicknessMap_d, out_sgmDepthThicknessMap_p, vx, vy);
 
-    // find best depth
-    float bestSim = 255.0f;
+    // corresponding output depth/sim pointer or nullptr
+    float2* out_bestDepthSimPtr = (out_sgmDepthSimMap_d == nullptr) ? nullptr : get2DBufferAt(out_sgmDepthSimMap_d, out_sgmDepthSimMap_p, vx, vy);
+
+    // find the best depth plane index for the current pixel
+    // the best depth plane has the best similarity value
+    // - best possible similarity value is 0
+    // - worst possible similarity value is 254
+    // - invalid similarity value is 255
+    float bestSim = 255.f;
     int bestZIdx = -1;
+
     for(int vz = depthRange.begin; vz < depthRange.end; ++vz)
     {
       const float simAtZ = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, vz);
-      if (simAtZ < bestSim)
+
+      if(simAtZ < bestSim)
       {
         bestSim = simAtZ;
         bestZIdx = vz;
       }
     }
 
-    // TODO: consider filtering out the values with a too bad score like (bestSim > 200.0f)
-    //       to reduce the storage volume of the depth maps
-    if (bestZIdx == -1)
+    // filtering out invalid values and values with a too bad score (above the user maximum similarity threshold)
+    // note: this helps to reduce following calculations and also the storage volume of the depth maps.
+    if((bestZIdx == -1) || (bestSim > maxSimilarity))
     {
-        out_bestDepthSimPtr->x = -1.0f; // invalid depth
-        out_bestDepthSimPtr->y =  1.0f; // worst similarity value
+        out_bestDepthThicknessPtr->x = -1.f; // invalid depth
+        out_bestDepthThicknessPtr->y = -1.f; // invalid thickness
+
+        if(out_bestDepthSimPtr != nullptr)
+        {
+            out_bestDepthSimPtr->x = -1.f; // invalid depth
+            out_bestDepthSimPtr->y =  1.f; // worst similarity value
+        }
         return;
     }
 
+    // find best depth plane previous and next indexes
+    const int bestZIdx_m1 = max(0, bestZIdx - 1);           // best depth plane previous index
+    const int bestZIdx_p1 = min(volDimZ - 1, bestZIdx + 1); // best depth plane next index
+
+    // get best best depth current, previous and next plane depth values
+    // note: float3 struct is useful for depth interpolation
+    float3 depthPlanes;
+    depthPlanes.x = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_m1, 0);  // best depth previous plane
+    depthPlanes.y = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx, 0);     // best depth plane
+    depthPlanes.z = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_p1, 0);  // best depth next plane
+
+    const float bestDepth    = depthPlaneToDepth(rcDeviceCamParams, depthPlanes.y, pix); // best depth
+    const float bestDepth_m1 = depthPlaneToDepth(rcDeviceCamParams, depthPlanes.x, pix); // previous best depth
+    const float bestDepth_p1 = depthPlaneToDepth(rcDeviceCamParams, depthPlanes.z, pix); // next best depth
+
 #ifdef ALICEVISION_DEPTHMAP_RETRIEVE_BEST_Z_INTERPOLATION
     // with depth/sim interpolation
-    // NOTE: disable by default
-    const int bestZIdx_m1 = max(0, bestZIdx - 1);
-    const int bestZIdx_p1 = min(volDimZ-1, bestZIdx + 1);
-
-    float3 depths;
-    depths.x = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_m1, 0);
-    depths.y = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx, 0);
-    depths.z = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_p1, 0);
+    // note: disable by default
 
     float3 sims;
     sims.x = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, bestZIdx_m1);
@@ -358,62 +484,67 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int ou
     sims.z = (sims.z / 255.0f) * 2.0f - 1.0f;
 
     // interpolation between the 3 depth planes candidates
-    const float refinedDepthPlane = refineDepthSubPixel(depths, sims);
+    const float refinedDepthPlane = refineDepthSubPixel(depthPlanes, sims);
 
-    out_bestDepthSimPtr->x = depthPlaneToDepth(rcDeviceCamId, pix, refinedDepthPlane);
-    out_bestDepthSimPtr->y = sims.y;
+    const float out_bestDepth = depthPlaneToDepth(rcDeviceCamParams, refinedDepthPlane, pix);
+    const float out_bestSim = sims.y;
 #else
     // without depth interpolation
-    const float bestDepthPlane = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx, 0);
-    out_bestDepthSimPtr->x = depthPlaneToDepth(rcDeviceCamId, pix, bestDepthPlane);
-    out_bestDepthSimPtr->y = (bestSim / 255.0f) * 2.0f - 1.0f; // convert from (0, 255) to (-1, +1)
-    return;
+    const float out_bestDepth = bestDepth;
+    const float out_bestSim = (bestSim / 255.0f) * 2.0f - 1.0f; // convert from (0, 255) to (-1, +1)
 #endif
+
+    // compute output best depth thickness
+    // thickness is the maximum distance between output best depth and previous or next depth
+    // thickness can be inflate with thicknessMultFactor
+    const float out_bestDepthThickness = max(bestDepth_p1 - out_bestDepth, out_bestDepth - bestDepth_m1) * thicknessMultFactor;
+
+    // write output depth/thickness
+    out_bestDepthThicknessPtr->x = out_bestDepth;
+    out_bestDepthThicknessPtr->y = out_bestDepthThickness;
+
+    if(out_sgmDepthSimMap_d != nullptr)
+    {
+        // write output depth/sim
+        out_bestDepthSimPtr->x = out_bestDepth;
+        out_bestDepthSimPtr->y = out_bestSim;
+    }
 }
 
 
-__global__ void volume_refineBestZ_kernel(float2* out_refineDepthSimMap_d, int out_refineDepthSimMap_p,
-                                          const float2* in_sgmDepthPixSizeMap_d, int in_sgmDepthPixSizeMap_p,
-                                          const TSimRefine* in_volSim_d, int in_volSim_s, int in_volSim_p, 
-                                          int volDimZ, 
-                                          int rcDeviceCamId, 
-                                          int scaleStep,
-                                          int samplesPerPixSize, // number of subsamples (samples between two depths)
-                                          int halfNbSamples,     // number of samples (in front and behind mid depth)
-                                          int halfNbDepths,      // number of depths  (in front and behind mid depth) should be equal to (volDimZ - 1) / 2
-                                          float twoTimesSigmaPowerTwo, 
-                                          const ROI roi)
+__global__ void volume_refineBestDepth_kernel(float2* out_refineDepthSimMap_d, int out_refineDepthSimMap_p,
+                                              const float2* in_sgmDepthPixSizeMap_d, int in_sgmDepthPixSizeMap_p,
+                                              const TSimRefine* in_volSim_d, int in_volSim_s, int in_volSim_p,
+                                              int volDimZ,
+                                              int samplesPerPixSize, // number of subsamples (samples between two depths)
+                                              int halfNbSamples,     // number of samples (in front and behind mid depth)
+                                              int halfNbDepths,      // number of depths  (in front and behind mid depth) should be equal to (volDimZ - 1) / 2
+                                              float twoTimesSigmaPowerTwo,
+                                              const ROI roi)
 {
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(roiX >= roi.width() || roiY >= roi.height())
+    if(vx >= roi.width() || vy >= roi.height())
         return;
 
-    // corresponding volume / depth sim map coordinates
-    const int vx = roiX;
-    const int vy = roiY;
-
-    // corresponding device image coordinates
-    const int x = (roi.x.begin + vx) * scaleStep;
-    const int y = (roi.y.begin + vy) * scaleStep;
-
-    // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
+    // corresponding input sgm depth/pixSize (middle depth)
+    const float2 in_sgmDepthPixSize = *get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy);
 
     // corresponding output depth/sim pointer
     float2* out_bestDepthSimPtr = get2DBufferAt(out_refineDepthSimMap_d, out_refineDepthSimMap_p, vx, vy);
 
-    if(originalDepth <= 0.0f) // original depth invalid or masked
+    // sgm depth (middle depth) invalid or masked
+    if(in_sgmDepthPixSize.x <= 0.0f)
     {
-        out_bestDepthSimPtr->x = originalDepth;  // -1 (invalid) or -2 (masked)
-        out_bestDepthSimPtr->y = 1.0f;           // similarity between (-1, +1)
+        out_bestDepthSimPtr->x = in_sgmDepthPixSize.x;  // -1 (invalid) or -2 (masked)
+        out_bestDepthSimPtr->y = 1.0f;                  // similarity between (-1, +1)
         return;
     }
 
     // find best z sample per pixel
-    float bestSampleSim = 99999.f;
-    int bestSampleOffsetIndex = 0;
+    float bestSampleSim = 0.f;      // all sample sim <= 0.f
+    int bestSampleOffsetIndex = 0;  // default is middle depth (SGM)
 
     // sliding gaussian window
     for(int sample = -halfNbSamples; sample <= halfNbSamples; ++sample)
@@ -422,15 +553,17 @@ __global__ void volume_refineBestZ_kernel(float2* out_refineDepthSimMap_d, int o
 
         for(int vz = 0; vz < volDimZ; ++vz)
         {
-            const int rz = (vz - halfNbDepths);        // relative depth index offset
-            const int zs = rz * samplesPerPixSize;     // relative sample offset
+            const int rz = (vz - halfNbDepths);    // relative depth index offset
+            const int zs = rz * samplesPerPixSize; // relative sample offset
 
-            // get the inversed similarity sum value
+            // get the inverted similarity sum value
             // best value is the HIGHEST
+            // worst value is 0
             const float invSimSum = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, vz);
 
-            // reverse the inversed similarity sum value
-            // best similarity value is the LOWEST
+            // reverse the inverted similarity sum value
+            // best value is the LOWEST
+            // worst value is 0
             const float simSum = -invSimSum;
 
             // apply gaussian
@@ -445,12 +578,17 @@ __global__ void volume_refineBestZ_kernel(float2* out_refineDepthSimMap_d, int o
         }
     }
 
-    // get rc 3d point at original depth (z center)
-    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), originalDepth);
-    const float sampleSize = computePixSize(rcDeviceCamId, p) / samplesPerPixSize;
-    const float sampleSizeOffset = bestSampleOffsetIndex * sampleSize;
-    const float bestDepth = originalDepth + sampleSizeOffset;
+    // compute sample size
+    const float sampleSize = in_sgmDepthPixSize.y / samplesPerPixSize; // input sgm pixSize / samplesPerPixSize
 
+    // compute sample size offset from z center
+    const float sampleSizeOffset = bestSampleOffsetIndex * sampleSize;
+
+    // compute best depth
+    // input sgm depth (middle depth) + sample size offset from z center
+    const float bestDepth = in_sgmDepthPixSize.x + sampleSizeOffset;
+
+    // write output best depth/sim
     out_bestDepthSimPtr->x = bestDepth;
     out_bestDepthSimPtr->y = bestSampleSim;
 }
@@ -517,18 +655,23 @@ __global__ void volume_computeBestZInSlice_kernel(TSimAcc* xzSlice_d, int xzSlic
  * @param[in] xSliceBestInColCst
  * @param[out] volSimT output similarity volume
  */
-__global__ void volume_agregateCostVolumeAtXinSlices_kernel(
-            cudaTextureObject_t rcTex,
-            TSimAcc* xzSliceForY_d, int xzSliceForY_p,
-            const TSimAcc* xzSliceForYm1_d, int xzSliceForYm1_p,
-            const TSimAcc* bestSimInYm1_d,
-            TSim* volAgr_d, int volAgr_s, int volAgr_p,
-            const int3 volDim,
-            const int3 axisT,
-            float step,
-            int y, float _P1, float _P2,
-            int ySign, int filteringIndex,
-            const ROI roi)
+__global__ void volume_agregateCostVolumeAtXinSlices_kernel(const cudaTextureObject_t rcMipmapImage_tex,
+                                                            const unsigned int rcSgmLevelWidth,
+                                                            const unsigned int rcSgmLevelHeight,
+                                                            const float rcMipmapLevel,
+                                                            TSimAcc* xzSliceForY_d, int xzSliceForY_p,
+                                                            const TSimAcc* xzSliceForYm1_d, const int xzSliceForYm1_p,
+                                                            const TSimAcc* bestSimInYm1_d,
+                                                            TSim* volAgr_d, const int volAgr_s, const int volAgr_p,
+                                                            const int3 volDim,
+                                                            const int3 axisT,
+                                                            const float step,
+                                                            const int y,
+                                                            const float P1,
+                                                            const float _P2,
+                                                            const int ySign,
+                                                            const int filteringIndex,
+                                                            const ROI roi)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int z = blockIdx.y * blockDim.y + threadIdx.y;
@@ -565,9 +708,9 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
           const int imX1 = imX0 - ySign * step * (axisT.y == 0); // M1
           const int imY1 = imY0 - ySign * step * (axisT.y == 1);
 
-          const float4 gcr0 = tex2D_float4(rcTex, float(imX0) + 0.5f, float(imY0) + 0.5f);
-          const float4 gcr1 = tex2D_float4(rcTex, float(imX1) + 0.5f, float(imY1) + 0.5f);
-          const float deltaC = Euclidean3(gcr0, gcr1);
+          const float4 gcr0 = tex2DLod<float4>(rcMipmapImage_tex, (float(imX0) + 0.5f) / float(rcSgmLevelWidth), (float(imY0) + 0.5f) / float(rcSgmLevelHeight), rcMipmapLevel);
+          const float4 gcr1 = tex2DLod<float4>(rcMipmapImage_tex, (float(imX1) + 0.5f) / float(rcSgmLevelWidth), (float(imY1) + 0.5f) / float(rcSgmLevelHeight), rcMipmapLevel);
+          const float deltaC = euclideanDist3(gcr0, gcr1);
 
           // sigmoid f(x) = i + (a - i) * (1 / ( 1 + e^(10 * (x - P2) / w)))
           // see: https://www.desmos.com/calculator/1qvampwbyx
@@ -580,7 +723,7 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         const TSimAcc pathCostMDM1 = *get2DBufferAt(xzSliceForYm1_d, xzSliceForYm1_p, x, z - 1); // M1: minus 1 over depths
         const TSimAcc pathCostMD   = *get2DBufferAt(xzSliceForYm1_d, xzSliceForYm1_p, x, z);
         const TSimAcc pathCostMDP1 = *get2DBufferAt(xzSliceForYm1_d, xzSliceForYm1_p, x, z + 1); // P1: plus 1 over depths
-        const float minCost = multi_fminf(pathCostMD, pathCostMDM1 + _P1, pathCostMDP1 + _P1, bestCostInColM1 + P2);
+        const float minCost = multi_fminf(pathCostMD, pathCostMDM1 + P1, pathCostMDP1 + P1, bestCostInColM1 + P2);
 
         // if 'pathCostMD' is the minimal value of the depth
         pathCost = (*sim_xz) + minCost - bestCostInColM1;

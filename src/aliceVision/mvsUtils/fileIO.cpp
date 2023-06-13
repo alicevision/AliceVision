@@ -18,7 +18,7 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale, const std::string& customSuffix, int tileBeginX, int tileBeginY)
+std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, const std::string& customSuffix, int tileBeginX, int tileBeginY)
 {
   std::string folder = mp._imagesFolder;
   std::string suffix;
@@ -214,28 +214,57 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
       }
       case EFileType::depthMap:
       {
-          if(scale == 0)
-              folder = mp.getDepthMapsFilterFolder();
-          else
-              folder = mp.getDepthMapsFolder();
+          folder = mp.getDepthMapsFolder();
           suffix = "_depthMap";
           ext = "exr";
           break;
       }
+      case EFileType::depthMapFiltered:
+      {
+          folder = mp.getDepthMapsFilterFolder();
+          suffix = "_depthMap";
+          ext = "exr";
+          break;
+      }
+      case EFileType::simMap:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_simMap";
+          ext = "exr";
+          break;
+      }
+      case EFileType::simMapFiltered:
+      {
+          folder = mp.getDepthMapsFilterFolder();
+          suffix = "_simMap";
+          ext = "exr";
+          break;
+      }
       case EFileType::normalMap:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_normalMap";
+          ext = "exr";
+          break;
+      }
+      case EFileType::normalMapFiltered:
       {
           folder = mp.getDepthMapsFilterFolder();
           suffix = "_normalMap";
           ext = "exr";
           break;
       }
-      case EFileType::simMap:
+      case EFileType::thicknessMap:
       {
-          if(scale == 0)
-              folder = mp.getDepthMapsFilterFolder();
-          else
-              folder = mp.getDepthMapsFolder();
-          suffix = "_simMap";
+          folder = mp.getDepthMapsFolder();
+          suffix = "_thicknessMap";
+          ext = "exr";
+          break;
+      }
+      case EFileType::pixSizeMap:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_pixSizeMap";
           ext = "exr";
           break;
       }
@@ -280,7 +309,14 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
       case EFileType::volumeCross:
       {
           folder = mp.getDepthMapsFolder();
-          suffix = "_volume-cross";
+          suffix = "_volumeCross";
+          ext = "abc";
+          break;
+      }
+      case EFileType::volumeTopographicCut:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_volumeTopographicCut";
           ext = "abc";
           break;
       }
@@ -299,27 +335,15 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           break;
       }
   }
-  if(scale > 1)
-  {
-      suffix += "_scale" + num2str(scale);
-  }
 
-  std::string fileName = folder + std::to_string(viewId) + suffix + customSuffix + tileSuffix + "." + ext;
+  const std::string fileName = folder + std::to_string(viewId) + suffix + customSuffix + tileSuffix + "." + ext;
+
   return fileName;
 }
 
-std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType mv_file_type, int scale, const std::string& customSuffix, int tileBeginX, int tileBeginY)
+std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType mv_file_type, const std::string& customSuffix, int tileBeginX, int tileBeginY)
 {
-    return getFileNameFromViewId(mp, mp.getViewId(index), mv_file_type, scale, customSuffix, tileBeginX, tileBeginY);
-}
-
-FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite)
-{
-    const std::string fileName = getFileNameFromIndex(mp, index, mv_file_type, 0, "");
-    FILE* out = fopen(fileName.c_str(), readWrite);
-    if (out==NULL)
-        throw std::runtime_error(std::string("Cannot create file: ") + fileName);
-    return out;
+    return getFileNameFromViewId(mp, mp.getViewId(index), mv_file_type, customSuffix, tileBeginX, tileBeginY);
 }
 
 

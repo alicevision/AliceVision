@@ -2,9 +2,11 @@
 set(depthMap_files_headers
   BufPtr.hpp
   computeOnMultiGPUs.hpp
-  depthMap.hpp
-  depthMapUtils.hpp
+  CustomPatchPatternParams.hpp
+  DepthMapEstimator.hpp
   DepthMapParams.hpp
+  depthMapUtils.hpp
+  NormalMapEstimator.hpp
   Refine.hpp
   RefineParams.hpp
   Sgm.hpp
@@ -17,8 +19,10 @@ set(depthMap_files_headers
 # Sources
 set(depthMap_files_sources
   computeOnMultiGPUs.cpp
-  depthMap.cpp
+  CustomPatchPatternParams.cpp
+  DepthMapEstimator.cpp
   depthMapUtils.cpp
+  NormalMapEstimator.cpp
   Refine.cpp
   Sgm.cpp
   SgmDepthList.cpp
@@ -35,14 +39,16 @@ set(depthMap_cuda_host_headers
 
 # Cuda Host Sources
 set(depthMap_cuda_host_sources
+  cuda/host/DeviceCache.hpp
+  cuda/host/DeviceCache.cpp
+  cuda/host/DeviceMipmapImage.hpp
+  cuda/host/DeviceMipmapImage.cpp
+  cuda/host/DeviceStreamManager.hpp
+  cuda/host/DeviceStreamManager.cpp
+  cuda/host/patchPattern.hpp
+  cuda/host/patchPattern.cpp
   cuda/host/utils.hpp
   cuda/host/utils.cpp
-  cuda/host/DeviceStreamManager.cpp
-  cuda/host/DeviceStreamManager.hpp
-  cuda/host/DeviceCache.cpp
-  cuda/host/DeviceCache.hpp
-  cuda/host/DeviceCamera.cpp
-  cuda/host/DeviceCamera.hpp
 )
 
 # device CUDA Headers Only
@@ -60,6 +66,8 @@ set(depthMap_cuda_device_headers
 set(depthMap_cuda_device_sources
   cuda/device/DeviceCameraParams.hpp
   cuda/device/DeviceCameraParams.cu
+  cuda/device/DevicePatchPattern.hpp
+  cuda/device/DevicePatchPattern.cu
 )
 
 # imageProcessing CUDA Sources
@@ -68,19 +76,8 @@ set(depthMap_cuda_imageProcessing_sources
   cuda/imageProcessing/deviceGaussianFilter.cu
   cuda/imageProcessing/deviceColorConversion.hpp
   cuda/imageProcessing/deviceColorConversion.cu
-)
-
-# normalMapping CUDA Headers Only
-set(depthMap_cuda_normalMapping_headers
-  cuda/normalMapping/deviceNormalMapKernels.cuh
-)
-
-# normalMapping CUDA Sources
-set(depthMap_cuda_normalMapping_sources
-  cuda/normalMapping/deviceNormalMap.hpp
-  cuda/normalMapping/deviceNormalMap.cu
-  cuda/normalMapping/DeviceNormalMapper.hpp
-  cuda/normalMapping/DeviceNormalMapper.cpp
+  cuda/imageProcessing/deviceMipmappedArray.hpp
+  cuda/imageProcessing/deviceMipmappedArray.cu
 )
 
 # planeSweeping CUDA Headers Only
@@ -100,7 +97,6 @@ set(depthMap_cuda_planeSweeping_sources
 
 set_source_files_properties(${depthMap_cuda_host_headers}
 			    ${depthMap_cuda_device_headers} 
-			    ${depthMap_cuda_normalMapping_headers}
 			    ${depthMap_cuda_planeSweeping_headers}
 
   PROPERTIES HEADER_FILE_ONLY true
@@ -109,7 +105,6 @@ set_source_files_properties(${depthMap_cuda_host_headers}
 source_group("aliceVision_depthMap_cuda_host" FILES ${depthMap_cuda_host_headers} ${depthMap_cuda_host_sources})
 source_group("aliceVision_depthMap_cuda_device" FILES ${depthMap_cuda_device_headers} ${depthMap_cuda_device_sources})
 source_group("aliceVision_depthMap_cuda_imageProcessing" FILES ${depthMap_cuda_imageProcessing_sources})
-source_group("aliceVision_depthMap_cuda_normalMapping" FILES ${depthMap_cuda_normalMapping_headers} ${depthMap_cuda_normalMapping_sources})
 source_group("aliceVision_depthMap_cuda_planeSweeping" FILES ${depthMap_cuda_planeSweeping_headers} ${depthMap_cuda_planeSweeping_sources})
 
 # Cuda Sources
@@ -119,8 +114,6 @@ set(depthMap_cuda_files_sources
   ${depthMap_cuda_device_headers} 
   ${depthMap_cuda_device_sources}
   ${depthMap_cuda_imageProcessing_sources}
-  ${depthMap_cuda_normalMapping_headers} 
-  ${depthMap_cuda_normalMapping_sources}
   ${depthMap_cuda_planeSweeping_headers} 
   ${depthMap_cuda_planeSweeping_sources}
 )

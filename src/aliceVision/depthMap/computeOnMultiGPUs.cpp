@@ -12,7 +12,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, GPUJob gpujob, int nbGPUsToUse)
+void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPUsToUse)
 {
     const int nbGPUDevices = listCudaDevices();
     const int nbCPUThreads = omp_get_max_threads();
@@ -31,8 +31,8 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
     {
         // the GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
         // possible values: FASTEST_FIRST (default) or PCI_BUS_ID
-        const int cudaDeviceIndex = 0;
-        gpujob(cudaDeviceIndex, mp, cams);
+        const int cudaDeviceId = 0;
+        gpujob.compute(cudaDeviceId, cams);
     }
     else
     {
@@ -62,7 +62,7 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
                 subcams.push_back(cams[rc]);
             }
 
-            gpujob(cudaDeviceId, mp, subcams);
+            gpujob.compute(cudaDeviceId, subcams);
         }
         omp_set_num_threads(previous_count_threads);
     }

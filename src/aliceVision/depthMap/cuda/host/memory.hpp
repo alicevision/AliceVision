@@ -682,15 +682,10 @@ public:
 
     void deallocate()
     {
-        if( buffer == nullptr ) return;
+        if(buffer == nullptr)
+          return;
 
-        cudaError_t err = cudaFree(buffer);
-        if( err != cudaSuccess )
-        {
-            std::stringstream ss;
-            ss << "CudaDeviceMemory: Device free failed, " << cudaGetErrorString(err);
-            throw std::runtime_error(ss.str());
-        }
+        CHECK_CUDA_RETURN_ERROR(cudaFree(buffer));
 
         buffer = nullptr;
     }
@@ -716,83 +711,6 @@ public:
                                            stream );
 
         THROW_ON_CUDA_ERROR( err, "Failed to copy from flat host buffer to CudaDeviceMemory in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString(err) );
-    }
-};
-
-/*********************************************************************************
- * CudaArray
- *********************************************************************************/
-
-template <class Type, unsigned Dim> class CudaArray : public CudaMemorySizeBase<Type,Dim>
-{
-    cudaArray *array;
-public:
-    explicit CudaArray(const CudaSize<Dim> &size)
-    {
-        allocate( size );
-    }
-
-    explicit inline CudaArray(const CudaDeviceMemoryPitched<Type, Dim> &rhs)
-    {
-        allocate( rhs.getSize() );
-        copy(*this, rhs);
-    }
-
-    explicit inline CudaArray(const CudaHostMemoryHeap<Type, Dim> &rhs)
-    {
-        allocate( rhs.getSize() );
-        copy(*this, rhs);
-    }
-
-    virtual ~CudaArray()
-    {
-        cudaFreeArray(array);
-    }
-
-    cudaArray *getArray()
-    {
-        return array;
-    }
-
-    const cudaArray *getArray() const
-    {
-        return array;
-    }
-
-    void allocate( const CudaSize<Dim> &size )
-    {
-        this->setSize( size, true );
-
-        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
-        if(Dim == 1)
-        {
-            cudaError_t err = cudaMallocArray(&array,
-                                              &channelDesc,
-                                              this->getUnitsInDim(0),
-                                              1,
-                                              cudaArraySurfaceLoadStore);
-            THROW_ON_CUDA_ERROR(err, "Device alloc 1D array failed");
-        }
-        else if(Dim == 2)
-        {
-            cudaError_t err = cudaMallocArray(&array,
-                                              &channelDesc,
-                                              this->getUnitsInDim(0),
-                                              this->getUnitsInDim(1),
-                                              cudaArraySurfaceLoadStore);
-            THROW_ON_CUDA_ERROR(err, "Device alloc 2D array failed");
-        }
-        else
-        {
-            cudaExtent extent;
-            extent.width  = this->getUnitsInDim(0);
-            extent.height = this->getUnitsInDim(1);
-            extent.depth  = this->getUnitsInDim(2);
-            for(unsigned i = 3; i < Dim; ++i)
-                extent.depth *= this->getUnitsInDim(i);
-            cudaError_t err = cudaMalloc3DArray(&array, &channelDesc, extent);
-            THROW_ON_CUDA_ERROR(err, "Device alloc 3D array failed");
-        }
     }
 };
 
@@ -999,53 +917,6 @@ template<class Type> void copy(CudaHostMemoryHeap<Type,1>& _dst, const CudaDevic
   THROW_ON_CUDA_ERROR(err, "Failed to copy from CudaHostMemoryHeap to CudaDeviceMemory");
 }
 
-template<class Type, unsigned Dim> void copy(CudaHostMemoryHeap<Type, Dim>& _dst, const CudaArray<Type, Dim>& _src)
-{
-  cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
-  if(Dim == 1) {
-    cudaError_t err = cudaMemcpyFromArray(_dst.getBytePtr(),
-                                          _src.getArray(),
-                                          0, 0,
-                                          _dst.getUnpaddedBytesInRow(),
-                                          kind);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-  else if(Dim == 2)
-  {
-    cudaError_t err = cudaMemcpy2DFromArray(_dst.getBytePtr(),
-                                            _dst.getPitch(),
-                                            _src.getArray(),
-                                            0,
-                                            0,
-                                            _dst.getUnpaddedBytesInRow(),
-                                            _dst.getUnitsInDim(1),
-                                            kind);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-  else if(Dim >= 3)
-  {
-    size_t number_of_rows = 1;
-    for( int i=1; i<Dim; i++ ) number_of_rows *= _dst.getUnitsInDim(i);
-
-    cudaMemcpy3DParms p = { 0 };
-    p.srcArray = const_cast<cudaArray *>(_src.getArray());
-
-    p.dstPtr.ptr = (void *)_dst.getBytePtr();
-    p.dstPtr.pitch  = _dst.getPitch();
-    p.dstPtr.xsize  = _dst.getUnitsInDim(0);
-    p.dstPtr.ysize  = number_of_rows;
-
-    p.extent.width  = _dst.getUnitsInDim(0);
-    p.extent.height = _dst.getUnitsInDim(1);
-    p.extent.depth  = _dst.getUnitsInDim(2);
-    for(unsigned i = 3; i < Dim; ++i)
-      p.extent.depth *= _src.getUnitsInDim(i);
-    p.kind = kind;
-    cudaError_t err = cudaMemcpy3D(&p);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-}
-
 template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>& _dst, const CudaHostMemoryHeap<Type, Dim>& _src)
 {
     _dst.copyFrom( _src );
@@ -1069,146 +940,6 @@ template<class Type> void copy(CudaDeviceMemory<Type>& _dst, const CudaHostMemor
 template<class Type> void copy(CudaDeviceMemory<Type>& _dst, const Type* buffer, const size_t numelems )
 {
     _dst.copyFrom( buffer, numelems );
-}
-
-template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>& _dst, const CudaArray<Type, Dim>& _src)
-{
-  const cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
-  if(Dim == 1) {
-    cudaError_t err = cudaMemcpyFromArray(_dst.getBytePtr(),
-                                          _src.getArray(),
-                                          0, 0,
-                                          _src.getUnpaddedBytesInRow(),
-                                          kind);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-  else if(Dim == 2)
-  {
-    cudaError_t err = cudaMemcpy2DFromArray(_dst.getBytePtr(),
-                                            _dst.getPitch(),
-                                            _src.getArray(),
-                                            0,
-                                            0,
-                                            _src.getUnpaddedBytesInRow(),
-                                            _src.getUnitsInDim(1),
-                                            kind);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-  else if(Dim == 3) {
-    cudaMemcpy3DParms p = { 0 };
-    p.srcArray = const_cast<cudaArray *>(_src.getArray());
-    p.srcPtr.pitch = _src.getPitch();
-    p.srcPtr.xsize = _src.getSize()[0];
-    p.srcPtr.ysize = _src.getSize()[1];
-    p.dstPtr.ptr = (void *)_dst.getBytePtr();
-    p.dstPtr.pitch = _dst.getPitch();
-    p.dstPtr.xsize = _dst.getSize()[0];
-    p.dstPtr.ysize = _dst.getSize()[1];
-    p.extent.width = _src.getSize()[0];
-    p.extent.height = _src.getSize()[1];
-    p.extent.depth = _src.getSize()[2];
-    for(unsigned i = 3; i < Dim; ++i)
-      p.extent.depth *= _src.getSize()[i];
-    p.kind = kind;
-    cudaError_t err = cudaMemcpy3D(&p);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-}
-
-template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const CudaHostMemoryHeap<Type, Dim>& _src)
-{
-  const cudaMemcpyKind kind = cudaMemcpyHostToDevice;
-  if(Dim == 1) {
-    cudaError_t err = cudaMemcpyToArray(_dst.getArray(),
-                                        0, 0,
-                                        _src.getBytePtr(),
-                                          _src.getUnpaddedBytesInRow(),
-                                        kind);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-  else if(Dim == 2) {
-    cudaError_t err = cudaMemcpy2DToArray(_dst.getArray(),
-                                          0,
-                                          0,
-                                          _src.getBytePtr(),
-                                          _src.getPitch(),
-                                          _src.getUnpaddedBytesInRow(),
-                                          _src.getUnitsInDim(1),
-                                          kind);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-  else if(Dim >= 3) {
-    size_t number_of_rows = 1;
-    for( int i=1; i<Dim; i++ ) number_of_rows *= _src.getUnitsInDim(i);
-
-    cudaMemcpy3DParms p = { 0 };
-    p.srcPtr.ptr = (void *)_src.getBytePtr();
-    p.srcPtr.pitch = _src.getPitch();
-    p.srcPtr.xsize = _src.getUnitsInDim(0);
-    p.srcPtr.ysize = number_of_rows;
-
-    p.dstArray = _dst.getArray();
-
-    p.extent.width  = _src.getUnitsInDim(0);
-    p.extent.height = _src.getUnitsInDim(1);
-    p.extent.depth  = _src.getUnitsInDim(2);
-    for(unsigned i = 3; i < Dim; ++i)
-      p.extent.depth *= _src.getUnitsInDim(i);
-    p.kind = kind;
-    cudaError_t err = cudaMemcpy3D(&p);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-}
-
-template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const CudaDeviceMemoryPitched<Type, Dim>& _src)
-{
-  const cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
-  if(Dim == 1) {
-    cudaError_t err = cudaMemcpyToArray(_dst.getArray(),
-                                        0, 0,
-                                        _src.getBytePtr(),
-                                        _src.getUnpaddedBytesInRow(),
-                                        kind);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-  else if(Dim == 2) {
-    cudaError_t err = cudaMemcpy2DToArray(_dst.getArray(),
-                                          0,
-                                          0,
-                                          _src.getBytePtr(),
-                                          _src.getPitch(),
-                                          _src.getUnpaddedBytesInRow(),
-                                          _src.getUnitsInDim(1),
-                                          kind);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
-  else if(Dim >= 3) {
-    size_t number_of_rows = 1;
-    for( int i=1; i<Dim; i++ ) number_of_rows *= _src.getUnitsInDim(i);
-
-    cudaMemcpy3DParms p = { 0 };
-    p.srcPtr.ptr = (void *)_src.getBytePtr();
-    p.srcPtr.pitch  = _src.getPitch();
-    p.srcPtr.xsize  = _src.getUnitsInDim(0);
-    p.srcPtr.ysize  = number_of_rows;
-
-    p.dstArray = _dst.getArray();
-
-    /* From the documentation:
-     * The extent field defines the dimensions of the transferred area in elements.
-     * If a CUDA array is participating in the copy, the extent is defined in terms
-     * of that array's elements. If no CUDA array is participating in the copy then
-     * the extents are defined in elements of unsigned char.
-     */
-    p.extent.width  = _src.getUnitsInDim(0);
-    p.extent.height = _src.getUnitsInDim(1);
-    p.extent.depth  = _src.getUnitsInDim(2);
-    for(unsigned i = 3; i < Dim; ++i)
-      p.extent.depth *= _src.getUnitsInDim(i);
-    p.kind = kind;
-    cudaError_t err = cudaMemcpy3D(&p);
-    THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-  }
 }
 
 template<class Type, unsigned Dim> void copy(Type* _dst, size_t sx, size_t sy, const CudaDeviceMemoryPitched<Type, Dim>& _src)
@@ -1298,37 +1029,102 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
 }
 
 /*
- * @notes: use normalized coordinates
+ * @struct CudaTexture
+ * @brief Support class to maintain a buffer texture in gpu memory.
+ *
+ * @tparam Type the buffer type
+ *
+ * @tparam subpixelInterpolation enable subpixel interpolation
+ *   - can have a large performance impact on some graphic cards
+ *   - could be critical for quality during SGM in small resolution
+ *
+ * @tparam normalizedCoords enable normalized coordinates
+ *   - if true  addressed (x,y) in [0, 1]
+ *   - if false addressed (x,y) in [width, height]
  */
-template <class Type>
+template <class Type, bool subpixelInterpolation, bool normalizedCoords>
 struct CudaTexture
 {
     cudaTextureObject_t textureObj = 0;
+
     CudaTexture(CudaDeviceMemoryPitched<Type, 2>& buffer_dmp)
     {
-        cudaTextureDesc  tex_desc;
-        memset(&tex_desc, 0, sizeof(cudaTextureDesc));
-        tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
-        tex_desc.addressMode[0] = cudaAddressModeClamp;
-        tex_desc.addressMode[1] = cudaAddressModeClamp;
-        tex_desc.addressMode[2] = cudaAddressModeClamp;
-        tex_desc.readMode = cudaReadModeElementType;
-        tex_desc.filterMode = cudaFilterModePoint;
+        cudaTextureDesc  texDesc;
+        memset(&texDesc, 0, sizeof(cudaTextureDesc));
+        texDesc.normalizedCoords = normalizedCoords;
+        texDesc.addressMode[0] = cudaAddressModeClamp;
+        texDesc.addressMode[1] = cudaAddressModeClamp;
+        texDesc.addressMode[2] = cudaAddressModeClamp;
+        texDesc.readMode = cudaReadModeElementType;
+        texDesc.filterMode = (subpixelInterpolation) ? cudaFilterModeLinear : cudaFilterModePoint;
 
-        cudaResourceDesc res_desc;
-        res_desc.resType = cudaResourceTypePitch2D;
-        res_desc.res.pitch2D.desc = cudaCreateChannelDesc<Type>();
-        res_desc.res.pitch2D.devPtr = buffer_dmp.getBuffer();
-        res_desc.res.pitch2D.width = buffer_dmp.getSize()[0];
-        res_desc.res.pitch2D.height = buffer_dmp.getSize()[1];
-        res_desc.res.pitch2D.pitchInBytes = buffer_dmp.getPitch();
+        cudaResourceDesc resDesc;
+        resDesc.resType = cudaResourceTypePitch2D;
+        resDesc.res.pitch2D.desc = cudaCreateChannelDesc<Type>();
+        resDesc.res.pitch2D.devPtr = buffer_dmp.getBuffer();
+        resDesc.res.pitch2D.width = buffer_dmp.getSize()[0];
+        resDesc.res.pitch2D.height = buffer_dmp.getSize()[1];
+        resDesc.res.pitch2D.pitchInBytes = buffer_dmp.getPitch();
 
-        // create texture object: we only have to do this once!
-        cudaCreateTextureObject(&textureObj, &res_desc, &tex_desc, NULL);
+        // create texture object
+        // note: we only have to do this once
+        CHECK_CUDA_RETURN_ERROR(cudaCreateTextureObject(&textureObj, &resDesc, &texDesc, nullptr));
     }
+
     ~CudaTexture()
     {
-        cudaDestroyTextureObject(textureObj);
+        CHECK_CUDA_RETURN_ERROR_NOEXCEPT(cudaDestroyTextureObject(textureObj));
+    }
+};
+
+struct CudaRGBATexture
+{
+    cudaTextureObject_t textureObj = 0;
+
+    CudaRGBATexture(CudaDeviceMemoryPitched<CudaRGBA, 2>& buffer_dmp)
+    {
+        cudaTextureDesc  texDesc;
+        memset(&texDesc, 0, sizeof(cudaTextureDesc));
+        texDesc.normalizedCoords = false;
+        texDesc.addressMode[0] = cudaAddressModeClamp;
+        texDesc.addressMode[1] = cudaAddressModeClamp;
+        texDesc.addressMode[2] = cudaAddressModeClamp;
+
+#if defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR) && defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION)
+        texDesc.readMode = cudaReadModeNormalizedFloat; // uchar to float [0:1], see tex2d_float4 function
+
+#else
+        texDesc.readMode = cudaReadModeElementType;
+#endif
+
+#if defined ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
+        texDesc.filterMode = cudaFilterModeLinear;
+#else
+        texDesc.filterMode = cudaFilterModePoint;
+#endif
+
+        cudaResourceDesc resDesc;
+        resDesc.resType = cudaResourceTypePitch2D;
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
+        resDesc.res.pitch2D.desc = cudaCreateChannelDescHalf4();
+#else
+        resDesc.res.pitch2D.desc = cudaCreateChannelDesc<CudaRGBA>();
+#endif
+
+        resDesc.res.pitch2D.devPtr = buffer_dmp.getBuffer();
+        resDesc.res.pitch2D.width = buffer_dmp.getSize()[0];
+        resDesc.res.pitch2D.height = buffer_dmp.getSize()[1];
+        resDesc.res.pitch2D.pitchInBytes = buffer_dmp.getPitch();
+
+        // create texture object
+        // note: we only have to do this once
+        CHECK_CUDA_RETURN_ERROR(cudaCreateTextureObject(&textureObj, &resDesc, &texDesc, nullptr));
+    }
+
+    ~CudaRGBATexture()
+    {
+        CHECK_CUDA_RETURN_ERROR_NOEXCEPT(cudaDestroyTextureObject(textureObj));
     }
 };
 

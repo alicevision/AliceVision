@@ -26,18 +26,23 @@ struct RefineParams
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
+  bool interpolateMiddleDepth = false;
+  bool useConsistentScale = false;
+  bool useCustomPatchPattern = false;
   bool useRefineFuse = true;
   bool useColorOptimization = true;
 
   // intermediate results export parameters
 
   bool exportIntermediateDepthSimMaps = false;
+  bool exportIntermediateNormalMaps = false;
   bool exportIntermediateCrossVolumes = false;
+  bool exportIntermediateTopographicCutVolumes = false;
   bool exportIntermediateVolume9pCsv = false;
 
   // constant parameters
 
-  const bool useNormalMap = false; // for experimentation purposes
+  const bool useSgmNormalMap = false; // for experimentation purposes
 };
 
 } // namespace depthMap

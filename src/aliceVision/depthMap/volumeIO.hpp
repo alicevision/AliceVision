@@ -21,27 +21,31 @@ namespace depthMap {
  * @brief Export 9 similarity values over the entire depth in a CSV file.
  * @param[in] in_volumeSim_hmh the similarity in host memory
  * @param[in] in_depths the SGM depth list
- * @param[in] camIndex the R cam global index
  * @param[in] name the export name
+ * @param[in] sgmParams the Semi Global Matching parameters
  * @param[in] filepath the export filepath
+ * @param[in] roi the 2d region of interest
  */
 void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh, 
                                 const std::vector<float>& in_depths,
-                                int camIndex, 
                                 const std::string& name, 
-                                const std::string& filepath);
+                                const SgmParams& sgmParams,
+                                const std::string& filepath,
+                                const ROI& roi);
 
 /**
  * @brief Export 9 similarity values over the entire depth in a CSV file.
  * @param[in] in_volumeSim_hmh the similarity in host memory
- * @param[in] camIndex the R cam global index
  * @param[in] name the export name
+ * @param[in] refineParams the Refine parameters
  * @param[in] filepath the export filepath
+ * @param[in] roi the 2d region of interest
  */
 void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh, 
-                                int camIndex, 
                                 const std::string& name, 
-                                const std::string& filepath);
+                                const RefineParams& refineParams,
+                                const std::string& filepath,
+                                const ROI& roi);
 
 /**
  * @brief Export the given similarity volume to an Alembic file.
@@ -96,6 +100,42 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
                                  const RefineParams& refineParams, 
                                  const std::string& filepath, 
                                  const ROI& roi);
+
+/**
+ * @brief Export a topographic cut of the given similarity volume to an Alembic file.
+ * @param[in] in_volumeSim_hmh the similarity in host memory
+ * @param[in] in_depths the SGM depth list
+ * @param[in] mp the multi-view parameters
+ * @param[in] camIndex the R cam global index
+ * @param[in] sgmParams the Semi Global Matching parameters
+ * @param[in] filepath the export filepath
+ * @param[in] roi the 2d region of interest
+ */
+void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
+                                          const std::vector<float>& in_depths,
+                                          const mvsUtils::MultiViewParams& mp,
+                                          int camIndex,
+                                          const SgmParams& sgmParams,
+                                          const std::string& filepath,
+                                          const ROI& roi);
+
+/**
+ * @brief Export a topographic cut of the given similarity volume to an Alembic file.
+ * @param[in] in_volumeSim_hmh the similarity in host memory
+ * @param[in] in_depthSimMapSgmUpscale_hmh the upscaled SGM depth/sim map
+ * @param[in] mp the multi-view parameters
+ * @param[in] camIndex the R cam global index
+ * @param[in] refineParams the Refine parameters
+ * @param[in] filepath the export filepath
+ * @param[in] roi the 2d region of interest
+ */
+void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
+                                          const CudaHostMemoryHeap<float2, 2>& in_depthSimMapSgmUpscale_hmh,
+                                          const mvsUtils::MultiViewParams& mp,
+                                          int camIndex,
+                                          const RefineParams& refineParams,
+                                          const std::string& filepath,
+                                          const ROI& roi);
 
 /**
  * @brief Export the given similarity volume to an Alembic file.

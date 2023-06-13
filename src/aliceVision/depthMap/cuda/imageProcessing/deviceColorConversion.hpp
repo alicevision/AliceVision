@@ -12,13 +12,11 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief In-place color conversion into CIELAB using CUDA.
- * @param[in, out] frame_dmp the camera frame in device memory
- * @param[in] width the frame width
- * @param[in] height the frame height
+ * @brief In-place color conversion from RGB into CIELAB using CUDA.
+ * @param[in, out] inout_img_dmp the input RGB buffer, the output LAB buffer in device memory
  * @param[in] stream the CUDA stream for gpu execution
  */
-extern void cuda_rgb2lab(CudaDeviceMemoryPitched<CudaRGBA, 2>& frame_dmp, int width, int height, cudaStream_t stream);
+extern void cuda_rgb2lab(CudaDeviceMemoryPitched<CudaRGBA, 2>& inout_img_dmp, cudaStream_t stream);
 
 } // namespace depthMap
 } // namespace aliceVision
