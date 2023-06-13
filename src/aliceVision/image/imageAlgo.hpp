@@ -76,6 +76,21 @@ void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
                  const std::string& filter = "", float filterSize = 0);
 
 /**
+ * @brief Resize a given image buffer.
+ * @param[in] newWidth The destination width
+ * @param[in] newHeight The destination height
+ * @param[in] inImage The input image buffer
+ * @param[out] outImage The output image buffer
+ * @param[in] filter The name of a high-quality filter to use when resampling
+ *            Default is bilinear resampling
+ *            See openImageIO documentation "ImageBufAlgo filtername"
+ * @param[in] filterSize The resize filter size
+ */
+void resizeImage(int newWidth, int newHeight, const image::Image<image::RGBfColor>& inImage,
+                 image::Image<image::RGBfColor>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
+
+/**
  * @brief Resize a given image buffer in place.
  * @param[in] downscale The resize downscale
  * @param[in,out] inoutImage The input/output image buffer

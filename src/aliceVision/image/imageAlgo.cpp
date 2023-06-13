@@ -344,6 +344,15 @@ void resizeImage(int downscale, const image::Image<image::RGBfColor> &inImage,
                 inImage.data(), outImage.data(), filter, filterSize);
 }
 
+void resizeImage(const int outWidth, const int outHeight, const image::Image<image::RGBfColor> &inImage,
+                 image::Image<image::RGBfColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
 void resizeImage(int downscale, image::Image<image::RGBfColor>& inoutImage,
                  const std::string& filter, float filterSize)
 {

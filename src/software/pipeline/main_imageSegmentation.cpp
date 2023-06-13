@@ -37,14 +37,42 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
+void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfColor> & source)
+{
+    size_t planeSize = source.Width() * source.Height();
+    
+    output.resize(planeSize * 3);
+
+    float * planeR = output.data();
+    float * planeG = planeR + planeSize;
+    float * planeB = planeG + planeSize;
+
+    size_t pos = 0;
+    for (int i = 0; i < source.Height(); i++)
+    {
+        for (int j = 0; j < source.Width(); j++)
+        {
+            const image::RGBfColor & rgb = source(i, j);
+            planeR[pos] = rgb.r();
+            planeG[pos] = rgb.g();
+            planeB[pos] = rgb.b();
+
+            pos++;
+        }
+    }
+}
+
+
 int aliceVision_main(int argc, char** argv)
 {
     std::string sfmDataFilepath;
+    std::string outputPath;
     
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.");
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
+        ("output,o", po::value<std::string>(&outputPath)->required(), "output folder.");
 
     CmdLine cmdline(
         "AliceVision imageSegmentation");
@@ -63,51 +91,101 @@ int aliceVision_main(int argc, char** argv)
     }
 
     
-    const OrtApi * ortObject = OrtGetApiBase()->GetApi(ORT_API_VERSION);
-    if (!ortObject) {
-        ALICEVISION_LOG_ERROR("ONNX runtime failed to initialize");
-        return EXIT_FAILURE;
-    }
+    Ort::Env ortEnvironment(ORT_LOGGING_LEVEL_WARNING, "aliceVision-imageSegmentation");
+    Ort::SessionOptions ortSessionOptions;
+    Ort::Session ortSession = Ort::Session(ortEnvironment, "/s/apps/users/servantf/MeshroomResearch/mrrs/segmentation/semantic/fcn_resnet50.onnx", ortSessionOptions);
 
-    OrtEnv * ortEnvironment;
-    ortObject->CreateEnv(ORT_LOGGING_LEVEL_WARNING, "imageSegmentation", &ortEnvironment);
-    if (ortEnvironment == nullptr)
+    Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
+
+    std::vector<const char*> inputNames{"input"};
+    std::vector<const char*> outputNames{"output"};
+
+    std::vector<int64_t> inputDimensions = {1, 3, 720, 1280};
+    std::vector<int64_t> outputDimensions = {1, 21, 720, 1280};
+
+    for (const auto & pv : sfmData.getViews())
     {
-        ALICEVISION_LOG_ERROR("ONNX runtime failed to create ONNX environment");
-        return EXIT_FAILURE;
+        std::string path = pv.second->getImagePath();
+
+        image::Image<image::RGBfColor> image;
+        image::readImage(path, image, image::EImageColorSpace::NO_CONVERSION);
+
+        if (image.Height() > image.Width())
+        {
+
+        }
+        
+        
+        /*//Normalize
+        for (int i = 0; i < 720; i++)
+        {
+            for (int j = 0; j < 1280;j++)
+            {
+                image::RGBfColor value = image(i, j);
+                image(i, j).r() = (value.r() - 0.485) / 0.229;
+                image(i, j).g() = (value.g() - 0.456) / 0.224;
+                image(i, j).b() = (value.b() - 0.406) / 0.225;
+            }
+        }
+       
+        std::vector<float> transformedInput;
+        imageToPlanes(transformedInput, image);
+
+        std::vector<float> output(21 * 720 * 1280);
+
+        Ort::Value inputTensors = Ort::Value::CreateTensor<float>(
+            mem_info, 
+            transformedInput.data(), transformedInput.size(), 
+            inputDimensions.data(), inputDimensions.size()
+        );
+
+        Ort::Value outputTensors = Ort::Value::CreateTensor<float>(
+            mem_info, 
+            output.data(), output.size(), 
+            outputDimensions.data(), outputDimensions.size()
+        );
+
+        try 
+        {
+            std::cout << "Before Running\n";
+            ortSession.Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensors, 1, outputNames.data(), &outputTensors, 1);
+            std::cout << "Done!" << std::endl;
+        } 
+        catch (const Ort::Exception& exception) 
+        {
+            std::cout << "ERROR running model inference: " << exception.what() << std::endl;
+            exit(-1);
+        }
+
+
+        image::Image<float> dest(1280, 720, true);
+        for (int i = 0; i < 720; i++)
+        {
+            for (int j = 0; j < 1280; j++)
+            {
+                int maxClasse = 0;
+                int maxVal = 0;
+
+                for (int classe = 0; classe < 21; classe++)
+                {
+                    int classPos = classe * 1280 * 720;
+                    int pos = classPos + i * 1280  + j;
+
+                    float val = output[pos];
+                    if (val > maxVal)
+                    {
+                        maxVal = val;
+                        maxClasse = classe;
+                    }
+                }
+
+                dest(i, j) = maxClasse / 21.0;
+            }
+        }
+
+        image::writeImage("/s/prods/mvg/_source_global/users/servantf/toto.png", dest, image::ImageWriteOptions());*/
     }
 
-    OrtSessionOptions * ortSessionOptions;
-    OrtStatus * ortStatus = ortObject->CreateSessionOptions(&ortSessionOptions);
-
-    if (ortStatus != nullptr)
-    {
-        ALICEVISION_LOG_ERROR("ONNX runtime failed to create ONNX session options");
-        ortObject->ReleaseStatus(ortStatus);
-        return EXIT_FAILURE;
-    }
-
-    OrtSession* ortSession;
-    ortStatus = ortObject->CreateSession(ortEnvironment, "/s/apps/users/servantf/MeshroomResearch/mrrs/segmentation/semantic/fcn_resnet50.onnx", ortSessionOptions, &ortSession);
-    if (ortStatus != nullptr)
-    {
-        ALICEVISION_LOG_ERROR("ONNX runtime failed to create ONNX session");
-        ortObject->ReleaseStatus(ortStatus);
-        return EXIT_FAILURE;
-    }
-
-    OrtMemoryInfo* ortMemoryInfo;
-    ortStatus = ortObject->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &ortMemoryInfo);
-    if (ortStatus != nullptr)
-    {
-        ALICEVISION_LOG_ERROR("ONNX runtime failed to create ONNX Memory info");
-        ortObject->ReleaseStatus(ortStatus);
-        return EXIT_FAILURE;
-    }
-
-    ortObject->ReleaseSessionOptions(ortSessionOptions);
-    ortObject->ReleaseSession(ortSession);
-    ortObject->ReleaseEnv(ortEnvironment);
 
     return EXIT_SUCCESS;
 }
