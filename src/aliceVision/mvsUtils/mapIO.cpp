@@ -477,7 +477,7 @@ void writeMapToFileOrTile(int rc,
     }
 
     // min/max/nb depth metadata (for depth map only)
-    if(fileType == EFileType::depthMap)
+    if((fileType == EFileType::depthMap) || (fileType == EFileType::depthMapFiltered))
     {
         const int nbDepthValues = std::count_if(in_map.data(), in_map.data() + in_map.size(), [](float v) { return v > 0.0f; });
         float maxDepth = -1.0f;
