@@ -93,11 +93,12 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
  * @param[in] targetIndexesFilename: in case offsetRefBracketIndex is out of range the number of views in a group target indexes can be read from a text file
  *                                   if the file cannot be read or does not contain the expected number of values (same as view group number) and
  *                                   if offsetRefBracketIndex is out of range the number of views then a clamped values of offsetRefBracketIndex is considered
+ * @return Index of the targetView
  */
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
-                       std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex,
-                       const std::string& targetIndexesFilename = "", const double meanTargetedLuma = 0.4,
-                       const double minLuma = 0.25);
+int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
+                      std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex,
+                      const std::string& targetIndexesFilename = "", const double meanTargetedLuma = 0.4,
+                      const double minLuma = 0.25);
 
 }
 }

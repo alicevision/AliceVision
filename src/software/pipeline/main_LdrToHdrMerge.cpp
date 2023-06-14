@@ -64,7 +64,7 @@ int aliceVision_main(int argc, char** argv)
     int channelQuantizationPower = 10;
     int offsetRefBracketIndex = 1000; // By default, use the automatic selection
     double meanTargetedLumaForMerging = 0.4;
-    double minLumaForMerging = 0.25;
+    double minLumaForMerging = 0.0;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
@@ -198,6 +198,7 @@ int aliceVision_main(int argc, char** argv)
         }
     }
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
+    int estimatedTargetIndex;
 
     if (!byPass)
     {
@@ -217,9 +218,9 @@ int aliceVision_main(int argc, char** argv)
         if (workingColorSpace != image::EImageColorSpace::SRGB)
         {
             meanTargetedLumaForMerging = std::pow((meanTargetedLumaForMerging + 0.055) / 1.055, 2.2);
-            minLumaForMerging = std::pow((minLumaForMerging + 0.055) / 1.055, 2.2);
+            minLumaForMerging = minLumaForMerging == 0.0 ? 0.0 : std::pow((minLumaForMerging + 0.055) / 1.055, 2.2);
         }
-        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging, minLumaForMerging);
+        estimatedTargetIndex = hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging, minLumaForMerging);
 
         if ((targetViews.empty() || targetViews.size() != groupedViews.size()) && !isOffsetRefBracketIndexValid)
         {
@@ -346,7 +347,7 @@ int aliceVision_main(int argc, char** argv)
             hdr::hdrMerge merge;
             sfmData::ExposureSetting targetCameraSetting = targetView->getCameraExposureSetting();
             ALICEVISION_LOG_INFO("[" << g - rangeStart << "/" << rangeSize << "] Merge " << group.size() << " LDR images " << g << "/" << groupedViews.size());
-            merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure());
+            merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure(), estimatedTargetIndex);
             if(highlightCorrectionFactor > 0.0f)
             {
                 merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure(), highlightCorrectionFactor, highlightTargetLux);
@@ -357,6 +358,35 @@ int aliceVision_main(int argc, char** argv)
             // Nothing to do
             HDRimage = images[0];
         }
+
+        //for (int x = 252; x < 7000; x += 1000)
+        //{
+        //    for (int y = 750; y < 4000; y += 1000)
+        //    {
+        //        for(int l = x - 10; l <= x + 11; l++)
+        //        {
+        //            image::RGBfColor& pix1 = HDRimage(y - 10, l);
+        //            pix1[0] = 1.f;
+        //            pix1[1] = 0.f;
+        //            pix1[2] = 0.f;
+        //            image::RGBfColor& pix2 = HDRimage(y + 11, l);
+        //            pix2[0] = 1.f;
+        //            pix2[1] = 0.f;
+        //            pix2[2] = 0.f;
+        //        }
+        //        for(int c = y - 10; c <= y + 11; c++)
+        //        {
+        //            image::RGBfColor& pix1 = HDRimage(c, x - 10);
+        //            pix1[0] = 1.f;
+        //            pix1[1] = 0.f;
+        //            pix1[2] = 0.f;
+        //            image::RGBfColor& pix2 = HDRimage(c, x + 11);
+        //            pix2[0] = 1.f;
+        //            pix2[1] = 0.f;
+        //            pix2[2] = 0.f;
+        //        }
+        //    }
+        //}
 
         boost::filesystem::path p(targetView->getImagePath());
         const std::string hdrImagePath = getHdrImagePath(outputPath, g, keepSourceImageName ? p.stem().string() : "");

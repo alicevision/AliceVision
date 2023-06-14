@@ -29,7 +29,8 @@ public:
                 const rgbCurve &weight,
                 const rgbCurve &response,
                 image::Image<image::RGBfColor> &radiance,
-                float targetCameraExposure);
+                float targetCameraExposure,
+                int refImageIndex);
 
   void postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
       const std::vector<double> &times,

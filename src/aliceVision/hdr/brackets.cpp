@@ -127,9 +127,9 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     return true;
 }
 
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
-                       std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex,
-                       const std::string& lumaStatFilepath, const double meanTargetedLuma, const double minLuma)
+int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
+                      std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex,
+                      const std::string& lumaStatFilepath, const double meanTargetedLuma, const double minLuma)
 {
     // If targetIndexesFilename cannot be opened or is not valid an error is thrown
     // For odd number, there is no ambiguity on the middle image.
@@ -239,7 +239,7 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVi
 
         out_targetViews.push_back(group[targetIndex]);
     }
-    return;
+    return targetIndex;
 }
 
 }
