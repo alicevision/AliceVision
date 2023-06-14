@@ -344,15 +344,6 @@ void resizeImage(int downscale, const image::Image<image::RGBfColor> &inImage,
                 inImage.data(), outImage.data(), filter, filterSize);
 }
 
-void resizeImage(const int outWidth, const int outHeight, const image::Image<image::RGBfColor> &inImage,
-                 image::Image<image::RGBfColor> &outImage, const std::string &filter,
-                 float filterSize)
-{
-    outImage.resize(outWidth, outHeight);
-    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 3,
-                inImage.data(), outImage.data(), filter, filterSize);
-}
-
 void resizeImage(int downscale, image::Image<image::RGBfColor>& inoutImage,
                  const std::string& filter, float filterSize)
 {
@@ -430,6 +421,50 @@ void resizeImage(int downscale, image::Image<image::RGBAfColor>& inoutImage,
                 inoutImage.data(), rescaled.data(), filter, filterSize);
     
     inoutImage.swap(rescaled);
+}
+
+void resizeImage(const int outWidth, const int outHeight, const image::Image<image::RGBfColor> &inImage,
+                 image::Image<image::RGBfColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int outWidth, const int outHeight, const image::Image<IndexT> &inImage,
+                 image::Image<IndexT> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::UINT32, inImage.Width(), inImage.Height(), outWidth, outHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+template<typename T>
+void resampleImage(oiio::TypeDesc typeDesc,
+                 int inWidth,
+                 int inHeight,
+                 int outWidth,
+                 int outHeight,
+                 int nchannels,
+                 const T* inBuffer,
+                 T* outBuffer,
+                 bool interpolate)
+{
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc),
+                               const_cast<T*>(inBuffer));
+    oiio::ImageBuf outBuf(oiio::ImageSpec(outWidth, outHeight, nchannels, typeDesc), outBuffer);
+
+    oiio::ImageBufAlgo::resample(outBuf, inBuf, interpolate);
+}
+
+void resampleImage(int outWidth, int outHeight, const image::Image<IndexT>& inImage,
+                 image::Image<IndexT>& outImage, bool interpolate)
+{
+    outImage.resize(outWidth, outHeight);
+    resampleImage(oiio::TypeDesc::UINT32, inImage.Width(), inImage.Height(), outWidth, outHeight, 1,
+        inImage.data(), outImage.data(), interpolate);
 }
 
 template<typename T>

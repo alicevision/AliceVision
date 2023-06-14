@@ -631,6 +631,6 @@ if(ALICEVISION_HAVE_ONNX)
           aliceVision_system
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ONNXRuntime::ONNXRuntime
+          aliceVision_segmentation
     )
 endif()

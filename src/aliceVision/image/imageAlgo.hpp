@@ -86,6 +86,9 @@ void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
  *            See openImageIO documentation "ImageBufAlgo filtername"
  * @param[in] filterSize The resize filter size
  */
+void resizeImage(int newWidth, int newHeight, const image::Image<IndexT>& inImage,
+                 image::Image<IndexT>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
 void resizeImage(int newWidth, int newHeight, const image::Image<image::RGBfColor>& inImage,
                  image::Image<image::RGBfColor>& outImage,
                  const std::string& filter = "", float filterSize = 0);
@@ -111,6 +114,18 @@ void resizeImage(int downscale, image::Image<image::RGBAColor>& inoutImage,
                  const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, image::Image<image::RGBAfColor>& inoutImage,
                  const std::string& filter = "", float filterSize = 0);
+
+
+/**
+ * @brief resample a given image buffer.
+ * @param[in] newWidth The destination width
+ * @param[in] newHeight The destination height
+ * @param[in] inImage The input image buffer
+ * @param[out] outImage The output image buffer
+ * @param[in] interpolate use interpolation (bilinear) ?
+ */
+void resampleImage(int newWidth, int newHeight, const image::Image<IndexT>& inImage,
+                 image::Image<IndexT>& outImage, bool interpolate);
 
 /**
  * @brief convolve a given image buffer

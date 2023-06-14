@@ -24,9 +24,10 @@
 // IO
 #include <fstream>
 #include <algorithm>
+#include <boost/algorithm/string.hpp>    
 
-// ONNXRuntime
-#include <onnxruntime_cxx_api.h>
+
+#include <aliceVision/segmentation/segmentation.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -37,9 +38,9 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfColor> & source)
+void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfColor>::Base & source)
 {
-    size_t planeSize = source.Width() * source.Height();
+    size_t planeSize = source.rows() * source.cols();
     
     output.resize(planeSize * 3);
 
@@ -48,9 +49,9 @@ void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfCo
     float * planeB = planeG + planeSize;
 
     size_t pos = 0;
-    for (int i = 0; i < source.Height(); i++)
+    for (int i = 0; i < source.rows(); i++)
     {
-        for (int j = 0; j < source.Width(); j++)
+        for (int j = 0; j < source.cols(); j++)
         {
             const image::RGBfColor & rgb = source(i, j);
             planeR[pos] = rgb.r();
@@ -63,10 +64,12 @@ void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfCo
 }
 
 
+
 int aliceVision_main(int argc, char** argv)
 {
     std::string sfmDataFilepath;
     std::string outputPath;
+    std::vector<std::string> validClasses = {"person"};
     
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -74,9 +77,14 @@ int aliceVision_main(int argc, char** argv)
         ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
         ("output,o", po::value<std::string>(&outputPath)->required(), "output folder.");
 
-    CmdLine cmdline(
-        "AliceVision imageSegmentation");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("validClasses,c", po::value<std::vector<std::string>>(&validClasses)->multitoken(),
+         "Names of classes which are to be considered");
+
+    CmdLine cmdline("AliceVision imageSegmentation");
     cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
@@ -90,18 +98,27 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    
-    Ort::Env ortEnvironment(ORT_LOGGING_LEVEL_WARNING, "aliceVision-imageSegmentation");
-    Ort::SessionOptions ortSessionOptions;
-    Ort::Session ortSession = Ort::Session(ortEnvironment, "/s/apps/users/servantf/MeshroomResearch/mrrs/segmentation/semantic/fcn_resnet50.onnx", ortSessionOptions);
+    aliceVision::segmentation::Segmentation seg;
+    const auto & classes = seg.getClasses();
 
-    Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
+    std::set<IndexT> validClassesIndices;
+    for (const auto & s : validClasses)
+    {
+        std::string classInput = boost::to_lower_copy(s);
+        boost::trim(classInput);
 
-    std::vector<const char*> inputNames{"input"};
-    std::vector<const char*> outputNames{"output"};
+        for (int idc = 0; idc < classes.size(); idc++)
+        {
+            std::string classCompare = boost::to_lower_copy(classes[idc]);
+            boost::trim(classCompare);
 
-    std::vector<int64_t> inputDimensions = {1, 3, 720, 1280};
-    std::vector<int64_t> outputDimensions = {1, 21, 720, 1280};
+            if (classCompare.compare(classInput) == 0)
+            {
+                validClassesIndices.insert(idc);
+                break;
+            }
+        }
+    }
 
     for (const auto & pv : sfmData.getViews())
     {
@@ -110,82 +127,18 @@ int aliceVision_main(int argc, char** argv)
         image::Image<image::RGBfColor> image;
         image::readImage(path, image, image::EImageColorSpace::NO_CONVERSION);
 
-        if (image.Height() > image.Width())
+        image::Image<IndexT> labels;
+        if (!seg.processImage(labels, image))
         {
-
-        }
-        
-        
-        /*//Normalize
-        for (int i = 0; i < 720; i++)
-        {
-            for (int j = 0; j < 1280;j++)
-            {
-                image::RGBfColor value = image(i, j);
-                image(i, j).r() = (value.r() - 0.485) / 0.229;
-                image(i, j).g() = (value.g() - 0.456) / 0.224;
-                image(i, j).b() = (value.b() - 0.406) / 0.225;
-            }
-        }
-       
-        std::vector<float> transformedInput;
-        imageToPlanes(transformedInput, image);
-
-        std::vector<float> output(21 * 720 * 1280);
-
-        Ort::Value inputTensors = Ort::Value::CreateTensor<float>(
-            mem_info, 
-            transformedInput.data(), transformedInput.size(), 
-            inputDimensions.data(), inputDimensions.size()
-        );
-
-        Ort::Value outputTensors = Ort::Value::CreateTensor<float>(
-            mem_info, 
-            output.data(), output.size(), 
-            outputDimensions.data(), outputDimensions.size()
-        );
-
-        try 
-        {
-            std::cout << "Before Running\n";
-            ortSession.Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensors, 1, outputNames.data(), &outputTensors, 1);
-            std::cout << "Done!" << std::endl;
-        } 
-        catch (const Ort::Exception& exception) 
-        {
-            std::cout << "ERROR running model inference: " << exception.what() << std::endl;
-            exit(-1);
+            ALICEVISION_LOG_INFO("Failed to segment image " << path);
         }
 
-
-        image::Image<float> dest(1280, 720, true);
-        for (int i = 0; i < 720; i++)
-        {
-            for (int j = 0; j < 1280; j++)
-            {
-                int maxClasse = 0;
-                int maxVal = 0;
-
-                for (int classe = 0; classe < 21; classe++)
-                {
-                    int classPos = classe * 1280 * 720;
-                    int pos = classPos + i * 1280  + j;
-
-                    float val = output[pos];
-                    if (val > maxVal)
-                    {
-                        maxVal = val;
-                        maxClasse = classe;
-                    }
-                }
-
-                dest(i, j) = maxClasse / 21.0;
-            }
-        }
-
-        image::writeImage("/s/prods/mvg/_source_global/users/servantf/toto.png", dest, image::ImageWriteOptions());*/
+        //Store image
+        std::stringstream ss;
+        ss << outputPath << "/" << pv.first << ".exr";
+        image::writeImage(ss.str(), labels, image::ImageWriteOptions());
     }
 
-
+   
     return EXIT_SUCCESS;
 }
