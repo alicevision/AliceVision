@@ -13,6 +13,7 @@ set(aliceVision_linearProgramming_DEPS
   Coin::Clp        # clp + solver wrapper
   Coin::CoinUtils  # container tools
   Coin::Osi        # generic LP
+  Coin::OsiClp
 )
 
 if (NOT MOSEK_FOUND)

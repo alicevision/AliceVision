@@ -450,6 +450,7 @@ if(ALICEVISION_BUILD_SFM)
   find_package(CoinUtils REQUIRED)
   find_package(Clp REQUIRED)
   find_package(Osi REQUIRED)
+  find_package(OsiClp REQUIRED)
 endif()
 
 # ==============================================================================
