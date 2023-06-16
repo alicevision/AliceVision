@@ -18,6 +18,8 @@ test -d dl || \
         mkdir dl
 test -f dl/vlfeat_K80L3.SIFT.tree || \
         wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree -O dl/vlfeat_K80L3.SIFT.tree
+test -f dl/sphereDetection_Mask-RCNN.onnx || \
+        wget https://gitlab.com/alicevision/SphereDetectionModel/-/raw/main/sphereDetection_Mask-RCNN.onnx -O dl/sphereDetection_Mask-RCNN.onnx
 export CMAKE_VERSION=3.26.0
 export CMAKE_VERSION_MM=3.26
 test -f dl/cmake-${CMAKE_VERSION}.tar.gz || \
