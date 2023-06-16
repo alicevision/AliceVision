@@ -6,6 +6,7 @@ The project is released under [MPLv2](LICENSE-MPL2.md).
 Individuals
 -----------
 
+- Abdelrahman Al Marouk
 - Candice Bentejac
 - Carsten Griwodz
 - Cenek Albl
