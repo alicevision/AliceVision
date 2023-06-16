@@ -31,7 +31,7 @@ AliceVision depends on external libraries:
 * [Geogram >= 1.7.5](https://github.com/BrunoLevy/geogram)
 * [Expat >= 2.4.8](https://libexpat.github.io/)
 * [OpenEXR >= 2.5](https://github.com/AcademySoftwareFoundation/openexr)
-* [OpenImageIO >= 2.1.0 (recommended >= 2.4.6)](https://github.com/OpenImageIO/oiio)
+* [OpenImageIO >= 2.1.0 (recommended >= 2.4.12)](https://github.com/OpenImageIO/oiio)
 * Open Solver Interface (Osi) >= 0.106.10 use [our fork](https://github.com/alicevision/Osi)) with a CMake build system
 * [zlib](https://www.zlib.net)
 
