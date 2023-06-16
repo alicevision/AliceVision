@@ -58,7 +58,7 @@ void modelExplore(Ort::Session& session)
     size_t inputCount = session.GetInputCount();
     for (size_t i = 0; i < inputCount; ++i)
     {
-#if ORT_API_VERSION >= 14
+#if ORT_API_VERSION >= 13
         const Ort::AllocatedStringPtr inputName = session.GetInputNameAllocated(i, allocator);
         ALICEVISION_LOG_DEBUG("Input[" << i << "]: " << inputName.get());
 #else
@@ -83,7 +83,7 @@ void modelExplore(Ort::Session& session)
     const size_t outputCount = session.GetOutputCount();
     for (size_t i = 0; i < outputCount; ++i)
     {
-#if ORT_API_VERSION >= 14
+#if ORT_API_VERSION >= 13
         const Ort::AllocatedStringPtr outputName = session.GetOutputNameAllocated(i, allocator);
         ALICEVISION_LOG_DEBUG("Output[" << i << "]: " << outputName.get());
 #else
