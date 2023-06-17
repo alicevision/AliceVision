@@ -27,6 +27,7 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
+
 class IntrinsicsManifoldSymbolic : public utils::CeresManifold {
  public:
   explicit IntrinsicsManifoldSymbolic(size_t parametersSize, double focalRatio, bool lockFocal,
@@ -234,18 +235,19 @@ public:
       return true;
     }
 
+    
     Eigen::Matrix2d d_res_d_pt_est = Eigen::Matrix2d::Identity() / scale;
 
     if (jacobians[0] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
 
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pth) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoseLeft(T_pose3, pth) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
     }
 
     if (jacobians[1] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[1]);
       
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pth) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoseLeft(T_pose3, pth) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
     }
 
     if (jacobians[2] != nullptr) {
@@ -269,6 +271,73 @@ private:
   const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
   bool _withRig;
 };
+
+class CostProjectionSimple : public ceres::CostFunction {
+public:
+  CostProjectionSimple(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics) : _measured(measured), _intrinsics(intrinsics)
+  {
+    set_num_residuals(2);
+
+    mutable_parameter_block_sizes()->push_back(16);
+    mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());    
+    mutable_parameter_block_sizes()->push_back(3);    
+  }
+
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override
+  {
+    const double * parameter_pose = parameters[0];
+    const double * parameter_intrinsics = parameters[1];
+    const double * parameter_landmark = parameters[2];
+
+    const Eigen::Map<const SE3::Matrix> T(parameter_pose);
+    const Eigen::Map<const Vec3> pt(parameter_landmark);
+
+    const Vec4 pth = pt.homogeneous();
+
+    const Vec4 cpt = T * pth;
+
+    Vec2 pt_est = _intrinsics->project(T, pth, false);
+    const double scale = (_measured.scale > 1e-12) ? _measured.scale : 1.0;
+
+    residuals[0] = (pt_est(0) - _measured.x(0)) / scale;
+    residuals[1] = (pt_est(1) - _measured.x(1)) / scale;
+
+    if (jacobians == nullptr) {
+      return true;
+    }
+
+     const geometry::Pose3 T_pose3(T.block<3, 4>(0, 0));
+    size_t params_size = _intrinsics->getParams().size();
+
+    double d_res_d_pt_est = 1.0 / scale;
+
+    if (jacobians[0] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
+
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoseLeft(T_pose3, pth);
+    }
+
+    if (jacobians[1] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 2, params_size);
+      
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, pth);
+    }
+
+    if (jacobians[2] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[2]);
+
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint3(T, pth);
+    }
+
+    return true;
+  }
+
+private:
+  const sfmData::Observation & _measured;
+  const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
+};
+
+
 
 void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation)
 {
@@ -295,13 +364,13 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
     return;
   }
 
-  if (refineRotation && refineTranslation)
+  if (refineRotation || refineTranslation)
   {
 #if ALICEVISION_CERES_HAS_MANIFOLD
-    problem.SetManifold(poseBlockPtr, new SE3::Manifold(refineRotation, refineTranslation));
+    problem.SetManifold(poseBlockPtr, new SE3::ManifoldLeft(refineRotation, refineTranslation));
 #else
     problem.SetParameterization(poseBlockPtr, new utils::ManifoldToParameterizationWrapper(
-                                    new SE3::Manifold(refineRotation, refineTranslation)));
+                                    new SE3::ManifoldLeft(refineRotation, refineTranslation)));
 #endif
   }
   else
@@ -486,6 +555,10 @@ void BundleAdjustmentSymbolicCeres::setSolverOptions(ceres::Solver::Options& sol
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
+  solverOptions.max_num_iterations = _ceresOptions.maxNumIterations;
+  /*solverOptions.function_tolerance = 1e-12;
+  solverOptions.gradient_tolerance = 1e-12;
+  solverOptions.parameter_tolerance = 1e-12;*/
 
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
@@ -586,6 +659,8 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     }
 
     assert(isValid(intrinsicPtr->getType()));
+
+    _intrinsicObjects[intrinsicId].reset(intrinsicPtr->clone());
 
     std::vector<double>& intrinsicBlock = _intrinsicsBlocks[intrinsicId];
     intrinsicBlock = intrinsicPtr->getParams();
@@ -723,7 +798,9 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
     {
       const sfmData::View& view = sfmData.getView(observationPair.first);
       const sfmData::Observation& observation = observationPair.second;
-      const std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+
+      //Get shared object clone
+      const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[view.getIntrinsicId()];
 
       // each residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
@@ -753,8 +830,16 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
         _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
       }
 
-      ceres::CostFunction* costFunction = new CostProjection(observation, intrinsic, withRig);
-      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, rigBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
+      if (withRig)
+      {
+        ceres::CostFunction* costFunction = new CostProjection(observation, intrinsic, withRig);
+        problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, rigBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
+      }
+      else
+      {
+        ceres::CostFunction* costFunction = new CostProjectionSimple(observation, intrinsic);
+        problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
+      }
 
       if(!refineStructure || getLandmarkState(landmarkId) == EParameterState::CONSTANT)
       {
@@ -790,6 +875,7 @@ void BundleAdjustmentSymbolicCeres::createProblem(const sfmData::SfMData& sfmDat
 
   // add SfM landmarks to the Ceres problem
   addLandmarksToProblem(sfmData, refineOptions, problem);
+
 }
 
 void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const
@@ -894,6 +980,8 @@ bool BundleAdjustmentSymbolicCeres::adjust(sfmData::SfMData& sfmData, ERefineOpt
   // create problem
   ceres::Problem::Options problemOptions;
   problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+  problemOptions.evaluation_callback = this;
+
   ceres::Problem problem(problemOptions);
   createProblem(sfmData, refineOptions, problem);
 
@@ -907,7 +995,6 @@ bool BundleAdjustmentSymbolicCeres::adjust(sfmData::SfMData& sfmData, ERefineOpt
   ceres::Solve(options, &problem, &summary);
 
   // print summary
-  std::cout << "symbolic" << std::endl;
   if(_ceresOptions.summary) {
     ALICEVISION_LOG_INFO(summary.FullReport());
   }
@@ -937,6 +1024,17 @@ bool BundleAdjustmentSymbolicCeres::adjust(sfmData::SfMData& sfmData, ERefineOpt
   }
 
   return true;
+}
+
+void BundleAdjustmentSymbolicCeres::PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point)
+{
+    if (new_evaluation_point)
+    {
+        for (const auto & pair : _intrinsicsBlocks)
+        {
+            _intrinsicObjects[pair.first]->updateFromParams(pair.second);
+        }
+    }
 }
 
 } // namespace sfm

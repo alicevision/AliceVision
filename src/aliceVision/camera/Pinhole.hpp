@@ -79,13 +79,20 @@ public:
 
     void setK(const Mat3 & K);
 
-    Vec2 project(const geometry::Pose3& pose, const Vec4& pt, bool applyDistortion = true) const override;
+    Vec2 project(const geometry::Pose3& pose, const Vec4& pt3D, bool applyDistortion = true) const
+    {
+        return project(pose.getHomogeneous(), pt3D, applyDistortion);
+    }
+
+    Vec2 project(const Eigen::Matrix4d & pose, const Vec4& pt, bool applyDistortion = true) const override;
 
     Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec4 & pt);
 
-    Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4& pt) const override;
+    Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const geometry::Pose3& pose, const Vec4& pt) const override;
 
     Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override;
+
+    Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4 & pt) const override;
 
     Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt) const;
 

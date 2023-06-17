@@ -196,6 +196,19 @@ alicevision_add_software(aliceVision_sfmTransform
         Boost::program_options
 )
 
+# SfM Regression
+alicevision_add_software(aliceVision_sfmRegression
+  SOURCE main_sfmRegression.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_feature
+        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+)
+
 # SfM split reconstructed
 alicevision_add_software(aliceVision_sfmSplitReconstructed
   SOURCE main_sfmSplitReconstructed.cpp
