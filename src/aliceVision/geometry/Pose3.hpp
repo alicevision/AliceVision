@@ -22,8 +22,9 @@ class Pose3
     Vec3 _center;
 
   public:
-    // Constructors
+    
     Pose3() : _rotation(Mat3::Identity()), _center(Vec3::Zero()) {}
+
     Pose3(const Mat3& r, const Vec3& c) : _rotation(r), _center(c) {}
     Pose3(const Mat34& Rt)
     : _rotation(Rt.block<3,3>(0,0))
@@ -113,12 +114,9 @@ inline Pose3 poseFromRT(const Mat3& R, const Vec3& t)
 
 inline Pose3 randomPose()
 {
-    using namespace Eigen;
-    Vec3 rAngles = Vec3::Random() * boost::math::constants::pi<double>();
-    Mat3 R(AngleAxisd(rAngles(0), Vec3::UnitZ())
-          * AngleAxisd(rAngles(1), Vec3::UnitY())
-          * AngleAxisd(rAngles(2), Vec3::UnitZ()));
-    return geometry::Pose3(R, Vec3::Random());
+    Vec3 vecR = Vec3::Random().normalized() * boost::math::constants::pi<double>();
+    
+    return geometry::Pose3(SO3::expm(vecR), Vec3::Random());
 }
 
 } // namespace geometry
