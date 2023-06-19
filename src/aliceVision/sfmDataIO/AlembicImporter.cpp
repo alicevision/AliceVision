@@ -693,7 +693,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       T2 = (M * T * M).inverse();
     }
 
-    Pose3 pose(T2.block<3, 4>(0, 0));
+    Pose3 pose(T2);
 
     if(view->isPartOfRig() && !view->isPoseIndependant())
     {
@@ -825,7 +825,7 @@ bool readXform(const Version & abcVersion, IXform& xform, M44d& mat, sfmData::Sf
           T2 = (M * T * M).inverse();
       }
 
-      Pose3 pose(T2.block<3, 4>(0, 0));
+      Pose3 pose(T2);
 
       if (sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
       {

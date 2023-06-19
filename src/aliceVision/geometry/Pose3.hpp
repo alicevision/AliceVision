@@ -9,92 +9,108 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <boost/math/constants/constants.hpp>
+#include <aliceVision/geometry/lie.hpp>
 
 
 namespace aliceVision {
 namespace geometry {
 
-// Define a 3D Pose as a 3D transform: [R|C] t = -RC
+// Define a 3D Pose as a SE3 matrix
 class Pose3
 {
   protected:
-    Mat3 _rotation;
-    Vec3 _center;
+    SE3::Matrix _homogeneous;
 
   public:
-    
-    Pose3() : _rotation(Mat3::Identity()), _center(Vec3::Zero()) {}
 
-    Pose3(const Mat3& r, const Vec3& c) : _rotation(r), _center(c) {}
-    Pose3(const Mat34& Rt)
-    : _rotation(Rt.block<3,3>(0,0))
+    Pose3() : _homogeneous(SE3::Matrix::Identity())
     {
-      Vec3 t = Rt.block<3, 1>(0,3);
-      _center = -_rotation.transpose() * t;
+
+    }
+
+    Pose3(const Mat3& c_R_w, const Vec3& w_c) 
+    {
+        _homogeneous.setIdentity();
+        _homogeneous.block<3, 3>(0, 0) = c_R_w;
+        _homogeneous.block<3, 1>(0, 3) = - c_R_w * w_c;
+    }
+
+    Pose3(const Mat4 & T)
+    : _homogeneous(T)
+    {
     }
 
     // Accessors
-    const Mat3& rotation() const { return _rotation; }
+    Mat3 rotation() const 
+    { 
+        return _homogeneous.block<3, 3>(0, 0); 
+    }
+
     void setRotation(const Mat3 & rotation) 
     {
-        _rotation = rotation;
+        _homogeneous.block<3, 3>(0, 0) = rotation;
     }
-    const Vec3& center() const { return _center; }
+
+    Vec3 translation() const 
+    { 
+        return _homogeneous.block<3, 1>(0, 3); 
+    }
+
+    Vec3 center() const 
+    { 
+        return - rotation().transpose() * translation(); 
+    }
+
     void setCenter(const Vec3 & center) 
     {
-        _center = center;
+        _homogeneous.block<3, 1>(0, 3) = - rotation() * center;
     }
-    // Translation vector t = -RC
-    inline Vec3 translation() const { return -(_rotation * _center); }
 
     // Apply pose
     inline Mat3X operator () (const Mat3X& p) const
     {
-      return _rotation * (p.colwise() - _center);
+      return rotation() * (p.colwise() - center());
     }
 
     // Composition
     Pose3 operator * (const Pose3& P) const
     {
-      return Pose3(_rotation * P._rotation, P._center + P._rotation.transpose() * _center );
+      return Pose3(_homogeneous * P._homogeneous);
     }
 
     // Operator ==
     bool operator==(const Pose3& other) const
     {
-      return AreMatNearEqual(_rotation, other._rotation, 1e-6) &&
-              AreVecNearEqual(_center, other._center, 1e-6);
+      return AreMatNearEqual(rotation(), other.rotation(), 1e-6) &&
+              AreVecNearEqual(center(), other.center(), 1e-6);
     }
 
     // Inverse
     Pose3 inverse() const
     {
-      return Pose3(_rotation.transpose(),  -(_rotation * _center));
+      // parameter is center ... which will inverse
+      return Pose3(rotation().transpose(),  translation() );
     }
 
     /// Return the depth (distance) of a point respect to the camera center
     double depth(const Vec3 &X) const
     {
-      return (_rotation * (X - _center))[2];
+      return (rotation() * (X - center()))[2];
     }
 
     /// Return the pose with the Scale, Rotation and translation applied.
     Pose3 transformSRt(const double S, const Mat3 & R, const Vec3 & t) const
     {
       Pose3 pose;
-      pose._center = S * R * _center + t;
-      pose._rotation = _rotation * R.transpose();
+      pose.setCenter(S * R * center() + t);
+      pose.setRotation(rotation() * R.transpose());
+
       return pose;
     }
 
-    Mat4 getHomogeneous() const 
+    const SE3::Matrix & getHomogeneous() const 
     {
-      Mat4 ret = Mat4::Identity();
-
-      ret.block<3, 3>(0, 0) = _rotation;
-      ret.block<3, 1>(0, 3) = translation();
-
-      return ret;
+      return _homogeneous;
     }
 
 public:

@@ -75,7 +75,9 @@ bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, g
   KRt_from_P(P, &K, &R, &t);
   cam = camera::Pinhole(0,0,K);
   // K.transpose() is applied to give [R t] to the constructor instead of P = K [R t]
-  pose = geometry::Pose3(K.transpose() * P);
+  Mat4 T = Mat4::Identity();
+  T.block<3, 4>(0, 0) = K.transpose() * P;
+  pose = geometry::Pose3(T);
   return true;
 }
 

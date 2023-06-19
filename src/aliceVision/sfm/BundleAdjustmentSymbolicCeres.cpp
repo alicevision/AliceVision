@@ -221,7 +221,7 @@ public:
     _intrinsics->updateFromParams(params);
 
     const SE3::Matrix T = cTr * rTo;
-    const geometry::Pose3 T_pose3(T.block<3, 4>(0, 0));
+    const geometry::Pose3 T_pose3(T);
 
     const Vec4 pth = pt.homogeneous();
 
@@ -343,6 +343,7 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
 {
   const Mat3& R = cameraPose.getTransform().rotation();
   const Vec3& t = cameraPose.getTransform().translation();
+  
 
   poseBlock = SE3::Matrix::Identity();
   poseBlock.block<3,3>(0, 0) = R;
