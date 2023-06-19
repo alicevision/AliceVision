@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2016 AliceVision contributors.
+// Copyright (c) 2023 AliceVision contributors.
 // Copyright (c) 2012 openMVG contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -9,6 +9,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <boost/math/constants/constants.hpp>
+
 
 namespace aliceVision {
 namespace geometry {
@@ -33,10 +34,15 @@ class Pose3
 
     // Accessors
     const Mat3& rotation() const { return _rotation; }
-    Mat3& rotation() { return _rotation; }
+    void setRotation(const Mat3 & rotation) 
+    {
+        _rotation = rotation;
+    }
     const Vec3& center() const { return _center; }
-    Vec3& center() { return _center; }
-
+    void setCenter(const Vec3 & center) 
+    {
+        _center = center;
+    }
     // Translation vector t = -RC
     inline Vec3 translation() const { return -(_rotation * _center); }
 
