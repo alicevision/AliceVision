@@ -65,6 +65,11 @@ int aliceVision_main(int argc, char** argv)
     int offsetRefBracketIndex = 1000; // By default, use the automatic selection
     double meanTargetedLumaForMerging = 0.4;
     double minLumaForMerging = 0.0;
+    bool enablePixelwiseAdvancedMerging = true;
+    double noiseThreshold = 0.1;
+    double minSignificantValue = 0.05;
+    double maxSignificantValue = 0.999;
+    double toleranceOnRatio = 0.75;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
@@ -106,6 +111,16 @@ int aliceVision_main(int argc, char** argv)
          "Mean expected luminance after merging step when input LDR images are decoded in sRGB color space. Must be in the range [0, 1].")
         ("minLumaForMerging", po::value<double>(&minLumaForMerging)->default_value(minLumaForMerging),
          "Minimum mean luminance of LDR images for merging. Must be in the range [0, 1].")
+        ("enablePixelwiseAdvancedMerging", po::value<bool>(&enablePixelwiseAdvancedMerging)->default_value(enablePixelwiseAdvancedMerging),
+         "Enable pixelwise advanced merging to reduce noise.")
+        ("noiseThreshold", po::value<double>(&noiseThreshold)->default_value(noiseThreshold),
+         "Value under which input channel value is considered as noise. Used in advanced pixelwise merging.")
+        ("minSignificantValue", po::value<double>(&minSignificantValue)->default_value(minSignificantValue),
+         "Minimum channel input value to be considered in advanced pixelwise merging. Used in advanced pixelwise merging.")
+        ("maxSignificantValue", po::value<double>(&maxSignificantValue)->default_value(maxSignificantValue),
+         "Maximum channel input value to be considered in advanced pixelwise merging. Used in advanced pixelwise merging.")
+        ("toleranceOnRatio", po::value<double>(&toleranceOnRatio)->default_value(toleranceOnRatio),
+         "Tolerance on ratio between two input channel values at two consecutive exposures. Used in advanced pixelwise merging.")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
@@ -347,7 +362,16 @@ int aliceVision_main(int argc, char** argv)
             hdr::hdrMerge merge;
             sfmData::ExposureSetting targetCameraSetting = targetView->getCameraExposureSetting();
             ALICEVISION_LOG_INFO("[" << g - rangeStart << "/" << rangeSize << "] Merge " << group.size() << " LDR images " << g << "/" << groupedViews.size());
-            merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure(), estimatedTargetIndex);
+
+            hdr::MergingParams mergingParams;
+            mergingParams.targetCameraExposure = targetCameraSetting.getExposure();
+            mergingParams.refImageIndex = estimatedTargetIndex;
+            mergingParams.noiseThreshold = enablePixelwiseAdvancedMerging ? noiseThreshold : -1.0;
+            mergingParams.minSignificantValue = enablePixelwiseAdvancedMerging ? minSignificantValue : -1.0;
+            mergingParams.maxSignificantValue = enablePixelwiseAdvancedMerging ? maxSignificantValue : 1000.0;
+            mergingParams.dataRatioTolerance = enablePixelwiseAdvancedMerging ? toleranceOnRatio : -1.0;
+
+            merge.process(images, exposures, fusionWeight, response, HDRimage, mergingParams);//, targetCameraSetting.getExposure(), estimatedTargetIndex);
             if(highlightCorrectionFactor > 0.0f)
             {
                 merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure(), highlightCorrectionFactor, highlightTargetLux);

@@ -12,6 +12,16 @@
 
 namespace aliceVision {
 namespace hdr {
+
+struct MergingParams
+{
+    double minSignificantValue = 0.05;
+    double maxSignificantValue = 0.999;
+    double dataRatioTolerance = 0.75; // +/- 75%
+    double noiseThreshold = 0.1;
+    float targetCameraExposure;
+    int refImageIndex;
+};
  
 class hdrMerge {
 public:
@@ -24,13 +34,9 @@ public:
    * @param targetCameraExposure
    * @param response
    */
-  void process(const std::vector< image::Image<image::RGBfColor> > &images,
-                const std::vector<double> &times,
-                const rgbCurve &weight,
-                const rgbCurve &response,
-                image::Image<image::RGBfColor> &radiance,
-                float targetCameraExposure,
-                int refImageIndex);
+    void process(const std::vector<image::Image<image::RGBfColor>>& images, const std::vector<double>& times,
+                 const rgbCurve& weight, const rgbCurve& response, image::Image<image::RGBfColor>& radiance,
+                 MergingParams& mergingParams);
 
   void postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
       const std::vector<double> &times,

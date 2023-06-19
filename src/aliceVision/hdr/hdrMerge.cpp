@@ -47,8 +47,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
                         const rgbCurve &weight,
                         const rgbCurve &response,
                         image::Image<image::RGBfColor> &radiance,
-                        float targetCameraExposure,
-                        int refImageIndex)
+                        MergingParams &mergingParams)
 {
   //checks
   assert(!response.isEmpty());
@@ -83,17 +82,19 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   //   Compute a ratio between the next and the current exposure values.
   //   Deduce a range of ratii that will be used for enabling input data.
   // Duplicate the last range limits to associate it with the longuest exposure
-  for (std::size_t i = 0; i < times.size() - 1; i++)
+  const double minTolerance = (mergingParams.dataRatioTolerance < 0.0) ? 1.0 : mergingParams.dataRatioTolerance;
+  const double maxTolerance = (mergingParams.dataRatioTolerance < 0.0) ? 1000.0 : mergingParams.dataRatioTolerance;
+  for(std::size_t i = 0; i < times.size() - 1; i++)
   {
     const double refRatio = times[i + 1] / times[i];
-    v_minRatio.push_back(0.25 * refRatio);
-    v_maxRatio.push_back(1.75 * refRatio);
+    v_minRatio.push_back((1.0 - minTolerance) * refRatio);
+    v_maxRatio.push_back((1.0 + maxTolerance) * refRatio);
   }
   v_minRatio.push_back(v_minRatio.back());
   v_maxRatio.push_back(v_maxRatio.back());
 
-  const double minValue = 0.05;
-  const double maxValue = 0.999;
+  const double minValue = mergingParams.minSignificantValue;
+  const double maxValue = mergingParams.maxSignificantValue;
 
   #pragma omp parallel for
   for(int y = 0; y < height; ++y)
@@ -140,13 +141,11 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
                                        images[images.size() - 1](y, x)(2)) /
                                       3.0;
 
-      const double noiseThreshold = 0.1;
-
-      if(meanValueHighExp < noiseThreshold) // Noise case
+      if(meanValueHighExp < mergingParams.noiseThreshold) // Noise case
       {
           for(std::size_t channel = 0; channel < 3; ++channel)
           {
-              radianceColor(channel) = targetCameraExposure * response(meanValueHighExp, channel) / times[images.size() - 1];
+              radianceColor(channel) = mergingParams.targetCameraExposure * response(meanValueHighExp, channel) / times[images.size() - 1];
           }
       }
       else
@@ -246,7 +245,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
           {
               for(std::size_t channel = 0; channel < 3; ++channel)
               {
-                  vv_coeff_final[channel][refImageIndex] = 1.0;
+                  vv_coeff_final[channel][mergingParams.refImageIndex] = 1.0;
                   v_sumCoeff[channel] = 1.0;
               }
           }
@@ -259,7 +258,9 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
                 {
                     v += vv_coeff_final[channel][i] * vv_normalizedValue[channel][i];
                 }
-                radianceColor(channel) = targetCameraExposure * (v != 0.0 ? v : vv_normalizedValue[channel][refImageIndex]) / v_sumCoeff[channel];
+                radianceColor(channel) = mergingParams.targetCameraExposure *
+                                         (v != 0.0 ? v : vv_normalizedValue[channel][mergingParams.refImageIndex]) /
+                                         v_sumCoeff[channel];
           }
       }
     }
