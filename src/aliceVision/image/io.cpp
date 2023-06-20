@@ -427,10 +427,11 @@ oiio::ImageSpec readImageSpec(const std::string& path)
 #endif 
 
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
-  oiio::ImageSpec spec = in->spec();
 
   if(!in)
     throw std::runtime_error("Can't find/open image file '" + path + "'.");
+
+  oiio::ImageSpec spec = in->spec();
 
   in->close();
 
