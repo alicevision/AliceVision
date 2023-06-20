@@ -558,6 +558,7 @@ void readImage(const std::string& path,
 
         // libRAW configuration
         // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
+        // and https://www.libraw.org/docs/API-datastruct-eng.html#libraw_raw_unpack_params_t for raw:balance_clamped and raw:adjust_maximum_thr behavior
 
 #if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12) // OIIO_VERSION >= 2.4.12
 	    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
@@ -580,6 +581,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawNoWhiteBalancing)
@@ -589,6 +592,10 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
             configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+            configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing)
         {
@@ -597,6 +604,10 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_wb", 1); // white balance correction
             configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+            configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
         {
@@ -619,6 +630,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata)
@@ -641,6 +654,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else
