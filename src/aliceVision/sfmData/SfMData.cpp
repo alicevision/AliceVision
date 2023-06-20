@@ -231,7 +231,7 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
     // Pose dedicated for this view (independant from rig, even if it is potentially part of a rig)
     if (view.isPoseIndependant())
     {
-        viewPose.setTransform(absolutePose.getTransform());
+        viewPose = absolutePose;
         return;
     }
 
@@ -242,6 +242,12 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
         RigSubPose& subPose = getRigSubPose(view);
 
         viewPose.setTransform(subPose.pose.inverse() * absolutePose.getTransform());
+
+        if (absolutePose.isLocked())
+        {
+            viewPose.lock();
+        }
+
         return;
     }
 
