@@ -126,7 +126,16 @@ public:
      * @param[in] applyDistortion If true apply distrortion if any
      * @return The projection jacobian  wrt pose
      */
-    virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const geometry::Pose3& pose, const Vec4& pt3D) const = 0;
+    virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const Eigen::Matrix4d & pose, const Vec4& pt3D) const = 0;
+
+    /**
+     * @brief get derivative of a projection of a 3D point into the camera plane
+     * @param[in] pose The pose
+     * @param[in] pt3D The 3d point
+     * @param[in] applyDistortion If true apply distrortion if any
+     * @return The projection jacobian  wrt pose
+     */
+    virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d & pose, const Vec4& pt3D) const = 0;
 
     /**
      * @brief get derivative of a projection of a 3D point into the camera plane
@@ -135,7 +144,7 @@ public:
      * @param[in] applyDistortion If true apply distrortion if any
      * @return The projection jacobian  wrt point
      */
-    virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3 & pose, const Vec4& pt3D) const = 0;
+    virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const Eigen::Matrix4d & pose, const Vec4& pt3D) const = 0;
 
     /**
      * @brief get derivative of a projection of a 3D point into the camera plane
@@ -153,7 +162,7 @@ public:
      * @param[in] applyDistortion If true apply distrortion if any
      * @return The projection jacobian wrt params
      */
-    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const = 0;
+    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const Eigen::Matrix4d & pos, const Vec4& pt3D) const = 0;
 
     /**
      * @brief Compute the residual between the 3D projected point X and an image observation x

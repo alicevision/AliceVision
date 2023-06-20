@@ -78,21 +78,23 @@ public:
         return project(pose.getHomogeneous(), pt3D, applyDistortion);
     }
 
-    Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec4 & pt);
+    Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const Eigen::Matrix4d & pose, const Vec4 & pt);
 
-    Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const geometry::Pose3& pose, const Vec4 & pt) const override;
+    Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const Eigen::Matrix4d & pose, const Vec4 & pt) const override;
 
-    Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override;
+    Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d & pose, const Vec4 & pt) const override;
 
-    Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4 & pt) const override;
+    Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const Eigen::Matrix4d & pose, const Vec4 & pt) const override;
 
-    Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt);
+    Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint3(const Eigen::Matrix4d & pose, const Vec4 & pt) const override;
 
-    Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt);
+    Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const Eigen::Matrix4d & pose, const Vec4 & pt);
 
-    Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt);
+    Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const Eigen::Matrix4d & pose, const Vec4 & pt);
 
-    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const override;
+    Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const Eigen::Matrix4d & pose, const Vec4 & pt);
+
+    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const Eigen::Matrix4d & pose, const Vec4& pt3D) const override;
 
     Vec3 toUnitSphere(const Vec2 & pt) const override;
 

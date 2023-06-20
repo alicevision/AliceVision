@@ -262,7 +262,6 @@ public:
   bool PlusJacobian(const double * x, double* jacobian) const override {
 
     Eigen::Map<Eigen::Matrix<double, 16, 6, Eigen::RowMajor>> J(jacobian);
-    Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T(x);
 
     J.fill(0);
 

@@ -42,7 +42,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
 
     auto phIntrinsicEst = camera::createIntrinsic(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 950, 950, 0, 0);
     auto phPinholeEst = std::dynamic_pointer_cast<camera::PinholeRadialK3>(phIntrinsicEst);
-    std::vector<double> paramsEst = {0.1, 0.002, -0.01};
+    std::vector<double> paramsEst = {0.0, 0.0, -0.0};
     phPinholeEst->setDistortionParams(paramsEst);
     sfmDataEst.getIntrinsics()[0] = phPinholeEst;
 
@@ -51,17 +51,17 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     Vec3 axis = {1.0, 1.0, 0.0};
     axis = axis.normalized();
 
-    for (int i = 0; i < 40; i++)
+    for (int i = 0; i < 120; i++)
     {
-        Vec3 pos = direction * double(i) / 40.0;
-        Eigen::Matrix3d R = SO3::expm(axis * double(0) * M_PI / (8*40.0));
+        Vec3 pos = direction * double(i) / 120.0;
+        Eigen::Matrix3d R = SO3::expm(axis * double(i) * M_PI / (8*120.0));
         geometry::Pose3 poseGT(R, pos);
         sfmData::CameraPose cposeGT(poseGT);
         sfmDataGT.getPoses()[i] = cposeGT;
         sfmDataGT.getViews()[i] = std::make_shared<sfmData::View>("", i, 0, i, 1920, 1080);
 
-        Eigen::Matrix3d Rup = SO3::expm(Vec3::Random() * ((i < 1)?0.0:0.05));
-        Eigen::Vector3d tup = Vec3::Random() * ((i < 1)?0.0:0.1);
+        Eigen::Matrix3d Rup = SO3::expm(Vec3::Random() * (0.1));
+        Eigen::Vector3d tup = Vec3::Random() * (0.5);
 
         geometry::Pose3 poseEst(Rup * R, pos + tup);
         sfmData::CameraPose cposeEst(poseEst, (i==0));
@@ -71,7 +71,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     }
 
     int tid = 0;
-    for (double y = -2.0; y < 2.0; y+=0.1)
+    /*for (double y = -2.0; y < 2.0; y+=0.1)
     {
         for (double x = -2.0; x < 2.0; x+=0.1)
         {
@@ -86,7 +86,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
 
             tid++;
         }
-    }
+    }*/
 
     for (double y = -2.0; y < 2.0; y+=0.1)
     {
@@ -98,7 +98,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
             sfmDataGT.getLandmarks()[tid] = lGT;
 
             sfmData::Landmark lEst = lGT;
-            lEst.X += Vec3::Random() * 0.9;
+            lEst.X += Vec3::Random() * 2.9;
             sfmDataEst.getLandmarks()[tid] = lEst;
 
             tid++;
@@ -115,7 +115,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
             sfmDataGT.getLandmarks()[tid] = lGT;
 
             sfmData::Landmark lEst = lGT;
-            lEst.X += Vec3::Random() * 0.9;
+            lEst.X += Vec3::Random() * 1.9;
             sfmDataEst.getLandmarks()[tid] = lEst;
 
             tid++;
@@ -166,7 +166,7 @@ int aliceVision_main(int argc, char **argv)
     generateSampleSceneOnePlane(sfmDataGT, sfmDataEst);
 
     BundleAdjustmentSymbolicCeres::CeresOptions options;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS;
+    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS | BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
     options.summary = true;
     //options.nbThreads = 1;
 
@@ -181,7 +181,7 @@ int aliceVision_main(int argc, char **argv)
     generateSampleSceneOnePlane(sfmDataGT, sfmDataEst);
 
     BundleAdjustmentCeres::CeresOptions options;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS;
+    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS | BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
     options.summary = true;
     //options.nbThreads = 1;
 

@@ -241,26 +241,26 @@ public:
     if (jacobians[0] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
 
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoseLeft(T_pose3, pth) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T, pth) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
     }
 
     if (jacobians[1] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[1]);
       
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoseLeft(T_pose3, pth) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T, pth) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
     }
 
     if (jacobians[2] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
       
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, pth);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T, pth);
     }
 
     if (jacobians[3] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[3]);
 
 
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, pth) * Eigen::Matrix<double, 4, 3>::Identity();
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T, pth) * Eigen::Matrix<double, 4, 3>::Identity();
     }
 
     return true;
@@ -314,13 +314,13 @@ public:
     if (jacobians[0] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
 
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoseLeft(T_pose3, pth);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoseLeft(T, pth);
     }
 
     if (jacobians[1] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 2, params_size);
       
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, pth);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T, pth);
     }
 
     if (jacobians[2] != nullptr) {
