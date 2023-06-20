@@ -47,13 +47,13 @@ bool Segmentation::processImage(image::Image<IndexT> &labels, const image::Image
     int resizedWidth = 0;
     if (source.Height() < source.Width())
     {
-        resizedHeight = _modelHeight;
-        resizedWidth = double(source.Width()) * double(_modelHeight) / double(source.Height());
+        resizedHeight = _parameters.modelHeight;
+        resizedWidth = double(source.Width()) * double(_parameters.modelHeight) / double(source.Height());
     }
     else 
     {
-        resizedWidth = _modelWidth;
-        resizedHeight = double(source.Height()) * double(_modelWidth) / double(source.Width());
+        resizedWidth = _parameters.modelWidth;
+        resizedHeight = double(source.Height()) * double(_parameters.modelWidth) / double(source.Width());
     }
 
     //Resize image
@@ -66,7 +66,7 @@ bool Segmentation::processImage(image::Image<IndexT> &labels, const image::Image
         for (int j = 0; j < resizedWidth;j++)
         {
             image::RGBfColor value = resized(i, j);
-            resized(i, j) = (value - _center) * _scale;
+            resized(i, j) = (value - _parameters.center) * _parameters.scale;
         }
     }
 
@@ -84,8 +84,8 @@ bool Segmentation::processImage(image::Image<IndexT> &labels, const image::Image
 bool Segmentation::tiledProcess(image::Image<IndexT> & labels, const image::Image<image::RGBfColor> & source)
 {    
     //Compute the theorical tiles count
-    int cwidth = divideRoundUp(source.Width(), _modelWidth);
-    int cheight = divideRoundUp(source.Height(), _modelHeight);
+    int cwidth = divideRoundUp(source.Width(), _parameters.modelWidth);
+    int cheight = divideRoundUp(source.Height(), _parameters.modelHeight);
 
     image::Image<ScoredLabel> scoredLabels(source.Width(), source.Height(), true, {0, 0.0f});
 
@@ -93,8 +93,8 @@ bool Segmentation::tiledProcess(image::Image<IndexT> & labels, const image::Imag
     for (int i = 0; i < cheight; i++)
     {
         //Compute starting point with overlap on previous
-        int y = std::max(0, int(i * _modelHeight - _overlapRatio * _modelHeight));
-        int ly = y + _modelHeight;
+        int y = std::max(0, int(i * _parameters.modelHeight - _parameters.overlapRatio * _parameters.modelHeight));
+        int ly = y + _parameters.modelHeight;
 
         //If we are on the end border, shift on the other side
         int shifty = source.Height() - ly;
@@ -106,8 +106,8 @@ bool Segmentation::tiledProcess(image::Image<IndexT> & labels, const image::Imag
         for (int j = 0; j < cwidth; j++)
         {
             //Compute starting point with overlap on previous
-            int x = std::max(0, int(j * _modelWidth - _overlapRatio * _modelWidth));
-            int lx = x + _modelWidth;
+            int x = std::max(0, int(j * _parameters.modelWidth - _parameters.overlapRatio * _parameters.modelWidth));
+            int lx = x + _parameters.modelWidth;
 
             //If we are on the end border, shift on the other side
             int shiftx = source.Width() - lx;
@@ -117,10 +117,10 @@ bool Segmentation::tiledProcess(image::Image<IndexT> & labels, const image::Imag
             }
 
             //x and y contains the position of the tile in the input image
-            auto & block = source.block(y, x, _modelHeight, _modelWidth);
+            auto & block = source.block(y, x, _parameters.modelHeight, _parameters.modelWidth);
 
             //Compute tile
-            image::Image<ScoredLabel> tileLabels(_modelWidth, _modelHeight, true, {0, 0.0f});
+            image::Image<ScoredLabel> tileLabels(_parameters.modelWidth, _parameters.modelHeight, true, {0, 0.0f});
             processTile(tileLabels, block);
 
 
@@ -155,17 +155,17 @@ bool Segmentation::mergeLabels(image::Image<ScoredLabel> & labels, image::Image<
 
 bool Segmentation::labelsFromModelOutput(image::Image<ScoredLabel> & labels, const std::vector<float> & modelOutput)
 {
-    for (int outputY = 0; outputY < _modelHeight; outputY++)
+    for (int outputY = 0; outputY < _parameters.modelHeight; outputY++)
     {
-        for (int outputX = 0; outputX < _modelWidth; outputX++)
+        for (int outputX = 0; outputX < _parameters.modelWidth; outputX++)
         {
             int maxClasse = 0;
             int maxVal = 0;
 
-            for (int classe = 0; classe < _classes.size(); classe++)
+            for (int classe = 0; classe < _parameters.classes.size(); classe++)
             {
-                int classPos = classe * _modelWidth * _modelHeight;
-                int pos = classPos + outputY * _modelWidth  + outputX;
+                int classPos = classe * _parameters.modelWidth * _parameters.modelHeight;
+                int pos = classPos + outputY * _parameters.modelWidth  + outputX;
 
                 float val = modelOutput[pos];
                 if (val > maxVal)
@@ -186,16 +186,16 @@ bool Segmentation::processTile(image::Image<ScoredLabel> & labels, const image::
 {
     Ort::Env ortEnvironment(ORT_LOGGING_LEVEL_WARNING, "aliceVision-imageSegmentation");
     Ort::SessionOptions ortSessionOptions;
-    Ort::Session ortSession = Ort::Session(ortEnvironment, "/s/apps/users/servantf/MeshroomResearch/mrrs/segmentation/semantic/fcn_resnet50.onnx", ortSessionOptions);
+    Ort::Session ortSession = Ort::Session(ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
 
     Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
     std::vector<const char*> inputNames{"input"};
     std::vector<const char*> outputNames{"output"};
-    std::vector<int64_t> inputDimensions = {1, 3, _modelHeight, _modelWidth};
-    std::vector<int64_t> outputDimensions = {1, _classes.size(), _modelHeight, _modelWidth};
+    std::vector<int64_t> inputDimensions = {1, 3, _parameters.modelHeight, _parameters.modelWidth};
+    std::vector<int64_t> outputDimensions = {1, _parameters.classes.size(), _parameters.modelHeight, _parameters.modelWidth};
 
-    std::vector<float> output(_classes.size() * _modelHeight * _modelWidth);
+    std::vector<float> output(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
     Ort::Value outputTensors = Ort::Value::CreateTensor<float>(
         mem_info, 
         output.data(), output.size(), 
@@ -213,9 +213,7 @@ bool Segmentation::processTile(image::Image<ScoredLabel> & labels, const image::
 
     try 
     {
-        ALICEVISION_LOG_INFO("test");
         ortSession.Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensors, 1, outputNames.data(), &outputTensors, 1);
-        ALICEVISION_LOG_INFO("test2");
     } 
     catch (const Ort::Exception& exception) 
     {

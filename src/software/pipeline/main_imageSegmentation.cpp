@@ -63,18 +63,30 @@ void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfCo
     }
 }
 
-
+void labelsToMask(image::Image<unsigned char> & mask, const image::Image<IndexT> & labels, const std::set<IndexT> & validClasses)
+{
+    for (int i = 0; i < mask.Height(); i++)
+    {
+        for (int j = 0; j < mask.Width(); j++)
+        {
+            IndexT label = labels(i, j);
+            mask(i, j) = (validClasses.find(label) != validClasses.end())?255:0;
+        }
+    }
+}
 
 int aliceVision_main(int argc, char** argv)
 {
     std::string sfmDataFilepath;
     std::string outputPath;
-    std::vector<std::string> validClasses = {"person"};
+    std::string modelWeightsPath;
+    std::vector<std::string> validClasses;
     
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
+        ("modelPath,m", po::value<std::string>(&modelWeightsPath)->required(), "Input Model weights file.")
         ("output,o", po::value<std::string>(&outputPath)->required(), "output folder.");
 
     po::options_description optionalParams("Optional parameters");
@@ -98,9 +110,23 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    aliceVision::segmentation::Segmentation seg;
+    aliceVision::segmentation::Segmentation::Parameters parameters;
+
+    parameters.modelWeights = modelWeightsPath;
+    parameters.classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus",
+                                    "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
+                                    "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
+    parameters.center= {0.485, 0.456, 0.406};
+    parameters.scale= {1.0 / 0.229, 1.0 / 0.224, 1.0 / 0.225};
+    parameters.modelWidth = 1280;
+    parameters.modelHeight = 720;
+    parameters.overlapRatio = 0.3;
+
+    aliceVision::segmentation::Segmentation seg(parameters);
     const auto & classes = seg.getClasses();
 
+
+    //Compute the set of valid classes given parameters
     std::set<IndexT> validClassesIndices;
     for (const auto & s : validClasses)
     {
@@ -133,10 +159,14 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("Failed to segment image " << path);
         }
 
+
+        image::Image<unsigned char> mask(labels.Width(), labels.Height());
+        labelsToMask(mask, labels, validClassesIndices);
+
         //Store image
         std::stringstream ss;
         ss << outputPath << "/" << pv.first << ".exr";
-        image::writeImage(ss.str(), labels, image::ImageWriteOptions());
+        image::writeImage(ss.str(), mask, image::ImageWriteOptions());
     }
 
    

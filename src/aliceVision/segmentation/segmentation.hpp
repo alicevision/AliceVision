@@ -29,10 +29,26 @@ class Segmentation
 public:
     const std::vector<std::string> & getClasses() 
     {
-        return _classes;
+        return _parameters.classes;
     }
 
+    struct Parameters
+    {
+        std::string modelWeights;
+        std::vector<std::string> classes;
+        image::RGBfColor center;
+        image::RGBfColor scale;
+        int modelWidth;
+        int modelHeight;
+        double overlapRatio;
+    };
+
 public:
+    Segmentation(const Parameters & parameters) : _parameters(parameters)
+    {
+
+    }
+
     /**
      * Process an input image to estimate segmentation
      * @param labels the labels image resulting from the process
@@ -72,14 +88,7 @@ private:
     bool mergeLabels(image::Image<ScoredLabel> & labels, image::Image<ScoredLabel> & tileLabels, int tileX, int tileY);
 
 protected:
-    std::vector<std::string> _classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus",
-                                    "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
-                                    "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
-    image::RGBfColor _center= {0.485, 0.456, 0.406};
-    image::RGBfColor _scale= {1.0 / 0.229, 1.0 / 0.224, 1.0 / 0.225};
-    int _modelWidth = 1280;
-    int _modelHeight = 720;
-    double _overlapRatio = 0.3;
+    Parameters _parameters;
 };
 
 } //aliceVision
