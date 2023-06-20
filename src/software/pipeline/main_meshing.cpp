@@ -218,6 +218,45 @@ struct BoundingBox
         hexah[6] = Point3d(vertex6.x(), vertex6.y(), vertex6.z());
         hexah[7] = Point3d(vertex7.x(), vertex7.y(), vertex7.z());
     }
+
+    static BoundingBox fromHexahedron(const Point3d* hexah)
+    {
+        BoundingBox bbox = BoundingBox();
+
+        // Compute the scale
+        bbox.scale(0) = (hexah[0] - hexah[1]).size() / 2.;
+        bbox.scale(1) = (hexah[0] - hexah[3]).size() / 2.;
+        bbox.scale(2) = (hexah[0] - hexah[4]).size() / 2.;
+
+        // Compute the translation
+        Point3d cg(0., 0., 0.);
+        for(int i = 0; i < 8; i++)
+        {
+            cg += hexah[i];
+        }
+        cg /= 8.;
+
+        bbox.translation(0) = cg.x;
+        bbox.translation(1) = cg.y;
+        bbox.translation(2) = cg.z;
+
+        // Compute the rotation matrix
+        Eigen::Matrix3d rotateMat = Eigen::Matrix3d::Identity();
+        Point3d cx = ((hexah[1] + hexah[2] + hexah[5] + hexah[6]) / 4. - cg).normalize();
+        Point3d cy = ((hexah[3] + hexah[2] + hexah[7] + hexah[6]) / 4. - cg).normalize();
+        Point3d cz = ((hexah[7] + hexah[4] + hexah[5] + hexah[6]) / 4. - cg).normalize();
+        rotateMat.col(0).head<3>() << cx.x, cx.y, cx.z;
+        rotateMat.col(1).head<3>() << cy.x, cy.y, cy.z;
+        rotateMat.col(2).head<3>() << cz.x, cz.y, cz.z;
+
+        // eurlar rotation angles on Qt side
+        Eigen::Vector3d ea = rotateMat.eulerAngles(1, 0, 2) * 180. / M_PI;
+        bbox.rotation(0) = ea(1);
+        bbox.rotation(1) = ea(0);
+        bbox.rotation(2) = ea(2);
+
+        return bbox;
+    }
 };
 
 inline std::istream& operator>>(std::istream& in, BoundingBox& out_bbox)
@@ -481,6 +520,19 @@ int aliceVision_main(int argc, char* argv[])
                         const double height = hexah[0].z - hexah[4].z;
 
                         ALICEVISION_LOG_INFO("bounding Box : length: " << length << ", width: " << width << ", height: " << height);
+
+                        // Save bounding box
+                        BoundingBox bbox = BoundingBox::fromHexahedron(&hexah[0]);
+                        std::string filename = (outDirectory / "boundingBox.txt").string();
+                        std::ofstream fs(filename, std::ios::out);
+                        if(!fs.is_open())
+                        {
+                            ALICEVISION_LOG_WARNING("Unable to create the bounding box file " << filename);
+                        }
+                        fs << bbox.translation << std::endl;
+                        fs << bbox.rotation << std::endl;
+                        fs << bbox.scale << std::endl;
+                        fs.close();
                     }
 
                     StaticVector<int> cams;
