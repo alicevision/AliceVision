@@ -7,6 +7,7 @@
 #include <vector>
 #include <string> 
 
+#include <aliceVision/config.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/image/Image.hpp>
 
@@ -46,7 +47,15 @@ public:
 public:
     Segmentation(const Parameters & parameters) : _parameters(parameters)
     {
+        if (!initialize())
+        {
+            throw std::runtime_error("Error on segmentation initialization");
+        }
+    }
 
+    virtual ~Segmentation()
+    {
+        terminate();
     }
 
     /**
@@ -57,6 +66,17 @@ public:
     bool processImage(image::Image<IndexT> &labels, const image::Image<image::RGBfColor> & source);
 
 private:
+
+    /**
+     * Onnx creation code
+    */
+    bool initialize();
+    
+    /**
+     * Onnx destruction code
+    */
+    bool terminate();
+
     /**
      * Assume the source image is the correct size
      * @param labels the output label image
@@ -79,6 +99,15 @@ private:
     bool processTile(image::Image<ScoredLabel> & labels, const image::Image<image::RGBfColor>::Base & source);
 
     /**
+     * Process effectively a buffer of the model input size
+     * param labels the output labels
+     * @param source the source tile
+     */
+    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+    bool processTileGPU(image::Image<ScoredLabel> & labels, const image::Image<image::RGBfColor>::Base & source);
+    #endif
+
+    /**
      * Merge tile labels with global labels image
      * @param labels the global labels image
      * @param tileLabels the local tile labels image
@@ -89,6 +118,15 @@ private:
 
 protected:
     Parameters _parameters;
+    std::unique_ptr<Ort::Env> _ortEnvironment;
+    std::unique_ptr<Ort::Session> _ortSession;
+    
+    std::vector<float> _output;
+
+    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+    void * _cudaOutput;
+    void * _cudaInput;
+    #endif
 };
 
 } //aliceVision

@@ -123,9 +123,10 @@ int aliceVision_main(int argc, char** argv)
     parameters.overlapRatio = 0.3;
 
     aliceVision::segmentation::Segmentation seg(parameters);
+
     const auto & classes = seg.getClasses();
 
-
+    
     //Compute the set of valid classes given parameters
     std::set<IndexT> validClassesIndices;
     for (const auto & s : validClasses)
@@ -149,6 +150,7 @@ int aliceVision_main(int argc, char** argv)
     for (const auto & pv : sfmData.getViews())
     {
         std::string path = pv.second->getImagePath();
+        ALICEVISION_LOG_INFO("processing " << path);
 
         image::Image<image::RGBfColor> image;
         image::readImage(path, image, image::EImageColorSpace::NO_CONVERSION);

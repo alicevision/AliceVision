@@ -6,12 +6,17 @@
 
 #include "segmentation.hpp"
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+#include <cuda_runtime.h>
+#endif
+
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
 namespace segmentation {
+
 
 void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfColor>::Base & source)
 {
@@ -36,6 +41,47 @@ void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfCo
             pos++;
         }
     }
+}
+
+bool Segmentation::initialize()
+{
+    const auto& api = Ort::GetApi();
+
+    _ortEnvironment = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "aliceVision-imageSegmentation");
+
+    Ort::SessionOptions ortSessionOptions;
+
+    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+        OrtCUDAProviderOptionsV2* cuda_options = nullptr;
+        api.CreateCUDAProviderOptions(&cuda_options);
+        api.SessionOptionsAppendExecutionProvider_CUDA_V2(static_cast<OrtSessionOptions*>(ortSessionOptions), cuda_options);
+        api.ReleaseCUDAProviderOptions(cuda_options);
+
+        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);  
+
+        Ort::MemoryInfo memInfoCuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
+        Ort::Allocator cudaAllocator(*_ortSession, memInfoCuda);
+
+        _output.resize(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
+        _cudaInput = cudaAllocator.Alloc(_output.size() * sizeof(float));
+        _cudaOutput = cudaAllocator.Alloc(_output.size() * sizeof(float));
+    #else
+        _ortSession = std::make_unique<Ort::Session>(ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+    #endif
+
+    return true;
+}
+
+bool Segmentation::terminate()
+{
+    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+        Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
+        Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
+        cudaAllocator.Free(_cudaInput);
+        cudaAllocator.Free(_cudaOutput);
+    #endif
+
+    return true;
 }
 
 bool Segmentation::processImage(image::Image<IndexT> &labels, const image::Image<image::RGBfColor> & source)
@@ -121,7 +167,12 @@ bool Segmentation::tiledProcess(image::Image<IndexT> & labels, const image::Imag
 
             //Compute tile
             image::Image<ScoredLabel> tileLabels(_parameters.modelWidth, _parameters.modelHeight, true, {0, 0.0f});
+
+            #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+            processTileGPU(tileLabels, block);
+            #else
             processTile(tileLabels, block);
+            #endif
 
 
             //Update the global labeling
@@ -184,11 +235,7 @@ bool Segmentation::labelsFromModelOutput(image::Image<ScoredLabel> & labels, con
 
 bool Segmentation::processTile(image::Image<ScoredLabel> & labels, const image::Image<image::RGBfColor>::Base & source)
 {
-    Ort::Env ortEnvironment(ORT_LOGGING_LEVEL_WARNING, "aliceVision-imageSegmentation");
-    Ort::SessionOptions ortSessionOptions;
-    Ort::Session ortSession = Ort::Session(ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
-
-    Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
+    Ort::MemoryInfo memInfo = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
     std::vector<const char*> inputNames{"input"};
     std::vector<const char*> outputNames{"output"};
@@ -197,7 +244,7 @@ bool Segmentation::processTile(image::Image<ScoredLabel> & labels, const image::
 
     std::vector<float> output(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
     Ort::Value outputTensors = Ort::Value::CreateTensor<float>(
-        mem_info, 
+        memInfo, 
         output.data(), output.size(), 
         outputDimensions.data(), outputDimensions.size()
     );
@@ -206,18 +253,18 @@ bool Segmentation::processTile(image::Image<ScoredLabel> & labels, const image::
     imageToPlanes(transformedInput, source);
 
     Ort::Value inputTensors = Ort::Value::CreateTensor<float>(
-        mem_info, 
+        memInfo, 
         transformedInput.data(), transformedInput.size(), 
         inputDimensions.data(), inputDimensions.size()
     );
 
     try 
     {
-        ortSession.Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensors, 1, outputNames.data(), &outputTensors, 1);
+        _ortSession->Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensors, 1, outputNames.data(), &outputTensors, 1);
     } 
     catch (const Ort::Exception& exception) 
     {
-        std::cout << "ERROR running model inference: " << exception.what() << std::endl;
+        ALICEVISION_LOG_ERROR("ERROR running model inference: " << exception.what());
         return false;
     }
 
@@ -228,6 +275,56 @@ bool Segmentation::processTile(image::Image<ScoredLabel> & labels, const image::
 
     return true;
 }
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+bool Segmentation::processTileGPU(image::Image<ScoredLabel> & labels, const image::Image<image::RGBfColor>::Base & source)
+{
+    Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
+    Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
+
+    std::vector<const char*> inputNames{"input"};
+    std::vector<const char*> outputNames{"output"};
+    std::vector<int64_t> inputDimensions = {1, 3, _parameters.modelHeight, _parameters.modelWidth};
+    std::vector<int64_t> outputDimensions = {1, _parameters.classes.size(), _parameters.modelHeight, _parameters.modelWidth};
+
+    
+    Ort::Value outputTensors = Ort::Value::CreateTensor<float>(
+        mem_info_cuda, 
+        reinterpret_cast<float*>(_cudaOutput), _output.size(), 
+        outputDimensions.data(), outputDimensions.size()
+    );
+
+    std::vector<float> transformedInput;
+    imageToPlanes(transformedInput, source);
+
+    cudaMemcpy(_cudaInput, transformedInput.data(), sizeof(float) * transformedInput.size(), cudaMemcpyHostToDevice);
+
+    Ort::Value inputTensors = Ort::Value::CreateTensor<float>(
+        mem_info_cuda, 
+        reinterpret_cast<float*>(_cudaInput), transformedInput.size(), 
+        inputDimensions.data(), inputDimensions.size()
+    );
+
+    try 
+    {
+        _ortSession->Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensors, 1, outputNames.data(), &outputTensors, 1);
+    } 
+    catch (const Ort::Exception& exception) 
+    {
+        ALICEVISION_LOG_ERROR("ERROR running model inference: " << exception.what());
+        return false;
+    }
+
+    cudaMemcpy(_output.data(), _cudaOutput, sizeof(float) * _output.size(), cudaMemcpyDeviceToHost);
+
+    if (!labelsFromModelOutput(labels, _output))
+    {
+        return false;
+    }
+
+    return true;
+}
+#endif
 
 } //aliceVision
 } //segmentation
