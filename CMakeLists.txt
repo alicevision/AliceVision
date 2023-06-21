@@ -892,7 +892,7 @@ if(AV_BUILD_POPSIFT)
 set(POPSIFT_TARGET popsift)
 ExternalProject_Add(${POPSIFT_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/popsift
-      GIT_TAG 4c22d41579c17d7326938929c00c54cfa01a4592
+      GIT_TAG 4b4b2478d5f0cdb6c4215a031572e951c0c2502e
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
