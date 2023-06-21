@@ -622,7 +622,7 @@ if(ALICEVISION_HAVE_OPENCV AND ALICEVISION_HAVE_ONNX)
 endif()
 
 if(ALICEVISION_HAVE_ONNX)
-    # SphereDetection
+    # Image Segmentation
     alicevision_add_software(aliceVision_imageSegmentation
     SOURCE main_imageSegmentation.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}

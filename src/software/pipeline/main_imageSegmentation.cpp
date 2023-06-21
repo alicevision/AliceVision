@@ -70,7 +70,7 @@ void labelsToMask(image::Image<unsigned char> & mask, const image::Image<IndexT>
         for (int j = 0; j < mask.Width(); j++)
         {
             IndexT label = labels(i, j);
-            mask(i, j) = (validClasses.find(label) != validClasses.end())?255:0;
+            mask(i, j) = (validClasses.find(label) != validClasses.end()) ? 255 : 0;
         }
     }
 }
@@ -113,9 +113,17 @@ int aliceVision_main(int argc, char** argv)
     aliceVision::segmentation::Segmentation::Parameters parameters;
 
     parameters.modelWeights = modelWeightsPath;
-    parameters.classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus",
-                                    "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
-                                    "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
+    parameters.classes = {
+        "__background__",
+        "aeroplane",
+        "bicycle", "bird", "boat", "bottle", "bus",
+        "car", "cat", "chair", "cow",
+        "diningtable", "dog",
+        "horse",
+        "motorbike",
+        "person", "pottedplant",
+        "sheep", "sofa",
+        "train", "tvmonitor"};
     parameters.center= {0.485, 0.456, 0.406};
     parameters.scale= {1.0 / 0.229, 1.0 / 0.224, 1.0 / 0.225};
     parameters.modelWidth = 1280;
