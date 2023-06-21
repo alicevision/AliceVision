@@ -32,7 +32,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -57,6 +57,8 @@ int aliceVision_main(int argc, char **argv)
     int maxThreads = 0;
     bool forceCpuExtraction = false;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
+    std::string maskExtension = "png";
+    bool maskInvert = false;
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -88,6 +90,10 @@ int aliceVision_main(int argc, char **argv)
          "Use only CPU feature extraction methods.")
         ("masksFolder", po::value<std::string>(&masksFolder),
          "Masks folder.")
+        ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
+         "File extension for masks.")
+        ("maskInvert", po::value<bool>(&maskInvert)->default_value(maskInvert),
+         "Invert mask values.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
          "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -135,7 +141,7 @@ int aliceVision_main(int argc, char **argv)
 
     // create feature extractor
     feature::FeatureExtractor extractor(sfmData);
-    extractor.setMasksFolder(masksFolder);
+    extractor.setMasksFolder(masksFolder, maskExtension, maskInvert);
     extractor.setOutputFolder(outputFolder);
 
     // set maxThreads

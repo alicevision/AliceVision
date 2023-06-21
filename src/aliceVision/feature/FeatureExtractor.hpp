@@ -79,9 +79,11 @@ public:
       _rangeSize = rangeSize;
     }
 
-    void setMasksFolder(const std::string& folder)
+    void setMasksFolder(const std::string& folder, const std::string& ext, bool invert)
     {
       _masksFolder = folder;
+      _maskExtension = ext;
+      _maskInvert = invert;
     }
 
     void setOutputFolder(const std::string& folder)
@@ -103,6 +105,8 @@ private:
     const sfmData::SfMData& _sfmData;
     std::vector<std::shared_ptr<feature::ImageDescriber>> _imageDescribers;
     std::string _masksFolder;
+    std::string _maskExtension;
+    bool _maskInvert;
     std::string _outputFolder;
     int _rangeStart = -1;
     int _rangeSize = -1;

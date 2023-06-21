@@ -182,9 +182,9 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
     {
         const auto masksFolder = fs::path(_masksFolder);
         const auto idMaskPath = masksFolder /
-                fs::path(std::to_string(job.view().getViewId())).replace_extension("png");
+                fs::path(std::to_string(job.view().getViewId())).replace_extension(_maskExtension);
         const auto nameMaskPath = masksFolder /
-                fs::path(job.view().getImagePath()).filename().replace_extension("png");
+                fs::path(job.view().getImagePath()).filename().replace_extension(_maskExtension);
 
         if (fs::exists(idMaskPath))
         {
@@ -233,7 +233,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
                 bool masked = false;
                 if (x < mask.Width() && y < mask.Height())
                 {
-                    if (mask(y, x) == 0)
+                    if ((mask(y, x) == 0 && !_maskInvert) || (mask(y, x) != 0 && _maskInvert))
                     {
                         masked = true;
                     }
