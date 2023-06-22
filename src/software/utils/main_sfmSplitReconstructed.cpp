@@ -58,10 +58,13 @@ int aliceVision_main(int argc, char** argv)
     {
         sfmData::SfMData outReconstructed = sfmData;
         auto & views = outReconstructed.getViews();
-        for (auto it = views.begin(); it != views.end(); it++)
+
+        auto it = views.begin();
+        while (it != views.end())
         {
             if (sfmData.isPoseAndIntrinsicDefined(it->first))
             {
+                it++;
                 continue;
             }
 
@@ -83,13 +86,19 @@ int aliceVision_main(int argc, char** argv)
         outNonReconstructed.getRotationPriors().clear();
         outNonReconstructed.getLandmarks().clear();
         auto & views = outNonReconstructed.getViews();
-        for (auto it = views.begin(); it != views.end(); it++)
+
+        auto it = views.begin();
+        while (it != views.end())
         {
-            if (sfmData.isPoseAndIntrinsicDefined(it->first))
+            if (!sfmData.isPoseAndIntrinsicDefined(it->first))
             {
-                it = views.erase(it);
+                it++;
+                continue;
             }
+
+            it = views.erase(it);
         }
+
 
         // Export the SfMData scene in the expected format
         if(!sfmDataIO::Save(outNonReconstructed, outNRSfMDataFilename, sfmDataIO::ESfMData::ALL))
