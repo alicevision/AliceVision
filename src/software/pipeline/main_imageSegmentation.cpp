@@ -24,7 +24,8 @@
 // IO
 #include <fstream>
 #include <algorithm>
-#include <boost/algorithm/string.hpp>    
+#include <memory>
+#include <string>
 
 
 #include <aliceVision/segmentation/segmentation.hpp>
@@ -81,6 +82,8 @@ int aliceVision_main(int argc, char** argv)
     std::string outputPath;
     std::string modelWeightsPath;
     std::vector<std::string> validClasses;
+    int rangeStart = -1;
+    int rangeSize = 1;
     
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -92,7 +95,11 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("validClasses,c", po::value<std::vector<std::string>>(&validClasses)->multitoken(),
-         "Names of classes which are to be considered");
+         "Names of classes which are to be considered")
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), 
+        "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), 
+        "Range size for processing views (ordered by image filepath).");
 
     CmdLine cmdline("AliceVision imageSegmentation");
     cmdline.add(requiredParams);
@@ -108,6 +115,40 @@ int aliceVision_main(int argc, char** argv)
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
         return EXIT_FAILURE;
+    }
+
+    // Order views by their image names
+    std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
+    for(auto& viewIt : sfmData.getViews())
+    {
+        viewsOrderedByName.push_back(viewIt.second);
+    }
+    std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(),
+              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool
+              {
+                  if(a == nullptr || b == nullptr)
+                      return true;
+                  return (a->getImagePath() < b->getImagePath());
+              });
+
+    // Define range to compute
+    if(rangeStart != -1)
+    {
+        if(rangeStart < 0 || rangeSize < 0 || static_cast<std::size_t>(rangeStart) > viewsOrderedByName.size())
+        {
+            ALICEVISION_LOG_ERROR("Range is incorrect");
+            return EXIT_FAILURE;
+        }
+
+        if(static_cast<std::size_t>(rangeStart + rangeSize) > viewsOrderedByName.size())
+        {
+            rangeSize = static_cast<int>(viewsOrderedByName.size()) - rangeStart;
+        }
+    }
+    else
+    {
+        rangeStart = 0;
+        rangeSize = static_cast<int>(viewsOrderedByName.size());
     }
 
     aliceVision::segmentation::Segmentation::Parameters parameters;
@@ -155,9 +196,9 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    for (const auto & pv : sfmData.getViews())
+    for (const auto & view : viewsOrderedByName)
     {
-        std::string path = pv.second->getImagePath();
+        std::string path = view->getImagePath();
         ALICEVISION_LOG_INFO("processing " << path);
 
         image::Image<image::RGBfColor> image;
@@ -175,7 +216,7 @@ int aliceVision_main(int argc, char** argv)
 
         //Store image
         std::stringstream ss;
-        ss << outputPath << "/" << pv.first << ".exr";
+        ss << outputPath << "/" << view->getViewId() << ".exr";
         image::writeImage(ss.str(), mask, image::ImageWriteOptions());
     }
 
