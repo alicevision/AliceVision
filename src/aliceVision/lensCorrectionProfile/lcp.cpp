@@ -126,14 +126,47 @@ void XMLCALL LCPinfo::XmlStartHandler(void* pLCPinfo, const char* el, const char
         {
             LCPdata->_currReadingState = LCPReadingState::FillChromaticGreenModel;
             LCPdata->currLensParam.setChromaticParamsStatus(true);
+            if(attr[0])
+            {
+                for(int i = 0; attr[i]; i += 2)
+                {
+                    std::string key(attr[i]);
+                    std::string value(attr[i + 1]);
+
+                    LCPdata->_currText = value;
+                    LCPdata->setRectilinearModel(LCPdata->currLensParam.ChromaticGreenParams, key);
+                }
+            }
         }
         else if (element == "stCamera:ChromaticRedGreenModel")
         {
             LCPdata->_currReadingState = LCPReadingState::FillChromaticRedGreenModel;
+            if(attr[0])
+            {
+                for(int i = 0; attr[i]; i += 2)
+                {
+                    std::string key(attr[i]);
+                    std::string value(attr[i + 1]);
+
+                    LCPdata->_currText = value;
+                    LCPdata->setRectilinearModel(LCPdata->currLensParam.ChromaticRedGreenParams, key);
+                }
+            }
         }
         else if (element == "stCamera:ChromaticBlueGreenModel")
         {
             LCPdata->_currReadingState = LCPReadingState::FillChromaticBlueGreenModel;
+            if(attr[0])
+            {
+                for(int i = 0; attr[i]; i += 2)
+                {
+                    std::string key(attr[i]);
+                    std::string value(attr[i + 1]);
+
+                    LCPdata->_currText = value;
+                    LCPdata->setRectilinearModel(LCPdata->currLensParam.ChromaticBlueGreenParams, key);
+                }
+            }
         }
         else if (attr[0])
         {
@@ -530,6 +563,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
 
     std::vector<bool> v_isDistortionValid;
     std::vector<bool> v_isVignetteValid;
+    std::vector<bool> v_isChromaticValid;
 
     // Search the best focal lengths with respect to the target one in settings
     // At the end of the loop, iLow is the index in v_lensParam of the lens parameter set with the closest focal length, lower or equal to the one in settings.
@@ -544,9 +578,13 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
 
         v_isDistortionValid.push_back(currParam.isFisheye() ? !currParam.fisheyeParams.isEmpty : !currParam.perspParams.isEmpty);
         v_isVignetteValid.push_back(currParam.hasVignetteParams() && !currParam.vignParams.isEmpty);
+        v_isChromaticValid.push_back(currParam.hasChromaticParams() && !currParam.ChromaticGreenParams.isEmpty &&
+                                     !currParam.ChromaticBlueGreenParams.isEmpty &&
+                                     !currParam.ChromaticRedGreenParams.isEmpty);
 
         bool isCurrentValid = (mode == LCPCorrectionMode::DISTORTION && v_isDistortionValid.back()) ||
-                              (mode == LCPCorrectionMode::VIGNETTE && v_isVignetteValid.back());
+                              (mode == LCPCorrectionMode::VIGNETTE && v_isVignetteValid.back()) ||
+                              (mode == LCPCorrectionMode::CA && v_isChromaticValid.back());
 
         if (isCurrentValid)
         {
@@ -610,7 +648,8 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
         for (int i = 0; i < v_lensParams.size(); ++i)
         {
             bool isCurrentValid = (mode == LCPCorrectionMode::DISTORTION && v_isDistortionValid[i]) ||
-                                  (mode == LCPCorrectionMode::VIGNETTE && v_isVignetteValid[i]);
+                                  (mode == LCPCorrectionMode::VIGNETTE && v_isVignetteValid[i]) ||
+                                  (mode == LCPCorrectionMode::CA && v_isChromaticValid[i]);
 
             if (isCurrentValid && v_lensParams[i].camData.FocalLength == v_lensParams[iLow].camData.FocalLength)
             {
@@ -767,7 +806,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
             return true;
         }
     }
-    else if ((mode == LCPCorrectionMode::DISTORTION) && (settings.FocusDistance == 0.f))
+    else if ((mode != LCPCorrectionMode::VIGNETTE) && (settings.FocusDistance == 0.f))
     {
         if (v_lensParams[iHigh].camData.FocalLength > v_lensParams[iLow].camData.FocalLength)
         {
@@ -846,30 +885,43 @@ void LCPinfo::combine(size_t iLow, size_t iHigh, float weightLow, LCPCorrectionM
     }
 
     case LCPCorrectionMode::CA: {
-        pOut.ChromaticGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticGreenParams.FocalLengthX, p2.ChromaticGreenParams.FocalLengthX);
-        pOut.ChromaticGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticGreenParams.FocalLengthY, p2.ChromaticGreenParams.FocalLengthY);
-        pOut.ChromaticGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticGreenParams.ImageXCenter, p2.ChromaticGreenParams.ImageXCenter);
-        pOut.ChromaticGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticGreenParams.ImageYCenter, p2.ChromaticGreenParams.ImageYCenter);
-        pOut.ChromaticGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam1, p2.ChromaticGreenParams.RadialDistortParam1);
-        pOut.ChromaticGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam2, p2.ChromaticGreenParams.RadialDistortParam2);
-        pOut.ChromaticGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam3, p2.ChromaticGreenParams.RadialDistortParam3);
-        pOut.ChromaticGreenParams.isEmpty = false;
-        pOut.ChromaticBlueGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.FocalLengthX, p2.ChromaticBlueGreenParams.FocalLengthX);
-        pOut.ChromaticBlueGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.FocalLengthY, p2.ChromaticBlueGreenParams.FocalLengthY);
-        pOut.ChromaticBlueGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.ImageXCenter, p2.ChromaticBlueGreenParams.ImageXCenter);
-        pOut.ChromaticBlueGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.ImageYCenter, p2.ChromaticBlueGreenParams.ImageYCenter);
-        pOut.ChromaticBlueGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam1, p2.ChromaticBlueGreenParams.RadialDistortParam1);
-        pOut.ChromaticBlueGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam2, p2.ChromaticBlueGreenParams.RadialDistortParam2);
-        pOut.ChromaticBlueGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam3, p2.ChromaticBlueGreenParams.RadialDistortParam3);
-        pOut.ChromaticBlueGreenParams.isEmpty = false;
-        pOut.ChromaticRedGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.FocalLengthX, p2.ChromaticRedGreenParams.FocalLengthX);
-        pOut.ChromaticRedGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.FocalLengthY, p2.ChromaticRedGreenParams.FocalLengthY);
-        pOut.ChromaticRedGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.ImageXCenter, p2.ChromaticRedGreenParams.ImageXCenter);
-        pOut.ChromaticRedGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.ImageYCenter, p2.ChromaticRedGreenParams.ImageYCenter);
-        pOut.ChromaticRedGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam1, p2.ChromaticRedGreenParams.RadialDistortParam1);
-        pOut.ChromaticRedGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam2, p2.ChromaticRedGreenParams.RadialDistortParam2);
-        pOut.ChromaticRedGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam3, p2.ChromaticRedGreenParams.RadialDistortParam3);
-        pOut.ChromaticRedGreenParams.isEmpty = false;
+        if(p1.hasChromaticParams() && !p1.ChromaticGreenParams.isEmpty && p2.hasChromaticParams() && !p2.ChromaticGreenParams.isEmpty)
+        {
+            pOut.setChromaticParamsStatus(true);
+            pOut.ChromaticGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticGreenParams.FocalLengthX, p2.ChromaticGreenParams.FocalLengthX);
+            pOut.ChromaticGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticGreenParams.FocalLengthY, p2.ChromaticGreenParams.FocalLengthY);
+            pOut.ChromaticGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticGreenParams.ImageXCenter, p2.ChromaticGreenParams.ImageXCenter);
+            pOut.ChromaticGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticGreenParams.ImageYCenter, p2.ChromaticGreenParams.ImageYCenter);
+            pOut.ChromaticGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam1, p2.ChromaticGreenParams.RadialDistortParam1);
+            pOut.ChromaticGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam2, p2.ChromaticGreenParams.RadialDistortParam2);
+            pOut.ChromaticGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam3, p2.ChromaticGreenParams.RadialDistortParam3);
+            pOut.ChromaticGreenParams.isEmpty = false;
+            pOut.ChromaticBlueGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.FocalLengthX, p2.ChromaticBlueGreenParams.FocalLengthX);
+            pOut.ChromaticBlueGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.FocalLengthY, p2.ChromaticBlueGreenParams.FocalLengthY);
+            pOut.ChromaticBlueGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.ImageXCenter, p2.ChromaticBlueGreenParams.ImageXCenter);
+            pOut.ChromaticBlueGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.ImageYCenter, p2.ChromaticBlueGreenParams.ImageYCenter);
+            pOut.ChromaticBlueGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam1, p2.ChromaticBlueGreenParams.RadialDistortParam1);
+            pOut.ChromaticBlueGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam2, p2.ChromaticBlueGreenParams.RadialDistortParam2);
+            pOut.ChromaticBlueGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam3, p2.ChromaticBlueGreenParams.RadialDistortParam3);
+            pOut.ChromaticBlueGreenParams.ScaleFactor = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.ScaleFactor, p2.ChromaticBlueGreenParams.ScaleFactor);
+            pOut.ChromaticBlueGreenParams.isEmpty = false;
+            pOut.ChromaticRedGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.FocalLengthX, p2.ChromaticRedGreenParams.FocalLengthX);
+            pOut.ChromaticRedGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.FocalLengthY, p2.ChromaticRedGreenParams.FocalLengthY);
+            pOut.ChromaticRedGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.ImageXCenter, p2.ChromaticRedGreenParams.ImageXCenter);
+            pOut.ChromaticRedGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.ImageYCenter, p2.ChromaticRedGreenParams.ImageYCenter);
+            pOut.ChromaticRedGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam1, p2.ChromaticRedGreenParams.RadialDistortParam1);
+            pOut.ChromaticRedGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam2, p2.ChromaticRedGreenParams.RadialDistortParam2);
+            pOut.ChromaticRedGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam3, p2.ChromaticRedGreenParams.RadialDistortParam3);
+            pOut.ChromaticRedGreenParams.ScaleFactor = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.ScaleFactor, p2.ChromaticRedGreenParams.ScaleFactor);
+            pOut.ChromaticRedGreenParams.isEmpty = false;
+        }
+        else
+        {
+            pOut.setChromaticParamsStatus(false);
+            pOut.ChromaticGreenParams.isEmpty = true;
+            pOut.ChromaticBlueGreenParams.isEmpty = true;
+            pOut.ChromaticRedGreenParams.isEmpty = true;
+        }
     }
     }
 }
@@ -901,6 +953,21 @@ void LCPinfo::getVignettingParams(const float& focalLength, const float& apertur
     if (search(userSettings, LCPCorrectionMode::VIGNETTE, iLow, iHigh, weightLow))
     {
         combine(iLow, iHigh, weightLow, LCPCorrectionMode::VIGNETTE, lparam);
+    }
+}
+
+void LCPinfo::getChromaticParams(const float& focalLength, const float& focusDistance, LensParam& lparam)
+{
+    settingsInfo userSettings;
+    userSettings.ApertureValue = 0.f;
+    userSettings.FocalLength = focalLength;
+    userSettings.FocusDistance = focusDistance;
+
+    int iLow, iHigh;
+    float weightLow;
+    if(search(userSettings, LCPCorrectionMode::CA, iLow, iHigh, weightLow))
+    {
+        combine(iLow, iHigh, weightLow, LCPCorrectionMode::CA, lparam);
     }
 }
 
@@ -968,9 +1035,9 @@ void LCPinfo::setRectilinearModel(RectilinearModel& model, const std::string& na
     else if (name == "stCamera:RadialDistortParam3")
         model.RadialDistortParam3 = std::stof(_currText.c_str());
     else if (name == "stCamera:TangentiallDistortParam1")
-        model.RadialDistortParam1 = std::stof(_currText.c_str());
+        model.TangentialDistortParam1 = std::stof(_currText.c_str());
     else if (name == "stCamera:TangentiallDistortParam2")
-        model.RadialDistortParam2 = std::stof(_currText.c_str());
+        model.TangentialDistortParam2 = std::stof(_currText.c_str());
     else if (name == "stCamera:ScaleFactor")
         model.ScaleFactor = std::stof(_currText.c_str());
 }

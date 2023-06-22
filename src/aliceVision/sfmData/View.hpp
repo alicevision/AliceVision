@@ -14,6 +14,7 @@
 #include <utility>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/dcp.hpp>
+#include <aliceVision/lensCorrectionProfile/lcp.hpp>
 
 namespace aliceVision {
 namespace sfmData {
@@ -845,6 +846,52 @@ public:
       {
           addMetadata("AliceVision:DCP:CameraCalibrationMat" + std::to_string(k + 1), v_strCalibMatrix[k]);
       }
+  }
+
+  /**
+   * @brief Add vignetting model parameters in metadata
+   * @param[in] The lens data extracted from a LCP file
+   */
+  void addVignettingMetadata(LensParam& lensParam)
+  {
+      addMetadata("AliceVision:VignParamFocX", std::to_string(lensParam.vignParams.FocalLengthX));
+      addMetadata("AliceVision:VignParamFocY", std::to_string(lensParam.vignParams.FocalLengthY));
+      addMetadata("AliceVision:VignParamCenterX", std::to_string(lensParam.vignParams.ImageXCenter));
+      addMetadata("AliceVision:VignParamCenterY", std::to_string(lensParam.vignParams.ImageYCenter));
+      addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
+      addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
+      addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
+  }
+
+  /**
+   * @brief Add chromatic model parameters in metadata
+   * @param[in] The lens data extracted from a LCP file
+   */
+  void addChromaticMetadata(LensParam& lensParam)
+  {
+      addMetadata("AliceVision:CAGreenFocX", std::to_string(lensParam.ChromaticGreenParams.FocalLengthX));
+      addMetadata("AliceVision:CAGreenFocY", std::to_string(lensParam.ChromaticGreenParams.FocalLengthY));
+      addMetadata("AliceVision:CAGreenCenterX", std::to_string(lensParam.ChromaticGreenParams.ImageXCenter));
+      addMetadata("AliceVision:CAGreenCenterY", std::to_string(lensParam.ChromaticGreenParams.ImageYCenter));
+      addMetadata("AliceVision:CAGreenParam1", std::to_string(lensParam.ChromaticGreenParams.RadialDistortParam1));
+      addMetadata("AliceVision:CAGreenParam2", std::to_string(lensParam.ChromaticGreenParams.RadialDistortParam2));
+      addMetadata("AliceVision:CAGreenParam3", std::to_string(lensParam.ChromaticGreenParams.RadialDistortParam3));
+      addMetadata("AliceVision:CABlueGreenFocX", std::to_string(lensParam.ChromaticBlueGreenParams.FocalLengthX));
+      addMetadata("AliceVision:CABlueGreenFocY", std::to_string(lensParam.ChromaticBlueGreenParams.FocalLengthY));
+      addMetadata("AliceVision:CABlueGreenCenterX", std::to_string(lensParam.ChromaticBlueGreenParams.ImageXCenter));
+      addMetadata("AliceVision:CABlueGreenCenterY", std::to_string(lensParam.ChromaticBlueGreenParams.ImageYCenter));
+      addMetadata("AliceVision:CABlueGreenParam1", std::to_string(lensParam.ChromaticBlueGreenParams.RadialDistortParam1));
+      addMetadata("AliceVision:CABlueGreenParam2", std::to_string(lensParam.ChromaticBlueGreenParams.RadialDistortParam2));
+      addMetadata("AliceVision:CABlueGreenParam3", std::to_string(lensParam.ChromaticBlueGreenParams.RadialDistortParam3));
+      addMetadata("AliceVision:CABlueGreenScaleFactor", std::to_string(lensParam.ChromaticBlueGreenParams.ScaleFactor));
+      addMetadata("AliceVision:CARedGreenFocX", std::to_string(lensParam.ChromaticRedGreenParams.FocalLengthX));
+      addMetadata("AliceVision:CARedGreenFocY", std::to_string(lensParam.ChromaticRedGreenParams.FocalLengthY));
+      addMetadata("AliceVision:CARedGreenCenterX", std::to_string(lensParam.ChromaticRedGreenParams.ImageXCenter));
+      addMetadata("AliceVision:CARedGreenCenterY", std::to_string(lensParam.ChromaticRedGreenParams.ImageYCenter));
+      addMetadata("AliceVision:CARedGreenParam1", std::to_string(lensParam.ChromaticRedGreenParams.RadialDistortParam1));
+      addMetadata("AliceVision:CARedGreenParam2", std::to_string(lensParam.ChromaticRedGreenParams.RadialDistortParam2));
+      addMetadata("AliceVision:CARedGreenParam3", std::to_string(lensParam.ChromaticRedGreenParams.RadialDistortParam3));
+      addMetadata("AliceVision:CARedGreenScaleFactor", std::to_string(lensParam.ChromaticRedGreenParams.ScaleFactor));
   }
 
 private:

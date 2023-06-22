@@ -300,6 +300,14 @@ public:
     void getVignettingParams(const float& focalLength, const float& aperture, LensParam& lparam);
 
     /**
+     * @brief Get defringing parameters for a given couple focal length, focus distance. Focus distance can set to zero.
+     * @param[in] focalLength Focal length in mm
+     * @param[in] focusDistance Focus distance in meters
+     * @param[out] lparam Lens parameters to be populated with the R, G and B defringing models
+     */
+    void getChromaticParams(const float& focalLength, const float& focusDistance, LensParam& lparam);
+
+    /**
      * @brief Indicate that no lens paramater set is available
      * @return true if no lens paramater set is available
      */

@@ -359,6 +359,8 @@ int aliceVision_main(int argc, char **argv)
   std::size_t lcpGeometryViewCount = 0;
   // number of views with LCP data used to add vignetting params in metadata
   std::size_t lcpVignettingViewCount = 0;
+  // number of views with LCP data used to add chromatic aberration params in metadata
+  std::size_t lcpChromaticViewCount = 0;
 
   // load known informations
   if(imageFolder.empty())
@@ -697,6 +699,7 @@ int aliceVision_main(int argc, char **argv)
     {
         lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
         lcpData->getVignettingParams(focalLengthmm, focusDistance, lensParam);
+        lcpData->getChromaticParams(focalLengthmm, focusDistance, lensParam);
 
         lcpCameraModel = lensParam.isFisheye() ? camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE : camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
     }
@@ -768,6 +771,12 @@ int aliceVision_main(int argc, char **argv)
             view.addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
 
             ++lcpVignettingViewCount;
+        }
+
+        if (lensParam.hasChromaticParams() && !lensParam.ChromaticGreenParams.isEmpty)
+        {
+            view.addChromaticMetadata(lensParam);
+            ++lcpChromaticViewCount;
         }
     }
 
@@ -1059,6 +1068,7 @@ int aliceVision_main(int argc, char **argv)
                    << "\n\t   - # with DCP color calibration (raw images only): " << viewsWithDCPMetadata
                    << "\n\t   - # with LCP lens distortion initialization: " << lcpGeometryViewCount
                    << "\n\t   - # with LCP vignetting calibration: " << lcpVignettingViewCount
+                   << "\n\t   - # with LCP chromatic aberration correction models: " << lcpChromaticViewCount
                    << "\n\t- # Cameras Intrinsics: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;
