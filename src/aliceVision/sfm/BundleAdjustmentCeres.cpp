@@ -82,8 +82,8 @@ class IntrinsicsManifold : public utils::CeresManifold {
     {
       if (_lockFocalRatio)
       {
-        x_plus_delta[0] = x[0] + delta[posDelta]; 
-        x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
+        x_plus_delta[0] = x[0] + _focalRatio * delta[posDelta]; 
+        x_plus_delta[1] = x[1] + delta[posDelta];
         posDelta++;
       }
       else
@@ -127,8 +127,8 @@ class IntrinsicsManifold : public utils::CeresManifold {
     {
       if (_lockFocalRatio)
       {
-        J(0, posDelta) = 1.0;
-        J(1, posDelta) = _focalRatio;
+        J(0, posDelta) = _focalRatio;
+        J(1, posDelta) = 1.0;
         posDelta++;
       }
       else
@@ -637,7 +637,6 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
   const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
   const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
   const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
-  const bool fixFocalRatio = true;
 
   std::map<IndexT, std::size_t> intrinsicsUsage;
 
@@ -720,7 +719,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
         problem.SetParameterLowerBound(intrinsicBlockPtr, 1, 0.0);
       }
 
-      focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
+      focalRatio = intrinsicBlockPtr[0] / intrinsicBlockPtr[1];
 
       std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
       if (castedcam_iso)
