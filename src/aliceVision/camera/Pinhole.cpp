@@ -21,10 +21,10 @@ Mat3 Pinhole::K() const
     return K;
 }
 
-void Pinhole::setK(double focalLengthPix, double ppx, double ppy)
+void Pinhole::setK(double focalLengthPixX, double focalLengthPixY, double ppx, double ppy)
 {
-    _scale(0) = focalLengthPix;
-    _scale(1) = focalLengthPix;
+    _scale(0) = focalLengthPixX;
+    _scale(1) = focalLengthPixY;
     _offset(0) = ppx - static_cast<double>(_w) * 0.5;
     _offset(1) = ppy - static_cast<double>(_h) * 0.5;
 }

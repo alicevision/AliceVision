@@ -1600,11 +1600,12 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
       Vec3 t;
       KRt_from_P(resectionData.projection_matrix, &K, &R, &t);
       
-      const double focal = (K(0,0) + K(1,1))/2.0;
+      const double focalX = K(0,0);
+      const double focalY = K(1,1);
       const Vec2 principal_point(K(0,2), K(1,2));
       
       // Fill the uninitialized camera intrinsic group
-      pinhole_cam->setK(focal, principal_point(0), principal_point(1));
+      pinhole_cam->setK(focalX, focalY, principal_point(0), principal_point(1));
     }
 
     const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();
