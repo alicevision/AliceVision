@@ -133,11 +133,12 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     
     const double initialFocalLengthMM = (intrinsicScaleOffset->getInitialScale().x() > 0) ? intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getInitialScale().x() / double(intrinsic->w()): -1;
     const double focalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getScale().x() / double(intrinsic->w());
-    const double pixelRatio = (intrinsicScaleOffset->getScale().x()) / intrinsicScaleOffset->getScale().y();
+    const double focalRatio = intrinsicScaleOffset->getScale().x() / intrinsicScaleOffset->getScale().y();
+    const double pixelAspectRatio = 1.0 / focalRatio;
 
     intrinsicTree.put("initialFocalLength", initialFocalLengthMM);
     intrinsicTree.put("focalLength", focalLengthMM);
-    intrinsicTree.put("pixelRatio", pixelRatio);
+    intrinsicTree.put("pixelRatio", pixelAspectRatio);
     intrinsicTree.put("pixelRatioLocked", intrinsicScaleOffset->isRatioLocked());
 
     saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
@@ -234,13 +235,14 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
   else 
   {
     const double fmm = intrinsicTree.get<double>("focalLength", 1.0);
-    const double ratio = intrinsicTree.get<double>("pixelRatio", 1.0);
+    const double pixelAspectRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
 
-    const double px = (fmm / sensorWidth) * double(width);
-    const double py = px / ratio;
+    const double focalRatio = 1.0 / pixelAspectRatio;
+    const double fx = (fmm / sensorWidth) * double(width);
+    const double fy = fx / focalRatio;
 
-    pxFocalLength(0) = px;
-    pxFocalLength(1) = py;
+    pxFocalLength(0) = fx;
+    pxFocalLength(1) = fy;
   }
 
   // pinhole parameters
