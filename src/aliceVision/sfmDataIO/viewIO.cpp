@@ -184,8 +184,9 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   double pxFocalLength = (focalLength / sensorWidth) * std::max(view.getWidth(), view.getHeight());
 
   // retrieve pixel aspect ratio
-  double pixelRatio = defaultFocalRatio;
-  view.getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
+  double pixelAspectRatio = 1.0 / defaultFocalRatio;
+  view.getDoubleMetadata({"PixelAspectRatio"}, pixelAspectRatio);
+  const double focalRatio = 1.0 / pixelAspectRatio;
 
   bool hasFisheyeCompatibleParameters = ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0));
   bool checkPossiblePinhole = (allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) && hasFisheyeCompatibleParameters;
@@ -237,7 +238,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     camera::createIntrinsic(
         /*camera*/       intrinsicType,
         /*dimensions*/   view.getWidth(), view.getHeight(),
-        /*focal length*/ pxFocalLength, pxFocalLength / pixelRatio,
+        /*focal length*/ pxFocalLength, pxFocalLength / focalRatio,
         /*offset*/       0, 0);
   if(hasFocalLengthInput)
   {
@@ -245,7 +246,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     
     if (intrinsicScaleOffset)
     {
-      intrinsicScaleOffset->setInitialScale({pxFocalLength, (pxFocalLength > 0) ? pxFocalLength / pixelRatio : -1});
+      intrinsicScaleOffset->setInitialScale({pxFocalLength, (pxFocalLength > 0) ? pxFocalLength / focalRatio : -1});
       intrinsicScaleOffset->setOffset({defaultOffsetX, defaultOffsetY});
     }
   }
