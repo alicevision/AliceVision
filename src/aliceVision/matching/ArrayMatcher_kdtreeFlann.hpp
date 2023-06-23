@@ -56,8 +56,9 @@ class ArrayMatcher_kdtreeFlann : public ArrayMatcher<Scalar, Metric>
         new flann::Matrix<Scalar>((Scalar*)dataset, nbRows, dimension));
 
     //-- Build FLANN index
-    _index.reset(
-        new flann::Index<Metric> (*_datasetM, flann::KDTreeIndexParams(4)));
+    flann::KDTreeIndexParams params(4);
+    params["random_seed"] = 1;
+    _index.reset(new flann::Index<Metric> (*_datasetM, params));
     _index->buildIndex();
 
     return true;
