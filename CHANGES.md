@@ -1,5 +1,84 @@
 # AliceVision Changelog
 
+## Release 3.1.0 (2023/06/21)
+
+### Major Features
+
+- New Photometric Stereo software [PR](https://github.com/alicevision/AliceVision/pull/999)
+- [calibration] Checkerboard detection [PR](https://github.com/alicevision/AliceVision/pull/1331)
+- [depthMap] New option for multi-resolution similarity estimation and optimizations [PR](https://github.com/alicevision/AliceVision/pull/1351)
+- [utils] split360Images: support SfMData input and output [PR](https://github.com/alicevision/AliceVision/pull/1382)
+- [sfmTransform] Creation of auto mode [PR](https://github.com/alicevision/AliceVision/pull/1402)
+- Distortion calibration [PR](https://github.com/alicevision/AliceVision/pull/1415)
+
+### Features
+
+- Add rec709 color space definition [PR](https://github.com/alicevision/AliceVision/pull/1412)
+- SfM: Expose new parameters to the command line [PR](https://github.com/alicevision/AliceVision/pull/1413)
+- [image] New image cache [PR](https://github.com/alicevision/AliceVision/pull/1310)
+- [sfmTransform] rewrite auto_from_cameras [PR](https://github.com/alicevision/AliceVision/pull/1376)
+- Stitching color space [PR](https://github.com/alicevision/AliceVision/pull/1380)
+- [panoramaInit]  add generation of contact sheet using xml input [PR](https://github.com/alicevision/AliceVision/pull/1392)
+- Add compression option for exr and jpg images [PR](https://github.com/alicevision/AliceVision/pull/1408)
+- [cmake] Update CXX standard from 14 to 17 [PR](https://github.com/alicevision/AliceVision/pull/1428)
+- ColorTemperatureAsImageProcessingParameter [PR](https://github.com/alicevision/AliceVision/pull/1433)
+
+### Other Improvements
+
+- Start Development Version 3.1.0 [PR](https://github.com/alicevision/AliceVision/pull/1401)
+- [panorama] compositing common scale selection [PR](https://github.com/alicevision/AliceVision/pull/1394)
+- Move cmdline from system to dedicated module [PR](https://github.com/alicevision/AliceVision/pull/1410)
+- [cameraInit] Reject input if multiple frames have same frame id [PR](https://github.com/alicevision/AliceVision/pull/1259)
+- Keyframe Selection: Add support for SfMData files as inputs and outputs [PR](https://github.com/alicevision/AliceVision/pull/1406)
+- [panorama] Generate a preview panorama [PR](https://github.com/alicevision/AliceVision/pull/1388)
+- add tracksbuilder app [PR](https://github.com/alicevision/AliceVision/pull/1418)
+- HDR filenames [PR](https://github.com/alicevision/AliceVision/pull/1424)
+- IncrementalSfM: expose nbOutliersThreshold param [PR](https://github.com/alicevision/AliceVision/pull/1436)
+- Fixed separator in CMAKE_INSTALL_RPATH [PR](https://github.com/alicevision/AliceVision/pull/1427)
+- oiio gammaX.Y color spaces management [PR](https://github.com/alicevision/AliceVision/pull/1445)
+- Exposure and format adjustment [PR](https://github.com/alicevision/AliceVision/pull/1414)
+- Ground level alignment based on sfm point cloud [PR](https://github.com/alicevision/AliceVision/pull/1438)
+- [image] ImageCache improvements [PR](https://github.com/alicevision/AliceVision/pull/1419)
+- [software] applyCalibration: simply copy input data when calibrated data filename is empty [PR](https://github.com/alicevision/AliceVision/pull/1450)
+- [gitignore] Update .gitignore [PR](https://github.com/alicevision/AliceVision/pull/1453)
+- [software] Do not fail if range start is larger than the number of views [PR](https://github.com/alicevision/AliceVision/pull/1457)
+- KeyframeSelection: Add new parameter value to disable the export of keyframes [PR](https://github.com/alicevision/AliceVision/pull/1454)
+- Disable libraw flip  [PR](https://github.com/alicevision/AliceVision/pull/1301)
+- Stereo Photometry: Add robustness to unexpected inputs [PR](https://github.com/alicevision/AliceVision/pull/1452)
+- Set LibRaw options [PR](https://github.com/alicevision/AliceVision/pull/1468)
+
+### Bugfixes, CI, Build and Documentation
+
+- [cmake] housekeeping [PR](https://github.com/alicevision/AliceVision/pull/1407)
+- [software] ldrTohdrSampling: fix error when using jpg, rawColorInterpretation was wrongly interpreted [PR](https://github.com/alicevision/AliceVision/pull/1420)
+- [doc] RELEASING: Add example command to generate the release note [PR](https://github.com/alicevision/AliceVision/pull/1421)
+- Build: Add dependency to Boost.JSON and make the Calibration module Boost1.81-compliant [PR](https://github.com/alicevision/AliceVision/pull/1416)
+- Fix command line parsing for executables that used the old one [PR](https://github.com/alicevision/AliceVision/pull/1422)
+- Fix small compilation issue in trackIO on Windows [PR](https://github.com/alicevision/AliceVision/pull/1429)
+- [pipeline] cameraInit: fix rigHasUniqueFrameIds [PR](https://github.com/alicevision/AliceVision/pull/1430)
+- Fix .clang-format after updating CXX standard [PR](https://github.com/alicevision/AliceVision/pull/1446)
+- [doc] INSTALL.md: remove geogram broken link [PR](https://github.com/alicevision/AliceVision/pull/1451)
+- [Meshing] Fix to avoid small holes in the final mesh [PR](https://github.com/alicevision/AliceVision/pull/1447)
+- [sfmDataIO] Alembic Import: initialize intrinsics properly [PR](https://github.com/alicevision/AliceVision/pull/1456)
+- [ci] Update docker image for dependencies to fix runtime issue in CI [PR](https://github.com/alicevision/AliceVision/pull/1458)
+- Debug in camera object [PR](https://github.com/alicevision/AliceVision/pull/1461)
+- Panorama was using too much memory for no reason [PR](https://github.com/alicevision/AliceVision/pull/1462)
+- [mvsUtils] fix writing metadata for filtered depthmaps [PR](https://github.com/alicevision/AliceVision/pull/1467)
+- [docker] Download, copy and export the sphere detection model [PR](https://github.com/alicevision/AliceVision/pull/1470)
+- [image] readImageSpec: perform safety check before anything else [PR](https://github.com/alicevision/AliceVision/pull/1474)
+- CameraPose lock was not correctly loaded [PR](https://github.com/alicevision/AliceVision/pull/1475)
+
+### Updates to the Sensor Database
+
+- Update cameraSensors.db [PR](https://github.com/alicevision/AliceVision/pull/1442)
+- Add Google Pixel 7/7 Pro main camera to cameraSensors.db [PR](https://github.com/alicevision/AliceVision/pull/1444)
+- Update cameraSensors.db [PR](https://github.com/alicevision/AliceVision/pull/1443)
+
+### Contributors
+
+[almarouk](https://github.com/almarouk), [cbentejac](https://github.com/cbentejac), [demoulinv](https://github.com/demoulinv), [earlywill](https://github.com/earlywill), [erikjwaxx](https://github.com/erikjwaxx), [fabiencastan](https://github.com/fabiencastan), [gregoire-dl](https://github.com/gregoire-dl), [ICIbrahim](https://github.com/ICIbrahim), [jmelou](https://github.com/jmelou), [mugulmd](https://github.com/mugulmd), [serguei-k](https://github.com/serguei-k), [servantftechnicolor](https://github.com/servantftechnicolor), [simogasp](https://github.com/simogasp)
+
+
 ## Release 3.0.0 (2023/03/20)
 
 ### Release Notes Summary
