@@ -21,6 +21,8 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
+#include <OpenImageIO/imagebufalgo.h>
+
 // IO
 #include <fstream>
 #include <algorithm>
@@ -196,13 +198,38 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    for (const auto & view : viewsOrderedByName)
+    for (int itemidx = 0; itemidx < rangeSize; itemidx++)
     {
+        const auto& view = viewsOrderedByName[rangeStart + itemidx];
+
         std::string path = view->getImagePath();
         ALICEVISION_LOG_INFO("processing " << path);
 
         image::Image<image::RGBfColor> image;
         image::readImage(path, image, image::EImageColorSpace::NO_CONVERSION);
+
+        double pixelRatio = 1.0;
+        view->getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
+        if (pixelRatio != 1.0)
+        {
+            // Resample input image in order to work with square pixels
+            const int w = image.Width();
+            const int h = image.Height();
+
+            const int nw = static_cast<int>(static_cast<double>(w) * pixelRatio);
+            const int nh = h;
+
+            image::Image<image::RGBfColor> resizedInput(nw, nh);
+
+            const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
+            const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
+
+            const oiio::ImageBuf inBuf(imageSpecOrigin, image.data());
+            oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
+
+            oiio::ImageBufAlgo::resize(outBuf, inBuf);
+            image.swap(resizedInput);
+        }
 
         image::Image<IndexT> labels;
         if (!seg.processImage(labels, image))
@@ -213,6 +240,27 @@ int aliceVision_main(int argc, char** argv)
 
         image::Image<unsigned char> mask(labels.Width(), labels.Height());
         labelsToMask(mask, labels, validClassesIndices);
+
+        if (pixelRatio != 1.0)
+        {
+            // Resample input image in order to work with square pixels
+            const int w = mask.Width();
+            const int h = mask.Height();
+
+            const int nw = static_cast<int>(static_cast<double>(w) / pixelRatio);
+            const int nh = h;
+
+            image::Image<unsigned char> resizedMask(nw, nh);
+
+            const oiio::ImageSpec imageSpecResized(nw, nh, 1, oiio::TypeDesc::UINT8);
+            const oiio::ImageSpec imageSpecOrigin(w, h, 1, oiio::TypeDesc::UINT8);
+
+            const oiio::ImageBuf inBuf(imageSpecOrigin, mask.data());
+            oiio::ImageBuf outBuf(imageSpecResized, resizedMask.data());
+
+            oiio::ImageBufAlgo::resize(outBuf, inBuf);
+            mask.swap(resizedMask);
+        }
 
         //Store image
         std::stringstream ss;
