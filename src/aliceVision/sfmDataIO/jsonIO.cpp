@@ -232,7 +232,19 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
   {
     loadMatrix("pxFocalLength", pxFocalLength, intrinsicTree);
   }
-  else 
+  else if (version < Version(1,2,5))
+  {
+    const double fmm = intrinsicTree.get<double>("focalLength", 1.0);
+    // pixelRatio field was actually storing the focalRatio before version 1.2.5
+    const double focalRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
+
+    const double fx = (fmm / sensorWidth) * double(width);
+    const double fy = fx / focalRatio;
+
+    pxFocalLength(0) = fx;
+    pxFocalLength(1) = fy;
+  }
+  else
   {
     const double fmm = intrinsicTree.get<double>("focalLength", 1.0);
     const double pixelAspectRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
