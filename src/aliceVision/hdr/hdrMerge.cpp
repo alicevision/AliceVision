@@ -47,6 +47,9 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
                         const rgbCurve &weight,
                         const rgbCurve &response,
                         image::Image<image::RGBfColor> &radiance,
+                        image::Image<image::RGBfColor> &lowLight,
+                        image::Image<image::RGBfColor> &highLight,
+                        image::Image<image::RGBfColor> &noMidLight,
                         MergingParams &mergingParams)
 {
   //checks
@@ -72,29 +75,15 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   rgbCurve weightLongestExposure = weight;
   weightLongestExposure.freezeFirstPartValues();
 
-  const std::string mergeInfoFilename = "C:/Temp/mergeInfo.csv";
-  std::ofstream file(mergeInfoFilename);
-
-  std::vector<double> v_minRatio;
-  std::vector<double> v_maxRatio;
-
-  // For each exposure except the longuest,
-  //   Compute a ratio between the next and the current exposure values.
-  //   Deduce a range of ratii that will be used for enabling input data.
-  // Duplicate the last range limits to associate it with the longuest exposure
-  const double minTolerance = (mergingParams.dataRatioTolerance < 0.0) ? 1.0 : mergingParams.dataRatioTolerance;
-  const double maxTolerance = (mergingParams.dataRatioTolerance < 0.0) ? 1000.0 : mergingParams.dataRatioTolerance;
-  for(std::size_t i = 0; i < times.size() - 1; i++)
-  {
-    const double refRatio = times[i + 1] / times[i];
-    v_minRatio.push_back((1.0 - minTolerance) * refRatio);
-    v_maxRatio.push_back((1.0 + maxTolerance) * refRatio);
-  }
-  v_minRatio.push_back(v_minRatio.back());
-  v_maxRatio.push_back(v_maxRatio.back());
+  //const std::string mergeInfoFilename = "C:/Temp/mergeInfo.csv";
+  //std::ofstream file(mergeInfoFilename);
 
   const double minValue = mergingParams.minSignificantValue;
   const double maxValue = mergingParams.maxSignificantValue;
+
+  highLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
+  lowLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
+  noMidLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
 
   #pragma omp parallel for
   for(int y = 0; y < height; ++y)
@@ -102,9 +91,12 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
     for(int x = 0; x < width; ++x)
     {
       //for each pixels
-      image::RGBfColor &radianceColor = radiance(y, x);
+      image::RGBfColor& radianceColor = radiance(y, x);
+      image::RGBfColor& highLightColor = highLight(y, x);
+      image::RGBfColor& lowLightColor = lowLight(y, x);
+      image::RGBfColor& noMidLightColor = noMidLight(y, x);
 
-      //if ((x%1000 == 780) && (y%1000 == 446))
+      //if ((x%1000 == 650) && (y%1000 == 850))
       //{
       //    if(!file)
       //    {
@@ -146,121 +138,124 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
           for(std::size_t channel = 0; channel < 3; ++channel)
           {
               radianceColor(channel) = mergingParams.targetCameraExposure * response(meanValueHighExp, channel) / times[images.size() - 1];
+              highLightColor(channel) = 0.0;
+              lowLightColor(channel) = 1.0;
+              noMidLightColor(channel) = 0.0;
           }
       }
       else
       {
-          std::vector<std::vector<double>> vv_ratio;
           std::vector<std::vector<double>> vv_coeff;
-          std::vector<std::vector<double>> vv_coeff_filt;
-          std::vector<double> v_sumCoeff;
+          std::vector<std::vector<double>> vv_value;
           std::vector<std::vector<double>> vv_normalizedValue;
 
-          // Per channel, and per exposition compute a mixing coefficient and the ratio between linearized values at the next and the current exposure. 
-          // Keep the coeffcient if the computed ratio is in the predefined range and if the linearized input value is significant enough (higher than a threshold).
-          // To deal with highlights, keep the shortest exposure if the second one is saturated.
-
+          // Compute merging range
+          std::vector<int> v_firstIndex;
+          std::vector<int> v_lastIndex;
           for(std::size_t channel = 0; channel < 3; ++channel)
           {
-              std::vector<double> v_ratio;
+              int firstIndex = mergingParams.refImageIndex;
+              while(firstIndex > 0 &&
+                    (response(images[firstIndex](y, x)(channel), channel) > 0.05 || firstIndex == images.size() - 1))
+              {
+                  firstIndex--;
+              }
+              v_firstIndex.push_back(firstIndex);
+
+              int lastIndex = v_firstIndex[channel] + 1;
+              while(lastIndex < images.size() - 1 && response(images[lastIndex](y, x)(channel), channel) < 0.995)
+              {
+                  lastIndex++;
+              }
+              v_lastIndex.push_back(lastIndex);
+          }
+
+          // Compute merging coeffs and values to be merged
+          for(std::size_t channel = 0; channel < 3; ++channel)
+          {
               std::vector<double> v_coeff;
-              std::vector<double> v_coeff_filt;
               std::vector<double> v_normalizedValue;
+              std::vector<double> v_value;
 
               {
                   const double value = response(images[0](y, x)(channel), channel);
-                  const double ratio = (value > 0.0) ? response(images[1](y, x)(channel), channel) / value : 0.0;
                   const double normalizedValue = value / times[0];
-                  double coeff = std::max(0.001f, weightShortestExposure(images[0](y, x)(channel), channel));
+                  double coeff = std::max(0.001f, weightShortestExposure(value, channel));
 
-                  const bool coeffOK = (value > minValue && ratio > v_minRatio[0] && ratio < v_maxRatio[0]) ||
-                                       response(images[1](y, x)(channel), channel) > maxValue;
-
+                  v_value.push_back(value);
                   v_normalizedValue.push_back(normalizedValue);
-                  v_ratio.push_back(ratio);
                   v_coeff.push_back(coeff);
-                  v_coeff_filt.push_back(coeffOK ? coeff : 0.0);
               }
 
               for(std::size_t e = 1; e < images.size() - 1; e++)
               {
                   const double value = response(images[e](y, x)(channel), channel);
                   const double normalizedValue = value / times[e];
-                  const double ratio = (value > 0.0) ? response(images[e + 1](y, x)(channel), channel) / value : 0.0;
                   double coeff = std::max(0.001f, weight(value, channel));
 
-                  const bool coeffOK = (value > minValue && ratio > v_minRatio[e] && ratio < v_maxRatio[e]);
-
+                  v_value.push_back(value);
                   v_normalizedValue.push_back(normalizedValue);
-                  v_ratio.push_back(ratio);
                   v_coeff.push_back(coeff);
-                  v_coeff_filt.push_back(coeffOK ? coeff : 0.0);
               }
 
               {
                   const double value = response(images[images.size() - 1](y, x)(channel), channel);
-                  const double ratio = v_ratio.back();
                   const double normalizedValue = value / times[images.size() - 1];
-                  double coeff = std::max(
-                      0.001f,
-                      weightLongestExposure(response(images[images.size() - 1](y, x)(channel), channel), channel));
+                  double coeff = std::max(0.001f, weightLongestExposure(value, channel));
 
-                  const bool coeffOK = (value < maxValue && ratio > v_minRatio[images.size() - 1] &&
-                                        ratio < v_maxRatio[images.size() - 1]);
-
+                  v_value.push_back(value);
                   v_normalizedValue.push_back(normalizedValue);
-                  //v_ratio.push_back(ratio);
                   v_coeff.push_back(coeff);
-                  v_coeff_filt.push_back(coeffOK ? coeff : 0.0);
               }
 
-              //vv_ratio.push_back(v_ratio);
               vv_coeff.push_back(v_coeff);
-              vv_coeff_filt.push_back(v_coeff_filt);
               vv_normalizedValue.push_back(v_normalizedValue);
+              vv_value.push_back(v_value);
           }
 
-          std::vector<std::vector<double>> vv_coeff_final = vv_coeff_filt;
-          v_sumCoeff = {0.0, 0.0, 0.0};
-
-          // Per exposure and per channel,
-          //   If the coeff has been discarded for the current channel but is valid for at least one of the two other channels, restore it's original value.
-          // Per channel, sum the valid coefficients.
-          for(std::size_t e = 0; e < images.size(); e++)
+          // Compute light masks if required (monitoring and debug purposes)
+          if(mergingParams.computeLightMasks)
           {
               for(std::size_t channel = 0; channel < 3; ++channel)
               {
-                  if(vv_coeff_final[channel][e] == 0.0 &&
-                     (vv_coeff_filt[(channel + 1) % 3][e] != 0.0 || vv_coeff_filt[(channel + 2) % 3][e] != 0.0))
+                  int idxMaxValue = 0;
+                  int idxMinValue = 0;
+                  double maxValue = 0.0;
+                  double minValue = 10000.0;
+                  bool jump = true;
+                  for(std::size_t e = 0; e < images.size(); ++e)
                   {
-                      vv_coeff_final[channel][e] = vv_coeff[channel][e];
+                      if(vv_value[channel][e] > maxValue)
+                      {
+                          maxValue = vv_value[channel][e];
+                          idxMaxValue = e;
+                      }
+                      if(vv_value[channel][e] < minValue)
+                      {
+                          minValue = vv_value[channel][e];
+                          idxMinValue = e;
+                      }
+                      jump = jump && ((vv_value[channel][e] < 0.1 && e < images.size() - 1) ||
+                                      (vv_value[channel][e] > 0.9 && e > 0));
                   }
-                  v_sumCoeff[channel] += vv_coeff_final[channel][e];
-              }
-          }
-
-          // Per channel, if the sum of the coefficients is null, restore the coefficient corresponding to the reference image.
-          // Due to the previous step, if the sum of the coefficients is null for a given channel it should be also null for the two other channels.
-          if(v_sumCoeff[0] == 0.0)
-          {
-              for(std::size_t channel = 0; channel < 3; ++channel)
-              {
-                  vv_coeff_final[channel][mergingParams.refImageIndex] = 1.0;
-                  v_sumCoeff[channel] = 1.0;
+                  highLightColor(channel) = minValue > 0.9 ? 1.0 : 0.0;
+                  lowLightColor(channel) = maxValue < 0.1 ? 1.0 : 0.0;
+                  noMidLightColor(channel) = jump ? 1.0 : 0.0;
               }
           }
 
           // Compute the final result and adjust the exposure to the reference one.
           for(std::size_t channel = 0; channel < 3; ++channel)
           {
-                double v = 0.0;
-                for(std::size_t i = 0; i < images.size(); ++i)
-                {
-                    v += vv_coeff_final[channel][i] * vv_normalizedValue[channel][i];
-                }
-                radianceColor(channel) = mergingParams.targetCameraExposure *
-                                         (v != 0.0 ? v : vv_normalizedValue[channel][mergingParams.refImageIndex]) /
-                                         v_sumCoeff[channel];
+              double v = 0.0;
+              double sumCoeff = 0.0;
+              for(std::size_t i = v_firstIndex[channel]; i <= v_lastIndex[channel]; ++i)
+              {
+                  v += vv_coeff[channel][i] * vv_normalizedValue[channel][i];
+                  sumCoeff += vv_coeff[channel][i];
+              }
+              radianceColor(channel) = mergingParams.targetCameraExposure *
+                                       (sumCoeff != 0.0 ? v / sumCoeff : vv_normalizedValue[channel][mergingParams.refImageIndex]);
           }
       }
     }

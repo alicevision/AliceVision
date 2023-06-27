@@ -16,11 +16,11 @@ namespace hdr {
 struct MergingParams
 {
     double minSignificantValue = 0.05;
-    double maxSignificantValue = 0.999;
-    double dataRatioTolerance = 0.75; // +/- 75%
+    double maxSignificantValue = 0.995;
     double noiseThreshold = 0.1;
     float targetCameraExposure;
     int refImageIndex;
+    bool computeLightMasks = false;
 };
  
 class hdrMerge {
@@ -36,6 +36,7 @@ public:
    */
     void process(const std::vector<image::Image<image::RGBfColor>>& images, const std::vector<double>& times,
                  const rgbCurve& weight, const rgbCurve& response, image::Image<image::RGBfColor>& radiance,
+                 image::Image<image::RGBfColor>& lowLight, image::Image<image::RGBfColor>& highLight, image::Image<image::RGBfColor>& noMidLight,
                  MergingParams& mergingParams);
 
   void postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,

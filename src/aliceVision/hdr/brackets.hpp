@@ -97,8 +97,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
  */
 int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
                       std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex,
-                      const std::string& targetIndexesFilename = "", const double meanTargetedLuma = 0.4,
-                      const double minLuma = 0.25);
+                      const std::string& targetIndexesFilename = "", const double meanTargetedLuma = 0.4);
 
 }
 }
