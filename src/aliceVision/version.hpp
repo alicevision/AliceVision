@@ -9,12 +9,12 @@
 #include <aliceVision/numeric/numeric.hpp>
 
 #define ALICEVISION_VERSION_MAJOR 3
-#define ALICEVISION_VERSION_MINOR 1
+#define ALICEVISION_VERSION_MINOR 2
 #define ALICEVISION_VERSION_REVISION 0
 
 // Version status could be "release" or "develop".
 // When moving from release to develop, always increment the minor version.
-#define ALICEVISION_VERSION_STATUS "release"
+#define ALICEVISION_VERSION_STATUS "develop"
 
 // Preprocessor to string conversion
 #define ALICEVISION_TO_STRING_HELPER(x) #x
