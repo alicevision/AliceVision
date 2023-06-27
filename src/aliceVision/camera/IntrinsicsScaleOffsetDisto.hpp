@@ -73,7 +73,7 @@ public:
 
     bool hasDistortion() const override
     {
-        return _pDistortion != nullptr;
+        return _pDistortion != nullptr || _pUndistortion != nullptr;
     }
 
     /**
@@ -129,7 +129,7 @@ public:
 
     std::vector<double> getDistortionParams() const
     {
-        if (!hasDistortion()) {
+        if (!_pDistortion) {
             return std::vector<double>();
         }
         return _pDistortion->getParameters();
@@ -196,7 +196,7 @@ public:
     {
         std::vector<double> params = {_scale(0), _scale(1), _offset(0), _offset(1)};
 
-        if (hasDistortion())
+        if (_pDistortion)
         {
             params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
         }
@@ -207,7 +207,7 @@ public:
     std::size_t getParamsSize() const override
     {
         std::size_t size = 4;
-        if (hasDistortion())
+        if (_pDistortion)
         {
             size += _pDistortion->getParameters().size();
         }
