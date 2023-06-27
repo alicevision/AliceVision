@@ -56,7 +56,12 @@ if(ALICEVISION_BUILD_MVS)
   if(ALICEVISION_HAVE_CUDA)
     add_subdirectory(depthMap)
   endif()
+
+  if(ALICEVISION_HAVE_ONNX)
+    add_subdirectory(segmentation)
+  endif()
 endif()
+
 
 
 if(ALICEVISION_BUILD_SFM AND ALICEVISION_BUILD_MVS)

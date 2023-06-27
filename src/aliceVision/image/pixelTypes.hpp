@@ -169,6 +169,17 @@ namespace aliceVision
         return Rgb( ((*this)(0) + other(0)), ((*this)(1) + other(1)), ((*this)(2) + other(2)));
       }
 
+      /**
+      * @brief Elementwise multiplication
+      * @param other the other element to multiply
+      * @return Rgb color after multiply
+      * @note This does not modify the Rgb value (ie: only return a modified copy)
+      */
+      inline Rgb operator *( const Rgb& other ) const
+      {
+        return Rgb( ((*this)(0) * other(0)), ((*this)(1) * other(1)), ((*this)(2) * other(2)));
+      }
+
     
       /**
       * @brief scalar division
@@ -183,6 +194,7 @@ namespace aliceVision
                     T( ( Z )( ( *this )( 1 ) ) / val ),
                     T( ( Z )( ( *this )( 2 ) ) / val ) );
       }
+      
 
       /**
       * @brief scalar multiplication
