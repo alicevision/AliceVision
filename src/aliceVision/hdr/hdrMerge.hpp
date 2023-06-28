@@ -17,7 +17,6 @@ struct MergingParams
 {
     double minSignificantValue = 0.05;
     double maxSignificantValue = 0.995;
-    double noiseThreshold = 0.1;
     float targetCameraExposure;
     int refImageIndex;
     bool computeLightMasks = false;

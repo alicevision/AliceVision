@@ -79,7 +79,6 @@ int aliceVision_main(int argc, char** argv)
     int channelQuantizationPower = 10;
     int offsetRefBracketIndex = 1000; // By default, use the automatic selection
     double meanTargetedLumaForMerging = 0.4;
-    double noiseThreshold = 0.1;
     double minSignificantValue = 0.05;
     double maxSignificantValue = 0.995;
     bool computeLightMasks = false;
@@ -122,8 +121,6 @@ int aliceVision_main(int argc, char** argv)
          "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed backet.")
         ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
          "Mean expected luminance after merging step when input LDR images are decoded in sRGB color space. Must be in the range [0, 1].")
-        ("noiseThreshold", po::value<double>(&noiseThreshold)->default_value(noiseThreshold),
-         "Value under which input channel value is considered as noise. Used in advanced pixelwise merging.")
         ("minSignificantValue", po::value<double>(&minSignificantValue)->default_value(minSignificantValue),
          "Minimum channel input value to be considered in advanced pixelwise merging. Used in advanced pixelwise merging.")
         ("maxSignificantValue", po::value<double>(&maxSignificantValue)->default_value(maxSignificantValue),
@@ -377,7 +374,6 @@ int aliceVision_main(int argc, char** argv)
             hdr::MergingParams mergingParams;
             mergingParams.targetCameraExposure = targetCameraSetting.getExposure();
             mergingParams.refImageIndex = estimatedTargetIndex;
-            mergingParams.noiseThreshold = noiseThreshold;
             mergingParams.minSignificantValue = minSignificantValue;
             mergingParams.maxSignificantValue = maxSignificantValue;
             mergingParams.computeLightMasks = computeLightMasks;
@@ -393,35 +389,6 @@ int aliceVision_main(int argc, char** argv)
             // Nothing to do
             HDRimage = images[0];
         }
-
-        //for (int x = 252; x < 7000; x += 1000)
-        //{
-        //    for (int y = 750; y < 4000; y += 1000)
-        //    {
-        //        for(int l = x - 10; l <= x + 11; l++)
-        //        {
-        //            image::RGBfColor& pix1 = HDRimage(y - 10, l);
-        //            pix1[0] = 1.f;
-        //            pix1[1] = 0.f;
-        //            pix1[2] = 0.f;
-        //            image::RGBfColor& pix2 = HDRimage(y + 11, l);
-        //            pix2[0] = 1.f;
-        //            pix2[1] = 0.f;
-        //            pix2[2] = 0.f;
-        //        }
-        //        for(int c = y - 10; c <= y + 11; c++)
-        //        {
-        //            image::RGBfColor& pix1 = HDRimage(c, x - 10);
-        //            pix1[0] = 1.f;
-        //            pix1[1] = 0.f;
-        //            pix1[2] = 0.f;
-        //            image::RGBfColor& pix2 = HDRimage(c, x + 11);
-        //            pix2[0] = 1.f;
-        //            pix2[1] = 0.f;
-        //            pix2[2] = 0.f;
-        //        }
-        //    }
-        //}
 
         boost::filesystem::path p(targetView->getImagePath());
         const std::string hdrImagePath = getHdrImagePath(outputPath, g, keepSourceImageName ? p.stem().string() : "");
