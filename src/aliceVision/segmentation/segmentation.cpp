@@ -57,7 +57,12 @@ bool Segmentation::initialize()
         api.SessionOptionsAppendExecutionProvider_CUDA_V2(static_cast<OrtSessionOptions*>(ortSessionOptions), cuda_options);
         api.ReleaseCUDAProviderOptions(cuda_options);
 
-        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);  
+        #if defined(_WIN32) || defined(_WIN64)
+        std::wstring modelWeights(_parameters.modelWeights.begin(), _parameters.modelWeights.end());
+        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, modelWeights.c_str(), ortSessionOptions); 
+        #else
+        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+        #endif
 
         Ort::MemoryInfo memInfoCuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
         Ort::Allocator cudaAllocator(*_ortSession, memInfoCuda);
@@ -66,7 +71,12 @@ bool Segmentation::initialize()
         _cudaInput = cudaAllocator.Alloc(_output.size() * sizeof(float));
         _cudaOutput = cudaAllocator.Alloc(_output.size() * sizeof(float));
     #else
-        _ortSession = std::make_unique<Ort::Session>(ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+        #if defined(_WIN32) || defined(_WIN64)
+        std::wstring modelWeights(_parameters.modelWeights.begin(), _parameters.modelWeights.end());
+        _ortSession = std::make_unique<Ort::Session>(ortEnvironment, modelWeights.c_str(), ortSessionOptions);
+        #else
+        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+        #endif
     #endif
 
     return true;
