@@ -57,7 +57,12 @@ bool Segmentation::initialize()
         api.SessionOptionsAppendExecutionProvider_CUDA_V2(static_cast<OrtSessionOptions*>(ortSessionOptions), cuda_options);
         api.ReleaseCUDAProviderOptions(cuda_options);
 
-        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);  
+        #if defined(_WIN32) || defined(_WIN64)
+        std::wstring modelWeights(_parameters.modelWeights.begin(), _parameters.modelWeights.end());
+        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, modelWeights.c_str(), ortSessionOptions); 
+        #else
+        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+        #endif
 
         Ort::MemoryInfo memInfoCuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
         Ort::Allocator cudaAllocator(*_ortSession, memInfoCuda);
@@ -66,7 +71,12 @@ bool Segmentation::initialize()
         _cudaInput = cudaAllocator.Alloc(_output.size() * sizeof(float));
         _cudaOutput = cudaAllocator.Alloc(_output.size() * sizeof(float));
     #else
-        _ortSession = std::make_unique<Ort::Session>(ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+        #if defined(_WIN32) || defined(_WIN64)
+        std::wstring modelWeights(_parameters.modelWeights.begin(), _parameters.modelWeights.end());
+        _ortSession = std::make_unique<Ort::Session>(ortEnvironment, modelWeights.c_str(), ortSessionOptions);
+        #else
+        _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+        #endif
     #endif
 
     return true;
@@ -226,7 +236,7 @@ bool Segmentation::labelsFromModelOutput(image::Image<ScoredLabel> & labels, con
                 }
             }
             
-            labels(outputY, outputX) = {maxClasse, maxVal};
+            labels(outputY, outputX) = {static_cast<IndexT>(maxClasse), static_cast<float>(maxVal)};
         }
     }
     
@@ -239,8 +249,10 @@ bool Segmentation::processTile(image::Image<ScoredLabel> & labels, const image::
 
     std::vector<const char*> inputNames{"input"};
     std::vector<const char*> outputNames{"output"};
-    std::vector<int64_t> inputDimensions = {1, 3, _parameters.modelHeight, _parameters.modelWidth};
-    std::vector<int64_t> outputDimensions = {1, _parameters.classes.size(), _parameters.modelHeight, _parameters.modelWidth};
+    std::vector<int64_t> inputDimensions =
+        {1, 3, _parameters.modelHeight, _parameters.modelWidth};
+    std::vector<int64_t> outputDimensions =
+        {1, static_cast<int64_t>(_parameters.classes.size()), _parameters.modelHeight, _parameters.modelWidth};
 
     std::vector<float> output(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
     Ort::Value outputTensors = Ort::Value::CreateTensor<float>(
@@ -284,8 +296,10 @@ bool Segmentation::processTileGPU(image::Image<ScoredLabel> & labels, const imag
 
     std::vector<const char*> inputNames{"input"};
     std::vector<const char*> outputNames{"output"};
-    std::vector<int64_t> inputDimensions = {1, 3, _parameters.modelHeight, _parameters.modelWidth};
-    std::vector<int64_t> outputDimensions = {1, _parameters.classes.size(), _parameters.modelHeight, _parameters.modelWidth};
+    std::vector<int64_t> inputDimensions =
+        {1, 3, _parameters.modelHeight, _parameters.modelWidth};
+    std::vector<int64_t> outputDimensions =
+        {1, static_cast<int64_t>(_parameters.classes.size()), _parameters.modelHeight, _parameters.modelWidth};
 
     
     Ort::Value outputTensors = Ort::Value::CreateTensor<float>(
