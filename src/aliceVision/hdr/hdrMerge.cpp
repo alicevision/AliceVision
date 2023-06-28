@@ -78,8 +78,12 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   //const std::string mergeInfoFilename = "C:/Temp/mergeInfo.csv";
   //std::ofstream file(mergeInfoFilename);
 
-  const double minValue = mergingParams.minSignificantValue;
-  const double maxValue = mergingParams.maxSignificantValue;
+  const std::vector<double> v_minValue = {mergingParams.minSignificantValue * response(1.0, 0),
+                                          mergingParams.minSignificantValue * response(1.0, 1),
+                                          mergingParams.minSignificantValue * response(1.0, 2)};
+  const std::vector<double> v_maxValue = {mergingParams.maxSignificantValue * response(1.0, 0),
+                                          mergingParams.maxSignificantValue * response(1.0, 1),
+                                          mergingParams.maxSignificantValue * response(1.0, 2)};
 
   highLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
   lowLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
@@ -155,15 +159,15 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
           for(std::size_t channel = 0; channel < 3; ++channel)
           {
               int firstIndex = mergingParams.refImageIndex;
-              while(firstIndex > 0 &&
-                    (response(images[firstIndex](y, x)(channel), channel) > 0.05 || firstIndex == images.size() - 1))
+              while(firstIndex > 0 && (response(images[firstIndex](y, x)(channel), channel) > v_minValue[channel] ||
+                                       firstIndex == images.size() - 1))
               {
                   firstIndex--;
               }
               v_firstIndex.push_back(firstIndex);
 
               int lastIndex = v_firstIndex[channel] + 1;
-              while(lastIndex < images.size() - 1 && response(images[lastIndex](y, x)(channel), channel) < 0.995)
+              while(lastIndex < images.size() - 1 && response(images[lastIndex](y, x)(channel), channel) < v_maxValue[channel])
               {
                   lastIndex++;
               }
