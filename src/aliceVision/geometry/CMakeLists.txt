@@ -2,10 +2,10 @@
 set(geometry_files_headers
     Frustum.hpp
     HalfPlane.hpp
+    lie.hpp
     Pose3.hpp
     rigidTransformation3D.hpp
     Similarity3.hpp
-    lie.hpp
 )
 
 # Sources
