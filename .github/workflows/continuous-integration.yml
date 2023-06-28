@@ -104,11 +104,11 @@ jobs:
       DEPS_INSTALL_DIR: '${{ github.workspace }}/install'
       buildDir: '${{ github.workspace }}/build/'
       vcpkgDir: '${{ github.workspace }}\..\vcpkg'
-      # tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
+      vcpkgArchive: '${{ github.workspace }}\..\vcpkg\installed.zip'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: '${{ github.workspace }}/install'
-      COMMIT_ID: 8e8a3d7c1a6f7f587b486663b1e814911e6f2342
+      VCPKG_ROOT: '${{ github.workspace}}\..\vcpkg'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -116,80 +116,50 @@ jobs:
             submodules: recursive
 
       - name: vcpkg - Clone repository
-        # Uses a specific version of vcpkg with a fix on OpenEXR/Imath portfiles
+        # Uses a specific version of vcpkg
         run: |
           cd ..
           git clone https://github.com/alicevision/vcpkg.git
           cd vcpkg
-          git checkout ${{ env.COMMIT_ID }}
           cd ${{ github.workspace }}
 
-          # New-Item -Path ${{ env.tripletPath}} -ItemType File
-          # "set(VCPKG_TARGET_ARCHITECTURE x64)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          # "set(VCPKG_CRT_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          # "set(VCPKG_LIBRARY_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          # "set(VCPKG_BUILD_TYPE release)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-
-      - name: vcpkg - Boostrap
+      - name: vcpkg - Bootstrap
         run: |
            ${{ env.vcpkgDir }}\bootstrap-vcpkg.bat
 
-      #- uses: Jimver/cuda-toolkit@v0.2.3
-      #  id: cuda-toolkit
-      #  with:
-      #    cuda: '11.2.2'
-      #
-      #- name: Display CUDA information
-      #  run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
-      #       echo "Cuda install location "${{steps.cuda-toolkit.outputs.CUDA_PATH}}
-      #       nvcc -V
+      - name: vcpkg - Download zip file with prebuilt binaries
+        uses: suisei-cn/actions-download-file@v1.3.0
+        id: vcpkgDownload
+        with:
+          url: "https://gdirect.cc/d/mrmIK&type=1"
+          target: "${{ env.vcpkgDir }}"
+          filename: installed.zip
 
-      # CUDA doesn't seem to handle Custom Build with "Jimver/cuda-toolkit@v0.2.3" well raising an error MSB8066 during build
-      # This needs a fix before implementation
-
-
-      - name: Display remaining disk space (16 Go max)
+      - name: vcpkg - Unzip prebuilt binaries
         run: |
-          Get-CimInstance -Class Win32_logicaldisk
+          tar -xvzf "${{ env.vcpkgArchive }}" -C "${{ env.vcpkgDir }}"
+
+      - name: vcpkg - Display installed packages
+        run: |
+          ${{ env.vcpkgDir }}\vcpkg list
+
+      - name: Get CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.10
+        id: cuda-toolkit
+        with:
+          cuda: '11.6.0'
+
+      - name: Display CUDA information
+        run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
+             echo "Cuda install location "${{steps.cuda-toolkit.outputs.CUDA_PATH}}
+             nvcc -V
 
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
 
-      # Restore from cache the previously built ports. If a "cache miss" occurs, then vcpkg is bootstrapped. Since a the vcpkg.json is being used later on to install the packages when run-cmake runs, no packages are installed at this time and the input 'setupOnly:true' is mandatory.
-      - name: vcpkg - Setup dependencies
-        uses: lukka/run-vcpkg@v7
-        with:
-          # Just install vcpkg for now, do not install any ports in this step yet.
-          setupOnly: false
-          # Location of the vcpkg submodule in the Git repository.
-          vcpkgDirectory: ${{ env.vcpkgDir }}
-          vcpkgGitCommitId: ${{ env.COMMIT_ID }}
-          vcpkgArguments: boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log
-                          boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer
-                          lz4
-                          openexr
-                          geogram
-                          eigen3
-                          alembic
-                          opencv[eigen,ffmpeg,webp,contrib,nonFree]
-                          openimageio[libraw,ffmpeg,freetype,opencv,gif,webp,opencolorio]
-                          ceres[suitesparse,cxsparse]
-                          tbb
-                          assimp
-                          pcl
-                          clp
-          # without "cuda" for now
-          vcpkgTriplet: x64-windows-release
-          # doNotCache: true
-          # Ensure the vcpkg artifacts are cached, they are generated in the 'CMAKE_BINARY_DIR/vcpkg_installed' directory.
-          additionalCachedPaths: ${{ env.buildDir }}/vcpkg_installed
-          # This is used to unbreak cached artifacts if for some reason dependencies fail to build,
-          # the action does not notice it and saves broken artifacts.
-          appendedCacheKey: cache2
-
-      - name: vcpkg - Display installed packages
-        run:
-            vcpkg list
+      - name: Display remaining disk space (16 Go max)
+        run: |
+          Get-CimInstance -Class Win32_logicaldisk
 
       - name: Build
         uses: lukka/run-cmake@v3
@@ -198,21 +168,23 @@ jobs:
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
           buildWithCMakeArgs: '--config Release --target install'
-          cmakeAppendedArgs: -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-                             -DBUILD_SHARED_LIBS:BOOL=ON
+          cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
+                             -DVCPKG_TARGET_TRIPLET=x64-windows
+                             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+                             -A x64 -T host=x64
+                             -DBUILD_SHARED_LIBS=ON
                              -DTARGET_ARCHITECTURE=core
-                             -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
-                             -DALICEVISION_BUILD_TESTS:BOOL=ON
-                             -DALICEVISION_BUILD_EXAMPLES:BOOL=ON
-                             -DALICEVISION_USE_OPENCV:BOOL=ON
-                             -DALICEVISION_USE_CUDA:BOOL=OFF
-                             -DALICEVISION_USE_CCTAG:BOOL=OFF
-                             -DALICEVISION_USE_POPSIFT:BOOL=OFF
-                             -DALICEVISION_USE_ALEMBIC:BOOL=ON
-                             -DALICEVISION_USE_OPENGV:BOOL=OFF
+                             -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }}
+                             -DALICEVISION_BUILD_TESTS=ON
+                             -DALICEVISION_BUILD_EXAMPLES=OFF
+                             -DALICEVISION_USE_OPENCV=ON
+                             -DALICEVISION_USE_CUDA=ON
+                             -DALICEVISION_USE_CCTAG=OFF
+                             -DALICEVISION_USE_POPSIFT=OFF
+                             -DALICEVISION_USE_ALEMBIC=ON
+                             -DALICEVISION_USE_OPENGV=OFF
           # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
           cmakeBuildType: Release
-          useVcpkgToolchainFile: true
           buildWithCMake: true
 
       - name: UnitTests
@@ -227,4 +199,3 @@ jobs:
           cmakeBuildType: Release
           useVcpkgToolchainFile: true
           buildWithCMake: true
-
