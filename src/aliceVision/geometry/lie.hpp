@@ -61,13 +61,13 @@ inline Eigen::Matrix3d skew(const Eigen::Vector3d& in) {
  * @return a 3*3 SO(3) matrix
  */
 inline Eigen::Matrix3d expm(const Eigen::Vector3d& algebra) {
-    double angle = algebra.norm();
+    const double angle = algebra.norm();
 
     if (angle < std::numeric_limits<double>::epsilon()) {
         return Eigen::Matrix3d::Identity();
     }
 
-    Eigen::Matrix3d omega = skew(algebra);
+    const Eigen::Matrix3d omega = skew(algebra);
 
     Eigen::Matrix3d ret;
     ret = Eigen::Matrix3d::Identity() + (sin(angle) / angle) * omega + ((1.0 - cos(angle)) / (angle * angle)) * omega * omega;
@@ -83,9 +83,9 @@ inline Eigen::Matrix3d expm(const Eigen::Vector3d& algebra) {
 inline Eigen::Vector3d logm(const Eigen::Matrix3d& R) {
     Eigen::Vector3d ret;
 
-    double p1 = R(2, 1) - R(1, 2);
-    double p2 = R(0, 2) - R(2, 0);
-    double p3 = R(1, 0) - R(0, 1);
+    const double p1 = R(2, 1) - R(1, 2);
+    const double p2 = R(0, 2) - R(2, 0);
+    const double p3 = R(1, 0) - R(0, 1);
 
     double costheta = (R.trace() - 1.0) / 2.0;
     if (costheta < -1.0) {
@@ -101,8 +101,8 @@ inline Eigen::Vector3d logm(const Eigen::Matrix3d& R) {
         return ret;
     }
 
-    double theta = acos(costheta);
-    double scale = theta / (2.0 * sin(theta));
+    const double theta = acos(costheta);
+    const double scale = theta / (2.0 * sin(theta));
 
     ret(0) = scale * p1;
     ret(1) = scale * p2;
@@ -126,8 +126,8 @@ inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1>& algebra) {
     Eigen::Matrix4d ret;
     ret.setIdentity();
 
-    Eigen::Vector3d vecR = algebra.block<3, 1>(0, 0);
-    Eigen::Vector3d vecT = algebra.block<3, 1>(3, 0);
+    const Eigen::Vector3d vecR = algebra.block<3, 1>(0, 0);
+    const Eigen::Vector3d vecT = algebra.block<3, 1>(3, 0);
 
     double angle = vecR.norm();
     if (angle < std::numeric_limits<double>::epsilon()) {
@@ -136,8 +136,8 @@ inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1>& algebra) {
         return ret;
     }
 
-    Eigen::Matrix3d omega = SO3::skew(vecR);
-    Eigen::Matrix3d V = Eigen::Matrix3d::Identity() + ((1.0 - cos(angle)) / (angle * angle))
+    const Eigen::Matrix3d omega = SO3::skew(vecR);
+    const Eigen::Matrix3d V = Eigen::Matrix3d::Identity() + ((1.0 - cos(angle)) / (angle * angle))
         * omega + ((angle - sin(angle)) / (angle * angle * angle)) * omega * omega;
 
     ret.block<3, 3>(0, 0) = SO3::expm(vecR);
