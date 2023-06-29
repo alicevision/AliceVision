@@ -142,15 +142,8 @@ int aliceVision_main(int argc, char* argv[])
 
             ALICEVISION_LOG_DEBUG("Resize image with dimensions " << nw << "x" << nh);
 
-            image::Image<image::RGBColor> resizedInput(nw, nh);
-
-            const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::UCHAR);
-            const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::UCHAR);
-
-            const oiio::ImageBuf inBuf(imageSpecOrigin, source.data());
-            oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
-
-            oiio::ImageBufAlgo::resize(outBuf, inBuf);
+            image::Image<image::RGBColor> resizedInput;
+            imageAlgo::resizeImage(nw, nh, source, resizedInput);
             source.swap(resizedInput);
         }
 

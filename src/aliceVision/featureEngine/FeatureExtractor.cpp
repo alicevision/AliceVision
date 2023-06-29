@@ -190,15 +190,8 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
         const int nw = static_cast<int>(static_cast<double>(w) * pixelRatio);
         const int nh = h;
 
-        image::Image<float> resizedInput(nw, nh);
-
-        const oiio::ImageSpec imageSpecResized(nw, nh, 1, oiio::TypeDesc::FLOAT);
-        const oiio::ImageSpec imageSpecOrigin(w, h, 1, oiio::TypeDesc::FLOAT);
-
-        const oiio::ImageBuf inBuf(imageSpecOrigin, imageGrayFloat.data());
-        oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
-
-        oiio::ImageBufAlgo::resize(outBuf, inBuf);
+        image::Image<float> resizedInput;
+        imageAlgo::resizeImage(nw, nh, imageGrayFloat, resizedInput);
         imageGrayFloat.swap(resizedInput);
     }
 

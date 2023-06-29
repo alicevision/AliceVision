@@ -219,15 +219,8 @@ int aliceVision_main(int argc, char** argv)
             const int nw = static_cast<int>(static_cast<double>(w) * pixelRatio);
             const int nh = h;
 
-            image::Image<image::RGBfColor> resizedInput(nw, nh);
-
-            const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
-            const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
-
-            const oiio::ImageBuf inBuf(imageSpecOrigin, image.data());
-            oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
-
-            oiio::ImageBufAlgo::resize(outBuf, inBuf);
+            image::Image<image::RGBfColor> resizedInput;
+            imageAlgo::resizeImage(nw, nh, image, resizedInput);
             image.swap(resizedInput);
         }
 
@@ -250,15 +243,8 @@ int aliceVision_main(int argc, char** argv)
             const int nw = static_cast<int>(static_cast<double>(w) / pixelRatio);
             const int nh = h;
 
-            image::Image<unsigned char> resizedMask(nw, nh);
-
-            const oiio::ImageSpec imageSpecResized(nw, nh, 1, oiio::TypeDesc::UINT8);
-            const oiio::ImageSpec imageSpecOrigin(w, h, 1, oiio::TypeDesc::UINT8);
-
-            const oiio::ImageBuf inBuf(imageSpecOrigin, mask.data());
-            oiio::ImageBuf outBuf(imageSpecResized, resizedMask.data());
-
-            oiio::ImageBufAlgo::resize(outBuf, inBuf);
+            image::Image<unsigned char> resizedMask;
+            imageAlgo::resizeImage(nw, nh, mask, resizedMask);
             mask.swap(resizedMask);
         }
 
