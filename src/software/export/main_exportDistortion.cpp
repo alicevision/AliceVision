@@ -34,6 +34,7 @@ using namespace aliceVision::camera;
 std::string toNuke(std::shared_ptr<Undistortion> undistortion, EINTRINSIC intrinsicType)
 {
     const std::vector<double>& params = undistortion->getParameters();
+    const auto& size = undistortion->getSize();
 
     std::stringstream ss;
 
@@ -54,6 +55,10 @@ std::string toNuke(std::shared_ptr<Undistortion> undistortion, EINTRINSIC intrin
            << " distortionNumeratorY11 " << params[7] << "\n"
            << " distortionNumeratorY20 " << params[9] << "\n"
            << " output Undistort" << "\n"
+           << " distortionScalingType Format" << "\n"
+           << " distortionScalingFormat \""
+           << size(0) << " " << size(1) << " 0 0 "
+           << size(0) << " " << size(1) << " 1 AV_undist_fmt \"" << "\n"
            << " distortionModelType \"Radial Asymmetric\"" << "\n"
            << " distortionOrder {2 0}" << "\n"
            << " normalisationType Diagonal" << "\n"
