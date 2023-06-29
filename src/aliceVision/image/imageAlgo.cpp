@@ -429,21 +429,66 @@ void resizeImage(int downscale, image::Image<image::RGBAfColor>& inoutImage,
     inoutImage.swap(rescaled);
 }
 
-void resizeImage(const int outWidth, const int outHeight, const image::Image<image::RGBfColor> &inImage,
-                 image::Image<image::RGBfColor> &outImage, const std::string &filter,
-                 float filterSize)
-{
-    outImage.resize(outWidth, outHeight);
-    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 3,
-                inImage.data(), outImage.data(), filter, filterSize);
-}
-
-void resizeImage(const int outWidth, const int outHeight, const image::Image<IndexT> &inImage,
+void resizeImage(const int newWidth, const int newHeight, const image::Image<IndexT> &inImage,
                  image::Image<IndexT> &outImage, const std::string &filter,
                  float filterSize)
 {
-    outImage.resize(outWidth, outHeight);
-    resizeImage(oiio::TypeDesc::UINT32, inImage.Width(), inImage.Height(), outWidth, outHeight, 1,
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::UINT32, inImage.Width(), inImage.Height(), newWidth, newHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<unsigned char> &inImage,
+                 image::Image<unsigned char> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<float> &inImage,
+                 image::Image<float> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<image::RGBColor> &inImage,
+                 image::Image<image::RGBColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<image::RGBfColor> &inImage,
+                 image::Image<image::RGBfColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<image::RGBAColor> &inImage,
+                 image::Image<image::RGBAColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 4,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<image::RGBAfColor> &inImage,
+                 image::Image<image::RGBAfColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 4,
                 inImage.data(), outImage.data(), filter, filterSize);
 }
 
