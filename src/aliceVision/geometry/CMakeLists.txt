@@ -26,6 +26,7 @@ alicevision_add_library(aliceVision_geometry
 # Unit tests
 alicevision_add_test(rigidTransformation3D_test.cpp NAME "geometry_rigidTransformation3D" LINKS aliceVision_geometry)
 alicevision_add_test(halfSpaceIntersection_test.cpp NAME "geometry_halfSpaceIntersection" LINKS aliceVision_geometry)
+alicevision_add_test(Pose3d_test.cpp NAME "geometry_pose3D" LINKS aliceVision_geometry)
 alicevision_add_test(frustumIntersection_test.cpp
   NAME "geometry_frustumIntersection"
   LINKS aliceVision_geometry
