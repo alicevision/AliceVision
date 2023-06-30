@@ -406,7 +406,7 @@ void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColo
     }
 }
 
-void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, const std::map<std::string, std::string>& imageMetadata, std::shared_ptr<camera::IntrinsicBase> cam)
+void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, std::map<std::string, std::string>& imageMetadata, std::shared_ptr<camera::IntrinsicBase> cam)
 {
     const unsigned int nchannels = 4;
 
