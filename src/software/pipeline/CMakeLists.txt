@@ -65,6 +65,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_gpu
           aliceVision_image
           aliceVision_feature
+          aliceVision_featureEngine
           aliceVision_multiview
           aliceVision_sfmData
           aliceVision_sfmDataIO

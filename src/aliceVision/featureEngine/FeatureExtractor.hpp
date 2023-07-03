@@ -4,12 +4,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "ImageDescriber.hpp"
+#include <aliceVision/feature/feature.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/system/hardwareContext.hpp>
 namespace aliceVision {
-namespace feature {
+namespace featureEngine {
 
 class FeatureExtractorViewJob
 {
@@ -112,5 +112,5 @@ private:
     int _rangeSize = -1;
 };
 
-} // namespace feature
+} // namespace featureEngine
 } // namespace aliceVision

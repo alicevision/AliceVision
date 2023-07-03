@@ -79,7 +79,7 @@ public:
 
     Mat3 K() const;
 
-    void setK(double focalLengthPix, double ppx, double ppy);
+    void setK(double focalLengthPixX, double focalLengthPixY, double ppx, double ppy);
 
     void setK(const Mat3 & K);
 

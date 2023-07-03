@@ -14,7 +14,7 @@
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
-namespace feature {
+namespace featureEngine {
 
 FeatureExtractorViewJob::FeatureExtractorViewJob(const sfmData::View& view,
                                                  const std::string& outputFolder) :
@@ -178,6 +178,23 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
 
     image::readImage(job.view().getImagePath(), imageGrayFloat, workingColorSpace);
 
+    double pixelRatio = 1.0;
+    job.view().getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
+
+    if (pixelRatio != 1.0)
+    {
+        // Resample input image in order to work with square pixels
+        const int w = imageGrayFloat.Width();
+        const int h = imageGrayFloat.Height();
+
+        const int nw = static_cast<int>(static_cast<double>(w) * pixelRatio);
+        const int nh = h;
+
+        image::Image<float> resizedInput;
+        imageAlgo::resizeImage(nw, nh, imageGrayFloat, resizedInput);
+        imageGrayFloat.swap(resizedInput);
+    }
+
     if (!_masksFolder.empty() && fs::exists(_masksFolder))
     {
         const auto masksFolder = fs::path(_masksFolder);
@@ -221,6 +238,15 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
             imageDescriber->describe(imageGrayUChar, regions);
         }
 
+        if (pixelRatio != 1.0)
+        {
+            // Re-position point features on input image
+            for (auto & feat : regions->Features())
+            {
+                feat.x() /= pixelRatio;
+            }
+        }
+
         if (mask.Height() > 0)
         {
             std::vector<feature::FeatureInImage> selectedIndices;
@@ -259,5 +285,5 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
     }
 }
 
-} // namespace feature
+} // namespace featureEngine
 } // namespace aliceVision

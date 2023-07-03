@@ -89,8 +89,23 @@ void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
 void resizeImage(int newWidth, int newHeight, const image::Image<IndexT>& inImage,
                  image::Image<IndexT>& outImage,
                  const std::string& filter = "", float filterSize = 0);
+void resizeImage(int newWidth, int newHeight, const image::Image<unsigned char>& inImage,
+                 image::Image<unsigned char>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int newWidth, int newHeight, const image::Image<float>& inImage,
+                 image::Image<float>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int newWidth, int newHeight, const image::Image<image::RGBColor>& inImage,
+                 image::Image<image::RGBColor>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
 void resizeImage(int newWidth, int newHeight, const image::Image<image::RGBfColor>& inImage,
                  image::Image<image::RGBfColor>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int newWidth, int newHeight, const image::Image<image::RGBAColor>& inImage,
+                 image::Image<image::RGBAColor>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int newWidth, int newHeight, const image::Image<image::RGBAfColor>& inImage,
+                 image::Image<image::RGBAfColor>& outImage,
                  const std::string& filter = "", float filterSize = 0);
 
 /**
