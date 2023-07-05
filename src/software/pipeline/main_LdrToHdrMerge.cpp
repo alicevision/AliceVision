@@ -36,11 +36,11 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const std::string& rootname="")
+std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const std::string& rootname = "")
 {
     // Output image file path
     std::stringstream sstream;
-    if (rootname == "")
+    if(rootname == "")
     {
         sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
     }
@@ -52,6 +52,21 @@ std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const 
     return hdrImagePath;
 }
 
+std::string getHdrMaskPath(const std::string& outputPath, std::size_t g, const std::string& maskname, const std::string& rootname = "")
+{
+    // Output image file path
+    std::stringstream sstream;
+    if(rootname == "")
+    {
+        sstream << "hdrMask_" << maskname << "_" << std::setfill('0') << std::setw(4) << g << ".exr";
+    }
+    else
+    {
+        sstream << rootname << "_" << maskname << ".exr";
+    }
+    const std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
+    return hdrImagePath;
+}
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -64,6 +79,9 @@ int aliceVision_main(int argc, char** argv)
     int channelQuantizationPower = 10;
     int offsetRefBracketIndex = 1000; // By default, use the automatic selection
     double meanTargetedLumaForMerging = 0.4;
+    double minSignificantValue = 0.05;
+    double maxSignificantValue = 0.995;
+    bool computeLightMasks = false;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
@@ -103,6 +121,12 @@ int aliceVision_main(int argc, char** argv)
          "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed backet.")
         ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
          "Mean expected luminance after merging step when input LDR images are decoded in sRGB color space. Must be in the range [0, 1].")
+        ("minSignificantValue", po::value<double>(&minSignificantValue)->default_value(minSignificantValue),
+         "Minimum channel input value to be considered in advanced pixelwise merging. Used in advanced pixelwise merging.")
+        ("maxSignificantValue", po::value<double>(&maxSignificantValue)->default_value(maxSignificantValue),
+         "Maximum channel input value to be considered in advanced pixelwise merging. Used in advanced pixelwise merging.")
+        ("computeLightMasks", po::value<bool>(&computeLightMasks)->default_value(computeLightMasks),
+         "Compute masks of dark and high lights and missing mid lights info.")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
@@ -195,6 +219,7 @@ int aliceVision_main(int argc, char** argv)
         }
     }
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
+    int estimatedTargetIndex;
 
     if (!byPass)
     {
@@ -215,7 +240,7 @@ int aliceVision_main(int argc, char** argv)
         {
             meanTargetedLumaForMerging = std::pow((meanTargetedLumaForMerging + 0.055) / 1.055, 2.2);
         }
-        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
+        estimatedTargetIndex = hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
 
         if ((targetViews.empty() || targetViews.size() != groupedViews.size()) && !isOffsetRefBracketIndexValid)
         {
@@ -337,12 +362,23 @@ int aliceVision_main(int argc, char** argv)
 
         // Merge HDR images
         image::Image<image::RGBfColor> HDRimage;
+        image::Image<image::RGBfColor> lowLightMask;
+        image::Image<image::RGBfColor> highLightMask;
+        image::Image<image::RGBfColor> noMidLightMask;
         if(images.size() > 1)
         {
             hdr::hdrMerge merge;
             sfmData::ExposureSetting targetCameraSetting = targetView->getCameraExposureSetting();
             ALICEVISION_LOG_INFO("[" << g - rangeStart << "/" << rangeSize << "] Merge " << group.size() << " LDR images " << g << "/" << groupedViews.size());
-            merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure());
+
+            hdr::MergingParams mergingParams;
+            mergingParams.targetCameraExposure = targetCameraSetting.getExposure();
+            mergingParams.refImageIndex = estimatedTargetIndex;
+            mergingParams.minSignificantValue = minSignificantValue;
+            mergingParams.maxSignificantValue = maxSignificantValue;
+            mergingParams.computeLightMasks = computeLightMasks;
+
+            merge.process(images, exposures, fusionWeight, response, HDRimage, lowLightMask, highLightMask, noMidLightMask, mergingParams);//, targetCameraSetting.getExposure(), estimatedTargetIndex);
             if(highlightCorrectionFactor > 0.0f)
             {
                 merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure(), highlightCorrectionFactor, highlightTargetLux);
@@ -381,6 +417,23 @@ int aliceVision_main(int argc, char** argv)
         writeOptions.storageDataType(storageDataType);
 
         image::writeImage(hdrImagePath, HDRimage, writeOptions, targetMetadata);
+
+        if(computeLightMasks)
+        {
+            const std::string hdrMaskLowLightPath =
+                getHdrMaskPath(outputPath, g, "lowLight", keepSourceImageName ? p.stem().string() : "");
+            const std::string hdrMaskHighLightPath =
+                getHdrMaskPath(outputPath, g, "highLight", keepSourceImageName ? p.stem().string() : "");
+            const std::string hdrMaskNoMidLightPath =
+                getHdrMaskPath(outputPath, g, "noMidLight", keepSourceImageName ? p.stem().string() : "");
+
+            image::ImageWriteOptions maskWriteOptions;
+            maskWriteOptions.exrCompressionMethod(image::EImageExrCompression::None);
+
+            image::writeImage(hdrMaskLowLightPath, lowLightMask, maskWriteOptions);
+            image::writeImage(hdrMaskHighLightPath, highLightMask, maskWriteOptions);
+            image::writeImage(hdrMaskNoMidLightPath, noMidLightMask, maskWriteOptions);
+        }
     }
 
     return EXIT_SUCCESS;
