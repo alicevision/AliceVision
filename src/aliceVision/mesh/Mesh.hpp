@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/image/Rgb.hpp>
+#include <aliceVision/mesh//Material.hpp>
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
@@ -168,7 +169,7 @@ public:
 
     bool loadFromBin(const std::string& binFilepath);
     void saveToBin(const std::string& binFilepath);
-    void load(const std::string& filepath);
+    void load(const std::string& filepath, bool mergeCoincidentVerts=false, Material* material=nullptr);
 
     void addMesh(const Mesh& mesh);
 
@@ -210,10 +211,10 @@ public:
                                       double maximalNeighDist = -1.0f);
     void laplacianSmoothPts(float maximalNeighDist = -1.0f);
     void laplacianSmoothPts(StaticVector<StaticVector<int>>& ptsNeighPts, double maximalNeighDist = -1.0f);
-    void computeNormalsForPts(StaticVector<Point3d>& out_nms);
-    void computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, StaticVector<Point3d>& out_nms);
+    void computeNormalsForPts(StaticVector<Point3d>& out_nms) const;
+    void computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, StaticVector<Point3d>& out_nms) const;
     void smoothNormals(StaticVector<Point3d>& nms, StaticVector<StaticVector<int>>& ptsNeighPts);
-    Point3d computeTriangleNormal(int idTri);
+    Point3d computeTriangleNormal(int idTri) const;
     Point3d computeTriangleCenterOfGravity(int idTri) const;
     double computeTriangleMaxEdgeLength(int idTri) const;
     double computeTriangleMinEdgeLength(int idTri) const;

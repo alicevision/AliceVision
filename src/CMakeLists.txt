@@ -556,6 +556,24 @@ if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
 endif()
 
 # ==============================================================================
+# USD
+# ==============================================================================
+# - optional, it allows to export the geometry and textures as USD
+# ==============================================================================
+set(ALICEVISION_HAVE_USD 0)
+
+if(NOT ALICEVISION_USE_USD STREQUAL "OFF")
+  find_package(pxr CONFIG)
+
+  if(pxr_FOUND)
+    set(ALICEVISION_HAVE_USD 1)
+    message(STATUS "USD version ${PXR_VERSION} found.")
+  elseif(ALICEVISION_USE_USD STREQUAL "ON")
+    message(SEND_ERROR "Failed to find USD.")
+  endif()
+endif()
+
+# ==============================================================================
 # OpenGV
 # ==============================================================================
 # - optional, it allows to use the generic camera PnP algorithms for rig localization

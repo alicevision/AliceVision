@@ -13,6 +13,7 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/mesh/Material.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
 #include <aliceVision/stl/bitmask.hpp>
@@ -107,6 +108,9 @@ struct Texturing
     /// texture atlas to 3D triangle ids
     std::vector<std::vector<int>> _atlases;
 
+    /// Material and texture information
+    Material material;
+
     ~Texturing()
     {
         delete mesh;
@@ -119,6 +123,9 @@ public:
 
     /// Load a mesh from a .obj file and initialize internal structures
     void loadWithAtlas(const std::string& filepath, bool flipNormals=false);
+
+    /// Load a textured mesh from a .obj and .mtl files
+    void loadWithMaterial(const std::string& filepath, bool flipNormals=false);
 
     /**
      * @brief Remap visibilities
@@ -216,9 +223,7 @@ public:
 
     /// Save textured mesh as an OBJ + MTL file
     void saveAs(const bfs::path& dir, const std::string& basename,
-                aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::OBJ,
-                image::EImageFileType textureFileType = image::EImageFileType::EXR,
-                const BumpMappingParams& bumpMappingParams = BumpMappingParams());
+                aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::OBJ);
 };
 
 } // namespace mesh

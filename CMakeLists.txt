@@ -24,6 +24,7 @@ option(AV_BUILD_COINUTILS "Enable building an embedded CoinUtils" ON)
 option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
 option(AV_BUILD_PCL "Enable building an embedded PointCloud library" ON)
+option(AV_BUILD_USD "Enable building an embedded USD library" OFF)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" ON)
 
@@ -85,6 +86,7 @@ message(STATUS "AV_BUILD_COINUTILS: ${AV_BUILD_COINUTILS}")
 message(STATUS "AV_BUILD_OSI: ${AV_BUILD_OSI}")
 message(STATUS "AV_BUILD_CLP: ${AV_BUILD_CLP}")
 message(STATUS "AV_BUILD_PCL: ${AV_BUILD_PCL}")
+message(STATUS "AV_BUILD_USD: ${AV_BUILD_USD}")
 message(STATUS "AV_BUILD_DEPENDENCIES_PARALLEL: ${AV_BUILD_DEPENDENCIES_PARALLEL}")
 message(STATUS "")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -1058,6 +1060,40 @@ if(AV_BUILD_PCL)
 
 endif()
 
+if(AV_BUILD_USD)
+    set(USD_TARGET pxr)
+    ExternalProject_Add(${USD_TARGET}
+        GIT_REPOSITORY https://github.com/PixarAnimationStudios/USD.git
+        GIT_TAG v23.05
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ""
+        INSTALL_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/usd
+        BINARY_DIR ${BUILD_DIR}/usd_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        BUILD_COMMAND python ${CMAKE_CURRENT_BINARY_DIR}/usd/build_scripts/build_usd.py
+            --build-shared
+            --no-examples
+            --no-tools
+            --no-ptex
+            --no-prman
+            --no-openimageio
+            --no-opencolorio
+            --no-alembic
+            --no-draco
+            --no-materialx
+            --no-tutorials
+            --no-tests
+            --no-docs
+            --no-python
+            <INSTALL_DIR>
+    )
+    set(USD_CMAKE_FLAGS -Dpxr_DIR:PATH=${CMAKE_INSTALL_PREFIX})
+endif()
+
 set(AV_DEPS
   ${ZLIB_TARGET}
   ${ASSIMP_TARGET}
@@ -1086,6 +1122,7 @@ set(AV_DEPS
   ${COINUTILS_TARGET}
   ${OSI_TARGET}
   ${CLP_TARGET}
+  ${USD_TARGET}
 )
 
 if(AV_BUILD_ALICEVISION)
@@ -1130,6 +1167,7 @@ ExternalProject_Add(aliceVision
             ${LZ4_CMAKE_FLAGS}
             ${FLANN_CMAKE_FLAGS}
             ${PCL_CMAKE_FLAGS}
+            ${USD_CMAKE_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
        DEPENDS ${AV_DEPS}
        )
