@@ -192,7 +192,7 @@ public:
 private:
   /// Compute relative rotations
   void Compute_Relative_Rotations(aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R);
-  bool cleanWithPriors();
+  bool addConstraints2DWithKnownRotation();
   
   // Logger
   std::shared_ptr<htmlDocument::htmlDocumentStream> _htmlDocStream;

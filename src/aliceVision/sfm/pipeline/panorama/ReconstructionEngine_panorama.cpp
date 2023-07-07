@@ -373,106 +373,106 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
 // Adjust the scene (& remove outliers)
 bool ReconstructionEngine_panorama::Adjust()
 {
-  BundleAdjustmentPanoramaCeres::CeresOptions options;
-  options.summary = true;
-  
-  // Start bundle with rotation only
-  BundleAdjustmentPanoramaCeres BA(options);
-  bool success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION);
-  if(success)
-  {
-    ALICEVISION_LOG_INFO("Rotations successfully refined.");
-  }
-  else
-  {
-    ALICEVISION_LOG_INFO("Failed to refine the rotations only.");
-    return false;
-  }
+    BundleAdjustmentPanoramaCeres::CeresOptions options;
+    options.summary = true;
 
-  if(_params.lockAllIntrinsics)
-  {
-      // no not modify intrinsic camera parameters
-      return true;
-  }
-
-  if(_params.intermediateRefineWithFocal)
-  {
-      success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
-                                    BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL);
-      if(success)
-      {
-        ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal");
-      }
-      else
-      {
-        ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal");
-          return false;
-      }
-  }
-  if(_params.intermediateRefineWithFocalDist)
-  {
-      success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
-                                    BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL |
-                                    BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION);
-      if(success)
-      {
-        ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal + Distortion");
-      }
-      else
-      {
-        ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal + Distortion");
-          return false;
-      }
-  }
-
-  // Minimize All
-  success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
-                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL |
-                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION |
-                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS);
-  if(success)
-  {
-      ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal + Optical Center + Distortion");
-  }
-  else
-  {
-      ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal + Distortion + Optical Center");
-      return false;
-  }
-
-  //Assuming only a small number of views have outliers due to motion
-  if (cleanWithPriors())
-  {
-    // Minimize Rotation
-    success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION);
+    // Start bundle with rotation only
+    BundleAdjustmentPanoramaCeres BA(options);
+    bool success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION);
     if(success)
     {
-        ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation after cleaning outliers");
+        ALICEVISION_LOG_INFO("Rotations successfully refined.");
     }
     else
     {
-        ALICEVISION_LOG_INFO("Failed to refine: Rotation");
+        ALICEVISION_LOG_INFO("Failed to refine the rotations only.");
         return false;
     }
-  }
 
-  return true;
+    if(_params.lockAllIntrinsics)
+    {
+        // no not modify intrinsic camera parameters
+        return true;
+    }
+
+    if(_params.intermediateRefineWithFocal)
+    {
+        success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
+                                          BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL);
+        if(success)
+        {
+            ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal");
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal");
+            return false;
+        }
+    }
+    if(_params.intermediateRefineWithFocalDist)
+    {
+        success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
+                                          BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL |
+                                          BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION);
+        if(success)
+        {
+            ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal + Distortion");
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal + Distortion");
+            return false;
+        }
+    }
+
+    // Minimize All
+    success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
+                                      BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL |
+                                      BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION |
+                                      BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS);
+    if(success)
+    {
+        ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal + Optical Center + Distortion");
+    }
+    else
+    {
+        ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal + Distortion + Optical Center");
+        return false;
+    }
+
+    //If we have priors
+    if(_rotationPriors.size() == _sfmData.getViews().size())
+    {
+        //Remove all matches in sfm
+        sfm::Constraints2D & constraints2d = _sfmData.getConstraints2D();
+        constraints2d.clear();
+
+        //Put back the rotations from priors and reestimate
+        _sfmData.getPoses() = _rotationPriors;
+
+        //Add matches but filters out those which are too far from the prior rotation
+        addConstraints2DWithKnownRotation();
+
+        // Minimize Rotation
+        success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION);
+        if(success)
+        {
+            ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation after cleaning outliers");
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("Failed to refine: Rotation");
+            return false;
+        }
+    }
+
+    return true;
 }
 
-bool ReconstructionEngine_panorama::cleanWithPriors()
+bool ReconstructionEngine_panorama::addConstraints2DWithKnownRotation()
 {
-    if (_rotationPriors.size() != _sfmData.getViews().size())
-    {
-        return false;
-    }
-
-    //Remove all matches in sfm
     sfm::Constraints2D & constraints2d = _sfmData.getConstraints2D();
-    constraints2d.clear();
-
-    //Put back the rotations
-    _sfmData.getPoses() = _rotationPriors;
-
+    
     //Check all matches
     for (const auto & matchesForView : *_pairwiseMatches)
     {
@@ -518,7 +518,6 @@ bool ReconstructionEngine_panorama::cleanWithPriors()
                 {
                     continue;
                 }
-
 
                 const sfm::Constraint2D constraint(viewI, sfm::Observation(ptViewI, indMatch._i, feat_I.scale()), viewJ, sfm::Observation(ptViewJ, indMatch._j, feat_J.scale()), descType);
                 constraints2d.push_back(constraint);
