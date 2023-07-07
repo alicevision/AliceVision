@@ -314,6 +314,7 @@ int aliceVision_main(int argc, char** argv)
 
     if(rangeStart == 0)
     {
+        int pos = 0;
         sfmData::SfMData outputSfm;
         outputSfm.getIntrinsics() = sfmData.getIntrinsics();
 
@@ -326,7 +327,7 @@ int aliceVision_main(int argc, char** argv)
             const auto & groups = groupedViews.second;
             const auto & targetViews = targetViewsPerIntrinsics[intrinsicId];
 
-            for (int g = 0; g < groups.size(); g++)
+            for (int g = 0; g < groups.size(); g++, pos++)
             {
                 std::shared_ptr<sfmData::View> hdrView;
 
@@ -348,7 +349,7 @@ int aliceVision_main(int argc, char** argv)
                 if(!byPass)
                 {
                     boost::filesystem::path p(targetViews[g]->getImagePath());
-                    const std::string hdrImagePath = getHdrImagePath(outputPath, g, keepSourceImageName ? p.stem().string() : "");
+                    const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
                     hdrView->setImagePath(hdrImagePath);
                 }
                 hdrView->addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace));
