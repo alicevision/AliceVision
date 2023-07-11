@@ -105,11 +105,15 @@ bool Segmentation::processImage(image::Image<IndexT> &labels, const image::Image
     int resizedWidth = 0;
     if (source.Height() < source.Width())
     {
-        resizedWidth = double(source.Width()) * double(_parameters.modelHeight) / double(source.Height());
+        resizedWidth = static_cast<int>(
+            static_cast<double>(source.Width()) * static_cast<double>(_parameters.modelHeight)
+            / static_cast<double>(source.Height()));
         if (resizedWidth < _parameters.modelWidth)
         {
             resizedWidth = _parameters.modelWidth;
-            resizedHeight = double(resizedWidth) * double(_parameters.modelHeight) / double(_parameters.modelWidth);
+            resizedHeight = static_cast<int>(
+                static_cast<double>(resizedWidth) * static_cast<double>(_parameters.modelHeight)
+                / static_cast<double>(_parameters.modelWidth));
         }
         else
         {
@@ -118,11 +122,15 @@ bool Segmentation::processImage(image::Image<IndexT> &labels, const image::Image
     }
     else 
     {
-        resizedHeight = double(source.Height()) * double(_parameters.modelWidth) / double(source.Width());
+        resizedHeight = static_cast<int>(
+            static_cast<double>(source.Height()) * static_cast<double>(_parameters.modelWidth)
+            / static_cast<double>(source.Width()));
         if (resizedHeight < _parameters.modelHeight)
         {
             resizedHeight = _parameters.modelHeight;
-            resizedWidth = double(resizedHeight) * double(_parameters.modelWidth) / double(_parameters.modelHeight);
+            resizedWidth = static_cast<int>(
+                static_cast<double>(resizedHeight) * static_cast<double>(_parameters.modelWidth)
+                / static_cast<double>(_parameters.modelHeight));
         }
         else
         {
