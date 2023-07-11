@@ -98,18 +98,36 @@ bool Segmentation::processImage(image::Image<IndexT> &labels, const image::Image
 {
     //Todo : handle orientation and small images smaller than model input
         
-    // Compute the optimal resized size such that at last one dimension fit the model
+    // Compute the optimal resized size such that:
+    // - at last one dimension fit the model
+    // - both dimensions are larger or equal than the model dimensions
     int resizedHeight = 0;
     int resizedWidth = 0;
     if (source.Height() < source.Width())
     {
-        resizedHeight = _parameters.modelHeight;
         resizedWidth = double(source.Width()) * double(_parameters.modelHeight) / double(source.Height());
+        if (resizedWidth < _parameters.modelWidth)
+        {
+            resizedWidth = _parameters.modelWidth;
+            resizedHeight = double(resizedWidth) * double(_parameters.modelHeight) / double(_parameters.modelWidth);
+        }
+        else
+        {
+            resizedHeight = _parameters.modelHeight;
+        }
     }
     else 
     {
-        resizedWidth = _parameters.modelWidth;
         resizedHeight = double(source.Height()) * double(_parameters.modelWidth) / double(source.Width());
+        if (resizedHeight < _parameters.modelHeight)
+        {
+            resizedHeight = _parameters.modelHeight;
+            resizedWidth = double(resizedHeight) * double(_parameters.modelWidth) / double(_parameters.modelHeight);
+        }
+        else
+        {
+            resizedWidth = _parameters.modelWidth;
+        }
     }
 
     //Resize image
