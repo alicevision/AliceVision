@@ -91,7 +91,7 @@ vcpkg install ^
           eigen3 ^
           expat ^
           onnxruntime-gpu ^
-          opencv[eigen,ffmpeg,webp,contrib,nonFree,cuda] ^
+          opencv[eigen,ffmpeg,webp,contrib,nonfree,cuda] ^
           openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
           ceres[suitesparse,cxsparse] ^
           cuda ^
