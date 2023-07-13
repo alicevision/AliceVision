@@ -289,7 +289,7 @@ bool ReconstructionEngine_panorama::process()
     HashMap<IndexT, Mat3> global_rotations;
     if(!Compute_Global_Rotations(relatives_R, global_rotations))
     {
-        ALICEVISION_LOG_WARNING("Panorama:: Rotation Averaging failure!");
+        ALICEVISION_LOG_WARNING("Panorama: Rotation Averaging failure!");
         return false;
     }
 
@@ -393,13 +393,13 @@ bool ReconstructionEngine_panorama::Adjust()
     }
     else
     {
-        ALICEVISION_LOG_INFO("Failed to refine the rotations only.");
+        ALICEVISION_LOG_WARNING("Failed to refine the rotations only.");
         return false;
     }
 
     if(_params.lockAllIntrinsics)
     {
-        // no not modify intrinsic camera parameters
+        // Do not modify intrinsic camera parameters
         return true;
     }
 
@@ -413,7 +413,7 @@ bool ReconstructionEngine_panorama::Adjust()
         }
         else
         {
-            ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal");
+            ALICEVISION_LOG_WARNING("Failed to refine: Rotation + Focal");
             return false;
         }
     }
@@ -428,7 +428,7 @@ bool ReconstructionEngine_panorama::Adjust()
         }
         else
         {
-            ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal + Distortion");
+            ALICEVISION_LOG_WARNING("Failed to refine: Rotation + Focal + Distortion");
             return false;
         }
     }
@@ -444,7 +444,7 @@ bool ReconstructionEngine_panorama::Adjust()
     }
     else
     {
-        ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal + Distortion + Optical Center");
+        ALICEVISION_LOG_WARNING("Failed to refine: Rotation + Focal + Distortion + Optical Center");
         return false;
     }
 
@@ -469,7 +469,7 @@ bool ReconstructionEngine_panorama::Adjust()
         }
         else
         {
-            ALICEVISION_LOG_INFO("Failed to refine: Rotation");
+            ALICEVISION_LOG_WARNING("Failed to refine: Rotation");
             return false;
         }
     }
