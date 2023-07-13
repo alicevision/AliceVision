@@ -17,10 +17,6 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         return false;
     }
 
-    if ((countBrackets > 0) && ((countImages % countBrackets) != 0))
-    {
-        return false;
-    }
 
     const sfmData::Views & views = sfmData.getViews();
 
@@ -79,6 +75,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
                 group.clear();
             }
 
+            lastExposure = exp;
             group.push_back(view);
         }
     }
@@ -86,6 +83,37 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     if (!group.empty())
     {
         groups.push_back(group);
+    }
+
+
+    //Check maximal size
+    int maxSize = 0;
+    for (auto & group : groups)
+    {
+        if (group.size() > maxSize)
+        {
+            maxSize = group.size();
+        }
+    }
+
+    //Only keep groups with majority group size
+    auto groupIt = groups.begin();
+    while (groupIt != groups.end())
+    {
+        if (groupIt->size() != maxSize)
+        {
+            groupIt = groups.erase(groupIt);
+        }
+        else
+        {
+            groupIt++;
+        }
+    }
+
+    //Make sure we only have a few spurious measures
+    if (groups.size() * maxSize < countImages - 2)
+    {
+        return false;
     }
 
     std::vector< std::vector<sfmData::ExposureSetting>> v_exposuresSetting;
