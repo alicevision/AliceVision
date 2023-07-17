@@ -126,6 +126,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
     if (!hdr::estimateBracketsFromSfmData(groupedViews, sfmData, nbBrackets))
     {
+        ALICEVISION_LOG_ERROR("Failure to estimate brackets.");
         return EXIT_FAILURE;
     }
 

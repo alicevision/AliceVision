@@ -171,11 +171,6 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_ERROR("The input SfMData contains no image.");
         return EXIT_FAILURE;
     }
-    if(nbBrackets > 0 && (countImages % nbBrackets) != 0)
-    {
-        ALICEVISION_LOG_ERROR("The input SfMData file (" << countImages << " images) is not compatible with the number of brackets (" << nbBrackets << " brackets).");
-        return EXIT_FAILURE;
-    }
     if(nbBrackets == 1 && !byPass)
     {
         ALICEVISION_LOG_WARNING("Enable bypass as there is only one input bracket.");
@@ -191,6 +186,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
     if (!hdr::estimateBracketsFromSfmData(groupedViews, sfmData, nbBrackets))
     {
+        ALICEVISION_LOG_ERROR("Failure to estimate brackets.");
         return EXIT_FAILURE;
     }
 
