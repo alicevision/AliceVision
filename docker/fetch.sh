@@ -20,11 +20,13 @@ test -f dl/vlfeat_K80L3.SIFT.tree || \
         wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree -O dl/vlfeat_K80L3.SIFT.tree
 test -f dl/sphereDetection_Mask-RCNN.onnx || \
         wget https://gitlab.com/alicevision/SphereDetectionModel/-/raw/main/sphereDetection_Mask-RCNN.onnx -O dl/sphereDetection_Mask-RCNN.onnx
+test -f dl/fcn_resnet50.onnx || \
+        wget https://gitlab.com/alicevision/semanticSegmentationModel/-/raw/main/fcn_resnet50.onnx -O dl/fcn_resnet50.onnx
 export CMAKE_VERSION=3.26.0
 export CMAKE_VERSION_MM=3.26
 test -f dl/cmake-${CMAKE_VERSION}.tar.gz || \
         wget https://cmake.org/files/v${CMAKE_VERSION_MM}/cmake-${CMAKE_VERSION}.tar.gz -O dl/cmake-${CMAKE_VERSION}.tar.gz
-test -d  dl/deps || \
+test -d dl/deps || \
 	mkdir dl/deps
 
 test -d build-fetch || {
