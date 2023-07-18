@@ -73,7 +73,7 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmInputDataFilename;
     std::string inputResponsePath;
     std::string sfmOutputDataFilepath;
-    int nbBrackets = 3;
+    int nbBrackets = 0;
     bool byPass = false;
     bool keepSourceImageName = false;
     int channelQuantizationPower = 10;
