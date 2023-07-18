@@ -679,7 +679,11 @@ int aliceVision_main(int argc, char** argv)
     // set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
     hwc.setUserCoresLimit(maxThreads);
+    
     omp_set_num_threads(hwc.getMaxThreads());
+    oiio::attribute("threads", static_cast<int>(hwc.getMaxThreads()));
+    oiio::attribute("exr_threads", static_cast<int>(hwc.getMaxThreads()));
+
 
     if(overlayType == "borders" || overlayType == "all")
     {
