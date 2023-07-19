@@ -110,12 +110,6 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         }
     }
 
-    //Make sure we only have a few spurious measures
-    if (groups.size() * maxSize < countImages - 2)
-    {
-        return false;
-    }
-
     std::vector< std::vector<sfmData::ExposureSetting>> v_exposuresSetting;
     for(auto & group : groups)
     {
