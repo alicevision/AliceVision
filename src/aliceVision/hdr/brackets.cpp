@@ -86,21 +86,37 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     }
 
 
-    //Check maximal size
-    int maxSize = 0;
-    for (auto & group : groups)
+    //Vote for the best bracket count
+    std::map<size_t, int> counters;
+    for (const auto & group : groups)
     {
-        if (group.size() > maxSize)
+        size_t bracketCount = group.size();
+        if (counters.find(bracketCount) != counters.end())
         {
-            maxSize = group.size();
+            counters[bracketCount]++;
+        }
+        else
+        {
+            counters[bracketCount] = 1;
         }
     }
 
-    //Only keep groups with majority group size
+    int maxSize = 0;
+    int bestBracketCount = 0;
+    for (const auto & item : counters)
+    {
+        if (item.second > maxSize)
+        {
+            maxSize = item.second;
+            bestBracketCount = item.first;
+        }
+    }
+
+    //Only keep groups with majority bracket size
     auto groupIt = groups.begin();
     while (groupIt != groups.end())
     {
-        if (groupIt->size() != maxSize)
+        if (groupIt->size() != bestBracketCount)
         {
             groupIt = groups.erase(groupIt);
         }
