@@ -11,6 +11,8 @@ namespace hdr {
 
 bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, const sfmData::SfMData& sfmData, size_t countBrackets)
 {
+    groups.clear();
+
     size_t countImages = sfmData.getViews().size();
     if(countImages == 0)
     {
@@ -53,7 +55,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     }
     
     std::vector<std::shared_ptr<sfmData::View>> group;
-    double lastExposure = std::numeric_limits<double>::max();
+    double lastExposure = std::numeric_limits<double>::min();
     for(auto& view : viewsOrderedByName)
     {
         if (countBrackets > 0)
@@ -108,6 +110,12 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         if (item.second > maxSize)
         {
             maxSize = item.second;
+            bestBracketCount = item.first;
+        }
+        else if (item.second == maxSize && item.first > bestBracketCount)
+        {
+            //If two brackets size have the same vote number, 
+            //Keep the larger one (Just to avoid keeping only the outlier)
             bestBracketCount = item.first;
         }
     }
