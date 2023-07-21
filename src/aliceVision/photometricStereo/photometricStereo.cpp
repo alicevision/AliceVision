@@ -112,17 +112,29 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         ALICEVISION_LOG_INFO("Pose Id: " << posesIt.first);
         std::vector<IndexT>& initViewIds = posesIt.second;
 
-        std::map<std::string, IndexT> idMap;
-        for (auto& viewId : initViewIds)
-        {
-            std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getImage().getMetadata();
-            idMap[currentMetadata.at("Exif:DateTimeDigitized")] = viewId;
-        }
+        bool hasMetadata = true;
+        std::map<std::string, std::string> metadataTest = sfmData.getView(initViewIds.at(0)).getImage().getMetadata();
+        if (metadataTest.find("Exif:DateTimeDigitized") == metadataTest.end())
+            hasMetadata = false;
 
         std::vector<IndexT> viewIds;
-        for (const auto& [currentTime, viewId] : idMap)
+        if (hasMetadata)
         {
-            viewIds.push_back(viewId);
+            std::map<std::string, IndexT> idMap;
+            for (auto& viewId : initViewIds)
+            {
+                std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getImage().getMetadata();
+                idMap[currentMetadata.at("Exif:DateTimeDigitized")] = viewId;
+            }
+
+            for (const auto& [currentTime, viewId] : idMap)
+            {
+                viewIds.push_back(viewId);
+            }
+        }
+        else
+        {
+            viewIds = initViewIds;
         }
 
         for (auto& viewId : viewIds)
