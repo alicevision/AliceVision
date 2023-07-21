@@ -160,7 +160,16 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         }
         else
         {
-            buildLightMatFromJSON(lightData, viewIds, lightMat, intList);
+            const std::string extension = fs::path(lightData).extension();
+
+            if (extension == ".json")  // JSON File
+            {
+                buildLightMatFromJSON(lightData, viewIds, lightMat, intList);
+            }
+            else if (extension == ".lp")
+            {
+                buildLightMatFromLP(lightData, imageList, lightMat, intList);
+            }
         }
 
         /* Ensure that there are as many images as light calibrations, and that the list of input images is not empty.

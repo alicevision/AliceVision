@@ -241,6 +241,57 @@ void buildLightMatFromJSON(const std::string& fileName,
     }
 }
 
+void buildLightMatFromLP(const std::string& fileName,
+                         const std::vector<std::string>& imageList,
+                         Eigen::MatrixXf& lightMat,
+                         std::vector<std::array<float, 3>>& intList)
+{
+    std::string pictureName;
+    float x, y, z;
+
+    int lineNumber = 0;
+    std::array<float, 3> intensities = {1.0, 1.0, 1.0};
+
+    for (auto& currentImPath : imageList)
+    {
+        std::stringstream stream;
+        std::string line;
+        std::fstream intFile;
+        intFile.open(fileName, std::ios::in);
+
+        if (!intFile.is_open())
+        {
+            ALICEVISION_LOG_ERROR("Unable to load Lp file");
+            ALICEVISION_THROW_ERROR("Cannot open '" << fileName << "'!");
+        }
+        else
+        {
+            fs::path imagePathFS = fs::path(currentImPath);
+            while (!intFile.eof())
+            {
+                std::getline(intFile, line);
+                stream.clear();
+                stream.str(line);
+
+                stream >> pictureName >> x >> y >> z;
+
+                std::string stringToCompare = imagePathFS.filename().string();
+
+                if (boost::algorithm::iequals(pictureName, stringToCompare))
+                {
+                    lightMat(lineNumber, 0) = x;
+                    lightMat(lineNumber, 1) = -y;
+                    lightMat(lineNumber, 2) = -z;
+                    ++lineNumber;
+
+                    intList.push_back(intensities);
+                }
+            }
+            intFile.close();
+        }
+    }
+}
+
 void loadMask(std::string const& maskName, image::Image<float>& mask)
 {
     if (maskName.empty() || !utils::exists(maskName))
