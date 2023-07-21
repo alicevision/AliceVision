@@ -132,15 +132,15 @@ void lightCalibrationOneImage(const std::string& picturePath,
         getNormalOnSphere(brigthestPoint(0), brigthestPoint(1), sphereParam, normalBrightestPoint);
 
         // Observation direction :
-        Eigen::Vector3f observationRay;
+        Eigen::Vector3f observationRayPersp;
 
-        // orthographic approximation :
-        observationRay(0) = 0.0;
-        observationRay(1) = 0.0;
-        observationRay(2) = -1.0;
+        observationRayPersp(0) = (brigthestPoint(0) - imageFloat.cols() / 2) / focal;
+        observationRayPersp(1) = (brigthestPoint(1) - imageFloat.rows() / 2) / focal;
+        observationRayPersp(2) = 1;
+        observationRayPersp = -observationRayPersp / observationRayPersp.norm();
 
         // Evaluate lighting direction :
-        lightingDirection = 2 * normalBrightestPoint.dot(observationRay) * normalBrightestPoint - observationRay;
+        lightingDirection = 2 * normalBrightestPoint.dot(observationRayPersp) * normalBrightestPoint - observationRayPersp;
         lightingDirection = lightingDirection / lightingDirection.norm();
     }
     // If method = HS :
