@@ -200,13 +200,6 @@ public:
   void convertDistancesToStates(const sfmData::SfMData& sfmData);
 
   /**
-   * @brief Update rigs edges.
-   * @param[in] sfmData contains all the information about the reconstruction
-   * @return
-   */
-  std::size_t updateRigEdgesToTheGraph(const sfmData::SfMData& sfmData);
-
-  /**
    * @brief Count and return the number of nodes in the underlying lemon graph.
    * @return The number of nodes in the graph.
    */
@@ -374,10 +367,10 @@ private:
   std::map<IndexT, std::vector<int>> _intrinsicEdgesId;
 
   /**
-   * @brief Store the Lemon index of the edges added for the rig links "the intrinsic-edges"
-   * <rigId, [edgeId]>
+   * @brief Store the list of views connected to a given referenceViewId through rigs.
+   * <referenceViewId, [views]>
    */
-  std::map<IndexT, std::vector<int>> _rigEdgesId;
+  std::map<IndexT, std::set<IndexT>> _rigLinksPerView;
 };
 
 } // namespace sfm
