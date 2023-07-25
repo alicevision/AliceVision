@@ -37,10 +37,13 @@ alicevision_add_library(aliceVision_matching
     aliceVision_numeric
     aliceVision_stl
     aliceVision_system
+    
   PRIVATE_LINKS
     Boost::filesystem
     Boost::boost
-    ${FLANN_LIBRARY}
+
+    flann::flann_cpp
+    LZ4::lz4_static
 )
 
 # Unit tests

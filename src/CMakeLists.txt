@@ -163,7 +163,7 @@ endmacro(add_target_properties)
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/MeshSDFilter/external)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
@@ -428,19 +428,9 @@ endif()
 # ==============================================================================
 # Flann
 # ==============================================================================
-# - internal by default (flann),
-# - external if FLANN_INCLUDE_DIR_HINTS and a valid Flann setup is found
-# ==============================================================================
 if(ALICEVISION_BUILD_SFM)
-  if(NOT DEFINED FLANN_INCLUDE_DIR_HINTS)
-    set(FLANN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src/cpp)
-    set(ALICEVISION_USE_INTERNAL_FLANN ON)
-  endif()
-  find_package(Flann QUIET)
-  if(NOT FLANN_FOUND OR ALICEVISION_USE_INTERNAL_FLANN)
-    set(FLANN_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src/cpp)
-    set(FLANN_LIBRARY flann_cpp_s)
-  endif()
+  find_package(lz4 REQUIRED)
+  find_package(flann REQUIRED)
 endif()
 
 # ==============================================================================

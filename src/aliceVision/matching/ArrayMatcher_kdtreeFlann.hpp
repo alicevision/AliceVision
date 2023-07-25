@@ -11,7 +11,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
-#include "flann/flann.hpp"
+#include <flann/flann.hpp>
 
 #include <memory>
 

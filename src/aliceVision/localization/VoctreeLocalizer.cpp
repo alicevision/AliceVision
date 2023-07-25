@@ -15,6 +15,7 @@
 #include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>
+#include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
@@ -25,6 +26,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
+
+#include <flann/algorithms/dist.h>
 
 #include <boost/filesystem.hpp>
 
