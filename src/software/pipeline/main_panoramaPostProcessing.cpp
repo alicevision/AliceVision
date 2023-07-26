@@ -200,7 +200,7 @@ int aliceVision_main(int argc, char** argv)
     int compressionLevel = 0;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     size_t previewSize = 1000;
-    bool fillHoles = false;  
+    bool fillHoles = false;
 
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -240,9 +240,6 @@ int aliceVision_main(int argc, char** argv)
     {
         return EXIT_FAILURE;
     }
-
-    
-    fs::path previewPath = fs::path(outputPanoramaPath).parent_path() / "preview.jpg";
 
     //Get information about input panorama
     const oiio::ImageSpec &inputSpec = panoramaInput->spec();
@@ -339,6 +336,30 @@ int aliceVision_main(int argc, char** argv)
     const double ratioPreview = double(width) / double(previewSize);
     image::Image<image::RGBAfColor> previewImage(previewSize, previewSize / 2);
     int previewCurrentRow = 0;
+
+    // Create image outputs for downscaled panorama levels
+    const int nbLevels = static_cast<int>(std::floor(std::log2(tileSize)));
+    std::vector<std::unique_ptr<oiio::ImageOutput>> levelOutputs;
+
+    ALICEVISION_LOG_INFO("Number of downscaled panorama levels to generate: " << nbLevels);
+
+    for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
+    {
+        fs::path levelPath = fs::path(outputPanoramaPath).parent_path() / ("level_" + std::to_string(levelIdx) + ".exr");
+        levelOutputs.push_back(std::move(oiio::ImageOutput::create(levelPath.string())));
+
+        oiio::ImageSpec levelSpec(outputSpec);
+        levelSpec.width /= (1 << levelIdx);
+        levelSpec.height /= (1 << levelIdx);
+        levelSpec.full_width /= (1 << levelIdx);
+        levelSpec.full_height /= (1 << levelIdx);
+
+        if (!levelOutputs[levelIdx-1]->open(levelPath.string(), levelSpec))
+        {
+            ALICEVISION_LOG_ERROR("Impossible to write downscaled panorama at level " << levelIdx);
+            return EXIT_FAILURE;
+        }
+    }
 
     if (fillHoles)
     {
@@ -566,9 +587,21 @@ int aliceVision_main(int argc, char** argv)
                 previewCurrentRow++;
             }
 
+            // Write panorama output
             colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
-
             panoramaOutput->write_scanlines(ty * tileSize, (ty + 1) * tileSize, 0, oiio::TypeDesc::FLOAT, final.data());
+
+            // Write downscaled panorama levels
+            for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
+            {
+                image::Image<image::RGBAfColor> & levelTile = pyramid[levelIdx];
+                const int levelTileSize = tileSize / (1 << levelIdx);
+                const int levelWidth = width / (1 << levelIdx);
+                image::Image<image::RGBAfColor> level(levelWidth, levelTileSize);
+                level.block(0, 0, levelTileSize, levelWidth) = levelTile.block(levelTileSize, levelTileSize, levelTileSize, levelWidth);
+                colorSpaceTransform(level, fromColorSpace, outputColorSpace, dcpProf, neutral);
+                levelOutputs[levelIdx-1]->write_scanlines(ty * levelTileSize, (ty + 1) * levelTileSize, 0, oiio::TypeDesc::FLOAT, level.data());
+            }
         }
     }
     else 
@@ -628,6 +661,10 @@ int aliceVision_main(int argc, char** argv)
 
     panoramaInput->close();
     panoramaOutput->close();
+    for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
+    {
+        levelOutputs[levelIdx-1]->close();
+    }
 
     if (outputPanoramaPreviewPath != "")
     {
