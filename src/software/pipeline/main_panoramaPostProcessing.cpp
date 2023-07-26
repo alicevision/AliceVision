@@ -201,6 +201,7 @@ int aliceVision_main(int argc, char** argv)
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     size_t previewSize = 1000;
     bool fillHoles = false;
+    bool exportLevels = false;
 
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -221,6 +222,7 @@ int aliceVision_main(int argc, char** argv)
          "Only dwaa, dwab, zip and zips compression methods are concerned.")
 
         ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
+        ("exportLevels", po::value<bool>(&exportLevels)->default_value(exportLevels), "Export downscaled panorama levels")
         ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.")
         ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath), "Path of the output panorama preview.");
@@ -338,7 +340,7 @@ int aliceVision_main(int argc, char** argv)
     int previewCurrentRow = 0;
 
     // Create image outputs for downscaled panorama levels
-    const int nbLevels = static_cast<int>(std::floor(std::log2(tileSize)));
+    const int nbLevels = exportLevels ? static_cast<int>(std::floor(std::log2(tileSize))) : 0;
     std::vector<std::unique_ptr<oiio::ImageOutput>> levelOutputs;
 
     ALICEVISION_LOG_INFO("Number of downscaled panorama levels to generate: " << nbLevels);
