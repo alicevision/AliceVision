@@ -431,6 +431,14 @@ endif()
 if(ALICEVISION_BUILD_SFM)
   find_package(lz4 REQUIRED)
   find_package(flann REQUIRED)
+
+  if (TARGET lz4::lz4)
+    set(FLANN_LIBRARIES flann::flann_cpp lz4::lz4)
+  elseif (TARGET LZ4::lz4_static)
+    set(FLANN_LIBRARIES flann::flann_cpp LZ4::lz4_static)
+  else()
+    message(FATAL_ERROR "FLANN can not be found")
+  endif()
 endif()
 
 # ==============================================================================
