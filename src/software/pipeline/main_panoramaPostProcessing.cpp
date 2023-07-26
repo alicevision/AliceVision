@@ -443,7 +443,7 @@ int aliceVision_main(int argc, char** argv)
             int yend = (ty + 1) * tileSize - 1;
             
             //Build subimage
-            image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);          
+            image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);
             image::Image<image::RGBAfColor> subFiled(rowSize, 3, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
             image::Image<image::RGBAfColor> final(width, tileSize, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
                 
@@ -565,7 +565,6 @@ int aliceVision_main(int argc, char** argv)
             }
 
             const image::Image<image::RGBAfColor> & finalTile = pyramid[0];
-            
             final.block(0, 0, tileSize, width) = finalTile.block(tileSize, tileSize, tileSize, width);
 
             //Fill preview image
@@ -606,33 +605,57 @@ int aliceVision_main(int argc, char** argv)
     }
     else 
     {
-         //Process one full row of tiles each iteration
+        //Process one full row of tiles each iteration
         for (int ty = 0; ty < countHeight; ty++)
         {
             int ybegin = ty * tileSize;
             int yend = (ty + 1) * tileSize - 1;
 
+            // Build subimage
+            image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);
             image::Image<image::RGBAfColor> final(width, tileSize, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
-            
-            #pragma omp parallel for
-            for (int tx = 0; tx < countWidth; tx++)
-            {
-                image::Image<image::RGBAfColor> tile(tileSize, tileSize);
-                if (!panoramaInput->read_tile(tx * tileSize, ybegin, 0, oiio::TypeDesc::FLOAT, tile.data()))
-                {
-                    ALICEVISION_LOG_ERROR("Error reading from image");
-                }
 
-                int available = width - tx*tileSize;
-                if (available < tileSize)
+            //Build a region           
+            for (int ry = 0; ry < 3; ry++)
+            {
+                int dy = ry - 1;
+                int cy = ty + dy;
+                
+                #pragma omp parallel for
+                for (int rx = 0; rx < rowSize; rx++)
                 {
-                    final.block(0, tx * tileSize, tileSize, available) = tile.block(0, 0, tileSize, available);
-                }
-                else
-                {
-                    final.block(0, tx * tileSize, tileSize, tileSize) = tile;
+                    int dx = rx - 1;
+                    int cx = dx;
+
+                    image::Image<image::RGBAfColor> tile(tileSize, tileSize);
+                    if (!readFullTile(tile, panoramaInput, cx, cy))
+                    {
+                        ALICEVISION_LOG_ERROR("Invalid tile");
+                        continue;
+                    }
+
+                    region.block(ry * tileSize, rx * tileSize, tileSize, tileSize) = tile;
                 }
             }
+
+            //First level is original image
+            std::vector<image::Image<image::RGBAfColor>> pyramid;
+            pyramid.push_back(region);
+
+            //Build pyramid for tile
+            int cs = tileSize * rowSize;
+            while (cs != rowSize)
+            {
+                int ns = cs / 2;
+                image::Image<image::RGBAfColor> smaller;
+                downscaleTriangle(smaller, region);
+                pyramid.push_back(smaller);
+                region = smaller;
+                cs = ns;
+            }
+
+            const image::Image<image::RGBAfColor> & finalTile = pyramid[0];
+            final.block(0, 0, tileSize, width) = finalTile.block(tileSize, tileSize, tileSize, width);
 
             //Fill preview image
             while (previewCurrentRow < previewImage.rows())
@@ -653,9 +676,21 @@ int aliceVision_main(int argc, char** argv)
                 previewCurrentRow++;
             }
 
+            // Write panorama output
             colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
+            panoramaOutput->write_scanlines(ty * tileSize, (ty + 1) * tileSize, 0, oiio::TypeDesc::FLOAT, final.data());
 
-            panoramaOutput->write_scanlines(ybegin, yend, 0, oiio::TypeDesc::FLOAT, final.data());
+            // Write downscaled panorama levels
+            for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
+            {
+                image::Image<image::RGBAfColor> & levelTile = pyramid[levelIdx];
+                const int levelTileSize = tileSize / (1 << levelIdx);
+                const int levelWidth = width / (1 << levelIdx);
+                image::Image<image::RGBAfColor> level(levelWidth, levelTileSize);
+                level.block(0, 0, levelTileSize, levelWidth) = levelTile.block(levelTileSize, levelTileSize, levelTileSize, levelWidth);
+                colorSpaceTransform(level, fromColorSpace, outputColorSpace, dcpProf, neutral);
+                levelOutputs[levelIdx-1]->write_scanlines(ty * levelTileSize, (ty + 1) * levelTileSize, 0, oiio::TypeDesc::FLOAT, level.data());
+            }
         }
     }
 
