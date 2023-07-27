@@ -97,6 +97,22 @@ bool readFullTile(image::Image<image::RGBAfColor> & output, std::unique_ptr<oiio
     const int countWidth = std::ceil(double(width) / double(tileSize));
     const int countHeight = std::ceil(double(height) / double(tileSize));
 
+    // Utility lambda to load only part of a tile (before of after a given split position)
+    auto readTilePartial = [&](
+        image::Image<image::RGBAfColor> & buf,
+        int txLeft,
+        int xOutput, int xBuf, int sliceWidth) -> bool
+    {
+        if (!input->read_tile(txLeft * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
+        {
+            return false;
+        }
+
+        output.block(0, xOutput, tileSize, sliceWidth) = buf.block(0, xBuf, tileSize, sliceWidth);
+
+        return true;
+    };
+
     // Default filling
     output.fill(image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
 
@@ -116,22 +132,15 @@ bool readFullTile(image::Image<image::RGBAfColor> & output, std::unique_ptr<oiio
         const int leftside = (txLeft + 1) * tileSize - offset;
         const int rightside = tileSize - leftside;
 
-        // Load left part tile
         image::Image<image::RGBAfColor> buf(tileSize, tileSize);
-        if (!input->read_tile(txLeft * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
-        {
-            return false;
-        }
-        output.block(0, 0, tileSize, leftside) = buf.block(0, rightside, tileSize, leftside);
+
+        // Load left part tile
+        if (!readTilePartial(buf, txLeft, 0, rightside, leftside)) return false;
 
         // Load right part tile to complete filling output
         if (rightside > 0)
         {
-            if (!input->read_tile((txLeft + 1) * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
-            {
-                return false;
-            }
-            output.block(0, leftside, tileSize, rightside) = buf.block(0, 0, tileSize, rightside);
+            if (!readTilePartial(buf, txLeft + 1, leftside, 0, rightside)) return false;
         }
     }
     else if (tx == countWidth - 1)
@@ -140,22 +149,15 @@ bool readFullTile(image::Image<image::RGBAfColor> & output, std::unique_ptr<oiio
         const int leftside = width - tx * tileSize;
         const int rightside = tileSize - leftside;
 
-        // Load last tile (the last column of this tile may be incomplete)
         image::Image<image::RGBAfColor> buf(tileSize, tileSize);
-        if (!input->read_tile(tx * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
-        {
-            return false;
-        }
-        output.block(0, 0, tileSize, leftside) = buf.block(0, 0, tileSize, leftside);
+
+        // Load last tile (which may be incomplete)
+        if (!readTilePartial(buf, tx, 0, 0, leftside)) return false;
 
         // Load first tile to complete filling output
         if (rightside > 0)
         {
-            if (!input->read_tile(0, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
-            {
-                return false;
-            }
-            output.block(0, leftside, tileSize, rightside) = buf.block(0, 0, tileSize, rightside);
+            if (!readTilePartial(buf, 0, leftside, 0, rightside)) return false;
         }
     }
     else if (tx == countWidth)
@@ -168,22 +170,15 @@ bool readFullTile(image::Image<image::RGBAfColor> & output, std::unique_ptr<oiio
         const int leftside = (txLeft + 1) * tileSize - offset;
         const int rightside = tileSize - leftside;
 
-        // Load left part tile
         image::Image<image::RGBAfColor> buf(tileSize, tileSize);
-        if (!input->read_tile(txLeft * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
-        {
-            return false;
-        }
-        output.block(0, 0, tileSize, leftside) = buf.block(0, rightside, tileSize, leftside);
+
+        // Load left part tile
+        if (!readTilePartial(buf, txLeft, 0, rightside, leftside)) return false;
 
         // Load right part tile to complete filling output
         if (rightside > 0)
         {
-            if (!input->read_tile((txLeft + 1) * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
-            {
-                return false;
-            }
-            output.block(0, leftside, tileSize, rightside) = buf.block(0, 0, tileSize, rightside);
+            if (!readTilePartial(buf, txLeft + 1, leftside, 0, rightside)) return false;
         }
     }
     else if (tx >= 0 && tx < countWidth - 1)
