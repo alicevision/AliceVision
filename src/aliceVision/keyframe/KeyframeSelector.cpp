@@ -509,8 +509,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                 metadata.push_back(oiio::ParamValue("Exif:FocalLength", mmFocals[id]));
                 metadata.push_back(oiio::ParamValue("Exif:ImageUniqueID", std::to_string(getRandomInt())));
                 metadata.push_back(oiio::ParamValue("Orientation", orientation));  // Will not propagate for PNG outputs
-                if (outputExtension != "jpg")  // TODO: propagate pixelAspectRatio properly for JPG
-                    metadata.push_back(oiio::ParamValue("PixelAspectRatio", pixelAspectRatio));
+                metadata.push_back(oiio::ParamValue("PixelAspectRatio", pixelAspectRatio));
 
                 fs::path folder = _outputFolder;
                 std::ostringstream filenameSS;
