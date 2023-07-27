@@ -90,55 +90,109 @@ bool downscaleTriangle(image::Image<image::RGBAfColor> & smaller, const image::I
 bool readFullTile(image::Image<image::RGBAfColor> & output, std::unique_ptr<oiio::ImageInput> & input, int tx, int ty)
 {
     const oiio::ImageSpec &inputSpec = input->spec();
-    int tileSize = inputSpec.tile_width; 
-    int width = inputSpec.width;
-    int height = inputSpec.height;
+    const int tileSize = inputSpec.tile_width; 
+    const int width = inputSpec.width;
+    const int height = inputSpec.height;
 
-    int countWidth = std::ceil(double(width) / double(tileSize));
-    int countHeight = std::ceil(double(height) / double(tileSize));
+    const int countWidth = std::ceil(double(width) / double(tileSize));
+    const int countHeight = std::ceil(double(height) / double(tileSize));
 
-    if (tx < 0 || tx >= countWidth || ty < 0 || ty >= countHeight)
+    // Default filling
+    output.fill(image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+
+    // Make sure tile y-coordinate is in the right range
+    if (ty < 0 || ty >= countHeight)
     {
-        output.fill(image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
         return true;
     }
 
-    if (tx < 0)
+    if (tx == -1)
     {
-        tx = countWidth + tx;
+        // Wrap tile x-coordinate
+        const int offset = width - 1 - tileSize;
+        const int txLeft = offset / tileSize;
+
+        // Size of the left and right part of the tile
+        const int leftside = (txLeft + 1) * tileSize - offset;
+        const int rightside = tileSize - leftside;
+
+        // Load left part tile
+        image::Image<image::RGBAfColor> buf(tileSize, tileSize);
+        if (!input->read_tile(txLeft * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
+        {
+            return false;
+        }
+        output.block(0, 0, tileSize, leftside) = buf.block(0, rightside, tileSize, leftside);
+
+        // Load right part tile to complete filling output
+        if (rightside > 0)
+        {
+            if (!input->read_tile((txLeft + 1) * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
+            {
+                return false;
+            }
+            output.block(0, leftside, tileSize, rightside) = buf.block(0, 0, tileSize, rightside);
+        }
     }
-
-    if (tx >= countWidth)
+    else if (tx == countWidth - 1)
     {
-        tx = tx - countWidth;
-    }
+        // Size of the left and right part of the tile
+        const int leftside = width - tx * tileSize;
+        const int rightside = tileSize - leftside;
 
-    /*int available = width - (tx * tileSize);
-
-    if (available < tileSize)
-    {
+        // Load last tile (the last column of this tile may be incomplete)
         image::Image<image::RGBAfColor> buf(tileSize, tileSize);
         if (!input->read_tile(tx * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
         {
             return false;
         }
+        output.block(0, 0, tileSize, leftside) = buf.block(0, 0, tileSize, leftside);
 
-        output.block(0, tileSize - available, tileSize, available) = buf.block(0, 0, tileSize, available);
+        // Load first tile to complete filling output
+        if (rightside > 0)
+        {
+            if (!input->read_tile(0, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
+            {
+                return false;
+            }
+            output.block(0, leftside, tileSize, rightside) = buf.block(0, 0, tileSize, rightside);
+        }
+    }
+    else if (tx == countWidth)
+    {
+        // Wrap tile x-coordinate
+        const int offset = countWidth * tileSize - width;
+        const int txLeft = offset / tileSize;
 
-        if (!input->read_tile((tx - 1) * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
+        // Size of the left and right part of the tile
+        const int leftside = (txLeft + 1) * tileSize - offset;
+        const int rightside = tileSize - leftside;
+
+        // Load left part tile
+        image::Image<image::RGBAfColor> buf(tileSize, tileSize);
+        if (!input->read_tile(txLeft * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
         {
             return false;
         }
+        output.block(0, 0, tileSize, leftside) = buf.block(0, rightside, tileSize, leftside);
 
-        output.block(0, 0, tileSize, tileSize - available) = buf.block(0, available, tileSize, tileSize - available);
-
-        return true;
-    }*/
-
-    output.fill(image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
-    if (!input->read_tile(tx * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, output.data()))
+        // Load right part tile to complete filling output
+        if (rightside > 0)
+        {
+            if (!input->read_tile((txLeft + 1) * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
+            {
+                return false;
+            }
+            output.block(0, leftside, tileSize, rightside) = buf.block(0, 0, tileSize, rightside);
+        }
+    }
+    else if (tx >= 0 && tx < countWidth - 1)
     {
-        return false;
+        // Load tile data directly into output
+        if (!input->read_tile(tx * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, output.data()))
+        {
+            return false;
+        }
     }
 
     return true;
