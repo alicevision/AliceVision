@@ -747,8 +747,8 @@ int aliceVision_main(int argc, char** argv)
 
         if(rangeIteration >= countIterations)
         {
-            ALICEVISION_LOG_ERROR("Range is incorrect");
-            return EXIT_FAILURE;
+            // nothing to compute for this chunk
+            return EXIT_SUCCESS;
         }
 
         rangeSize = rangeSize * divideRoundUp(viewsCount, oldViewsCount);
