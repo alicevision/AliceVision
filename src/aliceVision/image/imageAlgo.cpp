@@ -1,3 +1,9 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2019 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include "imageAlgo.hpp"
 
 #include <aliceVision/image/Image.hpp>
@@ -421,6 +427,95 @@ void resizeImage(int downscale, image::Image<image::RGBAfColor>& inoutImage,
                 inoutImage.data(), rescaled.data(), filter, filterSize);
     
     inoutImage.swap(rescaled);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<IndexT> &inImage,
+                 image::Image<IndexT> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::UINT32, inImage.Width(), inImage.Height(), newWidth, newHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<unsigned char> &inImage,
+                 image::Image<unsigned char> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<float> &inImage,
+                 image::Image<float> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<image::RGBColor> &inImage,
+                 image::Image<image::RGBColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<image::RGBfColor> &inImage,
+                 image::Image<image::RGBfColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<image::RGBAColor> &inImage,
+                 image::Image<image::RGBAColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 4,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(const int newWidth, const int newHeight, const image::Image<image::RGBAfColor> &inImage,
+                 image::Image<image::RGBAfColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    outImage.resize(newWidth, newHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 4,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+template<typename T>
+void resampleImage(oiio::TypeDesc typeDesc,
+                 int inWidth,
+                 int inHeight,
+                 int outWidth,
+                 int outHeight,
+                 int nchannels,
+                 const T* inBuffer,
+                 T* outBuffer,
+                 bool interpolate)
+{
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc),
+                               const_cast<T*>(inBuffer));
+    oiio::ImageBuf outBuf(oiio::ImageSpec(outWidth, outHeight, nchannels, typeDesc), outBuffer);
+
+    oiio::ImageBufAlgo::resample(outBuf, inBuf, interpolate);
+}
+
+void resampleImage(int outWidth, int outHeight, const image::Image<IndexT>& inImage,
+                 image::Image<IndexT>& outImage, bool interpolate)
+{
+    outImage.resize(outWidth, outHeight);
+    resampleImage(oiio::TypeDesc::UINT32, inImage.Width(), inImage.Height(), outWidth, outHeight, 1,
+        inImage.data(), outImage.data(), interpolate);
 }
 
 template<typename T>

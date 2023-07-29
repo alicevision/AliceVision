@@ -65,6 +65,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_gpu
           aliceVision_image
           aliceVision_feature
+          aliceVision_featureEngine
           aliceVision_multiview
           aliceVision_sfmData
           aliceVision_sfmDataIO
@@ -290,6 +291,7 @@ if(ALICEVISION_BUILD_SFM)
           Boost::program_options
           Boost::filesystem
           Boost::boost
+          Boost::json
   )
 
   # Calibrate a rig
@@ -381,8 +383,9 @@ if(ALICEVISION_BUILD_SFM)
           Boost::boost
           Boost::timer
   )
+         
 endif() # if(ALICEVISION_BUILD_SFM)
-
+   
 ### MVS software
 if(ALICEVISION_BUILD_MVS)
 
@@ -520,6 +523,45 @@ if(ALICEVISION_BUILD_MVS)
   )
 endif() # if(ALICEVISION_BUILD_MVS)
 
+if(ALICEVISION_HAVE_OPENCV)
+    # Photometric Stereo
+    alicevision_add_software(aliceVision_photometricStereo
+      SOURCE main_photometricStereo.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_photometricStereo
+            aliceVision_cmdline
+            aliceVision_system
+            aliceVision_mvsData
+            aliceVision_mvsUtils
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            Boost::program_options
+    )
+
+    alicevision_add_software(aliceVision_normalIntegration
+      SOURCE main_normalIntegration.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_photometricStereo
+            aliceVision_cmdline
+            aliceVision_system
+            aliceVision_mvsData
+            aliceVision_mvsUtils
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            Boost::program_options
+    )
+endif()
+
+alicevision_add_software(aliceVision_lightingCalibration
+  SOURCE main_lightingCalibration.cpp
+  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+  LINKS aliceVision_lightingEstimation
+        aliceVision_cmdline
+        aliceVision_system
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+)
 
 if(ALICEVISION_BUILD_HDR)
 
@@ -563,4 +605,33 @@ alicevision_add_software(aliceVision_LdrToHdrMerge
         Boost::filesystem
 )
 
+endif()
+
+if(ALICEVISION_HAVE_OPENCV AND ALICEVISION_HAVE_ONNX)
+    # SphereDetection
+    alicevision_add_software(aliceVision_sphereDetection
+    SOURCE main_sphereDetection.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_image
+          aliceVision_cmdline
+          aliceVision_system
+          aliceVision_sphereDetection
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          ${OpenCV_LIBRARIES}
+    )
+endif()
+
+if(ALICEVISION_HAVE_ONNX)
+    # Image Segmentation
+    alicevision_add_software(aliceVision_imageSegmentation
+    SOURCE main_imageSegmentation.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_image
+          aliceVision_cmdline
+          aliceVision_system
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          aliceVision_segmentation
+    )
 endif()

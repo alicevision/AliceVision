@@ -21,7 +21,7 @@ namespace depthMap {
 * @return
 */
 template <typename T>
-__device__ static inline T* get2DBufferAt(T* ptr, size_t pitch, size_t x, size_t y)
+__device__ inline T* get2DBufferAt(T* ptr, size_t pitch, size_t x, size_t y)
 {
     return &(BufPtr<T>(ptr,pitch).at(x,y));
 }
@@ -36,37 +36,35 @@ __device__ static inline T* get2DBufferAt(T* ptr, size_t pitch, size_t x, size_t
 * @return
 */
 template <typename T>
-__device__ static inline T* get3DBufferAt(T* ptr, size_t spitch, size_t pitch, size_t x, size_t y, size_t z)
+__device__ inline T* get3DBufferAt(T* ptr, size_t spitch, size_t pitch, size_t x, size_t y, size_t z)
 {
     return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
 template <typename T>
-__device__ static inline const T* get3DBufferAt(const T* ptr, size_t spitch, size_t pitch, size_t x, size_t y, size_t z)
+__device__ inline const T* get3DBufferAt(const T* ptr, size_t spitch, size_t pitch, size_t x, size_t y, size_t z)
 {
     return ((const T*)(((const char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
 template <typename T>
-__device__ static inline T* get3DBufferAt(T* ptr, size_t spitch, size_t pitch, const int3& v)
+__device__ inline T* get3DBufferAt(T* ptr, size_t spitch, size_t pitch, const int3& v)
 {
     return get3DBufferAt(ptr, spitch, pitch, v.x, v.y, v.z);
 }
 
 template <typename T>
-__device__ static inline const T* get3DBufferAt(const T* ptr, size_t spitch, size_t pitch, const int3& v)
+__device__ inline const T* get3DBufferAt(const T* ptr, size_t spitch, size_t pitch, const int3& v)
 {
     return get3DBufferAt(ptr, spitch, pitch, v.x, v.y, v.z);
 }
 
-__device__ static inline
-float multi_fminf(float a, float b, float c)
+__device__ inline float multi_fminf(float a, float b, float c)
 {
   return fminf(fminf(a, b), c);
 }
 
-__device__ static inline
-float multi_fminf(float a, float b, float c, float d)
+__device__ inline float multi_fminf(float a, float b, float c, float d)
 {
   return fminf(fminf(fminf(a, b), c), d);
 }
@@ -74,8 +72,7 @@ float multi_fminf(float a, float b, float c, float d)
 
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 
-__device__ static inline
-float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
+__device__ inline float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
 {
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
     // cudaReadNormalizedFloat
@@ -90,8 +87,7 @@ float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
 
 #else
 
-__device__ static inline
-float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
+__device__ inline float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
 {
     return tex2D<float4>(rc_tex, x, y);
 }

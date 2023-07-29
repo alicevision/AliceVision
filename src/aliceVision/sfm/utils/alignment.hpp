@@ -17,32 +17,32 @@ inline void getCommonViews(const sfmData::SfMData& sfmDataA,
                            const sfmData::SfMData& sfmDataB,
                            std::vector<IndexT>& outIndexes)
 {
-  for(const auto& viewA: sfmDataA.getViews())
-  {
-    if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end())
+    for(const auto& viewA: sfmDataA.getViews())
     {
-      outIndexes.push_back(viewA.first);
+        if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end())
+        {
+            outIndexes.push_back(viewA.first);
+        }
     }
-  }
 }
 
 inline void getCommonViewsWithPoses(const sfmData::SfMData& sfmDataA,
                                     const sfmData::SfMData& sfmDataB,
                                     std::vector<IndexT>& outIndexes)
 {
-  for(const auto& viewA: sfmDataA.getViews())
-  {
-    // check there is a view with the same ID and both of them have pose and 
-    // intrinsics defined
-    if(!sfmDataA.isPoseAndIntrinsicDefined(viewA.second.get()))
-      continue;
-
-    if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end() &&
-       sfmDataB.isPoseAndIntrinsicDefined(viewA.first))
+    for(const auto& viewA: sfmDataA.getViews())
     {
-      outIndexes.push_back(viewA.first);
+        // check there is a view with the same ID and both of them have pose and 
+        // intrinsics defined
+        if(!sfmDataA.isPoseAndIntrinsicDefined(viewA.second.get()))
+            continue;
+
+        if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end() &&
+            sfmDataB.isPoseAndIntrinsicDefined(viewA.first))
+        {
+            outIndexes.push_back(viewA.first);
+        }
     }
-  }
 }
 
 inline void getCommonPoseId(const sfmData::SfMData& sfmDataA,
@@ -153,32 +153,33 @@ inline void applyTransform(sfmData::SfMData& sfmData,
                            const Vec3& t,
                            bool transformControlPoints = false)
 {
-  for(auto& poseIt: sfmData.getPoses())
-  {
-    geometry::Pose3 pose = poseIt.second.getTransform();
-    pose = pose.transformSRt(S, R, t);
-    poseIt.second.setTransform(pose);
-  }
-  for (auto& rigIt : sfmData.getRigs())
-  {
-      for (auto& subPose : rigIt.second.getSubPoses())
-      {
-          subPose.pose.center() *= S;
-      }
-  }
+    for(auto& poseIt: sfmData.getPoses())
+    {
+        geometry::Pose3 pose = poseIt.second.getTransform();
+        pose = pose.transformSRt(S, R, t);
+        poseIt.second.setTransform(pose);
+    }
 
-  for(auto& landmark: sfmData.structure)
-  {
-    landmark.second.X = S * R * landmark.second.X + t;
-  }
-  
-  if(!transformControlPoints)
-    return;
-  
-  for(auto& controlPts: sfmData.control_points)
-  {
-    controlPts.second.X = S * R * controlPts.second.X + t;
-  }
+    for (auto& rigIt : sfmData.getRigs())
+    {
+        for (auto& subPose : rigIt.second.getSubPoses())
+        {
+            subPose.pose.center() *= S;
+        }
+    }
+
+    for(auto& landmark: sfmData.structure)
+    {
+        landmark.second.X = S * R * landmark.second.X + t;
+    }
+
+    if(!transformControlPoints)
+        return;
+
+    for(auto& controlPts: sfmData.control_points)
+    {
+        controlPts.second.X = S * R * controlPts.second.X + t;
+    }
 }
 
 /**
@@ -210,12 +211,20 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
 void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t);
 
 /**
- * @brief Compute the new coordinate system in the given reconstruction so that the mean
- * of the camera centers is the origin of the world coordinate system, a
- * dominant plane P is fitted to the set of the optical centers and the scene
- * aligned so that P roughly define the (x,y) plane, and the scale is set so
- * that the optical centers RMS is "1.0".
- * (Hartley-like normalization, p.180)
+ * @brief Compute the new coordinate system in the given SfM so that the ground is at Y=0
+ *
+ * @param[in] sfmData
+ * @param[out] out_t translation
+ */
+void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3& out_t);
+
+/**
+ * @brief Compute the new coordinate system in the given reconstruction
+ * so that the mean of the camera centers is the origin of the world coordinate system,
+ * a dominant plane P is fitted to the set of the optical centers
+ * and the scene aligned so that P roughly define the (x,y) plane,
+ * and the scale is set so that the optical centers standard deviation is "1.0".
+ * @see https://www.ltu.se/cms_fs/1.51590!/svd-fitting.pdf
  *
  * @param[in] sfmData
  * @param[out] out_S scale

@@ -196,12 +196,6 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Unwrapping done.");
     }
 
-    // save final obj file
-    if(!inputMeshFilepath.empty())
-    {
-        mesh.saveAs(outputFolder, "texturedMesh", outputMeshFileType, texParams.textureFileType, bumpMappingParams);
-    }
-
     if(texParams.subdivisionTargetRatio > 0)
     {
         const bool remapVisibilities = false;
@@ -240,6 +234,12 @@ int aliceVision_main(int argc, char* argv[])
         denseMesh.load(inputRefMeshFilepath);
 
         mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, bumpMappingParams);
+    }
+
+    // save final obj file
+    if(!inputMeshFilepath.empty())
+    {
+        mesh.saveAs(outputFolder, "texturedMesh", outputMeshFileType);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

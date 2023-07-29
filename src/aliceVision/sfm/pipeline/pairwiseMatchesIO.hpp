@@ -40,12 +40,20 @@ inline bool loadPairwiseMatches(
 {
   std::vector<std::string> matchesFolders;
 
+  ALICEVISION_LOG_DEBUG("List of provided match folders:");
+  for (auto it = folders.begin(); it != folders.end(); ++it)
+    ALICEVISION_LOG_DEBUG("\t - " << *it);
+
   if(!useOnlyMatchesFromFolder)
     matchesFolders = sfmData.getMatchesFolders();
   else
     ALICEVISION_LOG_DEBUG("Load only matches from given folder.");
 
   matchesFolders.insert(matchesFolders.end(), folders.begin(), folders.end());
+
+  ALICEVISION_LOG_DEBUG("List of match folders to load:");
+  for (auto it = matchesFolders.begin(); it != matchesFolders.end(); ++it)
+    ALICEVISION_LOG_DEBUG("\t - " << *it);
 
   ALICEVISION_LOG_DEBUG("Loading matches");
   if (!matching::Load(out_pairwiseMatches, sfmData.getViewsKeys(), matchesFolders, descTypes, maxNbMatches, minNbMatches))

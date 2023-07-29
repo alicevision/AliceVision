@@ -1768,7 +1768,7 @@ void DCPProfile::setChromaticityCoordinates(const double x, const double y, doub
             du /= len;
             dv /= len;
 
-            tint = (uu * du + vv * dv) * 3000.f;
+            tint = (uu * du + vv * dv) * (-3000.f);
 
             break;
         }
@@ -2164,23 +2164,60 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const
     return cameraToSrgbLinear;
 }
 
-DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
+DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, double& cct, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Triple asShotNeutralInv = { 1.0 / asShotNeutral[0] , 1.0 / asShotNeutral[1] , 1.0 / asShotNeutral[2] };
+    Triple cctNeutral = { 1.0, 1.0, 1.0 };
 
+    double cctLocal, tintLocal;
+    Matrix invNeutralFromCct = IdentityMatrix;
     double x, y;
-    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutralInv, x, y);
-    double cct, tint;
-    setChromaticityCoordinates(x, y, cct, tint);
-
-    ALICEVISION_LOG_INFO("Estimated illuminant (cct; tint) : (" << cct << "; " << tint << ")");
-
     Matrix neutral = IdentityMatrix;
-    if (sourceIsRaw)
+
+    if (cct <= 0.0)
     {
-        neutral[0][0] = asShotNeutral[0];
-        neutral[1][1] = asShotNeutral[1];
-        neutral[2][2] = asShotNeutral[2];
+        getColorTemperatureAndTintFromNeutral(asShotNeutral, cctLocal, tintLocal);
+        getChromaticityCoordinates(cctLocal, tintLocal, x, y);
+        cct = cctLocal;
+        ALICEVISION_LOG_TRACE("Estimated illuminant (cct; tint): (" << cctLocal << "; " << tintLocal << ")");
+        if (sourceIsRaw)
+        {
+            // set neutral value from asShot metadata
+            neutral[0][0] = asShotNeutral[0];
+            neutral[1][1] = asShotNeutral[1];
+            neutral[2][2] = asShotNeutral[2];
+        }
+    }
+    else
+    {
+        cctLocal = cct;
+        tintLocal = 0.0;
+        getChromaticityCoordinates(cctLocal, tintLocal, x, y);
+        if (!useColorMatrixOnly && info.has_forward_matrix_1)
+        {
+            // compute neutral from cct
+            Triple xyz = getXyzFromChromaticityCoordinates(x, y);
+            Matrix xyzToCamera = getInterpolatedMatrix(cct, "color");
+            cctNeutral = matMult(xyzToCamera, xyz);
+            cctNeutral[0] = cctNeutral[1] / cctNeutral[0];
+            cctNeutral[1] = 1.0;
+            cctNeutral[2] = cctNeutral[1] / cctNeutral[2];
+            ALICEVISION_LOG_TRACE("Estimated neutral from cct: " << cctNeutral);
+            // The forward matrix will be used. Data must be white balanced before applying the matrix.
+            if (sourceIsRaw)
+            {
+                // set neutral value from cct
+                neutral[0][0] = cctNeutral[0];
+                neutral[1][1] = cctNeutral[1];
+                neutral[2][2] = cctNeutral[2];
+            }
+            else
+            {
+                // replace asShot neutral value with cct neutral value
+                neutral[0][0] = cctNeutral[0] / asShotNeutral[0];
+                neutral[1][1] = cctNeutral[1] / asShotNeutral[1];
+                neutral[2][2] = cctNeutral[2] / asShotNeutral[2];
+            }
+        }
     }
 
     Matrix cameraToXyzD50 = IdentityMatrix;
@@ -2190,7 +2227,7 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         Matrix xyzToCamera = IdentityMatrix;
         if (info.has_color_matrix_1 && info.has_color_matrix_2)
         {
-            xyzToCamera = getInterpolatedMatrix(cct, "color");
+            xyzToCamera = getInterpolatedMatrix(cctLocal, "color");
         }
         else if (info.has_color_matrix_1)
         {
@@ -2202,9 +2239,9 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         {
             // White balancing has been applied before demosaicing but color matrix is supposed to work on non white balanced data
             // The white balance operation must be reversed
-            wbInv[0][0] = asShotNeutralInv[0];
-            wbInv[1][1] = asShotNeutralInv[1];
-            wbInv[2][2] = asShotNeutralInv[2];
+            wbInv[0][0] = 1.0 / asShotNeutral[0];
+            wbInv[1][1] = 1.0 / asShotNeutral[1];
+            wbInv[2][2] = 1.0 / asShotNeutral[2];
         }
         const Matrix cameraToXyz = matMult(matInv(xyzToCamera), wbInv);
 
@@ -2216,14 +2253,14 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
     }
     else if ((info.has_forward_matrix_1) && (info.has_forward_matrix_2))
     {
-        cameraToXyzD50 = matMult(getInterpolatedMatrix(cct, "forward"), neutral);
+        cameraToXyzD50 = matMult(getInterpolatedMatrix(cctLocal, "forward"), neutral);
     }
     else if (info.has_forward_matrix_1)
     {
         cameraToXyzD50 = matMult(forward_matrix_1, neutral);
     }
 
-    ALICEVISION_LOG_INFO("cameraToXyzD50Matrix : " << cameraToXyzD50);
+    ALICEVISION_LOG_TRACE("cameraToXyzD50Matrix: " << cameraToXyzD50);
 
     Matrix cameraToACES2065 = matMult(xyzD50ToACES2065Matrix, cameraToXyzD50);
 
@@ -2341,11 +2378,11 @@ void DCPProfile::setMatricesFromStrings(const std::string& type, std::vector<std
     setMatrices(type, v_Mat);
 }
 
-void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
+void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, double& cct, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw, useColorMatrixOnly);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, cct, sourceIsRaw, useColorMatrixOnly);
 
-    ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
+    ALICEVISION_LOG_INFO("cameraToACES2065Matrix: " << cameraToACES2065Matrix);
 
     #pragma omp parallel for
     for (int i = 0; i < image.spec().height; ++i)
@@ -2367,11 +2404,11 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, const Triple& neutral, const
         }
 }
 
-void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, const bool sourceIsRaw, const bool useColorMatrixOnly) const
+void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, double& cct, const bool sourceIsRaw, const bool useColorMatrixOnly) const
 {
-    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw, useColorMatrixOnly);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, cct, sourceIsRaw, useColorMatrixOnly);
 
-    ALICEVISION_LOG_INFO("cameraToACES2065Matrix : " << cameraToACES2065Matrix);
+    ALICEVISION_LOG_INFO("cameraToACES2065Matrix: " << cameraToACES2065Matrix);
 
     #pragma omp parallel for
     for (int i = 0; i < image.Height(); ++i)
@@ -2390,6 +2427,14 @@ void DCPProfile::applyLinear(Image<image::RGBAfColor>& image, const Triple& neut
             }
             image(i, j) = rgbOut;
         }
+}
+
+void DCPProfile::getColorTemperatureAndTintFromNeutral(const Triple& neutral, double& cct, double& tint) const
+{
+    const Triple invNeutral = { 1.0/neutral[0], 1.0/neutral[1], 1.0/neutral[2]};
+    double x, y;
+    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, invNeutral, x, y);
+    setChromaticityCoordinates(x, y, cct, tint);
 }
 
 DCPDatabase::DCPDatabase(const std::string& databaseDirPath)

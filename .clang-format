@@ -16,7 +16,7 @@ SpaceBeforeParens: Never
 SpaceBeforeAssignmentOperators: true
 SpacesInParentheses: false
 AlwaysBreakTemplateDeclarations: true
-Standard: Cpp11
+Standard: c++17
 AccessModifierOffset: -4
 IncludeCategories:
   - Regex:           '^".*"'

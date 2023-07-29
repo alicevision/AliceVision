@@ -194,6 +194,17 @@ alicevision_add_software(aliceVision_sfmTransform
         Boost::program_options
 )
 
+# SfM split reconstructed
+alicevision_add_software(aliceVision_sfmSplitReconstructed
+  SOURCE main_sfmSplitReconstructed.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+)
+
 # SfM color harmonize
 alicevision_add_software(aliceVision_sfmColorHarmonize
   SOURCE main_sfmColorHarmonize.cpp
@@ -269,6 +280,9 @@ alicevision_add_software(aliceVision_split360Images
         aliceVision_numeric
         aliceVision_image
         aliceVision_panorama
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_camera
         ${OPENIMAGEIO_LIBRARIES}
         Boost::program_options
         Boost::filesystem
@@ -330,6 +344,18 @@ if(ALICEVISION_HAVE_OPENCV_CONTRIB)
           Boost::filesystem
           ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
           opencv_mcc
+)
+
+# Apply calibration
+alicevision_add_software(aliceVision_applyCalibration
+  SOURCE main_applyCalibration.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_camera
+        Boost::program_options
 )
 endif()
 

@@ -94,12 +94,14 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
     }
 
     const size_t maxCountSample = 100;
+    std::random_device rd;
+    std::mt19937 gen(rd());
     for (auto & list : mapSampleRefList)
     {
         if (list.second.size() > maxCountSample)
         {
              /*Shuffle and ignore the exceeding samples*/
-            std::random_shuffle(list.second.begin(), list.second.end());
+            std::shuffle(list.second.begin(), list.second.end(), gen);
             list.second.resize(maxCountSample);
         }
 

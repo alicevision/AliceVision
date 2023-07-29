@@ -24,8 +24,9 @@ option(AV_BUILD_COINUTILS "Enable building an embedded CoinUtils" ON)
 option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
 option(AV_BUILD_PCL "Enable building an embedded PointCloud library" ON)
+option(AV_BUILD_USD "Enable building an embedded USD library" OFF)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
-option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" OFF)
+option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" ON)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
 # disable by default for AppleClang
@@ -85,6 +86,7 @@ message(STATUS "AV_BUILD_COINUTILS: ${AV_BUILD_COINUTILS}")
 message(STATUS "AV_BUILD_OSI: ${AV_BUILD_OSI}")
 message(STATUS "AV_BUILD_CLP: ${AV_BUILD_CLP}")
 message(STATUS "AV_BUILD_PCL: ${AV_BUILD_PCL}")
+message(STATUS "AV_BUILD_USD: ${AV_BUILD_USD}")
 message(STATUS "AV_BUILD_DEPENDENCIES_PARALLEL: ${AV_BUILD_DEPENDENCIES_PARALLEL}")
 message(STATUS "")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -121,7 +123,7 @@ include(ExternalProject)
 
 set(BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
 
-set(CMAKE_CORE_BUILD_FLAGS -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS} -DCMAKE_INSTALL_DO_STRIP:BOOL=${CMAKE_INSTALL_DO_STRIP} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+set(CMAKE_CORE_BUILD_FLAGS -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS} -DCMAKE_INSTALL_DO_STRIP:BOOL=${CMAKE_INSTALL_DO_STRIP} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_CXX_STANDARD=17)
 
 if(AV_BUILD_ZLIB)
 set(ZLIB_TARGET zlib)
@@ -256,23 +258,10 @@ ExternalProject_Add(${TBB_TARGET}
 set(TBB_CMAKE_FLAGS -DTBB_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/TBB)
 
 # Eigen requires overaligned buffers for maximum efficiency (e.g. on AVX512 buffers may need to
-# be aligned to 64 bytes). AliceVision currently does not support this. Fortunately this is fixed
-# in C++17. While we can't upgrade to C++17 just yet, some compilers support overaligned
-# allocation feature with a separate flag, so use it if alignment is enabled in Eigen.
+# be aligned to 64 bytes). Fortunately this is fixed in C++17.
 # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
-if(AV_EIGEN_MEMORY_ALIGNMENT)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
-    set(EIGEN_CMAKE_ALIGNMENT_FLAGS "-DCMAKE_CXX_FLAGS:STRING=-faligned-new")
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0)
-    set(EIGEN_CMAKE_ALIGNMENT_FLAGS "-DCMAKE_CXX_FLAGS:STRING=-faligned-new")
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
-    set(EIGEN_CMAKE_ALIGNMENT_FLAGS "-DCMAKE_CXX_FLAGS:STRING=-faligned-new")
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.12)
-    set(EIGEN_CMAKE_ALIGNMENT_FLAGS "-DCMAKE_CXX_FLAGS:STRING=/Zc:alignedNew")
-  else()
-    message(FATAL_ERROR "AV_EIGEN_MEMORY_ALIGNMENT is only supported starting GCC 7.1, Clang 6.0 and MSVC 2017 15.5")
-  endif()
-else()
+# Only change this option to disable it for older compilers or for debug purposes.
+if(NOT AV_EIGEN_MEMORY_ALIGNMENT)
   set(EIGEN_CMAKE_ALIGNMENT_FLAGS
       "-DCMAKE_CXX_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0"
       "-DCMAKE_C_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0")
@@ -327,11 +316,33 @@ ExternalProject_Add(${EXPAT_TARGET}
        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
        )
 
+# Add ONNXRuntime
+set(ONNXRUNTIME_TARGET onnxruntime)
+ExternalProject_Add(${ONNXRUNTIME_TARGET}
+      URL https://github.com/microsoft/onnxruntime/releases/download/v1.12.0/onnxruntime-linux-x64-1.12.0.tgz
+      URL_HASH SHA256=5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5
+      DOWNLOAD_DIR ${BUILD_DIR}/download/onnxruntime
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/onnxruntime
+      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+      PREFIX ${BUILD_DIR}
+      INSTALL_COMMAND sh -c "mkdir -p <INSTALL_DIR>/include <INSTALL_DIR>/lib && cp -r <SOURCE_DIR>/lib/* <INSTALL_DIR>/lib && cp -r <SOURCE_DIR>/include/* <INSTALL_DIR>/include"
+      CONFIGURE_COMMAND ""
+      UPDATE_COMMAND ""
+      BUILD_COMMAND ""
+      BUILD_ALWAYS 0
+      BUILD_IN_SOURCE 0
+)
+
+
 if(AV_BUILD_OPENGV)
 set(OPENGV_TARGET opengv)
 ExternalProject_Add(${OPENGV_TARGET}
-       GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
-       GIT_TAG 91f4b19c73450833a40e463ad3648aae80b3a7f3
+       # Official repository
+       # GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
+       # Our fork, with a fix:
+       GIT_REPOSITORY https://github.com/alicevision/opengv.git
+       # Use a custom commit with a fix to override the cxx standard from cmake command line
+       GIT_TAG 65f7edccf5044d445d305580f79c50c2efcbd438
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -845,6 +856,8 @@ ExternalProject_Add(${CCTAG_TARGET}
           -DCCTAG_WITH_CUDA:BOOL=${AV_USE_CUDA}
           -DCCTAG_BUILD_TESTS=OFF
           -DCCTAG_BUILD_APPS=OFF
+          -DCCTAG_EIGEN_MEMORY_ALIGNMENT=ON
+          -DCCTAG_CXX_STANDARD=17
           -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
           <SOURCE_DIR>
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
@@ -881,7 +894,7 @@ if(AV_BUILD_POPSIFT)
 set(POPSIFT_TARGET popsift)
 ExternalProject_Add(${POPSIFT_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/popsift
-      GIT_TAG 4c22d41579c17d7326938929c00c54cfa01a4592
+      GIT_TAG 4b4b2478d5f0cdb6c4215a031572e951c0c2502e
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -1047,6 +1060,40 @@ if(AV_BUILD_PCL)
 
 endif()
 
+if(AV_BUILD_USD)
+    set(USD_TARGET pxr)
+    ExternalProject_Add(${USD_TARGET}
+        GIT_REPOSITORY https://github.com/PixarAnimationStudios/USD.git
+        GIT_TAG v23.05
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ""
+        INSTALL_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/usd
+        BINARY_DIR ${BUILD_DIR}/usd_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        BUILD_COMMAND python ${CMAKE_CURRENT_BINARY_DIR}/usd/build_scripts/build_usd.py
+            --build-shared
+            --no-examples
+            --no-tools
+            --no-ptex
+            --no-prman
+            --no-openimageio
+            --no-opencolorio
+            --no-alembic
+            --no-draco
+            --no-materialx
+            --no-tutorials
+            --no-tests
+            --no-docs
+            --no-python
+            <INSTALL_DIR>
+    )
+    set(USD_CMAKE_FLAGS -Dpxr_DIR:PATH=${CMAKE_INSTALL_PREFIX})
+endif()
+
 set(AV_DEPS
   ${ZLIB_TARGET}
   ${ASSIMP_TARGET}
@@ -1054,6 +1101,7 @@ set(AV_DEPS
   ${CUDA_TARGET}
   ${TBB_TARGET}
   ${EIGEN_TARGET}
+  ${ONNXRUNTIME_TARGET}
   ${OPENGV_TARGET}
   ${OPENCV_TARGET}
   ${LAPACK_TARGET}
@@ -1074,6 +1122,7 @@ set(AV_DEPS
   ${COINUTILS_TARGET}
   ${OSI_TARGET}
   ${CLP_TARGET}
+  ${USD_TARGET}
 )
 
 if(AV_BUILD_ALICEVISION)
@@ -1118,6 +1167,7 @@ ExternalProject_Add(aliceVision
             ${LZ4_CMAKE_FLAGS}
             ${FLANN_CMAKE_FLAGS}
             ${PCL_CMAKE_FLAGS}
+            ${USD_CMAKE_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
        DEPENDS ${AV_DEPS}
        )

@@ -211,6 +211,73 @@ std::istream& operator>>(std::istream& in, EStorageDataType& dataType)
     return in;
 }
 
+std::string EImageExrCompression_informations()
+{
+    return EImageExrCompression_enumToString(EImageExrCompression::None) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::Auto) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::RLE) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::ZIP) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::ZIPS) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::PIZ) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::PXR24) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::B44) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::B44A) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::DWAA) + ", " +
+        EImageExrCompression_enumToString(EImageExrCompression::DWAB);
+}
+
+EImageExrCompression EImageExrCompression_stringToEnum(const std::string& exrCompression)
+{
+    std::string type = exrCompression;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+
+    if (type == "none")  return EImageExrCompression::None;
+    if (type == "auto")  return EImageExrCompression::Auto;
+    if (type == "rle")   return EImageExrCompression::RLE;
+    if (type == "zip")   return EImageExrCompression::ZIP;
+    if (type == "zips")  return EImageExrCompression::ZIPS;
+    if (type == "piz")   return EImageExrCompression::PIZ;
+    if (type == "pxr24") return EImageExrCompression::PXR24;
+    if (type == "b44")   return EImageExrCompression::B44;
+    if (type == "b44a")  return EImageExrCompression::B44A;
+    if (type == "dwaa")  return EImageExrCompression::DWAA;
+    if (type == "dwab")  return EImageExrCompression::DWAB;
+
+    throw std::out_of_range("Invalid EImageExrCompression: " + exrCompression);
+}
+
+std::string EImageExrCompression_enumToString(const EImageExrCompression exrCompression)
+{
+    switch (exrCompression)
+    {
+    case EImageExrCompression::None:  return "none";
+    case EImageExrCompression::Auto:  return "auto";
+    case EImageExrCompression::RLE:   return "rle";
+    case EImageExrCompression::ZIP:   return "zip";
+    case EImageExrCompression::ZIPS:  return "zips";
+    case EImageExrCompression::PIZ:   return "piz";
+    case EImageExrCompression::PXR24: return "pxr24";
+    case EImageExrCompression::B44:   return "b44";
+    case EImageExrCompression::B44A:  return "b44a";
+    case EImageExrCompression::DWAA:  return "dwaa";
+    case EImageExrCompression::DWAB:  return "dwab";
+    }
+    throw std::out_of_range("Invalid EImageExrCompression enum");
+}
+
+std::ostream& operator<<(std::ostream& os, EImageExrCompression exrCompression)
+{
+    return os << EImageExrCompression_enumToString(exrCompression);
+}
+
+std::istream& operator>>(std::istream& in, EImageExrCompression& exrCompression)
+{
+    std::string token;
+    in >> token;
+    exrCompression = EImageExrCompression_stringToEnum(token);
+    return in;
+}
+
 std::string EImageQuality_informations()
 {
     return "Image quality :\n"
@@ -352,11 +419,19 @@ oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int&
 
 oiio::ImageSpec readImageSpec(const std::string& path)
 {
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
-  oiio::ImageSpec spec = in->spec();
+  oiio::ImageSpec configSpec;
+#if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12) // OIIO_VERSION >= 2.4.12
+    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
+    // so we can disable the auto orientation and keep the metadata.
+    configSpec.attribute("raw:user_flip", 0); // disable auto rotation of the image buffer but keep exif metadata orientation valid  
+#endif 
+
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
 
   if(!in)
     throw std::runtime_error("Can't find/open image file '" + path + "'.");
+
+  oiio::ImageSpec spec = in->spec();
 
   in->close();
 
@@ -483,6 +558,13 @@ void readImage(const std::string& path,
 
         // libRAW configuration
         // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
+        // and https://www.libraw.org/docs/API-datastruct-eng.html#libraw_raw_unpack_params_t for raw:balance_clamped and raw:adjust_maximum_thr behavior
+
+#if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12) // OIIO_VERSION >= 2.4.12
+	    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
+	    // so we can disable the auto orientation and keep the metadata.
+        configSpec.attribute("raw:user_flip", 0); // disable auto rotation of the image buffer but keep exif metadata orientation valid 
+#endif
 
         if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::None)
         {
@@ -499,21 +581,33 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawNoWhiteBalancing)
         {
-            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright); // automatic exposure correction
+            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment); // manual exposure adjustment
             configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
             configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+            configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing)
         {
-            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright); // automatic exposure correction
+            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment); // manual exposure adjustment
             configSpec.attribute("raw:use_camera_wb", 1); // white balance correction
             configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+            configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
         {
@@ -529,12 +623,15 @@ void readImage(const std::string& path,
                     user_mul[i] = 1.0;
                 }
             }
-            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright); // automatic exposure correction
+            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment); // manual exposure adjustment
             configSpec.attribute("raw:use_camera_wb", 0); // No White balance correction => user_mul is used
             configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul);
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata)
@@ -557,6 +654,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
+            configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
+            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else
@@ -578,13 +677,30 @@ void readImage(const std::string& path,
     if (inBuf.spec().nchannels == 2)
         ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
+    oiio::ParamValueList imgMetadata = readImageMetadata(path);
+
+    if (isRawImage)
+    {
+        // Check orientation metadata. If image is mirrored, mirror it back and update orientation metadata
+        int orientation = imgMetadata.get_int("orientation", -1);
+
+        if (orientation == 2 || orientation == 4 || orientation == 5 || orientation == 7)
+        {
+            // horizontal mirroring
+            oiio::ImageBuf inBufMirrored = oiio::ImageBufAlgo::flop(inBuf);
+            inBuf = inBufMirrored;
+
+            orientation += (orientation == 2 || orientation == 4) ? -1 : 1;
+        }
+    }
+
     // Apply DCP profile
     if (!imageReadOptions.colorProfileFileName.empty() &&
         imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
     {
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
-        oiio::ParamValueList imgMetadata = readImageMetadata(path);
+        //oiio::ParamValueList imgMetadata = readImageMetadata(path);
         std::string cam_mul = "";
         if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
         {
@@ -610,7 +726,9 @@ void readImage(const std::string& path,
 
         ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = " << neutral);
 
-        dcpProfile.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
+        double cct = imageReadOptions.correlatedColorTemperature;
+
+        dcpProfile.applyLinear(inBuf, neutral, cct, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
     }
 
     // color conversion
@@ -623,6 +741,14 @@ void readImage(const std::string& path,
                                         inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB")));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
+
+    // Manage oiio GammaX.Y color space assuming that the gamma correction has been applied on an image with sRGB primaries.
+    if (fromColorSpaceName.substr(0, 5) == "Gamma")
+    {
+        // Reverse gamma correction
+        oiio::ImageBufAlgo::pow(inBuf, inBuf, std::stof(fromColorSpaceName.substr(5)));
+        fromColorSpaceName = "linear";
+    }
 
     DCPProfile dcpProf;
     if ((fromColorSpaceName == "no_conversion") && (imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION))
@@ -656,7 +782,9 @@ void readImage(const std::string& path,
             neutral[i] = v_mult[i] / v_mult[1];
         }
 
-        dcpProf.applyLinear(inBuf, neutral, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
+        double cct = imageReadOptions.correlatedColorTemperature;
+
+        dcpProf.applyLinear(inBuf, neutral, cct, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
         fromColorSpaceName = "aces2065-1";
     }
 
@@ -832,7 +960,42 @@ void writeImage(const std::string& path,
     imageSpec.extra_attribs = metadata; // add custom metadata
 
     imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
-    imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
+
+    std::string compressionMethod = "none";
+    if (isEXR)
+    {
+        const std::string methodName = EImageExrCompression_enumToString(options.getExrCompressionMethod());
+        const int compressionLevel = options.getExrCompressionLevel();
+        std::string suffix = "";
+        switch (options.getExrCompressionMethod())
+        {
+            case EImageExrCompression::Auto:
+                compressionMethod = "zips";
+                break;
+            case EImageExrCompression::DWAA:
+            case EImageExrCompression::DWAB:
+                if (compressionLevel > 0) suffix = ":" + std::to_string(compressionLevel);
+                compressionMethod = methodName + suffix;
+                break;
+            case EImageExrCompression::ZIP:
+            case EImageExrCompression::ZIPS:
+                if (compressionLevel > 0) suffix = ":" + std::to_string(std::min(compressionLevel, 9));
+                compressionMethod = methodName + suffix;
+                break;
+            default:
+                compressionMethod = methodName;
+                break;
+        }
+    }
+    else if (isJPG)
+    {
+        if (options.getJpegCompress())
+        {
+            compressionMethod = "jpeg:" + std::to_string(std::clamp(options.getJpegQuality(), 0, 100));
+        }
+    }
+
+    imageSpec.attribute("compression", compressionMethod);
 
     if(displayRoi.defined() && isEXR)
     {

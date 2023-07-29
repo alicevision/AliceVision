@@ -89,10 +89,12 @@ int aliceVision_main(int argc, char** argv)
                                      "Filter Matches before solving the Panorama.")(
         "refine", po::value<bool>(&refine)->default_value(refine), "Refine cameras with a Bundle Adjustment")(
         "lockAllIntrinsics", po::value<bool>(&params.lockAllIntrinsics)->default_value(params.lockAllIntrinsics),
-        "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")(
-        "maxAngleToPrior", po::value<double>(&params.maxAngleToPrior)->default_value(params.maxAngleToPrior),
-        "Maximal angle allowed regarding the input prior.")(
-        "maxAngularError", po::value<double>(&params.maxAngularError)->default_value(params.maxAngularError),
+        "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+        ("maxAngleToPrior", po::value<double>(&params.maxAngleToPrior)->default_value(params.maxAngleToPrior),
+        "Maximal angle allowed regarding the input prior.")
+        ("maxAngleToPriorRefined", po::value<double>(&params.maxAngleToPriorRefined)->default_value(params.maxAngleToPriorRefined),
+        "Maximal angle allowed regarding the input prior after refinement.")
+        ("maxAngularError", po::value<double>(&params.maxAngularError)->default_value(params.maxAngularError),
         "Maximal angular error in global rotation averaging.")(
         "intermediateRefineWithFocal",
         po::value<bool>(&params.intermediateRefineWithFocal)->default_value(params.intermediateRefineWithFocal),

@@ -22,6 +22,7 @@
 #include <list>
 #include <mutex>
 #include <thread>
+#include <algorithm>
 
 
 namespace aliceVision {
@@ -218,11 +219,23 @@ public:
      * @note This method is thread-safe.
      * @param[in] filename the image's filename on disk
      * @param[in] downscaleLevel the downscale level
+     * @param[in] cachedOnly if true, only return images that are already in the cache
+     * @param[in] lazyCleaning if true, will try lazy cleaning heuristic before LRU cleaning
      * @return a shared pointer to the cached image
      * @throws std::runtime_error if the image does not fit in the maximal size of the cache
      */
     template<typename TPix>
-    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1);
+    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1, bool cachedOnly = false, bool lazyCleaning = true);
+
+    /**
+     * @brief Check if an image at a given downscale level is currently in the cache.
+     * @note This method is thread-safe.
+     * @param[in] filename the image's filename on disk
+     * @param[in] downscaleLevel the downscale level
+     * @return whether or not the cache currently contains the image
+     */
+    template<typename TPix>
+    bool contains(const std::string& filename, int downscaleLevel = 1) const;
 
     /**
      * @return information on the current cache state and usage
@@ -268,7 +281,7 @@ private:
 // their definition must be given in this header file
 
 template<typename TPix>
-std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel)
+std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel, bool cachedOnly, bool lazyCleaning)
 {
     if (downscaleLevel < 1)
     {
@@ -301,6 +314,10 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
             ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
             return _imagePtrs.at(keyReq).get<TPix>();
         }
+        else if (cachedOnly)
+        {
+            return nullptr;
+        }
     }
 
     // retrieve image size
@@ -318,10 +335,11 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
     }
 
     // retrieve missing capacity
-    unsigned long long int missingCapacity = memSize + _info.contentSize - _info.capacity;
+    long long int missingCapacity = memSize + _info.contentSize - _info.capacity;
 
     // find unused image with size bigger than missing capacity
     // remove it and add image to cache
+    if (lazyCleaning)
     {
         auto it = _keys.begin();
         while (it != _keys.end())
@@ -364,6 +382,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
             _keys.erase(it);
 
             _info.nbRemoveUnused++;
+
+            missingCapacity = memSize + _info.contentSize - _info.capacity;
         }
         else 
         {
@@ -411,6 +431,27 @@ void ImageCache::load(const CacheKey& key)
     // update memory usage
     _info.nbImages++;
     _info.contentSize += value.memorySize();
+}
+
+template<typename TPix>
+bool ImageCache::contains(const std::string& filename, int downscaleLevel) const
+{
+    if (downscaleLevel < 1)
+    {
+        ALICEVISION_THROW_ERROR("[image] ImageCache: cannot contain image with downscale level < 1, "
+                                << "request was made with downscale level " << downscaleLevel);
+    }
+
+    const std::lock_guard<std::mutex> lock(_mutex);
+
+    using TInfo = ColorTypeInfo<TPix>;
+
+    auto lastWriteTime = boost::filesystem::last_write_time(filename);
+    CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, downscaleLevel, lastWriteTime);
+
+    auto it = std::find(_keys.begin(), _keys.end(), keyReq);
+    
+    return it != _keys.end();
 }
 
 } // namespace image

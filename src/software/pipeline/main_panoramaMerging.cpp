@@ -71,6 +71,10 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    HardwareContext hwc = cmdline.getHardwareContext();
+    oiio::attribute("threads", static_cast<int>(hwc.getMaxThreads()));
+    oiio::attribute("exr_threads", static_cast<int>(hwc.getMaxThreads()));
+
     // load input scene
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))

@@ -4,6 +4,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+//
+// IMPORTANT: THESE TESTS ARE NOT VALID ANYMORE
+//
+// TODO: update tests once the 3DERadial4 and 3DEClassicLD undistortion classes are implemented
+//
+
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/calibration/distortionEstimation.hpp>
 
@@ -12,6 +18,8 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
+
+#include <boost/math/constants/constants.hpp>
 
 using namespace aliceVision;
 
@@ -25,9 +33,12 @@ using namespace aliceVision;
 //-----------------
 BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_classicld)
 {
-  const camera::Pinhole3DEClassicLD cam(1000, 1000, 1000, 1000, 0, 0, -0.34768564335290314, 1.5809150001711287, -0.17204522667665839, -0.15541950225726325, 1.1240093674337683);
+  const camera::Pinhole3DEClassicLD cam(1000, 1000, 1000, 1000, 0, 0,
+                                        -0.34768564335290314, 1.5809150001711287,
+                                        -0.17204522667665839, -0.15541950225726325,
+                                        1.1240093674337683);
 
-  //Create points
+  // Create points
   std::vector<calibration::PointPair> pts;
   for (int i = 0; i < 1000; i+=10)
   {
@@ -46,9 +57,13 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_classicld)
   }
 
 
-  //Calibrate
+  // Calibrate
   calibration::Statistics st;
-  std::shared_ptr<camera::Pinhole> estimatedCam = std::make_shared<camera::Pinhole3DEClassicLD>(1000, 1000, 1000, 1000, 0, 0, 0, M_PI_2, 0, 0, 0);
+  std::shared_ptr<camera::Pinhole> estimatedCam =
+    std::make_shared<camera::Pinhole3DEClassicLD>(1000, 1000, 1000, 1000, 0, 0,
+                                                  0, boost::math::constants::pi<double>() * .5,
+                                                  0, 0,
+                                                  0);
 
   std::vector<bool> lockedDistortions = {false, false, false, false, false};
   BOOST_CHECK(calibration::estimate(estimatedCam, st, pts, true, false, lockedDistortions));
@@ -75,9 +90,12 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_classicld)
 //-----------------
 BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_radial4)
 {
-  const camera::Pinhole3DERadial4 cam(1000, 1000, 1000, 1000, 0, 0, -0.4839495643487452, 1.0301284234642258, 0.014928332802185664, -0.0007797104872758904, -0.038994206396183909, 8.0474385001183646e-05);
+  const camera::Pinhole3DERadial4 cam(1000, 1000, 1000, 1000, 0, 0,
+                                      -0.4839495643487452, 1.0301284234642258,
+                                      0.014928332802185664, -0.0007797104872758904,
+                                      -0.038994206396183909, 8.0474385001183646e-05);
 
-  //Create points
+  // Create points
   std::vector<calibration::PointPair> pts;
   for (int i = 0; i < 1000; i+=10)
   {
@@ -96,9 +114,10 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_radial4)
   }
 
 
-  //Calibrate
+  // Calibrate
   calibration::Statistics st;
-  std::shared_ptr<camera::Pinhole> estimatedCam = std::make_shared<camera::Pinhole3DERadial4>(1000, 1000, 1000, 1000, 0, 0, 0, 0, 0, 0, 0);
+  std::shared_ptr<camera::Pinhole> estimatedCam =
+    std::make_shared<camera::Pinhole3DERadial4>(1000, 1000, 1000, 1000, 0, 0, 0, 0, 0, 0, 0);
 
   std::vector<bool> lockedDistortions = {false, false, false, false, false, false};
   BOOST_CHECK(calibration::estimate(estimatedCam, st, pts, true, false, lockedDistortions));
@@ -127,15 +146,18 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_radial4)
 //-----------------
 BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_classicld)
 {
-  const camera::Pinhole3DEClassicLD cam(1000, 1000, 1000, 1000, 0, 0, -0.34768564335290314, 1.5809150001711287, -0.17204522667665839, -0.15541950225726325, 1.1240093674337683);
+  const camera::Pinhole3DEClassicLD cam(1000, 1000, 1000, 1000, 0, 0,
+                                        -0.34768564335290314, 1.5809150001711287,
+                                        -0.17204522667665839, -0.15541950225726325,
+                                        1.1240093674337683);
 
-  //Create points
+  // Create points
   std::vector<calibration::PointPair> pts;
   std::vector<calibration::LineWithPoints> lines;
   for (int i = 0; i < 1000; i+=10)
   {
     calibration::LineWithPoints line;
-    line.angle = M_PI_4;
+    line.angle = boost::math::constants::pi<double>() * .25;
     line.dist = 0;
     line.horizontal = true;
 
@@ -160,7 +182,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_classicld)
   for (int j = 0; j < 1000; j+=10)
   {
     calibration::LineWithPoints line;
-    line.angle = M_PI_4;
+    line.angle = boost::math::constants::pi<double>() * .25;
     line.dist = 0;
     line.horizontal = false;
 
@@ -178,9 +200,13 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_classicld)
   }
 
 
-  //Calibrate
+  // Calibrate
   calibration::Statistics st;
-  std::shared_ptr<camera::Pinhole> estimatedCam = std::make_shared<camera::Pinhole3DEClassicLD>(1000, 1000, 1000, 1000, 0, 0, 0, M_PI_2, 0, 0, 0);
+  std::shared_ptr<camera::Pinhole> estimatedCam =
+    std::make_shared<camera::Pinhole3DEClassicLD>(1000, 1000, 1000, 1000, 0, 0,
+                                                  0, boost::math::constants::pi<double>() * .5,
+                                                  0, 0,
+                                                  0);
 
   {
     std::vector<bool> lockedDistortions = {true, true, true, true, true};
@@ -218,15 +244,18 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_classicld)
 //-----------------
 BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_radial4)
 {
-  const camera::Pinhole3DERadial4 cam(1000, 1000, 1000, 1000, 0, 0, -0.4839495643487452, 1.0301284234642258, 0.014928332802185664, -0.0007797104872758904, -0.038994206396183909, 8.0474385001183646e-05);
+  const camera::Pinhole3DERadial4 cam(1000, 1000, 1000, 1000, 0, 0,
+                                      -0.4839495643487452, 1.0301284234642258,
+                                      0.014928332802185664, -0.0007797104872758904,
+                                      -0.038994206396183909, 8.0474385001183646e-05);
 
-  //Create points
+  // Create points
   std::vector<calibration::PointPair> pts;
   std::vector<calibration::LineWithPoints> lines;
   for (int i = 0; i < 1000; i+=10)
   {
     calibration::LineWithPoints line;
-    line.angle = M_PI_4;
+    line.angle = boost::math::constants::pi<double>() * .25;
     line.dist = 0;
     line.horizontal = true;
 
@@ -251,7 +280,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_radial4)
   for (int j = 0; j < 1000; j+=10)
   {
     calibration::LineWithPoints line;
-    line.angle = M_PI_4;
+    line.angle = boost::math::constants::pi<double>() * .25;
     line.dist = 0;
     line.horizontal = false;
 
@@ -269,9 +298,10 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_radial4)
   }
 
 
-  //Calibrate
+  // Calibrate
   calibration::Statistics st;
-  std::shared_ptr<camera::Pinhole> estimatedCam = std::make_shared<camera::Pinhole3DERadial4>(1000, 1000, 1000, 1000, 0, 0, 0, 0, 0, 0, 0, 0);
+  std::shared_ptr<camera::Pinhole> estimatedCam =
+    std::make_shared<camera::Pinhole3DERadial4>(1000, 1000, 1000, 1000, 0, 0, 0, 0, 0, 0, 0, 0);
 
   {
     std::vector<bool> lockedDistortions = {true, true, true, true, true, true};

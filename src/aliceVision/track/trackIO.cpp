@@ -23,8 +23,8 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, alic
         );
     }
     jv = {
-    	{"descType", EImageDescriberType_enumToString(input.descType)},
-        {"featPerView", featPerView}
+    	{"descType", EImageDescriberType_enumToString(input.descType)} ,
+        {"featPerView", boost::json::value_from(input.featPerView)}
     };
 }
 

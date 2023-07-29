@@ -49,7 +49,7 @@ namespace fs = boost::filesystem;
 
 /**
  * @brief Recursively list all files from a folder with a specific extension
- * @param[in] folderOrFile A file or foder path
+ * @param[in] folderOrFile A file or folder path
  * @param[in] extensions An extensions filter
  * @param[out] outFiles A list of output image paths
  * @return true if folderOrFile have been load successfully
@@ -141,6 +141,8 @@ bool rigHasUniqueFrameIds(const sfmData::SfMData & sfmData)
     std::set<std::tuple<IndexT, IndexT, IndexT>> unique_ids;
     for (auto vitem : sfmData.getViews())
     {
+        if (!(vitem.second->isPartOfRig())) continue;
+
         std::tuple<IndexT, IndexT, IndexT> tuple = { vitem.second->getRigId(), vitem.second->getSubPoseId(), vitem.second->getFrameId() };
 
         if (unique_ids.find(tuple) != unique_ids.end())
@@ -924,24 +926,44 @@ int aliceVision_main(int argc, char **argv)
   {
       for(const auto& poseGroup : poseGroups)
       {
-          // Sort views of the poseGroup per timestamps
-          std::vector<std::pair<int64_t, IndexT>> sortedViews;
+          bool hasAmbiant = false;
+
+          // Photometric stereo : ambiant viewId used for all pictures
           for(const IndexT vId : poseGroup.second)
           {
-              int64_t t = sfmData.getView(vId).getMetadataDateTimestamp();
-              sortedViews.push_back(std::make_pair(t, vId));
+              const fs::path imagePath = fs::path(sfmData.getView(vId).getImagePath());
+              if(boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+              {
+                    hasAmbiant = true;
+                    for(const auto it : poseGroup.second)
+                    {
+                        // Update poseId with ambiant view id
+                        sfmData.getView(it).setPoseId(vId);
+                    }
+                    break;
+              }
           }
-          std::sort(sortedViews.begin(), sortedViews.end());
-
-          // Get the view which was taken at the middle of the sequence
-          int median = sortedViews.size() / 2;
-          IndexT middleViewId = sortedViews[median].second;
-
-          for(const auto it : sortedViews)
+          if(!hasAmbiant)
           {
-              const IndexT vId = it.second;
-              // Update poseId with middle view id
-              sfmData.getView(vId).setPoseId(middleViewId);
+              // Sort views of the poseGroup per timestamps
+              std::vector<std::pair<int64_t, IndexT>> sortedViews;
+              for(const IndexT vId : poseGroup.second)
+              {
+                  int64_t t = sfmData.getView(vId).getMetadataDateTimestamp();
+                  sortedViews.push_back(std::make_pair(t, vId));
+              }
+              std::sort(sortedViews.begin(), sortedViews.end());
+
+              // Get the view which was taken at the middle of the sequence
+              int median = sortedViews.size() / 2;
+              IndexT middleViewId = sortedViews[median].second;
+
+              for(const auto it : sortedViews)
+              {
+                  const IndexT vId = it.second;
+                  // Update poseId with middle view id
+                  sfmData.getView(vId).setPoseId(middleViewId);
+              }
           }
       }
   }

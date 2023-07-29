@@ -11,13 +11,12 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/image/io.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/camera/camera.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -66,10 +65,16 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
           if(readFromDepthMaps)
           {
-              // use output of DepthMapFilter if scale==0
-              // use output of DepthMap if scale==1
-              const int scale = (depthMapsFolder.empty() ? 0 : 1);
-              path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMap, scale);
+              if(depthMapsFolder.empty())
+              {
+                  // use output of depth map filtering
+                  path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMapFiltered);
+              }
+              else
+              {
+                  // use output of depth map estimation
+                  path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMap);
+              }
           }
           else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
           {

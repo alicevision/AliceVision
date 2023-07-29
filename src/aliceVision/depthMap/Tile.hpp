@@ -15,22 +15,23 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Depth Map Tile Structure
+ * @struct Depth Map Tile Structure
+ * @brief Support class to keep tile information.
  */
 struct Tile
 {
-  int id;                       //< tile index
-  int nbTiles;                  //< number of tiles per image
-  int rc;                       //< related R camera index
-  std::vector<int> sgmTCams;    //< SGM T camera index list
-  std::vector<int> refineTCams; //< Refine T camera index list
-  ROI roi;                      //< 2d region of interest of the R image
+    int id;                       //< tile index
+    int nbTiles;                  //< number of tiles per image
+    int rc;                       //< related R camera index
+    std::vector<int> sgmTCams;    //< SGM T camera index list
+    std::vector<int> refineTCams; //< Refine T camera index list
+    ROI roi;                      //< 2d region of interest of the R image
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Tile& tile)
 {
-  os << "(rc: " << tile.rc << ", tile: " << (tile.id + 1) << "/" << tile.nbTiles << ") ";
-  return os;
+    os << "(rc: " << tile.rc << ", tile: " << (tile.id + 1) << "/" << tile.nbTiles << ") ";
+    return os;
 }
 
 } // namespace depthMap

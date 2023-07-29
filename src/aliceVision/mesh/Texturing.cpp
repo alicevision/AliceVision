@@ -901,7 +901,10 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
         std::swap(resizedColorBuffer, atlasTexture.img);
     }
 
-    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + image::EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+    material.diffuseType = textureFileType;
+    const std::string textureName = material.textureName(Material::TextureType::DIFFUSE, static_cast<int>(atlasID));
+    material.addTexture(Material::TextureType::DIFFUSE, textureName);
+
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
@@ -916,6 +919,7 @@ void Texturing::clear()
 {
     delete mesh;
     mesh = nullptr;
+    material.clear();
 }
 
 void Texturing::loadWithAtlas(const std::string& filepath, bool flipNormals)
@@ -934,6 +938,26 @@ void Texturing::loadWithAtlas(const std::string& filepath, bool flipNormals)
     // if no material, create only one atlas with all triangles
     _atlases.resize(std::max(1, mesh->nmtls));
     for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); ++triangleID)
+    {
+        unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
+        _atlases[atlasID].push_back(triangleID);
+    }
+}
+
+void Texturing::loadWithMaterial(const std::string& filepath, bool flipNormals)
+{
+    clear();
+
+    mesh = new Mesh();
+    mesh->load(filepath, true, &material);
+
+    if (flipNormals)
+    {
+        mesh->invertTriangleOrientations();
+    }
+
+    _atlases.resize(std::max(1, mesh->nmtls));
+    for (int triangleID = 0; triangleID < mesh->trisMtlIds().size(); ++triangleID)
     {
         unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
         _atlases[atlasID].push_back(triangleID);
@@ -1032,10 +1056,7 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
     }
 }
 
-void Texturing::saveAs(const bfs::path& dir, const std::string& basename, 
-    EFileType meshFileType, 
-    image::EImageFileType textureFileType,
-    const BumpMappingParams& bumpMappingParams)
+void Texturing::saveAs(const bfs::path& dir, const std::string& basename, EFileType meshFileType)
 {
     const std::string meshFileTypeStr = EFileType_enumToString(meshFileType);
     const std::string filepath = (dir / (basename + "." + meshFileTypeStr)).string();
@@ -1058,51 +1079,56 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
     scene.mMaterials = new aiMaterial*[_atlases.size()];
     scene.mNumMaterials = _atlases.size();
 
-    // write faces per texture atlas
-    for(std::size_t atlasId = 0; atlasId < _atlases.size(); ++atlasId)
-    {      
-        // starts at '1001' for UDIM compatibility
-        const std::size_t textureId = 1001 + atlasId;
-        const std::string texturePath = "texture_" + std::to_string(textureId) + "." + image::EImageFileType_enumToString(textureFileType);
+    // define shared material properties
+    const aiVector3D valcolor = {material.diffuse.r, material.diffuse.g, material.diffuse.b};
+    const aiVector3D valambient = {material.ambient.r, material.ambient.g, material.ambient.b};
+    const aiVector3D valspecular = {material.specular.r, material.specular.g, material.specular.b};
+    const double shininess = material.shininess;
 
+    // get any previously generated textures
+    const StaticVector<std::string>& diffuseTextures = material.getTextures(Material::TextureType::DIFFUSE);
+    const StaticVector<std::string>& normalTextures = material.getTextures(Material::TextureType::NORMAL);
+    const StaticVector<std::string>& bumpTextures = material.getTextures(Material::TextureType::BUMP);
+    const StaticVector<std::string>& displacementTextures = material.getTextures(Material::TextureType::DISPLACEMENT);
+
+    // write faces per texture atlas
+    for(int atlasId = 0; atlasId < _atlases.size(); ++atlasId)
+    {
         //Set material for this atlas
-        const aiVector3D valcolor(0.6, 0.6, 0.6);
-        const aiVector3D valspecular(0.0, 0.0, 0.0);
-        const double shininess = 0.0;
-        const aiString texFile(texturePath);
-        const aiString texName(std::to_string(textureId));
+        const aiString texName(Material::textureId(atlasId));
 
         scene.mMaterials[atlasId] = new aiMaterial;
         scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_AMBIENT);
-        scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_DIFFUSE);
+        scene.mMaterials[atlasId]->AddProperty(&valambient, 1, AI_MATKEY_COLOR_DIFFUSE);
         scene.mMaterials[atlasId]->AddProperty(&valspecular, 1, AI_MATKEY_COLOR_SPECULAR);
         scene.mMaterials[atlasId]->AddProperty(&shininess, 1, AI_MATKEY_SHININESS);
-        scene.mMaterials[atlasId]->AddProperty(&texFile, AI_MATKEY_TEXTURE_DIFFUSE(0));
         scene.mMaterials[atlasId]->AddProperty(&texName, AI_MATKEY_NAME);
 
         // Color Mapping
-        if(textureFileType != image::EImageFileType::NONE)
+        if(diffuseTextures.size() == _atlases.size())
         {
-            const aiString texFile(texturePath);
+            const aiString texFile(diffuseTextures[atlasId]);
             scene.mMaterials[atlasId]->AddProperty(&texFile, AI_MATKEY_TEXTURE_DIFFUSE(0));
         }
 
         // Displacement Mapping
-        if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
+        if(displacementTextures.size() == _atlases.size())
         {
-            const aiString texFileHeightMap("Displacement_" + std::to_string(textureId) + "." +EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType));
+            const aiString texFileHeightMap(displacementTextures[atlasId]);
             scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_DISPLACEMENT(0));
         }
         
-        // Bump Mapping
-        if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
+        // Normal Mapping
+        if(normalTextures.size() == _atlases.size())
         {
-            const aiString texFileNormalMap("Normal_" + std::to_string(textureId) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType));
+            const aiString texFileNormalMap(normalTextures[atlasId]);
             scene.mMaterials[atlasId]->AddProperty(&texFileNormalMap, AI_MATKEY_TEXTURE_NORMALS(0));
         }
-        else if(bumpMappingParams.bumpType == EBumpMappingType::Height && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
+
+        // Bump Mapping
+        if(bumpTextures.size() == _atlases.size())
         {
-            const aiString texFileHeightMap("Bump_" + std::to_string(textureId) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType));
+            const aiString texFileHeightMap(bumpTextures[atlasId]);
             scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_HEIGHT(0));
         }
 
@@ -1462,7 +1488,10 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                                             normalMap(i).g() * 0.5 + 0.5,
                                             normalMap(i).b() * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
 
-        const std::string name = "Normal_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
+        material.normalType = bumpMappingParams.bumpMappingFileType;
+        const std::string name = material.textureName(Material::TextureType::NORMAL, static_cast<int>(atlasID));
+        material.addTexture(Material::TextureType::NORMAL, name);
+
         bfs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
@@ -1497,7 +1526,10 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // Save Bump Map
         if(bumpMappingParams.bumpType == EBumpMappingType::Height)
         {
-            const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
+            material.bumpType = bumpMappingParams.bumpMappingFileType;
+            const std::string bumpName = material.textureName(Material::TextureType::BUMP, static_cast<int>(atlasID));
+            material.addTexture(Material::TextureType::BUMP, bumpName);
+
             bfs::path bumpMapPath = outPath / bumpName;
             ALICEVISION_LOG_INFO("Writing bump map: " << bumpMapPath);
 
@@ -1507,7 +1539,11 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // Save Displacement Map
         if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
         {
-            const std::string dispName = "Displacement_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType);
+            material.displacementType = bumpMappingParams.displacementFileType;
+            const std::string dispName = material.textureName(Material::TextureType::DISPLACEMENT,
+                                                              static_cast<int>(atlasID));
+            material.addTexture(Material::TextureType::DISPLACEMENT, dispName);
+
             bfs::path dispMapPath = outPath / dispName;
             ALICEVISION_LOG_INFO("Writing displacement map: " << dispMapPath);
 

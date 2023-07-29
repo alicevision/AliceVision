@@ -2197,6 +2197,8 @@ Google;Pixel 4a;5.56;usercontribution
 Google;Pixel 5;5.56;usercontribution
 Google;Pixel 6;9.79;usercontribution
 Google;Pixel 6 Pro;9.79;usercontribution
+Google;Pixel 7;9.79;usercontribution
+Google;Pixel 7 Pro;9.79;usercontribution
 GoPro;GoPro Fusion;6.17;dpreview
 GoPro;GoPro Hero 2018;6.17;dpreview
 GoPro;GoPro Hero3-Silver Edition;5.37;usercontribution
@@ -5908,6 +5910,7 @@ Samsung;Samsung SM-G9880;10.82;devicespecifications
 Samsung;Samsung SM-G988B;10.82;devicespecifications
 Samsung;Samsung SM-G988N;10.82;devicespecifications
 Samsung;Samsung SM-G991B;7.26;usercontribution
+Samsung;Samsung SM-G998B;6.70;usercontribution
 Samsung;Samsung SM-M315F;7.42;devicespecifications
 Samsung;Samsung SM-N985F;9.6;devicespecifications
 Samsung;Samsung SM-N986B;9.6;devicespecifications
@@ -6829,6 +6832,7 @@ Sony;Sony DSLR-A900;35.9;usercontribution
 Sony;Sony FDR-X1000V;6.19;usercontribution
 Sony;Sony FDR-X3000;5.744;dpreview
 Sony;Sony FX30;23.4;dpreview
+Sony;Sony ILME-FX30;23.4;dpreview
 Sony;Sony HDR-AS300;5.744;dpreview
 Sony;Sony HDR-HC7e;4.98;usercontribution
 Sony;Sony ILCE 5000;23.2;dpreview

@@ -21,7 +21,8 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Depth Map Estimation Refine
+ * @class Depth map estimation Refine
+ * @brief Manages the calculation of the Refine step.
  */
 class Refine
 {
@@ -63,10 +64,10 @@ public:
     /**
      * @brief Refine for a single R camera the Semi-Global Matching depth/sim map.
      * @param[in] tile The given tile for Refine computation
-     * @param[in] in_sgmDepthSimMap_dmp the SGM result depth/sim map in device memory
+     * @param[in] in_sgmDepthThicknessMap_dmp the SGM result depth/thickness map in device memory
      * @param[in] in_sgmNormalMap_dmp the SGM result normal map in device memory (or empty)
      */
-    void refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
+    void refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
 
 private:
 
@@ -83,6 +84,14 @@ private:
      * @param[in] tile The given tile for Refine computation
      */
     void optimizeDepthSimMap(const Tile& tile);
+
+    /**
+     * @brief Compute and write the normal map from the input depth/sim map.
+     * @param[in] tile The given tile for Refine computation
+     * @param[in] in_depthSimMap_dmp the input depth/sim map in device memory
+     * @param[in] name the export filename
+     */
+    void computeAndWriteNormalMap(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const std::string& name = "");
 
     /**
      * @brief Export volume cross alembic file and 9 points csv file.
@@ -102,7 +111,8 @@ private:
     CudaDeviceMemoryPitched<float2, 2> _sgmDepthPixSizeMap_dmp;    //< rc upscaled SGM depth/pixSize map
     CudaDeviceMemoryPitched<float2, 2> _refinedDepthSimMap_dmp;    //< rc refined and fused depth/sim map
     CudaDeviceMemoryPitched<float2, 2> _optimizedDepthSimMap_dmp;  //< rc optimized depth/sim map
-    CudaDeviceMemoryPitched<float3, 2> _normalMap_dmp;             //< rc normal map
+    CudaDeviceMemoryPitched<float3, 2> _sgmNormalMap_dmp;          //< rc upscaled SGM normal map (for experimentation purposes)
+    CudaDeviceMemoryPitched<float3, 2> _normalMap_dmp;             //< rc normal map (for debug / intermediate results purposes)
     CudaDeviceMemoryPitched<TSimRefine, 3> _volumeRefineSim_dmp;   //< rc refine similarity volume
     CudaDeviceMemoryPitched<float, 2> _optTmpDepthMap_dmp;         //< for color optimization: temporary depth map buffer
     CudaDeviceMemoryPitched<float, 2> _optImgVariance_dmp;         //< for color optimization: image variance buffer

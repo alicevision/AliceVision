@@ -38,9 +38,11 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
-# C++14
-set(CMAKE_CXX_STANDARD 14)
+# C++17
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard used by the project")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "The C++ standard used to compile cuda code in the project")
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # ==============================================================================
 # AliceVision build options
@@ -60,6 +62,7 @@ trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
 trilean_option(ALICEVISION_USE_OPENGV "Enable use of OpenGV algorithms" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
+trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
@@ -103,9 +106,9 @@ endif()
 if(ALICEVISION_USE_RPATH)
   if(APPLE)
     set(CMAKE_MACOSX_RPATH 1)
-    set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}:@loader_path")
+    set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path")
   elseif(UNIX)
-    set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\\$ORIGIN")
+    set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR};\\$ORIGIN")
   endif()
 endif()
 
@@ -369,6 +372,22 @@ else()
 endif()
 
 # ==============================================================================
+# onnxruntime
+# ==============================================================================
+set(ALICEVISION_HAVE_ONNX 0)
+
+if(NOT ALICEVISION_USE_ONNX STREQUAL "OFF")
+  find_package(ONNXRuntime)
+
+  if(TARGET ONNXRuntime::ONNXRuntime)
+    set(ALICEVISION_HAVE_ONNX 1)
+    message(STATUS "ONNXRuntime FOUND: ${ONNXRuntime_LIBRARY}")
+  elseif(ALICEVISION_USE_ONNX STREQUAL "ON")
+    message(SEND_ERROR "Failed to find ONNX Runtime.")
+  endif()
+endif()
+
+# ==============================================================================
 # Ceres
 # ==============================================================================
 # - rely on Ceres_DIR
@@ -537,6 +556,24 @@ if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
 endif()
 
 # ==============================================================================
+# USD
+# ==============================================================================
+# - optional, it allows to export the geometry and textures as USD
+# ==============================================================================
+set(ALICEVISION_HAVE_USD 0)
+
+if(NOT ALICEVISION_USE_USD STREQUAL "OFF")
+  find_package(pxr CONFIG)
+
+  if(pxr_FOUND)
+    set(ALICEVISION_HAVE_USD 1)
+    message(STATUS "USD version ${PXR_VERSION} found.")
+  elseif(ALICEVISION_USE_USD STREQUAL "ON")
+    message(SEND_ERROR "Failed to find USD.")
+  endif()
+endif()
+
+# ==============================================================================
 # OpenGV
 # ==============================================================================
 # - optional, it allows to use the generic camera PnP algorithms for rig localization
@@ -625,34 +662,23 @@ if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
     # Need to declare CUDA_USE_STATIC_CUDA_RUNTIME as an option to ensure that it is not overwritten in FindCUDA.
     option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
     set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
-    # Workaround to force deactivation of cuda static runtime for cmake < 3.10
-    set(CUDA_cudart_static_LIBRARY 0)
   else()
     message(STATUS "BUILD_SHARED_LIBS OFF")
     option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" ON)
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
   endif()
 
-  find_package(CUDA 7.0)
+  find_package(CUDA 11.0)
 
   if(CUDA_FOUND)
     set(ALICEVISION_HAVE_CUDA 1)
     message(STATUS "CUDA found.")
   elseif(ALICEVISION_USE_CUDA STREQUAL "ON")
-    message(SEND_ERROR "Failed to find CUDA (>= 7.0).")
+    message(SEND_ERROR "Failed to find CUDA (>= 11.0).")
   endif()
 endif()
 
 if(ALICEVISION_HAVE_CUDA)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0")
-      if(CUDA_VERSION VERSION_LESS "8.0")
-        MESSAGE(STATUS "Found gcc >=5 and CUDA <= 7.5, adding workaround C++ flags")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORCE_INLINES -D_MWAITXINTRIN_H_INCLUDED -D__STRICT_ANSI__")
-      endif()
-    endif()
-  endif()
-
   set(CUDA_SEPARABLE_COMPILATION ON)
   message("Build Mode: ${CMAKE_BUILD_TYPE}")
 
@@ -668,14 +694,8 @@ if(ALICEVISION_HAVE_CUDA)
     set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80 86)
   elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 11)
     set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 10)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62 70 72 75)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 9)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62 70)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 8)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 60 61 62)
   else()
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 )
+    message(SEND_ERROR "Requires CUDA >= 11.0.")
   endif()
   set(ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CUDA_CC_LIST_BASIC}
       CACHE STRING "CUDA CC versions to compile")
@@ -692,28 +712,23 @@ if(ALICEVISION_HAVE_CUDA)
   list(GET ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CC_LIST_LEN} ALICEVISION_CUDA_CC_LIST_LAST)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CUDA_CC_LIST_LAST},code=compute_${ALICEVISION_CUDA_CC_LIST_LAST}")
 
-
-  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
-  endif()
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++17")
 
   # default stream legacy implies that the 0 stream synchronizes all streams
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;legacy")
   # default stream per-thread implies that each host thread has one non-synchronizing 0-stream
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
   # print local memory usage per kernel: -Xptxas;-v
-  # CUDA >= 7.5: -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
+  #   -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
   message(STATUS "CUDA Version is ${CUDA_VERSION}")
-  if(NOT CUDA_VERSION VERSION_LESS 7.5) # cuda >= 7.5
-    if(UNIX)
-      set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
-    endif()
-    if(ALICEVISION_NVCC_WARNINGS)
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
-    endif()
+  if(UNIX)
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
+  endif()
+  if(ALICEVISION_NVCC_WARNINGS)
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
   endif()
 
   # library required for CUDA dynamic parallelism, forgotten by CMake 3.4

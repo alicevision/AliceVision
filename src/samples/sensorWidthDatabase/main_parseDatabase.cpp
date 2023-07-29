@@ -5,6 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
@@ -20,62 +21,43 @@ namespace po = boost::program_options;
 
 int main(int argc, char ** argv)
 {
-  std::string sensorDatabasePath;
-  std::string brandName;
-  std::string modelName;
+    std::string sensorDatabasePath;
+    std::string brandName;
+    std::string modelName;
 
-  po::options_description allParams("AliceVision Sample parseDatabase");
-  allParams.add_options()
-    ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
-      "Camera sensor width database path.")
-    ("brand,b", po::value<std::string>(&brandName)->required(),
-      "Camera brand.")
-    ("model,m", po::value<std::string>(&modelName)->required(),
-      "Camera model.");
+    po::options_description requiredParams;
+    requiredParams.add_options()
+        ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
+         "Camera sensor width database path.")
+        ("brand,b", po::value<std::string>(&brandName)->required(),
+         "Camera brand.")
+        ("model,m", po::value<std::string>(&modelName)->required(),
+         "Camera model.");
 
-  po::variables_map vm;
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
+    aliceVision::CmdLine cmdline("AliceVision Sample parseDatabase");
+    cmdline.add(requiredParams);
+    if(!cmdline.execute(argc, argv))
     {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
+        return EXIT_FAILURE;
     }
-    po::notify(vm);
-  }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
 
-  std::vector<aliceVision::sensorDB::Datasheet> vec_database;
-  aliceVision::sensorDB::Datasheet datasheet;
+    std::vector<aliceVision::sensorDB::Datasheet> vec_database;
+    aliceVision::sensorDB::Datasheet datasheet;
 
-  if ( !aliceVision::sensorDB::parseDatabase( sensorDatabasePath, vec_database ) )
-  {
-    std::cout << "Database creation failure from the file : " << sensorDatabasePath  << std::endl;
-    return EXIT_FAILURE;
-  }
+    if (!aliceVision::sensorDB::parseDatabase(sensorDatabasePath, vec_database))
+    {
+        std::cout << "Database creation failure from the file : " << sensorDatabasePath  << std::endl;
+        return EXIT_FAILURE;
+    }
 
-  if ( !aliceVision::sensorDB::getInfo( brandName, modelName, vec_database, datasheet ) )
-  {
-    ALICEVISION_LOG_ERROR("The camera " << modelName << " doesn't exist in the database.");
-    return EXIT_FAILURE;
-  }
+    if (!aliceVision::sensorDB::getInfo(brandName, modelName, vec_database, datasheet))
+    {
+        ALICEVISION_LOG_ERROR("The camera " << modelName << " doesn't exist in the database.");
+        return EXIT_FAILURE;
+    }
 
-  ALICEVISION_LOG_INFO("Result: " << std::endl
-                       << datasheet._brand << "\t" << datasheet._model << "\t" << datasheet._sensorWidth);
+    ALICEVISION_LOG_INFO("Result: " << std::endl
+                                    << datasheet._brand << "\t" << datasheet._model << "\t" << datasheet._sensorWidth);
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
-

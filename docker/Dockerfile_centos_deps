@@ -65,6 +65,12 @@ ENV PATH="/opt/rh/devtoolset-10/root/usr/bin:${PATH}" \
 COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
 
+COPY dl/sphereDetection_Mask-RCNN.onnx ${AV_INSTALL}/share/aliceVision/
+RUN echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx" > /etc/profile.d/alicevision.sh
+
+COPY dl/fcn_resnet50.onnx ${AV_INSTALL}/share/aliceVision/
+RUN echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx" > /etc/profile.d/alicevision.sh
+
 COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
 RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh` && echo "Build multithreading number of cores: ${CPU_CORES}"
 
@@ -95,6 +101,8 @@ RUN mkdir -p "${AV_INSTALL}/lib" && \
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
+# RUN make -j ${CPU_CORES} onnxruntime
+# RUN make -j ${CPU_CORES} pcl
 # RUN make -j ${CPU_CORES} turbojpeg
 # RUN make -j ${CPU_CORES} boost
 # RUN make -j ${CPU_CORES} openexr
@@ -115,7 +123,7 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 # RUN make -j ${CPU_CORES} ffmpeg
 # RUN make -j ${CPU_CORES} opencv
 # RUN make -j ${CPU_CORES} expat
-
+# 
 # RUN make -j ${CPU_CORES} cctag
 # RUN make -j ${CPU_CORES} popsift
 

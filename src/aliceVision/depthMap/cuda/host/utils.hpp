@@ -6,22 +6,33 @@
 
 #pragma once
 
-// Macro for checking cuda errors
-#define CHECK_CUDA_ERROR()                                                                                             \
-    if(cudaError_t err = cudaGetLastError())                                                                           \
+// Macros for checking cuda errors
+#define CHECK_CUDA_RETURN_ERROR(err)                                                                                   \
+    if(err != cudaSuccess)                                                                                             \
     {                                                                                                                  \
         fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));                                               \
         fprintf(stderr, "  file:       %s\n", __FILE__);                                                               \
         fprintf(stderr, "  function:   %s\n", __FUNCTION__);                                                           \
         fprintf(stderr, "  line:       %d\n\n", __LINE__);                                                             \
         std::stringstream s;                                                                                           \
-        s << "\n  CUDA Error: " << cudaGetErrorString(err) << "\n  file:       " << __FILE__                           \
-          << "\n  function:   " << __FUNCTION__ << "\n  line:       " << __LINE__ << "\n";                             \
+        s << "\n  CUDA Error: " << cudaGetErrorString(err)                                                             \
+          << "\n  file:  " << __FILE__                                                                                 \
+          << "\n  function:   " << __FUNCTION__                                                                        \
+          << "\n  line:       " << __LINE__                                                                            \
+          << "\n";                                                                                                     \
         throw std::runtime_error(s.str());                                                                             \
-    }
+    }                                                                                                                  \
 
-#define ALICEVISION_CU_PRINT_DEBUG(a) std::cerr << a << std::endl;
-#define ALICEVISION_CU_PRINT_ERROR(a) std::cerr << a << std::endl;
+#define CHECK_CUDA_RETURN_ERROR_NOEXCEPT(err)                                                                          \
+    if(err != cudaSuccess)                                                                                             \
+    {                                                                                                                  \
+        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));                                               \
+        fprintf(stderr, "  file:       %s\n", __FILE__);                                                               \
+        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                                                           \
+        fprintf(stderr, "  line:       %d\n\n", __LINE__);                                                             \
+    }                                                                                                                  \
+
+#define CHECK_CUDA_ERROR() CHECK_CUDA_RETURN_ERROR(cudaGetLastError());
 
 #define THROW_ON_CUDA_ERROR(rcode, message)                                                                            \
     if(rcode != cudaSuccess)                                                                                           \
@@ -29,7 +40,7 @@
         std::stringstream s;                                                                                           \
         s << message << ": " << cudaGetErrorString(err);                                                               \
         throw std::runtime_error(s.str());                                                                             \
-    }
+    }                                                                                                                  \
 
 namespace aliceVision {
 namespace depthMap {

@@ -9,9 +9,9 @@
 namespace aliceVision {
 namespace depthMap {
 
-/*
+/**
  * @struct DeviceCameraParams
- * @brief Support class to maintain usefull camera parameters in gpu memory.
+ * @brief Support class to maintain useful camera parameters in gpu memory.
  */
 struct DeviceCameraParams
 {

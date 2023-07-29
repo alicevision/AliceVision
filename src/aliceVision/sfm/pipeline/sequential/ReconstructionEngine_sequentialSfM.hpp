@@ -63,12 +63,32 @@ public:
     bool filterTrackForks = true;
     robustEstimation::ERobustEstimator localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
     double localizerEstimatorError = std::numeric_limits<double>::infinity();
-    size_t localizerEstimatorMaxIterations = 4096;
+    std::size_t localizerEstimatorMaxIterations = 4096;
 
     // Pyramid scoring
 
     const int pyramidBase = 2;
     const int pyramidDepth = 5;
+
+    // Bundle Adjustment triggering
+
+    /// The beginning of the incremental SfM is a well known risky and
+    /// unstable step which has a big impact on the final result.
+    /// The Bundle Adjustment is an intensive computing step so we only use it
+    /// every N cameras.
+    /// We make an exception for the first 'nbFirstUnstableCameras' cameras
+    /// and perform a BA for each camera because it makes the results
+    /// more stable and it's quite cheap because we have few data.
+    std::size_t nbFirstUnstableCameras = 30;
+
+    /// Limit to a maximum number of cameras added to ensure that
+    /// we don't add too much data in one step without bundle adjustment.
+    std::size_t maxImagesPerGroup = 30;
+
+    /// Threshold for the maximum number of outliers allowed at the end of a BA iteration.
+    /// If the limit is not met, another BA iteration is performed.
+    /// Using a negative value for this threshold will disable BA iterations.
+    int bundleAdjustmentMaxOutliers = 50;
 
     // Local Bundle Adjustment data
 

@@ -464,78 +464,87 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
             return false;
         }
 
-        std::string processedOutputFolder = _outputFolder;
-        if (_mediaPaths.size() > 1) {
-            const std::string rigFolder = _outputFolder + "/rig/";
-            if (!fs::exists(rigFolder)) {
-                fs::create_directory(rigFolder);
+        // Ensure that we do want to write the keyframes on disk before going through this
+        if (outputExtension != "none") {
+            std::string processedOutputFolder = _outputFolder;
+            if (_mediaPaths.size() > 1) {
+                const std::string rigFolder = _outputFolder + "/rig/";
+                if (!fs::exists(rigFolder)) {
+                    fs::create_directory(rigFolder);
+                }
+
+                processedOutputFolder = rigFolder + std::to_string(id);
+                if (!fs::exists(processedOutputFolder)) {
+                    fs::create_directory(processedOutputFolder);
+                }
             }
 
-            processedOutputFolder = rigFolder + std::to_string(id);
-            if (!fs::exists(processedOutputFolder)) {
-                fs::create_directory(processedOutputFolder);
+            unsigned int outputKeyframeCnt = 0;  // Used if the "renameKeyframes" option is enabled
+            for (const auto pos : _selectedKeyframes) {
+                if (!feed.goToFrame(pos)) {
+                    ALICEVISION_LOG_ERROR("Invalid frame position " << pos << ". Ignoring this frame.");
+                    continue;
+                }
+
+                if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
+                    ALICEVISION_LOG_ERROR("Error reading image");
+                    return false;
+                }
+
+                oiio::ImageSpec inputSpec;
+                inputSpec.extra_attribs = image::readImageMetadata(currentImgName);
+                int orientation = inputSpec.get_int_attribute("Orientation", 1);
+                float pixelAspectRatio = inputSpec.get_float_attribute("PixelAspectRatio", 1.0f);
+                std::string colorspace = inputSpec.get_string_attribute("oiio:Colorspace", "");
+
+                oiio::ParamValueList metadata;
+                metadata.push_back(oiio::ParamValue("Make", brands[id]));
+                metadata.push_back(oiio::ParamValue("Model", models[id]));
+                metadata.push_back(oiio::ParamValue("Exif:BodySerialNumber", std::to_string(getRandomInt())));
+                metadata.push_back(oiio::ParamValue("Exif:FocalLength", mmFocals[id]));
+                metadata.push_back(oiio::ParamValue("Exif:ImageUniqueID", std::to_string(getRandomInt())));
+                metadata.push_back(oiio::ParamValue("Orientation", orientation));  // Will not propagate for PNG outputs
+                if (outputExtension != "jpg")  // TODO: propagate pixelAspectRatio properly for JPG
+                    metadata.push_back(oiio::ParamValue("PixelAspectRatio", pixelAspectRatio));
+
+                fs::path folder = _outputFolder;
+                std::ostringstream filenameSS;
+                if (renameKeyframes)
+                    filenameSS << std::setw(5) << std::setfill('0') << outputKeyframeCnt++ << "." << outputExtension;
+                else
+                    filenameSS << std::setw(5) << std::setfill('0') << pos << "." << outputExtension;
+                const auto filepath = (processedOutputFolder / fs::path(filenameSS.str())).string();
+
+                image::ImageWriteOptions options;
+                // If the feed is a video, frames are read as OpenCV RGB matrices before being converted to image::ImageRGB
+                if (feed.isVideo()) {
+                    options.fromColorSpace(image::EImageColorSpace::SRGB);
+                    options.toColorSpace(image::EImageColorSpace::AUTO);
+                } else {  // Otherwise, the frames have been read without any conversion, they should be written as such
+                    if (colorspace == "sRGB")
+                            options.fromColorSpace(image::EImageColorSpace::SRGB);
+
+                    if (outputExtension == "exr")
+                        options.toColorSpace(image::EImageColorSpace::NO_CONVERSION);
+                    else
+                        options.toColorSpace(image::EImageColorSpace::AUTO);
+                }
+
+                if (storageDataType != image::EStorageDataType::Undefined && outputExtension == "exr") {
+                    options.storageDataType(storageDataType);
+                }
+
+                image::writeImage(filepath, image, options, metadata);
+                ALICEVISION_LOG_DEBUG("Wrote selected keyframe " << pos);
+
+                _keyframesPaths[id].push_back(filepath);
             }
         }
 
-        unsigned int outputKeyframeCnt = 0;  // Used if the "renameKeyframes" option is enabled
-        for (const auto pos : _selectedKeyframes) {
-            if (!feed.goToFrame(pos)) {
-                ALICEVISION_LOG_ERROR("Invalid frame position " << pos << ". Ignoring this frame.");
-                continue;
-            }
-
-            if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
-                ALICEVISION_LOG_ERROR("Error reading image");
-                return false;
-            }
-
-            oiio::ImageSpec inputSpec;
-            inputSpec.extra_attribs = image::readImageMetadata(currentImgName);
-            int orientation = inputSpec.get_int_attribute("Orientation", 1);
-            float pixelAspectRatio = inputSpec.get_float_attribute("PixelAspectRatio", 1.0f);
-            std::string colorspace = inputSpec.get_string_attribute("oiio:Colorspace", "");
-
-            oiio::ParamValueList metadata;
-            metadata.push_back(oiio::ParamValue("Make", brands[id]));
-            metadata.push_back(oiio::ParamValue("Model", models[id]));
-            metadata.push_back(oiio::ParamValue("Exif:BodySerialNumber", std::to_string(getRandomInt())));
-            metadata.push_back(oiio::ParamValue("Exif:FocalLength", mmFocals[id]));
-            metadata.push_back(oiio::ParamValue("Exif:ImageUniqueID", std::to_string(getRandomInt())));
-            metadata.push_back(oiio::ParamValue("Orientation", orientation));  // Will not propagate for PNG outputs
-            if (outputExtension != "jpg")  // TODO: propagate pixelAspectRatio properly for JPG
-                metadata.push_back(oiio::ParamValue("PixelAspectRatio", pixelAspectRatio));
-
-            fs::path folder = _outputFolder;
-            std::ostringstream filenameSS;
-            if (renameKeyframes)
-                filenameSS << std::setw(5) << std::setfill('0') << outputKeyframeCnt++ << "." << outputExtension;
-            else
-                filenameSS << std::setw(5) << std::setfill('0') << pos << "." << outputExtension;
-            const auto filepath = (processedOutputFolder / fs::path(filenameSS.str())).string();
-
-            image::ImageWriteOptions options;
-            // If the feed is a video, frames are read as OpenCV RGB matrices before being converted to image::ImageRGB
-            if (feed.isVideo()) {
-                options.fromColorSpace(image::EImageColorSpace::SRGB);
-                options.toColorSpace(image::EImageColorSpace::AUTO);
-            } else {  // Otherwise, the frames have been read without any conversion, they should be written as such
-                if (colorspace == "sRGB")
-                        options.fromColorSpace(image::EImageColorSpace::SRGB);
-
-                if (outputExtension == "exr")
-                    options.toColorSpace(image::EImageColorSpace::NO_CONVERSION);
-                else
-                    options.toColorSpace(image::EImageColorSpace::AUTO);
-            }
-
-            if (storageDataType != image::EStorageDataType::Undefined && outputExtension == "exr"){
-                options.storageDataType(storageDataType);
-            }
-
-            image::writeImage(filepath, image, options, metadata);
-            ALICEVISION_LOG_DEBUG("Wrote selected keyframe " << pos);
-
-            _keyframesPaths[id].push_back(filepath);
+        // If the current media is a video and there is no output keyframe, the corresponding SfMData file will not be written
+        if (feed.isVideo() && outputExtension == "none") {
+            ALICEVISION_THROW(std::invalid_argument, "The keyframes selected from the input video have not been " <<
+                              "written on disk. The keyframes' SfMData file cannot be written.");
         }
 
         if (!writeSfMData(path, feed, brands, models, mmFocals))

@@ -26,7 +26,7 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-const std::string supportedExtensions = "exr, jpg, png";
+const std::string supportedExtensions = "none, exr, jpg, png";
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -51,7 +51,7 @@ int aliceVision_main(int argc, char** argv)
     std::size_t rescaledWidthFlow = 720;    // width of the rescaled frames for the flow; 0 if no rescale is performed (smart selection)
     std::size_t sharpnessWindowSize = 200;  // sliding window's size in sharpness computation (smart selection)
     std::size_t flowCellSize = 90;          // size of the cells within a frame used to compute the optical flow (smart selection)
-    std::string outputExtension = "exr";    // file extension of the written keyframes
+    std::string outputExtension = "exr";    // file extension of the written keyframes (keyframes will not be written if set to "none")
     image::EStorageDataType exrDataType =   // storage data type for EXR output files
         image::EStorageDataType::Float;
     bool renameKeyframes = false;           // name selected keyframes as consecutive frames instead of using their index as a name
@@ -101,7 +101,11 @@ int aliceVision_main(int argc, char** argv)
             "If the selected keyframes should have originally be written as [00015.exr, 00294.exr, 00825.exr], they "
             "will instead be written as [00000.exr, 00001.exr, 00002.exr] if this option is enabled.")
         ("outputExtension", po::value<std::string>(&outputExtension)->default_value(outputExtension),
-            "File extension of the output keyframes.")
+            ("File extension of the output keyframes (e.g. 'exr').\n"
+            "If set to 'none', the keyframes will not be written on disk, and only the SfMData file will be written.\n"
+            "For input videos, 'none' should not be used since written keyframes are used to generate the SfMData "
+            "file.\n"
+            "Supported extensions are: " + supportedExtensions).c_str())
         ("storageDataType", po::value<image::EStorageDataType>(&exrDataType)->default_value(exrDataType),
             ("Storage data type for EXR output files: " + image::EStorageDataType_informations()).c_str());
 
@@ -190,6 +194,8 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Convert the provided output extension to lowercase before performing any comparison
+    std::transform(outputExtension.begin(), outputExtension.end(), outputExtension.begin(), ::tolower);
     if (supportedExtensions.find(outputExtension) == std::string::npos) {
         ALICEVISION_LOG_ERROR("Unsupported extension for the output file. Supported extensions are: "
                               << supportedExtensions);

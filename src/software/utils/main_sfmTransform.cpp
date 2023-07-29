@@ -22,7 +22,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -44,7 +44,8 @@ enum class EAlignmentMethod : unsigned char
     FROM_SINGLE_CAMERA,
     FROM_CENTER_CAMERA,
     FROM_MARKERS,
-    FROM_GPS
+    FROM_GPS,
+    ALIGN_GROUND
 };
 
 /**
@@ -56,16 +57,17 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
 {
   switch(alignmentMethod)
   {
-    case EAlignmentMethod::TRANSFORMATION:      return "transformation";
-    case EAlignmentMethod::MANUAL:              return "manual";
-    case EAlignmentMethod::AUTO:              return "auto";
-    case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
-    case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:   return "auto_from_cameras_x_axis";
-    case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
-    case EAlignmentMethod::FROM_SINGLE_CAMERA:  return "from_single_camera";
-    case EAlignmentMethod::FROM_CENTER_CAMERA:  return "from_center_camera";
-    case EAlignmentMethod::FROM_MARKERS:        return "from_markers";
-    case EAlignmentMethod::FROM_GPS:        return "from_gps";
+    case EAlignmentMethod::TRANSFORMATION:           return "transformation";
+    case EAlignmentMethod::MANUAL:                   return "manual";
+    case EAlignmentMethod::AUTO:                     return "auto";
+    case EAlignmentMethod::AUTO_FROM_CAMERAS:        return "auto_from_cameras";
+    case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS: return "auto_from_cameras_x_axis";
+    case EAlignmentMethod::AUTO_FROM_LANDMARKS:      return "auto_from_landmarks";
+    case EAlignmentMethod::FROM_SINGLE_CAMERA:       return "from_single_camera";
+    case EAlignmentMethod::FROM_CENTER_CAMERA:       return "from_center_camera";
+    case EAlignmentMethod::FROM_MARKERS:             return "from_markers";
+    case EAlignmentMethod::FROM_GPS:                 return "from_gps";
+    case EAlignmentMethod::ALIGN_GROUND:             return "align_ground";
   }
   throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -80,16 +82,17 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   std::string method = alignmentMethod;
   std::transform(method.begin(), method.end(), method.begin(), ::tolower); //tolower
 
-  if(method == "transformation")      return EAlignmentMethod::TRANSFORMATION;
-  if(method == "manual")              return EAlignmentMethod::MANUAL;
-  if(method == "auto")              return EAlignmentMethod::AUTO;
-  if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
-  if(method == "auto_from_cameras_x_axis")   return EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS;
-  if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
-  if(method == "from_single_camera")  return EAlignmentMethod::FROM_SINGLE_CAMERA;
-  if(method == "from_center_camera")  return EAlignmentMethod::FROM_CENTER_CAMERA;
-  if(method == "from_markers")        return EAlignmentMethod::FROM_MARKERS;
-  if(method == "from_gps")        return EAlignmentMethod::FROM_GPS;
+  if (method == "transformation")           return EAlignmentMethod::TRANSFORMATION;
+  if (method == "manual")                   return EAlignmentMethod::MANUAL;
+  if (method == "auto")                     return EAlignmentMethod::AUTO;
+  if (method == "auto_from_cameras")        return EAlignmentMethod::AUTO_FROM_CAMERAS;
+  if (method == "auto_from_cameras_x_axis") return EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS;
+  if (method == "auto_from_landmarks")      return EAlignmentMethod::AUTO_FROM_LANDMARKS;
+  if (method == "from_single_camera")       return EAlignmentMethod::FROM_SINGLE_CAMERA;
+  if (method == "from_center_camera")       return EAlignmentMethod::FROM_CENTER_CAMERA;
+  if (method == "from_markers")             return EAlignmentMethod::FROM_MARKERS;
+  if (method == "from_gps")                 return EAlignmentMethod::FROM_GPS;
+  if (method == "align_ground")             return EAlignmentMethod::ALIGN_GROUND;
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -265,13 +268,14 @@ int aliceVision_main(int argc, char **argv)
         "Transform Method:\n"
         "\t- transformation: Apply a given transformation\n"
         "\t- manual: Apply the gizmo transformation\n"
-        "\t- auto: Use cameras X axis, Zero centering, automatic scaling\n"
-        "\t- auto_from_cameras: Use cameras\n"
-        "\t- auto_from_cameras_x_axis: Use cameras X axis\n"
-        "\t- auto_from_landmarks: Use landmarks\n"
-        "\t- from_single_camera: Use camera specified by --tranformation\n"
-        "\t- from_markers: Use markers specified by --markers\n"
-        "\t- from_gps: use gps metadata\n")
+        "\t- auto: Determines scene orientation from the cameras' X axis, auto-scaling from GPS information if available, and defines ground level from the point cloud.\n"
+        "\t- auto_from_cameras: Defines coordinate system from cameras.\n"
+        "\t- auto_from_cameras_x_axis: Determines scene orientation from the cameras' X axis.\n"
+        "\t- auto_from_landmarks: Defines coordinate system from landmarks.\n"
+        "\t- from_single_camera: Refines the coordinate system from the camera specified by --tranformation\n"
+        "\t- from_markers: Refines the coordinate system from markers specified by --markers\n"
+        "\t- from_gps: Redefines coordinate system from GPS metadata\n"
+        "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n")
     ("transformation", po::value<std::string>(&transform)->default_value(transform),
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
@@ -471,6 +475,11 @@ int aliceVision_main(int argc, char **argv)
           }
           break;
       }
+      case EAlignmentMethod::ALIGN_GROUND:
+      {
+          sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
+          break;
+      }
   }
 
   if(!applyRotation)
@@ -510,6 +519,13 @@ int aliceVision_main(int argc, char **argv)
   }
 
   sfm::applyTransform(sfmData, S, R, t);
+ 
+  // In AUTO mode, ground detection and alignment is performed as a post-process
+  if (alignmentMethod == EAlignmentMethod::AUTO && applyTranslation)
+  {
+    sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
+    sfm::applyTransform(sfmData, 1.0, Eigen::Matrix3d::Identity(), t);
+  }
 
   ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
   

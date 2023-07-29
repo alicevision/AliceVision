@@ -122,20 +122,11 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Make sure there is only one kind of image in dataset
-    if(sfmData.getIntrinsics().size() > 1)
-    {
-        ALICEVISION_LOG_ERROR("Only one intrinsic allowed (" << sfmData.getIntrinsics().size() << " found)");
-        return EXIT_FAILURE;
-    }
-
-    const std::size_t width = sfmData.getIntrinsics().begin()->second->w();
-    const std::size_t height = sfmData.getIntrinsics().begin()->second->h();
-
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
     if (!hdr::estimateBracketsFromSfmData(groupedViews, sfmData, nbBrackets))
     {
+        ALICEVISION_LOG_ERROR("Failure to estimate brackets.");
         return EXIT_FAILURE;
     }
 
@@ -188,105 +179,155 @@ int aliceVision_main(int argc, char** argv)
         rangeSize = groupedViews.size();
     }
     ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
+    
 
+    std::map<IndexT, std::vector<std::vector<std::shared_ptr<sfmData::View>>>> groupedViewsPerIntrinsics;
     for(std::size_t groupIdx = rangeStart; groupIdx < rangeStart + rangeSize; ++groupIdx)
     {
         auto & group = groupedViews[groupIdx];
-        ALICEVISION_LOG_INFO("Extracting samples from group " << groupIdx);
 
-        std::vector<std::string> paths;
-        std::vector<sfmData::ExposureSetting> exposuresSetting;
-        std::vector<IndexT> viewIds;
+        IndexT intrinsicId = UndefinedIndexT;
 
-        image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
-        std::string colorProfileFileName = "";
-
-        for (auto & v : group)
+        for (const auto & v : group)
         {
-            paths.push_back(v->getImagePath());
-            exposuresSetting.push_back(v->getCameraExposureSetting());
-            viewIds.push_back(v->getViewId());
-
-            const std::string rawColorInterpretation_str = v->getRawColorInterpretation();
-            rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(rawColorInterpretation_str);
-            colorProfileFileName = v->getColorProfileFileName();
-
-            ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back() << ", raw color interpretation: " << ERawColorInterpretation_enumToString(rawColorInterpretation));
-        }
-        if(!sfmData::hasComparableExposures(exposuresSetting))
-        {
-            ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
-        }
-        std::vector<double> exposures = getExposures(exposuresSetting);
-
-        image::ImageReadOptions imgReadOptions;
-        imgReadOptions.workingColorSpace = workingColorSpace;
-        imgReadOptions.rawColorInterpretation = rawColorInterpretation;
-        imgReadOptions.colorProfileFileName = colorProfileFileName;
-
-        const bool simplifiedSampling = byPass || (calibrationMethod == ECalibrationMethod::LINEAR);
-
-        std::vector<hdr::ImageSample> out_samples;
-        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, viewIds, exposures, width, height, channelQuantization, imgReadOptions, params, simplifiedSampling);
-        if (!res)
-        {
-            ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);
-        }
-
-        using namespace boost::accumulators;
-        using Accumulator = accumulator_set<float, stats<tag::min, tag::max, tag::median, tag::mean>>;
-        Accumulator acc_nbUsedBrackets;
-        {
-            utils::Histogram<int> histogram(1, usedNbBrackets, usedNbBrackets-1);
-            for(const hdr::ImageSample& sample : out_samples)
+            IndexT lid = v->getIntrinsicId();
+            if (intrinsicId == UndefinedIndexT)
             {
-                acc_nbUsedBrackets(sample.descriptions.size());
-                histogram.Add(sample.descriptions.size());
+                intrinsicId = lid;
             }
-            ALICEVISION_LOG_INFO("Number of used brackets in selected samples: "
-                                 << " min: " << extract::min(acc_nbUsedBrackets) << " max: "
-                                 << extract::max(acc_nbUsedBrackets) << " mean: " << extract::mean(acc_nbUsedBrackets)
-                                 << " median: " << extract::median(acc_nbUsedBrackets));
 
-            ALICEVISION_LOG_INFO("Histogram of the number of brackets per sample: " << histogram.ToString("", 2));
-        }
-        if(debug)
-        {
-            image::Image<image::RGBfColor> selectedPixels(width, height, true);
-
-            for(const hdr::ImageSample& sample: out_samples)
+            if (lid != intrinsicId)
             {
-                const float score = float(sample.descriptions.size()) / float(usedNbBrackets);
-                const image::RGBfColor color = getColorFromJetColorMap(score);
-                selectedPixels(sample.y, sample.x) = image::RGBfColor(color.r(), color.g(), color.b());
+                ALICEVISION_LOG_INFO("One group shall not have multiple intrinsics");
+                return EXIT_FAILURE;
             }
-            oiio::ParamValueList metadata;
-            metadata.push_back(oiio::ParamValue("AliceVision:nbSelectedPixels", int(selectedPixels.size())));
-            metadata.push_back(oiio::ParamValue("AliceVision:minNbUsedBrackets", extract::min(acc_nbUsedBrackets)));
-            metadata.push_back(oiio::ParamValue("AliceVision:maxNbUsedBrackets", extract::max(acc_nbUsedBrackets)));
-            metadata.push_back(oiio::ParamValue("AliceVision:meanNbUsedBrackets", extract::mean(acc_nbUsedBrackets)));
-            metadata.push_back(oiio::ParamValue("AliceVision:medianNbUsedBrackets", extract::median(acc_nbUsedBrackets)));
-
-            image::writeImage((fs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
-                              selectedPixels, image::ImageWriteOptions(), metadata);
-
         }
 
-        // Store to file
-        const std::string samplesFilepath = (fs::path(outputFolder) / (std::to_string(groupIdx) + "_samples.dat")).string();
-        std::ofstream fileSamples(samplesFilepath, std::ios::binary);
-        if (!fileSamples.is_open())
+        if (intrinsicId == UndefinedIndexT)
         {
-            ALICEVISION_LOG_ERROR("Impossible to write samples");
+            ALICEVISION_LOG_INFO("One group has no intrinsics");
             return EXIT_FAILURE;
         }
 
-        const std::size_t size = out_samples.size();
-        fileSamples.write((const char *)&size, sizeof(size));
+        groupedViewsPerIntrinsics[intrinsicId].push_back(group);
+    }
 
-        for(std::size_t i = 0; i < out_samples.size(); ++i)
+    for (const auto  & pGroups : groupedViewsPerIntrinsics)
+    {
+        IndexT intrinsicId = pGroups.first;
+
+        const auto & intrinsic = sfmData.getIntrinsics().at(intrinsicId);
+        const std::size_t width = intrinsic->w();
+        const std::size_t height = intrinsic->h();
+
+        for (const auto & group : pGroups.second)
         {
-            fileSamples << out_samples[i];
+            std::vector<std::string> paths;
+            std::vector<sfmData::ExposureSetting> exposuresSetting;
+            std::vector<IndexT> viewIds;
+
+            image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
+            std::string colorProfileFileName = "";
+
+            bool first = true;
+            IndexT firstViewId = UndefinedIndexT;
+
+
+            for (auto & v : group)
+            {
+                //Retrieve first view Id to get a unique name for files
+                //As one view is only in one group
+                if (first)
+                {
+                    firstViewId = v->getViewId();
+                    first = false;
+                }
+
+                paths.push_back(v->getImagePath());
+                exposuresSetting.push_back(v->getCameraExposureSetting());
+                viewIds.push_back(v->getViewId());
+
+                const std::string rawColorInterpretation_str = v->getRawColorInterpretation();
+                rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(rawColorInterpretation_str);
+                colorProfileFileName = v->getColorProfileFileName();
+
+                ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back() << ", raw color interpretation: " << ERawColorInterpretation_enumToString(rawColorInterpretation));
+            }
+            if(!sfmData::hasComparableExposures(exposuresSetting))
+            {
+                ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
+            }
+            std::vector<double> exposures = getExposures(exposuresSetting);
+
+            image::ImageReadOptions imgReadOptions;
+            imgReadOptions.workingColorSpace = workingColorSpace;
+            imgReadOptions.rawColorInterpretation = rawColorInterpretation;
+            imgReadOptions.colorProfileFileName = colorProfileFileName;
+
+            const bool simplifiedSampling = byPass || (calibrationMethod == ECalibrationMethod::LINEAR);
+
+            std::vector<hdr::ImageSample> out_samples;
+            const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, viewIds, exposures, width, height, channelQuantization, imgReadOptions, params, simplifiedSampling);
+            if (!res)
+            {
+                ALICEVISION_LOG_ERROR("Error while extracting samples from group");
+            }
+
+            using namespace boost::accumulators;
+            using Accumulator = accumulator_set<float, stats<tag::min, tag::max, tag::median, tag::mean>>;
+            Accumulator acc_nbUsedBrackets;
+            {
+                utils::Histogram<int> histogram(1, usedNbBrackets, usedNbBrackets-1);
+                for(const hdr::ImageSample& sample : out_samples)
+                {
+                    acc_nbUsedBrackets(sample.descriptions.size());
+                    histogram.Add(sample.descriptions.size());
+                }
+                ALICEVISION_LOG_INFO("Number of used brackets in selected samples: "
+                                    << " min: " << extract::min(acc_nbUsedBrackets) << " max: "
+                                    << extract::max(acc_nbUsedBrackets) << " mean: " << extract::mean(acc_nbUsedBrackets)
+                                    << " median: " << extract::median(acc_nbUsedBrackets));
+
+                ALICEVISION_LOG_INFO("Histogram of the number of brackets per sample: " << histogram.ToString("", 2));
+            }
+            if(debug)
+            {
+                image::Image<image::RGBfColor> selectedPixels(width, height, true);
+
+                for(const hdr::ImageSample& sample: out_samples)
+                {
+                    const float score = float(sample.descriptions.size()) / float(usedNbBrackets);
+                    const image::RGBfColor color = getColorFromJetColorMap(score);
+                    selectedPixels(sample.y, sample.x) = image::RGBfColor(color.r(), color.g(), color.b());
+                }
+                oiio::ParamValueList metadata;
+                metadata.push_back(oiio::ParamValue("AliceVision:nbSelectedPixels", int(selectedPixels.size())));
+                metadata.push_back(oiio::ParamValue("AliceVision:minNbUsedBrackets", extract::min(acc_nbUsedBrackets)));
+                metadata.push_back(oiio::ParamValue("AliceVision:maxNbUsedBrackets", extract::max(acc_nbUsedBrackets)));
+                metadata.push_back(oiio::ParamValue("AliceVision:meanNbUsedBrackets", extract::mean(acc_nbUsedBrackets)));
+                metadata.push_back(oiio::ParamValue("AliceVision:medianNbUsedBrackets", extract::median(acc_nbUsedBrackets)));
+
+                image::writeImage((fs::path(outputFolder) / (std::to_string(firstViewId) + "_selectedPixels.png")).string(),
+                                selectedPixels, image::ImageWriteOptions(), metadata);
+
+            }
+
+            // Store to file
+            const std::string samplesFilepath = (fs::path(outputFolder) / (std::to_string(firstViewId) + "_samples.dat")).string();
+            std::ofstream fileSamples(samplesFilepath, std::ios::binary);
+            if (!fileSamples.is_open())
+            {
+                ALICEVISION_LOG_ERROR("Impossible to write samples");
+                return EXIT_FAILURE;
+            }
+
+            const std::size_t size = out_samples.size();
+            fileSamples.write((const char *)&size, sizeof(size));
+
+            for(std::size_t i = 0; i < out_samples.size(); ++i)
+            {
+                fileSamples << out_samples[i];
+            }
         }
     }
 

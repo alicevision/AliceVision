@@ -63,7 +63,7 @@ size_t getCompositingOptimalScale(int width, int height)
      * Ideally, should be gaussianFilterSize = 1 + 2 * gaussianFilterRadius with:
      * const size_t gaussianFilterRadius = 2;
      */
-    const int gaussianFilterSize = 1;
+    const int gaussianFilterSize = 5;
 
     //Avoid negative values on scale
     if (minsize < gaussianFilterSize)
@@ -163,6 +163,10 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         panoramaBoundingBox = referenceBoundingBox.divide(panoramaMap.getScale())
                                   .dilate(panoramaMap.getBorderSize())
                                   .multiply(panoramaMap.getScale());
+
+        panoramaBoundingBox.clampTop();
+        panoramaBoundingBox.clampBottom(panoramaMap.getHeight());
+
         compositer = std::unique_ptr<Compositer>(
             new LaplacianCompositer(panoramaBoundingBox.width, panoramaBoundingBox.height, panoramaMap.getScale()));
     }
@@ -616,6 +620,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
     image::writeImage(outputFilePath, output,
                       image::ImageWriteOptions()
+                          .fromColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
                           .toColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
                           .storageDataType(storageDataType),
                       metadata);
@@ -674,7 +679,11 @@ int aliceVision_main(int argc, char** argv)
     // set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
     hwc.setUserCoresLimit(maxThreads);
+    
     omp_set_num_threads(hwc.getMaxThreads());
+    oiio::attribute("threads", static_cast<int>(hwc.getMaxThreads()));
+    oiio::attribute("exr_threads", static_cast<int>(hwc.getMaxThreads()));
+
 
     if(overlayType == "borders" || overlayType == "all")
     {
@@ -738,8 +747,8 @@ int aliceVision_main(int argc, char** argv)
 
         if(rangeIteration >= countIterations)
         {
-            ALICEVISION_LOG_ERROR("Range is incorrect");
-            return EXIT_FAILURE;
+            // nothing to compute for this chunk
+            return EXIT_SUCCESS;
         }
 
         rangeSize = rangeSize * divideRoundUp(viewsCount, oldViewsCount);

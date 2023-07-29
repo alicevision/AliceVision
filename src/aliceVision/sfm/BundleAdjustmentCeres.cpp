@@ -13,14 +13,14 @@
 #include <aliceVision/utils/CeresUtils.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/camera/Equidistant.hpp>
+#include <aliceVision/camera/camera.hpp>
 
 #include <boost/filesystem.hpp>
 
 #include <ceres/rotation.h>
 
 #include <fstream>
-
+#include <memory>
 
 
 namespace fs = boost::filesystem;
@@ -82,8 +82,8 @@ class IntrinsicsManifold : public utils::CeresManifold {
     {
       if (_lockFocalRatio)
       {
-        x_plus_delta[0] = x[0] + delta[posDelta]; 
-        x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
+        x_plus_delta[0] = x[0] + _focalRatio * delta[posDelta]; 
+        x_plus_delta[1] = x[1] + delta[posDelta];
         posDelta++;
       }
       else
@@ -127,8 +127,8 @@ class IntrinsicsManifold : public utils::CeresManifold {
     {
       if (_lockFocalRatio)
       {
-        J(0, posDelta) = 1.0;
-        J(1, posDelta) = _focalRatio;
+        J(0, posDelta) = _focalRatio;
+        J(1, posDelta) = 1.0;
         posDelta++;
       }
       else
@@ -201,24 +201,48 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
   int w = intrinsicPtr->w();
   int h = intrinsicPtr->h();
 
+  // Apply undistortion to observation
+  sfmData::Observation obsUndistorted = observation;
+  const camera::IntrinsicsScaleOffsetDisto* intrinsicDistortionPtr =
+    dynamic_cast<const camera::IntrinsicsScaleOffsetDisto*>(intrinsicPtr);
+  if (intrinsicDistortionPtr)
+  {
+    auto undistortion = intrinsicDistortionPtr->getUndistortion();
+    if (undistortion)
+    {
+      obsUndistorted.x = undistortion->undistort(observation.x);
+    }
+  }
+
   switch(intrinsicPtr->getType())
   {
     case EINTRINSIC::PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(new ResidualErrorFunctor_Pinhole(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(
+        new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 3>(
+        new ResidualErrorFunctor_PinholeRadialK1(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 3>(
+        new ResidualErrorFunctor_PinholeRadialK3(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 3>(new ResidualErrorFunctor_Pinhole3DERadial4(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 3>(
+        new ResidualErrorFunctor_Pinhole3DERadial4(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 3>(new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 3>(
+        new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
+    case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(
+        new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 3>(
+        new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 3>(
+        new ResidualErrorFunctor_PinholeFisheye(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 3>(
+        new ResidualErrorFunctor_PinholeFisheye1(w, h, obsUndistorted));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   }
@@ -235,24 +259,48 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
   int w = intrinsicPtr->w();
   int h = intrinsicPtr->h();
 
+  // Apply undistortion to observation
+  sfmData::Observation obsUndistorted = observation;
+  const camera::IntrinsicsScaleOffsetDisto* intrinsicDistortionPtr =
+    dynamic_cast<const camera::IntrinsicsScaleOffsetDisto*>(intrinsicPtr);
+  if (intrinsicDistortionPtr)
+  {
+    auto undistortion = intrinsicDistortionPtr->getUndistortion();
+    if (undistortion)
+    {
+      obsUndistorted.x = undistortion->undistort(observation.x);
+    }
+  }
+
   switch(intrinsicPtr->getType())
   {
     case EINTRINSIC::PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_Pinhole(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 6, 3>(
+        new ResidualErrorFunctor_PinholeRadialK1(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 6, 3>(
+        new ResidualErrorFunctor_PinholeRadialK3(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 6, 3>(new ResidualErrorFunctor_Pinhole3DERadial4(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole3DERadial4(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 6, 3>(new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
+    case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEAnamorphic4, 2, 18, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole3DEAnamorphic4(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 6, 3>(
+        new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 6, 3>(
+        new ResidualErrorFunctor_PinholeFisheye(w, h, obsUndistorted));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(w, h, observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 6, 3>(
+        new ResidualErrorFunctor_PinholeFisheye1(w, h, obsUndistorted));
     default:
       throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
   }
@@ -589,7 +637,6 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
   const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
   const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
   const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
-  const bool fixFocalRatio = true;
 
   std::map<IndexT, std::size_t> intrinsicsUsage;
 
@@ -672,7 +719,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
         problem.SetParameterLowerBound(intrinsicBlockPtr, 1, 0.0);
       }
 
-      focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
+      focalRatio = intrinsicBlockPtr[0] / intrinsicBlockPtr[1];
 
       std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
       if (castedcam_iso)
@@ -709,7 +756,8 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     }
 
     // lens distortion
-    if(!refineIntrinsicsDistortion)
+    if (!refineIntrinsicsDistortion ||
+        intrinsicPtr->getDistortionInitializationMode() == camera::EInitMode::CALIBRATED)
     {
       lockDistortion = true;
     }

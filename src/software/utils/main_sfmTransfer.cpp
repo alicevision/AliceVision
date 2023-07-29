@@ -96,6 +96,7 @@ int aliceVision_main(int argc, char **argv)
     std::string sfmDataReferenceFilename;
     bool transferPoses = true;
     bool transferIntrinsics = true;
+    bool transferLandmarks = true;
     EMatchingMethod matchingMethod = EMatchingMethod::FROM_VIEWID;
     std::string fileMatchingPattern;
     std::vector<std::string> metadataMatchingList = { "Make", "Model", "Exif:BodySerialNumber" , "Exif:LensSerialNumber" };
@@ -126,9 +127,10 @@ int aliceVision_main(int argc, char **argv)
             "Transfer poses.")
         ("transferIntrinsics", po::value<bool>(&transferIntrinsics)->default_value(transferIntrinsics),
             "Transfer intrinsics.")
+        ("transferLandmarks", po::value<bool>(&transferLandmarks)->default_value(transferLandmarks),
+            "Transfer landmarks.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-            "Path of the output SfMData file.")
-        ;
+            "Path of the output SfMData file.");
 
     CmdLine cmdline("AliceVision sfmTransfer");
     cmdline.add(requiredParams);
@@ -277,6 +279,50 @@ int aliceVision_main(int argc, char **argv)
                     ALICEVISION_LOG_TRACE("Transfer intrinsics (intrinsic id: " << viewA.getIntrinsicId() << " <- " << viewB.getIntrinsicId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
                     sfmData.getIntrinsicPtr(viewA.getIntrinsicId())->assign(*sfmDataRef.getIntrinsicPtr(viewB.getIntrinsicId()));
                 }
+
+                if (transferLandmarks)
+                {
+                    aliceVision::sfmData::Landmarks refLandmarks = sfmDataRef.getLandmarks();
+                    if(!refLandmarks.empty())
+                    {
+                        ALICEVISION_LOG_TRACE("Transfer landmarks");
+                        std::map<IndexT, IndexT> commonViewsMap;
+
+                        // Create map of common views <viewIdInRef; viewIdInNewSfMData>
+                        for(auto viewPair: commonViewIds)
+                        {
+                            commonViewsMap.emplace(viewPair.second, viewPair.first);
+                        }
+
+                        HashMap<IndexT, aliceVision::sfmData::Landmark> newLandmarks;
+                        for (const auto& landIt : refLandmarks)
+                        {
+                            // Copy of the current landmark :
+                            aliceVision::sfmData::Landmark newLandmark = landIt.second;
+
+                            // Clear all observations :
+                            newLandmark.observations.clear();
+
+                            // For all observations of the ref landmark :
+                            for (const auto& obsIt : landIt.second.observations)
+                            {
+                                  const IndexT viewId = obsIt.first;
+                                  // If the observation view has a correspondance in the other sfmData, we copy it :
+                                  if (commonViewsMap.find(viewId) != commonViewsMap.end() )
+                                  {
+                                      newLandmark.observations.emplace(commonViewsMap.at(viewId), landIt.second.observations.at(viewId));
+                                  }
+                            }
+
+                            // If the landmark has at least one observation in the new scene, we copy it :
+                            if(newLandmark.observations.size() > 0)
+                            {
+                                newLandmarks.emplace(landIt.first,newLandmark);
+                            }
+                        }
+                        sfmData.getLandmarks() = newLandmarks;
+                    }
+                }
             }
         }
     }
@@ -311,7 +357,7 @@ int aliceVision_main(int argc, char **argv)
     if(!outputViewsAndPosesFilepath.empty())
     {
         sfmDataIO::Save(sfmData, outputViewsAndPosesFilepath,
-                        sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
+                        sfmDataIO::ESfMData(sfmDataIO::ALL));
     }
 
     return EXIT_SUCCESS;

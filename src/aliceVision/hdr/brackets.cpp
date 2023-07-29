@@ -11,16 +11,14 @@ namespace hdr {
 
 bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, const sfmData::SfMData& sfmData, size_t countBrackets)
 {
+    groups.clear();
+
     size_t countImages = sfmData.getViews().size();
     if(countImages == 0)
     {
         return false;
     }
 
-    if ((countBrackets > 0) && ((countImages % countBrackets) != 0))
-    {
-        return false;
-    }
 
     const sfmData::Views & views = sfmData.getViews();
 
@@ -57,7 +55,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     }
     
     std::vector<std::shared_ptr<sfmData::View>> group;
-    std::vector<double> exposures;
+    double lastExposure = std::numeric_limits<double>::min();
     for(auto& view : viewsOrderedByName)
     {
         if (countBrackets > 0)
@@ -73,13 +71,13 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         {
             // Automatically determines the number of brackets
             double exp = view->getCameraExposureSetting().getExposure();
-            if(!exposures.empty() && exp != exposures.back() && exp == exposures.front())
+            if(exp < lastExposure)
             {
                 groups.push_back(group);
                 group.clear();
-                exposures.clear();
             }
-            exposures.push_back(exp);
+
+            lastExposure = exp;
             group.push_back(view);
         }
     }
@@ -87,6 +85,53 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     if (!group.empty())
     {
         groups.push_back(group);
+    }
+
+
+    //Vote for the best bracket count
+    std::map<size_t, int> counters;
+    for (const auto & group : groups)
+    {
+        size_t bracketCount = group.size();
+        if (counters.find(bracketCount) != counters.end())
+        {
+            counters[bracketCount]++;
+        }
+        else
+        {
+            counters[bracketCount] = 1;
+        }
+    }
+
+    int maxSize = 0;
+    int bestBracketCount = 0;
+    for (const auto & item : counters)
+    {
+        if (item.second > maxSize)
+        {
+            maxSize = item.second;
+            bestBracketCount = item.first;
+        }
+        else if (item.second == maxSize && item.first > bestBracketCount)
+        {
+            //If two brackets size have the same vote number, 
+            //Keep the larger one (Just to avoid keeping only the outlier)
+            bestBracketCount = item.first;
+        }
+    }
+
+    //Only keep groups with majority bracket size
+    auto groupIt = groups.begin();
+    while (groupIt != groups.end())
+    {
+        if (groupIt->size() != bestBracketCount)
+        {
+            groupIt = groups.erase(groupIt);
+        }
+        else
+        {
+            groupIt++;
+        }
     }
 
     std::vector< std::vector<sfmData::ExposureSetting>> v_exposuresSetting;
@@ -127,7 +172,9 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     return true;
 }
 
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex, const std::string& lumaStatFilepath, const double meanTargetedLuma)
+int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
+                      std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex,
+                      const std::string& lumaStatFilepath, const double meanTargetedLuma)
 {
     // If targetIndexesFilename cannot be opened or is not valid an error is thrown
     // For odd number, there is no ambiguity on the middle image.
@@ -219,7 +266,7 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
 
         out_targetViews.push_back(group[targetIndex]);
     }
-    return;
+    return targetIndex;
 }
 
 }

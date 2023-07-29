@@ -75,6 +75,12 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::s
         }
 
         Vec2 im = intrinsic_gt->project(pose, pt.homogeneous(), true);
+        double dice = dist(mt);
+        if (dice < ratio_inliers) {
+          //Outlier: generate large error
+          im(0) += noise(mt);
+          im(1) += noise(mt);
+        }
         if (!intrinsic_gt->isVisible(im)) {
           continue;
         }
@@ -85,13 +91,6 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::s
         
         /*Also store the index of this feature for this view*/
         observations.push_back(std::make_pair(idPose, pfs.size()));
-
-        double dice = dist(mt);
-        if (dice < ratio_inliers) {
-          //Outlier: generate large error
-          im(0) += noise(mt);
-          im(1) += noise(mt);
-        }
 
         feature::PointFeature pf(im(0), im(1), 1.0, 0.0);
         pfs.push_back(pf);

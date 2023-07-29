@@ -699,7 +699,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
   if(!isInitialPair && !_params.lockAllIntrinsics)
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
-  const std::size_t nbOutliersThreshold = (isInitialPair) ? 0 : 50;
+  const int nbOutliersThreshold =
+    (isInitialPair) ? 0 : _params.bundleAdjustmentMaxOutliers;
   std::size_t iteration = 0;
   std::size_t nbOutliers = 0;
   bool enableLocalStrategy = false;
@@ -794,7 +795,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     ALICEVISION_LOG_INFO("Bundle adjustment iteration: " << iteration << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chronoItStart).count() << " msec.");
     ++iteration;
   }
-  while(nbOutliers > nbOutliersThreshold);
+  while(nbOutliersThreshold >= 0 && nbOutliers > nbOutliersThreshold);
 
   ALICEVISION_LOG_INFO("Bundle adjustment with " << iteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chronoStart).count() << " msec.");
   return true;
@@ -1089,33 +1090,24 @@ bool ReconstructionEngine_sequentialSfM::findNextBestViews(
     }
   }
 
-  // The beginning of the incremental SfM is a well known risky and
-  // unstable step which has a big impact on the final result.
-  // The Bundle Adjustment is an intensive computing step so we only use it
-  // every N cameras.
-  // We make an exception for the first 'nbFirstUnstableCameras' cameras
-  // and perform a BA for each camera because it makes the results
-  // more stable and it's quite cheap because we have few data.
-  static const std::size_t nbFirstUnstableCameras = 30;
-
-  if(_sfmData.getPoses().size() < nbFirstUnstableCameras &&
+  // If the number of cameras is less than nbFirstUnstableCameras, then the bundle adjustment should be performed
+  // every time a new camera is added: it is not expensive as there is very little data and it gives more stable results.
+  if(_sfmData.getPoses().size() < _params.nbFirstUnstableCameras &&
      !out_selectedViewIds.empty())
   {
     // add images one by one to reconstruct the first cameras
     ALICEVISION_LOG_DEBUG("findNextBestViews: beginning of the incremental SfM" << std::endl
       << "Only the first image of the resection group is used." << std::endl
       << "\t- image view id : " << out_selectedViewIds.front() << std::endl
-      << "\t- # unstable poses : " << _sfmData.getPoses().size() << " / " << nbFirstUnstableCameras << std::endl);
+      << "\t- # unstable poses : " << _sfmData.getPoses().size() << " / " << _params.nbFirstUnstableCameras << std::endl);
 
     out_selectedViewIds.resize(1);
   }
 
-  // Limit to a maximum number of cameras added to ensure that
-  // we don't add too much data in one step without bundle adjustment.
-  static const std::size_t maxImagesPerGroup = 30;
-
-  if(out_selectedViewIds.size() > maxImagesPerGroup)
-    out_selectedViewIds.resize(maxImagesPerGroup);
+  // No more than maxImagesPerGroup cameras should be added at once without performing the bundle adjustment (if set to
+  // 0, then there is no limit on the number of views that can be added at once)
+  if(_params.maxImagesPerGroup > 0 && out_selectedViewIds.size() > _params.maxImagesPerGroup)
+    out_selectedViewIds.resize(_params.maxImagesPerGroup);
 
   ALICEVISION_LOG_DEBUG(
     "Find next best views took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec\n"
@@ -1608,11 +1600,12 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
       Vec3 t;
       KRt_from_P(resectionData.projection_matrix, &K, &R, &t);
       
-      const double focal = (K(0,0) + K(1,1))/2.0;
+      const double focalX = K(0,0);
+      const double focalY = K(1,1);
       const Vec2 principal_point(K(0,2), K(1,2));
       
       // Fill the uninitialized camera intrinsic group
-      pinhole_cam->setK(focal, principal_point(0), principal_point(1));
+      pinhole_cam->setK(focalX, focalY, principal_point(0), principal_point(1));
     }
 
     const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();

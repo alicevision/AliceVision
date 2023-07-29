@@ -28,8 +28,6 @@ double RMSE(const SfMData& sfmData);
 
 SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic);
 
-track::TracksPerView getTracksPerViews(const SfMData& sfmData);
-
 // Test summary:
 // - Create a SfMData scene from a synthetic dataset
 //   - since random noise have been added on 2d data point (initial residual is not small)
@@ -168,7 +166,7 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   // if it's not locked, all views will have a distance of 1 as all views share a common intrinsic.
   sfmData.getIntrinsics().begin()->second->lock();
 
-  track::TracksPerView tracksPerView = getTracksPerViews(sfmData);
+  track::TracksPerView tracksPerView = getLandmarksPerViews(sfmData);
 
   // Set the view "v0' as new (graph-distance(v0) = 0):
   std::set<IndexT> newReconstructedViews;
@@ -324,30 +322,5 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
   }
 
   return sfm_data;
-}
-
-track::TracksPerView getTracksPerViews(const SfMData& sfmData)
-{
-  track::TracksPerView tracksPerView;
-  for (const auto& landIt : sfmData.getLandmarks())
-  {
-    for (const auto& obsIt : landIt.second.observations)
-    {
-      IndexT viewId = obsIt.first;
-      track::TrackIdSet& tracksSet = tracksPerView[viewId];
-      tracksSet.push_back(landIt.first);
-    }
-  }
-
-  // sort tracks Ids in each view
-  #pragma omp parallel for
-  for(int i = 0; i < tracksPerView.size(); ++i)
-  {
-    track::TracksPerView::iterator it = tracksPerView.begin();
-    std::advance(it, i);
-    std::sort(it->second.begin(), it->second.end());
-  }
-
-  return tracksPerView;
 }
 

@@ -17,7 +17,7 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsUtils/depthSimMapIO.hpp>
+#include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/alicevision_omp.hpp>
@@ -301,7 +301,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         const int height = mp.getHeight(c);
 
         // read depth map
-        mvsUtils::readDepthMap(c, mp, depthMap, 0);
+        mvsUtils::readMap(c, mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
 
         if(depthMap.size() <= 0)
         {
@@ -312,7 +312,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         // read similarity map
         try
         {
-            mvsUtils::readSimMap(c, mp, simMap, 0);
+            mvsUtils::readMap(c, mp, mvsUtils::EFileType::simMapFiltered, simMap);
             image::Image<float> simMapTmp(simMap.Width(), simMap.Height());
             imageAlgo::convolveImage(simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
             simMap.swap(simMapTmp);
@@ -940,8 +940,7 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
         for(int c = 0; c < cams.size(); c++)
         {
             image::Image<float> depthMap;
-
-            mvsUtils::readDepthMap(c, _mp, depthMap, 0);
+            mvsUtils::readMap(c, _mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
 
             if(depthMap.size() <= 0)
             {
@@ -1088,7 +1087,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
             {
                 // read depth map
-                mvsUtils::readDepthMap(c, _mp, depthMap, 0);
+                mvsUtils::readMap(c, _mp, mvsUtils::EFileType::depthMapFiltered, depthMap);
 
                 if(depthMap.size() <= 0)
                 {
@@ -1099,12 +1098,12 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 // read similarity map
                 try
                 {
-                    mvsUtils::readSimMap(c, _mp, simMap, 0);
-                        image::Image<float> simMapTmp;
-                        imageAlgo::convolveImage(simMap, simMapTmp, "gaussian",
-                                                 params.simGaussianSizeInit,
-                                                 params.simGaussianSizeInit);
-                        simMap.swap(simMapTmp);
+                    mvsUtils::readMap(c, _mp, mvsUtils::EFileType::simMapFiltered, simMap);
+                    image::Image<float> simMapTmp;
+                    imageAlgo::convolveImage(simMap, simMapTmp, "gaussian",
+                                             params.simGaussianSizeInit,
+                                             params.simGaussianSizeInit);
+                    simMap.swap(simMapTmp);
                 }
                 catch(const std::exception& e)
                 {
@@ -1114,7 +1113,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
                 // read nmod map
                 int wTmp, hTmp;
-                const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap, 0);
+                const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap);
                 // If we have an nModMap in input (from depthmapfilter) use it,
                 // else init with a constant value.
                 if(boost::filesystem::exists(nmodMapFilepath))
@@ -2721,36 +2720,7 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8], const std:
         }
         ALICEVISION_LOG_WARNING("Declare empty around camera centers: " << nbModifiedCells << " cells changed to empty within " << _cellIsFull.size() << " cells.");
     }
-
-
-    // Set cells that have a point outside hexahedron as empty
-    if(hexah != nullptr)
-    {
-        int nbModifiedCells = 0;
-        Point3d hexahinf[8];
-        mvsUtils::inflateHexahedron(hexah, hexahinf, 1.001);
-        for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
-        {
-            if(isInvalidOrInfiniteCell(ci) || !_cellIsFull[ci])
-                continue;
-
-            const Point3d& pa = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
-            const Point3d& pb = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
-            const Point3d& pc = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
-            const Point3d& pd = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
-
-            if((!mvsUtils::isPointInHexahedron(pa, hexahinf)) ||
-               (!mvsUtils::isPointInHexahedron(pb, hexahinf)) ||
-               (!mvsUtils::isPointInHexahedron(pc, hexahinf)) ||
-               (!mvsUtils::isPointInHexahedron(pd, hexahinf)))
-            {
-                _cellIsFull[ci] = false;
-                ++nbModifiedCells;
-            }
-        }
-        ALICEVISION_LOG_WARNING("Full cells with a vertex outside the BBox are changed to empty: " << nbModifiedCells << " cells changed to empty.");
-    }
-
+    
     if(doRemoveDust)
     {
         removeDust(minSegmentSize);

@@ -7,7 +7,7 @@ Build instructions
 Required tools:
 * CMake >= 3.11
 * Git
-* C/C++ compiler (gcc or visual studio or clang) with C++14 support (i.e. gcc >= 5, clang >= 3.4, msvc >= 19.10, cuda >= 9.0).
+* C/C++ compiler (gcc or visual studio or clang) with C++17 support (i.e. gcc >= 7, clang >= 5, msvc >= 19.15, cuda >= 11.0).
 
 ### Compile the project
 
@@ -28,11 +28,10 @@ AliceVision depends on external libraries:
 * CoinUtils >= 2.9.3 use [our fork](https://github.com/alicevision/CoinUtils) with a CMake build system so that it can be easily found
 * Coin-or linear programming (Clp) use [our fork](https://github.com/alicevision/Clp) with a CMake build system
 * [Eigen >= 3.3.4](https://gitlab.com/libeigen/eigen)
-* [Geogram >= 1.7.5](https://gforge.inria.fr/frs/?group_id=5833)
 * [Geogram >= 1.7.5](https://github.com/BrunoLevy/geogram)
 * [Expat >= 2.4.8](https://libexpat.github.io/)
 * [OpenEXR >= 2.5](https://github.com/AcademySoftwareFoundation/openexr)
-* [OpenImageIO >= 2.1.0 (recommended >= 2.4.6)](https://github.com/OpenImageIO/oiio)
+* [OpenImageIO >= 2.1.0 (recommended >= 2.4.12)](https://github.com/OpenImageIO/oiio)
 * Open Solver Interface (Osi) >= 0.106.10 use [our fork](https://github.com/alicevision/Osi)) with a CMake build system
 * [zlib](https://www.zlib.net)
 
@@ -40,7 +39,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 
 * Alembic (data I/O)
 * CCTag (feature extraction/matching and localization on CPU or GPU)
-* Cuda >= 7.0 (feature extraction and depth map computation)
+* Cuda >= 11.0 (feature extraction and depth map computation)
 * Magma (required for UncertaintyTE)
 * Mosek >= 6 (linear programming)
 * OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
@@ -63,36 +62,20 @@ AliceVision also depends on some embedded libraries:
 Building the project using vcpkg (recommended on Windows)
 --------------------------------
 [Vcpkg](https://github.com/alicevision/vcpkg) is a package manager that helps in acquiring, building, and managing C/C++ libraries.
-AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
+AliceVision's required dependencies can be built with it.
+Vcpkg evolved from being a Windows-only project to becoming cross-platform.
+In the scope of AliceVision, vcpkg has only been tested on Windows.
 
+1. Install vcpkg itself
+
+See the reference [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
+We recommend to use our vcpkg fork, where dependencies have been validated by the AliceVision development team but it should work with the latest version.
 ```bash
 git clone https://github.com/alicevision/vcpkg --branch alicevision_master
 cd vcpkg
 .\bootstrap-vcpkg.bat
 ```
 
-**Note**: while started as a Windows only project, vcpkg recently became cross-platform. In the scope of AliceVision, it has only been tested on Windows.
-
-To build AliceVision using vcpkg:
-1. Setup the environment
-
-#### Windows: CUDA and Visual Studio
-* CUDA >= 10.0
-CUDA 10.0 is fully compatible with **Visual Studio 2017 (Update 8)** which allows to use
-the most recent compiler toolset (v141) to build AliceVision and its dependencies.
-VS2015 can also be used in this configuration.
-*This requires a recent version of CMake (tested with 3.12).*
-
-* CUDA < 10.0
-Due to incompatibilities between CUDA and Visual Studio 2017, **Visual 2015 toolset** must be used to build AliceVision.
-Visual Studio 2017 can be used as an IDE, but v140 toolset must be installed and used for this to work.
-To setup a VS2017 command prompt using the v140 toolset:
-```bash
-# Windows: CUDA < 10.0 + VS2017 v140 toolset
-"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.0
-nmake /version
-# should print Version 14.00.xxx
-```
 2. Build the required dependencies
 ```bash
 cd <VCPKG_INSTALL_DIR>
@@ -108,7 +91,7 @@ vcpkg install ^
           eigen3 ^
           expat ^
           onnxruntime-gpu ^
-          opencv[eigen,ffmpeg,webp,contrib,nonFree,cuda] ^
+          opencv[eigen,ffmpeg,webp,contrib,nonfree,cuda] ^
           openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
           ceres[suitesparse,cxsparse] ^
           cuda ^
@@ -125,26 +108,20 @@ vcpkg install ^
 cd /path/to/aliceVision/
 mkdir build && cd build
 
-
-# Windows: CUDA >= 10.0 + Visual 2022 + Powershell
+# Windows: Visual 2022 + Powershell
 cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT"\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 -T host=x64
 
-# Windows: CUDA >= 10.0 + Visual 2022
+# Windows: Visual 2022
 cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 -T host=x64
 
-# Windows: CUDA >= 10.0 + Visual 2017
+# Windows: Visual 2017
 cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 15 2017" -A x64 -T host=x64
-
-# Windows: CUDA < 10.0 + Visual 2017 v140 (Visual 2015 toolset)
-cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 15 2017" -A x64 -T v140,host=x64
-
-# Windows: CUDA < 10.0 + Visual 2015
-cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 14 2015" -A x64 -T v140,host=x64
-
-# Windows: this generates a "aliceVision.sln" solution inside the build folder
 ```
 
-Building the project with embedded dependencies
+This generates a "aliceVision.sln" solution inside the build folder that you can open in Visual Studio to launch the build. Do not forget to switch the build type to "Release".
+
+
+Building the project with embedded dependencies (recommended on linux)
 -----------------------------------------------
 
 ```bash
@@ -403,21 +380,20 @@ Check the sample in [samples](src/samples/aliceVisionAs3rdParty) for an example 
 
 ### Docker image
 
-A docker image can be built using the CentOS 7 or Ubuntu 18 Dockerfiles.
+A docker image can be built using the CentOS or Ubuntu Dockerfiles.
 The Dockerfiles are based on `nvidia/cuda` images (https://hub.docker.com/r/nvidia/cuda/)
 
+To generate the docker image, just run:
 ```
-docker build --tag alicevision:centos7-cuda7.0 .
-docker build --tag alicevision:ubuntu18.04-cuda9.2 -f Dockerfile_ubuntu .
+./docker/build-centos.sh
 ```
 
-Parameters `OS_TAG` and `CUDA_TAG` can be passed to build the image with a specific OS and CUDA version.
-Use NPROC=8 to select the number of cores to use, 1 by default.
-For example, the first line of below's commands shows the example to create docker for a CentOS 7 with Cuda 9.2 and second line for Ubuntu 16.04 with Cuda 8.0:
+To do it manually, parameters `OS_TAG` and `CUDA_TAG` should be passed to choose the OS and CUDA version.
+For example, the first line of below's commands shows the example to create docker for a CentOS 7 with Cuda 11.3.1 and second line for Ubuntu 16.04 with Cuda 11.0:
 
 ```
-docker build --build-arg OS_TAG=7 --build-arg CUDA_TAG=9.2 --tag alicevision:centos7-cuda9.2 .
-docker build --build-arg OS_TAG=16.04 --build-arg CUDA_TAG=8.0 --build-arg NPROC=8 --tag alicevision:ubuntu16.04-cuda8.0 -f Dockerfile_ubuntu .
+docker build --build-arg OS_TAG=7 --build-arg CUDA_TAG=11.3.1 --tag alicevision:centos7-cuda11.3.1 .
+docker build --build-arg OS_TAG=16.04 --build-arg CUDA_TAG=11.0 --build-arg NPROC=8 --tag alicevision:ubuntu16.04-cuda11.0 -f Dockerfile_ubuntu .
 ```
 
 In order to run the image [nvidia docker](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) is needed.
@@ -430,7 +406,7 @@ To retrieve the generated files:
 
 ```
 # Create an instance of the image, copy the files and remove the temporary docker instance.
-CID=$(docker create alicevision:centos7-cuda9.2) && docker cp ${CID}:/opt/AliceVision_install . && docker cp ${CID}:/opt/AliceVision_bundle . && docker rm ${CID}
+CID=$(docker create alicevision:centos7-cuda11.3.1) && docker cp ${CID}:/opt/AliceVision_install . && docker cp ${CID}:/opt/AliceVision_bundle . && docker rm ${CID}
 ```
 
 Environment variable
