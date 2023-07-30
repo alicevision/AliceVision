@@ -11,17 +11,6 @@ namespace track {
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, aliceVision::track::Track const& input)
 {
-    boost::json::object featPerView;
-    for (
-        auto emplacing = input.featPerView.begin();
-        input.featPerView.end() != emplacing;
-        emplacing++
-    ) {
-        featPerView.emplace(
-            std::to_string(emplacing->first),
-            emplacing->second
-        );
-    }
     jv = {
     	{"descType", EImageDescriberType_enumToString(input.descType)} ,
         {"featPerView", boost::json::value_from(input.featPerView)}
