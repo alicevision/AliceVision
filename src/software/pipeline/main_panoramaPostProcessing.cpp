@@ -251,6 +251,7 @@ int aliceVision_main(int argc, char** argv)
     size_t previewSize = 1000;
     bool fillHoles = false;
     bool exportLevels = false;
+    int lastLevelMaxSize = 3840;
 
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -272,6 +273,7 @@ int aliceVision_main(int argc, char** argv)
 
         ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
         ("exportLevels", po::value<bool>(&exportLevels)->default_value(exportLevels), "Export downscaled panorama levels")
+        ("lastLevelMaxSize", po::value<int>(&lastLevelMaxSize)->default_value(lastLevelMaxSize), "Maximum width of smallest downscaled panorama level.")
         ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.")
         ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath), "Path of the output panorama preview.");
@@ -389,7 +391,11 @@ int aliceVision_main(int argc, char** argv)
     int previewCurrentRow = 0;
 
     // Create image outputs for downscaled panorama levels
-    const int nbLevels = exportLevels ? static_cast<int>(std::floor(std::log2(tileSize))) : 0;
+    const int nbLevels = exportLevels ?
+        static_cast<int>(std::min(
+            std::floor(std::log2(tileSize)),
+            std::ceil(std::log2(width) - std::log2(lastLevelMaxSize))))
+        : 0;
     std::vector<std::unique_ptr<oiio::ImageOutput>> levelOutputs;
 
     ALICEVISION_LOG_INFO("Number of downscaled panorama levels to generate: " << nbLevels);
