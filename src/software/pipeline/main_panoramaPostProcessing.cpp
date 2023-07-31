@@ -402,7 +402,8 @@ int aliceVision_main(int argc, char** argv)
 
     for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
     {
-        fs::path levelPath = fs::path(outputPanoramaPath).parent_path() / ("level_" + std::to_string(levelIdx) + ".exr");
+        const int levelWidth = width / (1 << levelIdx);
+        fs::path levelPath = fs::path(outputPanoramaPath).parent_path() / ("level_" + std::to_string(levelWidth) + ".exr");
         levelOutputs.push_back(std::move(oiio::ImageOutput::create(levelPath.string())));
 
         oiio::ImageSpec levelSpec(outputSpec);
