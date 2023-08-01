@@ -23,7 +23,8 @@ option(AV_BUILD_VPX "Enable building an embedded libvpx required for ffmpeg" ON)
 option(AV_BUILD_COINUTILS "Enable building an embedded CoinUtils" ON)
 option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
-option(AV_BUILD_PCL "Enable building an embedded PointCloud library" ON)
+option(AV_BUILD_FLANN "Enable building an embedded Flann" ON)
+option(AV_BUILD_PCL "Enable building an embedded PointCloud library" OFF)
 option(AV_BUILD_USD "Enable building an embedded USD library" OFF)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" ON)
@@ -85,6 +86,7 @@ message(STATUS "AV_USE_OPENMP: ${AV_USE_OPENMP}")
 message(STATUS "AV_BUILD_COINUTILS: ${AV_BUILD_COINUTILS}")
 message(STATUS "AV_BUILD_OSI: ${AV_BUILD_OSI}")
 message(STATUS "AV_BUILD_CLP: ${AV_BUILD_CLP}")
+message(STATUS "AV_BUILD_FLANN: ${AV_BUILD_FLANN}")
 message(STATUS "AV_BUILD_PCL: ${AV_BUILD_PCL}")
 message(STATUS "AV_BUILD_USD: ${AV_BUILD_USD}")
 message(STATUS "AV_BUILD_DEPENDENCIES_PARALLEL: ${AV_BUILD_DEPENDENCIES_PARALLEL}")
@@ -976,14 +978,12 @@ ExternalProject_Add(${CLP_TARGET}
 set(CLP_CMAKE_FLAGS -DClp_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/clp)
 endif()
 
-# Add PCL
-if(AV_BUILD_PCL)
-    # build other dependencies for pcl
+if(AV_BUILD_FLANN)
     # add lz4 for flann
     set(LZ4_TARGET lz4)
     ExternalProject_Add(${LZ4_TARGET}
-            GIT_REPOSITORY https://github.com/alicevision/lz4
-            GIT_TAG 47a530e8a8c945ad3bb809e2ce4591a56c5081e2
+            GIT_REPOSITORY https://github.com/lz4/lz4
+            GIT_TAG v1.9.4
             PREFIX ${BUILD_DIR}
             BUILD_IN_SOURCE 0
             BUILD_ALWAYS 0
@@ -993,17 +993,16 @@ if(AV_BUILD_PCL)
             INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
             CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
                 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-                <SOURCE_DIR>
+                <SOURCE_DIR>/build/cmake/
             BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+            INSTALL_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} install 
             )
     set(LZ4_CMAKE_FLAGS -Dlz4_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/lz4/)
 
-    # @TODO whenever flann will be removed as embedded dependency move this and lz4 out from if(AV_BUILD_PCL) as they will be needed by the library
-    # add flann
     set(FLANN_TARGET flann)
     ExternalProject_Add(${FLANN_TARGET}
             GIT_REPOSITORY https://github.com/alicevision/flann
-            GIT_TAG 9e79ca6881b779fb842e83c17aef1f4c816ce058
+            GIT_TAG 46e72429ef60ce9c413fa926ac7729f8dee96395
             PREFIX ${BUILD_DIR}
             BUILD_IN_SOURCE 0
             BUILD_ALWAYS 0
@@ -1011,20 +1010,26 @@ if(AV_BUILD_PCL)
             SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${FLANN_TARGET}
             BINARY_DIR ${BUILD_DIR}/${FLANN_TARGET}_build
             INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-            CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
+            CONFIGURE_COMMAND 
+            ${CMAKE_COMMAND} -E env PKG_CONFIG_PATH=${CMAKE_INSTALL_PREFIX}/lib64/pkgconfig/
+            ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
                 -DBUILD_C_BINDINGS:BOOL=OFF
                 -DBUILD_EXAMPLES=OFF
                 -DBUILD_TESTS:BOOL=OFF
                 -DBUILD_DOC:BOOL=OFF
                 -DBUILD_PYTHON_BINDINGS:BOOL=OFF
                 -DBUILD_MATLAB_BINDINGS:BOOL=OFF
-                ${LZ4_CMAKE_FLAGS}
                 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
             BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+            INSTALL_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} install
             DEPENDS ${LZ4_TARGET}
             )
     set(FLANN_CMAKE_FLAGS -Dflann_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/flann/)
 
+endif()
+
+# Add PCL
+if(AV_BUILD_PCL)
     # add point cloud library
     set(PCL_TARGET pcl)
     ExternalProject_Add(${PCL_TARGET}
@@ -1123,6 +1128,8 @@ set(AV_DEPS
   ${OSI_TARGET}
   ${CLP_TARGET}
   ${USD_TARGET}
+  ${FLANN_TARGET}
+  ${LZ4_TARGET}
 )
 
 if(AV_BUILD_ALICEVISION)

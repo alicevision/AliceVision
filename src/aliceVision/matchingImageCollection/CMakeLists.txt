@@ -42,6 +42,7 @@ alicevision_add_library(aliceVision_matchingImageCollection
   PRIVATE_LINKS
     aliceVision_system
     ${CERES_LIBRARIES}
+    ${FLANN_LIBRARIES}
 )
 
 # Unit tests

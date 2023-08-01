@@ -163,7 +163,7 @@ endmacro(add_target_properties)
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/MeshSDFilter/external)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
@@ -428,18 +428,18 @@ endif()
 # ==============================================================================
 # Flann
 # ==============================================================================
-# - internal by default (flann),
-# - external if FLANN_INCLUDE_DIR_HINTS and a valid Flann setup is found
-# ==============================================================================
 if(ALICEVISION_BUILD_SFM)
-  if(NOT DEFINED FLANN_INCLUDE_DIR_HINTS)
-    set(FLANN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src/cpp)
-    set(ALICEVISION_USE_INTERNAL_FLANN ON)
-  endif()
-  find_package(Flann QUIET)
-  if(NOT FLANN_FOUND OR ALICEVISION_USE_INTERNAL_FLANN)
-    set(FLANN_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src/cpp)
-    set(FLANN_LIBRARY flann_cpp_s)
+  find_package(lz4 REQUIRED)
+  find_package(flann REQUIRED)
+
+  if (TARGET lz4::lz4)
+    set(FLANN_LIBRARIES flann::flann_cpp lz4::lz4)
+  elseif (TARGET LZ4::lz4_static)
+    set(FLANN_LIBRARIES flann::flann_cpp LZ4::lz4_static)
+  elseif (TARGET LZ4::lz4_shared)
+    set(FLANN_LIBRARIES flann::flann_cpp LZ4::lz4_shared)
+  else()
+    message(FATAL_ERROR "FLANN can not be found")
   endif()
 endif()
 
@@ -947,13 +947,7 @@ message(STATUS "EIGEN: " ${EIGEN_VERSION} "")
 
 if(ALICEVISION_BUILD_SFM)
   message(STATUS "CERES: " ${CERES_VERSION} "")
-
-  if(ALICEVISION_USE_INTERNAL_FLANN)
-    message(STATUS "FLANN: " ${FLANN_VERSION} " (internal)")
-  else()
-    message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
-  endif()
-
+  message(STATUS "FLANN: " ${FLANN_VERSION} "")
   message(STATUS "CLP: " ${Clp_VERSION} "")
   message(STATUS "COINUTILS: " ${CoinUtils_VERSION} "")
   message(STATUS "OSI: " ${Osi_VERSION} "")

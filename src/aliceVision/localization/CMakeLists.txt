@@ -38,6 +38,7 @@ alicevision_add_library(aliceVision_localization
     aliceVision_matchingImageCollection
     Boost::filesystem
     Boost::boost
+    ${FLANN_LIBRARIES}
 )
 
 if(ALICEVISION_HAVE_CCTAG)

@@ -13,14 +13,11 @@
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/Database.hpp>
-#include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/localization/reconstructed_regions.hpp>
 #include <aliceVision/localization/LocalizationResult.hpp>
 #include <aliceVision/localization/ILocalizer.hpp>
 #include <aliceVision/localization/BoundedBuffer.hpp>
-
-#include <flann/algorithms/dist.h>
 
 namespace aliceVision {
 namespace localization {
