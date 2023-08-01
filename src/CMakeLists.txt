@@ -947,13 +947,7 @@ message(STATUS "EIGEN: " ${EIGEN_VERSION} "")
 
 if(ALICEVISION_BUILD_SFM)
   message(STATUS "CERES: " ${CERES_VERSION} "")
-
-  if(ALICEVISION_USE_INTERNAL_FLANN)
-    message(STATUS "FLANN: " ${FLANN_VERSION} " (internal)")
-  else()
-    message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
-  endif()
-
+  message(STATUS "FLANN: " ${FLANN_VERSION} "")
   message(STATUS "CLP: " ${Clp_VERSION} "")
   message(STATUS "COINUTILS: " ${CoinUtils_VERSION} "")
   message(STATUS "OSI: " ${Osi_VERSION} "")
