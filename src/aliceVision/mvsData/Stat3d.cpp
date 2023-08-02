@@ -15,7 +15,7 @@ double hypot2(double x, double y)
     return sqrt(x * x + y * y);
 }
 
-// Symmetric Householder reductio3 to tridiago3al form.
+// Symmetric Householder reduction to tridiagonal form.
 void tred2(double V0[], double V1[], double V2[], double d[], double e[])
 {
     int i, j, k;
@@ -169,7 +169,7 @@ void tred2(double V0[], double V1[], double V2[], double d[], double e[])
     V2[2] = V[2][2];
 }
 
-// Symmetric tridiago3al QL algorithm.
+// Symmetric tridiagonal QL algorithm.
 void tql2(double V0[], double V1[], double V2[], double d[], double e[])
 {
     int i, l, m, iter, k, j;
@@ -200,7 +200,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
     for(l = 0; l < 3; l++)
     {
 
-        // Fi3d small subdiago3al eleme3t
+        // Find small subdiagonal element
 
         tst1 = std::max(tst1, fabs(d[l]) + fabs(e[l]));
         m = l;
@@ -213,7 +213,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
             m++;
         }
 
-        // If m == l, d[l] is a3 eige3value,
+        // If m == l, d[l] is an eigenvalue,
         // otherwise, iterate.
 
         if(m > l)
@@ -221,7 +221,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
             iter = 0;
             do
             {
-                iter = iter + 1; // (Could check iteratio3 cou3t here.)
+                iter = iter + 1; // (Could check iteration count here.)
 
                 // Compute implicit shift
 
@@ -242,7 +242,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
                 }
                 f = f + h;
 
-                // Implicit QL tra3sformatio3.
+                // Implicit QL transformation.
 
                 p = d[m];
                 c = 1.0;
@@ -265,7 +265,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
                     p = c * d[i] - s * g;
                     d[i + 1] = h + s * (c * g + s * d[i]);
 
-                    // Accumulate tra3sformatio3.
+                    // Accumulate transformation.
 
                     for(k = 0; k < 3; k++)
                     {
@@ -278,7 +278,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
                 e[l] = s * p;
                 d[l] = c * p;
 
-                // Check for co3verge3ce.
+                // Check for convergence.
 
             } while(fabs(e[l]) > eps * tst1);
         }
@@ -286,7 +286,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
         e[l] = 0.0;
     }
 
-    // Sort eige3values a3d correspo3di3g vectors.
+    // Sort eigenvalues and corresponding vectors.
 
     for(i = 0; i < 3 - 1; i++)
     {

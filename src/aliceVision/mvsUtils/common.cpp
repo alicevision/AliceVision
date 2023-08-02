@@ -526,7 +526,7 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     return d1 * d2 >= 0.0;
 }
 
-double computeHexahedronVolume(const Point3d* hexah)
+double computeHexahedronVolume(const Point3d* hexah)  // is this correct in case of rotated hexahedron?
 {
   const double w = std::abs(hexah[1].x - hexah[0].x);
   const double h = std::abs(hexah[3].y - hexah[0].y);

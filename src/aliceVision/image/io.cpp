@@ -666,7 +666,7 @@ void readImage(const std::string& path,
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
-    inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
+    inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image conversion to float (for grayscale and color space conversion)
 
     if(!inBuf.initialized())
         ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'.");

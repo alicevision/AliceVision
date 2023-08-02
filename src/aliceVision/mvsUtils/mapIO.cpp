@@ -612,7 +612,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
             const int nbTileDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
 
             if(nbTileDepthValues < 0)
-                ALICEVISION_THROW_ERROR("Cannot find or incorrect 'AliceVision:nbDepthValues' metadata in depth map tile (rc: " << rc << ")");
+                ALICEVISION_THROW_ERROR("Cannot find or incorrect 'AliceVision:nbDepthValues' metadata in depth map tile (rc: " << rc << ")"); // throw error or recompute (like below)?
 
             nbDepthValues += nbTileDepthValues;
         }
