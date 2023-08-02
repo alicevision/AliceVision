@@ -92,7 +92,8 @@ bool prepareDenseScene(const SfMData& sfmData,
                        image::EImageFileType outputFileType,
                        bool saveMetadata,
                        bool saveMatricesFiles,
-                       bool evCorrection)
+                       bool evCorrection,
+                       float landmarksMaskScale)
 {
     // defined view Ids
     std::set<IndexT> viewIds;
@@ -127,6 +128,8 @@ bool prepareDenseScene(const SfMData& sfmData,
     // for exposure correction
     const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
     ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0 / medianCameraExposure));
+
+    const LandmarksPerView landmarksPerView = getLandmarksPerViews(sfmData);
 
 #pragma omp parallel for num_threads(3)
     for (int i = 0; i < viewIds.size(); ++i)
@@ -251,29 +254,55 @@ bool prepareDenseScene(const SfMData& sfmData,
                                               << " Ev compensation: " + std::to_string(exposureCompensation));
             }
 
-            image::Image<unsigned char> mask;
-            if (tryLoadMask(&mask, masksFolders, viewId, srcImage, maskExtension))
+            image::Image<unsigned char> maskLandmarks;
+            if(landmarksMaskScale > 0.f)
             {
-                process<Image<RGBAfColor>>(
-                  dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask](Image<RGBAfColor>& image) {
-                      if (image.width() * image.height() != mask.width() * mask.height())
-                      {
-                          ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
-                          return;
-                      }
-
-                      for (int pix = 0; pix < image.width() * image.height(); ++pix)
-                      {
-                          const bool masked = (mask(pix) == 0);
-                          image(pix).a() = masked ? 0.f : 1.f;
-                      }
-                  });
+                const LandmarkIdSet& landmarksSet = landmarksPerView.at(viewId);
+                image::Image<RGBAfColor> image;
+                readImage(srcImage, image, image::EImageColorSpace::LINEAR);
+                maskLandmarks = image::Image<unsigned char>(image.Width(), image.Height(), true, 0);
+                int r = (int)(landmarksMaskScale * 0.5f * (image.Width() + image.Height()));
+                for(const auto& landmarkId : landmarksSet)
+                {
+                    const sfmData::Landmark& landmark = sfmData.getLandmarks().at(landmarkId);
+                    Observation obs = landmark.observations.at(viewId);
+                    // maskLandmarks(obs.x.y(), obs.x.x()) = 1;
+                    for(int y = std::max(obs.x.y() - r, 0.);
+                        y <= std::min(obs.x.y() + r, (double)maskLandmarks.Height() - 1); y++)
+                    {
+                        for(int x = std::max(obs.x.x() - r, 0.);
+                            x <= std::min(obs.x.x() + r, (double)maskLandmarks.Width() - 1); x++)
+                        {
+                            maskLandmarks(y, x) = 1;
+                        }
+                    }
+                }
             }
+
+            image::Image<unsigned char> mask;
+            if(tryLoadMask(&mask, masksFolders, viewId, srcImage, maskExtension))
+                mask = mask * maskLandmarks;
             else
+                mask = maskLandmarks;
+            process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
+            {
+                if(image.Width() * image.Height() != mask.Width() * mask.Height())
+                {
+                    ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
+                    return;
+                }
+
+                for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+                {
+                    const bool masked = (mask(pix) == 0);
+                    image(pix).a() = masked ? 0.f : 1.f;
+                }
+            });
+            /* else
             {
                 const auto noMaskingFunc = [](Image<RGBAfColor>& image) {};
                 process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
-            }
+            }*/
         }
 
         ++progressDisplay;
@@ -298,6 +327,7 @@ int aliceVision_main(int argc, char* argv[])
     bool saveMetadata = true;
     bool saveMatricesTxtFiles = false;
     bool evCorrection = false;
+    float landmarksMaskScale = 0.f;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -328,7 +358,10 @@ int aliceVision_main(int argc, char* argv[])
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
          "Range size.")
         ("evCorrection", po::value<bool>(&evCorrection)->default_value(evCorrection),
-         "Correct exposure value.");
+         "Correct exposure value.")
+        ("landmarksMaskScale", po::value<float>(&landmarksMaskScale)->default_value(landmarksMaskScale),
+         "Scale (relative to image size) of the projection of landmarks to mask images for depth computation.\n"
+         "If 0, masking using landmarks will not be used.");
     // clang-format on
 
     CmdLine cmdline("AliceVision prepareDenseScene");
@@ -392,7 +425,8 @@ int aliceVision_main(int argc, char* argv[])
                           outputFileType,
                           saveMetadata,
                           saveMatricesTxtFiles,
-                          evCorrection))
+                          evCorrection,
+                          landmarksMaskScale))
         return EXIT_SUCCESS;
 
     return EXIT_FAILURE;
