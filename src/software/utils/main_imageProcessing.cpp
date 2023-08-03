@@ -320,7 +320,7 @@ struct ProcessingParams
     bool fixNonFinite = false;
     bool applyDcpMetadata = false;
     bool useDCPColorMatrixOnly = false;
-    bool sourceIsRaw = false;
+    bool enableColorTempProcessing = false;
     double correlatedColorTemperature = -1.0;
 
     LensCorrectionParams lensCorrection =
@@ -600,7 +600,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 #endif
     }
 
-    if (pParams.applyDcpMetadata || (pParams.sourceIsRaw && pParams.correlatedColorTemperature <= 0.0))
+    if (pParams.applyDcpMetadata || (pParams.enableColorTempProcessing && pParams.correlatedColorTemperature <= 0.0))
     {
         bool dcpMetadataOK = map_has_non_empty_value(imageMetadata, "AliceVision:DCP:Temp1") &&
                              map_has_non_empty_value(imageMetadata, "AliceVision:DCP:Temp2") &&
@@ -678,7 +678,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         double cct = pParams.correlatedColorTemperature;
         double tint;
 
-        if (pParams.sourceIsRaw)
+        if (pParams.enableColorTempProcessing)
         {
             dcpProf.getColorTemperatureAndTintFromNeutral(neutral, cct, tint);
         }
@@ -690,7 +690,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         imageMetadata["AliceVision:ColorTemperature"] = std::to_string(cct);
     }
-    else if (pParams.sourceIsRaw && pParams.correlatedColorTemperature > 0.0)
+    else if (pParams.enableColorTempProcessing && pParams.correlatedColorTemperature > 0.0)
     {
         imageMetadata["AliceVision:ColorTemperature"] = std::to_string(pParams.correlatedColorTemperature);
     }
@@ -1108,7 +1108,7 @@ int aliceVision_main(int argc, char * argv[])
                 options.rawAutoBright = pParams.rawAutoBright;
                 options.correlatedColorTemperature = correlatedColorTemperature;
                 pParams.correlatedColorTemperature = correlatedColorTemperature;
-                pParams.sourceIsRaw = true;
+                pParams.enableColorTempProcessing = options.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
             }
 
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
@@ -1331,7 +1331,7 @@ int aliceVision_main(int argc, char * argv[])
                         (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
                 {
                     // Fallback case of missing profile but no error requested
-                    readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+                    readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
                 }
                 else
                 {
@@ -1351,7 +1351,7 @@ int aliceVision_main(int argc, char * argv[])
                 readOptions.rawAutoBright = pParams.rawAutoBright;
                 readOptions.correlatedColorTemperature = correlatedColorTemperature;
                 pParams.correlatedColorTemperature = correlatedColorTemperature;
-                pParams.sourceIsRaw = true;
+                pParams.enableColorTempProcessing = readOptions.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
 
                 pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                 if (pParams.applyDcpMetadata)
