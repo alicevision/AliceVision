@@ -1331,7 +1331,7 @@ int aliceVision_main(int argc, char * argv[])
                         (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
                 {
                     // Fallback case of missing profile but no error requested
-                    readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+                    readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
                 }
                 else
                 {
