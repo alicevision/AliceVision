@@ -235,6 +235,17 @@ private:
     double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize);
 
     /**
+     * @brief Compute the standard deviation of the local averaged Laplacian in an image.
+     * @param sum The integral image of the Laplacian of a given image
+     * @param squaredSum The squared integral image of the Laplacian of a given image
+     * @param x The x-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param y The y-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param windowSize The size of the window along the x- and y-axis for the local standard deviation computation
+     * @return a const double value representating the local standard deviation of the Laplacian
+     */
+    const double computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x, const int y, const int windowSize);
+
+    /**
      * @brief Estimate the optical flow score for an input grayscale frame based on its previous frame cell by cell
      * @param[in] ptrFlow the OpenCV's DenseOpticalFlow object
      * @param[in] grayscaleImage the grayscale matrix of the current frame

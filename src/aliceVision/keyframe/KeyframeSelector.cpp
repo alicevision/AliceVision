@@ -757,31 +757,50 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
     cv::Laplacian(grayscaleImage, laplacian, CV_64F);
     cv::integral(laplacian, sum, squaredSum);
 
-    double totalCount = windowSize * windowSize;
     double maxstd = 0.0;
+    int x, y;
 
-    // TODO: do not slide the window pixel by pixel to speed up computations
     // Starts at 1 because the integral image is padded with 0s on the top and left borders
-    for (int y = 1; y < sum.rows - windowSize; ++y) {
-        for (int x = 1; x < sum.cols - windowSize; ++x) {
-            double tl = sum.at<double>(y, x);
-            double tr = sum.at<double>(y, x + windowSize);
-            double bl = sum.at<double>(y + windowSize, x);
-            double br = sum.at<double>(y + windowSize, x + windowSize);
-            const double s1 = br + tl - tr - bl;
+    for (y = 1; y < sum.rows - windowSize; y += windowSize / 4) {
+        for (x = 1; x < sum.cols - windowSize; x += windowSize / 4) {
+            maxstd = std::max(maxstd, computeSharpnessStd(sum, squaredSum, x, y, windowSize));
+        }
 
-            tl = squaredSum.at<double>(y, x);
-            tr = squaredSum.at<double>(y, x + windowSize);
-            bl = squaredSum.at<double>(y + windowSize, x);
-            br = squaredSum.at<double>(y + windowSize, x + windowSize);
-            const double s2 = br + tl - tr - bl;
-
-            const double std2 = std::sqrt((s2 - (s1 * s1) / totalCount) / totalCount);
-            maxstd = std::max(maxstd, std2);
+        // Compute sharpness over the last part of the image for windowSize along the x-axis;
+        // the overlap with the previous window might be greater than the previous ones
+        if (x >= sum.cols - windowSize) {
+            x = sum.cols - windowSize - 1;
+            maxstd = std::max(maxstd, computeSharpnessStd(sum, squaredSum, x, y, windowSize));
         }
     }
 
+    // Compute sharpness over the last part of the image for windowSize along the y-axis;
+    // the overlap with the previous window might be greater than the previous ones
+    if (y >= sum.rows - windowSize) {
+        y = sum.rows - windowSize - 1;
+        maxstd = std::max(maxstd, computeSharpnessStd(sum, squaredSum, x, y, windowSize));
+    }
+
     return maxstd;
+}
+
+const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x,
+                                                   const int y, const int windowSize)
+{
+    const double totalCount = windowSize * windowSize;
+    double tl = sum.at<double>(y, x);
+    double tr = sum.at<double>(y, x + windowSize);
+    double bl = sum.at<double>(y + windowSize, x);
+    double br = sum.at<double>(y + windowSize, x + windowSize);
+    const double s1 = br + tl - tr - bl;
+
+    tl = squaredSum.at<double>(y, x);
+    tr = squaredSum.at<double>(y, x + windowSize);
+    bl = squaredSum.at<double>(y + windowSize, x);
+    br = squaredSum.at<double>(y + windowSize, x + windowSize);
+    const double s2 = br + tl - tr - bl;
+
+    return std::sqrt((s2 - (s1 * s1) / totalCount) / totalCount);
 }
 
 double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
