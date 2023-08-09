@@ -323,7 +323,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
         }
     }
 
-    const std::lock_guard<std::mutex> lockGeneral(_mutexGeneral);
+    const std::scoped_lock<std::mutex> lockGeneral(_mutexGeneral);
 
     // retrieve image size
     int width, height;
@@ -451,7 +451,7 @@ bool ImageCache::contains(const std::string& filename, int downscaleLevel) const
                                 << "request was made with downscale level " << downscaleLevel);
     }
 
-    const std::lock_guard<std::mutex> lockPeek(_mutexPeek);
+    const std::scoped_lock<std::mutex> lockPeek(_mutexPeek);
 
     using TInfo = ColorTypeInfo<TPix>;
 
