@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <fstream>
+#include <thread>
 
 
 namespace fs = boost::filesystem;
@@ -320,8 +321,85 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
     _frameWidth = 0;
     _frameHeight = 0;
 
-    // Create feeds and count minimum number of frames
+    // Create single feed and count minimum number of frames
     std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
+
+    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
+        const auto& path = _mediaPaths.at(mediaIndex);
+
+        // Create a feed provider per mediaPaths
+        auto feed = std::make_unique<dataio::FeedProvider>(path);
+
+        // Check if feed is initialized
+        if (!feed->isInit()) {
+            ALICEVISION_THROW(std::invalid_argument, "Cannot initialize the FeedProvider with " << path);
+        }
+
+        // Number of frames in the rig might slightly differ
+        nbFrames = std::min(nbFrames, static_cast<std::size_t>(feed->nbFrames()));
+
+        if (mediaIndex == 0) {
+            // Read first image and set _frameWidth and _frameHeight, since the feeds have been initialized
+            feed->goToFrame(0);
+            cv::Mat mat = readImage(*feed, rescaledWidthFlow);
+            // Will be used later on to determine the motion accumulation step
+            _frameWidth = mat.size().width;
+            _frameHeight = mat.size().height;
+        }
+    }
+
+    // Check if minimum number of frame is zero
+    if (nbFrames == 0) {
+        ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or is empty!");
+    }
+
+    // With the number of threads available and the number of frames to process known,
+    // blocks can be prepared for multi-threading
+    int nbThreads = omp_get_max_threads();
+
+    std::size_t blockSize = (nbFrames / static_cast<std::size_t>(nbThreads)) + 1;
+
+    // If a block contains less than _minBlockSize frames (when there are lots of available threads for a small number
+    // of frames, for example), resize it: less threads will be spawned, but since new FeedProvider objects need to be
+    // created for each thread, we prevent spawing thread that will need to create FeedProvider objects
+    // for very few frames.
+    if (blockSize < _minBlockSize && nbFrames >= _minBlockSize) {
+        blockSize = _minBlockSize;
+        nbThreads = static_cast<int>(nbFrames / blockSize) + 1;  // +1 to ensure that every frame in processed by a thread
+    }
+
+    std::vector<std::thread> threads;
+    ALICEVISION_LOG_INFO("Splitting " << nbFrames << " frames into " << nbThreads << " threads of size " << blockSize << ".");
+
+    for (std::size_t i = 0; i < nbThreads; i++) {
+        std::size_t startFrame = static_cast<std::size_t>(std::max(0, static_cast<int>(i * blockSize) - 1));
+        std::size_t endFrame = std::min(i * blockSize + blockSize, nbFrames);
+
+        // If there is an extra thread with no new frames to process, skip it.
+        // This might occur as a consequence of the "+1" when adjusting the number of threads.
+        if (startFrame >= nbFrames) {
+            break;
+        }
+
+        ALICEVISION_LOG_DEBUG("Starting thread to compute scores for frame " << startFrame << " to " << endFrame << ".");
+
+        threads.push_back(std::thread(&KeyframeSelector::computeScoresProc, this, startFrame, endFrame, nbFrames,
+                                      rescaledWidthSharpness, rescaledWidthFlow, sharpnessWindowSize, flowCellSize,
+                                      skipSharpnessComputation));
+    }
+
+    for (auto &th : threads) {
+        th.join();
+    }
+
+    return true;
+}
+
+bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std::size_t endFrame,
+                                         const std::size_t nbFrames, const std::size_t rescaledWidthSharpness,
+                                         const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
+                                         const std::size_t flowCellSize, const bool skipSharpnessComputation)
+{
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
 
     for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
@@ -335,14 +413,6 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
         if (!feed.isInit()) {
             ALICEVISION_THROW(std::invalid_argument, "Cannot initialize the FeedProvider with " << path);
         }
-
-        // Update minimum number of frames
-        nbFrames = std::min(nbFrames, (size_t)feed.nbFrames());
-    }
-
-    // Check if minimum number of frame is zero
-    if (nbFrames == 0) {
-        ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or is empty!");
     }
 
     // Feed provider variables
@@ -354,26 +424,26 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
     // Feed and metadata initialization
     for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
         // First frame with offset
-        feeds.at(mediaIndex)->goToFrame(0);
+        feeds.at(mediaIndex)->goToFrame(startFrame);
 
         if (!feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
             ALICEVISION_THROW(std::invalid_argument, "Cannot read media first frame " << _mediaPaths[mediaIndex]);
         }
     }
 
-    std::size_t currentFrame = 0;
+    std::size_t currentFrame = startFrame;
     cv::Mat currentMatSharpness;  // OpenCV matrix for the sharpness computation
     cv::Mat previousMatFlow, currentMatFlow;  // OpenCV matrices for the optical flow computation
     auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
 
-    while (currentFrame < nbFrames) {
+    while (currentFrame < endFrame) {
         double minimalSharpness = skipSharpnessComputation ? 1.0f : std::numeric_limits<double>::max();
         double minimalFlow = std::numeric_limits<double>::max();
 
         for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
             auto& feed = *feeds.at(mediaIndex);
 
-            if (currentFrame > 0) {  // Get currentFrame - 1 for the optical flow computation
+            if (currentFrame > startFrame) {  // Get currentFrame - 1 for the optical flow computation
                 previousMatFlow = readImage(feed, rescaledWidthFlow);
                 feed.goToNextFrame();
             }
@@ -398,9 +468,12 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
                         ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
                                                 << ", attempting to read frame " << currentFrame + 2 << ".");
 
-                        // Push dummy scores for the frame that was skipped
-                        _sharpnessScores[currentFrame] = -1.f;
-                        _flowScores[currentFrame] = -1.f;
+                        {
+                            // Push dummy scores for the frame that was skipped
+                            const std::scoped_lock lock(_mutex);
+                            _sharpnessScores[currentFrame] = -1.f;
+                            _flowScores[currentFrame] = -1.f;
+                        }
 
                         success = feed.goToFrame(++currentFrame);
                         if (success) {
@@ -416,11 +489,6 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
                 currentMatFlow = readImage(feed, rescaledWidthFlow);
             }
 
-            if (_frameWidth == 0 && _frameHeight == 0) {  // Will be used later on to determine the motion accumulation step
-                _frameWidth = currentMatFlow.size().width;
-                _frameHeight = currentMatFlow.size().height;
-            }
-
             // Compute sharpness
             if (!skipSharpnessComputation) {
                 const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize);
@@ -428,20 +496,23 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
             }
 
             // Compute optical flow
-            if (currentFrame > 0) {
+            if (currentFrame > startFrame) {
                 const double flow = estimateFlow(ptrFlow, currentMatFlow, previousMatFlow, flowCellSize);
                 minimalFlow = std::min(minimalFlow, flow);
             }
 
-            ALICEVISION_LOG_INFO("Finished processing frame " << currentFrame + 1 << "/" << nbFrames);
+            std::string rigInfo = feeds.size() > 1 ? " (media " + std::to_string(mediaIndex + 1) + "/" + std::to_string(feeds.size()) + ")" : "";
+            ALICEVISION_LOG_INFO("Finished processing frame " << currentFrame + 1 << "/" << nbFrames << rigInfo);
         }
 
-        // Save scores for the current frame
-        _sharpnessScores[currentFrame] = minimalSharpness;
-        _flowScores[currentFrame] = currentFrame > 0 ? minimalFlow : -1.f;
+        {
+            // Save scores for the current frame
+            const std::scoped_lock lock(_mutex);
+            _sharpnessScores[currentFrame] = minimalSharpness;
+            _flowScores[currentFrame] = currentFrame > startFrame ? minimalFlow : -1.f;
+        }
         ++currentFrame;
     }
-
     return true;
 }
 
