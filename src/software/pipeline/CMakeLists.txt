@@ -331,17 +331,19 @@ if(ALICEVISION_BUILD_SFM)
               Boost::timer
     )
 
-    # Filter SfM data
-    alicevision_add_software(aliceVision_filterSfM
-        SOURCE main_filterSfM.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_sfmData
-              aliceVision_sfmDataIO
-              Boost::program_options
-              Boost::filesystem
-    )
+  # Filter SfM data
+  alicevision_add_software(aliceVision_filterSfM
+    SOURCE main_filterSfM.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_cmdline
+          aliceVision_sfmData
+          aliceVision_mvsUtils
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          nanoflann
+  )
          
 endif() # if(ALICEVISION_BUILD_SFM)
 
