@@ -55,8 +55,8 @@ struct LandmarksAdaptator
     /// CRTP helper method
     inline Derived& derived() { return *static_cast<Derived*>(this); }
 
-    const sfmData::Landmarks& _data;
-    LandmarksAdaptator(const sfmData::Landmarks& data)
+    const std::vector<Landmark> _data;
+    LandmarksAdaptator(const std::vector<Landmark>& data)
         : _data(data)
     {
     }
@@ -67,9 +67,7 @@ struct LandmarksAdaptator
     // Returns the dim'th component of the idx'th point in the class:
     inline T kdtree_get_pt(const size_t idx, int dim) const
     {
-        auto it = _data.begin();
-        std::advance(it, idx);
-        return it->second.X(dim);
+        return _data[idx].X(dim);
     }
 
     // Optional bounding-box computation: return false to default to a standard bbox computation loop.
@@ -100,7 +98,7 @@ public:
     const double _pixSize_i;
     bool found = false;
 
-    inline PixSizeSearch(double radius, const std::vector<double>& pixSize, int i)
+    inline PixSizeSearch(double radius, const std::vector<double>& pixSize, size_t i)
         : _radius_sq(radius * radius)
         , _pixSize(pixSize)
         , _pixSize_i(pixSize[i])
@@ -124,16 +122,23 @@ public:
 
 bool filterLandmarks(SfMData& sfmData, double radiusScale)
 {
+    std::vector<Landmark> landmarksData(sfmData.getLandmarks().size());
+    {
+        size_t i = 0;
+        for(const auto& it : sfmData.getLandmarks())
+        {
+            landmarksData[i++] = it.second;
+        }
+    }
+
     mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
-    std::vector<double> landmarksPixSize(sfmData.getLandmarks().size());
+    std::vector<double> landmarksPixSize(landmarksData.size());
 
     ALICEVISION_LOG_INFO("Computing pixel size: started.");
     #pragma omp parallel for
-    for(auto i = 0; i < sfmData.getLandmarks().size(); i++)
+    for(auto i = 0; i < landmarksData.size(); i++)
     {
-        auto landmarkPair = sfmData.getLandmarks().begin();
-        std::advance(landmarkPair, i);
-        const sfmData::Landmark& landmark = landmarkPair->second;
+        const Landmark& landmark = landmarksData[i];
 
         // compute landmark pixSize
         double pixSize = 0.;
@@ -155,73 +160,66 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale)
     //std::stable_sort(landmarksPixSize.begin(), landmarksPixSize.end(), std::greater<>{});
 
     ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
-    LandmarksAdaptator data(sfmData.getLandmarks());
+    LandmarksAdaptator data(landmarksData);
     KdTree tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     tree.buildIndex();
-    ALICEVISION_LOG_INFO("KdTree created for " << sfmData.getLandmarks().size() << " points.");
-    std::vector<IndexT> newIdx(sfmData.getLandmarks().size());
-    IndexT currentIdx = 0;
+    ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
+    std::vector<bool> toRemove(landmarksData.size(), false);
 
     ALICEVISION_LOG_INFO("Identifying landmarks to remove: started.");
-    #pragma omp parallel for
-    for (auto i = 0; i < sfmData.getLandmarks().size(); i++)
+
+    size_t nbToRemove = 0;
+    #pragma omp parallel for reduction(+:nbToRemove)
+    for(auto i = 0; i < landmarksData.size(); i++)
     {
         PixSizeSearch search(landmarksPixSize[i] * radiusScale, landmarksPixSize, i);
-        bool found = tree.findNeighbors(search, sfmData.getLandmarks().at(i).X.data(), nanoflann::SearchParams());
+        bool found = tree.findNeighbors(search, landmarksData[i].X.data(), nanoflann::SearchParams());
         if (found)
         {
-            newIdx[i] = -1;
-        }
-        else
-        {
-            newIdx[i] = currentIdx++;
+            toRemove[i] = true;
+            nbToRemove++;
         }
     }
 
     ALICEVISION_LOG_INFO(
-        "Identified " << (sfmData.getLandmarks().size() - currentIdx) <<
-        " landmarks to remove out of " << (sfmData.getLandmarks().size()) <<
-        ", i.e. " << ((sfmData.getLandmarks().size() - currentIdx) * 100.f / sfmData.getLandmarks().size()) <<
+        "Identified " << (landmarksData.size() - nbToRemove) <<
+        " landmarks to remove out of " << (landmarksData.size()) <<
+        ", i.e. " << ((landmarksData.size() - nbToRemove) * 100.f / landmarksData.size()) <<
         " % "
     );
     ALICEVISION_LOG_INFO("Identifying landmarks to remove: done.");
 
     ALICEVISION_LOG_INFO("Removing landmarks: started.");
-    std::vector<std::pair<IndexT, Landmark>> filteredLandmarks(currentIdx);
-    #pragma omp parallel for
-    for (auto i = 0; i < sfmData.getLandmarks().size(); i++)
+    std::vector<std::pair<IndexT, Landmark>> filteredLandmarks(landmarksData.size() - nbToRemove);
+    IndexT newIdx = 0;
+    for (size_t i = 0; i < landmarksData.size(); i++)
     {
-        if(newIdx[i] != -1)
+        if(!toRemove[i])
         {
-            filteredLandmarks[newIdx[i]] = std::make_pair(newIdx[i], sfmData.getLandmarks().at(i));
+            filteredLandmarks[newIdx++] = std::make_pair(newIdx, landmarksData[i]);
         }
     }
     sfmData.getLandmarks() = Landmarks(filteredLandmarks.begin(), filteredLandmarks.end());
     ALICEVISION_LOG_INFO("Removing landmarks: done.");
 
-    //// take only best observations
-    //observationScores.resize(maxNbObservationsPerLandmark);
-
-
-
-    //// replace the observations
-    //Observations filteredObservations;
-    //for(auto observationScorePair : observationScores)
-    //{
-    //    filteredObservations[observationScorePair.second] = landmark.observations[observationScorePair.second];
-    //}
-    //landmark.observations = filteredObservations;
     return true;
 }
 
 bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark)
 {
-    #pragma omp parallel for
-    for(auto i = 0; i < sfmData.getLandmarks().size(); i++)
+    std::vector<Landmark> landmarksData(sfmData.getLandmarks().size());
     {
-        auto landmarkPair = sfmData.getLandmarks().begin();
-        std::advance(landmarkPair, i);
-        sfmData::Landmark& landmark = landmarkPair->second;
+        size_t i = 0;
+        for(const auto& it : sfmData.getLandmarks())
+        {
+            landmarksData[i++] = it.second;
+        }
+    }
+
+    #pragma omp parallel for
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        sfmData::Landmark landmark = landmarksData[i];
 
         // check number of observations
         if(landmark.observations.size() <= maxNbObservationsPerLandmark)
@@ -232,8 +230,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark)
 
         // compute observation scores
 
-        std::vector<std::pair<double, IndexT> > observationScores;
-        observationScores.reserve(landmark.observations.size());
+        std::vector<std::pair<double, IndexT>> observationScores(landmark.observations.size());
 
         for(const auto& observationPair : landmark.observations)
         {
@@ -254,7 +251,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark)
 
         // replace the observations
         Observations filteredObservations;
-        for(auto observationScorePair : observationScores)
+        for(const auto& observationScorePair : observationScores)
         {
             filteredObservations[observationScorePair.second] = landmark.observations[observationScorePair.second];
         }
@@ -273,6 +270,11 @@ int aliceVision_main(int argc, char *argv[])
     int maxNbObservationsPerLandmark = 5;
     double radiusScale = 2;
 
+    // user optional parameters
+    std::vector<std::string> featuresFolders;
+    std::vector<std::string> matchesFolders;
+    std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputSfmFilename)->required(),
@@ -285,7 +287,13 @@ int aliceVision_main(int argc, char *argv[])
         ("maxNbObservationsPerLandmark", po::value<int>(&maxNbObservationsPerLandmark)->default_value(maxNbObservationsPerLandmark),
          "Maximum number of allowed observations per landmark.")
         ("radiusScale", po::value<double>(&radiusScale)->default_value(radiusScale),
-         "Scale factor applied to pixel size based radius filter applied to landmarks.");
+         "Scale factor applied to pixel size based radius filter applied to landmarks.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
+         "Path to folder(s) in which computed matches are stored.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+        feature::EImageDescriberType_informations().c_str());
 
     CmdLine cmdline("AliceVision SfM filtering.");
     cmdline.add(requiredParams);
@@ -311,18 +319,22 @@ int aliceVision_main(int argc, char *argv[])
     }
 
     // filter SfM data
-    ALICEVISION_LOG_INFO("Filtering landmarks: started.");
-    bool success2 = filterLandmarks(sfmData, radiusScale);
-    ALICEVISION_LOG_INFO("Filtering landmarks: done.");
-    ALICEVISION_LOG_INFO("Filtering observations: started.");
-    bool success1 = filterObservations(sfmData, maxNbObservationsPerLandmark);
-    ALICEVISION_LOG_INFO("Filtering observations: done.");
-
-    if(success1)
+    if(radiusScale > 0)
     {
-        sfmDataIO::Save(sfmData, outputSfmFilename, sfmDataIO::ESfMData::ALL);
-        return EXIT_SUCCESS;
+        ALICEVISION_LOG_INFO("Filtering landmarks: started.");
+        filterLandmarks(sfmData, radiusScale);
+        ALICEVISION_LOG_INFO("Filtering landmarks: done.");
+    }
+    
+    if(maxNbObservationsPerLandmark > 0)
+    {
+        ALICEVISION_LOG_INFO("Filtering observations: started.");
+        filterObservations(sfmData, maxNbObservationsPerLandmark);
+        ALICEVISION_LOG_INFO("Filtering observations: done.");
     }
 
-    return EXIT_FAILURE;
+
+    sfmDataIO::Save(sfmData, outputSfmFilename, sfmDataIO::ESfMData::ALL);
+    return EXIT_SUCCESS;
+
 }
