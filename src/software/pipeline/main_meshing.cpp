@@ -221,7 +221,7 @@ struct BoundingBox
 
     static BoundingBox fromHexahedron(const Point3d* hexah)
     {
-        BoundingBox bbox = BoundingBox();
+        BoundingBox bbox;
 
         // Compute the scale
         bbox.scale(0) = (hexah[0] - hexah[1]).size() / 2.;
@@ -249,7 +249,7 @@ struct BoundingBox
         rotateMat.col(1).head<3>() << cy.x, cy.y, cy.z;
         rotateMat.col(2).head<3>() << cz.x, cz.y, cz.z;
 
-        // eurlar rotation angles on Qt side
+        // Euler rotation angles
         Eigen::Vector3d ea = rotateMat.eulerAngles(1, 0, 2) * 180. / M_PI;
         bbox.rotation(0) = ea(1);
         bbox.rotation(1) = ea(0);
