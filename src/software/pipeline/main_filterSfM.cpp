@@ -43,7 +43,7 @@ using namespace aliceVision::sfmDataIO;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-static const std::size_t MAX_LEAF_ELEMENTS = 10;
+static const std::size_t MAX_LEAF_ELEMENTS = 64;
 
 struct LandmarksAdaptator
 {
@@ -156,7 +156,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale)
 
     ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
     LandmarksAdaptator data(sfmData.getLandmarks());
-    KdTree tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+    KdTree tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     tree.buildIndex();
     ALICEVISION_LOG_INFO("KdTree created for " << sfmData.getLandmarks().size() << " points.");
     std::vector<IndexT> newIdx(sfmData.getLandmarks().size());
@@ -168,7 +168,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale)
     {
         PixSizeSearch search(landmarksPixSize[i] * radiusScale, landmarksPixSize, i);
         bool found = tree.findNeighbors(search, sfmData.getLandmarks().at(i).X.data(), nanoflann::SearchParams());
-        if (!found)
+        if (found)
         {
             newIdx[i] = -1;
         }
@@ -177,19 +177,26 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale)
             newIdx[i] = currentIdx++;
         }
     }
+
+    ALICEVISION_LOG_INFO(
+        "Identified " << (sfmData.getLandmarks().size() - currentIdx) <<
+        " landmarks to remove out of " << (sfmData.getLandmarks().size()) <<
+        ", i.e. " << ((sfmData.getLandmarks().size() - currentIdx) * 100.f / sfmData.getLandmarks().size()) <<
+        " % "
+    );
     ALICEVISION_LOG_INFO("Identifying landmarks to remove: done.");
 
     ALICEVISION_LOG_INFO("Removing landmarks: started.");
-    Landmarks filteredLandmarks;
+    std::vector<std::pair<IndexT, Landmark>> filteredLandmarks(currentIdx);
     #pragma omp parallel for
     for (auto i = 0; i < sfmData.getLandmarks().size(); i++)
     {
         if(newIdx[i] != -1)
         {
-            filteredLandmarks[newIdx[i]] = sfmData.getLandmarks().at(i);
+            filteredLandmarks[newIdx[i]] = std::make_pair(newIdx[i], sfmData.getLandmarks().at(i));
         }
     }
-    sfmData.getLandmarks() = filteredLandmarks;
+    sfmData.getLandmarks() = Landmarks(filteredLandmarks.begin(), filteredLandmarks.end());
     ALICEVISION_LOG_INFO("Removing landmarks: done.");
 
     //// take only best observations
