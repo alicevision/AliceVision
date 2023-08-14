@@ -938,7 +938,7 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
     auto rand = std::bind(std::uniform_real_distribution<float>{0.0, 1.0}, generator);
 
     int addedPoints = 0;
-    float minDist2 = minDist * minDist;
+    const float minDist2 = minDist * minDist;
     Tree kdTree(_verticesCoords);
     for(int x = 0; x <= ns; ++x)
     {
