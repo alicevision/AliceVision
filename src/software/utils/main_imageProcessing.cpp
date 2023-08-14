@@ -63,6 +63,12 @@ struct LensCorrectionParams
     std::vector<float> caGParams;
     std::vector<float> caRGParams;
     std::vector<float> caBGParams;
+
+    RectilinearModel geometryModel = RectilinearModel();
+
+    RectilinearModel caGModel = RectilinearModel();
+    RectilinearModel caBGModel = RectilinearModel();
+    RectilinearModel caRGModel = RectilinearModel();
 };
 
 std::istream& operator>>(std::istream& in, LensCorrectionParams& lcParams)
@@ -406,7 +412,109 @@ void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColo
     }
 }
 
-void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, std::map<std::string, std::string>& imageMetadata, std::shared_ptr<camera::IntrinsicBase> cam)
+void undistordRectilinearGeometryLCP(const aliceVision::image::Image<aliceVision::image::RGBAfColor>& img,
+                                     RectilinearModel& model,
+                                     aliceVision::image::Image<aliceVision::image::RGBAfColor>& img_ud,
+                                     const image::RGBAfColor fillcolor)
+{
+    if(!model.isEmpty && model.FocalLengthX != 0.0 && model.FocalLengthY != 0.0)
+    {
+        img_ud.resize(img.Width(), img.Height(), true, fillcolor);
+        const image::Sampler2d<image::SamplerLinear> sampler;
+
+        const float maxWH = std::max(img.Width(), img.Height());
+        const float ppX = model.ImageXCenter * img.Width();
+        const float ppY = model.ImageYCenter * img.Height();
+        const float scaleX = model.FocalLengthX * maxWH;
+        const float scaleY = model.FocalLengthY * maxWH;
+
+        #pragma omp parallel for
+        for(int v = 0; v < img.Height(); ++v)
+            for(int u = 0; u < img.Width(); ++u)
+            {
+                // image to camera
+                const float x = (u - ppX) / scaleX;
+                const float y = (v - ppY) / scaleY;
+
+                // disto
+                float xd, yd;
+                model.distord(x, y, xd, yd);
+
+                // camera to image
+                const Vec2 distoPix(xd * scaleX + ppX, yd * scaleY + ppY);
+
+                // pick pixel if it is in the image domain
+                if(img.Contains(distoPix(1), distoPix(0)))
+                {
+                    img_ud(v, u) = sampler(img, distoPix(1), distoPix(0));
+                }
+            }
+    }
+}
+
+void undistordChromaticAberrations(const aliceVision::image::Image<aliceVision::image::RGBAfColor>& img,
+                                   RectilinearModel& greenModel, RectilinearModel& blueGreenModel,
+                                   RectilinearModel& redGreenModel,
+                                   aliceVision::image::Image<aliceVision::image::RGBAfColor>& img_ud,
+                                   const image::RGBAfColor fillcolor, bool undistordGeometry = false)
+{
+    if(!greenModel.isEmpty && greenModel.FocalLengthX != 0.0 && greenModel.FocalLengthY != 0.0)
+    {
+        img_ud.resize(img.Width(), img.Height(), true, fillcolor);
+        const image::Sampler2d<image::SamplerLinear> sampler;
+
+        const float maxWH = std::max(img.Width(), img.Height());
+        const float ppX = greenModel.ImageXCenter * img.Width();
+        const float ppY = greenModel.ImageYCenter * img.Height();
+        const float scaleX = greenModel.FocalLengthX * maxWH;
+        const float scaleY = greenModel.FocalLengthY * maxWH;
+
+        #pragma omp parallel for
+        for(int v = 0; v < img.Height(); ++v)
+            for(int u = 0; u < img.Width(); ++u)
+            {
+                // image to camera
+                const float x = (u - ppX) / scaleX;
+                const float y = (v - ppY) / scaleY;
+
+                // disto
+                float xdRed,ydRed,xdGreen,ydGreen,xdBlue,ydBlue;
+                if(undistordGeometry)
+                {
+                    greenModel.distord(x, y, xdGreen, ydGreen);
+                }
+                else
+                {
+                    xdGreen = x;
+                    ydGreen = y;
+                }
+                redGreenModel.distord(xdGreen, ydGreen, xdRed, ydRed);
+                blueGreenModel.distord(xdGreen, ydGreen, xdBlue, ydBlue);
+
+                // camera to image
+                const Vec2 distoPixRed(xdRed * scaleX + ppX, ydRed * scaleY + ppY);
+                const Vec2 distoPixGreen(xdGreen * scaleX + ppX, ydGreen * scaleY + ppY);
+                const Vec2 distoPixBlue(xdBlue * scaleX + ppX, ydBlue * scaleY + ppY);
+
+                // pick pixel if it is in the image domain
+                if(img.Contains(distoPixRed(1), distoPixRed(0)))
+                {
+                    img_ud(v, u)[0] = sampler(img, distoPixRed(1), distoPixRed(0))[0];
+                }
+                if(img.Contains(distoPixGreen(1), distoPixGreen(0)))
+                {
+                    img_ud(v, u)[1] = sampler(img, distoPixGreen(1), distoPixGreen(0))[1];
+                }
+                if(img.Contains(distoPixBlue(1), distoPixBlue(0)))
+                {
+                    img_ud(v, u)[2] = sampler(img, distoPixBlue(1), distoPixBlue(0))[2];
+                }
+            }
+    }
+}
+
+void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pParams,
+                  std::map<std::string, std::string>& imageMetadata, std::shared_ptr<camera::IntrinsicBase> cam)
 {
     const unsigned int nchannels = 4;
 
@@ -421,27 +529,49 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         ALICEVISION_LOG_INFO("Fixed " << pixelsFixed << " non-finite pixels.");
     }
 
-    if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
+    if (pParams.lensCorrection.enabled)
     {
-        undistortVignetting(image, pParams.lensCorrection.vParams);
-    }
+        if (pParams.lensCorrection.vignetting && !pParams.lensCorrection.vParams.empty())
+        {
+            undistortVignetting(image, pParams.lensCorrection.vParams);
+        }
+        else if (pParams.lensCorrection.vignetting && pParams.lensCorrection.vParams.empty())
+        {
+            ALICEVISION_LOG_WARNING("No distortion model available for lens vignetting correction.");
+        }
 
-    if (pParams.lensCorrection.enabled && pParams.lensCorrection.geometry)
-    {
-        if (cam != NULL && cam->hasDistortion())
+        if (pParams.lensCorrection.chromaticAberration && !pParams.lensCorrection.caGModel.isEmpty)
         {
             const image::RGBAfColor FBLACK_A(.0f, .0f, .0f, 1.0f);
             image::Image<image::RGBAfColor> image_ud;
-            camera::UndistortImage(image, cam.get(), image_ud, FBLACK_A);
+            undistordChromaticAberrations(image, pParams.lensCorrection.caGModel, pParams.lensCorrection.caBGModel,
+                                            pParams.lensCorrection.caRGModel, image_ud, FBLACK_A, false);
             image = image_ud;
         }
-        else if (cam != NULL && !cam->hasDistortion())
+        else if(pParams.lensCorrection.chromaticAberration && pParams.lensCorrection.caGModel.isEmpty)
         {
-            ALICEVISION_LOG_INFO("No distortion model available for lens correction.");
+            ALICEVISION_LOG_WARNING("No distortion model available for lens chromatic aberration correction.");
         }
-        else if (cam == NULL)
+        
+        if (pParams.lensCorrection.geometry && cam != NULL && cam->hasDistortion())
         {
-            ALICEVISION_LOG_INFO("No intrinsics data available for lens correction.");
+            const image::RGBAfColor FBLACK_A(.0f, .0f, .0f, 1.0f);
+            image::Image<image::RGBAfColor> image_ud;
+            const image::Sampler2d<image::SamplerLinear> sampler;
+
+            image_ud.resize(image.Width(), image.Height(), true, FBLACK_A);
+
+            camera::UndistortImage(image, cam.get(), image_ud, FBLACK_A);
+
+            image = image_ud;
+        }
+        else if (pParams.lensCorrection.geometry && cam != NULL && !cam->hasDistortion())
+        {
+            ALICEVISION_LOG_WARNING("No distortion model available for lens geometry distortion correction.");
+        }
+        else if (pParams.lensCorrection.geometry && cam == NULL)
+        {
+            ALICEVISION_LOG_WARNING("No intrinsics data available for lens geometry distortion correction.");
         }
     }
 
@@ -1128,10 +1258,40 @@ int aliceVision_main(int argc, char * argv[])
 
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
             {
-                pParams.lensCorrection.vParams;
                 if (!view.getVignettingParams(pParams.lensCorrection.vParams))
                 {
                     pParams.lensCorrection.vParams.clear();
+                }
+            }
+
+            if (pParams.lensCorrection.enabled && pParams.lensCorrection.chromaticAberration)
+            {
+                std::vector<float> caGParams, caBGParams, caRGParams;
+                view.getChromaticAberrationParams(caGParams,caBGParams,caRGParams);
+
+                pParams.lensCorrection.caGModel.init3(caGParams);
+                pParams.lensCorrection.caBGModel.init3(caBGParams);
+                pParams.lensCorrection.caRGModel.init3(caRGParams);
+
+                if(pParams.lensCorrection.caGModel.FocalLengthX == 0.0)
+                {
+                    float sensorWidth = view.getSensorWidth();
+                    pParams.lensCorrection.caGModel.FocalLengthX = view.getWidth() * view.getMetadataFocalLength() /
+                                                                   sensorWidth / std::max(view.getWidth(), view.getHeight());
+                }
+                if(pParams.lensCorrection.caGModel.FocalLengthY == 0.0)
+                {
+                    float sensorHeight = view.getSensorHeight();
+                    pParams.lensCorrection.caGModel.FocalLengthY = view.getHeight() * view.getMetadataFocalLength() /
+                                                                   sensorHeight / std::max(view.getWidth(), view.getHeight());
+                }
+
+                if((pParams.lensCorrection.caGModel.FocalLengthX <= 0.0) ||
+                   (pParams.lensCorrection.caGModel.FocalLengthY <= 0.0))
+                {
+                    pParams.lensCorrection.caGModel.reset();
+                    pParams.lensCorrection.caBGModel.reset();
+                    pParams.lensCorrection.caRGModel.reset();
                 }
             }
 
@@ -1268,7 +1428,7 @@ int aliceVision_main(int argc, char * argv[])
 
         // check sensor database
         std::vector<sensorDB::Datasheet> sensorDatabase;
-        if (pParams.lensCorrection.enabled && pParams.lensCorrection.geometry)
+        if (pParams.lensCorrection.enabled && (pParams.lensCorrection.geometry || pParams.lensCorrection.chromaticAberration))
         {
             if (sensorDatabasePath.empty())
             {
@@ -1387,33 +1547,80 @@ int aliceVision_main(int argc, char * argv[])
                 if ((lcpData != nullptr) && !(lcpData->isEmpty()))
                 {
                     double focalLengthmm = view.getMetadataFocalLength();
-                    // const float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0); // to be uncommented when adding lcp defringing model search
+                    const float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
                     const float focusDistance = 0.f;
 
                     LensParam lensParam;
                     lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
-                    lcpData->getVignettingParams(focalLengthmm, focusDistance, lensParam);
+                    lcpData->getVignettingParams(focalLengthmm, apertureValue, lensParam);
+                    lcpData->getChromaticParams(focalLengthmm, focusDistance, lensParam);
+
+                    // Get sensor size by combining information from sensor database and view's metadata
+                    double sensorWidth = -1.0;
+                    double sensorHeight = -1.0;
+                    camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
+                    view.getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, true);
 
                     if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty && pParams.lensCorrection.vignetting)
                     {
+                        float FocX = lensParam.vignParams.FocalLengthX != 0.0
+                                         ? lensParam.vignParams.FocalLengthX
+                                         : width * focalLengthmm / sensorWidth / std::max(width, height);
+                        float FocY = lensParam.vignParams.FocalLengthY != 0.0
+                                         ? lensParam.vignParams.FocalLengthY
+                                         : height * focalLengthmm / sensorHeight / std::max(width, height);
+
                         pParams.lensCorrection.vParams.clear();
-                        pParams.lensCorrection.vParams.push_back(lensParam.vignParams.FocalLengthX);
-                        pParams.lensCorrection.vParams.push_back(lensParam.vignParams.FocalLengthY);
-                        pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageXCenter);
-                        pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageYCenter);
-                        pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam1);
-                        pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam2);
-                        pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam3);
+
+                        if (FocX == 0.0 || FocY == 0.0)
+                        {
+                            ALICEVISION_LOG_WARNING("Vignetting correction is requested but cannot be applied due to missing info.");
+                        }
+                        else
+                        {
+                            pParams.lensCorrection.vParams.push_back(FocX);
+                            pParams.lensCorrection.vParams.push_back(FocY);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageXCenter);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageYCenter);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam1);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam2);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam3);
+                        }
+                    }
+
+                    if (pParams.lensCorrection.chromaticAberration && lensParam.hasChromaticParams() && !lensParam.ChromaticGreenParams.isEmpty)
+                    {
+                        if (lensParam.ChromaticGreenParams.FocalLengthX == 0.0)
+                        {
+                            lensParam.ChromaticGreenParams.FocalLengthX =
+                                width * focalLengthmm / sensorWidth / std::max(width, height);
+                        }
+                        if (lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
+                        {
+                            lensParam.ChromaticGreenParams.FocalLengthY =
+                                height * focalLengthmm / sensorHeight / std::max(width, height);
+                        }
+
+                        if(lensParam.ChromaticGreenParams.FocalLengthX == 0.0 ||
+                           lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
+                        {
+                            pParams.lensCorrection.caGModel.reset();
+                            pParams.lensCorrection.caBGModel.reset();
+                            pParams.lensCorrection.caRGModel.reset();
+
+                            ALICEVISION_LOG_WARNING(
+                                "Chromatic Aberration correction is requested but cannot be applied due to missing info.");
+                        }
+                        else
+                        {
+                            pParams.lensCorrection.caGModel = lensParam.ChromaticGreenParams;
+                            pParams.lensCorrection.caBGModel = lensParam.ChromaticBlueGreenParams;
+                            pParams.lensCorrection.caRGModel = lensParam.ChromaticRedGreenParams;
+                        }
                     }
 
                     if (pParams.lensCorrection.geometry)
                     {
-                        // Get sensor size by combining information from sensor database and view's metadata
-                        double sensorWidth = -1.0;
-                        double sensorHeight = -1.0;
-                        camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
-                        view.getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, true);
-
                         // build intrinsic
                         const camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
                         const camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask("radial3,fisheye4");
@@ -1425,6 +1632,8 @@ int aliceVision_main(int argc, char * argv[])
                         intrinsicBase = sfmDataIO::getViewIntrinsic(
                             view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView, defaultFocalRatio,
                             defaultOffsetX, defaultOffsetY, &lensParam, defaultCameraModel, allowedCameraModels);
+
+                        pParams.lensCorrection.geometryModel = lensParam.perspParams;
                     }
                 }
                 else

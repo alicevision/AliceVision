@@ -359,6 +359,8 @@ int aliceVision_main(int argc, char **argv)
   std::size_t lcpGeometryViewCount = 0;
   // number of views with LCP data used to add vignetting params in metadata
   std::size_t lcpVignettingViewCount = 0;
+  // number of views with LCP data used to add chromatic aberration params in metadata
+  std::size_t lcpChromaticViewCount = 0;
 
   // load known informations
   if(imageFolder.empty())
@@ -614,20 +616,27 @@ int aliceVision_main(int argc, char **argv)
       }
     }
 
-    // const  apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0); // to be uncommented when adding lcp defringing model search
+    const float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
     const float focusDistance = 0.f;
 
     LensParam lensParam;
     if ((lcpData != nullptr) && !(lcpData->isEmpty()))
     {
       lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
-      lcpData->getVignettingParams(focalLengthmm, focusDistance, lensParam);
+      lcpData->getVignettingParams(focalLengthmm, apertureValue, lensParam);
+      lcpData->getChromaticParams(focalLengthmm, focusDistance, lensParam);
     }
 
     if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty)
     {
       view.addVignettingMetadata(lensParam);
       ++lcpVignettingViewCount;
+    }
+
+    if(lensParam.hasChromaticParams() && !lensParam.ChromaticGreenParams.isEmpty)
+    {
+      view.addChromaticMetadata(lensParam);
+      ++lcpChromaticViewCount;
     }
 
     // build intrinsic
@@ -910,6 +919,7 @@ int aliceVision_main(int argc, char **argv)
                    << "\n\t   - # with DCP color calibration (raw images only): " << viewsWithDCPMetadata
                    << "\n\t   - # with LCP lens distortion initialization: " << lcpGeometryViewCount
                    << "\n\t   - # with LCP vignetting calibration: " << lcpVignettingViewCount
+                   << "\n\t   - # with LCP chromatic aberration correction models: " << lcpChromaticViewCount
                    << "\n\t- # Cameras Intrinsics: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;

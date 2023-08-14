@@ -92,32 +92,69 @@ struct RectilinearModel
     {
         *this = RectilinearModel();
     }
-};
 
-/**
- * @brief PerspectiveModel contains parameters of a perspective model of distortion
- * Detailed information on this model can be found in the Adobe technical report
- * "Adobe Camera Model" part of the documentation of the Adobe free tool Lens Profile Creator.
- */
-struct PerspectiveModel
-{
-    int Version = -1;
-    float FocalLengthX = 0.f;
-    float FocalLengthY = 0.f;
-    float ImageXCenter = 0.5f;
-    float ImageYCenter = 0.5f;
-    float ResidualMeanError = 0.f;
-    float ResidualStandardDeviation = 0.f;
-    float RadialDistortParam1 = 0.f;
-    float RadialDistortParam2 = 0.f;
-    float RadialDistortParam3 = 0.f;
-    bool isEmpty = true;
-
-    void reset()
+    void distord(const float x, const float y, float& x_d, float& y_d)
     {
-        *this = PerspectiveModel();
+        const float rr = x * x + y * y;
+        const float p1 = 1.f + rr * (RadialDistortParam1 + rr * (RadialDistortParam2 + rr * RadialDistortParam3));
+        const float p2 = TangentialDistortParam1 * y + TangentialDistortParam2 * x;
+        x_d = ScaleFactor * (p1 * x + 2 * p2 * x + TangentialDistortParam2 * rr);
+        y_d = ScaleFactor * (p1 * y + 2 * p2 * y + TangentialDistortParam1 * rr);
+    }
+
+    bool init3(const std::vector<float>& params)
+    {
+        if(params.size() < 7)
+        {
+            reset();
+            return false;
+        }
+        FocalLengthX = params[0];
+        FocalLengthY = params[1];
+        ImageXCenter = params[2];
+        ImageYCenter = params[3];
+        RadialDistortParam1 = params[4];
+        RadialDistortParam2 = params[5];
+        RadialDistortParam3 = params[6];
+        ScaleFactor = (params.size() >= 8) ? params[7] : 1.0;
+        isEmpty = false;
+        return true;
+    }
+
+    bool init5(const std::vector<float>& params)
+    {
+        if(params.size() < 9)
+        {
+            reset();
+            return false;
+        }
+        init3(params);
+        TangentialDistortParam1 = params[7];
+        TangentialDistortParam2 = params[8];
+        ScaleFactor = (params.size() >= 10) ? params[9] : 1.0;
+        isEmpty = false;
+        return true;
     }
 };
+
+inline std::ostream& operator<<(std::ostream& os, const RectilinearModel& model)
+{
+    if (model.isEmpty)
+    {
+        os << "Empty";
+    }
+    else
+    {
+        os << "Focal: (" << model.FocalLengthX << ", " << model.FocalLengthY << ")" << std::endl;
+        os << "Center: (" << model.ImageXCenter << ", " << model.ImageYCenter << ")" << std::endl;
+        os << "Radial: (" << model.RadialDistortParam1 << ", " << model.RadialDistortParam2 << ", "
+           << model.RadialDistortParam3 << ")" << std::endl;
+        os << "Tangential: (" << model.TangentialDistortParam1 << ", " << model.TangentialDistortParam2 << ")"
+           << std::endl;
+        os << "scale: " << model.ScaleFactor;
+    }
+    return os;
+}
 
 /**
  * @brief VignetteModel contains parameters of a vignetting model of distortion
@@ -304,6 +341,14 @@ public:
     * @param[out] lparam Lens parameters to be populated with the vignetting model
     */
     void getVignettingParams(const float& focalLength, const float& aperture, LensParam& lparam);
+
+    /**
+     * @brief Get defringing parameters for a given couple focal length, focus distance. Focus distance can set to zero.
+     * @param[in] focalLength Focal length in mm
+     * @param[in] focusDistance Focus distance in meters
+     * @param[out] lparam Lens parameters to be populated with the R, G and B defringing models
+     */
+    void getChromaticParams(const float& focalLength, const float& focusDistance, LensParam& lparam);
 
     /**
      * @brief Indicate that no lens paramater set is available
