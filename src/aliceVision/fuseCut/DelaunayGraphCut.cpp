@@ -3070,7 +3070,7 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
   const double densifyScale = _mp.userParams.get<double>("LargeScale.densifyScale", 1.0);
 
   const float minDist =
-      hexah && (helperPointsGridSize >= 0)
+      hexah && (helperPointsGridSize > 0)
           ? ((hexah[0] - hexah[1]).size() + (hexah[0] - hexah[3]).size() + (hexah[0] - hexah[4]).size()) /
                 (3. * helperPointsGridSize)
           : 0.00001f;
