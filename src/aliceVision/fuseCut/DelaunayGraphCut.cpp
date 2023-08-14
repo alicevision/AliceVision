@@ -795,7 +795,7 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
 void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist)
 {
     int addedPoints = 0;
-    float minDist2 = minDist * minDist;
+    const float minDist2 = minDist * minDist;
     Tree kdTree(_verticesCoords);
     for(int camid = 0; camid < cams.size(); camid++)
     {
@@ -846,7 +846,7 @@ void DelaunayGraphCut::addPointsToPreventSingularities(const Point3d voxel[8], f
     fcg = (voxel[3] + voxel[2] + voxel[6] + voxel[7]) / 4.0f;
     extrPts[5] = fcg + (fcg - vcg) / 10.0f;
     int addedPoints = 0;
-    float minDist2 = minDist * minDist;
+    const float minDist2 = minDist * minDist;
     Tree kdTree(_verticesCoords);
     for(int i = 0; i < 6; i++)
     {
