@@ -120,7 +120,7 @@ public:
     inline double worstDist() const { return _radius_sq; }
 };
 
-bool filterLandmarks(SfMData& sfmData, double radiusScale)
+bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale)
 {
     std::vector<Landmark> landmarksData(sfmData.getLandmarks().size());
     {
@@ -146,8 +146,10 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale)
         for(const auto& observationPair : landmark.observations)
         {
             const IndexT viewId = observationPair.first;
-            pixSize += mp.getCamPixelSize(Point3d(landmark.X.x(), landmark.X.y(), landmark.X.z()),
-                                          mp.getIndexFromViewId(viewId), observationPair.second.scale);
+            pixSize += mp.getCamPixelSize(
+                Point3d(landmark.X.x(), landmark.X.y(), landmark.X.z()),
+                mp.getIndexFromViewId(viewId),
+                useFeatureScale ? observationPair.second.scale : 1);
             n++;
         }
         pixSize /= n;
@@ -269,6 +271,7 @@ int aliceVision_main(int argc, char *argv[])
     std::string outputSfmFilename;
     int maxNbObservationsPerLandmark = 5;
     double radiusScale = 2;
+    bool useFeatureScale = true;
 
     // user optional parameters
     std::vector<std::string> featuresFolders;
@@ -287,7 +290,9 @@ int aliceVision_main(int argc, char *argv[])
         ("maxNbObservationsPerLandmark", po::value<int>(&maxNbObservationsPerLandmark)->default_value(maxNbObservationsPerLandmark),
          "Maximum number of allowed observations per landmark.")
         ("radiusScale", po::value<double>(&radiusScale)->default_value(radiusScale),
-         "Scale factor applied to pixel size based radius filter applied to landmarks.")
+         "Scale factor applied to pixel size based radius filter applied to landmarks.")(
+        "useFeatureScale", po::value<bool>(&useFeatureScale)->default_value(useFeatureScale),
+         "If true, use feature scale for computing pixel size. Otherwise, use a scale of 1 pixel.")
         ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
          "Path to folder(s) containing the extracted features.")
         ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
@@ -322,7 +327,7 @@ int aliceVision_main(int argc, char *argv[])
     if(radiusScale > 0)
     {
         ALICEVISION_LOG_INFO("Filtering landmarks: started.");
-        filterLandmarks(sfmData, radiusScale);
+        filterLandmarks(sfmData, radiusScale, useFeatureScale);
         ALICEVISION_LOG_INFO("Filtering landmarks: done.");
     }
     
