@@ -14,6 +14,7 @@
 
 #include <boost/program_options.hpp>
 
+#include <iomanip>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -512,7 +513,8 @@ int aliceVision_main(int argc, char **argv)
   }
 
   {
-      ALICEVISION_LOG_INFO("Transformation:" << std::endl
+      ALICEVISION_LOG_INFO(std::setprecision(17)
+          << "Transformation:" << std::endl
           << "\t- Scale: " << S << std::endl
           << "\t- Rotation:\n" << R << std::endl
           << "\t- Translate: " << t.transpose());
