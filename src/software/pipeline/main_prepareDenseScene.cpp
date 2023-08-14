@@ -129,7 +129,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
     ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0 / medianCameraExposure));
 
-    const LandmarksPerView landmarksPerView = getLandmarksPerViews(sfmData);
+    const LandmarksPerView& landmarksPerView = getLandmarksPerViews(sfmData);
 
 #pragma omp parallel for num_threads(3)
     for (int i = 0; i < viewIds.size(); ++i)
@@ -255,49 +255,54 @@ bool prepareDenseScene(const SfMData& sfmData,
             }
 
             image::Image<unsigned char> maskLandmarks;
-            if(landmarksMaskScale > 0.f)
+            bool doMaskLandmarks = landmarksMaskScale > 0.f;
+            if(doMaskLandmarks)
             {
-                const LandmarkIdSet& landmarksSet = landmarksPerView.at(viewId);
                 image::Image<RGBAfColor> image;
                 readImage(srcImage, image, image::EImageColorSpace::LINEAR);
-                maskLandmarks = image::Image<unsigned char>(image.Width(), image.Height(), true, 0);
+                // for the T camera, image alpha should be at least 0.4f * 255 (masking)
+                maskLandmarks = image::Image<unsigned char>(image.Width(), image.Height(), true, 127);
                 int r = (int)(landmarksMaskScale * 0.5f * (image.Width() + image.Height()));
-                for(const auto& landmarkId : landmarksSet)
+                const auto& landmarksSetIt = landmarksPerView.find(viewId);
+                if(landmarksSetIt != landmarksPerView.end())
                 {
-                    const sfmData::Landmark& landmark = sfmData.getLandmarks().at(landmarkId);
-                    Observation obs = landmark.observations.at(viewId);
-                    // maskLandmarks(obs.x.y(), obs.x.x()) = 1;
-                    for(int y = std::max(obs.x.y() - r, 0.);
-                        y <= std::min(obs.x.y() + r, (double)maskLandmarks.Height() - 1); y++)
+                    const LandmarkIdSet& landmarksSet = landmarksSetIt->second;
+                    for(const auto& landmarkId : landmarksSet)
                     {
-                        for(int x = std::max(obs.x.x() - r, 0.);
-                            x <= std::min(obs.x.x() + r, (double)maskLandmarks.Width() - 1); x++)
+                        const sfmData::Landmark& landmark = sfmData.getLandmarks().at(landmarkId);
+                        Observation obs = landmark.observations.at(viewId);
+                        for(int y = std::max(obs.x.y() - r, 0.);
+                            y <= std::min(obs.x.y() + r, (double)maskLandmarks.Height() - 1); y++)
                         {
-                            maskLandmarks(y, x) = 1;
+                            for(int x = std::max(obs.x.x() - r, 0.);
+                                x <= std::min(obs.x.x() + r, (double)maskLandmarks.Width() - 1); x++)
+                            {
+                                maskLandmarks(y, x) = std::numeric_limits<unsigned char>::max();
+                            }
                         }
                     }
                 }
             }
 
             image::Image<unsigned char> mask;
+            bool maskLoaded = false;
             if(tryLoadMask(&mask, masksFolders, viewId, srcImage, maskExtension))
-                mask = mask * maskLandmarks;
-            else
-                mask = maskLandmarks;
-            process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
-            {
-                if(image.Width() * image.Height() != mask.Width() * mask.Height())
+                maskLoaded = true;
+            process<Image<RGBAfColor>>(
+                dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation,
+                [&maskLoaded, &mask, &maskLandmarks, &doMaskLandmarks](Image<RGBAfColor>& image)
                 {
-                    ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
-                    return;
-                }
+                    if(maskLoaded && (image.Width() * image.Height() != mask.Width() * mask.Height()))
+                    {
+                        ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
+                        return;
+                    }
 
-                for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
-                {
-                    const bool masked = (mask(pix) == 0);
-                    image(pix).a() = masked ? 0.f : 1.f;
-                }
-            });
+                    for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+                    {
+                        image(pix).a() = (maskLoaded && mask(pix) == 0) ? 0.f : (doMaskLandmarks && maskLandmarks(pix) == 127) ? .5f : 1.f;
+                    }
+                });
             /* else
             {
                 const auto noMaskingFunc = [](Image<RGBAfColor>& image) {};
