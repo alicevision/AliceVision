@@ -209,19 +209,19 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale)
 
 bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark)
 {
-    std::vector<Landmark> landmarksData(sfmData.getLandmarks().size());
+    std::vector<Landmark*> landmarksData(sfmData.getLandmarks().size());
     {
         size_t i = 0;
-        for(const auto& it : sfmData.getLandmarks())
+        for(auto& it : sfmData.getLandmarks())
         {
-            landmarksData[i++] = it.second;
+            landmarksData[i++] = &it.second;
         }
     }
 
     #pragma omp parallel for
     for(auto i = 0; i < landmarksData.size(); i++)
     {
-        sfmData::Landmark landmark = landmarksData[i];
+        sfmData::Landmark& landmark = *landmarksData[i];
 
         // check number of observations
         if(landmark.observations.size() <= maxNbObservationsPerLandmark)
@@ -232,7 +232,8 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark)
 
         // compute observation scores
 
-        std::vector<std::pair<double, IndexT>> observationScores(landmark.observations.size());
+        std::vector<std::pair<double, IndexT>> observationScores;
+        observationScores.reserve(landmark.observations.size());
 
         for(const auto& observationPair : landmark.observations)
         {
