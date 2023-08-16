@@ -120,15 +120,48 @@ public:
     inline double worstDist() const { return _radius_sq; }
 };
 
-bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale)
+bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale, int minNbObservationsPerLandmark)
 {
-    std::vector<Landmark> landmarksData(sfmData.getLandmarks().size());
+    const auto initialNbLandmarks = sfmData.getLandmarks().size();
+    std::vector<Landmark> landmarksData(initialNbLandmarks);
     {
         size_t i = 0;
-        for(const auto& it : sfmData.getLandmarks())
+        if (minNbObservationsPerLandmark > 0)
         {
-            landmarksData[i++] = it.second;
+            ALICEVISION_LOG_INFO("Removing landmarks having an insufficient number of observations: started.");
+            for(auto& it : sfmData.getLandmarks())
+            {
+                if(it.second.observations.size() < minNbObservationsPerLandmark)
+                    continue;
+                landmarksData[i++] = it.second;
+            }
+            landmarksData.resize(i);
+            ALICEVISION_LOG_INFO(
+                "Removed " << (initialNbLandmarks - i) <<
+                " landmarks out of " << initialNbLandmarks <<
+                ", i.e. " << ((initialNbLandmarks - i) * 100.f / initialNbLandmarks) <<
+                " % "
+            );
+            ALICEVISION_LOG_INFO("Removing landmarks having an insufficient number of observations: done.");
         }
+        else
+        {
+            for(auto& it : sfmData.getLandmarks())
+            {
+                landmarksData[i++] = it.second;
+            }
+        }
+    }
+
+    if (radiusScale <= 0)
+    {
+        std::vector<std::pair<IndexT, Landmark>> filteredLandmarks(landmarksData.size());
+        for(IndexT newIdx = 0; newIdx < landmarksData.size(); newIdx++)
+        {
+            filteredLandmarks[newIdx] = std::make_pair(newIdx, landmarksData[newIdx]);
+        }
+        sfmData.getLandmarks() = Landmarks(filteredLandmarks.begin(), filteredLandmarks.end());
+        return true;
     }
 
     mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
@@ -168,7 +201,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale)
     ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
     std::vector<bool> toRemove(landmarksData.size(), false);
 
-    ALICEVISION_LOG_INFO("Identifying landmarks to remove: started.");
+    ALICEVISION_LOG_INFO("Identifying landmarks to remove based on pixel size: started.");
 
     size_t nbToRemove = 0;
     #pragma omp parallel for reduction(+:nbToRemove)
@@ -184,14 +217,14 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale)
     }
 
     ALICEVISION_LOG_INFO(
-        "Identified " << (landmarksData.size() - nbToRemove) <<
-        " landmarks to remove out of " << (landmarksData.size()) <<
-        ", i.e. " << ((landmarksData.size() - nbToRemove) * 100.f / landmarksData.size()) <<
+        "Identified " << nbToRemove <<
+        " landmarks to remove out of " << initialNbLandmarks <<
+        ", i.e. " << (nbToRemove * 100.f / initialNbLandmarks) <<
         " % "
     );
     ALICEVISION_LOG_INFO("Identifying landmarks to remove: done.");
 
-    ALICEVISION_LOG_INFO("Removing landmarks: started.");
+    ALICEVISION_LOG_INFO("Removing landmarks based on pixel size: started.");
     std::vector<std::pair<IndexT, Landmark>> filteredLandmarks(landmarksData.size() - nbToRemove);
     IndexT newIdx = 0;
     for (size_t i = 0; i < landmarksData.size(); i++)
@@ -202,7 +235,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale)
         }
     }
     sfmData.getLandmarks() = Landmarks(filteredLandmarks.begin(), filteredLandmarks.end());
-    ALICEVISION_LOG_INFO("Removing landmarks: done.");
+    ALICEVISION_LOG_INFO("Removing landmarks based on pixel size: done.");
 
     return true;
 }
@@ -270,7 +303,8 @@ int aliceVision_main(int argc, char *argv[])
     // std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputSfmFilename;
     std::string outputSfmFilename;
-    int maxNbObservationsPerLandmark = 5;
+    int maxNbObservationsPerLandmark = 2;
+    int minNbObservationsPerLandmark = 5;
     double radiusScale = 2;
     bool useFeatureScale = true;
 
@@ -290,9 +324,11 @@ int aliceVision_main(int argc, char *argv[])
     optionalParams.add_options()
         ("maxNbObservationsPerLandmark", po::value<int>(&maxNbObservationsPerLandmark)->default_value(maxNbObservationsPerLandmark),
          "Maximum number of allowed observations per landmark.")
+        ("minNbObservationsPerLandmark", po::value<int>(&minNbObservationsPerLandmark)->default_value(minNbObservationsPerLandmark),
+         "Minimum number of observations required to keep a landmark.")
         ("radiusScale", po::value<double>(&radiusScale)->default_value(radiusScale),
-         "Scale factor applied to pixel size based radius filter applied to landmarks.")(
-        "useFeatureScale", po::value<bool>(&useFeatureScale)->default_value(useFeatureScale),
+         "Scale factor applied to pixel size based radius filter applied to landmarks.")
+        ("useFeatureScale", po::value<bool>(&useFeatureScale)->default_value(useFeatureScale),
          "If true, use feature scale for computing pixel size. Otherwise, use a scale of 1 pixel.")
         ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
          "Path to folder(s) containing the extracted features.")
@@ -325,10 +361,11 @@ int aliceVision_main(int argc, char *argv[])
     }
 
     // filter SfM data
-    if(radiusScale > 0)
+
+    if(radiusScale > 0 || minNbObservationsPerLandmark > 0)
     {
         ALICEVISION_LOG_INFO("Filtering landmarks: started.");
-        filterLandmarks(sfmData, radiusScale, useFeatureScale);
+        filterLandmarks(sfmData, radiusScale, useFeatureScale, minNbObservationsPerLandmark);
         ALICEVISION_LOG_INFO("Filtering landmarks: done.");
     }
     
