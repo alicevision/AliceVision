@@ -65,15 +65,17 @@ double findMedian(const std::vector<double>& vec)
 }
 
 KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
+                                   const std::vector<std::string>& maskPaths,
                                    const std::string& sensorDbPath,
                                    const std::string& outputFolder,
                                    const std::string& outputSfmKeyframes,
                                    const std::string& outputSfmFrames)
-    : _mediaPaths(mediaPaths)
-    , _sensorDbPath(sensorDbPath)
-    , _outputFolder(outputFolder)
-    , _outputSfmKeyframesPath(outputSfmKeyframes)
-    , _outputSfmFramesPath(outputSfmFrames)
+    : _mediaPaths(mediaPaths),
+      _maskPaths(maskPaths),
+      _sensorDbPath(sensorDbPath),
+      _outputFolder(outputFolder),
+      _outputSfmKeyframesPath(outputSfmKeyframes),
+      _outputSfmFramesPath(outputSfmFrames)
 {
     // Check that a least one media file path has been provided
     if (mediaPaths.empty()) {

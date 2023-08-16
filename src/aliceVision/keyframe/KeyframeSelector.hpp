@@ -40,13 +40,15 @@ class KeyframeSelector
 public:
     /**
      * @brief KeyframeSelector constructor
-     * @param[in] mediaPath video file path, image sequence directory or SfMData file
+     * @param[in] mediaPaths video file path, image sequence directory or SfMData file
+     * @param[in] maskPaths paths to directories containing masks to apply to input frames
      * @param[in] sensorDbPath camera sensor width database path
      * @param[in] outputFolder output keyframes directory
      * @param[in] outputSfmKeyframes output SfMData file containing the keyframes
      * @param[in] outputSfmFrames output SfMData file containing all the non-selected frames
      */
     KeyframeSelector(const std::vector<std::string>& mediaPaths,
+                     const std::vector<std::string>& maskPaths,
                      const std::string& sensorDbPath,
                      const std::string& outputFolder,
                      const std::string& outputSfmKeyframes,
@@ -352,6 +354,8 @@ private:
 
     /// Media paths
     std::vector<std::string> _mediaPaths;
+    /// Mask paths
+    std::vector<std::string> _maskPaths;
     /// Camera sensor width database
     std::string _sensorDbPath;
     /// Output folder for keyframes
