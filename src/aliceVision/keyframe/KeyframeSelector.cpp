@@ -348,6 +348,20 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
             _frameWidth = mat.size().width;
             _frameHeight = mat.size().height;
         }
+
+        if  (_maskPaths.size() > 0) {
+            const auto& maskPath = _maskPaths.at(mediaIndex);
+            auto maskFeed = std::make_unique<dataio::FeedProvider>(maskPath);
+
+            if (!maskFeed->isInit()) {
+                ALICEVISION_THROW(std::invalid_argument, "Invalid path to masks: " << maskPath);
+            }
+
+            const std::size_t nbMasks = static_cast<std::size_t>(feed->nbFrames());
+            if (nbMasks != nbFrames) {
+                ALICEVISION_THROW_ERROR("The number of masks does not match the number of frames.");
+            }
+        }
     }
 
     // Check if minimum number of frame is zero
@@ -403,6 +417,9 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
                                          const std::size_t flowCellSize, const bool skipSharpnessComputation)
 {
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
+    std::vector<std::unique_ptr<dataio::FeedProvider>> maskFeeds;
+
+    const bool masksProvided = _maskPaths.size() > 0;
 
     for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
         const auto& path = _mediaPaths.at(mediaIndex);
@@ -415,13 +432,32 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
         if (!feed.isInit()) {
             ALICEVISION_THROW(std::invalid_argument, "Cannot initialize the FeedProvider with " << path);
         }
+
+        if (masksProvided) {
+            const auto& maskPath = _maskPaths.at(mediaIndex);
+
+            // Create a feed provider per mask directory
+            maskFeeds.push_back(std::make_unique<dataio::FeedProvider>(maskPath));
+            const auto& maskFeed = *maskFeeds.back();
+
+            if (!maskFeed.isInit()) {
+                ALICEVISION_THROW(std::invalid_argument, "Invalid path to masks: " << maskPath);
+            }
+        }
     }
 
     // Feed provider variables
-    image::Image<image::RGBColor> image;     // original image
     camera::Pinhole queryIntrinsics;         // image associated camera intrinsics
     bool hasIntrinsics = false;              // true if queryIntrinsics is valid
+
+    // Input feed provider variables
+    image::Image<image::RGBColor> image;     // original image
     std::string currentImgName;              // current image name
+
+    // Mask feed provider variables
+    image::Image<image::RGBColor> mask;     // original mask
+    std::string currentMaskName;            // current mask name
+
 
     // Feed and metadata initialization
     for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
@@ -431,12 +467,21 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
         if (!feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
             ALICEVISION_THROW(std::invalid_argument, "Cannot read media first frame " << _mediaPaths[mediaIndex]);
         }
+
+        if (masksProvided) {
+            maskFeeds.at(mediaIndex)->goToFrame(startFrame);
+            if (!maskFeeds.at(mediaIndex)->readImage(mask, queryIntrinsics, currentMaskName, hasIntrinsics)) {
+                ALICEVISION_THROW(std::invalid_argument, "Cannot read mask media first frame " << _maskPaths[mediaIndex]);
+            }
+        }
     }
 
     std::size_t currentFrame = startFrame;
     cv::Mat currentMatSharpness;  // OpenCV matrix for the sharpness computation
     cv::Mat previousMatFlow, currentMatFlow;  // OpenCV matrices for the optical flow computation
     auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
+
+    cv::Mat previousMatFlowMask, currentMatFlowMask, currentMatMask;  // OpenCV matrices that will contain the masks
 
     while (currentFrame < endFrame) {
         double minimalSharpness = skipSharpnessComputation ? 1.0f : std::numeric_limits<double>::max();
@@ -448,6 +493,12 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
             if (currentFrame > startFrame) {  // Get currentFrame - 1 for the optical flow computation
                 previousMatFlow = readImage(feed, rescaledWidthFlow);
                 feed.goToNextFrame();
+
+                if (masksProvided) {
+                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                    previousMatFlowMask = readImage(maskFeed, rescaledWidthFlow);
+                    maskFeed.goToNextFrame();
+                }
             }
 
             /* Handle input feeds that may have invalid or missing frames:
@@ -462,6 +513,10 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
                 try {
                     // Read image for sharpness and rescale it if requested
                     currentMatSharpness = readImage(feed, rescaledWidthSharpness);
+                    if (masksProvided) {
+                        auto &maskFeed = *maskFeeds.at(mediaIndex);
+                        currentMatMask = readImage(maskFeed, rescaledWidthSharpness);
+                    }
                 } catch (const std::invalid_argument& ex) {
                     bool success = false;
                     while (!success && currentFrame < nbFrames) {
@@ -480,6 +535,12 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
                         success = feed.goToFrame(++currentFrame);
                         if (success) {
                             currentMatSharpness = readImage(feed, rescaledWidthSharpness);
+
+                            if (masksProvided) {
+                                auto &maskFeed = *maskFeeds.at(mediaIndex);
+                                maskFeed.goToFrame(currentFrame);
+                                currentMatMask = readImage(maskFeed, rescaledWidthSharpness);
+                            }
                         }
                     }
                 }
@@ -487,8 +548,16 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
 
             if (rescaledWidthSharpness == rescaledWidthFlow && !skipSharpnessComputation) {
                 currentMatFlow = currentMatSharpness;
+                if (masksProvided) {
+                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                    currentMatFlowMask = currentMatMask;
+                }
             } else {
                 currentMatFlow = readImage(feed, rescaledWidthFlow);
+                if (masksProvided) {
+                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                    currentMatFlowMask = readImage(maskFeed, rescaledWidthFlow);
+                }
             }
 
             // Compute sharpness
