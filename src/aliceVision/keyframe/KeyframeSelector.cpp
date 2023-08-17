@@ -562,7 +562,7 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
 
             // Compute sharpness
             if (!skipSharpnessComputation) {
-                const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize);
+                const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize, currentMatMask);
                 minimalSharpness = std::min(minimalSharpness, sharpness);
             }
 
@@ -886,7 +886,8 @@ cv::Mat KeyframeSelector::readImage(dataio::FeedProvider &feed, std::size_t widt
     return cvRescaled;
 }
 
-double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize)
+double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize,
+                                          const cv::Mat& mask)
 {
     if (windowSize > grayscaleImage.size().width || windowSize > grayscaleImage.size().height) {
         ALICEVISION_THROW(std::invalid_argument,
@@ -895,9 +896,31 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
                           << grayscaleImage.size().height << ")");
     }
 
+    if (!mask.empty() && (mask.size().width != grayscaleImage.size().width ||
+                          mask.size().height != grayscaleImage.size().height)) {
+        ALICEVISION_THROW(std::invalid_argument,
+                          "The sizes of the frame and the mask differ (image size: " << grayscaleImage.size().width
+                          << "x" << grayscaleImage.size().height << ", mask size: " << mask.size().width << "x"
+                          << mask.size().height << ")");
+    }
+
     cv::Mat sum, squaredSum, laplacian;
     cv::Laplacian(grayscaleImage, laplacian, CV_64F);
     cv::integral(laplacian, sum, squaredSum);
+
+    cv::Mat maskedSum = sum;
+    cv::Mat maskedSquaredSum = squaredSum;
+    cv::Mat paddedMask;
+    // If the mask exists, apply it directly on the integral and squared integral images:
+    // The sharpness information will still be retained but the masked pixels will now appear as 0s,
+    // and they will be counted out during the standard deviation computation.
+    if (!mask.empty()) {
+        // The integral matrices are padded, so the mask needs it as well
+        paddedMask = cv::Mat(sum.size(), CV_8UC1, 255);
+        mask.copyTo(paddedMask(cv::Rect(1, 1, paddedMask.size().width - 1, paddedMask.size().height - 1)));
+        sum.copyTo(maskedSum, paddedMask);
+        squaredSum.copyTo(maskedSquaredSum, paddedMask);
+    }
 
     double maxstd = 0.0;
     int x, y;
@@ -905,14 +928,14 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
     // Starts at 1 because the integral image is padded with 0s on the top and left borders
     for (y = 1; y < sum.rows - windowSize; y += windowSize / 4) {
         for (x = 1; x < sum.cols - windowSize; x += windowSize / 4) {
-            maxstd = std::max(maxstd, computeSharpnessStd(sum, squaredSum, x, y, windowSize));
+            maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
         }
 
         // Compute sharpness over the last part of the image for windowSize along the x-axis;
         // the overlap with the previous window might be greater than the previous ones
         if (x >= sum.cols - windowSize) {
             x = sum.cols - windowSize - 1;
-            maxstd = std::max(maxstd, computeSharpnessStd(sum, squaredSum, x, y, windowSize));
+            maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
         }
     }
 
@@ -920,16 +943,17 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
     // the overlap with the previous window might be greater than the previous ones
     if (y >= sum.rows - windowSize) {
         y = sum.rows - windowSize - 1;
-        maxstd = std::max(maxstd, computeSharpnessStd(sum, squaredSum, x, y, windowSize));
+        maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
     }
 
     return maxstd;
 }
 
 const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x,
-                                                   const int y, const int windowSize)
+                                                   const int y, const int windowSize, const cv::Mat &mask)
 {
-    const double totalCount = windowSize * windowSize;
+    double totalCount = windowSize * windowSize;
+
     double tl = sum.at<double>(y, x);
     double tr = sum.at<double>(y, x + windowSize);
     double bl = sum.at<double>(y + windowSize, x);
@@ -942,7 +966,20 @@ const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum, const cv:
     br = squaredSum.at<double>(y + windowSize, x + windowSize);
     const double s2 = br + tl - tr - bl;
 
-    return std::sqrt((s2 - (s1 * s1) / totalCount) / totalCount);
+    if (!mask.empty()) {
+        // Count the number of pixels that are non-masked. Masked pixels are 0s.
+        cv::Mat maskROI = mask(cv::Rect(x, y, windowSize, windowSize));
+        totalCount = cv::countNonZero(maskROI);
+    }
+
+    const double var = (s2 - (s1 * s1) / totalCount) / totalCount;
+    // If the variance is negative or if less than 50% of the window is not covered by the mask,
+    // return an invalid value.
+    if (var < 0.0 || totalCount < windowSize * windowSize * 0.5) {
+        return -1.0f;
+    }
+
+    return std::sqrt(var);
 }
 
 double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,

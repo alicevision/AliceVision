@@ -264,20 +264,23 @@ private:
      * @brief Compute the sharpness scores for an input grayscale frame with a sliding window
      * @param[in] grayscaleImage the input grayscale matrix of the frame
      * @param[in] windowSize the size of the sliding window
+     * @param[in] mask the mask associated to the input frame if it exists, an empty cv::Mat otherwise
      * @return a double value representing the sharpness score of the sharpest tile in the image
      */
-    double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize);
+    double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize, const cv::Mat& mask);
 
     /**
      * @brief Compute the standard deviation of the local averaged Laplacian in an image
-     * @param sum The integral image of the Laplacian of a given image
-     * @param squaredSum The squared integral image of the Laplacian of a given image
-     * @param x The x-coordinate of the top-left corner of the window for the local standard deviation computation
-     * @param y The y-coordinate of the top-left corner of the window for the local standard deviation computation
-     * @param windowSize The size of the window along the x- and y-axis for the local standard deviation computation
+     * @param[in] sum the (masked) integral image of the Laplacian of a given image
+     * @param[in] squaredSum the (masked) squared integral image of the Laplacian of a given image
+     * @param[in] x the x-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param[in] y the y-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param[in] windowSize the size of the window along the x- and y-axis for the local standard deviation computation
+     * @param[in] mask the mask associated to the frame the integral and integral images were calculated from
      * @return a const double value representating the local standard deviation of the Laplacian
      */
-    const double computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x, const int y, const int windowSize);
+    const double computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x, const int y,
+                                     const int windowSize, const cv::Mat& mask);
 
     /**
      * @brief Estimate the optical flow score for an input grayscale frame based on its previous frame cell by cell
