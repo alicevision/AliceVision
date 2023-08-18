@@ -227,7 +227,7 @@ int aliceVision_main(int argc, char* argv[])
     if(!inputMeshFilepath.empty() && !sfmDataFilename.empty() && texParams.textureFileType != image::EImageFileType::NONE)
     {
         ALICEVISION_LOG_INFO("Generate textures.");
-        mesh.generateTextures(mp, outputFolder, texParams.textureFileType);
+        mesh.generateTextures(mp, outputFolder, hwc.getMaxMemory(), texParams.textureFileType);
     }
 
 

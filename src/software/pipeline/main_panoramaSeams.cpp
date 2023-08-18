@@ -17,7 +17,6 @@
 #include <aliceVision/image/imageAlgo.hpp>
 
 // System
-#include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 // Reading command line options

@@ -44,6 +44,12 @@ public:
 
     unsigned int getMaxThreads() const;
 
+    /**
+     * @brief compute the maximum memory available 
+     * @return the size in bytes
+     */
+    size_t getMaxMemory() const;
+
 private:
     /**
      * @brief This is the maximum memory available 

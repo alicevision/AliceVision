@@ -52,4 +52,14 @@ unsigned int HardwareContext::getMaxThreads() const
     return count;
 }
 
+size_t HardwareContext::getMaxMemory() const 
+{
+    auto meminfo = system::getMemoryInfo();
+
+    size_t ret = meminfo.availableRam;
+    ret = std::min(ret, _maxUserMemoryAvailable);
+
+    return ret;
+}
+
 }

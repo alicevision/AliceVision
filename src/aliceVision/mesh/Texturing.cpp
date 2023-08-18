@@ -9,7 +9,6 @@
 #include "UVAtlas.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/numeric/numeric.hpp>
@@ -285,6 +284,7 @@ void Texturing::updateAtlases()
 
 void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
                                  const boost::filesystem::path& outPath,
+                                 size_t memoryAvailable,
                                  image::EImageFileType textureFileType)
 {
     // Ensure that contribution levels do not contain 0 and are sorted (as each frequency band contributes to lower bands).
@@ -312,7 +312,6 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     ALICEVISION_LOG_INFO("Images loaded from cache with: " + ECorrectEV_enumToString(texParams.correctEV));
 
     //calculate the maximum number of atlases in memory in MB
-    system::MemoryInfo memInfo = system::getMemoryInfo();
     const std::size_t imageMaxMemSize =
             mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(image::RGBfColor) / std::pow(2,20); //MB
     const std::size_t imagePyramidMaxMemSize = texParams.nbBand * imageMaxMemSize;
@@ -320,7 +319,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
             texParams.textureSide * texParams.textureSide * (sizeof(image::RGBfColor)+sizeof(float)) / std::pow(2,20); //MB
     const std::size_t atlasPyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
-    const int availableRam = int(memInfo.availableRam / std::pow(2,20));
+    const int availableRam = int(memoryAvailable / std::pow(2,20));
     const int availableMem = availableRam - 2 * (imagePyramidMaxMemSize + imageMaxMemSize); // keep some memory for the 2 input images in cache and one laplacian pyramid
 
     const int nbAtlas = _atlases.size();

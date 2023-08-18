@@ -1,7 +1,6 @@
 #include "cmdline.hpp"
 
 #include <aliceVision/system/cpu.hpp>
-#include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 namespace aliceVision {
