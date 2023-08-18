@@ -288,10 +288,11 @@ private:
      * @param[in] grayscaleImage the grayscale matrix of the current frame
      * @param[in] previousGrayscaleImage the grayscale matrix of the previous frame
      * @param[in] cellSize the size of the evaluated cells within the frame
+     * @param[in] mask the mask associated to the current frame if it exists, an empty cv::Mat otherwise
      * @return a double value representing the median motion of all the image's cells
      */
     double estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
-                        const cv::Mat& previousGrayscaleImage, const std::size_t cellSize);
+                        const cv::Mat& previousGrayscaleImage, const std::size_t cellSize, const cv::Mat& mask);
 
     /**
      * @brief Write the output SfMData files with the selected and non-selected keyframes information

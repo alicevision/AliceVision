@@ -481,7 +481,7 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
     cv::Mat previousMatFlow, currentMatFlow;  // OpenCV matrices for the optical flow computation
     auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
 
-    cv::Mat previousMatFlowMask, currentMatFlowMask, currentMatMask;  // OpenCV matrices that will contain the masks
+    cv::Mat currentMatFlowMask, currentMatMask;  // OpenCV matrices that will contain the masks
 
     while (currentFrame < endFrame) {
         double minimalSharpness = skipSharpnessComputation ? 1.0f : std::numeric_limits<double>::max();
@@ -496,7 +496,6 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
 
                 if (masksProvided) {
                     auto &maskFeed = *maskFeeds.at(mediaIndex);
-                    previousMatFlowMask = readImage(maskFeed, rescaledWidthFlow);
                     maskFeed.goToNextFrame();
                 }
             }
@@ -568,7 +567,8 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
 
             // Compute optical flow
             if (currentFrame > startFrame) {
-                const double flow = estimateFlow(ptrFlow, currentMatFlow, previousMatFlow, flowCellSize);
+                const double flow = estimateFlow(ptrFlow, currentMatFlow, previousMatFlow, flowCellSize,
+                                                 currentMatFlowMask);
                 minimalFlow = std::min(minimalFlow, flow);
             }
 
@@ -983,7 +983,8 @@ const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum, const cv:
 }
 
 double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
-                                      const cv::Mat& previousGrayscaleImage, const std::size_t cellSize)
+                                      const cv::Mat& previousGrayscaleImage, const std::size_t cellSize,
+                                      const cv::Mat& mask)
 {
     if (cellSize > grayscaleImage.size().width) {  // If the cell size is bigger than the height, it will be adjusted
         ALICEVISION_THROW(std::invalid_argument,
@@ -999,32 +1000,76 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
                           << ")");
     }
 
+    if (!mask.empty() && (grayscaleImage.size().width != mask.size().width ||
+        grayscaleImage.size().height != mask.size().height)) {
+        ALICEVISION_THROW(std::invalid_argument,
+                          "The sizes of the framse and the masks differ (image size: " << grayscaleImage.size().width
+                          << "x" << grayscaleImage.size().height << ", mask size: " << mask.size().width << "x"
+                          << mask.size().height << ")");
+    }
+
     cv::Mat flow;
     ptrFlow->calc(grayscaleImage, previousGrayscaleImage, flow);
 
     cv::Mat sumflow;
     cv::integral(flow, sumflow, CV_64F);
 
+    cv::Mat maskedSumflow = sumflow;
+    cv::Mat paddedMask;
+    if (!mask.empty()) {
+        // The integral matrix is padded, so the mask needs it as well
+        paddedMask = cv::Mat(sumflow.size(), CV_8UC1, 255);
+        mask.copyTo(paddedMask(cv::Rect(1, 1, paddedMask.size().width - 1, paddedMask.size().height - 1)));
+
+        // Split sumflow into independent channels: this makes applying the masks on both channels easier
+        cv::Mat xyChannels[2];
+        cv::split(sumflow, xyChannels);
+
+        // Apply the masks on both channels
+        cv::Mat xChannel, yChannel;
+        xyChannels[0].copyTo(xChannel, paddedMask);
+        xyChannels[1].copyTo(yChannel, paddedMask);
+
+        // Merge back the channels together
+        std::vector<cv::Mat> channels = { xyChannels[0], xyChannels[1] };
+        cv::merge(channels, maskedSumflow);
+    }
+
     double norm;
     std::vector<double> motionByCell;
 
     // Starts at 1 because the integral matrix is padded with 0s on the top and left borders
-    for (std::size_t y = 1; y < sumflow.size().height; y += cellSize) {
+    for (std::size_t y = 1; y < maskedSumflow.size().height; y += cellSize) {
         std::size_t maxCellSizeHeight = cellSize;
-        if (std::min(sumflow.size().height, int(y + cellSize)) == sumflow.size().height)
-            maxCellSizeHeight = sumflow.size().height - y;
+        if (std::min(maskedSumflow.size().height, int(y + cellSize)) == maskedSumflow.size().height)
+            maxCellSizeHeight = maskedSumflow.size().height - y;
 
-        for (std::size_t x = 1; x < sumflow.size().width; x += cellSize) {
+        for (std::size_t x = 1; x < maskedSumflow.size().width; x += cellSize) {
             std::size_t maxCellSizeWidth = cellSize;
-            if (std::min(sumflow.size().width, int(x + cellSize)) == sumflow.size().width)
-                maxCellSizeWidth = sumflow.size().width - x;
-            cv::Point2d tl = sumflow.at<cv::Point2d>(y, x);
-            cv::Point2d tr = sumflow.at<cv::Point2d>(y, x + maxCellSizeWidth - 1);
-            cv::Point2d bl = sumflow.at<cv::Point2d>(y + maxCellSizeHeight - 1, x);
-            cv::Point2d br = sumflow.at<cv::Point2d>(y + maxCellSizeHeight - 1, x + maxCellSizeWidth - 1);
+            if (std::min(maskedSumflow.size().width, int(x + cellSize)) == maskedSumflow.size().width)
+                maxCellSizeWidth = maskedSumflow.size().width - x;
+            cv::Point2d tl = maskedSumflow.at<cv::Point2d>(y, x);
+            cv::Point2d tr = maskedSumflow.at<cv::Point2d>(y, x + maxCellSizeWidth - 1);
+            cv::Point2d bl = maskedSumflow.at<cv::Point2d>(y + maxCellSizeHeight - 1, x);
+            cv::Point2d br = maskedSumflow.at<cv::Point2d>(y + maxCellSizeHeight - 1, x + maxCellSizeWidth - 1);
             cv::Point2d s = br + tl - tr - bl;
-            norm = std::hypot(s.x, s.y) / (maxCellSizeHeight * maxCellSizeWidth);
-            motionByCell.push_back(norm);
+
+            const double hypot = std::hypot(s.x, s.y);
+            double totalCount = maxCellSizeWidth * maxCellSizeHeight;
+
+            if (!mask.empty()) {
+                // Count the number of pixels that are non-masked. Masked pixels are 0s.
+                cv::Mat maskROI = paddedMask(cv::Rect(x, y, maxCellSizeWidth, maxCellSizeHeight));
+                totalCount = cv::countNonZero(maskROI);
+            }
+
+            if (totalCount > maxCellSizeWidth * maxCellSizeHeight * 0.5) {
+                // If at least 50% of the cell is masked, then ignore it and skip to the next one
+                norm = hypot / totalCount;
+                motionByCell.push_back(norm);
+            } else {
+                ALICEVISION_LOG_DEBUG("At least 50\% of the cell is covered by the mask. Skipping it.");
+            }
         }
     }
 
