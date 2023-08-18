@@ -795,18 +795,19 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
 void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist)
 {
     int addedPoints = 0;
-    const float minDist2 = minDist * minDist;
-    Tree kdTree(_verticesCoords);
+    // Note: For now, we skip the check of collision between cameras and data points to avoid useless computation.
+    // const float minDist2 = minDist * minDist;
+    // Tree kdTree(_verticesCoords);
     for(int camid = 0; camid < cams.size(); camid++)
     {
         int rc = cams[camid];
         {
             const Point3d p(_mp.CArr[rc].x, _mp.CArr[rc].y, _mp.CArr[rc].z);
-            std::size_t vi;
-            double sq_dist;
+            // std::size_t vi;
+            // double sq_dist;
 
             // if there is no nearest vertex or the nearest vertex is not too close
-            if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
+            // if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
             {
                 const GEO::index_t nvi = _verticesCoords.size();
                 _verticesCoords.push_back(p);
@@ -819,10 +820,10 @@ void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams,
                 _verticesAttr.push_back(newv);
                 ++addedPoints;
             }
-            else
-            {
-                _camsVertexes[rc] = vi;
-            }
+            // else
+            // {
+            //     _camsVertexes[rc] = vi;
+            // }
         }
     }
     ALICEVISION_LOG_WARNING("Add " << addedPoints << " new points for the " << cams.size() << " cameras centers.");
@@ -846,17 +847,13 @@ void DelaunayGraphCut::addPointsToPreventSingularities(const Point3d voxel[8], f
     extrPts[4] = fcg + (fcg - vcg) * s;
     fcg = (voxel[3] + voxel[2] + voxel[6] + voxel[7]) * 0.25;
     extrPts[5] = fcg + (fcg - vcg) * s;
+
     int addedPoints = 0;
-    const float minDist2 = minDist * minDist;
-    Tree kdTree(_verticesCoords);
-    for(int i = 0; i < 6; i++)
+    for(int i = 0; i < 6; ++i)
     {
         const Point3d p(extrPts[i].x, extrPts[i].y, extrPts[i].z);
-        std::size_t vi;
-        double sq_dist;
 
-        // if there is no nearest vertex or the nearest vertex is not too close
-        if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
+        // Note: As we create points outside of the bbox, we do not check collisions with data points.
         {
             _verticesCoords.push_back(p);
             GC_vertexInfo newv;
