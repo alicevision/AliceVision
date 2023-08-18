@@ -24,7 +24,7 @@ public:
 
     void setUserMaxMemoryAvailable(size_t val)
     {
-        _maxUserCoresAvailable = val;
+        _maxUserMemoryAvailable = val;
     }
 
     unsigned int getUserMaxCoresAvailable() const
@@ -43,6 +43,12 @@ public:
     }
 
     unsigned int getMaxThreads() const;
+
+    /**
+     * @brief compute the maximum memory available 
+     * @return the size in bytes
+     */
+    size_t getMaxMemory() const;
 
 private:
     /**

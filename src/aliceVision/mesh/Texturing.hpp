@@ -200,6 +200,7 @@ public:
     /// Generate texture files for all texture atlases
     void generateTextures(const mvsUtils::MultiViewParams& mp,
                           const bfs::path &outPath,
+                          size_t memoryAvailable,
                           image::EImageFileType textureFileType = image::EImageFileType::PNG);
 
     /// Generate texture files for the given sub-set of texture atlases
