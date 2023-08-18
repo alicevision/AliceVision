@@ -17,7 +17,6 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include <string>
-#include <deque>
 #include <map>
 #include <vector>
 #include <memory>
@@ -334,9 +333,9 @@ private:
     unsigned int _minOutFrames = 10;
 
     /// Sharpness scores for each frame
-    std::vector<double> _sharpnessScores;
+    std::map<std::size_t, double> _sharpnessScores;
     /// Optical flow scores for each frame
-    std::vector<double> _flowScores;
+    std::map<std::size_t, double> _flowScores;
     /// Vector containing 1s for frames that have been selected, 0 for those which have not
     std::vector<char> _selectedFrames;
 
@@ -357,7 +356,7 @@ private:
     std::map<std::size_t, std::vector<std::string>> _keyframesPaths;
 
     /// Map score vectors with names for export
-    std::map<const std::string, const std::vector<double>*> scoresMap;
+    std::map<const std::string, const std::map<std::size_t, double>*> scoresMap;
 };
 
 } // namespace keyframe 

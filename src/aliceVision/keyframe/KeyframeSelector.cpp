@@ -397,14 +397,15 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
                         // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
                         ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
                                                 << ", attempting to read frame " << currentFrame + 2 << ".");
+
+                        // Push dummy scores for the frame that was skipped
+                        _sharpnessScores[currentFrame] = -1.f;
+                        _flowScores[currentFrame] = -1.f;
+
                         success = feed.goToFrame(++currentFrame);
                         if (success) {
                             currentMatSharpness = readImage(feed, rescaledWidthSharpness);
                         }
-
-                        // Push dummy scores for the frame that was skipped
-                        _sharpnessScores.push_back(-1.f);
-                        _flowScores.push_back(-1.f);
                     }
                 }
             }
@@ -436,8 +437,8 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
         }
 
         // Save scores for the current frame
-        _sharpnessScores.push_back(minimalSharpness);
-        _flowScores.push_back(currentFrame > 0 ? minimalFlow : -1.f);
+        _sharpnessScores[currentFrame] = minimalSharpness;
+        _flowScores[currentFrame] = currentFrame > 0 ? minimalFlow : -1.f;
         ++currentFrame;
     }
 
