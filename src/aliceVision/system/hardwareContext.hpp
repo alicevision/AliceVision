@@ -24,7 +24,7 @@ public:
 
     void setUserMaxMemoryAvailable(size_t val)
     {
-        _maxUserCoresAvailable = val;
+        _maxUserMemoryAvailable = val;
     }
 
     unsigned int getUserMaxCoresAvailable() const
