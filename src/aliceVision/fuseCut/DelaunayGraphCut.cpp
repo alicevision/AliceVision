@@ -830,21 +830,22 @@ void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams,
 
 void DelaunayGraphCut::addPointsToPreventSingularities(const Point3d voxel[8], float minDist)
 {
-    Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+    Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0;
     Point3d extrPts[6];
     Point3d fcg;
-    fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) / 4.0f;
-    extrPts[0] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[0] + voxel[4] + voxel[7] + voxel[3]) / 4.0f;
-    extrPts[1] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[0] + voxel[1] + voxel[5] + voxel[4]) / 4.0f;
-    extrPts[2] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 4.0f;
-    extrPts[3] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[1] + voxel[5] + voxel[6] + voxel[2]) / 4.0f;
-    extrPts[4] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[3] + voxel[2] + voxel[6] + voxel[7]) / 4.0f;
-    extrPts[5] = fcg + (fcg - vcg) / 10.0f;
+    const double s = 0.1;
+    fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) * 0.25;
+    extrPts[0] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[0] + voxel[4] + voxel[7] + voxel[3]) * 0.25;
+    extrPts[1] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[0] + voxel[1] + voxel[5] + voxel[4]) * 0.25;
+    extrPts[2] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[4] + voxel[5] + voxel[6] + voxel[7]) * 0.25;
+    extrPts[3] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[1] + voxel[5] + voxel[6] + voxel[2]) * 0.25;
+    extrPts[4] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[3] + voxel[2] + voxel[6] + voxel[7]) * 0.25;
+    extrPts[5] = fcg + (fcg - vcg) * s;
     int addedPoints = 0;
     const float minDist2 = minDist * minDist;
     Tree kdTree(_verticesCoords);
