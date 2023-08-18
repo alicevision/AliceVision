@@ -144,6 +144,13 @@ int aliceVision_main(int argc, char* argv[])
     {
         return EXIT_FAILURE;
     }
+
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
+    oiio::attribute("threads", std::min(4, static_cast<int>(hwc.getMaxThreads())));
+    oiio::attribute("exr_threads", std::min(4, static_cast<int>(hwc.getMaxThreads())));
+
     // set bump mapping file type
     bumpMappingParams.bumpMappingFileType = (bumpMappingParams.bumpType == mesh::EBumpMappingType::Normal) ? normalFileType : heightFileType;
 
