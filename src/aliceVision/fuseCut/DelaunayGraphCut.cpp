@@ -1117,8 +1117,9 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     std::vector<double> pixSizePrepare(realMaxVertices);
     std::vector<float> simScorePrepare(realMaxVertices);
 
-    // counter for points filtered based on the number of observations (minVis)
+    // counter for filtered points
     int minVisCounter = 0;
+    int minAngleCounter = 0;
 
     ALICEVISION_LOG_INFO("simFactor: " << params.simFactor);
     ALICEVISION_LOG_INFO("nbPixels: " << nbPixels);
@@ -1326,6 +1327,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
         if(maxAngle < params.minAngleThreshold)
         {
             pixSizePrepare[vIndex] = -1;
+            minAngleCounter += 1;
             continue;
         }
         // Filter points based on their number of observations
@@ -1352,7 +1354,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     ALICEVISION_LOG_INFO("Angle min: " << stat_minAngle << ", max: " << stat_maxAngle << ".");
     ALICEVISION_LOG_INFO("Angle score min: " << stat_minAngleScore << ", max: " << stat_maxAngleScore << ".");
 #endif
-    ALICEVISION_LOG_INFO((minVisCounter) << " points filtered based on the number of observations (minVis). ");
+    ALICEVISION_LOG_INFO(minAngleCounter << " filtered points due to low angle of observations (minAngleThreshold=" << params.minAngleThreshold << "). ");
+    ALICEVISION_LOG_INFO(minVisCounter << " filtered points due to low number of observations (minVis=" << params.minVis << "). ");
     removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare, verticesAttrPrepare);
 
     ALICEVISION_LOG_INFO("Filter by angle score and sim score");
