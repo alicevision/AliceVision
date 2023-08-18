@@ -2013,7 +2013,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
     int vertexIndex, int cam, float weight, float fullWeight, double nPixelSizeBehind,
                                        bool fillOut, float distFcnHeight)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
-    const int maxint = 1000000; // std::numeric_limits<int>::std::max()
+    const int maxint = std::numeric_limits<int>::max();
     const double marginEpsilonFactor = 1.0e-4;
 
     const Point3d& originPt = _verticesCoords[vertexIndex];
@@ -3247,7 +3247,7 @@ void DelaunayGraphCut::maxflow()
 void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName)
 {
     ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
-    const int maxint = 1000000.0f;
+    const int maxint = std::numeric_limits<int>::max();
 
     long t1;
 
