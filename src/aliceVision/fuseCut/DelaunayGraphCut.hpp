@@ -280,21 +280,7 @@ public:
         }
         return result;
     }
-
-    inline GEO::index_t locateNearestVertex(const Point3d& p) const
-    {
-        if(_tetrahedralization->nb_vertices() == 0)
-            return GEO::NO_VERTEX;
-        /*
-        GEO::index_t cellIndex = ((const GEO::Delaunay3d*)_tetrahedralization.get())->locate(p.m); // TODO GEOGRAM: how to??
-        if(cellIndex == NO_TETRAHEDRON)
-            return GEO::NO_VERTEX;
-
-        return nearestVertexInCell(cellIndex, p);
-        */
-        return _tetrahedralization->nearest_vertex(p.m); // TODO GEOGRAM: this is a brute force approach!
-    }
-
+    
     /**
      * @brief A cell is infinite if one of its vertices is infinite.
      */
