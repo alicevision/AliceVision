@@ -145,6 +145,9 @@ void KeyframeSelector::processRegular()
         }
     }
 
+    // Ensure the step is always larger than 0, thus ensuring that the 'for' loop will always run smoothly
+    step = std::max(step, static_cast<unsigned int>(1));
+
     for (unsigned int id = 0; id < nbFrames; id += step) {
         ALICEVISION_LOG_INFO("Selecting frame with ID " << id);
         _selectedKeyframes.push_back(id);
