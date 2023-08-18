@@ -413,8 +413,12 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
         {
             ALICEVISION_LOG_INFO("  exposure compensation for image " << camId + 1 << ": " << exposureCompensation);
 
-            for (std::size_t i = 0; i < img.size(); ++i)
-                img(i) = img(i) * exposureCompensation;
+            for(std::size_t i = 0; i < img.size(); ++i)
+            {
+                img(i)[0] *= exposureCompensation;
+                img(i)[1] *= exposureCompensation;
+                img(i)[2] *= exposureCompensation;
+            }
 
             imageAlgo::colorconvert(img, image::EImageColorSpace::LINEAR, colorspace);
         }
