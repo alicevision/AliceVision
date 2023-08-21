@@ -962,8 +962,15 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
     for (std::size_t i = 0; i < feed.nbFrames(); ++i) {
         // Need to read the image to get its size and path
         if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
-            ALICEVISION_LOG_ERROR("Error reading image");
-            return false;
+            ALICEVISION_LOG_ERROR("Error reading image.");
+
+            // Frames may be seldomly corrupted in the VideoFeeds, but this should not occur with other feeds
+            if (feed.isVideo()) {
+                ALICEVISION_LOG_WARNING("Skipping to the next frame.");
+                continue;
+            } else {
+                return false;
+            }
         }
 
         // Create the view
