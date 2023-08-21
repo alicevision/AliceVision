@@ -19,6 +19,20 @@
 #include <sstream>
 #include <vector>
 
+//===== NEW ======
+#include <GeographicLib/UTMUPS.hpp>
+#include <ceres/ceres.h>
+#include <ceres/rotation.h>
+#include <glog/logging.h>
+
+using ceres::AutoDiffCostFunction;
+using ceres::CostFunction;
+using ceres::Problem;
+using ceres::Solve;
+using ceres::Solver;
+
+typedef Eigen::Matrix<double,3,4> Matrix34d;
+//===== NEW ======
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -46,7 +60,8 @@ enum class EAlignmentMethod : unsigned char
     FROM_CENTER_CAMERA,
     FROM_MARKERS,
     FROM_GPS,
-    ALIGN_GROUND
+    ALIGN_GROUND,
+    FROM_GPS2UTM
 };
 
 /**
@@ -69,6 +84,7 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::FROM_MARKERS:             return "from_markers";
     case EAlignmentMethod::FROM_GPS:                 return "from_gps";
     case EAlignmentMethod::ALIGN_GROUND:             return "align_ground";
+    case EAlignmentMethod::FROM_GPS2UTM:             return "from_gps2utm";
   }
   throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -94,6 +110,7 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if (method == "from_markers")             return EAlignmentMethod::FROM_MARKERS;
   if (method == "from_gps")                 return EAlignmentMethod::FROM_GPS;
   if (method == "align_ground")             return EAlignmentMethod::ALIGN_GROUND;
+  if (method == "from_gps2utm")             return EAlignmentMethod::FROM_GPS2UTM;
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -189,6 +206,143 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
     R = rotateMat; // Assign Rotation
 }
 
+
+//===== NEW ======
+struct AlignRotateTranslateScaleError {
+  AlignRotateTranslateScaleError(double observed_x, double observed_y, double observed_z)
+      : observed_x(observed_x), observed_y(observed_y), observed_z(observed_z) {}
+
+  template <typename T>
+  bool operator()(const T* const pose,
+		    const T* const point,
+            T* residuals) const {
+
+    T pp[3];
+    // first global pose
+    ceres::AngleAxisRotatePoint(pose, point, pp);
+    
+    pp[0] *= pose[6]; 
+    pp[1] *= pose[6]; 
+    pp[2] *= pose[6];
+    
+    pp[0] += pose[3]; 
+    pp[1] += pose[4]; 
+    pp[2] += pose[5];
+    
+    // get observation k from observations_
+    residuals[0] = pp[0] - T(observed_x);
+    residuals[1] = pp[1] - T(observed_y);
+    residuals[2] = pp[2] - T(observed_z);
+    return true;
+  }
+
+  double observed_x;
+  double observed_y;
+  double observed_z;
+};
+
+void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
+{
+    bool debug = false;
+
+    Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+    int cnt = 0;
+    for (auto v : sfmData.getViews()) {
+        double lat; double lon; double alt;
+        v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
+        // zone and northp should be returned!!!
+        int zone; bool northp; 
+        double x, y, gamma, k;
+        GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
+        mean += Eigen::Vector3d(x, y, alt);
+        cnt++;
+    }
+    mean /= cnt;
+
+    // at this point we need to get to a working rotation/translation/scale transform, which maps the poses to the gps positions naturally
+
+    double *Rn = new double[9]; 
+    Rn[0] = 1;  Rn[3] = 0;  Rn[6] = 0; 
+    Rn[1] = 0;  Rn[4] = 1;  Rn[7] = 0; 
+    Rn[2] = 0;  Rn[5] = 0;  Rn[8] = 1; 
+
+    double* pose_for_alignment = new double[7];
+    ceres::RotationMatrixToAngleAxis(Rn, pose_for_alignment);
+
+    pose_for_alignment[3] = 0;
+    pose_for_alignment[4] = 0;
+    pose_for_alignment[5] = 0;
+    pose_for_alignment[6] = 1.0;
+
+    ceres::Problem problem;
+    ceres::LossFunction* loss_function = new ceres::HuberLoss(2.0);
+
+    double * centers = new double[3*sfmData.getViews().size()];
+    double * cPtr = centers;
+    for (auto v : sfmData.getViews()) 
+    {
+        double lat; double lon; double alt;
+        v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
+        // zone and northp should be returned!!!
+        int zone; bool northp; 
+        double x, y, gamma, k;
+        GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
+
+        const Vec3 center = sfmData.getPose(*v.second).getTransform().center();
+
+        cPtr[0] = center(0);
+        cPtr[1] = center(1);
+        cPtr[2] = center(2);
+
+        ceres::CostFunction* cost_function =
+	        new ceres::AutoDiffCostFunction<AlignRotateTranslateScaleError, 3, 7, 3>(
+            new AlignRotateTranslateScaleError(
+                x - mean(0),
+                y - mean(1),
+                alt - mean(2)
+            )
+        );
+
+        problem.AddResidualBlock(
+                cost_function,
+                loss_function, // squared loss,
+                pose_for_alignment,
+                cPtr
+        );
+
+        problem.SetParameterBlockConstant(cPtr);
+        cPtr += 3;
+    }
+    ceres::Solver::Options options;
+    options.max_num_iterations = 100;
+    options.linear_solver_type = ceres::DENSE_QR;
+    if(debug)
+        options.minimizer_progress_to_stdout = true;
+    else
+        options.minimizer_progress_to_stdout = false;
+    
+    ceres::Solver::Summary summary;
+    Solve(options, &problem, &summary);
+
+    if(debug)
+        std::cout<< summary.FullReport() << std::endl;
+
+    delete[] centers;
+
+    ceres::AngleAxisToRotationMatrix(pose_for_alignment, Rn);
+    Eigen::Matrix3d Rnew; Rnew << Rn[0] , Rn[1] , Rn[2] , Rn[3] , Rn[4] , Rn[5] , Rn[6] , Rn[7] , Rn[8];
+    Eigen::Vector3d Tnew; Tnew << pose_for_alignment[3] , pose_for_alignment[4] , pose_for_alignment[5];
+    Matrix34d Pnew; Pnew.leftCols(3) = Rnew; Pnew.rightCols(1) = Tnew;
+    double scale = pose_for_alignment[6];
+
+    R = Rnew;
+    t = Tnew;
+    S = scale;
+    
+    delete[] pose_for_alignment;
+}
+//===== NEW ======
+
 } // namespace
 
 IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & transform)
@@ -276,7 +430,8 @@ int aliceVision_main(int argc, char **argv)
         "\t- from_single_camera: Refines the coordinate system from the camera specified by --tranformation\n"
         "\t- from_markers: Refines the coordinate system from markers specified by --markers\n"
         "\t- from_gps: Redefines coordinate system from GPS metadata\n"
-        "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n")
+        "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n"
+        "\t- from_gps2utm: uses GPS coordinates to determine UTM alignment.\n")
     ("transformation", po::value<std::string>(&transform)->default_value(transform),
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
@@ -479,6 +634,11 @@ int aliceVision_main(int argc, char **argv)
       case EAlignmentMethod::ALIGN_GROUND:
       {
           sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
+          break;
+      }
+      case EAlignmentMethod::FROM_GPS2UTM:
+      {
+          alignGpsToUTM(sfmData, S, R, t);
           break;
       }
   }

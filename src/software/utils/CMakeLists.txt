@@ -4,6 +4,8 @@
 # Software PROPERTY FOLDER is 'Software/Utils'
 set(FOLDER_SOFTWARE_UTILS "Software/Utils")
 
+find_library(GeographicLib_LIBRARY_RELEASE NAMES Geographic GeographicLib DOC "GeographicLib library (release)")
+
 
 if(ALICEVISION_HAVE_CUDA)
 alicevision_add_software(aliceVision_hardwareResources
@@ -192,6 +194,7 @@ alicevision_add_software(aliceVision_sfmTransform
         aliceVision_sfmData
         aliceVision_sfmDataIO
         Boost::program_options
+	${GeographicLib_LIBRARY_RELEASE}
 )
 
 # SfM split reconstructed
