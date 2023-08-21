@@ -889,7 +889,7 @@ void LCPinfo::combine(size_t iLow, size_t iHigh, float weightLow, LCPCorrectionM
     }
 
     case LCPCorrectionMode::CA: {
-        if(p1.hasChromaticParams() && !p1.ChromaticGreenParams.isEmpty && p2.hasChromaticParams() &&
+        if (p1.hasChromaticParams() && !p1.ChromaticGreenParams.isEmpty && p2.hasChromaticParams() &&
            !p2.ChromaticGreenParams.isEmpty)
         {
             pOut.setChromaticParamsStatus(true);

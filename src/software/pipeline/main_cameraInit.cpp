@@ -537,7 +537,7 @@ int aliceVision_main(int argc, char **argv)
 
     if (imgFormat.compare("raw") == 0)
     {
-        // Store the color interpretation mode choosen for raw images in metadata,
+        // Store the color interpretation mode chosen for raw images in metadata,
         // so all future loads of this image will be interpreted in the same way.
         if (!dcpError)
         {

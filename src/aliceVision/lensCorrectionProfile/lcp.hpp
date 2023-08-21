@@ -93,7 +93,7 @@ struct RectilinearModel
         *this = RectilinearModel();
     }
 
-    void distord(const float x, const float y, float& x_d, float& y_d)
+    void distort(const float x, const float y, float& x_d, float& y_d)
     {
         const float rr = x * x + y * y;
         const float p1 = 1.f + rr * (RadialDistortParam1 + rr * (RadialDistortParam2 + rr * RadialDistortParam3));

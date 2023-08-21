@@ -966,7 +966,7 @@ public:
    * @param[out] focalLengthmm The focal length
    * @param[out] intrinsicInitMode The intrinsic init mode
    * @param[in] verbose Enable verbosity
-   * @return A Error or Warning code: 1 - Unkwnown sensor, 2 - No metadata, 3 - Unsure sensor, 4 - Computation from 35mm Focal
+   * @return An Error or Warning code: 1 - Unknown sensor, 2 - No metadata, 3 - Unsure sensor, 4 - Computation from 35mm Focal
    */
   int getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, double& sensorWidth, double& sensorHeight, double& focalLengthmm, camera::EInitMode& intrinsicInitMode,
                     bool verbose = false);

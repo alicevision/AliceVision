@@ -49,7 +49,7 @@ alicevision_add_software(aliceVision_imageProcessing
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
-		aliceVision_lensCorrectionProfile
+        aliceVision_lensCorrectionProfile
         ${Boost_LIBRARIES}
 )
 

@@ -412,7 +412,7 @@ void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColo
     }
 }
 
-void undistordRectilinearGeometryLCP(const aliceVision::image::Image<aliceVision::image::RGBAfColor>& img,
+void undistortRectilinearGeometryLCP(const aliceVision::image::Image<aliceVision::image::RGBAfColor>& img,
                                      RectilinearModel& model,
                                      aliceVision::image::Image<aliceVision::image::RGBAfColor>& img_ud,
                                      const image::RGBAfColor fillcolor)
@@ -438,7 +438,7 @@ void undistordRectilinearGeometryLCP(const aliceVision::image::Image<aliceVision
 
                 // disto
                 float xd, yd;
-                model.distord(x, y, xd, yd);
+                model.distort(x, y, xd, yd);
 
                 // camera to image
                 const Vec2 distoPix(xd * scaleX + ppX, yd * scaleY + ppY);
@@ -452,11 +452,11 @@ void undistordRectilinearGeometryLCP(const aliceVision::image::Image<aliceVision
     }
 }
 
-void undistordChromaticAberrations(const aliceVision::image::Image<aliceVision::image::RGBAfColor>& img,
+void undistortChromaticAberrations(const aliceVision::image::Image<aliceVision::image::RGBAfColor>& img,
                                    RectilinearModel& greenModel, RectilinearModel& blueGreenModel,
                                    RectilinearModel& redGreenModel,
                                    aliceVision::image::Image<aliceVision::image::RGBAfColor>& img_ud,
-                                   const image::RGBAfColor fillcolor, bool undistordGeometry = false)
+                                   const image::RGBAfColor fillcolor, bool undistortGeometry = false)
 {
     if(!greenModel.isEmpty && greenModel.FocalLengthX != 0.0 && greenModel.FocalLengthY != 0.0)
     {
@@ -479,17 +479,17 @@ void undistordChromaticAberrations(const aliceVision::image::Image<aliceVision::
 
                 // disto
                 float xdRed,ydRed,xdGreen,ydGreen,xdBlue,ydBlue;
-                if(undistordGeometry)
+                if(undistortGeometry)
                 {
-                    greenModel.distord(x, y, xdGreen, ydGreen);
+                    greenModel.distort(x, y, xdGreen, ydGreen);
                 }
                 else
                 {
                     xdGreen = x;
                     ydGreen = y;
                 }
-                redGreenModel.distord(xdGreen, ydGreen, xdRed, ydRed);
-                blueGreenModel.distord(xdGreen, ydGreen, xdBlue, ydBlue);
+                redGreenModel.distort(xdGreen, ydGreen, xdRed, ydRed);
+                blueGreenModel.distort(xdGreen, ydGreen, xdBlue, ydBlue);
 
                 // camera to image
                 const Vec2 distoPixRed(xdRed * scaleX + ppX, ydRed * scaleY + ppY);
@@ -544,7 +544,7 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
         {
             const image::RGBAfColor FBLACK_A(.0f, .0f, .0f, 1.0f);
             image::Image<image::RGBAfColor> image_ud;
-            undistordChromaticAberrations(image, pParams.lensCorrection.caGModel, pParams.lensCorrection.caBGModel,
+            undistortChromaticAberrations(image, pParams.lensCorrection.caGModel, pParams.lensCorrection.caBGModel,
                                             pParams.lensCorrection.caRGModel, image_ud, FBLACK_A, false);
             image = image_ud;
         }
