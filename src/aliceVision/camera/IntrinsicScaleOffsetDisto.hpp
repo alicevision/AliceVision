@@ -28,10 +28,9 @@ public:
                                 double scaleX, double scaleY,
                                 double offsetX, double offsetY,
                                 std::shared_ptr<Distortion> distortion = nullptr,
-                                std::shared_ptr<Undistortion> undistortion = nullptr,
-                                EInitMode distortionInitializationMode = EInitMode::NONE) :
+                                std::shared_ptr<Undistortion> undistortion = nullptr) :
         IntrinsicScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
-        _pDistortion(distortion), _pUndistortion(undistortion), _distortionInitializationMode(distortionInitializationMode)
+        _pDistortion(distortion), _pUndistortion(undistortion)
     {
     }
 

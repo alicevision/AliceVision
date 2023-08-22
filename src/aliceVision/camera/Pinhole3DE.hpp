@@ -26,12 +26,10 @@ public:
                                double offsetX = 0, double offsetY = 0,
                                double c2 = 0.0, double c4 = 0.0,
                                double u1 = 0.0, double v1 = 0.0,
-                               double u2 = 0.0, double v2 = 0.0,
-                               EInitMode distortionInitializationMode = EInitMode::NONE) :
+                               double u2 = 0.0, double v2 = 0.0) :
     Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
             std::shared_ptr<Distortion>(new Distortion3DERadial4(c2, c4, u1, v1, u2, v2)),
-            nullptr,
-            distortionInitializationMode)
+            nullptr)
     {
     }
 
@@ -50,12 +48,10 @@ public:
 
     explicit Pinhole3DEAnamorphic4(int w = 0, int h = 0,
                                    double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
-                                   double offsetX = 0, double offsetY = 0,
-                                   EInitMode distortionInitializationMode = EInitMode::NONE) :
+                                   double offsetX = 0, double offsetY = 0) :
     Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
             nullptr,
-            std::make_shared<Undistortion3DEAnamorphic4>(w, h),
-            distortionInitializationMode)
+            std::make_shared<Undistortion3DEAnamorphic4>(w, h))
     {
     }
 
@@ -77,12 +73,10 @@ public:
                                  double offsetX = 0, double offsetY = 0,
                                  double delta = 0.0, double epsilon = 1.0,
                                  double mux = 0.0, double muy = 0.0,
-                                 double q = 0.0,
-                                 EInitMode distortionInitializationMode = EInitMode::NONE) :
+                                 double q = 0.0) :
     Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
             std::shared_ptr<Distortion>(new Distortion3DEClassicLD(delta, epsilon, mux, muy, q)),
-            nullptr,
-            distortionInitializationMode)
+            nullptr)
     {
     }
 
