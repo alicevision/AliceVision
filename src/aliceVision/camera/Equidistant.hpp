@@ -21,19 +21,19 @@ namespace aliceVision {
 namespace camera {
 
 /**
- * @brief EquiDistant is a camera model used for fisheye optics.
+ * @brief Equidistant is a camera model used for fisheye optics.
  * See https://en.wikipedia.org/wiki/Fisheye_lens
  * 
  */
-class EquiDistant : public IntrinsicScaleOffsetDisto
+class Equidistant : public IntrinsicScaleOffsetDisto
 {
 public:
-    EquiDistant() :
-    EquiDistant(1, 1, 1.0, 0.0, 0.0)
+    Equidistant() :
+    Equidistant(1, 1, 1.0, 0.0, 0.0)
     {
     }
 
-    EquiDistant(unsigned int w, unsigned int h,
+    Equidistant(unsigned int w, unsigned int h,
                 double focalLengthPix,
                 double offsetX, double offsetY,
                 std::shared_ptr<Distortion> distortion = nullptr) :
@@ -42,7 +42,7 @@ public:
     {
     }
 
-    EquiDistant(unsigned int w, unsigned int h,
+    Equidistant(unsigned int w, unsigned int h,
                 double focalLengthPix, double offsetX,
                 double offsetY, double circleRadiusPix,
                 std::shared_ptr<Distortion> distortion = nullptr) :
@@ -51,16 +51,16 @@ public:
     {
     }
 
-    ~EquiDistant() override = default;
+    ~Equidistant() override = default;
 
-    EquiDistant* clone() const override
+    Equidistant* clone() const override
     {
-        return new EquiDistant(*this); 
+        return new Equidistant(*this); 
     }
 
     void assign(const IntrinsicBase& other) override
     {
-        *this = dynamic_cast<const EquiDistant&>(other);
+        *this = dynamic_cast<const Equidistant&>(other);
     }
 
     bool isValid() const override

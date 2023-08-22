@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(cameraEquidistant_disto_undisto_Radial)
   const double k1 = 0.3;
   const double k2 = 0.2;
   const double k3 = 0.1;
-  const EquiDistantRadialK3 cam(w, h, focal, offsetX, offsetY, radius, k1, k2, k3);
+  const EquidistantRadialK3 cam(w, h, focal, offsetX, offsetY, radius, k1, k2, k3);
 
   const double epsilon = 1e-4;
   for (int i = 0; i < 10; ++i)

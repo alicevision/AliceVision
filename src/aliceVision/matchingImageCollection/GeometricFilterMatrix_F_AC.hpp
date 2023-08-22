@@ -109,8 +109,8 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                              descTypes, xI, xJ);
 
     std::vector<std::size_t> inliers;
-    const camera::EquiDistant * cam_I_equidistant = dynamic_cast<const camera::EquiDistant *>(camI);
-    const camera::EquiDistant * cam_J_equidistant = dynamic_cast<const camera::EquiDistant *>(camJ);
+    const camera::Equidistant * cam_I_equidistant = dynamic_cast<const camera::Equidistant *>(camI);
+    const camera::Equidistant * cam_J_equidistant = dynamic_cast<const camera::Equidistant *>(camJ);
     std::pair<bool, std::size_t> estimationPair;
 
     switch(m_estimator)
@@ -178,7 +178,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
   std::pair<bool, std::size_t>
   geometricEstimation_Spherical_Mat(const Mat& xI, // points of the first image
                                     const Mat& xJ, // points of the second image
-                                    const camera::EquiDistant* cam_I, const camera::EquiDistant* cam_J,
+                                    const camera::Equidistant* cam_I, const camera::Equidistant* cam_J,
                                     const std::pair<size_t, size_t>& imageSizeI, // size of the first image
                                     const std::pair<size_t, size_t>& imageSizeJ, // size of the first image
                                     std::mt19937 &randomNumberGenerator,

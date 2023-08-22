@@ -620,7 +620,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       }
     }
 
-    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+    std::shared_ptr<camera::Equidistant> casted = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
     if (casted)
     {
       casted->setCircleCenterX(fisheyeCenterX);

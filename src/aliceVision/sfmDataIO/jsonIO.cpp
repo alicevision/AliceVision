@@ -185,7 +185,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.add_child("undistortionParams", undistParamsTree);
   }
 
-  std::shared_ptr<camera::EquiDistant> intrinsicEquidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+  std::shared_ptr<camera::Equidistant> intrinsicEquidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
   if (intrinsicEquidistant)
   {
     intrinsicTree.put("fisheyeCircleCenterX", intrinsicEquidistant->getCircleCenterX());
@@ -350,13 +350,13 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     }
   }
 
-  // Load EquiDistant params
-  std::shared_ptr<camera::EquiDistant> intrinsicEquiDistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
-  if (intrinsicEquiDistant != nullptr)
+  // Load Equidistant params
+  std::shared_ptr<camera::Equidistant> intrinsicEquidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
+  if (intrinsicEquidistant != nullptr)
   {
-    intrinsicEquiDistant->setCircleCenterX(intrinsicTree.get<double>("fisheyeCircleCenterX", 0.0));
-    intrinsicEquiDistant->setCircleCenterY(intrinsicTree.get<double>("fisheyeCircleCenterY", 0.0));
-    intrinsicEquiDistant->setCircleRadius(intrinsicTree.get<double>("fisheyeCircleRadius", 1.0));
+    intrinsicEquidistant->setCircleCenterX(intrinsicTree.get<double>("fisheyeCircleCenterX", 0.0));
+    intrinsicEquidistant->setCircleCenterY(intrinsicTree.get<double>("fisheyeCircleCenterY", 0.0));
+    intrinsicEquidistant->setCircleRadius(intrinsicTree.get<double>("fisheyeCircleRadius", 1.0));
   }
 }
 

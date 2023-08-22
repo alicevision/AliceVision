@@ -48,9 +48,9 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
     case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
         return std::make_shared<Pinhole3DEClassicLD>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY);
     case EINTRINSIC::EQUIDISTANT_CAMERA:
-        return std::make_shared<EquiDistant>(w, h, focalLengthPixX, offsetX, offsetY);
+        return std::make_shared<Equidistant>(w, h, focalLengthPixX, offsetX, offsetY);
     case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:
-        return std::make_shared<EquiDistantRadialK3>(w, h, focalLengthPixX, offsetX, offsetY);
+        return std::make_shared<EquidistantRadialK3>(w, h, focalLengthPixX, offsetX, offsetY);
     case EINTRINSIC::UNKNOWN:
     case EINTRINSIC::VALID_PINHOLE:
     case EINTRINSIC::VALID_EQUIDISTANT:

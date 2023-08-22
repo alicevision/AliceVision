@@ -315,7 +315,7 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
 ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation_first, const Vec2& observation_second)
 {
   double radius = 0.0;
-  const camera::EquiDistant * equi = dynamic_cast<const camera::EquiDistant *>(intrinsicPtr);
+  const camera::Equidistant * equi = dynamic_cast<const camera::Equidistant *>(intrinsicPtr);
   if (equi) {
     radius = equi->getCircleRadius();
   }
