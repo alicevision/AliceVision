@@ -203,8 +203,8 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
 
   // Apply undistortion to observation
   sfmData::Observation obsUndistorted = observation;
-  const camera::IntrinsicsScaleOffsetDisto* intrinsicDistortionPtr =
-    dynamic_cast<const camera::IntrinsicsScaleOffsetDisto*>(intrinsicPtr);
+  const camera::IntrinsicScaleOffsetDisto* intrinsicDistortionPtr =
+    dynamic_cast<const camera::IntrinsicScaleOffsetDisto*>(intrinsicPtr);
   if (intrinsicDistortionPtr)
   {
     auto undistortion = intrinsicDistortionPtr->getUndistortion();
@@ -261,8 +261,8 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
 
   // Apply undistortion to observation
   sfmData::Observation obsUndistorted = observation;
-  const camera::IntrinsicsScaleOffsetDisto* intrinsicDistortionPtr =
-    dynamic_cast<const camera::IntrinsicsScaleOffsetDisto*>(intrinsicPtr);
+  const camera::IntrinsicScaleOffsetDisto* intrinsicDistortionPtr =
+    dynamic_cast<const camera::IntrinsicScaleOffsetDisto*>(intrinsicPtr);
   if (intrinsicDistortionPtr)
   {
     auto undistortion = intrinsicDistortionPtr->getUndistortion();
@@ -700,7 +700,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     // refine the focal length
     if(refineIntrinsicsFocalLength)
     {
-      std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
       if (intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
       {
         // if we have an initial guess, we only authorize a margin around this value.
@@ -721,7 +721,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
 
       focalRatio = intrinsicBlockPtr[0] / intrinsicBlockPtr[1];
 
-      std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      std::shared_ptr<camera::IntrinsicScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
       if (castedcam_iso)
       {
         lockRatio = castedcam_iso->isRatioLocked();

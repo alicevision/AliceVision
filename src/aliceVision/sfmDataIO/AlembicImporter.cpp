@@ -600,7 +600,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     intrinsic->setInitializationMode(EInitMode_stringToEnum(mvg_intrinsicInitializationMode));
     intrinsic->setDistortionInitializationMode(EInitMode_stringToEnum(mvg_intrinsicDistortionInitializationMode));
 
-    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+    std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsic);
     if (intrinsicCasted)
     {
       // fy_pix = fx_pix * fy/fx

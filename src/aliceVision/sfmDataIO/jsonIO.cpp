@@ -127,7 +127,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
   intrinsicTree.put("initializationMode", camera::EInitMode_enumToString(intrinsic->getInitializationMode()));
 
-  std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+  std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
   if (intrinsicScaleOffset)
   {
     
@@ -144,7 +144,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
   }
 
-  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsic);
   if (intrinsicScaleOffsetDisto)
   {
     bpt::ptree distParamsTree;
@@ -273,7 +273,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     intrinsic->unlock();
   }
 
-  std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicWithScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+  std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicWithScale = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
   if (intrinsicWithScale != nullptr) {
 
     if (version < Version(1, 2, 2))
@@ -297,7 +297,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
   }
 
   // Load distortion
-  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicWithDistoEnabled = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsicWithDistoEnabled = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsic);
   if (intrinsicWithDistoEnabled != nullptr)
   {
     const camera::EInitMode distortionInitializationMode =

@@ -94,8 +94,8 @@ int aliceVision_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> calibratedIntrinsic
-        = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(calibratedIntrinsics.begin()->second);
+    std::shared_ptr<camera::IntrinsicScaleOffsetDisto> calibratedIntrinsic
+        = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibratedIntrinsics.begin()->second);
 
     if (calibratedIntrinsic->getDistortionInitializationMode() != camera::EInitMode::CALIBRATED)
     {
@@ -125,8 +125,8 @@ int aliceVision_main(int argc, char **argv)
         }
 
         // Create copy of calibrated intrinsic
-        std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> newIntrinsic
-            = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(camera::createIntrinsic(calibratedIntrinsic->getType()));
+        std::shared_ptr<camera::IntrinsicScaleOffsetDisto> newIntrinsic
+            = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camera::createIntrinsic(calibratedIntrinsic->getType()));
         newIntrinsic->assign(*calibratedIntrinsic);
 
         // Apply dimensions of input intrinsic

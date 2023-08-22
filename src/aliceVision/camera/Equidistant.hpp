@@ -9,7 +9,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
-#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
 #include "DistortionFisheye1.hpp"
@@ -25,7 +25,7 @@ namespace camera {
  * See https://en.wikipedia.org/wiki/Fisheye_lens
  * 
  */
-class EquiDistant : public IntrinsicsScaleOffsetDisto
+class EquiDistant : public IntrinsicScaleOffsetDisto
 {
 public:
     EquiDistant() :
@@ -37,7 +37,7 @@ public:
                 double focalLengthPix,
                 double offsetX, double offsetY,
                 std::shared_ptr<Distortion> distortion = nullptr) :
-        IntrinsicsScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
+        IntrinsicScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
         _circleRadius(std::min(w, h) * 0.5), _circleCenter(w / 2.0, h / 2.0)
     {
     }
@@ -46,7 +46,7 @@ public:
                 double focalLengthPix, double offsetX,
                 double offsetY, double circleRadiusPix,
                 std::shared_ptr<Distortion> distortion = nullptr) :
-        IntrinsicsScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
+        IntrinsicScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
         _circleRadius(circleRadiusPix), _circleCenter(w / 2.0, h / 2.0)
     {
     }

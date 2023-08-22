@@ -1266,8 +1266,8 @@ int main(int argc, char* argv[])
         for(auto& intrinsic_pair : intrinsics)
         {
             std::shared_ptr<camera::IntrinsicBase>& intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicSO =
-                std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+            std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicSO =
+                std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
             std::shared_ptr<camera::EquiDistantRadialK3> equidistant =
                 std::dynamic_pointer_cast<camera::EquiDistantRadialK3>(intrinsic);
 

@@ -615,7 +615,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     // refine the focal length
     if(refineIntrinsicsFocalLength)
     {
-      std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
       if(intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
       {
         // if we have an initial guess, we only authorize a margin around this value.
@@ -636,7 +636,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
 
       focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
 
-      std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      std::shared_ptr<camera::IntrinsicScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
       if (castedcam_iso)
       {
         lockRatio = castedcam_iso->isRatioLocked();

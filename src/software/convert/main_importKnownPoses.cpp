@@ -216,7 +216,7 @@ int aliceVision_main(int argc, char **argv)
               geometry::Pose3 pos3(R, pos_vec);
               pose.setTransform(pos3);
 
-              std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
+              std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsicBase);
               if (intrinsic == nullptr)
               {
                   ALICEVISION_THROW_ERROR("Invalid intrinsic");

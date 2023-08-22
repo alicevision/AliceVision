@@ -176,7 +176,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   OUInt32ArrayProperty(userProps, "mvg_ancestorsParams").set(view.getAncestors());
 
   // set intrinsic properties
-  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsic);
   if(intrinsicCasted)
   {
     CameraSample camSample;
