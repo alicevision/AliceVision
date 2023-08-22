@@ -834,9 +834,9 @@ void DelaunayGraphCut::addPointsToPreventSingularities(const Point3d voxel[8], f
     Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0;
     Point3d extrPts[6];
     Point3d fcg;
-    const double s = 0.1;
-    fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) * 0.25;
-    extrPts[0] = fcg + (fcg - vcg) * s;
+    const double s = 0.25;
+    fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) * 0.25; // facet center
+    extrPts[0] = fcg + (fcg - vcg) * s; // extra point beyond the bbox facet
     fcg = (voxel[0] + voxel[4] + voxel[7] + voxel[3]) * 0.25;
     extrPts[1] = fcg + (fcg - vcg) * s;
     fcg = (voxel[0] + voxel[1] + voxel[5] + voxel[4]) * 0.25;
