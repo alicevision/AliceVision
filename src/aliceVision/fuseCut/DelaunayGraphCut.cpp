@@ -184,7 +184,7 @@ public:
 #else
         nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
         resultSet.init(&index, &sq_dist);
-        if(!_tree->findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
+        if(!_tree->findNeighbors(resultSet, p.m, nanoflann::SearchParameters()))
         {
             return false;
         }
@@ -251,8 +251,8 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare, std::vec
             // }
         }
 #else
-
-        static const nanoflann::SearchParams searchParams(32, 0, false); // false: dont need to sort
+        
+        static const nanoflann::SearchParameters searchParams(0.f, false); // false: dont need to sort
         SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, simScorePrepare, vIndex);
         kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams);
         if(resultSet.found)
@@ -391,7 +391,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 std::size_t nearestVertexIndex = std::numeric_limits<std::size_t>::max();
                 double dist = std::numeric_limits<double>::max();
                 resultSet.init(&nearestVertexIndex, &dist);
-                if(!kdTree.findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
+                if(!kdTree.findNeighbors(resultSet, p.m, nanoflann::SearchParameters()))
                 {
                     ALICEVISION_LOG_TRACE("Failed to find Neighbors.");
                     continue;
