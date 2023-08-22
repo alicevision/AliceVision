@@ -918,25 +918,22 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
     if(helperPointsGridSize <= 0)
         return;
 
-    int ns = helperPointsGridSize;
-    float md = 1.0f / 500.0f;
-    Point3d vx = (voxel[1] - voxel[0]);
-    Point3d vy = (voxel[3] - voxel[0]);
-    Point3d vz = (voxel[4] - voxel[0]);
-    Point3d O = voxel[0] + vx * md + vy * md + vz * md;
-    vx = vx - vx * 2.0f * md;
-    vy = vy - vy * 2.0f * md;
-    vz = vz - vz * 2.0f * md;
+    const double ns = helperPointsGridSize;
+    const Point3d vx = (voxel[1] - voxel[0]);
+    const Point3d vy = (voxel[3] - voxel[0]);
+    const Point3d vz = (voxel[4] - voxel[0]);
 
-    float maxSize = 2.0f * (O - voxel[0]).size();
-    Point3d CG = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+    // Add uniform noise on helper points, with 1/4 margin around the vertex.
+    const double md = 1.0 / (helperPointsGridSize * 4.0);
+    const double maxNoiseSize = md * (voxel[7] - voxel[0]).size();
+    Point3d center = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0;
     
     const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
     std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
-    auto rand = std::bind(std::uniform_real_distribution<float>{0.0, 1.0}, generator);
+    auto rand = std::bind(std::uniform_real_distribution<float>{-1.0, 1.0}, generator);
 
     int addedPoints = 0;
-    const float minDist2 = minDist * minDist;
+    const double minDist2 = minDist * minDist;
     Tree kdTree(_verticesCoords);
     for(int x = 0; x <= ns; ++x)
     {
@@ -944,13 +941,12 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
         {
             for(int z = 0; z <= ns; ++z)
             {
-                Point3d pt = voxel[0] + vx * ((float)x / (float)ns) + vy * ((float)y / (float)ns) +
-                             vz * ((float)z / (float)ns);
-                pt = pt + (CG - pt).normalize() * (maxSize * rand());
-
-                const Point3d p(pt.x, pt.y, pt.z);
-                std::size_t vi;
-                double sq_dist;
+                const Point3d pt = voxel[0] + vx * ((double)x / ns) + vy * ((double)y / ns) +
+                             vz * ((double)z / ns);
+                const Point3d noise((maxNoiseSize * rand()), (maxNoiseSize * rand()), (maxNoiseSize * rand()));
+                const Point3d p = pt + noise;
+                std::size_t vi{};
+                double sq_dist{};
 
                 // if there is no nearest vertex or the nearest vertex is not too close
                 if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
