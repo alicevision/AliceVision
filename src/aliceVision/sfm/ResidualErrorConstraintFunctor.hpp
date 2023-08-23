@@ -1,7 +1,6 @@
 #pragma once
 
 #include <aliceVision/camera/camera.hpp>
-#include <aliceVision/camera/PinholeRadial.hpp>
 
 #include <ceres/rotation.h>
 

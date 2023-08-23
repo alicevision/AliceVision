@@ -12,17 +12,11 @@ set(camera_files_headers
 	Undistortion.hpp
 	Undistortion3DE.hpp
 	Equidistant.hpp
-	EquidistantRadial.hpp
 	IntrinsicBase.hpp
 	IntrinsicInitMode.hpp
 	IntrinsicScaleOffset.hpp
 	IntrinsicScaleOffsetDisto.hpp
 	Pinhole.hpp
-	Pinhole3DE.hpp
-	PinholeBrown.hpp
-	PinholeFisheye.hpp
-	PinholeFisheye1.hpp
-	PinholeRadial.hpp
 )
 
 set(camera_files_sources

@@ -61,7 +61,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     
     ALICEVISION_CERR("allTheSameIntrinsics mode: using the intrinsics of the " << intrinsicIndex << " result");
     
-    camera::PinholeRadialK3* currIntrinsics = &vec_localizationResult.at(intrinsicIndex).getIntrinsics();
+    camera::Pinhole* currIntrinsics = &vec_localizationResult.at(intrinsicIndex).getIntrinsics();
     
     if(b_no_distortion)
     {
@@ -74,7 +74,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     else
     {
       // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-      tinyScene.intrinsics[intrinsicID] = std::shared_ptr<camera::PinholeRadialK3>(currIntrinsics, [](camera::PinholeRadialK3*){});
+      tinyScene.intrinsics[intrinsicID] = std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*){});
       ALICEVISION_LOG_DEBUG("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
     }
   }
@@ -121,9 +121,9 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     
     if(!allTheSameIntrinsics)
     {
-      camera::PinholeRadialK3* currIntrinsics = &currResult.getIntrinsics();
+      camera::Pinhole* currIntrinsics = &currResult.getIntrinsics();
        // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-      tinyScene.intrinsics[intrinsicID] = std::shared_ptr<camera::PinholeRadialK3>(currIntrinsics, [](camera::PinholeRadialK3*){});
+      tinyScene.intrinsics[intrinsicID] = std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*){});
       ++intrinsicID;
     }
     
@@ -479,7 +479,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
 bool refineRigPose(const std::vector<Mat> &pts2d,
                    const std::vector<Mat> &pts3d,
                    const std::vector<std::vector<std::size_t> > &inliers,
-                   const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                   const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose)
 {
@@ -626,7 +626,7 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
 // rmse, min, max
 std::tuple<double, double, double> computeStatistics(const Mat &pts2D, 
                                                      const Mat &pts3D,
-                                                     const camera::PinholeRadialK3 &currCamera,
+                                                     const camera::Pinhole &currCamera,
                                                      const std::vector<std::size_t> &currInliers,
                                                      const geometry::Pose3 &subPoses,
                                                      const geometry::Pose3 &rigPose)
@@ -662,7 +662,7 @@ std::tuple<double, double, double> computeStatistics(const Mat &pts2D,
 
 void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
                        const std::vector<Mat> &vec_pts3D,
-                       const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                       const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                        const std::vector<geometry::Pose3 > &vec_subPoses,
                        const geometry::Pose3 &rigPose,
                        const std::vector<std::vector<std::size_t> > &vec_inliers)
@@ -699,7 +699,7 @@ void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
 
 std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
                                        const std::vector<Mat> &vec_pts3d,
-                                       const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                                       const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                                        const std::vector<geometry::Pose3 > &vec_subPoses,
                                        double maxReprojectionError,
                                        const geometry::Pose3 &rigPose,
@@ -726,7 +726,7 @@ std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
   {
     const std::size_t numPts = vec_pts2d[camID].cols();
     
-    const camera::PinholeRadialK3 &currCamera = vec_queryIntrinsics[camID];
+    const camera::Pinhole &currCamera = vec_queryIntrinsics[camID];
     
     Mat2X residuals;
     if(camID != 0)
@@ -775,7 +775,7 @@ std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
 
 bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
                             const std::vector<Mat> &pts3d,
-                            const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                            const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                             const std::vector<geometry::Pose3 > &vec_subPoses,
                             double maxReprojectionError,
                             std::size_t minNumPoints,

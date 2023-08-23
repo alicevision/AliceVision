@@ -363,7 +363,7 @@ int aliceVision_main(int argc, char** argv)
   {
     // @fixme It's better to have arrays of pointers...
     std::vector<image::Image<float> > vec_imageGrey;
-    std::vector<camera::PinholeRadialK3 > vec_queryIntrinsics;
+    std::vector<camera::Pinhole > vec_queryIntrinsics;
     vec_imageGrey.reserve(numCameras);
     vec_queryIntrinsics.reserve(numCameras);
            
@@ -371,7 +371,7 @@ int aliceVision_main(int argc, char** argv)
     for(std::size_t idCamera = 0; idCamera < numCameras; ++idCamera)
     {
       image::Image<float> imageGrey;
-      camera::PinholeRadialK3 queryIntrinsics;
+      camera::Pinhole queryIntrinsics;
       bool hasIntrinsics = false;
       std::string currentImgName;
       haveImage = feeders[idCamera]->readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics);

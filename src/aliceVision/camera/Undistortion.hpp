@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <aliceVision/camera/cameraCommon.hpp>
+
 #include <aliceVision/numeric/numeric.hpp>
 
 #include <vector>
@@ -33,6 +35,8 @@ public:
         setSize(width, height);
         setOffset({ 0.0, 0.0 });
     }
+
+    virtual EDISTORTION getType() const = 0;
 
     virtual Undistortion* clone() const = 0;
 

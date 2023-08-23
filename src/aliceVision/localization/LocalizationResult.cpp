@@ -23,7 +23,7 @@ LocalizationResult::LocalizationResult(
         const sfm::ImageLocalizerMatchData& matchData,
         const std::vector<IndMatch3D2D>& indMatch3D2D,
         const geometry::Pose3& pose,
-        const camera::PinholeRadialK3& intrinsics,
+        const camera::Pinhole& intrinsics,
         const std::vector<voctree::DocMatch>& matchedImages,
         bool isValid) :
         _matchData(matchData),
@@ -209,7 +209,7 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
         IndexT intrinsicId;
         std::shared_ptr<camera::IntrinsicBase> intrinsicPtr;
         sfmDataIO::loadIntrinsic(version, intrinsicId, intrinsicPtr, lrTree.get_child("intrinsic"));
-        lr._intrinsics = *(dynamic_cast<camera::PinholeRadialK3*>(intrinsicPtr.get()));
+        lr._intrinsics = *(dynamic_cast<camera::Pinhole*>(intrinsicPtr.get()));
       }
 
       // inliers
@@ -290,7 +290,7 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
 
     //intrinsic
     {
-      std::shared_ptr<camera::PinholeRadialK3> intrinsicPtr(new camera::PinholeRadialK3());
+      std::shared_ptr<camera::Pinhole> intrinsicPtr = std::make_shared<camera::Pinhole>();
       *intrinsicPtr = lr._intrinsics;
       sfmDataIO::saveIntrinsic("intrinsic", UndefinedIndexT, std::dynamic_pointer_cast<camera::IntrinsicBase>(intrinsicPtr), lrTree);
     }

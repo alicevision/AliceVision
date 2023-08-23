@@ -31,7 +31,7 @@ public:
     FeederImpl(const std::string& imagePath, const std::string& calibPath);
 
     template <typename T>
-    bool readImage(image::Image<T>& image, camera::PinholeRadialK3& camIntrinsics, std::string& imageName,
+    bool readImage(image::Image<T>& image, camera::Pinhole& camIntrinsics, std::string& imageName,
                    bool& hasIntrinsics)
     {
         if(!_isInit)
@@ -149,19 +149,19 @@ SfMDataFeed::SfMDataFeed(const std::string& imagePath, const std::string& calibP
 {
 }
 
-bool SfMDataFeed::readImage(image::Image<image::RGBColor>& imageRGB, camera::PinholeRadialK3& camIntrinsics,
+bool SfMDataFeed::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
                             std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_sfmDataFeed->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool SfMDataFeed::readImage(image::Image<float>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool SfMDataFeed::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
                             std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_sfmDataFeed->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool SfMDataFeed::readImage(image::Image<unsigned char>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool SfMDataFeed::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
                             std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_sfmDataFeed->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));

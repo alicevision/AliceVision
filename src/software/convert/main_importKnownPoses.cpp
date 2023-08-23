@@ -237,10 +237,10 @@ int aliceVision_main(int argc, char **argv)
 
               if(xmp.distortionModel == "brown3t2")
               {
-                std::shared_ptr<camera::PinholeBrownT2> camera = std::dynamic_pointer_cast<camera::PinholeBrownT2>(intrinsic);
+                std::shared_ptr<camera::Pinhole> camera = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
                 if (camera == nullptr)
                 {
-                    camera = std::make_shared<camera::PinholeBrownT2>();
+                    camera = std::make_shared<camera::Pinhole>();
                     camera->copyFrom(*intrinsic);
                     sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
                 }
@@ -264,10 +264,10 @@ int aliceVision_main(int argc, char **argv)
               }
               else if(xmp.distortionModel == "brown3")
               {
-                std::shared_ptr<camera::PinholeBrownT2> camera = std::dynamic_pointer_cast<camera::PinholeBrownT2>(intrinsic);
+                std::shared_ptr<camera::Pinhole> camera = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
                 if (camera == nullptr)
                 {
-                    camera = std::make_shared<camera::PinholeBrownT2>();
+                    camera = std::make_shared<camera::Pinhole>();
                     camera->copyFrom(*intrinsic);
                     sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
                 }

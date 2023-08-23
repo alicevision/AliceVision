@@ -8,7 +8,7 @@
 
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/localization/LocalizationResult.hpp>
@@ -89,7 +89,7 @@ public:
                         const LocalizerParameters *param,
                         std::mt19937 & gen,
                         bool useInputIntrinsics,
-                        camera::PinholeRadialK3 &queryIntrinsics,
+                        camera::Pinhole &queryIntrinsics,
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
 
@@ -98,14 +98,14 @@ public:
                         const LocalizerParameters *param,
                         std::mt19937 & gen,
                         bool useInputIntrinsics,
-                        camera::PinholeRadialK3 &queryIntrinsics,
+                        camera::Pinhole &queryIntrinsics,
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
     
   virtual bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                            const LocalizerParameters *param,
                            std::mt19937 & gen,
-                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                           std::vector<camera::Pinhole > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,
                            geometry::Pose3 &rigPose, 
                            std::vector<LocalizationResult>& vec_locResults)=0;
@@ -114,7 +114,7 @@ public:
                            const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                            const LocalizerParameters *param,
                            std::mt19937 & gen,
-                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                           std::vector<camera::Pinhole > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,
                            geometry::Pose3 &rigPose,
                            std::vector<LocalizationResult>& vec_locResults)=0;

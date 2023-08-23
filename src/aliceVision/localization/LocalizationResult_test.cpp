@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "LocalizationResult.hpp"
-#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 
@@ -55,7 +55,11 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   geometry::Pose3 pose = geometry::Pose3(Mat3::Random(), Vec3::Random());
   
   // random intrinsics
-  camera::PinholeRadialK3 intrinsics = camera::PinholeRadialK3(640, 480, 1400, 320.5, 240.5, 0.001, -0.05, 0.00003);
+  camera::Pinhole intrinsics = camera::Pinhole(
+    640, 480,
+    1400, 1400,
+    320.5, 240.5,
+    std::make_shared<camera::DistortionRadialK3>(0.001, -0.05, 0.00003));
   
   // random valid
   const bool valid = (numPts % 2 == 0);

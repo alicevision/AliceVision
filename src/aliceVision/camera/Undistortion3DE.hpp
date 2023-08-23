@@ -27,6 +27,8 @@ public:
         _undistortionParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0};
     }
 
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_3DEANAMORPHIC4; }
+
     Undistortion * clone() const override { return new Undistortion3DEAnamorphic4(*this); }
 
     Vec2 undistortNormalized(const Vec2& p) const override;

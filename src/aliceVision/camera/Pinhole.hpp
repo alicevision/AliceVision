@@ -71,10 +71,7 @@ public:
         return getFocalLengthPixX() > 0 && getFocalLengthPixY() > 0 && IntrinsicBase::isValid();
     }
 
-    EINTRINSIC getType() const override
-    {
-        return EINTRINSIC::PINHOLE_CAMERA;
-    }
+    EINTRINSIC getType() const override;
 
     Mat3 K() const;
 

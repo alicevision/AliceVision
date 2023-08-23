@@ -370,7 +370,7 @@ int aliceVision_main(int argc, char** argv)
 #endif
   
   image::Image<float> imageGrey;
-  camera::PinholeRadialK3 queryIntrinsics;
+  camera::Pinhole queryIntrinsics;
   bool hasIntrinsics = false;
   
   std::size_t frameCounter = 0;

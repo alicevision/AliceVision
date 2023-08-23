@@ -344,7 +344,7 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
 
     // Feed provider variables
     image::Image<image::RGBColor> image;     // original image
-    camera::PinholeRadialK3 queryIntrinsics; // image associated camera intrinsics
+    camera::Pinhole queryIntrinsics;         // image associated camera intrinsics
     bool hasIntrinsics = false;              // true if queryIntrinsics is valid
     std::string currentImgName;              // current image name
 
@@ -448,7 +448,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                                       const image::EStorageDataType storageDataType)
 {
     image::Image<image::RGBColor> image;
-    camera::PinholeRadialK3 queryIntrinsics;
+    camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
 
@@ -712,7 +712,7 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
 cv::Mat KeyframeSelector::readImage(dataio::FeedProvider &feed, std::size_t width)
 {
     image::Image<image::RGBColor> image;
-    camera::PinholeRadialK3 queryIntrinsics;
+    camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
 
@@ -940,7 +940,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
 
     // Feed provider variables
     image::Image<image::RGBColor> image;
-    camera::PinholeRadialK3 queryIntrinsics;
+    camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
 

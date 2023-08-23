@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "rigResection.hpp"
-#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
 #include "optimization.hpp"
@@ -107,7 +107,7 @@ void generateRandomExperiment(std::size_t numCameras,
                               double noise,
                               geometry::Pose3 &rigPoseGT,
                               Mat3X &pointsGT,
-                              std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                              std::vector<camera::Pinhole > &vec_queryIntrinsics,
                               std::vector<geometry::Pose3 > &vec_subPoses,
                               std::vector<Mat> &vec_pts3d,
                               std::vector<Mat> &vec_pts2d)
@@ -134,7 +134,8 @@ void generateRandomExperiment(std::size_t numCameras,
         vec_subPoses.push_back(generateRandomPose(Vec3::Constant(M_PI/10), 1.5));
 
       // let's keep it simple
-      vec_queryIntrinsics.push_back(camera::PinholeRadialK3(640, 480, 500, 320, 240));
+      vec_queryIntrinsics.push_back(
+        camera::Pinhole(640, 480, 500, 500, 320, 240, std::make_shared<camera::DistortionRadialK3>()));
     }
     assert(vec_subPoses.size() == numCameras-1);
   //  for(std::size_t i = 0; i < vec_subPoses.size(); ++i)
@@ -233,7 +234,7 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseNoOutliers)
 
     // generate random pose for the rig
     geometry::Pose3 rigPoseGT;
-    std::vector<camera::PinholeRadialK3 > vec_queryIntrinsics;
+    std::vector<camera::Pinhole > vec_queryIntrinsics;
     std::vector<geometry::Pose3 > vec_subPoses;
     std::vector<Mat> vec_pts3d;
     std::vector<Mat> vec_pts2d;
@@ -313,7 +314,7 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseNoOutliers)
 //    for(std::size_t cam = 0; cam < numCameras; ++cam)
 //    {
 //      const std::size_t numPts = vec_pts2d[cam].cols();
-//      const camera::PinholeRadialK3 &currCamera = vec_queryIntrinsics[cam];
+//      const camera::Pinhole &currCamera = vec_queryIntrinsics[cam];
 //      Mat2X residuals;
 //      if(cam!=0)
 //        residuals = currCamera.residuals(vec_subPoses[cam-1]*rigPose, vec_pts3d[cam], vec_pts2d[cam]);
@@ -345,7 +346,7 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleWithNoiseNoOutliers)
 
     // generate random pose for the rig
     geometry::Pose3 rigPoseGT;
-    std::vector<camera::PinholeRadialK3 > vec_queryIntrinsics;
+    std::vector<camera::Pinhole > vec_queryIntrinsics;
     std::vector<geometry::Pose3 > vec_subPoses;
     std::vector<Mat> vec_pts3d;
     std::vector<Mat> vec_pts2d;
@@ -433,7 +434,7 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseWithOutliers)
     // generate random pose for the rig
     geometry::Pose3 rigPoseGT;
     const double outlierPercentage = 0.4*dis(gen);
-    std::vector<camera::PinholeRadialK3 > vec_queryIntrinsics;
+    std::vector<camera::Pinhole > vec_queryIntrinsics;
     std::vector<geometry::Pose3 > vec_subPoses;
     std::vector<Mat> vec_pts3d;
     std::vector<Mat> vec_pts2d;
@@ -478,7 +479,7 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseWithOutliers)
 //    for(std::size_t cam = 0; cam < numCameras; ++cam)
 //    {
 //      const std::size_t numPts = vec_pts2d[cam].cols();
-//      const camera::PinholeRadialK3 &currCamera = vec_queryIntrinsics[cam];
+//      const camera::Pinhole &currCamera = vec_queryIntrinsics[cam];
 //      Mat2X residuals;
 //      if(cam!=0)
 //        residuals = currCamera.residuals(vec_subPoses[cam-1]*rigPose, vec_pts3d[cam], vec_pts2d[cam]);

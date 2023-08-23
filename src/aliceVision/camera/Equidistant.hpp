@@ -43,11 +43,12 @@ public:
     }
 
     Equidistant(unsigned int w, unsigned int h,
-                double focalLengthPix, double offsetX,
-                double offsetY, double circleRadiusPix,
+                double focalLengthPix,
+                double offsetX, double offsetY,
+                double circleRadiusPix,
                 std::shared_ptr<Distortion> distortion = nullptr) :
         IntrinsicScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
-        _circleRadius(circleRadiusPix), _circleCenter(w / 2.0, h / 2.0)
+        _circleRadius(circleRadiusPix != 0.0 ? circleRadiusPix : std::min(w, h) * 0.5), _circleCenter(w / 2.0, h / 2.0)
     {
     }
 
@@ -68,10 +69,7 @@ public:
         return _scale(0) > 0 && IntrinsicBase::isValid();
     }
 
-    EINTRINSIC getType() const override
-    {
-        return EQUIDISTANT_CAMERA;
-    }
+    EINTRINSIC getType() const override;
 
     Vec2 project(const geometry::Pose3& pose, const Vec4& pt, bool applyDistortion = true) const override;
 

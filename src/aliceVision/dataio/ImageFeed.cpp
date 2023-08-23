@@ -36,7 +36,7 @@ public:
     FeederImpl(const std::string& imagePath, const std::string& calibPath);
 
     template <typename T>
-    bool readImage(image::Image<T>& image, camera::PinholeRadialK3& camIntrinsics, std::string& imageName,
+    bool readImage(image::Image<T>& image, camera::Pinhole& camIntrinsics, std::string& imageName,
                    bool& hasIntrinsics)
     {
         if(!_isInit)
@@ -81,7 +81,7 @@ private:
     bool _withCalibration;
     // It contains the images to be fed
     std::vector<std::string> _images;
-    camera::PinholeRadialK3 _camIntrinsics;
+    camera::Pinhole _camIntrinsics;
 
     unsigned int _currentImageIndex = 0;
 };
@@ -248,19 +248,19 @@ ImageFeed::ImageFeed(const std::string& imagePath, const std::string& calibPath)
 {
 }
 
-bool ImageFeed::readImage(image::Image<image::RGBColor>& imageRGB, camera::PinholeRadialK3& camIntrinsics,
+bool ImageFeed::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
                           std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_imageFeed->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool ImageFeed::readImage(image::Image<float>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool ImageFeed::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
                           std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_imageFeed->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool ImageFeed::readImage(image::Image<unsigned char>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool ImageFeed::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
                           std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_imageFeed->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));

@@ -25,6 +25,8 @@ public:
         _distortionParams = {p1};
     }
 
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_FISHEYE1; }
+
     DistortionFisheye1* clone() const override { return new DistortionFisheye1(*this); }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])

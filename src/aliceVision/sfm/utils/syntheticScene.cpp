@@ -76,23 +76,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
   {
     const unsigned int w = config._cx *2;
     const unsigned int h = config._cy *2;
-    switch (eintrinsic)
-    {
-        case camera::EINTRINSIC::PINHOLE_CAMERA:
-        sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>
-          (w, h, config._fx, config._fx, 0, 0);
-      break;
-        case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-        sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>
-          (w, h, config._fx, config._fx, 0, 0, 0.0);
-      break;
-        case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-        sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>
-          (w, h, config._fx, config._fx, 0, 0, 0., 0., 0.);
-      break;
-      default:
-        ALICEVISION_LOG_DEBUG("Not yet supported");
-    }
+    sfmData.intrinsics[0] = camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx);
   }
 
   // 4. Landmarks
@@ -162,20 +146,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
   {
     const unsigned int w = config._cx * 2;
     const unsigned int h = config._cy * 2;
-    switch (eintrinsic)
-    {
-      case camera::EINTRINSIC::PINHOLE_CAMERA:
-        sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>(w, h, config._fx, config._fx, 0, 0);
-      break;
-      case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-        sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>(w, h, config._fx, config._fx, 0, 0, 0.0);
-      break;
-      case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-        sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>(w, h, config._fx, config._fx, 0, 0, 0., 0., 0.);
-      break;
-      default:
-      throw std::runtime_error("Intrinsic type is not implemented.");
-    }
+    sfmData.intrinsics[0] = camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx);
   }
 
   // 5. Landmarks

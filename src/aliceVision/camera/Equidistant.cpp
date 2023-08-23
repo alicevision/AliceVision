@@ -375,5 +375,19 @@ bool Equidistant::isVisibleRay(const Vec3 & ray) const
     return  centered.norm() <= _circleRadius;
 }
 
+EINTRINSIC Equidistant::getType() const
+{
+    if (_pDistortion)
+    {
+        switch (_pDistortion->getType())
+        {
+        case EDISTORTION::DISTORTION_RADIALK3PT: return EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3;
+        default: throw std::out_of_range("Invalid distortion model for equidistant camera.");
+        }
+    }
+
+    return EINTRINSIC::EQUIDISTANT_CAMERA;
+}
+
 } // namespace camera
 } // namespace aliceVision

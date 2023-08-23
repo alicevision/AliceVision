@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
 
@@ -35,7 +35,7 @@ public:
      * is no intrinsics associated to \p imageRGB.
      * @return True if there is a new image, false otherwise.
      */
-    virtual bool readImage(image::Image<image::RGBColor>& imageRGB, camera::PinholeRadialK3& camIntrinsics,
+    virtual bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
                            std::string& mediaPath, bool& hasIntrinsics) = 0;
 
     /**
@@ -47,7 +47,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    virtual bool readImage(image::Image<float>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+    virtual bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
                            std::string& mediaPath, bool& hasIntrinsics) = 0;
 
     /**
@@ -59,7 +59,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    virtual bool readImage(image::Image<unsigned char>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+    virtual bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
                            std::string& mediaPath, bool& hasIntrinsics) = 0;
 
     virtual std::size_t nbFrames() const = 0;
@@ -71,13 +71,13 @@ public:
     virtual ~IFeed() {}
 };
 
-//@todo to be move somewhere else more appropriated
+//@todo to be move somewhere else more appropriate
 /**
  * @brief Read the calibration from a simple text file.
  * @param[in] filename The file containing the calibration parameters.
  * @param[out] camIntrinsics The loaded parameters.
  */
-void readCalibrationFromFile(const std::string& filename, camera::PinholeRadialK3& camIntrinsics);
+void readCalibrationFromFile(const std::string& filename, camera::Pinhole& camIntrinsics);
 
 } // namespace dataio
 } // namespace aliceVision

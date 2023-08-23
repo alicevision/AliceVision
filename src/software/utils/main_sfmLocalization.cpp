@@ -183,9 +183,11 @@ int aliceVision_main(int argc, char **argv)
 
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
-      optional_intrinsic = std::make_shared<camera::PinholeRadialK3>(
+      optional_intrinsic = camera::createIntrinsic(
+        camera::PINHOLE_CAMERA_RADIAL3,
         imageGray.Width(), imageGray.Height(),
-        focal, principal_point(0), principal_point(1));
+        focal, focal,
+        principal_point(0), principal_point(1));
     }
     sfm::SfMLocalizer::RefinePose
     (
