@@ -618,6 +618,8 @@ int aliceVision_main(int argc, char **argv)
 
     const float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
     const float focusDistance = 0.f;
+    const float foc = view.getWidth() * focalLengthmm / sensorWidth / std::max(view.getWidth(), view.getHeight());
+    //const float focY = view.getHeight() * focalLengthmm / sensorHeight / std::max(view.getWidth(), view.getHeight());
 
     LensParam lensParam;
     if ((lcpData != nullptr) && !(lcpData->isEmpty()))
@@ -629,12 +631,32 @@ int aliceVision_main(int argc, char **argv)
 
     if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty)
     {
+      if(lensParam.vignParams.FocalLengthX == 0.0)
+      {
+        lensParam.vignParams.FocalLengthX = foc;
+      }
+      if(lensParam.vignParams.FocalLengthY == 0.0)
+      {
+        lensParam.vignParams.FocalLengthY = foc;
+      }
       view.addVignettingMetadata(lensParam);
       ++lcpVignettingViewCount;
     }
 
     if(lensParam.hasChromaticParams() && !lensParam.ChromaticGreenParams.isEmpty)
     {
+      if(lensParam.ChromaticGreenParams.FocalLengthX == 0.0)
+      {
+        lensParam.ChromaticGreenParams.FocalLengthX = foc;
+        lensParam.ChromaticBlueGreenParams.FocalLengthX = foc;
+        lensParam.ChromaticRedGreenParams.FocalLengthX = foc;
+      }
+      if(lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
+      {
+        lensParam.ChromaticGreenParams.FocalLengthY = foc;
+        lensParam.ChromaticBlueGreenParams.FocalLengthY = foc;
+        lensParam.ChromaticRedGreenParams.FocalLengthY = foc;
+      }
       view.addChromaticMetadata(lensParam);
       ++lcpChromaticViewCount;
     }

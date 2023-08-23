@@ -20,6 +20,9 @@
 #include <aliceVision/hdr/hdrMerge.hpp>
 #include <aliceVision/hdr/brackets.hpp>
 
+// Lens Correction
+#include <aliceVision/lensCorrectionProfile/lcp.hpp>
+
 // Command line parameters
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -66,6 +69,67 @@ std::string getHdrMaskPath(const std::string& outputPath, std::size_t g, const s
     }
     const std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
     return hdrImagePath;
+}
+
+void undistortChromaticAberrations(const aliceVision::image::Image<aliceVision::image::RGBfColor>& img,
+                                   RectilinearModel& greenModel, RectilinearModel& blueGreenModel,
+                                   RectilinearModel& redGreenModel,
+                                   aliceVision::image::Image<aliceVision::image::RGBfColor>& img_ud,
+                                   const image::RGBfColor fillcolor, bool undistortGeometry = false)
+{
+    if (!greenModel.isEmpty && greenModel.FocalLengthX != 0.0 && greenModel.FocalLengthY != 0.0)
+    {
+        img_ud.resize(img.Width(), img.Height(), true, fillcolor);
+        const image::Sampler2d<image::SamplerLinear> sampler;
+
+        const float maxWH = std::max(img.Width(), img.Height());
+        const float ppX = greenModel.ImageXCenter * img.Width();
+        const float ppY = greenModel.ImageYCenter * img.Height();
+        const float scaleX = greenModel.FocalLengthX * maxWH;
+        const float scaleY = greenModel.FocalLengthY * maxWH;
+
+        #pragma omp parallel for
+        for(int v = 0; v < img.Height(); ++v)
+            for(int u = 0; u < img.Width(); ++u)
+            {
+                // image to camera
+                const float x = (u - ppX) / scaleX;
+                const float y = (v - ppY) / scaleY;
+
+                // disto
+                float xdRed, ydRed, xdGreen, ydGreen, xdBlue, ydBlue;
+                if(undistortGeometry)
+                {
+                    greenModel.distort(x, y, xdGreen, ydGreen);
+                }
+                else
+                {
+                    xdGreen = x;
+                    ydGreen = y;
+                }
+                redGreenModel.distort(xdGreen, ydGreen, xdRed, ydRed);
+                blueGreenModel.distort(xdGreen, ydGreen, xdBlue, ydBlue);
+
+                // camera to image
+                const Vec2 distoPixRed(xdRed * scaleX + ppX, ydRed * scaleY + ppY);
+                const Vec2 distoPixGreen(xdGreen * scaleX + ppX, ydGreen * scaleY + ppY);
+                const Vec2 distoPixBlue(xdBlue * scaleX + ppX, ydBlue * scaleY + ppY);
+
+                // pick pixel if it is in the image domain
+                if(img.Contains(distoPixRed(1), distoPixRed(0)))
+                {
+                    img_ud(v, u)[0] = sampler(img, distoPixRed(1), distoPixRed(0))[0];
+                }
+                if(img.Contains(distoPixGreen(1), distoPixGreen(0)))
+                {
+                    img_ud(v, u)[1] = sampler(img, distoPixGreen(1), distoPixGreen(0))[1];
+                }
+                if(img.Contains(distoPixBlue(1), distoPixBlue(0)))
+                {
+                    img_ud(v, u)[2] = sampler(img, distoPixBlue(1), distoPixBlue(0))[2];
+                }
+            }
+    }
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -425,6 +489,24 @@ int aliceVision_main(int argc, char** argv)
                 image::readImage(filepath, images[i], options);
 
                 exposuresSetting[i] = group[i]->getCameraExposureSetting();
+
+                std::vector<float> v_caGParam, v_caBGParam, v_caRGParam;
+                group[i]->getChromaticAberrationParams(v_caGParam, v_caBGParam, v_caRGParam);
+
+                RectilinearModel caGModel, caBGModel, caRGModel;
+                caGModel.init3(v_caGParam);
+                caBGModel.init3(v_caBGParam);
+                caRGModel.init3(v_caRGParam);
+
+                if (!caGModel.isEmpty)
+                {
+                    const image::RGBfColor FBLACK_A(.0f, .0f, .0f);
+                    //image::Image<image::RGBAfColor> image_ud;
+                    image::Image<image::RGBfColor> image_src = images[i];
+                    undistortChromaticAberrations(image_src, caGModel, caBGModel, caRGModel, images[i], FBLACK_A,
+                                                  false);
+                    //images[i] = image_src;
+                }
             }
 
             if(!sfmData::hasComparableExposures(exposuresSetting))
