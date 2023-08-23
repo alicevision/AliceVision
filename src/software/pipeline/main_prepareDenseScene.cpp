@@ -52,7 +52,9 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
     {
         for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
         {
-            image(pix) = image(pix) * exposureCompensation;
+            image(pix)[0] *= exposureCompensation;
+            image(pix)[1] *= exposureCompensation;
+            image(pix)[2] *= exposureCompensation;
         }
     }
 

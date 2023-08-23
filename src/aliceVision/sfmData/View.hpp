@@ -133,7 +133,7 @@ public:
         area2 = (aperture1 / aperture2)^2
         */
         double new_fnumber = fnumber * iso_2_aperture;
-        double exp_increase = (new_fnumber / lReferenceFNumber) * (new_fnumber / lReferenceFNumber);
+        double exp_increase = (lReferenceFNumber / new_fnumber) * (lReferenceFNumber / new_fnumber);
 
         // If the aperture was more important for this image, this means that it received less light than with a default aperture
         // This means also that if we want to simulate that all the image have the same aperture, we have to increase virtually th

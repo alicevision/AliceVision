@@ -55,7 +55,7 @@ int aliceVision_main(int argc, char* argv[])
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO;
     bool flipNormals = false;
-    bool correctEV = false;
+    bool correctEV = true;
 
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
