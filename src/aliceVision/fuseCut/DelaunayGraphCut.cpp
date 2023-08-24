@@ -3110,16 +3110,16 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
   // add points for cam centers
   addPointsFromCameraCenters(cams, minDist);
 
-  // add 6 points to prevent singularities
-  addPointsToPreventSingularities(hexah, minDist);
-
   densifyWithHelperPoints(densifyNbFront, densifyNbBack, densifyScale);
 
   // add volume points to prevent singularities
   {
     Point3d hexahExt[8];
-    mvsUtils::inflateHexahedron(hexah, hexahExt, 1.1);
+    mvsUtils::inflateHexahedron(hexah, hexahExt, 1.3);
     addGridHelperPoints(helperPointsGridSize, hexahExt, minDist);
+
+    // add 6 points to prevent singularities (one point beyond each bbox facet)
+    addPointsToPreventSingularities(hexahExt, minDist);
 
     // add point for shape from silhouette
     if(depthMapsFuseParams != nullptr)
