@@ -201,7 +201,7 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
     iter != vec_camfilenames.end(); ++iter, ++index)
   {
     geometry::Pose3 pose;
-    std::shared_ptr<camera::Pinhole> pinholeIntrinsic = std::make_shared<camera::Pinhole>();
+    std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA);
     bool loaded = fcnReadCamPtr((fs::path(sGTPath) / *iter).string(), *pinholeIntrinsic.get(), pose);
     if (!loaded)
     {

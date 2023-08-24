@@ -33,11 +33,15 @@ void generateSampleScene(sfmData::SfMData & output)
     const double offsetY = 16;
     output.getIntrinsics().emplace(
         0,
-        std::make_shared<camera::Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA,
+            w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
     output.getIntrinsics().emplace(
         1,
-        std::make_shared<camera::Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
-            std::make_shared<camera::DistortionRadialK3>(0.1, 0.05, -0.001)));
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,
+            w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY,
+            {0.1, 0.05, -0.001}));
 
     // Generate poses on another cube
     IndexT idpose = 0;

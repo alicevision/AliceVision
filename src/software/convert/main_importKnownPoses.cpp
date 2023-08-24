@@ -240,7 +240,7 @@ int aliceVision_main(int argc, char **argv)
                 std::shared_ptr<camera::Pinhole> camera = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
                 if (camera == nullptr)
                 {
-                    camera = std::make_shared<camera::Pinhole>();
+                    camera = camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA);
                     camera->copyFrom(*intrinsic);
                     sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
                 }
@@ -267,7 +267,7 @@ int aliceVision_main(int argc, char **argv)
                 std::shared_ptr<camera::Pinhole> camera = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
                 if (camera == nullptr)
                 {
-                    camera = std::make_shared<camera::Pinhole>();
+                    camera = camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA);
                     camera->copyFrom(*intrinsic);
                     sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
                 }

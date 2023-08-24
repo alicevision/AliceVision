@@ -290,7 +290,7 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
 
     //intrinsic
     {
-      std::shared_ptr<camera::Pinhole> intrinsicPtr = std::make_shared<camera::Pinhole>();
+      std::shared_ptr<camera::Pinhole> intrinsicPtr = camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA);
       *intrinsicPtr = lr._intrinsics;
       sfmDataIO::saveIntrinsic("intrinsic", UndefinedIndexT, std::dynamic_pointer_cast<camera::IntrinsicBase>(intrinsicPtr), lrTree);
     }
