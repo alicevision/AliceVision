@@ -918,32 +918,45 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
     if(helperPointsGridSize <= 0)
         return;
 
-    const double ns = helperPointsGridSize;
+    ALICEVISION_LOG_INFO("Add grid helper points.");
+    const int ns = helperPointsGridSize;
     const Point3d vx = (voxel[1] - voxel[0]);
     const Point3d vy = (voxel[3] - voxel[0]);
     const Point3d vz = (voxel[4] - voxel[0]);
 
-    // Add uniform noise on helper points, with 1/4 margin around the vertex.
-    const double md = 1.0 / (helperPointsGridSize * 4.0);
-    const double maxNoiseSize = md * (voxel[7] - voxel[0]).size();
+    // Add uniform noise on helper points, with 1/8 margin around the vertex.
+    const double md = 1.0 / (helperPointsGridSize * 8.0);
+    const Point3d maxNoiseSize(
+        md * (voxel[1] - voxel[0]).size(),
+        md * (voxel[3] - voxel[0]).size(),
+        md * (voxel[4] - voxel[0]).size()
+        );
     Point3d center = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0;
     
     const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
     std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
     auto rand = std::bind(std::uniform_real_distribution<float>{-1.0, 1.0}, generator);
 
-    int addedPoints = 0;
     const double minDist2 = minDist * minDist;
+    ALICEVISION_LOG_TRACE("GRID: Prepare kdtree");
     Tree kdTree(_verticesCoords);
+
+    ALICEVISION_LOG_TRACE("GRID: Allocate vertices");
+    std::vector<Point3d> gridVerticesCoords(std::pow(float(ns + 1), 3.f));
+    std::vector<bool> valid(gridVerticesCoords.size());
+
+    ALICEVISION_LOG_TRACE("Create helper points.");
+    #pragma omp parallel for
     for(int x = 0; x <= ns; ++x)
     {
         for(int y = 0; y <= ns; ++y)
         {
             for(int z = 0; z <= ns; ++z)
             {
-                const Point3d pt = voxel[0] + vx * ((double)x / ns) + vy * ((double)y / ns) +
-                             vz * ((double)z / ns);
-                const Point3d noise((maxNoiseSize * rand()), (maxNoiseSize * rand()), (maxNoiseSize * rand()));
+                int i = x * (ns+1)*(ns+1) + y * (ns+1) + z;
+                const Point3d pt = voxel[0] + vx * ((double)x / double(ns)) + vy * ((double)y / double(ns)) +
+                             vz * ((double)z / double(ns));
+                const Point3d noise(maxNoiseSize.x * rand(), maxNoiseSize.y * rand(), maxNoiseSize.z * rand());
                 const Point3d p = pt + noise;
                 std::size_t vi{};
                 double sq_dist{};
@@ -951,15 +964,29 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
                 // if there is no nearest vertex or the nearest vertex is not too close
                 if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
                 {
-                    _verticesCoords.push_back(p);
-                    GC_vertexInfo newv;
-                    newv.nrc = 0;
-
-                    _verticesAttr.push_back(newv);
-                    ++addedPoints;
+                    gridVerticesCoords[i] = p;
+                    valid[i] = true;
+                }
+                else
+                {
+                    valid[i] = false;
                 }
             }
         }
+    }
+    ALICEVISION_LOG_TRACE("Insert helper points.");
+    _verticesCoords.reserve(_verticesCoords.size() + gridVerticesCoords.size());
+    _verticesAttr.reserve(_verticesAttr.size() + gridVerticesCoords.size());
+    int addedPoints = 0;
+    for(int i = 0; i < gridVerticesCoords.size(); ++i)
+    {
+        if(!valid[i])
+            continue;
+        _verticesCoords.push_back(gridVerticesCoords[i]);
+        GC_vertexInfo newv;
+        newv.nrc = 0;
+        _verticesAttr.push_back(newv);
+        ++addedPoints;
     }
 
     ALICEVISION_LOG_WARNING("Add " << addedPoints << " new helper points for a 3D grid of " << ns << "x" << ns << "x"
