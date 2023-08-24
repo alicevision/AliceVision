@@ -34,7 +34,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -65,14 +65,18 @@ void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfCo
     }
 }
 
-void labelsToMask(image::Image<unsigned char> & mask, const image::Image<IndexT> & labels, const std::set<IndexT> & validClasses)
+void labelsToMask(image::Image<unsigned char> & mask, const image::Image<IndexT> & labels, const std::set<IndexT> & validClasses,
+                  const bool & maskInvert)
 {
     for (int i = 0; i < mask.Height(); i++)
     {
         for (int j = 0; j < mask.Width(); j++)
         {
             IndexT label = labels(i, j);
-            mask(i, j) = (validClasses.find(label) != validClasses.end()) ? 255 : 0;
+            if (maskInvert)
+                mask(i, j) = (validClasses.find(label) != validClasses.end()) ? 0 : 255;
+            else
+                mask(i, j) = (validClasses.find(label) != validClasses.end()) ? 255 : 0;
         }
     }
 }
@@ -83,20 +87,23 @@ int aliceVision_main(int argc, char** argv)
     std::string outputPath;
     std::string modelWeightsPath;
     std::vector<std::string> validClasses;
+    bool maskInvert = false;
     int rangeStart = -1;
     int rangeSize = 1;
     
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input SfMData.")
         ("modelPath,m", po::value<std::string>(&modelWeightsPath)->required(), "Input Model weights file.")
-        ("output,o", po::value<std::string>(&outputPath)->required(), "output folder.");
+        ("output,o", po::value<std::string>(&outputPath)->required(), "Output folder.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("validClasses,c", po::value<std::vector<std::string>>(&validClasses)->multitoken(),
-         "Names of classes which are to be considered")
+         "Names of classes which are to be considered.")
+        ("maskInvert", po::value<bool>(&maskInvert)->default_value(maskInvert),
+         "Invert mask values. If selected, the pixels corresponding to the mask will be set to 0.0 instead of 1.0.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), 
         "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), 
@@ -231,7 +238,7 @@ int aliceVision_main(int argc, char** argv)
 
 
         image::Image<unsigned char> mask(labels.Width(), labels.Height());
-        labelsToMask(mask, labels, validClassesIndices);
+        labelsToMask(mask, labels, validClassesIndices, maskInvert);
 
         if (pixelRatio != 1.0)
         {
@@ -247,7 +254,7 @@ int aliceVision_main(int argc, char** argv)
             mask.swap(resizedMask);
         }
 
-        //Store image
+        // Store image
         std::stringstream ss;
         ss << outputPath << "/" << view->getViewId() << ".exr";
         image::writeImage(ss.str(), mask, image::ImageWriteOptions());
