@@ -29,7 +29,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 using namespace aliceVision::camera;
@@ -79,6 +79,7 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
 bool prepareDenseScene(const SfMData& sfmData,
                        const std::vector<std::string>& imagesFolders,
                        const std::vector<std::string>& masksFolders,
+                       const std::string& maskExtension,
                        int beginIndex,
                        int endIndex,
                        const std::string& outFolder,
@@ -246,7 +247,7 @@ bool prepareDenseScene(const SfMData& sfmData,
             }
 
             image::Image<unsigned char> mask;
-            if(tryLoadMask(&mask, masksFolders, viewId, srcImage))
+            if(tryLoadMask(&mask, masksFolders, viewId, srcImage, maskExtension))
             {
                 process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
                 {
@@ -286,6 +287,7 @@ int aliceVision_main(int argc, char *argv[])
     std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
     std::vector<std::string> imagesFolders;
     std::vector<std::string> masksFolders;
+    std::string maskExtension = "png";
     int rangeStart = -1;
     int rangeSize = 1;
     bool saveMetadata = true;
@@ -307,6 +309,8 @@ int aliceVision_main(int argc, char *argv[])
         ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
          "Use masks from specific folder(s).\n"
          "Filename should be the same or the image uid.")
+        ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
+         "File extension of the masks to use.")
         ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
          image::EImageFileType_informations().c_str())
         ("saveMetadata", po::value<bool>(&saveMetadata)->default_value(saveMetadata),
@@ -371,7 +375,7 @@ int aliceVision_main(int argc, char *argv[])
     }
 
     // export
-    if(prepareDenseScene(sfmData, imagesFolders, masksFolders, rangeStart, rangeEnd,
+    if(prepareDenseScene(sfmData, imagesFolders, masksFolders, maskExtension, rangeStart, rangeEnd,
                          outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
         return EXIT_SUCCESS;
 
