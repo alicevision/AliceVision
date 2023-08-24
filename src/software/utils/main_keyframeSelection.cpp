@@ -19,7 +19,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -55,6 +55,7 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType exrDataType =   // storage data type for EXR output files
         image::EStorageDataType::Float;
     bool renameKeyframes = false;           // name selected keyframes as consecutive frames instead of using their index as a name
+    std::size_t minBlockSize = 10;          // minimum number of frames in a block for multi-threading
 
     // Debug options
     bool exportScores = false;              // export the sharpness and optical flow scores to a CSV file
@@ -134,7 +135,9 @@ int aliceVision_main(int argc, char** argv)
         ("sharpnessWindowSize", po::value<std::size_t>(&sharpnessWindowSize)->default_value(sharpnessWindowSize),
             "Size, in pixels, of the sliding window that is used to compute the sharpness score of a frame.")
         ("flowCellSize", po::value<std::size_t>(&flowCellSize)->default_value(flowCellSize),
-            "Size, in pixels, of the cells within an input frame that are used to compute the optical flow scores.");
+            "Size, in pixels, of the cells within an input frame that are used to compute the optical flow scores.")
+        ("minBlockSize", po::value<std::size_t>(&minBlockSize)->default_value(minBlockSize),
+            "Minimum number of frames processed by a single thread when multi-threading is used.");
 
     po::options_description debugParams("Debug parameters");
     debugParams.add_options()
@@ -221,6 +224,9 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
+
     // Initialize KeyframeSelector
     keyframe::KeyframeSelector selector(inputPaths, sensorDbPath, outputFolder, outputSfMDataKeyframes,
                                         outputSfMDataFrames);
@@ -230,6 +236,7 @@ int aliceVision_main(int argc, char** argv)
     selector.setMaxFrameStep(maxFrameStep);
     selector.setMinOutFrames(minNbOutFrames);
     selector.setMaxOutFrames(maxNbOutFrames);
+    selector.setMinBlockSize(minBlockSize);
 
     if (flowVisualisationOnly) {
         bool exported = selector.exportFlowVisualisation(rescaledWidthFlow);
