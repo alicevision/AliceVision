@@ -37,13 +37,13 @@ public:
 
     bool isInit() const { return _isInit; }
 
-    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::PinholeRadialK3& camIntrinsics,
+    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
                    std::string& mediaPath, bool& hasIntrinsics);
 
-    bool readImage(image::Image<float>& imageGray, camera::PinholeRadialK3& camIntrinsics, std::string& mediaPath,
+    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath,
                    bool& hasIntrinsics);
 
-    bool readImage(image::Image<unsigned char>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
                    std::string& mediaPath, bool& hasIntrinsics);
 
     bool goToFrame(const unsigned int frame);
@@ -58,7 +58,7 @@ private:
     bool _withIntrinsics;
     std::string _videoPath;
     cv::VideoCapture _videoCapture;
-    camera::PinholeRadialK3 _camIntrinsics;
+    camera::Pinhole _camIntrinsics;
 };
 
 VideoFeed::FeederImpl::FeederImpl(const std::string& videoPath, const std::string& calibPath)
@@ -109,7 +109,7 @@ VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string& calibPath)
     _isInit = true;
 }
 
-bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor>& imageRGB, camera::PinholeRadialK3& camIntrinsics,
+bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
                                       std::string& mediaPath, bool& hasIntrinsics)
 {
     cv::Mat frame;
@@ -152,7 +152,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor>& imageRGB, c
     return true;
 }
 
-bool VideoFeed::FeederImpl::readImage(image::Image<float>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool VideoFeed::FeederImpl::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
                                       std::string& mediaPath, bool& hasIntrinsics)
 {
     image::Image<unsigned char> imageGrayUChar;
@@ -164,7 +164,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<float>& imageGray, camera::Pi
     return false;
 }
 
-bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
                                       std::string& mediaPath, bool& hasIntrinsics)
 {
     cv::Mat frame;
@@ -247,19 +247,19 @@ VideoFeed::VideoFeed(int videoDevice, const std::string& calibPath)
 {
 }
 
-bool VideoFeed::readImage(image::Image<image::RGBColor>& imageRGB, camera::PinholeRadialK3& camIntrinsics,
+bool VideoFeed::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
                           std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool VideoFeed::readImage(image::Image<float>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool VideoFeed::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
                           std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool VideoFeed::readImage(image::Image<unsigned char>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool VideoFeed::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
                           std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));

@@ -25,6 +25,9 @@ public:
         _distortionParams = {p1, p2, p3, p4, p5};
     }
 
+
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_BROWN; }
+
     DistortionBrown* clone() const override
     {
         return new DistortionBrown(*this);

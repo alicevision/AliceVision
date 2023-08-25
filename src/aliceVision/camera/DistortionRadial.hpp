@@ -73,6 +73,8 @@ public:
         _distortionParams = {k1};
     }
 
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_RADIALK1; }
+
     DistortionRadialK1* clone() const override { return new DistortionRadialK1(*this); }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
@@ -124,6 +126,8 @@ public:
         _distortionParams = {k1, k2, k3};
     }
 
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_RADIALK3; }
+
     DistortionRadialK3* clone() const override { return new DistortionRadialK3(*this); }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
@@ -160,6 +164,8 @@ public:
     {
         _distortionParams = {k1, k2, k3};
     }
+
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_RADIALK3PT; }
 
     DistortionRadialK3PT* clone() const override { return new DistortionRadialK3PT(*this); }
 

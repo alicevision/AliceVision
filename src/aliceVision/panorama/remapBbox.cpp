@@ -76,7 +76,7 @@ bool computeCoarseBB_Equidistant(BoundingBox& coarse_bbox, const std::pair<int, 
                                  const geometry::Pose3& pose, const aliceVision::camera::IntrinsicBase& intrinsics)
 {
 
-    const aliceVision::camera::EquiDistant& cam = dynamic_cast<const camera::EquiDistant&>(intrinsics);
+    const aliceVision::camera::Equidistant& cam = dynamic_cast<const camera::Equidistant&>(intrinsics);
 
     bool loop = false;
     std::vector<bool> vec_bool(panoramaSize.second, false);

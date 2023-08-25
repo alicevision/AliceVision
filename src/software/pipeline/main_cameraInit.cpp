@@ -646,7 +646,7 @@ int aliceVision_main(int argc, char **argv)
     if (!lensParam.isEmpty())
       ++lcpGeometryViewCount;
 
-    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
+    std::shared_ptr<camera::IntrinsicScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicBase);
 
     // set initialization mode
     intrinsic->setInitializationMode(intrinsicInitMode);

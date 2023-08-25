@@ -4,14 +4,14 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "IntrinsicsScaleOffset.hpp"
+#include "IntrinsicScaleOffset.hpp"
 
 #include <aliceVision/version.hpp>
 
 namespace aliceVision {
 namespace camera {
 
-bool IntrinsicsScaleOffset::operator==(const IntrinsicBase& otherBase) const
+bool IntrinsicScaleOffset::operator==(const IntrinsicBase& otherBase) const
 {
     if (!IntrinsicBase::operator==(otherBase))
     {
@@ -23,17 +23,17 @@ bool IntrinsicsScaleOffset::operator==(const IntrinsicBase& otherBase) const
         return false;
     }
     
-    const IntrinsicsScaleOffset& other = static_cast<const IntrinsicsScaleOffset&>(otherBase);
+    const IntrinsicScaleOffset& other = static_cast<const IntrinsicScaleOffset&>(otherBase);
 
     return _scale.isApprox(other._scale) && _offset.isApprox(other._offset);
 }
 
-Vec2 IntrinsicsScaleOffset::cam2ima(const Vec2& p) const
+Vec2 IntrinsicScaleOffset::cam2ima(const Vec2& p) const
 {
     return p.cwiseProduct(_scale) + getPrincipalPoint();
 }
 
-Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeCam2ImaWrtScale(const Vec2& p) const
+Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeCam2ImaWrtScale(const Vec2& p) const
 {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
@@ -43,7 +43,7 @@ Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeCam2ImaWrtScale(const Vec2& 
     return M;
 }
 
-Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeCam2ImaWrtPoint() const
+Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeCam2ImaWrtPoint() const
 {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
@@ -53,12 +53,12 @@ Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeCam2ImaWrtPoint() const
     return M;
 }
 
-Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeCam2ImaWrtPrincipalPoint() const
+Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeCam2ImaWrtPrincipalPoint() const
 {
     return Eigen::Matrix2d::Identity();
 }
 
-Vec2 IntrinsicsScaleOffset::ima2cam(const Vec2& p) const
+Vec2 IntrinsicScaleOffset::ima2cam(const Vec2& p) const
 {
     Vec2 np;
 
@@ -70,7 +70,7 @@ Vec2 IntrinsicsScaleOffset::ima2cam(const Vec2& p) const
     return np;
 }
 
-Eigen::Matrix<double, 2, 2> IntrinsicsScaleOffset::getDerivativeIma2CamWrtScale(const Vec2& p) const
+Eigen::Matrix<double, 2, 2> IntrinsicScaleOffset::getDerivativeIma2CamWrtScale(const Vec2& p) const
 {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
@@ -82,7 +82,7 @@ Eigen::Matrix<double, 2, 2> IntrinsicsScaleOffset::getDerivativeIma2CamWrtScale(
     return M;
 }
 
-Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeIma2CamWrtPoint() const
+Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeIma2CamWrtPoint() const
 {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
@@ -92,7 +92,7 @@ Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeIma2CamWrtPoint() const
     return M;
 }
 
-Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeIma2CamWrtPrincipalPoint() const
+Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeIma2CamWrtPrincipalPoint() const
 {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
@@ -102,7 +102,7 @@ Eigen::Matrix2d IntrinsicsScaleOffset::getDerivativeIma2CamWrtPrincipalPoint() c
     return M;
 }
 
-void IntrinsicsScaleOffset::rescale(float factor)
+void IntrinsicScaleOffset::rescale(float factor)
 {
     IntrinsicBase::rescale(factor);
 
@@ -110,7 +110,7 @@ void IntrinsicsScaleOffset::rescale(float factor)
     _offset *= factor;
 }
 
-bool IntrinsicsScaleOffset::updateFromParams(const std::vector<double>& params)
+bool IntrinsicScaleOffset::updateFromParams(const std::vector<double>& params)
 {
     if (params.size() < 4)
     {
@@ -125,7 +125,7 @@ bool IntrinsicsScaleOffset::updateFromParams(const std::vector<double>& params)
     return true;
 }
 
-bool IntrinsicsScaleOffset::importFromParams(const std::vector<double>& params, const Version & inputVersion)
+bool IntrinsicScaleOffset::importFromParams(const std::vector<double>& params, const Version & inputVersion)
 {
     std::vector<double> paramsLocal;
     if (inputVersion < Version(1, 2, 0))

@@ -68,9 +68,9 @@ private:
   Eigen::Matrix3d _two_R_one;
 };
 
-class CostEquiDistant : public ceres::SizedCostFunction<2, 9, 9, 7> {
+class CostEquidistant : public ceres::SizedCostFunction<2, 9, 9, 7> {
 public:
-  CostEquiDistant(Vec2 fi, Vec2 fj, std::shared_ptr<camera::EquiDistant> & intrinsic) : _fi(fi), _fj(fj), _intrinsic(intrinsic) {
+  CostEquidistant(Vec2 fi, Vec2 fj, std::shared_ptr<camera::Equidistant> & intrinsic) : _fi(fi), _fj(fj), _intrinsic(intrinsic) {
 
   }
 
@@ -138,7 +138,7 @@ public:
 private:
   Vec2 _fi;
   Vec2 _fj;
-  std::shared_ptr<camera::EquiDistant> _intrinsic;
+  std::shared_ptr<camera::Equidistant> _intrinsic;
 };
 
 class CostPinHole : public ceres::CostFunction {
@@ -603,16 +603,16 @@ void BundleAdjustmentPanoramaCeres::addConstraints2DToProblem(const sfmData::SfM
     assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
 
     std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view_1.getIntrinsicId());
-    std::shared_ptr<camera::EquiDistant> equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+    std::shared_ptr<camera::Equidistant> equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
     std::shared_ptr<camera::Pinhole> pinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
     if (equidistant != nullptr)  
     {
-      ceres::CostFunction* costFunction = new CostEquiDistant(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant);
+      ceres::CostFunction* costFunction = new CostEquidistant(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
 
       /* Symmetry */
-      costFunction = new CostEquiDistant(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant);
+      costFunction = new CostEquidistant(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
     }
     else if (pinhole != nullptr)  

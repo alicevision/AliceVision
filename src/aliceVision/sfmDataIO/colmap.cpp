@@ -97,7 +97,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA corresponds to Colmap's PINHOLE
             // Parameters: f, cx, cy
             {
-                const camera::Pinhole* pinhole_intrinsic = dynamic_cast<const camera::Pinhole*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinhole_intrinsic = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "PINHOLE"
@@ -111,8 +111,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_RADIAL1 can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
-                const camera::PinholeRadialK1* pinhole_intrinsic_radial =
-                    dynamic_cast<const camera::PinholeRadialK1*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinhole_intrinsic_radial = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
@@ -132,8 +131,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_RADIAL3 can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
-                const camera::PinholeRadialK3* pinhole_intrinsic_radial =
-                    dynamic_cast<const camera::PinholeRadialK3*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinhole_intrinsic_radial = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
@@ -159,8 +157,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_BROWN can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
-                const camera::PinholeBrownT2* pinholeCameraBrownIntrinsics =
-                    dynamic_cast<const camera::PinholeBrownT2*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinholeCameraBrownIntrinsics = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
@@ -187,8 +184,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_FISHEYE is modeled by Colmap's OPENCV_FISHEYE
             // Parameters: fx, fy, cx, cy, k1, k2, k3, k4
             {
-                const camera::PinholeFisheye* pinholeIntrinsicFisheye =
-                    dynamic_cast<const camera::PinholeFisheye*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinholeIntrinsicFisheye = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "OPENCV_FISHEYE"
@@ -207,8 +203,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_FISHEYE corresponds to Colmap's FOV
             // Parameters: fx, fy, cx, cy, k1, k2, k3, k4
             {
-                const camera::PinholeFisheye1* pinholeIntrinsicFisheye =
-                    dynamic_cast<const camera::PinholeFisheye1*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinholeIntrinsicFisheye = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "FOV"

@@ -74,7 +74,7 @@ std::string toNuke(std::shared_ptr<Undistortion> undistortion, EINTRINSIC intrin
 }
 
 void toSTMap(image::Image<image::RGBAfColor>& stmap,
-             std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsic,
+             std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic,
              bool distort,
              const oiio::ROI& roi = oiio::ROI())
 {
@@ -145,7 +145,7 @@ int aliceVision_main(int argc, char* argv[])
     {
         ALICEVISION_LOG_INFO("Exporting distortion for intrinsic " << intrinsicId);
 
-        auto intrinsicDisto = std::dynamic_pointer_cast<IntrinsicsScaleOffsetDisto>(intrinsicPtr);
+        auto intrinsicDisto = std::dynamic_pointer_cast<IntrinsicScaleOffsetDisto>(intrinsicPtr);
         if (!intrinsicDisto) continue;
 
         auto undistortion = intrinsicDisto->getUndistortion();

@@ -19,20 +19,34 @@
 namespace aliceVision {
 namespace camera {
 
+enum EDISTORTION
+{
+    NONE,
+    DISTORTION_RADIALK1,
+    DISTORTION_RADIALK3,
+    DISTORTION_RADIALK3PT,
+    DISTORTION_BROWN,
+    DISTORTION_FISHEYE,
+    DISTORTION_FISHEYE1,
+    DISTORTION_3DERADIAL4,
+    DISTORTION_3DEANAMORPHIC4,
+    DISTORTION_3DECLASSICLD,
+};
+
 enum EINTRINSIC
 {
     UNKNOWN = (1u << 0),
-    PINHOLE_CAMERA = (1u << 1),          // no distortion
-    PINHOLE_CAMERA_RADIAL1 = (1u << 2),  // radial distortion K1
-    PINHOLE_CAMERA_RADIAL3 = (1u << 3),  // radial distortion K1,K2,K3
-    PINHOLE_CAMERA_BROWN = (1u << 4),    // radial distortion K1,K2,K3, tangential distortion T1,T2
-    PINHOLE_CAMERA_FISHEYE = (1u << 5),  // a simple Fish-eye distortion model with 4 distortion coefficients
-    PINHOLE_CAMERA_FISHEYE1 = (1u << 6), // a simple Fish-eye distortion model with 1 distortion coefficient
-    PINHOLE_CAMERA_3DEANAMORPHIC4 = (1u << 7), // a simple anamorphic distortion model
-    PINHOLE_CAMERA_3DECLASSICLD = (1u << 8), // a simple anamorphic distortion model
-    PINHOLE_CAMERA_3DERADIAL4 = (1u << 9), // a simple anamorphic distortion model
-    EQUIDISTANT_CAMERA = (1u << 10),      // an equidistant model
-    EQUIDISTANT_CAMERA_RADIAL3 = (1u << 11),  // an equidistant model with radial distortion
+    PINHOLE_CAMERA = (1u << 1),                 // plain pinhole model
+    PINHOLE_CAMERA_RADIAL1 = (1u << 2),         // pinhole model with radial distortion K1
+    PINHOLE_CAMERA_RADIAL3 = (1u << 3),         // pinhole model with radial distortion K1,K2,K3
+    PINHOLE_CAMERA_BROWN = (1u << 4),           // pinhole model with radial distortion K1,K2,K3, tangential distortion T1,T2
+    PINHOLE_CAMERA_FISHEYE = (1u << 5),         // pinhole model with 4 coefficients fish-eye distortion
+    PINHOLE_CAMERA_FISHEYE1 = (1u << 6),        // pinhole model with 1 coefficient fish-eye distortion
+    PINHOLE_CAMERA_3DEANAMORPHIC4 = (1u << 7),  // pinhole model with 3DEqualizer anamorphic distortion
+    PINHOLE_CAMERA_3DECLASSICLD = (1u << 8),    // pinhole model with 3DEqualizer ClassicLD distortion
+    PINHOLE_CAMERA_3DERADIAL4 = (1u << 9),      // pinhole model with 3DEqualizer radial distortion
+    EQUIDISTANT_CAMERA = (1u << 10),            // plain equidistant model
+    EQUIDISTANT_CAMERA_RADIAL3 = (1u << 11),    // equidistant model with radial distortion
     VALID_PINHOLE = PINHOLE_CAMERA | PINHOLE_CAMERA_RADIAL1 | PINHOLE_CAMERA_RADIAL3 | PINHOLE_CAMERA_3DERADIAL4 | PINHOLE_CAMERA_BROWN |
                     PINHOLE_CAMERA_3DEANAMORPHIC4 | PINHOLE_CAMERA_3DECLASSICLD| PINHOLE_CAMERA_FISHEYE | PINHOLE_CAMERA_FISHEYE1,
     VALID_EQUIDISTANT = EQUIDISTANT_CAMERA | EQUIDISTANT_CAMERA_RADIAL3,

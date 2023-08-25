@@ -117,9 +117,11 @@ int main(int argc, char **argv)
         Image<RGBColor> image, imageUd;
         readImage(inFileName, image, image::EImageColorSpace::NO_CONVERSION);
 
-        const PinholeRadialK3 cam(image.Width(), image.Height(), f, c(0), c(1), k(0), k(1), k(2));
+        std::shared_ptr<Distortion> distortion = std::make_shared<DistortionRadialK3>(k(0), k(1), k(2));
 
-        UndistortImage(image, &cam, imageUd, BLACK);
+        std::shared_ptr<Pinhole> cam = std::make_shared<Pinhole>(image.Width(), image.Height(), f, f, c(0), c(1), distortion);
+
+        UndistortImage(image, cam.get(), imageUd, BLACK);
         writeImage(outFileName, imageUd,
                    image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 

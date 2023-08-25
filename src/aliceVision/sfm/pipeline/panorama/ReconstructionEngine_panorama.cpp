@@ -638,8 +638,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             std::shared_ptr<IntrinsicBase> cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId());
             std::shared_ptr<IntrinsicBase> cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId());
 
-            std::shared_ptr<camera::EquiDistant> cam_I_equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(cam_I);
-            std::shared_ptr<camera::EquiDistant> cam_J_equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(cam_J);
+            std::shared_ptr<camera::Equidistant> cam_I_equidistant = std::dynamic_pointer_cast<camera::Equidistant>(cam_I);
+            std::shared_ptr<camera::Equidistant> cam_J_equidistant = std::dynamic_pointer_cast<camera::Equidistant>(cam_J);
 
             bool useSpherical = false;
             if (cam_I_equidistant && cam_J_equidistant)

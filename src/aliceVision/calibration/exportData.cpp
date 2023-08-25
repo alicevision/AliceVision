@@ -35,14 +35,17 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
   aliceVision::image::Image<unsigned char> inputImage;
   aliceVision::image::Image<unsigned char> outputImage;
   std::string currentImgName;
-  aliceVision::camera::PinholeRadialK3 queryIntrinsics;
+  aliceVision::camera::Pinhole queryIntrinsics;
 
   export_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   export_params.push_back(100);
 
-  aliceVision::camera::PinholeRadialK3 camera(imageSize.width, imageSize.height,
-                                                       cameraMatrix.at<double>(0, 0), cameraMatrix.at<double>(0, 2), cameraMatrix.at<double>(1, 2),
-                                                       distCoeffs.at<double>(0), distCoeffs.at<double>(1), distCoeffs.at<double>(4));
+  aliceVision::camera::Pinhole camera(
+    imageSize.width, imageSize.height,
+    cameraMatrix.at<double>(0, 0), cameraMatrix.at<double>(0, 0),
+    cameraMatrix.at<double>(0, 2), cameraMatrix.at<double>(1, 2),
+    std::make_shared<camera::DistortionRadialK3>(
+        distCoeffs.at<double>(0), distCoeffs.at<double>(1), distCoeffs.at<double>(4)));
   ALICEVISION_LOG_DEBUG("Coefficients matrix :\n " << distCoeffs);
   ALICEVISION_LOG_DEBUG("Exporting images ...");
   for (std::size_t currentFrame : exportFrames)

@@ -122,7 +122,7 @@ public:
                 const LocalizerParameters *param,
                 std::mt19937 & randomNumberGenerator,
                 bool useInputIntrinsics,
-                camera::PinholeRadialK3 &queryIntrinsics,
+                camera::Pinhole &queryIntrinsics,
                 LocalizationResult &localizationResult, 
                 const std::string& imagePath = std::string()) override;
 
@@ -146,7 +146,7 @@ public:
                 const LocalizerParameters *param,
                 std::mt19937 & randomNumberGenerator,
                 bool useInputIntrinsics,
-                camera::PinholeRadialK3 &queryIntrinsics,
+                camera::Pinhole &queryIntrinsics,
                 LocalizationResult & localizationResult,
                 const std::string& imagePath = std::string()) override;
   
@@ -154,7 +154,7 @@ public:
   bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                    const LocalizerParameters *param,
                    std::mt19937 & randomNumberGenerator,
-                   std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                   std::vector<camera::Pinhole > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult> & vec_locResults) override;
@@ -163,7 +163,7 @@ public:
                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                    const LocalizerParameters *param,
                    std::mt19937 & randomNumberGenerator,
-                   std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                   std::vector<camera::Pinhole > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult>& vec_locResults) override;
@@ -174,7 +174,7 @@ public:
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,
                           std::mt19937 & randomNumberGenerator,
-                          std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                          std::vector<camera::Pinhole > &vec_queryIntrinsics,
                           const std::vector<geometry::Pose3 > &vec_subPoses,
                           geometry::Pose3 &rigPose,
                           std::vector<LocalizationResult>& vec_locResults);
@@ -184,7 +184,7 @@ public:
                         const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                         const LocalizerParameters *parameters,
                         std::mt19937 & randomNumberGenerator,
-                        std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                        std::vector<camera::Pinhole > &vec_queryIntrinsics,
                         const std::vector<geometry::Pose3 > &vec_subPoses,
                         geometry::Pose3 &rigPose,
                         std::vector<LocalizationResult>& vec_locResults);
@@ -213,7 +213,7 @@ public:
                                const Parameters &param, 
                                std::mt19937 & randomNumberGenerator,
                                bool useInputIntrinsics,
-                               camera::PinholeRadialK3 &queryIntrinsics,
+                               camera::Pinhole &queryIntrinsics,
                                LocalizationResult &localizationResult,
                                const std::string &imagePath = std::string());
 
@@ -240,7 +240,7 @@ public:
                           const Parameters &param,
                           std::mt19937 & randomNumberGenerator,
                           bool useInputIntrinsics,
-                          camera::PinholeRadialK3 &queryIntrinsics,
+                          camera::Pinhole &queryIntrinsics,
                           LocalizationResult &localizationResult,
                           const std::string& imagePath = std::string());
   
@@ -266,7 +266,7 @@ public:
                           const Parameters &param,
                           std::mt19937 & randomNumberGenerator,
                           bool useInputIntrinsics,
-                          const camera::PinholeRadialK3 &queryIntrinsics,
+                          const camera::Pinhole &queryIntrinsics,
                           OccurenceMap & out_occurences,
                           Mat &out_pt2D,
                           Mat &out_pt3D,
@@ -326,7 +326,7 @@ private:
                                  const std::pair<std::size_t, std::size_t> & imageSize,
                                  const Parameters &param,
                                  bool useInputIntrinsics,
-                                 const camera::PinholeRadialK3 &queryIntrinsics,
+                                 const camera::Pinhole &queryIntrinsics,
                                  OccurenceMap &out_occurences,
                                  std::mt19937 & randomNumberGenerator,
                                  const std::string& imagePath = std::string()) const;

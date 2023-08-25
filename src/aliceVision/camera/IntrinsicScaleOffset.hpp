@@ -15,10 +15,10 @@ namespace camera {
 /**
  * @brief Class with "focal" (scale) and center offset
  */
-class IntrinsicsScaleOffset: public IntrinsicBase
+class IntrinsicScaleOffset: public IntrinsicBase
 {
 public:
-    IntrinsicsScaleOffset(unsigned int w, unsigned int h,
+    IntrinsicScaleOffset(unsigned int w, unsigned int h,
                           double scaleX, double scaleY,
                           double offsetX, double offsetY) :
         IntrinsicBase(w, h),
@@ -26,9 +26,9 @@ public:
     {
     }
 
-    ~IntrinsicsScaleOffset() override = default;
+    ~IntrinsicScaleOffset() override = default;
 
-    void copyFrom(const IntrinsicsScaleOffset& other) { *this = other; }
+    void copyFrom(const IntrinsicScaleOffset& other) { *this = other; }
 
     bool operator==(const IntrinsicBase& otherBase) const override;
 

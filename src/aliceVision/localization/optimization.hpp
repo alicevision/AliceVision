@@ -7,7 +7,7 @@
 #pragma once
 
 #include "LocalizationResult.hpp"
-#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
 #include <vector>
@@ -87,7 +87,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
 bool refineRigPose(const std::vector<Mat> &pts2d,
                    const std::vector<Mat> &pts3d,
                    const std::vector<std::vector<std::size_t> > &inliers,
-                   const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                   const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose);
 
@@ -106,7 +106,7 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
  */
 bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
                             const std::vector<Mat> &pts3d,
-                            const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                            const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                             const std::vector<geometry::Pose3 > &vec_subPoses,
                             double maxReprojectionError,
                             std::size_t minNumPoints,
@@ -116,7 +116,7 @@ bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
 
 std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
                                        const std::vector<Mat> &vec_pts3d,
-                                       const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                                       const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                                        const std::vector<geometry::Pose3 > &vec_subPoses,
                                        double maxReprojectionError,
                                        const geometry::Pose3 &rigPose,
@@ -124,7 +124,7 @@ std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
 
 void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
                        const std::vector<Mat> &vec_pts3D,
-                       const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                       const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                        const std::vector<geometry::Pose3 > &vec_subPoses,
                        const geometry::Pose3 &rigPose,
                        const std::vector<std::vector<std::size_t> > &vec_inliers);
@@ -141,7 +141,7 @@ void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
  */
 std::tuple<double, double, double> computeStatistics(const Mat &pts2d, 
                                                      const Mat &pts3d,
-                                                     const camera::PinholeRadialK3 &currCamera,
+                                                     const camera::Pinhole &currCamera,
                                                      const std::vector<std::size_t> &currInliers,
                                                      const geometry::Pose3 &subPoses,
                                                      const geometry::Pose3 &rigPose);

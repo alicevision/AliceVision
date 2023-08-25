@@ -4,14 +4,14 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "IntrinsicsScaleOffsetDisto.hpp"
+#include "IntrinsicScaleOffsetDisto.hpp"
 
 namespace aliceVision {
 namespace camera {
 
-bool IntrinsicsScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) const
+bool IntrinsicScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) const
 {
-    if (!IntrinsicsScaleOffset::operator==(otherBase))
+    if (!IntrinsicScaleOffset::operator==(otherBase))
     {
         return false;
     }
@@ -21,7 +21,7 @@ bool IntrinsicsScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) cons
         return false;
     }
 
-    const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
+    const IntrinsicScaleOffsetDisto& other = static_cast<const IntrinsicScaleOffsetDisto&>(otherBase);
 
     if (_distortionInitializationMode != other._distortionInitializationMode)
     {
@@ -42,19 +42,19 @@ bool IntrinsicsScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) cons
         && _pUndistortion == nullptr && other._pUndistortion == nullptr;
 }
 
-Vec2 IntrinsicsScaleOffsetDisto::get_ud_pixel(const Vec2& p) const
+Vec2 IntrinsicScaleOffsetDisto::get_ud_pixel(const Vec2& p) const
 {
     return cam2ima(removeDistortion(ima2cam(p)));
 }
 
-Vec2 IntrinsicsScaleOffsetDisto::get_d_pixel(const Vec2& p) const
+Vec2 IntrinsicScaleOffsetDisto::get_d_pixel(const Vec2& p) const
 {
     return cam2ima(addDistortion(ima2cam(p)));
 }
 
-bool IntrinsicsScaleOffsetDisto::updateFromParams(const std::vector<double>& params)
+bool IntrinsicScaleOffsetDisto::updateFromParams(const std::vector<double>& params)
 {
-    if (!IntrinsicsScaleOffset::updateFromParams(params))
+    if (!IntrinsicScaleOffset::updateFromParams(params))
     {
         return false;
     }

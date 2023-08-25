@@ -90,19 +90,19 @@ FeedProvider::FeedProvider(const std::string& feedPath, const std::string& calib
     }
 }
 
-bool FeedProvider::readImage(image::Image<image::RGBColor>& imageRGB, camera::PinholeRadialK3& camIntrinsics,
+bool FeedProvider::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
                              std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool FeedProvider::readImage(image::Image<float>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool FeedProvider::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
                              std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool FeedProvider::readImage(image::Image<unsigned char>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+bool FeedProvider::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
                              std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));

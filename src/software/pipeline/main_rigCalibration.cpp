@@ -341,7 +341,8 @@ int aliceVision_main(int argc, char** argv)
     //pointsFile = inputFolder + "/points.txt";
 
     image::Image<float> imageGrey;
-    std::shared_ptr<camera::PinholeRadialK3> queryIntrinsics = std::make_shared<camera::PinholeRadialK3>();
+    std::shared_ptr<camera::Pinhole> queryIntrinsics = std::dynamic_pointer_cast<camera::Pinhole>(
+        camera::createIntrinsic(camera::PINHOLE_CAMERA_RADIAL3));
     bool hasIntrinsics = false;
 
     std::size_t iInputFrame = 0;

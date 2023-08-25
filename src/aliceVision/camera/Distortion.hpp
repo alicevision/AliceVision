@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <aliceVision/camera/cameraCommon.hpp>
+
 #include <aliceVision/numeric/numeric.hpp>
 
 #include <vector>
@@ -22,6 +24,8 @@ class Distortion
 {
 public:
     Distortion() = default;
+
+    virtual EDISTORTION getType() const = 0;
 
     virtual Distortion* clone() const = 0;
 

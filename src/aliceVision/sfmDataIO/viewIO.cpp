@@ -242,7 +242,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
         /*offset*/       0, 0);
   if(hasFocalLengthInput)
   {
-    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+    std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
     
     if (intrinsicScaleOffset)
     {
@@ -396,7 +396,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, pxFocalLength, 0, 0);
   if (hasFocalLengthInput)
   {
-    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+    std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
 
     if (intrinsicScaleOffset)
     {

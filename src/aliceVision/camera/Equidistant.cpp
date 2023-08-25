@@ -12,7 +12,7 @@
 namespace aliceVision {
 namespace camera {
 
-Vec2 EquiDistant::project(const geometry::Pose3& pose, const Vec4& pt, bool applyDistortion) const
+Vec2 Equidistant::project(const geometry::Pose3& pose, const Vec4& pt, bool applyDistortion) const
 {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
@@ -38,7 +38,7 @@ Vec2 EquiDistant::project(const geometry::Pose3& pose, const Vec4& pt, bool appl
     return pt_ima;
 }
 
-Eigen::Matrix<double, 2, 9> EquiDistant::getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec4 & pt)
+Eigen::Matrix<double, 2, 9> Equidistant::getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec4 & pt)
 {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -87,7 +87,7 @@ Eigen::Matrix<double, 2, 9> EquiDistant::getDerivativeProjectWrtRotation(const g
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_R;
 }
 
-Eigen::Matrix<double, 2, 16> EquiDistant::getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4 & pt) const
+Eigen::Matrix<double, 2, 16> Equidistant::getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4 & pt) const
 {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -136,7 +136,7 @@ Eigen::Matrix<double, 2, 16> EquiDistant::getDerivativeProjectWrtPose(const geom
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
 }
 
-Eigen::Matrix<double, 2, 4> EquiDistant::getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const
+Eigen::Matrix<double, 2, 4> Equidistant::getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const
 {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -186,7 +186,7 @@ Eigen::Matrix<double, 2, 4> EquiDistant::getDerivativeProjectWrtPoint(const geom
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
 }
 
-Eigen::Matrix<double, 2, 3> EquiDistant::getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt)
+Eigen::Matrix<double, 2, 3> Equidistant::getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt)
 {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -210,7 +210,7 @@ Eigen::Matrix<double, 2, 3> EquiDistant::getDerivativeProjectWrtDisto(const geom
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
 }
 
-Eigen::Matrix<double, 2, 2> EquiDistant::getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt)
+Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt)
 {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -245,17 +245,17 @@ Eigen::Matrix<double, 2, 2> EquiDistant::getDerivativeProjectWrtScale(const geom
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
 }
 
-Eigen::Matrix<double, 2, 2> EquiDistant::getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt)
+Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt)
 {
     return getDerivativeCam2ImaWrtPrincipalPoint();
 }
 
-Eigen::Matrix<double, 2, Eigen::Dynamic> EquiDistant::getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const
+Eigen::Matrix<double, 2, Eigen::Dynamic> Equidistant::getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const
 {
     return Eigen::Matrix<double, 2, Eigen::Dynamic>(2, 6);
 }
 
-Vec3 EquiDistant::toUnitSphere(const Vec2 & pt) const
+Vec3 Equidistant::toUnitSphere(const Vec2 & pt) const
 {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
@@ -272,7 +272,7 @@ Vec3 EquiDistant::toUnitSphere(const Vec2 & pt) const
     return ret;
 }
 
-Eigen::Matrix<double, 3, 2> EquiDistant::getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
+Eigen::Matrix<double, 3, 2> Equidistant::getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
 {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
@@ -299,7 +299,7 @@ Eigen::Matrix<double, 3, 2> EquiDistant::getDerivativetoUnitSphereWrtPoint(const
     return d_ret_d_angles * d_angles_d_pt;
 }
 
-Eigen::Matrix<double, 3, 2> EquiDistant::getDerivativetoUnitSphereWrtScale(const Vec2 & pt)
+Eigen::Matrix<double, 3, 2> Equidistant::getDerivativetoUnitSphereWrtScale(const Vec2 & pt)
 {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
@@ -329,37 +329,37 @@ Eigen::Matrix<double, 3, 2> EquiDistant::getDerivativetoUnitSphereWrtScale(const
     return d_ret_d_angles * d_angles_d_fov * d_fov_d_scale;
 }
 
-double EquiDistant::imagePlaneToCameraPlaneError(double value) const
+double Equidistant::imagePlaneToCameraPlaneError(double value) const
 {
     return value / _scale(0);
 }
 
-Vec2 EquiDistant::cam2ima(const Vec2& p) const
+Vec2 Equidistant::cam2ima(const Vec2& p) const
 {
     return _circleRadius * p  + getPrincipalPoint();
 }
 
-Eigen::Matrix2d EquiDistant::getDerivativeCam2ImaWrtPoint() const
+Eigen::Matrix2d Equidistant::getDerivativeCam2ImaWrtPoint() const
 {
     return Eigen::Matrix2d::Identity() * _circleRadius;
 }
 
-Vec2 EquiDistant::ima2cam(const Vec2& p) const
+Vec2 Equidistant::ima2cam(const Vec2& p) const
 {
     return (p - getPrincipalPoint()) / _circleRadius;
 }
 
-Eigen::Matrix2d EquiDistant::getDerivativeIma2CamWrtPoint() const
+Eigen::Matrix2d Equidistant::getDerivativeIma2CamWrtPoint() const
 {
     return Eigen::Matrix2d::Identity() * (1.0 / _circleRadius);
 }
 
-Eigen::Matrix2d EquiDistant::getDerivativeIma2CamWrtPrincipalPoint() const
+Eigen::Matrix2d Equidistant::getDerivativeIma2CamWrtPrincipalPoint() const
 {
     return Eigen::Matrix2d::Identity() * (-1.0 / _circleRadius);
 }
 
-bool EquiDistant::isVisibleRay(const Vec3 & ray) const
+bool Equidistant::isVisibleRay(const Vec3 & ray) const
 {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
@@ -373,6 +373,20 @@ bool EquiDistant::isVisibleRay(const Vec3 & ray) const
     const Vec2 proj = project(geometry::Pose3(), ray.homogeneous(), true);
     const Vec2 centered = proj - Vec2(_circleCenter(0), _circleCenter(1));
     return  centered.norm() <= _circleRadius;
+}
+
+EINTRINSIC Equidistant::getType() const
+{
+    if (_pDistortion)
+    {
+        switch (_pDistortion->getType())
+        {
+        case EDISTORTION::DISTORTION_RADIALK3PT: return EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3;
+        default: throw std::out_of_range("Invalid distortion model for equidistant camera.");
+        }
+    }
+
+    return EINTRINSIC::EQUIDISTANT_CAMERA;
 }
 
 } // namespace camera

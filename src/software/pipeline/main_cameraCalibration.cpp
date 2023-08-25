@@ -5,8 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/dataio/FeedProvider.hpp>
-#include <aliceVision/camera/cameraUndistortImage.hpp>
-#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/calibration/patternDetect.hpp>
 #include <aliceVision/calibration/bestImages.hpp>
@@ -169,7 +168,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     aliceVision::image::Image<uchar> imageGrey;
-    aliceVision::camera::PinholeRadialK3 queryIntrinsics;
+    aliceVision::camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
     std::size_t iInputFrame = 0;

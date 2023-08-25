@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "IntrinsicsScaleOffset.hpp"
+#include "IntrinsicScaleOffset.hpp"
 #include "IntrinsicInitMode.hpp"
 #include "Distortion.hpp"
 #include "Undistortion.hpp"
@@ -20,24 +20,23 @@ namespace camera {
 /**
  * @brief Class with disto
  */
-class IntrinsicsScaleOffsetDisto : public IntrinsicsScaleOffset
+class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
 {
 public:
 
-    IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h,
+    IntrinsicScaleOffsetDisto(unsigned int w, unsigned int h,
                                 double scaleX, double scaleY,
                                 double offsetX, double offsetY,
                                 std::shared_ptr<Distortion> distortion = nullptr,
-                                std::shared_ptr<Undistortion> undistortion = nullptr,
-                                EInitMode distortionInitializationMode = EInitMode::NONE) :
-        IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
-        _pDistortion(distortion), _pUndistortion(undistortion), _distortionInitializationMode(distortionInitializationMode)
+                                std::shared_ptr<Undistortion> undistortion = nullptr) :
+        IntrinsicScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
+        _pDistortion(distortion), _pUndistortion(undistortion)
     {
     }
 
-    IntrinsicsScaleOffsetDisto(const IntrinsicsScaleOffsetDisto &other) 
+    IntrinsicScaleOffsetDisto(const IntrinsicScaleOffsetDisto &other) 
     : 
-        IntrinsicsScaleOffset(other),
+        IntrinsicScaleOffset(other),
         _distortionInitializationMode(other._distortionInitializationMode)
     {
         if (other._pDistortion)
@@ -61,7 +60,7 @@ public:
 
     void assign(const IntrinsicBase& other) override
     {
-        *this = dynamic_cast<const IntrinsicsScaleOffsetDisto&>(other);
+        *this = dynamic_cast<const IntrinsicScaleOffsetDisto&>(other);
     }
 
     bool operator==(const IntrinsicBase& otherBase) const override;
@@ -289,7 +288,7 @@ public:
         return _pDistortion;
     }
 
-    ~IntrinsicsScaleOffsetDisto() override = default;
+    ~IntrinsicScaleOffsetDisto() override = default;
 
     void setUndistortionObject(std::shared_ptr<Undistortion> object)
     {
@@ -305,7 +304,7 @@ protected:
     void throwSetDistortionParamsCountError(std::size_t expected, std::size_t received)
     {
         std::stringstream s;
-        s << "IntrinsicsScaleOffsetDisto::setDistortionParams*: "
+        s << "IntrinsicScaleOffsetDisto::setDistortionParams*: "
         << "wrong number of distortion parameters (expected: "
         << expected << ", given:" << received << ").";
         throw std::runtime_error(s.str());

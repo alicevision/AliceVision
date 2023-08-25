@@ -11,7 +11,7 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
-#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 
 #include <memory>
 #include <limits>
@@ -22,7 +22,7 @@ namespace aliceVision {
 namespace camera {
 
 /// Define a classic Pinhole camera
-class Pinhole : public IntrinsicsScaleOffsetDisto
+class Pinhole : public IntrinsicScaleOffsetDisto
 {
 public:
     Pinhole() :
@@ -31,7 +31,7 @@ public:
     }
 
     Pinhole(unsigned int w, unsigned int h, const Mat3& K) :
-    IntrinsicsScaleOffsetDisto(w, h, K(0, 0), K(1, 1), K(0, 2), K(1, 2))
+    IntrinsicScaleOffsetDisto(w, h, K(0, 0), K(1, 1), K(0, 2), K(1, 2))
     {
     }
 
@@ -39,9 +39,8 @@ public:
             double focalLengthPixX, double focalLengthPixY,
             double offsetX, double offsetY,
             std::shared_ptr<Distortion> distortion = nullptr,
-            std::shared_ptr<Undistortion> undistortion = nullptr,
-            EInitMode distortionInitializationMode = EInitMode::NONE) :
-    IntrinsicsScaleOffsetDisto(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, undistortion, distortionInitializationMode)
+            std::shared_ptr<Undistortion> undistortion = nullptr) :
+    IntrinsicScaleOffsetDisto(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, undistortion)
     {
     }
 
@@ -72,10 +71,7 @@ public:
         return getFocalLengthPixX() > 0 && getFocalLengthPixY() > 0 && IntrinsicBase::isValid();
     }
 
-    EINTRINSIC getType() const override
-    {
-        return EINTRINSIC::PINHOLE_CAMERA;
-    }
+    EINTRINSIC getType() const override;
 
     Mat3 K() const;
 

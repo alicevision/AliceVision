@@ -8,7 +8,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
-#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
@@ -49,7 +49,7 @@ namespace localization{
  */
 EstimationStatus rigResection(const std::vector<Mat> &vec_pts2d,
                   const std::vector<Mat> &vec_pts3d,
-                  const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                  const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                   const std::vector<geometry::Pose3 > &vec_subPoses,
                   const std::vector< std::vector<feature::EImageDescriberType> > * descTypesPerCamera,
                   geometry::Pose3 &rigPose,
