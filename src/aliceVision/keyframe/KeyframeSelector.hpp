@@ -17,8 +17,8 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include <string>
-#include <deque>
 #include <map>
+#include <mutex>
 #include <vector>
 #include <memory>
 #include <limits>
@@ -182,6 +182,15 @@ public:
     }
 
     /**
+     * @brief Set the minimum size of the blocks of frames for the multi-threading
+     * @param[in] blockSize minimum number of frames in a block for a thread to be spawned
+     */
+    void setMinBlockSize(std::size_t blockSize)
+    {
+        _minBlockSize = blockSize;
+    }
+
+    /**
      * @brief Get the minimum frame step parameter for the processing algorithm
      * @return minimum number of frames between two keyframes
      */
@@ -219,13 +228,35 @@ public:
     
 private:
     /**
-     * @brief Read an image from a feed provider into a grayscale OpenCV matrix, and rescale it if a size is provided.
+     * @brief Read an image from a feed provider into a grayscale OpenCV matrix, and rescale it if a size is provided
      * @param[in] feed The feed provider
      * @param[in] width The width to resize the input image to. The height will be adjusted with respect to the size ratio.
      *                  There will be no resizing if this parameter is set to 0
      * @return An OpenCV Mat object containing the image
      */
     cv::Mat readImage(dataio::FeedProvider &feed, std::size_t width = 0);
+
+
+    /**
+     * @brief Compute the sharpness and optical flow scores for the input media paths for a given range of frames
+     * @param[in] startFrame the index of the first frame to compute the scores for
+     * @param[in] endFrame the index of the last frame to compute the scores for
+     * @param[in] nbFrames the total number of frames in the sequence
+     * @param[in] rescaledWidthSharpness the width to resize the input frames to before using them to compute the
+     *            sharpness scores (if equal to 0, no rescale will be performed)
+     * @param[in] rescaledWidthFlow the width to resize the input frames to before using them to compute the
+     *            motion scores (if equal to 0, no rescale will be performed)
+     * @param[in] sharpnessWindowSize the size of the sliding window used to compute sharpness scores, in pixels
+     * @param[in] flowCellSize the size of the cells within a frame that are used to compute the optical flow scores,
+     *            in pixels
+     * @param[in] skipSharpnessComputation if true, the sharpness score computations will not be performed and a fixed
+     *            sharpness score will be given to all the input frames
+     * @return true if the scores have been successfully computed for all frames, false otherwise
+     */
+    bool computeScoresProc(const std::size_t startFrame, const std::size_t endFrame, const std::size_t nbFrames,
+                           const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
+                           const std::size_t sharpnessWindowSize, const std::size_t flowCellSize,
+                           const bool skipSharpnessComputation);
 
     /**
      * @brief Compute the sharpness scores for an input grayscale frame with a sliding window
@@ -234,6 +265,17 @@ private:
      * @return a double value representing the sharpness score of the sharpest tile in the image
      */
     double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize);
+
+    /**
+     * @brief Compute the standard deviation of the local averaged Laplacian in an image
+     * @param sum The integral image of the Laplacian of a given image
+     * @param squaredSum The squared integral image of the Laplacian of a given image
+     * @param x The x-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param y The y-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param windowSize The size of the window along the x- and y-axis for the local standard deviation computation
+     * @return a const double value representating the local standard deviation of the Laplacian
+     */
+    const double computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x, const int y, const int windowSize);
 
     /**
      * @brief Estimate the optical flow score for an input grayscale frame based on its previous frame cell by cell
@@ -333,10 +375,13 @@ private:
     /// Minimum number of output frames
     unsigned int _minOutFrames = 10;
 
+    /// Minimum block size for multi-threading
+    std::size_t _minBlockSize = 10;
+
     /// Sharpness scores for each frame
-    std::vector<double> _sharpnessScores;
+    std::map<std::size_t, double> _sharpnessScores;
     /// Optical flow scores for each frame
-    std::vector<double> _flowScores;
+    std::map<std::size_t, double> _flowScores;
     /// Vector containing 1s for frames that have been selected, 0 for those which have not
     std::vector<char> _selectedFrames;
 
@@ -357,7 +402,10 @@ private:
     std::map<std::size_t, std::vector<std::string>> _keyframesPaths;
 
     /// Map score vectors with names for export
-    std::map<const std::string, const std::vector<double>*> scoresMap;
+    std::map<const std::string, const std::map<std::size_t, double>*> scoresMap;
+
+    /// Mutex to ensure thread-safe operations
+    mutable std::mutex _mutex;
 };
 
 } // namespace keyframe 
