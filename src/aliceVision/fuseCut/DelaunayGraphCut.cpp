@@ -1147,7 +1147,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     ALICEVISION_LOG_INFO("simFactor: " << params.simFactor);
     ALICEVISION_LOG_INFO("nbPixels: " << nbPixels);
     ALICEVISION_LOG_INFO("maxVertices: " << params.maxPoints);
-    ALICEVISION_LOG_INFO("step: " << step);
+    ALICEVISION_LOG_INFO("step: " << step << " (minStep: " << params.minStep << ")");
     ALICEVISION_LOG_INFO("realMaxVertices: " << realMaxVertices);
     ALICEVISION_LOG_INFO("minVis: " << params.minVis);
 
@@ -1204,19 +1204,19 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
                 else
                 {
-                    ALICEVISION_LOG_WARNING("nModMap file can't be found.");
+                    ALICEVISION_LOG_WARNING("nModMap file can't be found: " << nmodMapFilepath);
                     numOfModalsMap.resize(width, height, true, 1);
                 }
             }
 
-            int syMax = divideRoundUp(height, step);
-            int sxMax = divideRoundUp(width, step);
+            const int syMax = divideRoundUp(height, step);
+            const int sxMax = divideRoundUp(width, step);
             #pragma omp parallel for
             for(int sy = 0; sy < syMax; ++sy)
             {
                 for(int sx = 0; sx < sxMax; ++sx)
                 {
-                    int index = startIndex[c] + sy * sxMax + sx;
+                    const int index = startIndex[c] + sy * sxMax + sx;
                     float bestDepth = std::numeric_limits<float>::max();
                     float bestScore = 0;
                     float bestSimScore = 0;
@@ -1269,7 +1269,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                     }
                     else
                     {
-                        Point3d p = _mp.CArr[c] + (_mp.iCamArr[c] * Point2d((float)bestX, (float)bestY)).normalize() * bestDepth;
+                        const Point3d p = _mp.CArr[c] + (_mp.iCamArr[c] * Point2d((float)bestX, (float)bestY)).normalize() * bestDepth;
                         
                         // TODO: isPointInHexahedron: here or in the previous loop per pixel to not loose point?
                         if(voxel == nullptr || mvsUtils::isPointInHexahedron(p, voxel)) 
@@ -1387,8 +1387,11 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     double pixSizeMarginFinalCoef = params.pixSizeMarginFinalCoef;
     for(int filteringIt = 0; filteringIt < 20; ++filteringIt)
     {
+        ALICEVISION_LOG_INFO("Filter index: " << filteringIt << ", pixSizeMarginFinalCoef: " << pixSizeMarginFinalCoef);
         // Filter points with new simScore
         filterByPixSize(verticesCoordsPrepare, pixSizePrepare, pixSizeMarginFinalCoef, simScorePrepare);
+
+        ALICEVISION_LOG_INFO("Remove invalid points.");
         removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare, verticesAttrPrepare);
 
         if(verticesCoordsPrepare.size() < params.maxPoints)
