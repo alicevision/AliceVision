@@ -1118,13 +1118,14 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     // If too much points at the end, increment a coefficient factor on the pixel size
     // and iterate to fuse points until we get the right amount of points.
 
-    // unsigned long nbValidDepths = computeNumberOfAllPoints(mp, 0);
-    // int stepPts = divideRoundUp(nbValidDepths, maxPoints);
+    const unsigned long nbValidDepths = computeNumberOfAllPoints(_mp, _mp.getProcessDownscale());
+    ALICEVISION_LOG_INFO("Number of all valid depths in input depth maps: " << nbValidDepths);
     std::size_t nbPixels = 0;
     for(const auto& imgParams: _mp.getImagesParams())
     {
         nbPixels += imgParams.size;
     }
+    ALICEVISION_LOG_INFO("Number of pixels from all input images: " << nbPixels);
     int step = std::floor(std::sqrt(double(nbPixels) / double(params.maxInputPoints)));
     step = std::max(step, params.minStep);
     std::size_t realMaxVertices = 0;
@@ -1145,7 +1146,6 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     int minAngleCounter = 0;
 
     ALICEVISION_LOG_INFO("simFactor: " << params.simFactor);
-    ALICEVISION_LOG_INFO("nbPixels: " << nbPixels);
     ALICEVISION_LOG_INFO("maxVertices: " << params.maxPoints);
     ALICEVISION_LOG_INFO("step: " << step << " (minStep: " << params.minStep << ")");
     ALICEVISION_LOG_INFO("realMaxVertices: " << realMaxVertices);
