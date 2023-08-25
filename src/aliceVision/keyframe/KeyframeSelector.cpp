@@ -145,6 +145,9 @@ void KeyframeSelector::processRegular()
         }
     }
 
+    // Ensure the step is always larger than 0, thus ensuring that the 'for' loop will always run smoothly
+    step = std::max(step, static_cast<unsigned int>(1));
+
     for (unsigned int id = 0; id < nbFrames; id += step) {
         ALICEVISION_LOG_INFO("Selecting frame with ID " << id);
         _selectedKeyframes.push_back(id);
@@ -380,28 +383,29 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
              *   - try reading the next frame instead
              *   - if the next frame is correctly read, then push dummy scores for the invalid frame and go on with
              *     the process
-             *   - otherwise (feed not correctly moved to the next frame), throw a runtime error exception as something
-             *     is wrong with the video
+             *   - otherwise (feed not correctly moved to the next frame), keep on going to the next frame until it is
+             *     valid or the end of the feed is reached
              */
             if (!skipSharpnessComputation) {
                 try {
                     // Read image for sharpness and rescale it if requested
                     currentMatSharpness = readImage(feed, rescaledWidthSharpness);
                 } catch (const std::invalid_argument& ex) {
-                    // currentFrame + 1 = currently evaluated frame with indexing starting at 1, for display reasons
-                    // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
-                    ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
-                                            << ", attempting to read frame " << currentFrame + 2 << ".");
-                    bool success = feed.goToFrame(++currentFrame);
-                    if (success) {
-                        // Will throw an exception if next frame is also invalid
-                        currentMatSharpness = readImage(feed, rescaledWidthSharpness);
-                        // If no exception has been thrown, push dummy scores for the frame that was skipped
+                    bool success = false;
+                    while (!success && currentFrame < nbFrames) {
+                        // currentFrame + 1 = currently evaluated frame with indexing starting at 1, for display reasons
+                        // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
+                        ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
+                                                << ", attempting to read frame " << currentFrame + 2 << ".");
+                        success = feed.goToFrame(++currentFrame);
+                        if (success) {
+                            currentMatSharpness = readImage(feed, rescaledWidthSharpness);
+                        }
+
+                        // Push dummy scores for the frame that was skipped
                         _sharpnessScores.push_back(-1.f);
                         _flowScores.push_back(-1.f);
-                    } else
-                        ALICEVISION_THROW_ERROR("Could not go to frame " << currentFrame + 1
-                                                << " either. The feed might be corrupted.");
+                    }
                 }
             }
 
@@ -958,8 +962,15 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
     for (std::size_t i = 0; i < feed.nbFrames(); ++i) {
         // Need to read the image to get its size and path
         if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
-            ALICEVISION_LOG_ERROR("Error reading image");
-            return false;
+            ALICEVISION_LOG_ERROR("Error reading image.");
+
+            // Frames may be seldomly corrupted in the VideoFeeds, but this should not occur with other feeds
+            if (feed.isVideo()) {
+                ALICEVISION_LOG_WARNING("Skipping to the next frame.");
+                continue;
+            } else {
+                return false;
+            }
         }
 
         // Create the view
