@@ -314,10 +314,12 @@ void readMapFromFileOrTiles(int rc,
     // check single file fullsize map exists
     if(fs::exists(mapPath))
     {
+        ALICEVISION_LOG_TRACE("Load depth map (full image): " << mapPath << ", scale: " << scale << ", step: " << step);
         // read single file fullsize map
         image::readImage(mapPath, out_map, image::EImageColorSpace::NO_CONVERSION);
         return;
     }
+    ALICEVISION_LOG_TRACE("No full image depth map: " << mapPath << ", scale: " << scale << ", step: " << step << ". Looking for tiles.");
 
     // read map from tiles
     const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
@@ -338,6 +340,10 @@ void readMapFromFileOrTiles(int rc,
         // map can be empty
         ALICEVISION_LOG_INFO("Cannot find any " << getMapNameFromFileType(fileType) << " tile file (rc: " << rc << ").");
         return; // nothing to do, already initialized
+    }
+    else
+    {
+        ALICEVISION_LOG_TRACE("Load depth map from " << mapTilePathList.size() << " tiles. First tile: " << mapTilePathList[0] << ", scale: " << scale << ", step: " << step);
     }
 
     // get tileParams from first tile file metadata
