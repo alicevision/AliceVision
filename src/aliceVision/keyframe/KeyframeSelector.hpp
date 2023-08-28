@@ -40,13 +40,15 @@ class KeyframeSelector
 public:
     /**
      * @brief KeyframeSelector constructor
-     * @param[in] mediaPath video file path, image sequence directory or SfMData file
+     * @param[in] mediaPaths video file path, image sequence directory or SfMData file
+     * @param[in] maskPaths paths to directories containing masks to apply to input frames
      * @param[in] sensorDbPath camera sensor width database path
      * @param[in] outputFolder output keyframes directory
      * @param[in] outputSfmKeyframes output SfMData file containing the keyframes
      * @param[in] outputSfmFrames output SfMData file containing all the non-selected frames
      */
     KeyframeSelector(const std::vector<std::string>& mediaPaths,
+                     const std::vector<std::string>& maskPaths,
                      const std::string& sensorDbPath,
                      const std::string& outputFolder,
                      const std::string& outputSfmKeyframes,
@@ -262,20 +264,23 @@ private:
      * @brief Compute the sharpness scores for an input grayscale frame with a sliding window
      * @param[in] grayscaleImage the input grayscale matrix of the frame
      * @param[in] windowSize the size of the sliding window
+     * @param[in] mask the mask associated to the input frame if it exists, an empty cv::Mat otherwise
      * @return a double value representing the sharpness score of the sharpest tile in the image
      */
-    double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize);
+    double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize, const cv::Mat& mask);
 
     /**
      * @brief Compute the standard deviation of the local averaged Laplacian in an image
-     * @param sum The integral image of the Laplacian of a given image
-     * @param squaredSum The squared integral image of the Laplacian of a given image
-     * @param x The x-coordinate of the top-left corner of the window for the local standard deviation computation
-     * @param y The y-coordinate of the top-left corner of the window for the local standard deviation computation
-     * @param windowSize The size of the window along the x- and y-axis for the local standard deviation computation
+     * @param[in] sum the (masked) integral image of the Laplacian of a given image
+     * @param[in] squaredSum the (masked) squared integral image of the Laplacian of a given image
+     * @param[in] x the x-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param[in] y the y-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param[in] windowSize the size of the window along the x- and y-axis for the local standard deviation computation
+     * @param[in] mask the mask associated to the frame the integral and integral images were calculated from
      * @return a const double value representating the local standard deviation of the Laplacian
      */
-    const double computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x, const int y, const int windowSize);
+    const double computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x, const int y,
+                                     const int windowSize, const cv::Mat& mask);
 
     /**
      * @brief Estimate the optical flow score for an input grayscale frame based on its previous frame cell by cell
@@ -283,10 +288,11 @@ private:
      * @param[in] grayscaleImage the grayscale matrix of the current frame
      * @param[in] previousGrayscaleImage the grayscale matrix of the previous frame
      * @param[in] cellSize the size of the evaluated cells within the frame
+     * @param[in] mask the mask associated to the current frame if it exists, an empty cv::Mat otherwise
      * @return a double value representing the median motion of all the image's cells
      */
     double estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
-                        const cv::Mat& previousGrayscaleImage, const std::size_t cellSize);
+                        const cv::Mat& previousGrayscaleImage, const std::size_t cellSize, const cv::Mat& mask);
 
     /**
      * @brief Write the output SfMData files with the selected and non-selected keyframes information
@@ -352,6 +358,8 @@ private:
 
     /// Media paths
     std::vector<std::string> _mediaPaths;
+    /// Mask paths
+    std::vector<std::string> _maskPaths;
     /// Camera sensor width database
     std::string _sensorDbPath;
     /// Output folder for keyframes
