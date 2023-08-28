@@ -91,13 +91,16 @@ public:
     _intrinsic->setDistortionParamsFn(3, [&](auto index) { return parameter_intrinsics[4 + index]; });
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
-    geometry::Pose3 T(R, Vec3({0,0,0}));
+
+
+    geometry::Pose3 T_pose3(R, Vec3({0,0,0}));
+    Eigen::Matrix4d T = T_pose3.getHomogeneous();
 
     Vec2 pt_i_cam = _intrinsic->ima2cam(pt_i);
     Vec2 pt_i_undist = _intrinsic->removeDistortion(pt_i_cam);
     Vec4 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist).homogeneous();
 
-    Vec2 pt_j_est = _intrinsic->project(T, pt_i_sphere, true);
+    Vec2 pt_j_est = _intrinsic->project(T_pose3, pt_i_sphere, true);
 
     residuals[0] = pt_j_est(0) - pt_j(0);
     residuals[1] = pt_j_est(1) - pt_j(1);
@@ -177,13 +180,14 @@ public:
     });
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
-    geometry::Pose3 T(R, Vec3({0,0,0}));
+    geometry::Pose3 T_pose3(R, Vec3({0,0,0}));
+    Eigen::Matrix4d T = T_pose3.getHomogeneous();
 
     Vec2 pt_i_cam = _intrinsic->ima2cam(pt_i);
     Vec2 pt_i_undist = _intrinsic->removeDistortion(pt_i_cam);
     Vec4 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist).homogeneous();
 
-    Vec2 pt_j_est = _intrinsic->project(T, pt_i_sphere, true);
+    Vec2 pt_j_est = _intrinsic->project(T_pose3, pt_i_sphere, true);
 
     residuals[0] = pt_j_est(0) - pt_j(0);
     residuals[1] = pt_j_est(1) - pt_j(1);

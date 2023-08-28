@@ -13,7 +13,7 @@
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/CameraPose.hpp>
-
+#include <aliceVision/camera/IntrinsicBase.hpp>
 #include <ceres/ceres.h>
 #include "liealgebra.hpp"
 
@@ -28,7 +28,9 @@ class SfMData;
 
 namespace sfm {
 
-class BundleAdjustmentSymbolicCeres : public BundleAdjustment
+class SymbolicEvaluationCallback;
+
+class BundleAdjustmentSymbolicCeres : public BundleAdjustment, ceres::EvaluationCallback
 {
 public:
 
@@ -37,9 +39,10 @@ public:
    */
   struct CeresOptions
   {
-    CeresOptions(bool verbose = true, bool multithreaded = true)
+    CeresOptions(bool verbose = true, bool multithreaded = true, unsigned int maxIterations = 50)
       : verbose(verbose)
       , nbThreads(multithreaded ? omp_get_max_threads() : 1) // set number of threads, 1 if OpenMP is not enabled
+      , maxNumIterations(maxIterations)
     {
       setDenseBA(); // use dense BA by default
       lossFunction.reset(new ceres::HuberLoss(Square(4.0)));
@@ -53,6 +56,7 @@ public:
     ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
     std::shared_ptr<ceres::LossFunction> lossFunction;
     unsigned int nbThreads;
+    unsigned int maxNumIterations;
     bool useParametersOrdering = true;
     bool summary = false;
     bool verbose = true;
@@ -167,6 +171,8 @@ public:
   {
     return (_localGraph != nullptr);
   }
+
+  virtual void PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point);
 
 private:
 
@@ -289,6 +295,7 @@ private:
   /// intrinsics blocks wrapper
   /// block: intrinsics params
   HashMap<IndexT, std::vector<double>> _intrinsicsBlocks;
+  HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
   /// landmarks blocks wrapper
   /// block: 3d position(3)
   HashMap<IndexT, std::array<double,3>> _landmarksBlocks;
