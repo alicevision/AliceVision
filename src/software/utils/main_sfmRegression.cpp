@@ -34,16 +34,10 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     sfmData::SfMData sfmDataGT;
     sfmData::SfMData sfmDataEst;
 
-    auto phIntrinsicGT = camera::createIntrinsic(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 980, 980, 10, 20);
-    auto phPinholeGT = std::dynamic_pointer_cast<camera::PinholeRadialK3>(phIntrinsicGT);
-    std::vector<double> paramsGT = {0.1, 0.002, -0.01};
-    phPinholeGT->setDistortionParams(paramsGT);
+    auto phPinholeGT = camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 980, 980, 10, 20, {0.1, 0.002, -0.01});
     sfmDataGT.getIntrinsics()[0] = phPinholeGT;
 
-    auto phIntrinsicEst = camera::createIntrinsic(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 950, 950, 0, 0);
-    auto phPinholeEst = std::dynamic_pointer_cast<camera::PinholeRadialK3>(phIntrinsicEst);
-    std::vector<double> paramsEst = {0.0, 0.0, -0.0};
-    phPinholeEst->setDistortionParams(paramsEst);
+    auto phPinholeEst = camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 950, 950, 0, 0, {0.0, 0.0, 0.0});
     sfmDataEst.getIntrinsics()[0] = phPinholeEst;
 
     Vec3 direction = {1.0, 1.0, 1.0};
@@ -71,23 +65,6 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     }
 
     int tid = 0;
-    /*for (double y = -2.0; y < 2.0; y+=0.1)
-    {
-        for (double x = -2.0; x < 2.0; x+=0.1)
-        {
-            sfmData::Landmark lGT;
-            lGT.X = Vec3(x, y, 2.0);
-            lGT.descType = feature::EImageDescriberType::SIFT;
-            sfmDataGT.getLandmarks()[tid] = lGT;
-
-            sfmData::Landmark lEst = lGT;
-            lEst.X += Vec3::Random() * 0.9;
-            sfmDataEst.getLandmarks()[tid] = lEst;
-
-            tid++;
-        }
-    }*/
-
     for (double y = -2.0; y < 2.0; y+=0.1)
     {
         for (double x = -2.0; x < 2.0; x+=0.1)
@@ -130,7 +107,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
         for (auto & pp : sfmDataGT.getPoses())
         {
             sfmData::Observation obs;
-            obs.x = phIntrinsicGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true);
+            obs.x = phPinholeGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true);
             obs.scale = 1.0;
             obs.id_feat = pl.first;
 
