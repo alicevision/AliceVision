@@ -213,21 +213,21 @@ struct AlignRotateTranslateScaleError {
       : observed_x(observed_x), observed_y(observed_y), observed_z(observed_z) {}
 
   template <typename T>
-  bool operator()(const T* const pose,
+  bool operator()(const T* const rot, const T* const tran, const T* const scl,
 		    const T* const point,
             T* residuals) const {
 
     T pp[3];
     // first global pose
-    ceres::AngleAxisRotatePoint(pose, point, pp);
+    ceres::AngleAxisRotatePoint(rot, point, pp);
     
-    pp[0] *= pose[6]; 
-    pp[1] *= pose[6]; 
-    pp[2] *= pose[6];
+    pp[0] *= scl[0]; 
+    pp[1] *= scl[0]; 
+    pp[2] *= scl[0];
     
-    pp[0] += pose[3]; 
-    pp[1] += pose[4]; 
-    pp[2] += pose[5];
+    pp[0] += tran[0]; 
+    pp[1] += tran[1]; 
+    pp[2] += tran[2];
     
     // get observation k from observations_
     residuals[0] = pp[0] - T(observed_x);
@@ -243,21 +243,38 @@ struct AlignRotateTranslateScaleError {
 
 void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
 {
-    bool debug = false;
+    bool debug = true;
 
     Eigen::Vector3d mean = Eigen::Vector3d::Zero();
-    int cnt = 0;
+    int numValidPoses = 0;
+    const sfmData::Poses poses = sfmData.getPoses();
     for (auto v : sfmData.getViews()) {
-        double lat; double lon; double alt;
-        v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
-        // zone and northp should be returned!!!
-        int zone; bool northp; 
-        double x, y, gamma, k;
-        GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
-        mean += Eigen::Vector3d(x, y, alt);
-        cnt++;
+
+        IndexT poseId = v.second->getPoseId();
+        if(poses.find(poseId) != poses.end())
+        {
+            double lat; double lon; double alt;
+            v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
+            // zone and northp should be returned!!!
+            int zone; bool northp; 
+            double x, y, gamma, k;
+            GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
+            mean += Eigen::Vector3d(x, y, alt);
+            numValidPoses++;
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO(std::setprecision(17)
+            << "No pose for view " << v.second->getViewId() << std::endl);
+        }
     }
-    mean /= cnt;
+    mean /= numValidPoses;
+
+    {
+      ALICEVISION_LOG_INFO(std::setprecision(17)
+          << "Mean:" <<  std::endl
+          << "\t " << mean << std::endl);
+    }
 
     // at this point we need to get to a working rotation/translation/scale transform, which maps the poses to the gps positions naturally
 
@@ -274,45 +291,70 @@ void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
     pose_for_alignment[5] = 0;
     pose_for_alignment[6] = 1.0;
 
+    double *rotPtr = pose_for_alignment;
+    double *tranPtr = pose_for_alignment + 3;
+    double *sclPtr = pose_for_alignment + 6;
+
     ceres::Problem problem;
     ceres::LossFunction* loss_function = new ceres::HuberLoss(2.0);
 
-    double * centers = new double[3*sfmData.getViews().size()];
+    double * centers = new double[3*numValidPoses];
     double * cPtr = centers;
     for (auto v : sfmData.getViews()) 
     {
-        double lat; double lon; double alt;
-        v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
-        // zone and northp should be returned!!!
-        int zone; bool northp; 
-        double x, y, gamma, k;
-        GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
+        IndexT poseId = v.second->getPoseId();
+        if(poses.find(poseId) != poses.end())
+        {
+            double lat; double lon; double alt;
+            v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
+            // zone and northp should be returned!!!
+            int zone; bool northp; 
+            double x, y, gamma, k;
+            GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
 
-        const Vec3 center = sfmData.getPose(*v.second).getTransform().center();
+            /*
+            {
+                ALICEVISION_LOG_INFO(std::setprecision(17)
+                << "Getting center for view " << v.second->getViewId() << std::endl);
+            }
+            */
+            const Vec3 center = sfmData.getPose(*v.second).getTransform().center();
+            /*
+            {
+                ALICEVISION_LOG_INFO(std::setprecision(17)
+                << "\t " << center << std::endl);
+            }
+            */
+            cPtr[0] = center(0);
+            cPtr[1] = center(1);
+            cPtr[2] = center(2);
 
-        cPtr[0] = center(0);
-        cPtr[1] = center(1);
-        cPtr[2] = center(2);
+            ceres::CostFunction* cost_function =
+                new ceres::AutoDiffCostFunction<AlignRotateTranslateScaleError, 3, 3, 3, 1, 3>(
+                new AlignRotateTranslateScaleError(
+                    x - mean(0),
+                    y - mean(1),
+                    alt - mean(2)
+                )
+            );
 
-        ceres::CostFunction* cost_function =
-	        new ceres::AutoDiffCostFunction<AlignRotateTranslateScaleError, 3, 7, 3>(
-            new AlignRotateTranslateScaleError(
-                x - mean(0),
-                y - mean(1),
-                alt - mean(2)
-            )
-        );
+            problem.AddResidualBlock(
+                    cost_function,
+                    loss_function, // huber for now
+                    rotPtr,
+                    tranPtr,
+                    sclPtr,
+                    cPtr
+            );
 
-        problem.AddResidualBlock(
-                cost_function,
-                loss_function, // squared loss,
-                pose_for_alignment,
-                cPtr
-        );
-
-        problem.SetParameterBlockConstant(cPtr);
-        cPtr += 3;
+            problem.SetParameterBlockConstant(cPtr);
+            cPtr += 3;
+        }
     }
+    //problem.SetParameterBlockConstant(sclPtr);
+    problem.SetParameterLowerBound(sclPtr, 0, 0.1);
+    problem.SetParameterUpperBound(sclPtr, 0, 10.0);
+
     ceres::Solver::Options options;
     options.max_num_iterations = 100;
     options.linear_solver_type = ceres::DENSE_QR;
@@ -335,7 +377,13 @@ void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
     Matrix34d Pnew; Pnew.leftCols(3) = Rnew; Pnew.rightCols(1) = Tnew;
     double scale = pose_for_alignment[6];
 
-    R = Rnew;
+    // invert y and z
+
+    Eigen::Matrix3d invYZ = Eigen::Matrix3d::Identity();
+    invYZ(1,1) = -1; invYZ(2,2) = -1;
+    std::cout << invYZ << std::endl;
+
+    R = invYZ * Rnew;//.transpose();
     t = Tnew;
     S = scale;
     
