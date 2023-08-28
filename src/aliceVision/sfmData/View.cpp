@@ -211,6 +211,7 @@ int View::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, 
     const std::string& model = getMetadataModel();
     focalLengthmm = getMetadataFocalLength();
     const bool hasCameraMetadata = (!make.empty() || !model.empty());
+    const double imageRatio = static_cast<double>(getWidth()) / static_cast<double>(getHeight());
 
     if (hasCameraMetadata)
     {
@@ -258,7 +259,6 @@ int View::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, 
     const bool hasFocalIn35mmMetadata = hasDigitMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"});
     if (hasFocalIn35mmMetadata)
     {
-        const double imageRatio = static_cast<double>(getWidth()) / static_cast<double>(getHeight());
         const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
         const double focalIn35mm = hasFocalIn35mmMetadata ? getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"}) : -1.0;
 
@@ -292,8 +292,6 @@ int View::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, 
                 ss << "\t- focal length: " << focalLengthmm << "\n";
                 ALICEVISION_LOG_DEBUG(ss.str());
             }
-
-            sensorHeight = (imageRatio > 1.0) ? sensorWidth / imageRatio : sensorWidth * imageRatio;
 
             intrinsicInitMode = camera::EInitMode::ESTIMATED;
         }
@@ -371,6 +369,10 @@ int View::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, 
         }
         sensorWidth = 36.0;
         sensorHeight = 24.0;
+    }
+    else
+    {
+        sensorHeight = (imageRatio > 1.0) ? sensorWidth / imageRatio : sensorWidth * imageRatio;
     }
 
     return errCode;
