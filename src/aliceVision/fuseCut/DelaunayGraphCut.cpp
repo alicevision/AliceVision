@@ -184,7 +184,7 @@ public:
 #else
         nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
         resultSet.init(&index, &sq_dist);
-        if(!_tree->findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
+        if(!_tree->findNeighbors(resultSet, p.m, nanoflann::SearchParameters()))
         {
             return false;
         }
@@ -251,8 +251,8 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare, std::vec
             // }
         }
 #else
-
-        static const nanoflann::SearchParams searchParams(32, 0, false); // false: dont need to sort
+        
+        static const nanoflann::SearchParameters searchParams(0.f, false); // false: dont need to sort
         SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, simScorePrepare, vIndex);
         kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams);
         if(resultSet.found)
@@ -391,7 +391,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 std::size_t nearestVertexIndex = std::numeric_limits<std::size_t>::max();
                 double dist = std::numeric_limits<double>::max();
                 resultSet.init(&nearestVertexIndex, &dist);
-                if(!kdTree.findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
+                if(!kdTree.findNeighbors(resultSet, p.m, nanoflann::SearchParameters()))
                 {
                     ALICEVISION_LOG_TRACE("Failed to find Neighbors.");
                     continue;
@@ -795,18 +795,19 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
 void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist)
 {
     int addedPoints = 0;
-    const float minDist2 = minDist * minDist;
-    Tree kdTree(_verticesCoords);
+    // Note: For now, we skip the check of collision between cameras and data points to avoid useless computation.
+    // const float minDist2 = minDist * minDist;
+    // Tree kdTree(_verticesCoords);
     for(int camid = 0; camid < cams.size(); camid++)
     {
         int rc = cams[camid];
         {
             const Point3d p(_mp.CArr[rc].x, _mp.CArr[rc].y, _mp.CArr[rc].z);
-            std::size_t vi;
-            double sq_dist;
+            // std::size_t vi;
+            // double sq_dist;
 
             // if there is no nearest vertex or the nearest vertex is not too close
-            if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
+            // if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
             {
                 const GEO::index_t nvi = _verticesCoords.size();
                 _verticesCoords.push_back(p);
@@ -819,10 +820,10 @@ void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams,
                 _verticesAttr.push_back(newv);
                 ++addedPoints;
             }
-            else
-            {
-                _camsVertexes[rc] = vi;
-            }
+            // else
+            // {
+            //     _camsVertexes[rc] = vi;
+            // }
         }
     }
     ALICEVISION_LOG_WARNING("Add " << addedPoints << " new points for the " << cams.size() << " cameras centers.");
@@ -830,32 +831,29 @@ void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams,
 
 void DelaunayGraphCut::addPointsToPreventSingularities(const Point3d voxel[8], float minDist)
 {
-    Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+    Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0;
     Point3d extrPts[6];
     Point3d fcg;
-    fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) / 4.0f;
-    extrPts[0] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[0] + voxel[4] + voxel[7] + voxel[3]) / 4.0f;
-    extrPts[1] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[0] + voxel[1] + voxel[5] + voxel[4]) / 4.0f;
-    extrPts[2] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 4.0f;
-    extrPts[3] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[1] + voxel[5] + voxel[6] + voxel[2]) / 4.0f;
-    extrPts[4] = fcg + (fcg - vcg) / 10.0f;
-    fcg = (voxel[3] + voxel[2] + voxel[6] + voxel[7]) / 4.0f;
-    extrPts[5] = fcg + (fcg - vcg) / 10.0f;
+    const double s = 0.25;
+    fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) * 0.25; // facet center
+    extrPts[0] = fcg + (fcg - vcg) * s; // extra point beyond the bbox facet
+    fcg = (voxel[0] + voxel[4] + voxel[7] + voxel[3]) * 0.25;
+    extrPts[1] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[0] + voxel[1] + voxel[5] + voxel[4]) * 0.25;
+    extrPts[2] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[4] + voxel[5] + voxel[6] + voxel[7]) * 0.25;
+    extrPts[3] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[1] + voxel[5] + voxel[6] + voxel[2]) * 0.25;
+    extrPts[4] = fcg + (fcg - vcg) * s;
+    fcg = (voxel[3] + voxel[2] + voxel[6] + voxel[7]) * 0.25;
+    extrPts[5] = fcg + (fcg - vcg) * s;
+
     int addedPoints = 0;
-    const float minDist2 = minDist * minDist;
-    Tree kdTree(_verticesCoords);
-    for(int i = 0; i < 6; i++)
+    for(int i = 0; i < 6; ++i)
     {
         const Point3d p(extrPts[i].x, extrPts[i].y, extrPts[i].z);
-        std::size_t vi;
-        double sq_dist;
 
-        // if there is no nearest vertex or the nearest vertex is not too close
-        if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
+        // Note: As we create points outside of the bbox, we do not check collisions with data points.
         {
             _verticesCoords.push_back(p);
             GC_vertexInfo newv;
@@ -920,52 +918,75 @@ void DelaunayGraphCut::addGridHelperPoints(int helperPointsGridSize, const Point
     if(helperPointsGridSize <= 0)
         return;
 
-    int ns = helperPointsGridSize;
-    float md = 1.0f / 500.0f;
-    Point3d vx = (voxel[1] - voxel[0]);
-    Point3d vy = (voxel[3] - voxel[0]);
-    Point3d vz = (voxel[4] - voxel[0]);
-    Point3d O = voxel[0] + vx * md + vy * md + vz * md;
-    vx = vx - vx * 2.0f * md;
-    vy = vy - vy * 2.0f * md;
-    vz = vz - vz * 2.0f * md;
+    ALICEVISION_LOG_INFO("Add grid helper points.");
+    const int ns = helperPointsGridSize;
+    const Point3d vx = (voxel[1] - voxel[0]);
+    const Point3d vy = (voxel[3] - voxel[0]);
+    const Point3d vz = (voxel[4] - voxel[0]);
 
-    float maxSize = 2.0f * (O - voxel[0]).size();
-    Point3d CG = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+    // Add uniform noise on helper points, with 1/8 margin around the vertex.
+    const double md = 1.0 / (helperPointsGridSize * 8.0);
+    const Point3d maxNoiseSize(
+        md * (voxel[1] - voxel[0]).size(),
+        md * (voxel[3] - voxel[0]).size(),
+        md * (voxel[4] - voxel[0]).size()
+        );
+    Point3d center = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0;
     
     const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
     std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
-    auto rand = std::bind(std::uniform_real_distribution<float>{0.0, 1.0}, generator);
+    auto rand = std::bind(std::uniform_real_distribution<float>{-1.0, 1.0}, generator);
 
-    int addedPoints = 0;
-    const float minDist2 = minDist * minDist;
+    const double minDist2 = minDist * minDist;
+    ALICEVISION_LOG_TRACE("GRID: Prepare kdtree");
     Tree kdTree(_verticesCoords);
+
+    ALICEVISION_LOG_TRACE("GRID: Allocate vertices");
+    std::vector<Point3d> gridVerticesCoords(std::pow(float(ns + 1), 3.f));
+    std::vector<bool> valid(gridVerticesCoords.size());
+
+    ALICEVISION_LOG_TRACE("Create helper points.");
+    #pragma omp parallel for
     for(int x = 0; x <= ns; ++x)
     {
         for(int y = 0; y <= ns; ++y)
         {
             for(int z = 0; z <= ns; ++z)
             {
-                Point3d pt = voxel[0] + vx * ((float)x / (float)ns) + vy * ((float)y / (float)ns) +
-                             vz * ((float)z / (float)ns);
-                pt = pt + (CG - pt).normalize() * (maxSize * rand());
-
-                const Point3d p(pt.x, pt.y, pt.z);
-                std::size_t vi;
-                double sq_dist;
+                int i = x * (ns+1)*(ns+1) + y * (ns+1) + z;
+                const Point3d pt = voxel[0] + vx * ((double)x / double(ns)) + vy * ((double)y / double(ns)) +
+                             vz * ((double)z / double(ns));
+                const Point3d noise(maxNoiseSize.x * rand(), maxNoiseSize.y * rand(), maxNoiseSize.z * rand());
+                const Point3d p = pt + noise;
+                std::size_t vi{};
+                double sq_dist{};
 
                 // if there is no nearest vertex or the nearest vertex is not too close
                 if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
                 {
-                    _verticesCoords.push_back(p);
-                    GC_vertexInfo newv;
-                    newv.nrc = 0;
-
-                    _verticesAttr.push_back(newv);
-                    ++addedPoints;
+                    gridVerticesCoords[i] = p;
+                    valid[i] = true;
+                }
+                else
+                {
+                    valid[i] = false;
                 }
             }
         }
+    }
+    ALICEVISION_LOG_TRACE("Insert helper points.");
+    _verticesCoords.reserve(_verticesCoords.size() + gridVerticesCoords.size());
+    _verticesAttr.reserve(_verticesAttr.size() + gridVerticesCoords.size());
+    int addedPoints = 0;
+    for(int i = 0; i < gridVerticesCoords.size(); ++i)
+    {
+        if(!valid[i])
+            continue;
+        _verticesCoords.push_back(gridVerticesCoords[i]);
+        GC_vertexInfo newv;
+        newv.nrc = 0;
+        _verticesAttr.push_back(newv);
+        ++addedPoints;
     }
 
     ALICEVISION_LOG_WARNING("Add " << addedPoints << " new helper points for a 3D grid of " << ns << "x" << ns << "x"
@@ -1097,13 +1118,14 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     // If too much points at the end, increment a coefficient factor on the pixel size
     // and iterate to fuse points until we get the right amount of points.
 
-    // unsigned long nbValidDepths = computeNumberOfAllPoints(mp, 0);
-    // int stepPts = divideRoundUp(nbValidDepths, maxPoints);
+    const unsigned long nbValidDepths = computeNumberOfAllPoints(_mp, _mp.getProcessDownscale());
+    ALICEVISION_LOG_INFO("Number of all valid depths in input depth maps: " << nbValidDepths);
     std::size_t nbPixels = 0;
     for(const auto& imgParams: _mp.getImagesParams())
     {
         nbPixels += imgParams.size;
     }
+    ALICEVISION_LOG_INFO("Number of pixels from all input images: " << nbPixels);
     int step = std::floor(std::sqrt(double(nbPixels) / double(params.maxInputPoints)));
     step = std::max(step, params.minStep);
     std::size_t realMaxVertices = 0;
@@ -1119,13 +1141,13 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     std::vector<double> pixSizePrepare(realMaxVertices);
     std::vector<float> simScorePrepare(realMaxVertices);
 
-    // counter for points filtered based on the number of observations (minVis)
+    // counter for filtered points
     int minVisCounter = 0;
+    int minAngleCounter = 0;
 
     ALICEVISION_LOG_INFO("simFactor: " << params.simFactor);
-    ALICEVISION_LOG_INFO("nbPixels: " << nbPixels);
     ALICEVISION_LOG_INFO("maxVertices: " << params.maxPoints);
-    ALICEVISION_LOG_INFO("step: " << step);
+    ALICEVISION_LOG_INFO("step: " << step << " (minStep: " << params.minStep << ")");
     ALICEVISION_LOG_INFO("realMaxVertices: " << realMaxVertices);
     ALICEVISION_LOG_INFO("minVis: " << params.minVis);
 
@@ -1182,19 +1204,19 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
                 else
                 {
-                    ALICEVISION_LOG_WARNING("nModMap file can't be found.");
+                    ALICEVISION_LOG_WARNING("nModMap file can't be found: " << nmodMapFilepath);
                     numOfModalsMap.resize(width, height, true, 1);
                 }
             }
 
-            int syMax = divideRoundUp(height, step);
-            int sxMax = divideRoundUp(width, step);
+            const int syMax = divideRoundUp(height, step);
+            const int sxMax = divideRoundUp(width, step);
             #pragma omp parallel for
             for(int sy = 0; sy < syMax; ++sy)
             {
                 for(int sx = 0; sx < sxMax; ++sx)
                 {
-                    int index = startIndex[c] + sy * sxMax + sx;
+                    const int index = startIndex[c] + sy * sxMax + sx;
                     float bestDepth = std::numeric_limits<float>::max();
                     float bestScore = 0;
                     float bestSimScore = 0;
@@ -1247,7 +1269,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                     }
                     else
                     {
-                        Point3d p = _mp.CArr[c] + (_mp.iCamArr[c] * Point2d((float)bestX, (float)bestY)).normalize() * bestDepth;
+                        const Point3d p = _mp.CArr[c] + (_mp.iCamArr[c] * Point2d((float)bestX, (float)bestY)).normalize() * bestDepth;
                         
                         // TODO: isPointInHexahedron: here or in the previous loop per pixel to not loose point?
                         if(voxel == nullptr || mvsUtils::isPointInHexahedron(p, voxel)) 
@@ -1328,6 +1350,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
         if(maxAngle < params.minAngleThreshold)
         {
             pixSizePrepare[vIndex] = -1;
+            minAngleCounter += 1;
             continue;
         }
         // Filter points based on their number of observations
@@ -1354,7 +1377,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     ALICEVISION_LOG_INFO("Angle min: " << stat_minAngle << ", max: " << stat_maxAngle << ".");
     ALICEVISION_LOG_INFO("Angle score min: " << stat_minAngleScore << ", max: " << stat_maxAngleScore << ".");
 #endif
-    ALICEVISION_LOG_INFO((minVisCounter) << " points filtered based on the number of observations (minVis). ");
+    ALICEVISION_LOG_INFO(minAngleCounter << " filtered points due to low angle of observations (minAngleThreshold=" << params.minAngleThreshold << "). ");
+    ALICEVISION_LOG_INFO(minVisCounter << " filtered points due to low number of observations (minVis=" << params.minVis << "). ");
     removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare, verticesAttrPrepare);
 
     ALICEVISION_LOG_INFO("Filter by angle score and sim score");
@@ -1363,8 +1387,11 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     double pixSizeMarginFinalCoef = params.pixSizeMarginFinalCoef;
     for(int filteringIt = 0; filteringIt < 20; ++filteringIt)
     {
+        ALICEVISION_LOG_INFO("Filter index: " << filteringIt << ", pixSizeMarginFinalCoef: " << pixSizeMarginFinalCoef);
         // Filter points with new simScore
         filterByPixSize(verticesCoordsPrepare, pixSizePrepare, pixSizeMarginFinalCoef, simScorePrepare);
+
+        ALICEVISION_LOG_INFO("Remove invalid points.");
         removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare, verticesAttrPrepare);
 
         if(verticesCoordsPrepare.size() < params.maxPoints)
@@ -2013,7 +2040,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
     int vertexIndex, int cam, float weight, float fullWeight, double nPixelSizeBehind,
                                        bool fillOut, float distFcnHeight)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
-    const int maxint = 1000000; // std::numeric_limits<int>::std::max()
+    const int maxint = std::numeric_limits<int>::max();
     const double marginEpsilonFactor = 1.0e-4;
 
     const Point3d& originPt = _verticesCoords[vertexIndex];
@@ -3086,16 +3113,16 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
   // add points for cam centers
   addPointsFromCameraCenters(cams, minDist);
 
-  // add 6 points to prevent singularities
-  addPointsToPreventSingularities(hexah, minDist);
-
   densifyWithHelperPoints(densifyNbFront, densifyNbBack, densifyScale);
 
   // add volume points to prevent singularities
   {
     Point3d hexahExt[8];
-    mvsUtils::inflateHexahedron(hexah, hexahExt, 1.1);
+    mvsUtils::inflateHexahedron(hexah, hexahExt, 1.3);
     addGridHelperPoints(helperPointsGridSize, hexahExt, minDist);
+
+    // add 6 points to prevent singularities (one point beyond each bbox facet)
+    addPointsToPreventSingularities(hexahExt, minDist);
 
     // add point for shape from silhouette
     if(depthMapsFuseParams != nullptr)
@@ -3247,7 +3274,7 @@ void DelaunayGraphCut::maxflow()
 void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName)
 {
     ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
-    const int maxint = 1000000.0f;
+    const int maxint = std::numeric_limits<int>::max();
 
     long t1;
 

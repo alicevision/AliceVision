@@ -314,10 +314,12 @@ void readMapFromFileOrTiles(int rc,
     // check single file fullsize map exists
     if(fs::exists(mapPath))
     {
+        ALICEVISION_LOG_TRACE("Load depth map (full image): " << mapPath << ", scale: " << scale << ", step: " << step);
         // read single file fullsize map
         image::readImage(mapPath, out_map, image::EImageColorSpace::NO_CONVERSION);
         return;
     }
+    ALICEVISION_LOG_TRACE("No full image depth map: " << mapPath << ", scale: " << scale << ", step: " << step << ". Looking for tiles.");
 
     // read map from tiles
     const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
@@ -338,6 +340,10 @@ void readMapFromFileOrTiles(int rc,
         // map can be empty
         ALICEVISION_LOG_INFO("Cannot find any " << getMapNameFromFileType(fileType) << " tile file (rc: " << rc << ").");
         return; // nothing to do, already initialized
+    }
+    else
+    {
+        ALICEVISION_LOG_TRACE("Load depth map from " << mapTilePathList.size() << " tiles. First tile: " << mapTilePathList[0] << ", scale: " << scale << ", step: " << step);
     }
 
     // get tileParams from first tile file metadata
@@ -588,22 +594,32 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
                                            int step,
                                            const std::string& customSuffix)
 {
-    const std::string depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMap, customSuffix);
+    const std::string depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMapFiltered, customSuffix);
     int nbDepthValues = -1;
+    bool fileExists = false;
+    bool fromTiles = false;
 
     // get nbDepthValues from metadata
     if (fs::exists(depthMapPath)) // untilled
     {
+        fileExists = true;
         const oiio::ParamValueList metadata = image::readImageMetadata(depthMapPath);
         nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
     }
     else // tilled
     {
         std::vector<std::string> mapTilePathList;
-        getTilePathList(rc, mp, EFileType::depthMap, customSuffix, mapTilePathList);
+        getTilePathList(rc, mp, EFileType::depthMapFiltered, customSuffix, mapTilePathList);
 
         if(mapTilePathList.empty()) // depth map can be empty
+        {
           ALICEVISION_LOG_INFO("Cannot find any depth map tile file (rc: " << rc << ").");
+        }
+        else
+        {
+            fileExists = true;
+            fromTiles = true;
+        }
 
         for(const std::string& mapTilePath : mapTilePathList)
         {
@@ -618,16 +634,19 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
         }
     }
 
+    ALICEVISION_LOG_TRACE("DepthMap: " << depthMapPath << ", fileExists: " << fileExists << ", fromTiles: " << fromTiles << ", nbDepthValues (from metadata): " << nbDepthValues);
+
     // no metadata compute number of depth values
-    if(nbDepthValues < 0)
+    if(fileExists && nbDepthValues < 0)
     {
         image::Image<float> depthMap;
 
         ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in depth map (rc: " << rc << "). Recompute the number of valid values.");
 
-        readMap(rc, mp, EFileType::depthMap, depthMap, scale, step, customSuffix);
+        readMap(rc, mp, EFileType::depthMapFiltered, depthMap, scale, step, customSuffix);
 
         nbDepthValues = std::count_if(depthMap.data(), depthMap.data() + depthMap.size(), [](float v) { return v > 0.0f; });
+        ALICEVISION_LOG_WARNING("nbDepthValues (recomputed from pixels): " << nbDepthValues);
     }
 
     return nbDepthValues;
