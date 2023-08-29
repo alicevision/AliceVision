@@ -481,6 +481,11 @@ int aliceVision_main(int argc, char** argv)
                 calibration.process(calibrationSamples, groupedExposures, channelQuantization, false, response);
                 break;
             }
+            case ECalibrationMethod::AUTO:
+            {
+                ALICEVISION_LOG_ERROR("Calibration method cannot be automaticaly selected");
+                return EXIT_FAILURE;
+            }
             }
 
             const std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
