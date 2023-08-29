@@ -208,7 +208,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
     for(auto i = 0; i < landmarksData.size(); i++)
     {
         PixSizeSearch search(landmarksPixSize[i] * radiusScale, landmarksPixSize, i);
-        bool found = tree.findNeighbors(search, landmarksData[i].X.data(), nanoflann::SearchParams());
+        bool found = tree.findNeighbors(search, landmarksData[i].X.data(), nanoflann::SearchParameters());
         if (found)
         {
             toRemove[i] = true;
