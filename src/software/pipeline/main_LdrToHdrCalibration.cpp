@@ -9,6 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebufalgo.h>
 
 // SFMData
@@ -143,11 +144,11 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmInputDataFilename;
     std::string samplesFolder;
     std::string outputResponsePath;
-    ECalibrationMethod calibrationMethod = ECalibrationMethod::DEBEVEC;
+    ECalibrationMethod calibrationMethod = ECalibrationMethod::AUTO;
     std::string calibrationWeightFunction = "default";
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
-    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::AUTO;
     size_t maxTotalPoints = 1000000;
     bool byPass = false;
 
@@ -384,6 +385,15 @@ int aliceVision_main(int argc, char** argv)
                     bool first = true;
                     IndexT firstViewId = group.begin()->get()->getViewId();
 
+                    if (calibrationMethod == ECalibrationMethod::AUTO)
+                    {
+                        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(group.begin()->get()->getImagePath()));
+                        const std::string imgFormat = in->format_name();
+                        const bool isRAW = imgFormat.compare("raw") == 0;
+
+                        calibrationMethod = isRAW ? ECalibrationMethod::LINEAR : ECalibrationMethod::DEBEVEC;
+                        ALICEVISION_LOG_INFO("Calibration method automaticaly set to " << calibrationMethod);
+                    }
 
                     // Read from file
                     const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(firstViewId) + "_samples.dat")).string();

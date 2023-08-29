@@ -17,6 +17,7 @@ enum class ECalibrationMethod
     DEBEVEC,
     GROSSBERG,
     LAGUERRE,
+    AUTO,
 };
 
 /**
@@ -28,6 +29,8 @@ inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod cali
 {
     switch (calibrationMethod)
     {
+    case ECalibrationMethod::AUTO:
+        return "auto";
     case ECalibrationMethod::LINEAR:
         return "linear";
     case ECalibrationMethod::DEBEVEC:
@@ -50,6 +53,8 @@ inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& cal
     std::string methodName = calibrationMethodName;
     std::transform(methodName.begin(), methodName.end(), methodName.begin(), ::tolower);
 
+    if (methodName == "auto")
+        return ECalibrationMethod::AUTO;
     if (methodName == "linear")
         return ECalibrationMethod::LINEAR;
     if (methodName == "debevec")

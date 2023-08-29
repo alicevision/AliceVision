@@ -9,6 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebufalgo.h>
 
 // SFMData
@@ -82,7 +83,7 @@ int aliceVision_main(int argc, char** argv)
     double minSignificantValue = 0.05;
     double maxSignificantValue = 0.995;
     bool computeLightMasks = false;
-    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::AUTO;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
     float highlightCorrectionFactor = 0.0f;
@@ -179,9 +180,6 @@ int aliceVision_main(int argc, char** argv)
 
     const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
-    // Fusion always produces linear image. sRGB is the only non linear color space that must be changed to linear (sRGB linear). 
-    image::EImageColorSpace mergedColorSpace = (workingColorSpace == image::EImageColorSpace::SRGB) ? image::EImageColorSpace::LINEAR : workingColorSpace;
-
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
     if (!hdr::estimateBracketsFromSfmData(groupedViews, sfmData, nbBrackets))
@@ -246,6 +244,20 @@ int aliceVision_main(int argc, char** argv)
         groupedViewsPerIntrinsics[intrinsicId].push_back(group);
     }
 
+    //Estimate working color space if set to AUTO
+    if (workingColorSpace == image::EImageColorSpace::AUTO)
+    {
+        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(groupedViews[0][0]->getImagePath()));
+        const std::string imgFormat = in->format_name();
+        const bool isRAW = imgFormat.compare("raw") == 0;
+
+        workingColorSpace = isRAW ? image::EImageColorSpace::LINEAR : image::EImageColorSpace::SRGB;
+        ALICEVISION_LOG_INFO("Working color space automaticaly set to " << workingColorSpace);
+    }
+
+    // Fusion always produces linear image. sRGB is the only non linear color space that must be changed to linear (sRGB
+    // linear).
+    image::EImageColorSpace mergedColorSpace = (workingColorSpace == image::EImageColorSpace::SRGB) ? image::EImageColorSpace::LINEAR : workingColorSpace;
 
     //Estimate target views for each group
     std::map<IndexT, std::vector<std::shared_ptr<sfmData::View>>> targetViewsPerIntrinsics;
@@ -360,7 +372,6 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
     }
-
     
     if(byPass)
     {

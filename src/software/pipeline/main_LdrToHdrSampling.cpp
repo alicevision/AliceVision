@@ -24,6 +24,7 @@
 #include <aliceVision/hdr/brackets.hpp>
 
 // Image Processing
+#include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebufalgo.h>
 
 // Command line parameters
@@ -55,8 +56,8 @@ int aliceVision_main(int argc, char** argv)
     std::string outputFolder;
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
-    ECalibrationMethod calibrationMethod = ECalibrationMethod::DEBEVEC;
-    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
+    ECalibrationMethod calibrationMethod = ECalibrationMethod::AUTO;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::AUTO;
     hdr::Sampling::Params params;
     bool byPass = false;
     bool debug = false;
@@ -232,7 +233,6 @@ int aliceVision_main(int argc, char** argv)
             bool first = true;
             IndexT firstViewId = UndefinedIndexT;
 
-
             for (auto & v : group)
             {
                 //Retrieve first view Id to get a unique name for files
@@ -241,6 +241,21 @@ int aliceVision_main(int argc, char** argv)
                 {
                     firstViewId = v->getViewId();
                     first = false;
+
+                    const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(v->getImagePath()));
+                    const std::string imgFormat = in->format_name();
+                    const bool isRAW = imgFormat.compare("raw") == 0;
+
+                    if (calibrationMethod == ECalibrationMethod::AUTO)
+                    {
+                        calibrationMethod = isRAW ? ECalibrationMethod::LINEAR : ECalibrationMethod::DEBEVEC;
+                        ALICEVISION_LOG_INFO("Calibration method automaticaly set to " << calibrationMethod);
+                    }
+                    if (workingColorSpace == image::EImageColorSpace::AUTO)
+                    {
+                        workingColorSpace = isRAW ? image::EImageColorSpace::LINEAR : image::EImageColorSpace::SRGB;
+                        ALICEVISION_LOG_INFO("Working color space automaticaly set to " << workingColorSpace);
+                    }
                 }
 
                 paths.push_back(v->getImagePath());
