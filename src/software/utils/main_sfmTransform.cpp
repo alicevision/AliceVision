@@ -245,9 +245,12 @@ void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
 {
     bool debug = true;
 
+    std::vector<Eigen::Vector3d> coords;
+
     Eigen::Vector3d mean = Eigen::Vector3d::Zero();
     int numValidPoses = 0;
     const sfmData::Poses poses = sfmData.getPoses();
+    int zone; bool northp; 
     for (auto v : sfmData.getViews()) {
 
         IndexT poseId = v.second->getPoseId();
@@ -256,10 +259,12 @@ void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
             double lat; double lon; double alt;
             v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
             // zone and northp should be returned!!!
-            int zone; bool northp; 
             double x, y, gamma, k;
             GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
             mean += Eigen::Vector3d(x, y, alt);
+
+            coords.push_back(Eigen::Vector3d(x, y, alt));
+
             numValidPoses++;
         }
         else
@@ -271,7 +276,32 @@ void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
     mean /= numValidPoses;
 
     {
-      ALICEVISION_LOG_INFO(std::setprecision(17)
+        FILE* localcoordfile = fopen("localcenter.json", "wt");
+        fprintf(localcoordfile,"{ \"Coords\": {\n");
+        fprintf(localcoordfile,"\"Center\": [ %.16f, %.16f, %.16f ],\n", mean(0), mean(1), mean(2));
+        fprintf(localcoordfile,"\"Zone\": %d,\n",zone);
+        fprintf(localcoordfile,"\"North\": %s,\n",northp ? "true" : "false");
+        fprintf(localcoordfile,"\"EPSGCode\": %d\n",northp ? 32600+zone : 32700+zone);
+        fprintf(localcoordfile,"}\n}");
+        fclose(localcoordfile);
+    }
+
+/*
+    {
+        FILE* coordfile = fopen("gpscoords.json","wt");
+        fprintf(coordfile,"{ \"Coords\": [\n");
+        for(int c = 0; c < coords.size(); c++)
+        {
+            fprintf(coordfile,"[%.15f, %.15f, %.15f]",coords[c](0)-mean(0),coords[c](1)-mean(1),coords[c](2)-mean(2));
+            if(c < (coords.size() - 1))
+                fprintf(coordfile,",\n");
+        }
+        fprintf(coordfile,"]\n}");
+        fclose(coordfile);
+    }
+*/
+    {
+      ALICEVISION_LOG_TRACE(std::setprecision(17)
           << "Mean:" <<  std::endl
           << "\t " << mean << std::endl);
     }
@@ -289,7 +319,7 @@ void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
     pose_for_alignment[3] = 0;
     pose_for_alignment[4] = 0;
     pose_for_alignment[5] = 0;
-    pose_for_alignment[6] = 1.0;
+    pose_for_alignment[6] = 3.6;
 
     double *rotPtr = pose_for_alignment;
     double *tranPtr = pose_for_alignment + 3;
@@ -377,13 +407,7 @@ void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
     Matrix34d Pnew; Pnew.leftCols(3) = Rnew; Pnew.rightCols(1) = Tnew;
     double scale = pose_for_alignment[6];
 
-    // invert y and z
-
-    Eigen::Matrix3d invYZ = Eigen::Matrix3d::Identity();
-    invYZ(1,1) = -1; invYZ(2,2) = -1;
-    std::cout << invYZ << std::endl;
-
-    R = invYZ * Rnew;//.transpose();
+    R = Rnew.transpose();
     t = Tnew;
     S = scale;
     
@@ -729,7 +753,17 @@ int aliceVision_main(int argc, char **argv)
   }
 
   sfm::applyTransform(sfmData, S, R, t);
- 
+
+  if (alignmentMethod == EAlignmentMethod::FROM_GPS2UTM)
+  {
+    ALICEVISION_LOG_INFO("Applying additional inversion to Y and Z to make textured mesh end up aligned correctly!");
+    Eigen::Matrix3d invYZ = Eigen::Matrix3d::Identity();
+    invYZ(1,1) = -1; invYZ(2,2) = -1;
+    Eigen::Vector3d zeroT = Eigen::Vector3d::Zero();
+
+    sfm::applyTransform(sfmData, 1.0, invYZ, zeroT);
+  }
+    
   // In AUTO mode, ground detection and alignment is performed as a post-process
   if (alignmentMethod == EAlignmentMethod::AUTO && applyTranslation)
   {
