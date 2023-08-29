@@ -9,7 +9,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
-#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
 #include "DistortionFisheye1.hpp"
@@ -21,46 +21,47 @@ namespace aliceVision {
 namespace camera {
 
 /**
- * @brief EquiDistant is a camera model used for fisheye optics.
+ * @brief Equidistant is a camera model used for fisheye optics.
  * See https://en.wikipedia.org/wiki/Fisheye_lens
  * 
  */
-class EquiDistant : public IntrinsicsScaleOffsetDisto
+class Equidistant : public IntrinsicScaleOffsetDisto
 {
 public:
-    EquiDistant() :
-    EquiDistant(1, 1, 1.0, 0.0, 0.0)
+    Equidistant() :
+    Equidistant(1, 1, 1.0, 0.0, 0.0)
     {
     }
 
-    EquiDistant(unsigned int w, unsigned int h,
+    Equidistant(unsigned int w, unsigned int h,
                 double focalLengthPix,
                 double offsetX, double offsetY,
                 std::shared_ptr<Distortion> distortion = nullptr) :
-        IntrinsicsScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
+        IntrinsicScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
         _circleRadius(std::min(w, h) * 0.5), _circleCenter(w / 2.0, h / 2.0)
     {
     }
 
-    EquiDistant(unsigned int w, unsigned int h,
-                double focalLengthPix, double offsetX,
-                double offsetY, double circleRadiusPix,
+    Equidistant(unsigned int w, unsigned int h,
+                double focalLengthPix,
+                double offsetX, double offsetY,
+                double circleRadiusPix,
                 std::shared_ptr<Distortion> distortion = nullptr) :
-        IntrinsicsScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
-        _circleRadius(circleRadiusPix), _circleCenter(w / 2.0, h / 2.0)
+        IntrinsicScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, offsetX, offsetY, distortion),
+        _circleRadius(circleRadiusPix != 0.0 ? circleRadiusPix : std::min(w, h) * 0.5), _circleCenter(w / 2.0, h / 2.0)
     {
     }
 
-    ~EquiDistant() override = default;
+    ~Equidistant() override = default;
 
-    EquiDistant* clone() const override
+    Equidistant* clone() const override
     {
-        return new EquiDistant(*this); 
+        return new Equidistant(*this); 
     }
 
     void assign(const IntrinsicBase& other) override
     {
-        *this = dynamic_cast<const EquiDistant&>(other);
+        *this = dynamic_cast<const Equidistant&>(other);
     }
 
     bool isValid() const override
@@ -68,26 +69,32 @@ public:
         return _scale(0) > 0 && IntrinsicBase::isValid();
     }
 
-    EINTRINSIC getType() const override
+    EINTRINSIC getType() const override;
+
+    Vec2 project(const Eigen::Matrix4d & pose, const Vec4& pt, bool applyDistortion = true) const override;
+
+    Vec2 project(const geometry::Pose3& pose, const Vec4& pt3D, bool applyDistortion = true) const
     {
-        return EQUIDISTANT_CAMERA;
+        return project(pose.getHomogeneous(), pt3D, applyDistortion);
     }
 
-    Vec2 project(const geometry::Pose3& pose, const Vec4& pt, bool applyDistortion = true) const override;
+    Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const Eigen::Matrix4d & pose, const Vec4 & pt);
 
-    Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec4 & pt);
+    Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const Eigen::Matrix4d & pose, const Vec4 & pt) const override;
 
-    Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4 & pt) const override;
+    Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d & pose, const Vec4 & pt) const override;
 
-    Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override;
+    Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const Eigen::Matrix4d & pose, const Vec4 & pt) const override;
 
-    Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt);
+    Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint3(const Eigen::Matrix4d & pose, const Vec4 & pt) const override;
 
-    Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt);
+    Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const Eigen::Matrix4d & pose, const Vec4 & pt);
 
-    Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt);
+    Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const Eigen::Matrix4d & pose, const Vec4 & pt);
 
-    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const override;
+    Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const Eigen::Matrix4d & pose, const Vec4 & pt);
+
+    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const Eigen::Matrix4d & pose, const Vec4& pt3D) const override;
 
     Vec3 toUnitSphere(const Vec2 & pt) const override;
 

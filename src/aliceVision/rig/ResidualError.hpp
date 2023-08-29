@@ -7,8 +7,8 @@
 #pragma once
 
 #include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/camera/PinholeRadial.hpp> //todo: not generic
-                         // only PinholeRadialK3 is currently supported
+#include <aliceVision/camera/camera.hpp> //todo: not generic
+                         // only radial3 is currently supported
                          // todo: allows internal parameters refinement
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
@@ -20,7 +20,7 @@ namespace rig {
 class ResidualErrorMainCameraFunctor
 {
 public :
-  ResidualErrorMainCameraFunctor(const camera::PinholeRadialK3 & intrinsics,
+  ResidualErrorMainCameraFunctor(const camera::Pinhole & intrinsics,
                                  const Vec2 & pt2d,
                                  const Vec3 & pt3d)
   {
@@ -129,7 +129,7 @@ private :
 class ResidualErrorSecondaryCameraFunctor
 {
 public :
-  ResidualErrorSecondaryCameraFunctor(const camera::PinholeRadialK3 & intrinsics,
+  ResidualErrorSecondaryCameraFunctor(const camera::Pinhole & intrinsics,
                                       const aliceVision::Vec2 & pt2d,
                                       const aliceVision::Vec3 & pt3d) // const double* const pos_2dpoint
   {
@@ -256,7 +256,7 @@ private :
 class ResidualErrorSecondaryCameraFixedRelativeFunctor
 {
 public :
-  ResidualErrorSecondaryCameraFixedRelativeFunctor(const camera::PinholeRadialK3 & intrinsics,
+  ResidualErrorSecondaryCameraFixedRelativeFunctor(const camera::Pinhole & intrinsics,
                                                    const Vec2 & pt2d,
                                                    const Vec3 & pt3d,
                                                    const geometry::Pose3 &relativePose) // const double* const pos_2dpoint

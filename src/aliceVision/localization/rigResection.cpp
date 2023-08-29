@@ -28,7 +28,7 @@ namespace localization{
 
 EstimationStatus rigResection(const std::vector<Mat> &pts2d,
                   const std::vector<Mat> &pts3d,
-                  const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                  const std::vector<camera::Pinhole > &vec_queryIntrinsics,
                   const std::vector<geometry::Pose3 > &vec_subPoses,
                   const std::vector< std::vector<feature::EImageDescriberType> > * descTypesPerCamera,
                   geometry::Pose3 &rigPose,
@@ -93,7 +93,7 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
   for(std::size_t cam = 0; cam < numCameras; ++cam)
   {
     const std::size_t numPts = pts2d[cam].cols();
-    const camera::PinholeRadialK3 &currCamera = vec_queryIntrinsics[cam];
+    const camera::Pinhole &currCamera = vec_queryIntrinsics[cam];
     
     for(std::size_t i = 0; i < numPts; ++i)
     {

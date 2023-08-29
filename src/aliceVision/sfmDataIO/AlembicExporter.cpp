@@ -176,7 +176,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   OUInt32ArrayProperty(userProps, "mvg_ancestorsParams").set(view.getAncestors());
 
   // set intrinsic properties
-  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsic);
   if(intrinsicCasted)
   {
     CameraSample camSample;
@@ -245,7 +245,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     camObj.getSchema().set(camSample);
   }
 
-  std::shared_ptr<camera::EquiDistant> intrinsicEquiCasted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+  std::shared_ptr<camera::Equidistant> intrinsicEquiCasted = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
   if(intrinsicEquiCasted)
   {
     ODoubleProperty(userProps, "mvg_fisheyeCircleCenterX").set(intrinsicEquiCasted->getCircleCenterX());

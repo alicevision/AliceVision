@@ -14,6 +14,9 @@
 #include <utility>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/dcp.hpp>
+#include <aliceVision/sensorDB/Datasheet.hpp>
+#include <aliceVision/camera/IntrinsicInitMode.hpp>
+#include <aliceVision/lensCorrectionProfile/lcp.hpp>
 
 namespace aliceVision {
 namespace sfmData {
@@ -130,7 +133,7 @@ public:
         area2 = (aperture1 / aperture2)^2
         */
         double new_fnumber = fnumber * iso_2_aperture;
-        double exp_increase = (new_fnumber / lReferenceFNumber) * (new_fnumber / lReferenceFNumber);
+        double exp_increase = (lReferenceFNumber / new_fnumber) * (lReferenceFNumber / new_fnumber);
 
         // If the aperture was more important for this image, this means that it received less light than with a default aperture
         // This means also that if we want to simulate that all the image have the same aperture, we have to increase virtually th
@@ -295,7 +298,6 @@ public:
   {
     return _intrinsicId;
   }
-
 
   /**
    * @brief Get the pose id
@@ -610,20 +612,78 @@ public:
       bool valid = true;
       double value;
 
-      valid = valid && getDoubleMetadata({ "AliceVision:VignParamFocX" }, value);
+      valid = valid && getDoubleMetadata({"AliceVision:VignParamFocX"}, value);
       v_vignParam.push_back(static_cast<float>(value));
-      valid = valid && getDoubleMetadata({ "AliceVision:VignParamFocY" }, value);
+      valid = valid && getDoubleMetadata({"AliceVision:VignParamFocY"}, value);
       v_vignParam.push_back(static_cast<float>(value));
-      valid = valid && getDoubleMetadata({ "AliceVision:VignParamCenterX" }, value);
+      valid = valid && getDoubleMetadata({"AliceVision:VignParamCenterX"}, value);
       v_vignParam.push_back(static_cast<float>(value));
-      valid = valid && getDoubleMetadata({ "AliceVision:VignParamCenterY" }, value);
+      valid = valid && getDoubleMetadata({"AliceVision:VignParamCenterY"}, value);
       v_vignParam.push_back(static_cast<float>(value));
-      valid = valid && getDoubleMetadata({ "AliceVision:VignParam1" }, value);
+      valid = valid && getDoubleMetadata({"AliceVision:VignParam1"}, value);
       v_vignParam.push_back(static_cast<float>(value));
-      valid = valid && getDoubleMetadata({ "AliceVision:VignParam2" }, value);
+      valid = valid && getDoubleMetadata({"AliceVision:VignParam2"}, value);
       v_vignParam.push_back(static_cast<float>(value));
-      valid = valid && getDoubleMetadata({ "AliceVision:VignParam3" }, value);
+      valid = valid && getDoubleMetadata({"AliceVision:VignParam3"}, value);
       v_vignParam.push_back(static_cast<float>(value));
+      return valid;
+  }
+
+  const bool getChromaticAberrationParams(std::vector<float>& v_caGParam, std::vector<float>& v_caBGParam, std::vector<float>& v_caRGParam) const
+  {
+      v_caGParam.clear();
+      v_caBGParam.clear();
+      v_caRGParam.clear();
+      bool valid = true;
+      double value;
+
+      valid = valid && getDoubleMetadata({"AliceVision:CAGreenFocX"}, value);
+      v_caGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CAGreenFocY"}, value);
+      v_caGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CAGreenCenterX"}, value);
+      v_caGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CAGreenCenterY"}, value);
+      v_caGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CAGreenParam1"}, value);
+      v_caGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CAGreenParam2"}, value);
+      v_caGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CAGreenParam3"}, value);
+      v_caGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CABlueGreenFocX"}, value);
+      v_caBGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CABlueGreenFocY"}, value);
+      v_caBGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CABlueGreenCenterX"}, value);
+      v_caBGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CABlueGreenCenterY"}, value);
+      v_caBGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CABlueGreenParam1"}, value);
+      v_caBGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CABlueGreenParam2"}, value);
+      v_caBGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CABlueGreenParam3"}, value);
+      v_caBGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CABlueGreenScaleFactor"}, value);
+      v_caBGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CARedGreenFocX"}, value);
+      v_caRGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CARedGreenFocY"}, value);
+      v_caRGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CARedGreenCenterX"}, value);
+      v_caRGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CARedGreenCenterY"}, value);
+      v_caRGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CARedGreenParam1"}, value);
+      v_caRGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CARedGreenParam2"}, value);
+      v_caRGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CARedGreenParam3"}, value);
+      v_caRGParam.push_back(static_cast<float>(value));
+      valid = valid && getDoubleMetadata({"AliceVision:CARedGreenScaleFactor"}, value);
+      v_caRGParam.push_back(static_cast<float>(value));
+
       return valid;
   }
 
@@ -658,6 +718,10 @@ public:
 
     return timecode;
   }
+
+  double getSensorWidth() const { return getDoubleMetadata({"AliceVision:SensorWidth"}); }
+
+  double getSensorHeight() const { return getDoubleMetadata({"AliceVision:SensorHeight"}); }
 
   /**
    * @brief Get the view metadata structure
@@ -846,6 +910,66 @@ public:
           addMetadata("AliceVision:DCP:CameraCalibrationMat" + std::to_string(k + 1), v_strCalibMatrix[k]);
       }
   }
+
+
+  /**
+   * @brief Add vignetting model parameters in metadata
+   * @param[in] The lens data extracted from a LCP file
+   */
+  void addVignettingMetadata(LensParam& lensParam)
+  {
+      addMetadata("AliceVision:VignParamFocX", std::to_string(lensParam.vignParams.FocalLengthX));
+      addMetadata("AliceVision:VignParamFocY", std::to_string(lensParam.vignParams.FocalLengthY));
+      addMetadata("AliceVision:VignParamCenterX", std::to_string(lensParam.vignParams.ImageXCenter));
+      addMetadata("AliceVision:VignParamCenterY", std::to_string(lensParam.vignParams.ImageYCenter));
+      addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
+      addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
+      addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
+  }
+
+    /**
+   * @brief Add chromatic model parameters in metadata
+   * @param[in] The lens data extracted from a LCP file
+   */
+  void addChromaticMetadata(LensParam& lensParam)
+  {
+      addMetadata("AliceVision:CAGreenFocX", std::to_string(lensParam.ChromaticGreenParams.FocalLengthX));
+      addMetadata("AliceVision:CAGreenFocY", std::to_string(lensParam.ChromaticGreenParams.FocalLengthY));
+      addMetadata("AliceVision:CAGreenCenterX", std::to_string(lensParam.ChromaticGreenParams.ImageXCenter));
+      addMetadata("AliceVision:CAGreenCenterY", std::to_string(lensParam.ChromaticGreenParams.ImageYCenter));
+      addMetadata("AliceVision:CAGreenParam1", std::to_string(lensParam.ChromaticGreenParams.RadialDistortParam1));
+      addMetadata("AliceVision:CAGreenParam2", std::to_string(lensParam.ChromaticGreenParams.RadialDistortParam2));
+      addMetadata("AliceVision:CAGreenParam3", std::to_string(lensParam.ChromaticGreenParams.RadialDistortParam3));
+      addMetadata("AliceVision:CABlueGreenFocX", std::to_string(lensParam.ChromaticBlueGreenParams.FocalLengthX));
+      addMetadata("AliceVision:CABlueGreenFocY", std::to_string(lensParam.ChromaticBlueGreenParams.FocalLengthY));
+      addMetadata("AliceVision:CABlueGreenCenterX", std::to_string(lensParam.ChromaticBlueGreenParams.ImageXCenter));
+      addMetadata("AliceVision:CABlueGreenCenterY", std::to_string(lensParam.ChromaticBlueGreenParams.ImageYCenter));
+      addMetadata("AliceVision:CABlueGreenParam1", std::to_string(lensParam.ChromaticBlueGreenParams.RadialDistortParam1));
+      addMetadata("AliceVision:CABlueGreenParam2", std::to_string(lensParam.ChromaticBlueGreenParams.RadialDistortParam2));
+      addMetadata("AliceVision:CABlueGreenParam3", std::to_string(lensParam.ChromaticBlueGreenParams.RadialDistortParam3));
+      addMetadata("AliceVision:CABlueGreenScaleFactor", std::to_string(lensParam.ChromaticBlueGreenParams.ScaleFactor));
+      addMetadata("AliceVision:CARedGreenFocX", std::to_string(lensParam.ChromaticRedGreenParams.FocalLengthX));
+      addMetadata("AliceVision:CARedGreenFocY", std::to_string(lensParam.ChromaticRedGreenParams.FocalLengthY));
+      addMetadata("AliceVision:CARedGreenCenterX", std::to_string(lensParam.ChromaticRedGreenParams.ImageXCenter));
+      addMetadata("AliceVision:CARedGreenCenterY", std::to_string(lensParam.ChromaticRedGreenParams.ImageYCenter));
+      addMetadata("AliceVision:CARedGreenParam1", std::to_string(lensParam.ChromaticRedGreenParams.RadialDistortParam1));
+      addMetadata("AliceVision:CARedGreenParam2", std::to_string(lensParam.ChromaticRedGreenParams.RadialDistortParam2));
+      addMetadata("AliceVision:CARedGreenParam3", std::to_string(lensParam.ChromaticRedGreenParams.RadialDistortParam3));
+      addMetadata("AliceVision:CARedGreenScaleFactor", std::to_string(lensParam.ChromaticRedGreenParams.ScaleFactor));
+  }
+
+  /**
+   * @brief Get sensor size by combining info in metadata and in sensor database
+   * @param[in] sensorDatabase The sensor database
+   * @param[out] sensorWidth The sensor width
+   * @param[out] sensorHeight The sensor height
+   * @param[out] focalLengthmm The focal length
+   * @param[out] intrinsicInitMode The intrinsic init mode
+   * @param[in] verbose Enable verbosity
+   * @return An Error or Warning code: 1 - Unknown sensor, 2 - No metadata, 3 - Unsure sensor, 4 - Computation from 35mm Focal
+   */
+  int getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, double& sensorWidth, double& sensorHeight, double& focalLengthmm, camera::EInitMode& intrinsicInitMode,
+                    bool verbose = false);
 
 private:
 

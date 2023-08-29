@@ -203,8 +203,8 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
 
   // Apply undistortion to observation
   sfmData::Observation obsUndistorted = observation;
-  const camera::IntrinsicsScaleOffsetDisto* intrinsicDistortionPtr =
-    dynamic_cast<const camera::IntrinsicsScaleOffsetDisto*>(intrinsicPtr);
+  const camera::IntrinsicScaleOffsetDisto* intrinsicDistortionPtr =
+    dynamic_cast<const camera::IntrinsicScaleOffsetDisto*>(intrinsicPtr);
   if (intrinsicDistortionPtr)
   {
     auto undistortion = intrinsicDistortionPtr->getUndistortion();
@@ -261,8 +261,8 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
 
   // Apply undistortion to observation
   sfmData::Observation obsUndistorted = observation;
-  const camera::IntrinsicsScaleOffsetDisto* intrinsicDistortionPtr =
-    dynamic_cast<const camera::IntrinsicsScaleOffsetDisto*>(intrinsicPtr);
+  const camera::IntrinsicScaleOffsetDisto* intrinsicDistortionPtr =
+    dynamic_cast<const camera::IntrinsicScaleOffsetDisto*>(intrinsicPtr);
   if (intrinsicDistortionPtr)
   {
     auto undistortion = intrinsicDistortionPtr->getUndistortion();
@@ -315,7 +315,7 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
 ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation_first, const Vec2& observation_second)
 {
   double radius = 0.0;
-  const camera::EquiDistant * equi = dynamic_cast<const camera::EquiDistant *>(intrinsicPtr);
+  const camera::Equidistant * equi = dynamic_cast<const camera::Equidistant *>(intrinsicPtr);
   if (equi) {
     radius = equi->getCircleRadius();
   }
@@ -512,7 +512,11 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
-
+  solverOptions.max_num_iterations = _ceresOptions.maxNumIterations;
+  /*solverOptions.function_tolerance = 1e-12;
+  solverOptions.gradient_tolerance = 1e-12;
+  solverOptions.parameter_tolerance = 1e-12;*/
+  
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
 #endif
@@ -700,7 +704,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     // refine the focal length
     if(refineIntrinsicsFocalLength)
     {
-      std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
       if (intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
       {
         // if we have an initial guess, we only authorize a margin around this value.
@@ -721,7 +725,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
 
       focalRatio = intrinsicBlockPtr[0] / intrinsicBlockPtr[1];
 
-      std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      std::shared_ptr<camera::IntrinsicScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
       if (castedcam_iso)
       {
         lockRatio = castedcam_iso->isRatioLocked();

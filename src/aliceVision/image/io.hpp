@@ -506,7 +506,7 @@ struct ColorTypeInfo<RGBAfColor>
 };
 
 bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
-                 const IndexT viewId, const std::string & srcImage);
+                 const IndexT viewId, const std::string& srcImage, const std::string& fileExtension);
 
 /**
  * Returns the value of ALICEVISION_ROOT environmental variable, or empty string if it is not

@@ -45,18 +45,59 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
     auto& intrTest = sfmTest.getIntrinsics();
     BOOST_CHECK(intrTest.empty());
     // add some compatible intrinsics
-    intrTest.emplace(10, std::make_shared<camera::Pinhole>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54));
-    intrTest.emplace(11, std::make_shared<camera::PinholeRadialK1>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078));
-    intrTest.emplace(12, std::make_shared<camera::PinholeRadialK3>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714));
-    intrTest.emplace(13, std::make_shared<camera::PinholeBrownT2>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134, -0.000542));
-    intrTest.emplace(14, std::make_shared<camera::PinholeFisheye>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134));
-    intrTest.emplace(15, std::make_shared<camera::PinholeFisheye1>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.000542));
+    intrTest.emplace(10,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA,
+            1920, 1080, 1548.76, 1547.32, 992.36, 549.54));
+    intrTest.emplace(11,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
+            1920, 1080, 1548.76, 1547.32, 992.36, 549.54,
+            {-0.02078}));
+    intrTest.emplace(12,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,
+            1920, 1080, 1548.76, 1547.32, 992.36, 549.54,
+            {-0.02078, 0.1705, -0.00714}));
+    intrTest.emplace(13,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
+            1920, 1080, 1548.76, 1547.32, 992.36, 549.54,
+            {-0.02078, 0.1705, -0.00714, 0.00134, -0.000542}));
+    intrTest.emplace(14,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
+            1920, 1080, 1548.76, 1547.32, 992.36, 549.54,
+            {-0.02078, 0.1705, -0.00714, 0.00134}));
+    intrTest.emplace(15,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1,
+            1920, 1080, 1548.76, 1547.32, 992.36, 549.54,
+            {-0.000542}));
     // add some incompatible intrinsics
-    intrTest.emplace(20, std::make_shared<camera::Pinhole3DEAnamorphic4>(1920, 1080));
-    intrTest.emplace(21, std::make_shared<camera::Pinhole3DEClassicLD>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134, -0.000542));
-    intrTest.emplace(22, std::make_shared<camera::Pinhole3DERadial4>(1920, 1080, 1548.76, 1547.32, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134, -0.00714, 0.00134));
-    intrTest.emplace(23, std::make_shared<camera::EquiDistant>(1920, 1080, 1548.76, 992.36, 549.54, -0.02078));
-    intrTest.emplace(24, std::make_shared<camera::EquiDistantRadialK3>(1920, 1080, 1548.76, 992.36, 549.54, -0.02078, 0.1705, -0.00714, 0.00134));
+    intrTest.emplace(20,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4,
+            1920, 1080, 0., 0., 0., 0.));
+    intrTest.emplace(21,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD,
+            1920, 1080, 1548.76, 1547.32, 992.36, 549.54,
+            {-0.02078, 0.1705, -0.00714, 0.00134, -0.000542}));
+    intrTest.emplace(22,
+        camera::createPinhole(
+            camera::EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4,
+            1920, 1080, 1548.76, 1547.32, 992.36, 549.54,
+            {-0.02078, 0.1705, -0.00714, 0.00134, -0.00714, 0.00134}));
+    intrTest.emplace(23,
+        camera::createEquidistant(
+            camera::EINTRINSIC::EQUIDISTANT_CAMERA,
+            1920, 1080, 1548.76, 549.54, -0.02078));
+    intrTest.emplace(24,
+        camera::createEquidistant(
+            camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3,
+            1920, 1080, 1548.76, 549.54, -0.02078,
+            {0.1705, -0.00714, 0.00134}));
 
     // reference for each intrinsic ID the relevant expected string
     const std::map<IndexT, std::string> stringRef{

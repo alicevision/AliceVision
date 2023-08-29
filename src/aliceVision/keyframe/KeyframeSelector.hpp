@@ -17,8 +17,8 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include <string>
-#include <deque>
 #include <map>
+#include <mutex>
 #include <vector>
 #include <memory>
 #include <limits>
@@ -40,13 +40,15 @@ class KeyframeSelector
 public:
     /**
      * @brief KeyframeSelector constructor
-     * @param[in] mediaPath video file path, image sequence directory or SfMData file
+     * @param[in] mediaPaths video file path, image sequence directory or SfMData file
+     * @param[in] maskPaths paths to directories containing masks to apply to input frames
      * @param[in] sensorDbPath camera sensor width database path
      * @param[in] outputFolder output keyframes directory
      * @param[in] outputSfmKeyframes output SfMData file containing the keyframes
      * @param[in] outputSfmFrames output SfMData file containing all the non-selected frames
      */
     KeyframeSelector(const std::vector<std::string>& mediaPaths,
+                     const std::vector<std::string>& maskPaths,
                      const std::string& sensorDbPath,
                      const std::string& outputFolder,
                      const std::string& outputSfmKeyframes,
@@ -182,6 +184,15 @@ public:
     }
 
     /**
+     * @brief Set the minimum size of the blocks of frames for the multi-threading
+     * @param[in] blockSize minimum number of frames in a block for a thread to be spawned
+     */
+    void setMinBlockSize(std::size_t blockSize)
+    {
+        _minBlockSize = blockSize;
+    }
+
+    /**
      * @brief Get the minimum frame step parameter for the processing algorithm
      * @return minimum number of frames between two keyframes
      */
@@ -219,7 +230,7 @@ public:
     
 private:
     /**
-     * @brief Read an image from a feed provider into a grayscale OpenCV matrix, and rescale it if a size is provided.
+     * @brief Read an image from a feed provider into a grayscale OpenCV matrix, and rescale it if a size is provided
      * @param[in] feed The feed provider
      * @param[in] width The width to resize the input image to. The height will be adjusted with respect to the size ratio.
      *                  There will be no resizing if this parameter is set to 0
@@ -227,13 +238,49 @@ private:
      */
     cv::Mat readImage(dataio::FeedProvider &feed, std::size_t width = 0);
 
+
+    /**
+     * @brief Compute the sharpness and optical flow scores for the input media paths for a given range of frames
+     * @param[in] startFrame the index of the first frame to compute the scores for
+     * @param[in] endFrame the index of the last frame to compute the scores for
+     * @param[in] nbFrames the total number of frames in the sequence
+     * @param[in] rescaledWidthSharpness the width to resize the input frames to before using them to compute the
+     *            sharpness scores (if equal to 0, no rescale will be performed)
+     * @param[in] rescaledWidthFlow the width to resize the input frames to before using them to compute the
+     *            motion scores (if equal to 0, no rescale will be performed)
+     * @param[in] sharpnessWindowSize the size of the sliding window used to compute sharpness scores, in pixels
+     * @param[in] flowCellSize the size of the cells within a frame that are used to compute the optical flow scores,
+     *            in pixels
+     * @param[in] skipSharpnessComputation if true, the sharpness score computations will not be performed and a fixed
+     *            sharpness score will be given to all the input frames
+     * @return true if the scores have been successfully computed for all frames, false otherwise
+     */
+    bool computeScoresProc(const std::size_t startFrame, const std::size_t endFrame, const std::size_t nbFrames,
+                           const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
+                           const std::size_t sharpnessWindowSize, const std::size_t flowCellSize,
+                           const bool skipSharpnessComputation);
+
     /**
      * @brief Compute the sharpness scores for an input grayscale frame with a sliding window
      * @param[in] grayscaleImage the input grayscale matrix of the frame
      * @param[in] windowSize the size of the sliding window
+     * @param[in] mask the mask associated to the input frame if it exists, an empty cv::Mat otherwise
      * @return a double value representing the sharpness score of the sharpest tile in the image
      */
-    double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize);
+    double computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize, const cv::Mat& mask);
+
+    /**
+     * @brief Compute the standard deviation of the local averaged Laplacian in an image
+     * @param[in] sum the (masked) integral image of the Laplacian of a given image
+     * @param[in] squaredSum the (masked) squared integral image of the Laplacian of a given image
+     * @param[in] x the x-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param[in] y the y-coordinate of the top-left corner of the window for the local standard deviation computation
+     * @param[in] windowSize the size of the window along the x- and y-axis for the local standard deviation computation
+     * @param[in] mask the mask associated to the frame the integral and integral images were calculated from
+     * @return a const double value representating the local standard deviation of the Laplacian
+     */
+    const double computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x, const int y,
+                                     const int windowSize, const cv::Mat& mask);
 
     /**
      * @brief Estimate the optical flow score for an input grayscale frame based on its previous frame cell by cell
@@ -241,10 +288,11 @@ private:
      * @param[in] grayscaleImage the grayscale matrix of the current frame
      * @param[in] previousGrayscaleImage the grayscale matrix of the previous frame
      * @param[in] cellSize the size of the evaluated cells within the frame
+     * @param[in] mask the mask associated to the current frame if it exists, an empty cv::Mat otherwise
      * @return a double value representing the median motion of all the image's cells
      */
     double estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
-                        const cv::Mat& previousGrayscaleImage, const std::size_t cellSize);
+                        const cv::Mat& previousGrayscaleImage, const std::size_t cellSize, const cv::Mat& mask);
 
     /**
      * @brief Write the output SfMData files with the selected and non-selected keyframes information
@@ -310,6 +358,8 @@ private:
 
     /// Media paths
     std::vector<std::string> _mediaPaths;
+    /// Mask paths
+    std::vector<std::string> _maskPaths;
     /// Camera sensor width database
     std::string _sensorDbPath;
     /// Output folder for keyframes
@@ -333,10 +383,13 @@ private:
     /// Minimum number of output frames
     unsigned int _minOutFrames = 10;
 
+    /// Minimum block size for multi-threading
+    std::size_t _minBlockSize = 10;
+
     /// Sharpness scores for each frame
-    std::vector<double> _sharpnessScores;
+    std::map<std::size_t, double> _sharpnessScores;
     /// Optical flow scores for each frame
-    std::vector<double> _flowScores;
+    std::map<std::size_t, double> _flowScores;
     /// Vector containing 1s for frames that have been selected, 0 for those which have not
     std::vector<char> _selectedFrames;
 
@@ -357,7 +410,10 @@ private:
     std::map<std::size_t, std::vector<std::string>> _keyframesPaths;
 
     /// Map score vectors with names for export
-    std::map<const std::string, const std::vector<double>*> scoresMap;
+    std::map<const std::string, const std::map<std::size_t, double>*> scoresMap;
+
+    /// Mutex to ensure thread-safe operations
+    mutable std::mutex _mutex;
 };
 
 } // namespace keyframe 

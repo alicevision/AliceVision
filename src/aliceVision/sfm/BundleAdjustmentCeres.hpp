@@ -35,9 +35,10 @@ public:
    */
   struct CeresOptions
   {
-    CeresOptions(bool verbose = true, bool multithreaded = true)
+    CeresOptions(bool verbose = true, bool multithreaded = true, unsigned int maxIterations = 50)
       : verbose(verbose)
       , nbThreads(multithreaded ? omp_get_max_threads() : 1) // set number of threads, 1 if OpenMP is not enabled
+      , maxNumIterations(maxIterations)
     {
       setDenseBA(); // use dense BA by default
       lossFunction.reset(new ceres::HuberLoss(Square(4.0)));
@@ -51,6 +52,7 @@ public:
     ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
     std::shared_ptr<ceres::LossFunction> lossFunction;
     unsigned int nbThreads;
+    unsigned int maxNumIterations;
     bool useParametersOrdering = true;
     bool summary = false;
     bool verbose = true;

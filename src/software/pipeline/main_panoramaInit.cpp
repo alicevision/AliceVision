@@ -1,3 +1,9 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -1266,19 +1272,19 @@ int main(int argc, char* argv[])
         for(auto& intrinsic_pair : intrinsics)
         {
             std::shared_ptr<camera::IntrinsicBase>& intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicSO =
-                std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
-            std::shared_ptr<camera::EquiDistantRadialK3> equidistant =
-                std::dynamic_pointer_cast<camera::EquiDistantRadialK3>(intrinsic);
+            std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicSO =
+                std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
+            std::shared_ptr<camera::Equidistant> equidistant =
+                std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
 
             if(intrinsicSO != nullptr && equidistant == nullptr)
             {
                 ALICEVISION_LOG_INFO("Replace intrinsic " << intrinsic_pair.first << " of type "
                                                           << intrinsic->getTypeStr()
-                                                          << " to an EquiDistant camera model.");
-                // convert non-EquiDistant intrinsics to EquiDistant
-                std::shared_ptr<camera::EquiDistantRadialK3> newEquidistant =
-                    std::dynamic_pointer_cast<camera::EquiDistantRadialK3>(
+                                                          << " to an Equidistant camera model.");
+                // convert non-Equidistant intrinsics to Equidistant
+                std::shared_ptr<camera::Equidistant> newEquidistant =
+                    std::dynamic_pointer_cast<camera::Equidistant>(
                         camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3));
 
                 newEquidistant->copyFrom(*intrinsicSO);
@@ -1355,14 +1361,14 @@ int main(int argc, char* argv[])
         for(const auto& intrinsic_pair : intrinsics)
         {
             std::shared_ptr<camera::IntrinsicBase> intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::EquiDistant> equidistant =
-                std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+            std::shared_ptr<camera::Equidistant> equidistant =
+                std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
             if(!equidistant)
             {
                 // skip non equidistant cameras
                 continue;
             }
-            ALICEVISION_LOG_INFO("Update EquiDistant camera intrinsic " << intrinsic_pair.first
+            ALICEVISION_LOG_INFO("Update Equidistant camera intrinsic " << intrinsic_pair.first
                                                                         << " with center and offset.");
 
             equidistant->setCircleCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset(0));

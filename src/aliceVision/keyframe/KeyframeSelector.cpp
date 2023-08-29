@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <fstream>
+#include <thread>
 
 
 namespace fs = boost::filesystem;
@@ -64,15 +65,17 @@ double findMedian(const std::vector<double>& vec)
 }
 
 KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
+                                   const std::vector<std::string>& maskPaths,
                                    const std::string& sensorDbPath,
                                    const std::string& outputFolder,
                                    const std::string& outputSfmKeyframes,
                                    const std::string& outputSfmFrames)
-    : _mediaPaths(mediaPaths)
-    , _sensorDbPath(sensorDbPath)
-    , _outputFolder(outputFolder)
-    , _outputSfmKeyframesPath(outputSfmKeyframes)
-    , _outputSfmFramesPath(outputSfmFrames)
+    : _mediaPaths(mediaPaths),
+      _maskPaths(maskPaths),
+      _sensorDbPath(sensorDbPath),
+      _outputFolder(outputFolder),
+      _outputSfmKeyframesPath(outputSfmKeyframes),
+      _outputSfmFramesPath(outputSfmFrames)
 {
     // Check that a least one media file path has been provided
     if (mediaPaths.empty()) {
@@ -144,6 +147,9 @@ void KeyframeSelector::processRegular()
             step = _maxFrameStep;
         }
     }
+
+    // Ensure the step is always larger than 0, thus ensuring that the 'for' loop will always run smoothly
+    step = std::max(step, static_cast<unsigned int>(1));
 
     for (unsigned int id = 0; id < nbFrames; id += step) {
         ALICEVISION_LOG_INFO("Selecting frame with ID " << id);
@@ -317,9 +323,103 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
     _frameWidth = 0;
     _frameHeight = 0;
 
-    // Create feeds and count minimum number of frames
+    // Create single feed and count minimum number of frames
     std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
+
+    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
+        const auto& path = _mediaPaths.at(mediaIndex);
+
+        // Create a feed provider per mediaPaths
+        auto feed = std::make_unique<dataio::FeedProvider>(path);
+
+        // Check if feed is initialized
+        if (!feed->isInit()) {
+            ALICEVISION_THROW(std::invalid_argument, "Cannot initialize the FeedProvider with " << path);
+        }
+
+        // Number of frames in the rig might slightly differ
+        nbFrames = std::min(nbFrames, static_cast<std::size_t>(feed->nbFrames()));
+
+        if (mediaIndex == 0) {
+            // Read first image and set _frameWidth and _frameHeight, since the feeds have been initialized
+            feed->goToFrame(0);
+            cv::Mat mat = readImage(*feed, rescaledWidthFlow);
+            // Will be used later on to determine the motion accumulation step
+            _frameWidth = mat.size().width;
+            _frameHeight = mat.size().height;
+        }
+
+        if  (_maskPaths.size() > 0) {
+            const auto& maskPath = _maskPaths.at(mediaIndex);
+            auto maskFeed = std::make_unique<dataio::FeedProvider>(maskPath);
+
+            if (!maskFeed->isInit()) {
+                ALICEVISION_THROW(std::invalid_argument, "Invalid path to masks: " << maskPath);
+            }
+
+            const std::size_t nbMasks = static_cast<std::size_t>(feed->nbFrames());
+            if (nbMasks != nbFrames) {
+                ALICEVISION_THROW_ERROR("The number of masks does not match the number of frames.");
+            }
+        }
+    }
+
+    // Check if minimum number of frame is zero
+    if (nbFrames == 0) {
+        ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or is empty!");
+    }
+
+    // With the number of threads available and the number of frames to process known,
+    // blocks can be prepared for multi-threading
+    int nbThreads = omp_get_max_threads();
+
+    std::size_t blockSize = (nbFrames / static_cast<std::size_t>(nbThreads)) + 1;
+
+    // If a block contains less than _minBlockSize frames (when there are lots of available threads for a small number
+    // of frames, for example), resize it: less threads will be spawned, but since new FeedProvider objects need to be
+    // created for each thread, we prevent spawing thread that will need to create FeedProvider objects
+    // for very few frames.
+    if (blockSize < _minBlockSize && nbFrames >= _minBlockSize) {
+        blockSize = _minBlockSize;
+        nbThreads = static_cast<int>(nbFrames / blockSize) + 1;  // +1 to ensure that every frame in processed by a thread
+    }
+
+    std::vector<std::thread> threads;
+    ALICEVISION_LOG_INFO("Splitting " << nbFrames << " frames into " << nbThreads << " threads of size " << blockSize << ".");
+
+    for (std::size_t i = 0; i < nbThreads; i++) {
+        std::size_t startFrame = static_cast<std::size_t>(std::max(0, static_cast<int>(i * blockSize) - 1));
+        std::size_t endFrame = std::min(i * blockSize + blockSize, nbFrames);
+
+        // If there is an extra thread with no new frames to process, skip it.
+        // This might occur as a consequence of the "+1" when adjusting the number of threads.
+        if (startFrame >= nbFrames) {
+            break;
+        }
+
+        ALICEVISION_LOG_DEBUG("Starting thread to compute scores for frame " << startFrame << " to " << endFrame << ".");
+
+        threads.push_back(std::thread(&KeyframeSelector::computeScoresProc, this, startFrame, endFrame, nbFrames,
+                                      rescaledWidthSharpness, rescaledWidthFlow, sharpnessWindowSize, flowCellSize,
+                                      skipSharpnessComputation));
+    }
+
+    for (auto &th : threads) {
+        th.join();
+    }
+
+    return true;
+}
+
+bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std::size_t endFrame,
+                                         const std::size_t nbFrames, const std::size_t rescaledWidthSharpness,
+                                         const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
+                                         const std::size_t flowCellSize, const bool skipSharpnessComputation)
+{
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
+    std::vector<std::unique_ptr<dataio::FeedProvider>> maskFeeds;
+
+    const bool masksProvided = _maskPaths.size() > 0;
 
     for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
         const auto& path = _mediaPaths.at(mediaIndex);
@@ -333,46 +433,71 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
             ALICEVISION_THROW(std::invalid_argument, "Cannot initialize the FeedProvider with " << path);
         }
 
-        // Update minimum number of frames
-        nbFrames = std::min(nbFrames, (size_t)feed.nbFrames());
-    }
+        if (masksProvided) {
+            const auto& maskPath = _maskPaths.at(mediaIndex);
 
-    // Check if minimum number of frame is zero
-    if (nbFrames == 0) {
-        ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or is empty!");
+            // Create a feed provider per mask directory
+            maskFeeds.push_back(std::make_unique<dataio::FeedProvider>(maskPath));
+            const auto& maskFeed = *maskFeeds.back();
+
+            if (!maskFeed.isInit()) {
+                ALICEVISION_THROW(std::invalid_argument, "Invalid path to masks: " << maskPath);
+            }
+        }
     }
 
     // Feed provider variables
-    image::Image<image::RGBColor> image;     // original image
-    camera::PinholeRadialK3 queryIntrinsics; // image associated camera intrinsics
+    camera::Pinhole queryIntrinsics;         // image associated camera intrinsics
     bool hasIntrinsics = false;              // true if queryIntrinsics is valid
+
+    // Input feed provider variables
+    image::Image<image::RGBColor> image;     // original image
     std::string currentImgName;              // current image name
+
+    // Mask feed provider variables
+    image::Image<image::RGBColor> mask;     // original mask
+    std::string currentMaskName;            // current mask name
+
 
     // Feed and metadata initialization
     for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
         // First frame with offset
-        feeds.at(mediaIndex)->goToFrame(0);
+        feeds.at(mediaIndex)->goToFrame(startFrame);
 
         if (!feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
             ALICEVISION_THROW(std::invalid_argument, "Cannot read media first frame " << _mediaPaths[mediaIndex]);
         }
+
+        if (masksProvided) {
+            maskFeeds.at(mediaIndex)->goToFrame(startFrame);
+            if (!maskFeeds.at(mediaIndex)->readImage(mask, queryIntrinsics, currentMaskName, hasIntrinsics)) {
+                ALICEVISION_THROW(std::invalid_argument, "Cannot read mask media first frame " << _maskPaths[mediaIndex]);
+            }
+        }
     }
 
-    std::size_t currentFrame = 0;
+    std::size_t currentFrame = startFrame;
     cv::Mat currentMatSharpness;  // OpenCV matrix for the sharpness computation
     cv::Mat previousMatFlow, currentMatFlow;  // OpenCV matrices for the optical flow computation
     auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
 
-    while (currentFrame < nbFrames) {
+    cv::Mat currentMatFlowMask, currentMatMask;  // OpenCV matrices that will contain the masks
+
+    while (currentFrame < endFrame) {
         double minimalSharpness = skipSharpnessComputation ? 1.0f : std::numeric_limits<double>::max();
         double minimalFlow = std::numeric_limits<double>::max();
 
         for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
             auto& feed = *feeds.at(mediaIndex);
 
-            if (currentFrame > 0) {  // Get currentFrame - 1 for the optical flow computation
+            if (currentFrame > startFrame) {  // Get currentFrame - 1 for the optical flow computation
                 previousMatFlow = readImage(feed, rescaledWidthFlow);
                 feed.goToNextFrame();
+
+                if (masksProvided) {
+                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                    maskFeed.goToNextFrame();
+                }
             }
 
             /* Handle input feeds that may have invalid or missing frames:
@@ -380,63 +505,85 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
              *   - try reading the next frame instead
              *   - if the next frame is correctly read, then push dummy scores for the invalid frame and go on with
              *     the process
-             *   - otherwise (feed not correctly moved to the next frame), throw a runtime error exception as something
-             *     is wrong with the video
+             *   - otherwise (feed not correctly moved to the next frame), keep on going to the next frame until it is
+             *     valid or the end of the feed is reached
              */
             if (!skipSharpnessComputation) {
                 try {
                     // Read image for sharpness and rescale it if requested
                     currentMatSharpness = readImage(feed, rescaledWidthSharpness);
+                    if (masksProvided) {
+                        auto &maskFeed = *maskFeeds.at(mediaIndex);
+                        currentMatMask = readImage(maskFeed, rescaledWidthSharpness);
+                    }
                 } catch (const std::invalid_argument& ex) {
-                    // currentFrame + 1 = currently evaluated frame with indexing starting at 1, for display reasons
-                    // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
-                    ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
-                                            << ", attempting to read frame " << currentFrame + 2 << ".");
-                    bool success = feed.goToFrame(++currentFrame);
-                    if (success) {
-                        // Will throw an exception if next frame is also invalid
-                        currentMatSharpness = readImage(feed, rescaledWidthSharpness);
-                        // If no exception has been thrown, push dummy scores for the frame that was skipped
-                        _sharpnessScores.push_back(-1.f);
-                        _flowScores.push_back(-1.f);
-                    } else
-                        ALICEVISION_THROW_ERROR("Could not go to frame " << currentFrame + 1
-                                                << " either. The feed might be corrupted.");
+                    bool success = false;
+                    while (!success && currentFrame < nbFrames) {
+                        // currentFrame + 1 = currently evaluated frame with indexing starting at 1, for display reasons
+                        // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
+                        ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
+                                                << ", attempting to read frame " << currentFrame + 2 << ".");
+
+                        {
+                            // Push dummy scores for the frame that was skipped
+                            const std::scoped_lock lock(_mutex);
+                            _sharpnessScores[currentFrame] = -1.f;
+                            _flowScores[currentFrame] = -1.f;
+                        }
+
+                        success = feed.goToFrame(++currentFrame);
+                        if (success) {
+                            currentMatSharpness = readImage(feed, rescaledWidthSharpness);
+
+                            if (masksProvided) {
+                                auto &maskFeed = *maskFeeds.at(mediaIndex);
+                                maskFeed.goToFrame(currentFrame);
+                                currentMatMask = readImage(maskFeed, rescaledWidthSharpness);
+                            }
+                        }
+                    }
                 }
             }
 
             if (rescaledWidthSharpness == rescaledWidthFlow && !skipSharpnessComputation) {
                 currentMatFlow = currentMatSharpness;
+                if (masksProvided) {
+                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                    currentMatFlowMask = currentMatMask;
+                }
             } else {
                 currentMatFlow = readImage(feed, rescaledWidthFlow);
-            }
-
-            if (_frameWidth == 0 && _frameHeight == 0) {  // Will be used later on to determine the motion accumulation step
-                _frameWidth = currentMatFlow.size().width;
-                _frameHeight = currentMatFlow.size().height;
+                if (masksProvided) {
+                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                    currentMatFlowMask = readImage(maskFeed, rescaledWidthFlow);
+                }
             }
 
             // Compute sharpness
             if (!skipSharpnessComputation) {
-                const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize);
+                const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize, currentMatMask);
                 minimalSharpness = std::min(minimalSharpness, sharpness);
             }
 
             // Compute optical flow
-            if (currentFrame > 0) {
-                const double flow = estimateFlow(ptrFlow, currentMatFlow, previousMatFlow, flowCellSize);
+            if (currentFrame > startFrame) {
+                const double flow = estimateFlow(ptrFlow, currentMatFlow, previousMatFlow, flowCellSize,
+                                                 currentMatFlowMask);
                 minimalFlow = std::min(minimalFlow, flow);
             }
 
-            ALICEVISION_LOG_INFO("Finished processing frame " << currentFrame + 1 << "/" << nbFrames);
+            std::string rigInfo = feeds.size() > 1 ? " (media " + std::to_string(mediaIndex + 1) + "/" + std::to_string(feeds.size()) + ")" : "";
+            ALICEVISION_LOG_INFO("Finished processing frame " << currentFrame + 1 << "/" << nbFrames << rigInfo);
         }
 
-        // Save scores for the current frame
-        _sharpnessScores.push_back(minimalSharpness);
-        _flowScores.push_back(currentFrame > 0 ? minimalFlow : -1.f);
+        {
+            // Save scores for the current frame
+            const std::scoped_lock lock(_mutex);
+            _sharpnessScores[currentFrame] = minimalSharpness;
+            _flowScores[currentFrame] = currentFrame > startFrame ? minimalFlow : -1.f;
+        }
         ++currentFrame;
     }
-
     return true;
 }
 
@@ -448,7 +595,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                                       const image::EStorageDataType storageDataType)
 {
     image::Image<image::RGBColor> image;
-    camera::PinholeRadialK3 queryIntrinsics;
+    camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
 
@@ -504,8 +651,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                 metadata.push_back(oiio::ParamValue("Exif:FocalLength", mmFocals[id]));
                 metadata.push_back(oiio::ParamValue("Exif:ImageUniqueID", std::to_string(getRandomInt())));
                 metadata.push_back(oiio::ParamValue("Orientation", orientation));  // Will not propagate for PNG outputs
-                if (outputExtension != "jpg")  // TODO: propagate pixelAspectRatio properly for JPG
-                    metadata.push_back(oiio::ParamValue("PixelAspectRatio", pixelAspectRatio));
+                metadata.push_back(oiio::ParamValue("PixelAspectRatio", pixelAspectRatio));
 
                 fs::path folder = _outputFolder;
                 std::ostringstream filenameSS;
@@ -712,7 +858,7 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
 cv::Mat KeyframeSelector::readImage(dataio::FeedProvider &feed, std::size_t width)
 {
     image::Image<image::RGBColor> image;
-    camera::PinholeRadialK3 queryIntrinsics;
+    camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
 
@@ -740,7 +886,8 @@ cv::Mat KeyframeSelector::readImage(dataio::FeedProvider &feed, std::size_t widt
     return cvRescaled;
 }
 
-double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize)
+double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize,
+                                          const cv::Mat& mask)
 {
     if (windowSize > grayscaleImage.size().width || windowSize > grayscaleImage.size().height) {
         ALICEVISION_THROW(std::invalid_argument,
@@ -749,39 +896,95 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
                           << grayscaleImage.size().height << ")");
     }
 
+    if (!mask.empty() && (mask.size().width != grayscaleImage.size().width ||
+                          mask.size().height != grayscaleImage.size().height)) {
+        ALICEVISION_THROW(std::invalid_argument,
+                          "The sizes of the frame and the mask differ (image size: " << grayscaleImage.size().width
+                          << "x" << grayscaleImage.size().height << ", mask size: " << mask.size().width << "x"
+                          << mask.size().height << ")");
+    }
+
     cv::Mat sum, squaredSum, laplacian;
     cv::Laplacian(grayscaleImage, laplacian, CV_64F);
     cv::integral(laplacian, sum, squaredSum);
 
-    double totalCount = windowSize * windowSize;
+    cv::Mat maskedSum = sum;
+    cv::Mat maskedSquaredSum = squaredSum;
+    cv::Mat paddedMask;
+    // If the mask exists, apply it directly on the integral and squared integral images:
+    // The sharpness information will still be retained but the masked pixels will now appear as 0s,
+    // and they will be counted out during the standard deviation computation.
+    if (!mask.empty()) {
+        // The integral matrices are padded, so the mask needs it as well
+        paddedMask = cv::Mat(sum.size(), CV_8UC1, 255);
+        mask.copyTo(paddedMask(cv::Rect(1, 1, paddedMask.size().width - 1, paddedMask.size().height - 1)));
+        sum.copyTo(maskedSum, paddedMask);
+        squaredSum.copyTo(maskedSquaredSum, paddedMask);
+    }
+
     double maxstd = 0.0;
+    int x, y;
 
-    // TODO: do not slide the window pixel by pixel to speed up computations
     // Starts at 1 because the integral image is padded with 0s on the top and left borders
-    for (int y = 1; y < sum.rows - windowSize; ++y) {
-        for (int x = 1; x < sum.cols - windowSize; ++x) {
-            double tl = sum.at<double>(y, x);
-            double tr = sum.at<double>(y, x + windowSize);
-            double bl = sum.at<double>(y + windowSize, x);
-            double br = sum.at<double>(y + windowSize, x + windowSize);
-            const double s1 = br + tl - tr - bl;
-
-            tl = squaredSum.at<double>(y, x);
-            tr = squaredSum.at<double>(y, x + windowSize);
-            bl = squaredSum.at<double>(y + windowSize, x);
-            br = squaredSum.at<double>(y + windowSize, x + windowSize);
-            const double s2 = br + tl - tr - bl;
-
-            const double std2 = std::sqrt((s2 - (s1 * s1) / totalCount) / totalCount);
-            maxstd = std::max(maxstd, std2);
+    for (y = 1; y < sum.rows - windowSize; y += windowSize / 4) {
+        for (x = 1; x < sum.cols - windowSize; x += windowSize / 4) {
+            maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
         }
+
+        // Compute sharpness over the last part of the image for windowSize along the x-axis;
+        // the overlap with the previous window might be greater than the previous ones
+        if (x >= sum.cols - windowSize) {
+            x = sum.cols - windowSize - 1;
+            maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
+        }
+    }
+
+    // Compute sharpness over the last part of the image for windowSize along the y-axis;
+    // the overlap with the previous window might be greater than the previous ones
+    if (y >= sum.rows - windowSize) {
+        y = sum.rows - windowSize - 1;
+        maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
     }
 
     return maxstd;
 }
 
+const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x,
+                                                   const int y, const int windowSize, const cv::Mat &mask)
+{
+    double totalCount = windowSize * windowSize;
+
+    double tl = sum.at<double>(y, x);
+    double tr = sum.at<double>(y, x + windowSize);
+    double bl = sum.at<double>(y + windowSize, x);
+    double br = sum.at<double>(y + windowSize, x + windowSize);
+    const double s1 = br + tl - tr - bl;
+
+    tl = squaredSum.at<double>(y, x);
+    tr = squaredSum.at<double>(y, x + windowSize);
+    bl = squaredSum.at<double>(y + windowSize, x);
+    br = squaredSum.at<double>(y + windowSize, x + windowSize);
+    const double s2 = br + tl - tr - bl;
+
+    if (!mask.empty()) {
+        // Count the number of pixels that are non-masked. Masked pixels are 0s.
+        cv::Mat maskROI = mask(cv::Rect(x, y, windowSize, windowSize));
+        totalCount = cv::countNonZero(maskROI);
+    }
+
+    const double var = (s2 - (s1 * s1) / totalCount) / totalCount;
+    // If the variance is negative or if less than 50% of the window is not covered by the mask,
+    // return an invalid value.
+    if (var < 0.0 || totalCount < windowSize * windowSize * 0.5) {
+        return -1.0f;
+    }
+
+    return std::sqrt(var);
+}
+
 double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
-                                      const cv::Mat& previousGrayscaleImage, const std::size_t cellSize)
+                                      const cv::Mat& previousGrayscaleImage, const std::size_t cellSize,
+                                      const cv::Mat& mask)
 {
     if (cellSize > grayscaleImage.size().width) {  // If the cell size is bigger than the height, it will be adjusted
         ALICEVISION_THROW(std::invalid_argument,
@@ -797,32 +1000,76 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
                           << ")");
     }
 
+    if (!mask.empty() && (grayscaleImage.size().width != mask.size().width ||
+        grayscaleImage.size().height != mask.size().height)) {
+        ALICEVISION_THROW(std::invalid_argument,
+                          "The sizes of the framse and the masks differ (image size: " << grayscaleImage.size().width
+                          << "x" << grayscaleImage.size().height << ", mask size: " << mask.size().width << "x"
+                          << mask.size().height << ")");
+    }
+
     cv::Mat flow;
     ptrFlow->calc(grayscaleImage, previousGrayscaleImage, flow);
 
     cv::Mat sumflow;
     cv::integral(flow, sumflow, CV_64F);
 
+    cv::Mat maskedSumflow = sumflow;
+    cv::Mat paddedMask;
+    if (!mask.empty()) {
+        // The integral matrix is padded, so the mask needs it as well
+        paddedMask = cv::Mat(sumflow.size(), CV_8UC1, 255);
+        mask.copyTo(paddedMask(cv::Rect(1, 1, paddedMask.size().width - 1, paddedMask.size().height - 1)));
+
+        // Split sumflow into independent channels: this makes applying the masks on both channels easier
+        cv::Mat xyChannels[2];
+        cv::split(sumflow, xyChannels);
+
+        // Apply the masks on both channels
+        cv::Mat xChannel, yChannel;
+        xyChannels[0].copyTo(xChannel, paddedMask);
+        xyChannels[1].copyTo(yChannel, paddedMask);
+
+        // Merge back the channels together
+        std::vector<cv::Mat> channels = { xyChannels[0], xyChannels[1] };
+        cv::merge(channels, maskedSumflow);
+    }
+
     double norm;
     std::vector<double> motionByCell;
 
     // Starts at 1 because the integral matrix is padded with 0s on the top and left borders
-    for (std::size_t y = 1; y < sumflow.size().height; y += cellSize) {
+    for (std::size_t y = 1; y < maskedSumflow.size().height; y += cellSize) {
         std::size_t maxCellSizeHeight = cellSize;
-        if (std::min(sumflow.size().height, int(y + cellSize)) == sumflow.size().height)
-            maxCellSizeHeight = sumflow.size().height - y;
+        if (std::min(maskedSumflow.size().height, int(y + cellSize)) == maskedSumflow.size().height)
+            maxCellSizeHeight = maskedSumflow.size().height - y;
 
-        for (std::size_t x = 1; x < sumflow.size().width; x += cellSize) {
+        for (std::size_t x = 1; x < maskedSumflow.size().width; x += cellSize) {
             std::size_t maxCellSizeWidth = cellSize;
-            if (std::min(sumflow.size().width, int(x + cellSize)) == sumflow.size().width)
-                maxCellSizeWidth = sumflow.size().width - x;
-            cv::Point2d tl = sumflow.at<cv::Point2d>(y, x);
-            cv::Point2d tr = sumflow.at<cv::Point2d>(y, x + maxCellSizeWidth - 1);
-            cv::Point2d bl = sumflow.at<cv::Point2d>(y + maxCellSizeHeight - 1, x);
-            cv::Point2d br = sumflow.at<cv::Point2d>(y + maxCellSizeHeight - 1, x + maxCellSizeWidth - 1);
+            if (std::min(maskedSumflow.size().width, int(x + cellSize)) == maskedSumflow.size().width)
+                maxCellSizeWidth = maskedSumflow.size().width - x;
+            cv::Point2d tl = maskedSumflow.at<cv::Point2d>(y, x);
+            cv::Point2d tr = maskedSumflow.at<cv::Point2d>(y, x + maxCellSizeWidth - 1);
+            cv::Point2d bl = maskedSumflow.at<cv::Point2d>(y + maxCellSizeHeight - 1, x);
+            cv::Point2d br = maskedSumflow.at<cv::Point2d>(y + maxCellSizeHeight - 1, x + maxCellSizeWidth - 1);
             cv::Point2d s = br + tl - tr - bl;
-            norm = std::hypot(s.x, s.y) / (maxCellSizeHeight * maxCellSizeWidth);
-            motionByCell.push_back(norm);
+
+            const double hypot = std::hypot(s.x, s.y);
+            double totalCount = maxCellSizeWidth * maxCellSizeHeight;
+
+            if (!mask.empty()) {
+                // Count the number of pixels that are non-masked. Masked pixels are 0s.
+                cv::Mat maskROI = paddedMask(cv::Rect(x, y, maxCellSizeWidth, maxCellSizeHeight));
+                totalCount = cv::countNonZero(maskROI);
+            }
+
+            if (totalCount > maxCellSizeWidth * maxCellSizeHeight * 0.5) {
+                // If at least 50% of the cell is masked, then ignore it and skip to the next one
+                norm = hypot / totalCount;
+                motionByCell.push_back(norm);
+            } else {
+                ALICEVISION_LOG_DEBUG("At least 50\% of the cell is covered by the mask. Skipping it.");
+            }
         }
     }
 
@@ -940,7 +1187,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
 
     // Feed provider variables
     image::Image<image::RGBColor> image;
-    camera::PinholeRadialK3 queryIntrinsics;
+    camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
 
@@ -958,8 +1205,15 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
     for (std::size_t i = 0; i < feed.nbFrames(); ++i) {
         // Need to read the image to get its size and path
         if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
-            ALICEVISION_LOG_ERROR("Error reading image");
-            return false;
+            ALICEVISION_LOG_ERROR("Error reading image.");
+
+            // Frames may be seldomly corrupted in the VideoFeeds, but this should not occur with other feeds
+            if (feed.isVideo()) {
+                ALICEVISION_LOG_WARNING("Skipping to the next frame.");
+                continue;
+            } else {
+                return false;
+            }
         }
 
         // Create the view

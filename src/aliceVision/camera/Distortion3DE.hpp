@@ -37,6 +37,8 @@ public:
         _distortionParams = {c2, c4, u1, v1, u3, v3};
     }
 
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_3DERADIAL4; }
+
     Distortion3DERadial4* clone() const override { return new Distortion3DERadial4(*this); }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
@@ -97,6 +99,8 @@ public:
         _distortionParams = {cx02, cy02, cx22, cy22, cx04, cy04, cx24, cy24, cx44, cy44, phi, sqx, sqy, ps};
     }
 
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_3DEANAMORPHIC4; }
+
     Distortion3DEAnamorphic4* clone() const override { return new Distortion3DEAnamorphic4(*this); }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
@@ -144,12 +148,14 @@ public:
     /**
      * @brief Constructor with the three coefficients
      */
-    explicit Distortion3DEClassicLD(double delta = 0.0, double epsilon = 1.0,
-                                    double mux = 0.0, double muy = 0.0,
-                                    double q = 0.0)
+    explicit Distortion3DEClassicLD(double delta, double epsilon,
+                                    double mux, double muy,
+                                    double q)
     {
         _distortionParams = {delta, 1.0 / epsilon, mux, muy, q};
     }
+
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_3DECLASSICLD; }
 
     Distortion3DEClassicLD* clone() const override { return new Distortion3DEClassicLD(*this); }
 

@@ -151,52 +151,47 @@ Eigen::Matrix2d DistortionRadialK3::getDerivativeAddDistoWrtPt(const Vec2 & p) c
     const double& k2 = _distortionParams[1];
     const double& k3 = _distortionParams[2];
 
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
-    const double eps = 1e-8;
-    if (r < eps)
+    const double r2 = p(0) * p(0) + p(1) * p(1);
+    const double eps = 1e-21;
+    if (r2 < eps)
     {
         return Eigen::Matrix2d::Identity();
     }
 
-    Eigen::Matrix<double, 1, 2> d_r_d_p;
-    d_r_d_p(0) = p(0) / r;
-    d_r_d_p(1) = p(1) / r;
-
-    const double r2 = r * r;
-    const double r3 = r2 * r;
     const double r4 = r2 * r2;
-    const double r5 = r4 * r;
     const double r6 = r4 * r2;
 
     const double r_coeff = 1.0 + k1 * r2 + k2 * r4 + k3 * r6;
+    const double d_coeff = 2.0 * k1 + 4.0 * k2 * r2 + 6.0 * k3 * r4;
 
-    double d_r_coeff_d_r = 2.0 * k1 * r + 4.0 * k2 * r3 + 6.0 * k3 * r5;
-    Eigen::Matrix<double, 1, 2> d_r_coeff_d_p = d_r_coeff_d_r * d_r_d_p;
+    Eigen::Matrix2d ret;
+    ret(0, 0) = r_coeff + p(0) * d_coeff * p(0);
+    ret(0, 1) = p(0) * d_coeff * p(1);
+    ret(1, 0) = p(1) * d_coeff * p(0);
+    ret(1, 1) = r_coeff + p(1) * d_coeff * p(1);
 
-    return Eigen::Matrix2d::Identity() * r_coeff + p * d_r_coeff_d_p;
+    return ret;
 }
 
 Eigen::MatrixXd DistortionRadialK3::getDerivativeAddDistoWrtDisto(const Vec2 & p) const
 {
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
-    const double eps = 1e-8;
-    if (r < eps)
+    const double r2 = p(0)*p(0) + p(1)*p(1);
+    const double eps = 1e-21;
+    if (r2 < eps)
     {
         return Eigen::Matrix<double, 2, 3>::Zero();
     }
 
-    const double r2 = r * r;
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
 
-    /*const double r_coeff = 1.0 + k1 * r2 + k2 * r4 + k3 * r6;*/
-
-    Eigen::Matrix<double, 1, 3> d_r_coeff_d_params;
-    d_r_coeff_d_params(0, 0) = r2;
-    d_r_coeff_d_params(0, 1) = r4;
-    d_r_coeff_d_params(0, 2) = r6;
-
-    Eigen::MatrixXd ret = p * d_r_coeff_d_params;
+    Eigen::Matrix<double, 2, 3> ret;
+    ret(0, 0) = p(0) * r2;
+    ret(0, 1) = p(0) * r4;
+    ret(0, 2) = p(0) * r6;
+    ret(1, 0) = p(1) * r2;
+    ret(1, 1) = p(1) * r4;
+    ret(1, 2) = p(1) * r6;
 
     return ret;
 }

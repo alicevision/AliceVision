@@ -88,7 +88,11 @@ int aliceVision_main(int argc, char** argv)
 
   // load intrinsics
   auto v = ReadIntrinsicsFile(calibFile);
-  camera::PinholeRadialK3 intrinsics = camera::PinholeRadialK3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
+  camera::Pinhole intrinsics = camera::Pinhole(
+    v[0], v[1],
+    v[2], v[2],
+    v[3], v[4],
+    std::make_shared<camera::DistortionRadialK3>(v[5], v[6], v[7]));
 
   // export to abc
   sfmDataIO::AlembicExporter exporter(exportFile);

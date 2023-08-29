@@ -56,7 +56,7 @@ public:
      * is no intrinsics associated to \p imageRGB.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::PinholeRadialK3& camIntrinsics,
+    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
                    std::string& mediaPath, bool& hasIntrinsics);
 
     /**
@@ -69,7 +69,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<float>& imageGray, camera::PinholeRadialK3& camIntrinsics, std::string& mediaPath,
+    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath,
                    bool& hasIntrinsics);
 
     /**
@@ -82,7 +82,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<unsigned char>& imageGray, camera::PinholeRadialK3& camIntrinsics,
+    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
                    std::string& mediaPath, bool& hasIntrinsics);
 
     std::size_t nbFrames() const;

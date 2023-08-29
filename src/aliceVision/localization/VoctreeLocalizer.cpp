@@ -142,7 +142,7 @@ bool VoctreeLocalizer::localize(const feature::MapRegionsPerDesc & queryRegions,
                                 const LocalizerParameters *param,
                                 std::mt19937 & randomNumberGenerator,
                                 bool useInputIntrinsics,
-                                camera::PinholeRadialK3 &queryIntrinsics,
+                                camera::Pinhole &queryIntrinsics,
                                 LocalizationResult & localizationResult,
                                 const std::string& imagePath)
 {
@@ -183,7 +183,7 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
                                 const LocalizerParameters *param,
                                 std::mt19937 & randomNumberGenerator,
                                 bool useInputIntrinsics,
-                                camera::PinholeRadialK3 &queryIntrinsics,
+                                camera::Pinhole &queryIntrinsics,
                                 LocalizationResult &localizationResult,
                                 const std::string& imagePath /* = std::string() */)
 {
@@ -386,7 +386,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
                                                const Parameters &param,
                                                std::mt19937 & randomNumberGenerator,
                                                bool useInputIntrinsics,
-                                               camera::PinholeRadialK3 &queryIntrinsics,
+                                               camera::Pinhole &queryIntrinsics,
                                                LocalizationResult &localizationResult,
                                                const std::string &imagePath)
 {
@@ -607,7 +607,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
                                           const Parameters &param,
                                           std::mt19937 & randomNumberGenerator,
                                           bool useInputIntrinsics,
-                                          camera::PinholeRadialK3 &queryIntrinsics,
+                                          camera::Pinhole &queryIntrinsics,
                                           LocalizationResult &localizationResult,
                                           const std::string& imagePath)
 {
@@ -746,7 +746,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
                                           const Parameters &param,
                                           std::mt19937 & randomNumberGenerator,
                                           bool useInputIntrinsics,
-                                          const camera::PinholeRadialK3 &queryIntrinsics,
+                                          const camera::Pinhole &queryIntrinsics,
                                           OccurenceMap &out_occurences,
                                           Mat &out_pt2D,
                                           Mat &out_pt3D,
@@ -983,7 +983,7 @@ void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatche
                                                  const std::pair<std::size_t, std::size_t> & queryImageSize,
                                                  const Parameters &param,
                                                  bool useInputIntrinsics,
-                                                 const camera::PinholeRadialK3 &queryIntrinsics,
+                                                 const camera::Pinhole &queryIntrinsics,
                                                  OccurenceMap & out_occurences,
                                                  std::mt19937 & randomNumberGenerator,
                                                  const std::string& imagePath) const
@@ -1160,7 +1160,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
 bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                                    const LocalizerParameters *parameters,
                                    std::mt19937 & randomNumberGenerator,
-                                   std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                                   std::vector<camera::Pinhole > &vec_queryIntrinsics,
                                    const std::vector<geometry::Pose3 > &vec_subPoses,
                                    geometry::Pose3 &rigPose, 
                                    std::vector<LocalizationResult> & vec_locResults)
@@ -1218,7 +1218,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<feature::MapRegionsPerDesc>
                                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                    const LocalizerParameters *parameters,
                                    std::mt19937 & randomNumberGenerator,
-                                   std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                                   std::vector<camera::Pinhole > &vec_queryIntrinsics,
                                    const std::vector<geometry::Pose3 > &vec_subPoses,
                                    geometry::Pose3 &rigPose,
                                    std::vector<LocalizationResult>& vec_locResults)
@@ -1259,7 +1259,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsP
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                           const LocalizerParameters *parameters,
                                           std::mt19937 &randomNumberGenerator,
-                                          std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                                          std::vector<camera::Pinhole > &vec_queryIntrinsics,
                                           const std::vector<geometry::Pose3 > &vec_subPoses,
                                           geometry::Pose3 &rigPose,
                                           std::vector<LocalizationResult>& vec_locResults)
@@ -1299,7 +1299,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsP
     auto &imageSize = vec_imageSize[camID];
     Mat &pts3D = vec_pts3D[camID];
     Mat &pts2D = vec_pts2D[camID];
-    camera::PinholeRadialK3 &queryIntrinsics = vec_queryIntrinsics[camID];
+    camera::Pinhole &queryIntrinsics = vec_queryIntrinsics[camID];
     const bool useInputIntrinsics = true;
     getAllAssociations(vec_queryRegions[camID],
                        imageSize,
@@ -1484,7 +1484,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsP
     // compute the reprojection error for inliers (just debugging purposes)
     for(std::size_t camID = 0; camID < numCams; ++camID)
     {
-      const camera::PinholeRadialK3 &currCamera = vec_queryIntrinsics[camID];
+      const camera::Pinhole &currCamera = vec_queryIntrinsics[camID];
       Mat2X residuals;
       if(camID!=0)
         residuals = currCamera.residuals(vec_subPoses[camID-1]*rigPose, vec_pts3D[camID], vec_pts2D[camID]);
@@ -1521,7 +1521,7 @@ bool VoctreeLocalizer::localizeRig_naive(const std::vector<feature::MapRegionsPe
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                           const LocalizerParameters *parameters,
                                           std::mt19937 & randomNumberGenerator,
-                                          std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
+                                          std::vector<camera::Pinhole > &vec_queryIntrinsics,
                                           const std::vector<geometry::Pose3 > &vec_subPoses,
                                           geometry::Pose3 &rigPose,
                                           std::vector<LocalizationResult>& vec_localizationResults)

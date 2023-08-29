@@ -18,7 +18,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 5
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -55,6 +55,8 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType exrDataType =   // storage data type for EXR output files
         image::EStorageDataType::Float;
     bool renameKeyframes = false;           // name selected keyframes as consecutive frames instead of using their index as a name
+    std::size_t minBlockSize = 10;          // minimum number of frames in a block for multi-threading
+    std::vector<std::string> maskPaths;    // masks path list
 
     // Debug options
     bool exportScores = false;              // export the sharpness and optical flow scores to a CSV file
@@ -134,7 +136,12 @@ int aliceVision_main(int argc, char** argv)
         ("sharpnessWindowSize", po::value<std::size_t>(&sharpnessWindowSize)->default_value(sharpnessWindowSize),
             "Size, in pixels, of the sliding window that is used to compute the sharpness score of a frame.")
         ("flowCellSize", po::value<std::size_t>(&flowCellSize)->default_value(flowCellSize),
-            "Size, in pixels, of the cells within an input frame that are used to compute the optical flow scores.");
+            "Size, in pixels, of the cells within an input frame that are used to compute the optical flow scores.")
+        ("minBlockSize", po::value<std::size_t>(&minBlockSize)->default_value(minBlockSize),
+            "Minimum number of frames processed by a single thread when multi-threading is used.")
+        ("maskPaths", po::value<std::vector<std::string>>(&maskPaths)->default_value(models)->multitoken(),
+            "Paths to directories containing masks. Masks (e.g. segmentation masks) will be used to ignore some parts "
+            "of the frames when computing the scores.");
 
     po::options_description debugParams("Debug parameters");
     debugParams.add_options()
@@ -168,6 +175,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     const std::size_t nbCameras = inputPaths.size();
+    const std::size_t nbMasks = maskPaths.size();
 
     // Check output folder and update to its absolute path
     {
@@ -180,7 +188,12 @@ int aliceVision_main(int argc, char** argv)
     }
 
     if (nbCameras < 1) {
-        ALICEVISION_LOG_ERROR("Program needs at least one media path.");
+        ALICEVISION_LOG_ERROR("At least one media path needs to be provided.");
+        return EXIT_FAILURE;
+    }
+
+    if (nbMasks > 0 && nbMasks != nbCameras) {
+        ALICEVISION_LOG_ERROR("The number of provided mask directories does not match the number of media paths.");
         return EXIT_FAILURE;
     }
 
@@ -221,8 +234,11 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
+
     // Initialize KeyframeSelector
-    keyframe::KeyframeSelector selector(inputPaths, sensorDbPath, outputFolder, outputSfMDataKeyframes,
+    keyframe::KeyframeSelector selector(inputPaths, maskPaths, sensorDbPath, outputFolder, outputSfMDataKeyframes,
                                         outputSfMDataFrames);
 
     // Set frame-related algorithm parameters
@@ -230,6 +246,7 @@ int aliceVision_main(int argc, char** argv)
     selector.setMaxFrameStep(maxFrameStep);
     selector.setMinOutFrames(minNbOutFrames);
     selector.setMaxOutFrames(maxNbOutFrames);
+    selector.setMinBlockSize(minBlockSize);
 
     if (flowVisualisationOnly) {
         bool exported = selector.exportFlowVisualisation(rescaledWidthFlow);

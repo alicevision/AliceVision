@@ -13,7 +13,7 @@
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
-#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/Undistortion.hpp>
 #include <aliceVision/image/io.hpp>

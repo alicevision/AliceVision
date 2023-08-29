@@ -25,6 +25,8 @@ public:
         _distortionParams = {p1, p2, p3, p4};
     }
 
+    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_FISHEYE; }
+
     DistortionFisheye* clone() const override
     {
         return new DistortionFisheye(*this);

@@ -62,6 +62,8 @@ The minimum and maximum number of selected keyframes with the smart method can b
 - `minNbOutFrames`: the minimum number of selected keyframes;
 - `maxNbOutFrames`: the maximum number of selected keyframes.
 
+Masks (e.g. segmentation masks) can also be provided with the `maskPaths` parameters. If they are provided and valid (i.e. the number of masks and their size is identical to the input frames'), they are loaded alongside the input frames and are applied during the computation of the scores.
+
 ### Frame scoring
 
 For both the sharpness and motion scores, the evaluated frame is converted to a grayscale OpenCV matrix that may be rescaled
@@ -73,9 +75,13 @@ The Laplacian of the input frame is first computed, followed by the integral ima
 
 The image is evaluated with a sliding window instead of as a whole to prevent giving a bad score (low standard deviation) to a frame that contains a sharp element but is overall blurry.
 
+If a valid mask has been provided, it is applied on the integral image of the Laplacian. All masked pixels are then set to 0, and they are excluded from the standard deviation computation. If the number of masked pixels within the window exceeds 50%, then the standard deviation for that specific sliding window position is skipped, and the window is moved to the next position. 
+
 #### Motion score
 
 The dense optical flow of a frame is computed. The frame is then divided into cells of `flowCellSize` pixels in which the motion vectors are averaged to obtain a displacement value (in pixels) within that cell. Once all the displacement values have been computed, the median value of these displacement values is used as the motion score.
+
+If a valid mask has been provided, it is applied to the computed motion vectors, and the masked motion vectors are excluded from the displacement computation. If the mask covers at least 50% of the cell that is evaluated, the computation for that cell is skipped altogether: it will be ignored when the median value of the displacement scores is computed.
 
 ### Selection
 
@@ -103,6 +109,7 @@ Debug options specific to the smart selection method are available:
 - Constructor
 ```cpp
 KeyframeSelector(const std::vector<std::string>& mediaPaths,
+                 const std::vector<std::string>& maskPaths,
                  const std::string& sensorDbPath,
                  const std::string& outputFolder,
                  const std::string& outputSfmKeyframes,
