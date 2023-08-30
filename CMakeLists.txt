@@ -26,6 +26,7 @@ option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
 option(AV_BUILD_FLANN "Enable building an embedded Flann" ON)
 option(AV_BUILD_PCL "Enable building an embedded PointCloud library" OFF)
 option(AV_BUILD_USD "Enable building an embedded USD library" OFF)
+option(AV_BUILD_GEOGRAPHIC "Enable building an embedded Geographic library" ON)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" ON)
 
@@ -89,6 +90,7 @@ message(STATUS "AV_BUILD_CLP: ${AV_BUILD_CLP}")
 message(STATUS "AV_BUILD_FLANN: ${AV_BUILD_FLANN}")
 message(STATUS "AV_BUILD_PCL: ${AV_BUILD_PCL}")
 message(STATUS "AV_BUILD_USD: ${AV_BUILD_USD}")
+message(STATUS "AV_BUILD_GEOGRAPHIC: ${AV_BUILD_GEOGRAPHIC}")
 message(STATUS "AV_BUILD_DEPENDENCIES_PARALLEL: ${AV_BUILD_DEPENDENCIES_PARALLEL}")
 message(STATUS "")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -1099,6 +1101,30 @@ if(AV_BUILD_USD)
     set(USD_CMAKE_FLAGS -Dpxr_DIR:PATH=${CMAKE_INSTALL_PREFIX})
 endif()
 
+IF(AV_BUILD_GEOGRAPHIC)
+    set(GEOGRAPHIC_TARGET GeographicLib)
+        ExternalProject_Add(${GEOGRAPHIC_TARGET}
+            GIT_REPOSITORY https://github.com/geographiclib/geographiclib.git
+            GIT_TAG v2.3
+            PREFIX ${BUILD_DIR}
+            BUILD_IN_SOURCE 0
+            BUILD_ALWAYS 0
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            INSTALL_COMMAND ""
+            SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/geographic
+            BINARY_DIR ${BUILD_DIR}/geographic_build
+            INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+            CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
+                -DBUILD_DOCUMENTATION=OFF 
+                -DBUILD_MANPAGES=OFF
+                -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+            BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+            INSTALL_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} install
+        )
+        set(GEOGRAPHIC_CMAKE_FLAGS -DGeographic_DIR:PATH=${CMAKE_INSTALL_PREFIX})
+endif()
+
 set(AV_DEPS
   ${ZLIB_TARGET}
   ${ASSIMP_TARGET}
@@ -1128,6 +1154,7 @@ set(AV_DEPS
   ${OSI_TARGET}
   ${CLP_TARGET}
   ${USD_TARGET}
+  ${GEOGRAPHIC_TARGET}
   ${FLANN_TARGET}
   ${LZ4_TARGET}
 )

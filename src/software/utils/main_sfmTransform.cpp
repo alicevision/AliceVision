@@ -19,20 +19,20 @@
 #include <sstream>
 #include <vector>
 
-//===== NEW ======
-#include <GeographicLib/UTMUPS.hpp>
-#include <ceres/ceres.h>
-#include <ceres/rotation.h>
-#include <glog/logging.h>
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
+    #include <GeographicLib/UTMUPS.hpp>
+    #include <ceres/ceres.h>
+    #include <ceres/rotation.h>
+    #include <glog/logging.h>
 
-using ceres::AutoDiffCostFunction;
-using ceres::CostFunction;
-using ceres::Problem;
-using ceres::Solve;
-using ceres::Solver;
+    using ceres::AutoDiffCostFunction;
+    using ceres::CostFunction;
+    using ceres::Problem;
+    using ceres::Solve;
+    using ceres::Solver;
 
-typedef Eigen::Matrix<double,3,4> Matrix34d;
-//===== NEW ======
+    typedef Eigen::Matrix<double,3,4> Matrix34d;
+#endif
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -61,7 +61,9 @@ enum class EAlignmentMethod : unsigned char
     FROM_MARKERS,
     FROM_GPS,
     ALIGN_GROUND,
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)    
     FROM_GPS2UTM
+#endif
 };
 
 /**
@@ -84,7 +86,9 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::FROM_MARKERS:             return "from_markers";
     case EAlignmentMethod::FROM_GPS:                 return "from_gps";
     case EAlignmentMethod::ALIGN_GROUND:             return "align_ground";
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)    
     case EAlignmentMethod::FROM_GPS2UTM:             return "from_gps2utm";
+#endif
   }
   throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -110,7 +114,9 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if (method == "from_markers")             return EAlignmentMethod::FROM_MARKERS;
   if (method == "from_gps")                 return EAlignmentMethod::FROM_GPS;
   if (method == "align_ground")             return EAlignmentMethod::ALIGN_GROUND;
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)  
   if (method == "from_gps2utm")             return EAlignmentMethod::FROM_GPS2UTM;
+#endif
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -207,7 +213,7 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
 }
 
 
-//===== NEW ======
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
 struct AlignRotateTranslateScaleError {
   AlignRotateTranslateScaleError(double observed_x, double observed_y, double observed_z)
       : observed_x(observed_x), observed_y(observed_y), observed_z(observed_z) {}
@@ -243,7 +249,7 @@ struct AlignRotateTranslateScaleError {
 
 void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
 {
-    bool debug = true;
+    bool debug = false;
 
     std::vector<Eigen::Vector3d> coords;
 
@@ -413,7 +419,7 @@ void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
     
     delete[] pose_for_alignment;
 }
-//===== NEW ======
+#endif
 
 } // namespace
 
@@ -503,7 +509,10 @@ int aliceVision_main(int argc, char **argv)
         "\t- from_markers: Refines the coordinate system from markers specified by --markers\n"
         "\t- from_gps: Redefines coordinate system from GPS metadata\n"
         "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n"
-        "\t- from_gps2utm: uses GPS coordinates to determine UTM alignment.\n")
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
+        "\t- from_gps2utm: uses GPS coordinates to determine UTM alignment and inverts axes to match x/y/z right/up/sky.\n"
+#endif
+    )
     ("transformation", po::value<std::string>(&transform)->default_value(transform),
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
@@ -708,11 +717,13 @@ int aliceVision_main(int argc, char **argv)
           sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
           break;
       }
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
       case EAlignmentMethod::FROM_GPS2UTM:
       {
           alignGpsToUTM(sfmData, S, R, t);
           break;
       }
+#endif
   }
 
   if(!applyRotation)
@@ -754,6 +765,7 @@ int aliceVision_main(int argc, char **argv)
 
   sfm::applyTransform(sfmData, S, R, t);
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
   if (alignmentMethod == EAlignmentMethod::FROM_GPS2UTM)
   {
     ALICEVISION_LOG_INFO("Applying additional inversion to Y and Z to make textured mesh end up aligned correctly!");
@@ -763,7 +775,8 @@ int aliceVision_main(int argc, char **argv)
 
     sfm::applyTransform(sfmData, 1.0, invYZ, zeroT);
   }
-    
+#endif
+
   // In AUTO mode, ground detection and alignment is performed as a post-process
   if (alignmentMethod == EAlignmentMethod::AUTO && applyTranslation)
   {
