@@ -414,7 +414,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
       {
         intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 0.0524, 0.0094, -0.0037, -0.0004});
       }
-      else if ((!lensParam->isEmpty()) && (cameraBrand != "Custom"))
+      else if (lensParam && (!lensParam->isEmpty()) && (cameraBrand != "Custom"))
       {
         std::vector<double> p = {pxFocalLength, pxFocalLength, 0, 0};
         p.push_back(lensParam->fisheyeParams.RadialDistortParam1);
@@ -435,7 +435,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     }
     case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
     {
-      if ((!lensParam->isEmpty()) && (cameraBrand != "Custom"))
+      if (lensParam && (!lensParam->isEmpty()) && (cameraBrand != "Custom"))
       {
         std::vector<double> p = {pxFocalLength, pxFocalLength, 0, 0};
         p.push_back(lensParam->perspParams.RadialDistortParam1);
