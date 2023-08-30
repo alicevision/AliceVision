@@ -244,6 +244,22 @@ if(ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
+    alicevision_add_software(aliceVision_intrinsicsCalibration
+        SOURCE main_intrinsicsCalibration.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_dataio
+              aliceVision_image
+              aliceVision_calibration
+              aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmDataIO
+              aliceVision_multiview
+              aliceVision_sfm
+              Boost::program_options
+              Boost::json
+              Boost::boost
+    )
+
     # Calibrate a rig
     alicevision_add_software(aliceVision_rigCalibration
         SOURCE main_rigCalibration.cpp
