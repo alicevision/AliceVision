@@ -105,179 +105,16 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
 }
 
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
-                    const sfmData::View& view, double mmFocalLength, double sensorWidth,
-                    double defaultFocalLength, double defaultFieldOfView, 
-                    double defaultFocalRatio, double defaultOffsetX, double defaultOffsetY,
-                    camera::EINTRINSIC lcpIntrinsicType,
-                    camera::EINTRINSIC defaultIntrinsicType,
-                    camera::EINTRINSIC allowedEintrinsics)
-{
-  // can't combine defaultFocalLengthPx and defaultFieldOfView
-  assert(defaultFocalLength < 0 || defaultFieldOfView < 0);
-
-  // get view informations
-  const std::string& cameraBrand = view.getMetadataMake();
-  const std::string& cameraModel = view.getMetadataModel();
-  const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
-  const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
-
-  double focalLength{-1.0};
-  bool hasFocalLengthInput = false;
-
-  if (sensorWidth < 0)
-  {
-    ALICEVISION_LOG_WARNING("Sensor size is unknown");
-    ALICEVISION_LOG_WARNING("Use default sensor size (36 mm)");
-    sensorWidth = 36.0;
-  }
-  
-  if(defaultFocalLength > 0.0)
-  {
-    focalLength = defaultFocalLength;
-  }
-
-  if(defaultFieldOfView > 0.0)
-  {
-    const double focalRatio = 0.5 / std::tan(0.5 * degreeToRadian(defaultFieldOfView));
-    focalLength = focalRatio * sensorWidth;
-  }
-
-  camera::EINTRINSIC intrinsicType = defaultIntrinsicType;
-
-  bool isResized = false;
-
-  if(view.hasMetadata({"Exif:PixelXDimension", "PixelXDimension"}) && view.hasMetadata({"Exif:PixelYDimension", "PixelYDimension"})) // has dimension metadata
-  {
-    // check if the image is resized
-    int exifWidth = std::stoi(view.getMetadata({"Exif:PixelXDimension", "PixelXDimension"}));
-    int exifHeight = std::stoi(view.getMetadata({"Exif:PixelYDimension", "PixelXDimension"}));
-
-    // if metadata is rotated
-    if(exifWidth == view.getHeight() && exifHeight == view.getWidth())
-      std::swap(exifWidth, exifHeight);
-
-
-    if(exifWidth > 0 && exifHeight > 0 &&
-       (exifWidth != view.getWidth() || exifHeight != view.getHeight()))
-    {
-      ALICEVISION_LOG_WARNING("Resized image detected: " << fs::path(view.getImagePath()).filename().string() << std::endl
-                          << "\t- real image size: " <<  view.getWidth() << "x" <<  view.getHeight() << std::endl
-                          << "\t- image size from exif metadata is: " << exifWidth << "x" << exifHeight << std::endl);
-      isResized = true;
-    }
-  }
-
-  // handle case where focal length (mm) is unset or false
-  if(mmFocalLength <= 0.0)
-  {
-    ALICEVISION_LOG_WARNING("Image '" << fs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
-                             << "Can't compute focal length, use default." << std::endl);
-  }
-  else
-  {
-    // Retrieve the focal from the metadata in mm and convert to pixel.
-    focalLength = mmFocalLength;
-    hasFocalLengthInput = true;
-  }
-
-  double focalLengthIn35mm = 36.0 * focalLength;
-  double pxFocalLength = (focalLength / sensorWidth) * std::max(view.getWidth(), view.getHeight());
-
-  // retrieve pixel aspect ratio
-  double pixelAspectRatio = 1.0 / defaultFocalRatio;
-  view.getDoubleMetadata({"PixelAspectRatio"}, pixelAspectRatio);
-  const double focalRatio = 1.0 / pixelAspectRatio;
-
-  bool hasFisheyeCompatibleParameters = ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0));
-  bool checkPossiblePinhole = (allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) && hasFisheyeCompatibleParameters;
-
-  // choose intrinsic type
-  if(cameraBrand == "Custom")
-  {
-    intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
-  }
-  else if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN) && (allowedEintrinsics & lcpIntrinsicType))
-  {
-      intrinsicType = lcpIntrinsicType;
-  }
-  else if(checkPossiblePinhole)
-  {
-    // If the focal lens is short, the fisheye model should fit better.
-    intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
-  }
-  else if(intrinsicType == camera::EINTRINSIC::UNKNOWN)
-  {
-    // Choose a default camera model if no default type
-    static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities = {
-        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,
-        camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
-        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
-        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
-        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1,
-        camera::EINTRINSIC::PINHOLE_CAMERA
-    };
-
-    for(const auto& e : intrinsicsPriorities)
-    {
-        if(allowedEintrinsics & e)
-        {
-            intrinsicType = e;
-            break;
-        }
-    }
-
-    // If still unassigned
-    if (intrinsicType == camera::EINTRINSIC::UNKNOWN)
-    {
-        throw std::invalid_argument("No intrinsic type can be attributed.");
-    }
-  }
-
-  // create the desired intrinsic
-  std::shared_ptr<camera::IntrinsicBase> intrinsic =
-    camera::createIntrinsic(
-        /*camera*/       intrinsicType,
-        /*dimensions*/   view.getWidth(), view.getHeight(),
-        /*focal length*/ pxFocalLength, pxFocalLength / focalRatio,
-        /*offset*/       0, 0);
-  if(hasFocalLengthInput)
-  {
-    std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
-    
-    if (intrinsicScaleOffset)
-    {
-      intrinsicScaleOffset->setInitialScale({pxFocalLength, (pxFocalLength > 0) ? pxFocalLength / focalRatio : -1});
-      intrinsicScaleOffset->setOffset({defaultOffsetX, defaultOffsetY});
-    }
-  }
-
-  // initialize distortion parameters
-  switch(intrinsicType)
-  {
-    case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-    {
-      if(cameraBrand == "GoPro")
-        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 0.0524, 0.0094, -0.0037, -0.0004});
-      break;
-    }
-    case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-    {
-      if(cameraBrand == "GoPro")
-        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 1.04});
-      break;
-    }
-    default: break;
-  }
-
-  // create serial number
-  intrinsic->setSerialNumber(bodySerialNumber + lensSerialNumber);
-
-  return intrinsic;
-}
-
-std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& view, double mmFocalLength, double sensorWidth, double defaultFocalLength, double defaultFieldOfView,
-                                                        double defaultFocalRatio, double defaultOffsetX, double defaultOffsetY, LensParam* lensParam,
-                                                        camera::EINTRINSIC defaultIntrinsicType, camera::EINTRINSIC allowedEintrinsics)
+    const sfmData::View& view,
+    double mmFocalLength,
+    double sensorWidth,
+    double defaultFocalLength,
+    double defaultFieldOfView,
+    double defaultFocalRatio,
+    double defaultOffsetX, double defaultOffsetY,
+    LensParam* lensParam,
+    camera::EINTRINSIC defaultIntrinsicType,
+    camera::EINTRINSIC allowedEintrinsics)
 {
   // can't combine defaultFocalLengthPx and defaultFieldOfView
   assert(defaultFocalLength < 0 || defaultFieldOfView < 0);
@@ -353,8 +190,12 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
 
   // choose intrinsic type
 
-  camera::EINTRINSIC lcpIntrinsicType = (lensParam == nullptr || lensParam->isEmpty()) ? camera::EINTRINSIC::UNKNOWN :
-      (lensParam->isFisheye() ? camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE : camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
+  camera::EINTRINSIC lcpIntrinsicType =
+    (lensParam == nullptr || lensParam->isEmpty()) ?
+        camera::EINTRINSIC::UNKNOWN :
+        (lensParam->isFisheye() ?
+            camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE :
+            camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
 
   if (cameraBrand == "Custom")
   {
@@ -372,9 +213,13 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   else if (intrinsicType == camera::EINTRINSIC::UNKNOWN)
   {
     // Choose a default camera model if no default type
-    static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities = {camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,  camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
-                                                                                   camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,  camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
-                                                                                   camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1, camera::EINTRINSIC::PINHOLE_CAMERA};
+    static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities =
+        {camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 
+        camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
+        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1, 
+        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
+        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1,
+        camera::EINTRINSIC::PINHOLE_CAMERA};
 
     for (const auto& e : intrinsicsPriorities)
     {
@@ -393,10 +238,13 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   }
 
   // create the desired intrinsic
-  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, pxFocalLength, 0, 0);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic =
+    camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, pxFocalLength, 0, 0);
+
   if (hasFocalLengthInput)
   {
-    std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
+    std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset =
+        std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
 
     if (intrinsicScaleOffset)
     {
