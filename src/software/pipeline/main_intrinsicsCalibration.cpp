@@ -64,9 +64,9 @@ Eigen::Matrix<double, 1, 6> computeV(const Eigen::Matrix3d& H, int i, int j)
     return v;
 }
 
-bool process(sfmData::SfMData& sfmData,
-                   std::map<IndexT, calibration::CheckerDetector>& boardsAllImages,
-                   const double squareSize)
+bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
+                             std::map<IndexT, calibration::CheckerDetector>& boardsAllImages,
+                             const double squareSize)
 {
     if (boardsAllImages.size() < 2)
     {
@@ -277,7 +277,9 @@ bool process(sfmData::SfMData& sfmData,
             geometry::Pose3 pose(T);
             sfmData::CameraPose cp;
             cp.setTransform(pose);
-            sfmData.getPoses()[pH.first] = cp;
+
+            auto view = sfmData.views.at(pH.first);
+            sfmData.getPoses()[view->getPoseId()] = cp;
         }
 
         // Get residuals
@@ -328,11 +330,77 @@ bool process(sfmData::SfMData& sfmData,
         }
     }
 
-    // Mark all intrinsics as calibrated
-    for (auto& pi : sfmData.getIntrinsics())
+    return true;
+}
+
+
+bool estimateRigs(sfmData::SfMData& sfmData)
+{
+    // Calibrate rigs
+    if (sfmData.getRigs().size() > 0)
     {
-        std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = pi.second;
-        intrinsicPtr->setInitializationMode(camera::EInitMode::CALIBRATED);
+        // Initialize rig poses
+        for (auto& pv : sfmData.getViews())
+        {
+            auto view = pv.second;
+            if (view->isPartOfRig())
+            {
+                const IndexT rigId = view->getRigId();
+                const IndexT subPoseId = view->getSubPoseId();
+                sfmData::Rig& rig = sfmData.getRigs().at(rigId);
+                sfmData::RigSubPose& subPose = rig.getSubPose(subPoseId);
+                if (subPoseId == 0)
+                {
+                    if (sfmData.getPoses().find(view->getPoseId()) == sfmData.getPoses().end())
+                    {
+                        continue;
+                    }
+                    sfmData::CameraPose absPose = sfmData.getPoses().at(view->getPoseId());
+                    sfmData.getPoses()[rigId] = absPose;
+                    subPose.pose = geometry::Pose3();  // identity
+                    subPose.status = sfmData::ERigSubPoseStatus::CONSTANT;
+                }
+            }
+        }
+
+        // Initialize sub-poses
+        for (auto& pv : sfmData.getViews())
+        {
+            auto view = pv.second;
+            if (view->isPartOfRig())
+            {
+                const IndexT rigId = view->getRigId();
+                const IndexT subPoseId = view->getSubPoseId();
+                sfmData::Rig& rig = sfmData.getRigs().at(rigId);
+                sfmData::RigSubPose& subPose = rig.getSubPose(subPoseId);
+                if (subPoseId > 0)
+                {
+                    if (sfmData.getPoses().find(view->getPoseId()) == sfmData.getPoses().end())
+                    {
+                        continue;
+                    }
+                    sfmData::CameraPose absPose = sfmData.getPoses().at(view->getPoseId());
+                    sfmData::CameraPose rigPose = sfmData.getPoses()[rigId];
+                    sfmData.getPoses()[view->getPoseId()] = rigPose;
+                    subPose.pose = absPose.getTransform() * rigPose.getTransform().inverse();
+                    subPose.status = sfmData::ERigSubPoseStatus::ESTIMATED;
+                }
+            }
+        }
+
+        // Compute non-linear refinements
+        sfm::BundleAdjustmentCeres::CeresOptions options;
+        options.summary = true;
+        sfm::BundleAdjustmentCeres ba(options);
+        sfm::BundleAdjustment::ERefineOptions boptions =
+            sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_ALL;
+        if (!ba.adjust(sfmData, boptions))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate");
+            return false;
+        }
     }
 
     return true;
@@ -395,10 +463,33 @@ int aliceVision_main(int argc, char* argv[])
         boardsAllImages[viewId] = detector;
     }
 
-    // Calibration
-    if (!process(sfmData, boardsAllImages, squareSize))
+    // Calibrate intrinsics and poses
+    if (!estimateIntrinsicsPoses(sfmData, boardsAllImages, squareSize))
     {
         return EXIT_FAILURE;
+    }
+
+    // Calibrate rigs
+    if (!estimateRigs(sfmData))
+    {
+        return EXIT_FAILURE;
+    }
+
+    // Mark all intrinsics as calibrated
+    for (auto& pi : sfmData.getIntrinsics())
+    {
+        std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = pi.second;
+        intrinsicPtr->setInitializationMode(camera::EInitMode::CALIBRATED);
+    }
+
+    // Mark all rig sub-poses as constant
+    for (auto& pr : sfmData.getRigs())
+    {
+        sfmData::Rig& rig = pr.second;
+        for (auto& subPose : rig.getSubPoses())
+        {
+            subPose.status = sfmData::ERigSubPoseStatus::CONSTANT;
+        }
     }
 
     // Save sfmData to disk
