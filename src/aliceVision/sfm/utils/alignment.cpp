@@ -544,9 +544,10 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
             //If we use the raw X, it will be in the image without the orientation 
             //We need to use this orientation to make sure the X spans the horizontal plane.
             const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
+            const Eigen::Vector3d rY = p.rotation().transpose() * oriented_Y;
 
             meanRx += rX;
-            meanRy += oriented_Y;
+            meanRy += rY;
 
             meanCameraCenter += p.center();
             ++validPoses;
@@ -608,18 +609,18 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
     const Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();    
 
-    const double d = nullestSpace.dot(meanRy);
+    // Compute the rotation which rotates nullestSpace onto unitY
+    out_R = Matrix3d(Quaterniond().setFromTwoVectors(nullestSpace, referenceAxis));
+    const double d = (out_R * meanRy).normalized().dot(Eigen::Vector3d::UnitY());
     const bool inverseDirection = (d < 0.0);
     // We have an ambiguity on the Y direction, so if our Y axis is not aligned with the Y axis of the scene
     // we inverse the axis.
     if(inverseDirection)
     {
         nullestSpace = -nullestSpace;
+        out_R = Matrix3d(Quaterniond().setFromTwoVectors(nullestSpace, referenceAxis));
     }
-
-
-    // Compute the rotation which rotates nullestSpace onto unitY
-    out_R = Matrix3d(Quaterniond().setFromTwoVectors(nullestSpace, referenceAxis));
+    
     out_S = 1.0;
     out_t = -out_R * meanCameraCenter;
 }
