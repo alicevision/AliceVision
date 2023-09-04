@@ -249,12 +249,12 @@ int aliceVision_main(int argc, char** argv)
                     if (calibrationMethod == ECalibrationMethod::AUTO)
                     {
                         calibrationMethod = isRAW ? ECalibrationMethod::LINEAR : ECalibrationMethod::DEBEVEC;
-                        ALICEVISION_LOG_INFO("Calibration method automaticaly set to " << calibrationMethod);
+                        ALICEVISION_LOG_INFO("Calibration method automatically set to " << calibrationMethod);
                     }
                     if (workingColorSpace == image::EImageColorSpace::AUTO)
                     {
                         workingColorSpace = isRAW ? image::EImageColorSpace::LINEAR : image::EImageColorSpace::SRGB;
-                        ALICEVISION_LOG_INFO("Working color space automaticaly set to " << workingColorSpace);
+                        ALICEVISION_LOG_INFO("Working color space automatically set to " << workingColorSpace);
                     }
                 }
 

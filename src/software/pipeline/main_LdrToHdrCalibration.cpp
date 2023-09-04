@@ -392,7 +392,7 @@ int aliceVision_main(int argc, char** argv)
                         const bool isRAW = imgFormat.compare("raw") == 0;
 
                         calibrationMethod = isRAW ? ECalibrationMethod::LINEAR : ECalibrationMethod::DEBEVEC;
-                        ALICEVISION_LOG_INFO("Calibration method automaticaly set to " << calibrationMethod);
+                        ALICEVISION_LOG_INFO("Calibration method automatically set to " << calibrationMethod);
                     }
 
                     // Read from file
@@ -483,7 +483,7 @@ int aliceVision_main(int argc, char** argv)
             }
             case ECalibrationMethod::AUTO:
             {
-                ALICEVISION_LOG_ERROR("Calibration method cannot be automaticaly selected");
+                ALICEVISION_LOG_ERROR("Calibration method cannot be automatically selected");
                 return EXIT_FAILURE;
             }
             }
