@@ -166,7 +166,9 @@ int aliceVision_main(int argc, char** argv)
         ("samplesFolders,f", po::value<std::string>(&samplesFolder)->default_value(samplesFolder),
          "Path to folder containing the extracted samples (Required if the calibration is not linear).")
         ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
-         "Name of method used for camera calibration: linear, debevec, grossberg, laguerre.")
+         "Name of the method used for the camera calibration: auto, linear, debevec, grossberg, laguerre."
+         "If 'auto' is selected, the linear method will be used if there are RAW images; otherwise, the Debevec method "
+         "will be used.")
         ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
          "Weight function used to calibrate camera response (default depends on the calibration method, gaussian, "
          "triangle, plateau).")

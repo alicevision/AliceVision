@@ -85,7 +85,9 @@ int aliceVision_main(int argc, char** argv)
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
-         "Name of method used for camera calibration: linear, debevec, grossberg, laguerre.")
+         "Name of the method used for the camera calibration: auto, linear, debevec, grossberg, laguerre."
+         "If 'auto' is selected, the linear method will be used if there are RAW images; otherwise, the Debevec method "
+         "will be used.")
         ("blockSize", po::value<int>(&params.blockSize)->default_value(params.blockSize),
          "Size of the image tile to extract a sample.")
         ("radius", po::value<int>(&params.radius)->default_value(params.radius),
