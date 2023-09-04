@@ -72,14 +72,14 @@ int aliceVision_main(int argc, char** argv)
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
-        "Output path for the samples files.");
+         "Output path for the samples files.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
-         "bracket count per HDR image (0 means automatic).")
+         "Bracket count per HDR image (0 means automatic).")
         ("byPass", po::value<bool>(&byPass)->default_value(byPass),
-         "bypass HDR creation and use a single bracket as input for next steps")
+         "Bypass HDR creation and use a single bracket as the input for the next steps.")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
@@ -92,8 +92,8 @@ int aliceVision_main(int argc, char** argv)
          "Size of the image tile to extract a sample.")
         ("radius", po::value<int>(&params.radius)->default_value(params.radius),
          "Radius of the patch used to analyze the sample statistics.")
-        ("maxCountSample", po::value<size_t>(&params.maxCountSample)->default_value(params.maxCountSample),
-         "Max number of samples per image group.")
+        ("maxCountSample", po::value<std::size_t>(&params.maxCountSample)->default_value(params.maxCountSample),
+         "Maximum number of samples per image group.")
         ("debug", po::value<bool>(&debug)->default_value(debug),
          "Export debug files.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
@@ -111,15 +111,15 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // set maxThreads
+    // Set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
     omp_set_num_threads(hwc.getMaxThreads());
 
     const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
-    // Read sfm data
+    // Read SfMData
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
@@ -136,24 +136,25 @@ int aliceVision_main(int argc, char** argv)
     std::size_t usedNbBrackets = 0;
     {
         std::set<std::size_t> sizeOfGroups;
-        for(auto& group : groupedViews)
+        for (auto& group : groupedViews)
         {
             sizeOfGroups.insert(group.size());
         }
-        if(sizeOfGroups.size() == 1)
+        if (sizeOfGroups.size() == 1)
         {
             usedNbBrackets = *sizeOfGroups.begin();
-            if(usedNbBrackets == 1)
+            if (usedNbBrackets == 1)
             {
                 ALICEVISION_LOG_INFO("No multi-bracketing.");
                 return EXIT_SUCCESS;
             }
-            ALICEVISION_LOG_INFO("Number of brackets: " << usedNbBrackets << ". It will generate " << groupedViews.size() << " hdr images.");
+            ALICEVISION_LOG_INFO("Number of brackets: " << usedNbBrackets << ". It will generate "
+                                 << groupedViews.size() << " HDR images.");
         }
         else
         {
             ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
-            for(auto& group : groupedViews)
+            for (auto& group : groupedViews)
             {
                 ALICEVISION_LOG_ERROR(" * " << group.size());
             }
@@ -162,30 +163,29 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Define range to compute
-    if(rangeStart != -1)
+    if (rangeStart != -1)
     {
-      if(rangeStart < 0 || rangeSize < 0 ||
-         rangeStart > groupedViews.size())
-      {
-        ALICEVISION_LOG_ERROR("Range is incorrect");
-        return EXIT_FAILURE;
-      }
+        if (rangeStart < 0 || rangeSize < 0 || rangeStart > groupedViews.size())
+        {
+            ALICEVISION_LOG_ERROR("Range is incorrect.");
+            return EXIT_FAILURE;
+        }
 
-      if(rangeStart + rangeSize > groupedViews.size())
-      {
-        rangeSize = groupedViews.size() - rangeStart;
-      }
+        if (rangeStart + rangeSize > groupedViews.size())
+        {
+            rangeSize = groupedViews.size() - rangeStart;
+        }
     }
     else
     {
         rangeStart = 0;
         rangeSize = groupedViews.size();
     }
-    ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
+    ALICEVISION_LOG_DEBUG("Range to compute: rangeStart = " << rangeStart << ", rangeSize = " << rangeSize);
     
 
     std::map<IndexT, std::vector<std::vector<std::shared_ptr<sfmData::View>>>> groupedViewsPerIntrinsics;
-    for(std::size_t groupIdx = rangeStart; groupIdx < rangeStart + rangeSize; ++groupIdx)
+    for (std::size_t groupIdx = rangeStart; groupIdx < rangeStart + rangeSize; ++groupIdx)
     {
         auto & group = groupedViews[groupIdx];
 
@@ -201,14 +201,14 @@ int aliceVision_main(int argc, char** argv)
 
             if (lid != intrinsicId)
             {
-                ALICEVISION_LOG_INFO("One group shall not have multiple intrinsics");
+                ALICEVISION_LOG_INFO("One group shall not have multiple intrinsics.");
                 return EXIT_FAILURE;
             }
         }
 
         if (intrinsicId == UndefinedIndexT)
         {
-            ALICEVISION_LOG_INFO("One group has no intrinsics");
+            ALICEVISION_LOG_INFO("One group has no intrinsics.");
             return EXIT_FAILURE;
         }
 
@@ -237,8 +237,7 @@ int aliceVision_main(int argc, char** argv)
 
             for (auto & v : group)
             {
-                //Retrieve first view Id to get a unique name for files
-                //As one view is only in one group
+                // Retrieve first ViewId to get a unique name for files as one view is only in one group
                 if (first)
                 {
                     firstViewId = v->getViewId();
@@ -268,9 +267,11 @@ int aliceVision_main(int argc, char** argv)
                 rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(rawColorInterpretation_str);
                 colorProfileFileName = v->getColorProfileFileName();
 
-                ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back() << ", raw color interpretation: " << ERawColorInterpretation_enumToString(rawColorInterpretation));
+                ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back()
+                                     << ", raw color interpretation: "
+                                     << ERawColorInterpretation_enumToString(rawColorInterpretation));
             }
-            if(!sfmData::hasComparableExposures(exposuresSetting))
+            if (!sfmData::hasComparableExposures(exposuresSetting))
             {
                 ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
             }
@@ -284,10 +285,12 @@ int aliceVision_main(int argc, char** argv)
             const bool simplifiedSampling = byPass || (calibrationMethod == ECalibrationMethod::LINEAR);
 
             std::vector<hdr::ImageSample> out_samples;
-            const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, viewIds, exposures, width, height, channelQuantization, imgReadOptions, params, simplifiedSampling);
+            const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, viewIds, exposures,
+                                                                     width, height, channelQuantization, imgReadOptions,
+                                                                     params, simplifiedSampling);
             if (!res)
             {
-                ALICEVISION_LOG_ERROR("Error while extracting samples from group");
+                ALICEVISION_LOG_ERROR("Error while extracting samples from group.");
             }
 
             using namespace boost::accumulators;
@@ -295,7 +298,7 @@ int aliceVision_main(int argc, char** argv)
             Accumulator acc_nbUsedBrackets;
             {
                 utils::Histogram<int> histogram(1, usedNbBrackets, usedNbBrackets-1);
-                for(const hdr::ImageSample& sample : out_samples)
+                for (const hdr::ImageSample& sample : out_samples)
                 {
                     acc_nbUsedBrackets(sample.descriptions.size());
                     histogram.Add(sample.descriptions.size());
@@ -303,15 +306,16 @@ int aliceVision_main(int argc, char** argv)
                 ALICEVISION_LOG_INFO("Number of used brackets in selected samples: "
                                     << " min: " << extract::min(acc_nbUsedBrackets) << " max: "
                                     << extract::max(acc_nbUsedBrackets) << " mean: " << extract::mean(acc_nbUsedBrackets)
-                                    << " median: " << extract::median(acc_nbUsedBrackets));
+                                    << " median: " << extract::median(acc_nbUsedBrackets) << ".");
 
-                ALICEVISION_LOG_INFO("Histogram of the number of brackets per sample: " << histogram.ToString("", 2));
+                ALICEVISION_LOG_INFO("Histogram of the number of brackets per sample: " << histogram.ToString("", 2)
+                                     << ".");
             }
-            if(debug)
+            if (debug)
             {
                 image::Image<image::RGBfColor> selectedPixels(width, height, true);
 
-                for(const hdr::ImageSample& sample: out_samples)
+                for (const hdr::ImageSample& sample: out_samples)
                 {
                     const float score = float(sample.descriptions.size()) / float(usedNbBrackets);
                     const image::RGBfColor color = getColorFromJetColorMap(score);
@@ -334,7 +338,7 @@ int aliceVision_main(int argc, char** argv)
             std::ofstream fileSamples(samplesFilepath, std::ios::binary);
             if (!fileSamples.is_open())
             {
-                ALICEVISION_LOG_ERROR("Impossible to write samples");
+                ALICEVISION_LOG_ERROR("Cannot write samples.");
                 return EXIT_FAILURE;
             }
 

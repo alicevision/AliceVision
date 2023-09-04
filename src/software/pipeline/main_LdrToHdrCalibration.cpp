@@ -149,7 +149,7 @@ int aliceVision_main(int argc, char** argv)
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::AUTO;
-    size_t maxTotalPoints = 1000000;
+    std::size_t maxTotalPoints = 1000000;
     bool byPass = false;
 
     // Command line parameters
@@ -159,30 +159,30 @@ int aliceVision_main(int argc, char** argv)
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
         ("response,o", po::value<std::string>(&outputResponsePath)->required(),
-        "Output path for the response file.");
+         "Output path for the response file.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("samplesFolders,f", po::value<std::string>(&samplesFolder)->default_value(samplesFolder),
-         "Path to folder containing the extracted samples (Required if the calibration is not linear).")
+         "Path to folder containing the extracted samples (required if the calibration is not linear).")
         ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
          "Name of the method used for the camera calibration: auto, linear, debevec, grossberg, laguerre."
          "If 'auto' is selected, the linear method will be used if there are RAW images; otherwise, the Debevec method "
          "will be used.")
         ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
-         "Weight function used to calibrate camera response (default depends on the calibration method, gaussian, "
+         "Weight function used to calibrate the camera response (default depends on the calibration method, gaussian, "
          "triangle, plateau).")
         ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
-         "bracket count per HDR image (0 means automatic).")
+         "Bracket count per HDR image (0 means automatic).")
         ("byPass", po::value<bool>(&byPass)->default_value(byPass),
-         "bypass HDR creation and use a single bracket as input for next steps")
+         "Bypass HDR creation and use a single bracket as the input for the next steps.")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
-        ("maxTotalPoints", po::value<size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
-            "Max number of points used from the sampling. This ensures that the number of pixels values extracted by the sampling "
-            "can be managed by the calibration step (in term of computation time and memory usage).")
+        ("maxTotalPoints", po::value<std::size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
+         "Maximum number of points used from the sampling. This ensures that the number of pixels values extracted by "
+         "the sampling can be managed by the calibration step (in terms of computation time and memory usage).")
         ;
 
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
@@ -195,35 +195,35 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // set maxThreads
+    // Set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
     omp_set_num_threads(hwc.getMaxThreads());
 
-    // Read sfm data
+    // Read SfMData
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
     }
     if (channelQuantizationPower <= 0)
     {
-        ALICEVISION_LOG_ERROR("Invalid channelQuantizationPower config");
+        ALICEVISION_LOG_ERROR("Invalid channelQuantizationPower configuration.");
         return EXIT_FAILURE;
     }
     if (nbBrackets < 0)
     {
-        ALICEVISION_LOG_ERROR("Invalid nbBrackets config");
+        ALICEVISION_LOG_ERROR("Invalid nbBrackets config.");
         return EXIT_FAILURE;
     }
 
-    const size_t channelQuantization = std::pow(2, channelQuantizationPower);
+    const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
-    // Make groups
+    // Estimate groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> globalGroupedViews;
     if (!hdr::estimateBracketsFromSfmData(globalGroupedViews, sfmData, nbBrackets))
     {
-        ALICEVISION_LOG_ERROR("Error on brackets information");
+        ALICEVISION_LOG_ERROR("Error on brackets information.");
         return EXIT_FAILURE;
     }
 
@@ -232,18 +232,18 @@ int aliceVision_main(int argc, char** argv)
     {
         sizeOfGroups.insert(group.size());
     }
-    if(sizeOfGroups.size() == 1)
+    if (sizeOfGroups.size() == 1)
     {
         std::size_t usedNbBrackets = *sizeOfGroups.begin();
-        if(usedNbBrackets == 1)
+        if (usedNbBrackets == 1)
         {
             ALICEVISION_LOG_INFO("No multi-bracketing.");
             // Nothing to calibrate, export a linear CRF.
             calibrationMethod = ECalibrationMethod::LINEAR;
         }
         ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
-                                << usedNbBrackets << ". It will generate " << globalGroupedViews.size()
-                                << " hdr images.");
+                             << usedNbBrackets << ". It will generate " << globalGroupedViews.size()
+                             << " HDR images.");
     }
     else
     {
@@ -266,14 +266,14 @@ int aliceVision_main(int argc, char** argv)
 
             if (lid != intrinsicId)
             {
-                ALICEVISION_LOG_INFO("One group shall not have multiple intrinsics");
+                ALICEVISION_LOG_INFO("One group shall not have multiple intrinsics.");
                 return EXIT_FAILURE;
             }
         }
 
         if (intrinsicId == UndefinedIndexT)
         {
-            ALICEVISION_LOG_INFO("One group has no intrinsics");
+            ALICEVISION_LOG_INFO("One group has no intrinsics.");
             return EXIT_FAILURE;
         }
 
@@ -292,7 +292,8 @@ int aliceVision_main(int argc, char** argv)
 
         if (samplesFolder.empty())
         {
-            ALICEVISION_LOG_ERROR("A folder with selected samples is required to calibrate the Camera Response Function (CRF) and/or estimate the hdr output exposure level.");
+            ALICEVISION_LOG_ERROR("A folder with selected samples is required to calibrate the Camera Response "
+                                  "Function (CRF) and/or estimate the HDR output exposure level.");
             return EXIT_FAILURE;
         }
         else
@@ -315,10 +316,10 @@ int aliceVision_main(int argc, char** argv)
                 groupedExposures.push_back(getExposures(exposuresSetting));
             }
 
-            size_t group_pos = 0;
+            std::size_t group_pos = 0;
             hdr::Sampling sampling;
 
-            ALICEVISION_LOG_INFO("Analyzing samples for each group");
+            ALICEVISION_LOG_INFO("Analyzing samples for each group.");
             for (auto& group : groupedViews)
             {
                 if (group.size() == 0)
@@ -334,7 +335,7 @@ int aliceVision_main(int argc, char** argv)
                 std::ifstream fileSamples(samplesFilepath, std::ios::binary);
                 if (!fileSamples.is_open())
                 {
-                    ALICEVISION_LOG_ERROR("Impossible to read samples from file " << samplesFilepath);
+                    ALICEVISION_LOG_ERROR("Cannot read samples from file " << samplesFilepath << ".");
                     return EXIT_FAILURE;
                 }
 
@@ -373,7 +374,7 @@ int aliceVision_main(int argc, char** argv)
                 // We need to trim samples list
                 sampling.filter(maxTotalPoints);
 
-                ALICEVISION_LOG_INFO("Extracting samples for each group");
+                ALICEVISION_LOG_INFO("Extracting samples for each group.");
                 group_pos = 0;
 
                 std::size_t total = 0;
@@ -394,7 +395,7 @@ int aliceVision_main(int argc, char** argv)
                         const bool isRAW = imgFormat.compare("raw") == 0;
 
                         calibrationMethod = isRAW ? ECalibrationMethod::LINEAR : ECalibrationMethod::DEBEVEC;
-                        ALICEVISION_LOG_INFO("Calibration method automatically set to " << calibrationMethod);
+                        ALICEVISION_LOG_INFO("Calibration method automatically set to " << calibrationMethod << ".");
                     }
 
                     // Read from file
@@ -402,7 +403,7 @@ int aliceVision_main(int argc, char** argv)
                     std::ifstream fileSamples(samplesFilepath, std::ios::binary);
                     if (!fileSamples.is_open())
                     {
-                        ALICEVISION_LOG_ERROR("Impossible to read samples from file " << samplesFilepath);
+                        ALICEVISION_LOG_ERROR("Cannot read samples from file " << samplesFilepath << ".");
                         return EXIT_FAILURE;
                     }
 
@@ -446,14 +447,14 @@ int aliceVision_main(int argc, char** argv)
 
         if (!byPass)
         {
-            ALICEVISION_LOG_INFO("Start calibration");
+            ALICEVISION_LOG_INFO("Start calibration.");
             hdr::rgbCurve response(channelQuantization);
 
             switch (calibrationMethod)
             {
             case ECalibrationMethod::LINEAR:
             {
-                // set the response function to linear
+                // Set the response function to linear
                 response.setLinear();
                 break;
             }
@@ -463,7 +464,7 @@ int aliceVision_main(int argc, char** argv)
                 const float lambda = channelQuantization;
                 bool res = debevec.process(calibrationSamples, groupedExposures, channelQuantization, calibrationWeight, lambda, response);
                 if (!res) {
-                    ALICEVISION_LOG_ERROR("Calibration failed");
+                    ALICEVISION_LOG_ERROR("Calibration failed.");
                     return EXIT_FAILURE;
                 }
 
@@ -485,7 +486,7 @@ int aliceVision_main(int argc, char** argv)
             }
             case ECalibrationMethod::AUTO:
             {
-                ALICEVISION_LOG_ERROR("Calibration method cannot be automatically selected");
+                ALICEVISION_LOG_ERROR("The calibration method cannot be automatically selected.");
                 return EXIT_FAILURE;
             }
             }
@@ -505,7 +506,7 @@ int aliceVision_main(int argc, char** argv)
         std::ofstream file(lumastatFilename);
         if (!file)
         {
-            ALICEVISION_LOG_ERROR("Unable to create file " << lumastatFilename << " for storing luminance statistics");
+            ALICEVISION_LOG_ERROR("Unable to create the file '" << lumastatFilename << "' to store luminance statistics.");
             return EXIT_FAILURE;
         }
 
