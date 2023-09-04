@@ -9,6 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebufalgo.h>
 
 // SFMData
@@ -40,7 +41,7 @@ std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const 
 {
     // Output image file path
     std::stringstream sstream;
-    if(rootname == "")
+    if (rootname == "")
     {
         sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
     }
@@ -52,11 +53,14 @@ std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const 
     return hdrImagePath;
 }
 
-std::string getHdrMaskPath(const std::string& outputPath, std::size_t g, const std::string& maskname, const std::string& rootname = "")
+std::string getHdrMaskPath(const std::string& outputPath,
+                           std::size_t g,
+                           const std::string& maskname,
+                           const std::string& rootname = "")
 {
     // Output image file path
     std::stringstream sstream;
-    if(rootname == "")
+    if (rootname == "")
     {
         sstream << "hdrMask_" << maskname << "_" << std::setfill('0') << std::setw(4) << g << ".exr";
     }
@@ -82,7 +86,7 @@ int aliceVision_main(int argc, char** argv)
     double minSignificantValue = 0.05;
     double maxSignificantValue = 0.995;
     bool computeLightMasks = false;
-    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::AUTO;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
     float highlightCorrectionFactor = 0.0f;
@@ -99,38 +103,41 @@ int aliceVision_main(int argc, char** argv)
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
         ("response,o", po::value<std::string>(&inputResponsePath)->required(),
-        "Input path for the response file.")
+         "Input path for the response file.")
         ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
          "SfMData file output.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
-         "bracket count per HDR image (0 means automatic).")
+         "Bracket count per HDR image (0 means automatic).")
         ("byPass", po::value<bool>(&byPass)->default_value(byPass),
-         "bypass HDR creation and use medium bracket as input for next steps")
+         "Bypass HDR creation and use a single bracket as the input for the next steps.")
         ("keepSourceImageName", po::value<bool>(&keepSourceImageName)->default_value(keepSourceImageName),
-         "Keep the filename of the input image selected as central image for the output image filename")
+         "Use the filename of the input image selected as the central image for the output image filename.")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
-         "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
+         "Weight function used to fuse all the LDR images together (gaussian, triangle, plateau).")
         ("offsetRefBracketIndex", po::value<int>(&offsetRefBracketIndex)->default_value(offsetRefBracketIndex),
-         "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed backet.")
+         "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed bracket.")
         ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
-         "Mean expected luminance after merging step when input LDR images are decoded in sRGB color space. Must be in the range [0, 1].")
+         "Mean expected luminance after merging step when the input LDR images are decoded in the sRGB color space. "
+         "Must be in the range [0, 1].")
         ("minSignificantValue", po::value<double>(&minSignificantValue)->default_value(minSignificantValue),
-         "Minimum channel input value to be considered in advanced pixelwise merging. Used in advanced pixelwise merging.")
+         "Minimum channel input value to be considered in advanced pixelwise merging. "
+         "Used in advanced pixelwise merging.")
         ("maxSignificantValue", po::value<double>(&maxSignificantValue)->default_value(maxSignificantValue),
-         "Maximum channel input value to be considered in advanced pixelwise merging. Used in advanced pixelwise merging.")
+         "Maximum channel input value to be considered in advanced pixelwise merging. "
+         "Used in advanced pixelwise merging.")
         ("computeLightMasks", po::value<bool>(&computeLightMasks)->default_value(computeLightMasks),
          "Compute masks of dark and high lights and missing mid lights info.")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
-         "float value between 0 and 1 to correct clamped highlights in dynamic range: use 0 for no correction, 1 for "
+         "Float value between 0 and 1 to correct clamped highlights in dynamic range: use 0 for no correction, 1 for "
          "full correction to maxLuminance.")
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
@@ -149,7 +156,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // set maxThreads
+    // Set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
     omp_set_num_threads(hwc.getMaxThreads());
 
@@ -157,21 +164,21 @@ int aliceVision_main(int argc, char** argv)
     boost::filesystem::path path(sfmOutputDataFilepath);
     std::string outputPath = path.parent_path().string();
 
-    // Read sfm data
+    // Read SfMData
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
     }
     // Check input compatibility with brackets
     const int countImages = sfmData.getViews().size();
-    if(countImages == 0)
+    if (countImages == 0)
     {
         ALICEVISION_LOG_ERROR("The input SfMData contains no image.");
         return EXIT_FAILURE;
     }
-    if(nbBrackets == 1 && !byPass)
+    if (nbBrackets == 1 && !byPass)
     {
         ALICEVISION_LOG_WARNING("Enable bypass as there is only one input bracket.");
         byPass = true;
@@ -179,10 +186,7 @@ int aliceVision_main(int argc, char** argv)
 
     const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
-    // Fusion always produces linear image. sRGB is the only non linear color space that must be changed to linear (sRGB linear). 
-    image::EImageColorSpace mergedColorSpace = (workingColorSpace == image::EImageColorSpace::SRGB) ? image::EImageColorSpace::LINEAR : workingColorSpace;
-
-    // Make groups
+    // Estimate groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
     if (!hdr::estimateBracketsFromSfmData(groupedViews, sfmData, nbBrackets))
     {
@@ -194,20 +198,20 @@ int aliceVision_main(int argc, char** argv)
     std::size_t usedNbBrackets;
     {
         std::set<std::size_t> sizeOfGroups;
-        for(auto& group : groupedViews)
+        for (auto& group : groupedViews)
         {
             sizeOfGroups.insert(group.size());
         }
-        if(sizeOfGroups.size() == 1)
+        if (sizeOfGroups.size() == 1)
         {
             usedNbBrackets = *sizeOfGroups.begin();
-            if(usedNbBrackets == 1)
+            if (usedNbBrackets == 1)
             {
                 ALICEVISION_LOG_INFO("No multi-bracketing.");
             }
             ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
                                  << usedNbBrackets << ". It will generate " << groupedViews.size()
-                                 << " hdr images.");
+                                 << " HDR images.");
         }
         else
         {
@@ -232,22 +236,37 @@ int aliceVision_main(int argc, char** argv)
 
             if (lid != intrinsicId)
             {
-                ALICEVISION_LOG_INFO("One group shall not have multiple intrinsics");
+                ALICEVISION_LOG_INFO("One group shall not have multiple intrinsics.");
                 return EXIT_FAILURE;
             }
         }
 
         if (intrinsicId == UndefinedIndexT)
         {
-            ALICEVISION_LOG_INFO("One group has no intrinsics");
+            ALICEVISION_LOG_INFO("One group has no intrinsics.");
             return EXIT_FAILURE;
         }
 
         groupedViewsPerIntrinsics[intrinsicId].push_back(group);
     }
 
+    // Estimate working color space if set to AUTO
+    if (workingColorSpace == image::EImageColorSpace::AUTO)
+    {
+        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(groupedViews[0][0]->getImagePath()));
+        const std::string imgFormat = in->format_name();
+        const bool isRAW = imgFormat.compare("raw") == 0;
 
-    //Estimate target views for each group
+        workingColorSpace = isRAW ? image::EImageColorSpace::LINEAR : image::EImageColorSpace::SRGB;
+        ALICEVISION_LOG_INFO("Working color space automatically set to " << workingColorSpace << ".");
+    }
+
+    // Fusion always produces linear image. sRGB is the only non linear color space that must be changed to linear (sRGB
+    // linear).
+    image::EImageColorSpace mergedColorSpace = (workingColorSpace == image::EImageColorSpace::SRGB) ?
+                                               image::EImageColorSpace::LINEAR : workingColorSpace;
+
+    // Estimate target views for each group
     std::map<IndexT, std::vector<std::shared_ptr<sfmData::View>>> targetViewsPerIntrinsics;
     std::map<IndexT, int> targetIndexPerIntrinsics;
     if (!byPass)
@@ -266,7 +285,9 @@ int aliceVision_main(int argc, char** argv)
 
             if (!fs::is_regular_file(lumaStatFilepath) && !isOffsetRefBracketIndexValid)
             {
-                ALICEVISION_LOG_ERROR("Unable to open the file " << lumaStatFilepath.string() << " with luminance statistics. This file is needed to select the optimal exposure for the creation of HDR images.");
+                ALICEVISION_LOG_ERROR("Unable to open the file '" << lumaStatFilepath.string() << "' with luminance "
+                                      "statistics. This file is needed to select the optimal exposure for the creation "
+                                      "of HDR images.");
                 return EXIT_FAILURE;
             }
 
@@ -275,11 +296,16 @@ int aliceVision_main(int argc, char** argv)
             {
                 meanTargetedLumaForMerging = std::pow((meanTargetedLumaForMerging + 0.055) / 1.055, 2.2);
             }
-            targetIndexPerIntrinsics[intrinsicId] = hdr::selectTargetViews(targetViews, groups, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
+            targetIndexPerIntrinsics[intrinsicId] = hdr::selectTargetViews(targetViews,
+                                                                           groups,
+                                                                           offsetRefBracketIndex,
+                                                                           lumaStatFilepath.string(),
+                                                                           meanTargetedLumaForMerging);
 
             if ((targetViews.empty() || targetViews.size() != groups.size()) && !isOffsetRefBracketIndexValid)
             {
-                ALICEVISION_LOG_ERROR("File " << lumaStatFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
+                ALICEVISION_LOG_ERROR("File '" << lumaStatFilepath.string() << "' is not valid. This file is required "
+                                      "to select the optimal exposure for the creation of HDR images.");
                 return EXIT_FAILURE;
             }
 
@@ -288,15 +314,15 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Define range to compute
-    if(rangeStart != -1)
+    if (rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0 || rangeStart > groupedViews.size())
+        if (rangeStart < 0 || rangeSize < 0 || rangeStart > groupedViews.size())
         {
-            ALICEVISION_LOG_ERROR("Range is incorrect");
+            ALICEVISION_LOG_ERROR("Range is incorrect.");
             return EXIT_FAILURE;
         }
 
-        if(rangeStart + rangeSize > groupedViews.size())
+        if (rangeStart + rangeSize > groupedViews.size())
         {
             rangeSize = groupedViews.size() - rangeStart;
         }
@@ -306,9 +332,9 @@ int aliceVision_main(int argc, char** argv)
         rangeStart = 0;
         rangeSize = groupedViews.size();
     }
-    ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
+    ALICEVISION_LOG_DEBUG("Range to compute: rangeStart = " << rangeStart << ", rangeSize = " << rangeSize);
 
-    if(rangeStart == 0)
+    if (rangeStart == 0)
     {
         int pos = 0;
         sfmData::SfMData outputSfm;
@@ -335,14 +361,14 @@ int aliceVision_main(int argc, char** argv)
                 }
                 else if (targetViews.empty())
                 {
-                    ALICEVISION_LOG_ERROR("Target view for HDR merging has not been computed");
+                    ALICEVISION_LOG_ERROR("Target view for HDR merging has not been computed.");
                     return EXIT_FAILURE;
                 }
                 else
                 {
                     hdrView = std::make_shared<sfmData::View>(*targetViews.at(g));
                 }
-                if(!byPass)
+                if (!byPass)
                 {
                     boost::filesystem::path p(targetViews[g]->getImagePath());
                     const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
@@ -353,16 +379,15 @@ int aliceVision_main(int argc, char** argv)
             }
         }
 
-        // Export output sfmData
-        if(!sfmDataIO::Save(outputSfm, sfmOutputDataFilepath, sfmDataIO::ESfMData::ALL))
+        // Export output SfMData
+        if (!sfmDataIO::Save(outputSfm, sfmOutputDataFilepath, sfmDataIO::ESfMData::ALL))
         {
-            ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilepath);
+            ALICEVISION_LOG_ERROR("Cannot save output SfMData file at '" << sfmOutputDataFilepath << "'.");
             return EXIT_FAILURE;
         }
     }
-
     
-    if(byPass)
+    if (byPass)
     {
         ALICEVISION_LOG_INFO("Bypass enabled, nothing to compute.");
         return EXIT_SUCCESS;
@@ -413,10 +438,12 @@ int aliceVision_main(int argc, char** argv)
                 options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getRawColorInterpretation());
                 options.colorProfileFileName = group[i]->getColorProfileFileName();
 
-                // Whatever the raw color interpretation mode, the default read processing for raw images is to apply white balancing in libRaw, before demosaicing.
+                // Whatever the raw color interpretation mode, the default read processing for raw images is to apply
+                // white balancing in libRaw, before demosaicing.
                 // The DcpMetadata mode allows to not apply color management after demosaicing.
-                // Because if requested after demosaicing, white balancing is done at color management stage, we can set this option to true to get real raw data,
-                // without any white balancing, when the DcpMetadata mode is selected.
+                // Because if requested after demosaicing, white balancing is done at color management stage, we can
+                // set this option to true to get real raw data, without any white balancing, when the DcpMetadata mode
+                // is selected.
                 if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
                 {
                     options.doWBAfterDemosaicing = true;
@@ -427,7 +454,7 @@ int aliceVision_main(int argc, char** argv)
                 exposuresSetting[i] = group[i]->getCameraExposureSetting();
             }
 
-            if(!sfmData::hasComparableExposures(exposuresSetting))
+            if (!sfmData::hasComparableExposures(exposuresSetting))
             {
                 ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
             }
@@ -439,7 +466,7 @@ int aliceVision_main(int argc, char** argv)
             image::Image<image::RGBfColor> lowLightMask;
             image::Image<image::RGBfColor> highLightMask;
             image::Image<image::RGBfColor> noMidLightMask;
-            if(images.size() > 1)
+            if (images.size() > 1)
             {
                 hdr::hdrMerge merge;
                 sfmData::ExposureSetting targetCameraSetting = targetView->getCameraExposureSetting();
@@ -450,13 +477,16 @@ int aliceVision_main(int argc, char** argv)
                 mergingParams.maxSignificantValue = maxSignificantValue;
                 mergingParams.computeLightMasks = computeLightMasks;
                
-                merge.process(images, exposures, fusionWeight, response, HDRimage, lowLightMask, highLightMask, noMidLightMask, mergingParams);
-                if(highlightCorrectionFactor > 0.0f)
+                merge.process(images, exposures, fusionWeight, response, HDRimage, lowLightMask, highLightMask,
+                              noMidLightMask, mergingParams);
+                if (highlightCorrectionFactor > 0.0f)
                 {
-                    merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure(), highlightCorrectionFactor, highlightTargetLux);
+                    merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage,
+                                               targetCameraSetting.getExposure(), highlightCorrectionFactor,
+                                               highlightTargetLux);
                 }
             }
-            else if(images.size() == 1)
+            else if (images.size() == 1)
             {
                 // Nothing to do
                 HDRimage = images[0];
@@ -490,7 +520,7 @@ int aliceVision_main(int argc, char** argv)
 
             image::writeImage(hdrImagePath, HDRimage, writeOptions, targetMetadata);
 
-            if(computeLightMasks)
+            if (computeLightMasks)
             {
                 const std::string hdrMaskLowLightPath =
                     getHdrMaskPath(outputPath, pos, "lowLight", keepSourceImageName ? p.stem().string() : "");

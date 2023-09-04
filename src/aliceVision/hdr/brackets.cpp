@@ -9,59 +9,66 @@
 namespace aliceVision {
 namespace hdr {
 
-bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, const sfmData::SfMData& sfmData, size_t countBrackets)
+bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
+                                 const sfmData::SfMData& sfmData,
+                                 size_t countBrackets)
 {
     groups.clear();
 
     size_t countImages = sfmData.getViews().size();
-    if(countImages == 0)
+    if (countImages == 0)
     {
         return false;
     }
-
 
     const sfmData::Views & views = sfmData.getViews();
 
     // Order views by their image names (without path and extension to make sure we handle rotated images)
     std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-    for(auto& viewIt : sfmData.getViews())
+    for (auto& viewIt : sfmData.getViews())
     {
         viewsOrderedByName.push_back(viewIt.second);
     }
+
     std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(),
-        [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-            if(a == nullptr || b == nullptr)
+        [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool
+        {
+            if (a == nullptr || b == nullptr)
                 return true;
 
             boost::filesystem::path path_a(a->getImagePath());
             boost::filesystem::path path_b(b->getImagePath());
 
             return (path_a.stem().string() < path_b.stem().string());
-        });
+        }
+    );
 
     // Print a warning if the aperture changes.
     std::set<float> fnumbers;
-    for(auto& view : viewsOrderedByName) {
+    for (auto& view : viewsOrderedByName)
+    {
         fnumbers.insert(view->getMetadataFNumber());
     }
     
-    if(fnumbers.size() != 1) {
+    if (fnumbers.size() != 1)
+    {
         ALICEVISION_LOG_WARNING("Different apertures amongst the dataset. For correct HDR, you should only change "
                                 "the shutter speed (and eventually the ISO).");
         ALICEVISION_LOG_WARNING("Used f-numbers:");
-        for(auto f : fnumbers) {
+        for (auto f : fnumbers)
+        {
             ALICEVISION_LOG_WARNING(" * " << f);
         }
     }
     
     std::vector<std::shared_ptr<sfmData::View>> group;
     double lastExposure = std::numeric_limits<double>::min();
-    for(auto& view : viewsOrderedByName)
+    for (auto& view : viewsOrderedByName)
     {
         if (countBrackets > 0)
         {
             group.push_back(view);
-            if(group.size() == countBrackets)
+            if (group.size() == countBrackets)
             {
                 groups.push_back(group);
                 group.clear();
@@ -71,7 +78,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         {
             // Automatically determines the number of brackets
             double exp = view->getCameraExposureSetting().getExposure();
-            if(exp < lastExposure)
+            if (exp < lastExposure)
             {
                 groups.push_back(group);
                 group.clear();
@@ -88,7 +95,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     }
 
 
-    //Vote for the best bracket count
+    // Vote for the best bracket count
     std::map<size_t, int> counters;
     for (const auto & group : groups)
     {
@@ -114,13 +121,13 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         }
         else if (item.second == maxSize && item.first > bestBracketCount)
         {
-            //If two brackets size have the same vote number, 
-            //Keep the larger one (Just to avoid keeping only the outlier)
+            // If two brackets size have the same vote number,
+            // keep the larger one (this avoids keeping only the outlier)
             bestBracketCount = item.first;
         }
     }
 
-    //Only keep groups with majority bracket size
+    // Only keep groups with the majority bracket size
     auto groupIt = groups.begin();
     while (groupIt != groups.end())
     {
@@ -135,15 +142,18 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     }
 
     std::vector< std::vector<sfmData::ExposureSetting>> v_exposuresSetting;
-    for(auto & group : groups)
+    for (auto & group : groups)
     {
         // Sort all images by exposure time
         std::sort(group.begin(), group.end(),
-                  [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-                      if(a == nullptr || b == nullptr)
-                          return true;
-                      return (a->getCameraExposureSetting().getExposure() < b->getCameraExposureSetting().getExposure());
-                  });
+            [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool
+            {
+                if (a == nullptr || b == nullptr)
+                    return true;
+                return (a->getCameraExposureSetting().getExposure() < b->getCameraExposureSetting().getExposure());
+            }
+        );
+
         std::vector<sfmData::ExposureSetting> exposuresSetting;
         for (auto& v : group)
         {
@@ -173,10 +183,12 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
 }
 
 int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
-                      std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex,
-                      const std::string& lumaStatFilepath, const double meanTargetedLuma)
+                      std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
+                      int offsetRefBracketIndex,
+                      const std::string& lumaStatFilepath,
+                      const double meanTargetedLuma)
 {
-    // If targetIndexesFilename cannot be opened or is not valid an error is thrown
+    // If targetIndexesFilename cannot be opened or is not valid, an error is thrown.
     // For odd number, there is no ambiguity on the middle image.
     // For even number, we arbitrarily choose the more exposed view (as we usually have more under-exposed images than over-exposed).
     const int viewNumberPerGroup = groups[0].size();
@@ -191,10 +203,13 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
     }
     else // try to use the luminance statistics of the LDR images stored in the file
     {
-        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter out of range, read file containing luminance statistics to compute an estimation");
+        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter out of range, " <<
+                             "read file containing luminance statistics to compute an estimation");
         std::ifstream file(lumaStatFilepath);
         if (!file)
+        {
             ALICEVISION_THROW_ERROR("Failed to open file: " << lumaStatFilepath);
+        }
         std::vector<std::string> lines;
         std::string line;
         while (std::getline(file, line))
@@ -204,7 +219,7 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
         if ((lines.size() < 3) || (std::stoi(lines[0]) != groups.size()) || (std::stoi(lines[1]) < groups[0].size()) ||
             (lines.size() < 3 + std::stoi(lines[0]) * std::stoi(lines[1])))
         {
-            ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
+            ALICEVISION_THROW_ERROR("File '" << lumaStatFilepath << "' is not a valid file");
         }
         int nbGroup = std::stoi(lines[0]);
         int nbExp = std::stoi(lines[1]);
@@ -223,9 +238,12 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
                 double exposure, lumaMean, lumaMin, lumaMax;
                 if (!(iss >> srcId >> exposure >> nbItem >> lumaMean >> lumaMin >> lumaMax))
                 {
-                    ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
+                    ALICEVISION_THROW_ERROR("File '" << lumaStatFilepath << "' is not a valid file");
                 }
-                if (exposure > 0.0) // discard dummy luminance info (with exposure set to -1.0) added at calibration stage if samples are missing for a view
+
+                // Discard dummy luminance info (with exposure set to -1.0) added at calibration stage if samples are
+                // missing for a view
+                if (exposure > 0.0)
                 {
                     lumaMeanMean += lumaMean;
                     ++nbValidViews;
@@ -234,9 +252,10 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
             v_lumaMeanMean.push_back(lumaMeanMean / nbValidViews);
         }
 
-        // adjust last index to avoid non increasing luminance curve due to saturation in highlights
+        // Adjust last index to avoid non increasing luminance curve due to saturation in highlights
         int lastIdx = v_lumaMeanMean.size() - 1;
-        while ((lastIdx > 1) && ((v_lumaMeanMean[lastIdx] < v_lumaMeanMean[lastIdx - 1]) || (v_lumaMeanMean[lastIdx] < v_lumaMeanMean[lastIdx - 2])))
+        while ((lastIdx > 1) && ((v_lumaMeanMean[lastIdx] < v_lumaMeanMean[lastIdx - 1]) ||
+                                 (v_lumaMeanMean[lastIdx] < v_lumaMeanMean[lastIdx - 2])))
         {
             lastIdx--;
         }
@@ -246,14 +265,16 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
 
         for (int k = 0; k < lastIdx; ++k)
         {
-            const double diffWithLumaTarget = (v_lumaMeanMean[k] > meanTargetedLuma) ? (v_lumaMeanMean[k] - meanTargetedLuma) : (meanTargetedLuma - v_lumaMeanMean[k]);
+            const double diffWithLumaTarget = (v_lumaMeanMean[k] > meanTargetedLuma) ?
+                                              (v_lumaMeanMean[k] - meanTargetedLuma) :
+                                              (meanTargetedLuma - v_lumaMeanMean[k]);
             if (diffWithLumaTarget < minDiffWithLumaTarget)
             {
                 minDiffWithLumaTarget = diffWithLumaTarget;
                 targetIndex = k;
             }
         }
-        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automaticaly set to " << targetIndex - middleIndex);
+        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automatically set to " << targetIndex - middleIndex);
     }
 
     for (auto& group : groups)
