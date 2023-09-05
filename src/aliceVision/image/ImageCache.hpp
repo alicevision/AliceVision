@@ -263,16 +263,19 @@ private:
     /**
      * @brief Load a new image corresponding to the given key and add it as a new entry in the cache.
      * @param[in] key the key used to identify the entry in the cache
+     * @param[in] lockPeek lock on the peeking mutex, will be released 
      */
     template<typename TPix>
-    void load(const CacheKey& key);
+    void load(const CacheKey& key, std::unique_lock<std::mutex>& lockPeek);
 
     CacheInfo _info;
     ImageReadOptions _options;
     std::unordered_map<CacheKey, CacheValue, CacheKeyHasher> _imagePtrs;
     /// ordered from LRU (Least Recently Used) to MRU (Most Recently Used)
     std::list<CacheKey> _keys;
-    mutable std::mutex _mutex;
+
+    mutable std::mutex _mutexGeneral;
+    mutable std::mutex _mutexPeek;
 
 };
 
@@ -289,7 +292,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
                                 << "request was made with downscale level " << downscaleLevel);
     }
 
-    const std::lock_guard<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> lockPeek(_mutexPeek);
 
     ALICEVISION_LOG_TRACE("[image] ImageCache: reading " << filename 
                          << " with downscale level " << downscaleLevel
@@ -320,6 +323,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
         }
     }
 
+    const std::scoped_lock<std::mutex> lockGeneral(_mutexGeneral);
+
     // retrieve image size
     int width, height;
     readImageSize(filename, width, height);
@@ -328,7 +333,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
     // add image to cache if it fits in capacity
     if (memSize + _info.contentSize <= _info.capacity) 
     {
-        load<TPix>(keyReq);
+        load<TPix>(keyReq, lockPeek);
 
         ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
         return _imagePtrs.at(keyReq).get<TPix>();
@@ -355,7 +360,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
 
                 _info.nbRemoveUnused++;
 
-                load<TPix>(keyReq);
+                load<TPix>(keyReq, lockPeek);
 
                 ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
                 return _imagePtrs.at(keyReq).get<TPix>();
@@ -394,7 +399,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
     // add image to cache if it fits in maxSize
     if (memSize + _info.contentSize <= _info.maxSize) 
     {
-        load<TPix>(keyReq);
+        load<TPix>(keyReq, lockPeek);
 
         ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
         return _imagePtrs.at(keyReq).get<TPix>();
@@ -406,8 +411,10 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
 }
 
 template<typename TPix>
-void ImageCache::load(const CacheKey& key)
+void ImageCache::load(const CacheKey& key, std::unique_lock<std::mutex>& lockPeek)
 {
+    lockPeek.unlock();
+
     auto img = std::make_shared<Image<TPix>>();
 
     // load image from disk
@@ -418,6 +425,8 @@ void ImageCache::load(const CacheKey& key)
     {
         imageAlgo::resizeImage(key.downscaleLevel, *img);
     }
+
+    lockPeek.lock();
 
     _info.nbLoadFromDisk++;
 
@@ -442,7 +451,7 @@ bool ImageCache::contains(const std::string& filename, int downscaleLevel) const
                                 << "request was made with downscale level " << downscaleLevel);
     }
 
-    const std::lock_guard<std::mutex> lock(_mutex);
+    const std::scoped_lock<std::mutex> lockPeek(_mutexPeek);
 
     using TInfo = ColorTypeInfo<TPix>;
 
