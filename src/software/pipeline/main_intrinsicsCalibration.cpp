@@ -41,6 +41,8 @@
 #include <boost/program_options.hpp>
 
 #include <fstream>
+#include <map>
+#include <utility>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -76,8 +78,8 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
 
     // Calibrate each intrinsic independently
     Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> indices;
-    size_t global_max_checkerboard_w = 0;
-    size_t global_max_checkerboard_h = 0;
+    size_t global_checkerboard_w = 0;
+    size_t global_checkerboard_h = 0;
     bool first = true;
     for (auto& pi : sfmData.getIntrinsics())
     {
@@ -94,8 +96,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
 
         ALICEVISION_LOG_INFO("Processing Intrinsic " << intrinsicId);
 
-        size_t max_checkerboard_w = 0;
-        size_t max_checkerboard_h = 0;
+        std::map<std::pair<size_t, size_t>, int> checkerboard_dims;
         std::map<size_t, Eigen::Matrix3d> homographies;
         for (auto& pv : sfmData.getViews())
         {
@@ -104,7 +105,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
             const calibration::CheckerDetector& detector = boardsAllImages[pv.first];
             if (detector.getBoards().size() != 1)
             {
-                ALICEVISION_LOG_ERROR("The view " << pv.first << " has either 0 or more than 1 checkerboard found.");
+                ALICEVISION_LOG_WARNING("The view " << pv.first << " has either 0 or more than 1 checkerboard found.");
                 continue;
             }
 
@@ -114,8 +115,15 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
             const auto& bs = detector.getBoards();
             const auto& b = bs[0];
 
-            max_checkerboard_w = std::max(size_t(b.cols()), max_checkerboard_w);
-            max_checkerboard_h = std::max(size_t(b.rows()), max_checkerboard_h);
+            const auto dim = std::make_pair(size_t(b.cols()), size_t(b.rows()));
+            if (checkerboard_dims.find(dim) == checkerboard_dims.end())
+            {
+                checkerboard_dims[dim] = 1;
+            }
+            else
+            {
+                ++checkerboard_dims[dim];
+            }
 
             for (int i = 0; i < b.rows(); i++)
             {
@@ -220,14 +228,31 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
         // Initialize camera intrinsics
         cameraPinhole->setK(A);
 
+        // Estimate checkerboard dimensions
+        size_t checkerboard_w = 0;
+        size_t checkerboard_h = 0;
+        int max_count = 0;
+        for (const auto& [dim, count] : checkerboard_dims)
+        {
+            if (count > max_count)
+            {
+                max_count = count;
+                checkerboard_w = dim.first;
+                checkerboard_h = dim.second;
+            }
+        }
+
         if (first)
         {
+            global_checkerboard_w = checkerboard_w;
+            global_checkerboard_h = checkerboard_h;
+
             // Create landmarks
-            indices = Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic>(max_checkerboard_h, max_checkerboard_w);
+            indices = Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic>(global_checkerboard_h, global_checkerboard_w);
             IndexT posLandmark = 0;
-            for (int i = 0; i < max_checkerboard_h; i++)
+            for (int i = 0; i < global_checkerboard_h; i++)
             {
-                for (int j = 0; j < max_checkerboard_w; j++)
+                for (int j = 0; j < global_checkerboard_w; j++)
                 {
                     indices(i, j) = posLandmark;
 
@@ -237,16 +262,13 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
                 }
             }
 
-            global_max_checkerboard_w = max_checkerboard_w;
-            global_max_checkerboard_h = max_checkerboard_h;
             first = false;
         }
         else
         {
-            if (global_max_checkerboard_h != max_checkerboard_h || global_max_checkerboard_w != max_checkerboard_w)
+            if (checkerboard_w != global_checkerboard_w || checkerboard_h != global_checkerboard_h)
             {
-                ALICEVISION_LOG_ERROR("Inconsistent checkerboard size");
-                return false;
+                ALICEVISION_LOG_WARNING("Inconsistent checkerboard size.");
             }
         }
 
@@ -290,13 +312,19 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
             const calibration::CheckerDetector& detector = boardsAllImages[viewId];
             const auto& bs = detector.getBoards();
             const auto& b = bs[0];
+
+            if (b.cols() != global_checkerboard_w || b.rows() != global_checkerboard_h)
+            {
+                continue;
+            }
+
             const auto& corners = detector.getCorners();
 
             auto& curview = sfmData.getViews()[viewId];
 
-            for (int i = 0; i < b.rows(); i++)
+            for (int i = 0; i < global_checkerboard_h; i++)
             {
-                for (int j = 0; j < b.cols(); j++)
+                for (int j = 0; j < global_checkerboard_w; j++)
                 {
                     IndexT idxlandmark = indices(i, j);
                     if (idxlandmark == UndefinedIndexT)
