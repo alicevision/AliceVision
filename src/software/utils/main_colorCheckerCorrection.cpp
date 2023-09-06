@@ -41,6 +41,34 @@ namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
+double srgbToLin(double c)
+{
+    return c <= 0.04045 ? c / 12.92 : powf((c + 0.055) / 1.055, 2.4);
+}
+cv::Vec3d srgbToLin(cv::Vec3d pix)
+{
+    cv::Vec3d pixOut(srgbToLin(pix[0]), srgbToLin(pix[1]), srgbToLin(pix[2]));
+    return pixOut;
+}
+double linToSrgb(double c)
+{
+    return c < 0.0031308 ? 12.92 * c : 1.055 * powf(c, 1.f / 2.4f) - 0.055;
+}
+cv::Vec3d linToSrgb(cv::Vec3d pix)
+{
+    cv::Vec3d pixOut(linToSrgb(pix[0]), linToSrgb(pix[1]), linToSrgb(pix[2]));
+    return pixOut;
+}
+
+double linToLum(cv::Vec3d pix)
+{
+    return 0.2126 * pix[0] + 0.7152 * pix[1] + 0.0722 * pix[2];
+}
+//double srgbToLum(cv::Vec3d pix)
+//{
+//    return 0.2126 * srgbToLin(pix[0]) + 0.7152 * srgbToLin(pix[1]) + 0.0722 * srgbToLin(pix[2]);
+//}
+
 struct CChecker
 {
     std::string _bodySerialNumber;
@@ -48,6 +76,7 @@ struct CChecker
     std::string _imagePath;
     std::string _viewId;
     cv::Mat _colorData;
+    double _weight; // In the range [0,1]. 1.0 corresponds to a Macbeth frontal view occupying the full image.
 
     explicit CChecker(const bpt::ptree::value_type& ccheckerPTree)
     {
@@ -67,30 +96,81 @@ struct CChecker
             matPixel[1] = row.second.get_child("g").get_value<double>();
             matPixel[2] = row.second.get_child("b").get_value<double>();
 
+            matPixel = srgbToLin(matPixel);
+
             ++i;
         }
+
+        i = 0;
+        std::vector<cv::Vec2d> corners_img(4);
+        for(const bpt::ptree::value_type& row : ccheckerPTree.second.get_child("positions"))
+        {
+            corners_img[i][0] = row.second.get_child("x").get_value<double>();
+            corners_img[i][1] = row.second.get_child("y").get_value<double>();
+
+            ++i;
+        }
+
+        const double area = (fabs((corners_img[0][0] - corners_img[2][0]) * (corners_img[1][1] - corners_img[3][1])) +
+                             fabs((corners_img[1][0] - corners_img[3][0]) * (corners_img[0][1] - corners_img[2][1]))) * 0.5;
+
+        double dot = 0.0;
+        for (int i = 0; i < 4; i++)
+        {
+            const double x1 = corners_img[(i + 1) % 4][0] - corners_img[i][0];
+            const double y1 = corners_img[(i + 1) % 4][1] - corners_img[i][1];
+            const double x2 = corners_img[(i + 2) % 4][0] - corners_img[(i + 1) % 4][0];
+            const double y2 = corners_img[(i + 2) % 4][1] - corners_img[(i + 1) % 4][1];
+            const double norm1 = sqrt(x1 * x1 + y1 * y1);
+            const double norm2 = sqrt(x2 * x2 + y2 * y2);
+
+            dot += fabs(x1 * x2 + y1 * y2) / norm1 / norm2;
+        }
+        dot /= 4.0; // Average of the abs value of dot products between consecutive edges, null for a frontal view.
+
+        std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(_imagePath));
+        _weight = area * (1.0 - dot) / in->spec().width / in->spec().height;
     }
 };
 
-void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors)
+void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors, bool luminanceOnly = false)
 {
     cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_32FC3);
 
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
-    model.run();
     
-    model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
+    //model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
     //model.setCCM_TYPE(cv::ccm::CCM_3x3);
     //model.setDistance(cv::ccm::DISTANCE_CIE2000);
-    //model.setLinear(cv::ccm::LINEARIZATION_GAMMA);
+    model.setLinear(cv::ccm::LINEARIZATION_IDENTITY); // input and ref colors are linear
     //model.setLinearGamma(2.2);
     //model.setLinearDegree(3); // to prevent overfitting
-    
+
     cv::Mat img;
     cvtColor(imageBGR, img, cv::COLOR_BGR2RGB);
     img.convertTo(img, CV_64F);
 
-    cv::Mat calibratedImage = model.infer(img, true); // make correction using cc matrix and assuming images are in linear color space (as RAW for example)
+    cv::Mat calibratedImage = img;
+
+    if(luminanceOnly)
+    {
+        const double lum = linToLum(refColors.at<cv::Vec3d>(21, 0));
+        const double lumTarget = srgbToLin(122.0 / 255.0); // 0.1946
+        const double gain = lumTarget / lum;
+
+        for(int r = 0; r < img.rows; r++)
+        {
+            for(int c = 0; c < img.cols; c++)
+            {
+                calibratedImage.at<cv::Vec3d>(r, c) = gain * img.at<cv::Vec3d>(r, c);
+            }
+        }
+    }
+    else
+    {
+        model.run();
+        calibratedImage = model.infer(img, true); // make correction and return a linear image
+    }
 
     calibratedImage.convertTo(calibratedImage, CV_32FC3);
 
@@ -118,6 +198,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
 
     image::ImageWriteOptions options;
 
+    options.fromColorSpace(image::EImageColorSpace::LINEAR);
     if(isEXR)
     {
         // Select storage data type
@@ -139,6 +220,8 @@ int aliceVision_main(int argc, char** argv)
     std::string extension;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string outputPath;
+    bool luminanceOnly = true;
+    bool useBestColorCheckerOnly = true;
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -152,10 +235,16 @@ int aliceVision_main(int argc, char** argv)
         ;
 
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-        ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
+    optionalParams.add_options()("storageDataType",
+                                 po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+                                 ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
         "extension", po::value<std::string>(&extension)->default_value(extension),
-         "Output image extension (like exr, or empty to keep the original source file format.");
+        "Output image extension (like exr, or empty to keep the original source file format.")(
+        "luminanceOnly", po::value<bool>(&luminanceOnly)->default_value(luminanceOnly),
+        "Correct the luminance only, do not apply the full color correction model.")(
+        "useBestColorCheckerOnly", po::value<bool>(&useBestColorCheckerOnly)->default_value(useBestColorCheckerOnly),
+        "Use only the color chart with the best orientation and size to compute the color correction model.")
+        ;
 
     CmdLine cmdline("This program is used to perform color correction based on a color checker.\n"
                     "AliceVision colorCheckerCorrection");
@@ -186,8 +275,37 @@ int aliceVision_main(int argc, char** argv)
         for(const bpt::ptree::value_type& ccheckerPTree : data.get_child("checkers"))
             ccheckers.push_back(CChecker(ccheckerPTree));
 
-        // for now the program behaves as if all the images to process are sharing the same properties
-        cv::Mat colorData = ccheckers[0]._colorData;
+        std::vector<double> ccheckerWeights;
+        double weightMax = 0.0;
+        int idxWeightMax = 0;
+        for (int i = 0; i < ccheckers.size(); i++)
+        {
+            ccheckerWeights.push_back(ccheckers[i]._weight);
+            if(ccheckers[i]._weight > weightMax)
+            {
+                weightMax = ccheckers[i]._weight;
+                idxWeightMax = i;
+            }
+        }
+
+        cv::Mat colorData;
+
+        if (useBestColorCheckerOnly)
+        {
+            colorData = ccheckers[idxWeightMax]._colorData;
+            ALICEVISION_LOG_INFO("Use color checker detected in image " << ccheckers[idxWeightMax]._imagePath);
+        }
+        else // Combine colors of all detected color checkers
+        {
+            colorData = ccheckerWeights[0] * ccheckers[0]._colorData;
+            double sumWeight = ccheckerWeights[0];
+            for (int i = 1; i < ccheckers.size(); i++)
+            {
+                colorData += ccheckerWeights[i] * ccheckers[i]._colorData;
+                sumWeight += ccheckerWeights[i];
+            }
+            colorData /= sumWeight;
+        }
 
         // Map used to store paths of the views that need to be processed
         std::unordered_map<IndexT, std::string> ViewPaths;
@@ -235,14 +353,14 @@ int aliceVision_main(int argc, char** argv)
 
                 // Read image options and load image
                 image::ImageReadOptions options;
-                options.workingColorSpace = image::EImageColorSpace::NO_CONVERSION;
+                options.workingColorSpace = image::EImageColorSpace::LINEAR;
                 options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
 
                 image::Image<image::RGBAfColor> image;
                 image::readImage(viewPath, image, options);
 
                 // Image color correction processing
-                processColorCorrection(image, colorData);
+                processColorCorrection(image, colorData, luminanceOnly);
 
                 // Save image
                 saveImage(image, viewPath, outputfilePath, storageDataType);
@@ -314,10 +432,10 @@ int aliceVision_main(int argc, char** argv)
 
                 // Read original image
                 image::Image<image::RGBAfColor> image;
-                image::readImage(inputFilePath, image, image::EImageColorSpace::NO_CONVERSION);
+                image::readImage(inputFilePath, image, image::EImageColorSpace::LINEAR);
 
                 // Image color correction processing
-                processColorCorrection(image, colorData);
+                processColorCorrection(image, colorData, luminanceOnly);
 
                 // Save image
                 saveImage(image, inputFilePath, outputFilePath, storageDataType);
