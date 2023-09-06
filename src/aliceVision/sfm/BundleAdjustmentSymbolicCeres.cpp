@@ -306,7 +306,7 @@ public:
       return true;
     }
 
-     const geometry::Pose3 T_pose3(T.block<3, 4>(0, 0));
+    const geometry::Pose3 T_pose3(T);
     size_t params_size = _intrinsics->getParams().size();
 
     double d_res_d_pt_est = 1.0 / scale;
