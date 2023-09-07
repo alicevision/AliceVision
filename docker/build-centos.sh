@@ -7,7 +7,7 @@ test -e docker/fetch.sh || {
     exit 1
 }
 
-test -z "$AV_DEPS_VERSION" && AV_DEPS_VERSION=2023.07.31
+test -z "$AV_DEPS_VERSION" && AV_DEPS_VERSION=2023.09.07
 test -z "$AV_VERSION" && AV_VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short HEAD)"
 test -z "$CUDA_VERSION" && CUDA_VERSION=11.3.1
 test -z "$CENTOS_VERSION" && CENTOS_VERSION=7
