@@ -207,7 +207,6 @@ void buildLightMatFromJSON(const std::string& fileName,
                 intList.push_back(currentIntensities);
 
                 cpt = 0;
-
                 for (auto& direction : light.second.get_child("direction"))
                 {
                     lightMat(lightIndex, cpt) = direction.second.get_value<float>();
@@ -287,6 +286,8 @@ void buildLightMatFromLP(const std::string& fileName,
                     ++lineNumber;
 
                     intList.push_back(intensities);
+
+                    break;
                 }
             }
             intFile.close();
