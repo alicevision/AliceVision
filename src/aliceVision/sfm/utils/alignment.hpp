@@ -164,7 +164,7 @@ inline void applyTransform(sfmData::SfMData& sfmData,
     {
         for (auto& subPose : rigIt.second.getSubPoses())
         {
-            subPose.pose.center() *= S;
+            subPose.pose.setCenter(subPose.pose.center() * S);
         }
     }
 

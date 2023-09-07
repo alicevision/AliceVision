@@ -52,7 +52,7 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   }
   
   // random pose
-  geometry::Pose3 pose = geometry::Pose3(Mat3::Random(), Vec3::Random());
+  geometry::Pose3 pose = geometry::randomPose();
   
   // random intrinsics
   camera::Pinhole intrinsics = camera::Pinhole(
@@ -93,6 +93,7 @@ BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveVector)
     resGT.push_back(generateRandomResult(numpts(gen)));
   }
 
+ 
   BOOST_CHECK_NO_THROW(localization::LocalizationResult::save(resGT, filename));
   BOOST_CHECK_NO_THROW(localization::LocalizationResult::load(resCheck, filename));
   BOOST_CHECK(resCheck.size() == resGT.size());
