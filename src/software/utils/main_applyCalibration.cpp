@@ -26,18 +26,6 @@
 namespace po = boost::program_options;
 using namespace aliceVision;
 
-std::shared_ptr<camera::IntrinsicBase> findCalibratedIntrinsic(
-    const std::shared_ptr<camera::IntrinsicBase>& intrinsic,
-    const sfmData::Intrinsics& calibratedIntrinsics)
-{
-    if (calibratedIntrinsics.size() == 1)
-    {
-        return calibratedIntrinsics.begin()->second;
-    }
-
-    return nullptr;
-}
-
 int aliceVision_main(int argc, char **argv)
 {
     // command-line parameters
@@ -75,7 +63,7 @@ int aliceVision_main(int argc, char **argv)
     if (sfmDataCalibratedFilename.empty())
     {
         // Save sfmData to disk
-        if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
         {
             ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfMDataFilename << "' cannot be written.");
             return EXIT_FAILURE;
@@ -86,7 +74,7 @@ int aliceVision_main(int argc, char **argv)
 
     // Load calibrated scene
     sfmData::SfMData sfmDataCalibrated;
-    if (!sfmDataIO::Load(sfmDataCalibrated, sfmDataCalibratedFilename, sfmDataIO::ESfMData::INTRINSICS))
+    if (!sfmDataIO::Load(sfmDataCalibrated, sfmDataCalibratedFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The calibrated SfMData file '" << sfmDataCalibratedFilename << "' cannot be read");
         return EXIT_FAILURE;
@@ -100,9 +88,42 @@ int aliceVision_main(int argc, char **argv)
         ALICEVISION_LOG_INFO("Processing intrinsic " << intrinsicId);
 
         // Find corresponding calibrated intrinsic
-        const auto calibratedIntrinsic =
-            std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(
-                findCalibratedIntrinsic(intrinsic, calibratedIntrinsics));
+        std::shared_ptr<camera::IntrinsicScaleOffsetDisto> calibratedIntrinsic = nullptr;
+        if (calibratedIntrinsics.size() == 1)
+        {
+            calibratedIntrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibratedIntrinsics.begin()->second);
+        }
+        else if (calibratedIntrinsics.size() > 1 && sfmDataCalibrated.getRigs().size() == 1)
+        {
+            IndexT subPoseId = UndefinedIndexT;
+            for (const auto& [viewId, view] : sfmData.getViews())
+            {
+                if (view->getIntrinsicId() == intrinsicId)
+                {
+                    subPoseId = view->getSubPoseId();
+                    break;
+                }
+            }
+
+            bool found = false;
+            for (const auto& [calibIntrId, calibIntr] : calibratedIntrinsics)
+            {
+                if (found) break;
+
+                for (const auto& [viewId, view] : sfmDataCalibrated.getViews())
+                {
+                    if (view->getIntrinsicId() == calibIntrId)
+                    {
+                        if (view->getSubPoseId() == subPoseId)
+                        {
+                            calibratedIntrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibIntr);
+                            found = true;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
         
         if (!calibratedIntrinsic)
         {
