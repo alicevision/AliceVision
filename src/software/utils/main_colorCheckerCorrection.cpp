@@ -64,10 +64,53 @@ double linToLum(cv::Vec3d pix)
 {
     return 0.2126 * pix[0] + 0.7152 * pix[1] + 0.0722 * pix[2];
 }
-//double srgbToLum(cv::Vec3d pix)
-//{
-//    return 0.2126 * srgbToLin(pix[0]) + 0.7152 * srgbToLin(pix[1]) + 0.0722 * srgbToLin(pix[2]);
-//}
+
+enum class ECorrectionMethod
+{
+    luminance,
+    whiteBalance,
+    full
+};
+
+inline std::string ECorrectionMethod_enumToString(ECorrectionMethod correctionMethod)
+{
+    switch(correctionMethod)
+    {
+        case ECorrectionMethod::luminance:
+            return "luminance";
+        case ECorrectionMethod::whiteBalance:
+            return "whitebalance";
+        case ECorrectionMethod::full:
+            return "full";
+    }
+    throw std::invalid_argument("Invalid ECorrectionMethod Enum");
+}
+
+inline ECorrectionMethod ECorrectionMethod_stringToEnum(std::string correctionMethod)
+{
+    boost::to_lower(correctionMethod);
+    if(correctionMethod == "luminance")
+        return ECorrectionMethod::luminance;
+    if(correctionMethod == "whitebalance")
+        return ECorrectionMethod::whiteBalance;
+    if(correctionMethod == "full")
+        return ECorrectionMethod::full;
+
+    throw std::invalid_argument("Unrecognized correction method '" + correctionMethod + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, ECorrectionMethod method)
+{
+    return os << ECorrectionMethod_enumToString(method);
+}
+
+inline std::istream& operator>>(std::istream& in, ECorrectionMethod& method)
+{
+    std::string token;
+    in >> token;
+    method = ECorrectionMethod_stringToEnum(token);
+    return in;
+}
 
 struct CChecker
 {
@@ -133,7 +176,7 @@ struct CChecker
     }
 };
 
-void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors, bool luminanceOnly = false)
+void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors, ECorrectionMethod method = ECorrectionMethod::full)
 {
     cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_32FC3);
 
@@ -152,7 +195,7 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
 
     cv::Mat calibratedImage = img;
 
-    if(luminanceOnly)
+    if(method == ECorrectionMethod::luminance)
     {
         const double lum = linToLum(refColors.at<cv::Vec3d>(21, 0));
         const double lumTarget = srgbToLin(122.0 / 255.0); // 0.1946
@@ -163,6 +206,23 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
             for(int c = 0; c < img.cols; c++)
             {
                 calibratedImage.at<cv::Vec3d>(r, c) = gain * img.at<cv::Vec3d>(r, c);
+            }
+        }
+    }
+    else if (method == ECorrectionMethod::whiteBalance)
+    {
+        const double target = srgbToLin(122.0 / 255.0); // 0.1946
+        const double gainR = target / refColors.at<cv::Vec3d>(21, 0)[0];
+        const double gainG = target / refColors.at<cv::Vec3d>(21, 0)[1];
+        const double gainB = target / refColors.at<cv::Vec3d>(21, 0)[2];
+
+        for(int r = 0; r < img.rows; r++)
+        {
+            for(int c = 0; c < img.cols; c++)
+            {
+                calibratedImage.at<cv::Vec3d>(r, c)[0] = gainR * img.at<cv::Vec3d>(r, c)[0];
+                calibratedImage.at<cv::Vec3d>(r, c)[1] = gainG * img.at<cv::Vec3d>(r, c)[1];
+                calibratedImage.at<cv::Vec3d>(r, c)[2] = gainB * img.at<cv::Vec3d>(r, c)[2];
             }
         }
     }
@@ -220,7 +280,7 @@ int aliceVision_main(int argc, char** argv)
     std::string extension;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string outputPath;
-    bool luminanceOnly = true;
+    ECorrectionMethod correctionMethod = ECorrectionMethod::luminance;
     bool useBestColorCheckerOnly = true;
 
     po::options_description requiredParams("Required parameters");
@@ -240,8 +300,8 @@ int aliceVision_main(int argc, char** argv)
                                  ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
         "extension", po::value<std::string>(&extension)->default_value(extension),
         "Output image extension (like exr, or empty to keep the original source file format.")(
-        "luminanceOnly", po::value<bool>(&luminanceOnly)->default_value(luminanceOnly),
-        "Correct the luminance only, do not apply the full color correction model.")(
+        "correctionMethod", po::value<ECorrectionMethod>(&correctionMethod)->default_value(correctionMethod),
+        "Correction method to apply.")(
         "useBestColorCheckerOnly", po::value<bool>(&useBestColorCheckerOnly)->default_value(useBestColorCheckerOnly),
         "Use only the color chart with the best orientation and size to compute the color correction model.")
         ;
@@ -360,7 +420,7 @@ int aliceVision_main(int argc, char** argv)
                 image::readImage(viewPath, image, options);
 
                 // Image color correction processing
-                processColorCorrection(image, colorData, luminanceOnly);
+                processColorCorrection(image, colorData, correctionMethod);
 
                 // Save image
                 saveImage(image, viewPath, outputfilePath, storageDataType);
@@ -435,7 +495,7 @@ int aliceVision_main(int argc, char** argv)
                 image::readImage(inputFilePath, image, image::EImageColorSpace::LINEAR);
 
                 // Image color correction processing
-                processColorCorrection(image, colorData, luminanceOnly);
+                processColorCorrection(image, colorData, correctionMethod);
 
                 // Save image
                 saveImage(image, inputFilePath, outputFilePath, storageDataType);
