@@ -327,8 +327,10 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              Boost::filesystem
               Boost::boost
               Boost::timer
+              nanoflann
     )
 
   # Filter SfM data

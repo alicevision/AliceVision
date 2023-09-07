@@ -14,6 +14,8 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
+#include "nanoflann.hpp"
+
 #include <boost/program_options.hpp>
 
 #include <stdlib.h>
@@ -40,6 +42,90 @@ using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
+
+static const std::size_t MAX_LEAF_ELEMENTS = 64;
+
+struct ObservationsAdaptator
+{
+    using Derived = ObservationsAdaptator; //!< In this case the dataset class is myself.
+    using T = double;
+
+    /// CRTP helper method
+    inline const Derived& derived() const { return *static_cast<const Derived*>(this); }
+    /// CRTP helper method
+    inline Derived& derived() { return *static_cast<Derived*>(this); }
+
+    const std::vector<const Observation*> _data;
+    ObservationsAdaptator(const std::vector<const Observation*>& data)
+        : _data(data)
+    {
+    }
+
+    // Must return the number of data points
+    inline size_t kdtree_get_point_count() const { return _data.size(); }
+
+    // Returns the dim'th component of the idx'th point in the class:
+    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data[idx]->x(dim); }
+
+    // Optional bounding-box computation: return false to default to a standard bbox computation loop.
+    //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it
+    //   again. Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+    template <class BBOX>
+    bool kdtree_get_bbox(BBOX& bb) const
+    {
+        return false;
+    }
+};
+
+using KdTree = nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, ObservationsAdaptator>,
+                                                   ObservationsAdaptator, 2, /* dim */
+                                                   size_t>;
+
+/**
+ * A result-set class used when performing a radius based search.
+ */
+class RadiusKnnSearch
+{
+public:
+    const double _radius_sq;
+    const int _nb_neighbors;
+    int nb_found = 0;
+
+    inline RadiusKnnSearch(double radius, int k)
+        : _radius_sq(radius * radius)
+        , _nb_neighbors(k)
+    {
+    }
+
+    inline bool full() const { return nb_found == _nb_neighbors; }
+
+    inline bool addPoint(double dist, IndexT index)
+    {
+        if(dist < _radius_sq)
+        {
+            nb_found++;
+            return nb_found < _nb_neighbors;
+        }
+        return true;
+    }
+
+    inline double worstDist() const { return _radius_sq; }
+};
+
+const auto getObservationsPerViews(const SfMData& sfmData)
+{
+    stl::flat_map<std::size_t, std::vector<const Observation*>> observationsPerView;
+    for(const auto& landIt : sfmData.getLandmarks())
+    {
+        for(const auto& obsIt : landIt.second.observations)
+        {
+            IndexT viewId = obsIt.first;
+            auto& landmarksSet = observationsPerView[viewId];
+            landmarksSet.push_back(&obsIt.second);
+        }
+    }
+    return observationsPerView;
+}
 
 template<class ImageT, class MaskFuncT>
 void process(const std::string& dstColorImage,
@@ -129,9 +215,9 @@ bool prepareDenseScene(const SfMData& sfmData,
     const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
     ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0 / medianCameraExposure));
 
-    const LandmarksPerView& landmarksPerView = getLandmarksPerViews(sfmData);
+    const auto& observationsPerView = getObservationsPerViews(sfmData);
 
-#pragma omp parallel for num_threads(3)
+// #pragma omp parallel for num_threads(3)
     for (int i = 0; i < viewIds.size(); ++i)
     {
         auto itView = viewIds.begin();
@@ -258,19 +344,37 @@ bool prepareDenseScene(const SfMData& sfmData,
             bool doMaskLandmarks = landmarksMaskScale > 0.f;
             if(doMaskLandmarks)
             {
-                image::Image<RGBAfColor> image;
-                readImage(srcImage, image, image::EImageColorSpace::LINEAR);
                 // for the T camera, image alpha should be at least 0.4f * 255 (masking)
-                maskLandmarks = image::Image<unsigned char>(image.Width(), image.Height(), true, 127);
-                int r = (int)(landmarksMaskScale * 0.5f * (image.Width() + image.Height()));
-                const auto& landmarksSetIt = landmarksPerView.find(viewId);
-                if(landmarksSetIt != landmarksPerView.end())
+                maskLandmarks = image::Image<unsigned char>(view->getWidth(), view->getHeight(), true, 127);
+                int r = (int)(landmarksMaskScale * 0.5f * (view->getWidth() + view->getHeight()));
+                const auto& observationsIt = observationsPerView.find(viewId);
+                if(observationsIt != observationsPerView.end())
                 {
-                    const LandmarkIdSet& landmarksSet = landmarksSetIt->second;
-                    for(const auto& landmarkId : landmarksSet)
+                    const auto& observations = observationsIt->second;
+
+                    ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
+                    ObservationsAdaptator data(observations);
+                    KdTree tree(2, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+                    tree.buildIndex();
+                    ALICEVISION_LOG_INFO("KdTree created for " << observations.size() << " points.");
+
+                    /*index = std::numeric_limits<std::size_t>::max();
+                    sq_dist = std::numeric_limits<double>::max();
+                    nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
+                    resultSet.init(&index, &sq_dist);
+                    if(!_tree->findNeighbors(resultSet, p.m, nanoflann::SearchParameters()))
                     {
-                        const sfmData::Landmark& landmark = sfmData.getLandmarks().at(landmarkId);
-                        Observation obs = landmark.observations.at(viewId);
+                        return false;
+                    }
+                    return true;*/
+
+                    for(const auto& observation : observations)
+                    {
+                        const auto& obs = *observation;
+                        RadiusKnnSearch search(r, 5);
+                        bool found = tree.findNeighbors(search, obs.x.data(), nanoflann::SearchParameters());
+                        if(!found)
+                            continue;
                         for(int y = std::max(obs.x.y() - r, 0.);
                             y <= std::min(obs.x.y() + r, (double)maskLandmarks.Height() - 1); y++)
                         {
