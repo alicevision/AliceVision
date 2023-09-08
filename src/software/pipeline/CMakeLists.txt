@@ -244,8 +244,8 @@ if(ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
-    alicevision_add_software(aliceVision_intrinsicsCalibration
-        SOURCE main_intrinsicsCalibration.cpp
+    alicevision_add_software(aliceVision_checkerboardCalibration
+        SOURCE main_checkerboardCalibration.cpp
         FOLDER ${FOLDER_SOFTWARE_PIPELINE}
         LINKS aliceVision_dataio
               aliceVision_image

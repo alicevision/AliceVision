@@ -455,7 +455,7 @@ int aliceVision_main(int argc, char* argv[])
         ("squareSize,s", po::value<double>(&squareSize)->default_value(squareSize), "Checkerboard square width in mm");
 
     CmdLine cmdline("This program calibrates camera intrinsics and extrinsics.\n"
-                    "AliceVision intrinsicsCalibration");
+                    "AliceVision checkerboardCalibration");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
