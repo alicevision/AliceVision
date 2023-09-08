@@ -296,7 +296,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
             Eigen::JacobiSVD<Eigen::Matrix3d> svd(M, Eigen::ComputeFullU | Eigen::ComputeFullV);
             T.block<3, 3>(0, 0) = svd.matrixU() * svd.matrixV().transpose();
 
-            geometry::Pose3 pose(T);
+            geometry::Pose3 pose(T.block<3, 3>(0, 0), -T.block<3, 3>(0, 0).transpose() * T.col(3));
             sfmData::CameraPose cp;
             cp.setTransform(pose);
 
