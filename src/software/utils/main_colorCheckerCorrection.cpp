@@ -377,7 +377,7 @@ int aliceVision_main(int argc, char** argv)
                                                  inputExt) != sfmSupportedExtensions.end())
         {
             sfmData::SfMData sfmData;
-            if(!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::VIEWS))
+            if(!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::ALL))
             {
                 ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
                 return EXIT_FAILURE;
@@ -499,6 +499,30 @@ int aliceVision_main(int argc, char** argv)
 
                 // Save image
                 saveImage(image, inputFilePath, outputFilePath, storageDataType);
+            }
+        }
+    }
+    else
+    {
+        // Copy sfmdata if it exists
+        // Check if sfmInputDataFilename exist and is recognized as sfm data file
+        const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
+        static const std::array<std::string, 3> sfmSupportedExtensions = {".sfm", ".json", ".abc"};
+        if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(),
+                                                 inputExt) != sfmSupportedExtensions.end())
+        {
+            sfmData::SfMData sfmData;
+            if(!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::ALL))
+            {
+                ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
+                return EXIT_FAILURE;
+            }
+            const std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
+            if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+            {
+                ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
+
+                return EXIT_FAILURE;
             }
         }
     }
