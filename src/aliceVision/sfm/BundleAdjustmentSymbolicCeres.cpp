@@ -6,15 +6,23 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
-#include <aliceVision/sfmData/SfMData.hpp>
+
 #include <aliceVision/alicevision_omp.hpp>
+
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
 #include <aliceVision/utils/CeresUtils.hpp>
-
 #include <boost/filesystem.hpp>
 
-#include <ceres/rotation.h>
+
+#include <aliceVision/sfm/manifolds/so3.hpp>
+#include <aliceVision/sfm/manifolds/se3.hpp>
+#include <aliceVision/sfm/manifolds/intrinsics.hpp>
+
+#include <aliceVision/sfm/costfunctions/projection.hpp>
+#include <aliceVision/sfm/costfunctions/projectionSimple.hpp>
+
 
 #include <fstream>
 
@@ -26,317 +34,6 @@ namespace sfm {
 
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
-
-
-class IntrinsicsManifoldSymbolic : public utils::CeresManifold {
- public:
-  explicit IntrinsicsManifoldSymbolic(size_t parametersSize, double focalRatio, bool lockFocal,
-                                      bool lockFocalRatio, bool lockCenter, bool lockDistortion)
-  : _ambientSize(parametersSize),
-    _focalRatio(focalRatio),
-    _lockFocal(lockFocal),
-    _lockFocalRatio(lockFocalRatio),
-    _lockCenter(lockCenter),
-    _lockDistortion(lockDistortion)
-  {
-    _distortionSize = _ambientSize - 4;
-    _tangentSize = 0;
-
-    if (!_lockFocal)
-    {
-      if (_lockFocalRatio)
-      {
-        _tangentSize += 1;
-      }
-      else
-      {
-        _tangentSize += 2;
-      }
-    }
-
-    if (!_lockCenter)
-    {
-      _tangentSize += 2;
-    }
-
-    if (!_lockDistortion)
-    {
-      _tangentSize += _distortionSize;
-    }
-  }
-
-  virtual ~IntrinsicsManifoldSymbolic() = default;
-
-
-  bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
-  {
-    for (int i = 0; i < _ambientSize; i++)
-    {
-      x_plus_delta[i] = x[i];
-    }
-    
-    size_t posDelta = 0;
-    if (!_lockFocal)
-    {
-      if (_lockFocalRatio)
-      {
-        x_plus_delta[0] = x[0] + delta[posDelta]; 
-        x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
-        ++posDelta;
-      }
-      else
-      {
-        x_plus_delta[0] = x[0] + delta[posDelta];
-        ++posDelta;
-        x_plus_delta[1] = x[1] + delta[posDelta];
-        ++posDelta;
-      }
-    }
-
-    if (!_lockCenter)
-    {
-      x_plus_delta[2] = x[2] + delta[posDelta]; 
-      ++posDelta;
-
-      x_plus_delta[3] = x[3] + delta[posDelta];
-      ++posDelta;
-    }
-
-    if (!_lockDistortion)
-    {
-      for (int i = 0; i < _distortionSize; i++)
-      {
-        x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
-        ++posDelta;
-      }
-    }
-
-    return true;
-  }
-
-  bool PlusJacobian(const double* x, double* jacobian) const override
-  {    
-    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, AmbientSize(), TangentSize());
-
-    J.fill(0);
-
-    size_t posDelta = 0;
-    if (!_lockFocal)
-    {
-      if (_lockFocalRatio)
-      {
-        J(0, posDelta) = 1.0;
-        J(1, posDelta) = _focalRatio;
-        ++posDelta;
-      }
-      else
-      {
-        J(0, posDelta) = 1.0;
-        ++posDelta;
-        J(1, posDelta) = 1.0;
-        ++posDelta;
-      }
-    }
-
-    if (!_lockCenter)
-    {
-      J(2, posDelta) = 1.0;
-      ++posDelta;
-
-      J(3, posDelta) = 1.0;
-      ++posDelta;
-    }
-
-    if (!_lockDistortion)
-    {
-      for (int i = 0; i < _distortionSize; i++)
-      {
-        J(4 + i, posDelta) = 1.0;
-        ++posDelta;
-      }
-    }
-
-    return true;
-  }
-
-  bool Minus(const double* y, const double* x, double* delta) const override {
-    throw std::invalid_argument("IntrinsicsManifold::Minus() should never be called");
-  }
-
-  bool MinusJacobian(const double* x, double* jacobian) const override {
-    throw std::invalid_argument("IntrinsicsManifold::MinusJacobian() should never be called");
-  }
-
-  int AmbientSize() const override
-  {
-    return _ambientSize;
-  }
-
-  int TangentSize() const override
-  { 
-    return _tangentSize;
-  }
-
- private:
-  size_t _distortionSize;
-  size_t _ambientSize;
-  size_t _tangentSize;
-  double _focalRatio;
-  bool _lockFocal;
-  bool _lockFocalRatio;
-  bool _lockCenter;
-  bool _lockDistortion;
-};
-
-
-class CostProjection : public ceres::CostFunction {
-public:
-  CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig)
-  {
-    set_num_residuals(2);
-
-    mutable_parameter_block_sizes()->push_back(16);
-    mutable_parameter_block_sizes()->push_back(16);
-    mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());    
-    mutable_parameter_block_sizes()->push_back(3);    
-  }
-
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override
-  {
-    const double * parameter_pose = parameters[0];
-    const double * parameter_rig = parameters[1];
-    const double * parameter_intrinsics = parameters[2];
-    const double * parameter_landmark = parameters[3];
-
-    const Eigen::Map<const SE3::Matrix> rTo(parameter_pose);
-    const Eigen::Map<const SE3::Matrix> cTr(parameter_rig);
-    const Eigen::Map<const Vec3> pt(parameter_landmark);
-
-    /*Update intrinsics object with estimated parameters*/
-    size_t params_size = _intrinsics->getParams().size();
-    std::vector<double> params;
-    for (size_t param_id = 0; param_id < params_size; param_id++) {
-      params.push_back(parameter_intrinsics[param_id]);
-    }
-    _intrinsics->updateFromParams(params);
-
-    const SE3::Matrix T = cTr * rTo;
-    const geometry::Pose3 T_pose3(T);
-
-    const Vec4 pth = pt.homogeneous();
-
-    const Vec2 pt_est = _intrinsics->project(T_pose3, pth, true);
-    const double scale = (_measured.scale > 1e-12) ? _measured.scale : 1.0;
-
-    residuals[0] = (pt_est(0) - _measured.x(0)) / scale;
-    residuals[1] = (pt_est(1) - _measured.x(1)) / scale;
-
-    if (jacobians == nullptr) {
-      return true;
-    }
-
-    
-    Eigen::Matrix2d d_res_d_pt_est = Eigen::Matrix2d::Identity() / scale;
-
-    if (jacobians[0] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
-
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T, pth) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
-    }
-
-    if (jacobians[1] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[1]);
-      
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T, pth) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
-    }
-
-    if (jacobians[2] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
-      
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T, pth);
-    }
-
-    if (jacobians[3] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[3]);
-
-
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T, pth) * Eigen::Matrix<double, 4, 3>::Identity();
-    }
-
-    return true;
-  }
-
-private:
-  const sfmData::Observation & _measured;
-  const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
-  bool _withRig;
-};
-
-class CostProjectionSimple : public ceres::CostFunction {
-public:
-  CostProjectionSimple(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics) : _measured(measured), _intrinsics(intrinsics)
-  {
-    set_num_residuals(2);
-
-    mutable_parameter_block_sizes()->push_back(16);
-    mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());    
-    mutable_parameter_block_sizes()->push_back(3);    
-  }
-
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override
-  {
-    const double * parameter_pose = parameters[0];
-    const double * parameter_intrinsics = parameters[1];
-    const double * parameter_landmark = parameters[2];
-
-    const Eigen::Map<const SE3::Matrix> T(parameter_pose);
-    const Eigen::Map<const Vec3> pt(parameter_landmark);
-
-    const Vec4 pth = pt.homogeneous();
-
-    const Vec4 cpt = T * pth;
-
-    Vec2 pt_est = _intrinsics->project(T, pth, false);
-    const double scale = (_measured.scale > 1e-12) ? _measured.scale : 1.0;
-
-    residuals[0] = (pt_est(0) - _measured.x(0)) / scale;
-    residuals[1] = (pt_est(1) - _measured.x(1)) / scale;
-
-    if (jacobians == nullptr) {
-      return true;
-    }
-
-    const geometry::Pose3 T_pose3(T);
-    size_t params_size = _intrinsics->getParams().size();
-
-    double d_res_d_pt_est = 1.0 / scale;
-
-    if (jacobians[0] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
-
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoseLeft(T, pth);
-    }
-
-    if (jacobians[1] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 2, params_size);
-      
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T, pth);
-    }
-
-    if (jacobians[2] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[2]);
-
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint3(T, pth);
-    }
-
-    return true;
-  }
-
-private:
-  const sfmData::Observation & _measured;
-  const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
-};
-
 
 
 void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation)
@@ -368,10 +65,10 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
   if (refineRotation || refineTranslation)
   {
 #if ALICEVISION_CERES_HAS_MANIFOLD
-    problem.SetManifold(poseBlockPtr, new SE3::ManifoldLeft(refineRotation, refineTranslation));
+    problem.SetManifold(poseBlockPtr, new SE3ManifoldLeft(refineRotation, refineTranslation));
 #else
     problem.SetParameterization(poseBlockPtr, new utils::ManifoldToParameterizationWrapper(
-                                    new SE3::ManifoldLeft(refineRotation, refineTranslation)));
+                                    new SE3ManifoldLeft(refineRotation, refineTranslation)));
 #endif
   }
   else

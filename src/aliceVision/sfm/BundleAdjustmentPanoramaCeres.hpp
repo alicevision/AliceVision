@@ -12,9 +12,8 @@
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 
+#include <aliceVision/geometry/lie.hpp>
 #include <ceres/ceres.h>
-#include "liealgebra.hpp"
-
 
 namespace aliceVision {
 

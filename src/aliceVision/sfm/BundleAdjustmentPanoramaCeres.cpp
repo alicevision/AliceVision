@@ -10,12 +10,17 @@
 #include <aliceVision/utils/CeresUtils.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
 
 #include <boost/filesystem.hpp>
 #include <ceres/rotation.h>
 
+#include <aliceVision/sfm/manifolds/so3.hpp>
+
 #include <aliceVision/camera/Equidistant.hpp>
+
+#include <aliceVision/sfm/costfunctions/panoramaEquidistant.hpp>
+#include <aliceVision/sfm/costfunctions/panoramaPinhole.hpp>
+#include <aliceVision/sfm/costfunctions/rotationPrior.hpp>
 
 #include <fstream>
 
@@ -23,213 +28,7 @@ namespace fs = boost::filesystem;
 
 namespace aliceVision {
 
-class CostRotationPrior : public ceres::SizedCostFunction<3, 9, 9> {
-public:
-  explicit CostRotationPrior(const Eigen::Matrix3d & two_R_one) : _two_R_one(two_R_one) {
 
-  }
-
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
-
-    const double * parameter_rotation_one = parameters[0];
-    const double * parameter_rotation_two = parameters[1];
-
-    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> oneRo(parameter_rotation_one);
-    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> twoRo(parameter_rotation_two);
-
-    Eigen::Matrix3d two_R_one_est = twoRo * oneRo.transpose();
-    Eigen::Matrix3d error_R = two_R_one_est * _two_R_one.transpose();
-    Eigen::Vector3d error_r = SO3::logm(error_R);
-
-    residuals[0] = error_r(0);
-    residuals[1] = error_r(1);
-    residuals[2] = error_r(2);
-
-    if (jacobians == nullptr) {
-      return true;
-    }
-
-    if (jacobians[0]) {
-      Eigen::Map<Eigen::Matrix<double, 3, 9, Eigen::RowMajor>> J(jacobians[0]);
-
-      J = SO3::dlogmdr(error_R) * getJacobian_AB_wrt_A<3, 3, 3>(two_R_one_est, _two_R_one.transpose()) * getJacobian_AB_wrt_B<3, 3, 3>(twoRo, oneRo.transpose()) * getJacobian_At_wrt_A<3, 3>() * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), oneRo);
-    }
-
-    if (jacobians[1]) {
-      Eigen::Map<Eigen::Matrix<double, 3, 9, Eigen::RowMajor>> J(jacobians[1]);
-
-      J = SO3::dlogmdr(error_R) * getJacobian_AB_wrt_A<3, 3, 3>(two_R_one_est, _two_R_one.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(twoRo, oneRo.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), twoRo);
-    }
-
-    return true;
-  }
-
-private:
-  Eigen::Matrix3d _two_R_one;
-};
-
-class CostEquidistant : public ceres::SizedCostFunction<2, 9, 9, 7> {
-public:
-  CostEquidistant(Vec2 fi, Vec2 fj, std::shared_ptr<camera::Equidistant> & intrinsic) : _fi(fi), _fj(fj), _intrinsic(intrinsic) {
-
-  }
-
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
-
-    Vec2 pt_i = _fi;
-    Vec2 pt_j = _fj;
-
-    const double * parameter_rotation_i = parameters[0];
-    const double * parameter_rotation_j = parameters[1];
-    const double * parameter_intrinsics = parameters[2];
-
-    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_rotation_i);
-    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
-
-    _intrinsic->setScale({parameter_intrinsics[0], parameter_intrinsics[1]});
-    _intrinsic->setOffset({parameter_intrinsics[2], parameter_intrinsics[3]});
-    _intrinsic->setDistortionParamsFn(3, [&](auto index) { return parameter_intrinsics[4 + index]; });
-
-    Eigen::Matrix3d R = jRo * iRo.transpose();
-
-
-    geometry::Pose3 T_pose3(R, Vec3({0,0,0}));
-    Eigen::Matrix4d T = T_pose3.getHomogeneous();
-
-    Vec2 pt_i_cam = _intrinsic->ima2cam(pt_i);
-    Vec2 pt_i_undist = _intrinsic->removeDistortion(pt_i_cam);
-    Vec4 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist).homogeneous();
-
-    Vec2 pt_j_est = _intrinsic->project(T_pose3, pt_i_sphere, true);
-
-    residuals[0] = pt_j_est(0) - pt_j(0);
-    residuals[1] = pt_j_est(1) - pt_j(1);
-
-    if (jacobians == nullptr) {
-      return true;
-    }
-
-    if (jacobians[0] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 9, Eigen::RowMajor>> J(jacobians[0]);
-
-      J = _intrinsic->getDerivativeProjectWrtRotation(T, pt_i_sphere) * getJacobian_AB_wrt_B<3, 3, 3>(jRo, iRo.transpose()) * getJacobian_At_wrt_A<3, 3>() * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), iRo);
-    }
-
-    if (jacobians[1] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 9, Eigen::RowMajor>> J(jacobians[1]);
-
-      J = _intrinsic->getDerivativeProjectWrtRotation(T, pt_i_sphere) * getJacobian_AB_wrt_A<3, 3, 3>(jRo, iRo.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), jRo);
-    }
-
-    if (jacobians[2] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 7, Eigen::RowMajor>> J(jacobians[2]);
-
-	Eigen::Matrix<double, 4, 3> Jhomogenous = Eigen::Matrix<double, 4, 3>::Identity();
-
-      Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtScale(pt_i_undist);
-      Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
-      Eigen::Matrix<double, 2, 3> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
-
-      J.block<2, 2>(0, 0) = Jscale;
-      J.block<2, 2>(0, 2) = Jpp;
-      J.block<2, 3>(0, 4) = Jdisto;
-    }
-
-    return true;
-  }
-
-private:
-  Vec2 _fi;
-  Vec2 _fj;
-  std::shared_ptr<camera::Equidistant> _intrinsic;
-};
-
-class CostPinHole : public ceres::CostFunction {
-public:
-  CostPinHole(Vec2 fi, Vec2 fj, std::shared_ptr<camera::Pinhole> & intrinsic) : _fi(fi), _fj(fj), _intrinsic(intrinsic) {
-
-    set_num_residuals(2);
-
-    mutable_parameter_block_sizes()->push_back(9);
-    mutable_parameter_block_sizes()->push_back(9);
-    mutable_parameter_block_sizes()->push_back(intrinsic->getParams().size());    
-  }
-
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
-
-    Vec2 pt_i = _fi;
-    Vec2 pt_j = _fj;
-
-    const double * parameter_rotation_i = parameters[0];
-    const double * parameter_rotation_j = parameters[1];
-    const double * parameter_intrinsics = parameters[2];
-
-    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_rotation_i);
-    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
-
-    _intrinsic->setScale({parameter_intrinsics[0], parameter_intrinsics[1]});
-    _intrinsic->setOffset({parameter_intrinsics[2], parameter_intrinsics[3]});
-
-    size_t params_size = _intrinsic->getParamsSize();
-    size_t disto_size = _intrinsic->getDistortionParamsSize();
-    size_t offset = params_size - disto_size;
-
-    _intrinsic->setDistortionParamsFn(disto_size, [&](auto index)
-    {
-        return parameter_intrinsics[offset + index];
-    });
-
-    Eigen::Matrix3d R = jRo * iRo.transpose();
-    geometry::Pose3 T_pose3(R, Vec3({0,0,0}));
-    Eigen::Matrix4d T = T_pose3.getHomogeneous();
-
-    Vec2 pt_i_cam = _intrinsic->ima2cam(pt_i);
-    Vec2 pt_i_undist = _intrinsic->removeDistortion(pt_i_cam);
-    Vec4 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist).homogeneous();
-
-    Vec2 pt_j_est = _intrinsic->project(T_pose3, pt_i_sphere, true);
-
-    residuals[0] = pt_j_est(0) - pt_j(0);
-    residuals[1] = pt_j_est(1) - pt_j(1);
-
-    if (jacobians == nullptr) {
-      return true;
-    }
-
-    if (jacobians[0] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 9, Eigen::RowMajor>> J(jacobians[0]);
-
-      J = _intrinsic->getDerivativeProjectWrtRotation(T, pt_i_sphere) * getJacobian_AB_wrt_B<3, 3, 3>(jRo, iRo.transpose()) * getJacobian_At_wrt_A<3, 3>() * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), iRo);
-    }
-
-    if (jacobians[1] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 9, Eigen::RowMajor>> J(jacobians[1]);
-
-      J = _intrinsic->getDerivativeProjectWrtRotation(T, pt_i_sphere) * getJacobian_AB_wrt_A<3, 3, 3>(jRo, iRo.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), jRo);
-    }
-
-    if (jacobians[2] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double,  Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
-
-      Eigen::Matrix<double, 4, 3> Jhomogenous = Eigen::Matrix<double, 4, 3>::Identity();
-
-      Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtScale(pt_i);
-      Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
-      Eigen::Matrix<double, 2, Eigen::Dynamic> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
-
-      J.block<2, 2>(0, 0) = Jscale;
-      J.block<2, 2>(0, 2) = Jpp;
-      J.block(0, 4, 2, disto_size) = Jdisto;
-    }
-
-    return true;
-  }
-
-private:
-  Vec2 _fi;
-  Vec2 _fj;
-  std::shared_ptr<camera::Pinhole> _intrinsic;
-};
 
 namespace sfm {
 
@@ -420,9 +219,9 @@ void BundleAdjustmentPanoramaCeres::addExtrinsicsToProblem(const sfmData::SfMDat
 
     /*Define rotation parameterization*/
 #if ALICEVISION_CERES_HAS_MANIFOLD
-    problem.AddParameterBlock(poseBlockPtr, 9, new SO3::Manifold);
+    problem.AddParameterBlock(poseBlockPtr, 9, new SO3Manifold);
 #else
-    problem.AddParameterBlock(poseBlockPtr, 9, new utils::ManifoldToParameterizationWrapper(new SO3::Manifold));
+    problem.AddParameterBlock(poseBlockPtr, 9, new utils::ManifoldToParameterizationWrapper(new SO3Manifold));
 #endif
 
     // keep the camera extrinsics constants
@@ -612,19 +411,19 @@ void BundleAdjustmentPanoramaCeres::addConstraints2DToProblem(const sfmData::SfM
 
     if (equidistant != nullptr)  
     {
-      ceres::CostFunction* costFunction = new CostEquidistant(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant);
+      ceres::CostFunction* costFunction = new CostPanoramaEquidistant(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
 
       /* Symmetry */
-      costFunction = new CostEquidistant(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant);
+      costFunction = new CostPanoramaEquidistant(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
     }
     else if (pinhole != nullptr)  
     {
-      ceres::CostFunction* costFunction = new CostPinHole(constraint.ObservationFirst.x, constraint.ObservationSecond.x, pinhole);
+      ceres::CostFunction* costFunction = new CostPanoramaPinHole(constraint.ObservationFirst.x, constraint.ObservationSecond.x, pinhole);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
       /* Symmetry */
-      costFunction = new CostPinHole(constraint.ObservationSecond.x, constraint.ObservationFirst.x, pinhole);
+      costFunction = new CostPanoramaPinHole(constraint.ObservationSecond.x, constraint.ObservationFirst.x, pinhole);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
     }
     else {
