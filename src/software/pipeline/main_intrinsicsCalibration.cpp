@@ -368,6 +368,7 @@ bool estimateRigs(sfmData::SfMData& sfmData)
     if (sfmData.getRigs().size() > 0)
     {
         // Initialize rig poses
+        sfmData::Poses rigPoses;
         for (auto& pv : sfmData.getViews())
         {
             auto view = pv.second;
@@ -384,7 +385,7 @@ bool estimateRigs(sfmData::SfMData& sfmData)
                         continue;
                     }
                     sfmData::CameraPose absPose = sfmData.getPoses().at(view->getPoseId());
-                    sfmData.getPoses()[rigId] = absPose;
+                    rigPoses[rigId] = absPose;
                     subPose.pose = geometry::Pose3();  // identity
                     subPose.status = sfmData::ERigSubPoseStatus::CONSTANT;
                 }
@@ -408,7 +409,7 @@ bool estimateRigs(sfmData::SfMData& sfmData)
                         continue;
                     }
                     sfmData::CameraPose absPose = sfmData.getPoses().at(view->getPoseId());
-                    sfmData::CameraPose rigPose = sfmData.getPoses()[rigId];
+                    sfmData::CameraPose rigPose = rigPoses[rigId];
                     sfmData.getPoses()[view->getPoseId()] = rigPose;
                     subPose.pose = absPose.getTransform() * rigPose.getTransform().inverse();
                     subPose.status = sfmData::ERigSubPoseStatus::ESTIMATED;
