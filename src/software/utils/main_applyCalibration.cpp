@@ -80,29 +80,71 @@ int aliceVision_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    // Overwrite input SfMData intrinsics with calibrated one
+    // Detect calibration setup
     const auto& calibratedIntrinsics = sfmDataCalibrated.getIntrinsics();
+
+    const bool isMonoCam = calibratedIntrinsics.size() == 1;
+    const bool isMultiCam = calibratedIntrinsics.size() > 1 && sfmDataCalibrated.getRigs().size() == 1;
+
+    if (!isMonoCam && !isMultiCam)
+    {
+        ALICEVISION_LOG_ERROR("Unknown calibration setup");
+        return EXIT_FAILURE;
+    }
+
+    // Apply rig calibration
+    if (isMultiCam)
+    {
+        if (sfmData.getRigs().size() != 1)
+        {
+            ALICEVISION_LOG_ERROR("There must be exactly 1 rig to apply rig calibration");
+            return EXIT_FAILURE;
+        }
+
+        // Retrieve calibrated sub-poses
+        const auto& calibratedRig = sfmDataCalibrated.getRigs().begin()->second;
+        const auto& calibratedSubPoses = calibratedRig.getSubPoses();
+
+        // Retrieve input sub-poses
+        auto& rig = sfmData.getRigs().begin()->second;
+        auto& subPoses = rig.getSubPoses();
+
+        if (subPoses.size() != calibratedSubPoses.size())
+        {
+            ALICEVISION_LOG_ERROR("Incoherent number of sub-poses");
+            return EXIT_FAILURE;
+        }
+
+        // Copy calibrated sub-poses
+        for (std::size_t idx = 0; idx < subPoses.size(); ++idx)
+        {
+            if (calibratedSubPoses[idx].status != sfmData::ERigSubPoseStatus::CONSTANT) continue;
+
+            subPoses[idx] = calibratedSubPoses[idx];
+        }
+    }
+
+    // Apply intrinsic and distortion calibration
     auto& intrinsics = sfmData.getIntrinsics();
     for (const auto& [intrinsicId, intrinsic] : intrinsics)
     {
         ALICEVISION_LOG_INFO("Processing intrinsic " << intrinsicId);
 
-        // Find corresponding calibrated intrinsic
+        // Find corresponding calibrated intrinsic depending on calibration setup
         std::shared_ptr<camera::IntrinsicScaleOffsetDisto> calibratedIntrinsic = nullptr;
-        if (calibratedIntrinsics.size() == 1)
+        if (isMonoCam)
         {
             calibratedIntrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibratedIntrinsics.begin()->second);
         }
-        else if (calibratedIntrinsics.size() > 1 && sfmDataCalibrated.getRigs().size() == 1)
+        else if (isMultiCam)
         {
             IndexT subPoseId = UndefinedIndexT;
             for (const auto& [viewId, view] : sfmData.getViews())
             {
-                if (view->getIntrinsicId() == intrinsicId)
-                {
-                    subPoseId = view->getSubPoseId();
-                    break;
-                }
+                if (view->getIntrinsicId() != intrinsicId) continue;
+
+                subPoseId = view->getSubPoseId();
+                break;
             }
 
             bool found = false;
@@ -112,15 +154,13 @@ int aliceVision_main(int argc, char **argv)
 
                 for (const auto& [viewId, view] : sfmDataCalibrated.getViews())
                 {
-                    if (view->getIntrinsicId() == calibIntrId)
-                    {
-                        if (view->getSubPoseId() == subPoseId)
-                        {
-                            calibratedIntrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibIntr);
-                            found = true;
-                        }
-                        break;
-                    }
+                    if (view->getIntrinsicId() != calibIntrId) continue;
+
+                    if (view->getSubPoseId() != subPoseId) continue;
+
+                    calibratedIntrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibIntr);
+                    found = true;
+                    break;
                 }
             }
         }
