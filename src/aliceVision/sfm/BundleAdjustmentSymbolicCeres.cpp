@@ -22,7 +22,9 @@
 
 #include <aliceVision/sfm/costfunctions/projection.hpp>
 #include <aliceVision/sfm/costfunctions/projectionSimple.hpp>
-
+#include <aliceVision/sfm/costfunctions/panoramaEquidistant.hpp>
+#include <aliceVision/sfm/costfunctions/panoramaPinhole.hpp>
+#include <aliceVision/sfm/costfunctions/rotationPrior.hpp>
 
 #include <fstream>
 
@@ -389,7 +391,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     if(refineIntrinsicsFocalLength)
     {
       std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
-      if(intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
+      if(intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0 && _ceresOptions.useFocalPrior)
       {
         // if we have an initial guess, we only authorize a margin around this value.
         assert(intrinsicBlock.size() >= 1);
@@ -553,6 +555,81 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
   }
 }
 
+void BundleAdjustmentSymbolicCeres::addConstraints2DToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  // set a LossFunction to be less penalized by false measurements.
+  // note: set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(8.0)); // TODO: make the LOSS function and the parameter an option
+
+  for (const auto & constraint : sfmData.getConstraints2D()) {
+    const sfmData::View& view_1 = sfmData.getView(constraint.ViewFirst);
+    const sfmData::View& view_2 = sfmData.getView(constraint.ViewSecond);
+
+    assert(getPoseState(view_1.getPoseId()) != EParameterState::IGNORED);
+    assert(getIntrinsicState(view_1.getIntrinsicId()) != EParameterState::IGNORED);
+    assert(getPoseState(view_2.getPoseId()) != EParameterState::IGNORED);
+    assert(getIntrinsicState(view_2.getIntrinsicId()) != EParameterState::IGNORED);
+
+    /* Get pose */
+    double * poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
+    double * poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
+
+    /*Get intrinsics */
+    double * intrinsicBlockPtr_1 = _intrinsicsBlocks.at(view_1.getIntrinsicId()).data();
+    double * intrinsicBlockPtr_2 = _intrinsicsBlocks.at(view_2.getIntrinsicId()).data();
+
+    /* For the moment assume a unique camera */
+    assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
+
+    std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view_1.getIntrinsicId());
+    std::shared_ptr<camera::Equidistant> equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
+    std::shared_ptr<camera::Pinhole> pinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
+
+    if (equidistant != nullptr)  
+    {
+      ceres::CostFunction* costFunction = new CostPanoramaEquidistant(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant);
+      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
+
+      /* Symmetry */
+      costFunction = new CostPanoramaEquidistant(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant);
+      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
+    }
+    else if (pinhole != nullptr)  
+    {
+      ceres::CostFunction* costFunction = new CostPanoramaPinHole(constraint.ObservationFirst.x, constraint.ObservationSecond.x, pinhole);
+      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
+      /* Symmetry */
+      costFunction = new CostPanoramaPinHole(constraint.ObservationSecond.x, constraint.ObservationFirst.x, pinhole);
+      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
+    }
+    else {
+      ALICEVISION_LOG_ERROR("Incompatible camera for a 2D constraint");
+      return;
+    }
+  }
+}
+
+void BundleAdjustmentSymbolicCeres::addRotationPriorsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  // set a LossFunction to be less penalized by false measurements.
+  // note: set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction* lossFunction = nullptr;
+
+  for (const auto & prior : sfmData.getRotationPriors()) {
+
+    const sfmData::View& view_1 = sfmData.getView(prior.ViewFirst);
+    const sfmData::View& view_2 = sfmData.getView(prior.ViewSecond);
+
+    assert(getPoseState(view_1.getPoseId()) != EParameterState::IGNORED);
+    assert(getPoseState(view_2.getPoseId()) != EParameterState::IGNORED);
+
+    double * poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
+    double * poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
+
+    ceres::CostFunction* costFunction = new CostRotationPrior(prior._second_R_first);
+    problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2);
+  }
+}
 
 void BundleAdjustmentSymbolicCeres::createProblem(const sfmData::SfMData& sfmData,
                                           ERefineOptions refineOptions,
@@ -574,6 +651,11 @@ void BundleAdjustmentSymbolicCeres::createProblem(const sfmData::SfMData& sfmDat
   // add SfM landmarks to the Ceres problem
   addLandmarksToProblem(sfmData, refineOptions, problem);
 
+  // add 2D constraints to the Ceres problem
+  addConstraints2DToProblem(sfmData, refineOptions, problem);
+
+  // add rotation priors to the Ceres problem
+  addRotationPriorsToProblem(sfmData, refineOptions, problem);
 }
 
 void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const

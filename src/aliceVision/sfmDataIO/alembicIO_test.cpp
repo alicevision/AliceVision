@@ -15,7 +15,7 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <iostream>
-#include <aliceVision/sfm/liealgebra.hpp>
+#include <aliceVision/geometry/lie.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::sfmData;
