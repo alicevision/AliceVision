@@ -45,6 +45,9 @@ public:
     bool useLocalBundleAdjustment = false;
     int localBundelAdjustementGraphDistanceLimit = 1;
 
+    /// Dump current status of the scene every 3 resections
+    bool logIntermediateSteps = false;
+
     RigParams rig;
 
     /// Has fixed Intrinsics

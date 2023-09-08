@@ -154,7 +154,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
   }
 
   // create sfm intermediate step folder
-  if(!fs::exists(_sfmStepFolder))
+  if(!fs::exists(_sfmStepFolder) && _params.logIntermediateSteps)
     fs::create_directory(_sfmStepFolder);
 }
 
@@ -572,20 +572,20 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
             std::set_union(potentials.begin(), potentials.end(), linkedViewIds.begin(), linkedViewIds.end(), std::inserter(potentials, potentials.end()));
 
             // scene logging for visual debug
-            // if((resectionId % 3) == 0)
-            // {
-            //     auto chrono_start = std::chrono::steady_clock::now();
-            //     std::ostringstream os;
-            //     os << "sfm_" << std::setw(8) << std::setfill('0') << resectionId;
-            //     sfmDataIO::Save(_sfmData,
-            //                     (fs::path(_sfmStepFolder) / (os.str() + _params.sfmStepFileExtension)).string(),
-            //                     _params.sfmStepFilter);
-            //     ALICEVISION_LOG_DEBUG("Save of file " << os.str() << " took "
-            //                                           << std::chrono::duration_cast<std::chrono::milliseconds>(
-            //                                                  std::chrono::steady_clock::now() - chrono_start)
-            //                                                  .count()
-            //                                           << " msec.");
-            // }
+            if(_params.logIntermediateSteps && (resectionId % 3) == 0)
+            {
+                auto chrono_start = std::chrono::steady_clock::now();
+                std::ostringstream os;
+                os << "sfm_" << std::setw(8) << std::setfill('0') << resectionId;
+                sfmDataIO::Save(_sfmData,
+                                (fs::path(_sfmStepFolder) / (os.str() + _params.sfmStepFileExtension)).string(),
+                                _params.sfmStepFilter);
+                ALICEVISION_LOG_DEBUG("Save of file " << os.str() << " took "
+                                                      << std::chrono::duration_cast<std::chrono::milliseconds>(
+                                                             std::chrono::steady_clock::now() - chrono_start)
+                                                             .count()
+                                                      << " msec.");
+            }
 
             ++resectionId;
         }
