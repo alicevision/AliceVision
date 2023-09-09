@@ -20,6 +20,7 @@
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/regex.hpp>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -406,6 +407,8 @@ int aliceVision_main(int argc, char** argv)
     // user optional parameters
     bool debug = false;
     unsigned int maxCountByImage = 1;
+    bool processAllImages = true;
+    std::string filter = "*_macbeth.*";
 
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
@@ -416,8 +419,11 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("debug", po::value<bool>(&debug),
-         "Output debug data.")
+        ("debug", po::value<bool>(&debug), "Output debug data.")
+        ("processAllImages", po::value<bool>(&processAllImages)->default_value(processAllImages),
+         "If True, process all available images.")
+        ("filter", po::value<std::string>(&filter)->default_value(filter),
+         "Regular expression to select images to be processed.")
         ("maxCount", po::value<unsigned int>(&maxCountByImage),
          "Maximum color charts count to detect in a single image.");
 
@@ -458,17 +464,20 @@ int aliceVision_main(int argc, char** argv)
         {
             const sfmData::View& view = *(viewIt.second);
 
-            ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '" << view.getImage().getImagePath() << "'.");
-            ImageOptions imgOpt = {
-                view.getImage().getImagePath(),
-                std::to_string(view.getViewId()),
-                view.getImage().getMetadataBodySerialNumber(),
-                view.getImage().getMetadataLensSerialNumber() };
-            imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
-            imgOpt.readOptions.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
-            detectColorChecker(detectedCCheckers, imgOpt, settings);
+            boost::filesystem::path p(view.getImage().getImagePath());
+            const std::regex regex = utils::filterToRegex(filter);
+            if(processAllImages || std::regex_match(p.generic_string(), regex))
+            {
+                ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '"
+                                               << view.getImage().getImagePath() << "'.");
+                ImageOptions imgOpt = {view.getImage().getImagePath(), std::to_string(view.getViewId()),
+                                       view.getImage().getMetadataBodySerialNumber(), view.getImage().getMetadataLensSerialNumber()};
+                imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
+                imgOpt.readOptions.rawColorInterpretation =
+                    image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
+                detectColorChecker(detectedCCheckers, imgOpt, settings);
+            }
         }
-
     }
     else
     {
@@ -509,11 +518,16 @@ int aliceVision_main(int argc, char** argv)
         int counter = 0;
         for(const std::string& imgSrcPath : filesStrPaths)
         {
-            ALICEVISION_LOG_INFO(++counter << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
-            ImageOptions imgOpt;
-            imgOpt.imgFsPath = imgSrcPath;
-            imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
-            detectColorChecker(detectedCCheckers, imgOpt, settings);
+            boost::filesystem::path p(imgSrcPath);
+            const std::regex regex = utils::filterToRegex(filter);
+            if(processAllImages || std::regex_match(p.generic_string(), regex))
+            {
+                ALICEVISION_LOG_INFO(++counter << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
+                ImageOptions imgOpt;
+                imgOpt.imgFsPath = imgSrcPath;
+                imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
+                detectColorChecker(detectedCCheckers, imgOpt, settings);
+            }
         }
 
     }
