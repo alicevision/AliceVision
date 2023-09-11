@@ -9,7 +9,6 @@
 #include <aliceVision/geometry/lie.hpp>
 #include <Eigen/Dense>
 #include <unsupported/Eigen/KroneckerProduct>
-#include <aliceVision/utils/CeresUtils.hpp>
 #include <ceres/ceres.h>
 
 #include <aliceVision/geometry/lie.hpp>
@@ -18,7 +17,7 @@ namespace aliceVision {
 namespace sfm {
 
 
-class SE3ManifoldLeft : public utils::CeresManifold {
+class SE3ManifoldLeft : public ceres::Manifold {
 public:
   SE3ManifoldLeft(bool refineRotation, bool refineTranslation) :
   _refineRotation(refineRotation), 
@@ -89,7 +88,7 @@ private:
 };
 
 
-class SE3ManifoldRight : public utils::CeresManifold {
+class SE3ManifoldRight : public ceres::Manifold {
 public:
   SE3ManifoldRight(bool refineRotation, bool refineTranslation) :
   _refineRotation(refineRotation), 

@@ -9,13 +9,12 @@
 #include <aliceVision/geometry/lie.hpp>
 #include <Eigen/Dense>
 #include <unsupported/Eigen/KroneckerProduct>
-#include <aliceVision/utils/CeresUtils.hpp>
 #include <ceres/ceres.h>
 
 namespace aliceVision {
 namespace sfm {
 
-class IntrinsicsManifoldSymbolic : public utils::CeresManifold {
+class IntrinsicsManifoldSymbolic : public ceres::Manifold {
  public:
   explicit IntrinsicsManifoldSymbolic(size_t parametersSize, 
                                       double focalRatio, bool lockFocal, bool lockFocalRatio, 

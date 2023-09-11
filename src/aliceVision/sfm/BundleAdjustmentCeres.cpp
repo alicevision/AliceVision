@@ -10,7 +10,6 @@
 #include <aliceVision/sfm/ResidualErrorConstraintFunctor.hpp>
 #include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/utils/CeresUtils.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/camera.hpp>
@@ -31,7 +30,7 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
-class IntrinsicsManifold : public utils::CeresManifold {
+class IntrinsicsManifold : public ceres::Manifold {
  public:
   explicit IntrinsicsManifold(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
   : _ambientSize(parametersSize),
@@ -584,13 +583,8 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
     // subset parametrization
     if(!constantExtrinsic.empty())
     {
-#if ALICEVISION_CERES_HAS_MANIFOLD
       auto* subsetManifold = new ceres::SubsetManifold(6, constantExtrinsic);
       problem.SetManifold(poseBlockPtr, subsetManifold);
-#else
-      ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(6, constantExtrinsic);
-      problem.SetParameterization(poseBlockPtr, subsetParameterization);
-#endif
     }
 
     _statistics.addState(EParameter::POSE, EParameterState::REFINED);
@@ -769,11 +763,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     
     IntrinsicsManifold* subsetManifold = new IntrinsicsManifold(intrinsicBlock.size(), focalRatio,
                                                                 lockFocal, lockRatio, lockCenter, lockDistortion);
-#if ALICEVISION_CERES_HAS_MANIFOLD
     problem.SetManifold(intrinsicBlockPtr, subsetManifold);
-#else
-    problem.SetParameterization(intrinsicBlockPtr, new utils::ManifoldToParameterizationWrapper(subsetManifold));
-#endif
 
     _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
   }

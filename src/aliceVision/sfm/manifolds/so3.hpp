@@ -9,7 +9,6 @@
 #include <aliceVision/geometry/lie.hpp>
 #include <Eigen/Dense>
 #include <unsupported/Eigen/KroneckerProduct>
-#include <aliceVision/utils/CeresUtils.hpp>
 #include <ceres/ceres.h>
 
 namespace aliceVision {
@@ -74,7 +73,7 @@ inline Eigen::Matrix<double, 3, 9, Eigen::RowMajor> dlogmdr(const Eigen::Matrix3
 
 namespace sfm {
 
-class SO3Manifold : public utils::CeresManifold {
+class SO3Manifold : public ceres::Manifold {
  public:
   ~SO3Manifold() override = default;
 

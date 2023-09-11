@@ -7,7 +7,6 @@
 #include "distortionEstimation.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/utils/CeresUtils.hpp>
 
 #include <ceres/ceres.h>
 

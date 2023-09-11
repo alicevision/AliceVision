@@ -9,14 +9,13 @@
 #include <aliceVision/geometry/lie.hpp>
 #include <Eigen/Dense>
 #include <unsupported/Eigen/KroneckerProduct>
-#include <aliceVision/utils/CeresUtils.hpp>
 #include <ceres/ceres.h>
 
 namespace aliceVision {
 
 namespace sfm {
 
-class SO2Manifold : public utils::CeresManifold {
+class SO2Manifold : public ceres::Manifold {
 public:
   bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
 

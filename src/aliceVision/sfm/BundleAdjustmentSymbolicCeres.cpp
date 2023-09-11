@@ -12,7 +12,6 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
-#include <aliceVision/utils/CeresUtils.hpp>
 #include <boost/filesystem.hpp>
 
 
@@ -66,12 +65,7 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
 
   if (refineRotation || refineTranslation)
   {
-#if ALICEVISION_CERES_HAS_MANIFOLD
     problem.SetManifold(poseBlockPtr, new SE3ManifoldLeft(refineRotation, refineTranslation));
-#else
-    problem.SetParameterization(poseBlockPtr, new utils::ManifoldToParameterizationWrapper(
-                                    new SE3ManifoldLeft(refineRotation, refineTranslation)));
-#endif
   }
   else
   {
@@ -452,12 +446,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
 
     IntrinsicsManifoldSymbolic* subsetManifold = new IntrinsicsManifoldSymbolic(intrinsicBlock.size(), focalRatio,
                                                                 lockFocal, lockRatio, lockCenter, lockDistortion);
-#if ALICEVISION_CERES_HAS_MANIFOLD
     problem.SetManifold(intrinsicBlockPtr, subsetManifold);
-#else
-    problem.SetParameterization(intrinsicBlockPtr, new utils::ManifoldToParameterizationWrapper(subsetManifold));
-#endif
-
     _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
   }
 }
