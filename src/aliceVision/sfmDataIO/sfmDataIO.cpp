@@ -25,36 +25,26 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace sfmDataIO {
 
-///Check that each pose have a valid intrinsic and pose id in the existing View ids
+///Check that each view references a declared intrinsic
 bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
 {
   const bool bCheck_Intrinsic = (partFlag & INTRINSICS);
-  const bool bCheck_Extrinsic = (partFlag & EXTRINSICS);
 
   std::set<IndexT> intrinsicIdsDeclared;
   transform(sfmData.getIntrinsics().begin(), sfmData.getIntrinsics().end(),
     std::inserter(intrinsicIdsDeclared, intrinsicIdsDeclared.begin()), stl::RetrieveKey());
 
-  std::set<IndexT> extrinsicIdsDeclared; //unique so can use a set
-  transform(sfmData.getPoses().begin(), sfmData.getPoses().end(),
-    std::inserter(extrinsicIdsDeclared, extrinsicIdsDeclared.begin()), stl::RetrieveKey());
-
-  // Collect id_intrinsic and id_extrinsic referenced from views
+  // Collect id_intrinsic referenced from views
   std::set<IndexT> intrinsicIdsReferenced;
-  std::set<IndexT> extrinsicIdsReferenced;
   for(const auto& v: sfmData.getViews())
   {
     const IndexT id_intrinsic = v.second.get()->getIntrinsicId();
     intrinsicIdsReferenced.insert(id_intrinsic);
-
-    const IndexT id_pose = v.second.get()->getPoseId();
-    extrinsicIdsReferenced.insert(id_pose);
   }
 
   // We may have some views with undefined Intrinsics,
   // so erase the UndefinedIndex value if exist.
   intrinsicIdsReferenced.erase(UndefinedIndexT);
-  extrinsicIdsReferenced.erase(UndefinedIndexT);
 
   // Check if defined intrinsic & extrinsic are at least connected to views
   bool bRet = true;
@@ -71,21 +61,6 @@ bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
     // some intrinsics are used in Views but never declared.
     // So the file structure is invalid and may create troubles.
     if(!undefinedIntrinsicIds.empty())
-      bRet = false; // error
-  }
-  
-  if (bCheck_Extrinsic && extrinsicIdsDeclared != extrinsicIdsReferenced)
-  {
-    ALICEVISION_LOG_TRACE(extrinsicIdsDeclared.size() << " extrinsics declared and " << extrinsicIdsReferenced.size() << " extrinsics used.");
-    std::set<IndexT> undefinedExtrinsicIds;
-    // undefinedExtrinsicIds = extrinsicIdsReferenced - extrinsicIdsDeclared
-    std::set_difference(extrinsicIdsDeclared.begin(), extrinsicIdsDeclared.end(),
-                        extrinsicIdsReferenced.begin(), extrinsicIdsReferenced.end(),
-                        std::inserter(undefinedExtrinsicIds, undefinedExtrinsicIds.begin()));
-    // If undefinedExtrinsicIds is not empty,
-    // some extrinsics are used in Views but never declared.
-    // So the file structure is invalid and may create troubles.
-    if(!undefinedExtrinsicIds.empty())
       bRet = false; // error
   }
 
@@ -123,8 +98,8 @@ bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partF
   if(status)
     sfmData.setAbsolutePath(filename);
 
-  // Assert that loaded intrinsics | extrinsics are linked to valid view
-  if(status && (partFlag & VIEWS) && ((partFlag & INTRINSICS) || (partFlag & EXTRINSICS)))
+  // Assert that loaded intrinsics are linked to valid view
+  if(status && (partFlag & VIEWS) && (partFlag & INTRINSICS))
     return ValidIds(sfmData, partFlag);
 
   return status;
