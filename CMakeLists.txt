@@ -16,6 +16,8 @@ option(AV_BUILD_CCTAG "Enable building an embedded CCTag" ON)
 option(AV_BUILD_APRILTAG "Enable building an embedded AprilTag" ON)
 option(AV_BUILD_OPENGV "Enable building an embedded OpenGV" ON)
 option(AV_BUILD_OPENCV "Enable building an embedded OpenCV" ON)
+option(AV_BUILD_ONNXRUNTIME "Enable building an embedded ONNX runtime" ON)
+set(AV_ONNX_APPLE_ARCH "arm64" CACHE STRING "Version to download on Apple [arm64, x86_64]")
 option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
 option(AV_BUILD_SUITESPARSE "Enable building an embedded SuiteSparse" ON)
 option(AV_BUILD_FFMPEG "Enable building an embedded FFMpeg" ON)
@@ -77,6 +79,10 @@ message(STATUS "AV_BUILD_APRILTAG: ${AV_BUILD_APRILTAG}")
 message(STATUS "AV_BUILD_POPSIFT: ${AV_BUILD_POPSIFT}")
 message(STATUS "AV_BUILD_OPENGV: ${AV_BUILD_OPENGV}")
 message(STATUS "AV_BUILD_OPENCV: ${AV_BUILD_OPENCV}")
+message(STATUS "AV_BUILD_ONNXRUNTIME: ${AV_BUILD_ONNXRUNTIME}")
+if(APPLE)
+    message(STATUS "AV_ONNX_APPLE_ARCH: ${AV_ONNX_APPLE_ARCH}")
+endif()
 message(STATUS "AV_BUILD_LAPACK: ${AV_BUILD_LAPACK}")
 message(STATUS "AV_BUILD_SUITESPARSE: ${AV_BUILD_SUITESPARSE}")
 message(STATUS "AV_BUILD_FFMPEG: ${AV_BUILD_FFMPEG}")
@@ -170,6 +176,7 @@ ExternalProject_Add(${ASSIMP_TARGET}
           -DASSIMP_WARNINGS_AS_ERRORS=OFF
           -DASSIMP_BUILD_TESTS=OFF
           <SOURCE_DIR>
+      BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
       DEPENDS ${ZLIB_TARGET}
       )
 set(ASSIMP_CMAKE_FLAGS -DAssimp_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/assimp-${ASSIMP_AV_VERSION})
@@ -319,10 +326,38 @@ ExternalProject_Add(${EXPAT_TARGET}
        )
 
 # Add ONNXRuntime
+if(AV_BUILD_ONNXRUNTIME)
+# when changing the version remember to update all the 3 different hashes AV_ONNX_HASH with the following bash script (update the version variable)
+##!/usr/bin/env bash
+# AV_ONNX_VERSION="1.12.0"
+# BASE_URL="https://github.com/microsoft/onnxruntime/releases/download/v${AV_ONNX_VERSION}"
+# platforms=("onnxruntime-linux-x64"  "onnxruntime-osx-arm64"  "onnxruntime-osx-x86_64")
+# # Iterate over the main options
+# for platform in "${platforms[@]}"; do
+#     AV_ONNX_FILENAME="${platform}-${AV_ONNX_VERSION}.tgz"
+#     echo "${AV_ONNX_FILENAME}"
+#     url="${BASE_URL}/${AV_ONNX_FILENAME}"; curl -sLO "$url" && checksum=$(sha256sum "${AV_ONNX_FILENAME}" | awk '{ print $1 }') && echo "SHA256 Checksum: $checksum" && rm "${AV_ONNX_FILENAME}"
+# done
+
+set(AV_ONNX_VERSION "1.12.0")
+if(APPLE)
+    set(AV_ONNX_FILENAME_PREFIX "onnxruntime-osx-${AV_ONNX_APPLE_ARCH}")
+    if(AV_ONNX_APPLE_ARCH STREQUAL "arm64")
+        set(AV_ONNX_HASH "23117b6f5d7324d4a7c51184e5f808dd952aec411a6b99a1b6fd1011de06e300")
+    elseif(AV_ONNX_APPLE_ARCH STREQUAL "x86_64")
+        set(AV_ONNX_HASH "09b17f712f8c6f19bb63da35d508815b443cbb473e16c6192abfaa297c02f600")
+    else()
+        message(FATAL_ERROR "Unsupported arch version ${AV_ONNX_APPLE_ARCH} for Apple")
+    endif()
+else()
+    set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-x64")
+    set(AV_ONNX_HASH "5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+endif()
+set(AV_ONNX_FILENAME "${AV_ONNX_FILENAME_PREFIX}-${AV_ONNX_VERSION}.tgz")
 set(ONNXRUNTIME_TARGET onnxruntime)
 ExternalProject_Add(${ONNXRUNTIME_TARGET}
-      URL https://github.com/microsoft/onnxruntime/releases/download/v1.12.0/onnxruntime-linux-x64-1.12.0.tgz
-      URL_HASH SHA256=5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5
+      URL https://github.com/microsoft/onnxruntime/releases/download/v${AV_ONNX_VERSION}/${AV_ONNX_FILENAME}
+      URL_HASH SHA256=${AV_ONNX_HASH}
       DOWNLOAD_DIR ${BUILD_DIR}/download/onnxruntime
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/onnxruntime
       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
@@ -334,6 +369,7 @@ ExternalProject_Add(${ONNXRUNTIME_TARGET}
       BUILD_ALWAYS 0
       BUILD_IN_SOURCE 0
 )
+endif()
 
 
 if(AV_BUILD_OPENGV)
@@ -416,7 +452,7 @@ ExternalProject_add(mpfr
 
 set(SUITESPARSE_TARGET suitesparse)
 if(APPLE)
-    set(SUITESPARSE_INTERNAL_MAKE_CMD MPFR_ROOT=${CMAKE_INSTALL_PREFIX} GMP_ROOT=${CMAKE_INSTALL_PREFIX} DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}" ${LAPACK_CMAKE_FLAGS})
+    set(SUITESPARSE_INTERNAL_MAKE_CMD VERBOSE=1 MPFR_ROOT=${CMAKE_INSTALL_PREFIX} GMP_ROOT=${CMAKE_INSTALL_PREFIX} DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}" LAPACK_LIBRARIES="${LAPACK_LIBRARIES}")
 else()
     set(SUITESPARSE_INTERNAL_MAKE_CMD VERBOSE=1 MPFR_ROOT=${CMAKE_INSTALL_PREFIX} GMP_ROOT=${CMAKE_INSTALL_PREFIX} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} BLAS_LIBRARIES="${BLAS_LIBRARIES}" BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}" LAPACK_LIBRARIES="${LAPACK_LIBRARIES}")
 endif()
@@ -634,8 +670,8 @@ ExternalProject_Add(${BOOST_TARGET}
       BINARY_DIR ${BUILD_DIR}/boost_build
       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
       CONFIGURE_COMMAND cd <SOURCE_DIR> && ./bootstrap.${SCRIPT_EXTENSION} --prefix=<INSTALL_DIR> --with-libraries=atomic,container,date_time,exception,filesystem,graph,iostreams,json,log,math,program_options,regex,serialization,system,test,thread,stacktrace,timer
-      BUILD_COMMAND cd <SOURCE_DIR> && ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} link=shared threading=multi -j8
-      INSTALL_COMMAND cd <SOURCE_DIR> && ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} link=shared threading=multi install
+      BUILD_COMMAND cd <SOURCE_DIR> && ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=11 link=shared threading=multi -j8
+      INSTALL_COMMAND cd <SOURCE_DIR> && ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE}  cxxstd=11 link=shared threading=multi install
       DEPENDS ${ZLIB_TARGET}
       )
 set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX})
@@ -697,6 +733,7 @@ ExternalProject_add(${FFMPEG_TARGET}
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ffmpeg
       UPDATE_COMMAND ""
       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
       CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
