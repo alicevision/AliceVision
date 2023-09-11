@@ -32,7 +32,7 @@
 
 #include <aliceVision/matching/supportEstimation.hpp>
 
-#include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>

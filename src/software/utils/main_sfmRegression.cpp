@@ -12,8 +12,8 @@
 #include <boost/program_options.hpp>
 
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 
 #include <string>
 #include <sstream>

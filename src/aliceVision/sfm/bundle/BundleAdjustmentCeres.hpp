@@ -9,7 +9,7 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 

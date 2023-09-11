@@ -11,7 +11,7 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
-#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 
 #include <aliceVision/sfmData/CameraPose.hpp>

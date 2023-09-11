@@ -10,7 +10,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>

@@ -9,7 +9,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 
 #include <iterator>
 
