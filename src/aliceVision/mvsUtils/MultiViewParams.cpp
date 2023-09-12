@@ -38,7 +38,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                  const std::string& imagesFolder,
                                  const std::string& depthMapsFolder,
                                  const std::string& depthMapsFilterFolder,
-                                 bool readFromDepthMaps,
+                                 mvsUtils::EFileType fileType,
                                  int downscale)
   : _sfmData(sfmData),
     _imagesFolder(imagesFolder + "/"),
@@ -63,7 +63,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
             std::string path = view.getImage().getImagePath();
 
-            if (readFromDepthMaps)
+            if (fileType == mvsUtils::EFileType::depthMap)
             {
                 if (depthMapsFolder.empty())
                 {
@@ -75,6 +75,11 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                     // use output of depth map estimation
                     path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMap);
                 }
+            }
+            else if (fileType == mvsUtils::EFileType::normalMap)
+            {
+                const int scale = 0;
+                path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::normalMap, scale);
             }
             else if (_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
             {

@@ -117,7 +117,7 @@ class MultiViewParams
                     const std::string& imagesFolder = "",
                     const std::string& depthMapsFolder = "",
                     const std::string& depthMapsFilterFolder = "",
-                    bool readFromDepthMaps = false,
+                    mvsUtils::EFileType fileType = mvsUtils::EFileType::none,
                     int downscale = 1);
 
     ~MultiViewParams();
