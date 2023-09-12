@@ -84,7 +84,7 @@ using KdTree = nanoflann::KDTreeSingleIndexAdaptor<
     nanoflann::L2_Simple_Adaptor<double, LandmarksAdaptator>,
     LandmarksAdaptator,
     3, /* dim */
-    IndexT
+    size_t
 >;
 
 /**
@@ -107,7 +107,7 @@ public:
 
     inline bool full() const { return found; }
 
-    inline bool addPoint(double dist, IndexT index)
+    inline bool addPoint(double dist, size_t index)
     {
         if(dist < _radius_sq && _pixSize[index] < _pixSize_i)
         {
@@ -291,8 +291,181 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark)
         {
             filteredObservations[observationScorePair.second] = landmark.observations[observationScorePair.second];
         }
-        landmark.observations = filteredObservations;
+        landmark.observations = std::move(filteredObservations);
     }
+    return true;
+}
+
+bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int nbNeighbors = 10, int nbIterations = 5,
+                         double fraction = 0.5)
+{
+    std::vector<Landmark> landmarksData(sfmData.getLandmarks().size());
+    {
+        size_t i = 0;
+        for(auto& it : sfmData.getLandmarks())
+        {
+            landmarksData[i++] = it.second;
+        }
+    }
+
+    std::vector<std::pair<std::vector<IndexT>, std::vector<double>>> viewScoresData(landmarksData.size());
+
+    ALICEVISION_LOG_INFO("Computing initial observation scores based on distance to observing view: started");
+#pragma omp parallel for
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        const sfmData::Landmark& landmark = landmarksData[i];
+
+        // compute observation scores
+
+        const auto& nbObservations = landmark.observations.size();
+        auto& [viewIds, viewScores] = viewScoresData[i];
+        viewIds.reserve(nbObservations);
+        viewScores.reserve(nbObservations);
+        double total = 0.;
+        for(const auto& observationPair : landmark.observations)
+        {
+            const IndexT viewId = observationPair.first;
+            const sfmData::View& view = *(sfmData.getViews().at(viewId));
+            const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+
+            viewIds.push_back(viewId);
+            const auto& v = 1. / (pose.center() - landmark.X).squaredNorm();
+            total += v;
+            viewScores.push_back(v);
+        }
+
+        // normalize view scores
+        for(auto j = 0; j < nbObservations; j++)
+        {
+            viewScores[j] /= total;
+        }
+
+        // sort by ascending view id order
+        // for consequent faster access
+        std::vector<size_t> idx(nbObservations);
+        std::iota(idx.begin(), idx.end(), 0);
+        std::stable_sort(idx.begin(), idx.end(), [&v = viewIds](size_t i1, size_t i2) { return v[i1] < v[i2]; });
+        auto ids_temp = viewIds;
+        auto scores_temp = viewScores;
+        for(auto j = 0; j < nbObservations; j++)
+        {
+            viewIds[j] = ids_temp[idx[j]];
+            viewScores[j] = scores_temp[idx[j]];
+        }
+    }
+    ALICEVISION_LOG_INFO("Computing initial observation scores based on distance to observing view: done");
+
+    ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: started");
+    ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
+    LandmarksAdaptator dataAdaptor(landmarksData);
+    KdTree tree(3, dataAdaptor, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    tree.buildIndex();
+    ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
+    std::vector<std::pair<std::vector<size_t>, std::vector<double>>> neighborsData(landmarksData.size());
+#pragma omp parallel for
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        const sfmData::Landmark& landmark = landmarksData[i];
+        auto& [indices_, weights_] = neighborsData[i];
+        indices_.resize(nbNeighbors);
+        weights_.resize(nbNeighbors);
+        tree.knnSearch(landmark.X.data(), nbNeighbors, &indices_[0], &weights_[0]);
+        double total = 0.;
+        for(auto& w : weights_)
+        {
+            w = 1. / std::sqrt(w);
+            total += w;
+        }
+        for(auto& w : weights_)
+        {
+            w /= total;
+        }
+    }
+    ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: done");
+
+    ALICEVISION_LOG_INFO("Propagating neighbors observation scores: started");
+    std::vector<std::vector<double>> viewScoresData_t(landmarksData.size());
+    for(auto i = 0; i < nbIterations; i++)
+    {
+        ALICEVISION_LOG_INFO("Iteration " << i << "...");
+#pragma omp parallel for
+        for(auto id = 0; id < landmarksData.size(); id++)
+        {
+            const auto& [viewIds, viewScores] = viewScoresData[id];
+            auto& viewScores_acc = viewScoresData_t[id];
+            viewScores_acc.assign(viewScores.size(), 0.);
+            double viewScores_total = 0.;
+            auto& [indices_, weights_] = neighborsData[id];
+            for(auto j = 0; j < nbNeighbors; j++)
+            {
+                const auto& neighborId = indices_[j];
+                const auto& neighborWeight = weights_[j];
+                const auto& [viewIds_neighbor, viewScores_neighbor] = viewScoresData[neighborId];
+                auto viewIds_it = viewIds.begin();
+                auto viewIds_neighbor_it = viewIds_neighbor.begin();
+                auto viewScores_neighbor_it = viewScores_neighbor.begin();
+                auto viewScores_acc_it = viewScores_acc.begin();
+                while(viewIds_it != viewIds.end() && viewIds_neighbor_it != viewIds_neighbor.end())
+                {
+                    if(*viewIds_it < *viewIds_neighbor_it)
+                    {
+                        ++viewIds_it;
+                        ++viewScores_acc_it;
+                    }
+                    else
+                    {
+                        if(!(*viewIds_neighbor_it < *viewIds_it))
+                        {
+                            const auto& v = *viewScores_neighbor_it * neighborWeight;
+                            (*viewScores_acc_it) += v;
+                            viewScores_total += v;
+                            ++viewIds_it;
+                            ++viewScores_acc_it;
+                        }
+                        ++viewIds_neighbor_it;
+                        ++viewScores_neighbor_it;
+                    }
+                }
+            }
+            for(auto j = 0; j < viewScores_acc.size(); j++)
+            {
+                viewScores_acc[j] *= fraction / viewScores_total;
+                viewScores_acc[j] += (1 - fraction) * viewScores[j];
+            }
+        }
+#pragma omp parallel for
+        for(auto id = 0; id < landmarksData.size(); id++)
+        {
+            viewScoresData[id].second = std::move(viewScoresData_t[id]);
+        }
+    }
+    ALICEVISION_LOG_INFO("Propagating neighbors observation scores: done");
+
+    ALICEVISION_LOG_INFO("Selecting observations with best scores: started");
+#pragma omp parallel for
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        sfmData::Landmark& landmark = landmarksData[i];
+        const auto& nbObservations = landmark.observations.size();
+        auto& [viewIds, viewScores] = viewScoresData[i];
+
+        // sort by descending view score order
+        std::vector<size_t> idx(nbObservations);
+        std::iota(idx.begin(), idx.end(), 0);
+        std::stable_sort(idx.begin(), idx.end(), [&v = viewScores](size_t i1, size_t i2) { return v[i1] > v[i2]; });
+
+        // replace the observations
+        Observations filteredObservations;
+        for(auto j = 0; j < maxNbObservationsPerLandmark; j++)
+        {
+            const auto& viewId = viewIds[idx[j]];
+            filteredObservations[viewId] = landmark.observations[viewId];
+        }
+        landmark.observations = std::move(filteredObservations);
+    }
+    ALICEVISION_LOG_INFO("Selecting observations with best scores: done");
+
     return true;
 }
 
@@ -372,7 +545,7 @@ int aliceVision_main(int argc, char *argv[])
     if(maxNbObservationsPerLandmark > 0)
     {
         ALICEVISION_LOG_INFO("Filtering observations: started.");
-        filterObservations(sfmData, maxNbObservationsPerLandmark);
+        filterObservations2(sfmData, maxNbObservationsPerLandmark);
         ALICEVISION_LOG_INFO("Filtering observations: done.");
     }
 
