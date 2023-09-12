@@ -56,9 +56,18 @@ struct LandmarksAdaptator
     inline Derived& derived() { return *static_cast<Derived*>(this); }
 
     const std::vector<Landmark> _data;
+    const std::vector<Landmark*> _data_ptr;
+    bool usePtr;
     LandmarksAdaptator(const std::vector<Landmark>& data)
         : _data(data)
     {
+        usePtr = false;
+    }
+
+    LandmarksAdaptator(const std::vector<Landmark*>& data)
+        : _data_ptr(data)
+    {
+        usePtr = true;
     }
 
     // Must return the number of data points
@@ -67,7 +76,7 @@ struct LandmarksAdaptator
     // Returns the dim'th component of the idx'th point in the class:
     inline T kdtree_get_pt(const size_t idx, int dim) const
     {
-        return _data[idx].X(dim);
+        return usePtr ? _data_ptr[idx]->X(dim) : _data[idx].X(dim);
     }
 
     // Optional bounding-box computation: return false to default to a standard bbox computation loop.
@@ -234,7 +243,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
             filteredLandmarks[newIdx++] = std::make_pair(newIdx, landmarksData[i]);
         }
     }
-    sfmData.getLandmarks() = Landmarks(filteredLandmarks.begin(), filteredLandmarks.end());
+    sfmData.getLandmarks() = std::move(Landmarks(filteredLandmarks.begin(), filteredLandmarks.end()));
     ALICEVISION_LOG_INFO("Removing landmarks based on pixel size: done.");
 
     return true;
@@ -299,12 +308,12 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark)
 bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int nbNeighbors = 10, int nbIterations = 5,
                          double fraction = 0.5)
 {
-    std::vector<Landmark> landmarksData(sfmData.getLandmarks().size());
+    std::vector<Landmark*> landmarksData(sfmData.getLandmarks().size());
     {
         size_t i = 0;
         for(auto& it : sfmData.getLandmarks())
         {
-            landmarksData[i++] = it.second;
+            landmarksData[i++] = &it.second;
         }
     }
 
@@ -314,7 +323,7 @@ bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int
 #pragma omp parallel for
     for(auto i = 0; i < landmarksData.size(); i++)
     {
-        const sfmData::Landmark& landmark = landmarksData[i];
+        const sfmData::Landmark& landmark = *landmarksData[i];
 
         // compute observation scores
 
@@ -366,7 +375,7 @@ bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int
 #pragma omp parallel for
     for(auto i = 0; i < landmarksData.size(); i++)
     {
-        const sfmData::Landmark& landmark = landmarksData[i];
+        const sfmData::Landmark& landmark = *landmarksData[i];
         auto& [indices_, weights_] = neighborsData[i];
         // a landmark is a neighbor to itself with zero distance
         indices_.resize(nbNeighbors + 1);
@@ -449,7 +458,7 @@ bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int
 #pragma omp parallel for
     for(auto i = 0; i < landmarksData.size(); i++)
     {
-        sfmData::Landmark& landmark = landmarksData[i];
+        sfmData::Landmark& landmark = *landmarksData[i];
         const auto& nbObservations = landmark.observations.size();
         auto& [viewIds, viewScores] = viewScoresData[i];
 
