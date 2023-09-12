@@ -107,7 +107,7 @@ void colorizeTracks(SfMData& sfmData)
     {
       const View& view = sfmData.getView(viewCardinal.viewId);
       image::Image<image::RGBColor> image;
-      image::readImage(view.getImagePath(), image, image::EImageColorSpace::SRGB);
+      image::readImage(view.getImage().getImagePath(), image, image::EImageColorSpace::SRGB);
 
       for(Landmark& landmark : viewCardinal.landmarks)
       {

@@ -253,7 +253,7 @@ int aliceVision_main(int argc, char** argv)
     // Estimate working color space if set to AUTO
     if (workingColorSpace == image::EImageColorSpace::AUTO)
     {
-        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(groupedViews[0][0]->getImagePath()));
+        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(groupedViews[0][0]->getImage().getImagePath()));
         const std::string imgFormat = in->format_name();
         const bool isRAW = imgFormat.compare("raw") == 0;
 
@@ -370,11 +370,11 @@ int aliceVision_main(int argc, char** argv)
                 }
                 if (!byPass)
                 {
-                    boost::filesystem::path p(targetViews[g]->getImagePath());
+                    boost::filesystem::path p(targetViews[g]->getImage().getImagePath());
                     const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
-                    hdrView->setImagePath(hdrImagePath);
+                    hdrView->getImage().setImagePath(hdrImagePath);
                 }
-                hdrView->addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace));
+                hdrView->getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace));
                 outputSfm.getViews()[hdrView->getViewId()] = hdrView;
             }
         }
@@ -430,13 +430,13 @@ int aliceVision_main(int argc, char** argv)
             // Load all images of the group
             for(std::size_t i = 0; i < group.size(); ++i)
             {
-                const std::string filepath = group[i]->getImagePath();
+                const std::string filepath = group[i]->getImage().getImagePath();
                 ALICEVISION_LOG_INFO("Load " << filepath);
 
                 image::ImageReadOptions options;
                 options.workingColorSpace = workingColorSpace;
-                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getRawColorInterpretation());
-                options.colorProfileFileName = group[i]->getColorProfileFileName();
+                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getImage().getRawColorInterpretation());
+                options.colorProfileFileName = group[i]->getImage().getColorProfileFileName();
 
                 // Whatever the raw color interpretation mode, the default read processing for raw images is to apply
                 // white balancing in libRaw, before demosaicing.
@@ -451,7 +451,7 @@ int aliceVision_main(int argc, char** argv)
                 
                 image::readImage(filepath, images[i], options);
 
-                exposuresSetting[i] = group[i]->getCameraExposureSetting();
+                exposuresSetting[i] = group[i]->getImage().getCameraExposureSetting();
             }
 
             if (!sfmData::hasComparableExposures(exposuresSetting))
@@ -469,7 +469,7 @@ int aliceVision_main(int argc, char** argv)
             if (images.size() > 1)
             {
                 hdr::hdrMerge merge;
-                sfmData::ExposureSetting targetCameraSetting = targetView->getCameraExposureSetting();
+                sfmData::ExposureSetting targetCameraSetting = targetView->getImage().getCameraExposureSetting();
                 hdr::MergingParams mergingParams;
                 mergingParams.targetCameraExposure = targetCameraSetting.getExposure();
                 mergingParams.refImageIndex = targetIndexPerIntrinsics[intrinsicId];
@@ -492,11 +492,11 @@ int aliceVision_main(int argc, char** argv)
                 HDRimage = images[0];
             }
 
-            boost::filesystem::path p(targetView->getImagePath());
+            boost::filesystem::path p(targetView->getImage().getImagePath());
             const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
 
             // Write an image with parameters from the target view
-            std::map<std::string, std::string> viewMetadata = targetView->getMetadata();
+            std::map<std::string, std::string> viewMetadata = targetView->getImage().getMetadata();
 
             oiio::ParamValueList targetMetadata;
             for (const auto& meta : viewMetadata)

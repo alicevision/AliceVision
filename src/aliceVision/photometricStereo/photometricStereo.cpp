@@ -108,7 +108,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         std::map<std::string, IndexT> idMap;
         for (auto& viewId: initViewIds)
         {
-            std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getMetadata();
+            std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getImage().getMetadata();
             idMap[currentMetadata.at("Exif:DateTimeDigitized")] = viewId;
         }
 
@@ -120,7 +120,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
 
         for (auto& viewId: viewIds)
         {
-            const fs::path imagePath = fs::path(sfmData.getView(viewId).getImagePath());
+            const fs::path imagePath = fs::path(sfmData.getView(viewId).getImage().getImagePath());
             if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
             {
                 ALICEVISION_LOG_INFO(" - " << imagePath.string());
@@ -167,7 +167,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         groupedImages = imageList.size() > 1 ? true : false;
 
         image::Image<float> mask;
-        std::string pictureFolderName = fs::path(sfmData.getView(viewIds[0]).getImagePath()).parent_path().filename().string();
+        std::string pictureFolderName = fs::path(sfmData.getView(viewIds[0]).getImage().getImagePath()).parent_path().filename().string();
         // If no mask folder was provided, do not make up a path anyway
         std::string currentMaskPath = maskPath.empty() ? maskPath : maskPath + "/" + pictureFolderName.erase(0, 3) + ".png";
 
@@ -216,7 +216,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
         {
             sfmData::View * view = albedoSfmData.getViews().at(viewId).get();
             std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.exr";
-            view->setImagePath(imagePath);
+            view->getImage().setImagePath(imagePath);
         }
         else
         {
@@ -237,7 +237,7 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
 
         sfmData::View * view = normalSfmData.getViews().at(viewId).get();
         std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_normals_w.exr";
-        view->setImagePath(imagePath);
+        view->getImage().setImagePath(imagePath);
     }
 
     sfmDataIO::Save(normalSfmData, outputPath + "/normalMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS));

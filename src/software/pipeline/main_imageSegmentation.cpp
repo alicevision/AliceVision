@@ -136,7 +136,7 @@ int aliceVision_main(int argc, char** argv)
               {
                   if(a == nullptr || b == nullptr)
                       return true;
-                  return (a->getImagePath() < b->getImagePath());
+                  return (a->getImage().getImagePath() < b->getImage().getImagePath());
               });
 
     // Define range to compute
@@ -208,14 +208,14 @@ int aliceVision_main(int argc, char** argv)
     {
         const auto& view = viewsOrderedByName[rangeStart + itemidx];
 
-        std::string path = view->getImagePath();
+        std::string path = view->getImage().getImagePath();
         ALICEVISION_LOG_INFO("processing " << path);
 
         image::Image<image::RGBfColor> image;
         image::readImage(path, image, image::EImageColorSpace::NO_CONVERSION);
 
         double pixelRatio = 1.0;
-        view->getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
+        view->getImage().getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
         if (pixelRatio != 1.0)
         {
             // Resample input image in order to work with square pixels

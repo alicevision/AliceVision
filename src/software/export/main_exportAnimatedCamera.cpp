@@ -191,7 +191,7 @@ int aliceVision_main(int argc, char** argv)
         {
             // Skip the view if it does not match the expression filter
             const std::regex regexFilter = utils::filterToRegex(viewFilter);
-            if(!std::regex_match(view.getImagePath(), regexFilter))
+            if(!std::regex_match(view.getImage().getImagePath(), regexFilter))
                 continue;
         }
 
@@ -303,7 +303,7 @@ int aliceVision_main(int argc, char** argv)
 
         ++progressDisplay;
 
-        const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
+        const std::string imagePathStem = fs::path(viewPair.second->getImage().getImagePath()).stem().string();
 
         // Undistort camera images
         if(undistortedImages)
@@ -312,8 +312,8 @@ int aliceVision_main(int argc, char** argv)
             const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
             const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
 
-            image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
-            oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
+            image::readImage(view.getImage().getImagePath(), image, image::EImageColorSpace::LINEAR);
+            oiio::ParamValueList metadata = image::readImageMetadata(view.getImage().getImagePath());
 
             if(cam->isValid() && cam->hasDistortion())
             {
@@ -358,7 +358,7 @@ int aliceVision_main(int argc, char** argv)
         if(!sfmData.isPoseAndIntrinsicDefined(&view))
             continue;
 
-        std::string cameraName =  view.getMetadataMake() + "_" + view.getMetadataModel();
+        std::string cameraName =  view.getImage().getMetadataMake() + "_" + view.getImage().getMetadataModel();
         IndexT frameN = 0;
         bool isSequence = false;
 
@@ -388,9 +388,9 @@ int aliceVision_main(int argc, char** argv)
             const std::size_t frame = frameN;
             videoViewPerFrame[cameraName][frame] = view.getViewId();
         }
-        else if(view.hasMetadataDateTimeOriginal()) // Picture
+        else if(view.getImage().hasMetadataDateTimeOriginal()) // Picture
         {
-            const std::size_t key = view.getMetadataDateTimestamp();
+            const std::size_t key = view.getImage().getMetadataDateTimestamp();
 
             dslrViewPerKey[cameraName].push_back({key, view.getViewId()});
         }
@@ -457,7 +457,7 @@ int aliceVision_main(int argc, char** argv)
                 const IndexT intrinsicId = findViewIt->second->getIntrinsicId();
                 const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
                 const sfmData::CameraPose pose = sfmData.getPose(*findViewIt->second);
-                const std::string& imagePath = findViewIt->second->getImagePath();
+                const std::string& imagePath = findViewIt->second->getImage().getImagePath();
                 const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(intrinsicId) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
                 exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, viewId, intrinsicId);
@@ -480,7 +480,7 @@ int aliceVision_main(int argc, char** argv)
             const sfmData::View& view = *(sfmData.getViews().at(cameraView.second));
             const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(view.getIntrinsicId()));
             const sfmData::CameraPose pose = sfmData.getPose(view);
-            const std::string& imagePath = view.getImagePath();
+            const std::string& imagePath = view.getImage().getImagePath();
             const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
             exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, view.getViewId(), view.getIntrinsicId());

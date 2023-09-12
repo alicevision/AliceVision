@@ -306,7 +306,7 @@ int aliceVision_main(int argc, char** argv)
 
                 for (int j = 0; j < group.size(); ++j)
                 {
-                    const sfmData::ExposureSetting exp = group[j]->getCameraExposureSetting();
+                    const sfmData::ExposureSetting exp = group[j]->getImage().getCameraExposureSetting();
                     exposuresSetting.push_back(exp);
                 }
                 if (!sfmData::hasComparableExposures(exposuresSetting))
@@ -390,7 +390,7 @@ int aliceVision_main(int argc, char** argv)
 
                     if (calibrationMethod == ECalibrationMethod::AUTO)
                     {
-                        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(group.begin()->get()->getImagePath()));
+                        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(group.begin()->get()->getImage().getImagePath()));
                         const std::string imgFormat = in->format_name();
                         const bool isRAW = imgFormat.compare("raw") == 0;
 

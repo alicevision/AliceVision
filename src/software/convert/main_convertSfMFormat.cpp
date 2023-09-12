@@ -126,10 +126,10 @@ int aliceVision_main(int argc, char **argv)
       for(std::size_t i = 0; i < imageWhiteList.size(); ++i)
       {
         // Compare to filename, stem (filename without extension), view UID or regex on the full path
-        if (imageWhiteList[i] == fs::path(view.getImagePath()).filename() ||
-            imageWhiteList[i] == fs::path(view.getImagePath()).stem() ||
+        if (imageWhiteList[i] == fs::path(view.getImage().getImagePath()).filename() ||
+            imageWhiteList[i] == fs::path(view.getImage().getImagePath()).stem() ||
             imageWhiteList[i] == std::to_string(view.getViewId()) ||
-            std::regex_match(view.getImagePath(), imageWhiteRegexList[i])
+            std::regex_match(view.getImage().getImagePath(), imageWhiteRegexList[i])
             )
         {
           toRemove = false;

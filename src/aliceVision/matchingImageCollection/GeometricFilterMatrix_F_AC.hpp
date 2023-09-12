@@ -68,8 +68,8 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     const camera::IntrinsicBase* camI = sfmData->getIntrinsicPtr(viewI.getIntrinsicId());
     const camera::IntrinsicBase* camJ = sfmData->getIntrinsicPtr(viewJ.getIntrinsicId());
 
-    const std::pair<std::size_t, std::size_t> imageSizeI(viewI.getWidth(), viewI.getHeight());
-    const std::pair<std::size_t, std::size_t> imageSizeJ(viewJ.getWidth(), viewJ.getHeight());
+    const std::pair<std::size_t, std::size_t> imageSizeI(viewI.getImage().getWidth(), viewI.getImage().getHeight());
+    const std::pair<std::size_t, std::size_t> imageSizeJ(viewJ.getImage().getWidth(), viewJ.getImage().getHeight());
 
     return geometricEstimation(regionsPerView.getDataPerDesc(pairIndex.first),
                                regionsPerView.getDataPerDesc(pairIndex.second),

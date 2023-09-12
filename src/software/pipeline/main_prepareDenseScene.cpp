@@ -138,7 +138,7 @@ bool prepareDenseScene(const SfMData& sfmData,
         const std::string baseFilename = std::to_string(viewId);
 
         // get metadata from source image to be sure we get all metadata. We don't use the metadatas from the Views inside the SfMData to avoid type conversion problems with string maps.
-        std::string srcImage = view->getImagePath();
+        std::string srcImage = view->getImage().getImagePath();
         oiio::ParamValueList metadata = image::readImageMetadata(srcImage);
 
         // export camera
@@ -235,7 +235,7 @@ bool prepareDenseScene(const SfMData& sfmData,
             const IntrinsicBase* cam = iterIntrinsic->second.get();
 
             // add exposure values to images metadata
-            const double cameraExposure = view->getCameraExposureSetting().getExposure();
+            const double cameraExposure = view->getImage().getCameraExposureSetting().getExposure();
             const double ev = std::log2(1.0 / cameraExposure);
             const float exposureCompensation = float(medianCameraExposure / cameraExposure);
             metadata.push_back(oiio::ParamValue("AliceVision:EV", float(ev)));

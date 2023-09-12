@@ -85,7 +85,7 @@ int aliceVision_main(int argc, char **argv)
     }
 
     image::Image<image::RGBColor> image, imageUd;
-    image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
+    image::readImage(view.getImage().getImagePath(), image, image::EImageColorSpace::LINEAR);
 
     // compute undistorted image
     if(intrinsicPtr->isValid() && intrinsicPtr->hasDistortion())
@@ -112,7 +112,7 @@ int aliceVision_main(int argc, char **argv)
     oiio::ImageBufAlgo::resample(proxyBuf,     imageBuf, false,     proxyROI); // no interpolation
     oiio::ImageBufAlgo::resample(thumbnailBuf, imageBuf, false, thumbnailROI); // no interpolation
 
-    const std::string basename = fs::path(view.getImagePath()).stem().string();
+    const std::string basename = fs::path(view.getImage().getImagePath()).stem().string();
 
     image::writeImage(outputFolder + "/undistort/proxy/" + basename + "-" + std::to_string(view.getViewId()) + "-UOP.jpg",
                       imageProxy, image::ImageWriteOptions());

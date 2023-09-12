@@ -129,10 +129,10 @@ void extractCamerasPositions(std::vector<std::pair<std::string, Vec3>>& outputPo
             outputPositions.push_back(std::make_pair(viewIdStr, sfmData.getPose(*viewIt.second).getTransform().center()));
             continue;
         }
-        std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
+        std::string stem = fs::path(viewIt.second->getImage().getImagePath()).stem().string();
         if (searchSet.empty() || searchSet.count(stem))
         {
-            outputPositions.push_back(std::make_pair(viewIt.second->getImagePath(), sfmData.getPose(*viewIt.second).getTransform().center()));
+            outputPositions.push_back(std::make_pair(viewIt.second->getImage().getImagePath(), sfmData.getPose(*viewIt.second).getTransform().center()));
         }
     }
 }

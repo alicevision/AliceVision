@@ -118,7 +118,7 @@ bool exportToPMVSFormat(
       Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
 
       // We have a valid view with a corresponding camera & pose
-      const std::string srcImage = view->getImagePath();
+      const std::string srcImage = view->getImage().getImagePath();
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
       const std::string dstImage = (fs::path(sOutDirectory) / std::string("visualize") / (os.str() + ".jpg")).string();
@@ -285,7 +285,7 @@ bool exportToBundlerFormat(
             << R(2,0) << " " << R(2, 1) << " " << R(2, 2) << os.widen('\n')  //R.row(2)
             << t(0)   << " " << t(1)    << " " << t(2)    << os.widen('\n'); //t
 
-          osList << fs::path(view->getImagePath()).filename() << " 0 " << focal << os.widen('\n');
+          osList << fs::path(view->getImage().getImagePath()).filename() << " 0 " << focal << os.widen('\n');
         }
         else 
         {

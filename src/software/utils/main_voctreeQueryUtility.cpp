@@ -373,9 +373,9 @@ int aliceVision_main(int argc, char** argv)
                 ALICEVISION_LOG_ERROR("Could not find the image file for the document " << docMatches.first << "!");
                 return EXIT_FAILURE;
             }
-            sylinkName = fs::path(it->second->getImagePath()).filename();
+            sylinkName = fs::path(it->second->getImage().getImagePath()).filename();
             dirname = fs::path(outDir) / sylinkName;
-            absoluteFilename = it->second->getImagePath();
+            absoluteFilename = it->second->getImage().getImagePath();
             fs::create_directories(dirname);
             fs::create_symlink(absoluteFilename, dirname / sylinkName);
 
@@ -450,7 +450,7 @@ int aliceVision_main(int argc, char** argv)
                 aliceVision::sfmData::Views::const_iterator it = sfmData.getViews().find(matches[j].id);
                 if(it != sfmData.getViews().end())
                 {
-                    absoluteFilename = it->second->getImagePath();
+                    absoluteFilename = it->second->getImage().getImagePath();
                     sylinkName = fs::path(utils::toStringZeroPadded(j, 4) + "." + std::to_string(matches[j].score) +
                                           "." + absoluteFilename.filename().string());
                 }

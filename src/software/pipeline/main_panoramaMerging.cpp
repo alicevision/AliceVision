@@ -105,7 +105,7 @@ int aliceVision_main(int argc, char** argv)
                 continue;
             }
 
-            const std::string warpedPath = viewItem.second->getMetadata().at("AliceVision:warpedPath");
+            const std::string warpedPath = viewItem.second->getImage().getMetadata().at("AliceVision:warpedPath");
 
             // Get composited image path
             const std::string imagePath = (fs::path(compositingFolder) / (warpedPath + ".exr")).string();

@@ -110,7 +110,7 @@ bool saveBAF(
       iterV != sfmData.getViews().end();
       ++ iterV)
     {
-      const std::string sView_filename = iterV->second->getImagePath();
+      const std::string sView_filename = iterV->second->getImage().getImagePath();
       stream
         << sView_filename
         << ' ' << iterV->second->getIntrinsicId()

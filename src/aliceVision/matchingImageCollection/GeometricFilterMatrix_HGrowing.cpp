@@ -217,10 +217,10 @@ void drawHomographyMatches(const sfmData::View &viewI,
                            const std::string &outFilename)
 {
 
-  const std::string& imagePathLeft = viewI.getImagePath();
-  const std::string& imagePathRight = viewJ.getImagePath();
-  const auto imageSizeLeft = std::make_pair(viewI.getWidth(), viewI.getHeight());
-  const auto imageSizeRight = std::make_pair(viewJ.getWidth(), viewJ.getHeight());
+  const std::string& imagePathLeft = viewI.getImage().getImagePath();
+  const std::string& imagePathRight = viewJ.getImage().getImagePath();
+  const auto imageSizeLeft = std::make_pair(viewI.getImage().getWidth(), viewI.getImage().getHeight());
+  const auto imageSizeRight = std::make_pair(viewJ.getImage().getWidth(), viewJ.getImage().getHeight());
 
   drawHomographyMatches(imagePathLeft,
                         imageSizeLeft,

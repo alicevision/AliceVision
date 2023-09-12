@@ -458,14 +458,14 @@ int aliceVision_main(int argc, char** argv)
         {
             const sfmData::View& view = *(viewIt.second);
 
-            ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '" << view.getImagePath() << "'.");
+            ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '" << view.getImage().getImagePath() << "'.");
             ImageOptions imgOpt = {
-                view.getImagePath(),
+                view.getImage().getImagePath(),
                 std::to_string(view.getViewId()),
-                view.getMetadataBodySerialNumber(),
-                view.getMetadataLensSerialNumber() };
+                view.getImage().getMetadataBodySerialNumber(),
+                view.getImage().getMetadataLensSerialNumber() };
             imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
-            imgOpt.readOptions.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
+            imgOpt.readOptions.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
             detectColorChecker(detectedCCheckers, imgOpt, settings);
         }
 

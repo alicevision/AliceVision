@@ -243,7 +243,7 @@ int aliceVision_main(int argc, char** argv)
                     firstViewId = v->getViewId();
                     first = false;
 
-                    const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(v->getImagePath()));
+                    const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(v->getImage().getImagePath()));
                     const std::string imgFormat = in->format_name();
                     const bool isRAW = imgFormat.compare("raw") == 0;
 
@@ -259,13 +259,13 @@ int aliceVision_main(int argc, char** argv)
                     }
                 }
 
-                paths.push_back(v->getImagePath());
-                exposuresSetting.push_back(v->getCameraExposureSetting());
+                paths.push_back(v->getImage().getImagePath());
+                exposuresSetting.push_back(v->getImage().getCameraExposureSetting());
                 viewIds.push_back(v->getViewId());
 
-                const std::string rawColorInterpretation_str = v->getRawColorInterpretation();
+                const std::string rawColorInterpretation_str = v->getImage().getRawColorInterpretation();
                 rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(rawColorInterpretation_str);
-                colorProfileFileName = v->getColorProfileFileName();
+                colorProfileFileName = v->getImage().getColorProfileFileName();
 
                 ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back()
                                      << ", raw color interpretation: "

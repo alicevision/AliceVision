@@ -81,83 +81,25 @@ int main(int argc, char **argv)
     for(int i = 0; i < sfm_data.views.size(); ++i) 
     { 
         const sfmData::View& view = *(sfm_data.views[i]);
-        const float evComp = float(cameraExposureMedian / view.getCameraExposureSetting().getExposure());
+        const float evComp = float(cameraExposureMedian / view.getImage().getCameraExposureSetting().getExposure());
  
         image::Image<image::RGBfColor> img; 
-        image::readImage(view.getImagePath(), img, image::EImageColorSpace::LINEAR); 
+        image::readImage(view.getImage().getImagePath(), img, image::EImageColorSpace::LINEAR); 
  
-        for(int pix = 0; pix < view.getWidth() * view.getHeight(); ++pix) 
+        for(int pix = 0; pix < view.getImage().getWidth() * view.getImage().getHeight(); ++pix) 
             img(pix) *= evComp; 
  
-        ALICEVISION_LOG_INFO(fs::path(view.getImagePath()).stem()); 
-        ALICEVISION_LOG_INFO("  EV: " << view.getEv()); 
+        ALICEVISION_LOG_INFO(fs::path(view.getImage().getImagePath()).stem()); 
+        ALICEVISION_LOG_INFO("  EV: " << view.getImage().getEv()); 
         ALICEVISION_LOG_INFO("  EV Compensation: " << evComp);
 
-        std::string outputPath = outputFilePath + fs::path(view.getImagePath()).stem().string() + ".EXR"; 
-        oiio::ParamValueList metadata = image::getMetadataFromMap(view.getMetadata()); 
+        std::string outputPath = outputFilePath + fs::path(view.getImage().getImagePath()).stem().string() + ".EXR"; 
+        oiio::ParamValueList metadata = image::getMetadataFromMap(view.getImage().getMetadata()); 
         image::writeImage(outputPath, img,
                           image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR),
                           metadata);
     } 
- 
-/* 
-    // calculate EV for all images in the input folder 
-    fs::path folderPath(inputFolderPath); 
-    for(auto& filePath : fs::directory_iterator(folderPath)) 
-    { 
-        Image img; 
-        int w, h; 
-        float ev; 
-        oiio::ParamValueList metadata; 
- 
-        imageIO::readImage(filePath.path().string(), w, h, img.data(), imageIO::EImageColorSpace::LINEAR); 
-        img.setSize(w, h); 
-        img.setName(filePath.path().stem().string()); 
-        imageIO::readImageMetadata(filePath.path().string(), metadata); 
- 
-        ALICEVISION_LOG_INFO(img.getName()); 
- 
-        const double shutter = metadata.get_float("ExposureTime"); 
-        const double aperture = metadata.get_float("FNumber"); 
-        const float iso = metadata.get_float("Exif:PhotographicSensitivity"); 
-        ev = log2f(std::pow(aperture, 2.0f) / shutter) - log2f(iso/100.f); 
- 
-        img.setEv(ev); 
-        evList.push_back(ev); 
- 
-        ALICEVISION_LOG_INFO("  Shutter: " << shutter); 
-        ALICEVISION_LOG_INFO("  Aperture: " << aperture); 
-        ALICEVISION_LOG_INFO("  ISO: " << iso); 
- 
-        ALICEVISION_LOG_INFO("  EV: " << img.getEv()); 
- 
-        imgList.push_back(img); 
-    } 
- 
-    // calculate median EV if necessary 
-    std::sort(evList.begin(), evList.end()); 
-    cameraExposureMedian = evList[evList.size()/2]; 
-    ALICEVISION_LOG_INFO("Median EV: " << cameraExposureMedian); 
- 
-    // write corrected images, not over exposed images 
-    for(int i = 0; i < imgList.size(); ++i) 
-    { 
-        Image& img = imgList[i]; 
-        ALICEVISION_LOG_INFO(img.getName()); 
- 
-        float evComp = std::pow(2.0f, img.getEv() - cameraExposureMedian); 
-        ALICEVISION_LOG_INFO("  EV Compensation: " << evComp); 
- 
-        for(int pix = 0; pix < img.width() * img.height(); ++pix) 
-        { 
-            img[pix] *= evComp; 
-        } 
- 
-        std::string outputPath = outputFilePath + imgList[i].getName() + ".EXR"; 
-        imageIO::writeImage(outputPath, imgList[i].width(), imgList[i].height(), imgList[i].data(), imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::LINEAR); 
- 
-    } 
-*/ 
+
  
  
     return EXIT_SUCCESS; 

@@ -93,7 +93,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData,
     os.str("");
     os << sRowBegin
       << sColBegin << id_view << sColEnd
-      << sColBegin + fs::path(v->getImagePath()).stem().string() + sColEnd;
+      << sColBegin + fs::path(v->getImage().getImagePath()).stem().string() + sColEnd;
 
     // IdView | basename | #Observations | residuals min | residual median | residual max
     if(sfmData.isPoseAndIntrinsicDefined(v))

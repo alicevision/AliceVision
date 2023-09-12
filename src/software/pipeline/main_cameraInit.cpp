@@ -382,7 +382,7 @@ int aliceVision_main(int argc, char **argv)
       for(int i = 0; i < incompleteViews.size(); ++i)
       {
         sfmData::View& view = incompleteViews.at(i);
-        view.setImagePath(imagePaths.at(i).string());
+        view.getImage().setImagePath(imagePaths.at(i).string());
         updateIncompleteView(view, viewIdMethod, viewIdRegex);
       }
 
@@ -430,7 +430,7 @@ int aliceVision_main(int argc, char **argv)
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
 
     // try to detect rig structure in the input folder
-    const fs::path parentPath = fs::path(view.getImagePath()).parent_path();
+    const fs::path parentPath = fs::path(view.getImage().getImagePath()).parent_path();
     if(boost::starts_with(parentPath.parent_path().stem().string(), "rig"))
     {
       try
@@ -451,7 +451,7 @@ int aliceVision_main(int argc, char **argv)
       }
       catch(std::exception& e)
       {
-        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << e.what() << std::endl << "Used as single image.");
+        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImage().getImagePath() << std::endl << e.what() << std::endl << "Used as single image.");
       }
     }
 
@@ -460,7 +460,7 @@ int aliceVision_main(int argc, char **argv)
         IndexT frameId;
         std::string prefix;
         std::string suffix;
-        if(sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), frameId, prefix, suffix))
+        if(sfmDataIO::extractNumberFromFileStem(fs::path(view.getImage().getImagePath()).stem().string(), frameId, prefix, suffix))
         {
           view.setFrameId(frameId);
         }
@@ -487,12 +487,12 @@ int aliceVision_main(int argc, char **argv)
         UNKNOWN
     } sensorWidthSource = ESensorWidthSource::UNKNOWN;
 
-    double focalLengthmm = view.getMetadataFocalLength();
-    const std::string& make = view.getMetadataMake();
-    const std::string& model = view.getMetadataModel();
+    double focalLengthmm = view.getImage().getMetadataFocalLength();
+    const std::string& make = view.getImage().getMetadataMake();
+    const std::string& model = view.getImage().getMetadataModel();
     const bool hasCameraMetadata = (!make.empty() || !model.empty());
 
-    std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(view.getImagePath()));
+    std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(view.getImage().getImagePath()));
 
     std::string imgFormat = in->format_name();
 
@@ -519,7 +519,7 @@ int aliceVision_main(int argc, char **argv)
             {
                 if (!dcpDatabase.empty() && dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
                 {
-                    view.addDCPMetadata(dcpProf);
+                    view.getImage().addDCPMetadata(dcpProf);
 
                     viewsWithDCPMetadata++;
 
@@ -541,13 +541,13 @@ int aliceVision_main(int argc, char **argv)
         // so all future loads of this image will be interpreted in the same way.
         if (!dcpError)
         {
-            view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
+            view.getImage().addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
         }
         else
         {
-            view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(image::ERawColorInterpretation::LibRawWhiteBalancing));
+            view.getImage().addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(image::ERawColorInterpretation::LibRawWhiteBalancing));
             if (!dcpDatabase.empty())
-                ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
+                ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImage().getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
         }
     }
 
@@ -571,30 +571,30 @@ int aliceVision_main(int argc, char **argv)
 
     camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
 
-    int errCode = view.getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, false);
+    int errCode = view.getImage().getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, false);
 
     // Throw a warning at the end
     if (errCode == 1)
     {
       #pragma omp critical(unknownSensors)
-      unknownSensors.emplace(std::make_pair(make, model), view.getImagePath());
+      unknownSensors.emplace(std::make_pair(make, model), view.getImage().getImagePath());
     }
     else if (errCode == 2)
     {
       #pragma omp critical(noMetadataImagePaths)
-      noMetadataImagePaths.emplace_back(view.getImagePath());
+      noMetadataImagePaths.emplace_back(view.getImage().getImagePath());
     }
     else if (errCode == 3)
     {
       sensorDB::Datasheet datasheet;
       sensorDB::getInfo(make, model, sensorDatabase, datasheet);
       #pragma omp critical(unsureSensors)
-      unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet));
+      unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImage().getImagePath(), datasheet));
     }
     else if (errCode == 4)
     {
       #pragma omp critical(intrinsicsSetFromFocal35mm)
-      intrinsicsSetFromFocal35mm.emplace(view.getImagePath(), std::make_pair(sensorWidth, focalLengthmm));
+      intrinsicsSetFromFocal35mm.emplace(view.getImage().getImagePath(), std::make_pair(sensorWidth, focalLengthmm));
     }
 
     // try to find an appropriate Lens Correction Profile
@@ -606,8 +606,8 @@ int aliceVision_main(int argc, char **argv)
     else if (!lcpStore.empty())
     {
       // Find an LCP file that matches the camera model and the lens model.
-      const std::string& lensModel = view.getMetadataLensModel();
-      const int lensID = view.getMetadataLensID();
+      const std::string& lensModel = view.getImage().getMetadataLensModel();
+      const int lensID = view.getImage().getMetadataLensID();
 
       if (!make.empty() && !lensModel.empty())
       {
@@ -616,7 +616,7 @@ int aliceVision_main(int argc, char **argv)
       }
     }
 
-    const float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
+    const float apertureValue = 2.f * std::log(view.getImage().getMetadataFNumber()) / std::log(2.0);
     const float focusDistance = 0.f;
 
     LensParam lensParam;
@@ -629,13 +629,13 @@ int aliceVision_main(int argc, char **argv)
 
     if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty)
     {
-      view.addVignettingMetadata(lensParam);
+      view.getImage().addVignettingMetadata(lensParam);
       ++lcpVignettingViewCount;
     }
 
     if(lensParam.hasChromaticParams() && !lensParam.ChromaticGreenParams.isEmpty)
     {
-      view.addChromaticMetadata(lensParam);
+      view.getImage().addChromaticMetadata(lensParam);
       ++lcpChromaticViewCount;
     }
 
@@ -665,8 +665,8 @@ int aliceVision_main(int argc, char **argv)
     if(intrinsic->serialNumber().empty())
     {
       // Create custom serial number
-      const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
-      const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
+      const std::string& bodySerialNumber = view.getImage().getMetadataBodySerialNumber();
+      const std::string& lensSerialNumber = view.getImage().getMetadataLensSerialNumber();
 
       if(!bodySerialNumber.empty() || !lensSerialNumber.empty())
       {
@@ -678,7 +678,7 @@ int aliceVision_main(int argc, char **argv)
         // We have no way to identify a camera device correctly.
 #pragma omp critical (missingDeviceUID)
         {
-          missingDeviceUID.emplace_back(view.getImagePath()); // will throw a warning message at the end
+          missingDeviceUID.emplace_back(view.getImage().getImagePath()); // will throw a warning message at the end
         }
 
         // To avoid stopping the process, we fallback to a solution selected by the user:
@@ -686,12 +686,12 @@ int aliceVision_main(int argc, char **argv)
         {
           // when we don't have a serial number, the folder will become part of the device ID.
           // This means that 2 images in different folder will NOT share intrinsics.
-          intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string());
+          intrinsic->setSerialNumber(fs::path(view.getImage().getImagePath()).parent_path().string());
         }
         else if(groupCameraFallback == EGroupCameraFallback::IMAGE)
         {
           // if no serial number, each view will get its own camera intrinsic parameters.
-          intrinsic->setSerialNumber(view.getImagePath());
+          intrinsic->setSerialNumber(view.getImage().getImagePath());
         }
         else if(groupCameraFallback == EGroupCameraFallback::GLOBAL)
         {
@@ -792,7 +792,7 @@ int aliceVision_main(int argc, char **argv)
           // Photometric stereo : ambiant viewId used for all pictures
           for(const IndexT vId : poseGroup.second)
           {
-              const fs::path imagePath = fs::path(sfmData.getView(vId).getImagePath());
+              const fs::path imagePath = fs::path(sfmData.getView(vId).getImage().getImagePath());
               if(boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
               {
                     hasAmbiant = true;
@@ -810,7 +810,7 @@ int aliceVision_main(int argc, char **argv)
               std::vector<std::pair<int64_t, IndexT>> sortedViews;
               for(const IndexT vId : poseGroup.second)
               {
-                  int64_t t = sfmData.getView(vId).getMetadataDateTimestamp();
+                  int64_t t = sfmData.getView(vId).getImage().getMetadataDateTimestamp();
                   sortedViews.push_back(std::make_pair(t, vId));
               }
               std::sort(sortedViews.begin(), sortedViews.end());

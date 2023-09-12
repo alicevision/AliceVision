@@ -94,7 +94,7 @@ int aliceVision_main(int argc, char **argv)
     const int h = pinhole_cam->h();
     
     // We can now create the .cam file for the View in the output dir 
-    std::ofstream outfile((fs::path(outDirectory) / (fs::path(view->getImagePath()).stem().string() + ".cam")).string());
+    std::ofstream outfile((fs::path(outDirectory) / (fs::path(view->getImage().getImagePath()).stem().string() + ".cam")).string());
     // See https://github.com/nmoehrle/mvs-texturing/blob/master/Arguments.cpp
     // for full specs
     const int largerDim = w > h ? w : h;

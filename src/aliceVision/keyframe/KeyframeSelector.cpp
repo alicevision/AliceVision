@@ -1226,13 +1226,13 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
         }
 
         // Prepare settings for the intrinsics
-        double focalLength = view->getMetadataFocalLength();
+        double focalLength = view->getImage().getMetadataFocalLength();
         if (focalLength == -1 && mmFocals[mediaIndex] != 0)
             focalLength = mmFocals[mediaIndex];
-        std::string make = view->getMetadataMake();
+        std::string make = view->getImage().getMetadataMake();
         if (make.empty() && !brands[mediaIndex].empty())
             make = brands[mediaIndex];
-        std::string model = view->getMetadataModel();
+        std::string model = view->getImage().getMetadataModel();
         if (model.empty() && !models[mediaIndex].empty())
             model = models[mediaIndex];
 
@@ -1260,7 +1260,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
                 view->setViewId(view->getViewId() + viewId++);
                 view->setPoseId(view->getViewId());
                 // The path for the view will be the video's; it needs to be replaced with the corresponding keyframe's
-                view->setImagePath(_keyframesPaths[mediaIndex][selectedKeyframesCounter++]);
+                view->getImage().setImagePath(_keyframesPaths[mediaIndex][selectedKeyframesCounter++]);
             }
             keyframesViews[view->getViewId()] = view;
             keyframesIntrinsics[intrinsicId] = intrinsic;
@@ -1308,7 +1308,7 @@ std::shared_ptr<sfmData::View> KeyframeSelector::createView(const std::string& i
     std::string prefix;
     std::string suffix;
     // Use the filename to determine the frame ID (if available)
-    if (sfmDataIO::extractNumberFromFileStem(fs::path(view->getImagePath()).stem().string(), frameId, prefix, suffix)) {
+    if (sfmDataIO::extractNumberFromFileStem(fs::path(view->getImage().getImagePath()).stem().string(), frameId, prefix, suffix)) {
         view->setFrameId(frameId);
     }
     // Otherwise, set it fully manually
@@ -1336,7 +1336,7 @@ std::shared_ptr<camera::IntrinsicBase> KeyframeSelector::createIntrinsic(const s
     }
 
     if (intrinsic->serialNumber().empty())  // Likely to happen with video feeds
-        intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string() + std::to_string(mediaIndex));
+        intrinsic->setSerialNumber(fs::path(view.getImage().getImagePath()).parent_path().string() + std::to_string(mediaIndex));
 
     return intrinsic;
 }

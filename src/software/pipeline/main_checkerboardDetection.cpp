@@ -88,7 +88,7 @@ int aliceVision_main(int argc, char* argv[])
               {
                   if(a == nullptr || b == nullptr)
                       return true;
-                  return (a->getImagePath() < b->getImagePath());
+                  return (a->getImage().getImagePath() < b->getImage().getImagePath());
               });
 
     // Define range to compute
@@ -120,12 +120,12 @@ int aliceVision_main(int argc, char* argv[])
         IndexT viewId = view->getViewId();
 
         //Load image and convert it to sRGB colorspace
-        std::string imagePath = view->getImagePath();
+        std::string imagePath = view->getImage().getImagePath();
         ALICEVISION_LOG_INFO("Load image with path " << imagePath);
         image::Image<image::RGBColor> source;
         image::readImage(imagePath, source, image::EImageColorSpace::SRGB);
 
-        double pixelRatio = view->getDoubleMetadata({"PixelAspectRatio"});
+        double pixelRatio = view->getImage().getDoubleMetadata({"PixelAspectRatio"});
         if (pixelRatio < 0.0)
         {
             pixelRatio = 1.0;

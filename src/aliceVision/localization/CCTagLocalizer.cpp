@@ -141,7 +141,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_
       if(itViewRegion == itViewRegions->second.end())
         continue;
       const feature::Regions& regions = *itViewRegion->second;
-      const std::string &sImageName = iter.second.get()->getImagePath();
+      const std::string &sImageName = iter.second.get()->getImage().getImagePath();
       std::stringstream ss;
 
       ss << "Image " << sImageName;
@@ -793,7 +793,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
   for(const IndexT keyframeId : nearestKeyFrames)
   {
     ALICEVISION_LOG_DEBUG(keyframeId);
-    ALICEVISION_LOG_DEBUG(_sfm_data.getViews().at(keyframeId)->getImagePath());
+    ALICEVISION_LOG_DEBUG(_sfm_data.getViews().at(keyframeId)->getImage().getImagePath());
     const feature::Regions& matchedRegions = _regionsPerView.getRegions(keyframeId, _cctagDescType);
     const ReconstructedRegionsMapping& regionsMapping = _reconstructedRegionsMappingPerView.at(keyframeId).at(_cctagDescType);
     const feature::CCTAG_Regions & matchedCCtagRegions = dynamic_cast<const feature::CCTAG_Regions &>(matchedRegions);
@@ -810,8 +810,8 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
       namespace bfs = boost::filesystem;
       const sfmData::View *mview = _sfm_data.getViews().at(keyframeId).get();
       const std::string queryImage = bfs::path(imagePath).stem().string();
-      const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
-      const std::string matchedPath = mview->getImagePath();
+      const std::string matchedImage = bfs::path(mview->getImage().getImagePath()).stem().string();
+      const std::string matchedPath = mview->getImage().getImagePath();
 
       // the directory where to save the feature matches
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;
@@ -833,7 +833,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
                                      imageSize, 
                                      queryRegions,
                                      matchedPath,
-                                     std::make_pair(mview->getWidth(), mview->getHeight()),
+                                     std::make_pair(mview->getImage().getWidth(), mview->getImage().getHeight()),
                                      matchedCCtagRegions,
                                      vec_featureMatches,
                                      outputName.string(),

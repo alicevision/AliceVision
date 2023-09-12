@@ -151,11 +151,11 @@ int aliceVision_main(int argc, char ** argv)
 
       const View* viewJ = itJ->second.get();
 
-      const std::string& viewImagePathI = viewI->getImagePath();
-      const std::string& viewImagePathJ = viewJ->getImagePath();
+      const std::string& viewImagePathI = viewI->getImage().getImagePath();
+      const std::string& viewImagePathJ = viewJ->getImage().getImagePath();
 
-      const std::pair<std::size_t, std::size_t> dimImageI = std::make_pair(viewI->getWidth(), viewI->getHeight());
-      const std::pair<std::size_t, std::size_t> dimImageJ = std::make_pair(viewJ->getWidth(), viewJ->getHeight());
+      const std::pair<std::size_t, std::size_t> dimImageI = std::make_pair(viewI->getImage().getWidth(), viewI->getImage().getHeight());
+      const std::pair<std::size_t, std::size_t> dimImageJ = std::make_pair(viewJ->getImage().getWidth(), viewJ->getImage().getHeight());
 
       // get common tracks between view I and J
       track::TracksMap mapTracksCommon;

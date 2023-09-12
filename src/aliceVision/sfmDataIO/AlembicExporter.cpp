@@ -138,8 +138,8 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   xform.getSchema().set(xformsample);
 
   // set view custom properties
-  if(!view.getImagePath().empty())
-    OStringProperty(userProps, "mvg_imagePath").set(view.getImagePath());
+  if(!view.getImage().getImagePath().empty())
+    OStringProperty(userProps, "mvg_imagePath").set(view.getImage().getImagePath());
 
   OUInt32Property(userProps, "mvg_viewId").set(view.getViewId());
   OUInt32Property(userProps, "mvg_poseId").set(view.getPoseId());
@@ -160,8 +160,8 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
 
   // set view metadata
   {
-    std::vector<std::string> rawMetadata(view.getMetadata().size() * 2);
-    auto it = view.getMetadata().cbegin();
+    std::vector<std::string> rawMetadata(view.getImage().getMetadata().size() * 2);
+    auto it = view.getImage().getMetadata().cbegin();
 
     for(std::size_t i = 0; i < rawMetadata.size(); i+=2)
     {
@@ -325,7 +325,7 @@ void AlembicExporter::addSfM(const sfmData::SfMData& sfmData, ESfMData flagsPart
 void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const sfmData::View& view,
                                          ESfMData flagsPart)
 {
-  const std::string name = fs::path(view.getImagePath()).stem().string();
+  const std::string name = fs::path(view.getImage().getImagePath()).stem().string();
   const sfmData::CameraPose* pose = ((flagsPart & ESfMData::EXTRINSICS) && sfmData.existsPose(view)) ? &(sfmData.getPoses().at(view.getPoseId())) : nullptr;
   const std::shared_ptr<camera::IntrinsicBase> intrinsic = (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicsharedPtr(view.getIntrinsicId()) : nullptr;
 
@@ -388,7 +388,7 @@ void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT ri
     const sfmData::View& view = *(sfmData.getViews().at(viewId));
     const sfmData::RigSubPose& rigSubPose = rig.getSubPose(view.getSubPoseId());
     const bool isReconstructed = (rigSubPose.status != sfmData::ERigSubPoseStatus::UNINITIALIZED);
-    const std::string name = fs::path(view.getImagePath()).stem().string();
+    const std::string name = fs::path(view.getImage().getImagePath()).stem().string();
     const std::shared_ptr<camera::IntrinsicBase> intrinsic = (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicsharedPtr(view.getIntrinsicId()) : nullptr;
     std::unique_ptr<sfmData::CameraPose> subPosePtr;
 

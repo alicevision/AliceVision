@@ -171,7 +171,7 @@ void generateSequentialMatches(const sfmData::SfMData& sfmData, size_t nbMatches
     sortedImagePaths.reserve(sfmData.getViews().size());
     for (const auto& vIt: sfmData.getViews())
     {
-        sortedImagePaths.emplace_back(vIt.second->getImagePath(), vIt.first);
+        sortedImagePaths.emplace_back(vIt.second->getImage().getImagePath(), vIt.first);
     }
     std::sort(sortedImagePaths.begin(), sortedImagePaths.end());
     for (size_t i = 0; i < sortedImagePaths.size(); ++i)

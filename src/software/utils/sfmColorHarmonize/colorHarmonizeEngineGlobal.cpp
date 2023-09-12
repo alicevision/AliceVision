@@ -473,8 +473,8 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
     iter != sfmData.getViews().end(); ++iter)
   {
     const View* v = iter->second.get();
-    _fileNames.push_back(v->getImagePath());
-    _imageSize.push_back(std::make_pair( v->getWidth(), v->getHeight() ));
+    _fileNames.push_back(v->getImage().getImagePath());
+    _imageSize.push_back(std::make_pair( v->getImage().getWidth(), v->getImage().getHeight() ));
   }
 
   // b. Read matches
