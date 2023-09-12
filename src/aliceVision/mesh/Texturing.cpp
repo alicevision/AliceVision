@@ -140,7 +140,7 @@ std::istream& operator>>(std::istream& in, EBumpMappingType& bumpMappingType)
  *  coordinates of this pixel relative to \p triangle
  * @return
  */
-bool isPixelInTriangle(const Point2d* triangle, const Pixel& pixel, Point2d& barycentricCoords)
+bool isPixelInTriangle(const Point2d* triangle, const Pixel& pixel, Point2d& barycentricCoords, double margin = 0.5)
 {
     // get pixel center
     GEO::vec2 p(pixel.x + 0.5, pixel.y + 0.5);
@@ -154,7 +154,7 @@ bool isPixelInTriangle(const Point2d* triangle, const Pixel& pixel, Point2d& bar
     barycentricCoords.x = l3;
     barycentricCoords.y = l2;
     // tolerance threshold of 1/2 pixel for pixels on the edges of the triangle
-    return dist < 0.5 + std::numeric_limits<double>::epsilon();
+    return dist < margin + std::numeric_limits<double>::epsilon();
 }
 
 Point2d barycentricToCartesian(const Point2d* triangle, const Point2d& coords)
