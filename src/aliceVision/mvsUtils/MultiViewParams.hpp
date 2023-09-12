@@ -80,6 +80,7 @@ enum class EFileType
     volumeTopographicCut = 50,
     stats9p = 51,
     tilePattern = 52,
+    none = 9999
 };
 
 class MultiViewParams
