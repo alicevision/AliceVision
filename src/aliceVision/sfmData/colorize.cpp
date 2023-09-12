@@ -12,6 +12,7 @@
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <map>
 #include <random>
@@ -20,9 +21,39 @@
 namespace aliceVision {
 namespace sfmData {
 
+class LMColorAccumulator
+{
+    public:
+        LMColorAccumulator() = default;
+        ~LMColorAccumulator() = default;
+
+
+        image::RGBfColor rgbFinal{0};
+        double sumSegments{.0};
+
+        void addRGB(const image::RGBfColor& rgbf, double weight) 
+        { 
+            rgbFinal = rgbFinal + (rgbf*weight);
+            sumSegments += weight; 
+        }
+
+        image::RGBfColor getColor() const 
+        { 
+            return rgbFinal / sumSegments;
+        }
+
+        image::RGBColor getRGBChar() const 
+        {
+            auto temp = getColor();
+            return image::RGBColor(static_cast<char>(temp.r()), static_cast<char>(temp.g()),static_cast<char>(temp.b()));
+        }
+
+};
+
 void colorizeTracks(SfMData& sfmData)
 {
-  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
+  system::Timer timer;
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,
                                                               "\nCompute scene structure color\n");
 
   std::vector<std::reference_wrapper<Landmark>> remainingLandmarksToColor;
@@ -31,97 +62,53 @@ void colorizeTracks(SfMData& sfmData)
   for(auto& landmarkPair : sfmData.getLandmarks())
     remainingLandmarksToColor.push_back(landmarkPair.second);
 
-  struct ViewInfo
+  std::vector<LMColorAccumulator> landmarkInfo(sfmData.getLandmarks().size());
+  const Views& views = sfmData.getViews();
+
+  omp_set_nested(1);
+  #pragma omp parallel for num_threads(3)
+  for( int viewIndex = 0; viewIndex < views.size(); ++viewIndex)
   {
-    ViewInfo(IndexT viewId, std::size_t cardinal)
-      : viewId(viewId)
-      , cardinal(cardinal)
-    {}
-
-    IndexT viewId;
-    std::size_t cardinal;
-    std::vector<std::reference_wrapper<Landmark>> landmarks;
-  };
-
-  std::vector<ViewInfo> sortedViewsCardinal;
-  sortedViewsCardinal.reserve(sfmData.getViews().size());
-  {
-    // create cardinal per viewId map
-    std::map<IndexT, std::size_t> viewsCardinalMap; // <ViewId, Cardinal>
-    for(const auto& landmarkPair : sfmData.getLandmarks())
-    {
-      const Observations& observations = landmarkPair.second.observations;
-      for(const auto& observationPair : observations)
-        ++viewsCardinalMap[observationPair.first]; // TODO: 0
-    }
-
-    // copy key-value pairs from the map to the vector
-    for(const auto& cardinalPair : viewsCardinalMap)
-      sortedViewsCardinal.push_back(ViewInfo(cardinalPair.first, cardinalPair.second));
-
-    // sort the vector, biggest cardinality first
-    std::sort(sortedViewsCardinal.begin(),
-              sortedViewsCardinal.end(),
-              [] (const ViewInfo& l, const ViewInfo& r) { return l.cardinal > r.cardinal; });
-  }
-
-  // assign each landmark to a view
-  for(ViewInfo& viewCardinal : sortedViewsCardinal)
-  {
-    std::vector<std::reference_wrapper<Landmark>> toKeep;
-    const IndexT viewId = viewCardinal.viewId;
-
-    for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
-    {
-      Landmark& landmark = remainingLandmarksToColor.at(i);
-      auto it = landmark.observations.find(viewId);
-      if(it != landmark.observations.end())
-      {
-        viewCardinal.landmarks.push_back(landmark);
-      }
-      else
-      {
-        toKeep.push_back(landmark);
-      }
-    }
-    std::swap(toKeep, remainingLandmarksToColor);
-
-    if(remainingLandmarksToColor.empty())
-      break;
-  }
-
-  std::random_device randomDevice;
-  std::mt19937 rng(randomDevice());
-
-  // create an unsorted index container
-  std::vector<int> unsortedIndexes(sortedViewsCardinal.size()) ;
-  std::iota(std::begin(unsortedIndexes), std::end(unsortedIndexes), 0);
-  std::shuffle(unsortedIndexes.begin(), unsortedIndexes.end(), rng);
-
-  // landmark colorization
-#pragma omp parallel for
-  for(int i = 0; i < unsortedIndexes.size(); ++i)
-  {
-    const ViewInfo& viewCardinal = sortedViewsCardinal.at(unsortedIndexes.at(i));
-    if(!viewCardinal.landmarks.empty())
-    {
-      const View& view = sfmData.getView(viewCardinal.viewId);
       image::Image<image::RGBColor> image;
-      image::readImage(view.getImagePath(), image, image::EImageColorSpace::SRGB);
 
-      for(Landmark& landmark : viewCardinal.landmarks)
+      auto itView = views.begin();
+      std::advance(itView, viewIndex);
+      const IndexT viewId = itView->first;
+      image::readImage(itView->second->getImagePath(), image, image::EImageColorSpace::SRGB);
+
+      #pragma omp parallel for
+      for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
       {
-        // color the point
-        Vec2 pt = landmark.observations.at(view.getViewId()).x;
-        // clamp the pixel position if the feature/marker center is outside the image.
-        pt.x() = clamp(pt.x(), 0.0, static_cast<double>(image.Width() - 1));
-        pt.y() = clamp(pt.y(), 0.0, static_cast<double>(image.Height() - 1));
-        landmark.rgb = image(pt.y(), pt.x());
-      }
+            const Landmark& landmark = remainingLandmarksToColor.at(i);
+            const auto it = landmark.observations.find(viewId);
 
-      progressDisplay += viewCardinal.landmarks.size();
-    }
+            if(it != landmark.observations.end())
+            {
+                const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
+                const Vec3& pt = landmark.X;
+                const double eucd = 1.0 / ((Tcenter - pt).norm() + 1e-5);
+                Vec2 uv = it->second.x;
+                uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
+                uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
+                const image::RGBColor obsColor = image(uv.y(), uv.x());
+                image::RGBfColor rgbf(obsColor.r(), obsColor.g(), obsColor.b());
+                #pragma omp critical (i)
+                {
+                    landmarkInfo.at(i).addRGB(rgbf, eucd);
+                }   
+            }     
+      }
+      ++progressDisplay;    
   }
+
+  for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
+  {
+      Landmark& landmark = remainingLandmarksToColor.at(i);
+      landmark.rgb = landmarkInfo.at(i).getRGBChar();
+      
+  }
+  
+  ALICEVISION_LOG_INFO(sfmData.getViews().size() << " views and " << remainingLandmarksToColor.size() << " points Colorize Time: " << timer << std::endl);
 }
 
 } // namespace sfm

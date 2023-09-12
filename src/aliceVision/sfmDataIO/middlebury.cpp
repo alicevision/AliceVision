@@ -7,7 +7,7 @@
 #include "middlebury.hpp"
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
-
+#include <fstream>
 #include <boost/filesystem.hpp>
 
 #include <fstream>

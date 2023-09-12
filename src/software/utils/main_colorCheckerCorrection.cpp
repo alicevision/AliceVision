@@ -74,6 +74,7 @@ struct CChecker
 
 void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors)
 {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
     cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_32FC3);
 
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
@@ -98,6 +99,9 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
     cvtColor(calibratedImage, outImg, cv::COLOR_RGB2BGR);
 
     image::cvMatBGRToImageRGBA(outImg, image);
+#else
+    throw std::invalid_argument("Unsupported mode! If you intended to use a color correction, please add OpenCV >=4.5 support.");
+#endif
 }
 
 
