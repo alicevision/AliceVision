@@ -368,9 +368,12 @@ bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int
     {
         const sfmData::Landmark& landmark = landmarksData[i];
         auto& [indices_, weights_] = neighborsData[i];
-        indices_.resize(nbNeighbors);
-        weights_.resize(nbNeighbors);
-        tree.knnSearch(landmark.X.data(), nbNeighbors, &indices_[0], &weights_[0]);
+        // a landmark is a neighbor to itself with zero distance
+        indices_.resize(nbNeighbors + 1);
+        weights_.resize(nbNeighbors + 1);
+        tree.knnSearch(landmark.X.data(), nbNeighbors + 1, &indices_[0], &weights_[0]);
+        indices_.erase(indices_.begin());
+        weights_.erase(weights_.begin());
         double total = 0.;
         for(auto& w : weights_)
         {

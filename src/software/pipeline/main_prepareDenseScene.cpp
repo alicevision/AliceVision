@@ -364,7 +364,8 @@ bool prepareDenseScene(const SfMData& sfmData,
                     tree.buildIndex();
                     ALICEVISION_LOG_INFO("KdTree created for " << observations.size() << " points.");
 
-                    int n = std::min(nbNeighborObservations, static_cast<int>(observations.size()));
+                    int n = std::min(nbNeighborObservations, static_cast<int>(observations.size() - 1)) + 1;
+                    // note that the observation is a neighbor to itself with zero distance, hence the +/- 1
                     std::vector<double> means(observations.size());
                     const std::size_t cacheSize = 1000;
                     accumulator_set<double, stats<tag::tail_quantile<right>, tag::mean>> acc(
@@ -379,7 +380,7 @@ bool prepareDenseScene(const SfMData& sfmData,
 
                         std::transform(distances_.begin(), distances_.end(), distances_.begin(),
                                        static_cast<double (*)(double)>(std::sqrt));
-                        const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / n;
+                        const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / (n - 1);
                         means[j++] = mean; 
                         acc(mean);
                     }
