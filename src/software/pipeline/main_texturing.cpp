@@ -50,6 +50,8 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string outputFolder;
     std::string imagesFolder;
+    std::string normalsFolder;
+
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO;
     bool flipNormals = false;
@@ -81,6 +83,9 @@ int aliceVision_main(int argc, char* argv[])
         ("imagesFolder", po::value<std::string>(&imagesFolder),
          "Use images from a specific folder instead of those specify in the SfMData file.\n"
          "Filename should be the image UID.")
+        ("normalsFolder", po::value<std::string>(&normalsFolder),
+         "Use normal maps from a specific folder to texture the mesh.\n"
+         "Filename should be: UID_normalMap.")
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
          "Output texture size.")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
@@ -98,9 +103,9 @@ int aliceVision_main(int argc, char* argv[])
         ("bumpType", po::value<mesh::EBumpMappingType>(&bumpMappingParams.bumpType)->default_value(bumpMappingParams.bumpType),
          "Use HeightMap for displacement or bump mapping.")
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
-         "Method to unwrap input mesh if it does not have UV coordinates.\n"
-         " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
-         " * LSCM (<= 600k faces): optimize space. Generates one atlas.\n"
+            "Method to unwrap input mesh if it does not have UV coordinates.\n"
+            " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
+            " * LSCM (<= 600k faces): optimize space. Generates one atlas.\n"
          " * ABF (<= 300k faces): optimize space and stretch. Generates one atlas.'")
         ("useUDIM", po::value<bool>(&texParams.useUDIM)->default_value(texParams.useUDIM),
          "Use UDIM UV mapping.")
@@ -130,9 +135,9 @@ int aliceVision_main(int argc, char* argv[])
          "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the "
          "convention changes from one software to another.")
         ("visibilityRemappingMethod", po::value<std::string>(&visibilityRemappingMethod)->default_value(visibilityRemappingMethod),
-         "Method to remap visibilities from the reconstruction to the input mesh.\n"
-         " * Pull: For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.\n"
-         " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
+            "Method to remap visibilities from the reconstruction to the input mesh.\n"
+            " * Pull: For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.\n"
+            " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
          " * PullPush: Combine results from Pull and Push results.'")
         ("subdivisionTargetRatio", po::value<float>(&texParams.subdivisionTargetRatio)->default_value(texParams.subdivisionTargetRatio),
          "Percentage of the density of the reconstruction as the target for the subdivision "
@@ -246,6 +251,14 @@ int aliceVision_main(int argc, char* argv[])
         denseMesh.load(inputRefMeshFilepath);
 
         mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, bumpMappingParams);
+    }
+
+    // generate normal maps textures from the fusion of normal maps per image
+    if (!normalsFolder.empty() && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
+    {
+        ALICEVISION_LOG_INFO("Generate normal maps.");
+        mvsUtils::MultiViewParams mpN(sfmData, normalsFolder);
+        mesh.generateTextures(mpN, outputFolder, hwc.getMaxMemory(), texParams.textureFileType, mvsUtils::EFileType::normalMap);
     }
 
     // save final obj file

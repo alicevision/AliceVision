@@ -78,8 +78,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             }
             else if (fileType == mvsUtils::EFileType::normalMap)
             {
-                const int scale = 0;
-                path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::normalMap, scale);
+                path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::normalMap);
             }
             else if (_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
             {

@@ -306,7 +306,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // initialization
-    mvsUtils::MultiViewParams mp(sfmData, "", "", depthMapsFolder, meshingFromDepthMaps);
+    mvsUtils::MultiViewParams mp(sfmData, "", "", depthMapsFolder, meshingFromDepthMaps ? mvsUtils::EFileType::depthMap : mvsUtils::EFileType::none);
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
     mp.userParams.put("LargeScale.helperPointsGridSize", helperPointsGridSize);
