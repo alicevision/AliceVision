@@ -59,9 +59,18 @@ public:
     , _poseId(poseId)
     , _rigId(rigId)
     , _subPoseId(subPoseId)
-    , _metadata(metadata)
     , _image(new ImageInfo(imagePath, width, height))
   {}
+  
+  View(const View & v)
+  {
+    _viewId = v._viewId;
+    _intrinsicId = v._intrinsicId;
+    _poseId = v._poseId;
+    _rigId = v._rigId;
+    _subPoseId = v._subPoseId;
+    _image = std::make_shared<ImageInfo>(*v._image);
+  }
 
   bool operator==(const View& other) const
   {
@@ -283,11 +292,9 @@ private:
   IndexT _resectionId = UndefinedIndexT;
   /// pose independent of other view(s)
   bool _isPoseIndependent = true;
-  /// map for metadata
-  std::map<std::string, std::string> _metadata;
   /// list of ancestors
   std::vector<IndexT> _ancestors;
-
+  /// Link  to imageinfo
   std::shared_ptr<ImageInfo> _image;
 };
 
