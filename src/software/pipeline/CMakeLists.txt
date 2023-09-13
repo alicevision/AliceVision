@@ -40,22 +40,6 @@ if(ALICEVISION_BUILD_SFM)
     )
   endif()
 
-  # Make sure all images are defined the same way
-  alicevision_add_software(aliceVision_panoramaPrepareImages
-    SOURCE main_panoramaPrepareImages.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_sensorDB
-          aliceVision_image
-          aliceVision_feature
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          Boost::program_options
-          Boost::filesystem
-          Boost::boost
-  )
-
   # Feature extraction
   alicevision_add_software(aliceVision_featureExtraction
     SOURCE main_featureExtraction.cpp
@@ -200,85 +184,7 @@ if(ALICEVISION_BUILD_SFM)
           Boost::filesystem
   )
 
-  # Panorama
-  alicevision_add_software(aliceVision_panoramaEstimation
-    SOURCE main_panoramaEstimation.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_image
-          aliceVision_feature
-          aliceVision_sfm
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
-  )
-  alicevision_add_software(aliceVision_panoramaWarping
-    SOURCE main_panoramaWarping.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_image
-          aliceVision_feature
-          aliceVision_sfm
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          aliceVision_panorama
-          ${Boost_LIBRARIES}
-  )
-  alicevision_add_software(aliceVision_panoramaMerging
-    SOURCE main_panoramaMerging.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_image
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          aliceVision_panorama
-          ${Boost_LIBRARIES}
-  )
-  alicevision_add_software(aliceVision_panoramaPostProcessing
-    SOURCE main_panoramaPostProcessing.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_image
-          ${Boost_LIBRARIES}
-  )
-  alicevision_add_software(aliceVision_panoramaCompositing
-    SOURCE main_panoramaCompositing.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_image
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          aliceVision_panorama
-          ${Boost_LIBRARIES}
-  )
-  alicevision_add_software(aliceVision_panoramaSeams
-    SOURCE main_panoramaSeams.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_image
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          aliceVision_panorama
-          ${Boost_LIBRARIES}
-  )
-  alicevision_add_software(aliceVision_panoramaInit
-    SOURCE main_panoramaInit.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_image
-          aliceVision_feature
-          aliceVision_sfm
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
-  )
+  
   # Compute structure from known camera poses
   alicevision_add_software(aliceVision_computeStructureFromKnownPoses
     SOURCE main_computeStructureFromKnownPoses.cpp
@@ -415,7 +321,104 @@ if(ALICEVISION_BUILD_SFM)
   )
          
 endif() # if(ALICEVISION_BUILD_SFM)
-   
+
+if(ALICEVISION_BUILD_PANORAMA)
+    # Panorama
+    alicevision_add_software(aliceVision_panoramaPrepareImages
+    SOURCE main_panoramaPrepareImages.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_sensorDB
+        aliceVision_image
+        aliceVision_feature
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+    )
+
+    alicevision_add_software(aliceVision_panoramaEstimation
+    SOURCE main_panoramaEstimation.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_image
+        aliceVision_feature
+        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        ${Boost_LIBRARIES}
+    )
+    alicevision_add_software(aliceVision_panoramaWarping
+    SOURCE main_panoramaWarping.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_image
+        aliceVision_feature
+        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_panorama
+        ${Boost_LIBRARIES}
+    )
+    alicevision_add_software(aliceVision_panoramaMerging
+    SOURCE main_panoramaMerging.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_image
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_panorama
+        ${Boost_LIBRARIES}
+    )
+    alicevision_add_software(aliceVision_panoramaPostProcessing
+    SOURCE main_panoramaPostProcessing.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_image
+        ${Boost_LIBRARIES}
+    )
+    alicevision_add_software(aliceVision_panoramaCompositing
+    SOURCE main_panoramaCompositing.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_image
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_panorama
+        ${Boost_LIBRARIES}
+    )
+    alicevision_add_software(aliceVision_panoramaSeams
+    SOURCE main_panoramaSeams.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_image
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_panorama
+        ${Boost_LIBRARIES}
+    )
+    alicevision_add_software(aliceVision_panoramaInit
+    SOURCE main_panoramaInit.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+        aliceVision_cmdline
+        aliceVision_image
+        aliceVision_feature
+        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        ${Boost_LIBRARIES}
+    )
+endif()
+
 ### MVS software
 if(ALICEVISION_BUILD_MVS)
 
@@ -553,45 +556,66 @@ if(ALICEVISION_BUILD_MVS)
   )
 endif() # if(ALICEVISION_BUILD_MVS)
 
-if(ALICEVISION_HAVE_OPENCV)
-    # Photometric Stereo
-    alicevision_add_software(aliceVision_photometricStereo
-      SOURCE main_photometricStereo.cpp
-      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-      LINKS aliceVision_photometricStereo
+
+if (ALICEVISION_BUILD_STEREOPHOTOMETRY)
+    alicevision_add_software(aliceVision_lightingCalibration
+    SOURCE main_lightingCalibration.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_lightingEstimation
             aliceVision_cmdline
             aliceVision_system
-            aliceVision_mvsData
-            aliceVision_mvsUtils
             aliceVision_sfmData
             aliceVision_sfmDataIO
             Boost::program_options
     )
 
-    alicevision_add_software(aliceVision_normalIntegration
-      SOURCE main_normalIntegration.cpp
-      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-      LINKS aliceVision_photometricStereo
-            aliceVision_cmdline
-            aliceVision_system
-            aliceVision_mvsData
-            aliceVision_mvsUtils
-            aliceVision_sfmData
-            aliceVision_sfmDataIO
-            Boost::program_options
-    )
+    if(ALICEVISION_HAVE_OPENCV)
+        # Photometric Stereo
+
+        if (ALICEVISION_BUILD_MVS)
+            alicevision_add_software(aliceVision_photometricStereo
+            SOURCE main_photometricStereo.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_photometricStereo
+                aliceVision_cmdline
+                aliceVision_system
+                aliceVision_mvsData
+                aliceVision_mvsUtils
+                aliceVision_sfmData
+                aliceVision_sfmDataIO
+                Boost::program_options
+            )
+
+            alicevision_add_software(aliceVision_normalIntegration
+                SOURCE main_normalIntegration.cpp
+                FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+                LINKS aliceVision_photometricStereo
+                    aliceVision_cmdline
+                    aliceVision_system
+                    aliceVision_mvsData
+                    aliceVision_mvsUtils
+                    aliceVision_sfmData
+                    aliceVision_sfmDataIO
+                    Boost::program_options
+            )
+        endif()
+        
+        if (ALICEVISION_HAVE_ONNX)
+            # SphereDetection
+            alicevision_add_software(aliceVision_sphereDetection
+            SOURCE main_sphereDetection.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_image
+                aliceVision_cmdline
+                aliceVision_system
+                aliceVision_sphereDetection
+                aliceVision_sfmData
+                aliceVision_sfmDataIO
+                ${OpenCV_LIBRARIES}
+            )
+        endif()
+    endif()
 endif()
-
-alicevision_add_software(aliceVision_lightingCalibration
-  SOURCE main_lightingCalibration.cpp
-  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-  LINKS aliceVision_lightingEstimation
-        aliceVision_cmdline
-        aliceVision_system
-        aliceVision_sfmData
-        aliceVision_sfmDataIO
-        Boost::program_options
-)
 
 if(ALICEVISION_BUILD_HDR)
 
@@ -637,31 +661,19 @@ alicevision_add_software(aliceVision_LdrToHdrMerge
 
 endif()
 
-if(ALICEVISION_HAVE_OPENCV AND ALICEVISION_HAVE_ONNX)
-    # SphereDetection
-    alicevision_add_software(aliceVision_sphereDetection
-    SOURCE main_sphereDetection.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_image
-          aliceVision_cmdline
-          aliceVision_system
-          aliceVision_sphereDetection
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          ${OpenCV_LIBRARIES}
-    )
-endif()
 
-if(ALICEVISION_HAVE_ONNX)
-    # Image Segmentation
-    alicevision_add_software(aliceVision_imageSegmentation
-    SOURCE main_imageSegmentation.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_image
-          aliceVision_cmdline
-          aliceVision_system
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          aliceVision_segmentation
-    )
+if (ALICEVISION_BUILD_SEGMENTATION)
+    if(ALICEVISION_HAVE_ONNX)
+        # Image Segmentation
+        alicevision_add_software(aliceVision_imageSegmentation
+        SOURCE main_imageSegmentation.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_image
+            aliceVision_cmdline
+            aliceVision_system
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            aliceVision_segmentation
+        )
+    endif()
 endif()
