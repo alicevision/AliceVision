@@ -249,64 +249,8 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
     return true;
 }
 
-bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark)
-{
-    std::vector<Landmark*> landmarksData(sfmData.getLandmarks().size());
-    {
-        size_t i = 0;
-        for(auto& it : sfmData.getLandmarks())
-        {
-            landmarksData[i++] = &it.second;
-        }
-    }
-
-    #pragma omp parallel for
-    for(auto i = 0; i < landmarksData.size(); i++)
-    {
-        sfmData::Landmark& landmark = *landmarksData[i];
-
-        // check number of observations
-        if(landmark.observations.size() <= maxNbObservationsPerLandmark)
-            continue;
-
-        // // check angle between observations
-        // if(!checkLandmarkMinObservationAngle(sfmData, landmark, minObservationAngle))
-
-        // compute observation scores
-
-        std::vector<std::pair<double, IndexT>> observationScores;
-        observationScores.reserve(landmark.observations.size());
-
-        for(const auto& observationPair : landmark.observations)
-        {
-            const IndexT viewId = observationPair.first;
-            const sfmData::View& view = *(sfmData.getViews().at(viewId));
-            const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
-
-            observationScores.push_back(std::pair<double, IndexT>(
-                (pose.center() - landmark.X).squaredNorm(),
-                viewId
-            ));
-        }
-
-        // sort observations by ascending score order
-        std::stable_sort(observationScores.begin(), observationScores.end());
-        // take only best observations
-        observationScores.resize(maxNbObservationsPerLandmark);
-
-        // replace the observations
-        Observations filteredObservations;
-        for(const auto& observationScorePair : observationScores)
-        {
-            filteredObservations[observationScorePair.second] = landmark.observations[observationScorePair.second];
-        }
-        landmark.observations = std::move(filteredObservations);
-    }
-    return true;
-}
-
-bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int nbNeighbors = 10, int nbIterations = 5,
-                         double fraction = 0.5)
+bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int nbNeighbors, double neighborsInfluence,
+                        int nbIterations)
 {
     std::vector<Landmark*> landmarksData(sfmData.getLandmarks().size());
     {
@@ -371,16 +315,18 @@ bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int
     KdTree tree(3, dataAdaptor, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     tree.buildIndex();
     ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
+    // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
+    int nbNeighbors_ = std::min(nbNeighbors, static_cast<int>(landmarksData.size() - 1)) + 1;
     std::vector<std::pair<std::vector<size_t>, std::vector<double>>> neighborsData(landmarksData.size());
 #pragma omp parallel for
     for(auto i = 0; i < landmarksData.size(); i++)
     {
         const sfmData::Landmark& landmark = *landmarksData[i];
         auto& [indices_, weights_] = neighborsData[i];
-        // a landmark is a neighbor to itself with zero distance
-        indices_.resize(nbNeighbors + 1);
-        weights_.resize(nbNeighbors + 1);
-        tree.knnSearch(landmark.X.data(), nbNeighbors + 1, &indices_[0], &weights_[0]);
+        indices_.resize(nbNeighbors_);
+        weights_.resize(nbNeighbors_);
+        tree.knnSearch(landmark.X.data(), nbNeighbors_, &indices_[0], &weights_[0]);
+        // a landmark is a neighbor to itself with zero distance, remove it
         indices_.erase(indices_.begin());
         weights_.erase(weights_.begin());
         double total = 0.;
@@ -442,8 +388,8 @@ bool filterObservations2(SfMData& sfmData, int maxNbObservationsPerLandmark, int
             }
             for(auto j = 0; j < viewScores_acc.size(); j++)
             {
-                viewScores_acc[j] *= fraction / viewScores_total;
-                viewScores_acc[j] += (1 - fraction) * viewScores[j];
+                viewScores_acc[j] *= neighborsInfluence / viewScores_total;
+                viewScores_acc[j] += (1 - neighborsInfluence) * viewScores[j];
             }
         }
 #pragma omp parallel for
@@ -485,13 +431,15 @@ int aliceVision_main(int argc, char *argv[])
 {
     // command-line parameters
 
-    // std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputSfmFilename;
     std::string outputSfmFilename;
     int maxNbObservationsPerLandmark = 2;
     int minNbObservationsPerLandmark = 5;
     double radiusScale = 2;
     bool useFeatureScale = true;
+    int nbNeighbors = 10;
+    double neighborsInfluence = 0.5;
+    int nbIterations = 5;
 
     // user optional parameters
     std::vector<std::string> featuresFolders;
@@ -515,6 +463,13 @@ int aliceVision_main(int argc, char *argv[])
          "Scale factor applied to pixel size based radius filter applied to landmarks.")
         ("useFeatureScale", po::value<bool>(&useFeatureScale)->default_value(useFeatureScale),
          "If true, use feature scale for computing pixel size. Otherwise, use a scale of 1 pixel.")
+        ("nbNeighbors", po::value<int>(&nbNeighbors)->default_value(nbNeighbors),
+         "Number of neighbor landmarks used in making the decision for best observations.")
+        ("neighborsInfluence", po::value<double>(&neighborsInfluence)->default_value(neighborsInfluence),
+         "Specifies how much influential the neighbors are in selecting the best observations."
+         "Between 0. and 1., the closer to 1., the more influencial the neighborhood is.")
+        ("nbIterations", po::value<int>(&nbIterations)->default_value(nbIterations),
+         "Number of iterations to propagate neighbors information.")
         ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
          "Path to folder(s) containing the extracted features.")
         ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
@@ -522,7 +477,7 @@ int aliceVision_main(int argc, char *argv[])
         ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
         feature::EImageDescriberType_informations().c_str());
 
-    CmdLine cmdline("AliceVision SfM filtering.");
+    CmdLine cmdline("AliceVision SfM filtering."); // TODO add description
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
@@ -557,7 +512,7 @@ int aliceVision_main(int argc, char *argv[])
     if(maxNbObservationsPerLandmark > 0)
     {
         ALICEVISION_LOG_INFO("Filtering observations: started.");
-        filterObservations2(sfmData, maxNbObservationsPerLandmark);
+        filterObservations(sfmData, maxNbObservationsPerLandmark, nbNeighbors, neighborsInfluence, nbIterations);
         ALICEVISION_LOG_INFO("Filtering observations: done.");
     }
 
