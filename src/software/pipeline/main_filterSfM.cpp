@@ -410,11 +410,22 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
             }
         }
         // update scores at end of iteration
-#pragma omp parallel for
+        double error = 0.;
+#pragma omp parallel for reduction(+:error)
         for(auto id = 0; id < landmarksData.size(); id++)
         {
+            double error_j = 0.;
+            for(auto j = 0; j < viewScoresData_t[id].size(); j++)
+            {
+                const auto& v = viewScoresData_t[id][j] - viewScoresData[id].second[j];
+                error_j += v * v;
+            }
+            error_j /= viewScoresData_t[id].size();
+            error += error_j;
             viewScoresData[id].second = std::move(viewScoresData_t[id]);
         }
+        error /= landmarksData.size();
+        ALICEVISION_LOG_INFO("MSE at iteration " << i << ": " << error);
     }
     ALICEVISION_LOG_INFO("Propagating neighbors observation scores: done");
 
