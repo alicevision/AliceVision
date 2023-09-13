@@ -71,7 +71,7 @@ struct LandmarksAdaptator
     }
 
     // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return _data.size(); }
+    inline size_t kdtree_get_point_count() const { return usePtr ? _data_ptr.size() : _data.size(); }
 
     // Returns the dim'th component of the idx'th point in the class:
     inline T kdtree_get_pt(const size_t idx, int dim) const
@@ -342,8 +342,12 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
         {
             // weight is the inverse of distance between a landmark and its neighbor
             w = 1. / std::sqrt(w);
+            if(std::isinf(w))
+                w = std::numeric_limits<double>::max();
             total += w;
         }
+        if(std::isinf(total))
+            total = std::numeric_limits<double>::max();
         // normalize weights
         for(auto& w : weights_)
         {
@@ -401,6 +405,9 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
                     }
                 }
             }
+            // if no common views with neighbor landmarks
+            if(viewScores_total == 0.)
+                continue;
             for(auto j = 0; j < viewScores_acc.size(); j++)
             {
                 // normalize score and apply influence factor
