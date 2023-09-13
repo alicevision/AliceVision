@@ -31,7 +31,7 @@ jobs:
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
     steps:
       - uses: actions/checkout@v1
-
+      
       - name: Prepare File Tree
         run: |
           mkdir ./build
@@ -87,6 +87,30 @@ jobs:
            -DCMAKE_PREFIX_PATH:PATH="$PWD/../../AV_install;${DEPS_INSTALL_DIR}"
           make -j$(nproc)
 
+      - name: Functional Tests with Meshroom
+        working-directory: ./functional_tests
+        run: |
+          # clone required repos
+          git clone --branch develop https://github.com/alicevision/Meshroom.git
+          git clone --branch main https://github.com/alicevision/dataset_panoramaFisheyeHdr.git
+          cd Meshroom/
+          # select meshroom branch
+          meshroom_avBranch=$(git ls-remote --heads https://github.com/alicevision/Meshroom.git $GITHUB_HEAD_REF | cut -f 1)
+          if [ $meshroom_avBranch != "" ]; then git checkout $meshroom_avBranch; echo "Use Meshroom/$GITHUB_HEAD_REF"; fi
+          export MESHROOM_INSTALL_DIR=$PWD
+          export PYTHONPATH=$PWD:${PYTHONPATH}
+          export ALICEVISION_ROOT=$PWD/../../../AV_install/
+          export PATH=$PATH:$PWD/../../../AV_install/bin:$PWD/../../../AV_install/lib
+          export ALICEVISION_SENSOR_DB=$PWD/../../../AV_install/share/aliceVision/cameraSensors.db
+          export ALICEVISION_LENS_PROFILE_INFO=""
+          export LD_LIBRARY_PATH=$PWD/../../../AV_install/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
+          mkdir ./outputData
+          cd bin/
+          python3 --version
+          pip3 --version
+          pip3 install psutil
+          python3 meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
+
       - name: Functional Tests
         working-directory: ./functional_tests
         run: |
@@ -97,6 +121,7 @@ jobs:
           export LD_LIBRARY_PATH=$PWD/../../../AV_install/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           echo "ldd aliceVision_cameraInit"
           ldd $PWD/../../../AV_install/bin/aliceVision_cameraInit
+          python --version
           python EvaluationLauncher.py -s $PWD/../../../AV_install/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
   build-windows:
