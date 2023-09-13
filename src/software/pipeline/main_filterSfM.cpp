@@ -252,6 +252,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
 bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int nbNeighbors, double neighborsInfluence,
                         int nbIterations)
 {
+    // store in vector for faster access
     std::vector<Landmark*> landmarksData(sfmData.getLandmarks().size());
     {
         size_t i = 0;
@@ -261,6 +262,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
         }
     }
 
+    // contains the observing view ids for each landmark with their corresponding scores
     std::vector<std::pair<std::vector<IndexT>, std::vector<double>>> viewScoresData(landmarksData.size());
 
     ALICEVISION_LOG_INFO("Computing initial observation scores based on distance to observing view: started");
@@ -270,11 +272,11 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
         const sfmData::Landmark& landmark = *landmarksData[i];
 
         // compute observation scores
-
         const auto& nbObservations = landmark.observations.size();
         auto& [viewIds, viewScores] = viewScoresData[i];
         viewIds.reserve(nbObservations);
         viewScores.reserve(nbObservations);
+        // accumulator for normalizing the scores
         double total = 0.;
         for(const auto& observationPair : landmark.observations)
         {
@@ -283,6 +285,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
             const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
 
             viewIds.push_back(viewId);
+            // score is the inverse of distance to observations
             const auto& v = 1. / (pose.center() - landmark.X).squaredNorm();
             total += v;
             viewScores.push_back(v);
@@ -296,9 +299,12 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
 
         // sort by ascending view id order
         // for consequent faster access
+
+        // indices that sort the view ids
         std::vector<size_t> idx(nbObservations);
         std::iota(idx.begin(), idx.end(), 0);
         std::stable_sort(idx.begin(), idx.end(), [&v = viewIds](size_t i1, size_t i2) { return v[i1] < v[i2]; });
+        // apply sorting to both view ids and view scores for correspondance
         auto ids_temp = viewIds;
         auto scores_temp = viewScores;
         for(auto j = 0; j < nbObservations; j++)
@@ -317,6 +323,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
     ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
     // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
     int nbNeighbors_ = std::min(nbNeighbors, static_cast<int>(landmarksData.size() - 1)) + 1;
+    // contains the neighbor landmarks ids with their corresponding weights
     std::vector<std::pair<std::vector<size_t>, std::vector<double>>> neighborsData(landmarksData.size());
 #pragma omp parallel for
     for(auto i = 0; i < landmarksData.size(); i++)
@@ -329,12 +336,15 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
         // a landmark is a neighbor to itself with zero distance, remove it
         indices_.erase(indices_.begin());
         weights_.erase(weights_.begin());
+        // accumulator used for normalisation
         double total = 0.;
         for(auto& w : weights_)
         {
+            // weight is the inverse of distance between a landmark and its neighbor
             w = 1. / std::sqrt(w);
             total += w;
         }
+        // normalize weights
         for(auto& w : weights_)
         {
             w /= total;
@@ -343,6 +353,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
     ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: done");
 
     ALICEVISION_LOG_INFO("Propagating neighbors observation scores: started");
+    // new view scores at iteration t
     std::vector<std::vector<double>> viewScoresData_t(landmarksData.size());
     for(auto i = 0; i < nbIterations; i++)
     {
@@ -352,7 +363,9 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
         {
             const auto& [viewIds, viewScores] = viewScoresData[id];
             auto& viewScores_acc = viewScoresData_t[id];
+            // initialize to zero, will first contain the weighted average scores of neighbors
             viewScores_acc.assign(viewScores.size(), 0.);
+            // accumulator for normalisation
             double viewScores_total = 0.;
             auto& [indices_, weights_] = neighborsData[id];
             for(auto j = 0; j < nbNeighbors; j++)
@@ -360,6 +373,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
                 const auto& neighborId = indices_[j];
                 const auto& neighborWeight = weights_[j];
                 const auto& [viewIds_neighbor, viewScores_neighbor] = viewScoresData[neighborId];
+                // loop over common views
                 auto viewIds_it = viewIds.begin();
                 auto viewIds_neighbor_it = viewIds_neighbor.begin();
                 auto viewScores_neighbor_it = viewScores_neighbor.begin();
@@ -373,6 +387,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
                     }
                     else
                     {
+                        // if same view, accumulate weighted scores
                         if(!(*viewIds_neighbor_it < *viewIds_it))
                         {
                             const auto& v = *viewScores_neighbor_it * neighborWeight;
@@ -388,10 +403,13 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
             }
             for(auto j = 0; j < viewScores_acc.size(); j++)
             {
+                // normalize score and apply influence factor
                 viewScores_acc[j] *= neighborsInfluence / viewScores_total;
+                // combine weghted neighbor scores and the landmark's own scores
                 viewScores_acc[j] += (1 - neighborsInfluence) * viewScores[j];
             }
         }
+        // update scores at end of iteration
 #pragma omp parallel for
         for(auto id = 0; id < landmarksData.size(); id++)
         {
@@ -417,7 +435,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
         std::iota(idx.begin(), idx.end(), 0);
         std::stable_sort(idx.begin(), idx.end(), [&v = viewScores](size_t i1, size_t i2) { return v[i1] > v[i2]; });
 
-        // replace the observations
+        // keep only observations with best scores
         Observations filteredObservations;
         for(auto j = 0; j < maxNbObservationsPerLandmark; j++)
         {
