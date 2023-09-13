@@ -29,12 +29,19 @@ namespace sfmDataIO {
 bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
 {
   const bool bCheck_Intrinsic = (partFlag & INTRINSICS);
+  const bool bCheck_Rig = (partFlag & EXTRINSICS);
 
+  // Collect intrinsic IDs  declared
   std::set<IndexT> intrinsicIdsDeclared;
   transform(sfmData.getIntrinsics().begin(), sfmData.getIntrinsics().end(),
     std::inserter(intrinsicIdsDeclared, intrinsicIdsDeclared.begin()), stl::RetrieveKey());
 
-  // Collect id_intrinsic referenced from views
+  // Collect rig IDs  declared
+  std::set<IndexT> rigIdsDeclared;
+  transform(sfmData.getRigs().begin(), sfmData.getRigs().end(),
+    std::inserter(rigIdsDeclared, rigIdsDeclared.begin()), stl::RetrieveKey());
+
+  // Collect intrinsic IDs referenced from views
   std::set<IndexT> intrinsicIdsReferenced;
   for(const auto& v: sfmData.getViews())
   {
@@ -42,11 +49,20 @@ bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
     intrinsicIdsReferenced.insert(id_intrinsic);
   }
 
-  // We may have some views with undefined Intrinsics,
+  // Collect rig IDs referenced from views
+  std::set<IndexT> rigIdsReferenced;
+  for(const auto& v: sfmData.getViews())
+  {
+    const IndexT id_rig = v.second.get()->getRigId();
+    rigIdsReferenced.insert(id_rig);
+  }
+
+  // We may have some views with undefined intrinsic/rig,
   // so erase the UndefinedIndex value if exist.
   intrinsicIdsReferenced.erase(UndefinedIndexT);
+  rigIdsReferenced.erase(UndefinedIndexT);
 
-  // Check if defined intrinsic & extrinsic are at least connected to views
+  // Check if defined intrinsics are at least connected to views
   bool bRet = true;
   if(bCheck_Intrinsic && intrinsicIdsDeclared != intrinsicIdsReferenced)
   {
@@ -61,6 +77,23 @@ bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
     // some intrinsics are used in Views but never declared.
     // So the file structure is invalid and may create troubles.
     if(!undefinedIntrinsicIds.empty())
+      bRet = false; // error
+  }
+
+  // Check if defined rigs are at least connected to views
+  if(bCheck_Rig && rigIdsDeclared != rigIdsReferenced)
+  {
+    ALICEVISION_LOG_WARNING("The number of rigs is incoherent:");
+    ALICEVISION_LOG_WARNING(rigIdsDeclared.size() << " rigs declared and " << rigIdsReferenced.size() << " rigs used.");
+    std::set<IndexT> undefinedRigIds;
+    // undefinedRigIds = rigIdsReferenced - rigIdsDeclared
+    std::set_difference(rigIdsReferenced.begin(), rigIdsReferenced.end(),
+                        rigIdsDeclared.begin(), rigIdsDeclared.end(), 
+                        std::inserter(undefinedRigIds, undefinedRigIds.begin()));
+    // If undefinedRigIds is not empty,
+    // some rigs are used in Views but never declared.
+    // So the file structure is invalid and may create troubles.
+    if(!undefinedRigIds.empty())
       bRet = false; // error
   }
 
