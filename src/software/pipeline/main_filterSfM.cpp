@@ -408,6 +408,10 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
         const auto& nbObservations = landmark.observations.size();
         auto& [viewIds, viewScores] = viewScoresData[i];
 
+        // check number of observations
+        if(landmark.observations.size() <= maxNbObservationsPerLandmark)
+            continue;
+
         // sort by descending view score order
         std::vector<size_t> idx(nbObservations);
         std::iota(idx.begin(), idx.end(), 0);
