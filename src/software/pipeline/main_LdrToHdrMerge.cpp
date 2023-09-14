@@ -373,7 +373,7 @@ int aliceVision_main(int argc, char** argv)
                     bool macbeth = false;
                     for(int k = 0; k < group.size(); k++)
                     {
-                        const std::string fname = group[k]->getImagePath();
+                        const std::string fname = group[k]->getImage().getImagePath();
                         boost::filesystem::path p(fname);
                         macbeth = macbeth || (p.stem().string().find("_macbeth") != std::string::npos);
                     }
