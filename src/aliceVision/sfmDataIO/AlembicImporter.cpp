@@ -655,7 +655,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     // set metadata
     for(std::size_t i = 0; i < rawMetadata.size(); i+=2)
     {
-      view->addMetadata(rawMetadata.at(i), rawMetadata.at(i + 1));
+      view->getImage().addMetadata(rawMetadata.at(i), rawMetadata.at(i + 1));
     }
 
     for (IndexT val : mvg_ancestorsParams)

@@ -255,7 +255,7 @@ int aliceVision_main(int argc, char** argv)
                 // Sort views per timestamps
                 for(auto v : outSfmData.getViews())
                 {
-                    int64_t t = v.second->getMetadataDateTimestamp();
+                    int64_t t = v.second->getImage().getMetadataDateTimestamp();
                     sorted_views.push_back(std::make_pair(t, v.second->getPoseId()));
                 }
                 std::sort(sorted_views.begin(), sorted_views.end());

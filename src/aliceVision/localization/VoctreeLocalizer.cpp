@@ -408,7 +408,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
 //    const IndexT matchedViewIndex = currMatch.id;
 //    // get the view handle
 //    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views[matchedViewIndex];
-//    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
+//    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImage().getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
 //            << " and it has "  << _regions_per_view[matchedViewIndex]._regions.RegionCount() 
@@ -439,10 +439,10 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     // image of the dataset that was not reconstructed
     if(_regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() < minNum3DPoints)
     {
-      ALICEVISION_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImagePath() << " as it has too few visible 3D points (" << _regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() << ")");
+      ALICEVISION_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImage().getImagePath() << " as it has too few visible 3D points (" << _regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() << ")");
       continue;
     }
-    ALICEVISION_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
+    ALICEVISION_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->getImage().getImagePath());
 
     // its associated intrinsics
     const camera::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.getIntrinsicPtr(matchedView->getIntrinsicId());
@@ -462,13 +462,13 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
                                       param._useRobustMatching,
                                       param._useGuidedMatching,
                                       queryImageSize,
-                                      std::make_pair(matchedView->getWidth(), matchedView->getHeight()),
+                                      std::make_pair(matchedView->getImage().getWidth(), matchedView->getImage().getHeight()),
                                       randomNumberGenerator,
                                       featureMatches,
                                       param._matchingEstimator);
     if (!matchWorked)
     {
-      ALICEVISION_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImagePath() << " failed! Skipping image");
+      ALICEVISION_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImage().getImagePath() << " failed! Skipping image");
       continue;
     }
 
@@ -481,14 +481,14 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       namespace bfs = boost::filesystem;
       const sfmData::View *mview = _sfm_data.getViews().at(matchedViewId).get();
       const std::string queryimage = bfs::path(imagePath).stem().string();
-      const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
-      const std::string matchedPath = mview->getImagePath();
+      const std::string matchedImage = bfs::path(mview->getImage().getImagePath()).stem().string();
+      const std::string matchedPath = mview->getImage().getImagePath();
       
       matching::saveMatches2SVG(imagePath,
                       queryImageSize,
                       queryRegions,
                       matchedPath,
-                      std::make_pair(mview->getWidth(), mview->getHeight()),
+                      std::make_pair(mview->getImage().getWidth(), mview->getImage().getHeight()),
                       _regionsPerView.getRegionsPerDesc(matchedViewId),
                       featureMatches,
                       param._visualDebug + "/" + queryimage + "_" + matchedImage + ".svg"); 
@@ -776,7 +776,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
 //  {
 //    // get the view handle
 //    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views[currMatch.id];
-//    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
+//    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImage().getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
 //            << " and it has "  << _regions_per_view[currMatch.id]._regions.RegionCount() 
@@ -808,10 +808,10 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
     // image of the dataset that was not reconstructed
     if(matchedRegions.getNbAllRegions() < minNum3DPoints)
     {
-      ALICEVISION_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImagePath() << " as it has too few visible 3D points");
+      ALICEVISION_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImage().getImagePath() << " as it has too few visible 3D points");
       continue;
     }
-    ALICEVISION_LOG_TRACE("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
+    ALICEVISION_LOG_TRACE("[matching]\tTrying to match the query image with " << matchedView->getImage().getImagePath());
     ALICEVISION_LOG_TRACE("[matching]\tIt has " << matchedRegions.getNbAllRegions() << " available features to match");
     
     // its associated intrinsics
@@ -836,13 +836,13 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
                                       param._useRobustMatching,
                                       param._useGuidedMatching,
                                       imageSize,
-                                      std::make_pair(matchedView->getWidth(), matchedView->getHeight()),
+                                      std::make_pair(matchedView->getImage().getWidth(), matchedView->getImage().getHeight()),
                                       randomNumberGenerator,
                                       featureMatches,
                                       param._matchingEstimator);
     if (!matchWorked)
     {
-//      ALICEVISION_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImagePath() << " failed! Skipping image");
+//      ALICEVISION_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImage().getImagePath() << " failed! Skipping image");
       continue;
     }
 
@@ -861,9 +861,9 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
       // the current query image without extension
       const auto queryImage = bfs::path(imagePath).stem();
       // the matching image without extension
-      const auto matchedImage = bfs::path(mview->getImagePath()).stem();
+      const auto matchedImage = bfs::path(mview->getImage().getImagePath()).stem();
       // the full path of the matching image
-      const auto matchedPath = mview->getImagePath();
+      const auto matchedPath = mview->getImage().getImagePath();
 
       // the directory where to save the feature matches
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;
@@ -885,7 +885,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
                                 imageSize,
                                 queryRegions,
                                 matchedPath,
-                                std::make_pair(mview->getWidth(), mview->getHeight()),
+                                std::make_pair(mview->getImage().getWidth(), mview->getImage().getHeight()),
                                 _regionsPerView.getRegionsPerDesc(matchedViewId),
                                 featureMatches,
                                 outputName.string()); 

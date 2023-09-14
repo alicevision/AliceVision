@@ -218,7 +218,7 @@ IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & 
                 continue;
             }
             
-            int64_t t = v.second->getMetadataDateTimestamp();
+            int64_t t = v.second->getImage().getMetadataDateTimestamp();
             sorted_views.push_back(std::make_pair(t, v.first));
         }
         std::sort(sorted_views.begin(), sorted_views.end());

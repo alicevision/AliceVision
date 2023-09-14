@@ -102,8 +102,8 @@ void computeTracksPyramidPerView(
     std::vector<double> cellHeightPerLevel(pyramidDepth);
     for(std::size_t level = 0; level < pyramidDepth; ++level)
     {
-      cellWidthPerLevel[level] = (double)view.getWidth() / (double)widthPerLevel[level];
-      cellHeightPerLevel[level] = (double)view.getHeight() / (double)widthPerLevel[level];
+      cellWidthPerLevel[level] = (double)view.getImage().getWidth() / (double)widthPerLevel[level];
+      cellHeightPerLevel[level] = (double)view.getImage().getHeight() / (double)widthPerLevel[level];
     }
     for(std::size_t i = 0; i < viewTracks.second.size(); ++i)
     {
@@ -1167,8 +1167,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   const Intrinsics::const_iterator itIntrinsicJ = _sfmData.getIntrinsics().find(viewJ.getIntrinsicId());
 
   ALICEVISION_LOG_INFO("Initial pair is:\n"
-                       "\t- [A] view id: " << I << ", filepath: " << viewI.getImagePath() << "\n"
-                       "\t- [B] view id: " << J << ", filepath: " << viewJ.getImagePath());
+                       "\t- [A] view id: " << I << ", filepath: " << viewI.getImage().getImagePath() << "\n"
+                       "\t- [B] view id: " << J << ", filepath: " << viewJ.getImage().getImagePath());
 
   if(itIntrinsicI == _sfmData.getIntrinsics().end() ||
      itIntrinsicJ == _sfmData.getIntrinsics().end() )
@@ -1272,8 +1272,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
       std::ostringstream os;
       os << std::endl
         << "<b>Robust Essential matrix:</b>" << "<br>"
-        << "-> View I:<br>id: " << I << "<br>image path: " << viewI.getImagePath() << "<br>"
-        << "-> View J:<br>id: " << J << "<br>image path: " << viewJ.getImagePath() << "<br><br>"
+        << "-> View I:<br>id: " << I << "<br>image path: " << viewI.getImage().getImagePath() << "<br>"
+        << "-> View J:<br>id: " << J << "<br>image path: " << viewJ.getImage().getImagePath() << "<br><br>"
         << "- Threshold: " << relativePoseInfo.found_residual_precision << "<br>"
         << "- Resection status: OK<br>"
         << "- # points used for robust Essential matrix estimation: " << xI.cols() << "<br>"
@@ -1579,7 +1579,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   ALICEVISION_LOG_INFO("[" << _sfmData.getValidViews().size()+1 << "/" << _sfmData.getViews().size() << "] Robust Resection of view: " << viewId);
 
   const bool bResection = sfm::SfMLocalizer::Localize(
-      Pair(view_I->getWidth(), view_I->getHeight()),
+      Pair(view_I->getImage().getWidth(), view_I->getImage().getHeight()),
       resectionData.optionalIntrinsic.get(),
       _randomNumberGenerator,
       resectionData,
@@ -1596,7 +1596,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
 
     os.str("");
     os << std::endl
-      << "- Image path: " << view_I->getImagePath() << "<br>"
+      << "- Image path: " << view_I->getImage().getImagePath() << "<br>"
       << "- Threshold (error max): " << resectionData.error_max << "<br>"
       << "- Resection status: " << (bResection ? "OK" : "FAILED") << "<br>"
       << "- # points used for Resection: " << resectionData.featuresId.size() << "<br>"

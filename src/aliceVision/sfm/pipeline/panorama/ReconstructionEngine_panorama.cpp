@@ -756,7 +756,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
                     if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
                     {
                         ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
-                        ALICEVISION_LOG_INFO("I: " << view_I->getImagePath() << ", J: " << view_J->getImagePath());
+                        ALICEVISION_LOG_INFO("I: " << view_I->getImage().getImagePath() << ", J: " << view_J->getImage().getImagePath());
                         continue;
                     }
 

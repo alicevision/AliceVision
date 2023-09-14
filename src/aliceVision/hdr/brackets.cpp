@@ -36,8 +36,8 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
             if (a == nullptr || b == nullptr)
                 return true;
 
-            boost::filesystem::path path_a(a->getImagePath());
-            boost::filesystem::path path_b(b->getImagePath());
+            boost::filesystem::path path_a(a->getImage().getImagePath());
+            boost::filesystem::path path_b(b->getImage().getImagePath());
 
             return (path_a.stem().string() < path_b.stem().string());
         }
@@ -47,7 +47,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     std::set<float> fnumbers;
     for (auto& view : viewsOrderedByName)
     {
-        fnumbers.insert(view->getMetadataFNumber());
+        fnumbers.insert(view->getImage().getMetadataFNumber());
     }
     
     if (fnumbers.size() != 1)
@@ -77,7 +77,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         else
         {
             // Automatically determines the number of brackets
-            double exp = view->getCameraExposureSetting().getExposure();
+            double exp = view->getImage().getCameraExposureSetting().getExposure();
             if (exp < lastExposure)
             {
                 groups.push_back(group);
@@ -150,14 +150,14 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
             {
                 if (a == nullptr || b == nullptr)
                     return true;
-                return (a->getCameraExposureSetting().getExposure() < b->getCameraExposureSetting().getExposure());
+                return (a->getImage().getCameraExposureSetting().getExposure() < b->getImage().getCameraExposureSetting().getExposure());
             }
         );
 
         std::vector<sfmData::ExposureSetting> exposuresSetting;
         for (auto& v : group)
         {
-            exposuresSetting.push_back(v->getCameraExposureSetting());
+            exposuresSetting.push_back(v->getImage().getCameraExposureSetting());
         }
         v_exposuresSetting.push_back(exposuresSetting);
     }

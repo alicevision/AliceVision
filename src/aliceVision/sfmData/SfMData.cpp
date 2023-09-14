@@ -42,7 +42,7 @@ bool SfMData::operator==(const SfMData& other) const
             return false;
 
         // Image paths
-        if (view1.getImagePath() != view2.getImagePath())
+        if (view1.getImage().getImagePath() != view2.getImage().getImagePath())
             return false;
     }
 

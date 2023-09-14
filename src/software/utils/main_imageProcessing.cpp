@@ -1189,7 +1189,7 @@ int aliceVision_main(int argc, char * argv[])
             else
             {
                 // Otherwise use the existing path
-                ViewPaths.insert({view.getViewId(), view.getImagePath()});
+                ViewPaths.insert({view.getViewId(), view.getImage().getImagePath()});
             }
         }
 
@@ -1214,7 +1214,7 @@ int aliceVision_main(int argc, char * argv[])
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
 
-            auto metadata = view.getMetadata();
+            auto metadata = view.getImage().getMetadata();
 
             if (pParams.applyDcpMetadata && metadata["AliceVision:ColorSpace"] != "no_conversion")
             {
@@ -1228,7 +1228,7 @@ int aliceVision_main(int argc, char * argv[])
             {
                 if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
                 {
-                    options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
+                    options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
                     if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
                     {
                         options.useDCPColorMatrixOnly = false;
@@ -1246,7 +1246,7 @@ int aliceVision_main(int argc, char * argv[])
                     options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                     options.doWBAfterDemosaicing = doWBAfterDemosaicing;
                 }
-                options.colorProfileFileName = view.getColorProfileFileName();
+                options.colorProfileFileName = view.getImage().getColorProfileFileName();
                 options.demosaicingAlgo = demosaicingAlgo;
                 options.highlightMode = highlightMode;
                 options.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
@@ -1258,7 +1258,7 @@ int aliceVision_main(int argc, char * argv[])
 
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
             {
-                if (!view.getVignettingParams(pParams.lensCorrection.vParams))
+                if (!view.getImage().getVignettingParams(pParams.lensCorrection.vParams))
                 {
                     pParams.lensCorrection.vParams.clear();
                 }
@@ -1267,7 +1267,7 @@ int aliceVision_main(int argc, char * argv[])
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.chromaticAberration)
             {
                 std::vector<float> caGParams, caBGParams, caRGParams;
-                view.getChromaticAberrationParams(caGParams,caBGParams,caRGParams);
+                view.getImage().getChromaticAberrationParams(caGParams,caBGParams,caRGParams);
 
                 pParams.lensCorrection.caGModel.init3(caGParams);
                 pParams.lensCorrection.caBGModel.init3(caBGParams);
@@ -1275,15 +1275,15 @@ int aliceVision_main(int argc, char * argv[])
 
                 if(pParams.lensCorrection.caGModel.FocalLengthX == 0.0)
                 {
-                    float sensorWidth = view.getSensorWidth();
-                    pParams.lensCorrection.caGModel.FocalLengthX = view.getWidth() * view.getMetadataFocalLength() /
-                                                                   sensorWidth / std::max(view.getWidth(), view.getHeight());
+                    float sensorWidth = view.getImage().getSensorWidth();
+                    pParams.lensCorrection.caGModel.FocalLengthX = view.getImage().getWidth() * view.getImage().getMetadataFocalLength() /
+                                                                   sensorWidth / std::max(view.getImage().getWidth(), view.getImage().getHeight());
                 }
                 if(pParams.lensCorrection.caGModel.FocalLengthY == 0.0)
                 {
-                    float sensorHeight = view.getSensorHeight();
-                    pParams.lensCorrection.caGModel.FocalLengthY = view.getHeight() * view.getMetadataFocalLength() /
-                                                                   sensorHeight / std::max(view.getWidth(), view.getHeight());
+                    float sensorHeight = view.getImage().getSensorHeight();
+                    pParams.lensCorrection.caGModel.FocalLengthY = view.getImage().getHeight() * view.getImage().getMetadataFocalLength() /
+                                                                   sensorHeight / std::max(view.getImage().getWidth(), view.getImage().getHeight());
                 }
 
                 if((pParams.lensCorrection.caGModel.FocalLengthX <= 0.0) ||
@@ -1303,7 +1303,7 @@ int aliceVision_main(int argc, char * argv[])
             if (pParams.exposureCompensation)
             {
                 const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
-                const double cameraExposure = view.getCameraExposureSetting().getExposure();
+                const double cameraExposure = view.getImage().getCameraExposureSetting().getExposure();
                 const double ev = std::log2(1.0 / cameraExposure);
                 const float compensationFactor = static_cast<float>(medianCameraExposure / cameraExposure);
 
@@ -1320,7 +1320,7 @@ int aliceVision_main(int argc, char * argv[])
             sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
             std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
 
-            std::map<std::string, std::string> viewMetadata = view.getMetadata();
+            std::map<std::string, std::string> viewMetadata = view.getImage().getMetadata();
 
             // Image processing
             processImage(image, pParams, viewMetadata, cam);
@@ -1349,10 +1349,10 @@ int aliceVision_main(int argc, char * argv[])
             saveImage(image, viewPath, outputfilePath, viewMetadata, metadataFolders, outputFormat, writeOptions);
 
             // Update view for this modification
-            view.setImagePath(outputfilePath);
-            view.setWidth(image.Width());
-            view.setHeight(image.Height());
-            view.addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
+            view.getImage().setImagePath(outputfilePath);
+            view.getImage().setWidth(image.Width());
+            view.getImage().setHeight(image.Height());
+            view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
         }
 
         if (pParams.scaleFactor != 1.0f)
@@ -1487,16 +1487,16 @@ int aliceVision_main(int argc, char * argv[])
 
             image::DCPProfile dcpProf;
             sfmData::View view; // used to extract and complete metadata
-            view.setImagePath(inputFilePath);
+            view.getImage().setImagePath(inputFilePath);
             int width, height;
             const auto metadata = image::readImageMetadata(inputFilePath, width, height);
-            view.setMetadata(image::getMapFromMetadata(metadata));
-            view.setWidth(width);
-            view.setHeight(height);
+            view.getImage().setMetadata(image::getMapFromMetadata(metadata));
+            view.getImage().setWidth(width);
+            view.getImage().setHeight(height);
             std::shared_ptr<camera::IntrinsicBase> intrinsicBase;
             // Get DSLR maker and model in view metadata.
-            const std::string& make = view.getMetadataMake();
-            const std::string& model = view.getMetadataModel();
+            const std::string& make = view.getImage().getMetadataMake();
+            const std::string& model = view.getImage().getMetadataModel();
 
             if (isRAW && (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
                           rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
@@ -1519,7 +1519,7 @@ int aliceVision_main(int argc, char * argv[])
                 }
 
                 // Add color profile info in metadata
-                view.addDCPMetadata(dcpProf);
+                view.getImage().addDCPMetadata(dcpProf);
             }
 
             if(isRAW && pParams.lensCorrection.enabled &&
@@ -1534,8 +1534,8 @@ int aliceVision_main(int argc, char * argv[])
                 else if (!lcpStore.empty())
                 {
                     // Find an LCP file that matches the camera model and the lens model.
-                    const std::string& lensModel = view.getMetadataLensModel();
-                    const int lensID = view.getMetadataLensID();
+                    const std::string& lensModel = view.getImage().getMetadataLensModel();
+                    const int lensID = view.getImage().getMetadataLensID();
 
                     if (!make.empty() && !lensModel.empty())
                     {
@@ -1546,8 +1546,8 @@ int aliceVision_main(int argc, char * argv[])
 
                 if ((lcpData != nullptr) && !(lcpData->isEmpty()))
                 {
-                    double focalLengthmm = view.getMetadataFocalLength();
-                    const float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
+                    double focalLengthmm = view.getImage().getMetadataFocalLength();
+                    const float apertureValue = 2.f * std::log(view.getImage().getMetadataFNumber()) / std::log(2.0);
                     const float focusDistance = 0.f;
 
                     LensParam lensParam;
@@ -1559,7 +1559,7 @@ int aliceVision_main(int argc, char * argv[])
                     double sensorWidth = -1.0;
                     double sensorHeight = -1.0;
                     camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
-                    view.getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, true);
+                    view.getImage().getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, true);
 
                     if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty && pParams.lensCorrection.vignetting)
                     {
@@ -1643,7 +1643,7 @@ int aliceVision_main(int argc, char * argv[])
                 }
             }
 
-            std::map<std::string, std::string> md = view.getMetadata();
+            std::map<std::string, std::string> md = view.getImage().getMetadata();
 
             // set readOptions
             image::ImageReadOptions readOptions;

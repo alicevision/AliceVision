@@ -225,11 +225,11 @@ int aliceVision_main(int argc, char **argv)
 
                 if (transferPoses)
                 {
-                    ALICEVISION_LOG_TRACE("Transfer pose (pose id: " << viewA.getPoseId() << " <- " << viewB.getPoseId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
+                    ALICEVISION_LOG_TRACE("Transfer pose (pose id: " << viewA.getPoseId() << " <- " << viewB.getPoseId() << ", " << viewA.getImage().getImagePath() << " <- " << viewB.getImage().getImagePath() << ").");
 
                     if (viewA.isPartOfRig() && viewB.isPartOfRig())
                     {
-                        ALICEVISION_LOG_TRACE("Transfer rig (rig id: " << viewA.getRigId() << " <- " << viewB.getRigId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
+                        ALICEVISION_LOG_TRACE("Transfer rig (rig id: " << viewA.getRigId() << " <- " << viewB.getRigId() << ", " << viewA.getImage().getImagePath() << " <- " << viewB.getImage().getImagePath() << ").");
 
                         if (!viewB.isPoseIndependant())
                         {
@@ -242,7 +242,7 @@ int aliceVision_main(int argc, char **argv)
                             else
                             {
                                 if (viewA.getPoseId() == viewA.getPoseId())
-                                    throw std::runtime_error("Invalid RigId/PoseId (in rig) for view: " + viewA.getImagePath());
+                                    throw std::runtime_error("Invalid RigId/PoseId (in rig) for view: " + viewA.getImage().getImagePath());
                             }
                         }
                         else
@@ -255,7 +255,7 @@ int aliceVision_main(int argc, char **argv)
                             else
                             {
                                 if (viewA.getPoseId() != viewA.getPoseId())
-                                    throw std::runtime_error("Invalid RigId/PoseId (out of rig) for view: " + viewA.getImagePath());
+                                    throw std::runtime_error("Invalid RigId/PoseId (out of rig) for view: " + viewA.getImage().getImagePath());
                             }
                         }
                         // copy the pose of the rig or the independant pose
@@ -276,7 +276,7 @@ int aliceVision_main(int argc, char **argv)
                 }
                 if (transferIntrinsics)
                 {
-                    ALICEVISION_LOG_TRACE("Transfer intrinsics (intrinsic id: " << viewA.getIntrinsicId() << " <- " << viewB.getIntrinsicId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
+                    ALICEVISION_LOG_TRACE("Transfer intrinsics (intrinsic id: " << viewA.getIntrinsicId() << " <- " << viewB.getIntrinsicId() << ", " << viewA.getImage().getImagePath() << " <- " << viewB.getImage().getImagePath() << ").");
                     sfmData.getIntrinsicPtr(viewA.getIntrinsicId())->assign(*sfmDataRef.getIntrinsicPtr(viewB.getIntrinsicId()));
                 }
 

@@ -379,7 +379,7 @@ public:
 
         for(const auto& view : views)
         {
-            const ExposureSetting ce = view.second->getCameraExposureSetting();
+            const ExposureSetting ce = view.second->getImage().getCameraExposureSetting();
             if (ce.isPartiallyDefined())
             {
                 auto find = std::find(std::begin(cameraExposureList), std::end(cameraExposureList), ce);

@@ -171,8 +171,8 @@ void matchesGridFilteringForAllPairs(const PairwiseMatches& geometricMatches,
                 if(useGridSort)
                 {
                     // TODO: rename as matchesGridOrdering
-                    matchesGridFiltering(*lRegions, sfmData.getView(indexImagePair.first).getImgSize(),
-                                         *rRegions, sfmData.getView(indexImagePair.second).getImgSize(),
+                    matchesGridFiltering(*lRegions, sfmData.getView(indexImagePair.first).getImage().getImgSize(),
+                                         *rRegions, sfmData.getView(indexImagePair.second).getImage().getImgSize(),
                                          indexImagePair, outMatches);
                 }
 

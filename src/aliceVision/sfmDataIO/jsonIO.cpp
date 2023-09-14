@@ -44,15 +44,15 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
   if(view.isPoseIndependant() == false)
     viewTree.put("isPoseIndependant", view.isPoseIndependant());
 
-  viewTree.put("path", view.getImagePath());
-  viewTree.put("width", view.getWidth());
-  viewTree.put("height", view.getHeight());
+  viewTree.put("path", view.getImage().getImagePath());
+  viewTree.put("width", view.getImage().getWidth());
+  viewTree.put("height", view.getImage().getHeight());
 
   // metadata
   {
     bpt::ptree metadataTree;
 
-    for(const auto& metadataPair : view.getMetadata())
+    for(const auto& metadataPair : view.getImage().getMetadata())
       metadataTree.put(metadataPair.first, metadataPair.second);
 
     viewTree.add_child("metadata", metadataTree);
@@ -93,9 +93,9 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
   view.setResectionId(viewTree.get<IndexT>("resectionId", UndefinedIndexT));
   view.setIndependantPose(viewTree.get<bool>("isPoseIndependant", true));
 
-  view.setImagePath(viewTree.get<std::string>("path"));
-  view.setWidth(viewTree.get<std::size_t>("width", 0));
-  view.setHeight(viewTree.get<std::size_t>("height", 0));
+  view.getImage().setImagePath(viewTree.get<std::string>("path"));
+  view.getImage().setWidth(viewTree.get<std::size_t>("width", 0));
+  view.getImage().setHeight(viewTree.get<std::size_t>("height", 0));
 
   if (viewTree.count("ancestors"))
   {
@@ -108,7 +108,7 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
   // metadata
   if(viewTree.count("metadata"))
     for(bpt::ptree::value_type &metaDataNode : viewTree.get_child("metadata"))
-      view.addMetadata(metaDataNode.first, metaDataNode.second.data());
+      view.getImage().addMetadata(metaDataNode.first, metaDataNode.second.data());
 
 }
 
@@ -692,8 +692,8 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
                                      "loaded from the json file.");
           }
 
-          v.setWidth(intrinsics->w());
-          v.setHeight(intrinsics->h());
+          v.getImage().setWidth(intrinsics->w());
+          v.getImage().setHeight(intrinsics->h());
         }
         updateIncompleteView(incompleteViews.at(i), viewIdMethod, viewIdRegex);
       }

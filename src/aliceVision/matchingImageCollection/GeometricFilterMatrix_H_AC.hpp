@@ -70,8 +70,8 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
                     multiview::UnnormalizerI,
                     robustEstimation::Mat3Model>;
 
-    const KernelT kernel(xI, viewI.getWidth(), viewI.getHeight(),
-                         xJ, viewJ.getWidth(), viewJ.getHeight(), false); // configure as point to point error model.
+    const KernelT kernel(xI, viewI.getImage().getWidth(), viewI.getImage().getHeight(),
+                         xJ, viewJ.getImage().getWidth(), viewJ.getImage().getHeight(), false); // configure as point to point error model.
 
     // robustly estimate the Homography matrix with A Contrario ransac
     const double upperBoundPrecision = Square(m_dPrecision);

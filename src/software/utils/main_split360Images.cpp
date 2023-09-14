@@ -511,7 +511,7 @@ int aliceVision_main(int argc, char** argv)
 
                     for (const auto& [_, view] : sfmData.getViews())
                     {
-                        imagePaths.push_back(view->getImagePath());
+                        imagePaths.push_back(view->getImage().getImagePath());
                     }
                 }
                 else
@@ -619,9 +619,9 @@ int aliceVision_main(int argc, char** argv)
             // Retrieve dimensions and focal length from the views metadata as they are not user provided
             const auto& views = outSfmData.getViews();
             const auto& view = views.begin()->second;
-            width = view->getWidth();
-            height = view->getHeight();
-            focal_px = view->getMetadataFocalLength() * (width / 36.0);
+            width = view->getImage().getWidth();
+            height = view->getImage().getHeight();
+            focal_px = view->getImage().getMetadataFocalLength() * (width / 36.0);
             if (focal_px < 0)
             {
                 // If there is no focal metadata, use a default field of view of 170 degrees

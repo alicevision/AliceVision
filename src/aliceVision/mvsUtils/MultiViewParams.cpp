@@ -61,7 +61,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
           if(!sfmData.isPoseAndIntrinsicDefined(&view))
             continue;
 
-          std::string path = view.getImagePath();
+          std::string path = view.getImage().getImagePath();
 
           if(readFromDepthMaps)
           {
@@ -102,8 +102,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             path = _imagesFolder + std::to_string(view.getViewId()) + fs::path(paths[0]).extension().string();
           }
 
-          dimensions.emplace(view.getWidth(), view.getHeight());
-          _imagesParams.emplace_back(view.getViewId(), view.getWidth(), view.getHeight(), path);
+          dimensions.emplace(view.getImage().getWidth(), view.getImage().getHeight());
+          _imagesParams.emplace_back(view.getViewId(), view.getImage().getWidth(), view.getImage().getHeight(), path);
           _imageIdsPerViewId[view.getViewId()] = i;
           ++i;
         }
@@ -323,7 +323,7 @@ MultiViewParams::~MultiViewParams()
 
 const std::map<std::string, std::string>& MultiViewParams::getMetadata(int index) const
 {
-  return _sfmData.getViews().at(getViewId(index))->getMetadata();
+  return _sfmData.getViews().at(getViewId(index))->getImage().getMetadata();
 }
 
 bool MultiViewParams::is3DPointInFrontOfCam(const Point3d* X, int rc) const

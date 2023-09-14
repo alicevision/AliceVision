@@ -1195,7 +1195,7 @@ int main(int argc, char* argv[])
             std::vector<std::pair<std::string, int>> namesWithRank;
             for(const auto& v : sfmData.getViews())
             {
-                boost::filesystem::path path_image(v.second->getImagePath());
+                boost::filesystem::path path_image(v.second->getImage().getImagePath());
                 namesWithRank.push_back(std::make_pair(path_image.stem().string(), v.first));
             }
             std::sort(namesWithRank.begin(), namesWithRank.end());
@@ -1213,10 +1213,10 @@ int main(int argc, char* argv[])
 
                         const sfmData::View& v = sfmData.getView(viewId);
 
-                        item.second.path = v.getImagePath();
-                        item.second.width = v.getWidth();
-                        item.second.height = v.getHeight();
-                        item.second.orientation = v.getMetadataOrientation();
+                        item.second.path = v.getImage().getImagePath();
+                        item.second.width = v.getImage().getWidth();
+                        item.second.height = v.getImage().getHeight();
+                        item.second.orientation = v.getImage().getMetadataOrientation();
                     }
                 }
 
@@ -1235,7 +1235,7 @@ int main(int argc, char* argv[])
                 IndexT viewIdx = namesWithRank[index].second;
                 const sfmData::View& v = sfmData.getView(viewIdx);
 
-                sfmData::EEXIFOrientation orientation = v.getMetadataOrientation();
+                sfmData::EEXIFOrientation orientation = v.getImage().getMetadataOrientation();
                 double orientationAngle = 0.;
                 switch (orientation)
                 {
@@ -1326,7 +1326,7 @@ int main(int argc, char* argv[])
                 {
                     // Read original image
                     image::Image<float> grayscale;
-                    image::readImage(v.second->getImagePath(), grayscale, image::EImageColorSpace::SRGB);
+                    image::readImage(v.second->getImage().getImagePath(), grayscale, image::EImageColorSpace::SRGB);
 
                     const bool res = detector.appendImage(grayscale);
                     if(!res)

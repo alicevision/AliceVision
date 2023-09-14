@@ -42,9 +42,9 @@ SfMData createTestScene(IndexT singleViewsCount,
     const IndexT id_intrinsic = bSharedIntrinsic ? 0 : i; //(shared or not intrinsics)
 
     std::shared_ptr<View> view = std::make_shared<View>(os.str(),id_view, id_intrinsic, id_pose, 1000, 1000);
-    view->addMetadata("A","A");
-    view->addMetadata("B","B");
-    view->addMetadata("C","C");
+    view->getImage().addMetadata("A","A");
+    view->getImage().addMetadata("B","B");
+    view->getImage().addMetadata("C","C");
     sfm_data.views[id_view] = view;
 
     // Add poses

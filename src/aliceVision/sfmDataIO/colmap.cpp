@@ -314,7 +314,7 @@ void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const Compatib
         }
 
         // this is necessary if we copy the images in the image folder because the image path is absolute in AV
-        const std::string imageFilename = fs::path(view->getImagePath()).filename().string();
+        const std::string imageFilename = fs::path(view->getImage().getImagePath()).filename().string();
         const IndexT intrID = view->getIntrinsicId();
 
         const auto pose = sfmData.getPose(*view).getTransform();
@@ -343,7 +343,7 @@ void copyImagesFromSfmData(const sfmData::SfMData& sfmData, const std::string& d
     for(const auto viewId : selection)
     {
         const auto& view = sfmData.getView(viewId);
-        const auto& from = fs::path(view.getImagePath());
+        const auto& from = fs::path(view.getImage().getImagePath());
         const auto& to = fs::path(destinationFolder) / from.filename();
         fs::copy_file(from, to);
     }

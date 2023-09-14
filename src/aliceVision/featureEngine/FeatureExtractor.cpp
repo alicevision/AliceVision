@@ -38,8 +38,8 @@ void FeatureExtractorViewJob::setImageDescribers(
             continue;
         }
 
-        _memoryConsuption += imageDescriber->getMemoryConsumption(_view.getWidth(),
-                                                                  _view.getHeight());
+        _memoryConsuption += imageDescriber->getMemoryConsumption(_view.getImage().getWidth(),
+                                                                  _view.getImage().getHeight());
 
         if(imageDescriber->useCuda())
             _gpuImageDescriberIndexes.push_back(i);
@@ -176,10 +176,10 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
     image::Image<unsigned char> imageGrayUChar;
     image::Image<unsigned char> mask;
 
-    image::readImage(job.view().getImagePath(), imageGrayFloat, workingColorSpace);
+    image::readImage(job.view().getImage().getImagePath(), imageGrayFloat, workingColorSpace);
 
     double pixelRatio = 1.0;
-    job.view().getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
+    job.view().getImage().getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
 
     if (pixelRatio != 1.0)
     {
@@ -201,7 +201,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
         const auto idMaskPath = masksFolder /
                 fs::path(std::to_string(job.view().getViewId())).replace_extension(_maskExtension);
         const auto nameMaskPath = masksFolder /
-                fs::path(job.view().getImagePath()).filename().replace_extension(_maskExtension);
+                fs::path(job.view().getImage().getImagePath()).filename().replace_extension(_maskExtension);
 
         if (fs::exists(idMaskPath))
         {
@@ -222,7 +222,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
 
         // Compute features and descriptors and export them to files
         ALICEVISION_LOG_INFO("Extracting " << imageDescriberTypeName  << " features from view '"
-                             << job.view().getImagePath() << "' " << (useGPU ? "[gpu]" : "[cpu]"));
+                             << job.view().getImage().getImagePath() << "' " << (useGPU ? "[gpu]" : "[cpu]"));
 
         std::unique_ptr<feature::Regions> regions;
         if (imageDescriber->useFloatImage())
@@ -281,7 +281,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
                              job.getDescriptorPath(imageDescriberType));
         ALICEVISION_LOG_INFO(std::left << std::setw(6) << " " << regions->RegionCount() << " "
                              << imageDescriberTypeName  << " features extracted from view '"
-                             << job.view().getImagePath() << "'");
+                             << job.view().getImage().getImagePath() << "'");
     }
 }
 

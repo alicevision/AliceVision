@@ -168,7 +168,7 @@ int aliceVision_main(int argc, char **argv)
   std::map<std::string, IndexT> viewIdPerStem;
   for(const auto viewIt : sfmData.getViews())
   {
-    const std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
+    const std::string stem = fs::path(viewIt.second->getImage().getImagePath()).stem().string();
     viewIdPerStem[stem] = viewIt.first;
   }
   fs::path knownPosesPath(knownPosesFilePath);
@@ -222,13 +222,13 @@ int aliceVision_main(int argc, char **argv)
                   ALICEVISION_THROW_ERROR("Invalid intrinsic");
               }
 
-              const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
+              const double imageRatio = static_cast<double>(view.getImage().getWidth()) / static_cast<double>(view.getImage().getHeight());
               const double sensorWidth = intrinsic->sensorWidth();
-              const double maxSize = std::max(view.getWidth(), view.getHeight());
+              const double maxSize = std::max(view.getImage().getWidth(), view.getImage().getHeight());
               const double focalLengthmm = (sensorWidth * xmp.focalLength35mm) / 36.0;
               const double focalLengthPix = maxSize * focalLengthmm / sensorWidth;
-              const double offsetX = (double(view.getWidth()) * 0.5) + (xmp.principalPointU *  maxSize);
-              const double offsetY = (double(view.getHeight()) * 0.5) + (xmp.principalPointV *  maxSize);
+              const double offsetX = (double(view.getImage().getWidth()) * 0.5) + (xmp.principalPointU *  maxSize);
+              const double offsetY = (double(view.getImage().getHeight()) * 0.5) + (xmp.principalPointV *  maxSize);
 
               intrinsic->setScale({focalLengthPix, focalLengthPix});
               intrinsic->setOffset({offsetX, offsetY});

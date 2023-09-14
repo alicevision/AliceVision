@@ -157,8 +157,8 @@ int aliceVision_main(int argc, char ** argv)
     const View* viewI = sfmData.getViews().at(I).get();
     const View* viewJ = sfmData.getViews().at(J).get();
 
-    const std::string viewImagePathI= viewI->getImagePath();
-    const std::string viewImagePathJ= viewJ->getImagePath();
+    const std::string viewImagePathI= viewI->getImage().getImagePath();
+    const std::string viewImagePathJ= viewJ->getImage().getImagePath();
 
     std::string destFilename_I;
     std::string destFilename_J;
@@ -182,8 +182,8 @@ int aliceVision_main(int argc, char ** argv)
                       image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::SRGB));
     }
 
-    const std::pair<size_t, size_t> dimImageI = std::make_pair(viewI->getWidth(), viewI->getHeight());
-    const std::pair<size_t, size_t> dimImageJ = std::make_pair(viewJ->getWidth(), viewJ->getHeight());
+    const std::pair<size_t, size_t> dimImageI = std::make_pair(viewI->getImage().getWidth(), viewI->getImage().getHeight());
+    const std::pair<size_t, size_t> dimImageJ = std::make_pair(viewJ->getImage().getWidth(), viewJ->getImage().getHeight());
 
     svgDrawer svgStream(dimImageI.first + dimImageJ.first, std::max(dimImageI.second, dimImageJ.second));
 

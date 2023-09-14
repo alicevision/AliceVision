@@ -179,7 +179,7 @@ int aliceVision_main(int argc, char** argv)
               {
                   if(a == nullptr || b == nullptr)
                       return true;
-                  return (a->getImagePath() < b->getImagePath());
+                  return (a->getImage().getImagePath() < b->getImage().getImagePath());
               });
 
     // Define range to compute
@@ -288,7 +288,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // Load image and convert it to linear colorspace
-        const std::string imagePath = view.getImagePath();
+        const std::string imagePath = view.getImage().getImagePath();
         ALICEVISION_LOG_INFO("Load image with path " << imagePath);
         image::Image<image::RGBfColor> source;
         image::readImage(imagePath, source, workingColorSpace);

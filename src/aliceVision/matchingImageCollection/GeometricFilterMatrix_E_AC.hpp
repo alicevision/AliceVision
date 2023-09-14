@@ -88,8 +88,8 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
                     robustEstimation::Mat3Model>;
 
     KernelT kernel(
-      xI, viewI.getWidth(), viewI.getHeight(),
-      xJ, viewJ.getWidth(), viewJ.getHeight(),
+      xI, viewI.getImage().getWidth(), viewI.getImage().getHeight(),
+      xJ, viewJ.getImage().getWidth(), viewJ.getImage().getHeight(),
       castedCam_I->K(), castedCam_J->K());
 
     // robustly estimate the Essential matrix with A Contrario ransac

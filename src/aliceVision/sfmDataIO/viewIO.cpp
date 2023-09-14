@@ -26,19 +26,19 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
   if(view.getViewId() != UndefinedIndexT &&
      view.getIntrinsicId() != UndefinedIndexT &&
      view.getPoseId() == view.getViewId() &&
-     view.getHeight() > 0 &&
-     view.getWidth() >  0)
+     view.getImage().getHeight() > 0 &&
+     view.getImage().getWidth() >  0)
     return;
 
   int width, height;
-  const auto metadata = image::readImageMetadata(view.getImagePath(), width, height);
+  const auto metadata = image::readImageMetadata(view.getImage().getImagePath(), width, height);
 
-  view.setWidth(width);
-  view.setHeight(height);
+  view.getImage().setWidth(width);
+  view.getImage().setHeight(height);
 
   // reset metadata
-  if(view.getMetadata().empty())
-    view.setMetadata(image::getMapFromMetadata(metadata));
+  if(view.getImage().getMetadata().empty())
+    view.getImage().setMetadata(image::getMapFromMetadata(metadata));
 
   // Reset viewId
   if(view.getViewId() == UndefinedIndexT)
@@ -56,7 +56,7 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
       }
 
       // Get view image filename without extension
-      const std::string filename = boost::filesystem::path(view.getImagePath()).stem().string();
+      const std::string filename = boost::filesystem::path(view.getImage().getImagePath()).stem().string();
 
       std::smatch match;
       std::regex_search(filename, match, re);
@@ -92,15 +92,15 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
     // check if the rig poseId id is defined
     if(view.isPartOfRig())
     {
-      ALICEVISION_LOG_ERROR("Error: Can't find poseId for'" << fs::path(view.getImagePath()).filename().string() << "' marked as part of a rig." << std::endl);
-      throw std::invalid_argument("Error: Can't find poseId for'" + fs::path(view.getImagePath()).filename().string() + "' marked as part of a rig.");
+      ALICEVISION_LOG_ERROR("Error: Can't find poseId for'" << fs::path(view.getImage().getImagePath()).filename().string() << "' marked as part of a rig." << std::endl);
+      throw std::invalid_argument("Error: Can't find poseId for'" + fs::path(view.getImage().getImagePath()).filename().string() + "' marked as part of a rig.");
     }
     else
       view.setPoseId(view.getViewId());
   }
   else if((!view.isPartOfRig()) && (view.getPoseId() != view.getViewId()))
   {
-    ALICEVISION_LOG_WARNING("PoseId and viewId are different for image '" << fs::path(view.getImagePath()).filename().string() << "'." << std::endl);
+    ALICEVISION_LOG_WARNING("PoseId and viewId are different for image '" << fs::path(view.getImage().getImagePath()).filename().string() << "'." << std::endl);
   }
 }
 
@@ -120,10 +120,10 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   assert(defaultFocalLength < 0 || defaultFieldOfView < 0);
 
   // get view informations
-  const std::string& cameraBrand = view.getMetadataMake();
-  const std::string& cameraModel = view.getMetadataModel();
-  const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
-  const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
+  const std::string& cameraBrand = view.getImage().getMetadataMake();
+  const std::string& cameraModel = view.getImage().getMetadataModel();
+  const std::string& bodySerialNumber = view.getImage().getMetadataBodySerialNumber();
+  const std::string& lensSerialNumber = view.getImage().getMetadataLensSerialNumber();
 
   double focalLength{-1.0};
   bool hasFocalLengthInput = false;
@@ -150,20 +150,20 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 
   bool isResized = false;
 
-  if (view.hasMetadata({"Exif:PixelXDimension", "PixelXDimension"}) && view.hasMetadata({"Exif:PixelYDimension", "PixelYDimension"})) // has dimension metadata
+  if (view.getImage().hasMetadata({"Exif:PixelXDimension", "PixelXDimension"}) && view.getImage().hasMetadata({"Exif:PixelYDimension", "PixelYDimension"})) // has dimension metadata
   {
     // check if the image is resized
-    int exifWidth = std::stoi(view.getMetadata({"Exif:PixelXDimension", "PixelXDimension"}));
-    int exifHeight = std::stoi(view.getMetadata({"Exif:PixelYDimension", "PixelXDimension"}));
+    int exifWidth = std::stoi(view.getImage().getMetadata({"Exif:PixelXDimension", "PixelXDimension"}));
+    int exifHeight = std::stoi(view.getImage().getMetadata({"Exif:PixelYDimension", "PixelXDimension"}));
 
     // if metadata is rotated
-    if (exifWidth == view.getHeight() && exifHeight == view.getWidth())
+    if (exifWidth == view.getImage().getHeight() && exifHeight == view.getImage().getWidth())
       std::swap(exifWidth, exifHeight);
 
-    if (exifWidth > 0 && exifHeight > 0 && (exifWidth != view.getWidth() || exifHeight != view.getHeight()))
+    if (exifWidth > 0 && exifHeight > 0 && (exifWidth != view.getImage().getWidth() || exifHeight != view.getImage().getHeight()))
     {
-      ALICEVISION_LOG_WARNING("Resized image detected: " << fs::path(view.getImagePath()).filename().string() << std::endl
-                                                         << "\t- real image size: " << view.getWidth() << "x" << view.getHeight() << std::endl
+      ALICEVISION_LOG_WARNING("Resized image detected: " << fs::path(view.getImage().getImagePath()).filename().string() << std::endl
+                                                         << "\t- real image size: " << view.getImage().getWidth() << "x" << view.getImage().getHeight() << std::endl
                                                          << "\t- image size from exif metadata is: " << exifWidth << "x" << exifHeight << std::endl);
       isResized = true;
     }
@@ -172,7 +172,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   // handle case where focal length (mm) is unset or false
   if (mmFocalLength <= 0.0)
   {
-    ALICEVISION_LOG_WARNING("Image '" << fs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
+    ALICEVISION_LOG_WARNING("Image '" << fs::path(view.getImage().getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
                                       << "Can't compute focal length, use default." << std::endl);
   }
   else
@@ -183,7 +183,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   }
 
   double focalLengthIn35mm = 36.0 * focalLength;
-  double pxFocalLength = (focalLength / sensorWidth) * std::max(view.getWidth(), view.getHeight());
+  double pxFocalLength = (focalLength / sensorWidth) * std::max(view.getImage().getWidth(), view.getImage().getHeight());
 
   bool hasFisheyeCompatibleParameters = ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0));
   bool checkPossiblePinhole = (allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) && hasFisheyeCompatibleParameters;
@@ -239,7 +239,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 
   // create the desired intrinsic
   std::shared_ptr<camera::IntrinsicBase> intrinsic =
-    camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, pxFocalLength, 0, 0);
+    camera::createIntrinsic(intrinsicType, view.getImage().getWidth(), view.getImage().getHeight(), pxFocalLength, pxFocalLength, 0, 0);
 
   if (hasFocalLengthInput)
   {
@@ -307,7 +307,7 @@ std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const s
 {
     return utils::getFilesPathsFromFolders(folders, [&view](const boost::filesystem::path& path) {
         const boost::filesystem::path stem = path.stem();
-        return (stem == std::to_string(view.getViewId()) || stem == fs::path(view.getImagePath()).stem());
+        return (stem == std::to_string(view.getViewId()) || stem == fs::path(view.getImage().getImagePath()).stem());
     });
 }
 

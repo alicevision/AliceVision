@@ -268,7 +268,7 @@ int main(int argc, char **argv)
         const IndexT& index = item->first;
         const sfmData::View& view = *item->second;
 
-        std::string imgPath = view.getImagePath();
+        std::string imgPath = view.getImage().getImagePath();
         std::string depthMapPath;
         if(!depthMapExp.empty())
         {
@@ -348,19 +348,19 @@ int main(int argc, char **argv)
 
         if(useDepthMap)
         {
-            bool viewHorizontal = view.getWidth() > view.getHeight();
+            bool viewHorizontal = view.getImage().getWidth() > view.getImage().getHeight();
             bool depthMapHorizontal = result.Width() > result.Height();
             if(viewHorizontal != depthMapHorizontal)
             {
-                ALICEVISION_LOG_ERROR("Image " << imgPath << " : " << view.getWidth() << "x" << view.getHeight());
+                ALICEVISION_LOG_ERROR("Image " << imgPath << " : " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
                 ALICEVISION_LOG_ERROR("Depth Map " << depthMapPath << " : " << result.Width() << "x" << result.Height());
                 throw std::runtime_error("Depth map orientation is not aligned with source image.");
             }
-            if(view.getWidth() != result.Width())
+            if(view.getImage().getWidth() != result.Width())
             {
-                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.Width() << "x" << result.Height() << ", to: " << view.getWidth() << "x" << view.getHeight());
+                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.Width() << "x" << result.Height() << ", to: " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
 
-                image::Image<unsigned char> rescaled(view.getWidth(), view.getHeight());
+                image::Image<unsigned char> rescaled(view.getImage().getWidth(), view.getImage().getHeight());
 
                 const oiio::ImageBuf inBuf(oiio::ImageSpec(result.Width(), result.Height(), 1, oiio::TypeDesc::UINT8), result.data());
                 oiio::ImageBuf outBuf(oiio::ImageSpec(rescaled.Width(), rescaled.Height(), 1, oiio::TypeDesc::UINT8), rescaled.data());

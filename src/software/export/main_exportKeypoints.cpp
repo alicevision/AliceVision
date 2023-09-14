@@ -110,10 +110,10 @@ int aliceVision_main(int argc, char ** argv)
   for(const auto &iterViews : sfmData.views)
   {
     const View * view = iterViews.second.get();
-    const std::string viewImagePath = view->getImagePath();
+    const std::string viewImagePath = view->getImage().getImagePath();
 
     const std::pair<size_t, size_t>
-      dimImage = std::make_pair(view->getWidth(), view->getHeight());
+      dimImage = std::make_pair(view->getImage().getWidth(), view->getImage().getHeight());
 
     const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->getViewId());
 

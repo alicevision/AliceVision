@@ -142,25 +142,25 @@ int aliceVision_main(int argc, char* argv[])
     std::map<int, size_t> count_flips;
     for(auto& v : views)
     {
-        if(v.second->hasMetadata({"raw:flip"}))
+        if(v.second->getImage().hasMetadata({"raw:flip"}))
         {
-            std::string str = v.second->getMetadata({"raw:flip"});
+            std::string str = v.second->getImage().getMetadata({"raw:flip"});
             int flip_code = std::stoi(str);
             count_flips[flip_code]++;
         }
         else
         {
             // Add fake raw:flip if needed
-            std::size_t width = v.second->getWidth();
-            std::size_t height = v.second->getHeight();
+            std::size_t width = v.second->getImage().getWidth();
+            std::size_t height = v.second->getImage().getHeight();
             if(width > height)
             {
-                v.second->addMetadata("raw:flip", "0");
+                v.second->getImage().addMetadata("raw:flip", "0");
                 count_flips[0]++;
             }
             else
             {
-                v.second->addMetadata("raw:flip", "5");
+                v.second->getImage().addMetadata("raw:flip", "5");
                 count_flips[5]++;
             }
         }
@@ -190,7 +190,7 @@ int aliceVision_main(int argc, char* argv[])
     for(const auto& v : views)
     {
         // Now, all views have "raw:flip"
-        const std::string str = v.second->getMetadata({"raw:flip"});
+        const std::string str = v.second->getImage().getMetadata({"raw:flip"});
         const int flip_code = std::stoi(str);
 
         if(flip_code == max_flip)
@@ -218,7 +218,7 @@ int aliceVision_main(int argc, char* argv[])
     for(auto& v : views)
     {
         // Now, all views have raw:flip
-        const std::string str = v.second->getMetadata({"raw:flip"});
+        const std::string str = v.second->getImage().getMetadata({"raw:flip"});
         const int flip_code = std::stoi(str);
 
         if(flip_code == max_flip)
@@ -244,20 +244,20 @@ int aliceVision_main(int argc, char* argv[])
 
         // Prepare output file
         image::Image<image::RGBfColor> output;
-        const boost::filesystem::path origImgPath(v.second->getImagePath());
+        const boost::filesystem::path origImgPath(v.second->getImage().getImagePath());
         const std::string origFilename = origImgPath.stem().string();
         const std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
-        oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
+        oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImage().getImagePath());
 
         // Read input file
         image::Image<image::RGBfColor> originalImage;
 
         image::ImageReadOptions options;
         options.workingColorSpace = image::EImageColorSpace::LINEAR;
-        options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(v.second->getRawColorInterpretation());
-        options.colorProfileFileName = v.second->getColorProfileFileName();
+        options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(v.second->getImage().getRawColorInterpretation());
+        options.colorProfileFileName = v.second->getImage().getColorProfileFileName();
 
-        image::readImage(v.second->getImagePath(), originalImage, options);
+        image::readImage(v.second->getImage().getImagePath(), originalImage, options);
         oiio::ImageBuf bufInput(
             oiio::ImageSpec(originalImage.Width(), originalImage.Height(), 3, oiio::TypeDesc::FLOAT),
             originalImage.data());
@@ -301,9 +301,9 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         image::writeImage(rotatedImagePath, output, image::ImageWriteOptions(), metadata);
-        v.second->setWidth(output.Width());
-        v.second->setHeight(output.Height());
-        v.second->setImagePath(rotatedImagePath);
+        v.second->getImage().setWidth(output.Width());
+        v.second->getImage().setHeight(output.Height());
+        v.second->getImage().setImagePath(rotatedImagePath);
     }
 
     // Export output sfmData

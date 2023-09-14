@@ -92,7 +92,7 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
         if(!sfmData.isPoseAndIntrinsicDefined(viewIt.first))
             continue;
 
-        const std::string warpedPath = viewIt.second->getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = viewIt.second->getImage().getMetadata().at("AliceVision:warpedPath");
 
         // Load mask
         const std::string maskPath = (fs::path(inputPath) / (warpedPath + "_mask.exr")).string();
@@ -217,7 +217,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     image::Image<std::vector<IndexT>> visiblePixels(globalUnionBoundingBox.width, globalUnionBoundingBox.height, true);
     for(IndexT viewCurrent : overlappingViews)
     {
-        const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getImage().getMetadata().at("AliceVision:warpedPath");
 
         // Load mask
         const std::string maskPath = (fs::path(warpingFolder) / (warpedPath + "_mask.exr")).string();
@@ -397,7 +397,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     if(!overlappingViews.empty())
     {
         const std::string warpedPath =
-            sfmData.getViews().at(overlappingViews[0])->getMetadata().at("AliceVision:warpedPath");
+            sfmData.getViews().at(overlappingViews[0])->getImage().getMetadata().at("AliceVision:warpedPath");
         const std::string firstImagePath = (fs::path(warpingFolder) / (warpedPath + ".exr")).string();
         srcMetadata = image::readImageMetadata(firstImagePath);
         colorSpace = srcMetadata.get_string("AliceVision:ColorSpace", "Linear");
@@ -412,7 +412,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
             continue;
         }
 
-        const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getImage().getMetadata().at("AliceVision:warpedPath");
 
         ALICEVISION_LOG_INFO("Processing input " << posCurrent << "/" << overlappingViews.size());
 
@@ -527,7 +527,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     }
     else 
     {
-        warpedPath = sfmData.getViews().at(viewReference)->getMetadata().at("AliceVision:warpedPath");
+        warpedPath = sfmData.getViews().at(viewReference)->getImage().getMetadata().at("AliceVision:warpedPath");
     }
 
     const std::string outputFilePath = (fs::path(outputFolder) / (warpedPath + ".exr")).string();
@@ -570,7 +570,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
             // Load mask
             const std::string warpedPath =
-                sfmData.getViews().at(viewCurrent)->getMetadata().at("AliceVision:warpedPath");
+                sfmData.getViews().at(viewCurrent)->getImage().getMetadata().at("AliceVision:warpedPath");
             const std::string maskPath = (fs::path(warpingFolder) / (warpedPath + "_mask.exr")).string();
             ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
             image::Image<unsigned char> mask;
@@ -714,13 +714,13 @@ int aliceVision_main(int argc, char** argv)
     std::set<std::string> uniquePreviousId;
     for(const auto pv : sfmData.getViews())
     {
-        if(pv.second->getMetadata().find("AliceVision:previousViewId") == pv.second->getMetadata().end())
+        if(pv.second->getImage().getMetadata().find("AliceVision:previousViewId") == pv.second->getImage().getMetadata().end())
         {
             ALICEVISION_LOG_ERROR("You mixed different versions of alicevision.");
             ALICEVISION_LOG_ERROR("Warped images do not contain the required metadatas.");
             return EXIT_FAILURE;
         }
-        const std::string pvid = pv.second->getMetadata().at("AliceVision:previousViewId");
+        const std::string pvid = pv.second->getImage().getMetadata().at("AliceVision:previousViewId");
         uniquePreviousId.insert(pvid);
     }
     const int oldViewsCount = uniquePreviousId.size();

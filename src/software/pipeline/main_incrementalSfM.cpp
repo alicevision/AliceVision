@@ -56,8 +56,8 @@ bool retrieveViewIdFromImageName(const sfmData::SfMData& sfmData,
     const sfmData::View& v = *(viewPair.second.get());
     
     if(name == std::to_string(v.getViewId()) ||
-       name == fs::path(v.getImagePath()).filename().string() ||
-       name == v.getImagePath())
+       name == fs::path(v.getImage().getImagePath()).filename().string() ||
+       name == v.getImage().getImagePath())
     {
       out_viewId = v.getViewId();
       break;

@@ -48,7 +48,7 @@ public:
 
         // Get the image path
         const sfmData::View* view = _views.at(_currentImageIndex);
-        imageName = view->getImagePath();
+        imageName = view->getImage().getImagePath();
         image::readImage(imageName, image, image::EImageColorSpace::NO_CONVERSION);
 
         return true;

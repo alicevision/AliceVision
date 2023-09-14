@@ -52,14 +52,14 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
     std::map<std::string, sfmData::View> viewMap;
     for (auto& viewIt: sfmData.getViews())
     {
-        std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getMetadata();
+        std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getImage().getMetadata();
         viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
     }
 
     for (const auto& [currentTime, currentView] : viewMap)
     {
         ALICEVISION_LOG_INFO("View Id: " << currentView.getViewId());
-        const fs::path imagePath = fs::path(currentView.getImagePath());
+        const fs::path imagePath = fs::path(currentView.getImage().getImagePath());
 
         if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
         {
@@ -271,16 +271,16 @@ void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, con
     std::map<std::string, sfmData::View> viewMap;
     for (auto& viewIt: sfmData.getViews())
     {
-        std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getMetadata();
+        std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getImage().getMetadata();
         viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
     }
 
     for (const auto& [currentTime, viewId]: viewMap)
     {
-        const fs::path imagePath = fs::path(viewId.getImagePath());
+        const fs::path imagePath = fs::path(viewId.getImage().getImagePath());
 
         // The file may be in the input SfMData but may not have been calibrated: in that case, it is not in imageList
-        const bool calibratedFile = (std::find(imageList.begin(), imageList.end(), viewId.getImagePath()) != imageList.end());
+        const bool calibratedFile = (std::find(imageList.begin(), imageList.end(), viewId.getImage().getImagePath()) != imageList.end());
 
         // Only write images that were actually used for the lighting calibration, instead of all the input images
         if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant") && calibratedFile)
