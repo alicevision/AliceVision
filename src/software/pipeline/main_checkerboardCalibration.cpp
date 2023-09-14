@@ -417,6 +417,16 @@ bool estimateRigs(sfmData::SfMData& sfmData)
             }
         }
 
+        // Turn off independent pose flag on views
+        for (auto& pv : sfmData.getViews())
+        {
+            auto view = pv.second;
+            if (view->isPartOfRig())
+            {
+                view->setIndependantPose(false);
+            }
+        }
+
         // Compute non-linear refinements
         sfm::BundleAdjustmentCeres::CeresOptions options;
         options.summary = true;
