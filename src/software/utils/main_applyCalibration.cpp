@@ -121,6 +121,16 @@ int aliceVision_main(int argc, char **argv)
             if (calibratedSubPoses[idx].status != sfmData::ERigSubPoseStatus::CONSTANT) continue;
 
             subPoses[idx] = calibratedSubPoses[idx];
+            subPoses[idx].status = sfmData::ERigSubPoseStatus::ESTIMATED;
+        }
+
+        // Turn off independent pose flag on views
+        for (auto& [viewId, view] : sfmData.getViews())
+        {
+            if (view->isPartOfRig())
+            {
+                view->setIndependantPose(false);
+            }
         }
     }
 
@@ -210,7 +220,7 @@ int aliceVision_main(int argc, char **argv)
             const double oy = calibratedIntrinsic->getOffset().y() * ry;
             newIntrinsic->setScale({fx, fy});
             newIntrinsic->setOffset({ox, oy});
-            newIntrinsic->setInitializationMode(camera::EInitMode::CALIBRATED);
+            newIntrinsic->setInitializationMode(camera::EInitMode::ESTIMATED);
         }
 
         if (isDistortionCalibrated)
