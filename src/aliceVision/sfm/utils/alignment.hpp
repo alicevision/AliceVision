@@ -145,13 +145,11 @@ bool computeSimilarityFromCommonMarkers(
  * @param S scale
  * @param R rotation
  * @param t translation
- * @param transformControlPoints
  */
 inline void applyTransform(sfmData::SfMData& sfmData,
                            const double S,
                            const Mat3& R,
-                           const Vec3& t,
-                           bool transformControlPoints = false)
+                           const Vec3& t)
 {
     for(auto& poseIt: sfmData.getPoses())
     {
@@ -171,14 +169,6 @@ inline void applyTransform(sfmData::SfMData& sfmData,
     for(auto& landmark: sfmData.structure)
     {
         landmark.second.X = S * R * landmark.second.X + t;
-    }
-
-    if(!transformControlPoints)
-        return;
-
-    for(auto& controlPts: sfmData.control_points)
-    {
-        controlPts.second.X = S * R * controlPts.second.X + t;
     }
 }
 

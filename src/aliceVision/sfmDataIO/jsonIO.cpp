@@ -481,7 +481,6 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
   const bool saveIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
   const bool saveExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
   const bool saveStructure = (partFlag & STRUCTURE) == STRUCTURE;
-  const bool saveControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
   const bool saveFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
   const bool saveObservations = saveFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
 
@@ -585,17 +584,6 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
     fileTree.add_child("structure", structureTree);
   }
 
-  // control points
-  if(saveControlPoints && !sfmData.getControlPoints().empty())
-  {
-    bpt::ptree controlPointTree;
-
-    for(const auto& controlPointPair : sfmData.getControlPoints())
-      saveLandmark("", controlPointPair.first, controlPointPair.second, controlPointTree);
-
-    fileTree.add_child("controlPoints", controlPointTree);
-  }
-
   // write the json file with the tree
 
   bpt::write_json(filename, fileTree);
@@ -613,7 +601,6 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
   const bool loadIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
   const bool loadExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
   const bool loadStructure = (partFlag & STRUCTURE) == STRUCTURE;
-  const bool loadControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
   const bool loadFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
   const bool loadObservations = loadFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
 
@@ -759,22 +746,6 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
       loadLandmark(landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
 
       structure.emplace(landmarkId, landmark);
-    }
-  }
-
-  // control points
-  if(loadControlPoints && fileTree.count("controlPoints"))
-  {
-    sfmData::Landmarks& controlPoints = sfmData.getControlPoints();
-
-    for(bpt::ptree::value_type &landmarkNode : fileTree.get_child("controlPoints"))
-    {
-      IndexT landmarkId;
-      sfmData::Landmark landmark;
-
-      loadLandmark(landmarkId, landmark, landmarkNode.second);
-
-      controlPoints.emplace(landmarkId, landmark);
     }
   }
 

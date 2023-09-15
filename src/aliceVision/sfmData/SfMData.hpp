@@ -63,8 +63,6 @@ public:
     Intrinsics intrinsics;
     /// Structure (3D points with their 2D observations)
     Landmarks structure;
-    /// Controls points (stored as Landmarks (id_feat has no meaning here))
-    Landmarks control_points;
     /// Uncertainty per pose
     PosesUncertainty _posesUncertainty;
     /// Uncertainty per landmark
@@ -133,13 +131,6 @@ public:
      */
     const RotationPriors& getRotationPriors() const {return rotationpriors;}
     RotationPriors& getRotationPriors() {return rotationpriors;}
-
-    /**
-     * @brief Get control points
-     * @return control points
-     */
-    const Landmarks& getControlPoints() const {return control_points;}
-    Landmarks& getControlPoints() {return control_points;}
 
     /**
      * @brief Get relative features folder paths
