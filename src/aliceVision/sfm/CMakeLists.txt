@@ -19,10 +19,9 @@ set(sfm_files_headers
   utils/alignment.hpp
   utils/statistics.hpp
   utils/syntheticScene.hpp
-  BundleAdjustment.hpp
-  BundleAdjustmentCeres.hpp
-  BundleAdjustmentPanoramaCeres.hpp
-  BundleAdjustmentSymbolicCeres.hpp
+  bundle/BundleAdjustment.hpp
+  bundle/BundleAdjustmentCeres.hpp
+  bundle/BundleAdjustmentSymbolicCeres.hpp
   LocalBundleAdjustmentGraph.hpp
   FrustumFilter.hpp
   ResidualErrorFunctor.hpp
@@ -51,9 +50,8 @@ set(sfm_files_sources
   utils/alignment.cpp
   utils/statistics.cpp
   utils/syntheticScene.cpp
-  BundleAdjustmentCeres.cpp
-  BundleAdjustmentPanoramaCeres.cpp
-  BundleAdjustmentSymbolicCeres.cpp
+  bundle/BundleAdjustmentCeres.cpp
+  bundle/BundleAdjustmentSymbolicCeres.cpp
   LocalBundleAdjustmentGraph.cpp
   FrustumFilter.cpp
   generateReport.cpp
@@ -85,7 +83,7 @@ alicevision_add_library(aliceVision_sfm
 
 # Unit tests
 
-alicevision_add_test(bundleAdjustment_test.cpp
+alicevision_add_test(bundle/bundleAdjustment_test.cpp
   NAME "sfm_bundleAdjustment"
   LINKS aliceVision_sfm
         aliceVision_multiview

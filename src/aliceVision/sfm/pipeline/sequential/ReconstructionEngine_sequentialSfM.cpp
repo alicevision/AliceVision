@@ -9,8 +9,8 @@
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
 #include <aliceVision/sfm/sfmStatistics.hpp>
 

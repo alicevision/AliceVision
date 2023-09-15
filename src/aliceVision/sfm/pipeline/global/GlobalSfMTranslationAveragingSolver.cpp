@@ -9,7 +9,7 @@
 #include <aliceVision/sfm/filters.hpp>
 #include <aliceVision/sfm/sfmTriangulation.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/global/reindexGlobalSfM.hpp>
 #include <aliceVision/sfm/pipeline/global/MutexSet.hpp>
 #include <aliceVision/matching/IndMatch.hpp>

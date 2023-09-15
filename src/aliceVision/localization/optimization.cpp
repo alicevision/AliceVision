@@ -6,7 +6,7 @@
 
 #include "optimization.hpp"
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/rig/ResidualError.hpp>
 #include <aliceVision/system/Logger.hpp>

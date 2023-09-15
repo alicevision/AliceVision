@@ -7,8 +7,8 @@
 
 #include "SfMLocalizer.hpp"
 #include <aliceVision/config.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>

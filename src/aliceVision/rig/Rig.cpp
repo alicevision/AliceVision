@@ -6,7 +6,7 @@
 
 #include "Rig.hpp"
 #include "ResidualError.hpp"
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <ceres/rotation.h>

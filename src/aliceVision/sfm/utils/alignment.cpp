@@ -6,7 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/utils/alignment.hpp>
-#include <aliceVision/sfm/liealgebra.hpp>
+#include <aliceVision/geometry/lie.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
 #include <aliceVision/stl/regex.hpp>
 
