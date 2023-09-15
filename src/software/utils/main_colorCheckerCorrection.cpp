@@ -282,6 +282,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputPath;
     ECorrectionMethod correctionMethod = ECorrectionMethod::luminance;
     bool useBestColorCheckerOnly = true;
+    bool keepImageName = true;
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -303,7 +304,9 @@ int aliceVision_main(int argc, char** argv)
         "correctionMethod", po::value<ECorrectionMethod>(&correctionMethod)->default_value(correctionMethod),
         "Correction method to apply.")(
         "useBestColorCheckerOnly", po::value<bool>(&useBestColorCheckerOnly)->default_value(useBestColorCheckerOnly),
-        "Use only the color chart with the best orientation and size to compute the color correction model.")
+        "Use only the color chart with the best orientation and size to compute the color correction model.")(
+        "keepImageName", po::value<bool>(&keepImageName)->default_value(keepImageName),
+        "Keep image filename if different from view Id.")
         ;
 
     CmdLine cmdline("This program is used to perform color correction based on a color checker.\n"
@@ -404,10 +407,11 @@ int aliceVision_main(int argc, char** argv)
                 sfmData::View& view = sfmData.getView(viewId);
 
                 const fs::path fsPath = viewPath;
+                const std::string filename = fs::path(view.getImage().getImagePath()).stem().string();
                 const std::string fileExt = fsPath.extension().string();
                 const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
                 const std::string outputfilePath =
-                    (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
+                    (fs::path(outputPath) / ((keepImageName ? filename : std::to_string(viewId)) + outputExt)).generic_string();
 
                 ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
 
