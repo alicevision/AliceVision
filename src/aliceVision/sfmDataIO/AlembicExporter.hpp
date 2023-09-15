@@ -59,7 +59,6 @@ class AlembicExporter
      * @param[in] points The 3D points to add
      */
     void addLandmarks(const sfmData::Landmarks& points,
-                      const sfmData::LandmarksUncertainty& landmarksUncertainty = sfmData::LandmarksUncertainty(),
                       bool withVisibility = true,
                       bool withFeatures = true);
 
@@ -69,14 +68,12 @@ class AlembicExporter
      * @param[in] view The corresponding view
      * @param[in] pose The camera pose (nullptr if undefined)
      * @param[in] intrinsic The camera intrinsic (nullptr if undefined)
-     * @param[in] uncertainty The camera uncertainty values (nullptr if undefined)
      * @param[in,out] parent The Alembic parent node
      */
     void addCamera(const std::string& name,
                    const sfmData::View& view,
                    const sfmData::CameraPose* pose = nullptr,
-                   std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr,
-                   const Vec6* uncertainty = nullptr);
+                   std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr);
 
     /**
      * @brief Add a keyframe to the animated camera

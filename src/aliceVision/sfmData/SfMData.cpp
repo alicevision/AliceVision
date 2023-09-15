@@ -269,8 +269,6 @@ void SfMData::clear()
     _views.clear();
     _intrinsics.clear();
     _structure.clear();
-    _posesUncertainty.clear();
-    _landmarksUncertainty.clear();
     constraints2d.clear();
     rotationpriors.clear();
 
