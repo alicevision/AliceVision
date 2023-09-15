@@ -290,6 +290,26 @@ public:
     /**
      * @brief Gives the view of the input view id.
      * @param[in] viewId The given view id
+     * @return the corresponding view ptr
+     */
+    View::ptr getViewPtr(IndexT viewId)
+    {
+        return views.at(viewId).get();
+    }
+
+    /**
+     * @brief Gives the view of the input view id.
+     * @param[in] viewId The given view id
+     * @return the corresponding view ptr
+     */
+    View::sptr getViewSharedPtr(IndexT viewId)
+    {
+        return views.at(viewId);
+    }
+
+    /**
+     * @brief Gives the view of the input view id.
+     * @param[in] viewId The given view id
      * @return the corresponding view reference
      */
     const View& getView(IndexT viewId) const

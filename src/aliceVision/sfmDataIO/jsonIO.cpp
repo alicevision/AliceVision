@@ -662,54 +662,50 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
 
     if(incompleteViews)
     {
-      // store incomplete views in a vector
-      std::vector<sfmData::View> incompleteViews(fileTree.get_child("views").size());
-
-      int viewIndex = 0;
-      for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
-      {
-        loadView(incompleteViews.at(viewIndex), viewNode.second);
-        ++viewIndex;
-      }
-
-      // update incomplete views
+      auto children = fileTree.get_child("views");
+    // update incomplete views
       #pragma omp parallel for
-      for(int i = 0; i < incompleteViews.size(); ++i)
+      for(int index = 0; index != children.size(); index++)
       {
-        sfmData::View& v = incompleteViews.at(i);
+        auto it = children.begin();
+        std::advance(it, index);
+
+        auto view = std::make_shared<sfmData::View>();
+        loadView(*view, it->second);
 
         // if we have the intrinsics and the view has an valid associated intrinsics
         // update the width and height field of View (they are mirrored)
-        if (loadIntrinsics && v.getIntrinsicId() != UndefinedIndexT)
+        if (loadIntrinsics && view->getIntrinsicId() != UndefinedIndexT)
         {
-          const auto intrinsics = sfmData.getIntrinsicPtr(v.getIntrinsicId());
+          const auto intrinsics = sfmData.getIntrinsicPtr(view->getIntrinsicId());
 
           if(intrinsics == nullptr)
           {
-            throw std::logic_error("View " + std::to_string(v.getViewId())
-                                   + " has a intrinsics id " +std::to_string(v.getIntrinsicId())
+            throw std::logic_error("View " + std::to_string(view->getViewId())
+                                   + " has a intrinsics id " + std::to_string(view->getIntrinsicId())
                                    + " that cannot be found or the intrinsics are not correctly "
                                      "loaded from the json file.");
           }
 
-          v.getImage().setWidth(intrinsics->w());
-          v.getImage().setHeight(intrinsics->h());
+          view->getImage().setWidth(intrinsics->w());
+          view->getImage().setHeight(intrinsics->h());
         }
-        updateIncompleteView(incompleteViews.at(i), viewIdMethod, viewIdRegex);
-      }
+        updateIncompleteView(*view, viewIdMethod, viewIdRegex);
 
-      // copy complete views in the SfMData views map
-      for(const sfmData::View& view : incompleteViews)
-        views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
+        #pragma omp critical
+        {
+            views.emplace(view->getViewId(), view);
+        }
+      }
     }
     else
     {
       // store directly in the SfMData views map
       for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
       {
-        sfmData::View view;
-        loadView(view, viewNode.second);
-        views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
+        auto view = std::make_shared<sfmData::View>();
+        loadView(*view, viewNode.second);
+        views.emplace(view->getViewId(), view);
       }
     }
   }

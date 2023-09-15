@@ -32,6 +32,10 @@ namespace sfmData {
 class View
 {
 public:
+  using sptr = std::shared_ptr<View>;
+  using ptr = View*;
+
+public:
 
   /**
    * @brief View Constructor
@@ -61,16 +65,29 @@ public:
     , _subPoseId(subPoseId)
     , _image(new ImageInfo(imagePath, width, height))
   {}
-  
-  View(const View & v)
+
+  /**
+   * @brief Shallow View Copy
+   * return a pointer to a new View
+   */ 
+  View * shallowClone()
   {
-    _viewId = v._viewId;
-    _intrinsicId = v._intrinsicId;
-    _poseId = v._poseId;
-    _rigId = v._rigId;
-    _subPoseId = v._subPoseId;
-    _image = std::make_shared<ImageInfo>(*v._image);
+    return new View(*this);    
   }
+
+  /**
+   * @brief Deep View Copy
+   * return a pointer to a new View
+   */ 
+  View * clone()
+  {
+    View * v = new View(*this);
+    v->_image = std::make_shared<ImageInfo>(*this->_image);
+
+    return v;
+  }
+
+  
 
   bool operator==(const View& other) const
   {
@@ -273,6 +290,9 @@ public:
   {
     _resectionId = resectionId;
   }
+
+private:
+  View(const View & v) = default;
 
 private:
 

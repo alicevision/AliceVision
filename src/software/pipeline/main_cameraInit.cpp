@@ -376,18 +376,17 @@ int aliceVision_main(int argc, char **argv)
 
     if(listFiles(imageFolder, image::getSupportedExtensions(), imagePaths))
     {
-      std::vector<sfmData::View> incompleteViews(imagePaths.size());
-
       #pragma omp parallel for
-      for(int i = 0; i < incompleteViews.size(); ++i)
+      for(int i = 0; i < imagePaths.size(); ++i)
       {
-        sfmData::View& view = incompleteViews.at(i);
-        view.getImage().setImagePath(imagePaths.at(i).string());
-        updateIncompleteView(view, viewIdMethod, viewIdRegex);
-      }
+        auto view = std::make_shared<sfmData::View>(imagePaths.at(i).string());
+        updateIncompleteView(*view, viewIdMethod, viewIdRegex);
 
-      for(const auto& view : incompleteViews)
-        views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
+        #pragma omp critical
+        {
+            views.emplace(view->getViewId(), view);
+        }
+      }
     }
     else {
       return EXIT_FAILURE;
