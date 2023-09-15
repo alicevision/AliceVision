@@ -7,7 +7,7 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <boost/json.hpp>
-#include <aliceVision/sfm/liealgebra.hpp>
+#include <aliceVision/geometry/lie.hpp>
 
 namespace Eigen
 {

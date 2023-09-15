@@ -30,7 +30,7 @@
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 
-#include <aliceVision/sfm/liealgebra.hpp>
+#include <aliceVision/geometry/lie.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
