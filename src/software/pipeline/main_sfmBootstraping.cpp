@@ -409,7 +409,6 @@ int aliceVision_main(int argc, char** argv)
     sfm::ReconstructedPair bestPair;
     std::vector<IndexT> bestUsedTracks;
 
-#pragma omp parallel for
     for (const sfm::ReconstructedPair & pair: reconstructedPairs)
     {
         std::vector<IndexT> usedTracks;
@@ -429,14 +428,11 @@ int aliceVision_main(int argc, char** argv)
 
         double score = std::min(refScore, nextScore) * radianToDegree(angle);
 
-        #pragma omp critical
-        {
         if (score > bestScore)
         {
             bestPair = pair;
             bestScore = score;
             bestUsedTracks = usedTracks;
-        }
         }
     }
 
