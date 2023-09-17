@@ -4,7 +4,6 @@
 # Software PROPERTY FOLDER is 'Software/Utils'
 set(FOLDER_SOFTWARE_UTILS "Software/Utils")
 
-
 if(ALICEVISION_HAVE_CUDA)
 alicevision_add_software(aliceVision_hardwareResources
   SOURCE main_hardwareResources.cpp
@@ -194,6 +193,7 @@ alicevision_add_software(aliceVision_sfmTransform
         aliceVision_sfmData
         aliceVision_sfmDataIO
         Boost::program_options
+	      ${GeographicLib_LIBRARY}
 )
 
 # SfM Regression

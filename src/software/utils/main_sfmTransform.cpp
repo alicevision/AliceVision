@@ -19,6 +19,20 @@
 #include <sstream>
 #include <vector>
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
+    #include <GeographicLib/UTMUPS.hpp>
+    #include <ceres/ceres.h>
+    #include <ceres/rotation.h>
+    #include <glog/logging.h>
+
+    using ceres::AutoDiffCostFunction;
+    using ceres::CostFunction;
+    using ceres::Problem;
+    using ceres::Solve;
+    using ceres::Solver;
+
+    typedef Eigen::Matrix<double,3,4> Matrix34d;
+#endif
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -46,7 +60,10 @@ enum class EAlignmentMethod : unsigned char
     FROM_CENTER_CAMERA,
     FROM_MARKERS,
     FROM_GPS,
-    ALIGN_GROUND
+    ALIGN_GROUND,
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)    
+    FROM_GPS2UTM
+#endif
 };
 
 /**
@@ -69,6 +86,9 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::FROM_MARKERS:             return "from_markers";
     case EAlignmentMethod::FROM_GPS:                 return "from_gps";
     case EAlignmentMethod::ALIGN_GROUND:             return "align_ground";
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)    
+    case EAlignmentMethod::FROM_GPS2UTM:             return "from_gps2utm";
+#endif
   }
   throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -94,6 +114,9 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if (method == "from_markers")             return EAlignmentMethod::FROM_MARKERS;
   if (method == "from_gps")                 return EAlignmentMethod::FROM_GPS;
   if (method == "align_ground")             return EAlignmentMethod::ALIGN_GROUND;
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)  
+  if (method == "from_gps2utm")             return EAlignmentMethod::FROM_GPS2UTM;
+#endif
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -189,6 +212,215 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
     R = rotateMat; // Assign Rotation
 }
 
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
+struct AlignRotateTranslateScaleError {
+  AlignRotateTranslateScaleError(double observed_x, double observed_y, double observed_z)
+      : observed_x(observed_x), observed_y(observed_y), observed_z(observed_z) {}
+
+  template <typename T>
+  bool operator()(const T* const rot, const T* const tran, const T* const scl,
+		    const T* const point,
+            T* residuals) const {
+
+    T pp[3];
+    // first global pose
+    ceres::AngleAxisRotatePoint(rot, point, pp);
+    
+    pp[0] *= scl[0]; 
+    pp[1] *= scl[0]; 
+    pp[2] *= scl[0];
+    
+    pp[0] += tran[0]; 
+    pp[1] += tran[1]; 
+    pp[2] += tran[2];
+    
+    // get observation k from observations_
+    residuals[0] = pp[0] - T(observed_x);
+    residuals[1] = pp[1] - T(observed_y);
+    residuals[2] = pp[2] - T(observed_z);
+    return true;
+  }
+
+  double observed_x;
+  double observed_y;
+  double observed_z;
+};
+
+void alignGpsToUTM(const sfmData::SfMData& sfmData, double& S, Mat3& R, Vec3& t)
+{
+    bool debug = false;
+
+    std::vector<Eigen::Vector3d> coords;
+
+    Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+    int numValidPoses = 0;
+    const sfmData::Poses poses = sfmData.getPoses();
+    int zone; bool northp; 
+    for (auto v : sfmData.getViews()) {
+
+        IndexT poseId = v.second->getPoseId();
+        if(poses.find(poseId) != poses.end())
+        {
+            double lat; double lon; double alt;
+            v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
+            // zone and northp should be returned!!!
+            double x, y, gamma, k;
+            GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
+            mean += Eigen::Vector3d(x, y, alt);
+
+            coords.push_back(Eigen::Vector3d(x, y, alt));
+
+            numValidPoses++;
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO(std::setprecision(17)
+            << "No pose for view " << v.second->getViewId() << std::endl);
+        }
+    }
+    mean /= numValidPoses;
+
+    {
+        FILE* localcoordfile = fopen("localcenter.json", "wt");
+        fprintf(localcoordfile,"{ \"Coords\": {\n");
+        fprintf(localcoordfile,"\"Center\": [ %.16f, %.16f, %.16f ],\n", mean(0), mean(1), mean(2));
+        fprintf(localcoordfile,"\"Zone\": %d,\n",zone);
+        fprintf(localcoordfile,"\"North\": %s,\n",northp ? "true" : "false");
+        fprintf(localcoordfile,"\"EPSGCode\": %d\n",northp ? 32600+zone : 32700+zone);
+        fprintf(localcoordfile,"}\n}");
+        fclose(localcoordfile);
+    }
+
+/*
+    {
+        FILE* coordfile = fopen("gpscoords.json","wt");
+        fprintf(coordfile,"{ \"Coords\": [\n");
+        for(int c = 0; c < coords.size(); c++)
+        {
+            fprintf(coordfile,"[%.15f, %.15f, %.15f]",coords[c](0)-mean(0),coords[c](1)-mean(1),coords[c](2)-mean(2));
+            if(c < (coords.size() - 1))
+                fprintf(coordfile,",\n");
+        }
+        fprintf(coordfile,"]\n}");
+        fclose(coordfile);
+    }
+*/
+    {
+      ALICEVISION_LOG_TRACE(std::setprecision(17)
+          << "Mean:" <<  std::endl
+          << "\t " << mean << std::endl);
+    }
+
+    // at this point we need to get to a working rotation/translation/scale transform, which maps the poses to the gps positions naturally
+
+    double *Rn = new double[9]; 
+    Rn[0] = 1;  Rn[3] = 0;  Rn[6] = 0; 
+    Rn[1] = 0;  Rn[4] = 1;  Rn[7] = 0; 
+    Rn[2] = 0;  Rn[5] = 0;  Rn[8] = 1; 
+
+    double* pose_for_alignment = new double[7];
+    ceres::RotationMatrixToAngleAxis(Rn, pose_for_alignment);
+
+    pose_for_alignment[3] = 0;
+    pose_for_alignment[4] = 0;
+    pose_for_alignment[5] = 0;
+    pose_for_alignment[6] = 3.6;
+
+    double *rotPtr = pose_for_alignment;
+    double *tranPtr = pose_for_alignment + 3;
+    double *sclPtr = pose_for_alignment + 6;
+
+    ceres::Problem problem;
+    ceres::LossFunction* loss_function = new ceres::HuberLoss(2.0);
+
+    double * centers = new double[3*numValidPoses];
+    double * cPtr = centers;
+    for (auto v : sfmData.getViews()) 
+    {
+        IndexT poseId = v.second->getPoseId();
+        if(poses.find(poseId) != poses.end())
+        {
+            double lat; double lon; double alt;
+            v.second->getGpsPositionWGS84FromMetadata(lat, lon, alt);
+            // zone and northp should be returned!!!
+            int zone; bool northp; 
+            double x, y, gamma, k;
+            GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y, gamma, k);
+
+            /*
+            {
+                ALICEVISION_LOG_INFO(std::setprecision(17)
+                << "Getting center for view " << v.second->getViewId() << std::endl);
+            }
+            */
+            const Vec3 center = sfmData.getPose(*v.second).getTransform().center();
+            /*
+            {
+                ALICEVISION_LOG_INFO(std::setprecision(17)
+                << "\t " << center << std::endl);
+            }
+            */
+            cPtr[0] = center(0);
+            cPtr[1] = center(1);
+            cPtr[2] = center(2);
+
+            ceres::CostFunction* cost_function =
+                new ceres::AutoDiffCostFunction<AlignRotateTranslateScaleError, 3, 3, 3, 1, 3>(
+                new AlignRotateTranslateScaleError(
+                    x - mean(0),
+                    y - mean(1),
+                    alt - mean(2)
+                )
+            );
+
+            problem.AddResidualBlock(
+                    cost_function,
+                    loss_function, // huber for now
+                    rotPtr,
+                    tranPtr,
+                    sclPtr,
+                    cPtr
+            );
+
+            problem.SetParameterBlockConstant(cPtr);
+            cPtr += 3;
+        }
+    }
+    //problem.SetParameterBlockConstant(sclPtr);
+    problem.SetParameterLowerBound(sclPtr, 0, 0.1);
+    problem.SetParameterUpperBound(sclPtr, 0, 10.0);
+
+    ceres::Solver::Options options;
+    options.max_num_iterations = 100;
+    options.linear_solver_type = ceres::DENSE_QR;
+    if(debug)
+        options.minimizer_progress_to_stdout = true;
+    else
+        options.minimizer_progress_to_stdout = false;
+    
+    ceres::Solver::Summary summary;
+    Solve(options, &problem, &summary);
+
+    if(debug)
+        std::cout<< summary.FullReport() << std::endl;
+
+    delete[] centers;
+
+    ceres::AngleAxisToRotationMatrix(pose_for_alignment, Rn);
+    Eigen::Matrix3d Rnew; Rnew << Rn[0] , Rn[1] , Rn[2] , Rn[3] , Rn[4] , Rn[5] , Rn[6] , Rn[7] , Rn[8];
+    Eigen::Vector3d Tnew; Tnew << pose_for_alignment[3] , pose_for_alignment[4] , pose_for_alignment[5];
+    Matrix34d Pnew; Pnew.leftCols(3) = Rnew; Pnew.rightCols(1) = Tnew;
+    double scale = pose_for_alignment[6];
+
+    R = Rnew.transpose();
+    t = Tnew;
+    S = scale;
+    
+    delete[] pose_for_alignment;
+}
+#endif
+
 } // namespace
 
 IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & transform)
@@ -276,7 +508,11 @@ int aliceVision_main(int argc, char **argv)
         "\t- from_single_camera: Refines the coordinate system from the camera specified by --tranformation\n"
         "\t- from_markers: Refines the coordinate system from markers specified by --markers\n"
         "\t- from_gps: Redefines coordinate system from GPS metadata\n"
-        "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n")
+        "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n"
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
+        "\t- from_gps2utm: uses GPS coordinates to determine UTM alignment and inverts axes to match x/y/z right/up/sky.\n"
+#endif
+    )
     ("transformation", po::value<std::string>(&transform)->default_value(transform),
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
@@ -481,6 +717,13 @@ int aliceVision_main(int argc, char **argv)
           sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
           break;
       }
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
+      case EAlignmentMethod::FROM_GPS2UTM:
+      {
+          alignGpsToUTM(sfmData, S, R, t);
+          break;
+      }
+#endif
   }
 
   if(!applyRotation)
@@ -521,7 +764,19 @@ int aliceVision_main(int argc, char **argv)
   }
 
   sfm::applyTransform(sfmData, S, R, t);
- 
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_GEOGRAPHIC)
+  if (alignmentMethod == EAlignmentMethod::FROM_GPS2UTM)
+  {
+    ALICEVISION_LOG_INFO("Applying additional inversion to Y and Z to make textured mesh end up aligned correctly!");
+    Eigen::Matrix3d invYZ = Eigen::Matrix3d::Identity();
+    invYZ(1,1) = -1; invYZ(2,2) = -1;
+    Eigen::Vector3d zeroT = Eigen::Vector3d::Zero();
+
+    sfm::applyTransform(sfmData, 1.0, invYZ, zeroT);
+  }
+#endif
+
   // In AUTO mode, ground detection and alignment is performed as a post-process
   if (alignmentMethod == EAlignmentMethod::AUTO && applyTranslation)
   {

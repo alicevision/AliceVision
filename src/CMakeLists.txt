@@ -64,6 +64,7 @@ trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
+trilean_option(ALICEVISION_USE_GEOGRAPHIC "Enable GeographicLib" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
 option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
@@ -267,7 +268,7 @@ set(ALICEVISION_BOOST_COMPONENTS atomic container date_time filesystem graph jso
 if(ALICEVISION_BUILD_TESTS)
     set(ALICEVISION_BOOST_COMPONENT_UNITTEST unit_test_framework)
 endif()
-find_package(Boost 1.60.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} ${ALICEVISION_BOOST_COMPONENT_UNITTEST})
+find_package(Boost 1.80.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} ${ALICEVISION_BOOST_COMPONENT_UNITTEST})
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
@@ -570,6 +571,23 @@ if(NOT ALICEVISION_USE_USD STREQUAL "OFF")
     message(STATUS "USD version ${PXR_VERSION} found.")
   elseif(ALICEVISION_USE_USD STREQUAL "ON")
     message(SEND_ERROR "Failed to find USD.")
+  endif()
+endif()
+
+# ==============================================================================
+# GeographicLib
+# ==============================================================================
+# - optional, used to convert to UTM coordinate system in SfmTransform
+# ==============================================================================
+set(ALICEVISION_HAVE_GEOGRAPHIC 0)
+
+if(NOT ALICEVISION_USE_GEOGRAPHIC STREQUAL "OFF")
+  find_library(GeographicLib_LIBRARY NAMES Geographic GeographicLib DOC "GeographicLib library")
+  if(GeographicLib_LIBRARY)
+    set(ALICEVISION_HAVE_GEOGRAPHIC 1)
+    message(STATUS "GeographicLib found.")
+  elseif(ALICEVISION_USE_GEOGRAPHIC STREQUAL "ON")
+    message(SEND_ERROR "Failed to find GeographicLib.")
   endif()
 endif()
 
@@ -941,6 +959,7 @@ message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
 message("** Use AprilTag markers: " ${ALICEVISION_HAVE_APRILTAG})
 message("** Use OpenGV for rig localization: " ${ALICEVISION_HAVE_OPENGV})
+message("** Use GeographicLib for Coordinate System Transformations: " ${ALICEVISION_HAVE_GEOGRAPHIC})
 message("\n")
 
 message(STATUS "EIGEN: " ${EIGEN_VERSION} "")
