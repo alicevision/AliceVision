@@ -549,7 +549,13 @@ public:
 
     void displayCellsStats() const;
     void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);
-    void exportFullScoreMeshs(const std::string& outputFolder, const std::string& name) const;
+
+    /**
+    * @brief Export debug cells score as tetrahedral mesh. 
+    * WARNING: Could create HUGE meshes, only use on very small datasets.
+    * @param[in] outputFolder: output directory (ending with path separator)
+    */
+    void exportFullScoreMeshs(const std::string& outputFolder) const;
 
     void exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt);
     void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);

@@ -3154,7 +3154,7 @@ void DelaunayGraphCut::createGraphCut(const Point3d hexah[8], const StaticVector
   voteFullEmptyScore(cams, folderName);
 
   if(exportDebugTetrahedralization)
-    exportFullScoreMeshs(folderName, "");
+    exportFullScoreMeshs(folderName);
 
   maxflow();
 }
@@ -3834,43 +3834,44 @@ void DelaunayGraphCut::exportDebugMesh(const std::string& filename, const Point3
     meshf->save(tempDirPath + "/" + filename);
 }
 
-void DelaunayGraphCut::exportFullScoreMeshs(const std::string& outputFolder, const std::string& name) const
+void DelaunayGraphCut::exportFullScoreMeshs(const std::string& outputFolder) const
 {
-    const std::string nameExt = (name.empty() ? "" : "_" + name);
+    const std::string nameExt = "." + mesh::EFileType_enumToString(mesh::EFileType::OBJ);
+    const std::string outputPathPrefix = outputFolder + "debug_";
     {
         std::unique_ptr<mesh::Mesh> meshEmptiness(
             createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.emptinessScore; }));
-        meshEmptiness->save(outputFolder + "/mesh_emptiness" + nameExt);
+        meshEmptiness->save(outputPathPrefix + "mesh_emptiness" + nameExt);
     }
     {
         std::unique_ptr<mesh::Mesh> meshFullness(
             createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.fullnessScore; }));
-        meshFullness->save(outputFolder + "/mesh_fullness" + nameExt);
+        meshFullness->save(outputPathPrefix + "mesh_fullness" + nameExt);
     }
     {
         std::unique_ptr<mesh::Mesh> meshSWeight(
             createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.cellSWeight; }));
-        meshSWeight->save(outputFolder + "/mesh_sWeight" + nameExt);
+        meshSWeight->save(outputPathPrefix + "mesh_sWeight" + nameExt);
     }
     {
         std::unique_ptr<mesh::Mesh> meshTWeight(
             createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.cellTWeight; }));
-        meshTWeight->save(outputFolder + "/mesh_tWeight" + nameExt);
+        meshTWeight->save(outputPathPrefix + "mesh_tWeight" + nameExt);
     }
     {
         std::unique_ptr<mesh::Mesh> meshOn(
             createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.on; }));
-        meshOn->save(outputFolder + "/mesh_on" + nameExt);
+        meshOn->save(outputPathPrefix + "mesh_on" + nameExt);
     }
     {
         std::unique_ptr<mesh::Mesh> mesh(createTetrahedralMesh(
             false, 0.99f, [](const fuseCut::GC_cellInfo& c) { return c.fullnessScore - c.emptinessScore; }));
-        mesh->save(outputFolder + "/mesh_fullness-emptiness" + nameExt);
+        mesh->save(outputPathPrefix + "mesh_fullness-emptiness" + nameExt);
     }
     {
         std::unique_ptr<mesh::Mesh> mesh(createTetrahedralMesh(
             false, 0.99f, [](const fuseCut::GC_cellInfo& c) { return c.cellSWeight - c.cellTWeight; }));
-        mesh->save(outputFolder + "/mesh_s-t" + nameExt);
+        mesh->save(outputPathPrefix + "mesh_s-t" + nameExt);
     }
 }
 
