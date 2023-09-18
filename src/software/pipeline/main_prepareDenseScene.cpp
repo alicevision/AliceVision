@@ -351,8 +351,9 @@ bool prepareDenseScene(const SfMData& sfmData,
             if(doMaskLandmarks)
             {
                 // for the T camera, image alpha should be at least 0.4f * 255 (masking)
-                maskLandmarks = image::Image<unsigned char>(view->getWidth(), view->getHeight(), true, 127);
-                int r = (int)(landmarksMaskScale * 0.5f * (view->getWidth() + view->getHeight()));
+                maskLandmarks =
+                    image::Image<unsigned char>(view->getImage().getWidth(), view->getImage().getHeight(), true, 127);
+                int r = (int)(landmarksMaskScale * 0.5f * (view->getImage().getWidth() + view->getImage().getHeight()));
                 const auto& observationsIt = observationsPerView.find(viewId);
                 if(observationsIt != observationsPerView.end())
                 {
