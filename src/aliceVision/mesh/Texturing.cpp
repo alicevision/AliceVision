@@ -863,12 +863,13 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         // If mode "normalMaps"
         if (imageType == mvsUtils::EFileType::normalMap)
         {
+            Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> visitedPixels(atlasTexture.img.rows(), atlasTexture.img.cols());
+            visitedPixels.fill(false);
+
             // Rotation and normalization of normals
 #pragma omp parallel for
             for (size_t i = 0; i < _atlases[atlasID].size(); ++i)
             {
-                // Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> visitedPixels(atlasTexture.img.rows(), atlasTexture.img.cols());
-                // visitedPixels.fill(false);
                 int triangleId = _atlases[atlasID][i];
 
                 // Retrieve triangle 3D and UV coordinates
@@ -931,18 +932,6 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                             continue;
                         }
 
-                        //                        bool visited;
-                        //                        #pragma omp critical
-                        //                        {
-                        //                            visited = visitedPixels(x,y);
-                        //                            visitedPixels(x,y) = true;
-                        //                        }
-
-                        //                       if(visited)
-                        //                        {
-                        //                            continue;
-                        //                        }
-
                         // remap 'y' to image coordinates system (inverted Y axis)
                         const unsigned int y_ = (texParams.textureSide - 1) - y;
                         // 1D pixel index
@@ -962,18 +951,17 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                         */
 
                         Vec3 origNormal = atlasTexture.img(xyoffset).cast<double>();
-                        if (origNormal[2] > 0)
+                        if (visitedPixels(x, y))
                         {
                             continue;
                         }
-                        origNormal.normalize();
-                        origNormal = worldToTriangleMatrix * origNormal;
-                        atlasTexture.img(xyoffset) = image::RGBfColor(origNormal[0], origNormal[1], origNormal[2]);
+                        visitedPixels(x, y) = true;
 
-                        // Normal in visual representation
-                        /*normalMap(i) = image::RGBfColor(normalMap(i).r() * 0.5 + 0.5,
-                                                        normalMap(i).g() * 0.5 + 0.5,
-                                                        normalMap(i).b() * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255*/
+                        origNormal = worldToTriangleMatrix * origNormal;
+                        origNormal.normalize();
+
+                        origNormal = origNormal * 0.5 + Vec3(0.5, 0.5, 0.5);  // Normal in visual representation
+                        atlasTexture.img(xyoffset) = image::RGBfColor(origNormal[0], origNormal[1], origNormal[2]);
                     }
                 }
             }
