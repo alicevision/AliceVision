@@ -14,7 +14,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-#include <aliceVision/mvsData/jetColorMap.hpp>
+#include <aliceVision/image/jetColorMap.hpp>
 
 #include <aliceVision/utils/Histogram.hpp>
 

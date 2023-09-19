@@ -12,7 +12,7 @@
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
-#include <aliceVision/mvsData/jetColorMap.hpp>
+#include <aliceVision/image/jetColorMap.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
