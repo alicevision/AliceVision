@@ -16,6 +16,7 @@
 
 
 #include <aliceVision/sfm/bundle/manifolds/so3.hpp>
+#include <aliceVision/sfm/bundle/manifolds/so3vec.hpp>
 #include <aliceVision/sfm/bundle/manifolds/se3.hpp>
 #include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
 
@@ -454,6 +455,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
 void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
 {
   const bool refineStructure = refineOptions & REFINE_STRUCTURE;
+  const bool refineStructureAsNormal = refineOptions & REFINE_STRUCTURE_AS_NORMALS;
 
   // set a LossFunction to be less penalized by false measurements.
   // note: set it to NULL if you don't want use a lossFunction.
@@ -478,6 +480,11 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
       landmarkBlock.at(i) = landmark.X(Eigen::Index(i));
 
     double* landmarkBlockPtr = landmarkBlock.data();
+    problem.AddParameterBlock(landmarkBlockPtr, 3);
+    if (refineStructureAsNormal)
+    {
+        problem.SetManifold(landmarkBlockPtr, new SO3Vec);
+    }
 
     // add landmark parameter to the all parameters blocks pointers list
     _allParametersBlocks.push_back(landmarkBlockPtr);
