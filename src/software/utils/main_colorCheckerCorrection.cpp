@@ -69,7 +69,8 @@ enum class ECorrectionMethod
 {
     luminance,
     whiteBalance,
-    full
+    full,
+    bypass
 };
 
 inline std::string ECorrectionMethod_enumToString(ECorrectionMethod correctionMethod)
@@ -82,6 +83,8 @@ inline std::string ECorrectionMethod_enumToString(ECorrectionMethod correctionMe
             return "whitebalance";
         case ECorrectionMethod::full:
             return "full";
+        case ECorrectionMethod::bypass:
+            return "bypass";
     }
     throw std::invalid_argument("Invalid ECorrectionMethod Enum");
 }
@@ -95,6 +98,8 @@ inline ECorrectionMethod ECorrectionMethod_stringToEnum(std::string correctionMe
         return ECorrectionMethod::whiteBalance;
     if(correctionMethod == "full")
         return ECorrectionMethod::full;
+    if(correctionMethod == "bypass")
+        return ECorrectionMethod::bypass;
 
     throw std::invalid_argument("Unrecognized correction method '" + correctionMethod + "'");
 }
@@ -326,7 +331,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if(fs::exists(inputData))
+    if(fs::exists(inputData) && correctionMethod != ECorrectionMethod::bypass)
     {
         // checkers collection
         std::vector<CChecker> ccheckers;
