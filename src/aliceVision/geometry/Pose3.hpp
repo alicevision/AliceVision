@@ -97,8 +97,8 @@ public:
     Pose3 transformSRt(const double S, const Mat3& R, const Vec3& t) const
     {
         Pose3 pose;
-        pose.setCenter(S * R * center() + t);
         pose.setRotation(rotation() * R.transpose());
+        pose.setCenter(S * R * center() + t);
 
         return pose;
     }
