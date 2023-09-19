@@ -626,7 +626,6 @@ if(ALICEVISION_BUILD_HDR)
               aliceVision_hdr
               aliceVision_sfmData
               aliceVision_sfmDataIO
-              aliceVision_mvsData
               Boost::program_options
               Boost::filesystem
     )

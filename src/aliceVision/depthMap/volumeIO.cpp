@@ -12,7 +12,7 @@
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
-#include <aliceVision/mvsData/jetColorMap.hpp>
+#include <aliceVision/image/jetColorMap.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
