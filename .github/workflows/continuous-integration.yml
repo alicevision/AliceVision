@@ -28,11 +28,17 @@ jobs:
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: '5G' # Set a maximum cache size of 5GB
     steps:
       - uses: actions/checkout@v1
 
+      - name: Install ccache on Linux
+        run: sudo apt-get install ccache
+
       - name: Prepare File Tree
         run: |
+          mkdir -p ${CCACHE_DIR}
           mkdir ./build
           mkdir ./build_as_3rdparty
           mkdir ./functional_tests
@@ -44,6 +50,7 @@ jobs:
         run: |
           cmake .. \
            -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
            -DBUILD_SHARED_LIBS:BOOL=ON \
            -DCMAKE_PREFIX_PATH="${DEPS_INSTALL_DIR}" \
            -DCMAKE_INSTALL_PREFIX:PATH=$PWD/../../AV_install \
@@ -160,6 +167,9 @@ jobs:
 
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
+      
+      - name: Install ccache on Windows
+        run: choco install ccache
 
       - name: Display remaining disk space (16 Go max)
         run: |
@@ -175,6 +185,7 @@ jobs:
           cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
                              -DVCPKG_TARGET_TRIPLET=x64-windows
                              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+                             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
                              -A x64 -T host=x64
                              -DBUILD_SHARED_LIBS=ON
                              -DTARGET_ARCHITECTURE=core
