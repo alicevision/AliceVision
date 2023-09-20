@@ -212,7 +212,7 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("processing " << path);
 
         image::Image<image::RGBfColor> image;
-        image::readImage(path, image, image::EImageColorSpace::NO_CONVERSION);
+        image::readImage(path, image, image::EImageColorSpace::SRGB);
 
         double pixelRatio = 1.0;
         view->getImage().getDoubleMetadata({"PixelAspectRatio"}, pixelRatio);
