@@ -33,8 +33,11 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: Install ccache on Linux
-        run: apt-get install ccache
+      - name: Setup ccache
+        uses: Chocobo1/setup-ccache-action@v1
+        with:
+          install_ccache: true
+          update_packager_index: false
 
       - name: Prepare File Tree
         run: |
