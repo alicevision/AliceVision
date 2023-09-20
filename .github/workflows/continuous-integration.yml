@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v1
 
       - name: Install ccache on Linux
-        run: sudo apt-get install ccache
+        run: apt-get install ccache
 
       - name: Prepare File Tree
         run: |
