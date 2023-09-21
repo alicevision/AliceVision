@@ -18,6 +18,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
+#include <aliceVision/sfm/utils/alignment.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -84,6 +85,7 @@ int aliceVision_main(int argc, char **argv)
   std::string extraInfoFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::pair<std::string,std::string> initialPairString("","");
+  bool useAutoTransform = true;
 
   sfm::ReconstructionEngine_sequentialSfM::Params sfmParams;
   bool lockScenePreviouslyReconstructed = true;
@@ -185,6 +187,8 @@ int aliceVision_main(int argc, char **argv)
       "Use of an observation constraint : basic, scale the observation or use of the covariance.\n")
     ("computeStructureColor", po::value<bool>(&computeStructureColor)->default_value(computeStructureColor),
       "Compute each 3D point color.\n")
+    ("useAutoTransform", po::value<bool>(&useAutoTransform)->default_value(useAutoTransform),
+      "Transform the result with the alignment method 'AUTO'.\n")
     ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
       "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ("logIntermediateSteps", po::value<bool>(&sfmParams.logIntermediateSteps)->default_value(logIntermediateSteps),
@@ -308,6 +312,22 @@ int aliceVision_main(int argc, char **argv)
 
   if(!sfmEngine.process())
     return EXIT_FAILURE;
+
+  //Mimic sfmTransform "EAlignmentMethod::AUTO"
+  if (useAutoTransform)
+  {
+    double S = 1.0;
+    Mat3 R = Mat3::Identity();
+    Vec3 t = Vec3::Zero();
+
+    ALICEVISION_LOG_DEBUG("Align automatically");
+    sfm::computeNewCoordinateSystemAuto(sfmEngine.getSfMData(), S, R, t);
+    sfm::applyTransform(sfmEngine.getSfMData(), S, R, t);
+    
+    ALICEVISION_LOG_DEBUG("Align with ground");
+    sfm::computeNewCoordinateSystemGroundAuto(sfmEngine.getSfMData(), t);
+    sfm::applyTransform(sfmEngine.getSfMData(), 1.0, Eigen::Matrix3d::Identity(), t);
+  }
 
   // set featuresFolders and matchesFolders relative paths
   {
