@@ -14,28 +14,11 @@ if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif(UNIX)
 
-# Add graph library
-if(DEFINED ALICEVISION_USE_INTERNAL_LEMON)
-  add_subdirectory(lemon)
-  set_property(TARGET lemon
-    PROPERTY FOLDER Dependencies/Lemon
-  )
-  set_property(TARGET check
-    PROPERTY FOLDER Dependencies/Lemon
-  )
-endif()
 
 # Add svg library
 add_subdirectory(vectorGraphics)
 
-# Add an Approximate Nearest Neighbor library
-if(DEFINED ALICEVISION_USE_INTERNAL_FLANN)
-  set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/flann/src/cpp)
-  add_subdirectory(flann)
-  set_property(TARGET flann_cpp_s
-    PROPERTY FOLDER Dependencies/Flann
-  )
-endif()
+
 
 list(APPEND directories histogram htmlDoc vectorGraphics)
 foreach(inDirectory ${directories})

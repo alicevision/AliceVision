@@ -462,24 +462,9 @@ if(ALICEVISION_BUILD_SFM)
   find_package(Osi REQUIRED)
 endif()
 
-# ==============================================================================
-# Lemon
-# ==============================================================================
-# - internal by default (Lemon),
-# - external if LEMON_INCLUDE_DIR_HINTS and a valid Lemon setup is found
-# ==============================================================================
+
 if(ALICEVISION_BUILD_SFM)
-  if(NOT DEFINED LEMON_INCLUDE_DIR_HINTS)
-    set(LEMON_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lemon)
-    set(ALICEVISION_USE_INTERNAL_LEMON ON)
-  endif()
-  find_package(Lemon QUIET)
-  if(NOT LEMON_FOUND OR ALICEVISION_USE_INTERNAL_LEMON)
-    set(LEMON_INCLUDE_DIRS
-      ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lemon
-      ${CMAKE_CURRENT_BINARY_DIR}/dependencies/lemon)
-    set(LEMON_LIBRARY lemon)
-  endif()
+  find_package(LEMON REQUIRED)
 endif()
 
 
@@ -960,12 +945,7 @@ if(ALICEVISION_BUILD_SFM)
   message(STATUS "CLP: " ${Clp_VERSION} "")
   message(STATUS "COINUTILS: " ${CoinUtils_VERSION} "")
   message(STATUS "OSI: " ${Osi_VERSION} "")
-
-  if(ALICEVISION_USE_INTERNAL_LEMON)
-    message(STATUS "LEMON: " ${LEMON_VERSION} " (internal)")
-  else()
-    message(STATUS "LEMON: " ${LEMON_VERSION} " (external)")
-  endif()
+  message(STATUS "LEMON: " ${LEMON_VERSION} "")
 endif()
 
 message("\n")
