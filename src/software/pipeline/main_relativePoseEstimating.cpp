@@ -25,15 +25,18 @@
 
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/multiview/essential.hpp>
-#include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
+#include <aliceVision/multiview/relativePose/Rotation3PSolver.hpp>
+#include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
 
 #include <aliceVision/geometry/lie.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/geometries.hpp>
 
 #include <aliceVision/sfm/pipeline/relativePoses.hpp>
 
@@ -145,6 +148,35 @@ bool robustEssential(Mat3& E, std::vector<size_t>& vecInliers, const Mat3& K1, c
     return true;
 }
 
+bool robustRotation(Mat3& R, std::vector<size_t>& vecInliers, 
+                    const Mat& x1, const Mat& x2, 
+                    std::mt19937& randomNumberGenerator,
+                    const size_t maxIterationCount, const size_t minInliers)
+{
+    using KernelType = multiview::RelativePoseSphericalKernel<
+                        multiview::relativePose::Rotation3PSolver,
+                        multiview::relativePose::RotationError,
+                        robustEstimation::Mat3Model
+                    >;
+
+    KernelType kernel(x1, x2);
+
+    robustEstimation::Mat3Model model;
+    vecInliers.clear();
+
+    // robustly estimation of the Essential matrix and its precision
+    robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vecInliers, 1024, &model, std::numeric_limits<double>::infinity());
+
+    if(vecInliers.size() < minInliers)
+    {
+        return false;
+    }
+
+    R = model.getMatrix();
+
+    return true;
+}
+
 void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track::TracksMap& mapTracks)
 {
     for(const auto& item : mapTracks)
@@ -173,6 +205,39 @@ void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track
     }
 }
 
+double computeAreaScore(
+    const std::vector<Eigen::Vector2d> & refPts,
+    const std::vector<Eigen::Vector2d> & nextPts,
+    double refArea,
+    double nextArea
+)
+{
+    namespace bg = boost::geometry;
+
+    typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> point_t;
+    typedef boost::geometry::model::multi_point<point_t> mpoint_t;
+    typedef boost::geometry::model::polygon<point_t> polygon;
+    mpoint_t mpt1, mpt2;
+
+    for (int idx = 0; idx < refPts.size(); idx++)
+    {
+        const auto & refPt = refPts[idx];
+        const auto & nextPt = nextPts[idx];
+
+        boost::geometry::append(mpt1, point_t(refPt(0), refPt(1)));
+        boost::geometry::append(mpt2, point_t(nextPt(0), nextPt(1)));
+    }
+
+    polygon hull1, hull2;
+    boost::geometry::convex_hull(mpt1, hull1);
+    boost::geometry::convex_hull(mpt2, hull2);
+    double area1 = boost::geometry::area(hull1);
+    double area2 = boost::geometry::area(hull1);
+    double score = (area1 + area2) / (refArea + nextArea);
+    
+    return score;
+}
+
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
@@ -183,6 +248,7 @@ int aliceVision_main(int argc, char** argv)
     int rangeStart = -1;
     int rangeSize = 1;
     const size_t minInliers = 35;
+    bool enforcePureRotation = false;
 
     // user optional parameters
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -193,13 +259,14 @@ int aliceVision_main(int argc, char** argv)
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
-    ("tracksFilename,i", po::value<std::string>(&tracksFilename)->required(), "Tracks file.")
+    ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(), "Tracks file.")
     ("output,o", po::value<std::string>(&outputDirectory)->required(), "Path to the output directory.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
     ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(), "Path to folder(s) containing the extracted features.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),feature::EImageDescriberType_informations().c_str())
+    ("enforcePureRotation,e", po::value<bool>(&enforcePureRotation)->default_value(enforcePureRotation), "Enforce pure rotation in estimation.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
 
@@ -290,7 +357,6 @@ int aliceVision_main(int argc, char** argv)
     std::map<Pair, unsigned int> covisibility;
     computeCovisibility(covisibility, mapTracks);
     
-
     
     ALICEVISION_LOG_INFO("Process co-visibility");
     std::stringstream ss;
@@ -350,34 +416,83 @@ int aliceVision_main(int argc, char** argv)
             pos++;
         }
 
-
-        //Try to fit an essential matrix (we assume we are approx. calibrated)
-        Mat3 E;
-        std::vector<size_t> vec_inliers;
-        const bool essentialSuccess =
-            robustEssential(E, vec_inliers, refPinhole->K(), nextPinhole->K(), refX, nextX,
-                            std::make_pair(refPinhole->w(), refPinhole->h()),
-                            std::make_pair(nextPinhole->w(), nextPinhole->h()), 
-                            randomNumberGenerator, 1024, minInliers);
-        if(!essentialSuccess)
-        {
-            continue;
-        }
-
-        std::vector<Vec3> structure;
-        std::vector<size_t> inliers;
+        std::vector<size_t> vecInliers;
         sfm::ReconstructedPair reconstructed;
-        reconstructed.reference = refImage;
-        reconstructed.next = nextImage;
 
-        if(!getPoseStructure(reconstructed.R, reconstructed.t, structure, inliers, E, vec_inliers, refPinhole->K(),
-                             nextPinhole->K(), refX, nextX))
+        if (enforcePureRotation)
         {
-            continue;
+            //Transform to vector
+            Mat refVecs(3, n);
+            Mat nextVecs(3, n);
+            for (int idx = 0; idx < n; idx++)
+            {
+                //Lift to unit sphere
+                refVecs.col(idx) = refIntrinsics->toUnitSphere(refIntrinsics->removeDistortion(refIntrinsics->ima2cam(refX.col(idx))));
+                nextVecs.col(idx) = nextIntrinsics->toUnitSphere(nextIntrinsics->removeDistortion(nextIntrinsics->ima2cam(nextX.col(idx))));
+            }
+
+            //Try to fit an essential matrix (we assume we are approx. calibrated)
+            Mat3 R;
+            const bool relativeSuccess = robustRotation(R, vecInliers, refVecs, nextVecs, randomNumberGenerator, 1024, minInliers);
+            if(!relativeSuccess)
+            {
+                continue;
+            }
+
+            reconstructed.reference = refImage;
+            reconstructed.next = nextImage;
+            reconstructed.R = R;
+            reconstructed.t.fill(0);
         }
+        else
+        {
+            //Try to fit an essential matrix (we assume we are approx. calibrated)
+            Mat3 E;
+            std::vector<size_t> inliers;
+            const bool essentialSuccess =
+                robustEssential(E, inliers, refPinhole->K(), nextPinhole->K(), refX, nextX,
+                                std::make_pair(refPinhole->w(), refPinhole->h()),
+                                std::make_pair(nextPinhole->w(), nextPinhole->h()), 
+                                randomNumberGenerator, 1024, minInliers);
+            if(!essentialSuccess)
+            {
+                continue;
+            }
+
+            std::vector<Vec3> structure;
+            reconstructed.reference = refImage;
+            reconstructed.next = nextImage;
+
+            if(!getPoseStructure(reconstructed.R, reconstructed.t, 
+                                structure, vecInliers, E, inliers, 
+                                refPinhole->K(), nextPinhole->K(), 
+                                refX, nextX))
+            {
+                continue;
+            }
+        }
+
+        std::vector<Vec2> refpts, nextpts;
+        for (auto id : vecInliers)
+        {
+            refpts.push_back(refX.col(id));
+            nextpts.push_back(nextX.col(id));
+        }
+
+        //Compute matched points coverage of image
+        double areaRef = refPinhole->w() * refPinhole->h();
+        double areaNext = nextPinhole->w() * nextPinhole->h();
+        double areaScore = computeAreaScore(refpts, nextpts, areaRef, areaNext);
+
+        //Compute ratio of matched points
+        double iunion = n;
+        double iinter = vecInliers.size();
+        double score = iinter / iunion;
+        reconstructed.score = 0.5 * score + 0.5 * areaScore;
+
 
         //Buffered output to avoid lo
-#pragma omp critical
+        #pragma omp critical
         {
             reconstructedPairs.push_back(reconstructed);
 
