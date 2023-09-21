@@ -140,9 +140,9 @@ struct CChecker
             cv::Vec3d* rowPtr = _colorData.ptr<cv::Vec3d>(i);
             cv::Vec3d& matPixel = rowPtr[0];
 
-            matPixel[0] = row.second.get_child("r").get_value<double>();
-            matPixel[1] = row.second.get_child("g").get_value<double>();
-            matPixel[2] = row.second.get_child("b").get_value<double>();
+            matPixel[0] = row.second.get_child("r").get_value<double>(0.f);
+            matPixel[1] = row.second.get_child("g").get_value<double>(0.f);
+            matPixel[2] = row.second.get_child("b").get_value<double>(0.f);
 
             matPixel = srgbToLin(matPixel);
 
