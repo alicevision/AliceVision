@@ -599,15 +599,5 @@ using LandmarksPerView = stl::flat_map<std::size_t, LandmarkIdSet>;
 
 LandmarksPerView getLandmarksPerViews(const SfMData& sfmData);
 
-using ObservationsPerView = stl::flat_map<std::size_t, std::pair<std::vector<const Observation*>, std::vector<Landmark*>>>;
-
-/**
- * @brief Get the landmark observations of camera views
- * with the corresponding landmarks information.
- * @param[in] sfmData: A given SfMData
- * @return Observation information per camera view
- */
-ObservationsPerView getObservationsPerViews(SfMData& sfmData);
-
 }  // namespace sfmData
 }  // namespace aliceVision

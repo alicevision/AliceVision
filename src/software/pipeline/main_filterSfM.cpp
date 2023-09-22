@@ -58,8 +58,8 @@ struct ObservationsAdaptator
     /// CRTP helper method
     inline Derived& derived() { return *static_cast<Derived*>(this); }
 
-    const std::vector<const Observation*> _data;
-    ObservationsAdaptator(const std::vector<const Observation*>& data)
+    const std::vector<Observation> _data;
+    ObservationsAdaptator(const std::vector<Observation>& data)
         : _data(data)
     {
     }
@@ -68,7 +68,7 @@ struct ObservationsAdaptator
     inline size_t kdtree_get_point_count() const { return _data.size(); }
 
     // Returns the dim'th component of the idx'th point in the class:
-    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data[idx]->x(dim); }
+    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data[idx].x(dim); }
 
     // Optional bounding-box computation: return false to default to a standard bbox computation loop.
     //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it
@@ -190,6 +190,30 @@ public:
 
     inline double worstDist() const { return _radius_sq; }
 };
+
+using ObservationsPerView = stl::flat_map<std::size_t, std::pair<std::vector<Observation>, std::vector<Landmark*>>>;
+
+/**
+ * @brief Get the landmark observations of camera views
+ * with the corresponding landmarks information.
+ * @param[in] sfmData: A given SfMData
+ * @return Observation information per camera view
+ */
+ObservationsPerView getObservationsPerViews(SfMData& sfmData)
+{
+    ObservationsPerView observationsPerView;
+    for(auto& landIt : sfmData.getLandmarks())
+    {
+        for(const auto& obsIt : landIt.second.observations)
+        {
+            IndexT viewId = obsIt.first;
+            auto& landmarksSet = observationsPerView[viewId];
+            landmarksSet.first.push_back(obsIt.second);
+            landmarksSet.second.push_back(&landIt.second);
+        }
+    }
+    return observationsPerView;
+}
 
 bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale, int minNbObservationsPerLandmark)
 {
@@ -648,7 +672,7 @@ bool filterObservations2D(SfMData& sfmData, int nbNeighbors2D, float percentile,
         std::advance(itView, i);
         const IndexT viewId = *itView;
 
-        auto& observationsIt = observationsPerView.find(viewId);
+        auto observationsIt = observationsPerView.find(viewId);
         if(observationsIt == observationsPerView.end())
             continue;
 
@@ -669,7 +693,7 @@ bool filterObservations2D(SfMData& sfmData, int nbNeighbors2D, float percentile,
                                                                                      cacheSize);
         for(auto j = 0; j < observations.size(); j++)
         {
-            const auto& obs = *observations[j];
+            const auto& obs = observations[j];
             std::vector<size_t> indices_(nbNeighbors_);
             std::vector<double> distances_(nbNeighbors_);
             tree.knnSearch(obs.x.data(), nbNeighbors_, &indices_[0], &distances_[0]);
@@ -694,7 +718,7 @@ bool filterObservations2D(SfMData& sfmData, int nbNeighbors2D, float percentile,
         }
         estimatedRadii_[i] = radius;
 
-        std::vector<const Observation*> filteredObservations;
+        std::vector<Observation> filteredObservations;
         std::vector<Landmark*> filteredLandmarks;
         filteredObservations.reserve(observations.size());
         filteredLandmarks.reserve(landmarks.size());
@@ -724,14 +748,14 @@ bool filterObservations2D(SfMData& sfmData, int nbNeighbors2D, float percentile,
         if(estimatedRadii_[i] != -1.)
             estimatedRadii[viewId] = estimatedRadii_[i];
 
-        auto& observationsIt = observationsPerView.find(viewId);
+        auto observationsIt = observationsPerView.find(viewId);
         if(observationsIt != observationsPerView.end())
         {
             auto& observations = observationsIt->second.first;
             auto& landmarks = observationsIt->second.second;
             for(int j = 0; j < observations.size(); j++)
             {
-                landmarks[j]->observations[viewId] = *observations[j];
+                landmarks[j]->observations[viewId] = observations[j];
             }
         }
     }
@@ -754,7 +778,7 @@ int aliceVision_main(int argc, char *argv[])
     double neighborsInfluence = 0.5;
     int nbIterations = 5;
     int nbNeighbors2D = 5;
-    float percentile = 0.95;
+    float percentile = 0.95f;
 
     // user optional parameters
     std::vector<std::string> featuresFolders;
