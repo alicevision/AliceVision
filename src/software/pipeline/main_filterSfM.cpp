@@ -544,56 +544,65 @@ bool filterObservations2D(SfMData& sfmData, int nbNeighbors2D, float percentile,
         const IndexT viewId = *itView;
 
         auto& observationsIt = observationsPerView.find(viewId);
-        if(observationsIt != observationsPerView.end())
+        if(observationsIt == observationsPerView.end())
+            continue;
+
+        auto& observations = observationsIt->second.first;
+        auto& landmarks = observationsIt->second.second;
+
+        ALICEVISION_LOG_INFO("Build nanoflann KdTree index for projected landmarks in 2D.");
+        ObservationsAdaptator data(observations);
+        KdTree2D tree(2, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+        tree.buildIndex();
+        ALICEVISION_LOG_INFO("KdTree created for " << observations.size() << " points.");
+
+        // note that the observation is a neighbor to itself with zero distance, hence the +/- 1
+        size_t nbNeighbors_ = std::min(static_cast<size_t>(nbNeighbors2D), observations.size() - 1) + 1;
+        std::vector<double> means(observations.size());
+        const std::size_t cacheSize = 1000;
+        accumulator_set<double, stats<tag::tail_quantile<right>, tag::mean>> acc(tag::tail<right>::cache_size =
+                                                                                     cacheSize);
+        for(auto j = 0; j < observations.size(); j++)
         {
-            auto& observations = observationsIt->second.first;
-            auto& landmarks = observationsIt->second.second;
+            const auto& obs = *observations[j];
+            std::vector<size_t> indices_(nbNeighbors_);
+            std::vector<double> distances_(nbNeighbors_);
+            tree.knnSearch(obs.x.data(), nbNeighbors_, &indices_[0], &distances_[0]);
 
-            ALICEVISION_LOG_INFO("Build nanoflann KdTree index for projected landmarks in 2D.");
-            ObservationsAdaptator data(observations);
-            KdTree2D tree(2, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-            tree.buildIndex();
-            ALICEVISION_LOG_INFO("KdTree created for " << observations.size() << " points.");
-
-            // note that the observation is a neighbor to itself with zero distance, hence the +/- 1
-            size_t nbNeighbors_ = std::min(static_cast<size_t>(nbNeighbors2D), observations.size() - 1) + 1;
-            std::vector<double> means(observations.size());
-            const std::size_t cacheSize = 1000;
-            accumulator_set<double, stats<tag::tail_quantile<right>, tag::mean>> acc(tag::tail<right>::cache_size =
-                                                                                         cacheSize);
-            for(auto j = 0; j < observations.size(); j++)
-            {
-                const auto& obs = *observations[j];
-                std::vector<size_t> indices_(nbNeighbors_);
-                std::vector<double> distances_(nbNeighbors_);
-                tree.knnSearch(obs.x.data(), nbNeighbors_, &indices_[0], &distances_[0]);
-
-                std::transform(distances_.begin(), distances_.end(), distances_.begin(),
-                               static_cast<double (*)(double)>(std::sqrt));
-                const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / (nbNeighbors_ - 1);
-                means[j] = mean;
-                acc(mean);
-            }
-            double mean_max = std::numeric_limits<double>::max();
-            if(percentile != 1.f)
-                mean_max = quantile(acc, quantile_probability = percentile);
-            estimatedRadii_[i] = mean(acc);
-
-            std::vector<const Observation*> filteredObservations;
-            std::vector<Landmark*> filteredLandmarks;
-            filteredObservations.reserve(observations.size());
-            filteredLandmarks.reserve(landmarks.size());
-            for(auto j = 0; j < observations.size(); j++)
-                if (means[j] < mean_max)
-                {
-                    filteredObservations.push_back(observations[j]);
-                    filteredLandmarks.push_back(landmarks[j]);
-                }
-            filteredObservations.shrink_to_fit();
-            filteredLandmarks.shrink_to_fit();
-            observations = std::move(filteredObservations);
-            landmarks = std::move(filteredLandmarks);
+            std::transform(distances_.begin(), distances_.end(), distances_.begin(),
+                           static_cast<double (*)(double)>(std::sqrt));
+            const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / (nbNeighbors_ - 1);
+            means[j] = mean;
+            acc(mean);
         }
+        double mean_max = std::numeric_limits<double>::max();
+        if(percentile != 1.f)
+            mean_max = quantile(acc, quantile_probability = percentile);
+        
+        double radius = mean(acc);
+        // check if estimated radius is too large
+        {
+            const View& view = *(sfmData.getViews().at(viewId));
+            double radiusMax = 0.15 * 0.5 * (view.getImage().getWidth() + view.getImage().getHeight());
+            if(radius > radiusMax)
+                radius = radiusMax;
+        }
+        estimatedRadii_[i] = radius;
+
+        std::vector<const Observation*> filteredObservations;
+        std::vector<Landmark*> filteredLandmarks;
+        filteredObservations.reserve(observations.size());
+        filteredLandmarks.reserve(landmarks.size());
+        for(auto j = 0; j < observations.size(); j++)
+            if(means[j] < mean_max)
+            {
+                filteredObservations.push_back(observations[j]);
+                filteredLandmarks.push_back(landmarks[j]);
+            }
+        filteredObservations.shrink_to_fit();
+        filteredLandmarks.shrink_to_fit();
+        observations = std::move(filteredObservations);
+        landmarks = std::move(filteredLandmarks);
     }
 
     for(auto& landmark : sfmData.getLandmarks())
