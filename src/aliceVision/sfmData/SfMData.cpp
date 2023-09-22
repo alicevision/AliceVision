@@ -378,5 +378,21 @@ LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
     return landmarksPerView;
 }
 
+ObservationsPerView getObservationsPerViews(SfMData& sfmData)
+{
+    ObservationsPerView observationsPerView;
+    for(auto& landIt : sfmData.getLandmarks())
+    {
+        for(const auto& obsIt : landIt.second.observations)
+        {
+            IndexT viewId = obsIt.first;
+            auto& landmarksSet = observationsPerView[viewId];
+            landmarksSet.first.push_back(&obsIt.second);
+            landmarksSet.second.push_back(&landIt.second);
+        }
+    }
+    return observationsPerView;
+}
+
 }  // namespace sfmData
 }  // namespace aliceVision

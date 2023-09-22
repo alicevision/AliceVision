@@ -18,6 +18,8 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,8 +44,41 @@ using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+using namespace boost::accumulators;
 
 static const std::size_t MAX_LEAF_ELEMENTS = 64;
+
+struct ObservationsAdaptator
+{
+    using Derived = ObservationsAdaptator; //!< In this case the dataset class is myself.
+    using T = double;
+
+    /// CRTP helper method
+    inline const Derived& derived() const { return *static_cast<const Derived*>(this); }
+    /// CRTP helper method
+    inline Derived& derived() { return *static_cast<Derived*>(this); }
+
+    const std::vector<const Observation*> _data;
+    ObservationsAdaptator(const std::vector<const Observation*>& data)
+        : _data(data)
+    {
+    }
+
+    // Must return the number of data points
+    inline size_t kdtree_get_point_count() const { return _data.size(); }
+
+    // Returns the dim'th component of the idx'th point in the class:
+    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data[idx]->x(dim); }
+
+    // Optional bounding-box computation: return false to default to a standard bbox computation loop.
+    //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it
+    //   again. Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+    template <class BBOX>
+    bool kdtree_get_bbox(BBOX& bb) const
+    {
+        return false;
+    }
+};
 
 struct LandmarksAdaptator
 {
@@ -89,16 +124,42 @@ struct LandmarksAdaptator
     }
 };
 
-using KdTree = nanoflann::KDTreeSingleIndexAdaptor<
-    nanoflann::L2_Simple_Adaptor<double, LandmarksAdaptator>,
-    LandmarksAdaptator,
-    3, /* dim */
-    size_t
->;
+using KdTree2D = nanoflann::KDTreeSingleIndexAdaptor<
+    nanoflann::L2_Simple_Adaptor<double, ObservationsAdaptator>,
+    ObservationsAdaptator, 2 /* dim */, size_t>;
 
-/**
- * A result-set class used when performing a radius based search.
- */
+using KdTree3D = nanoflann::KDTreeSingleIndexAdaptor<
+    nanoflann::L2_Simple_Adaptor<double, LandmarksAdaptator>,
+    LandmarksAdaptator, 3 /* dim */,size_t>;
+
+class RadiusKnnSearch
+{
+public:
+    const double _radius_sq;
+    const int _nb_neighbors;
+    int nb_found = 0;
+
+    inline RadiusKnnSearch(double radius, int k)
+        : _radius_sq(radius * radius)
+        , _nb_neighbors(k)
+    {
+    }
+
+    inline bool full() const { return nb_found == _nb_neighbors; }
+
+    inline bool addPoint(double dist, IndexT index)
+    {
+        if(dist < _radius_sq)
+        {
+            nb_found++;
+            return nb_found < _nb_neighbors;
+        }
+        return true;
+    }
+
+    inline double worstDist() const { return _radius_sq; }
+};
+
 class PixSizeSearch
 {
 public:
@@ -118,6 +179,7 @@ public:
 
     inline bool addPoint(double dist, size_t index)
     {
+        // strict comparison because a point in the tree can be a neighbor of itself
         if(dist < _radius_sq && _pixSize[index] < _pixSize_i)
         {
             found = true;
@@ -169,7 +231,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
         {
             filteredLandmarks[newIdx] = std::make_pair(newIdx, landmarksData[newIdx]);
         }
-        sfmData.getLandmarks() = Landmarks(filteredLandmarks.begin(), filteredLandmarks.end());
+        sfmData.getLandmarks() = std::move(Landmarks(filteredLandmarks.begin(), filteredLandmarks.end()));
         return true;
     }
 
@@ -203,9 +265,9 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
     //// sort landmarks by descending pixSize order
     //std::stable_sort(landmarksPixSize.begin(), landmarksPixSize.end(), std::greater<>{});
 
-    ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
+    ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
     LandmarksAdaptator data(landmarksData);
-    KdTree tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    KdTree3D tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     tree.buildIndex();
     ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
     std::vector<bool> toRemove(landmarksData.size(), false);
@@ -249,7 +311,7 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
     return true;
 }
 
-bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int nbNeighbors, double neighborsInfluence,
+bool filterObservations3D(SfMData& sfmData, int maxNbObservationsPerLandmark, int nbNeighbors3D, double neighborsInfluence,
                         int nbIterations)
 {
     // store in vector for faster access
@@ -316,13 +378,13 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
     ALICEVISION_LOG_INFO("Computing initial observation scores based on distance to observing view: done");
 
     ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: started");
-    ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
+    ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
     LandmarksAdaptator dataAdaptor(landmarksData);
-    KdTree tree(3, dataAdaptor, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    KdTree3D tree(3, dataAdaptor, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     tree.buildIndex();
     ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
     // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
-    int nbNeighbors_ = std::min(nbNeighbors, static_cast<int>(landmarksData.size() - 1)) + 1;
+    int nbNeighbors_ = std::min(nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
     // contains the neighbor landmarks ids with their corresponding weights
     std::vector<std::pair<std::vector<size_t>, std::vector<double>>> neighborsData(landmarksData.size());
 #pragma omp parallel for
@@ -372,7 +434,7 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
             // accumulator for normalisation
             double viewScores_total = 0.;
             auto& [indices_, weights_] = neighborsData[id];
-            for(auto j = 0; j < nbNeighbors; j++)
+            for(auto j = 0; j < nbNeighbors3D; j++)
             {
                 const auto& neighborId = indices_[j];
                 const auto& neighborWeight = weights_[j];
@@ -467,19 +529,118 @@ bool filterObservations(SfMData& sfmData, int maxNbObservationsPerLandmark, int 
     return true;
 }
 
+bool filterObservations2D(SfMData& sfmData, int nbNeighbors2D, float percentile,
+                          HashMap<IndexT, double>& estimatedRadii)
+{
+    std::set<IndexT> viewIds = sfmData.getValidViews();
+    std::vector<double> estimatedRadii_(viewIds.size(), -1.);
+    auto observationsPerView = getObservationsPerViews(sfmData);
+
+#pragma omp parallel for
+    for(int i = 0; i < viewIds.size(); ++i)
+    {
+        auto itView = viewIds.begin();
+        std::advance(itView, i);
+        const IndexT viewId = *itView;
+
+        auto& observationsIt = observationsPerView.find(viewId);
+        if(observationsIt != observationsPerView.end())
+        {
+            auto& observations = observationsIt->second.first;
+            auto& landmarks = observationsIt->second.second;
+
+            ALICEVISION_LOG_INFO("Build nanoflann KdTree index for projected landmarks in 2D.");
+            ObservationsAdaptator data(observations);
+            KdTree2D tree(2, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+            tree.buildIndex();
+            ALICEVISION_LOG_INFO("KdTree created for " << observations.size() << " points.");
+
+            // note that the observation is a neighbor to itself with zero distance, hence the +/- 1
+            size_t nbNeighbors_ = std::min(static_cast<size_t>(nbNeighbors2D), observations.size() - 1) + 1;
+            std::vector<double> means(observations.size());
+            const std::size_t cacheSize = 1000;
+            accumulator_set<double, stats<tag::tail_quantile<right>, tag::mean>> acc(tag::tail<right>::cache_size =
+                                                                                         cacheSize);
+            for(auto j = 0; j < observations.size(); j++)
+            {
+                const auto& obs = *observations[j];
+                std::vector<size_t> indices_(nbNeighbors_);
+                std::vector<double> distances_(nbNeighbors_);
+                tree.knnSearch(obs.x.data(), nbNeighbors_, &indices_[0], &distances_[0]);
+
+                std::transform(distances_.begin(), distances_.end(), distances_.begin(),
+                               static_cast<double (*)(double)>(std::sqrt));
+                const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / (nbNeighbors_ - 1);
+                means[j] = mean;
+                acc(mean);
+            }
+            double mean_max = std::numeric_limits<double>::max();
+            if(percentile != 1.f)
+                mean_max = quantile(acc, quantile_probability = percentile);
+            estimatedRadii_[i] = mean(acc);
+
+            std::vector<const Observation*> filteredObservations;
+            std::vector<Landmark*> filteredLandmarks;
+            filteredObservations.reserve(observations.size());
+            filteredLandmarks.reserve(landmarks.size());
+            for(auto j = 0; j < observations.size(); j++)
+                if (means[j] < mean_max)
+                {
+                    filteredObservations.push_back(observations[j]);
+                    filteredLandmarks.push_back(landmarks[j]);
+                }
+            filteredObservations.shrink_to_fit();
+            filteredLandmarks.shrink_to_fit();
+            observations = std::move(filteredObservations);
+            landmarks = std::move(filteredLandmarks);
+        }
+    }
+
+    for(auto& landmark : sfmData.getLandmarks())
+    {
+        landmark.second.observations.clear();
+    }
+
+    for(int i = 0; i < viewIds.size(); ++i)
+    {
+        auto itView = viewIds.begin();
+        std::advance(itView, i);
+        const IndexT viewId = *itView;
+
+        if(estimatedRadii_[i] != -1.)
+            estimatedRadii[viewId] = estimatedRadii_[i];
+
+        auto& observationsIt = observationsPerView.find(viewId);
+        if(observationsIt != observationsPerView.end())
+        {
+            auto& observations = observationsIt->second.first;
+            auto& landmarks = observationsIt->second.second;
+            for(int j = 0; j < observations.size(); j++)
+            {
+                landmarks[j]->observations[viewId] = *observations[j];
+            }
+        }
+    }
+
+    return true;
+}
+
 int aliceVision_main(int argc, char *argv[])
 {
     // command-line parameters
 
     std::string inputSfmFilename;
     std::string outputSfmFilename;
+    std::string outputRadiiFilename;
     int maxNbObservationsPerLandmark = 2;
     int minNbObservationsPerLandmark = 5;
     double radiusScale = 2;
     bool useFeatureScale = true;
-    int nbNeighbors = 10;
+    int nbNeighbors3D = 10;
     double neighborsInfluence = 0.5;
     int nbIterations = 5;
+    int nbNeighbors2D = 5;
+    float percentile = 0.95;
 
     // user optional parameters
     std::vector<std::string> featuresFolders;
@@ -503,19 +664,25 @@ int aliceVision_main(int argc, char *argv[])
          "Scale factor applied to pixel size based radius filter applied to landmarks.")
         ("useFeatureScale", po::value<bool>(&useFeatureScale)->default_value(useFeatureScale),
          "If true, use feature scale for computing pixel size. Otherwise, use a scale of 1 pixel.")
-        ("nbNeighbors", po::value<int>(&nbNeighbors)->default_value(nbNeighbors),
+        ("nbNeighbors3D", po::value<int>(&nbNeighbors3D)->default_value(nbNeighbors3D),
          "Number of neighbor landmarks used in making the decision for best observations.")
         ("neighborsInfluence", po::value<double>(&neighborsInfluence)->default_value(neighborsInfluence),
          "Specifies how much influential the neighbors are in selecting the best observations."
          "Between 0. and 1., the closer to 1., the more influencial the neighborhood is.")
         ("nbIterations", po::value<int>(&nbIterations)->default_value(nbIterations),
          "Number of iterations to propagate neighbors information.")
+        ("nbNeighbors2D", po::value<int>(&nbNeighbors2D)->default_value(nbNeighbors2D),
+         "Number of neighbor observations to be considered for the landmarks-based masking.")
+        ("percentile", po::value<float>(&percentile)->default_value(percentile),
+         "TODO.")
         ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
          "Path to folder(s) containing the extracted features.")
         ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
          "Path to folder(s) in which computed matches are stored.")
         ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-        feature::EImageDescriberType_informations().c_str());
+        feature::EImageDescriberType_informations().c_str())
+        ("outputRadiiFile", po::value<std::string>(&outputRadiiFilename)->default_value(outputRadiiFilename),
+         "Output Radii file containing the estimated projection radius of observations per view.");
 
     CmdLine cmdline("AliceVision SfM filtering."); // TODO add description
     cmdline.add(requiredParams);
@@ -551,11 +718,30 @@ int aliceVision_main(int argc, char *argv[])
     
     if(maxNbObservationsPerLandmark > 0)
     {
-        ALICEVISION_LOG_INFO("Filtering observations: started.");
-        filterObservations(sfmData, maxNbObservationsPerLandmark, nbNeighbors, neighborsInfluence, nbIterations);
-        ALICEVISION_LOG_INFO("Filtering observations: done.");
+        ALICEVISION_LOG_INFO("Filtering observations in 3D: started.");
+        filterObservations3D(sfmData, maxNbObservationsPerLandmark, nbNeighbors3D, neighborsInfluence, nbIterations);
+        ALICEVISION_LOG_INFO("Filtering observations in 3D: done.");
     }
 
+    if(nbNeighbors2D > 0 || percentile < 1.f)
+    {
+        HashMap<IndexT, double> estimatedRadii;
+        ALICEVISION_LOG_INFO("Filtering observations in 2D: started.");
+        filterObservations2D(sfmData, nbNeighbors2D, percentile, estimatedRadii);
+        ALICEVISION_LOG_INFO("Filtering observations in 2D: done.");
+
+        if(outputRadiiFilename.empty())
+            outputRadiiFilename = (fs::path(outputSfmFilename).parent_path() / "radii.txt").string();
+        std::ofstream fs(outputRadiiFilename, std::ios::out);
+        if(!fs.is_open())
+            ALICEVISION_LOG_WARNING("Unable to create the radii file " << outputRadiiFilename);
+        else
+        {
+            for(const auto& radius : estimatedRadii)
+                fs << radius.first << "\t" << radius.second << std::endl;
+            fs.close();
+        }
+    }
 
     sfmDataIO::Save(sfmData, outputSfmFilename, sfmDataIO::ESfMData::ALL);
     return EXIT_SUCCESS;

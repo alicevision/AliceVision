@@ -14,12 +14,8 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
-#include "nanoflann.hpp"
-
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -45,91 +41,6 @@ using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
-using namespace boost::accumulators;
-
-static const std::size_t MAX_LEAF_ELEMENTS = 64;
-
-struct ObservationsAdaptator
-{
-    using Derived = ObservationsAdaptator; //!< In this case the dataset class is myself.
-    using T = double;
-
-    /// CRTP helper method
-    inline const Derived& derived() const { return *static_cast<const Derived*>(this); }
-    /// CRTP helper method
-    inline Derived& derived() { return *static_cast<Derived*>(this); }
-
-    const std::vector<const Observation*> _data;
-    ObservationsAdaptator(const std::vector<const Observation*>& data)
-        : _data(data)
-    {
-    }
-
-    // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return _data.size(); }
-
-    // Returns the dim'th component of the idx'th point in the class:
-    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data[idx]->x(dim); }
-
-    // Optional bounding-box computation: return false to default to a standard bbox computation loop.
-    //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it
-    //   again. Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
-    template <class BBOX>
-    bool kdtree_get_bbox(BBOX& bb) const
-    {
-        return false;
-    }
-};
-
-using KdTree = nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, ObservationsAdaptator>,
-                                                   ObservationsAdaptator, 2, /* dim */
-                                                   size_t>;
-
-/**
- * A result-set class used when performing a radius based search.
- */
-class RadiusKnnSearch
-{
-public:
-    const double _radius_sq;
-    const int _nb_neighbors;
-    int nb_found = 0;
-
-    inline RadiusKnnSearch(double radius, int k)
-        : _radius_sq(radius * radius)
-        , _nb_neighbors(k)
-    {
-    }
-
-    inline bool full() const { return nb_found == _nb_neighbors; }
-
-    inline bool addPoint(double dist, IndexT index)
-    {
-        if(dist < _radius_sq)
-        {
-            nb_found++;
-            return nb_found < _nb_neighbors;
-        }
-        return true;
-    }
-
-    inline double worstDist() const { return _radius_sq; }
-};
-
-const auto getObservationsPerViews(const SfMData& sfmData)
-{
-    stl::flat_map<std::size_t, std::vector<const Observation*>> observationsPerView;
-    for(const auto& landIt : sfmData.getLandmarks())
-    {
-        for(const auto& obsIt : landIt.second.observations)
-        {
-            IndexT viewId = obsIt.first;
-            auto& landmarksSet = observationsPerView[viewId];
-            landmarksSet.push_back(&obsIt.second);
-        }
-    }
-    return observationsPerView;
-}
 
 template<class ImageT, class MaskFuncT>
 void process(const std::string& dstColorImage,
@@ -172,7 +83,7 @@ void process(const std::string& dstColorImage,
     }
 }
 
-bool prepareDenseScene(const SfMData& sfmData,
+bool prepareDenseScene(SfMData& sfmData,
                        const std::vector<std::string>& imagesFolders,
                        const std::vector<std::string>& masksFolders,
                        const std::string& maskExtension,
@@ -184,8 +95,7 @@ bool prepareDenseScene(const SfMData& sfmData,
                        bool saveMatricesFiles,
                        bool evCorrection,
                        float landmarksMaskScale,
-                       int nbNeighborObservations,
-                       float percentile)
+                       std::string inputRadiiFilename)
 {
     // defined view Ids
     std::set<IndexT> viewIds;
@@ -221,7 +131,42 @@ bool prepareDenseScene(const SfMData& sfmData,
     const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
     ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0 / medianCameraExposure));
 
-    const auto& observationsPerView = getObservationsPerViews(sfmData);
+    bool doMaskLandmarks = landmarksMaskScale > 0.f;
+    sfmData::ObservationsPerView observationsPerView;
+    HashMap<IndexT, double> estimatedRadii;
+    if (doMaskLandmarks)
+    {
+        observationsPerView = std::move(getObservationsPerViews(sfmData));
+
+        if (!inputRadiiFilename.empty())
+        {
+            std::stringstream stream;
+            std::string line;
+            IndexT viewId;
+            double radius;
+
+            std::fstream fs(inputRadiiFilename, std::ios::in);
+            if(!fs.is_open())
+            {
+                ALICEVISION_LOG_WARNING("Unable to open the radii file " << inputRadiiFilename
+                                                                         << "\nDefaulting to using image size.");
+            }
+            else
+            {
+                while(!fs.eof())
+                {
+                    std::getline(fs, line);
+                    stream.clear();
+                    stream.str(line);
+                    stream >> viewId;
+                    stream >> radius;
+                    estimatedRadii[viewId] = radius;
+                }
+                fs.close();
+            }
+        }
+
+    }
 
 #pragma omp parallel for
     for (int i = 0; i < viewIds.size(); ++i)
@@ -347,63 +292,35 @@ bool prepareDenseScene(const SfMData& sfmData,
             }
 
             image::Image<unsigned char> maskLandmarks;
-            bool doMaskLandmarks = nbNeighborObservations > 0 || percentile < 1.f;
             if(doMaskLandmarks)
             {
                 // for the T camera, image alpha should be at least 0.4f * 255 (masking)
                 maskLandmarks =
                     image::Image<unsigned char>(view->getImage().getWidth(), view->getImage().getHeight(), true, 127);
-                int r = (int)(landmarksMaskScale * 0.5f * (view->getImage().getWidth() + view->getImage().getHeight()));
+                double radius;
+                const auto& it = estimatedRadii.find(viewId);
+                if(it != estimatedRadii.end())
+                    radius = it->second;
+                else
+                    radius = 0.5 * (view->getImage().getWidth() + view->getImage().getHeight());
+                int r = (int)(landmarksMaskScale * radius);
                 const auto& observationsIt = observationsPerView.find(viewId);
                 if(observationsIt != observationsPerView.end())
                 {
-                    const auto& observations = observationsIt->second;
-
-                    ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
-                    ObservationsAdaptator data(observations);
-                    KdTree tree(2, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-                    tree.buildIndex();
-                    ALICEVISION_LOG_INFO("KdTree created for " << observations.size() << " points.");
-
-                    int n = std::min(nbNeighborObservations, static_cast<int>(observations.size() - 1)) + 1;
-                    // note that the observation is a neighbor to itself with zero distance, hence the +/- 1
-                    std::vector<double> means(observations.size());
-                    const std::size_t cacheSize = 1000;
-                    accumulator_set<double, stats<tag::tail_quantile<right>, tag::mean>> acc(
-                        tag::tail<right>::cache_size = cacheSize);
+                    const auto& observations = observationsIt->second.first;
                     int j = 0;
-                    for (const auto& observation : observations)
-                    {
-                        const auto& obs = *observation;
-                        std::vector<size_t> indices_(n);
-                        std::vector<double> distances_(n);
-                        tree.knnSearch(obs.x.data(), n, &indices_[0], &distances_[0]);
-
-                        std::transform(distances_.begin(), distances_.end(), distances_.begin(),
-                                       static_cast<double (*)(double)>(std::sqrt));
-                        const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / (n - 1);
-                        means[j++] = mean; 
-                        acc(mean);
-                    }
-                    double mean_max = std::numeric_limits<double>::max();
-                    if(percentile != 1.f)
-                        mean_max = quantile(acc, quantile_probability = percentile);
-                    r = mean(acc);
-
-                    j = 0;
                     for(const auto& observation : observations)
                     {
                         const auto& obs = *observation;
-                        if(means[j] < mean_max)
-                            for(int y = std::max(obs.x.y() - r, 0.);
-                                y <= std::min(obs.x.y() + r, (double)maskLandmarks.Height() - 1); y++)
+                        for(int y = std::max(obs.x.y() - r, 0.);
+                            y <= std::min(obs.x.y() + r, (double)maskLandmarks.Height() - 1); y++)
+                        {
+                            for(int x = std::max(obs.x.x() - r, 0.);
+                                x <= std::min(obs.x.x() + r, (double)maskLandmarks.Width() - 1); x++)
                             {
-                                for(int x = std::max(obs.x.x() - r, 0.);
-                                    x <= std::min(obs.x.x() + r, (double)maskLandmarks.Width() - 1); x++)
-                                {
-                                    maskLandmarks(y, x) = std::numeric_limits<unsigned char>::max();
-                                }
+                                maskLandmarks(y, x) = std::numeric_limits<unsigned char>::max();
                             }
+                        }
                         j++;
                     }
                 }
@@ -452,9 +369,8 @@ int aliceVision_main(int argc, char* argv[])
     bool saveMetadata = true;
     bool saveMatricesTxtFiles = false;
     bool evCorrection = false;
+    std::string inputRadiiFilename;
     float landmarksMaskScale = 0.f;
-    int nbNeighborObservations = 5;
-    float percentile = 0.95;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -487,14 +403,14 @@ int aliceVision_main(int argc, char* argv[])
         ("evCorrection", po::value<bool>(&evCorrection)->default_value(evCorrection),
          "Correct exposure value.")
         ("landmarksMaskScale", po::value<float>(&landmarksMaskScale)->default_value(landmarksMaskScale),
-         "Scale (relative to image size) of the projection of landmarks to mask images for depth computation.\n"
-         "If 0, masking using landmarks will not be used.")
-        ("nbNeighborObservations", po::value<int>(&nbNeighborObservations)->default_value(nbNeighborObservations),
-         "Number of neighbor observations to be considered for the landmarks-based masking.")
-        ("percentile", po::value<float>(&percentile)->default_value(percentile),
-         "TODO.");
+         "Scale of the projection of landmarks to mask images for depth computation.\n"
+         "If 0, masking using landmarks will not be used.\n"
+         "Otherwise, it's used to scale the projection radius \n"
+         "(either specified by `inputRadiiFile` or by image size if the former is not given).")
+        ("inputRadiiFile", po::value<std::string>(&inputRadiiFilename)->default_value(inputRadiiFilename),
+         "Input Radii file containing the estimated projection radius of landmarks per view. \n"
+         "If not specified, image size will be used to specify the radius.");
     // clang-format on
-
     CmdLine cmdline("AliceVision prepareDenseScene");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
@@ -558,8 +474,7 @@ int aliceVision_main(int argc, char* argv[])
                           saveMatricesTxtFiles,
                           evCorrection,
                           landmarksMaskScale,
-                          nbNeighborObservations,
-                          percentile))
+                          inputRadiiFilename))
         return EXIT_SUCCESS;
 
     return EXIT_FAILURE;
