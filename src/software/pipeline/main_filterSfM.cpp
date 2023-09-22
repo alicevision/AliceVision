@@ -224,6 +224,111 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
         }
     }
 
+    {
+        ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
+        LandmarksAdaptator data(landmarksData);
+        KdTree3D tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+        tree.buildIndex();
+        ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
+
+        // TODO as parameter
+        int nbNeighbors3D = 10;
+        // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
+        int nbNeighbors_ = std::min(nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
+        
+        // contains the observing view ids and neighbors for each landmark
+        std::vector<std::pair<std::vector<IndexT>, std::vector<size_t>>> viewData(landmarksData.size());
+
+#pragma omp parallel for
+        for(auto i = 0; i < landmarksData.size(); i++)
+        {
+            const sfmData::Landmark& landmark = landmarksData[i];
+            const auto& nbObservations = landmark.observations.size();
+            auto& [viewIds, neighbors] = viewData[i];
+            viewIds.reserve(nbObservations);
+            for(const auto& observationPair : landmark.observations)
+            {
+                const IndexT viewId = observationPair.first;
+                viewIds.push_back(viewId);
+            }
+            // sort by ascending view id order for consequent faster access
+            std::stable_sort(viewIds.begin(), viewIds.end());
+
+            neighbors.resize(nbNeighbors_);
+            std::vector<double> weights_(nbNeighbors_);
+            tree.knnSearch(landmark.X.data(), nbNeighbors_, &neighbors[0], &weights_[0]);
+            // a landmark is a neighbor to itself with zero distance, remove it
+            neighbors.erase(neighbors.begin());
+        }
+
+        std::vector<bool> toRemove(landmarksData.size(), false);
+        size_t nbToRemove = 0;
+        // TODO as parameter
+        int maxNbObservationsPerLandmark = 2;
+        const auto initialNbLandmarks = sfmData.getLandmarks().size();
+#pragma omp parallel for reduction(+ : nbToRemove)
+        for(auto i = 0; i < landmarksData.size(); i++)
+        {
+            int score = 0;
+            auto& [viewIds, neighbors] = viewData[i];
+            for(auto j = 0; j < neighbors.size(); j++)
+            {
+                int scoreNeighbor = 0;
+                const auto& neighborId = neighbors[j];
+                const auto& viewIds_neighbor = viewData[neighborId].first;
+                // loop over common views
+                auto viewIds_it = viewIds.begin();
+                auto viewIds_neighbor_it = viewIds_neighbor.begin();
+                while(viewIds_it != viewIds.end() && viewIds_neighbor_it != viewIds_neighbor.end())
+                {
+                    if(*viewIds_it < *viewIds_neighbor_it)
+                    {
+                        ++viewIds_it;
+                    }
+                    else
+                    {
+                        // if same view
+                        if(!(*viewIds_neighbor_it < *viewIds_it))
+                        {
+                            scoreNeighbor++;
+                            if(scoreNeighbor == maxNbObservationsPerLandmark)
+                            {
+                                score++;
+                                break;
+                            }
+                            ++viewIds_it;
+                        }
+                        ++viewIds_neighbor_it;
+                    }
+                }
+            }
+            if(score < nbNeighbors3D / 2)
+            {
+                toRemove[i] = true;
+                nbToRemove++;
+            }
+        }
+        ALICEVISION_LOG_INFO("Identified " << nbToRemove << " landmarks to remove out of " << initialNbLandmarks
+                                           << ", i.e. " << (nbToRemove * 100.f / initialNbLandmarks) << " % ");
+        ALICEVISION_LOG_INFO("Identifying landmarks to remove: done.");
+
+        ALICEVISION_LOG_INFO("Removing landmarks based on TODO: started.");
+        std::vector<std::pair<IndexT, Landmark>> filteredLandmarks(landmarksData.size() - nbToRemove);
+        std::vector<Landmark> landmarksData_filtered(landmarksData.size() - nbToRemove);
+        IndexT newIdx = 0;
+        for(size_t i = 0; i < landmarksData.size(); i++)
+        {
+            if(!toRemove[i])
+            {
+                landmarksData_filtered[newIdx] = landmarksData[i];
+                filteredLandmarks[newIdx++] = std::make_pair(newIdx, landmarksData[i]);
+            }
+        }
+        sfmData.getLandmarks() = std::move(Landmarks(filteredLandmarks.begin(), filteredLandmarks.end()));
+        landmarksData = std::move(landmarksData_filtered);
+        ALICEVISION_LOG_INFO("Removing landmarks based on TODO: done.");
+    }
+
     if (radiusScale <= 0)
     {
         std::vector<std::pair<IndexT, Landmark>> filteredLandmarks(landmarksData.size());
