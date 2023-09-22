@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 
 namespace aliceVision {
 

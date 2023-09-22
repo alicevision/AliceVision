@@ -15,6 +15,7 @@ set(image_files_headers
   drawing.hpp
   filtering.hpp
   io.hpp
+  jetColorMap.cpp
   resampling.hpp
   warping.hpp
   pixelTypes.hpp
@@ -32,6 +33,7 @@ set(image_files_sources
   filtering.cpp
   io.cpp
   imageAlgo.cpp
+  jetColorMap.cpp
   cache.cpp
   ImageCache.cpp
 )

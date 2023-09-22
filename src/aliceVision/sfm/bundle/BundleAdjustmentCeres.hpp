@@ -9,13 +9,11 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/sfmData/CameraPose.hpp>
-#include <aliceVision/camera/IntrinsicBase.hpp>
+
 #include <ceres/ceres.h>
-#include "liealgebra.hpp"
 
 #include <memory>
 
@@ -28,9 +26,7 @@ class SfMData;
 
 namespace sfm {
 
-class SymbolicEvaluationCallback;
-
-class BundleAdjustmentSymbolicCeres : public BundleAdjustment, ceres::EvaluationCallback
+class BundleAdjustmentCeres : public BundleAdjustment
 {
 public:
 
@@ -119,9 +115,9 @@ public:
   /**
    * @brief Bundle adjustment constructor
    * @param[in] options The user Ceres options
-   * @see BundleAdjustmentSymbolicCeres::CeresOptions
+   * @see BundleAdjustmentCeres::CeresOptions
    */
-  BundleAdjustmentSymbolicCeres(const CeresOptions& options = CeresOptions(), int minNbImagesToRefineOpticalCenter = 3)
+  BundleAdjustmentCeres(const CeresOptions& options = CeresOptions(), int minNbImagesToRefineOpticalCenter = 3)
     : _ceresOptions(options)
     , _minNbImagesToRefineOpticalCenter(minNbImagesToRefineOpticalCenter)
   {}
@@ -172,26 +168,12 @@ public:
     return (_localGraph != nullptr);
   }
 
-  virtual void PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point);
-
 private:
-
-  void addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation);
 
   /**
    * @brief Clear structures for a new problem
    */
-  inline void resetProblem()
-  {
-    _statistics = Statistics();
-
-    _allParametersBlocks.clear();
-    _posesBlocks.clear();
-    _intrinsicsBlocks.clear();
-    _landmarksBlocks.clear();
-    _rigBlocks.clear();
-    _linearSolverOrdering.Clear();
-  }
+  void resetProblem();
 
   /**
    * @brief Set user Ceres options to the solver
@@ -222,6 +204,22 @@ private:
    * @param[out] problem The Ceres bundle adjustement problem
    */
   void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+  /**
+   * @brief Create a residual block for each 2D constraints
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] problem The Ceres bundle adjustement problem
+   */
+  void addConstraints2DToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+  /**
+   * @brief Create a residual block for each rotation priors
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] problem The Ceres bundle adjustement problem
+   */
+  void addRotationPriorsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
   /**
    * @brief Create the Ceres bundle adjustement problem with:
@@ -291,23 +289,21 @@ private:
   std::vector<double*> _allParametersBlocks;
   /// poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
-  HashMap<IndexT, SE3::Matrix> _posesBlocks; //TODO : maybe we can use boost::flat_map instead of HashMap ?
+  HashMap<IndexT, std::array<double,6>> _posesBlocks; //TODO : maybe we can use boost::flat_map instead of HashMap ?
   /// intrinsics blocks wrapper
   /// block: intrinsics params
   HashMap<IndexT, std::vector<double>> _intrinsicsBlocks;
-  HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
   /// landmarks blocks wrapper
   /// block: 3d position(3)
   HashMap<IndexT, std::array<double,3>> _landmarksBlocks;
   /// rig sub-poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
-  HashMap<IndexT, HashMap<IndexT, SE3::Matrix>> _rigBlocks;
-  ///Rig pose to use when there is no rig
-  SE3::Matrix _rigNull = SE3::Matrix::Identity();
+  HashMap<IndexT, HashMap<IndexT, std::array<double,6>>> _rigBlocks;
 
   /// hinted order for ceres to eliminate blocks when solving.
   /// note: this ceres parameter is built internally and must be reset on each call to the solver.
   ceres::ParameterBlockOrdering _linearSolverOrdering;
+
 };
 
 } // namespace sfm

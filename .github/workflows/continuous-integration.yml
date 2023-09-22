@@ -143,6 +143,10 @@ jobs:
         run: |
           ${{ env.vcpkgDir }}\vcpkg list
 
+      - name: vcpkg - Remove zip file with prebuilt binaries
+        run: |
+          rm ${{ env.vcpkgArchive }}
+
       - name: Get CUDA Toolkit
         uses: Jimver/cuda-toolkit@v0.2.10
         id: cuda-toolkit
@@ -183,6 +187,9 @@ jobs:
                              -DALICEVISION_USE_POPSIFT=OFF
                              -DALICEVISION_USE_ALEMBIC=ON
                              -DALICEVISION_USE_OPENGV=OFF
+                             -DALICEVISION_BUILD_STEREOPHOTOMETRY=OFF
+                             -DALICEVISION_BUILD_SEGMENTATION=OFF
+                             -DBOOST_NO_CXX11=ON
           # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
           cmakeBuildType: Release
           buildWithCMake: true

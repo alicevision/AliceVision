@@ -399,10 +399,12 @@ int aliceVision_main(int argc, char** argv)
 
     ALICEVISION_LOG_INFO("Number of downscaled panorama levels to generate: " << nbLevels);
 
+    fs::path outputFSPath(outputPanoramaPath);
     for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
     {
         const int levelWidth = width / (1 << levelIdx);
-        fs::path levelPath = fs::path(outputPanoramaPath).parent_path() / ("level_" + std::to_string(levelWidth) + ".exr");
+        
+        fs::path levelPath = outputFSPath.parent_path() /  (outputFSPath.stem().string() + "_level_" + std::to_string(levelWidth) + ".exr");
         levelOutputs.push_back(std::move(oiio::ImageOutput::create(levelPath.string())));
 
         oiio::ImageSpec levelSpec(outputSpec);

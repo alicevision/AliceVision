@@ -8,7 +8,7 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
-#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 
 #include <lemon/list_graph.h>
 

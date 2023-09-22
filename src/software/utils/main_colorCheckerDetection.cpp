@@ -34,7 +34,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -269,16 +269,21 @@ struct MacbethCCheckerQuad : Quad {
         _colorData = cv::Mat::zeros(24, 1, CV_64FC3);
         cv::Mat pixelsCount = cv::Mat::zeros(24, 1, CV_32S);
 
-        for(int y = 0; y < (int) _bbox.sizeY(); ++y)
+        for(int y = 0; y < static_cast<int>(_bbox.sizeY()); ++y)
         {
-            for(int x = 0; x < (int) _bbox.sizeX(); ++x)
+            for(int x = 0; x < static_cast<int>(_bbox.sizeX()); ++x)
             {
-                for(int i = 0; i < _cellMasks.size(); ++i)
+                for(int i = 0; i < static_cast<int>(_cellMasks.size()); ++i)
                 {
+                    const int coordX = x + _bbox.min.x;
+                    const int coordY = y + _bbox.min.y;
+
                     // Check current pixel for the current image mask
-                    if(_cellMasks[i].at<uchar>(y,x) == 255)
+                    if(_cellMasks[i].at<uchar>(y,x) == 255 &&
+                       coordX >= 0 && coordX < img.Width() &&
+                       coordY >= 0 && coordY < img.Height())
                     {
-                        const image::RGBAfColor& px = img(y + _bbox.min.y, x + _bbox.min.x);
+                        const image::RGBAfColor& px = img(coordY, coordX);
                         _colorData.at< cv::Vec3d >(i,0) += cv::Vec3d(px.r(), px.g(), px.b());
                         ++pixelsCount.at<int>(i);
                     }

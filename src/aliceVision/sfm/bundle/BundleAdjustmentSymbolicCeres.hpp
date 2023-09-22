@@ -9,15 +9,20 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/numeric/numeric.hpp>
+
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 
+#include <aliceVision/sfmData/CameraPose.hpp>
+#include <aliceVision/camera/IntrinsicBase.hpp>
+
 #include <ceres/ceres.h>
-#include "liealgebra.hpp"
+
+#include <memory>
 
 
 namespace aliceVision {
-
 
 namespace sfmData {
 class SfMData;
@@ -25,7 +30,9 @@ class SfMData;
 
 namespace sfm {
 
-class BundleAdjustmentPanoramaCeres : public BundleAdjustment
+class SymbolicEvaluationCallback;
+
+class BundleAdjustmentSymbolicCeres : public BundleAdjustment, ceres::EvaluationCallback
 {
 public:
 
@@ -34,11 +41,13 @@ public:
    */
   struct CeresOptions
   {
-    CeresOptions(bool verbose = true, bool multithreaded = true)
+    CeresOptions(bool verbose = true, bool multithreaded = true, unsigned int maxIterations = 50)
       : verbose(verbose)
       , nbThreads(multithreaded ? omp_get_max_threads() : 1) // set number of threads, 1 if OpenMP is not enabled
+      , maxNumIterations(maxIterations)
     {
       setDenseBA(); // use dense BA by default
+      lossFunction.reset(new ceres::HuberLoss(Square(4.0)));
     }
 
     void setDenseBA();
@@ -47,9 +56,13 @@ public:
     ceres::LinearSolverType linearSolverType;
     ceres::PreconditionerType preconditionerType;
     ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
+    std::shared_ptr<ceres::LossFunction> lossFunction;
     unsigned int nbThreads;
+    unsigned int maxNumIterations;
+    bool useParametersOrdering = true;
     bool summary = false;
     bool verbose = true;
+    bool useFocalPrior = true;
   };
 
   /**
@@ -109,13 +122,22 @@ public:
   /**
    * @brief Bundle adjustment constructor
    * @param[in] options The user Ceres options
-   * @see BundleAdjustmentPanoramaCeres::CeresOptions
+   * @see BundleAdjustmentSymbolicCeres::CeresOptions
    */
-  BundleAdjustmentPanoramaCeres(const BundleAdjustmentPanoramaCeres::CeresOptions& options = CeresOptions())
+  BundleAdjustmentSymbolicCeres(const CeresOptions& options = CeresOptions(), int minNbImagesToRefineOpticalCenter = 3)
     : _ceresOptions(options)
-  {
-    
-  }
+    , _minNbImagesToRefineOpticalCenter(minNbImagesToRefineOpticalCenter)
+  {}
+
+  /**
+   * @brief Create a jacobian CRSMatrix
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] jacobian The jacobian CSRMatrix
+   */
+  void createJacobian(const sfmData::SfMData& sfmData,
+                      ERefineOptions refineOptions,
+                      ceres::CRSMatrix& jacobian);
 
   /**
    * @brief Perform a Bundle Adjustment on the SfM scene with refinement of the requested parameters
@@ -126,6 +148,14 @@ public:
    */
   bool adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions = REFINE_ALL);
 
+  /**
+   * @brief Ajust parameters according to the local reconstruction graph in order do perfomr an optimezed bundle adjustmentor
+   * @param[in] localGraph The Local bundle adjustment graph pointer or nullptr (will refine everything)
+   */
+  inline void useLocalStrategyGraph(const std::shared_ptr<const LocalBundleAdjustmentGraph>& localGraph)
+  {
+    _localGraph = localGraph;
+  }
 
   /**
    * @brief Get bundle adjustment statistics structure
@@ -145,7 +175,11 @@ public:
     return (_localGraph != nullptr);
   }
 
+  virtual void PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point);
+
 private:
+
+  void addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation);
 
   /**
    * @brief Clear structures for a new problem
@@ -153,8 +187,13 @@ private:
   inline void resetProblem()
   {
     _statistics = Statistics();
+
+    _allParametersBlocks.clear();
     _posesBlocks.clear();
     _intrinsicsBlocks.clear();
+    _landmarksBlocks.clear();
+    _rigBlocks.clear();
+    _linearSolverOrdering.Clear();
   }
 
   /**
@@ -178,6 +217,14 @@ private:
    * @param[out] problem The Ceres bundle adjustement problem
    */
   void addIntrinsicsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+  /**
+   * @brief Create a residual block for each landmarks according to the Ceres format
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] problem The Ceres bundle adjustement problem
+   */
+  void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
   /**
    * @brief Create a residual block for each 2D constraints
@@ -232,6 +279,16 @@ private:
     return (_localGraph != nullptr ? _localGraph->getIntrinsicState(intrinsicId) : BundleAdjustment::EParameterState::REFINED);
   }
 
+  /**
+   * @brief Return the BundleAdjustment::EParameterState for a specific landmark.
+   * @param[in] landmarkId The landmark id
+   * @return BundleAdjustment::EParameterState (always REFINED if no local strategy)
+   */
+  inline BundleAdjustment::EParameterState getLandmarkState(IndexT landmarkId) const
+  {
+    return (_localGraph != nullptr ? _localGraph->getLandmarkState(landmarkId) : BundleAdjustment::EParameterState::REFINED);
+  }
+
   // private members
 
   /// use or not the local budle adjustment strategy
@@ -239,19 +296,37 @@ private:
 
   /// user Ceres options to use in the solver
   CeresOptions _ceresOptions;
+  int _minNbImagesToRefineOpticalCenter = 3;
+
+  /// user FeatureConstraint options to use
+  EFeatureConstraint _featureConstraint;
 
   /// last adjustment iteration statisics
   Statistics _statistics;
 
   // data wrappers for refinement
+
+  /// all parameters blocks pointers
+  std::vector<double*> _allParametersBlocks;
   /// poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
-  HashMap<IndexT, SO3::Matrix> _posesBlocks; //TODO : maybe we can use boost::flat_map instead of HashMap ?
-
+  HashMap<IndexT, SE3::Matrix> _posesBlocks; //TODO : maybe we can use boost::flat_map instead of HashMap ?
   /// intrinsics blocks wrapper
   /// block: intrinsics params
   HashMap<IndexT, std::vector<double>> _intrinsicsBlocks;
+  HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
+  /// landmarks blocks wrapper
+  /// block: 3d position(3)
+  HashMap<IndexT, std::array<double,3>> _landmarksBlocks;
+  /// rig sub-poses blocks wrapper
+  /// block: ceres angleAxis(3) + translation(3)
+  HashMap<IndexT, HashMap<IndexT, SE3::Matrix>> _rigBlocks;
+  ///Rig pose to use when there is no rig
+  SE3::Matrix _rigNull = SE3::Matrix::Identity();
 
+  /// hinted order for ceres to eliminate blocks when solving.
+  /// note: this ceres parameter is built internally and must be reset on each call to the solver.
+  ceres::ParameterBlockOrdering _linearSolverOrdering;
 };
 
 } // namespace sfm
