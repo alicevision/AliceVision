@@ -8,6 +8,7 @@
 
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -23,7 +24,7 @@ void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
     design(2,i) = x2[0] * P2(2,i) - P2(0,i);
     design(3,i) = x2[1] * P2(2,i) - P2(1,i);
   }
-  Nullspace(&design, X_homogeneous);
+  Nullspace(design, *X_homogeneous);
 }
 
 void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,

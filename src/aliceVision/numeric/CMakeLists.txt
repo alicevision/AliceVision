@@ -3,6 +3,7 @@ set(numeric_files_headers
   numeric.hpp
   projection.hpp
   gps.hpp
+  algebra.hpp
 )
 
 # Sources

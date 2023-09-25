@@ -11,6 +11,7 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/PointFittingKernel.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 // [1] "Robust and accurate calibration of camera networks". PhD.
 // Authors: Pierre MOULON
@@ -85,7 +86,7 @@ public:
         encodeEpipolarEquation(x1, x2, &A);
 
         Vec9 e;
-        Nullspace(&A, &e);
+        Nullspace(A, e);
         Mat3 E = Map<RMat3>(e.data());
 
         // Find the closest essential matrix to E in frobenius norm
@@ -174,7 +175,7 @@ void TriangulateDLT(const Mat34 &P1, const Vec3 &x1,
         design(4,i) =  x2[2] * P2(0,i) - x2[0] * P2(2,i);
         design(5,i) = -x2[1] * P2(0,i) + x2[0] * P2(1,i);
     }
-    Nullspace(&design, X_homogeneous);
+    Nullspace(design, *X_homogeneous);
 }
 
 void TriangulateDLT(const Mat34 &P1, const Vec3 &x1,

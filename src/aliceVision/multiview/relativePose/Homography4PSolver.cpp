@@ -7,6 +7,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Homography4PSolver.hpp"
+#include <aliceVision/numeric/algebra.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -58,13 +59,13 @@ void Homography4PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustE
     typedef Eigen::Matrix<double, 16, 9> Mat16_9;
     Mat16_9 L = Mat::Zero(16, 9);
     buildActionMatrix(L, x1, x2);
-    Nullspace(&L, &h);
+    Nullspace(L, h);
   }
   else
   {
     MatX9 L = Mat::Zero(n * 2, 9);
     buildActionMatrix(L, x1, x2);
-    Nullspace(&L, &h);
+    Nullspace(L, h);
   }
 
   // map the linear vector as the H matrix
@@ -118,13 +119,13 @@ void Homography4PSphericalSolver::solve(const Mat& p1, const Mat& p2, std::vecto
         typedef Eigen::Matrix<double, 16, 9> Mat16_9;
         Mat16_9 L = Mat::Zero(16, 9);
         buildActionMatrixSpherical(L, p1, p2);
-        Nullspace(&L, &h);
+        Nullspace(L, h);
     }
     else
     {
         MatX9 L = Mat::Zero(n * 2, 9);
         buildActionMatrixSpherical(L, p1, p2);
-        Nullspace(&L, &h);
+        Nullspace(L, h);
     }
 
     // Build G matrix from vector

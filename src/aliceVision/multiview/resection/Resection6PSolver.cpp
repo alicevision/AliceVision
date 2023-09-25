@@ -7,6 +7,7 @@
 
 #include "Resection6PSolver.hpp"
 #include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -35,7 +36,7 @@ double nullspaceRatio(TMat* A, TVec* nullspace)
     A_extended.block(A->rows(), 0, A->cols() - A->rows(), A->cols()).setZero();
     A_extended.block(0, 0, A->rows(), A->cols()) = (*A);
 
-    return Nullspace(&A_extended, nullspace);
+    return Nullspace(A_extended, *nullspace);
 }
 
 /**
