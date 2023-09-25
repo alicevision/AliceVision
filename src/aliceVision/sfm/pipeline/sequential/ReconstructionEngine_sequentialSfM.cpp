@@ -1633,7 +1633,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
       Vec3 t;
-      KRt_from_P(resectionData.projection_matrix, &K, &R, &t);
+      KRt_from_P(resectionData.projection_matrix, K, R, t);
       
       const double focalX = K(0,0);
       const double focalY = K(1,1);

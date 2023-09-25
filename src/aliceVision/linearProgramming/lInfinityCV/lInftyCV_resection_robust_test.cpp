@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
     // Extract K[R|t]
     Mat3 R,K;
     Vec3 t;
-    KRt_from_P(P.getMatrix(), &K, &R, &t);
+    KRt_from_P(P.getMatrix(), K, R, t);
 
     d2._R[nResectionCameraIndex] = R;
     d2._t[nResectionCameraIndex] = t;
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
     // Extract K[R|t]
     Mat3 R,K;
     Vec3 t;
-    KRt_from_P(P.getMatrix(), &K, &R, &t);
+    KRt_from_P(P.getMatrix(), K, R, t);
 
     d2._R[nResectionCameraIndex] = R;
     d2._t[nResectionCameraIndex] = t;

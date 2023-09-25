@@ -141,8 +141,8 @@ public:
   inline double error(std::size_t sample, const ModelT& model) const
   {
     Mat34 poseA, poseB;
-    P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), &poseA);
-    P_from_KRt(Mat3::Identity(), _R, model.getMatrix(), &poseB);
+    P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), poseA);
+    P_from_KRt(Mat3::Identity(), _R, model.getMatrix(), poseB);
     const robustEstimation::Mat3Model F(F_from_P(poseA, poseB));
     return _errorEstimator.error(F, _x1.col(sample), _x2.col(sample));
   }

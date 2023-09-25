@@ -141,7 +141,7 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
 
             Mat3 K, R;
             Vec3 t;
-            KRt_from_P(P, &K, &R, &t);
+            KRt_from_P(P, K, R, t);
 
             // assert point in front of the cam
             std::size_t cpt = 0;

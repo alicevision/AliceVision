@@ -176,7 +176,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
         const Vec3 camCenter = camsPts[i];
         const Mat3 rotationMat = LookAt(matPts.col(0) - camCenter);
         const Vec3 translation = -rotationMat * camCenter;
-        P_from_KRt(internalParams, rotationMat, translation, &P);
+        P_from_KRt(internalParams, rotationMat, translation, P);
         projectedPtsPerCam.push_back(project(P, matPts));
 
         geometry::Pose3 pose(rotationMat, camCenter);

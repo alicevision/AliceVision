@@ -41,7 +41,7 @@ class EPnPKernel : public robustEstimation::PointFittingKernel<EPnPSolver, Proje
     {
       assert(x2d.cols() == x3d.cols());
       // Conversion from image coordinates to normalized camera coordinates
-      euclideanToNormalizedCamera(x2d, K, &x_camera_);
+      euclideanToNormalizedCamera(x2d, K, x_camera_);
     }
 
   void fit(const std::vector<std::size_t>& samples, std::vector<robustEstimation::Mat34Model>& models) const override
@@ -53,7 +53,7 @@ class EPnPKernel : public robustEstimation::PointFittingKernel<EPnPSolver, Proje
     Vec3 t;
     if (_kernelSolver.resection(x, X, &R, &t))
     {
-      P_from_KRt(K_, R, t, &P);
+      P_from_KRt(K_, R, t, P);
       models.emplace_back(P);
     }
   }

@@ -112,7 +112,7 @@ int aliceVision_main(int argc, char **argv)
 
     Mat3 R, K;
     Vec3 t;
-    KRt_from_P( P, &K, &R, &t);
+    KRt_from_P( P, K, R, t);
 
     const Vec3 optical_center = R.transpose() * t;
 

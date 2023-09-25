@@ -686,9 +686,9 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   vec_tis.resize(3);
   Mat3 K, R;
-  KRt_from_P(T.P1, &K, &R, &vec_tis[0]);
-  KRt_from_P(T.P2, &K, &R, &vec_tis[1]);
-  KRt_from_P(T.P3, &K, &R, &vec_tis[2]);
+  KRt_from_P(T.P1, K, R, vec_tis[0]);
+  KRt_from_P(T.P2, K, R, vec_tis[1]);
+  KRt_from_P(T.P3, K, R, vec_tis[2]);
 
 #ifdef DEBUG_TRIPLET
   // compute 3D scene base on motion estimation

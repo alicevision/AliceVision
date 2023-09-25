@@ -65,7 +65,7 @@ bool getPoseStructure(Mat3& R, Vec3& t, std::vector<Vec3>& structure, std::vecto
     Mat34 P1, P2;
     Mat3 R1 = Mat3::Identity();
     Vec3 t1 = Vec3::Zero();
-    P_from_KRt(K1, R1, t1, &P1);
+    P_from_KRt(K1, R1, t1, P1);
 
     size_t bestCoundValid = 0;
 
@@ -74,7 +74,7 @@ bool getPoseStructure(Mat3& R, Vec3& t, std::vector<Vec3>& structure, std::vecto
         const Mat3& R2 = Rs[it];
         const Vec3& t2 = ts[it];
 
-        P_from_KRt(K2, R2, t2, &P2);
+        P_from_KRt(K2, R2, t2, P2);
 
         std::vector<Vec3> points;
         std::vector<size_t> updatedInliers;

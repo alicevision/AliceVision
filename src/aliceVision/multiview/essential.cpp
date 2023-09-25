@@ -101,12 +101,12 @@ int motionFromEssentialChooseSolution(const std::vector<Mat3> &Rs,
   // Set P1 = K1 [Id|0]
   Mat3 R1 = Mat3::Identity();
   Vec3 t1 = Vec3::Zero();
-  P_from_KRt(K1, R1, t1, &P1);
+  P_from_KRt(K1, R1, t1, P1);
 
   for (int i = 0; i < 4; ++i) {
     const Mat3 &R2 = Rs[i];
     const Vec3 &t2 = ts[i];
-    P_from_KRt(K2, R2, t2, &P2);
+    P_from_KRt(K2, R2, t2, P2);
     Vec3 X;
     multiview::TriangulateDLT(P1, x1, P2, x2, X);
     // Test if point is front to the two cameras (positive depth)

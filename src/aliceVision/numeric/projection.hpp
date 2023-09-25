@@ -20,7 +20,7 @@ namespace aliceVision {
 /**
  * @brief Compute P = K[R|t]
  */
-void P_from_KRt(const Mat3& K, const Mat3& R, const Vec3& t, Mat34* P);
+void P_from_KRt(const Mat3& K, const Mat3& R, const Vec3& t, Mat34 & P);
 
 /**
  * @brief Compute P = K[R|t]
@@ -31,7 +31,7 @@ Mat34 P_from_KRt(const Mat3& K, const Mat3& R, const Vec3& t);
 /**
  * @brief Decompose using the RQ decomposition HZ A4.1.1 pag.579.
  */
-void KRt_from_P(const Mat34& P, Mat3* Kp, Mat3* Rp, Vec3* tp);
+void KRt_from_P(const Mat34& P, Mat3 & Kp, Mat3 & Rp, Vec3 & tp);
 
 /**
  * @brief Compute a fundamental matrix from projection matrices
@@ -70,12 +70,12 @@ Vec2 project(const Mat34& P, const Vec3& X);
 /**
  * @brief Compute P*[X|1.0] for the X list of point (3D point).
  */
-void project(const Mat34& P, const Mat3X& X, Mat2X* x);
+void project(const Mat34& P, const Mat3X& X, Mat2X & x);
 
 /**
  * @brief Compute P*[X|1.0] for the X list of point (4D point).
  */
-void project(const Mat34& P, const Mat4X& X, Mat2X* x);
+void project(const Mat34& P, const Mat4X& X, Mat2X& x);
 
 /**
  * @brief Return P*[X|1.0] for the X list of point (3D point).
@@ -105,7 +105,7 @@ Vec3 euclideanToHomogeneous(const Vec2& x);
 /**
  * @brief Change homogeneous coordinates to euclidean.
  */
-void homogeneousToEuclidean(const Mat& H, Mat* X);
+void homogeneousToEuclidean(const Mat& H, Mat & X);
 
 /**
  * @brief Change euclidean coordinates to homogeneous.
@@ -125,12 +125,12 @@ void homogeneousToEuclidean(const Mat3X& h, Mat2X& e);
 /**
  * @brief Project x point in camera coordinates
  */
-void euclideanToNormalizedCamera(const Mat2X& x, const Mat3& K, Mat2X* n);
+void euclideanToNormalizedCamera(const Mat2X& x, const Mat3& K, Mat2X& n);
 
 /**
  * @brief Project x point in camera coordinates
  */
-void homogeneousToNormalizedCamera(const Mat3X& x, const Mat3& K, Mat2X* n);
+void homogeneousToNormalizedCamera(const Mat3X& x, const Mat3& K, Mat2X& n);
 
 /**
  * @brief Estimates the root mean square error (2D)

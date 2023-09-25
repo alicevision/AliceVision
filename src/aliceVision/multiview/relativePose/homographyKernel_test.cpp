@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(NormalizedHomography4PKernel_Fitting)
   {
     // transform points by the ground truth homography.
     Mat y, yh = H_gt[i] * xh;
-    homogeneousToEuclidean(yh, &y);
+    homogeneousToEuclidean(yh, y);
 
     const relativePose::NormalizedHomography4PKernel kernel(x, y);
 
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(Homography4PKernel_Fitting)
   {
     // transform points by the ground truth homography.
     Mat y, yh = H_gt[i] * xh;
-    homogeneousToEuclidean(yh, &y);
+    homogeneousToEuclidean(yh, y);
 
     const relativePose::Homography4PKernel kernel(x, y);
 
