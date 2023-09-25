@@ -412,14 +412,6 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-
-    if (sfmData.getValidViews().size() >= 2)
-    {
-        ALICEVISION_LOG_INFO("SfmData has already an initialization");
-        return EXIT_SUCCESS;
-    }
-
-
     // get imageDescriber type
     const std::vector<feature::EImageDescriberType> describerTypes =
         feature::EImageDescriberType_stringToEnums(describerTypesName);
