@@ -215,7 +215,8 @@ ObservationsPerView getObservationsPerViews(SfMData& sfmData)
     return observationsPerView;
 }
 
-bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale, int minNbObservationsPerLandmark)
+bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale, int minNbObservationsPerLandmark,
+                     int nbNeighbors3D, int maxNbObservationsPerLandmark)
 {
     const auto initialNbLandmarks = sfmData.getLandmarks().size();
     std::vector<Landmark> landmarksData(initialNbLandmarks);
@@ -255,11 +256,8 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
         tree.buildIndex();
         ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
 
-        // TODO as parameter
-        int nbNeighbors3D = 10;
         // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
         int nbNeighbors_ = std::min(nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
-        
         // contains the observing view ids and neighbors for each landmark
         std::vector<std::pair<std::vector<IndexT>, std::vector<size_t>>> viewData(landmarksData.size());
 
@@ -287,8 +285,6 @@ bool filterLandmarks(SfMData& sfmData, double radiusScale, bool useFeatureScale,
 
         std::vector<bool> toRemove(landmarksData.size(), false);
         size_t nbToRemove = 0;
-        // TODO as parameter
-        int maxNbObservationsPerLandmark = 2;
         const auto initialNbLandmarks = sfmData.getLandmarks().size();
 #pragma omp parallel for reduction(+ : nbToRemove)
         for(auto i = 0; i < landmarksData.size(); i++)
@@ -552,7 +548,6 @@ bool filterObservations3D(SfMData& sfmData, int maxNbObservationsPerLandmark, in
     std::vector<std::vector<double>> viewScoresData_t(landmarksData.size());
     for(auto i = 0; i < nbIterations; i++)
     {
-        ALICEVISION_LOG_INFO("Iteration " << i << "...");
 #pragma omp parallel for
         for(auto id = 0; id < landmarksData.size(); id++)
         {
@@ -603,23 +598,44 @@ bool filterObservations3D(SfMData& sfmData, int maxNbObservationsPerLandmark, in
             {
                 // normalize score and apply influence factor
                 viewScores_acc[j] *= neighborsInfluence / viewScores_total;
-                // combine weghted neighbor scores and the landmark's own scores
+                // combine weighted neighbor scores and the landmark's own scores
                 viewScores_acc[j] += (1 - neighborsInfluence) * viewScores[j];
             }
+            // dampen scores of non-chosen observations
+            if(viewScores_acc.size() <= maxNbObservationsPerLandmark)
+                continue;
+            // sort by descending view score order
+            std::vector<size_t> idx(viewScores_acc.size());
+            std::iota(idx.begin(), idx.end(), 0);
+            std::stable_sort(idx.begin(), idx.end(),
+                             [&v = viewScores_acc](size_t i1, size_t i2) { return v[i1] > v[i2]; });
+            viewScores_total = 1.; 
+            for(auto j = maxNbObservationsPerLandmark; j < viewScores_acc.size(); j++)
+            {
+                const double& v = 0.5 * viewScores_acc[j];
+                viewScores_acc[j] = v;
+                viewScores_total -= v;
+            }
+            // re-normalize
+            for(auto j = 0; j < viewScores_acc.size(); j++)
+                viewScores_acc[j] /= viewScores_total;
         }
         // update scores at end of iteration
         double error = 0.;
 #pragma omp parallel for reduction(+:error)
         for(auto id = 0; id < landmarksData.size(); id++)
         {
-            double error_j = 0.;
-            for(auto j = 0; j < viewScoresData_t[id].size(); j++)
+            // compute MSE
             {
-                const auto& v = viewScoresData_t[id][j] - viewScoresData[id].second[j];
-                error_j += v * v;
+                double error_j = 0.;
+                for(auto j = 0; j < viewScoresData_t[id].size(); j++)
+                {
+                    const auto& v = viewScoresData_t[id][j] - viewScoresData[id].second[j];
+                    error_j += v * v;
+                }
+                error_j /= viewScoresData_t[id].size();
+                error += error_j;
             }
-            error_j /= viewScoresData_t[id].size();
-            error += error_j;
             viewScoresData[id].second = std::move(viewScoresData_t[id]);
         }
         error /= landmarksData.size();
@@ -850,7 +866,8 @@ int aliceVision_main(int argc, char *argv[])
     if(radiusScale > 0 || minNbObservationsPerLandmark > 0)
     {
         ALICEVISION_LOG_INFO("Filtering landmarks: started.");
-        filterLandmarks(sfmData, radiusScale, useFeatureScale, minNbObservationsPerLandmark);
+        filterLandmarks(sfmData, radiusScale, useFeatureScale, minNbObservationsPerLandmark, nbNeighbors3D,
+                        maxNbObservationsPerLandmark);
         ALICEVISION_LOG_INFO("Filtering landmarks: done.");
     }
     
