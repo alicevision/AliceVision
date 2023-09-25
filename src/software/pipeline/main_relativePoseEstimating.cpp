@@ -270,7 +270,7 @@ int aliceVision_main(int argc, char** argv)
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
 
-    CmdLine cmdline("AliceVision pairsEstimations");
+    CmdLine cmdline("AliceVision Relative Pose Estimating");
 
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);

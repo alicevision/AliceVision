@@ -392,7 +392,7 @@ int aliceVision_main(int argc, char** argv)
     ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(), "Path to folder(s) containing the extracted features.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),feature::EImageDescriberType_informations().c_str());
 
-    CmdLine cmdline("AliceVision pairsEstimations");
+    CmdLine cmdline("AliceVision Nodal SfM");
 
     cmdline.add(requiredParams);
     if(!cmdline.execute(argc, argv))
