@@ -21,7 +21,7 @@ namespace sfm {
 bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
   const Mat & x1, const Mat & x2,
   const Mat3 & E, const std::vector<size_t> & vec_inliers,
-  Mat3 * R, Vec3 * t)
+  Mat3 & R, Vec3 & t)
 {
   // Accumulator to find the best solution
   std::vector<size_t> f(4, 0);
@@ -68,9 +68,10 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
     // There is no right solution with points in front of the cameras
     return false;
   }
+  
   const size_t index = std::distance(f.begin(), iter);
-  (*R) = Rs[index];
-  (*t) = ts[index];
+  R = Rs[index];
+  t = ts[index];
 
   return true;
 }
@@ -115,7 +116,7 @@ bool robustRelativePose(const Mat3& K1, const Mat3& K2,
   Vec3 t;
   if (!estimate_Rt_fromE(
     K1, K2, x1, x2,
-    relativePose_info.essential_matrix, relativePose_info.vec_inliers, &R, &t))
+    relativePose_info.essential_matrix, relativePose_info.vec_inliers, R, t))
   {
     ALICEVISION_LOG_INFO("robustRelativePose: cannot find a valid [R|t] couple that makes the inliers in front of the camera.");
     return false; // cannot find a valid [R|t] couple that makes the inliers in front of the camera.
