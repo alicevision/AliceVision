@@ -90,12 +90,12 @@ Mat2X project(const Mat34& P, const Mat4X& X);
 /**
  * @brief Change homogeneous coordinates to euclidean.
  */
-void homogeneousToEuclidean(const Vec4& H, Vec3* X);
+void homogeneousToEuclidean(const Vec4& H, Vec3& X);
 
 /**
  * @brief Change euclidean coordinates to homogeneous.
  */
-void euclideanToHomogeneous(const Mat& X, Mat* H);
+void euclideanToHomogeneous(const Mat& X, Mat & H);
 
 /**
  * @brief Change euclidean coordinates to homogeneous.
@@ -115,12 +115,12 @@ Mat3X euclideanToHomogeneous(const Mat2X& x);
 /**
  * @brief Change euclidean coordinates to homogeneous.
  */
-void euclideanToHomogeneous(const Mat2X& x, Mat3X* h);
+void euclideanToHomogeneous(const Mat2X& x, Mat3X & h);
 
 /**
  * @brief Change homogeneous coordinates to euclidean.
  */
-void homogeneousToEuclidean(const Mat3X& h, Mat2X* e);
+void homogeneousToEuclidean(const Mat3X& h, Mat2X& e);
 
 /**
  * @brief Project x point in camera coordinates

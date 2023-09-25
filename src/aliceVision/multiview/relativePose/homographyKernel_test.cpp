@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(NormalizedHomography4PKernel_Fitting)
   x << 0, 0, 0, 1, 1, 1, 2, 2, 2,
        0, 1, 2, 0, 1, 2, 0, 1, 2;
 
-  euclideanToHomogeneous(x, &xh);
+  euclideanToHomogeneous(x, xh);
 
   for(int i = 0; i < H_gt.size(); ++i)
   {
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(Homography4PKernel_Fitting)
   x << 0, 0, 0, 1, 1, 1, 2, 2, 2,
        0, 1, 2, 0, 1, 2, 0, 1, 2;
 
-  euclideanToHomogeneous(x, &xh);
+  euclideanToHomogeneous(x, xh);
 
   for(int i = 0; i < H_gt.size(); ++i)
   {

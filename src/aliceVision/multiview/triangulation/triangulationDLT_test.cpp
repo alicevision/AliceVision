@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(Triangulation_TriangulateDLT)
     x2 = d._x[1].col(i);
     Vec3 X_estimated, X_gt;
     X_gt = d._X.col(i);
-    multiview::TriangulateDLT(d.P(0), x1, d.P(1), x2, &X_estimated);
+    multiview::TriangulateDLT(d.P(0), x1, d.P(1), x2, X_estimated);
     BOOST_CHECK_SMALL(DistanceLInfinity(X_estimated, X_gt), 1e-8);
   }
 }

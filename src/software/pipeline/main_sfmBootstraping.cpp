@@ -147,7 +147,7 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData, const sfm::Reconstructe
         }
 
         Vec3 X;
-        multiview::TriangulateDLT(P1, refptu, P2, nextptu, &X);
+        multiview::TriangulateDLT(P1, refptu, P2, nextptu, X);
         
         if (X(2) < 0.0)
         {
@@ -256,7 +256,7 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
         const Vec2 nextptu = nextIntrinsics->get_ud_pixel(nextpt);
 
         Vec3 X;
-        multiview::TriangulateDLT(P1, refptu, P2, nextptu, &X);
+        multiview::TriangulateDLT(P1, refptu, P2, nextptu, X);
         
         if (X(2) < 0.0)
         {

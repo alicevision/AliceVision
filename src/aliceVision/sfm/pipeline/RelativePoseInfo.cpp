@@ -53,7 +53,7 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
       const Vec2
         & x1_ = x1.col(vec_inliers[k]),
         & x2_ = x2.col(vec_inliers[k]);
-      multiview::TriangulateDLT(P1, x1_, P2, x2_, &X);
+      multiview::TriangulateDLT(P1, x1_, P2, x2_, X);
       // Test if point is front to the two cameras.
       if (Depth(R1, t1, X) > 0 && Depth(R2, t2, X) > 0)
       {

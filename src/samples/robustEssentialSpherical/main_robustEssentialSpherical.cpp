@@ -216,7 +216,7 @@ int main()
 
                         //Triangulate
                         Vec3 X;
-                        aliceVision::spherical_cam::TriangulateDLT(P1, x1_, P2, x2_, &X);
+                        aliceVision::spherical_cam::TriangulateSphericalDLT(P1, x1_, P2, x2_, X);
 
                         //Check positivity of the depth (sign of the dot product)
                         const Vec3 Mc = R2 * X + t2;

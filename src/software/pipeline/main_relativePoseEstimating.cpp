@@ -86,7 +86,7 @@ bool getPoseStructure(Mat3& R, Vec3& t, std::vector<Vec3>& structure, std::vecto
             const Vec2& pt2 = x2.col(vecInliers[k]);
 
             Vec3 X;
-            multiview::TriangulateDLT(P1, pt1, P2, pt2, &X);
+            multiview::TriangulateDLT(P1, pt1, P2, pt2, X);
 
             // Test if point is front to the two cameras.
             if(Depth(R1, t1, X) > 0 && Depth(R2, t2, X) > 0)

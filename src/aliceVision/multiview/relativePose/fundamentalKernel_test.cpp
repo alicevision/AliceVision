@@ -51,8 +51,8 @@ bool expectFundamentalProperties(const TMat& F,
   assert(ptsA.cols() == ptsB.cols());
   Mat hptsA, hptsB;
 
-  euclideanToHomogeneous(ptsA, &hptsA);
-  euclideanToHomogeneous(ptsB, &hptsB);
+  euclideanToHomogeneous(ptsA, hptsA);
+  euclideanToHomogeneous(ptsB, hptsB);
 
   for(int i = 0; i < ptsA.cols(); ++i)
   {

@@ -1430,7 +1430,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
       for (const size_t inlier_idx: relativePose_info.vec_inliers)
       {
         Vec3 X;
-        multiview::TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), &X);
+        multiview::TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), X);
         IndexT trackId = commonTracksIds[inlier_idx];
         auto iter = map_tracksCommon[trackId].featPerView.begin();
         const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second].coords().cast<double>();
@@ -1854,7 +1854,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       }
 
       // -- Triangulate:
-      multiview::TriangulateDLT(oi.P, oi.xUd, oj.P, oj.xUd, &X_euclidean);
+      multiview::TriangulateDLT(oi.P, oi.xUd, oj.P, oj.xUd, X_euclidean);
 
       // -- Check:
       //  - angle (small angle leads imprecise triangulation)
@@ -1907,7 +1907,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       
       multiview::TriangulateNViewLORANSAC(features, Ps, _randomNumberGenerator, &X_homogeneous, &inliersIndex, 8.0);
       
-      homogeneousToEuclidean(X_homogeneous, &X_euclidean);     
+      homogeneousToEuclidean(X_homogeneous, X_euclidean);     
       
       // observations = {350, 380, 442} | inliersIndex = [0, 1] | inliers = {350, 380}
       for (const auto & id : inliersIndex)
@@ -2077,7 +2077,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           const Mat34 pI = camIPinHole->getProjectiveEquivalent(poseI);
           const Mat34 pJ = camJPinHole->getProjectiveEquivalent(poseJ);
           
-          multiview::TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
+          multiview::TriangulateDLT(pI, xI_ud, pJ, xJ_ud, X_euclidean);
           
           // Check triangulation results
           //  - Check angle (small angle leads imprecise triangulation)

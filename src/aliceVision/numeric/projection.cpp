@@ -194,16 +194,14 @@ Mat2X project(const Mat34 &P, const Mat4X &X)
   return Mat3X(P * X).colwise().hnormalized();
 }
 
-void homogeneousToEuclidean(const Vec4 &H, Vec3 *X)
+void homogeneousToEuclidean(const Vec4 &H, Vec3 & X)
 {
-  assert(X != nullptr);
-  *X = H.hnormalized();
+  X = H.hnormalized();
 }
 
-void euclideanToHomogeneous(const Mat &X, Mat *H)
+void euclideanToHomogeneous(const Mat &X, Mat & H)
 {
-  assert(H != nullptr);
-  *H = X.colwise().homogeneous();  
+  H = X.colwise().homogeneous();  
 }
 
 double Depth(const Mat3 &R, const Vec3 &t, const Vec3 &X)
