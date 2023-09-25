@@ -154,6 +154,21 @@ if(ALICEVISION_BUILD_SFM)
               Boost::filesystem
     )
 
+    # Incremental SFM for pure rotation
+    alicevision_add_software(aliceVision_nodalSfM
+        SOURCE main_nodalSfM.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_image
+              aliceVision_feature
+              aliceVision_sfm
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+              Boost::filesystem
+    )
+
     # SfM Triangulation
     alicevision_add_software(aliceVision_sfmTriangulation
         SOURCE main_sfmTriangulation.cpp
