@@ -359,7 +359,15 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
                     descriptor = descriptorsOverDspScales;
                 }
 
-                regionsCasted->Features()[oIndex] = PointFeature(inFeat.frame.x, inFeat.frame.y, inFeat.sigma, inFeat.orientationScore);
+                // [a0 a2] [r1 -r2]
+                // [a1 a3] [r2 r1]
+                Vec2 nx;
+                nx(0) = inFeat.frame.a11; 
+                nx(1) = inFeat.frame.a21;
+                nx.normalize();
+                double angle = std::atan2(nx(1), nx(0));
+
+                regionsCasted->Features()[oIndex] = PointFeature(inFeat.frame.x, inFeat.frame.y, inFeat.sigma, angle);
                 Descriptor<T, 128>& outDescriptor = regionsCasted->Descriptors()[oIndex];
                 convertSIFT<T>(descriptor.data(), outDescriptor, params._rootSift);
             }
