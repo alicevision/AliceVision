@@ -89,10 +89,6 @@ bool SfMData::operator==(const SfMData& other) const
             return false;
     }
 
-    // Control points
-    if (control_points != other.control_points)
-        return false;
-
     if (constraints2d.size() != other.constraints2d.size())
         return false;
 
@@ -281,9 +277,6 @@ void SfMData::combine(const SfMData& sfmData)
     // structure
     structure.insert(sfmData.structure.begin(), sfmData.structure.end());
 
-    // control points
-    control_points.insert(sfmData.control_points.begin(), sfmData.control_points.end());
-
     // constraints
     constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
 }
@@ -293,7 +286,6 @@ void SfMData::clear()
     views.clear();
     intrinsics.clear();
     structure.clear();
-    control_points.clear();
     _posesUncertainty.clear();
     _landmarksUncertainty.clear();
     constraints2d.clear();

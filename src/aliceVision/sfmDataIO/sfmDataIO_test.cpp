@@ -102,7 +102,6 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), sfmData.structure.size());
-            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), sfmData.control_points.size());
 
             BOOST_CHECK(sfmData == sfmDataLoad);
         }
@@ -118,7 +117,6 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
-            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
 
         BOOST_TEST_CONTEXT("LOAD (only a subpart: POSES), file format: " << ext_Type[i])
@@ -132,7 +130,6 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
-            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
 
         BOOST_TEST_CONTEXT("LOAD (only a subpart: INTRINSICS), file format: " << ext_Type[i])
@@ -146,7 +143,6 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
-            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
 
         BOOST_TEST_CONTEXT("LOAD (subparts: INTRINSICS | EXTRINSICS), file format: " << ext_Type[i])
@@ -160,7 +156,6 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
-            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
 
         BOOST_TEST_CONTEXT("LOAD (subparts: VIEWS | INTRINSICS | EXTRINSICS), file format: " << ext_Type[i])
@@ -174,7 +169,6 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
-            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
     }
 }

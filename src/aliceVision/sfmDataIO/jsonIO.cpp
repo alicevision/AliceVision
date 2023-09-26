@@ -481,7 +481,6 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
   const bool saveIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
   const bool saveExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
   const bool saveStructure = (partFlag & STRUCTURE) == STRUCTURE;
-  const bool saveControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
   const bool saveFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
   const bool saveObservations = saveFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
 
@@ -585,17 +584,6 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
     fileTree.add_child("structure", structureTree);
   }
 
-  // control points
-  if(saveControlPoints && !sfmData.getControlPoints().empty())
-  {
-    bpt::ptree controlPointTree;
-
-    for(const auto& controlPointPair : sfmData.getControlPoints())
-      saveLandmark("", controlPointPair.first, controlPointPair.second, controlPointTree);
-
-    fileTree.add_child("controlPoints", controlPointTree);
-  }
-
   // write the json file with the tree
 
   bpt::write_json(filename, fileTree);
@@ -613,7 +601,6 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
   const bool loadIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
   const bool loadExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
   const bool loadStructure = (partFlag & STRUCTURE) == STRUCTURE;
-  const bool loadControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
   const bool loadFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
   const bool loadObservations = loadFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
 
@@ -662,54 +649,50 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
 
     if(incompleteViews)
     {
-      // store incomplete views in a vector
-      std::vector<sfmData::View> incompleteViews(fileTree.get_child("views").size());
-
-      int viewIndex = 0;
-      for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
-      {
-        loadView(incompleteViews.at(viewIndex), viewNode.second);
-        ++viewIndex;
-      }
-
-      // update incomplete views
+      auto children = fileTree.get_child("views");
+    // update incomplete views
       #pragma omp parallel for
-      for(int i = 0; i < incompleteViews.size(); ++i)
+      for(int index = 0; index != children.size(); index++)
       {
-        sfmData::View& v = incompleteViews.at(i);
+        auto it = children.begin();
+        std::advance(it, index);
+
+        auto view = std::make_shared<sfmData::View>();
+        loadView(*view, it->second);
 
         // if we have the intrinsics and the view has an valid associated intrinsics
         // update the width and height field of View (they are mirrored)
-        if (loadIntrinsics && v.getIntrinsicId() != UndefinedIndexT)
+        if (loadIntrinsics && view->getIntrinsicId() != UndefinedIndexT)
         {
-          const auto intrinsics = sfmData.getIntrinsicPtr(v.getIntrinsicId());
+          const auto intrinsics = sfmData.getIntrinsicPtr(view->getIntrinsicId());
 
           if(intrinsics == nullptr)
           {
-            throw std::logic_error("View " + std::to_string(v.getViewId())
-                                   + " has a intrinsics id " +std::to_string(v.getIntrinsicId())
+            throw std::logic_error("View " + std::to_string(view->getViewId())
+                                   + " has a intrinsics id " + std::to_string(view->getIntrinsicId())
                                    + " that cannot be found or the intrinsics are not correctly "
                                      "loaded from the json file.");
           }
 
-          v.getImage().setWidth(intrinsics->w());
-          v.getImage().setHeight(intrinsics->h());
+          view->getImage().setWidth(intrinsics->w());
+          view->getImage().setHeight(intrinsics->h());
         }
-        updateIncompleteView(incompleteViews.at(i), viewIdMethod, viewIdRegex);
-      }
+        updateIncompleteView(*view, viewIdMethod, viewIdRegex);
 
-      // copy complete views in the SfMData views map
-      for(const sfmData::View& view : incompleteViews)
-        views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
+        #pragma omp critical
+        {
+            views.emplace(view->getViewId(), view);
+        }
+      }
     }
     else
     {
       // store directly in the SfMData views map
       for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
       {
-        sfmData::View view;
-        loadView(view, viewNode.second);
-        views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
+        auto view = std::make_shared<sfmData::View>();
+        loadView(*view, viewNode.second);
+        views.emplace(view->getViewId(), view);
       }
     }
   }
@@ -763,22 +746,6 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
       loadLandmark(landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
 
       structure.emplace(landmarkId, landmark);
-    }
-  }
-
-  // control points
-  if(loadControlPoints && fileTree.count("controlPoints"))
-  {
-    sfmData::Landmarks& controlPoints = sfmData.getControlPoints();
-
-    for(bpt::ptree::value_type &landmarkNode : fileTree.get_child("controlPoints"))
-    {
-      IndexT landmarkId;
-      sfmData::Landmark landmark;
-
-      loadLandmark(landmarkId, landmark, landmarkNode.second);
-
-      controlPoints.emplace(landmarkId, landmark);
     }
   }
 

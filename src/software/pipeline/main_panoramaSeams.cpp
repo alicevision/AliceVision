@@ -255,7 +255,7 @@ int aliceVision_main(int argc, char** argv)
 
         for (int idx = 0; idx < images.size(); idx++)
         {
-            std::shared_ptr<sfmData::View> newView(new sfmData::View(*pv.second));
+            std::shared_ptr<sfmData::View> newView(pv.second->clone());
             
             newView->getImage().addMetadata("AliceVision:previousViewId", std::to_string(pv.first));
             newView->getImage().addMetadata("AliceVision:imageCounter", std::to_string(idx));

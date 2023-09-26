@@ -107,8 +107,7 @@ public:
       sfmDataIO::EXTRINSICS |
       sfmDataIO::INTRINSICS |
       sfmDataIO::STRUCTURE |
-      sfmDataIO::OBSERVATIONS |
-      sfmDataIO::CONTROL_POINTS);
+      sfmDataIO::OBSERVATIONS);
   };
 
 public:

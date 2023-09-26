@@ -160,9 +160,6 @@ void regenerateUID(SfMData &sfmdata, std::map<std::size_t, std::size_t> &oldIdTo
     return;
   
   sanityCheckLandmarks(sfmdata.getLandmarks(), sfmdata.getViews());
-  
-  sanityCheckLandmarks(sfmdata.getControlPoints(), sfmdata.getViews());
-  
 }
 
 

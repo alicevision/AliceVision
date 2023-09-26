@@ -232,7 +232,6 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC.intrinsics.size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC.structure.size());
-        BOOST_CHECK_EQUAL( sfmData.control_points.size(), sfmJsonToABC.control_points.size());
     }
 
     // Export as ABC
@@ -252,7 +251,6 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC2.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC2.intrinsics.size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC2.structure.size());
-        BOOST_CHECK_EQUAL( sfmData.control_points.size(), sfmJsonToABC2.control_points.size());
     }
 
     // Export as ABC
@@ -272,7 +270,6 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC3.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC3.intrinsics.size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC3.structure.size());
-        BOOST_CHECK_EQUAL( sfmData.control_points.size(), sfmJsonToABC3.control_points.size());
     }
 
     // Export as JSON

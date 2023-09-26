@@ -357,7 +357,7 @@ int aliceVision_main(int argc, char** argv)
                 
                 if (group.size() == 1)
                 {
-                    hdrView = std::make_shared<sfmData::View>(*group.at(0));
+                    hdrView.reset(group.at(0)->clone());
                 }
                 else if (targetViews.empty())
                 {
@@ -366,7 +366,7 @@ int aliceVision_main(int argc, char** argv)
                 }
                 else
                 {
-                    hdrView = std::make_shared<sfmData::View>(*targetViews.at(g));
+                    hdrView.reset(group.at(g)->clone());
                 }
                 if (!byPass)
                 {
