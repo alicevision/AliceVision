@@ -304,216 +304,229 @@ ObservationsPerView getObservationsPerViews(SfMData& sfmData)
     return observationsPerView;
 }
 
+void filterLandmarks_step1(SfMData& sfmData,
+                           const FilterParams::FilterLandmarksParams::FilterLandmarksStep1Params& params,
+                           std::vector<Landmark>& landmarksData)
+{
+    const auto& initialNbLandmarks = sfmData.getLandmarks().size();
+    landmarksData.resize(initialNbLandmarks);
+    size_t i = 0;
+    if(params.enabled)
+    {
+        ALICEVISION_LOG_INFO("Removing landmarks having an insufficient number of observations: started.");
+        for(auto& it : sfmData.getLandmarks())
+        {
+            if(it.second.observations.size() < params.minNbObservationsPerLandmark)
+                continue;
+            landmarksData[i++] = it.second;
+        }
+        landmarksData.resize(i);
+        ALICEVISION_LOG_INFO("Removed " << (initialNbLandmarks - i) << " landmarks out of " << initialNbLandmarks
+                                        << ", i.e. " << ((initialNbLandmarks - i) * 100.f / initialNbLandmarks)
+                                        << " % ");
+        ALICEVISION_LOG_INFO("Removing landmarks having an insufficient number of observations: done.");
+    }
+    else
+    {
+        for(auto& it : sfmData.getLandmarks())
+        {
+            landmarksData[i++] = it.second;
+        }
+    }
+}
+
+void filterLandmarks_step2(SfMData& sfmData,
+                           const FilterParams::FilterLandmarksParams::FilterLandmarksStep2Params& params,
+                           std::vector<Landmark>& landmarksData)
+{
+    ALICEVISION_LOG_INFO("Removing landmarks with dissimilar observations of 3D landmark neighbors: started.");
+
+    ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
+    LandmarksAdaptator data(landmarksData);
+    KdTree3D tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    tree.buildIndex();
+    ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
+
+    ALICEVISION_LOG_INFO("Computing landmarks neighbors: started.");
+    // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
+    int nbNeighbors_ = std::min(params.nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
+    // contains the observing view ids and neighbors for each landmark
+    std::vector<std::pair<std::vector<IndexT>, std::vector<size_t>>> viewData(landmarksData.size());
+#pragma omp parallel for
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        const sfmData::Landmark& landmark = landmarksData[i];
+        const auto& nbObservations = landmark.observations.size();
+        auto& [viewIds, neighbors] = viewData[i];
+        viewIds.reserve(nbObservations);
+        for(const auto& observationPair : landmark.observations)
+        {
+            const IndexT viewId = observationPair.first;
+            viewIds.push_back(viewId);
+        }
+        // sort by ascending view id order for consequent faster access
+        std::stable_sort(viewIds.begin(), viewIds.end());
+
+        neighbors.resize(nbNeighbors_);
+        std::vector<double> weights_(nbNeighbors_);
+        tree.knnSearch(landmark.X.data(), nbNeighbors_, &neighbors[0], &weights_[0]);
+        // a landmark is a neighbor to itself with zero distance, remove it
+        neighbors.erase(neighbors.begin());
+    }
+    ALICEVISION_LOG_INFO("Computing landmarks neighbors: done.");
+
+    ALICEVISION_LOG_INFO("Identifying landmarks to remove: started.");
+    std::vector<bool> toRemove(landmarksData.size(), false);
+    size_t nbToRemove = 0;
+    const auto& initialNbLandmarks = landmarksData.size();
+#pragma omp parallel for reduction(+ : nbToRemove)
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        int score = 0;
+        auto& [viewIds, neighbors] = viewData[i];
+        for(auto j = 0; j < neighbors.size(); j++)
+        {
+            int scoreNeighbor = 0;
+            const auto& neighborId = neighbors[j];
+            const auto& viewIds_neighbor = viewData[neighborId].first;
+            // loop over common views
+            auto viewIds_it = viewIds.begin();
+            auto viewIds_neighbor_it = viewIds_neighbor.begin();
+            while(viewIds_it != viewIds.end() && viewIds_neighbor_it != viewIds_neighbor.end())
+            {
+                if(*viewIds_it < *viewIds_neighbor_it)
+                {
+                    ++viewIds_it;
+                }
+                else
+                {
+                    // if same view
+                    if(!(*viewIds_neighbor_it < *viewIds_it))
+                    {
+                        scoreNeighbor++;
+                        if(scoreNeighbor == params.maxNbObservationsPerLandmark)
+                        {
+                            score++;
+                            break;
+                        }
+                        ++viewIds_it;
+                    }
+                    ++viewIds_neighbor_it;
+                }
+            }
+        }
+        if(score < params.nbNeighbors3D / 2)
+        {
+            toRemove[i] = true;
+            nbToRemove++;
+        }
+    }
+    ALICEVISION_LOG_INFO("Identified " << nbToRemove << " landmarks to remove out of " << initialNbLandmarks
+                                       << ", i.e. " << (nbToRemove * 100.f / initialNbLandmarks) << " % ");
+    ALICEVISION_LOG_INFO("Identifying landmarks to remove: done.");
+
+    ALICEVISION_LOG_INFO("Removing identified landmarks: started.");
+    std::vector<Landmark> landmarksData_filtered(landmarksData.size() - nbToRemove);
+    IndexT newIdx = 0;
+    for(size_t i = 0; i < landmarksData.size(); i++)
+    {
+        if(!toRemove[i])
+        {
+            landmarksData_filtered[newIdx++] = landmarksData[i];
+        }
+    }
+    landmarksData = std::move(landmarksData_filtered);
+    ALICEVISION_LOG_INFO("Removing identified landmarks: done.");
+
+    ALICEVISION_LOG_INFO("Removing landmarks with dissimilar observations of 3D landmark neighbors: done.");
+}
+
+void filterLandmarks_step3(SfMData& sfmData,
+                           const FilterParams::FilterLandmarksParams::FilterLandmarksStep3Params& params,
+                           std::vector<Landmark>& landmarksData)
+{
+    ALICEVISION_LOG_INFO("Removing landmarks with worse resolution than neighbors: started.");
+
+    mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
+    std::vector<double> landmarksPixSize(landmarksData.size());
+
+    ALICEVISION_LOG_INFO("Computing pixel size: started.");
+#pragma omp parallel for
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        const Landmark& landmark = landmarksData[i];
+        // compute landmark pixSize
+        double pixSize = 0.;
+        int n = 0;
+        for(const auto& observationPair : landmark.observations)
+        {
+            const IndexT viewId = observationPair.first;
+            pixSize += mp.getCamPixelSize(Point3d(landmark.X.x(), landmark.X.y(), landmark.X.z()),
+                                          mp.getIndexFromViewId(viewId),
+                                          params.useFeatureScale ? observationPair.second.scale : 1);
+            n++;
+        }
+        pixSize /= n;
+        landmarksPixSize[i] = pixSize;
+    }
+    ALICEVISION_LOG_INFO("Computing pixel size: done.");
+
+    ALICEVISION_LOG_INFO("Identifying landmarks to remove based on pixel size: started.");
+
+    ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
+    LandmarksAdaptator data(landmarksData);
+    KdTree3D tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    tree.buildIndex();
+    ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
+
+    const auto& initialNbLandmarks = landmarksData.size();
+    std::vector<bool> toRemove(landmarksData.size(), false);
+    size_t nbToRemove = 0;
+#pragma omp parallel for reduction(+ : nbToRemove)
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        PixSizeSearch search(landmarksPixSize[i] * params.radiusScale, landmarksPixSize, i);
+        bool found = tree.findNeighbors(search, landmarksData[i].X.data(), nanoflann::SearchParameters());
+        if(found)
+        {
+            toRemove[i] = true;
+            nbToRemove++;
+        }
+    }
+    ALICEVISION_LOG_INFO("Identified " << nbToRemove << " landmarks to remove out of " << initialNbLandmarks
+                                       << ", i.e. " << (nbToRemove * 100.f / initialNbLandmarks) << " % ");
+    ALICEVISION_LOG_INFO("Identifying landmarks to remove: done.");
+
+    ALICEVISION_LOG_INFO("Removing identified landmarks: started.");
+    std::vector<Landmark> landmarksData_filtered(landmarksData.size() - nbToRemove);
+    IndexT newIdx = 0;
+    for(size_t i = 0; i < landmarksData.size(); i++)
+    {
+        if(!toRemove[i])
+        {
+            landmarksData_filtered[newIdx++] = landmarksData[i];
+        }
+    }
+    landmarksData = std::move(landmarksData_filtered);
+    ALICEVISION_LOG_INFO("Removing identified landmarks: done.");
+
+    ALICEVISION_LOG_INFO("Removing landmarks with worse resolution than neighbors: done.");
+}
+
 bool filterLandmarks(SfMData& sfmData, const FilterParams::FilterLandmarksParams& params)
 {
     std::vector<Landmark> landmarksData;
+
     // Step 1
-    {
-        const auto& initialNbLandmarks = sfmData.getLandmarks().size();
-        landmarksData.resize(initialNbLandmarks);
-        size_t i = 0;
-        if(params.step1.enabled)
-        {
-            ALICEVISION_LOG_INFO("Removing landmarks having an insufficient number of observations: started.");
-            for(auto& it : sfmData.getLandmarks())
-            {
-                if(it.second.observations.size() < params.step1.minNbObservationsPerLandmark)
-                    continue;
-                landmarksData[i++] = it.second;
-            }
-            landmarksData.resize(i);
-            ALICEVISION_LOG_INFO(
-                "Removed " << (initialNbLandmarks - i) <<
-                " landmarks out of " << initialNbLandmarks <<
-                ", i.e. " << ((initialNbLandmarks - i) * 100.f / initialNbLandmarks) <<
-                " % "
-            );
-            ALICEVISION_LOG_INFO("Removing landmarks having an insufficient number of observations: done.");
-        }
-        else
-        {
-            for(auto& it : sfmData.getLandmarks())
-            {
-                landmarksData[i++] = it.second;
-            }
-        }
-    }
+    filterLandmarks_step1(sfmData, params.step1, landmarksData);
 
     // Step 2
     if(params.step2.enabled)
-    {
-        ALICEVISION_LOG_INFO("Removing landmarks with dissimilar observations of 3D landmark neighbors: started.");
-
-        ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
-        LandmarksAdaptator data(landmarksData);
-        KdTree3D tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-        tree.buildIndex();
-        ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
-
-        ALICEVISION_LOG_INFO("Computing landmarks neighbors: started.");
-        // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
-        int nbNeighbors_ = std::min(params.step2.nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
-        // contains the observing view ids and neighbors for each landmark
-        std::vector<std::pair<std::vector<IndexT>, std::vector<size_t>>> viewData(landmarksData.size());
-#pragma omp parallel for
-        for(auto i = 0; i < landmarksData.size(); i++)
-        {
-            const sfmData::Landmark& landmark = landmarksData[i];
-            const auto& nbObservations = landmark.observations.size();
-            auto& [viewIds, neighbors] = viewData[i];
-            viewIds.reserve(nbObservations);
-            for(const auto& observationPair : landmark.observations)
-            {
-                const IndexT viewId = observationPair.first;
-                viewIds.push_back(viewId);
-            }
-            // sort by ascending view id order for consequent faster access
-            std::stable_sort(viewIds.begin(), viewIds.end());
-
-            neighbors.resize(nbNeighbors_);
-            std::vector<double> weights_(nbNeighbors_);
-            tree.knnSearch(landmark.X.data(), nbNeighbors_, &neighbors[0], &weights_[0]);
-            // a landmark is a neighbor to itself with zero distance, remove it
-            neighbors.erase(neighbors.begin());
-        }
-        ALICEVISION_LOG_INFO("Computing landmarks neighbors: done.");
-
-        ALICEVISION_LOG_INFO("Identifying landmarks to remove: started.");
-        std::vector<bool> toRemove(landmarksData.size(), false);
-        size_t nbToRemove = 0;
-        const auto& initialNbLandmarks = landmarksData.size();
-#pragma omp parallel for reduction(+ : nbToRemove)
-        for(auto i = 0; i < landmarksData.size(); i++)
-        {
-            int score = 0;
-            auto& [viewIds, neighbors] = viewData[i];
-            for(auto j = 0; j < neighbors.size(); j++)
-            {
-                int scoreNeighbor = 0;
-                const auto& neighborId = neighbors[j];
-                const auto& viewIds_neighbor = viewData[neighborId].first;
-                // loop over common views
-                auto viewIds_it = viewIds.begin();
-                auto viewIds_neighbor_it = viewIds_neighbor.begin();
-                while(viewIds_it != viewIds.end() && viewIds_neighbor_it != viewIds_neighbor.end())
-                {
-                    if(*viewIds_it < *viewIds_neighbor_it)
-                    {
-                        ++viewIds_it;
-                    }
-                    else
-                    {
-                        // if same view
-                        if(!(*viewIds_neighbor_it < *viewIds_it))
-                        {
-                            scoreNeighbor++;
-                            if(scoreNeighbor == params.step2.maxNbObservationsPerLandmark)
-                            {
-                                score++;
-                                break;
-                            }
-                            ++viewIds_it;
-                        }
-                        ++viewIds_neighbor_it;
-                    }
-                }
-            }
-            if(score < params.step2.nbNeighbors3D / 2)
-            {
-                toRemove[i] = true;
-                nbToRemove++;
-            }
-        }
-        ALICEVISION_LOG_INFO("Identified " << nbToRemove << " landmarks to remove out of " << initialNbLandmarks
-                                           << ", i.e. " << (nbToRemove * 100.f / initialNbLandmarks) << " % ");
-        ALICEVISION_LOG_INFO("Identifying landmarks to remove: done.");
-
-        ALICEVISION_LOG_INFO("Removing identified landmarks: started.");
-        std::vector<Landmark> landmarksData_filtered(landmarksData.size() - nbToRemove);
-        IndexT newIdx = 0;
-        for(size_t i = 0; i < landmarksData.size(); i++)
-        {
-            if(!toRemove[i])
-            {
-                landmarksData_filtered[newIdx++] = landmarksData[i];
-            }
-        }
-        landmarksData = std::move(landmarksData_filtered);
-        ALICEVISION_LOG_INFO("Removing identified landmarks: done.");
-
-        ALICEVISION_LOG_INFO("Removing landmarks with dissimilar observations of 3D landmark neighbors: done.");
-    }
+        filterLandmarks_step2(sfmData, params.step2, landmarksData);
 
     // Step 3
     if(params.step3.enabled)
-    {
-        ALICEVISION_LOG_INFO("Removing landmarks with worse resolution than neighbors: started.");
-
-        mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
-        std::vector<double> landmarksPixSize(landmarksData.size());
-
-        ALICEVISION_LOG_INFO("Computing pixel size: started.");
-#pragma omp parallel for
-        for(auto i = 0; i < landmarksData.size(); i++)
-        {
-            const Landmark& landmark = landmarksData[i];
-            // compute landmark pixSize
-            double pixSize = 0.;
-            int n = 0;
-            for(const auto& observationPair : landmark.observations)
-            {
-                const IndexT viewId = observationPair.first;
-                pixSize += mp.getCamPixelSize(Point3d(landmark.X.x(), landmark.X.y(), landmark.X.z()),
-                                              mp.getIndexFromViewId(viewId),
-                                              params.step3.useFeatureScale ? observationPair.second.scale : 1);
-                n++;
-            }
-            pixSize /= n;
-            landmarksPixSize[i] = pixSize;
-        }
-        ALICEVISION_LOG_INFO("Computing pixel size: done.");
-
-        ALICEVISION_LOG_INFO("Identifying landmarks to remove based on pixel size: started.");
-
-        ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
-        LandmarksAdaptator data(landmarksData);
-        KdTree3D tree(3, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-        tree.buildIndex();
-        ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
-
-        const auto& initialNbLandmarks = landmarksData.size();
-        std::vector<bool> toRemove(landmarksData.size(), false);
-        size_t nbToRemove = 0;
-#pragma omp parallel for reduction(+ : nbToRemove)
-        for(auto i = 0; i < landmarksData.size(); i++)
-        {
-            PixSizeSearch search(landmarksPixSize[i] * params.step3.radiusScale, landmarksPixSize, i);
-            bool found = tree.findNeighbors(search, landmarksData[i].X.data(), nanoflann::SearchParameters());
-            if(found)
-            {
-                toRemove[i] = true;
-                nbToRemove++;
-            }
-        }
-        ALICEVISION_LOG_INFO("Identified " << nbToRemove << " landmarks to remove out of " << initialNbLandmarks
-                                           << ", i.e. " << (nbToRemove * 100.f / initialNbLandmarks) << " % ");
-        ALICEVISION_LOG_INFO("Identifying landmarks to remove: done.");
-
-        ALICEVISION_LOG_INFO("Removing identified landmarks: started.");
-        std::vector<Landmark> landmarksData_filtered(landmarksData.size() - nbToRemove);
-        IndexT newIdx = 0;
-        for(size_t i = 0; i < landmarksData.size(); i++)
-        {
-            if(!toRemove[i])
-            {
-                landmarksData_filtered[newIdx++] = landmarksData[i];
-            }
-        }
-        landmarksData = std::move(landmarksData_filtered);
-        ALICEVISION_LOG_INFO("Removing identified landmarks: done.");
-
-        ALICEVISION_LOG_INFO("Removing landmarks with worse resolution than neighbors: done.");
-    }
+        filterLandmarks_step3(sfmData, params.step3, landmarksData);
 
     // applying modifications to Sfm data
     std::vector<std::pair<IndexT, Landmark>> filteredLandmarks(landmarksData.size());
@@ -525,21 +538,9 @@ bool filterLandmarks(SfMData& sfmData, const FilterParams::FilterLandmarksParams
     return true;
 }
 
-bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservations3DParams& params)
+void computeInitialObservationScores(SfMData& sfmData, std::vector<Landmark*>& landmarksData,
+                                     std::vector<std::pair<std::vector<IndexT>, std::vector<double>>>& viewScoresData)
 {
-    // store in vector for faster access
-    std::vector<Landmark*> landmarksData(sfmData.getLandmarks().size());
-    {
-        size_t i = 0;
-        for(auto& it : sfmData.getLandmarks())
-        {
-            landmarksData[i++] = &it.second;
-        }
-    }
-
-    // contains the observing view ids for each landmark with their corresponding scores
-    std::vector<std::pair<std::vector<IndexT>, std::vector<double>>> viewScoresData(landmarksData.size());
-
     ALICEVISION_LOG_INFO("Computing initial observation scores based on distance to observing view: started");
 #pragma omp parallel for
     for(auto i = 0; i < landmarksData.size(); i++)
@@ -589,152 +590,192 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
         }
     }
     ALICEVISION_LOG_INFO("Computing initial observation scores based on distance to observing view: done");
+}
+
+void computeNeighborsInfo(std::vector<Landmark*>& landmarksData, const FilterParams::FilterObservations3DParams& params,
+                          std::vector<std::pair<std::vector<size_t>, std::vector<double>>>& neighborsData)
+{
+    ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: started");
+    ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
+    LandmarksAdaptator dataAdaptor(landmarksData);
+    KdTree3D tree(3, dataAdaptor, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    tree.buildIndex();
+    ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
+    // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
+    int nbNeighbors_ = std::min(params.nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
+#pragma omp parallel for
+    for(auto i = 0; i < landmarksData.size(); i++)
+    {
+        const sfmData::Landmark& landmark = *landmarksData[i];
+        auto& [indices_, weights_] = neighborsData[i];
+        indices_.resize(nbNeighbors_);
+        weights_.resize(nbNeighbors_);
+        tree.knnSearch(landmark.X.data(), nbNeighbors_, &indices_[0], &weights_[0]);
+        // a landmark is a neighbor to itself with zero distance, remove it
+        indices_.erase(indices_.begin());
+        weights_.erase(weights_.begin());
+        // accumulator used for normalisation
+        double total = 0.;
+        for(auto& w : weights_)
+        {
+            // weight is the inverse of distance between a landmark and its neighbor
+            w = 1. / std::sqrt(w);
+            if(std::isinf(w))
+                w = std::numeric_limits<double>::max();
+            total += w;
+        }
+        if(std::isinf(total))
+            total = std::numeric_limits<double>::max();
+        // normalize weights
+        for(auto& w : weights_)
+        {
+            w /= total;
+        }
+    }
+    ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: done");
+}
+
+void computeNewScores(const std::vector<Landmark*>& landmarksData,
+                      const FilterParams::FilterObservations3DParams& params,
+                      const std::vector<std::pair<std::vector<size_t>, std::vector<double>>>& neighborsData,
+                      const std::vector<std::pair<std::vector<IndexT>, std::vector<double>>>& viewScoresData,
+                      std::vector<std::vector<double>>& viewScoresData_t)
+{
+#pragma omp parallel for
+    for(auto id = 0; id < landmarksData.size(); id++)
+    {
+        const auto& [viewIds, viewScores] = viewScoresData[id];
+        auto& viewScores_acc = viewScoresData_t[id];
+        // initialize to zero, will first contain the weighted average scores of neighbors
+        viewScores_acc.assign(viewScores.size(), 0.);
+        // accumulator for normalisation
+        double viewScores_total = 0.;
+        auto& [indices_, weights_] = neighborsData[id];
+        for(auto j = 0; j < params.nbNeighbors3D; j++)
+        {
+            const auto& neighborId = indices_[j];
+            const auto& neighborWeight = weights_[j];
+            const auto& [viewIds_neighbor, viewScores_neighbor] = viewScoresData[neighborId];
+            // loop over common views
+            auto viewIds_it = viewIds.begin();
+            auto viewIds_neighbor_it = viewIds_neighbor.begin();
+            auto viewScores_neighbor_it = viewScores_neighbor.begin();
+            auto viewScores_acc_it = viewScores_acc.begin();
+            while(viewIds_it != viewIds.end() && viewIds_neighbor_it != viewIds_neighbor.end())
+            {
+                if(*viewIds_it < *viewIds_neighbor_it)
+                {
+                    ++viewIds_it;
+                    ++viewScores_acc_it;
+                }
+                else
+                {
+                    // if same view, accumulate weighted scores
+                    if(!(*viewIds_neighbor_it < *viewIds_it))
+                    {
+                        const auto& v = *viewScores_neighbor_it * neighborWeight;
+                        (*viewScores_acc_it) += v;
+                        viewScores_total += v;
+                        ++viewIds_it;
+                        ++viewScores_acc_it;
+                    }
+                    ++viewIds_neighbor_it;
+                    ++viewScores_neighbor_it;
+                }
+            }
+        }
+        // if common views with neighbor landmarks
+        if(viewScores_total != 0.)
+            for(auto j = 0; j < viewScores_acc.size(); j++)
+            {
+                // normalize score and apply influence factor
+                viewScores_acc[j] *= params.neighborsInfluence / viewScores_total;
+                // combine weighted neighbor scores and the landmark's own scores
+                viewScores_acc[j] += (1 - params.neighborsInfluence) * viewScores[j];
+            }
+
+        // dampen scores of non-chosen observations
+        if(params.dampingEnabled && viewScores_acc.size() <= params.maxNbObservationsPerLandmark)
+        {
+            // sort by descending view score order
+            std::vector<size_t> idx(viewScores_acc.size());
+            std::iota(idx.begin(), idx.end(), 0);
+            std::stable_sort(idx.begin(), idx.end(),
+                             [&v = viewScores_acc](size_t i1, size_t i2) { return v[i1] > v[i2]; });
+            viewScores_total = 1.;
+            for(auto j = params.maxNbObservationsPerLandmark; j < viewScores_acc.size(); j++)
+            {
+                const double& v = params.dampingFactor * viewScores_acc[j];
+                viewScores_total += v - viewScores_acc[j];
+                viewScores_acc[j] = v;
+            }
+            // re-normalize
+            for(auto j = 0; j < viewScores_acc.size(); j++)
+                viewScores_acc[j] /= viewScores_total;
+        }
+    }
+}
+
+void propagateNeighborsInfo(std::vector<Landmark*>& landmarksData,
+                            const FilterParams::FilterObservations3DParams& params,
+                            std::vector<std::pair<std::vector<size_t>, std::vector<double>>>& neighborsData,
+                            std::vector<std::pair<std::vector<IndexT>, std::vector<double>>>& viewScoresData)
+{
+    ALICEVISION_LOG_INFO("Propagating neighbors observation scores: started");
+    // new view scores at iteration t
+    std::vector<std::vector<double>> viewScoresData_t(landmarksData.size());
+    for(auto i = 0; i < params.nbIterations; i++)
+    {
+        computeNewScores(landmarksData, params, neighborsData, viewScoresData, viewScoresData_t);
+
+        // Mean Squared Error
+        double error = 0.;
+        // update scores at end of iteration
+#pragma omp parallel for reduction(+ : error)
+        for(auto id = 0; id < landmarksData.size(); id++)
+        {
+            // compute MSE
+            {
+                double error_j = 0.;
+                for(auto j = 0; j < viewScoresData_t[id].size(); j++)
+                {
+                    const auto& v = viewScoresData_t[id][j] - viewScoresData[id].second[j];
+                    error_j += v * v;
+                }
+                error_j /= viewScoresData_t[id].size();
+                error += error_j;
+            }
+            // update scores
+            viewScoresData[id].second = std::move(viewScoresData_t[id]);
+        }
+        error /= landmarksData.size();
+        ALICEVISION_LOG_INFO("MSE at iteration " << i << ": " << error);
+    }
+    ALICEVISION_LOG_INFO("Propagating neighbors observation scores: done");
+}
+
+bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservations3DParams& params)
+{
+    // store in vector for faster access
+    std::vector<Landmark*> landmarksData(sfmData.getLandmarks().size());
+    {
+        size_t i = 0;
+        for(auto& it : sfmData.getLandmarks())
+        {
+            landmarksData[i++] = &it.second;
+        }
+    }
+
+    // contains the observing view ids for each landmark with their corresponding scores
+    std::vector<std::pair<std::vector<IndexT>, std::vector<double>>> viewScoresData(landmarksData.size());
+    computeInitialObservationScores(sfmData, landmarksData, viewScoresData);
 
     if(params.propagationEnabled)
     {
-        ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: started");
-        ALICEVISION_LOG_INFO("Build nanoflann KdTree index for landmarks in 3D.");
-        LandmarksAdaptator dataAdaptor(landmarksData);
-        KdTree3D tree(3, dataAdaptor, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-        tree.buildIndex();
-        ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
-        // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
-        int nbNeighbors_ = std::min(params.nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
         // contains the neighbor landmarks ids with their corresponding weights
         std::vector<std::pair<std::vector<size_t>, std::vector<double>>> neighborsData(landmarksData.size());
-#pragma omp parallel for
-        for(auto i = 0; i < landmarksData.size(); i++)
-        {
-            const sfmData::Landmark& landmark = *landmarksData[i];
-            auto& [indices_, weights_] = neighborsData[i];
-            indices_.resize(nbNeighbors_);
-            weights_.resize(nbNeighbors_);
-            tree.knnSearch(landmark.X.data(), nbNeighbors_, &indices_[0], &weights_[0]);
-            // a landmark is a neighbor to itself with zero distance, remove it
-            indices_.erase(indices_.begin());
-            weights_.erase(weights_.begin());
-            // accumulator used for normalisation
-            double total = 0.;
-            for(auto& w : weights_)
-            {
-                // weight is the inverse of distance between a landmark and its neighbor
-                w = 1. / std::sqrt(w);
-                if(std::isinf(w))
-                    w = std::numeric_limits<double>::max();
-                total += w;
-            }
-            if(std::isinf(total))
-                total = std::numeric_limits<double>::max();
-            // normalize weights
-            for(auto& w : weights_)
-            {
-                w /= total;
-            }
-        }
-        ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: done");
-
-        ALICEVISION_LOG_INFO("Propagating neighbors observation scores: started");
-        // new view scores at iteration t
-        std::vector<std::vector<double>> viewScoresData_t(landmarksData.size());
-        for(auto i = 0; i < params.nbIterations; i++)
-        {
-#pragma omp parallel for
-            for(auto id = 0; id < landmarksData.size(); id++)
-            {
-                const auto& [viewIds, viewScores] = viewScoresData[id];
-                auto& viewScores_acc = viewScoresData_t[id];
-                // initialize to zero, will first contain the weighted average scores of neighbors
-                viewScores_acc.assign(viewScores.size(), 0.);
-                // accumulator for normalisation
-                double viewScores_total = 0.;
-                auto& [indices_, weights_] = neighborsData[id];
-                for(auto j = 0; j < params.nbNeighbors3D; j++)
-                {
-                    const auto& neighborId = indices_[j];
-                    const auto& neighborWeight = weights_[j];
-                    const auto& [viewIds_neighbor, viewScores_neighbor] = viewScoresData[neighborId];
-                    // loop over common views
-                    auto viewIds_it = viewIds.begin();
-                    auto viewIds_neighbor_it = viewIds_neighbor.begin();
-                    auto viewScores_neighbor_it = viewScores_neighbor.begin();
-                    auto viewScores_acc_it = viewScores_acc.begin();
-                    while(viewIds_it != viewIds.end() && viewIds_neighbor_it != viewIds_neighbor.end())
-                    {
-                        if(*viewIds_it < *viewIds_neighbor_it)
-                        {
-                            ++viewIds_it;
-                            ++viewScores_acc_it;
-                        }
-                        else
-                        {
-                            // if same view, accumulate weighted scores
-                            if(!(*viewIds_neighbor_it < *viewIds_it))
-                            {
-                                const auto& v = *viewScores_neighbor_it * neighborWeight;
-                                (*viewScores_acc_it) += v;
-                                viewScores_total += v;
-                                ++viewIds_it;
-                                ++viewScores_acc_it;
-                            }
-                            ++viewIds_neighbor_it;
-                            ++viewScores_neighbor_it;
-                        }
-                    }
-                }
-                // if common views with neighbor landmarks
-                if(viewScores_total != 0.)
-                    for(auto j = 0; j < viewScores_acc.size(); j++)
-                    {
-                        // normalize score and apply influence factor
-                        viewScores_acc[j] *= params.neighborsInfluence / viewScores_total;
-                        // combine weighted neighbor scores and the landmark's own scores
-                        viewScores_acc[j] += (1 - params.neighborsInfluence) * viewScores[j];
-                    }
-
-                // dampen scores of non-chosen observations
-                if(params.dampingEnabled && viewScores_acc.size() <= params.maxNbObservationsPerLandmark)
-                {
-                    // sort by descending view score order
-                    std::vector<size_t> idx(viewScores_acc.size());
-                    std::iota(idx.begin(), idx.end(), 0);
-                    std::stable_sort(idx.begin(), idx.end(),
-                                     [&v = viewScores_acc](size_t i1, size_t i2) { return v[i1] > v[i2]; });
-                    viewScores_total = 1.;
-                    for(auto j = params.maxNbObservationsPerLandmark; j < viewScores_acc.size(); j++)
-                    {
-                        const double& v = params.dampingFactor * viewScores_acc[j];
-                        viewScores_total += v - viewScores_acc[j];
-                        viewScores_acc[j] = v;
-                    }
-                    // re-normalize
-                    for(auto j = 0; j < viewScores_acc.size(); j++)
-                        viewScores_acc[j] /= viewScores_total;
-                }
-            }
-            // Mean Squared Error
-            double error = 0.;
-            // update scores at end of iteration
-#pragma omp parallel for reduction(+ : error)
-            for(auto id = 0; id < landmarksData.size(); id++)
-            {
-                // compute MSE
-                {
-                    double error_j = 0.;
-                    for(auto j = 0; j < viewScoresData_t[id].size(); j++)
-                    {
-                        const auto& v = viewScoresData_t[id][j] - viewScoresData[id].second[j];
-                        error_j += v * v;
-                    }
-                    error_j /= viewScoresData_t[id].size();
-                    error += error_j;
-                }
-                // update scores
-                viewScoresData[id].second = std::move(viewScoresData_t[id]);
-            }
-            error /= landmarksData.size();
-            ALICEVISION_LOG_INFO("MSE at iteration " << i << ": " << error);
-        }
-        ALICEVISION_LOG_INFO("Propagating neighbors observation scores: done");
+        computeNeighborsInfo(landmarksData, params, neighborsData);
+        propagateNeighborsInfo(landmarksData, params, neighborsData, viewScoresData);
     }
 
     ALICEVISION_LOG_INFO("Selecting observations with best scores: started");
@@ -768,6 +809,72 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
     return true;
 }
 
+double filter2DView(SfMData& sfmData, const FilterParams::FilterObservations2DParams& params, const IndexT& viewId,
+                    std::vector<Observation>& observations, std::vector<Landmark*>& landmarks)
+{
+    // Build nanoflann KdTree index for projected landmarks in 2D
+    ObservationsAdaptator data(observations);
+    KdTree2D tree(2, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    tree.buildIndex();
+
+    // note that the observation is a neighbor to itself with zero distance, hence the +/- 1
+    size_t nbNeighbors_ = std::min(static_cast<size_t>(params.nbNeighbors2D), observations.size() - 1) + 1;
+    // average neighbors distance for each observation
+    std::vector<double> means(observations.size());
+    const std::size_t cacheSize = 1000;
+    // accumulator for quantile computation
+    accumulator_set<double, stats<tag::tail_quantile<right>>> acc(tag::tail<right>::cache_size = cacheSize);
+    for(auto j = 0; j < observations.size(); j++)
+    {
+        // Find neighbors and the corresponding distances
+        const auto& obs = observations[j];
+        std::vector<size_t> indices_(nbNeighbors_);
+        std::vector<double> distances_(nbNeighbors_);
+        tree.knnSearch(obs.x.data(), nbNeighbors_, &indices_[0], &distances_[0]);
+        // returned distances are L2 -> apply squared root
+        std::transform(distances_.begin(), distances_.end(), distances_.begin(),
+                       static_cast<double (*)(double)>(std::sqrt));
+        // average distance
+        const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / (nbNeighbors_ - 1);
+        means[j] = mean;
+        // update accumulator
+        acc(mean);
+    }
+    double mean_max = std::numeric_limits<double>::max();
+    // check to avoid exception
+    if(params.percentile != 1.f)
+        mean_max = quantile(acc, quantile_probability = params.percentile);
+    // estimated mask radius is the average of distance means
+    // quantile is used to avoid outlier bias
+    double radius = quantile(acc, quantile_probability = (1.f - params.percentile) * 0.5f);
+    // check if estimated radius is too large
+    {
+        const View& view = *(sfmData.getViews().at(viewId));
+        double radiusMax =
+            params.maskRadiusThreshold * 0.5 * (view.getImage().getWidth() + view.getImage().getHeight());
+        if(radius > radiusMax)
+            radius = radiusMax;
+    }
+
+    // filter outlier observations
+    std::vector<Observation> filteredObservations;
+    std::vector<Landmark*> filteredLandmarks;
+    filteredObservations.reserve(observations.size());
+    filteredLandmarks.reserve(landmarks.size());
+    for(auto j = 0; j < observations.size(); j++)
+        if(means[j] < mean_max)
+        {
+            filteredObservations.push_back(observations[j]);
+            filteredLandmarks.push_back(landmarks[j]);
+        }
+    filteredObservations.shrink_to_fit();
+    filteredLandmarks.shrink_to_fit();
+    observations = std::move(filteredObservations);
+    landmarks = std::move(filteredLandmarks);
+
+    return radius;
+}
+
 bool filterObservations2D(SfMData& sfmData, const FilterParams::FilterObservations2DParams& params,
                           HashMap<IndexT, double>& estimatedRadii)
 {
@@ -786,66 +893,7 @@ bool filterObservations2D(SfMData& sfmData, const FilterParams::FilterObservatio
             continue;
         auto& observations = observationsIt->second.first;
         auto& landmarks = observationsIt->second.second;
-
-        // Build nanoflann KdTree index for projected landmarks in 2D
-        ObservationsAdaptator data(observations);
-        KdTree2D tree(2, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-        tree.buildIndex();
-
-        // note that the observation is a neighbor to itself with zero distance, hence the +/- 1
-        size_t nbNeighbors_ = std::min(static_cast<size_t>(params.nbNeighbors2D), observations.size() - 1) + 1;
-        // average neighbors distance for each observation
-        std::vector<double> means(observations.size());
-        const std::size_t cacheSize = 1000;
-        // accumulator for quantile computation
-        accumulator_set<double, stats<tag::tail_quantile<right>>> acc(tag::tail<right>::cache_size = cacheSize);
-        for(auto j = 0; j < observations.size(); j++)
-        {
-            // Find neighbors and the corresponding distances
-            const auto& obs = observations[j];
-            std::vector<size_t> indices_(nbNeighbors_);
-            std::vector<double> distances_(nbNeighbors_);
-            tree.knnSearch(obs.x.data(), nbNeighbors_, &indices_[0], &distances_[0]);
-            // returned distances are L2 -> apply squared root
-            std::transform(distances_.begin(), distances_.end(), distances_.begin(),
-                           static_cast<double (*)(double)>(std::sqrt));
-            // average distance
-            const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / (nbNeighbors_ - 1);
-            means[j] = mean;
-            // update accumulator
-            acc(mean);
-        }
-        double mean_max = std::numeric_limits<double>::max();
-        // check to avoid exception
-        if(params.percentile != 1.f)
-            mean_max = quantile(acc, quantile_probability = params.percentile);
-        // estimated mask radius is the average of distance means
-        // quantile is used to avoid outlier bias
-        double radius = quantile(acc, quantile_probability = (1.f - params.percentile) * 0.5f);
-        // check if estimated radius is too large
-        {
-            const View& view = *(sfmData.getViews().at(viewId));
-            double radiusMax = params.maskRadiusThreshold * 0.5 * (view.getImage().getWidth() + view.getImage().getHeight());
-            if(radius > radiusMax)
-                radius = radiusMax;
-        }
-        estimatedRadii_[i] = radius;
-
-        // filter outlier observations
-        std::vector<Observation> filteredObservations;
-        std::vector<Landmark*> filteredLandmarks;
-        filteredObservations.reserve(observations.size());
-        filteredLandmarks.reserve(landmarks.size());
-        for(auto j = 0; j < observations.size(); j++)
-            if(means[j] < mean_max)
-            {
-                filteredObservations.push_back(observations[j]);
-                filteredLandmarks.push_back(landmarks[j]);
-            }
-        filteredObservations.shrink_to_fit();
-        filteredLandmarks.shrink_to_fit();
-        observations = std::move(filteredObservations);
-        landmarks = std::move(filteredLandmarks);
+        estimatedRadii_[i] = filter2DView(sfmData, params, viewId, observations, landmarks);
     }
 
     // clear and update landmark observations
@@ -887,6 +935,7 @@ bool filterObservations2D(SfMData& sfmData, const FilterParams::FilterObservatio
 
 int aliceVision_main(int argc, char *argv[])
 {
+    std::cout << "hello" << std::endl;
     // command-line parameters
 
     std::string inputSfmFilename;
