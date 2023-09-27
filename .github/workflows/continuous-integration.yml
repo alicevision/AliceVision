@@ -21,6 +21,7 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     container:
       image: alicevision/alicevision-deps:2023.09.20-centos7-cuda11.3.1
     env:
@@ -100,6 +101,7 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+    if: github.event.pull_request.draft == false
     env:
       DEPS_INSTALL_DIR: '${{ github.workspace }}/install'
       buildDir: '${{ github.workspace }}/build/'
