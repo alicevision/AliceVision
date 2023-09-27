@@ -131,6 +131,12 @@ std::istream& operator>>(std::istream& in, FilterParams& params)
     return in;
 }
 
+// required for linux build
+inline std::ostream& operator<<(std::ostream& os, const FilterParams& params)
+{
+    return os;
+}
+
 struct ObservationsAdaptator
 {
     using Derived = ObservationsAdaptator; //!< In this case the dataset class is myself.
