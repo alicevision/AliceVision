@@ -57,7 +57,7 @@ SfMData createTestScene(IndexT singleViewsCount,
     {
       if(i == 0)
       {
-        sfm_data.intrinsics.emplace(0,
+        sfm_data.getIntrinsics().emplace(0,
             camera::createPinhole(
                 camera::EINTRINSIC::PINHOLE_CAMERA,
                 1000, 1000, 36.0, 36.0, std::rand()%10000, std::rand()%10000));
@@ -65,7 +65,7 @@ SfMData createTestScene(IndexT singleViewsCount,
     }
     else
     {
-      sfm_data.intrinsics.emplace(i, 
+      sfm_data.getIntrinsics().emplace(i, 
             camera::createPinhole(
                 camera::EINTRINSIC::PINHOLE_CAMERA,
                 1000, 1000, 36.0, 36.0, std::rand()%10000, std::rand()%10000));
@@ -91,7 +91,7 @@ SfMData createTestScene(IndexT singleViewsCount,
         rig.setSubPose(subPoseId, RigSubPose(geometry::Pose3(r, c), ERigSubPoseStatus::ESTIMATED));
       }
 
-      sfm_data.intrinsics.emplace(nbIntrinsics + subPoseId,
+      sfm_data.getIntrinsics().emplace(nbIntrinsics + subPoseId,
         camera::createPinhole(
                 camera::EINTRINSIC::PINHOLE_CAMERA,
                 1000, 1000, 36.0, 36.0, std::rand()%10000, std::rand()%10000));
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK(Load(sfmJsonToABC, jsonFile3, ESfMData(flags)));
         BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC.getPoses().size());
-        BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC.intrinsics.size());
+        BOOST_CHECK_EQUAL( sfmData.getIntrinsics().size(), sfmJsonToABC.getIntrinsics().size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC.structure.size());
     }
 
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK(Load(sfmJsonToABC2, abcFile3, ESfMData(flags)));
         BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC2.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC2.getPoses().size());
-        BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC2.intrinsics.size());
+        BOOST_CHECK_EQUAL( sfmData.getIntrinsics().size(), sfmJsonToABC2.getIntrinsics().size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC2.structure.size());
     }
 
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK(Load(sfmJsonToABC3, abcFile4, ESfMData(flags)));
         BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC3.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC3.getPoses().size());
-        BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC3.intrinsics.size());
+        BOOST_CHECK_EQUAL( sfmData.getIntrinsics().size(), sfmJsonToABC3.getIntrinsics().size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC3.structure.size());
     }
 

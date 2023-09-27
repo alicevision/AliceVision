@@ -55,12 +55,12 @@ bool SfMData::operator==(const SfMData& other) const
         return false;
 
     // Intrinsics
-    if (intrinsics.size() != other.intrinsics.size())
+    if (_intrinsics.size() != other._intrinsics.size())
         return false;
 
-    Intrinsics::const_iterator it = intrinsics.begin();
-    Intrinsics::const_iterator otherIt = other.intrinsics.begin();
-    for (; it != intrinsics.end() && otherIt != other.intrinsics.end(); ++it, ++otherIt)
+    Intrinsics::const_iterator it = _intrinsics.begin();
+    Intrinsics::const_iterator otherIt = other._intrinsics.begin();
+    for (; it != _intrinsics.end() && otherIt != other._intrinsics.end(); ++it, ++otherIt)
     {
         // Index
         if (it->first != otherIt->first)
@@ -266,7 +266,7 @@ void SfMData::combine(const SfMData& sfmData)
     _views.insert(sfmData._views.begin(), sfmData._views.end());
 
     // intrinsics
-    intrinsics.insert(sfmData.intrinsics.begin(), sfmData.intrinsics.end());
+    _intrinsics.insert(sfmData._intrinsics.begin(), sfmData._intrinsics.end());
 
     // poses
     _poses.insert(sfmData._poses.begin(), sfmData._poses.end());
@@ -284,7 +284,7 @@ void SfMData::combine(const SfMData& sfmData)
 void SfMData::clear()
 {
     _views.clear();
-    intrinsics.clear();
+    _intrinsics.clear();
     structure.clear();
     _posesUncertainty.clear();
     _landmarksUncertainty.clear();

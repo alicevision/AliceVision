@@ -58,8 +58,6 @@ using RotationPriors = std::vector<RotationPrior>;
 class SfMData
 {
 public:
-    /// Considered camera intrinsics (indexed by view.getIntrinsicId())
-    Intrinsics intrinsics;
     /// Structure (3D points with their 2D observations)
     Landmarks structure;
     /// Uncertainty per pose
@@ -107,8 +105,8 @@ public:
      * @brief Get intrinsics
      * @return intrinsics
      */
-    const Intrinsics& getIntrinsics() const {return intrinsics;}
-    Intrinsics& getIntrinsics() {return intrinsics;}
+    const Intrinsics& getIntrinsics() const {return _intrinsics;}
+    Intrinsics& getIntrinsics() {return _intrinsics;}
 
     /**
      * @brief Get landmarks
@@ -179,8 +177,8 @@ public:
      */
     const camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId) const
     {
-        if (intrinsics.count(intrinsicId))
-            return intrinsics.at(intrinsicId).get();
+        if (_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId).get();
         return nullptr;
     }
 
@@ -190,8 +188,8 @@ public:
      */
     camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId)
     {
-        if(intrinsics.count(intrinsicId))
-            return intrinsics.at(intrinsicId).get();
+        if(_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId).get();
         return nullptr;
     }
 
@@ -201,8 +199,8 @@ public:
      */
     std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId)
     {
-        if(intrinsics.count(intrinsicId))
-            return intrinsics.at(intrinsicId);
+        if(_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId);
         return nullptr;
     }
 
@@ -212,8 +210,8 @@ public:
      */
     const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId) const
     {
-        if(intrinsics.count(intrinsicId))
-            return intrinsics.at(intrinsicId);
+        if(_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId);
         return nullptr;
     }
 
@@ -242,7 +240,7 @@ public:
             view->getIntrinsicId() != UndefinedIndexT &&
             view->getPoseId() != UndefinedIndexT &&
             (!view->isPartOfRig() || view->isPoseIndependant() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
-            intrinsics.find(view->getIntrinsicId()) != intrinsics.end() &&
+            _intrinsics.find(view->getIntrinsicId()) != _intrinsics.end() &&
             _poses.find(view->getPoseId()) != _poses.end()
         );
     }
@@ -526,6 +524,8 @@ public:
     void clear();
 
 private:
+    /// Considered camera intrinsics (indexed by view.getIntrinsicId())
+    Intrinsics _intrinsics;
     /// Considered views
     Views _views;
     /// Absolute path to the SfMData file (should not be saved)

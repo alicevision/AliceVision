@@ -713,8 +713,8 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
     // add intrinsics
     const View * view_I = sfm_data.getViews().at(I).get();
     const View * view_J = sfm_data.getViews().at(J).get();
-    tiny_scene.intrinsics.insert(*sfm_data.getIntrinsics().find(view_I->getIntrinsicId()));
-    tiny_scene.intrinsics.insert(*sfm_data.getIntrinsics().find(view_J->getIntrinsicId()));
+    tiny_scene.getIntrinsics().insert(*sfm_data.getIntrinsics().find(view_I->getIntrinsicId()));
+    tiny_scene.getIntrinsics().insert(*sfm_data.getIntrinsics().find(view_J->getIntrinsicId()));
   }
 
   // Fill sfm_data with the inliers tracks. Feed image observations: no 3D yet.

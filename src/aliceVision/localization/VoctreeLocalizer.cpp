@@ -816,7 +816,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
     
     // its associated intrinsics
     // this is just ugly!
-    const camera::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics.at(matchedView->getIntrinsicId()).get();
+    const camera::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.getIntrinsics().at(matchedView->getIntrinsicId()).get();
     if ( !isPinhole(matchedIntrinsicsBase->getType()) )
     {
       //@fixme maybe better to throw something here
