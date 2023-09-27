@@ -60,11 +60,11 @@ TestData SomeTestData()
 
   essentialFromRt(Mat3::Identity(), Vec3::Zero(), d.R, d.t, &d.E);
 
-  P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), &d.P1);
-  P_from_KRt(Mat3::Identity(), d.R, d.t, &d.P2);
+  P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), d.P1);
+  P_from_KRt(Mat3::Identity(), d.R, d.t, d.P2);
 
-  project(d.P1, d.X, &d.x1);
-  project(d.P2, d.X, &d.x2);
+  project(d.P1, d.X, d.x1);
+  project(d.P2, d.X, d.x2);
 
   return d;
 }

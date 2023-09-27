@@ -9,7 +9,7 @@
 #include "Fundamental7PSolver.hpp"
 #include <aliceVision/numeric/polynomial.hpp>
 #include <aliceVision/multiview/epipolarEquation.hpp>
-
+#include <aliceVision/numeric/algebra.hpp>
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
@@ -38,7 +38,7 @@ void Fundamental7PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robust
     // ALICEVISION_LOG_DEBUG("Its singular values are:\n" << svdA.singularValues());
 
     // find the two F matrices in the nullspace of A.
-    Nullspace2(&A, &f1, &f2);
+    Nullspace2(A, f1, f2);
 
     // @fixme here there is a potential error, we should check that the size of
     // null(A) is 2. Otherwise we have a family of possible solutions for the
@@ -56,7 +56,7 @@ void Fundamental7PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robust
     encodeEpipolarEquation(x1, x2, &A);
 
     // find the two F matrices in the nullspace of A.
-    Nullspace2(&A, &f1, &f2);
+    Nullspace2(A, f1, f2);
   }
 
   Mat3 F1 = Map<RMat3>(f1.data());
@@ -115,7 +115,7 @@ void Fundamental7PSphericalSolver::solve(const Mat& x1, const Mat& x2, std::vect
         //    Eigen::JacobiSVD<Mat9> svdA(A);
         //    cout << "Its singular values are:" << endl << svdA.singularValues() << endl;
         // Find the two F matrices in the nullspace of A.
-        Nullspace2(&A, &f1, &f2);
+        Nullspace2(A, f1, f2);
         //@fixme here there is a potential error, we should check that the size of
         // null(A) is 2. Otherwise we have a family of possible solutions for the
         // fundamental matrix (ie infinite solution). This happens, e.g., when matching
@@ -131,7 +131,7 @@ void Fundamental7PSphericalSolver::solve(const Mat& x1, const Mat& x2, std::vect
         Mat A(x1.cols(), 9);
         encodeEpipolarSphericalEquation(x1, x2, &A);
         // Find the two F matrices in the nullspace of A.
-        Nullspace2(&A, &f1, &f2);
+        Nullspace2(A, f1, f2);
     }
 
     Mat3 F1 = Map<RMat3>(f1.data());

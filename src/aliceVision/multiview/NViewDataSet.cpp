@@ -70,7 +70,7 @@ NViewDataSet NRealisticCamerasRing(size_t nviews, size_t npoints,
 Mat34 NViewDataSet::P(size_t i)const {
   assert(i < _n);
   Mat34 P;
-  P_from_KRt(_K[i], _R[i], _t[i], &P);
+  P_from_KRt(_K[i], _R[i], _t[i], P);
   return P;
 }
 

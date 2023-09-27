@@ -21,7 +21,7 @@ namespace sfm {
 bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
   const Mat & x1, const Mat & x2,
   const Mat3 & E, const std::vector<size_t> & vec_inliers,
-  Mat3 * R, Vec3 * t)
+  Mat3 & R, Vec3 & t)
 {
   // Accumulator to find the best solution
   std::vector<size_t> f(4, 0);
@@ -39,13 +39,13 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
   Mat34 P1, P2;
   Mat3 R1 = Mat3::Identity();
   Vec3 t1 = Vec3::Zero();
-  P_from_KRt(K1, R1, t1, &P1);
+  P_from_KRt(K1, R1, t1, P1);
 
   for (unsigned int i = 0; i < 4; ++i)
   {
     const Mat3 &R2 = Rs[i];
     const Vec3 &t2 = ts[i];
-    P_from_KRt(K2, R2, t2, &P2);
+    P_from_KRt(K2, R2, t2, P2);
     Vec3 X;
 
     for (size_t k = 0; k < vec_inliers.size(); ++k)
@@ -53,7 +53,7 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
       const Vec2
         & x1_ = x1.col(vec_inliers[k]),
         & x2_ = x2.col(vec_inliers[k]);
-      multiview::TriangulateDLT(P1, x1_, P2, x2_, &X);
+      multiview::TriangulateDLT(P1, x1_, P2, x2_, X);
       // Test if point is front to the two cameras.
       if (Depth(R1, t1, X) > 0 && Depth(R2, t2, X) > 0)
       {
@@ -68,9 +68,10 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
     // There is no right solution with points in front of the cameras
     return false;
   }
+  
   const size_t index = std::distance(f.begin(), iter);
-  (*R) = Rs[index];
-  (*t) = ts[index];
+  R = Rs[index];
+  t = ts[index];
 
   return true;
 }
@@ -115,7 +116,7 @@ bool robustRelativePose(const Mat3& K1, const Mat3& K2,
   Vec3 t;
   if (!estimate_Rt_fromE(
     K1, K2, x1, x2,
-    relativePose_info.essential_matrix, relativePose_info.vec_inliers, &R, &t))
+    relativePose_info.essential_matrix, relativePose_info.vec_inliers, R, t))
   {
     ALICEVISION_LOG_INFO("robustRelativePose: cannot find a valid [R|t] couple that makes the inliers in front of the camera.");
     return false; // cannot find a valid [R|t] couple that makes the inliers in front of the camera.

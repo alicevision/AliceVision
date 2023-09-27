@@ -8,6 +8,7 @@
 
 #include "Fundamental8PSolver.hpp"
 #include <aliceVision/multiview/epipolarEquation.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -28,13 +29,13 @@ void solveProblem(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Ma
     // compiler doing the maximum of optimization.
     Mat9 A = Mat::Zero(9,9);
     encodeEpipolarEquation(x1, x2, &A, weights);
-    Nullspace(&A, &f);
+    Nullspace(A, f);
   }
   else  
   {
     MatX9 A(x1.cols(), 9);
     encodeEpipolarEquation(x1, x2, &A, weights);
-    Nullspace(&A, &f);
+    Nullspace(A, f);
   }
 
   Mat3 F = Map<RMat3>(f.data());

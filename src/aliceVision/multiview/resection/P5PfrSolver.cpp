@@ -8,6 +8,7 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 #include <cmath>
 #include <iostream>

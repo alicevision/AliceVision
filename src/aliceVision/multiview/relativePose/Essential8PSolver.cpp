@@ -8,6 +8,7 @@
 
 #include "Essential8PSolver.hpp"
 #include <aliceVision/multiview/epipolarEquation.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -24,7 +25,7 @@ void Essential8PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustEs
   encodeEpipolarEquation(x1, x2, &A);
 
   Vec9 e;
-  Nullspace(&A, &e);
+  Nullspace(A, e);
   Mat3 E = Map<RMat3>(e.data());
 
   // Find the closest essential matrix to E in frobenius norm

@@ -118,8 +118,8 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData, const sfm::Reconstructe
     Eigen::Vector3d c = - pair.R.transpose() * pair.t;
 
     Mat34 P1, P2;
-    P_from_KRt(Kref, Mat3::Identity(), Vec3::Zero(), &P1);
-    P_from_KRt(Knext, pair.R, pair.t, &P2);
+    P_from_KRt(Kref, Mat3::Identity(), Vec3::Zero(), P1);
+    P_from_KRt(Knext, pair.R, pair.t, P2);
     
     size_t count = 0;
     std::vector<double> angles;
@@ -147,7 +147,7 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData, const sfm::Reconstructe
         }
 
         Vec3 X;
-        multiview::TriangulateDLT(P1, refptu, P2, nextptu, &X);
+        multiview::TriangulateDLT(P1, refptu, P2, nextptu, X);
         
         if (X(2) < 0.0)
         {
@@ -236,8 +236,8 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
     const Eigen::Matrix3d Knext = nextPinhole->K();
 
     Mat34 P1, P2;
-    P_from_KRt(Kref, Mat3::Identity(), Vec3::Zero(), &P1);
-    P_from_KRt(Knext, pair.R, pair.t, &P2);
+    P_from_KRt(Kref, Mat3::Identity(), Vec3::Zero(), P1);
+    P_from_KRt(Knext, pair.R, pair.t, P2);
     
     size_t count = 0;
     std::vector<double> angles;
@@ -256,7 +256,7 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
         const Vec2 nextptu = nextIntrinsics->get_ud_pixel(nextpt);
 
         Vec3 X;
-        multiview::TriangulateDLT(P1, refptu, P2, nextptu, &X);
+        multiview::TriangulateDLT(P1, refptu, P2, nextptu, X);
         
         if (X(2) < 0.0)
         {

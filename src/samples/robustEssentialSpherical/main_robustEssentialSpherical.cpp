@@ -13,6 +13,7 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/multiview/AngularRadianErrorKernel.hpp>
+#include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 
 #include "sphericalCam.hpp"
 
@@ -197,7 +198,7 @@ int main()
 
                 //-> Test the 4 solutions will all the point
                 Mat34 P1;
-                P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), &P1);
+                P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), P1);
                 std::vector< std::vector<size_t> > vec_newInliers(4);
                 std::vector< std::vector<Vec3> > vec_3D(4);
 
@@ -205,7 +206,7 @@ int main()
                     const Mat3 &R2 = Rs[kk];
                     const Vec3 &t2 = ts[kk];
                     Mat34 P2;
-                    P_from_KRt(Mat3::Identity(), R2, t2, &P2);
+                    P_from_KRt(Mat3::Identity(), R2, t2, P2);
 
                     //-- For each inlier:
                     //   - triangulate
@@ -216,7 +217,7 @@ int main()
 
                         //Triangulate
                         Vec3 X;
-                        aliceVision::spherical_cam::TriangulateDLT(P1, x1_, P2, x2_, &X);
+                        aliceVision::multiview::TriangulateSphericalDLT(P1, x1_, P2, x2_, X);
 
                         //Check positivity of the depth (sign of the dot product)
                         const Vec3 Mc = R2 * X + t2;

@@ -286,52 +286,6 @@ inline bool AreMatNearEqual(const TMat& X, const TMat& Y, const double epsilon)
   return true;
 }
 
-// Solve the linear system Ax = 0 via SVD. Store the solution in x, such that
-// ||x|| = 1.0. Return the singular value corresponding to the solution.
-// Destroys A and resizes x if necessary.
-
-template <typename TMat, typename TVec>
-double Nullspace(TMat *A, TVec *nullspace)
-{
-  if(A->rows() >= A->cols())
-  {
-    Eigen::JacobiSVD<TMat> svd(*A, Eigen::ComputeFullV);
-    (*nullspace) = svd.matrixV().col(A->cols() - 1);
-    return svd.singularValues()(A->cols() - 1);
-  }
-  // Extend A with rows of zeros to make it square. It's a hack, but is
-  // necessary until Eigen supports SVD with more columns than rows.
-  TMat A_extended(A->cols(), A->cols());
-  A_extended.block(A->rows(), 0, A->cols() - A->rows(), A->cols()).setZero();
-  A_extended.block(0, 0, A->rows(), A->cols()) = (*A);
-  return Nullspace(&A_extended, nullspace);
-}
-
-/// Solve the linear system Ax = 0 via SVD. Finds two solutions, x1 and x2, such
-/// that x1 is the best solution and x2 is the next best solution (in the L2
-/// norm sense). Store the solution in x1 and x2, such that ||x|| = 1.0. Return
-/// the singular value corresponding to the solution x1. Destroys A and resizes
-/// x if necessary.
-
-template <typename TMat, typename TVec1, typename TVec2>
-inline double Nullspace2(TMat *A, TVec1 *x1, TVec2 *x2)
-{
-  if(A->rows() >= A->cols())
-  {
-    Eigen::JacobiSVD<TMat> svd(*A, Eigen::ComputeFullV);
-    TMat V = svd.matrixV();
-    *x1 = V.col(A->cols() - 1);
-    *x2 = V.col(A->cols() - 2);
-    return svd.singularValues()(A->cols() - 1);
-  }
-  // Extend A with rows of zeros to make it square. It's a hack, but is
-  // necessary until Eigen supports SVD with more columns than rows.
-  TMat A_extended(A->cols(), A->cols());
-  A_extended.block(A->rows(), 0, A->cols() - A->rows(), A->cols()).setZero();
-  A_extended.block(0, 0, A->rows(), A->cols()) = (*A);
-  return Nullspace2(&A_extended, x1, x2);
-}
-
 // Make a rotation matrix such that center becomes the direction of the
 // positive z-axis, and y is oriented close to up by default.
 Mat3 LookAt(const Vec3 &center, const Vec3 & up = Vec3::UnitY());

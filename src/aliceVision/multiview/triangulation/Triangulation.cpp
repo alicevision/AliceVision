@@ -11,6 +11,7 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -32,7 +33,7 @@ void TriangulateNView(const Mat2X &x,
     design(3 * i + 2, 4 + i) = 1.0;
   }
   Vec X_and_alphas;
-  Nullspace(&design, &X_and_alphas);
+  Nullspace(design, X_and_alphas);
   *X = X_and_alphas.head(4);
 }
 
@@ -54,7 +55,7 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
       design.block<2, 4>(2 * i, 0) *= (*weights)[i];
     }
   }
-  Nullspace(&design, X);
+  Nullspace(design, *X);
 }
 
 void TriangulateNViewLORANSAC(const Mat2X& x,
