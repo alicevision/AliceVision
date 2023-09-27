@@ -263,7 +263,7 @@ int aliceVision_main(int argc, char** argv)
             const IndexT newIndex = sfmData::computeViewUID(*newView);
 
             newView->setViewId(newIndex);
-            sfmData.getViews()[newIndex] = newView;
+            sfmData.getViews().emplace(newIndex, newView);
         }
     }
     
@@ -274,7 +274,7 @@ int aliceVision_main(int argc, char** argv)
     int downscaleFactor = 1;
     {
         const IndexT viewId = *sfmData.getValidViews().begin();
-        const std::string warpedPath = sfmData.getViews()[viewId]->getImage().getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = sfmData.getViews().at(viewId)->getImage().getMetadata().at("AliceVision:warpedPath");
 
         const std::string viewFilepath = (fs::path(warpingFolder) / (warpedPath + ".exr")).string();
         ALICEVISION_LOG_TRACE("Read panorama size from file: " << viewFilepath);

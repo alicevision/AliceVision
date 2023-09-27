@@ -663,7 +663,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       view->addAncestor(val);
     }
 
-    sfmData.views[viewId] = view;
+    sfmData.views.emplace(viewId, view);
   }
 
   if((flagsPart & ESfMData::EXTRINSICS) &&

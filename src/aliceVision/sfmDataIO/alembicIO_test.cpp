@@ -45,7 +45,7 @@ SfMData createTestScene(IndexT singleViewsCount,
     view->getImage().addMetadata("A","A");
     view->getImage().addMetadata("B","B");
     view->getImage().addMetadata("C","C");
-    sfm_data.views[id_view] = view;
+    sfm_data.views.emplace(id_view, view);
 
     // Add poses
     const Mat3 r = SO3::expm(Vec3::Random());
@@ -120,7 +120,7 @@ SfMData createTestScene(IndexT singleViewsCount,
         view->setFrameId(nbPoses + pose);
         view->setIndependantPose(false);
 
-        sfm_data.views[nbViews] = view;
+        sfm_data.views.emplace(nbViews, view);
         ++nbViews;
       }
     }

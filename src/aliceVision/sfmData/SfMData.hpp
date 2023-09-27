@@ -14,6 +14,7 @@
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/sfmData/HashMapPtr.hpp>
 #include <aliceVision/types.hpp>
 
 #include <stdexcept>
@@ -24,7 +25,7 @@ namespace aliceVision {
 namespace sfmData {
 
 /// Define a collection of View
-using Views = HashMap<IndexT, std::shared_ptr<View> >;
+using Views = HashMapPtr<View>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
 using Poses = HashMap<IndexT, CameraPose>;

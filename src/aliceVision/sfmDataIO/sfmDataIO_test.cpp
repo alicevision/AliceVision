@@ -42,7 +42,7 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
 
     std::shared_ptr<sfmData::View> view = std::make_shared<sfmData::View>(os.str(),viewId, intrinsicId, poseId, 1500, 1000);
 
-    sfmData.views[viewId] = view;
+    sfmData.views.emplace(viewId, view);
 
     // Add poses
     sfmData.setPose(*view, sfmData::CameraPose());

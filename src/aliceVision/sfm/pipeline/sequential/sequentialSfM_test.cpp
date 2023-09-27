@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
         camera::EINTRINSIC::PINHOLE_CAMERA,
         config._cx*2, config._cy*2, -1, -1, 0, 0);
     // The 3rd view use this invalid intrinsic
-    sfmData2.views[2]->setIntrinsicId(1);
+    sfmData2.views.at(2)->setIntrinsicId(1);
   }
 
   ReconstructionEngine_sequentialSfM::Params sfmParams;

@@ -52,7 +52,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
         geometry::Pose3 poseGT(R, pos);
         sfmData::CameraPose cposeGT(poseGT);
         sfmDataGT.getPoses()[i] = cposeGT;
-        sfmDataGT.getViews()[i] = std::make_shared<sfmData::View>("", i, 0, i, 1920, 1080);
+        sfmDataGT.getViews().emplace(i, std::make_shared<sfmData::View>("", i, 0, i, 1920, 1080));
 
         Eigen::Matrix3d Rup = SO3::expm(Vec3::Random() * (0.1));
         Eigen::Vector3d tup = Vec3::Random() * (0.5);
@@ -60,7 +60,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
         geometry::Pose3 poseEst(Rup * R, pos + tup);
         sfmData::CameraPose cposeEst(poseEst, (i==0));
         sfmDataEst.getPoses()[i] = cposeEst;
-        sfmDataEst.getViews()[i] = std::make_shared<sfmData::View>("", i, 0, i, 1920, 1080);
+        sfmDataEst.getViews().emplace(i, std::make_shared<sfmData::View>("", i, 0, i, 1920, 1080));
 
     }
 
