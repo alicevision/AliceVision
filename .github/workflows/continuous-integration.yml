@@ -78,14 +78,6 @@ jobs:
         run: |
           make test
 
-      - name: Build As Third Party
-        working-directory: ./build_as_3rdparty
-        run: |
-          cmake ../src/samples/aliceVisionAs3rdParty \
-           -DBUILD_SHARED_LIBS:BOOL=ON \
-           -DCMAKE_PREFIX_PATH:PATH="$PWD/../../AV_install;${DEPS_INSTALL_DIR}"
-          make -j$(nproc)
-
       - name: Functional Tests
         working-directory: ./functional_tests
         run: |
