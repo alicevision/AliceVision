@@ -18,10 +18,12 @@
 #include <aliceVision/sfm/bundle/manifolds/so3.hpp>
 #include <aliceVision/sfm/bundle/manifolds/so3vec.hpp>
 #include <aliceVision/sfm/bundle/manifolds/se3.hpp>
+#include <aliceVision/sfm/bundle/manifolds/so2vec.hpp>
 #include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
 
 #include <aliceVision/sfm/bundle/costfunctions/projection.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/projectionSimple.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/projectionParallaxSimple.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/panoramaEquidistant.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/panoramaPinhole.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/rotationPrior.hpp>

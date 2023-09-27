@@ -9,6 +9,7 @@
 
 #include <aliceVision/sfmData/CameraPose.hpp>
 #include <aliceVision/sfmData/Landmark.hpp>
+#include <aliceVision/sfmData/PBLandmark.hpp>
 #include <aliceVision/sfmData/Constraint2D.hpp>
 #include <aliceVision/sfmData/RotationPrior.hpp>
 #include <aliceVision/sfmData/View.hpp>
@@ -35,6 +36,9 @@ using Intrinsics = HashMapPtr<camera::IntrinsicBase>;
 
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = HashMap<IndexT, Landmark>;
+
+/// Define a collection of landmarks are indexed by their TrackId
+using PBLandmarks = HashMap<IndexT, PBLandmark>;
 
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;

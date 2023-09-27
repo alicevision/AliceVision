@@ -15,34 +15,43 @@ namespace sfmData {
 /**
  * @brief Landmark is a 3D point with its 2d observations.
  */
-struct Landmark
+struct PBLandmark
 {
-  Landmark() = default;
-  explicit Landmark(feature::EImageDescriberType descType): descType(descType) {}
-  Landmark(const Vec3& pos3d,
+  PBLandmark() = default;
+  explicit PBLandmark(feature::EImageDescriberType descType): descType(descType) {}
+  PBLandmark(const Vec4& parameters,
            feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED,
            const Observations& observations = Observations(),
            const image::RGBColor &color = image::WHITE)
-    : X(pos3d)
+    : X(parameters)
     , descType(descType)
     , observations(observations)
     , rgb(color)
   {}
 
-  Vec3 X;
+  Vec4 X;
   feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
   Observations observations;
   image::RGBColor rgb = image::WHITE;    //!> the color associated to the point
   
-  bool operator==(const Landmark& other) const
+  IndexT primaryView;
+  IndexT secondaryView;
+  
+  bool operator==(const PBLandmark& other) const
   {
     return AreVecNearEqual(X, other.X, 1e-3) &&
            AreVecNearEqual(rgb, other.rgb, 1e-3) &&
            observations == other.observations &&
            descType == other.descType;
   }
-  inline bool operator!=(const Landmark& other) const { return !(*this == other); }
+
+  inline bool operator!=(const PBLandmark& other) const 
+  { 
+    return !(*this == other); 
+  }
 };
+
+
 
 } // namespace sfmData
 } // namespace aliceVision
