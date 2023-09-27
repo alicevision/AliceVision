@@ -31,7 +31,7 @@ using Views = HashMapPtr<View>;
 using Poses = HashMap<IndexT, CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
-using Intrinsics = HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
+using Intrinsics = HashMapPtr<camera::IntrinsicBase>;
 
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = HashMap<IndexT, Landmark>;

@@ -117,7 +117,7 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std
             scene.intrinsics.insert({intrinsicsId, std::make_shared<camera::Pinhole>(imageWidth, imageHeight, matK)});
             if(lockIntrinsics)
             {
-                scene.intrinsics[intrinsicsId]->lock();
+                scene.intrinsics.at(intrinsicsId)->lock();
             }
         }
         ALICEVISION_LOG_DEBUG("rotation " << rotation);

@@ -49,9 +49,9 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   // pose
   sfm_data.setPose(*view, CameraPose(pose));
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-  sfm_data.intrinsics[0] = std::shared_ptr<camera::IntrinsicBase>(intrinsics, [](camera::IntrinsicBase*)
+  sfm_data.intrinsics.emplace(0, std::shared_ptr<camera::IntrinsicBase>(intrinsics, [](camera::IntrinsicBase*)
   {
-  });
+  }));
   // structure data (2D-3D correspondences)
   const double unknownScale = 0.0;
   for(size_t i = 0; i < vec_inliers.size(); ++i)

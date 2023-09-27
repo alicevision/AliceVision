@@ -641,7 +641,7 @@ int aliceVision_main(int argc, char** argv)
         // Add intrinsic to SfMData
         // Note: intrinsic ID is 0, this convention is used in several places in this file
         auto& intrinsics = outSfmData.getIntrinsics();
-        intrinsics[0] = intrinsic;
+        intrinsics.emplace(0, intrinsic);
     }
 
 
