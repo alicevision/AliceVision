@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
     std::vector<IndexT> indexes = {{ 12, 54, 89, 65 }};
     for( IndexT i: indexes )
     {
-      views[i] = std::make_shared<sfmData::View>("filepath", i);
+      views.emplace(i, std::make_shared<sfmData::View>("filepath", i));
     }
 
 

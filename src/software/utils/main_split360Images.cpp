@@ -176,7 +176,7 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
                 /* subPoseId */   i,
                 /* metadata */    image::getMapFromMetadata(metadataSource)
                 );
-            views[viewId] = view;
+            views.emplace(viewId, view);
         }
     }
 
@@ -276,7 +276,7 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
                 /* subPoseId */   index,
                 /* metadata */    image::getMapFromMetadata(outMetadataSpec.extra_attribs)
                 );
-            views[viewId] = view;
+            views.emplace(viewId, view);
         }
         
         // Increment index

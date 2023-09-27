@@ -185,7 +185,7 @@ void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdT
     // add the view to the new map using the uid as key and change the id
     assert(newViews.count(uid) == 0);
     newViews.emplace(uid, iter.second);
-    newViews[uid]->setViewId(uid);
+    newViews.at(uid)->setViewId(uid);
   }
   
   assert(newViews.size() == views.size());

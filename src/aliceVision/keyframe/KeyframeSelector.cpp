@@ -1151,10 +1151,10 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
         viewId = views[i]->getViewId();
         intrinsicId = views[i]->getIntrinsicId();
         if (_selectedFrames[i] == '1') {
-            keyframesViews[viewId] = views[i];
+            keyframesViews.emplace(viewId, views[i]);
             keyframesIntrinsics[intrinsicId] = inputSfm.getIntrinsics()[intrinsicId];
         } else {
-            framesViews[viewId] = views[i];
+            framesViews.emplace(viewId, views[i]);
             framesIntrinsics[intrinsicId] = inputSfm.getIntrinsics()[intrinsicId];
         }
     }
@@ -1262,12 +1262,12 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
                 // The path for the view will be the video's; it needs to be replaced with the corresponding keyframe's
                 view->getImage().setImagePath(_keyframesPaths[mediaIndex][selectedKeyframesCounter++]);
             }
-            keyframesViews[view->getViewId()] = view;
+            keyframesViews.emplace(view->getViewId(), view);
             keyframesIntrinsics[intrinsicId] = intrinsic;
         } else {
             // No rejected frames if the feed is a video one, as they are not written on disk
             if (!feed.isVideo()) {
-                framesViews[view->getViewId()] = view;
+                framesViews.emplace(view->getViewId(), view);
                 framesIntrinsics[intrinsicId] = intrinsic;
             }
         }

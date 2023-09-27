@@ -220,8 +220,8 @@ int main()
 
         // Setup a SfM scene with two view corresponding the pictures
         sfmData::SfMData tinyScene;
-        tinyScene.views[0].reset(new sfmData::View("", 0, bSharedIntrinsic ? 0 : 1, 0, imageL.Width(), imageL.Height()));
-        tinyScene.views[1].reset(new sfmData::View("", 1, bSharedIntrinsic ? 0 : 1, 1, imageR.Width(), imageR.Height()));
+        tinyScene.views.emplace(0, new sfmData::View("", 0, bSharedIntrinsic ? 0 : 1, 0, imageL.Width(), imageL.Height()));
+        tinyScene.views.emplace(1, new sfmData::View("", 1, bSharedIntrinsic ? 0 : 1, 1, imageR.Width(), imageR.Height()));
         // Setup intrinsics camera data
         switch (iBAType)
         {
@@ -252,8 +252,8 @@ int main()
         tinyScene.setPose(*tinyScene.views.at(1), sfmData::CameraPose(pose1));
 
         // Init structure by inlier triangulation
-        std::shared_ptr<camera::Pinhole> pinhole1 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]);
-        std::shared_ptr<camera::Pinhole> pinhole2 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views[1]->getIntrinsicId()]);
+        std::shared_ptr<camera::Pinhole> pinhole1 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views.at(0)->getIntrinsicId()]);
+        std::shared_ptr<camera::Pinhole> pinhole2 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views.at(1)->getIntrinsicId()]);
         const Mat34 P1 = pinhole1->getProjectiveEquivalent(pose0);
         const Mat34 P2 = pinhole2->getProjectiveEquivalent(pose1);
         sfmData::Landmarks & landmarks = tinyScene.structure;
@@ -267,9 +267,9 @@ int main()
             if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
                 continue;
             // Add a new landmark (3D point with its 2d observations)
-            landmarks[i].observations[tinyScene.views[0]->getViewId()] =
+            landmarks[i].observations[tinyScene.views.at(0)->getViewId()] =
                 sfmData::Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i, LL.scale());
-            landmarks[i].observations[tinyScene.views[1]->getViewId()] =
+            landmarks[i].observations[tinyScene.views.at(1)->getViewId()] =
                 sfmData::Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j, RR.scale());
             landmarks[i].X = X;
         }

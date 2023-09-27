@@ -375,7 +375,7 @@ int aliceVision_main(int argc, char** argv)
                     hdrView->getImage().setImagePath(hdrImagePath);
                 }
                 hdrView->getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace));
-                outputSfm.getViews()[hdrView->getViewId()] = hdrView;
+                outputSfm.getViews().emplace(hdrView->getViewId(), hdrView);
             }
         }
 

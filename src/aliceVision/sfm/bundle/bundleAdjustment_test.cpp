@@ -223,10 +223,10 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   BOOST_CHECK( BA->adjust(sfmData) );
 
   // Check views:
-  BOOST_CHECK( !(sfmData.getPose(*sfmData.views[0].get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views[0].get())) ); // v0 refined
-  BOOST_CHECK( !(sfmData.getPose(*sfmData.views[1].get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views[1].get())) ); // v1 refined
-  BOOST_CHECK( sfmData.getPose(*sfmData.views[2].get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views[2].get()) ); // v2 constant
-  BOOST_CHECK( sfmData.getPose(*sfmData.views[2].get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views[2].get()) ); // v2 ignored
+  BOOST_CHECK( !(sfmData.getPose(*sfmData.views.at(0).get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views.at(0).get())) ); // v0 refined
+  BOOST_CHECK( !(sfmData.getPose(*sfmData.views.at(1).get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views.at(1).get())) ); // v1 refined
+  BOOST_CHECK( sfmData.getPose(*sfmData.views.at(2).get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views.at(2).get()) ); // v2 constant
+  BOOST_CHECK( sfmData.getPose(*sfmData.views.at(2).get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views.at(2).get()) ); // v2 ignored
 
   // Check 3D points
   BOOST_CHECK( sfmData.structure[0].X != sfmData_notRefined.structure[0].X ); // p0 refined
@@ -286,7 +286,7 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
   for (int i = 0; i < nviews; ++i)
   {
     const IndexT id_view = i, id_pose = i, id_intrinsic = 0; //(shared intrinsics)
-    sfm_data.views[i] = std::make_shared<View>("", id_view, id_intrinsic, id_pose, config._cx *2, config._cy *2);
+    sfm_data.views.emplace(i, std::make_shared<View>("", id_view, id_intrinsic, id_pose, config._cx *2, config._cy *2));
   }
 
   // 2. Poses

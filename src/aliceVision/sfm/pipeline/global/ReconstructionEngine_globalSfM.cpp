@@ -479,8 +479,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       const IndexT I = pairIterator.first;
       const IndexT J = pairIterator.second;
 
-      const View* view_I = _sfmData.views[I].get();
-      const View* view_J = _sfmData.views[J].get();
+      const View* view_I = _sfmData.views.at(I).get();
+      const View* view_J = _sfmData.views.at(J).get();
 
       // Check that valid cameras are existing for the pair of view
       if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 ||
