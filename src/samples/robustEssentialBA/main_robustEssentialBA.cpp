@@ -226,18 +226,18 @@ int main()
         switch (iBAType)
         {
             case 1: // Each view use it's own pinhole camera intrinsic
-                tinyScene.intrinsics[0] = camera::createIntrinsic(
-                    camera::PINHOLE_CAMERA, imageL.Width(), imageL.Height(), K(0, 0), K(1, 1), K(0, 2), K(1, 2));
-                tinyScene.intrinsics[1] = camera::createIntrinsic(
-                    camera::PINHOLE_CAMERA, imageR.Width(), imageR.Height(), K(0, 0), K(1, 1), K(0, 2), K(1, 2));
+                tinyScene.intrinsics.emplace(0, camera::createIntrinsic(
+                    camera::PINHOLE_CAMERA, imageL.Width(), imageL.Height(), K(0, 0), K(1, 1), K(0, 2), K(1, 2)));
+                tinyScene.intrinsics.emplace(1, camera::createIntrinsic(
+                    camera::PINHOLE_CAMERA, imageR.Width(), imageR.Height(), K(0, 0), K(1, 1), K(0, 2), K(1, 2)));
                 break;
             case 2: // Shared pinhole camera intrinsic
-                tinyScene.intrinsics[0] = camera::createIntrinsic(
-                    camera::PINHOLE_CAMERA, imageL.Width(), imageL.Height(), K(0, 0), K(1, 1), K(0, 2), K(1, 2));
+                tinyScene.intrinsics.emplace(0, camera::createIntrinsic(
+                    camera::PINHOLE_CAMERA, imageL.Width(), imageL.Height(), K(0, 0), K(1, 1), K(0, 2), K(1, 2)));
                 break;
             case 3: // Shared pinhole camera intrinsic with radial K3 distortion
-                tinyScene.intrinsics[0] = camera::createIntrinsic(
-                    camera::PINHOLE_CAMERA_RADIAL3, imageL.Width(), imageL.Height(), K(0, 0), K(1, 1), K(0, 2), K(1, 2));
+                tinyScene.intrinsics.emplace(0, camera::createIntrinsic(
+                    camera::PINHOLE_CAMERA_RADIAL3, imageL.Width(), imageL.Height(), K(0, 0), K(1, 1), K(0, 2), K(1, 2)));
                 break;
             default:
                 std::cerr << "Invalid input number" << std::endl;
@@ -252,8 +252,8 @@ int main()
         tinyScene.setPose(*tinyScene.views.at(1), sfmData::CameraPose(pose1));
 
         // Init structure by inlier triangulation
-        std::shared_ptr<camera::Pinhole> pinhole1 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views.at(0)->getIntrinsicId()]);
-        std::shared_ptr<camera::Pinhole> pinhole2 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views.at(1)->getIntrinsicId()]);
+        std::shared_ptr<camera::Pinhole> pinhole1 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics.at(tinyScene.views.at(0)->getIntrinsicId()));
+        std::shared_ptr<camera::Pinhole> pinhole2 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics.at(tinyScene.views.at(1)->getIntrinsicId()));
         const Mat34 P1 = pinhole1->getProjectiveEquivalent(pose0);
         const Mat34 P2 = pinhole2->getProjectiveEquivalent(pose1);
         sfmData::Landmarks & landmarks = tinyScene.structure;

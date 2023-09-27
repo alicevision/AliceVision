@@ -84,7 +84,7 @@ SfMDataFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::str
     for(auto it = _sfmData.getViews().begin(); it != _sfmData.getViews().end(); ++it)
     {
         auto view = it->second.get();
-        auto serialNumber = intrinsics[view->getIntrinsicId()]->serialNumber();
+        auto serialNumber = intrinsics.at(view->getIntrinsicId())->serialNumber();
         viewSequences[serialNumber].push_back(view);
     }
 

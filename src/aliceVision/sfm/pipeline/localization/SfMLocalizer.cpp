@@ -187,7 +187,7 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
 
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
   std::shared_ptr<camera::IntrinsicBase> localIntrinsics(intrinsics->clone());
-  tinyScene.intrinsics[0] = localIntrinsics;
+  tinyScene.intrinsics.emplace(0, localIntrinsics);
 
   const double unknownScale = 0.0;
   // structure data (2D-3D correspondences)

@@ -633,7 +633,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     else
       intrinsic->unlock();
 
-    sfmData.intrinsics[intrinsicId] = intrinsic;
+    sfmData.intrinsics.emplace(intrinsicId, intrinsic);
   }
 
   // add imported data to the SfMData container TODO use UID
