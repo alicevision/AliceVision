@@ -48,7 +48,7 @@ bool exportToMatlab(
     const std::string landmarksFilename = (fs::path(outDirectory) / "scene.landmarks").string();
     std::ofstream landmarksFile(landmarksFilename);
     landmarksFile << "# landmarkId X Y Z\n";
-    for(const auto& s: sfm_data.structure)
+    for(const auto& s: sfm_data.getLandmarks())
     {
       const IndexT landmarkId = s.first;
       const Landmark& landmark = s.second;

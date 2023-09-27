@@ -718,7 +718,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   }
 
   // Fill sfm_data with the inliers tracks. Feed image observations: no 3D yet.
-  Landmarks & structure = tiny_scene.structure;
+  Landmarks & structure = tiny_scene.getLandmarks();
   for(size_t idx=0; idx < vec_inliers.size(); ++idx)
   {
     const size_t trackId = vec_inliers[idx];

@@ -502,7 +502,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
                              << globalIteration << ":" << std::endl
                              << "\t- # number of resection groups: " << resectionId << std::endl
                              << "\t- # number of poses: " << nbValidPoses << std::endl
-                             << "\t- # number of landmarks: " << _sfmData.structure.size() << std::endl);
+                             << "\t- # number of landmarks: " << _sfmData.getLandmarks().size() << std::endl);
 
         for(auto v : potentials)
         {
@@ -622,7 +622,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
                          << globalIteration << " iterations:" << std::endl
                          << "\t- # number of resection groups: " << resectionId << std::endl
                          << "\t- # number of poses: " << nbValidPoses << std::endl
-                         << "\t- # number of landmarks: " << _sfmData.structure.size() << std::endl);
+                         << "\t- # number of landmarks: " << _sfmData.getLandmarks().size() << std::endl);
 
     return timer.elapsed();
 }
@@ -1277,8 +1277,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
         << "- Threshold: " << relativePoseInfo.found_residual_precision << "<br>"
         << "- Resection status: OK<br>"
         << "- # points used for robust Essential matrix estimation: " << xI.cols() << "<br>"
-        << "- # points validated by robust estimation: " << _sfmData.structure.size() << "<br>"
-        << "- % points validated: " << _sfmData.structure.size()/static_cast<float>(xI.cols()) << "<br>";
+        << "- # points validated by robust estimation: " << _sfmData.getLandmarks().size() << "<br>"
+        << "- % points validated: " << _sfmData.getLandmarks().size()/static_cast<float>(xI.cols()) << "<br>";
       _htmlDocStream->pushInfo(os.str());
 
       _htmlDocStream->pushInfo(htmlMarkup("h3",
@@ -1308,7 +1308,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
     }
   }
 
-  return !_sfmData.structure.empty();
+  return !_sfmData.getLandmarks().empty();
 }
 
 bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId) {
@@ -1679,7 +1679,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
     if (residual.norm() < resectionData.error_max &&
         resectionData.pose.depth(X) > 0)
     {
-      Landmark& landmark = _sfmData.structure[*iterTrackId];
+      Landmark& landmark = _sfmData.getLandmarks()[*iterTrackId];
       const IndexT idFeat = resectionData.featuresId[i].second;
       const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : _featuresPerView->getFeatures(viewIndex, landmark.descType)[idFeat].scale();
       // Inlier, add the point to the reconstructed track
@@ -1938,15 +1938,15 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       }
 #pragma omp critical
       {
-        scene.structure[trackId] = landmark;
+        scene.getLandmarks()[trackId] = landmark;
       }      
     }
     else
     {
 #pragma omp critical
       {
-        if (scene.structure.find(trackId) != scene.structure.end()) 
-          scene.structure.erase(trackId);
+        if (scene.getLandmarks().find(trackId) != scene.getLandmarks().end()) 
+          scene.getLandmarks().erase(trackId);
       }
     }
   } // for all shared tracks 
@@ -2026,14 +2026,14 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
         bool trackIdExists;
 #pragma omp critical
         {
-          trackIdExists = scene.structure.find(trackId) != scene.structure.end();
+          trackIdExists = scene.getLandmarks().find(trackId) != scene.getLandmarks().end();
         }
         if (trackIdExists)
         {
           // 3D point triangulated before, only add image observation if needed
 #pragma omp critical
           {
-            Landmark& landmark = scene.structure.at(trackId);
+            Landmark& landmark = scene.getLandmarks().at(trackId);
             if (landmark.observations.count(I) == 0)
             {
               const Vec2 residual = camI->residual(poseI, landmark.X.homogeneous(), xI);
@@ -2104,7 +2104,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
 #pragma omp critical
             {
               // Add a new track
-              Landmark & landmark = scene.structure[trackId];
+              Landmark & landmark = scene.getLandmarks()[trackId];
               landmark.X = X_euclidean;
               landmark.descType = track.descType;
               

@@ -31,7 +31,7 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData, BoxStats<double>
 
   // Collect residuals for each observation
   std::vector<double> vec_residuals;
-  vec_residuals.reserve(sfmData.structure.size());
+  vec_residuals.reserve(sfmData.getLandmarks().size());
 
   for(const auto &track : sfmData.getLandmarks())
   {

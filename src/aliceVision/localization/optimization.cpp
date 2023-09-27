@@ -144,9 +144,9 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       // get the corresponding feature
       const Vec2 &feature = currResult.getPt2D().col(idx);
       // check if the point exists already
-      if(tinyScene.structure.count(match.landmarkId))
+      if(tinyScene.getLandmarks().count(match.landmarkId))
       {
-        sfmData::Landmark& landmark = tinyScene.structure.at(match.landmarkId);
+        sfmData::Landmark& landmark = tinyScene.getLandmarks().at(match.landmarkId);
         assert(landmark.descType == match.descType);
         // normally there should be no other features already associated to this
         // 3D point in this view
@@ -180,14 +180,14 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         newLandmark.descType = match.descType;
         newLandmark.X = currResult.getPt3D().col(idx);
         newLandmark.observations[viewID] = sfmData::Observation(feature, match.featId, unknownScale);
-        tinyScene.structure[match.landmarkId] = std::move(newLandmark);
+        tinyScene.getLandmarks()[match.landmarkId] = std::move(newLandmark);
       }
     }
   }
 
 //  {
-//    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations before filtering " << tinyScene.structure.size());
-//    sfmData::Landmarks &landmarks = tinyScene.structure;
+//    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations before filtering " << tinyScene.getLandmarks().size());
+//    sfmData::Landmarks &landmarks = tinyScene.getLandmarks();
 //    for(sfmData::Landmarks::iterator it = landmarks.begin(), ite = landmarks.end(); it != ite;)
 //    {
 //      if(it->second.observations.size() < 5)
@@ -202,7 +202,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   {
     // just debugging some stats -- this block can be safely removed/commented out
     
-    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations " << tinyScene.structure.size());
+    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations " << tinyScene.getLandmarks().size());
     
     std::size_t maxObs = 0;
     for(const auto landmark : tinyScene.getLandmarks() )
@@ -225,7 +225,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     ALICEVISION_LOG_DEBUG("Max number of observations per point:   " << bacc::max(stats) );
     
     std::size_t cumulative = 0;
-    const std::size_t num3DPoints = tinyScene.structure.size();
+    const std::size_t num3DPoints = tinyScene.getLandmarks().size();
     for(std::size_t i = 0; i < hist.size(); i++ ) 
     {
       ALICEVISION_LOG_DEBUG("Points with " << i << " observations: " << hist[i] 
@@ -246,7 +246,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   // filter out the 3D points having too few observations.
   if(minPointVisibility > 0)
   {
-    auto &landmarks = tinyScene.structure;
+    auto &landmarks = tinyScene.getLandmarks();
     auto iter = landmarks.begin();
     auto endIter = landmarks.end();
 

@@ -75,7 +75,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_
 
   // Build observations per view
   std::map<IndexT, std::map<feature::EImageDescriberType, std::vector<feature::FeatureInImage>>> observationsPerView;
-  for(const auto& landmarkValue : _sfm_data.structure)
+  for(const auto& landmarkValue : _sfm_data.getLandmarks())
   {
     IndexT trackId = landmarkValue.first;
     const sfmData::Landmark& landmark = landmarkValue.second;

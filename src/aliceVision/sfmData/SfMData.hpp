@@ -58,8 +58,6 @@ using RotationPriors = std::vector<RotationPrior>;
 class SfMData
 {
 public:
-    /// Structure (3D points with their 2D observations)
-    Landmarks structure;
     /// Uncertainty per pose
     PosesUncertainty _posesUncertainty;
     /// Uncertainty per landmark
@@ -112,8 +110,8 @@ public:
      * @brief Get landmarks
      * @return landmarks
      */
-    const Landmarks& getLandmarks() const {return structure;}
-    Landmarks& getLandmarks() {return structure;}
+    const Landmarks& getLandmarks() const {return _structure;}
+    Landmarks& getLandmarks() {return _structure;}
 
     /**
      * @brief Get Constraints2D
@@ -524,6 +522,8 @@ public:
     void clear();
 
 private:
+    /// Structure (3D points with their 2D observations)
+    Landmarks _structure;
     /// Considered camera intrinsics (indexed by view.getIntrinsicId())
     Intrinsics _intrinsics;
     /// Considered views

@@ -60,7 +60,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
     Landmark landmark;
     landmark.X = pt3D.col(idx);
     landmark.observations[0] = Observation(pt2D.col(idx), UndefinedIndexT, unknownScale);
-    sfm_data.structure[i] = std::move(landmark);
+    sfm_data.getLandmarks()[i] = std::move(landmark);
   }
 
   BundleAdjustmentCeres bundle_adjustment_obj;

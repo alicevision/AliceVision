@@ -166,7 +166,7 @@ inline void applyTransform(sfmData::SfMData& sfmData,
         }
     }
 
-    for(auto& landmark: sfmData.structure)
+    for(auto& landmark: sfmData.getLandmarks())
     {
         landmark.second.X = S * R * landmark.second.X + t;
     }

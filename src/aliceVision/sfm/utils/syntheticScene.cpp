@@ -90,7 +90,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
       const Vec2 pt = d._x[j].col(i);
       landmark.observations[j] = sfmData::Observation(pt, i, unknownScale);
     }
-    sfmData.structure[i] = landmark;
+    sfmData.getLandmarks()[i] = landmark;
   }
 
   return sfmData;
@@ -171,7 +171,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
       const Vec2 pt = project(camPinHole->getProjectiveEquivalent(camPose), landmark.X);
       landmark.observations[viewId] = sfmData::Observation(pt, landmarkId, unknownScale);
     }
-    sfmData.structure[landmarkId] = landmark;
+    sfmData.getLandmarks()[landmarkId] = landmark;
   }
 
   return sfmData;

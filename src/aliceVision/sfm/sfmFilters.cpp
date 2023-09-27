@@ -22,10 +22,10 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
                                          const unsigned int minTrackLength)
 {
   IndexT outlier_count = 0;
-  sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
+  sfmData::Landmarks::iterator iterTracks = sfmData.getLandmarks().begin();
 
 
-  while(iterTracks != sfmData.structure.end())
+  while(iterTracks != sfmData.getLandmarks().end())
   {
     sfmData::Observations & observations = iterTracks->second.observations;
     sfmData::Observations::iterator itObs = observations.begin();
@@ -54,7 +54,7 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
     }
 
     if (observations.empty() || observations.size() < minTrackLength)
-      iterTracks = sfmData.structure.erase(iterTracks);
+      iterTracks = sfmData.getLandmarks().erase(iterTracks);
     else
       ++iterTracks;
   }
@@ -67,15 +67,15 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
   const double dMaxAcceptedCosAngle = std::cos(degreeToRadian(dMinAcceptedAngle));
 
   using LandmarksKeysVec = std::vector<sfmData::Landmarks::key_type>;
-  LandmarksKeysVec v_keys; v_keys.reserve(sfmData.structure.size());
-  std::transform(sfmData.structure.cbegin(), sfmData.structure.cend(), std::back_inserter(v_keys), stl::RetrieveKey());
+  LandmarksKeysVec v_keys; v_keys.reserve(sfmData.getLandmarks().size());
+  std::transform(sfmData.getLandmarks().cbegin(), sfmData.getLandmarks().cend(), std::back_inserter(v_keys), stl::RetrieveKey());
 
   LandmarksKeysVec toErase;
 
   #pragma omp parallel for
   for (int landmarkIndex = 0; landmarkIndex < v_keys.size(); ++landmarkIndex)
   {
-    const sfmData::Observations &observations = sfmData.structure.at(v_keys[landmarkIndex]).observations;
+    const sfmData::Observations &observations = sfmData.getLandmarks().at(v_keys[landmarkIndex]).observations;
 
     // create matrix for observation directions from camera to point
     Mat3X viewDirections(3, observations.size());
@@ -146,7 +146,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
 
   for (IndexT key : toErase)
   {
-    sfmData.structure.erase(key);
+    sfmData.getLandmarks().erase(key);
   }
 
   return toErase.size();
@@ -155,7 +155,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
 bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_pose, std::set<IndexT>* outRemovedViewsId)
 {
   IndexT removed_elements = 0;
-  const sfmData::Landmarks & landmarks = sfmData.structure;
+  const sfmData::Landmarks & landmarks = sfmData.getLandmarks();
 
   // Count the observation poses occurrence
   HashMap<IndexT, IndexT> posesCount;
@@ -223,9 +223,9 @@ bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT m
 
   // For each landmark:
   //  - Check if we need to keep the observations & the track
-  sfmData::Landmarks::iterator itLandmarks = sfmData.structure.begin();
+  sfmData::Landmarks::iterator itLandmarks = sfmData.getLandmarks().begin();
 
-  while(itLandmarks != sfmData.structure.end())
+  while(itLandmarks != sfmData.getLandmarks().end())
   {
     sfmData::Observations& observations = itLandmarks->second.observations;
     sfmData::Observations::iterator itObs = observations.begin();
@@ -244,7 +244,7 @@ bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT m
     }
 
     if(observations.empty() || observations.size() < min_points_per_landmark)
-      itLandmarks = sfmData.structure.erase(itLandmarks);
+      itLandmarks = sfmData.getLandmarks().erase(itLandmarks);
     else
       ++itLandmarks;
   }

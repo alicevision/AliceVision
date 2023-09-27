@@ -33,12 +33,12 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
   std::deque<IndexT> rejectedId;
   system::ProgressDisplay progressDisplay;
   if (_bConsoleVerbose)
-    progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+    progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
                                                            "Blind triangulation progress:\n");
 
   #pragma omp parallel
-  for(sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
-    iterTracks != sfmData.structure.end();
+  for(sfmData::Landmarks::iterator iterTracks = sfmData.getLandmarks().begin();
+    iterTracks != sfmData.getLandmarks().end();
     ++iterTracks)
   {
     #pragma omp single nowait
@@ -96,7 +96,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
   // Erase the unsuccessful triangulated tracks
   for (auto& it : rejectedId)
   {
-    sfmData.structure.erase(it);
+    sfmData.getLandmarks().erase(it);
   }
 }
 
@@ -118,12 +118,12 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
 
   system::ProgressDisplay progressDisplay;
   if (_bConsoleVerbose)
-    progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+    progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
                                                            "Robust triangulation progress:\n");
 
   #pragma omp parallel
-  for(sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
-    iterTracks != sfmData.structure.end();
+  for(sfmData::Landmarks::iterator iterTracks = sfmData.getLandmarks().begin();
+    iterTracks != sfmData.getLandmarks().end();
     ++iterTracks)
   {
     #pragma omp single nowait
@@ -148,7 +148,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
   // Erase the unsuccessful triangulated tracks
   for(auto& it : rejectedId)
   {
-    sfmData.structure.erase(it);
+    sfmData.getLandmarks().erase(it);
   }
 }
 
