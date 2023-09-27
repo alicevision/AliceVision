@@ -62,9 +62,9 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
     observations[i] = sfmData::Observation( Vec2(i,i), i, unknownScale);
   }
 
-  sfmData.structure[0].observations = observations;
-  sfmData.structure[0].X = Vec3(11,22,33);
-  sfmData.structure[0].descType = feature::EImageDescriberType::SIFT;
+  sfmData.getLandmarks()[0].observations = observations;
+  sfmData.getLandmarks()[0].X = Vec3(11,22,33);
+  sfmData.getLandmarks()[0].descType = feature::EImageDescriberType::SIFT;
 
   return sfmData;
 }
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), sfmData.getViews().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getIntrinsics().size(), sfmData.getIntrinsics().size());
-            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), sfmData.structure.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.getLandmarks().size(), sfmData.getLandmarks().size());
 
             BOOST_CHECK(sfmData == sfmDataLoad);
         }
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), sfmData.getViews().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getIntrinsics().size(), 0);
-            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getLandmarks().size(), 0);
         }
 
         BOOST_TEST_CONTEXT("LOAD (only a subpart: POSES), file format: " << ext_Type[i])
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getIntrinsics().size(), 0);
-            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getLandmarks().size(), 0);
         }
 
         BOOST_TEST_CONTEXT("LOAD (only a subpart: INTRINSICS), file format: " << ext_Type[i])
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getIntrinsics().size(), sfmData.getIntrinsics().size());
-            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getLandmarks().size(), 0);
         }
 
         BOOST_TEST_CONTEXT("LOAD (subparts: INTRINSICS | EXTRINSICS), file format: " << ext_Type[i])
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getIntrinsics().size(), sfmData.getIntrinsics().size());
-            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getLandmarks().size(), 0);
         }
 
         BOOST_TEST_CONTEXT("LOAD (subparts: VIEWS | INTRINSICS | EXTRINSICS), file format: " << ext_Type[i])
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), sfmData.getViews().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getIntrinsics().size(), sfmData.getIntrinsics().size());
-            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getLandmarks().size(), 0);
         }
     }
 }

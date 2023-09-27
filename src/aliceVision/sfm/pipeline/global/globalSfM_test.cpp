@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
   sfmData2.getPoses().clear();
-  sfmData2.structure.clear();
+  sfmData2.getLandmarks().clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData2,
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
   sfmData2.getPoses().clear();
-  sfmData2.structure.clear();
+  sfmData2.getLandmarks().clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData2,
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
   sfmData2.getPoses().clear();
-  sfmData2.structure.clear();
+  sfmData2.getLandmarks().clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData2,
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
   sfmData2.getPoses().clear();
-  sfmData2.structure.clear();
+  sfmData2.getLandmarks().clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData2,

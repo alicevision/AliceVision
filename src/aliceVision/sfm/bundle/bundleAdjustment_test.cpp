@@ -229,12 +229,12 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   BOOST_CHECK( sfmData.getPose(*sfmData.getViews().at(2).get()) == sfmData_notRefined.getPose(*sfmData_notRefined.getViews().at(2).get()) ); // v2 ignored
 
   // Check 3D points
-  BOOST_CHECK( sfmData.structure[0].X != sfmData_notRefined.structure[0].X ); // p0 refined
-  BOOST_CHECK( sfmData.structure[1].X != sfmData_notRefined.structure[1].X ); // p1 refined
-  BOOST_CHECK_EQUAL( sfmData.structure[2].X, sfmData_notRefined.structure[2].X ); // p2 ignored
+  BOOST_CHECK( sfmData.getLandmarks()[0].X != sfmData_notRefined.getLandmarks()[0].X ); // p0 refined
+  BOOST_CHECK( sfmData.getLandmarks()[1].X != sfmData_notRefined.getLandmarks()[1].X ); // p1 refined
+  BOOST_CHECK_EQUAL( sfmData.getLandmarks()[2].X, sfmData_notRefined.getLandmarks()[2].X ); // p2 ignored
 
   // Not refined parameters:
-  BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X );
+  BOOST_CHECK( sfmData.getLandmarks()[2].X == sfmData_notRefined.getLandmarks()[2].X );
 
   const double dResidual_after = RMSE(sfmData);
   BOOST_CHECK_LT(dResidual_after, dResidual_before);
@@ -318,7 +318,7 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
 
       landmark.observations[j] = Observation(pt, i, unknownScale);
     }
-    sfm_data.structure[i] = landmark;
+    sfm_data.getLandmarks()[i] = landmark;
   }
 
   return sfm_data;

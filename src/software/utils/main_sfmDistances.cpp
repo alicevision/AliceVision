@@ -100,7 +100,7 @@ void extractLandmarksPositions(std::vector<std::pair<std::string, Vec3>>& output
         searchIdx.insert(boost::lexical_cast<IndexT>(s));
     }
 
-    for (const auto& landmarkIt : sfmData.structure)
+    for (const auto& landmarkIt : sfmData.getLandmarks())
     {
         if (descTypes.count(landmarkIt.second.descType))
         {

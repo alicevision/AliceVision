@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
   sfmData2.getPoses().clear();
-  sfmData2.structure.clear();
+  sfmData2.getLandmarks().clear();
 
   ReconstructionEngine_sequentialSfM::Params sfmParams;
   sfmParams.userInitialImagePair = Pair(0, 1);
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
   sfmData2.getPoses().clear();
-  sfmData2.structure.clear();
+  sfmData2.getLandmarks().clear();
 
   // The first two views will have valid intrinsics.
   // The third one will have an invalid intrinsic (unknown focal length)
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
   sfmData2.getPoses().clear();
-  sfmData2.structure.clear();
+  sfmData2.getLandmarks().clear();
 
   ReconstructionEngine_sequentialSfM::Params sfmParams;
   sfmParams.userInitialImagePair = Pair(0, 2);

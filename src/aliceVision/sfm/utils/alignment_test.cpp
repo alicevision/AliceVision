@@ -189,7 +189,7 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
 
       landmark.observations[j] = Observation(pt, i, unknownScale);
     }
-    sfm_data.structure[i] = landmark;
+    sfm_data.getLandmarks()[i] = landmark;
   }
 
   return sfm_data;

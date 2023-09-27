@@ -139,7 +139,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if(!inputSfmData.structure.empty())
+    if(!inputSfmData.getLandmarks().empty())
     {
         ALICEVISION_LOG_ERROR("Partially computed SfMData is not currently supported in PanoramaEstimation.");
         return EXIT_FAILURE;

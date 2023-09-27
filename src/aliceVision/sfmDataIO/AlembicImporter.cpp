@@ -190,7 +190,7 @@ bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData:
   }
 
   // Number of points before adding the Alembic data
-  const std::size_t nbPointsInit = sfmdata.structure.size();
+  const std::size_t nbPointsInit = sfmdata.getLandmarks().size();
   for(std::size_t point3d_i = 0;
       point3d_i < positions->size();
       ++point3d_i)
@@ -198,7 +198,7 @@ bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData:
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
 
 
-    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
+    sfmData::Landmark& landmark = sfmdata.getLandmarks()[nbPointsInit + point3d_i];
     
     if (abcVersion < Version(1, 2, 3))
     {
@@ -260,7 +260,7 @@ bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData:
         point3d_i < positions->size();
         ++point3d_i)
     {
-      sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
+      sfmData::Landmark& landmark = sfmdata.getLandmarks()[nbPointsInit + point3d_i];
       // Number of observation for this 3d point
       const std::size_t visibilitySize = sampleVisibilitySize[point3d_i];
 
@@ -342,7 +342,7 @@ bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData:
     for(std::size_t point3d_i = 0; point3d_i < positions->size(); ++point3d_i)
     {
       const int landmarkId = nbPointsInit + point3d_i;
-      sfmData::Landmark& landmark = sfmdata.structure[landmarkId];
+      sfmData::Landmark& landmark = sfmdata.getLandmarks()[landmarkId];
 
       // Number of observation for this 3d point
       const std::size_t visibilitySize = sampleVisibilitySize[point3d_i];

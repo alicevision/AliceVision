@@ -197,7 +197,7 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
     sfmData::Landmark landmark;
     landmark.X = matchingData.pt3D.col(idx);
     landmark.observations[0] = sfmData::Observation(matchingData.pt2D.col(idx), UndefinedIndexT, unknownScale); // TODO-SCALE
-    tinyScene.structure[i] = std::move(landmark);
+    tinyScene.getLandmarks()[i] = std::move(landmark);
   }
 
   BundleAdjustmentCeres BA;

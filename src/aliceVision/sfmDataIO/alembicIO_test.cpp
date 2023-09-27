@@ -136,10 +136,10 @@ SfMData createTestScene(IndexT singleViewsCount,
     Observations observations;
     observations[0] = Observation( Vec2(std::rand() % 10000, std::rand() % 10000), 0, unknownScale);
     observations[1] = Observation( Vec2(std::rand() % 10000, std::rand() % 10000), 1, unknownScale);
-    sfm_data.structure[i].observations = observations;
-    sfm_data.structure[i].X = Vec3(std::rand() % 10000, std::rand() % 10000, std::rand() % 10000);
-    sfm_data.structure[i].rgb = image::RGBColor((std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0);
-    sfm_data.structure[i].descType = feature::EImageDescriberType::SIFT;
+    sfm_data.getLandmarks()[i].observations = observations;
+    sfm_data.getLandmarks()[i].X = Vec3(std::rand() % 10000, std::rand() % 10000, std::rand() % 10000);
+    sfm_data.getLandmarks()[i].rgb = image::RGBColor((std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0);
+    sfm_data.getLandmarks()[i].descType = feature::EImageDescriberType::SIFT;
 
     // Add control points    
   }
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.getIntrinsics().size(), sfmJsonToABC.getIntrinsics().size());
-        BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC.structure.size());
+        BOOST_CHECK_EQUAL( sfmData.getLandmarks().size(), sfmJsonToABC.getLandmarks().size());
     }
 
     // Export as ABC
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC2.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC2.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.getIntrinsics().size(), sfmJsonToABC2.getIntrinsics().size());
-        BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC2.structure.size());
+        BOOST_CHECK_EQUAL( sfmData.getLandmarks().size(), sfmJsonToABC2.getLandmarks().size());
     }
 
     // Export as ABC
@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC3.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC3.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.getIntrinsics().size(), sfmJsonToABC3.getIntrinsics().size());
-        BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC3.structure.size());
+        BOOST_CHECK_EQUAL( sfmData.getLandmarks().size(), sfmJsonToABC3.getLandmarks().size());
     }
 
     // Export as JSON

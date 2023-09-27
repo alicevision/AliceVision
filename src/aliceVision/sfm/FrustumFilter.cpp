@@ -28,7 +28,7 @@ FrustumFilter::FrustumFilter(const sfmData::SfMData& sfmData, const double zNear
 {
   //-- Init Z_Near & Z_Far for all valid views
   init_z_near_z_far_depth(sfmData, zNear, zFar);
-  const bool bComputed_Z = (zNear == -1. && zFar == -1.) && !sfmData.structure.empty();
+  const bool bComputed_Z = (zNear == -1. && zFar == -1.) && !sfmData.getLandmarks().empty();
   _bTruncated = (zNear != -1. && zFar != -1.) || bComputed_Z;
   initFrustum(sfmData);
 }
@@ -168,7 +168,7 @@ void FrustumFilter::init_z_near_z_far_depth(const sfmData::SfMData& sfmData, con
 {
   // If z_near & z_far are -1 and structure if not empty,
   //  compute the values for each camera and the structure
-  const bool bComputed_Z = (zNear == -1. && zFar == -1.) && !sfmData.structure.empty();
+  const bool bComputed_Z = (zNear == -1. && zFar == -1.) && !sfmData.getLandmarks().empty();
   if(bComputed_Z)  // Compute the near & far planes from the structure and view observations
   {
     for(sfmData::Landmarks::const_iterator itL = sfmData.getLandmarks().begin();

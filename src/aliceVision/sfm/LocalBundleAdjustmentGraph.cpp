@@ -67,7 +67,7 @@ void LocalBundleAdjustmentGraph::setAllParametersToRefine(const sfmData::SfMData
     _statePerIntrinsicId[itIntrinsic.first] = BundleAdjustment::EParameterState::REFINED;
 
   // landmarks
-  for(const auto& itLandmark: sfmData.structure)
+  for(const auto& itLandmark: sfmData.getLandmarks())
     _statePerLandmarkId[itLandmark.first] = BundleAdjustment::EParameterState::REFINED;
 }
 
@@ -404,7 +404,7 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(const sfmData::SfMData
   }
   
   // landmarks
-  for(const auto& itLandmark: sfmData.structure)
+  for(const auto& itLandmark: sfmData.getLandmarks())
   {
     const IndexT landmarkId = itLandmark.first;
     const sfmData::Observations& observations = itLandmark.second.observations;
