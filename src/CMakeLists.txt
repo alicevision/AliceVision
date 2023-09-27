@@ -54,7 +54,6 @@ option(ALICEVISION_BUILD_SEGMENTATION "Build AliceVision Segmentation part" ON)
 option(ALICEVISION_BUILD_STEREOPHOTOMETRY "Build AliceVision StereoPhotometry part" ON)
 option(ALICEVISION_BUILD_PANORAMA "Build AliceVision panorama part" ON)
 option(ALICEVISION_BUILD_SOFTWARE "Build AliceVision command line tools." ON)
-option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." OFF)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
 
@@ -939,7 +938,6 @@ message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
-message("** Build AliceVision samples programs: " ${ALICEVISION_BUILD_EXAMPLES})
 message("** Build AliceVision+OpenCV samples programs: " ${ALICEVISION_HAVE_OPENCV})
 message("** Build UncertaintyTE: " ${ALICEVISION_HAVE_UNCERTAINTYTE})
 message("** Build MeshSDFilter: " ${ALICEVISION_HAVE_MESHSDFILTER})
@@ -994,11 +992,6 @@ endif()
 
 # The aliceVision library itself
 add_subdirectory(aliceVision)
-
-# aliceVision tutorial examples
-if(ALICEVISION_BUILD_EXAMPLES AND ALICEVISION_BUILD_SFM)
-  add_subdirectory(samples)
-endif()
 
 # Complete software(s) build on aliceVision libraries
 if(ALICEVISION_BUILD_SOFTWARE)
