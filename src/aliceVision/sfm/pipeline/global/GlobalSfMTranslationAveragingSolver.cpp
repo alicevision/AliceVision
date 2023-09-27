@@ -225,7 +225,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(ETranslationAver
           // Since index have been remapped
           // (use the backward indexing to retrieve the second global rotation)
           const IndexT secondId = _reindexBackward[rel.first.second];
-          const View * view = sfmData.views.at(secondId).get();
+          const View * view = sfmData.getViews().at(secondId).get();
           const Mat3 & Ri = map_globalR.at(view->getPoseId());
           const Vec3 direction = -(Ri.transpose() * rel.second.second.normalized());
 
@@ -638,7 +638,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
       const size_t idx_view = iter->first;
       const feature::PointFeature pt = normalizedFeaturesPerView.getFeatures(idx_view, track.descType)[iter->second];
       xxx[index]->col(cpt) = pt.coords().cast<double>();
-      const View * view = sfmData.views.at(idx_view).get();
+      const View * view = sfmData.getViews().at(idx_view).get();
       intrinsic_ids.insert(view->getIntrinsicId());
     }
   }
@@ -707,8 +707,8 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
     const IndexT J = pairIterator.first.second;
 
     // add views
-    tiny_scene.views.insert(*sfm_data.getViews().find(I));
-    tiny_scene.views.insert(*sfm_data.getViews().find(J));
+    tiny_scene.getViews().insert(*sfm_data.getViews().find(I));
+    tiny_scene.getViews().insert(*sfm_data.getViews().find(J));
 
     // add intrinsics
     const View * view_I = sfm_data.getViews().at(I).get();

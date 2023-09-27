@@ -163,7 +163,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
     for (int i = 0; i < camsPts.size(); ++i)
     {
         const IndexT id_view = i, id_pose = i, id_intrinsic = 0; // shared intrinsics
-        sfm_data.views.emplace(i, std::make_shared<View>("", id_view, id_intrinsic, id_pose, config._cx * 2, config._cy * 2));
+        sfm_data.getViews().emplace(i, std::make_shared<View>("", id_view, id_intrinsic, id_pose, config._cx * 2, config._cy * 2));
     }
 
     // 2. Poses
@@ -180,7 +180,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
         projectedPtsPerCam.push_back(project(P, matPts));
 
         geometry::Pose3 pose(rotationMat, camCenter);
-        sfm_data.setPose(*sfm_data.views.at(i), CameraPose(pose));
+        sfm_data.setPose(*sfm_data.getViews().at(i), CameraPose(pose));
     }
 
     // 3. Intrinsic data (shared, so only one camera intrinsic is defined)

@@ -157,8 +157,8 @@ int aliceVision_main(int argc, char **argv)
             return EXIT_FAILURE;
         }
 
-        if(rangeStart + rangeSize > sfmData.views.size())
-            rangeSize = sfmData.views.size() - rangeStart;
+        if(rangeStart + rangeSize > sfmData.getViews().size())
+            rangeSize = sfmData.getViews().size() - rangeStart;
 
         if(rangeSize <= 0)
         {

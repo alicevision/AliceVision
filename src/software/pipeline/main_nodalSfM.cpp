@@ -444,7 +444,7 @@ int aliceVision_main(int argc, char** argv)
     // For easier access, and for eah view we build a list of tracks observed in this view
     ALICEVISION_LOG_INFO("Estimate tracks per view");
     track::TracksPerView mapTracksPerView;
-    for(const auto& viewIt : sfmData.views)
+    for(const auto& viewIt : sfmData.getViews())
     {
         // create an entry in the map
         mapTracksPerView[viewIt.first];

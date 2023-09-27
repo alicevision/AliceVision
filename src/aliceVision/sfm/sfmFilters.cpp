@@ -32,7 +32,7 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
 
     while(itObs != observations.end())
     {
-      const sfmData::View * view = sfmData.views.at(itObs->first).get();
+      const sfmData::View * view = sfmData.getViews().at(itObs->first).get();
       const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
       const camera::IntrinsicBase * intrinsic = sfmData.intrinsics.at(view->getIntrinsicId()).get();
 
@@ -93,7 +93,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     // fill matrix, optimistically checking each new entry against col(greedyI)
     for(itObs = observations.begin(), i = 0; itObs != observations.end(); ++itObs, ++i)
     {
-      const sfmData::View * view = sfmData.views.at(itObs->first).get();
+      const sfmData::View * view = sfmData.getViews().at(itObs->first).get();
       const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
       const camera::IntrinsicBase * intrinsic = sfmData.intrinsics.at(view->getIntrinsicId()).get();
 

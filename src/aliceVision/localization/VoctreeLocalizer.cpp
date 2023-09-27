@@ -407,7 +407,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
 //    // get the corresponding index of the view
 //    const IndexT matchedViewIndex = currMatch.id;
 //    // get the view handle
-//    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views[matchedViewIndex];
+//    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.getViews()[matchedViewIndex];
 //    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImage().getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
@@ -432,7 +432,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     // the view index of the current matched image
     const IndexT matchedViewId = matchedImage.id;
     // the handler to the current view
-    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views.at(matchedViewId);
+    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.getViews().at(matchedViewId);
 
     // safeguard: we should match the query image with an image that has at least
     // some 3D points visible --> if it has 0 3d points it is likely that it is an
@@ -585,7 +585,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     
     {
       // just temporary code to evaluate the estimated pose @todo remove it
-      const geometry::Pose3 referencePose = _sfm_data.getPose(*_sfm_data.views.at(matchedViewId)).getTransform();
+      const geometry::Pose3 referencePose = _sfm_data.getPose(*_sfm_data.getViews().at(matchedViewId)).getTransform();
       ALICEVISION_LOG_DEBUG("R refined\n" << pose.rotation());
       ALICEVISION_LOG_DEBUG("t refined\n" << pose.translation());
       ALICEVISION_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
@@ -775,7 +775,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
 //  for(const voctree::DocMatch& currMatch : matchedImages )
 //  {
 //    // get the view handle
-//    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views[currMatch.id];
+//    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.getViews()[currMatch.id];
 //    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImage().getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
@@ -799,7 +799,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
 
     const auto matchedViewId = matchedImage.id;
     // the handler to the current view
-    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views.at(matchedViewId);
+    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.getViews().at(matchedViewId);
     // its associated reconstructed regions
     const feature::MapRegionsPerDesc& matchedRegions = _regionsPerView.getRegionsPerDesc(matchedViewId);
     

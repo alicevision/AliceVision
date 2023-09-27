@@ -219,8 +219,8 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
     updateIncompleteView(*viewPtr, EViewIdMethod::FILENAME, ".*?(\\d+)");
 
     // Update intrinsics with width and height of image
-    sfmData.views.emplace(viewPtr->getViewId(), viewPtr);
-    sfmData.setPose(*sfmData.views.at(viewPtr->getViewId()), sfmData::CameraPose(pose));
+    sfmData.getViews().emplace(viewPtr->getViewId(), viewPtr);
+    sfmData.setPose(*sfmData.getViews().at(viewPtr->getViewId()), sfmData::CameraPose(pose));
     sfmData.intrinsics.emplace(index, pinholeIntrinsic);
   }
   return true;

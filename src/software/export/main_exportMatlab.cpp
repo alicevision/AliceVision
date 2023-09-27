@@ -83,7 +83,7 @@ bool exportToMatlab(
     const std::string cameraPosesFilename = (fs::path(outDirectory) / "cameras.poses").string();
     std::ofstream cameraPosesFile(cameraPosesFilename);
     cameraPosesFile << "# viewId R11 R12 R13 R21 R22 R23 R31 R32 R33 C1 C2 C3\n";
-    for(const auto& v: sfm_data.views)
+    for(const auto& v: sfm_data.getViews())
     {
       const View& view = *v.second.get();
       if(!sfm_data.isPoseAndIntrinsicDefined(&view))
@@ -121,7 +121,7 @@ bool exportToMatlab(
       "# viewId fisheye4 f u0 v0 k1 k2 k3 k4\n"
       "# viewId fisheye1 f u0 v0 k1\n";
 
-    for(const auto& v: sfm_data.views)
+    for(const auto& v: sfm_data.getViews())
     {
       const View& view = *v.second.get();
       if(!sfm_data.isPoseAndIntrinsicDefined(&view))

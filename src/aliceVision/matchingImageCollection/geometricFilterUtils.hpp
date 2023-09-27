@@ -144,8 +144,8 @@ void fillMatricesWithUndistortFeaturesMatches(const Pair &pairIndex,
                       const std::vector<feature::EImageDescriberType> &descTypes,
                       MatT &x_I, MatT &x_J)
 {
-  const sfmData::View * view_I = sfmData->views.at(pairIndex.first).get();
-  const sfmData::View * view_J = sfmData->views.at(pairIndex.second).get();
+  const sfmData::View * view_I = sfmData->getViews().at(pairIndex.first).get();
+  const sfmData::View * view_J = sfmData->getViews().at(pairIndex.second).get();
 
   // Retrieve corresponding pair camera intrinsic if any
   const camera::IntrinsicBase * cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());

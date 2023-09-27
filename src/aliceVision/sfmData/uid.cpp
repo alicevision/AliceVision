@@ -154,7 +154,7 @@ void regenerateUID(SfMData &sfmdata, std::map<std::size_t, std::size_t> &oldIdTo
   if(sfmdata.getViews().empty())
     return;
   
-  regenerateViewUIDs(sfmdata.views, oldIdToNew);
+  regenerateViewUIDs(sfmdata.getViews(), oldIdToNew);
   
   if(!sanityCheck)
     return;

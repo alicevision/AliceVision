@@ -479,8 +479,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       const IndexT I = pairIterator.first;
       const IndexT J = pairIterator.second;
 
-      const View* view_I = _sfmData.views.at(I).get();
-      const View* view_J = _sfmData.views.at(J).get();
+      const View* view_I = _sfmData.getViews().at(I).get();
+      const View* view_J = _sfmData.getViews().at(J).get();
 
       // Check that valid cameras are existing for the pair of view
       if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 ||
@@ -543,8 +543,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       {
         // Refine the defined scene
         SfMData tinyScene;
-        tinyScene.views.insert(*_sfmData.getViews().find(view_I->getViewId()));
-        tinyScene.views.insert(*_sfmData.getViews().find(view_J->getViewId()));
+        tinyScene.getViews().insert(*_sfmData.getViews().find(view_I->getViewId()));
+        tinyScene.getViews().insert(*_sfmData.getViews().find(view_J->getViewId()));
         tinyScene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_I->getIntrinsicId()));
         tinyScene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_J->getIntrinsicId()));
 

@@ -259,7 +259,7 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     ALICEVISION_LOG_DEBUG("Build tracks per view");
 
     // Init tracksPerView to have an entry in the map for each view (even if there is no track at all)
-    for(const auto& viewIt: _sfmData.views)
+    for(const auto& viewIt: _sfmData.getViews())
     {
         // create an entry in the map
         _map_tracksPerView[viewIt.first];
@@ -267,7 +267,7 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     track::computeTracksPerView(_map_tracks, _map_tracksPerView);
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
-            _map_tracksPerView, _map_tracks, _sfmData.views, *_featuresPerView, _params.pyramidBase, _params.pyramidDepth, _map_featsPyramidPerView);
+            _map_tracksPerView, _map_tracks, _sfmData.getViews(), *_featuresPerView, _params.pyramidBase, _params.pyramidDepth, _map_featsPyramidPerView);
 
     // display stats
     {
@@ -1004,7 +1004,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
 
     // Check if the view is part of a rig
     {
-      const View& view = *_sfmData.views.at(viewId);
+      const View& view = *_sfmData.getViews().at(viewId);
 
       if(view.isPartOfRig())
       {
@@ -1665,7 +1665,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
   // update the view pose or rig pose/sub-pose
   _map_ACThreshold.insert(std::make_pair(viewIndex, resectionData.error_max));
 
-  const View& view = *_sfmData.views.at(viewIndex);
+  const View& view = *_sfmData.getViews().at(viewIndex);
   _sfmData.setPose(view, CameraPose(resectionData.pose));
 
   // B. Update the observations into the global scene structure
