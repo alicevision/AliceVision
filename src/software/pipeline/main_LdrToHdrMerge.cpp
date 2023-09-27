@@ -366,7 +366,7 @@ int aliceVision_main(int argc, char** argv)
                 }
                 else
                 {
-                    hdrView.reset(group.at(g)->clone());
+                    hdrView.reset(targetViews.at(g)->clone());
                 }
                 if (!byPass)
                 {
