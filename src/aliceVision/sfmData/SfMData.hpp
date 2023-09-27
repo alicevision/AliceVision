@@ -58,8 +58,6 @@ using RotationPriors = std::vector<RotationPrior>;
 class SfMData
 {
 public:
-    /// Considered views
-    Views views;
     /// Considered camera intrinsics (indexed by view.getIntrinsicId())
     Intrinsics intrinsics;
     /// Structure (3D points with their 2D observations)
@@ -88,8 +86,8 @@ public:
      * @brief Get views
      * @return views
      */
-    const Views& getViews() const {return views;}
-    Views& getViews() {return views;}
+    const Views& getViews() const {return _views;}
+    Views& getViews() {return _views;}
 
     /**
      * @brief Get poses
@@ -226,7 +224,7 @@ public:
     std::set<IndexT> getViewsKeys() const
     {
         std::set<IndexT> viewKeys;
-        for (auto v: views)
+        for (auto v: _views)
             viewKeys.insert(v.first);
         return viewKeys;
     }
@@ -256,7 +254,7 @@ public:
      */
     bool isPoseAndIntrinsicDefined(IndexT viewId) const
     { 
-        return isPoseAndIntrinsicDefined(views.at(viewId).get());
+        return isPoseAndIntrinsicDefined(_views.at(viewId).get());
     }
 
     /**
@@ -276,7 +274,7 @@ public:
      */
     View& getView(IndexT viewId)
     {
-        return *(views.at(viewId));
+        return *(_views.at(viewId));
     }
 
     /**
@@ -286,7 +284,7 @@ public:
      */
     View::ptr getViewPtr(IndexT viewId)
     {
-        return views.at(viewId).get();
+        return _views.at(viewId).get();
     }
 
     /**
@@ -296,7 +294,7 @@ public:
      */
     View::sptr getViewSharedPtr(IndexT viewId)
     {
-        return views.at(viewId);
+        return _views.at(viewId);
     }
 
     /**
@@ -306,7 +304,7 @@ public:
      */
     const View& getView(IndexT viewId) const
     {
-        return *(views.at(viewId));
+        return *(_views.at(viewId));
     }
 
     /**
@@ -387,9 +385,9 @@ public:
     ExposureSetting getMedianCameraExposureSetting() const
     {
         std::vector<ExposureSetting> cameraExposureList;
-        cameraExposureList.reserve(views.size());
+        cameraExposureList.reserve(_views.size());
 
-        for(const auto& view : views)
+        for(const auto& view : _views)
         {
             const ExposureSetting ce = view.second->getImage().getCameraExposureSetting();
             if (ce.isPartiallyDefined())
@@ -528,6 +526,8 @@ public:
     void clear();
 
 private:
+    /// Considered views
+    Views _views;
     /// Absolute path to the SfMData file (should not be saved)
     std::string _absolutePath;
     /// Features folders path

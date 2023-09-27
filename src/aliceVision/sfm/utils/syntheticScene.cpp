@@ -63,13 +63,13 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
   for(int i = 0; i < nviews; ++i)
   {
     const IndexT viewId = i, poseId = i, intrinsicId = 0; //(shared intrinsics)
-    sfmData.views.emplace(i, std::make_shared<sfmData::View>("", viewId, intrinsicId, poseId, config._cx * 2, config._cy * 2));
+    sfmData.getViews().emplace(i, std::make_shared<sfmData::View>("", viewId, intrinsicId, poseId, config._cx * 2, config._cy * 2));
   }
 
   // 2. Poses
   for(int i = 0; i < nviews; ++i)
   {
-    sfmData.setPose(*sfmData.views.at(i), sfmData::CameraPose(geometry::Pose3(d._R[i], d._C[i])));
+    sfmData.setPose(*sfmData.getViews().at(i), sfmData::CameraPose(geometry::Pose3(d._R[i], d._C[i])));
   }
 
   // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
@@ -131,10 +131,10 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
       auto viewPtr = std::make_shared<sfmData::View>("", viewId, intrinsicId, poseId, config._cx * 2, config._cy * 2, rigId, subposeI);
       viewPtr->setFrameId(poseId);
       viewPtr->setIndependantPose(false);
-      sfmData.views.emplace(viewId, viewPtr);
+      sfmData.getViews().emplace(viewId, viewPtr);
     }
   }
-  const std::size_t nbViews = sfmData.views.size();
+  const std::size_t nbViews = sfmData.getViews().size();
 
   // 3. Poses
   for(int poseId = 0; poseId < nbPoses; ++poseId)
@@ -158,7 +158,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
     landmark.X = d._X.col(landmarkId);
     for(int viewId = 0; viewId < nbViews; ++viewId)
     {
-      const sfmData::View& view = *sfmData.views.at(viewId);
+      const sfmData::View& view = *sfmData.getViews().at(viewId);
       const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
 
       std::shared_ptr<camera::IntrinsicBase> cam = sfmData.intrinsics.at(0);

@@ -45,7 +45,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   SfMData sfm_data;
   // view
   std::shared_ptr<View> view = std::make_shared<View>("", 0, 0, 0);
-  sfm_data.views.emplace(0, view);
+  sfm_data.getViews().emplace(0, view);
   // pose
   sfm_data.setPose(*view, CameraPose(pose));
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)

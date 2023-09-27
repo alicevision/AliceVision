@@ -119,7 +119,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
 //    ALICEVISION_LOG_DEBUG("\n*****\nView " << viewID);
     // view
     std::shared_ptr<sfmData::View> view = std::make_shared<sfmData::View>("",viewID, intrinsicID, viewID);
-    tinyScene.views.insert( std::make_pair(viewID, view));
+    tinyScene.getViews().insert( std::make_pair(viewID, view));
     // pose
     tinyScene.setPose(*view, sfmData::CameraPose(currResult.getPose()));
 

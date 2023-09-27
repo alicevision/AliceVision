@@ -233,7 +233,7 @@ void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<std::s
     tracksBuilder.exportToSTL(tracks);
 
     // Init tracksPerView to have an entry in the map for each view (even if there is no track at all)
-    for(const auto& viewIt: sfmData.views)
+    for(const auto& viewIt: sfmData.getViews())
     {
         // create an entry in the map
         tracksPerView[viewIt.first];

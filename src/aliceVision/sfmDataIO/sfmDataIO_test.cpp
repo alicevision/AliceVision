@@ -42,7 +42,7 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
 
     std::shared_ptr<sfmData::View> view = std::make_shared<sfmData::View>(os.str(),viewId, intrinsicId, poseId, 1500, 1000);
 
-    sfmData.views.emplace(viewId, view);
+    sfmData.getViews().emplace(viewId, view);
 
     // Add poses
     sfmData.setPose(*view, sfmData::CameraPose());
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             sfmData::SfMData sfmDataLoad;
             ESfMData flags_part = ESfMData::ALL;
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
-            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), sfmData.getViews().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), sfmData.structure.size());
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             sfmData::SfMData sfmDataLoad;
             ESfMData flags_part = ESfMData::VIEWS;
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
-            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), sfmData.getViews().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             sfmData::SfMData sfmDataLoad;
             ESfMData flags_part = ESfMData::EXTRINSICS;
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
-            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             sfmData::SfMData sfmDataLoad;
             ESfMData flags_part = ESfMData::INTRINSICS;
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
-            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             sfmData::SfMData sfmDataLoad;
             ESfMData flags_part = ESfMData(ESfMData::INTRINSICS | ESfMData::EXTRINSICS);
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
-            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             sfmData::SfMData sfmDataLoad;
             ESfMData flags_part = ESfMData(ESfMData::VIEWS | ESfMData::INTRINSICS | ESfMData::EXTRINSICS);
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
-            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.getViews().size(), sfmData.getViews().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);

@@ -202,7 +202,7 @@ int main(int argc, char **argv)
     }
 
     // check program range
-    if(rangeStart < 0 || rangeStart >= sfmData.views.size())
+    if(rangeStart < 0 || rangeStart >= sfmData.getViews().size())
     {
         ALICEVISION_LOG_ERROR("invalid subrange of views to process.");
         return EXIT_FAILURE;

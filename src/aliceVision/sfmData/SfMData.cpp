@@ -31,13 +31,13 @@ SfMData::~SfMData()
 bool SfMData::operator==(const SfMData& other) const
 {
     // Views
-    if (views.size() != other.views.size())
+    if (_views.size() != other._views.size())
         return false;
 
-    for (Views::const_iterator it = views.begin(); it != views.end(); ++it)
+    for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View& view1 = *(it->second.get());
-        const View& view2 = *(other.views.at(it->first).get());
+        const View& view2 = *(other._views.at(it->first).get());
         if (view1 != view2)
             return false;
 
@@ -194,7 +194,7 @@ void SfMData::setAbsolutePath(const std::string& path)
 std::set<IndexT> SfMData::getValidViews() const
 {
     std::set<IndexT> valid_idx;
-    for (Views::const_iterator it = views.begin(); it != views.end(); ++it)
+    for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View * v = it->second.get();
         if (isPoseAndIntrinsicDefined(v))
@@ -208,7 +208,7 @@ std::set<IndexT> SfMData::getValidViews() const
 std::set<IndexT> SfMData::getReconstructedIntrinsics() const
 {
     std::set<IndexT> valid_idx;
-    for (Views::const_iterator it = views.begin(); it != views.end(); ++it)
+    for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View * v = it->second.get();
         if (isPoseAndIntrinsicDefined(v))
@@ -263,7 +263,7 @@ void SfMData::combine(const SfMData& sfmData)
     addMatchesFolders(sfmData.getMatchesFolders());
 
     // views
-    views.insert(sfmData.views.begin(), sfmData.views.end());
+    _views.insert(sfmData._views.begin(), sfmData._views.end());
 
     // intrinsics
     intrinsics.insert(sfmData.intrinsics.begin(), sfmData.intrinsics.end());
@@ -283,7 +283,7 @@ void SfMData::combine(const SfMData& sfmData)
 
 void SfMData::clear()
 {
-    views.clear();
+    _views.clear();
     intrinsics.clear();
     structure.clear();
     _posesUncertainty.clear();

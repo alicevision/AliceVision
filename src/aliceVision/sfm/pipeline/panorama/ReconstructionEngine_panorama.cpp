@@ -629,8 +629,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             const Pair pairIterator = *(match_pairs.begin());
             const IndexT I = pairIterator.first;
             const IndexT J = pairIterator.second;
-            const View* view_I = _sfmData.views.at(I).get();
-            const View* view_J = _sfmData.views.at(J).get();
+            const View* view_I = _sfmData.getViews().at(I).get();
+            const View* view_J = _sfmData.getViews().at(J).get();
 
             // Check that valid cameras are existing for the pair of view
             if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 || _sfmData.getIntrinsics().count(view_J->getIntrinsicId()) == 0)

@@ -45,7 +45,7 @@ SfMData createTestScene(IndexT singleViewsCount,
     view->getImage().addMetadata("A","A");
     view->getImage().addMetadata("B","B");
     view->getImage().addMetadata("C","C");
-    sfm_data.views.emplace(id_view, view);
+    sfm_data.getViews().emplace(id_view, view);
 
     // Add poses
     const Mat3 r = SO3::expm(Vec3::Random());
@@ -120,7 +120,7 @@ SfMData createTestScene(IndexT singleViewsCount,
         view->setFrameId(nbPoses + pose);
         view->setIndependantPose(false);
 
-        sfm_data.views.emplace(nbViews, view);
+        sfm_data.getViews().emplace(nbViews, view);
         ++nbViews;
       }
     }
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     SfMData sfmJsonToABC;
     {
         BOOST_CHECK(Load(sfmJsonToABC, jsonFile3, ESfMData(flags)));
-        BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC.views.size());
+        BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC.intrinsics.size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC.structure.size());
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     SfMData sfmJsonToABC2;
     {
         BOOST_CHECK(Load(sfmJsonToABC2, abcFile3, ESfMData(flags)));
-        BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC2.views.size());
+        BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC2.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC2.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC2.intrinsics.size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC2.structure.size());
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     SfMData sfmJsonToABC3;
     {
         BOOST_CHECK(Load(sfmJsonToABC3, abcFile4, ESfMData(flags)));
-        BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC3.views.size());
+        BOOST_CHECK_EQUAL( sfmData.getViews().size(), sfmJsonToABC3.getViews().size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC3.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC3.intrinsics.size());
         BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC3.structure.size());

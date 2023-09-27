@@ -66,7 +66,7 @@ int main(int argc, char **argv)
  
             const auto metadata = image::readImageMetadata(filePath.string(), w, h);
  
-            sfm_data.views.emplace(c, std::make_shared<sfmData::View>(filePath.string(), id_view, id_intrinsic,
+            sfm_data.getViews().emplace(c, std::make_shared<sfmData::View>(filePath.string(), id_view, id_intrinsic,
                                                                 id_pose, w, h, rigId, subPoseId,
                                                                 image::getMapFromMetadata(metadata)));
  
@@ -78,9 +78,9 @@ int main(int argc, char **argv)
     const double cameraExposureMedian = sfm_data.getMedianCameraExposureSetting().getExposure();
     ALICEVISION_LOG_INFO("  EV Median :" << cameraExposureMedian); 
  
-    for(int i = 0; i < sfm_data.views.size(); ++i) 
+    for(int i = 0; i < sfm_data.getViews().size(); ++i) 
     { 
-        const sfmData::View& view = *(sfm_data.views.at(i));
+        const sfmData::View& view = *(sfm_data.getViews().at(i));
         const float evComp = float(cameraExposureMedian / view.getImage().getCameraExposureSetting().getExposure());
  
         image::Image<image::RGBfColor> img; 
