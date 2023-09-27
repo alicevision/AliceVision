@@ -652,7 +652,7 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
       auto children = fileTree.get_child("views");
     // update incomplete views
       #pragma omp parallel for
-      for(int index = 0; index != children.size(); index++)
+      for(int index = 0; index < children.size(); index++)
       {
         auto it = children.begin();
         std::advance(it, index);
