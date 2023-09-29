@@ -196,20 +196,6 @@ if(ALICEVISION_BUILD_SFM)
               Boost::timer
     )
 
-    # Export SfM aliceVision camera scene as triangle meshes
-    alicevision_add_software(aliceVision_exportCameraFrustums
-        SOURCE main_exportCameraFrustums.cpp
-        FOLDER ${FOLDER_SOFTWARE_EXPORT}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_sfm
-              aliceVision_sfmData
-              aliceVision_sfmDataIO
-              Boost::program_options
-              Boost::filesystem
-    )
-
     # Export geometry and textures as USD
     if(ALICEVISION_HAVE_USD)
         alicevision_add_software(aliceVision_exportUSD

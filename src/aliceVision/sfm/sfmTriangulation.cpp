@@ -33,12 +33,12 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
   std::deque<IndexT> rejectedId;
   system::ProgressDisplay progressDisplay;
   if (_bConsoleVerbose)
-    progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+    progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
                                                            "Blind triangulation progress:\n");
 
   #pragma omp parallel
-  for(sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
-    iterTracks != sfmData.structure.end();
+  for(sfmData::Landmarks::iterator iterTracks = sfmData.getLandmarks().begin();
+    iterTracks != sfmData.getLandmarks().end();
     ++iterTracks)
   {
     #pragma omp single nowait
@@ -52,7 +52,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
       const sfmData::Observations & observations = iterTracks->second.observations;
       for(const auto& itObs : observations)
       {
-        const sfmData::View * view = sfmData.views.at(itObs.first).get();
+        const sfmData::View * view = sfmData.getViews().at(itObs.first).get();
         if (sfmData.isPoseAndIntrinsicDefined(view))
         {
           std::shared_ptr<IntrinsicBase> cam = sfmData.getIntrinsics().at(view->getIntrinsicId());
@@ -96,7 +96,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
   // Erase the unsuccessful triangulated tracks
   for (auto& it : rejectedId)
   {
-    sfmData.structure.erase(it);
+    sfmData.getLandmarks().erase(it);
   }
 }
 
@@ -118,12 +118,12 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
 
   system::ProgressDisplay progressDisplay;
   if (_bConsoleVerbose)
-    progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+    progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
                                                            "Robust triangulation progress:\n");
 
   #pragma omp parallel
-  for(sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
-    iterTracks != sfmData.structure.end();
+  for(sfmData::Landmarks::iterator iterTracks = sfmData.getLandmarks().begin();
+    iterTracks != sfmData.getLandmarks().end();
     ++iterTracks)
   {
     #pragma omp single nowait
@@ -148,7 +148,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
   // Erase the unsuccessful triangulated tracks
   for(auto& it : rejectedId)
   {
-    sfmData.structure.erase(it);
+    sfmData.getLandmarks().erase(it);
   }
 }
 
@@ -196,7 +196,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
     {
       sfmData::Observations::const_iterator itObs = observations.begin();
       std::advance(itObs, it);
-      const sfmData::View * view = sfmData.views.at(itObs->first).get();
+      const sfmData::View * view = sfmData.getViews().at(itObs->first).get();
       const IntrinsicBase * cam = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
       const Pose3 pose = sfmData.getPose(*view).getTransform();
       const double z = pose.depth(current_model); // TODO: cam->depth(pose(X));
@@ -212,7 +212,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
     // Classification as inlier/outlier according pixel residual errors.
     for (const auto& itObs : observations)
     {
-      const sfmData::View * view = sfmData.views.at(itObs.first).get();
+      const sfmData::View * view = sfmData.getViews().at(itObs.first).get();
       const IntrinsicBase * intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
       const Pose3 pose = sfmData.getPose(*view).getTransform();
       const Vec2 residual = intrinsic->residual(pose, current_model.homogeneous(), itObs.second.x);
@@ -251,7 +251,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMD
     assert(idx < observations.size());
     sfmData::Observations::const_iterator itObs = observations.begin();
     std::advance(itObs, idx);
-    const sfmData::View * view = sfmData.views.at(itObs->first).get();
+    const sfmData::View * view = sfmData.getViews().at(itObs->first).get();
 
     std::shared_ptr<camera::IntrinsicBase> cam = sfmData.getIntrinsics().at(view->getIntrinsicId());
     std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);

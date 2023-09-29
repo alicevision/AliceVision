@@ -110,14 +110,14 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std
         image::readImageSize(imagePath, imageWidth, imageHeight);
 
         // if uniqueIntrinsics do it once, otherwise always
-        if((uniqueIntrinsics && scene.intrinsics.empty()) || !uniqueIntrinsics)
+        if((uniqueIntrinsics && scene.getIntrinsics().empty()) || !uniqueIntrinsics)
         {
             ALICEVISION_LOG_DEBUG("matK " << matK);
             // add the intrinsics
-            scene.intrinsics.insert({intrinsicsId, std::make_shared<camera::Pinhole>(imageWidth, imageHeight, matK)});
+            scene.getIntrinsics().insert({intrinsicsId, std::make_shared<camera::Pinhole>(imageWidth, imageHeight, matK)});
             if(lockIntrinsics)
             {
-                scene.intrinsics[intrinsicsId]->lock();
+                scene.getIntrinsics().at(intrinsicsId)->lock();
             }
         }
         ALICEVISION_LOG_DEBUG("rotation " << rotation);

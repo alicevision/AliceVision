@@ -63,7 +63,7 @@ void StructureEstimationFromKnownPoses::run(SfMData& sfmData,
   std::mt19937 &randomNumberGenerator, 
   double geometricErrorMax)
 {
-  sfmData.structure.clear();
+  sfmData.getLandmarks().clear();
 
   match(sfmData, pairs, regionsPerView, geometricErrorMax);
   filter(sfmData, pairs, regionsPerView);
@@ -274,10 +274,10 @@ void StructureEstimationFromKnownPoses::triangulate(
   matching::PairwiseMatches().swap(_tripletMatches);
 
   // Generate new Structure tracks
-  sfmData.structure.clear();
+  sfmData.getLandmarks().clear();
 
   // Fill sfm_data with the computed tracks (no 3D yet)
-  Landmarks & structure = sfmData.structure;
+  Landmarks & structure = sfmData.getLandmarks();
   IndexT idx(0);
   for (track::TracksMap::const_iterator itTracks = map_tracksCommon.begin();
     itTracks != map_tracksCommon.end();

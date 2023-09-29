@@ -14,6 +14,7 @@
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/sfmData/HashMapPtr.hpp>
 #include <aliceVision/types.hpp>
 
 #include <stdexcept>
@@ -24,13 +25,13 @@ namespace aliceVision {
 namespace sfmData {
 
 /// Define a collection of View
-using Views = HashMap<IndexT, std::shared_ptr<View> >;
+using Views = HashMapPtr<View>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
 using Poses = HashMap<IndexT, CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
-using Intrinsics = HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
+using Intrinsics = HashMapPtr<camera::IntrinsicBase>;
 
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = HashMap<IndexT, Landmark>;
@@ -57,12 +58,6 @@ using RotationPriors = std::vector<RotationPrior>;
 class SfMData
 {
 public:
-    /// Considered views
-    Views views;
-    /// Considered camera intrinsics (indexed by view.getIntrinsicId())
-    Intrinsics intrinsics;
-    /// Structure (3D points with their 2D observations)
-    Landmarks structure;
     /// Uncertainty per pose
     PosesUncertainty _posesUncertainty;
     /// Uncertainty per landmark
@@ -87,8 +82,8 @@ public:
      * @brief Get views
      * @return views
      */
-    const Views& getViews() const {return views;}
-    Views& getViews() {return views;}
+    const Views& getViews() const {return _views;}
+    Views& getViews() {return _views;}
 
     /**
      * @brief Get poses
@@ -108,15 +103,15 @@ public:
      * @brief Get intrinsics
      * @return intrinsics
      */
-    const Intrinsics& getIntrinsics() const {return intrinsics;}
-    Intrinsics& getIntrinsics() {return intrinsics;}
+    const Intrinsics& getIntrinsics() const {return _intrinsics;}
+    Intrinsics& getIntrinsics() {return _intrinsics;}
 
     /**
      * @brief Get landmarks
      * @return landmarks
      */
-    const Landmarks& getLandmarks() const {return structure;}
-    Landmarks& getLandmarks() {return structure;}
+    const Landmarks& getLandmarks() const {return _structure;}
+    Landmarks& getLandmarks() {return _structure;}
 
     /**
      * @brief Get Constraints2D
@@ -180,8 +175,8 @@ public:
      */
     const camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId) const
     {
-        if (intrinsics.count(intrinsicId))
-            return intrinsics.at(intrinsicId).get();
+        if (_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId).get();
         return nullptr;
     }
 
@@ -191,8 +186,8 @@ public:
      */
     camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId)
     {
-        if(intrinsics.count(intrinsicId))
-            return intrinsics.at(intrinsicId).get();
+        if(_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId).get();
         return nullptr;
     }
 
@@ -202,8 +197,8 @@ public:
      */
     std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId)
     {
-        if(intrinsics.count(intrinsicId))
-            return intrinsics.at(intrinsicId);
+        if(_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId);
         return nullptr;
     }
 
@@ -213,8 +208,8 @@ public:
      */
     const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId) const
     {
-        if(intrinsics.count(intrinsicId))
-            return intrinsics.at(intrinsicId);
+        if(_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId);
         return nullptr;
     }
 
@@ -225,7 +220,7 @@ public:
     std::set<IndexT> getViewsKeys() const
     {
         std::set<IndexT> viewKeys;
-        for (auto v: views)
+        for (auto v: _views)
             viewKeys.insert(v.first);
         return viewKeys;
     }
@@ -243,7 +238,7 @@ public:
             view->getIntrinsicId() != UndefinedIndexT &&
             view->getPoseId() != UndefinedIndexT &&
             (!view->isPartOfRig() || view->isPoseIndependant() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
-            intrinsics.find(view->getIntrinsicId()) != intrinsics.end() &&
+            _intrinsics.find(view->getIntrinsicId()) != _intrinsics.end() &&
             _poses.find(view->getPoseId()) != _poses.end()
         );
     }
@@ -255,7 +250,7 @@ public:
      */
     bool isPoseAndIntrinsicDefined(IndexT viewId) const
     { 
-        return isPoseAndIntrinsicDefined(views.at(viewId).get());
+        return isPoseAndIntrinsicDefined(_views.at(viewId).get());
     }
 
     /**
@@ -275,7 +270,7 @@ public:
      */
     View& getView(IndexT viewId)
     {
-        return *(views.at(viewId));
+        return *(_views.at(viewId));
     }
 
     /**
@@ -285,7 +280,7 @@ public:
      */
     View::ptr getViewPtr(IndexT viewId)
     {
-        return views.at(viewId).get();
+        return _views.at(viewId).get();
     }
 
     /**
@@ -295,7 +290,7 @@ public:
      */
     View::sptr getViewSharedPtr(IndexT viewId)
     {
-        return views.at(viewId);
+        return _views.at(viewId);
     }
 
     /**
@@ -305,7 +300,7 @@ public:
      */
     const View& getView(IndexT viewId) const
     {
-        return *(views.at(viewId));
+        return *(_views.at(viewId));
     }
 
     /**
@@ -386,9 +381,9 @@ public:
     ExposureSetting getMedianCameraExposureSetting() const
     {
         std::vector<ExposureSetting> cameraExposureList;
-        cameraExposureList.reserve(views.size());
+        cameraExposureList.reserve(_views.size());
 
-        for(const auto& view : views)
+        for(const auto& view : _views)
         {
             const ExposureSetting ce = view.second->getImage().getCameraExposureSetting();
             if (ce.isPartiallyDefined())
@@ -527,6 +522,12 @@ public:
     void clear();
 
 private:
+    /// Structure (3D points with their 2D observations)
+    Landmarks _structure;
+    /// Considered camera intrinsics (indexed by view.getIntrinsicId())
+    Intrinsics _intrinsics;
+    /// Considered views
+    Views _views;
     /// Absolute path to the SfMData file (should not be saved)
     std::string _absolutePath;
     /// Features folders path

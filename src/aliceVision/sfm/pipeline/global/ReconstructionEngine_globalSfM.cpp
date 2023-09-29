@@ -288,7 +288,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
     tracksBuilder.exportToSTL(map_selectedTracks);
 
     // Fill sfm_data with the computed tracks (no 3D yet)
-    Landmarks & structure = _sfmData.structure;
+    Landmarks & structure = _sfmData.getLandmarks();
     IndexT idx(0);
     for (TracksMap::const_iterator itTracks = map_selectedTracks.begin();
       itTracks != map_selectedTracks.end();
@@ -358,7 +358,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
                      sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
   }
-  return !_sfmData.structure.empty();
+  return !_sfmData.getLandmarks().empty();
 }
 
 // Adjust the scene (& remove outliers)
@@ -392,11 +392,11 @@ bool ReconstructionEngine_globalSfM::Adjust()
   }
 
   // Remove outliers (max_angle, residual error)
-  const size_t pointcount_initial = _sfmData.structure.size();
+  const size_t pointcount_initial = _sfmData.getLandmarks().size();
   RemoveOutliers_PixelResidualError(_sfmData, _featureConstraint, 4.0);
-  const size_t pointcount_pixelresidual_filter = _sfmData.structure.size();
+  const size_t pointcount_pixelresidual_filter = _sfmData.getLandmarks().size();
   RemoveOutliers_AngleError(_sfmData, 2.0);
-  const size_t pointcount_angular_filter = _sfmData.structure.size();
+  const size_t pointcount_angular_filter = _sfmData.getLandmarks().size();
   ALICEVISION_LOG_DEBUG("Outlier removal (remaining points):\n"
                         "\t- # landmarks initial: " << pointcount_initial << "\n"
                         "\t- # landmarks after pixel residual filter: " << pointcount_pixelresidual_filter << "\n"
@@ -413,7 +413,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
   {
     // TODO: must ensure that track graph is producing a single connected component
 
-    const size_t pointcount_cleaning = _sfmData.structure.size();
+    const size_t pointcount_cleaning = _sfmData.getLandmarks().size();
     ALICEVISION_LOG_DEBUG("# landmarks after eraseUnstablePosesAndObservations: " << pointcount_cleaning);
   }
 
@@ -479,8 +479,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       const IndexT I = pairIterator.first;
       const IndexT J = pairIterator.second;
 
-      const View* view_I = _sfmData.views[I].get();
-      const View* view_J = _sfmData.views[J].get();
+      const View* view_I = _sfmData.getViews().at(I).get();
+      const View* view_J = _sfmData.getViews().at(J).get();
 
       // Check that valid cameras are existing for the pair of view
       if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 ||
@@ -543,10 +543,10 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       {
         // Refine the defined scene
         SfMData tinyScene;
-        tinyScene.views.insert(*_sfmData.getViews().find(view_I->getViewId()));
-        tinyScene.views.insert(*_sfmData.getViews().find(view_J->getViewId()));
-        tinyScene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_I->getIntrinsicId()));
-        tinyScene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_J->getIntrinsicId()));
+        tinyScene.getViews().insert(*_sfmData.getViews().find(view_I->getViewId()));
+        tinyScene.getViews().insert(*_sfmData.getViews().find(view_J->getViewId()));
+        tinyScene.getIntrinsics().insert(*_sfmData.getIntrinsics().find(view_I->getIntrinsicId()));
+        tinyScene.getIntrinsics().insert(*_sfmData.getIntrinsics().find(view_J->getIntrinsicId()));
 
         // Init poses
         const Pose3& poseI = Pose3(Mat3::Identity(), Vec3::Zero());
@@ -558,7 +558,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
         // Init structure
         const Mat34 P1 = camIPinHole->getProjectiveEquivalent(poseI);
         const Mat34 P2 = camJPinHole->getProjectiveEquivalent(poseJ);
-        Landmarks & landmarks = tinyScene.structure;
+        Landmarks & landmarks = tinyScene.getLandmarks();
 
         size_t landmarkId = 0;
         for(const auto& matchesPerDescIt: matchesPerDesc)

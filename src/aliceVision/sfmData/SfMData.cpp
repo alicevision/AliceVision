@@ -31,13 +31,13 @@ SfMData::~SfMData()
 bool SfMData::operator==(const SfMData& other) const
 {
     // Views
-    if (views.size() != other.views.size())
+    if (_views.size() != other._views.size())
         return false;
 
-    for (Views::const_iterator it = views.begin(); it != views.end(); ++it)
+    for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View& view1 = *(it->second.get());
-        const View& view2 = *(other.views.at(it->first).get());
+        const View& view2 = *(other._views.at(it->first).get());
         if (view1 != view2)
             return false;
 
@@ -55,12 +55,12 @@ bool SfMData::operator==(const SfMData& other) const
         return false;
 
     // Intrinsics
-    if (intrinsics.size() != other.intrinsics.size())
+    if (_intrinsics.size() != other._intrinsics.size())
         return false;
 
-    Intrinsics::const_iterator it = intrinsics.begin();
-    Intrinsics::const_iterator otherIt = other.intrinsics.begin();
-    for (; it != intrinsics.end() && otherIt != other.intrinsics.end(); ++it, ++otherIt)
+    Intrinsics::const_iterator it = _intrinsics.begin();
+    Intrinsics::const_iterator otherIt = other._intrinsics.begin();
+    for (; it != _intrinsics.end() && otherIt != other._intrinsics.end(); ++it, ++otherIt)
     {
         // Index
         if (it->first != otherIt->first)
@@ -74,12 +74,12 @@ bool SfMData::operator==(const SfMData& other) const
     }
 
     // Points IDs are not preserved
-    if (structure.size() != other.structure.size())
+    if (_structure.size() != other._structure.size())
         return false;
 
-    Landmarks::const_iterator landMarkIt = structure.begin();
-    Landmarks::const_iterator otherLandmarkIt = other.structure.begin();
-    for (; landMarkIt != structure.end() && otherLandmarkIt != other.structure.end(); ++landMarkIt, ++otherLandmarkIt)
+    Landmarks::const_iterator landMarkIt = _structure.begin();
+    Landmarks::const_iterator otherLandmarkIt = other._structure.begin();
+    for (; landMarkIt != _structure.end() && otherLandmarkIt != other._structure.end(); ++landMarkIt, ++otherLandmarkIt)
     {
         // Points IDs are not preserved
         // Landmark
@@ -194,7 +194,7 @@ void SfMData::setAbsolutePath(const std::string& path)
 std::set<IndexT> SfMData::getValidViews() const
 {
     std::set<IndexT> valid_idx;
-    for (Views::const_iterator it = views.begin(); it != views.end(); ++it)
+    for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View * v = it->second.get();
         if (isPoseAndIntrinsicDefined(v))
@@ -208,7 +208,7 @@ std::set<IndexT> SfMData::getValidViews() const
 std::set<IndexT> SfMData::getReconstructedIntrinsics() const
 {
     std::set<IndexT> valid_idx;
-    for (Views::const_iterator it = views.begin(); it != views.end(); ++it)
+    for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View * v = it->second.get();
         if (isPoseAndIntrinsicDefined(v))
@@ -263,10 +263,10 @@ void SfMData::combine(const SfMData& sfmData)
     addMatchesFolders(sfmData.getMatchesFolders());
 
     // views
-    views.insert(sfmData.views.begin(), sfmData.views.end());
+    _views.insert(sfmData._views.begin(), sfmData._views.end());
 
     // intrinsics
-    intrinsics.insert(sfmData.intrinsics.begin(), sfmData.intrinsics.end());
+    _intrinsics.insert(sfmData._intrinsics.begin(), sfmData._intrinsics.end());
 
     // poses
     _poses.insert(sfmData._poses.begin(), sfmData._poses.end());
@@ -275,7 +275,7 @@ void SfMData::combine(const SfMData& sfmData)
     _rigs.insert(sfmData._rigs.begin(), sfmData._rigs.end());
 
     // structure
-    structure.insert(sfmData.structure.begin(), sfmData.structure.end());
+    _structure.insert(sfmData._structure.begin(), sfmData._structure.end());
 
     // constraints
     constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
@@ -283,9 +283,9 @@ void SfMData::combine(const SfMData& sfmData)
 
 void SfMData::clear()
 {
-    views.clear();
-    intrinsics.clear();
-    structure.clear();
+    _views.clear();
+    _intrinsics.clear();
+    _structure.clear();
     _posesUncertainty.clear();
     _landmarksUncertainty.clear();
     constraints2d.clear();

@@ -25,7 +25,7 @@ using namespace aliceVision;
 void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::shared_ptr<camera::IntrinsicBase> & intrinsic_noisy, double ratio_inliers) {
 
   sfmData::SfMData sfmdata;
-  sfmdata.getIntrinsics()[0] = intrinsic_noisy;
+  sfmdata.getIntrinsics().emplace(0, intrinsic_noisy);
 
   /*Create cameras */
   std::vector<geometry::Pose3> poses_gt;
@@ -40,7 +40,7 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::s
       poses_gt.push_back(pose);
       
       std::shared_ptr<sfmData::View> v = std::make_shared<sfmData::View>("fakeimg.png", count, 0, count, 1920, 1080);
-      sfmdata.getViews()[count] = v;
+      sfmdata.getViews().emplace(count, v);
       count++;
     }
   }

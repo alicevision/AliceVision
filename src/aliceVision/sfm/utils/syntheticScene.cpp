@@ -63,20 +63,20 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
   for(int i = 0; i < nviews; ++i)
   {
     const IndexT viewId = i, poseId = i, intrinsicId = 0; //(shared intrinsics)
-    sfmData.views[i] = std::make_shared<sfmData::View>("", viewId, intrinsicId, poseId, config._cx * 2, config._cy * 2);
+    sfmData.getViews().emplace(i, std::make_shared<sfmData::View>("", viewId, intrinsicId, poseId, config._cx * 2, config._cy * 2));
   }
 
   // 2. Poses
   for(int i = 0; i < nviews; ++i)
   {
-    sfmData.setPose(*sfmData.views.at(i), sfmData::CameraPose(geometry::Pose3(d._R[i], d._C[i])));
+    sfmData.setPose(*sfmData.getViews().at(i), sfmData::CameraPose(geometry::Pose3(d._R[i], d._C[i])));
   }
 
   // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
   {
     const unsigned int w = config._cx *2;
     const unsigned int h = config._cy *2;
-    sfmData.intrinsics[0] = camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx);
+    sfmData.getIntrinsics().emplace(0, camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx));
   }
 
   // 4. Landmarks
@@ -90,7 +90,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
       const Vec2 pt = d._x[j].col(i);
       landmark.observations[j] = sfmData::Observation(pt, i, unknownScale);
     }
-    sfmData.structure[i] = landmark;
+    sfmData.getLandmarks()[i] = landmark;
   }
 
   return sfmData;
@@ -131,10 +131,10 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
       auto viewPtr = std::make_shared<sfmData::View>("", viewId, intrinsicId, poseId, config._cx * 2, config._cy * 2, rigId, subposeI);
       viewPtr->setFrameId(poseId);
       viewPtr->setIndependantPose(false);
-      sfmData.views[viewId] = viewPtr;
+      sfmData.getViews().emplace(viewId, viewPtr);
     }
   }
-  const std::size_t nbViews = sfmData.views.size();
+  const std::size_t nbViews = sfmData.getViews().size();
 
   // 3. Poses
   for(int poseId = 0; poseId < nbPoses; ++poseId)
@@ -146,7 +146,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
   {
     const unsigned int w = config._cx * 2;
     const unsigned int h = config._cy * 2;
-    sfmData.intrinsics[0] = camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx);
+    sfmData.getIntrinsics().emplace(0, camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx));
   }
 
   // 5. Landmarks
@@ -158,10 +158,10 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
     landmark.X = d._X.col(landmarkId);
     for(int viewId = 0; viewId < nbViews; ++viewId)
     {
-      const sfmData::View& view = *sfmData.views.at(viewId);
+      const sfmData::View& view = *sfmData.getViews().at(viewId);
       const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
 
-      std::shared_ptr<camera::IntrinsicBase> cam = sfmData.intrinsics.at(0);
+      std::shared_ptr<camera::IntrinsicBase> cam = sfmData.getIntrinsics().at(0);
       std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
       if (!camPinHole) {
         ALICEVISION_LOG_ERROR("Camera is not pinhole in getInputRigScene");
@@ -171,7 +171,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
       const Vec2 pt = project(camPinHole->getProjectiveEquivalent(camPose), landmark.X);
       landmark.observations[viewId] = sfmData::Observation(pt, landmarkId, unknownScale);
     }
-    sfmData.structure[landmarkId] = landmark;
+    sfmData.getLandmarks()[landmarkId] = landmark;
   }
 
   return sfmData;

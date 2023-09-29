@@ -69,18 +69,18 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       ALICEVISION_LOG_DEBUG("Optical distortion won't be considered");
       // just add a simple pinhole camera with the same K as the input camera
       Vec2 pp = currIntrinsics->getPrincipalPoint();
-      tinyScene.intrinsics[intrinsicID] =
+      tinyScene.getIntrinsics().emplace(intrinsicID, 
         camera::createPinhole(
             camera::EINTRINSIC::PINHOLE_CAMERA,
             currIntrinsics->w(), currIntrinsics->h(),
             currIntrinsics->getFocalLengthPixX(), currIntrinsics->getFocalLengthPixY(),
-            pp(0), pp(1));
+            pp(0), pp(1)));
     }
     else
     {
       // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-      tinyScene.intrinsics[intrinsicID] = std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*){});
-      ALICEVISION_LOG_DEBUG("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
+      tinyScene.getIntrinsics().emplace(intrinsicID, std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*){}));
+      ALICEVISION_LOG_DEBUG("Type of intrinsics " <<tinyScene.getIntrinsics().at(0).get()->getType());
     }
   }
   
@@ -119,7 +119,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
 //    ALICEVISION_LOG_DEBUG("\n*****\nView " << viewID);
     // view
     std::shared_ptr<sfmData::View> view = std::make_shared<sfmData::View>("",viewID, intrinsicID, viewID);
-    tinyScene.views.insert( std::make_pair(viewID, view));
+    tinyScene.getViews().insert( std::make_pair(viewID, view));
     // pose
     tinyScene.setPose(*view, sfmData::CameraPose(currResult.getPose()));
 
@@ -128,7 +128,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     {
       camera::Pinhole* currIntrinsics = &currResult.getIntrinsics();
        // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-      tinyScene.intrinsics[intrinsicID] = std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*){});
+      tinyScene.getIntrinsics().emplace(intrinsicID, std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*){}));
       ++intrinsicID;
     }
     
@@ -144,9 +144,9 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       // get the corresponding feature
       const Vec2 &feature = currResult.getPt2D().col(idx);
       // check if the point exists already
-      if(tinyScene.structure.count(match.landmarkId))
+      if(tinyScene.getLandmarks().count(match.landmarkId))
       {
-        sfmData::Landmark& landmark = tinyScene.structure.at(match.landmarkId);
+        sfmData::Landmark& landmark = tinyScene.getLandmarks().at(match.landmarkId);
         assert(landmark.descType == match.descType);
         // normally there should be no other features already associated to this
         // 3D point in this view
@@ -180,14 +180,14 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         newLandmark.descType = match.descType;
         newLandmark.X = currResult.getPt3D().col(idx);
         newLandmark.observations[viewID] = sfmData::Observation(feature, match.featId, unknownScale);
-        tinyScene.structure[match.landmarkId] = std::move(newLandmark);
+        tinyScene.getLandmarks()[match.landmarkId] = std::move(newLandmark);
       }
     }
   }
 
 //  {
-//    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations before filtering " << tinyScene.structure.size());
-//    sfmData::Landmarks &landmarks = tinyScene.structure;
+//    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations before filtering " << tinyScene.getLandmarks().size());
+//    sfmData::Landmarks &landmarks = tinyScene.getLandmarks();
 //    for(sfmData::Landmarks::iterator it = landmarks.begin(), ite = landmarks.end(); it != ite;)
 //    {
 //      if(it->second.observations.size() < 5)
@@ -202,7 +202,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   {
     // just debugging some stats -- this block can be safely removed/commented out
     
-    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations " << tinyScene.structure.size());
+    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations " << tinyScene.getLandmarks().size());
     
     std::size_t maxObs = 0;
     for(const auto landmark : tinyScene.getLandmarks() )
@@ -225,7 +225,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     ALICEVISION_LOG_DEBUG("Max number of observations per point:   " << bacc::max(stats) );
     
     std::size_t cumulative = 0;
-    const std::size_t num3DPoints = tinyScene.structure.size();
+    const std::size_t num3DPoints = tinyScene.getLandmarks().size();
     for(std::size_t i = 0; i < hist.size(); i++ ) 
     {
       ALICEVISION_LOG_DEBUG("Points with " << i << " observations: " << hist[i] 
@@ -236,7 +236,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // just debugging stuff
     if(allTheSameIntrinsics)
     {
-      std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
+      std::vector<double> params = tinyScene.getIntrinsics().at(0).get()->getParams();
       ALICEVISION_LOG_DEBUG("K before bundle: " << params[0] << " " << params[1] << " "<< params[2]);
       if(params.size() == 6)
         ALICEVISION_LOG_DEBUG("Distortion before bundle: " << params[3] << " " << params[4] << " "<< params[5]);
@@ -246,7 +246,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   // filter out the 3D points having too few observations.
   if(minPointVisibility > 0)
   {
-    auto &landmarks = tinyScene.structure;
+    auto &landmarks = tinyScene.getLandmarks();
     auto iter = landmarks.begin();
     auto endIter = landmarks.end();
 
@@ -303,8 +303,8 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // update the intrinsics of each localization result
     
     // get its optimized parameters
-    std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
-    ALICEVISION_LOG_DEBUG("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
+    std::vector<double> params = tinyScene.getIntrinsics().at(0).get()->getParams();
+    ALICEVISION_LOG_DEBUG("Type of intrinsics " <<tinyScene.getIntrinsics().at(0).get()->getType());
     if(params.size() == 4)
     {
       // this means that the b_no_distortion has been passed

@@ -285,19 +285,6 @@ if(ALICEVISION_BUILD_SFM)
               ${Boost_LIBRARIES}
     )
 
-    # Project 180° fisheye images into equirectangular
-    alicevision_add_software(aliceVision_fisheyeProjection
-        SOURCE main_fisheyeProjection.cpp
-        FOLDER ${FOLDER_SOFTWARE_UTILS}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_numeric
-              aliceVision_image
-              ${OPENIMAGEIO_LIBRARIES}
-              ${Boost_LIBRARIES}
-    )
-
-
     # Perform color chart detection
     if(ALICEVISION_HAVE_OPENCV_CONTRIB)
         alicevision_add_software(aliceVision_colorCheckerDetection

@@ -19,19 +19,6 @@ if(ALICEVISION_BUILD_SFM)
               Boost::system
     )
 
-    # Convert float descriptors to unsigned char
-    alicevision_add_software(aliceVision_convertFloatDescriptorToUchar
-        SOURCE main_convertFloatDescriptorToUchar.cpp
-        FOLDER ${FOLDER_SOFTWARE_CONVERT}
-        LINKS aliceVision_localization
-              aliceVision_feature
-              aliceVision_cmdline
-              Boost::program_options
-              Boost::filesystem
-              Boost::boost
-              Boost::timer
-    )
-
     alicevision_add_software(aliceVision_importKnownPoses
         SOURCE main_importKnownPoses.cpp
         FOLDER ${FOLDER_SOFTWARE_CONVERT}
@@ -47,16 +34,6 @@ if(ALICEVISION_BUILD_SFM)
     )
 endif() # ALICEVISION_BUILD_SFM
 
-# Convert image to EXR
-alicevision_add_software(aliceVision_convertRAW
-    SOURCE main_convertRAW.cpp
-    FOLDER ${FOLDER_SOFTWARE_CONVERT}
-    LINKS aliceVision_system
-          aliceVision_image
-          aliceVision_cmdline
-          Boost::program_options
-          Boost::filesystem
-)
 
 if(ALICEVISION_BUILD_MVS)
     # Merge two meshes

@@ -139,7 +139,7 @@ int aliceVision_main(int argc, char **argv)
         }
 
         // Overwrite intrinsic with new one
-        intrinsics[intrinsicId] = newIntrinsic;
+        intrinsics.emplace(intrinsicId, newIntrinsic);
     }
 
     // Save sfmData to disk

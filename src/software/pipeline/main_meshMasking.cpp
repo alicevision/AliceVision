@@ -77,8 +77,8 @@ struct MaskCache
                 {
                     const auto& sfm = _mp.getInputSfMData();
                     const IndexT intrinsicId = sfm.getView(viewId).getIntrinsicId();
-                    const auto intrinsicIt = sfm.intrinsics.find(intrinsicId);
-                    if (intrinsicIt != sfm.intrinsics.end())
+                    const auto intrinsicIt = sfm.getIntrinsics().find(intrinsicId);
+                    if (intrinsicIt != sfm.getIntrinsics().end())
                     {
                         const auto& intrinsic = intrinsicIt->second;
                         if (intrinsic->isValid() && intrinsic->hasDistortion())

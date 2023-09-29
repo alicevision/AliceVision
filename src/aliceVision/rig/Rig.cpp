@@ -336,8 +336,8 @@ bool Rig::optimizeCalibration()
 
 // The following code can be used if the intrinsics have to be refined in the bundle adjustment
   
-//for (Intrinsics::const_iterator itIntrinsic = sfm_data.intrinsics.begin();
-//                      itIntrinsic != sfm_data.intrinsics.end(); ++itIntrinsic)
+//for (Intrinsics::const_iterator itIntrinsic = sfm_data.getIntrinsics().begin();
+//                      itIntrinsic != sfm_data.getIntrinsics().end(); ++itIntrinsic)
 //{
 //  for (int iLocalizer = 0 ; iLocalizer < _vLocalizationResults.size() ; ++iLocalizer )
 //  {
@@ -565,8 +565,8 @@ bool Rig::optimizeCalibration()
   // Possibility to update the intrinsics here
 
   // Update camera intrinsics with refined data
-  //    for (Intrinsics::iterator itIntrinsic = sfm_data.intrinsics.begin();
-  //      itIntrinsic != sfm_data.intrinsics.end(); ++itIntrinsic)
+  //    for (Intrinsics::iterator itIntrinsic = sfm_data.getIntrinsics().begin();
+  //      itIntrinsic != sfm_data.getIntrinsics().end(); ++itIntrinsic)
   //    {
   //      const IndexT indexCam = itIntrinsic->first;
   //

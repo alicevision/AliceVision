@@ -45,13 +45,13 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   SfMData sfm_data;
   // view
   std::shared_ptr<View> view = std::make_shared<View>("", 0, 0, 0);
-  sfm_data.views.emplace(0, view);
+  sfm_data.getViews().emplace(0, view);
   // pose
   sfm_data.setPose(*view, CameraPose(pose));
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-  sfm_data.intrinsics[0] = std::shared_ptr<camera::IntrinsicBase>(intrinsics, [](camera::IntrinsicBase*)
+  sfm_data.getIntrinsics().emplace(0, std::shared_ptr<camera::IntrinsicBase>(intrinsics, [](camera::IntrinsicBase*)
   {
-  });
+  }));
   // structure data (2D-3D correspondences)
   const double unknownScale = 0.0;
   for(size_t i = 0; i < vec_inliers.size(); ++i)
@@ -60,7 +60,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
     Landmark landmark;
     landmark.X = pt3D.col(idx);
     landmark.observations[0] = Observation(pt2D.col(idx), UndefinedIndexT, unknownScale);
-    sfm_data.structure[i] = std::move(landmark);
+    sfm_data.getLandmarks()[i] = std::move(landmark);
   }
 
   BundleAdjustmentCeres bundle_adjustment_obj;
