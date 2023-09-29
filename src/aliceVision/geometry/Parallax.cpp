@@ -37,12 +37,13 @@ Eigen::Vector3d getPointFromParallaxRepresentation(const geometry::Pose3 & poseP
 
     double theta = parallax(3);
     Vec3 posePrimary_n = parallax.block<3, 1>(0, 0);
+    Vec3 world_n = posePrimary.rotation().transpose() * posePrimary_n;
 
-    double alpha = std::acos((pmj - paj).normalized().dot(posePrimary_n));
+    double alpha = std::acos((pmj - paj).normalized().dot(world_n));
 
     double coeff = sin(alpha - theta) / sin(theta);
 
-    coeff * (pmj - paj).norm() * posePrimary.rotation() * posePrimary_n  + pmj;
+    ret = pmj + coeff * (pmj - paj).norm() * world_n;
 
     return ret;
 }
