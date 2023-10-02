@@ -84,6 +84,7 @@ vcpkg install ^
           boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-geometry boost-graph boost-json boost-log ^
           boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
           lz4 ^
+          liblemon ^
           openexr ^
           alembic ^
           geogram ^
@@ -176,6 +177,7 @@ At the end of the cmake process, a report shows for each library which version (
 -- EIGEN: 3.3.4
 -- CERES: 1.10.0
 -- FLANN: 1.8.4
+-- LEMON: 1.3
 ```
 
 
