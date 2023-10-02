@@ -89,6 +89,22 @@ bool SfMData::operator==(const SfMData& other) const
             return false;
     }
 
+    // Points IDs are not preserved
+    if (_pbstructure.size() != other._pbstructure.size())
+        return false;
+
+    PBLandmarks::const_iterator pbLandMarkIt = _pbstructure.begin();
+    PBLandmarks::const_iterator otherPBLandmarkIt = other._pbstructure.begin();
+    for (; pbLandMarkIt != _pbstructure.end() && otherPBLandmarkIt != other._pbstructure.end(); ++pbLandMarkIt, ++otherPBLandmarkIt)
+    {
+        // Points IDs are not preserved
+        // Landmark
+        const PBLandmark& landmark1 = pbLandMarkIt->second;
+        const PBLandmark& landmark2 = otherPBLandmarkIt->second;
+        if (landmark1 != landmark2)
+            return false;
+    }
+
     if (constraints2d.size() != other.constraints2d.size())
         return false;
 
@@ -277,6 +293,9 @@ void SfMData::combine(const SfMData& sfmData)
     // structure
     _structure.insert(sfmData._structure.begin(), sfmData._structure.end());
 
+    // structure
+    _pbstructure.insert(sfmData._pbstructure.begin(), sfmData._pbstructure.end());
+
     // constraints
     constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
 }
@@ -286,6 +305,7 @@ void SfMData::clear()
     _views.clear();
     _intrinsics.clear();
     _structure.clear();
+    _pbstructure.clear();
     _posesUncertainty.clear();
     _landmarksUncertainty.clear();
     constraints2d.clear();

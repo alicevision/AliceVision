@@ -253,6 +253,8 @@ void BundleAdjustmentSymbolicCeres::setSolverOptions(ceres::Solver::Options& sol
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
   solverOptions.max_num_iterations = _ceresOptions.maxNumIterations;
+  /*solverOptions.dogleg_type = ceres::SUBSPACE_DOGLEG;
+  solverOptions.trust_region_strategy_type = ceres::DOGLEG;*/
   /*solverOptions.function_tolerance = 1e-12;
   solverOptions.gradient_tolerance = 1e-12;
   solverOptions.parameter_tolerance = 1e-12;*/
@@ -553,6 +555,118 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
   }
 }
 
+void BundleAdjustmentSymbolicCeres::addPBLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  const bool refineStructure = refineOptions & REFINE_STRUCTURE;
+
+  // set a LossFunction to be less penalized by false measurements.
+  // note: set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
+
+  // build the residual blocks corresponding to the track observations
+  for(const auto& landmarkPair: sfmData.getPBLandmarks())
+  {
+    const IndexT landmarkId = landmarkPair.first;
+    const sfmData::PBLandmark& landmark = landmarkPair.second;
+
+    // do not create a residual block if the landmark
+    // have been set as Ignored by the Local BA strategy
+    // if(getLandmarkState(landmarkId) == EParameterState::IGNORED)
+    // {
+    //   _statistics.addState(EParameter::LANDMARK, EParameterState::IGNORED);
+    //   continue;
+    // }
+
+    std::array<double,5>& landmarkBlock = _palandmarksBlocks[landmarkId];
+    for(std::size_t i = 0; i < 3; ++i)
+      landmarkBlock.at(i) = landmark.X(Eigen::Index(i));
+
+    double theta = landmark.X(3);
+    landmarkBlock.at(3) = cos(theta);
+    landmarkBlock.at(4) = sin(theta);
+
+    double* landmarkBlockPtr = landmarkBlock.data();
+
+    problem.AddParameterBlock(landmarkBlockPtr, 5);
+    problem.SetManifold(landmarkBlockPtr, new ceres::ProductManifold<ceres::EuclideanManifold<3>, SO2Vec>);
+
+
+    // iterate over 2D observation associated to the 3D landmark
+    for(const auto& observationPair: landmark.observations)
+    {
+      const sfmData::View& view = sfmData.getView(observationPair.first);
+      const sfmData::Observation& observation = observationPair.second;
+
+      //Get shared object clone
+      const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[view.getIntrinsicId()];
+
+      // each residual block takes a point and a camera as input and outputs a 2
+      // dimensional residual. Internally, the cost function stores the observed
+      // image location and compares the reprojection against the observation.
+
+      assert(getPoseState(view.getPoseId()) != EParameterState::IGNORED);
+      assert(getIntrinsicState(view.getIntrinsicId()) != EParameterState::IGNORED);
+
+      // needed parameters to create a residual block (K, pose)
+      double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
+      double * primaryBlockPtr = _posesBlocks.at(landmark.primaryView).data();
+      double * secondaryBlockPtr = _posesBlocks.at(landmark.secondaryView).data();
+      double * intrinsicBlockPtr = _intrinsicsBlocks.at(view.getIntrinsicId()).data();
+
+      bool withRig = (view.isPartOfRig() && !view.isPoseIndependant());
+      double * rigBlockPtr = nullptr;
+      if (withRig) {
+        rigBlockPtr = _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data();
+      }
+      else {
+        rigBlockPtr = _rigNull.data();
+      }
+
+      // apply a specific parameter ordering:
+      if(_ceresOptions.useParametersOrdering)
+      {
+        _linearSolverOrdering.AddElementToGroup(landmarkBlockPtr, 0);
+        _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
+        _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
+      }
+
+      if (withRig)
+      {
+
+      }
+      else
+      {
+        if (primaryBlockPtr == poseBlockPtr)
+        {
+            ceres::CostFunction* costFunction = new CostProjectionParallaxPrimarySimple(observation, intrinsic);
+            problem.AddResidualBlock(costFunction, lossFunction, landmarkBlockPtr);
+        } 
+        else if (secondaryBlockPtr == poseBlockPtr)
+        {
+            ceres::CostFunction* costFunction = new CostProjectionParallaxSecondarySimple(observation, intrinsic);
+            problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, primaryBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
+        }
+        else
+        {
+            ceres::CostFunction* costFunction = new CostProjectionParallaxSimple(observation, intrinsic);
+            problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, primaryBlockPtr, secondaryBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
+        }
+      }
+
+      if(!refineStructure/* || getLandmarkState(landmarkId) == EParameterState::CONSTANT*/)
+      {
+        // set the whole landmark parameter block as constant.
+        /*_statistics.addState(EParameter::LANDMARK, EParameterState::CONSTANT);*/
+        problem.SetParameterBlockConstant(landmarkBlockPtr);
+      }
+      else
+      {
+        /*_statistics.addState(EParameter::LANDMARK, EParameterState::REFINED);*/
+      }
+    }
+  }
+}
+
 void BundleAdjustmentSymbolicCeres::addConstraints2DToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
 {
   // set a LossFunction to be less penalized by false measurements.
@@ -648,6 +762,9 @@ void BundleAdjustmentSymbolicCeres::createProblem(const sfmData::SfMData& sfmDat
 
   // add SfM landmarks to the Ceres problem
   addLandmarksToProblem(sfmData, refineOptions, problem);
+
+  // add SfM pblandmarks to the Ceres problem
+  addPBLandmarksToProblem(sfmData, refineOptions, problem);
 
   // add 2D constraints to the Ceres problem
   addConstraints2DToProblem(sfmData, refineOptions, problem);

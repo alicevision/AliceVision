@@ -192,6 +192,7 @@ private:
     _posesBlocks.clear();
     _intrinsicsBlocks.clear();
     _landmarksBlocks.clear();
+    _palandmarksBlocks.clear();
     _rigBlocks.clear();
     _linearSolverOrdering.Clear();
   }
@@ -225,6 +226,14 @@ private:
    * @param[out] problem The Ceres bundle adjustement problem
    */
   void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+   /**
+   * @brief Create a residual block for each pblandmarks according to the Ceres format
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] problem The Ceres bundle adjustement problem
+   */
+  void addPBLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
   /**
    * @brief Create a residual block for each 2D constraints
@@ -318,6 +327,9 @@ private:
   /// landmarks blocks wrapper
   /// block: 3d position(3)
   HashMap<IndexT, std::array<double,3>> _landmarksBlocks;
+  /// landmarks blocks wrapper
+  /// block: 5d parallax representation (5)
+  HashMap<IndexT, std::array<double,5>> _palandmarksBlocks;
   /// rig sub-poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
   HashMap<IndexT, HashMap<IndexT, SE3::Matrix>> _rigBlocks;

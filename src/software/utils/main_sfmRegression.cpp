@@ -15,6 +15,8 @@
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 
+#include <aliceVision/geometry/Parallax.hpp>
+
 #include <string>
 #include <sstream>
 
@@ -34,10 +36,10 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     sfmData::SfMData sfmDataGT;
     sfmData::SfMData sfmDataEst;
 
-    auto phPinholeGT = camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 980, 980, 10, 20, {0.1, 0.002, -0.01});
+    auto phPinholeGT = camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 980, 980, 10, 20, {0.0, 0.0, -0.0});
     sfmDataGT.getIntrinsics().emplace(0, phPinholeGT);
 
-    auto phPinholeEst = camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 950, 950, 0, 0, {0.0, 0.0, 0.0});
+    auto phPinholeEst = camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 980, 980, 10, 20, {0.0, 0.0, -0.0});
     sfmDataEst.getIntrinsics().emplace(0, phPinholeEst);
 
     Vec3 direction = {1.0, 1.0, 1.0};
@@ -48,17 +50,18 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     for (int i = 0; i < 120; i++)
     {
         Vec3 pos = direction * double(i) / 120.0;
+
         Eigen::Matrix3d R = SO3::expm(axis * double(i) * M_PI / (8*120.0));
         geometry::Pose3 poseGT(R, pos);
         sfmData::CameraPose cposeGT(poseGT);
         sfmDataGT.getPoses()[i] = cposeGT;
         sfmDataGT.getViews().emplace(i, std::make_shared<sfmData::View>("", i, 0, i, 1920, 1080));
 
-        Eigen::Matrix3d Rup = SO3::expm(Vec3::Random() * (0.1));
-        Eigen::Vector3d tup = Vec3::Random() * (0.5);
+        Eigen::Matrix3d Rup = SO3::expm(Vec3::Random() * ((i == 0 || i == 119) ? 0.0: 0.3));
+        Eigen::Vector3d tup = Vec3::Random() * ((i == 0 || i == 119) ? 0.0: 0.5);
 
         geometry::Pose3 poseEst(Rup * R, pos + tup);
-        sfmData::CameraPose cposeEst(poseEst, (i==0));
+        sfmData::CameraPose cposeEst(poseEst, false);
         sfmDataEst.getPoses()[i] = cposeEst;
         sfmDataEst.getViews().emplace(i, std::make_shared<sfmData::View>("", i, 0, i, 1920, 1080));
 
@@ -70,44 +73,56 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
         for (double x = -2.0; x < 2.0; x+=0.1)
         {
             sfmData::Landmark lGT;
-            lGT.X = Vec3(x, y, 4.0);
+            lGT.X = Vec3(x, y, 4.0) * 10.0;
+            if (tid % 10 == 0) lGT.X *= 1000.0;
             lGT.descType = feature::EImageDescriberType::SIFT;
             sfmDataGT.getLandmarks()[tid] = lGT;
 
-            sfmData::Landmark lEst = lGT;
-            lEst.X += Vec3::Random() * 2.9;
-            sfmDataEst.getLandmarks()[tid] = lEst;
+            sfmData::PBLandmark lEst;
+            lEst.X = geometry::getParallaxRepresentationFromPoint(sfmDataGT.getPoses()[0].getTransform(), sfmDataGT.getPoses()[119].getTransform(), lGT.X + Vec3::Random() * 2.9);
+
+            lEst.primaryView = 0;
+            lEst.secondaryView = 119;
+            lEst.descType = feature::EImageDescriberType::SIFT;
+            sfmDataEst.getPBLandmarks()[tid] = lEst;
 
             tid++;
         }
     }
 
-    for (double y = -2.0; y < 2.0; y+=0.1)
+    /*for (double y = -2.0; y < 2.0; y+=0.1)
     {
         for (double x = -2.0; x < 2.0; x+=0.1)
         {
             sfmData::Landmark lGT;
-            lGT.X = Vec3(x, y, 3.0 + sqrt(x*x + y*y));
+            lGT.X = Vec3(x, y, 4.0) * 10.0;
+            if (tid % 10 == 0) lGT.X *= 1000.0;
             lGT.descType = feature::EImageDescriberType::SIFT;
             sfmDataGT.getLandmarks()[tid] = lGT;
 
-            sfmData::Landmark lEst = lGT;
-            lEst.X += Vec3::Random() * 1.9;
+            sfmData::Landmark lEst;
+            lEst.X = lGT.X + Vec3::Random() * 2.9;
+            if (lEst.X(2) < 1e-12) lEst.X(2) = std::abs(lEst.X(2)) + 1e-12;
+            lEst.descType = feature::EImageDescriberType::SIFT;
             sfmDataEst.getLandmarks()[tid] = lEst;
 
             tid++;
         }
-    }
+    }*/
+
     
     //Compute observations
     for (auto & pl : sfmDataGT.getLandmarks())
     {
-        sfmData::Landmark & lEst = sfmDataEst.getLandmarks()[pl.first];
+        sfmData::PBLandmark & lEst = sfmDataEst.getPBLandmarks()[pl.first];
+        //sfmData::Landmark & lEst = sfmDataEst.getLandmarks()[pl.first];
         
         for (auto & pp : sfmDataGT.getPoses())
         {
+            //if (pp.first == 119) continue;
+
             sfmData::Observation obs;
-            obs.x = phPinholeGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true);
+            obs.x = phPinholeGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true) + Vec2::Random() * 2.0;
             obs.scale = 1.0;
             obs.id_feat = pl.first;
 
@@ -143,28 +158,18 @@ int aliceVision_main(int argc, char **argv)
     generateSampleSceneOnePlane(sfmDataGT, sfmDataEst);
 
     BundleAdjustmentSymbolicCeres::CeresOptions options;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS | BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
+    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE /*| BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS | BundleAdjustment::REFINE_INTRINSICS_DISTORTION*/;
     options.summary = true;
     //options.nbThreads = 1;
+    options.verbose= true;
+    options.maxNumIterations = 10;
 
+
+    options.setSparseBA();
     BundleAdjustmentSymbolicCeres BA(options, 3);
     const bool success = BA.adjust(sfmDataEst, refineOptions);
   }
 
-  {
-    srand(0);
-    sfmData::SfMData sfmDataGT;
-    sfmData::SfMData sfmDataEst;
-    generateSampleSceneOnePlane(sfmDataGT, sfmDataEst);
-
-    BundleAdjustmentCeres::CeresOptions options;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS | BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
-    options.summary = true;
-    //options.nbThreads = 1;
-
-    BundleAdjustmentCeres BA(options, 3);
-    const bool success = BA.adjust(sfmDataEst, refineOptions);
-  }
 
   return EXIT_SUCCESS;
 }

@@ -118,6 +118,13 @@ public:
     Landmarks& getLandmarks() {return _structure;}
 
     /**
+     * @brief Get PBlandmarks
+     * @return PBlandmarks
+     */
+    const PBLandmarks& getPBLandmarks() const {return _pbstructure;}
+    PBLandmarks& getPBLandmarks() {return _pbstructure;}
+
+    /**
      * @brief Get Constraints2D
      * @return Constraints2D
      */
@@ -528,6 +535,8 @@ public:
 private:
     /// Structure (3D points with their 2D observations)
     Landmarks _structure;
+    /// Structure using parallax based representation (3D points with their 2D observations)
+    PBLandmarks _pbstructure;
     /// Considered camera intrinsics (indexed by view.getIntrinsicId())
     Intrinsics _intrinsics;
     /// Considered views
