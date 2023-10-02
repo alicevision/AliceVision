@@ -133,7 +133,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://gdirect.cc/d/Dv7x7&type=1"
+          url: "https://gdirect.cc/d/xnDHH&type=1"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 
