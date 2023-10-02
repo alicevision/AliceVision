@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     container:
-      image: alicevision/alicevision-deps:2023.09.20-centos7-cuda11.3.1
+      image: alicevision/alicevision-deps:2023.10.02-centos7-cuda11.3.1
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
