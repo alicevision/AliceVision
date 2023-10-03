@@ -332,13 +332,21 @@ bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number,
     );
 
     std::smatch matches;
-    const bool containsNumber = std::regex_search(imagePathStem, matches, regexFrame);
+    bool containsNumber = std::regex_search(imagePathStem, matches, regexFrame);
 
     if(containsNumber)
     {
         prefix = matches[1];
         suffix = matches[3];
-        number = static_cast<IndexT>(std::stoi(matches[2]));
+        try
+        {
+            number = boost::lexical_cast<IndexT>(matches[2]);
+        }
+        catch (const boost::bad_lexical_cast&)
+        {
+            ALICEVISION_LOG_WARNING("Number in stem of file " << imagePathStem << " is out of range.");
+            containsNumber = false;
+        }
     }
 
     return containsNumber;
