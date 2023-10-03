@@ -31,8 +31,8 @@ public:
 
   void fit(const std::vector<std::size_t>& samples, std::vector<ModelT>& models) const override
   {
-    const Mat x2d = ExtractColumns(KernelBase::_x1, samples);
-    const Mat x3d = ExtractColumns(KernelBase::_x2, samples);
+    const Mat x2d = buildSubsetMatrix(KernelBase::_x1, samples);
+    const Mat x3d = buildSubsetMatrix(KernelBase::_x2, samples);
 
     assert(2 == x2d.rows());
     assert(3 == x3d.rows());

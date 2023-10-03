@@ -1,6 +1,7 @@
 # Headers
 set(numeric_files_headers
   numeric.hpp
+  Container.hpp
   projection.hpp
   gps.hpp
   algebra.hpp
@@ -9,6 +10,7 @@ set(numeric_files_headers
 # Sources
 set(numeric_files_sources
   numeric.cpp
+  Container.cpp
   projection.cpp
   gps.cpp
 )

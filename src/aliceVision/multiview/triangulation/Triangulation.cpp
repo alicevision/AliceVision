@@ -18,7 +18,7 @@ namespace multiview {
 
 void TriangulateNView(const Mat2X &x,
                       const std::vector< Mat34 > &Ps,
-                      Vec4 *X, 
+                      Vec4 & X, 
                       const std::vector<double> *weights)
 {
   Mat2X::Index nviews = x.cols();
@@ -34,34 +34,13 @@ void TriangulateNView(const Mat2X &x,
   }
   Vec X_and_alphas;
   Nullspace(design, X_and_alphas);
-  *X = X_and_alphas.head(4);
-}
-
-void TriangulateNViewAlgebraic(const Mat2X &x,
-                               const std::vector< Mat34 > &Ps,
-                               Vec4 *X, 
-                               const std::vector<double> *weights)
-{
-  assert(X != nullptr);
-  Mat2X::Index nviews = x.cols();
-  assert(static_cast<std::size_t>(nviews) == Ps.size());
-
-  Mat design(2 * nviews, 4);
-  for(Mat2X::Index i = 0; i < nviews; ++i)
-  {
-    design.block<2, 4>(2 * i, 0) = SkewMatMinimal(x.col(i)) * Ps[i];
-    if(weights != nullptr)
-    {
-      design.block<2, 4>(2 * i, 0) *= (*weights)[i];
-    }
-  }
-  Nullspace(design, *X);
+  X = X_and_alphas.head(4);
 }
 
 void TriangulateNViewLORANSAC(const Mat2X& x,
                               const std::vector<Mat34>& Ps,
                               std::mt19937 & generator,
-                              Vec4* X,
+                              Vec4 & X,
                               std::vector<std::size_t>* inliersIndex,
                               const double& thresholdError)
 {
@@ -70,7 +49,7 @@ void TriangulateNViewLORANSAC(const Mat2X& x,
   robustEstimation::ScoreEvaluator<TriangulationKernel> scorer(thresholdError);
   robustEstimation::MatrixModel<Vec4> model;
   model = robustEstimation::LO_RANSAC(kernel, scorer, generator, inliersIndex);
-  *X = model.getMatrix();
+  X = model.getMatrix();
 }
 
 double Triangulation::error(const Vec3 &X) const
@@ -147,18 +126,20 @@ Vec3 Triangulation::compute(int iter) const
   return X;
 }
 
-void TriangulateNViewsSolver::solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>> &X) const
+template <>
+void TriangulateNViewsSolver<Mat2X>::solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>> &X) const
 {
   Vec4 pt3d;
-  TriangulateNViewAlgebraic(x, Ps, &pt3d);
+  TriangulateNViewAlgebraic(x, Ps, pt3d);
   X.push_back(robustEstimation::MatrixModel<Vec4>(pt3d));
   assert(X.size() == 1);
 }
 
-void TriangulateNViewsSolver::solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>> &X, const std::vector<double> &weights) const
+template <>
+void TriangulateNViewsSolver<Mat2X>::solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>> &X, const std::vector<double> &weights) const
 {
   Vec4 pt3d;
-  TriangulateNViewAlgebraic(x, Ps, &pt3d, &weights);
+  TriangulateNViewAlgebraic(x, Ps, pt3d, &weights);
   X.push_back(robustEstimation::MatrixModel<Vec4>(pt3d));
   assert(X.size() == 1);
 }

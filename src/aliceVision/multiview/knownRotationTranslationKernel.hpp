@@ -126,8 +126,8 @@ public:
     assert(2 == _x1.rows());
     assert(2 == _x2.rows());
 
-    const Mat x1 = ExtractColumns(_x1, samples);
-    const Mat x2 = ExtractColumns(_x2, samples);
+    const Mat x1 = buildSubsetMatrix(_x1, samples);
+    const Mat x2 = buildSubsetMatrix(_x2, samples);
 
     _kernelSolver.solve(x1, x2, _R, models);
   }

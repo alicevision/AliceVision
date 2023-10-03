@@ -83,8 +83,8 @@ public:
    */
   inline virtual void fit(const std::vector<std::size_t>& samples, std::vector<ModelT>& models) const
   {
-    const Mat x1 = ExtractColumns(_x1, samples);
-    const Mat x2 = ExtractColumns(_x2, samples);
+    const Mat x1 = buildSubsetMatrix(_x1, samples);
+    const Mat x2 = buildSubsetMatrix(_x2, samples);
     _kernelSolver.solve(x1, x2, models);
   }
 
@@ -150,8 +150,8 @@ public:
    */
   inline void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
   {
-    const Mat x1 = ExtractColumns(KernelBase::_x1, samples);
-    const Mat x2 = ExtractColumns(KernelBase::_x2, samples);
+    const Mat x1 = buildSubsetMatrix(KernelBase::_x1, samples);
+    const Mat x2 = buildSubsetMatrix(KernelBase::_x2, samples);
 
     assert(2 == x1.rows());
     assert(KernelBase::getMinimumNbRequiredSamples() <= x1.cols());

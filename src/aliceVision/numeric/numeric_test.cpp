@@ -9,6 +9,7 @@
 #include <iostream>
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/numeric/Container.hpp>
 
 #define BOOST_TEST_MODULE numeric
 
@@ -87,12 +88,12 @@ BOOST_AUTO_TEST_CASE(TinyMatrix_LookAt) {
   EXPECT_MATRIX_NEAR(I, RTR, 1e-15);
 }
 
-BOOST_AUTO_TEST_CASE(Numeric_ExtractColumns) {
+BOOST_AUTO_TEST_CASE(Numeric_buildSubsetMatrix) {
   Mat2X A(2, 5);
   A << 1, 2, 3, 4, 5,
        6, 7, 8, 9, 10;
   Vec2i columns; columns << 0, 2;
-  Mat2X extracted = ExtractColumns(A, columns);
+  Mat2X extracted = buildSubsetMatrix(A, columns);
   BOOST_CHECK_SMALL(1- extracted(0,0), 1e-15);
   BOOST_CHECK_SMALL(3- extracted(0,1), 1e-15);
   BOOST_CHECK_SMALL(6- extracted(1,0), 1e-15);

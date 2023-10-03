@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/Container.hpp>
 
 #include <vector>
 
