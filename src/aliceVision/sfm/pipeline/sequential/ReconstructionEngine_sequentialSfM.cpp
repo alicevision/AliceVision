@@ -1880,7 +1880,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
        * ------------------------------------------------------- */ 
      
       // -- Prepare:
-      Mat2X features(2, observations.size()); // undistorted 2D features (one per pose)
+      std::vector<Vec2> features; // undistorted 2D features (one per pose)
       std::vector<Mat34> Ps; // projective matrices (one per pose)
       {
         const track::Track& track = _map_tracks.at(trackId);
@@ -1894,8 +1894,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
             continue;
           }
 
-          features(0,i) = o.xUd(0);
-          features(1,i) = o.xUd(1);
+          features.push_back(o.xUd);
           Ps.push_back(o.P);
           i++;
         }

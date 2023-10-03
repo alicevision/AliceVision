@@ -80,8 +80,8 @@ void TriangulateNViewAlgebraic(const ContainerT &x,
  * @param[out] X is the estimated 3D point
  * @param[out] inliersIndex (optional) store the index of the cameras (following Ps ordering, not the view_id) set as Inliers by Lo-RANSAC
  * @param[in] thresholdError (optional) set a threashold value to the Lo-RANSAC scorer
- */                               
-void TriangulateNViewLORANSAC(const Mat2X &x, 
+ */                        
+void TriangulateNViewLORANSAC(const std::vector<Vec2> &x, 
                               const std::vector< Mat34 > &Ps,
                               std::mt19937 & generator,
                               Vec4 & X,
@@ -148,9 +148,23 @@ struct TriangulateNViewsSolver
     return 1;
   }
 
-  void solve(const ContainerT& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X) const;
+  void solve(const ContainerT& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X) const
+  {
+    Vec4 pt3d;
+    TriangulateNViewAlgebraic(x, Ps, pt3d);
+    X.push_back(robustEstimation::MatrixModel<Vec4>(pt3d));
+    assert(X.size() == 1);
+  }
+
+
   
-  void solve(const ContainerT& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X, const std::vector<double>& weights) const;
+  void solve(const ContainerT& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X, const std::vector<double>& weights) const
+  {
+    Vec4 pt3d;
+    TriangulateNViewAlgebraic(x, Ps, pt3d, &weights);
+    X.push_back(robustEstimation::MatrixModel<Vec4>(pt3d));
+    assert(X.size() == 1);
+  }
 
 };
 

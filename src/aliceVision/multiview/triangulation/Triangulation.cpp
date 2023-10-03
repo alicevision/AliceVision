@@ -37,7 +37,7 @@ void TriangulateNView(const Mat2X &x,
   X = X_and_alphas.head(4);
 }
 
-void TriangulateNViewLORANSAC(const Mat2X& x,
+void TriangulateNViewLORANSAC(const std::vector<Vec2> & pts,
                               const std::vector<Mat34>& Ps,
                               std::mt19937 & generator,
                               Vec4 & X,
@@ -45,7 +45,7 @@ void TriangulateNViewLORANSAC(const Mat2X& x,
                               const double& thresholdError)
 {
   using TriangulationKernel = multiview::LORansacTriangulationKernel<>;
-  TriangulationKernel kernel(x, Ps);
+  TriangulationKernel kernel(pts, Ps);
   robustEstimation::ScoreEvaluator<TriangulationKernel> scorer(thresholdError);
   robustEstimation::MatrixModel<Vec4> model;
   model = robustEstimation::LO_RANSAC(kernel, scorer, generator, inliersIndex);
@@ -126,23 +126,7 @@ Vec3 Triangulation::compute(int iter) const
   return X;
 }
 
-template <>
-void TriangulateNViewsSolver<Mat2X>::solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>> &X) const
-{
-  Vec4 pt3d;
-  TriangulateNViewAlgebraic(x, Ps, pt3d);
-  X.push_back(robustEstimation::MatrixModel<Vec4>(pt3d));
-  assert(X.size() == 1);
-}
 
-template <>
-void TriangulateNViewsSolver<Mat2X>::solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>> &X, const std::vector<double> &weights) const
-{
-  Vec4 pt3d;
-  TriangulateNViewAlgebraic(x, Ps, pt3d, &weights);
-  X.push_back(robustEstimation::MatrixModel<Vec4>(pt3d));
-  assert(X.size() == 1);
-}
 
 } // namespace multiview
 } // namespace aliceVision

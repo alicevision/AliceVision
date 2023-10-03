@@ -198,18 +198,18 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
     Vec4 pt3d(Vec3::Random().homogeneous());
 
     // project the 3D point and prepare weights
-    Mat2X pt2d(2, nbViews);
+    std::vector<Vec2> pt2d;
     for(std::size_t j = 0; j < nbViews; ++j)
     {
       if(j < nbViews - nbOutliers)
       {
         // project the 3D point
-        pt2d.col(j) = (Ps[j] * pt3d).hnormalized();
+        pt2d.push_back((Ps[j] * pt3d).hnormalized());
       }
       else
       {
         // for the outliers just set them to some random value
-        pt2d.col(j) = Vec2::Random();
+        pt2d.push_back(Vec2::Random());
         // set the weight to 0 for the outliers
       }
     }
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
     for (std::size_t j = 0; j < nbInliers; ++j)
     {
       const Vec2 x_reprojected = (Ps[j] * X).hnormalized();
-      const double error = (x_reprojected - pt2d.col(j)).norm();
+      const double error = (x_reprojected - pt2d[j]).norm();
 //      EXPECT_NEAR(error, 0.0, 1e-4);
       BOOST_CHECK_SMALL(error, 1e-5);
     }

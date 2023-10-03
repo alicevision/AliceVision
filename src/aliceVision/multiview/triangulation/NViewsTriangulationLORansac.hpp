@@ -261,15 +261,11 @@ struct AngularError
   }
 };
 
-/// A kernel for robust triangulation with reprojection error
-//typedef NViewsTriangulationLORansac<TriangulateNViewsSolver, 
-//                                    ReprojectionError, 
-//                                    UnnormalizerT,
-//                                    TriangulateNViewsSolver> LORansacTriangulationKernel;
 
-using LORansacTriangulationSolver = TriangulateNViewsSolver<Mat2X>;
+using ContainerType = std::vector<Vec2>; 
+using LORansacTriangulationSolver = TriangulateNViewsSolver<ContainerType>;
 
 template<typename ErrorCost = ReprojectionError<robustEstimation::MatrixModel<Vec4>>>
-using LORansacTriangulationKernel =  NViewsTriangulationLORansac<LORansacTriangulationSolver, ErrorCost, UnnormalizerT, robustEstimation::MatrixModel<Vec4>, LORansacTriangulationSolver, Mat2X>;
+using LORansacTriangulationKernel =  NViewsTriangulationLORansac<LORansacTriangulationSolver, ErrorCost, UnnormalizerT, robustEstimation::MatrixModel<Vec4>, LORansacTriangulationSolver, ContainerType>;
 } // namespace multiview
 } // namespace aliceVision
