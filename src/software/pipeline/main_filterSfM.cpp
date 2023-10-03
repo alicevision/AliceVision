@@ -221,34 +221,6 @@ using KdTree3D = nanoflann::KDTreeSingleIndexAdaptor<
     nanoflann::L2_Simple_Adaptor<double, LandmarksAdaptator>,
     LandmarksAdaptator, 3 /* dim */,size_t>;
 
-class RadiusKnnSearch
-{
-public:
-    const double _radius_sq;
-    const int _nb_neighbors;
-    int nb_found = 0;
-
-    inline RadiusKnnSearch(double radius, int k)
-        : _radius_sq(radius * radius)
-        , _nb_neighbors(k)
-    {
-    }
-
-    inline bool full() const { return nb_found == _nb_neighbors; }
-
-    inline bool addPoint(double dist, IndexT index)
-    {
-        if(dist < _radius_sq)
-        {
-            nb_found++;
-            return nb_found < _nb_neighbors;
-        }
-        return true;
-    }
-
-    inline double worstDist() const { return _radius_sq; }
-};
-
 class PixSizeSearch
 {
 public:
@@ -278,6 +250,78 @@ public:
     }
 
     inline double worstDist() const { return _radius_sq; }
+};
+
+class KnnNonZeroSearch
+{
+
+public:
+    size_t* indices;
+    double* dists;
+    int capacity;
+    int count;
+    double _epsilon = 1e-6;
+
+    inline KnnNonZeroSearch(int capacity_)
+        : indices(nullptr)
+        , dists(nullptr)
+        , capacity(capacity_)
+        , count(0)
+    {
+    }
+
+    inline void init(size_t* indices_, double* dists_)
+    {
+        indices = indices_;
+        dists = dists_;
+        count = 0;
+        if(capacity)
+            dists[capacity - 1] = (std::numeric_limits<double>::max)();
+    }
+
+    inline int size() const { return count; }
+
+    inline bool full() const { return count == capacity; }
+
+    inline bool addPoint(double dist, size_t index)
+    {
+        if(dist < _epsilon)
+            return true;
+        int i;
+        bool isDuplicate = false;
+        for(i = count; i > 0; --i)
+        {
+            if(!(dists[i - 1] > dist))
+            {
+                isDuplicate = (dists[i - 1] == dist);
+                break;
+            }
+        }
+        if(isDuplicate)
+        {
+            if(indices[i - 1] > index)
+                indices[i - 1] = index;
+        }
+        else
+        {
+            if(i < capacity)
+            {
+                if(i > 0)
+                    if(count < capacity)
+                        std::move_backward(&indices[i], &indices[count], &indices[count + 1]);
+                    else
+                        std::move_backward(&indices[i], &indices[capacity - 1], &indices[capacity]);
+                dists[i] = dist;
+                indices[i] = index;
+            }
+            if(count < capacity)
+                count++;
+        }
+        // tell caller that the search shall continue
+        return true;
+    }
+
+    inline double worstDist() const { return dists[capacity - 1]; }
 };
 
 using ObservationsPerView = stl::flat_map<std::size_t, std::pair<std::vector<Observation>, std::vector<Landmark*>>>;
@@ -349,7 +393,7 @@ void filterLandmarks_step2(SfMData& sfmData,
 
     ALICEVISION_LOG_INFO("Computing landmarks neighbors: started.");
     // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
-    int nbNeighbors_ = std::min(params.nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
+    int nbNeighbors_ = params.nbNeighbors3D;
     // contains the observing view ids and neighbors for each landmark
     std::vector<std::pair<std::vector<IndexT>, std::vector<size_t>>> viewData(landmarksData.size());
 #pragma omp parallel for
@@ -369,9 +413,12 @@ void filterLandmarks_step2(SfMData& sfmData,
 
         neighbors.resize(nbNeighbors_);
         std::vector<double> weights_(nbNeighbors_);
-        tree.knnSearch(landmark.X.data(), nbNeighbors_, &neighbors[0], &weights_[0]);
-        // a landmark is a neighbor to itself with zero distance, remove it
-        neighbors.erase(neighbors.begin());
+        KnnNonZeroSearch resultSet(nbNeighbors_);
+        resultSet.init(&neighbors[0], &weights_[0]);
+        tree.findNeighbors(resultSet, landmark.X.data());
+        const auto& nbFound = resultSet.size();
+        neighbors.resize(nbFound);
+        weights_.resize(nbFound);
     }
     ALICEVISION_LOG_INFO("Computing landmarks neighbors: done.");
 
@@ -601,8 +648,7 @@ void computeNeighborsInfo(std::vector<Landmark*>& landmarksData, const FilterPar
     KdTree3D tree(3, dataAdaptor, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     tree.buildIndex();
     ALICEVISION_LOG_INFO("KdTree created for " << landmarksData.size() << " points.");
-    // note that the landmark is a neighbor to itself with zero distance, hence the +/- 1
-    int nbNeighbors_ = std::min(params.nbNeighbors3D, static_cast<int>(landmarksData.size() - 1)) + 1;
+    int nbNeighbors_ = params.nbNeighbors3D;
 #pragma omp parallel for
     for(auto i = 0; i < landmarksData.size(); i++)
     {
@@ -610,22 +656,20 @@ void computeNeighborsInfo(std::vector<Landmark*>& landmarksData, const FilterPar
         auto& [indices_, weights_] = neighborsData[i];
         indices_.resize(nbNeighbors_);
         weights_.resize(nbNeighbors_);
-        tree.knnSearch(landmark.X.data(), nbNeighbors_, &indices_[0], &weights_[0]);
-        // a landmark is a neighbor to itself with zero distance, remove it
-        indices_.erase(indices_.begin());
-        weights_.erase(weights_.begin());
+        KnnNonZeroSearch resultSet(nbNeighbors_);
+        resultSet.init(&indices_[0], &weights_[0]);
+        tree.findNeighbors(resultSet, landmark.X.data());
+        const auto& nbFound = resultSet.size(); 
+        indices_.resize(nbFound);
+        weights_.resize(nbFound);
         // accumulator used for normalisation
         double total = 0.;
         for(auto& w : weights_)
         {
             // weight is the inverse of distance between a landmark and its neighbor
             w = 1. / std::sqrt(w);
-            if(std::isinf(w))
-                w = std::numeric_limits<double>::max();
             total += w;
         }
-        if(std::isinf(total))
-            total = std::numeric_limits<double>::max();
         // normalize weights
         for(auto& w : weights_)
         {
@@ -651,7 +695,7 @@ void computeNewScores(const std::vector<Landmark*>& landmarksData,
         // accumulator for normalisation
         double viewScores_total = 0.;
         auto& [indices_, weights_] = neighborsData[id];
-        for(auto j = 0; j < params.nbNeighbors3D; j++)
+        for(auto j = 0; j < indices_.size(); j++)
         {
             const auto& neighborId = indices_[j];
             const auto& neighborWeight = weights_[j];
@@ -689,7 +733,8 @@ void computeNewScores(const std::vector<Landmark*>& landmarksData,
             for(auto j = 0; j < viewScores_acc.size(); j++)
             {
                 // normalize score and apply influence factor
-                viewScores_acc[j] *= params.neighborsInfluence / viewScores_total;
+                //viewScores_acc[j] *= params.neighborsInfluence / viewScores_total;
+                viewScores_acc[j] *= params.neighborsInfluence;
                 // combine weighted neighbor scores and the landmark's own scores
                 viewScores_acc[j] += (1 - params.neighborsInfluence) * viewScores[j];
             }
@@ -742,7 +787,8 @@ void propagateNeighborsInfo(std::vector<Landmark*>& landmarksData,
                     const auto& v = viewScoresData_t[id][j] - viewScoresData[id].second[j];
                     error_j += v * v;
                 }
-                error_j /= viewScoresData_t[id].size();
+                if(error_j > 0.)
+                    error_j /= viewScoresData_t[id].size();
                 error += error_j;
             }
             // update scores
@@ -799,6 +845,9 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
         Observations filteredObservations;
         for(auto j = 0; j < params.maxNbObservationsPerLandmark; j++)
         {
+            const auto& viewScore = viewScores[idx[j]];
+            if(viewScore < 0.3)
+                break;
             const auto& viewId = viewIds[idx[j]];
             filteredObservations[viewId] = landmark.observations[viewId];
         }
@@ -818,24 +867,31 @@ double filter2DView(SfMData& sfmData, const FilterParams::FilterObservations2DPa
     tree.buildIndex();
 
     // note that the observation is a neighbor to itself with zero distance, hence the +/- 1
-    size_t nbNeighbors_ = std::min(static_cast<size_t>(params.nbNeighbors2D), observations.size() - 1) + 1;
+    size_t nbNeighbors_ = params.nbNeighbors2D;
     // average neighbors distance for each observation
-    std::vector<double> means(observations.size());
+    std::vector<double> means(observations.size(), std::numeric_limits<double>::max());
     const std::size_t cacheSize = 1000;
     // accumulator for quantile computation
-    accumulator_set<double, stats<tag::tail_quantile<right>>> acc(tag::tail<right>::cache_size = cacheSize);
+    accumulator_set<double, stats<tag::median, tag::tail_quantile<right>>> acc(tag::tail<right>::cache_size = cacheSize);
     for(auto j = 0; j < observations.size(); j++)
     {
         // Find neighbors and the corresponding distances
         const auto& obs = observations[j];
         std::vector<size_t> indices_(nbNeighbors_);
         std::vector<double> distances_(nbNeighbors_);
-        tree.knnSearch(obs.x.data(), nbNeighbors_, &indices_[0], &distances_[0]);
+        KnnNonZeroSearch resultSet(nbNeighbors_);
+        resultSet.init(&indices_[0], &distances_[0]);
+        tree.findNeighbors(resultSet, obs.x.data());
+        const auto& nbFound = resultSet.size();
+        if(nbFound == 0)
+            continue;
+        indices_.resize(nbFound);
+        distances_.resize(nbFound);
         // returned distances are L2 -> apply squared root
         std::transform(distances_.begin(), distances_.end(), distances_.begin(),
                        static_cast<double (*)(double)>(std::sqrt));
         // average distance
-        const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / (nbNeighbors_ - 1);
+        const auto& mean = std::accumulate(distances_.begin(), distances_.end(), 0.0) / nbFound;
         means[j] = mean;
         // update accumulator
         acc(mean);
@@ -846,7 +902,7 @@ double filter2DView(SfMData& sfmData, const FilterParams::FilterObservations2DPa
         mean_max = quantile(acc, quantile_probability = params.percentile);
     // estimated mask radius is the average of distance means
     // quantile is used to avoid outlier bias
-    double radius = quantile(acc, quantile_probability = (1.f - params.percentile) * 0.5f);
+    double radius = median(acc);
     // check if estimated radius is too large
     {
         const View& view = *(sfmData.getViews().at(viewId));
@@ -854,6 +910,8 @@ double filter2DView(SfMData& sfmData, const FilterParams::FilterObservations2DPa
             params.maskRadiusThreshold * 0.5 * (view.getImage().getWidth() + view.getImage().getHeight());
         if(radius > radiusMax)
             radius = radiusMax;
+        if(mean_max > radiusMax)
+            mean_max = radiusMax;
     }
 
     // filter outlier observations
