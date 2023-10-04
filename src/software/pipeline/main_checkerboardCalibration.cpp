@@ -300,7 +300,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
             sfmData::CameraPose cp;
             cp.setTransform(pose);
 
-            auto view = sfmData.views.at(pH.first);
+            auto view = sfmData.getViews().at(pH.first);
             sfmData.getPoses()[view->getPoseId()] = cp;
         }
 
@@ -320,7 +320,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
 
             const auto& corners = detector.getCorners();
 
-            auto& curview = sfmData.getViews()[viewId];
+            auto& curview = sfmData.getViews().at(viewId);
 
             for (int i = 0; i < global_checkerboard_h; i++)
             {
