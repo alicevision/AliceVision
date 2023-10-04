@@ -935,8 +935,8 @@ endif()
 if(AV_BUILD_LEMON)
     set(LEMON_TARGET LEMON)
     ExternalProject_Add(${LEMON_TARGET}
-            URL http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz
-            URL_HASH MD5=e89f887559113b68657eca67cf3329b5
+            GIT_REPOSITORY https://github.com/The-OpenROAD-Project/lemon-graph.git
+            GIT_TAG 62ac75337e5a8d7221823f03e9cc782270cfef4b
             DOWNLOAD_DIR ${BUILD_DIR}/download/${LEMON_TARGET}
             PREFIX ${BUILD_DIR}
             BUILD_IN_SOURCE 0
