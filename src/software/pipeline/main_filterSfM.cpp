@@ -306,11 +306,19 @@ public:
         {
             if(i < capacity)
             {
-                if(i > 0)
-                    if(count < capacity)
+                if(i != count)
+                {
+                    if (count < capacity)
+                    {
                         std::move_backward(&indices[i], &indices[count], &indices[count + 1]);
+                        std::move_backward(&dists[i], &dists[count], &dists[count + 1]);
+                    }
                     else
+                    {
                         std::move_backward(&indices[i], &indices[capacity - 1], &indices[capacity]);
+                        std::move_backward(&dists[i], &dists[capacity - 1], &dists[capacity]);
+                    }
+                }
                 dists[i] = dist;
                 indices[i] = index;
             }
@@ -729,15 +737,15 @@ void computeNewScores(const std::vector<Landmark*>& landmarksData,
             }
         }
         // if common views with neighbor landmarks
-        if(viewScores_total != 0.)
-            for(auto j = 0; j < viewScores_acc.size(); j++)
-            {
-                // normalize score and apply influence factor
-                //viewScores_acc[j] *= params.neighborsInfluence / viewScores_total;
-                viewScores_acc[j] *= params.neighborsInfluence;
-                // combine weighted neighbor scores and the landmark's own scores
-                viewScores_acc[j] += (1 - params.neighborsInfluence) * viewScores[j];
-            }
+        //if(viewScores_total != 0.)
+        for(auto j = 0; j < viewScores_acc.size(); j++)
+        {
+            // normalize score and apply influence factor
+            //viewScores_acc[j] *= params.neighborsInfluence / viewScores_total;
+            viewScores_acc[j] *= params.neighborsInfluence;
+            // combine weighted neighbor scores and the landmark's own scores
+            viewScores_acc[j] += (1 - params.neighborsInfluence) * viewScores[j];
+        }
 
         // dampen scores of non-chosen observations
         if(params.dampingEnabled && viewScores_acc.size() <= params.maxNbObservationsPerLandmark)
@@ -843,11 +851,12 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
 
         // keep only observations with best scores
         Observations filteredObservations;
+        //double threshold = 0.1 / params.maxNbObservationsPerLandmark;
         for(auto j = 0; j < params.maxNbObservationsPerLandmark; j++)
         {
             const auto& viewScore = viewScores[idx[j]];
-            if(viewScore < 0.3)
-                break;
+            /*if(viewScore < threshold)
+                break;*/
             const auto& viewId = viewIds[idx[j]];
             filteredObservations[viewId] = landmark.observations[viewId];
         }
