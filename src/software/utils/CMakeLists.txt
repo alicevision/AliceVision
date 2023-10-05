@@ -195,6 +195,28 @@ if(ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
+    # SfM to rig
+    alicevision_add_software(aliceVision_sfmToRig
+        SOURCE main_sfmToRig.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+    )
+
+    # SfM Merge
+    alicevision_add_software(aliceVision_sfmMerge
+        SOURCE main_sfmMerge.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+    )
+
     # SfM Regression
     alicevision_add_software(aliceVision_sfmRegression
         SOURCE main_sfmRegression.cpp
