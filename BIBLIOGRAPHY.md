@@ -119,3 +119,6 @@
 
 [Bok] **Automated checkerboard detection and indexing using circular boundaries**
     Yunsu Bok, Hyowon Ha, In So Kweon.
+
+[Zhang] **A flexible new technique for camera calibration**
+    Zhengyou Zhang (1998).

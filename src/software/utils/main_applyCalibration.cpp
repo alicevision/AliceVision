@@ -20,12 +20,11 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
 using namespace aliceVision;
-
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -64,7 +63,7 @@ int aliceVision_main(int argc, char **argv)
     if (sfmDataCalibratedFilename.empty())
     {
         // Save sfmData to disk
-        if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
         {
             ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfMDataFilename << "' cannot be written.");
             return EXIT_FAILURE;
@@ -75,38 +74,118 @@ int aliceVision_main(int argc, char **argv)
 
     // Load calibrated scene
     sfmData::SfMData sfmDataCalibrated;
-    if (!sfmDataIO::Load(sfmDataCalibrated, sfmDataCalibratedFilename, sfmDataIO::ESfMData::INTRINSICS))
+    if (!sfmDataIO::Load(sfmDataCalibrated, sfmDataCalibratedFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The calibrated SfMData file '" << sfmDataCalibratedFilename << "' cannot be read");
         return EXIT_FAILURE;
     }
 
-    // Check that there is exactly one calibrated intrinsic
+    // Detect calibration setup
     const auto& calibratedIntrinsics = sfmDataCalibrated.getIntrinsics();
-    if (calibratedIntrinsics.size() == 0)
-    {
-        ALICEVISION_LOG_ERROR("The calibrated SfMData does not have any intrinsics");
-        return EXIT_FAILURE;
-    }
-    if (calibratedIntrinsics.size() > 1)
-    {
-        ALICEVISION_LOG_ERROR("The calibrated SfMData has more than 1 intrinsics");
-        return EXIT_FAILURE;
-    }
 
-    std::shared_ptr<camera::IntrinsicScaleOffsetDisto> calibratedIntrinsic
-        = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibratedIntrinsics.begin()->second);
+    const bool isMonoCam = calibratedIntrinsics.size() == 1;
+    const bool isMultiCam = calibratedIntrinsics.size() > 1 && sfmDataCalibrated.getRigs().size() == 1;
 
-    if (calibratedIntrinsic->getDistortionInitializationMode() != camera::EInitMode::CALIBRATED)
+    if (!isMonoCam && !isMultiCam)
     {
-        ALICEVISION_LOG_ERROR("Intrinsic from calibrated SfMData is not calibrated");
+        ALICEVISION_LOG_ERROR("Unknown calibration setup");
         return EXIT_FAILURE;
     }
 
-    // Overwrite input SfMData intrinsics with calibrated one
+    // Apply rig calibration
+    if (isMultiCam)
+    {
+        if (sfmData.getRigs().size() != 1)
+        {
+            ALICEVISION_LOG_ERROR("There must be exactly 1 rig to apply rig calibration");
+            return EXIT_FAILURE;
+        }
+
+        // Retrieve calibrated sub-poses
+        const auto& calibratedRig = sfmDataCalibrated.getRigs().begin()->second;
+        const auto& calibratedSubPoses = calibratedRig.getSubPoses();
+
+        // Retrieve input sub-poses
+        auto& rig = sfmData.getRigs().begin()->second;
+        auto& subPoses = rig.getSubPoses();
+
+        if (subPoses.size() != calibratedSubPoses.size())
+        {
+            ALICEVISION_LOG_ERROR("Incoherent number of sub-poses");
+            return EXIT_FAILURE;
+        }
+
+        // Copy calibrated sub-poses
+        for (std::size_t idx = 0; idx < subPoses.size(); ++idx)
+        {
+            if (calibratedSubPoses[idx].status != sfmData::ERigSubPoseStatus::CONSTANT) continue;
+
+            subPoses[idx] = calibratedSubPoses[idx];
+            subPoses[idx].status = sfmData::ERigSubPoseStatus::ESTIMATED;
+        }
+
+        // Turn off independent pose flag on views
+        for (auto& [viewId, view] : sfmData.getViews())
+        {
+            if (view->isPartOfRig())
+            {
+                view->setIndependantPose(false);
+            }
+        }
+    }
+
+    // Apply intrinsic and distortion calibration
     auto& intrinsics = sfmData.getIntrinsics();
     for (const auto& [intrinsicId, intrinsic] : intrinsics)
     {
+        ALICEVISION_LOG_INFO("Processing intrinsic " << intrinsicId);
+
+        // Find corresponding calibrated intrinsic depending on calibration setup
+        std::shared_ptr<camera::IntrinsicScaleOffsetDisto> calibratedIntrinsic = nullptr;
+        if (isMonoCam)
+        {
+            calibratedIntrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibratedIntrinsics.begin()->second);
+        }
+        else if (isMultiCam)
+        {
+            IndexT subPoseId = UndefinedIndexT;
+            for (const auto& [viewId, view] : sfmData.getViews())
+            {
+                if (view->getIntrinsicId() != intrinsicId) continue;
+
+                subPoseId = view->getSubPoseId();
+                break;
+            }
+
+            bool found = false;
+            for (const auto& [calibIntrId, calibIntr] : calibratedIntrinsics)
+            {
+                if (found) break;
+
+                for (const auto& [viewId, view] : sfmDataCalibrated.getViews())
+                {
+                    if (view->getIntrinsicId() != calibIntrId) continue;
+
+                    if (view->getSubPoseId() != subPoseId) continue;
+
+                    calibratedIntrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(calibIntr);
+                    found = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!calibratedIntrinsic)
+        {
+            ALICEVISION_LOG_ERROR("Unable to find a corresponding calibrated intrinsic");
+            return EXIT_FAILURE;
+        }
+        
+        const bool isIntrinsicCalibrated = calibratedIntrinsic->getInitializationMode() == camera::EInitMode::CALIBRATED;
+        const bool isDistortionCalibrated = calibratedIntrinsic->getDistortionInitializationMode() == camera::EInitMode::CALIBRATED;
+
+        if (!isIntrinsicCalibrated && !isDistortionCalibrated) continue;
+
         // Aspect ratio of input intrinsic
         const unsigned int width = intrinsic->w();
         const unsigned int height = intrinsic->h();
@@ -124,18 +203,37 @@ int aliceVision_main(int argc, char **argv)
             return EXIT_FAILURE;
         }
 
-        // Create copy of calibrated intrinsic
-        std::shared_ptr<camera::IntrinsicScaleOffsetDisto> newIntrinsic
-            = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camera::createIntrinsic(calibratedIntrinsic->getType()));
-        newIntrinsic->assign(*calibratedIntrinsic);
+        // Copy original intrinsic
+        auto newIntrinsic =
+            std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(
+                camera::createIntrinsic(intrinsic->getType()));
+        newIntrinsic->assign(*intrinsic);
 
-        // Apply dimensions of input intrinsic
-        newIntrinsic->setWidth(width);
-        newIntrinsic->setHeight(height);
-        auto undistortion = newIntrinsic->getUndistortion();
-        if (undistortion)
+        if (isIntrinsicCalibrated)
         {
+            // Use calibrated focal length and offset
+            const double rx = static_cast<double>(width) / static_cast<double>(calibrationWidth);
+            const double ry = static_cast<double>(height) / static_cast<double>(calibrationHeight);
+            const double fx = calibratedIntrinsic->getScale().x() * rx;
+            const double fy = calibratedIntrinsic->getScale().y() * ry;
+            const double ox = calibratedIntrinsic->getOffset().x() * rx;
+            const double oy = calibratedIntrinsic->getOffset().y() * ry;
+            newIntrinsic->setScale({fx, fy});
+            newIntrinsic->setOffset({ox, oy});
+            newIntrinsic->setInitializationMode(camera::EInitMode::ESTIMATED);
+        }
+
+        if (isDistortionCalibrated)
+        {
+            // Use calibrated distortion
+            newIntrinsic->setDistortionObject(nullptr);
+            auto calibratedUndistortion = calibratedIntrinsic->getUndistortion();
+            auto undistortion = camera::createUndistortion(
+                calibratedUndistortion->getType());
             undistortion->setSize(width, height);
+            undistortion->setParameters(calibratedUndistortion->getParameters());
+            newIntrinsic->setUndistortionObject(undistortion);
+            newIntrinsic->setDistortionInitializationMode(camera::EInitMode::CALIBRATED);
         }
 
         // Overwrite intrinsic with new one
