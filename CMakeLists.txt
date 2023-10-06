@@ -763,7 +763,7 @@ endif()
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
       URL https://github.com/OpenImageIO/oiio/archive/refs/tags/v2.4.13.0.tar.gz
-      URL_HASH MD5=c7df7aaf576e3dbbea7dd89fd2b71871
+      URL_HASH MD5=30e8b433bb71a262a51f56a41fc50ac7
       DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -945,7 +945,7 @@ if(AV_BUILD_LEMON)
             SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${LEMON_TARGET}
             BINARY_DIR ${BUILD_DIR}/${LEMON_TARGET}_build
             INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-            CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
+            CONFIGURE_COMMAND ${CMAKE_COMMAND}
                 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
             BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
             )
