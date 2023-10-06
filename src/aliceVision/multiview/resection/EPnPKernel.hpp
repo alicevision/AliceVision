@@ -46,8 +46,8 @@ class EPnPKernel : public robustEstimation::PointFittingKernel<EPnPSolver, Proje
 
   void fit(const std::vector<std::size_t>& samples, std::vector<robustEstimation::Mat34Model>& models) const override
   {
-    Mat2X x = ExtractColumns(x_camera_, samples);
-    Mat3X X = ExtractColumns(X_, samples);
+    Mat2X x = buildSubsetMatrix(x_camera_, samples);
+    Mat3X X = buildSubsetMatrix(X_, samples);
     Mat34 P;
     Mat3 R;
     Vec3 t;

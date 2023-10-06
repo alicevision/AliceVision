@@ -74,9 +74,9 @@ public:
   {
 
     // create a model from the points
-    _kernelSolver.solve(ExtractColumns(_x1n, samples),
-                        ExtractColumns(_x2n, samples),
-                        ExtractColumns(_x3n, samples),
+    _kernelSolver.solve(buildSubsetMatrix(_x1n, samples),
+                        buildSubsetMatrix(_x2n, samples),
+                        buildSubsetMatrix(_x3n, samples),
                         _vecKR, models, _thresholdUpperBound);
   }
 

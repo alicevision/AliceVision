@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(TriangulateNView_FiveViews)
       xs.col(j) = d._x[j].col(i);
     }
     Vec4 X;
-    multiview::TriangulateNView(xs, Ps, &X);
+    multiview::TriangulateNView(xs, Ps, X);
 
     // Check reprojection error. Should be nearly zero.
     for (int j = 0; j < nviews; ++j)
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(TriangulateNViewAlgebraic_FiveViews) {
       xs.col(j) = d._x[j].col(i);
     }
     Vec4 X;
-    multiview::TriangulateNViewAlgebraic(xs, Ps, &X);
+    multiview::TriangulateNViewAlgebraic(xs, Ps, X);
 
     // Check reprojection error. Should be nearly zero.
     for (int j = 0; j < nviews; ++j)
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_WithWeights)
   }
 
   Vec4 X;
-  multiview::TriangulateNViewAlgebraic(pt2d, Ps, &X, &weights);
+  multiview::TriangulateNViewAlgebraic(pt2d, Ps, X, &weights);
 
   // Check the reprojection error is nearly zero for inliers.
   for (std::size_t j = 0; j < nbViews - nbOutliers; ++j)
@@ -198,18 +198,18 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
     Vec4 pt3d(Vec3::Random().homogeneous());
 
     // project the 3D point and prepare weights
-    Mat2X pt2d(2, nbViews);
+    std::vector<Vec2> pt2d;
     for(std::size_t j = 0; j < nbViews; ++j)
     {
       if(j < nbViews - nbOutliers)
       {
         // project the 3D point
-        pt2d.col(j) = (Ps[j] * pt3d).hnormalized();
+        pt2d.push_back((Ps[j] * pt3d).hnormalized());
       }
       else
       {
         // for the outliers just set them to some random value
-        pt2d.col(j) = Vec2::Random();
+        pt2d.push_back(Vec2::Random());
         // set the weight to 0 for the outliers
       }
     }
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
     std::vector<std::size_t> inliers;
     Vec4 X;
     double const threshold = 0.01; // modify the default value: 4 pixels is too much in this configuration.
-    multiview::TriangulateNViewLORANSAC(pt2d, Ps, randomNumberGenerator, &X, &inliers, threshold);
+    multiview::TriangulateNViewLORANSAC(pt2d, Ps, randomNumberGenerator, X, &inliers, threshold);
     
     // check inliers are correct
     BOOST_CHECK_EQUAL(inliers.size(), nbInliers);
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
     for (std::size_t j = 0; j < nbInliers; ++j)
     {
       const Vec2 x_reprojected = (Ps[j] * X).hnormalized();
-      const double error = (x_reprojected - pt2d.col(j)).norm();
+      const double error = (x_reprojected - pt2d[j]).norm();
 //      EXPECT_NEAR(error, 0.0, 1e-4);
       BOOST_CHECK_SMALL(error, 1e-5);
     }

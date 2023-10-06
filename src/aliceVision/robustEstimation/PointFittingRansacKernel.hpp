@@ -79,8 +79,8 @@ public:
 
   void fitLS(const std::vector<std::size_t>& inliers, std::vector<ModelT_>& models, const std::vector<double>* weights = nullptr) const override
   {
-    const Mat x1 = ExtractColumns(PFKernel::_x1, inliers);
-    const Mat x2 = ExtractColumns(PFKernel::_x2, inliers);
+    const Mat x1 = buildSubsetMatrix(PFKernel::_x1, inliers);
+    const Mat x2 = buildSubsetMatrix(PFKernel::_x2, inliers);
 
     if(weights == nullptr)
       _solverLs.solve(x1, x2, models);

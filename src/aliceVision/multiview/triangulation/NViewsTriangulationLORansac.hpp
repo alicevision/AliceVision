@@ -9,6 +9,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/Container.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp> 
 #include <aliceVision/robustEstimation/ISolver.hpp>
@@ -38,7 +39,7 @@ namespace multiview {
  * a solution from any set of data larger than the minimum required, usually a 
  * DLT algorithm.
  */
-template <typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = robustEstimation::MatrixModel<Vec4>, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
+template <typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = robustEstimation::MatrixModel<Vec4>, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>, typename ContainerT = Mat2X>
 class NViewsTriangulationLORansac
     : public robustEstimation::IRansacKernel<ModelT_>
 {
@@ -78,11 +79,11 @@ public:
    * @param[in] _pt2d The feature points, a 2xN matrix.
    * @param[in] projMatrices The N projection matrix for each view.
    */
-  NViewsTriangulationLORansac(const Mat2X& _pt2d, const std::vector<Mat34>& projMatrices)
+  NViewsTriangulationLORansac(const ContainerT & _pt2d, const std::vector<Mat34>& projMatrices)
   : _pt2d(_pt2d)
   , _projMatrices(projMatrices)
   {
-    assert(_projMatrices.size() == _pt2d.cols());
+    assert(_projMatrices.size() == CountElements(_pt2d));
   }
 
   /**
@@ -92,7 +93,7 @@ public:
    */
   void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
   {
-    const Mat p2d = ExtractColumns(_pt2d, samples);
+    const ContainerT p2d = buildSubsetMatrix(_pt2d, samples);
     std::vector<Mat34> sampledMats;
     pick(sampledMats, _projMatrices, samples);
     _kernelSolver.solve(p2d, sampledMats, models);
@@ -108,7 +109,7 @@ public:
              std::vector<ModelT_>& models,
              const std::vector<double> *weights = nullptr) const override
   {
-    const Mat p2d = ExtractColumns(_pt2d, inliers);
+    const ContainerT p2d = buildSubsetMatrix(_pt2d, inliers);
     std::vector<Mat34> sampledMats;
     pick(sampledMats, _projMatrices, inliers);
     _kernelSolverLs.solve(p2d, sampledMats, models, *weights);
@@ -133,7 +134,8 @@ public:
     for(std::size_t sample = 0; sample < numInliers; ++sample)
     {
       const auto idx = inliers[sample];
-      vec_weights[sample] = _errorEstimator.error(_pt2d.col(idx), _projMatrices[idx], model);
+      vec_weights[sample] = _errorEstimator.error(getElement(_pt2d, idx), _projMatrices[idx], model);
+      
       // avoid division by zero
       vec_weights[sample] = 1/std::pow(std::max(eps, vec_weights[sample]), 2);
     }
@@ -147,7 +149,7 @@ public:
    */
   double error(std::size_t sample, const ModelT_& model) const override
   {
-    return _errorEstimator.error(_pt2d.col(sample), _projMatrices[sample], model);
+    return _errorEstimator.error(getElement(_pt2d, sample), _projMatrices[sample], model);
   }
 
   /**
@@ -158,7 +160,7 @@ public:
   void errors(const ModelT_& model, std::vector<double>& errors) const override
   {
     errors.resize(nbSamples());
-    for(Mat::Index i = 0; i < _pt2d.cols(); ++i)
+    for(Mat::Index i = 0; i < CountElements(_pt2d); ++i)
       errors[i] = error(i, model);
   }
 
@@ -175,7 +177,7 @@ public:
    */
   std::size_t nbSamples() const override
   {
-    return _pt2d.cols();
+    return CountElements(_pt2d);
   }
   
   double logalpha0() const override
@@ -209,7 +211,7 @@ public:
   }
 
 private:
-  const Mat2X& _pt2d;
+  const ContainerT & _pt2d;
   const std::vector<Mat34>& _projMatrices;
 
   const SolverT _kernelSolver = SolverT();
@@ -259,12 +261,11 @@ struct AngularError
   }
 };
 
-/// A kernel for robust triangulation with reprojection error
-//typedef NViewsTriangulationLORansac<TriangulateNViewsSolver, 
-//                                    ReprojectionError, 
-//                                    UnnormalizerT,
-//                                    TriangulateNViewsSolver> LORansacTriangulationKernel;
+
+using ContainerType = std::vector<Vec2>; 
+using LORansacTriangulationSolver = TriangulateNViewsSolver<ContainerType>;
+
 template<typename ErrorCost = ReprojectionError<robustEstimation::MatrixModel<Vec4>>>
-using LORansacTriangulationKernel =  NViewsTriangulationLORansac<TriangulateNViewsSolver, ErrorCost, UnnormalizerT, robustEstimation::MatrixModel<Vec4>, TriangulateNViewsSolver>;
+using LORansacTriangulationKernel =  NViewsTriangulationLORansac<LORansacTriangulationSolver, ErrorCost, UnnormalizerT, robustEstimation::MatrixModel<Vec4>, LORansacTriangulationSolver, ContainerType>;
 } // namespace multiview
 } // namespace aliceVision

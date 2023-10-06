@@ -140,8 +140,8 @@ public:
 
   void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
   {
-    const Mat x1 = ExtractColumns(_x1k, samples);
-    const Mat x2 = ExtractColumns(_x2k, samples);
+    const Mat x1 = buildSubsetMatrix(_x1k, samples);
+    const Mat x2 = buildSubsetMatrix(_x2k, samples);
 
     PFRansacKernel::PFKernel::_kernelSolver.solve(x1, x2, models);
   }

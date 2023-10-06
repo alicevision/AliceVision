@@ -10,6 +10,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 #include <vector>
 #include <random>
@@ -31,7 +32,7 @@ namespace multiview {
  */
 void TriangulateNView(const Mat2X &x, 
                       const std::vector< Mat34 > &Ps, 
-                      Vec4 *X, 
+                      Vec4 & X, 
                       const std::vector<double> *weights = nullptr);
 
 /**
@@ -41,15 +42,32 @@ void TriangulateNView(const Mat2X &x,
  * It also allows to specify some (optional) weight for each point (solving the 
  * weighted least squared problem)
  * 
- * @param[in] x are 2D coordinates (x,y,1) in each image
+ * @param[in] x are 2D coordinates (x,y) in each image
  * @param[in] Ps is the list of projective matrices for each camera
  * @param[out] X is the estimated 3D point
  * @param[in] weights a (optional) list of weights for each point
  */
-void TriangulateNViewAlgebraic(const Mat2X &x, 
+template <class ContainerT>
+void TriangulateNViewAlgebraic(const ContainerT &x, 
                                const std::vector< Mat34 > &Ps,
-                               Vec4 *X, 
-                               const std::vector<double> *weights = nullptr);
+                               Vec4 & X, 
+                               const std::vector<double> *weights = nullptr)
+
+{
+  Mat2X::Index nviews = CountElements(x);
+  assert(static_cast<std::size_t>(nviews) == Ps.size());
+
+  Mat design(2 * nviews, 4);
+  for(Mat2X::Index i = 0; i < nviews; ++i)
+  {
+    design.block<2, 4>(2 * i, 0) = SkewMatMinimal(getElement<ContainerT>(x, i)) * Ps[i];
+    if(weights != nullptr)
+    {
+      design.block<2, 4>(2 * i, 0) *= (*weights)[i];
+    }
+  }
+  Nullspace(design, X);
+}
 
 /**
  * @brief Compute a 3D position of a point from several images of it. In particular,
@@ -62,11 +80,11 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
  * @param[out] X is the estimated 3D point
  * @param[out] inliersIndex (optional) store the index of the cameras (following Ps ordering, not the view_id) set as Inliers by Lo-RANSAC
  * @param[in] thresholdError (optional) set a threashold value to the Lo-RANSAC scorer
- */                               
-void TriangulateNViewLORANSAC(const Mat2X &x, 
+ */                        
+void TriangulateNViewLORANSAC(const std::vector<Vec2> &x, 
                               const std::vector< Mat34 > &Ps,
                               std::mt19937 & generator,
-                              Vec4 *X,
+                              Vec4 & X,
                               std::vector<std::size_t> *inliersIndex = NULL,
                               const double & thresholdError = 4.0);                               
 
@@ -108,6 +126,7 @@ protected:
   std::vector< std::pair<Mat34, Vec2> > views; // Proj matrix and associated image point
 };
 
+template <class ContainerT>
 struct TriangulateNViewsSolver 
 {
 
@@ -129,9 +148,23 @@ struct TriangulateNViewsSolver
     return 1;
   }
 
-  void solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X) const;
+  void solve(const ContainerT& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X) const
+  {
+    Vec4 pt3d;
+    TriangulateNViewAlgebraic(x, Ps, pt3d);
+    X.push_back(robustEstimation::MatrixModel<Vec4>(pt3d));
+    assert(X.size() == 1);
+  }
+
+
   
-  void solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X, const std::vector<double>& weights) const;
+  void solve(const ContainerT& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X, const std::vector<double>& weights) const
+  {
+    Vec4 pt3d;
+    TriangulateNViewAlgebraic(x, Ps, pt3d, &weights);
+    X.push_back(robustEstimation::MatrixModel<Vec4>(pt3d));
+    assert(X.size() == 1);
+  }
 
 };
 

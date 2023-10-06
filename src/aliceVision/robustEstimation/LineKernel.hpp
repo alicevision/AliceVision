@@ -97,7 +97,7 @@ public:
     assert(samples.size() >= getMinimumNbRequiredSamples());
 
     // standard least squares solution.
-    const Mat2X sampled_xs = ExtractColumns(_xs, samples);
+    const Mat2X sampled_xs = buildSubsetMatrix(_xs, samples);
 
     Mat X(sampled_xs.cols(), 2);
     X.col(0).setOnes();
@@ -131,7 +131,7 @@ public:
     assert(samples.size() >= getMinimumNbRequiredSamples());
 
     // standard least squares solution.
-    const Mat2X sampled_xs = ExtractColumns(_xs, samples);
+    const Mat2X sampled_xs = buildSubsetMatrix(_xs, samples);
 
 
     const std::size_t numPts = sampled_xs.cols();
