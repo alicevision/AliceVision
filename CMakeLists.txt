@@ -26,6 +26,7 @@ option(AV_BUILD_COINUTILS "Enable building an embedded CoinUtils" ON)
 option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
 option(AV_BUILD_FLANN "Enable building an embedded Flann" ON)
+option(AV_BUILD_LEMON "Enable building an embedded LEMON library" ON)
 option(AV_BUILD_PCL "Enable building an embedded PointCloud library" OFF)
 option(AV_BUILD_USD "Enable building an embedded USD library" OFF)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
@@ -95,6 +96,7 @@ message(STATUS "AV_BUILD_CLP: ${AV_BUILD_CLP}")
 message(STATUS "AV_BUILD_FLANN: ${AV_BUILD_FLANN}")
 message(STATUS "AV_BUILD_PCL: ${AV_BUILD_PCL}")
 message(STATUS "AV_BUILD_USD: ${AV_BUILD_USD}")
+message(STATUS "AV_BUILD_LEMON: ${AV_BUILD_LEMON}")
 message(STATUS "AV_BUILD_DEPENDENCIES_PARALLEL: ${AV_BUILD_DEPENDENCIES_PARALLEL}")
 message(STATUS "")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -104,6 +106,7 @@ message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "CMAKE_INSTALL_RPATH: ${CMAKE_INSTALL_RPATH}")
 message(STATUS "CMAKE_INSTALL_DO_STRIP: ${CMAKE_INSTALL_DO_STRIP}")
 message(STATUS "----------------------------------------")
+
 
 # ==============================================================================
 # Enable cmake UNIT TEST framework
@@ -760,7 +763,7 @@ endif()
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
       URL https://github.com/OpenImageIO/oiio/archive/refs/tags/v2.4.13.0.tar.gz
-      URL_HASH MD5=c7df7aaf576e3dbbea7dd89fd2b71871
+      URL_HASH MD5=30e8b433bb71a262a51f56a41fc50ac7
       DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -926,6 +929,27 @@ ExternalProject_Add(${APRILTAG_TARGET}
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
       )
 set(APRILTAG_CMAKE_FLAGS -Dapriltag_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/apriltag/cmake)
+endif()
+
+# Add Lemon
+if(AV_BUILD_LEMON)
+    set(LEMON_TARGET LEMON)
+    ExternalProject_Add(${LEMON_TARGET}
+            GIT_REPOSITORY https://github.com/The-OpenROAD-Project/lemon-graph.git
+            GIT_TAG 62ac75337e5a8d7221823f03e9cc782270cfef4b
+            DOWNLOAD_DIR ${BUILD_DIR}/download/${LEMON_TARGET}
+            PREFIX ${BUILD_DIR}
+            BUILD_IN_SOURCE 0
+            BUILD_ALWAYS 0
+            UPDATE_COMMAND ""
+            SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${LEMON_TARGET}
+            BINARY_DIR ${BUILD_DIR}/${LEMON_TARGET}_build
+            INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+            CONFIGURE_COMMAND ${CMAKE_COMMAND}
+                -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+            BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+            )
+    set(LEMON_CMAKE_FLAGS -DLEMON_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/lemon/cmake)
 endif()
 
 # Add PopSift
@@ -1167,6 +1191,7 @@ set(AV_DEPS
   ${USD_TARGET}
   ${FLANN_TARGET}
   ${LZ4_TARGET}
+  ${LEMON_TARGET}
 )
 
 if(AV_BUILD_ALICEVISION)
