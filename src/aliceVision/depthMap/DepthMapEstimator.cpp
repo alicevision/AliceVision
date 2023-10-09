@@ -133,9 +133,14 @@ int DepthMapEstimator::getNbSimultaneousTiles() const
     }
 
     // check that we do not need more constant camera parameters than the ones in device constant memory
-    if(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS < (nbSimultaneousFullRc + ((nbRemainingTiles > 0) ? 1 : 0) * rcCamParams))
+    if(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS < ((nbSimultaneousFullRc + ((nbRemainingTiles > 0) ? 1 : 0)) * rcCamParams))
     {
+      const int previousNbSimultaneousFullRc = nbSimultaneousFullRc;
       nbSimultaneousFullRc = int(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS / rcCamParams);
+
+      ALICEVISION_LOG_INFO("DepthMapEstimator::getNbSimultaneousTiles(): limit the number of simultaneous RC due to the"
+                           << " max constant memory for camera params from " << previousNbSimultaneousFullRc << " to "
+                           << nbSimultaneousFullRc);
       nbRemainingTiles = 0;
     }
 
@@ -235,16 +240,27 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     const int nbStreams = std::min(getNbSimultaneousTiles(), int(tiles.size()));
     DeviceStreamManager deviceStreamManager(nbStreams);
 
-    // build device cache
-    const int nbTilesPerCamera = _tileRoiList.size();
-    const int nbRcPerBatch = divideRoundUp(nbStreams, nbTilesPerCamera); // number of R cameras in the same batch
-    const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera; // number of tiles in the same batch
+    // constants
     const bool hasRcSameDownscale = (_sgmParams.scale ==  _refineParams.scale); // we only need one camera params per image
     const bool hasRcWithoutDownscale = _sgmParams.scale == 1 || (_depthMapParams.useRefine && _refineParams.scale == 1); // we need R camera params SGM (downscale = 1)
     const int nbCameraParamsPerSgm = (1 + _depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1); // number of Sgm camera parameters per R camera
     const int nbCameraParamsPerRefine = (_depthMapParams.useRefine && !hasRcSameDownscale) ? (1 + _depthMapParams.maxTCams) : 0; // number of Refine camera parameters per R camera
-    const int nbMipmapImagesPerBatch = nbRcPerBatch * (1 + _depthMapParams.maxTCams); // number of camera mipmap image in the same batch
+
+    // build device cache
+    const int nbTilesPerCamera = _tileRoiList.size();
+
+    int nbRcPerBatch = divideRoundUp(nbStreams, nbTilesPerCamera); // number of R cameras in the same batch
+    if(nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine) > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
+    {
+        int previousNbRcPerBatch = nbRcPerBatch;
+        nbRcPerBatch = ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS /
+                      (nbCameraParamsPerSgm + nbCameraParamsPerRefine);
+        ALICEVISION_LOG_INFO("DepthMapEstimator::compute(): limit the number of simultaneous RC due to the max constant"
+                             << " memory for camera params from " << previousNbRcPerBatch << " to " << nbRcPerBatch);
+    }
     const int nbCamerasParamsPerBatch = nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine); // number of camera parameters in the same batch
+    const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera; // number of tiles in the same batch
+    const int nbMipmapImagesPerBatch = nbRcPerBatch * (1 + _depthMapParams.maxTCams); // number of camera mipmap image in the same batch
 
     DeviceCache& deviceCache = DeviceCache::getInstance();
     deviceCache.build(nbMipmapImagesPerBatch, nbCamerasParamsPerBatch);
