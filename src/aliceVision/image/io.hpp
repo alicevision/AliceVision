@@ -215,16 +215,21 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
  */
 struct ImageReadOptions
 {
-    ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
+    ImageReadOptions(EImageColorSpace workingColorSpace = EImageColorSpace::AUTO, EImageColorSpace inputColorSpace = EImageColorSpace::AUTO,
         ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawWhiteBalancing,
         const std::string& colorProfile = "", const bool useDCPColorMatrixOnly = true, const oiio::ROI& roi = oiio::ROI()) :
-        workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), useDCPColorMatrixOnly(useDCPColorMatrixOnly),
+        workingColorSpace(workingColorSpace),
+        inputColorSpace(inputColorSpace),
+        rawColorInterpretation(rawColorInterpretation),
+        colorProfileFileName(colorProfile),
+        useDCPColorMatrixOnly(useDCPColorMatrixOnly),
         doWBAfterDemosaicing(false), demosaicingAlgo("AHD"), highlightMode(0), rawAutoBright(false), rawExposureAdjustment(1.0),
         correlatedColorTemperature(-1.0), subROI(roi)
     {
     }
 
     EImageColorSpace workingColorSpace;
+    EImageColorSpace inputColorSpace;
     ERawColorInterpretation rawColorInterpretation;
     std::string colorProfileFileName;
     bool useDCPColorMatrixOnly;
