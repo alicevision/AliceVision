@@ -253,9 +253,7 @@ int aliceVision_main(int argc, char** argv)
     // Estimate working color space if set to AUTO
     if (workingColorSpace == image::EImageColorSpace::AUTO)
     {
-        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(groupedViews[0][0]->getImage().getImagePath()));
-        const std::string imgFormat = in->format_name();
-        const bool isRAW = imgFormat.compare("raw") == 0;
+        const bool isRAW = image::isRawFormat(groupedViews[0][0]->getImage().getImagePath());
 
         workingColorSpace = isRAW ? image::EImageColorSpace::LINEAR : image::EImageColorSpace::SRGB;
         ALICEVISION_LOG_INFO("Working color space automatically set to " << workingColorSpace << ".");

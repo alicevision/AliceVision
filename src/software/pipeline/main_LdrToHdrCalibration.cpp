@@ -390,9 +390,7 @@ int aliceVision_main(int argc, char** argv)
 
                     if (calibrationMethod == ECalibrationMethod::AUTO)
                     {
-                        const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(group.begin()->get()->getImage().getImagePath()));
-                        const std::string imgFormat = in->format_name();
-                        const bool isRAW = imgFormat.compare("raw") == 0;
+                        const bool isRAW = image::isRawFormat(group.begin()->get()->getImage().getImagePath());
 
                         calibrationMethod = isRAW ? ECalibrationMethod::LINEAR : ECalibrationMethod::DEBEVEC;
                         ALICEVISION_LOG_INFO("Calibration method automatically set to " << calibrationMethod << ".");

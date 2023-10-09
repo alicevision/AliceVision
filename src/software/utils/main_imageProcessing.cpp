@@ -1206,9 +1206,7 @@ int aliceVision_main(int argc, char * argv[])
             const std::string viewPath = viewIt.second;
             sfmData::View& view = sfmData.getView(viewId);
 
-            const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(viewPath));
-            const std::string imgFormat = in->format_name();
-            const bool isRAW = imgFormat.compare("raw") == 0;
+            const bool isRAW = image::isRawFormat(viewPath);
 
             const fs::path fsPath = viewPath;
             const std::string fileName = fsPath.stem().string();
@@ -1462,9 +1460,7 @@ int aliceVision_main(int argc, char * argv[])
         int i = 0;
         for (const std::string& inputFilePath : filesStrPaths)
         {
-            const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(inputFilePath));
-            const std::string imgFormat = in->format_name();
-            const bool isRAW = imgFormat.compare("raw") == 0;
+            const bool isRAW = image::isRawFormat(inputFilePath);
 
             const fs::path path = fs::path(inputFilePath);
             const std::string filename = path.stem().string();

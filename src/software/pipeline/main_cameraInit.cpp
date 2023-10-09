@@ -491,9 +491,7 @@ int aliceVision_main(int argc, char **argv)
     const std::string& model = view.getImage().getMetadataModel();
     const bool hasCameraMetadata = (!make.empty() || !model.empty());
 
-    std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(view.getImage().getImagePath()));
-
-    std::string imgFormat = in->format_name();
+    const bool isRaw = image::isRawFormat(view.getImage().getImagePath());
 
     bool dcpError = true;
 
@@ -501,7 +499,7 @@ int aliceVision_main(int argc, char **argv)
     // if yes and if metadata exist and image format is raw then update metadata with DCP info
     if((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
         rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata) &&
-        hasCameraMetadata && (imgFormat.compare("raw") == 0))
+        hasCameraMetadata && isRaw)
     {
 
         if (dcpDatabase.empty() && errorOnMissingColorProfile)
@@ -534,7 +532,7 @@ int aliceVision_main(int argc, char **argv)
         }
     }
 
-    if (imgFormat.compare("raw") == 0)
+    if (isRaw)
     {
         // Store the color interpretation mode chosen for raw images in metadata,
         // so all future loads of this image will be interpreted in the same way.

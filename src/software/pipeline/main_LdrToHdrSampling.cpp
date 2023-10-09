@@ -243,9 +243,7 @@ int aliceVision_main(int argc, char** argv)
                     firstViewId = v->getViewId();
                     first = false;
 
-                    const std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(v->getImage().getImagePath()));
-                    const std::string imgFormat = in->format_name();
-                    const bool isRAW = imgFormat.compare("raw") == 0;
+                    const bool isRAW = image::isRawFormat(v->getImage().getImagePath());
 
                     if (calibrationMethod == ECalibrationMethod::AUTO)
                     {

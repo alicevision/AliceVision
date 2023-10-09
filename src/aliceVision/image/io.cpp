@@ -495,7 +495,9 @@ bool isRawFormat(const std::string& path)
 {
     std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
     if(!in)
-        return false;
+    {
+        ALICEVISION_THROW_ERROR("The input image file '" << path << "' cannot be opened or does not exist.");
+    }
     std::string imgFormat = in->format_name();
 
     return (imgFormat.compare("raw") == 0);
