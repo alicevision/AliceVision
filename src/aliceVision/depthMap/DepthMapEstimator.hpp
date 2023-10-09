@@ -74,7 +74,7 @@ private:
      * @param[in] cams the list of cameras
      * @param[in,out] tiles the output tiles list
      */
-   void getTilesList(const std::vector<int>& cams, std::vector<Tile>& tiles) const;
+    void getTilesList(const std::vector<int>& cams, std::vector<Tile>& tiles) const;
 
     // private members
 
@@ -86,5 +86,5 @@ private:
     std::vector<ROI> _tileRoiList;             //< depth maps region-of-interest list
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision
