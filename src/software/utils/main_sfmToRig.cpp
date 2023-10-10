@@ -26,20 +26,18 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 
 
-
 int aliceVision_main(int argc, char **argv)
 {
     // command-line parameters
     std::string sfmDataFilename;
     std::string outSfMDataFilename;
 
-
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options() //
-        ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file") //
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file")
         ("output,o", po::value<std::string>(&outSfMDataFilename)->required(), "Output SfMData scene.");
 
-    CmdLine cmdline("AliceVision sfmTransfer");
+    CmdLine cmdline("AliceVision sfmToRig");
     cmdline.add(requiredParams);
     if (!cmdline.execute(argc, argv))
     {
@@ -60,14 +58,14 @@ int aliceVision_main(int argc, char **argv)
         sfmData.getRigs().clear();
     }
 
-    //Remove existing landmarks
+    // Remove existing landmarks
     sfmData.getLandmarks().clear();
     sfmData.getConstraints2D().clear();
     sfmData.getRotationPriors().clear();
 
     sfmData::Rig rig(sfmData.getPoses().size());
 
-    //Build rig
+    // Build rig
     size_t indexRig = 0;
     int index = 0;
     std::map<IndexT, int> mapPoseToSubPose;
@@ -78,18 +76,18 @@ int aliceVision_main(int argc, char **argv)
         sfmData::RigSubPose subPose(pose.getTransform(), sfmData::ERigSubPoseStatus::CONSTANT);
         rig.setSubPose(index, subPose);
 
-        //Rig id is the combination of uid of poses
+        // Rig id is the combination of uid of poses
         stl::hash_combine(indexRig, pp.first);
 
         mapPoseToSubPose[pp.first] = index;
         index++;
     }
 
-    //Insert rig
+    // Insert rig
     sfmData.getRigs().emplace(indexRig, rig);
 
-    //Update
-    for (auto & pv : sfmData.getViews())
+    // Update
+    for (const auto & pv : sfmData.getViews())
     {
         std::shared_ptr<sfmData::View> view = pv.second;
         if (!sfmData.isPoseAndIntrinsicDefined(view.get()))
@@ -97,31 +95,31 @@ int aliceVision_main(int argc, char **argv)
             continue;
         }
 
-        IndexT poseId = view->getPoseId();
-        int subPoseId = mapPoseToSubPose[poseId];
+        const IndexT poseId = view->getPoseId();
+        const int subPoseId = mapPoseToSubPose[poseId];
        
-        //New commmon pose id is the same than the rig id for convenience
+        // New commmon pose id is the same than the rig id for convenience
         view->setPoseId(indexRig);
         view->setRigAndSubPoseId(indexRig, subPoseId);
         view->setIndependantPose(false);
         
-        //Update intrinsicId
+        // Update intrinsicId
         size_t intrinsicId = view->getIntrinsicId();
         stl::hash_combine(intrinsicId, indexRig);
         view->setIntrinsicId(intrinsicId);
     }
 
-    //Update intrinsics
+    // Update intrinsics
     sfmData::Intrinsics intrinsics = sfmData.getIntrinsics();
     sfmData.getIntrinsics().clear();
-    for (auto & pi : intrinsics)
+    for (const auto & pi : intrinsics)
     {
         size_t intrinsicId = pi.first;
         stl::hash_combine(intrinsicId, indexRig);
         sfmData.getIntrinsics().emplace(intrinsicId, pi.second);
     }
 
-    //Remove all poses
+    // Remove all poses
     sfmData.getPoses().clear();
 
     if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))

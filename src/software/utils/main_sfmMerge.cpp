@@ -26,21 +26,19 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 
 
-
 int aliceVision_main(int argc, char **argv)
 {
     // command-line parameters
     std::string sfmDataFilename1, sfmDataFilename2;
     std::string outSfMDataFilename;
 
-
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options() //
-        ("firstinput,i1", po::value<std::string>(&sfmDataFilename1)->required(), "First SfMData file to merge.") //
-        ("secondinput,i2", po::value<std::string>(&sfmDataFilename2)->required(), "Second SfMData file to merge.") //
+    requiredParams.add_options()
+        ("firstinput,i1", po::value<std::string>(&sfmDataFilename1)->required(), "First SfMData file to merge.")
+        ("secondinput,i2", po::value<std::string>(&sfmDataFilename2)->required(), "Second SfMData file to merge.")
         ("output,o", po::value<std::string>(&outSfMDataFilename)->required(), "Output SfMData scene.");
 
-    CmdLine cmdline("AliceVision sfmTransfer");
+    CmdLine cmdline("AliceVision sfmMerge");
     cmdline.add(requiredParams);
     if (!cmdline.execute(argc, argv))
     {
@@ -65,12 +63,12 @@ int aliceVision_main(int argc, char **argv)
     {
         auto & views1 = sfmData1.getViews();
         auto & views2 = sfmData2.getViews();
-        size_t totalSize = views1.size() + views2.size();
+        const size_t totalSize = views1.size() + views2.size();
 
         views1.insert(views2.begin(), views2.end());
         if (views1.size() < totalSize)
         {
-            ALICEVISION_LOG_ERROR("Unhandled error : common view id between both sfmdata");
+            ALICEVISION_LOG_ERROR("Unhandled error: common view ID between both SfMData");
             return EXIT_FAILURE;
         }
     }
@@ -78,12 +76,12 @@ int aliceVision_main(int argc, char **argv)
     {
         auto & intrinsics1 = sfmData1.getIntrinsics();
         auto & intrinsics2 = sfmData2.getIntrinsics();
-        size_t totalSize = intrinsics1.size() + intrinsics2.size();
+        const size_t totalSize = intrinsics1.size() + intrinsics2.size();
 
         intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());
         if (intrinsics1.size() < totalSize)
         {
-            ALICEVISION_LOG_ERROR("Unhandled error : common intrinsics id between both sfmdata");
+            ALICEVISION_LOG_ERROR("Unhandled error: common intrinsics ID between both SfMData");
             return EXIT_FAILURE;
         }
     }
@@ -91,12 +89,12 @@ int aliceVision_main(int argc, char **argv)
     {
         auto & rigs1 = sfmData1.getRigs();
         auto & rigs2 = sfmData2.getRigs();
-        size_t totalSize = rigs1.size() + rigs2.size();
+        const size_t totalSize = rigs1.size() + rigs2.size();
 
         rigs1.insert(rigs2.begin(), rigs2.end());
         if (rigs1.size() < totalSize)
         {
-            ALICEVISION_LOG_ERROR("Unhandled error : common rigs id between both sfmdata");
+            ALICEVISION_LOG_ERROR("Unhandled error: common rigs ID between both SfMData");
             return EXIT_FAILURE;
         }
     }
@@ -104,24 +102,18 @@ int aliceVision_main(int argc, char **argv)
     {
         auto & landmarks1 = sfmData1.getLandmarks();
         auto & landmarks2 = sfmData2.getLandmarks();
-        size_t totalSize = landmarks1.size() + landmarks2.size();
+        const size_t totalSize = landmarks1.size() + landmarks2.size();
 
         landmarks1.insert(landmarks2.begin(), landmarks2.end());
         if (landmarks1.size() < totalSize)
         {
-            ALICEVISION_LOG_ERROR("Unhandled error : common rigs landmarks between both sfmdata");
+            ALICEVISION_LOG_ERROR("Unhandled error: common rigs landmarks between both SfMData");
             return EXIT_FAILURE;
         }
     }
 
-    {
-        sfmData1.addFeaturesFolders(sfmData2.getRelativeFeaturesFolders());
-    }
-
-    {
-        sfmData1.addMatchesFolders(sfmData2.getRelativeMatchesFolders());
-    }
-
+    sfmData1.addFeaturesFolders(sfmData2.getRelativeFeaturesFolders());
+    sfmData1.addMatchesFolders(sfmData2.getRelativeMatchesFolders());
 
     if (!sfmDataIO::Save(sfmData1, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     {
