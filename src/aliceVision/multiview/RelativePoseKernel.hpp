@@ -163,7 +163,7 @@ public:
   double errorVectorDimension() const override {return 0.5;} // point to line error
   Mat3 normalizer1() const override {return _N1;}
   Mat3 normalizer2() const override {return _N2;}
-  double unormalizeError(double val) const override { return val; }
+  double unormalizeError(double val) const override { return sqrt(val); }
 
 private:
 
