@@ -143,7 +143,7 @@ public:
    */
   virtual double logalpha0() const = 0;
 
-  virtual double multError() const = 0;
+  virtual double errorVectorDimension() const = 0;
   virtual double unormalizeError(double val) const = 0;
   virtual Mat3 normalizer1() const = 0;
   virtual Mat3 normalizer2() const = 0;

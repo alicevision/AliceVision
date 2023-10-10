@@ -87,23 +87,27 @@ inline ErrorIndex bestNFA(int startIndex, //number of point required for estimat
                           double maxThreshold,
                           const std::vector<float> &logc_n,
                           const std::vector<float> &logc_k,
-                          double multError = 1.0)
+                          double errorVectorDimension = 1.0)
 {
   ErrorIndex bestIndex(std::numeric_limits<double>::infinity(), startIndex);
   const size_t n = e.size();
+
   for(size_t k = startIndex + 1; k <= n && e[k - 1].first <= maxThreshold; ++k)
   {
-    const double logalpha = logalpha0 +
-      multError * log10(e[k - 1].first + std::numeric_limits<float>::epsilon());
-ErrorIndex index(loge0 +
-                     logalpha * (double) (k - startIndex) +
-                     logc_n[k] +
-                     logc_k[k], k);
+    double squaredResidual = e[k - 1].first;
+    double residual = sqrt(squaredResidual) + std::numeric_limits<float>::epsilon();
+
+    const double logalpha = logalpha0 + errorVectorDimension * log10(residual);
+    const double nfa = loge0 + logalpha * (double) (k - startIndex) + logc_n[k] + logc_k[k];
     
-    if(index.first < bestIndex.first)
-        bestIndex = index;
+    
+    if(nfa < bestIndex.first)
+    {
+        bestIndex = ErrorIndex(nfa, k);
     }
-    return bestIndex;
+  }
+
+  return bestIndex;
 }
 
 
@@ -227,7 +231,7 @@ std::pair<double, double> ACRANSAC(const Kernel& kernel,
           maxThreshold,
           vec_logc_n,
           vec_logc_k,
-          kernel.multError());
+          kernel.errorVectorDimension());
 
         if (best.first < minNFA /*&& vec_residuals[best.second-1].first < errorMax*/)
         {

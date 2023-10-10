@@ -218,9 +218,9 @@ public:
     return _logalpha0;
   }
 
-  inline double multError() const override
+  inline double errorVectorDimension() const override
   {
-    return 0.5;
+    return 1.0;
   }
 
   inline Mat3 normalizer1() const override

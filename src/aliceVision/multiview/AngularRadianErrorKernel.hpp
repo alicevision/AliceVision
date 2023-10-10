@@ -47,7 +47,7 @@ public:
   }
 
   double logalpha0() const override {return _logalpha0; }
-  double multError() const override {return 1./4.;}
+  double errorVectorDimension() const override {return 0.5;}
   Mat3 normalizer1() const override {return Mat3::Identity();}
   Mat3 normalizer2() const override {return Mat3::Identity();}
   double unormalizeError(double val) const override {return sqrt(val);}

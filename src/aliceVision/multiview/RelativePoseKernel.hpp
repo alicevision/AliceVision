@@ -78,7 +78,7 @@ public:
   }
 
   double logalpha0() const override {return _logalpha0; }
-  double multError() const override {return (_pointToLine)? 0.5 : 1.0;}
+  double errorVectorDimension() const override {return (_pointToLine)? 1.0 : 2.0;}
   Mat3 normalizer1() const override {return _N1;}
   Mat3 normalizer2() const override {return _N2;}
   double unormalizeError(double val) const override {return sqrt(val) / _N2(0,0);}
@@ -160,7 +160,7 @@ public:
   }
 
   double logalpha0() const override {return _logalpha0; }
-  double multError() const override {return 0.5;} // point to line error
+  double errorVectorDimension() const override {return 0.5;} // point to line error
   Mat3 normalizer1() const override {return _N1;}
   Mat3 normalizer2() const override {return _N2;}
   double unormalizeError(double val) const override { return val; }
@@ -208,7 +208,7 @@ public:
     }
 
     double logalpha0() const override { return _logalpha0; }
-    double multError() const override { return 1.0; }
+    double errorVectorDimension() const override { return 2.0; }
 
     Mat3 normalizer1() const { return Mat3::Identity(); }
     Mat3 normalizer2() const { return Mat3::Identity(); }

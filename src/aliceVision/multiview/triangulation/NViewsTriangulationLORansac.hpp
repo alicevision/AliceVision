@@ -186,9 +186,9 @@ public:
     return 0.0;
   }
 
-  double multError() const override
+  double errorVectorDimension() const override
   {
-    std::runtime_error("Method 'multError()' is not defined for 'NViewsTriangulationLORansac'.");
+    std::runtime_error("Method 'errorVectorDimension()' is not defined for 'NViewsTriangulationLORansac'.");
     return 0.0;
   }
 

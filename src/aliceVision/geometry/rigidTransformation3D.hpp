@@ -270,7 +270,7 @@ public:
 
     double logalpha0() const { return _logalpha0; }
 
-    double multError() const { return 1.; }
+    double errorVectorDimension() const { return 2.; }
 
     Mat3 normalizer1() const { return Mat3::Identity(); }
 
