@@ -326,7 +326,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                          xJ, imageSizeJ.first, imageSizeJ.second, true);
 
     //@fixme scorer should be using the pixel error, not the squared version, refactoring needed
-    const double normalizedThreshold = Square(m_dPrecision * kernel.normalizer2()(0, 0));
+    const double normalizedThreshold = Square(m_dPrecision * kernel.thresholdNormalizer());
     robustEstimation::ScoreEvaluator<KernelT> scorer(normalizedThreshold);
 
     robustEstimation::Mat3Model model = robustEstimation::LO_RANSAC(kernel, scorer, randomNumberGenerator, &out_inliers);

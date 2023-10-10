@@ -128,7 +128,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
         // value, the scorer should be not aware of the fact that we treat squared errors
         // and normalization inside the kernel
         // @todo refactor, maybe move scorer directly inside the kernel
-        const double threshold = resectionData.error_max * resectionData.error_max * (kernel.normalizer2()(0, 0) * kernel.normalizer2()(0, 0));
+        const double threshold = resectionData.error_max * resectionData.error_max * (kernel.thresholdNormalizer() * kernel.thresholdNormalizer());
         robustEstimation::ScoreEvaluator<KernelT> scorer(threshold);
 
         const robustEstimation::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, randomNumberGenerator, &resectionData.vec_inliers);

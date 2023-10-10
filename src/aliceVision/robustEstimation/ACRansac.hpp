@@ -159,7 +159,7 @@ std::pair<double, double> ACRANSAC(const Kernel& kernel,
 
   const double maxThreshold = (precision==std::numeric_limits<double>::infinity()) ?
     std::numeric_limits<double>::infinity() :
-    precision * precision * kernel.normalizer2()(0,0) * kernel.normalizer2()(0,0);
+    precision * precision * kernel.thresholdNormalizer() * kernel.thresholdNormalizer();
 
   std::vector<ErrorIndex> vec_residuals(nData); // [residual,index]
   std::vector<double> vec_residuals_(nData);

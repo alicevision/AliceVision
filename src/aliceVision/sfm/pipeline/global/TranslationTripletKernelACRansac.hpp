@@ -125,9 +125,9 @@ public:
     return _Kinv;
   }
 
-  Mat3 normalizer2() const override
+  double thresholdNormalizer() const override
   {
-    return Mat3::Identity();
+    return 1.0;
   }
 
   double unormalizeError(double val) const override

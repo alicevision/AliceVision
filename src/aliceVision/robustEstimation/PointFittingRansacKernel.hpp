@@ -146,7 +146,7 @@ public:
   virtual double errorVectorDimension() const = 0;
   virtual double unormalizeError(double val) const = 0;
   virtual Mat3 normalizer1() const = 0;
-  virtual Mat3 normalizer2() const = 0;
+  virtual double thresholdNormalizer() const = 0;
 
 private:
   const SolverLsT_ _solverLs{};

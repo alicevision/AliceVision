@@ -204,10 +204,10 @@ public:
     return Mat3();
   }
 
-  Mat3 normalizer2() const override
+  double thresholdNormalizer() const override
   {
-    std::runtime_error("Method 'normalizer2()' is not defined for 'NViewsTriangulationLORansac'.");
-    return Mat3();
+    std::runtime_error("Method 'thresholdNormalizer()' is not defined for 'NViewsTriangulationLORansac'.");
+    return 0.0;
   }
 
 private:

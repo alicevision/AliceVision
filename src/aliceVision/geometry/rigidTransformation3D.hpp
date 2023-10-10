@@ -274,7 +274,7 @@ public:
 
     Mat3 normalizer1() const { return Mat3::Identity(); }
 
-    Mat3 normalizer2() const { return Mat3::Identity(); }
+    double thresholdNormalizer() const { return 1.0; }
 
     double unormalizeError(double val) const { return sqrt(val); }
 
