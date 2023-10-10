@@ -136,7 +136,7 @@ bool robustEssential(Mat3& E, std::vector<size_t>& vecInliers, const Mat3& K1, c
 
     // robustly estimation of the Essential matrix and its precision
     const std::pair<double, double> acRansacOut =
-        robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vecInliers, maxIterationCount, &model, Square(4.0));
+        robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vecInliers, maxIterationCount, &model, 4.0);
 
     if(vecInliers.size() < minInliers)
     {

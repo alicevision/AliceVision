@@ -74,7 +74,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
                          xJ, viewJ.getImage().getWidth(), viewJ.getImage().getHeight(), false); // configure as point to point error model.
 
     // robustly estimate the Homography matrix with A Contrario ransac
-    const double upperBoundPrecision = Square(m_dPrecision);
+    const double upperBoundPrecision = m_dPrecision;
 
     std::vector<std::size_t> inliers;
     robustEstimation::Mat3Model model;

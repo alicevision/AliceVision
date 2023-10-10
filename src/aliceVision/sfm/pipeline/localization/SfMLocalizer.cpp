@@ -39,7 +39,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
   const double precision =
     resectionData.error_max == std::numeric_limits<double>::infinity() ?
     std::numeric_limits<double>::infinity() :
-    Square(resectionData.error_max);
+    resectionData.error_max;
 
   std::size_t minimumSamples = 0;
   const camera::Pinhole* pinholeCam = dynamic_cast<const camera::Pinhole*>(optionalIntrinsics);

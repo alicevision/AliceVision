@@ -1409,7 +1409,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     
     // Robust estimation of the relative pose
     RelativePoseInfo relativePose_info;
-    relativePose_info.initial_residual_tolerance = Square(4.0);
+    relativePose_info.initial_residual_tolerance = 4.0;
     
     const bool relativePoseSuccess = robustRelativePose(
           camI->K(), camJ->K(),

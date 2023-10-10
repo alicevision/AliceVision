@@ -229,7 +229,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
       const KernelT kernel(xI_lifted, xJ_lifted);
 
       // Robustly estimate the Fundamental matrix with A Contrario ransac
-      const double upper_bound_precision = Square(m_dPrecision);
+      const double upper_bound_precision = m_dPrecision;
 
       robustEstimation::Mat3Model model;
       const std::pair<double, double> ACRansacOut = ACRANSAC(kernel, randomNumberGenerator, out_inliers, m_stIteration, &model, upper_bound_precision);
@@ -277,7 +277,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                          xJ, imageSizeJ.first, imageSizeJ.second, true);
 
     // robustly estimate the Fundamental matrix with A Contrario ransac
-    const double upperBoundPrecision = Square(m_dPrecision);
+    const double upperBoundPrecision = m_dPrecision;
 
     ModelT_ model;
     const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, out_inliers, m_stIteration, &model, upperBoundPrecision);

@@ -95,15 +95,15 @@ inline ErrorIndex bestNFA(int startIndex, //number of point required for estimat
   {
     const double logalpha = logalpha0 +
       multError * log10(e[k - 1].first + std::numeric_limits<float>::epsilon());
-    ErrorIndex index(loge0 +
+ErrorIndex index(loge0 +
                      logalpha * (double) (k - startIndex) +
                      logc_n[k] +
                      logc_k[k], k);
-
+    
     if(index.first < bestIndex.first)
-      bestIndex = index;
-  }
-  return bestIndex;
+        bestIndex = index;
+    }
+    return bestIndex;
 }
 
 
@@ -134,7 +134,7 @@ inline ErrorIndex bestNFA(int startIndex, //number of point required for estimat
  * @param[out] vec_inliers points that fit the estimated model
  * @param[in] nIter maximum number of consecutive iterations
  * @param[out] model returned model if found
- * @param[in] precision upper bound of the precision (squared error)
+ * @param[in] precision upper bound of the precision
  *
  * @return (errorMax, minNFA)
  */
@@ -155,7 +155,7 @@ std::pair<double, double> ACRANSAC(const Kernel& kernel,
 
   const double maxThreshold = (precision==std::numeric_limits<double>::infinity()) ?
     std::numeric_limits<double>::infinity() :
-    precision * kernel.normalizer2()(0,0) * kernel.normalizer2()(0,0);
+    precision * precision * kernel.normalizer2()(0,0) * kernel.normalizer2()(0,0);
 
   std::vector<ErrorIndex> vec_residuals(nData); // [residual,index]
   std::vector<double> vec_residuals_(nData);
