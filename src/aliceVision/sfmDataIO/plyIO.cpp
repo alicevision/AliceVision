@@ -20,6 +20,13 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
     if (!(b_structure || b_extrinsics))
         return false;
 
+    bool b_binary = false;
+    {
+        auto position = filename.find(".bin.");
+        if (position != std::string::npos)
+            b_binary = true;
+    }
+
     // Create the stream and check it is ok
     std::ofstream stream(filename);
     if (!stream.is_open())
@@ -36,8 +43,9 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
                 view_with_pose_count += sfmData.isPoseAndIntrinsicDefined(view.second.get());
             }
         }
+
         stream << "ply" << '\n'
-               << "format ascii 1.0" << '\n'
+               << "format " << (b_binary ? "binary_little_endian" : "ascii") << " 1.0 " << '\n'
                << "element vertex "
                // Vertex count: (#landmark + #view_with_valid_pose)
                << ((b_structure ? sfmData.getLandmarks().size() : 0) + view_with_pose_count) << '\n'
@@ -56,8 +64,21 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
                 if (sfmData.isPoseAndIntrinsicDefined(view.second.get()))
                 {
                     const geometry::Pose3 pose = sfmData.getPose(*(view.second.get())).getTransform();
-                    stream << pose.center().transpose() << " 0 255 0"
-                           << "\n";
+
+                    if (b_binary)
+                    {
+                        auto point = pose.center().transpose();
+                        float values[3] = {point.x(), point.y(), point.z()};
+                        stream.write(reinterpret_cast<const char*>(&values), sizeof(float) * 3);
+
+                        uint8_t color[3] = {0, 255, 0};
+                        stream.write(reinterpret_cast<const char*>(&color), 3);
+                    }
+                    else
+                    {
+                        stream << pose.center().transpose() << " 0 255 0"
+                               << "\n";
+                    }
                 }
             }
         }
@@ -65,10 +86,24 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         if (b_structure)
         {
             const sfmData::Landmarks& landmarks = sfmData.getLandmarks();
+
             for (sfmData::Landmarks::const_iterator iterLandmarks = landmarks.begin(); iterLandmarks != landmarks.end(); ++iterLandmarks)
             {
-                stream << iterLandmarks->second.X.transpose() << " " << (int)iterLandmarks->second.rgb.r() << " "
-                       << (int)iterLandmarks->second.rgb.g() << " " << (int)iterLandmarks->second.rgb.b() << "\n";
+                if (b_binary)
+                {
+                    const auto& point = iterLandmarks->second.X.transpose();
+                    float values[3] = {point.x(), point.y(), point.z()};
+                    stream.write(reinterpret_cast<const char*>(&values), sizeof(float) * 3);
+
+                    const auto& rgb = iterLandmarks->second.rgb;
+                    uint8_t color[3] = {rgb.r(), rgb.g(), rgb.b()};
+                    stream.write(reinterpret_cast<const char*>(&color), sizeof(uint8_t) * 3);
+                }
+                else
+                {
+                    stream << iterLandmarks->second.X.transpose() << " " << (int)iterLandmarks->second.rgb.r() << " "
+                           << (int)iterLandmarks->second.rgb.g() << " " << (int)iterLandmarks->second.rgb.b() << "\n";
+                }
             }
         }
         stream.flush();
