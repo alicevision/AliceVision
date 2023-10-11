@@ -246,7 +246,7 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
         const aliceVision::matching::PairwiseMatches& matches = *_pairwiseMatches;
 
         ALICEVISION_LOG_DEBUG("Track building");
-        tracksBuilder.build(matches);
+        tracksBuilder.build(matches, _featuresPerView->getData());
 
         ALICEVISION_LOG_DEBUG("Track filtering");
         tracksBuilder.filter(_params.filterTrackForks, _params.minInputTrackLength);

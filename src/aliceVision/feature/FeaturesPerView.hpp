@@ -89,6 +89,8 @@ class FeaturesPerView
      */
     feature::MapFeaturesPerView& getData() { return _data; }
 
+    const feature::MapFeaturesPerView& getData() const { return _data; }
+
   private:
     /// PointFeature array per ViewId of the considered SfMData container
     MapFeaturesPerView _data;
