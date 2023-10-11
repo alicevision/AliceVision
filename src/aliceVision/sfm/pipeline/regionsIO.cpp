@@ -212,18 +212,20 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
      {
        if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
        {
-         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *(imageDescribers.at(i)));
-         if(regionsPtr)
+         std::unique_ptr<feature::Regions> regionsPtr;
+         try
          {
-#pragma omp critical
-           {
-             regionsPerView.addRegions(iter->second.get()->getViewId(), imageDescriberTypes.at(i), regionsPtr.release());
-             ++progressDisplay;
-           }
+           regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *(imageDescribers.at(i)));
          }
-         else
+         catch(const std::exception&)
          {
            invalid = true;
+           continue;
+         }
+#pragma omp critical
+         {
+           regionsPerView.addRegions(iter->second.get()->getViewId(), imageDescriberTypes.at(i), regionsPtr.release());
+           ++progressDisplay;
          }
        }
      }
@@ -268,8 +270,16 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
     {
       for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
       {
-        std::unique_ptr<feature::Regions> regionsPtr = loadFeatures(featuresFolders, iter->second.get()->getViewId(), *imageDescribers.at(i));
-
+        std::unique_ptr<feature::Regions> regionsPtr;
+        try
+        {
+          regionsPtr = loadFeatures(featuresFolders, iter->second.get()->getViewId(), *imageDescribers.at(i));
+        }
+        catch(const std::exception&)
+        {
+          invalid = true;
+          continue;
+        }
 #pragma omp critical
         {
           // save loaded Features as PointFeature
