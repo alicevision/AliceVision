@@ -61,7 +61,7 @@ struct FilterParams
         struct FilterLandmarksStep2Params
         {
             bool enabled = true;
-            int maxNbObservationsPerLandmark = 2;
+            float minScore = .3f;
             int nbNeighbors3D = 10;
         } step2;
         struct FilterLandmarksStep3Params
@@ -77,6 +77,9 @@ struct FilterParams
         int maxNbObservationsPerLandmark = 2;
         bool propagationEnabled = true;
         int nbNeighbors3D = 10;
+        bool observationsPropagationEnabled = true;
+        int observationsPropagationFrequency = 1;
+        int observationsPropagationCount = 1;
         double neighborsInfluence = 0.5;
         int nbIterations = 5;
         bool dampingEnabled = true;
@@ -97,7 +100,7 @@ std::istream& operator>>(std::istream& in, FilterParams& params)
     in >> token;
     std::vector<std::string> splitParams;
     boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
-    if(splitParams.size() != 21)
+    if(splitParams.size() != 24)
         throw std::invalid_argument("Failed to parse FilterParams from: \n" + token);
     int i = 0;
 
@@ -107,7 +110,7 @@ std::istream& operator>>(std::istream& in, FilterParams& params)
     params.filterLandmarks.step1.minNbObservationsPerLandmark = boost::lexical_cast<int>(splitParams[i++]);
 
     params.filterLandmarks.step2.enabled = boost::to_lower_copy(splitParams[i++]) == "true";
-    params.filterLandmarks.step2.maxNbObservationsPerLandmark = boost::lexical_cast<int>(splitParams[i++]);
+    params.filterLandmarks.step2.minScore = boost::lexical_cast<float>(splitParams[i++]);
     params.filterLandmarks.step2.nbNeighbors3D = boost::lexical_cast<int>(splitParams[i++]);
 
     params.filterLandmarks.step3.enabled = boost::to_lower_copy(splitParams[i++]) == "true";
@@ -118,6 +121,9 @@ std::istream& operator>>(std::istream& in, FilterParams& params)
     params.filterObservations3D.maxNbObservationsPerLandmark = boost::lexical_cast<int>(splitParams[i++]);
     params.filterObservations3D.propagationEnabled = boost::to_lower_copy(splitParams[i++]) == "true";
     params.filterObservations3D.nbNeighbors3D = boost::lexical_cast<int>(splitParams[i++]);
+    params.filterObservations3D.observationsPropagationEnabled = boost::to_lower_copy(splitParams[i++]) == "true";
+    params.filterObservations3D.observationsPropagationFrequency = boost::lexical_cast<int>(splitParams[i++]);
+    params.filterObservations3D.observationsPropagationCount = boost::lexical_cast<int>(splitParams[i++]);
     params.filterObservations3D.neighborsInfluence = boost::lexical_cast<double>(splitParams[i++]);
     params.filterObservations3D.nbIterations = boost::lexical_cast<int>(splitParams[i++]);
     params.filterObservations3D.dampingEnabled = boost::to_lower_copy(splitParams[i++]) == "true";
@@ -436,40 +442,24 @@ void filterLandmarks_step2(SfMData& sfmData,
 #pragma omp parallel for reduction(+ : nbToRemove)
     for(auto i = 0; i < landmarksData.size(); i++)
     {
-        int score = 0;
+        float score = 0.f;
         auto& [viewIds, neighbors] = viewData[i];
         for(auto j = 0; j < neighbors.size(); j++)
         {
             int scoreNeighbor = 0;
             const auto& neighborId = neighbors[j];
             const auto& viewIds_neighbor = viewData[neighborId].first;
-            // loop over common views
-            auto viewIds_it = viewIds.begin();
-            auto viewIds_neighbor_it = viewIds_neighbor.begin();
-            while(viewIds_it != viewIds.end() && viewIds_neighbor_it != viewIds_neighbor.end())
-            {
-                if(*viewIds_it < *viewIds_neighbor_it)
-                {
-                    ++viewIds_it;
-                }
-                else
-                {
-                    // if same view
-                    if(!(*viewIds_neighbor_it < *viewIds_it))
-                    {
-                        scoreNeighbor++;
-                        if(scoreNeighbor == params.maxNbObservationsPerLandmark)
-                        {
-                            score++;
-                            break;
-                        }
-                        ++viewIds_it;
-                    }
-                    ++viewIds_neighbor_it;
-                }
-            }
+
+            std::vector<IndexT> viewIds_intersection;
+            std::set_intersection(viewIds.begin(), viewIds.end(), viewIds_neighbor.begin(), viewIds_neighbor.end(),
+                                  std::back_inserter(viewIds_intersection));
+            float nbIntersection = static_cast<float>(viewIds_intersection.size());
+            // Jaccard index or Intersection over Union (IoU): #overlap / #union
+            score += nbIntersection / ((viewIds.size() + viewIds_neighbor.size()) - nbIntersection);
         }
-        if(score < params.nbNeighbors3D / 2)
+        //score /= neighbors.size();
+        score /= params.nbNeighbors3D;
+        if(score < params.minScore)
         {
             toRemove[i] = true;
             nbToRemove++;
@@ -686,10 +676,10 @@ void computeNeighborsInfo(std::vector<Landmark*>& landmarksData, const FilterPar
     ALICEVISION_LOG_INFO("Computing landmark neighbors and distance-based weights: done");
 }
 
-void augmentInitialObservations(std::vector<std::pair<std::vector<IndexT>, std::vector<double>>>& viewScoresData,
+void propagateNeighborsObservations(std::vector<std::pair<std::vector<IndexT>, std::vector<double>>>& viewScoresData,
                                      std::vector<std::pair<std::vector<size_t>, std::vector<double>>>& neighborsData)
 {
-    ALICEVISION_LOG_INFO("Augment initial observations based on neighbors observations: started");
+    ALICEVISION_LOG_INFO("Augment observations with neighbors observations: started");
     std::vector<std::vector<IndexT>> viewScoresData_t(viewScoresData.size());
     // for each landmark, identify the new observations coming from its neighborhood
 #pragma omp parallel for
@@ -712,12 +702,14 @@ void augmentInitialObservations(std::vector<std::pair<std::vector<IndexT>, std::
                             std::back_inserter(viewIds_toAdd));
         viewIds_t = std::move(viewIds_toAdd);
     }
+    double nbAdded = 0;
     // for each landmark, add the previously identified observations
-    #pragma omp parallel for
+#pragma omp parallel for reduction(+ : nbAdded)
     for(int id = 0; id < viewScoresData.size(); id++)
     {
         auto& [viewIds, viewScores] = viewScoresData[id];
         const auto& viewIds_toAdd = viewScoresData_t[id];
+        nbAdded += static_cast<double>(viewIds_toAdd.size()) / viewIds.size();
         viewIds.insert(viewIds.end(), viewIds_toAdd.begin(), viewIds_toAdd.end());
         viewScores.insert(viewScores.end(), viewIds_toAdd.size(), 0.);
 
@@ -737,21 +729,24 @@ void augmentInitialObservations(std::vector<std::pair<std::vector<IndexT>, std::
             viewScores[j] = scores_temp[idx[j]];
         }
     }
-    ALICEVISION_LOG_INFO("Augment initial observations based on neighbors observations: done");
+    ALICEVISION_LOG_INFO(
+        "On average, observations per landmark are augmented by: " << nbAdded * 100. / viewScoresData.size() << " %.");
+    ALICEVISION_LOG_INFO("Augment observations with neighbors observations: done");
 }
 
-void computeNewScores(const std::vector<Landmark*>& landmarksData,
+void propagateNeighborsScores(const std::vector<Landmark*>& landmarksData,
                       const FilterParams::FilterObservations3DParams& params,
                       const std::vector<std::pair<std::vector<size_t>, std::vector<double>>>& neighborsData,
                       const std::vector<std::pair<std::vector<IndexT>, std::vector<double>>>& viewScoresData,
                       std::vector<std::vector<double>>& viewScoresData_t)
 {
+    ALICEVISION_LOG_INFO("Propagating neighbors observation scores: started");
 #pragma omp parallel for
     for(auto id = 0; id < landmarksData.size(); id++)
     {
         const auto& [viewIds, viewScores] = viewScoresData[id];
         auto& viewScores_acc = viewScoresData_t[id];
-        // initialize to zero, will first contain the weighted average scores of neighbors
+        // initialize to zero, will contain the weighted average scores of neighbors
         viewScores_acc.assign(viewScores.size(), 0.);
         // accumulator for normalisation
         double viewScores_total = 0.;
@@ -789,19 +784,16 @@ void computeNewScores(const std::vector<Landmark*>& landmarksData,
                 }
             }
         }
-        // if common views with neighbor landmarks
-        //if(viewScores_total != 0.)
         for(auto j = 0; j < viewScores_acc.size(); j++)
         {
-            // normalize score and apply influence factor
-            //viewScores_acc[j] *= params.neighborsInfluence / viewScores_total;
+            // apply influence factor
             viewScores_acc[j] *= params.neighborsInfluence;
             // combine weighted neighbor scores and the landmark's own scores
             viewScores_acc[j] += (1 - params.neighborsInfluence) * viewScores[j];
         }
 
         // dampen scores of non-chosen observations
-        if(params.dampingEnabled && viewScores_acc.size() <= params.maxNbObservationsPerLandmark)
+        if(params.dampingEnabled && viewScores_acc.size() > params.maxNbObservationsPerLandmark)
         {
             // sort by descending view score order
             std::vector<size_t> idx(viewScores_acc.size());
@@ -820,6 +812,7 @@ void computeNewScores(const std::vector<Landmark*>& landmarksData,
                 viewScores_acc[j] /= viewScores_total;
         }
     }
+    ALICEVISION_LOG_INFO("Propagating neighbors observation scores: done");
 }
 
 void propagateNeighborsInfo(std::vector<Landmark*>& landmarksData,
@@ -827,12 +820,19 @@ void propagateNeighborsInfo(std::vector<Landmark*>& landmarksData,
                             std::vector<std::pair<std::vector<size_t>, std::vector<double>>>& neighborsData,
                             std::vector<std::pair<std::vector<IndexT>, std::vector<double>>>& viewScoresData)
 {
-    ALICEVISION_LOG_INFO("Propagating neighbors observation scores: started");
     // new view scores at iteration t
     std::vector<std::vector<double>> viewScoresData_t(landmarksData.size());
+    int observationsPropagationCount =
+        params.observationsPropagationCount == 0 ? params.nbIterations : params.observationsPropagationCount;
     for(auto i = 0; i < params.nbIterations; i++)
     {
-        computeNewScores(landmarksData, params, neighborsData, viewScoresData, viewScoresData_t);
+        if(params.observationsPropagationEnabled && (i % params.observationsPropagationFrequency == 0) &&
+           observationsPropagationCount > 0)
+        {
+            propagateNeighborsObservations(viewScoresData, neighborsData);
+            --observationsPropagationCount;
+        }
+        propagateNeighborsScores(landmarksData, params, neighborsData, viewScoresData, viewScoresData_t);
 
         // Mean Squared Error
         double error = 0.;
@@ -858,7 +858,6 @@ void propagateNeighborsInfo(std::vector<Landmark*>& landmarksData,
         error /= landmarksData.size();
         ALICEVISION_LOG_INFO("MSE at iteration " << i << ": " << error);
     }
-    ALICEVISION_LOG_INFO("Propagating neighbors observation scores: done");
 }
 
 void removeNonObservedLandmarks(SfMData& sfmData)
@@ -901,7 +900,6 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
         // contains the neighbor landmarks ids with their corresponding weights
         std::vector<std::pair<std::vector<size_t>, std::vector<double>>> neighborsData(landmarksData.size());
         computeNeighborsInfo(landmarksData, params, neighborsData);
-        augmentInitialObservations(viewScoresData, neighborsData);
         propagateNeighborsInfo(landmarksData, params, neighborsData, viewScoresData);
     }
 
@@ -913,10 +911,6 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
         auto& [viewIds, viewScores] = viewScoresData[i];
         const auto& nbObservations = viewIds.size();
 
-        //// check number of observations
-        //if(landmark.observations.size() <= params.maxNbObservationsPerLandmark)
-        //    continue;
-
         // sort by descending view score order
         std::vector<size_t> idx(nbObservations);
         std::iota(idx.begin(), idx.end(), 0);
@@ -924,13 +918,10 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
 
         // keep only observations with best scores
         Observations filteredObservations;
-        //double threshold = 0.1 / params.maxNbObservationsPerLandmark;
-        for(auto j = 0; j < params.maxNbObservationsPerLandmark; j++)
+        size_t maxNbObservationsPerLandmark =
+            std::min(static_cast<size_t>(params.maxNbObservationsPerLandmark), landmark.observations.size());
+        for(auto j = 0; j < maxNbObservationsPerLandmark; j++)
         {
-            //const auto& viewScore = viewScores[idx[j]];
-            /*if(viewScore < threshold)
-                break;*/
-
             // add observation only if it's an original observation and not augmented
             const auto& viewId = viewIds[idx[j]];
             const auto& obsIt = landmark.observations.find(viewId);
@@ -954,7 +945,7 @@ double filter2DView(SfMData& sfmData, const FilterParams::FilterObservations2DPa
     KdTree2D tree(2, data, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     tree.buildIndex();
 
-    size_t nbNeighbors_ = params.nbNeighbors2D;
+    int nbNeighbors_ = params.nbNeighbors2D;
     // average neighbors distance for each observation
     std::vector<double> means(observations.size(), std::numeric_limits<double>::max());
     const std::size_t cacheSize = 1000;
@@ -1106,7 +1097,7 @@ int aliceVision_main(int argc, char *argv[])
             "   * Min Nb of Observations: Minimum number of observations required to keep a landmark.\n"
             " * Step 2 parameters:\n"
             "   * Enabled: Remove landmarks with dissimilar observations of 3D landmark neighbors.\n"
-            "   * Max Nb of Observations: Maximum number of allowed observations per landmark.\n"
+            "   * Min Score: Minimum similarity score between the observations of the landmark and of its neighbors.\n"
             "   * Nb of Neighbors in 3D: Number of neighbor landmarks used in making the decision for best observations.\n"
             " * Step 3 parameters:\n"
             "   * Enabled: Remove landmarks with worse resolution than neighbors.\n"
@@ -1116,8 +1107,11 @@ int aliceVision_main(int argc, char *argv[])
             "Filter Observations 3D parameters:\n"
             " * Enabled: Select best observations for observation consistency between 3D neighboring landmarks.\n"
             " * Max Nb of Observations: Maximum number of allowed observations per landmark.\n"
-            " * Enable Neighbors Influence: nable propagating neighbors' scores iteratively.\n"
+            " * Enable Neighbors Influence: Enable propagating neighbors' info (scores, observations) iteratively.\n"
             "   * Nb of Neighbors in 3D: Number of neighbor landmarks used in making the decision for best observations.\n"
+            "   * Enable Propagating Observations: Propagate neighbors observations before propagating the scores.\n"
+            "     * Frequency: Specifies every how many iterations should the observations be propagated.\n"
+            "     * Count: Maximum number of times the observations are propagated (0 for no limit).\n"
             "   * Neighbors Influence: Specifies how much influential the neighbors are in selecting the best observations.\n"
             "     Between 0. and 1., the closer to 1., the more influencial the neighborhood is.\n"
             "   * Nb of Iterations: Number of iterations to propagate neighbors information.\n"
