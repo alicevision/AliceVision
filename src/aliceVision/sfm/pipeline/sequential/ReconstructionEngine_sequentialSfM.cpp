@@ -1522,8 +1522,6 @@ std::size_t ReconstructionEngine_sequentialSfM::computeCandidateImageScore(Index
  */
 bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, ResectionData& resectionData)
 {
-  using namespace track;
-
   // A. Compute 2D/3D matches
   // A1. list tracks ids used by the view
   const aliceVision::track::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewId);
@@ -1560,7 +1558,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   resectionData.vec_descType.resize(resectionData.tracksId.size());
   
   // B. Look if intrinsic data is known or not
-  const View * view_I = _sfmData.getViews().at(viewId).get();
+  std::shared_ptr<View> view_I = _sfmData.getViews().at(viewId);
   std::shared_ptr<camera::IntrinsicBase> intrinsics = _sfmData.getIntrinsicsharedPtr(view_I->getIntrinsicId());
   if(intrinsics == nullptr)
     {
@@ -1569,7 +1567,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
-  for (std::vector<FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
+  for (std::vector<track::FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
        iterfeatId != resectionData.featuresId.end();
        ++iterfeatId, ++iterTrackId, ++cpt)
   {
