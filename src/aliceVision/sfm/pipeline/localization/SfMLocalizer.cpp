@@ -144,13 +144,6 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
 
   const bool resection = matching::hasStrongSupport(resectionData.vec_inliers, resectionData.vec_descType, minimumSamples);
 
-  if(!resection)
-  {
-    ALICEVISION_LOG_DEBUG("Resection status is false:\n"
-                          "\t- resection_data.vec_inliers.size() = " << resectionData.vec_inliers.size() << "\n"
-                          "\t- minimumSamples = " << minimumSamples);
-  }
-
   if(resection)
   {
     resectionData.projection_matrix = P;
@@ -160,7 +153,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
 
-  ALICEVISION_LOG_INFO("Robust Resection information:\n"
+  ALICEVISION_LOG_TRACE("Robust Resection information:\n"
     "\t- resection status: " << resection << "\n"
     "\t- threshold (error max): " << resectionData.error_max << "\n"
     "\t- # points used for resection: " << resectionData.pt2D.cols() << "\n"

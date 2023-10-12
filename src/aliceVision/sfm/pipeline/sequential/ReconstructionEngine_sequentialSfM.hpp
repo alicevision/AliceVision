@@ -243,8 +243,6 @@ private:
     std::vector<track::FeatureId> featuresId;
     /// pose estimated by the resection
     geometry::Pose3 pose;
-    /// the instrinsic already exists in the scene or not.
-    bool isNewIntrinsic;
   };
 
   /**
