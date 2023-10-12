@@ -10,7 +10,7 @@ option(AV_USE_OPENMP "Enable OpenMP" $<$<CXX_COMPILER_ID:"AppleClang">,OFF,ON>) 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
 endif()
 
 # set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type for AliceVision")
@@ -58,7 +58,7 @@ endif()
 # Enable cmake UNIT TEST framework
 # ==============================================================================
 if(ALICEVISION_BUILD_TESTS)
-  enable_testing()
+    enable_testing()
 endif()
 
 
@@ -89,7 +89,7 @@ endif()
 # Include VCPKG installed dir for runtime dependencies lookup
 set(BUNDLE_LIBS_PATHS "")
 if(_VCPKG_INSTALLED_DIR)
-  set(BUNDLE_LIBS_PATHS ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin)
+    set(BUNDLE_LIBS_PATHS ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin)
 endif()
 
 add_custom_target(bundle

@@ -132,5 +132,4 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 
 RUN cmake --build . -j ${CPU_CORES} && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
-    rm -rf "${AV_BUILD}" 
-
+    rm -rf "${AV_BUILD}"

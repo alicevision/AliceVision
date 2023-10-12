@@ -61,6 +61,7 @@ COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
 RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh` && echo "Build multithreading number of cores: ${CPU_CORES}"
 
 COPY CMakeLists.txt ${AV_DEV}/
+COPY src/cmake/Dependencies.cmake ${AV_DEV}/src/cmake/
 
 COPY dl/deps ${AV_BUILD}/external/download/
 
@@ -104,4 +105,3 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 RUN cmake --build . -j ${CPU_CORES} && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
     rm -rf "${AV_BUILD}"
-
