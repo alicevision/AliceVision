@@ -150,8 +150,7 @@ void mergeTracks(const feature::MapFeaturesPerView& featuresPerView,
     //    map of (descType) to
     //        map of DuplicateFeatureId(x, y, scale) to
     //            pair of (set<featureId>, node)
-    HashMap<size_t,
-            HashMap<feature::EImageDescriberType, HashMap<DuplicateFeatureId, std::pair<std::set<size_t>, const MapIndexToNode::mapped_type*>>>>
+    HashMap<size_t, HashMap<feature::EImageDescriberType, HashMap<DuplicateFeatureId, std::pair<std::set<size_t>, MapIndexToNode::mapped_type>>>>
       duplicateFeaturesPerView;
 
     // per viewId pair
@@ -182,38 +181,42 @@ void mergeTracks(const feature::MapFeaturesPerView& featuresPerView,
             {
                 {
                     auto& featureI = featuresI[m._i];
-                    auto& [duplicateFeatureIdsI, duplicateFeatureNodeI] =
-                      duplicateFeaturesI[DuplicateFeatureId(featureI.x(), featureI.y(), featureI.scale())];
                     IndexedFeaturePair pairI(I, KeypointId(descType, m._i));
                     auto& nodeI = map_indexToNode.at(pairI);
+                    DuplicateFeatureId duplicateIdI(featureI.x(), featureI.y(), featureI.scale());
+                    const auto& duplicateFeaturesI_it = duplicateFeaturesI.find(duplicateIdI);
                     // if no duplicates yet found, add to map and update values
-                    if (duplicateFeatureNodeI == nullptr)
+                    if (duplicateFeaturesI_it == duplicateFeaturesI.end())
+                        duplicateFeaturesI[duplicateIdI] = std::make_pair(std::set<size_t>({m._i}), nodeI);
+                    else
                     {
-                        duplicateFeatureIdsI.insert(m._i);
-                        duplicateFeatureNodeI = &nodeI;
-                    }
-                    // if not already in corresponding duplicates set, add to set and join nodes
-                    else if (duplicateFeatureIdsI.insert(m._i).second)
-                    {
-                        _d->tracksUF->join(nodeI, *duplicateFeatureNodeI);
+                        auto& duplicateFeatureIdsI = duplicateFeaturesI_it->second.first;
+                        auto& duplicateFeatureNodeI = duplicateFeaturesI_it->second.second;
+                        // if not already in corresponding duplicates set, add to set and join nodes
+                        if (duplicateFeatureIdsI.insert(m._i).second)
+                        {
+                            _d->tracksUF->join(nodeI, duplicateFeatureNodeI);
+                        }
                     }
                 }
                 {
                     auto& featureJ = featuresJ[m._j];
-                    auto& [duplicateFeatureIdsJ, duplicateFeatureNodeJ] =
-                      duplicateFeaturesJ[DuplicateFeatureId(featureJ.x(), featureJ.y(), featureJ.scale())];
                     IndexedFeaturePair pairJ(J, KeypointId(descType, m._j));
                     auto& nodeJ = map_indexToNode.at(pairJ);
+                    DuplicateFeatureId duplicateIdJ(featureJ.x(), featureJ.y(), featureJ.scale());
+                    const auto& duplicateFeaturesJ_it = duplicateFeaturesJ.find(duplicateIdJ);
                     // if no duplicates yet found, add to map and update values
-                    if (duplicateFeatureNodeJ == nullptr)
+                    if (duplicateFeaturesJ_it == duplicateFeaturesJ.end())
+                        duplicateFeaturesJ[duplicateIdJ] = std::make_pair(std::set<size_t>({m._j}), nodeJ);
+                    else
                     {
-                        duplicateFeatureIdsJ.insert(m._j);
-                        duplicateFeatureNodeJ = &nodeJ;
-                    }
-                    // if not already in corresponding duplicates set, add to set and join nodes
-                    else if (duplicateFeatureIdsJ.insert(m._j).second)
-                    {
-                        _d->tracksUF->join(nodeJ, *duplicateFeatureNodeJ);
+                        auto& duplicateFeatureIdsJ = duplicateFeaturesJ_it->second.first;
+                        auto& duplicateFeatureNodeJ = duplicateFeaturesJ_it->second.second;
+                        // if not already in corresponding duplicates set, add to set and join nodes
+                        if (duplicateFeatureIdsJ.insert(m._j).second)
+                        {
+                            _d->tracksUF->join(nodeJ, duplicateFeatureNodeJ);
+                        }
                     }
                 }
             }
