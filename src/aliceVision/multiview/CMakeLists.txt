@@ -5,7 +5,6 @@ set(multiview_files_headers
   epipolarEquation.hpp
   knownRotationTranslationKernel.hpp
   Unnormalizer.hpp
-  AngularRadianErrorKernel.hpp
   RelativePoseKernel.hpp
   ResectionKernel.hpp
   relativePose/Essential5PSolver.hpp

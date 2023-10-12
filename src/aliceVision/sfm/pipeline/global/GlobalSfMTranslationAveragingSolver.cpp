@@ -675,8 +675,9 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   const size_t ORSA_ITER = 320;  // max number of iterations of AC-RANSAC
 
   TrifocalTensorModel T;
+  //Note by Fabien Servant : sqrt() as it should have been Squared before ... Trying to keep the same values
   const std::pair<double,double> acStat =
-    robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vec_inliers, ORSA_ITER, &T, precision/min_focal);
+    robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vec_inliers, ORSA_ITER, &T, sqrt(precision/min_focal));
   // If robust estimation fails => stop.
   if (precision == std::numeric_limits<double>::infinity())
     return false;

@@ -87,22 +87,26 @@ inline ErrorIndex bestNFA(int startIndex, //number of point required for estimat
                           double maxThreshold,
                           const std::vector<float> &logc_n,
                           const std::vector<float> &logc_k,
-                          double multError = 1.0)
+                          double errorVectorDimension = 1.0)
 {
   ErrorIndex bestIndex(std::numeric_limits<double>::infinity(), startIndex);
   const size_t n = e.size();
+
   for(size_t k = startIndex + 1; k <= n && e[k - 1].first <= maxThreshold; ++k)
   {
-    const double logalpha = logalpha0 +
-      multError * log10(e[k - 1].first + std::numeric_limits<float>::epsilon());
-    ErrorIndex index(loge0 +
-                     logalpha * (double) (k - startIndex) +
-                     logc_n[k] +
-                     logc_k[k], k);
+    double squaredResidual = e[k - 1].first;
+    double residual = sqrt(squaredResidual) + std::numeric_limits<float>::epsilon();
 
-    if(index.first < bestIndex.first)
-      bestIndex = index;
+    const double logalpha = logalpha0 + errorVectorDimension * log10(residual);
+    const double nfa = loge0 + logalpha * (double) (k - startIndex) + logc_n[k] + logc_k[k];
+    
+    
+    if(nfa < bestIndex.first)
+    {
+        bestIndex = ErrorIndex(nfa, k);
+    }
   }
+
   return bestIndex;
 }
 
@@ -134,7 +138,7 @@ inline ErrorIndex bestNFA(int startIndex, //number of point required for estimat
  * @param[out] vec_inliers points that fit the estimated model
  * @param[in] nIter maximum number of consecutive iterations
  * @param[out] model returned model if found
- * @param[in] precision upper bound of the precision (squared error)
+ * @param[in] precision upper bound of the precision
  *
  * @return (errorMax, minNFA)
  */
@@ -155,7 +159,7 @@ std::pair<double, double> ACRANSAC(const Kernel& kernel,
 
   const double maxThreshold = (precision==std::numeric_limits<double>::infinity()) ?
     std::numeric_limits<double>::infinity() :
-    precision * kernel.normalizer2()(0,0) * kernel.normalizer2()(0,0);
+    precision * precision * kernel.thresholdNormalizer() * kernel.thresholdNormalizer();
 
   std::vector<ErrorIndex> vec_residuals(nData); // [residual,index]
   std::vector<double> vec_residuals_(nData);
@@ -227,7 +231,7 @@ std::pair<double, double> ACRANSAC(const Kernel& kernel,
           maxThreshold,
           vec_logc_n,
           vec_logc_k,
-          kernel.multError());
+          kernel.errorVectorDimension());
 
         if (best.first < minNFA /*&& vec_residuals[best.second-1].first < errorMax*/)
         {

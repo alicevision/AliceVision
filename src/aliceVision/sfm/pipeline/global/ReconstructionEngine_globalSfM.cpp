@@ -524,9 +524,10 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
 
       RelativePoseInfo relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
-      relativePose_info.initial_residual_tolerance = std::sqrt(
+      // Note by Fabien Servant : double sqrt as before it was considered to be squared ...
+      relativePose_info.initial_residual_tolerance = std::sqrt(std::sqrt(
         cam_I->imagePlaneToCameraPlaneError(2.5) *
-        cam_J->imagePlaneToCameraPlaneError(2.5));
+        cam_J->imagePlaneToCameraPlaneError(2.5)));
 
       // Since we use normalized features, we will use unit image size and intrinsic matrix:
       const std::pair<size_t, size_t> imageSize(1., 1.);

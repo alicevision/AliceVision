@@ -1409,7 +1409,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     
     // Robust estimation of the relative pose
     RelativePoseInfo relativePose_info;
-    relativePose_info.initial_residual_tolerance = Square(4.0);
+    relativePose_info.initial_residual_tolerance = 4.0;
     
     const bool relativePoseSuccess = robustRelativePose(
           camI->K(), camJ->K(),
@@ -1522,8 +1522,6 @@ std::size_t ReconstructionEngine_sequentialSfM::computeCandidateImageScore(Index
  */
 bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, ResectionData& resectionData)
 {
-  using namespace track;
-
   // A. Compute 2D/3D matches
   // A1. list tracks ids used by the view
   const aliceVision::track::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewId);
@@ -1560,12 +1558,16 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   resectionData.vec_descType.resize(resectionData.tracksId.size());
   
   // B. Look if intrinsic data is known or not
-  const View * view_I = _sfmData.getViews().at(viewId).get();
-  resectionData.optionalIntrinsic = _sfmData.getIntrinsicsharedPtr(view_I->getIntrinsicId());
+  std::shared_ptr<View> view_I = _sfmData.getViews().at(viewId);
+  std::shared_ptr<camera::IntrinsicBase> intrinsics = _sfmData.getIntrinsicsharedPtr(view_I->getIntrinsicId());
+  if(intrinsics == nullptr)
+    {
+        throw std::runtime_error("Intrinsic " + std::to_string(view_I->getIntrinsicId()) + " is not initialized, all intrinsics should be initialized" );
+    }
   
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
-  for (std::vector<FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
+  for (std::vector<track::FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
        iterfeatId != resectionData.featuresId.end();
        ++iterfeatId, ++iterTrackId, ++cpt)
   {
@@ -1580,7 +1582,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
 
   const bool bResection = sfm::SfMLocalizer::Localize(
       Pair(view_I->getImage().getWidth(), view_I->getImage().getHeight()),
-      resectionData.optionalIntrinsic.get(),
+      intrinsics.get(),
       _randomNumberGenerator,
       resectionData,
       resectionData.pose, 
@@ -1616,40 +1618,16 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   // D. Refine the pose of the found camera.
   // We use a local scene with only the 3D points and the new camera.
   {
-    if(resectionData.optionalIntrinsic.get() == nullptr)
-      throw std::runtime_error("Intrinsic " + std::to_string(view_I->getIntrinsicId()) + " is not initialized, all intrinsics should be initialized" );
-
-    camera::Pinhole * pinhole_cam = dynamic_cast<camera::Pinhole *>(resectionData.optionalIntrinsic.get());
-    if(pinhole_cam == nullptr)
-      throw std::runtime_error("Intrinsic " + std::to_string(view_I->getIntrinsicId()) + " is not a Pinhole camera. This is not supported in the incremental pipeline." );
-
-    resectionData.isNewIntrinsic = !pinhole_cam->isValid();
-    // A valid pose has been found (try to refine it):
-    // If no valid intrinsic as input:
-    //  init a new one from the projection matrix decomposition
-    // Else use the existing one and consider it as constant.
-    if(resectionData.isNewIntrinsic)
-    {
-      // setup a default camera model from the found projection matrix
-      Mat3 K, R;
-      Vec3 t;
-      KRt_from_P(resectionData.projection_matrix, K, R, t);
-      
-      const double focalX = K(0,0);
-      const double focalY = K(1,1);
-      const Vec2 principal_point(K(0,2), K(1,2));
-      
-      // Fill the uninitialized camera intrinsic group
-      pinhole_cam->setK(focalX, focalY, principal_point(0), principal_point(1));
-    }
-
     const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();
     // If we use a camera intrinsic for the first time we need to refine it.
     const bool intrinsicsFirstUsage = (reconstructedIntrinsics.count(view_I->getIntrinsicId()) == 0);
 
     if(!sfm::SfMLocalizer::RefinePose(
-      resectionData.optionalIntrinsic.get(), resectionData.pose,
-      resectionData, true, resectionData.isNewIntrinsic || intrinsicsFirstUsage))
+      intrinsics.get(), 
+      resectionData.pose,
+      resectionData, 
+      true, 
+      intrinsicsFirstUsage))
     {
       ALICEVISION_LOG_INFO("Resection of view " << viewId << " failed during pose refinement.");
       return false;
@@ -1668,6 +1646,8 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
   const View& view = *_sfmData.getViews().at(viewIndex);
   _sfmData.setPose(view, CameraPose(resectionData.pose));
 
+  std::shared_ptr<camera::IntrinsicBase> intrinsics = _sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+
   // B. Update the observations into the global scene structure
   // - Add the new 2D observations to the reconstructed tracks
   std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
@@ -1675,7 +1655,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
   {
     const Vec3 X = resectionData.pt3D.col(i);
     const Vec2 x = resectionData.pt2D.col(i);
-    const Vec2 residual = resectionData.optionalIntrinsic->residual(resectionData.pose, X.homogeneous(), x);
+    const Vec2 residual = intrinsics->residual(resectionData.pose, X.homogeneous(), x);
     if (residual.norm() < resectionData.error_max &&
         resectionData.pose.depth(X) > 0)
     {

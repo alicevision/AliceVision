@@ -264,20 +264,6 @@ if(ALICEVISION_BUILD_SFM)
               Boost::timer
     )
 
-    # SfM localization
-    alicevision_add_software(aliceVision_sfmLocalization
-        SOURCE main_sfmLocalization.cpp
-        FOLDER ${FOLDER_SOFTWARE_UTILS}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_sfm
-              aliceVision_sfmData
-              aliceVision_sfmDataIO
-              Boost::program_options
-              Boost::filesystem
-    )
-
     # Keyframe selection
     # - export keyframes from video files / image sequence directories
     if(ALICEVISION_HAVE_OPENCV)
