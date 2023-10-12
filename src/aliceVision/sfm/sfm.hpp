@@ -29,5 +29,3 @@
 #include <aliceVision/sfm/pipeline/sequential/ReconstructionEngine_sequentialSfM.hpp>
 #include <aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
-#include <aliceVision/sfm/pipeline/localization/SfMLocalizationSingle3DTrackObservationDatabase.hpp>
-
