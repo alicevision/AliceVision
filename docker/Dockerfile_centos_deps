@@ -87,6 +87,7 @@ RUN tar zxf /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
     make install
 
 COPY CMakeLists.txt ${AV_DEV}/
+COPY src/cmake/Dependencies.cmake ${AV_DEV}/src/cmake/
 
 COPY dl/deps ${AV_BUILD}/external/download/
 
@@ -132,4 +133,3 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 RUN cmake --build . -j ${CPU_CORES} && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
     rm -rf "${AV_BUILD}"
-
