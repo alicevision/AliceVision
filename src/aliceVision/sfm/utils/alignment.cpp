@@ -608,7 +608,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
     Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();    
 
-    if (unicity < 10.0)
+    if (std::abs(unicity) < 10.0)
     {
         ALICEVISION_LOG_DEBUG("Algorithm did not find a clear axis. Align with raw Y.");
         nullestSpace = meanRy;
