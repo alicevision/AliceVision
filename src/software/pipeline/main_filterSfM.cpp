@@ -803,9 +803,9 @@ void propagateNeighborsScores(const std::vector<Landmark*>& landmarksData,
             viewScores_total = 1.;
             for(auto j = params.maxNbObservationsPerLandmark; j < viewScores_acc.size(); j++)
             {
-                const double& v = params.dampingFactor * viewScores_acc[j];
-                viewScores_total += v - viewScores_acc[j];
-                viewScores_acc[j] = v;
+                const double& v = params.dampingFactor * viewScores_acc[idx[j]];
+                viewScores_total += v - viewScores_acc[idx[j]];
+                viewScores_acc[idx[j]] = v;
             }
             // re-normalize
             for(auto j = 0; j < viewScores_acc.size(); j++)
