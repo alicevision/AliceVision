@@ -919,6 +919,7 @@ int aliceVision_main(int argc, char * argv[])
     std::vector<std::string> metadataFolders;
     std::string outputPath;
     EImageFormat outputFormat = EImageFormat::RGBA;
+    image::EImageColorSpace inputColorSpace = image::EImageColorSpace::AUTO;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::LINEAR;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
@@ -1036,6 +1037,9 @@ int aliceVision_main(int argc, char * argv[])
             " * HColor: Parameter regulating filter strength for color images only. Normally same as Filtering Parameter H. Not necessary for grayscale images\n "
             " * templateWindowSize: Size in pixels of the template patch that is used to compute weights. Should be odd. \n"
             " * searchWindowSize:Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time.")
+
+        ("inputColorSpace", po::value<image::EImageColorSpace>(&inputColorSpace)->default_value(inputColorSpace),
+         ("Input image color space: " + image::EImageColorSpace_informations()).c_str())
 
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
@@ -1254,6 +1258,10 @@ int aliceVision_main(int argc, char * argv[])
                 options.correlatedColorTemperature = correlatedColorTemperature;
                 pParams.correlatedColorTemperature = correlatedColorTemperature;
                 pParams.enableColorTempProcessing = options.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
+            }
+            else
+            {
+                options.inputColorSpace = inputColorSpace;
             }
 
             if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
@@ -1683,6 +1691,10 @@ int aliceVision_main(int argc, char * argv[])
                 {
                     workingColorSpace = image::EImageColorSpace::ACES2065_1;
                 }
+            }
+            else
+            {
+                readOptions.inputColorSpace = inputColorSpace;
             }
 
             readOptions.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;

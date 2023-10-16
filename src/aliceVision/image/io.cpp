@@ -738,9 +738,15 @@ void readImage(const std::string& path,
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
-    std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ? "aces2065-1" :
-                                       (isRawImage ? "linear" :
-                                        inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB")));
+    const std::string colorSpaceFromMetadata = inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"));
+
+    std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+                ? "aces2065-1"
+                : (isRawImage
+                   ? "linear"
+                   : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
+                      ? colorSpaceFromMetadata
+                      : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
 
