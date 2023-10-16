@@ -926,13 +926,17 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
         {
             // add observation only if it's an original observation and not augmented
             const auto& viewId = viewIds[idx[j]];
-            if(params.observationsPropagationKeep)
-                filteredObservations[viewId] = landmark.observations[viewId];
-            else
+            const auto& obsIt = landmark.observations.find(viewId);
+            if(obsIt != landmark.observations.end())
+                filteredObservations[viewId] = obsIt->second;
+            else if (params.observationsPropagationKeep)
             {
-                const auto& obsIt = landmark.observations.find(viewId);
-                if(obsIt != landmark.observations.end())
-                    filteredObservations[viewId] = landmark.observations[viewId];
+                // project landmark in view to find observation coords
+                const sfmData::View* view = sfmData.getViews().at(viewId).get();
+                const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
+                const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
+                const Vec2& x = intrinsic->project(pose, landmark.X.homogeneous());
+                filteredObservations[viewId] = Observation(x, UndefinedIndexT, 0.0);
             }
         }
         landmark.observations = std::move(filteredObservations);
