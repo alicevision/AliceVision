@@ -80,6 +80,7 @@ struct FilterParams
         bool observationsPropagationEnabled = true;
         int observationsPropagationFrequency = 1;
         int observationsPropagationCount = 1;
+        bool observationsPropagationKeep = false;
         double neighborsInfluence = 0.5;
         int nbIterations = 5;
         bool dampingEnabled = true;
@@ -100,7 +101,7 @@ std::istream& operator>>(std::istream& in, FilterParams& params)
     in >> token;
     std::vector<std::string> splitParams;
     boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
-    if(splitParams.size() != 24)
+    if(splitParams.size() != 25)
         throw std::invalid_argument("Failed to parse FilterParams from: \n" + token);
     int i = 0;
 
@@ -124,6 +125,7 @@ std::istream& operator>>(std::istream& in, FilterParams& params)
     params.filterObservations3D.observationsPropagationEnabled = boost::to_lower_copy(splitParams[i++]) == "true";
     params.filterObservations3D.observationsPropagationFrequency = boost::lexical_cast<int>(splitParams[i++]);
     params.filterObservations3D.observationsPropagationCount = boost::lexical_cast<int>(splitParams[i++]);
+    params.filterObservations3D.observationsPropagationKeep = boost::to_lower_copy(splitParams[i++]) == "true";
     params.filterObservations3D.neighborsInfluence = boost::lexical_cast<double>(splitParams[i++]);
     params.filterObservations3D.nbIterations = boost::lexical_cast<int>(splitParams[i++]);
     params.filterObservations3D.dampingEnabled = boost::to_lower_copy(splitParams[i++]) == "true";
@@ -924,9 +926,14 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
         {
             // add observation only if it's an original observation and not augmented
             const auto& viewId = viewIds[idx[j]];
-            const auto& obsIt = landmark.observations.find(viewId);
-            if(obsIt != landmark.observations.end())
+            if(params.observationsPropagationKeep)
                 filteredObservations[viewId] = landmark.observations[viewId];
+            else
+            {
+                const auto& obsIt = landmark.observations.find(viewId);
+                if(obsIt != landmark.observations.end())
+                    filteredObservations[viewId] = landmark.observations[viewId];
+            }
         }
         landmark.observations = std::move(filteredObservations);
     }
@@ -1112,6 +1119,7 @@ int aliceVision_main(int argc, char *argv[])
             "   * Enable Propagating Observations: Propagate neighbors observations before propagating the scores.\n"
             "     * Frequency: Specifies every how many iterations should the observations be propagated.\n"
             "     * Count: Maximum number of times the observations are propagated (0 for no limit).\n"
+            "     * Keep Observations: Specifies if propagated observations are to be kept at the end.\n"
             "   * Neighbors Influence: Specifies how much influential the neighbors are in selecting the best observations.\n"
             "     Between 0. and 1., the closer to 1., the more influencial the neighborhood is.\n"
             "   * Nb of Iterations: Number of iterations to propagate neighbors information.\n"
