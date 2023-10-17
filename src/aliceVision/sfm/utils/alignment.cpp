@@ -563,6 +563,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     meanRy /= validPoses;
     meanCameraCenter /= validPoses;
 
+    size_t count = 0;
     double rms = 0.0;
     // Compute covariance matrix of the rotation X component
     Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
@@ -581,7 +582,14 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
 
             const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
             C += (rX - meanRx) * (rX - meanRx).transpose();
+
+            count++;
         }
+    }
+
+    if (count > 1)
+    {
+        C = C / double(count - 1);
     }
 
     Eigen::EigenSolver<Eigen::Matrix3d> solver(C, true);
@@ -599,16 +607,19 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     double ratio1 = evalues[indices[2]] / evalues[indices[0]];
     double ratio2 = evalues[indices[2]] / evalues[indices[1]];
     double unicity = ratio1 / ratio2;
+    double largest = std::abs(evalues[indices[2]]);
 
     ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvalues: " << solver.eigenvalues());
     ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvectors: " << solver.eigenvectors());
+    ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: unicity: " << unicity);
+    ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: largest eigen value: " << largest); 
 
     // We assume that the X axis of all or majority of the cameras are on a plane.
     // The covariance is a flat ellipsoid and the min axis is our candidate Y axis.
     Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
     Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();    
 
-    if (std::abs(unicity) < 10.0)
+    if (std::abs(unicity) < 10.0 || largest < 1e-2)
     {
         ALICEVISION_LOG_DEBUG("Algorithm did not find a clear axis. Align with raw Y.");
         nullestSpace = meanRy;
