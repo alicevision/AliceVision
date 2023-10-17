@@ -1025,10 +1025,10 @@ int main(int argc, char* argv[])
                 const Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
                 const Eigen::AngleAxis<double> Mimage(additionalAngle - M_PI_2, Eigen::Vector3d::UnitZ());
 
-                const Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *
+                const Eigen::Matrix3d oRc = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *
                                             Mroll.toRotationMatrix() * Mimage.toRotationMatrix();
 
-                rotations[rank] = cRo.transpose();
+                rotations[rank] = oRc.transpose();
             }
 
             if(sfmData.getViews().size() != rotations.size())
@@ -1041,17 +1041,18 @@ int main(int argc, char* argv[])
         }
         else if(boost::algorithm::contains(initializeCameras, "horizontal"))
         {
-            constexpr double zenithPitch = -0.5 * boost::math::constants::pi<double>();
+            constexpr double zenithPitch = 0.5 * boost::math::constants::pi<double>();
             const Eigen::AngleAxis<double> zenithMpitch(zenithPitch, Eigen::Vector3d::UnitX());
             const Eigen::AngleAxis<double> zenithMroll(additionalAngle, Eigen::Vector3d::UnitZ());
-            const Eigen::Matrix3d zenithRo = zenithMpitch.toRotationMatrix() * zenithMroll.toRotationMatrix();
+            const Eigen::Matrix3d oRzenith = zenithMpitch.toRotationMatrix() * zenithMroll.toRotationMatrix();
 
             const bool withZenith = boost::algorithm::contains(initializeCameras, "zenith");
             if(initializeCameras == "zenith+horizontal")
             {
                 ALICEVISION_LOG_TRACE("Add zenith first");
-                rotations[rotations.size()] = zenithRo.transpose();
+                rotations[rotations.size()] = oRzenith.transpose();
             }
+
             const std::size_t nbHorizontalViews = sfmData.getViews().size() - int(withZenith);
             for(int x = 0; x < nbHorizontalViews; ++x)
             {
@@ -1066,15 +1067,15 @@ int main(int argc, char* argv[])
                 const Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
                 const Eigen::AngleAxis<double> Mroll(additionalAngle, Eigen::Vector3d::UnitZ());
 
-                const Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mroll.toRotationMatrix();
+                const Eigen::Matrix3d oRc = Myaw.toRotationMatrix() * Mroll.toRotationMatrix();
 
                 ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw);
-                rotations[rotations.size()] = cRo.transpose();
+                rotations[rotations.size()] = oRc.transpose();
             }
             if(initializeCameras == "horizontal+zenith")
             {
                 ALICEVISION_LOG_TRACE("Add zenith");
-                rotations[rotations.size()] = zenithRo.transpose();
+                rotations[rotations.size()] = oRzenith.transpose();
             }
         }
         else if(initializeCameras == "spherical" || (initializeCameras.empty() && !nbViewsPerLineString.empty()))
@@ -1165,12 +1166,12 @@ int main(int argc, char* argv[])
                     const Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
                     const Eigen::AngleAxis<double> Mroll(roll + additionalAngle, Eigen::Vector3d::UnitZ());
 
-                    const Eigen::Matrix3d cRo =
+                    const Eigen::Matrix3d oRc =
                         Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() * Mroll.toRotationMatrix();
 
                     ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw << ", pitch=" << pitch << ", roll=" << roll
                                                                << ".");
-                    rotations[i++] = cRo.transpose();
+                    rotations[i++] = oRc.transpose();
                 }
             }
         }
