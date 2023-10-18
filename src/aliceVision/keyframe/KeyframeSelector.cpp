@@ -647,7 +647,6 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                 oiio::ParamValueList metadata;
                 metadata.push_back(oiio::ParamValue("Make", brands[id]));
                 metadata.push_back(oiio::ParamValue("Model", models[id]));
-                metadata.push_back(oiio::ParamValue("Exif:BodySerialNumber", std::to_string(getRandomInt())));
                 metadata.push_back(oiio::ParamValue("Exif:FocalLength", mmFocals[id]));
                 metadata.push_back(oiio::ParamValue("Exif:ImageUniqueID", std::to_string(getRandomInt())));
                 metadata.push_back(oiio::ParamValue("Orientation", orientation));  // Will not propagate for PNG outputs
