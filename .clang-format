@@ -1,28 +1,70 @@
----
-IndentWidth: 4
-TabWidth: 4
-UseTab: Never
-ColumnLimit: 120
-AllowShortFunctionsOnASingleLine: Inline
+BasedOnStyle: Mozilla
+AlignTrailingComments: true
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: false
-BreakConstructorInitializersBeforeComma: true
-IndentCaseLabels: true
-BreakBeforeBraces: Allman
-NamespaceIndentation: None
-MaxEmptyLinesToKeep: 1
-KeepEmptyLinesAtTheStartOfBlocks: true
-PointerAlignment: Left
-SpaceBeforeParens: Never
-SpaceBeforeAssignmentOperators: true
-SpacesInParentheses: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakTemplateDeclarations: true
-Standard: c++17
-AccessModifierOffset: -4
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakBeforeInheritanceComma: false
+BreakConstructorInitializers: BeforeColon
+BreakInheritanceList: BeforeColon
+ColumnLimit: 150
+CompactNamespaces: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+ExperimentalAutoDetectBinPacking: false
+FixNamespaceComments: true
+IncludeBlocks: Regroup
+IndentCaseLabels: true
+IndentPPDirectives: BeforeHash
+IndentWidth: 4
+KeepEmptyLinesAtTheStartOfBlocks: false
+Language: Cpp
+PackConstructorInitializers: Never
+PointerAlignment: Left
+ReflowComments: true
+SpaceAfterLogicalNot: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpacesBeforeTrailingComments: 2
+SpaceInEmptyParentheses: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+Standard: "c++17"
 IncludeCategories:
   - Regex:           '^".*"'
     Priority:        1
   - Regex:           '^<aliceVision/.*>'
     Priority:        2
-  - Regex:           '^<.*>'
+  - Regex:           '^<boost/.*>'
     Priority:        3
+  - Regex:           '^<.*\..*>'
+    Priority:        4
 SortIncludes: false
