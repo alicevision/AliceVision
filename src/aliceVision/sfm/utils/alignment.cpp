@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <regex>
+#include <numeric>
 
 #include <aliceVision/numeric/gps.hpp>
 
@@ -562,6 +563,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     meanRy /= validPoses;
     meanCameraCenter /= validPoses;
 
+    size_t count = 0;
     double rms = 0.0;
     // Compute covariance matrix of the rotation X component
     Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
@@ -580,7 +582,14 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
 
             const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
             C += (rX - meanRx) * (rX - meanRx).transpose();
+
+            count++;
         }
+    }
+
+    if (count > 1)
+    {
+        C = C / double(count - 1);
     }
 
     Eigen::EigenSolver<Eigen::Matrix3d> solver(C, true);
@@ -588,26 +597,33 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     //Warning, eigenvalues are not sorted ...
     Vec3 evalues = solver.eigenvalues().real();
     Vec3 aevalues = evalues.cwiseAbs();
-    IndexT minCol = 0;
-    double minVal = aevalues[0];
-    if (aevalues[1] < minVal)
-    {
-        minVal = aevalues[1];
-        minCol = 1;
-    }
-    if (aevalues[2] < minVal)
-    {
-        minVal = aevalues[2];
-        minCol = 2;
-    }
+    
+    std::vector<int> indices(evalues.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::sort(indices.begin(), indices.end(), [&](int i, int j) { return evalues[i] < evalues[j]; });
+    int minCol = indices[0];
+
+    //Make sure we have a clear unique small eigen value
+    double ratio1 = evalues[indices[2]] / evalues[indices[0]];
+    double ratio2 = evalues[indices[2]] / evalues[indices[1]];
+    double unicity = ratio1 / ratio2;
+    double largest = std::abs(evalues[indices[2]]);
 
     ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvalues: " << solver.eigenvalues());
     ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvectors: " << solver.eigenvectors());
+    ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: unicity: " << unicity);
+    ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: largest eigen value: " << largest); 
 
     // We assume that the X axis of all or majority of the cameras are on a plane.
     // The covariance is a flat ellipsoid and the min axis is our candidate Y axis.
     Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
-    const Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();    
+    Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();    
+
+    if (std::abs(unicity) < 10.0 || largest < 1e-2)
+    {
+        ALICEVISION_LOG_DEBUG("Algorithm did not find a clear axis. Align with raw Y.");
+        nullestSpace = meanRy;
+    }
 
     // Compute the rotation which rotates nullestSpace onto unitY
     out_R = Matrix3d(Quaterniond().setFromTwoVectors(nullestSpace, referenceAxis));
@@ -655,6 +671,10 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
         stddev += camCenterMean.transpose() * camCenterMean; 
     }
     stddev /= nbCameras;
+    if (stddev < 1e-12) //If there is no translation change
+    {
+        stddev = 1.0;
+    }
 
     // Make sure the point cloud is centered and scaled to unit deviation
     for (Vec3::Index i = 0; i < vCamCenter.cols(); ++i)
@@ -1108,6 +1128,10 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
     //By default, scale to get unit rms
     const double rms = sqrt(covCamBase.trace() / double(count));
     out_S = 1.0 / rms;
+    if (rms < 1e-12)
+    {
+        out_S = 1.0;
+    }
 
     ALICEVISION_LOG_INFO("Initial point cloud scale: " << rms);
 
