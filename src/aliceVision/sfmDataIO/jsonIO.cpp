@@ -73,6 +73,34 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
         viewTree.add_child("ancestors", ancestorsTree);
     }
 
+    // ancestor images
+    if (!view.getAncestorImages().empty())
+    {
+        bpt::ptree ancestorImagesTree;
+
+        for (const auto& ancestorImage : view.getAncestorImages())
+        {
+            bpt::ptree ancestorImageTree;
+            ancestorImageTree.put("path", ancestorImage->getImagePath());
+            ancestorImageTree.put("width", ancestorImage->getWidth());
+            ancestorImageTree.put("height", ancestorImage->getHeight());
+
+            // metadata
+            {
+                bpt::ptree metadataTree;
+
+                for (const auto& metadataPair : ancestorImage->getMetadata())
+                    metadataTree.put(metadataPair.first, metadataPair.second);
+
+                ancestorImageTree.add_child("metadata", metadataTree);
+            }
+
+            ancestorImagesTree.add_child("", ancestorImageTree);
+        }
+
+        viewTree.add_child("ancestorImages", ancestorImagesTree);
+    }
+
     parentTree.push_back(std::make_pair(name, viewTree));
 }
 
@@ -107,6 +135,29 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
     if (viewTree.count("metadata"))
         for (bpt::ptree::value_type& metaDataNode : viewTree.get_child("metadata"))
             view.getImage().addMetadata(metaDataNode.first, metaDataNode.second.data());
+
+    if (viewTree.count("ancestorImages"))
+    {
+        for (bpt::ptree::value_type ancestorImageNode : viewTree.get_child("ancestorImages"))
+        {
+            bpt::ptree ancestorImageTree = ancestorImageNode.second;
+            sfmData::ImageInfo imgInfo;
+
+            imgInfo.setImagePath(ancestorImageTree.get<std::string>("path"));
+            imgInfo.setWidth(ancestorImageTree.get<std::size_t>("width", 0));
+            imgInfo.setHeight(ancestorImageTree.get<std::size_t>("height", 0));
+
+            if (ancestorImageTree.count("metadata"))
+            {
+                for (bpt::ptree::value_type& metaDataNode : ancestorImageTree.get_child("metadata"))
+                {
+                    imgInfo.addMetadata(metaDataNode.first, metaDataNode.second.data());
+                }
+            }
+
+            view.addAncestorImage(std::make_shared<sfmData::ImageInfo>(imgInfo));
+        }
+    }
 }
 
 void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::shared_ptr<camera::IntrinsicBase>& intrinsic, bpt::ptree& parentTree)

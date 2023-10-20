@@ -12,7 +12,7 @@
 
 #define ALICEVISION_SFMDATAIO_VERSION_MAJOR 1
 #define ALICEVISION_SFMDATAIO_VERSION_MINOR 2
-#define ALICEVISION_SFMDATAIO_VERSION_REVISION 5
+#define ALICEVISION_SFMDATAIO_VERSION_REVISION 6
 
 // AliceVision version as a string; for example "0.9.0".
 #define ALICEVISION_SFMDATAIO_VERSION_STRING                                                                                                         \

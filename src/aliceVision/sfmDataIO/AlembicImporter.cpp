@@ -421,6 +421,11 @@ bool readCamera(const Version& abcVersion,
     std::vector<double> distortionParams;
     std::vector<double> undistortionParams;
     Vec2 undistortionOffset = {0, 0};
+    std::vector<std::string> ancestorImagesPath;
+    std::vector<unsigned int> ancestorImagesWidth;
+    std::vector<unsigned int> ancestorImagesHeight;
+    std::vector<unsigned int> ancestorImagesMetadataSize;
+    std::vector<std::string> ancestorImagesRawMetadata;
 
     if (userProps)
     {
@@ -580,6 +585,33 @@ bool readCamera(const Version& abcVersion,
                     undistortionOffset(1) = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_undistortionOffsetY", sampleFrame);
                 }
             }
+            if (userProps.getPropertyHeader("mvg_ancestorImagesPath"))
+            {
+                getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_ancestorImagesPath", sampleFrame, ancestorImagesPath);
+            }
+            if (userProps.getPropertyHeader("mvg_ancestorImagesWidth"))
+            {
+                getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_ancestorImagesWidth", sampleFrame, ancestorImagesWidth);
+            }
+            if (userProps.getPropertyHeader("mvg_ancestorImagesHeight"))
+            {
+                getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_ancestorImagesHeight", sampleFrame, ancestorImagesHeight);
+            }
+            if (userProps.getPropertyHeader("mvg_ancestorImagesMetadataSize"))
+            {
+                getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(
+                  userProps, "mvg_ancestorImagesMetadataSize", sampleFrame, ancestorImagesMetadataSize);
+            }
+            if (userProps.getPropertyHeader("mvg_ancestorImagesRawMetadata"))
+            {
+                getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(
+                  userProps, "mvg_ancestorImagesRawMetadata", sampleFrame, ancestorImagesRawMetadata);
+                if (ancestorImagesRawMetadata.size() % 2 != 0)
+                {
+                    ALICEVISION_THROW_ERROR("[Alembic] 'metadata' property is supposed to be key/values. Number of values is " +
+                                            std::to_string(ancestorImagesRawMetadata.size()) + ".");
+                }
+            }
         }
     }
 
@@ -659,9 +691,26 @@ bool readCamera(const Version& abcVersion,
             view->getImage().addMetadata(rawMetadata.at(i), rawMetadata.at(i + 1));
         }
 
+        // set ancestor viewIds
         for (IndexT val : mvg_ancestorsParams)
         {
             view->addAncestor(val);
+        }
+
+        // set ancestor images
+        size_t mIndexStart = 0;
+        for (std::size_t i = 0; i < ancestorImagesPath.size(); i++)
+        {
+            std::map<std::string, std::string> metadata;
+            size_t mIndexEnd = mIndexStart + ancestorImagesMetadataSize[i];
+            for (size_t mIndex = mIndexStart; mIndex < mIndexEnd; mIndex++)
+            {
+                metadata.insert(
+                  std::pair<std::string, std::string>(ancestorImagesRawMetadata[2 * mIndex], ancestorImagesRawMetadata[2 * mIndex + 1]));
+            }
+            mIndexStart = mIndexEnd;
+            view->addAncestorImage(std::make_shared<sfmData::ImageInfo>(
+              sfmData::ImageInfo(ancestorImagesPath[i], ancestorImagesWidth[i], ancestorImagesHeight[i], metadata)));
         }
 
         sfmData.getViews().emplace(viewId, view);

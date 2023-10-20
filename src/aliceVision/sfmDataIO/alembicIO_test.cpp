@@ -41,6 +41,23 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
         view->getImage().addMetadata("A", "A");
         view->getImage().addMetadata("B", "B");
         view->getImage().addMetadata("C", "C");
+
+        view->addAncestor(static_cast<IndexT>(11));
+        view->addAncestor(static_cast<IndexT>(22));
+
+        sfmData::ImageInfo ancestorImg_1("path_1.jpg", 1024, 640);
+        ancestorImg_1.addMetadata("D", "D");
+        ancestorImg_1.addMetadata("E", "E");
+
+        view->addAncestorImage(std::make_shared<sfmData::ImageInfo>(ancestorImg_1));
+
+        sfmData::ImageInfo ancestorImg_2("path_2.jpg", 1024, 640);
+        ancestorImg_2.addMetadata("F", "F");
+        ancestorImg_2.addMetadata("G", "G");
+        ancestorImg_2.addMetadata("H", "H");
+
+        view->addAncestorImage(std::make_shared<sfmData::ImageInfo>(ancestorImg_2));
+
         sfm_data.getViews().emplace(id_view, view);
 
         // Add poses

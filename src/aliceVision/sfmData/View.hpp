@@ -62,7 +62,7 @@ class View
         _poseId(poseId),
         _rigId(rigId),
         _subPoseId(subPoseId),
-        _image(new ImageInfo(imagePath, width, height))
+        _image(new ImageInfo(imagePath, width, height, metadata))
     {}
 
     /**
@@ -80,6 +80,11 @@ class View
         View* v = new View(*this);
         v->_image = std::make_shared<ImageInfo>(*this->_image);
 
+        for (size_t i = 0; i < v->getAncestorImages().size(); i++)
+        {
+            (v->getAncestorImages())[i] = std::make_shared<ImageInfo>(*((this->getAncestorImages())[i]));
+        }
+
         return v;
     }
 
@@ -93,16 +98,22 @@ class View
     inline bool operator!=(const View& other) const { return !(*this == other); }
 
     /**
-     * @brief Get Image object
+     * @brief Get Image info object
      * @return an object
      */
     const ImageInfo& getImage() const { return *_image; }
 
     /**
-     * @brief Get Image object
+     * @brief Get Image info object
      * @return an object
      */
     ImageInfo& getImage() { return *_image; }
+
+    /**
+     * @brief Get Image info pointer
+     * @return a shared pointer
+     */
+    std::shared_ptr<ImageInfo> getImageInfo() { return _image; }
 
     /**
      * @brief Get the view id
@@ -218,6 +229,34 @@ class View
     const std::vector<IndexT>& getAncestors() const { return _ancestors; }
 
     /**
+     * @brief Add an ancestor images to the existing ones.
+     * If an image is generated from multiple input images, "Ancestor Images" allows to keep track of all features
+     * of the original images. For instance, the generated view can come from the fusion of multiple LDR images into
+     * one HDR image, the fusion from multi-focus stacking to get a fully focused image, fusion of images with multiple
+     * lighting to get a more diffuse lighting, etc.
+     * @param[in] new ancestor image
+     */
+    void addAncestorImage(std::shared_ptr<ImageInfo> image)
+    {
+        if (std::find(_ancestorImages.begin(), _ancestorImages.end(), image) == _ancestorImages.end())
+        {
+            _ancestorImages.push_back(image);
+        }
+    }
+
+    /**
+     * @Brief get all ancestor images for this view
+     * @return ancestor images
+     */
+    const std::vector<std::shared_ptr<ImageInfo>>& getAncestorImages() const { return _ancestorImages; }
+
+    /**
+     * @Brief get all ancestor images for this view
+     * @return ancestor images
+     */
+    std::vector<std::shared_ptr<ImageInfo>>& getAncestorImages() { return _ancestorImages; }
+
+    /**
      * @brief Set the given resection id
      * @param[in] resectionId The given resection id
      */
@@ -247,6 +286,8 @@ class View
     std::vector<IndexT> _ancestors;
     /// Link  to imageinfo
     std::shared_ptr<ImageInfo> _image;
+    /// Link to ancestor images info
+    std::vector<std::shared_ptr<ImageInfo>> _ancestorImages;
 };
 
 }  // namespace sfmData

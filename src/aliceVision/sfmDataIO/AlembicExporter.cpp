@@ -174,6 +174,36 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     // Export ancestors
     OUInt32ArrayProperty(userProps, "mvg_ancestorsParams").set(view.getAncestors());
 
+    // Export ancestor Images
+    std::vector<std::string> v_path;
+    std::vector<unsigned int> v_width;
+    std::vector<unsigned int> v_height;
+    std::vector<unsigned int> v_metadataSize;
+    std::vector<std::string> ancestorImagesRawMetadata;
+
+    for (auto ancestorImage : view.getAncestorImages())
+    {
+        v_path.push_back(ancestorImage->getImagePath());
+        v_width.push_back(ancestorImage->getWidth());
+        v_height.push_back(ancestorImage->getHeight());
+        v_metadataSize.push_back(ancestorImage->getMetadata().size());
+
+        auto it = ancestorImage->getMetadata().cbegin();
+        for (std::size_t i = 0; i < v_metadataSize.back(); i++)
+        {
+            ancestorImagesRawMetadata.push_back(it->first);
+            ancestorImagesRawMetadata.push_back(it->second);
+
+            std::advance(it, 1);
+        }
+    }
+
+    OStringArrayProperty(userProps, "mvg_ancestorImagesPath").set(v_path);
+    OUInt32ArrayProperty(userProps, "mvg_ancestorImagesWidth").set(v_width);
+    OUInt32ArrayProperty(userProps, "mvg_ancestorImagesHeight").set(v_height);
+    OUInt32ArrayProperty(userProps, "mvg_ancestorImagesMetadataSize").set(v_metadataSize);
+    OStringArrayProperty(userProps, "mvg_ancestorImagesRawMetadata").set(ancestorImagesRawMetadata);
+
     // set intrinsic properties
     std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsic);
     if (intrinsicCasted)
