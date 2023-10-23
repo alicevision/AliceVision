@@ -320,10 +320,6 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
         {
             distortionObject->setParameters(distortionParams);
         }
-        else
-        {
-            intrinsicWithDistoEnabled->setDistortionObject(nullptr);
-        }
     }
 
     std::shared_ptr<camera::Undistortion> undistortionObject = intrinsicWithDistoEnabled->getUndistortion();
@@ -342,10 +338,6 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
             Vec2 offset;
             loadMatrix("undistortionOffset", offset, intrinsicTree);
             undistortionObject->setOffset(offset);
-        }
-        else
-        {
-            intrinsicWithDistoEnabled->setUndistortionObject(nullptr);
         }
     }
   }

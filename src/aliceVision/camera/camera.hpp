@@ -64,6 +64,9 @@ inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType,
     case EDISTORTION::DISTORTION_3DERADIAL4:
         distortion = std::make_shared<Distortion3DERadial4>();
         break;
+    case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+        distortion = std::make_shared<Distortion3DEAnamorphic4>();
+        break;
     default: break;
     }
 
