@@ -21,8 +21,7 @@ namespace depthMap {
  */
 class NormalMapEstimator : public IGPUJob
 {
-public:
-
+  public:
     /**
      * @brief Normal Map Estimator constructor.
      * @param[in] mp the multi-view parameters
@@ -45,12 +44,11 @@ public:
      */
     void compute(int cudaDeviceId, const std::vector<int>& cams) override;
 
-private:
-
+  private:
     // private members
 
-    const mvsUtils::MultiViewParams& _mp;      //< multi-view parameters
+    const mvsUtils::MultiViewParams& _mp;  //< multi-view parameters
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

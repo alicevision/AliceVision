@@ -10,18 +10,17 @@
 
 #include <functional>
 
-namespace stl
-{
+namespace stl {
 
 // Combine hashing value
 // http://www.boost.org/doc/libs/1_37_0/doc/html/hash/reference.html#boost.hash_combine
-template <class T>
+template<class T>
 inline void hash_combine(std::size_t& seed, const T& v)
 {
-  std::hash<T> hasher;
-  seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-} // namespace stl
+}  // namespace stl
 
 #endif  // ALICEVISION_STL_HASH_H

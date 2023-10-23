@@ -8,12 +8,11 @@
 
 #include <aliceVision/image/all.hpp>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 class GaussianPyramidNoMask
 {
-public:
+  public:
     GaussianPyramidNoMask(const size_t width_base, const size_t height_base, const size_t limit_scales = 64);
 
     bool process(const image::Image<image::RGBfColor>& input);
@@ -26,7 +25,7 @@ public:
 
     std::vector<image::Image<image::RGBfColor>>& getPyramidColor() { return _pyramid_color; }
 
-protected:
+  protected:
     std::vector<image::Image<image::RGBfColor>> _pyramid_color;
     std::vector<image::Image<image::RGBfColor>> _filter_buffer;
     size_t _width_base;
@@ -34,47 +33,46 @@ protected:
     size_t _scales;
 };
 
-template <class T>
-inline void convolveRow(typename image::Image<T>::RowXpr output_row, typename image::Image<T>::ConstRowXpr input_row,
-                        const Eigen::Matrix<float, 5, 1>& kernel, bool loop)
+template<class T>
+inline void convolveRow(typename image::Image<T>::RowXpr output_row,
+                        typename image::Image<T>::ConstRowXpr input_row,
+                        const Eigen::Matrix<float, 5, 1>& kernel,
+                        bool loop)
 {
-
     const int radius = 2;
 
-    for(int j = 0; j < input_row.cols(); j++)
+    for (int j = 0; j < input_row.cols(); j++)
     {
-
         T sum = T();
         float sumw = 0.0f;
 
-        for(int k = 0; k < kernel.size(); k++)
+        for (int k = 0; k < kernel.size(); k++)
         {
-
             float w = kernel(k);
             int col = j + k - radius;
 
             /* mirror 5432 | 123456 | 5432 */
 
-            if(!loop)
+            if (!loop)
             {
-                if(col < 0)
+                if (col < 0)
                 {
                     col = -col;
                 }
 
-                if(col >= input_row.cols())
+                if (col >= input_row.cols())
                 {
                     col = input_row.cols() - 1 - (col + 1 - input_row.cols());
                 }
             }
             else
             {
-                if(col < 0)
+                if (col < 0)
                 {
                     col = input_row.cols() + col;
                 }
 
-                if(col >= input_row.cols())
+                if (col >= input_row.cols())
                 {
                     col = col - input_row.cols();
                 }
@@ -88,20 +86,16 @@ inline void convolveRow(typename image::Image<T>::RowXpr output_row, typename im
     }
 }
 
-template <class T>
-inline void convolveColumns(typename image::Image<T>::RowXpr output_row, const image::Image<T>& input_rows,
-                            const Eigen::Matrix<float, 5, 1>& kernel)
+template<class T>
+inline void convolveColumns(typename image::Image<T>::RowXpr output_row, const image::Image<T>& input_rows, const Eigen::Matrix<float, 5, 1>& kernel)
 {
-
-    for(int j = 0; j < output_row.cols(); j++)
+    for (int j = 0; j < output_row.cols(); j++)
     {
-
         T sum = T();
         float sumw = 0.0f;
 
-        for(int k = 0; k < kernel.size(); k++)
+        for (int k = 0; k < kernel.size(); k++)
         {
-
             float w = kernel(k);
             sum += w * input_rows(k, j);
             sumw += w;
@@ -111,11 +105,10 @@ inline void convolveColumns(typename image::Image<T>::RowXpr output_row, const i
     }
 }
 
-template <class T>
+template<class T>
 bool convolveGaussian5x5(image::Image<T>& output, const image::Image<T>& input, bool loop = false)
 {
-
-    if(output.size() != input.size())
+    if (output.size() != input.size())
     {
         return false;
     }
@@ -138,9 +131,8 @@ bool convolveGaussian5x5(image::Image<T>& output, const image::Image<T>& input, 
     convolveRow<T>(buf.row(3), input.row(1), kernel, loop);
     convolveRow<T>(buf.row(4), input.row(2), kernel, loop);
 
-    for(int i = 0; i < output.Height() - 3; i++)
+    for (int i = 0; i < output.Height() - 3; i++)
     {
-
         convolveColumns<T>(output.row(i), buf, kernel);
 
         buf.row(0) = buf.row(1);
@@ -174,4 +166,4 @@ bool convolveGaussian5x5(image::Image<T>& output, const image::Image<T>& input, 
     return true;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

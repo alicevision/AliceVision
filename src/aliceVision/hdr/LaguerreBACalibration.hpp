@@ -12,7 +12,6 @@
 
 #include <boost/math/constants/constants.hpp>
 
-
 namespace aliceVision {
 namespace hdr {
 
@@ -33,26 +32,25 @@ namespace hdr {
  */
 class LaguerreBACalibration
 {
-public:
-  explicit LaguerreBACalibration() = default;
+  public:
+    explicit LaguerreBACalibration() = default;
 
-  /**
-   * @brief
-   * @param[in] LDR images groups
-   * @param[in] channel quantization
-   * @param[in] exposure times
-   * @param[in] calibration weight function
-   * @param[out] camera response function
-   */
-  void process(
-      const std::vector<std::vector<ImageSample>>& ldrSamples,
-      std::vector<std::vector<double>>& cameraExposures,
-      const std::size_t channelQuantization,
-      bool refineExposures,
-      rgbCurve &response);
+    /**
+     * @brief
+     * @param[in] LDR images groups
+     * @param[in] channel quantization
+     * @param[in] exposure times
+     * @param[in] calibration weight function
+     * @param[out] camera response function
+     */
+    void process(const std::vector<std::vector<ImageSample>>& ldrSamples,
+                 std::vector<std::vector<double>>& cameraExposures,
+                 const std::size_t channelQuantization,
+                 bool refineExposures,
+                 rgbCurve& response);
 };
 
-template <typename T>
+template<typename T>
 T laguerreFunction(const T& a, const T& x)
 {
     // https://www.desmos.com/calculator/ib1y06t4pe
@@ -61,12 +59,11 @@ T laguerreFunction(const T& a, const T& x)
     return x + c * atan((a * sin(pi<double>() * x)) / (1.0 - a * cos(pi<double>() * x)));
 }
 
-template <typename T>
+template<typename T>
 T laguerreFunctionInv(const T& a, const T& x)
 {
     return laguerreFunction(-a, x);
 }
 
-
-} // namespace hdr
-} // namespace aliceVision
+}  // namespace hdr
+}  // namespace aliceVision

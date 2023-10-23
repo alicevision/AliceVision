@@ -27,6 +27,5 @@ MemoryInfo getMemoryInfo();
 
 std::ostream& operator<<(std::ostream& os, const MemoryInfo& infos);
 
-}
-}
-
+}  // namespace system
+}  // namespace aliceVision

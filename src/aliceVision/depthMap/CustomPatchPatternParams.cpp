@@ -19,18 +19,18 @@ std::istream& operator>>(std::istream& is, CustomPatchPatternParams::SubpartPara
     std::vector<std::string> splitParams;
     boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
 
-    if(splitParams.size() != 5)
+    if (splitParams.size() != 5)
         throw std::invalid_argument("Failed to parse CustomPatchPatternParams::SubpartParams from: " + token);
 
     try
     {
-      sp.isCircle = (boost::to_lower_copy(splitParams[0]) == "circle");
-      sp.radius = std::stof(splitParams[1]);
-      sp.nbCoordinates = std::stoi(splitParams[2]);
-      sp.level = std::stoi(splitParams[3]);
-      sp.weight = std::stof(splitParams[4]);
+        sp.isCircle = (boost::to_lower_copy(splitParams[0]) == "circle");
+        sp.radius = std::stof(splitParams[1]);
+        sp.nbCoordinates = std::stoi(splitParams[2]);
+        sp.level = std::stoi(splitParams[3]);
+        sp.weight = std::stof(splitParams[4]);
     }
-    catch(const std::exception& e)
+    catch (const std::exception& e)
     {
         throw std::invalid_argument("Failed to parse CustomPatchPatternParams::SubpartParams from: " + token);
     }
@@ -45,5 +45,5 @@ std::ostream& operator<<(std::ostream& os, const CustomPatchPatternParams::Subpa
     return os;
 }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

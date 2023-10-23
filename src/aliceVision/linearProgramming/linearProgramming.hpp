@@ -13,9 +13,8 @@
 #include <aliceVision/linearProgramming/OSIXSolver.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-#include <aliceVision/linearProgramming/MOSEKSolver.hpp>
+    #include <aliceVision/linearProgramming/MOSEKSolver.hpp>
 #endif
 
 // Multiple View Geometry solver that rely on Linear programming formulations
 #include <aliceVision/linearProgramming/lInfinityCV/lInfinityCV.hpp>
-

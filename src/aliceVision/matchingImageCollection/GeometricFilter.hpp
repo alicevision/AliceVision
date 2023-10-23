@@ -38,57 +38,53 @@ using namespace aliceVision::matching;
  * @param[in] randomNumberGenerator
  */
 template<typename GeometryFunctor>
-void robustModelEstimation(
-  PairwiseMatches& out_geometricMatches,
-  const sfmData::SfMData* sfmData,
-  const feature::RegionsPerView& regionsPerView,
-  const GeometryFunctor& functor,
-  const PairwiseMatches& putativeMatches,
-  std::mt19937 & randomNumberGenerator,
-  const bool guidedMatching = false,
-  const double distanceRatio = 0.6
-  )
+void robustModelEstimation(PairwiseMatches& out_geometricMatches,
+                           const sfmData::SfMData* sfmData,
+                           const feature::RegionsPerView& regionsPerView,
+                           const GeometryFunctor& functor,
+                           const PairwiseMatches& putativeMatches,
+                           std::mt19937& randomNumberGenerator,
+                           const bool guidedMatching = false,
+                           const double distanceRatio = 0.6)
 {
-  out_geometricMatches.clear();
+    out_geometricMatches.clear();
 
-  auto progressDisplay =
-          system::createConsoleProgressDisplay(putativeMatches.size(), std::cout,
-                                               "Robust Model Estimation\n");
-  
+    auto progressDisplay = system::createConsoleProgressDisplay(putativeMatches.size(), std::cout, "Robust Model Estimation\n");
+
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int)putativeMatches.size(); ++i)
-  {
-    PairwiseMatches::const_iterator iter = putativeMatches.begin();
-    std::advance(iter, i);
-
-    const Pair currentPair = iter->first;
-    const MatchesPerDescType& putativeMatchesPerType = iter->second;
-    const Pair& imagePair = iter->first;
-
-    // apply the geometric filter (robust model estimation)
+    for (int i = 0; i < (int)putativeMatches.size(); ++i)
     {
-      MatchesPerDescType inliers;
-      GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
-      const EstimationStatus state = geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, randomNumberGenerator, inliers);
-      if(state.hasStrongSupport)
-      {
-        if(guidedMatching)
+        PairwiseMatches::const_iterator iter = putativeMatches.begin();
+        std::advance(iter, i);
+
+        const Pair currentPair = iter->first;
+        const MatchesPerDescType& putativeMatchesPerType = iter->second;
+        const Pair& imagePair = iter->first;
+
+        // apply the geometric filter (robust model estimation)
         {
-          MatchesPerDescType guidedGeometricInliers;
-          geometricFilter.Geometry_guided_matching(sfmData, regionsPerView, imagePair, distanceRatio, guidedGeometricInliers);
-          //ALICEVISION_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
-          std::swap(inliers, guidedGeometricInliers);
-        }
+            MatchesPerDescType inliers;
+            GeometryFunctor geometricFilter = functor;  // use a copy since we are in a multi-thread context
+            const EstimationStatus state =
+              geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, randomNumberGenerator, inliers);
+            if (state.hasStrongSupport)
+            {
+                if (guidedMatching)
+                {
+                    MatchesPerDescType guidedGeometricInliers;
+                    geometricFilter.Geometry_guided_matching(sfmData, regionsPerView, imagePair, distanceRatio, guidedGeometricInliers);
+                    // ALICEVISION_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
+                    std::swap(inliers, guidedGeometricInliers);
+                }
 
 #pragma omp critical
-        {
-          out_geometricMatches.emplace(currentPair, std::move(inliers));
+                {
+                    out_geometricMatches.emplace(currentPair, std::move(inliers));
+                }
+            }
         }
-
-      }
+        ++progressDisplay;
     }
-    ++progressDisplay;
-  }
 }
 
 /**
@@ -104,7 +100,5 @@ void removePoorlyOverlappingImagePairs(PairwiseMatches& geometricMatches,
                                        float minimumRatio,
                                        std::size_t minimumGeometricCount);
 
-} // namespace matchingImageCollection
-} // namespace aliceVision
-
-
+}  // namespace matchingImageCollection
+}  // namespace aliceVision

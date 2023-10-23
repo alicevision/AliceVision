@@ -15,50 +15,47 @@
 
 #include <vector>
 
-
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
 
-
 struct Rotation3PSolver : public robustEstimation::ISolver<robustEstimation::Mat3Model>
 {
-  /**
-   * @brief Return the minimum number of required samples
-   * @return minimum number of required samples
-   */
-  inline std::size_t getMinimumNbRequiredSamples() const override { return 3; }
+    /**
+     * @brief Return the minimum number of required samples
+     * @return minimum number of required samples
+     */
+    inline std::size_t getMinimumNbRequiredSamples() const override { return 3; }
 
-  /**
-   * @brief Return the maximum number of models
-   * @return maximum number of models
-   */
-  inline std::size_t getMaximumNbModels() const override { return 1; }
+    /**
+     * @brief Return the maximum number of models
+     * @return maximum number of models
+     */
+    inline std::size_t getMaximumNbModels() const override { return 1; }
 
-  /**
-   * @brief Computes the homography that transforms x to y with the Direct Linear
-   * Transform (DLT).
-   *
-   * @param[in] x  A 2xN matrix of column vectors.
-   * @param[in] y  A 2xN matrix of column vectors.
-   * @param[out] Hs A vector into which the computed homography is stored.
-   *
-   * The estimated homography should approximately hold the condition y = H x.
-   */
-  void solve(const Mat& x, const Mat& y, std::vector<robustEstimation::Mat3Model>& models) const override;
+    /**
+     * @brief Computes the homography that transforms x to y with the Direct Linear
+     * Transform (DLT).
+     *
+     * @param[in] x  A 2xN matrix of column vectors.
+     * @param[in] y  A 2xN matrix of column vectors.
+     * @param[out] Hs A vector into which the computed homography is stored.
+     *
+     * The estimated homography should approximately hold the condition y = H x.
+     */
+    void solve(const Mat& x, const Mat& y, std::vector<robustEstimation::Mat3Model>& models) const override;
 
-  /**
-   * @brief Solve the problem.
-   * @param[in]  x1  A 2xN matrix of column vectors.
-   * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
-   * @param[out] models A vector into which the computed models are stored.
-   * @param[in]  weights.
-   */
-  void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models,
-             const std::vector<double>& weights) const override
-  {
-      throw std::logic_error("Rotation3PSolver does not support problem solving with weights.");
-  }
+    /**
+     * @brief Solve the problem.
+     * @param[in]  x1  A 2xN matrix of column vectors.
+     * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
+     * @param[out] models A vector into which the computed models are stored.
+     * @param[in]  weights.
+     */
+    void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models, const std::vector<double>& weights) const override
+    {
+        throw std::logic_error("Rotation3PSolver does not support problem solving with weights.");
+    }
 };
 
 struct RotationError
@@ -76,7 +73,6 @@ struct RotationError
     }
 };
 
-
-}  // namespace kernel
-}  // namespace rotation
+}  // namespace relativePose
+}  // namespace multiview
 }  // namespace aliceVision

@@ -15,9 +15,7 @@ Mat3 Pinhole::K() const
 
     Vec2 pp = getPrincipalPoint();
 
-    K  << _scale(0), 0.0, pp(0),
-            0.0, _scale(1), pp(1),
-            0.0, 0.0, 1.0;
+    K << _scale(0), 0.0, pp(0), 0.0, _scale(1), pp(1), 0.0, 0.0, 1.0;
     return K;
 }
 
@@ -29,7 +27,7 @@ void Pinhole::setK(double focalLengthPixX, double focalLengthPixY, double ppx, d
     _offset(1) = ppy - static_cast<double>(_h) * 0.5;
 }
 
-void Pinhole::setK(const Mat3 & K)
+void Pinhole::setK(const Mat3& K)
 {
     _scale(0) = K(0, 0);
     _scale(1) = K(1, 1);
@@ -37,9 +35,9 @@ void Pinhole::setK(const Mat3 & K)
     _offset(1) = K(1, 2) - static_cast<double>(_h) * 0.5;
 }
 
-Vec2 Pinhole::project(const Eigen::Matrix4d & pose, const Vec4& pt, bool applyDistortion) const
+Vec2 Pinhole::project(const Eigen::Matrix4d& pose, const Vec4& pt, bool applyDistortion) const
 {
-    const Vec4 X = pose * pt; // apply pose
+    const Vec4 X = pose * pt;  // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     const Vec2 distorted = this->addDistortion(P);
@@ -48,30 +46,30 @@ Vec2 Pinhole::project(const Eigen::Matrix4d & pose, const Vec4& pt, bool applyDi
     return impt;
 }
 
-Eigen::Matrix<double, 2, 9> Pinhole::getDerivativeProjectWrtRotation(const Eigen::Matrix4d & pose, const Vec4 & pt)
+Eigen::Matrix<double, 2, 9> Pinhole::getDerivativeProjectWrtRotation(const Eigen::Matrix4d& pose, const Vec4& pt)
 {
-    const Vec4 X = pose * pt; // apply pose
+    const Vec4 X = pose * pt;  // apply pose
 
-    const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.block<3,3>(0, 0), pt.head(3));
+    const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.block<3, 3>(0, 0), pt.head(3));
 
     const Vec2 P = X.head<2>() / X(2);
 
     Eigen::Matrix<double, 2, 3> d_P_d_X;
     d_P_d_X(0, 0) = 1 / X(2);
     d_P_d_X(0, 1) = 0;
-    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(0, 2) = -X(0) / (X(2) * X(2));
     d_P_d_X(1, 0) = 0;
     d_P_d_X(1, 1) = 1 / X(2);
-    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+    d_P_d_X(1, 2) = -X(1) / (X(2) * X(2));
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_R;
 }
 
-Eigen::Matrix<double, 2, 16> Pinhole::getDerivativeProjectWrtPose(const Eigen::Matrix4d & pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, 16> Pinhole::getDerivativeProjectWrtPose(const Eigen::Matrix4d& pose, const Vec4& pt) const
 {
     const Eigen::Matrix4d T = pose;
 
-    const Vec4 X = T * pt; // apply pose
+    const Vec4 X = T * pt;  // apply pose
 
     const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(T, pt);
 
@@ -80,19 +78,19 @@ Eigen::Matrix<double, 2, 16> Pinhole::getDerivativeProjectWrtPose(const Eigen::M
     Eigen::Matrix<double, 2, 3> d_P_d_X;
     d_P_d_X(0, 0) = 1 / X(2);
     d_P_d_X(0, 1) = 0;
-    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(0, 2) = -X(0) / (X(2) * X(2));
     d_P_d_X(1, 0) = 0;
     d_P_d_X(1, 1) = 1 / X(2);
-    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+    d_P_d_X(1, 2) = -X(1) / (X(2) * X(2));
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
 }
 
-Eigen::Matrix<double, 2, 16> Pinhole::getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d & pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, 16> Pinhole::getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d& pose, const Vec4& pt) const
 {
     const Eigen::Matrix4d T = pose;
 
-    const Vec4 X = T * pt; // apply pose
+    const Vec4 X = T * pt;  // apply pose
 
     const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(Eigen::Matrix4d::Identity(), X);
 
@@ -102,18 +100,17 @@ Eigen::Matrix<double, 2, 16> Pinhole::getDerivativeProjectWrtPoseLeft(const Eige
     double y = X(1);
     double z = X(2);
     double invz = 1.0 / z;
-    double invzsq = invz*invz;
+    double invzsq = invz * invz;
     double mxinvzsq = -x * invzsq;
     double myinvzsq = -y * invzsq;
-
 
     Eigen::Matrix<double, 2, 3> d_P_d_X;
     d_P_d_X(0, 0) = 1 / X(2);
     d_P_d_X(0, 1) = 0;
-    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(0, 2) = -X(0) / (X(2) * X(2));
     d_P_d_X(1, 0) = 0;
     d_P_d_X(1, 1) = 1 / X(2);
-    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+    d_P_d_X(1, 2) = -X(1) / (X(2) * X(2));
 
     Eigen::Matrix<double, 2, 16> d_P_d_T;
     d_P_d_T(0, 0) = invz * X(0);
@@ -149,38 +146,37 @@ Eigen::Matrix<double, 2, 16> Pinhole::getDerivativeProjectWrtPoseLeft(const Eige
     d_P_d_T(1, 13) = invz;
     d_P_d_T(1, 14) = myinvzsq;
     d_P_d_T(1, 15) = 0.0;
-    
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_T;
 }
 
-Eigen::Matrix<double, 2, 4> Pinhole::getDerivativeProjectWrtPoint(const Eigen::Matrix4d & pose, const Vec4 & pt) const
+Eigen::Matrix<double, 2, 4> Pinhole::getDerivativeProjectWrtPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const
 {
     const Eigen::Matrix4d T = pose;
-    const Vec4 X = T * pt; // apply pose
+    const Vec4 X = T * pt;  // apply pose
 
-    const Eigen::Matrix<double, 4, 4> & d_X_d_P = getJacobian_AB_wrt_B<4, 4, 1>(T, pt);
+    const Eigen::Matrix<double, 4, 4>& d_X_d_P = getJacobian_AB_wrt_B<4, 4, 1>(T, pt);
 
     const Vec2 P = X.head<2>() / X(2);
 
     Eigen::Matrix<double, 2, 4> d_P_d_X;
     d_P_d_X(0, 0) = 1 / X(2);
     d_P_d_X(0, 1) = 0;
-    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(0, 2) = -X(0) / (X(2) * X(2));
     d_P_d_X(0, 3) = 0;
     d_P_d_X(1, 0) = 0;
     d_P_d_X(1, 1) = 1 / X(2);
-    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+    d_P_d_X(1, 2) = -X(1) / (X(2) * X(2));
     d_P_d_X(1, 3) = 0;
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
 }
 
-Eigen::Matrix<double, 2, 3> Pinhole::getDerivativeProjectWrtPoint3(const Eigen::Matrix4d& T, const Vec4 & pt) const
+Eigen::Matrix<double, 2, 3> Pinhole::getDerivativeProjectWrtPoint3(const Eigen::Matrix4d& T, const Vec4& pt) const
 {
-    const Vec4 X = T * pt; // apply pose
+    const Vec4 X = T * pt;  // apply pose
 
-    //const Eigen::Matrix<double, 4, 3> & d_X_d_P = getJacobian_AB_wrt_B<4, 4, 1>(T, pt).block<4, 3>(0, 0);
+    // const Eigen::Matrix<double, 4, 3> & d_X_d_P = getJacobian_AB_wrt_B<4, 4, 1>(T, pt).block<4, 3>(0, 0);
 
     const Vec2 P = X.head<2>() / X(2);
 
@@ -198,7 +194,7 @@ Eigen::Matrix<double, 2, 3> Pinhole::getDerivativeProjectWrtPoint3(const Eigen::
     double y = X(1);
     double z = X(2);
     double invz = 1.0 / z;
-    double invzsq = invz*invz;
+    double invzsq = invz * invz;
     double mxinvzsq = -x * invzsq;
     double myinvzsq = -y * invzsq;
 
@@ -213,22 +209,22 @@ Eigen::Matrix<double, 2, 3> Pinhole::getDerivativeProjectWrtPoint3(const Eigen::
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_Pt;
 }
 
-Eigen::Matrix<double, 2, Eigen::Dynamic> Pinhole::getDerivativeProjectWrtDisto(const Eigen::Matrix4d & pose, const Vec4 & pt) const
+Eigen::Matrix<double, 2, Eigen::Dynamic> Pinhole::getDerivativeProjectWrtDisto(const Eigen::Matrix4d& pose, const Vec4& pt) const
 {
-    const Vec4 X = pose * pt; // apply pose
+    const Vec4 X = pose * pt;  // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
 }
 
-Eigen::Matrix<double, 2, 2> Pinhole::getDerivativeProjectWrtPrincipalPoint(const Eigen::Matrix4d & pose, const Vec4 & pt) const
+Eigen::Matrix<double, 2, 2> Pinhole::getDerivativeProjectWrtPrincipalPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const
 {
     return getDerivativeCam2ImaWrtPrincipalPoint();
 }
 
-Eigen::Matrix<double, 2, 2> Pinhole::getDerivativeProjectWrtScale(const Eigen::Matrix4d & pose, const Vec4 & pt) const
+Eigen::Matrix<double, 2, 2> Pinhole::getDerivativeProjectWrtScale(const Eigen::Matrix4d& pose, const Vec4& pt) const
 {
-    const Vec4 X = pose * pt; // apply pose
+    const Vec4 X = pose * pt;  // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     const Vec2 distorted = this->addDistortion(P);
@@ -236,7 +232,7 @@ Eigen::Matrix<double, 2, 2> Pinhole::getDerivativeProjectWrtScale(const Eigen::M
     return getDerivativeCam2ImaWrtScale(distorted);
 }
 
-Eigen::Matrix<double, 2, Eigen::Dynamic> Pinhole::getDerivativeProjectWrtParams(const Eigen::Matrix4d & pose, const Vec4& pt3D) const
+Eigen::Matrix<double, 2, Eigen::Dynamic> Pinhole::getDerivativeProjectWrtParams(const Eigen::Matrix4d& pose, const Vec4& pt3D) const
 {
     Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
 
@@ -252,14 +248,11 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Pinhole::getDerivativeProjectWrtParams(
     return ret;
 }
 
-Vec3 Pinhole::toUnitSphere(const Vec2 & pt) const
-{
-    return pt.homogeneous().normalized();
-}
+Vec3 Pinhole::toUnitSphere(const Vec2& pt) const { return pt.homogeneous().normalized(); }
 
-Eigen::Matrix<double, 3, 2> Pinhole::getDerivativetoUnitSphereWrtPoint(const Vec2 & pt) const
+Eigen::Matrix<double, 3, 2> Pinhole::getDerivativetoUnitSphereWrtPoint(const Vec2& pt) const
 {
-    const double norm2 = pt(0)*pt(0) + pt(1)*pt(1) + 1.0;
+    const double norm2 = pt(0) * pt(0) + pt(1) * pt(1) + 1.0;
     const double norm = sqrt(norm2);
 
     const Vec3 ptcam = pt.homogeneous();
@@ -279,12 +272,9 @@ Eigen::Matrix<double, 3, 2> Pinhole::getDerivativetoUnitSphereWrtPoint(const Vec
     return (norm * d_ptcam_d_pt - ptcam * d_norm_d_pt) / norm2;
 }
 
-double Pinhole::imagePlaneToCameraPlaneError(double value) const
-{
-    return value / _scale(0);
-}
+double Pinhole::imagePlaneToCameraPlaneError(double value) const { return value / _scale(0); }
 
-Mat34 Pinhole::getProjectiveEquivalent(const geometry::Pose3 & pose) const
+Mat34 Pinhole::getProjectiveEquivalent(const geometry::Pose3& pose) const
 {
     Mat34 P;
 
@@ -292,7 +282,7 @@ Mat34 Pinhole::getProjectiveEquivalent(const geometry::Pose3 & pose) const
     return P;
 }
 
-bool Pinhole::isVisibleRay(const Vec3 & ray) const
+bool Pinhole::isVisibleRay(const Vec3& ray) const
 {
     // if(ray(2) <= 0.0)
     if (ray(2) < std::numeric_limits<double>::epsilon())
@@ -326,29 +316,40 @@ EINTRINSIC Pinhole::getType() const
     {
         switch (_pDistortion->getType())
         {
-        case EDISTORTION::DISTORTION_RADIALK1:     return EINTRINSIC::PINHOLE_CAMERA_RADIAL1;
-        case EDISTORTION::DISTORTION_RADIALK3:     return EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
-        case EDISTORTION::DISTORTION_BROWN:        return EINTRINSIC::PINHOLE_CAMERA_BROWN;
-        case EDISTORTION::DISTORTION_FISHEYE:      return EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
-        case EDISTORTION::DISTORTION_FISHEYE1:     return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1;
-        case EDISTORTION::DISTORTION_3DERADIAL4:   return EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4;
-        case EDISTORTION::DISTORTION_3DECLASSICLD: return EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD;
-        case EDISTORTION::DISTORTION_3DEANAMORPHIC4: return EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4;
-        default: throw std::out_of_range("Invalid distortion model for pinhole camera.");
+            case EDISTORTION::DISTORTION_RADIALK1:
+                return EINTRINSIC::PINHOLE_CAMERA_RADIAL1;
+            case EDISTORTION::DISTORTION_RADIALK3:
+                return EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
+            case EDISTORTION::DISTORTION_BROWN:
+                return EINTRINSIC::PINHOLE_CAMERA_BROWN;
+            case EDISTORTION::DISTORTION_FISHEYE:
+                return EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
+            case EDISTORTION::DISTORTION_FISHEYE1:
+                return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1;
+            case EDISTORTION::DISTORTION_3DERADIAL4:
+                return EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4;
+            case EDISTORTION::DISTORTION_3DECLASSICLD:
+                return EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD;
+            case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+                return EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4;
+            default:
+                throw std::out_of_range("Invalid distortion model for pinhole camera.");
         }
     }
-    
+
     if (_pUndistortion)
     {
         switch (_pUndistortion->getType())
         {
-        case EDISTORTION::DISTORTION_3DEANAMORPHIC4: return EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4;
-        default: throw std::out_of_range("Invalid undistortion model for pinhole camera.");
+            case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+                return EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4;
+            default:
+                throw std::out_of_range("Invalid undistortion model for pinhole camera.");
         }
     }
 
     return EINTRINSIC::PINHOLE_CAMERA;
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

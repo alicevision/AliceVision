@@ -42,7 +42,7 @@ void loadLightIntensities(const std::string& intFileName, std::vector<std::array
     {
         while (!intFile.eof())
         {
-            std::getline(intFile,line);
+            std::getline(intFile, line);
             stream.clear();
             stream.str(line);
 
@@ -55,8 +55,7 @@ void loadLightIntensities(const std::string& intFileName, std::vector<std::array
     }
 }
 
-void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix,
-                         Eigen::MatrixXf& lightMat)
+void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat)
 {
     std::stringstream stream;
     std::string line;
@@ -76,7 +75,7 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
 
         while (!dirFile.eof())
         {
-            getline(dirFile,line);
+            getline(dirFile, line);
             stream.clear();
             stream.str(line);
 
@@ -114,7 +113,7 @@ void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
 
         while (!dirFile.eof())
         {
-            getline(dirFile,line);
+            getline(dirFile, line);
             stream.clear();
             stream.str(line);
 
@@ -137,8 +136,10 @@ void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
     }
 }
 
-void buildLightMatFromJSON(const std::string& fileName, const std::vector<std::string>& imageList,
-                           Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
+void buildLightMatFromJSON(const std::string& fileName,
+                           const std::vector<std::string>& imageList,
+                           Eigen::MatrixXf& lightMat,
+                           std::vector<std::array<float, 3>>& intList)
 {
     // Main tree
     bpt::ptree fileTree;
@@ -147,55 +148,16 @@ void buildLightMatFromJSON(const std::string& fileName, const std::vector<std::s
     bpt::read_json(fileName, fileTree);
 
     int lineNumber = 0;
-    for (auto& currentImPath: imageList)
+    for (auto& currentImPath : imageList)
     {
         int cpt = 0;
-        for (auto& lightsName: fileTree.get_child("lights"))
+        for (auto& lightsName : fileTree.get_child("lights"))
         {
-           fs::path imagePathFS = fs::path(currentImPath);
-           if (boost::algorithm::icontains(imagePathFS.stem().string(), lightsName.first))
-           {
-               std::array<float, 3> currentIntensities;
-               for (auto& intensities: lightsName.second.get_child("intensity"))
-               {
-                   currentIntensities[cpt] = intensities.second.get_value<float>();
-                   ++cpt;
-               }
-               intList.push_back(currentIntensities);
-
-               cpt = 0;
-
-               for (auto& direction: lightsName.second.get_child("direction"))
-               {
-                   lightMat(lineNumber, cpt)  = direction.second.get_value<float>();
-                   ++cpt;
-               }
-               ++lineNumber;
-           }
-        }
-    }
-}
-
-void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT>& indices,
-                           Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
-{
-    // Main tree
-    bpt::ptree fileTree;
-
-    // Read the JSON file and initialize the tree
-    bpt::read_json(fileName, fileTree);
-
-    int lineNumber = 0;
-    for (auto& currentIndex: indices)
-    {
-        int cpt = 0;
-        for (auto& light: fileTree.get_child("lights"))
-        {
-            IndexT lightIndex = light.second.get<IndexT>("lightId", UndefinedIndexT);
-            if (lightIndex != UndefinedIndexT)
+            fs::path imagePathFS = fs::path(currentImPath);
+            if (boost::algorithm::icontains(imagePathFS.stem().string(), lightsName.first))
             {
                 std::array<float, 3> currentIntensities;
-                for (auto& intensities: light.second.get_child("intensity"))
+                for (auto& intensities : lightsName.second.get_child("intensity"))
                 {
                     currentIntensities[cpt] = intensities.second.get_value<float>();
                     ++cpt;
@@ -204,11 +166,52 @@ void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT
 
                 cpt = 0;
 
-               for (auto& direction: light.second.get_child("direction"))
-               {
-                   lightMat(lightIndex, cpt)  = direction.second.get_value<float>();
-                   ++cpt;
-               }
+                for (auto& direction : lightsName.second.get_child("direction"))
+                {
+                    lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                    ++cpt;
+                }
+                ++lineNumber;
+            }
+        }
+    }
+}
+
+void buildLightMatFromJSON(const std::string& fileName,
+                           const std::vector<IndexT>& indices,
+                           Eigen::MatrixXf& lightMat,
+                           std::vector<std::array<float, 3>>& intList)
+{
+    // Main tree
+    bpt::ptree fileTree;
+
+    // Read the JSON file and initialize the tree
+    bpt::read_json(fileName, fileTree);
+
+    int lineNumber = 0;
+    for (auto& currentIndex : indices)
+    {
+        int cpt = 0;
+        for (auto& light : fileTree.get_child("lights"))
+        {
+            IndexT lightIndex = light.second.get<IndexT>("lightId", UndefinedIndexT);
+            if (lightIndex != UndefinedIndexT)
+            {
+                std::array<float, 3> currentIntensities;
+                for (auto& intensities : light.second.get_child("intensity"))
+                {
+                    currentIntensities[cpt] = intensities.second.get_value<float>();
+                    ++cpt;
+                }
+                intList.push_back(currentIntensities);
+
+                cpt = 0;
+
+                for (auto& direction : light.second.get_child("direction"))
+                {
+                    lightMat(lightIndex, cpt) = direction.second.get_value<float>();
+                    ++cpt;
+                }
             }
             else
             {
@@ -216,7 +219,7 @@ void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT
                 if (lightIndex == currentIndex)
                 {
                     std::array<float, 3> currentIntensities;
-                    for (auto& intensities: light.second.get_child("intensity"))
+                    for (auto& intensities : light.second.get_child("intensity"))
                     {
                         currentIntensities[cpt] = intensities.second.get_value<float>();
                         ++cpt;
@@ -225,12 +228,12 @@ void buildLightMatFromJSON(const std::string& fileName, const std::vector<IndexT
 
                     cpt = 0;
 
-                   for (auto& direction: light.second.get_child("direction"))
-                   {
-                       lightMat(lineNumber, cpt) = direction.second.get_value<float>();
-                       ++cpt;
-                   }
-                   ++lineNumber;
+                    for (auto& direction : light.second.get_child("direction"))
+                    {
+                        lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                        ++cpt;
+                    }
+                    ++lineNumber;
                 }
             }
         }
@@ -257,7 +260,6 @@ void loadMask(std::string const& maskName, image::Image<float>& mask)
     {
         image::readImage(maskName, mask, image::EImageColorSpace::SRGB);
     }
-
 }
 
 void getIndMask(image::Image<float> const& mask, std::vector<int>& indices)
@@ -287,7 +289,7 @@ void intensityScaling(std::array<float, 3> const& intensities, image::Image<imag
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            for(int ch = 0; ch < 3; ++ch)
+            for (int ch = 0; ch < 3; ++ch)
             {
                 imageToScale(i, j)(ch) /= intensities[ch];
             }
@@ -295,8 +297,7 @@ void intensityScaling(std::array<float, 3> const& intensities, image::Image<imag
     }
 }
 
-void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::vector<int>& indices,
-                    Eigen::MatrixXf& imageOut)
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::vector<int>& indices, Eigen::MatrixXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -307,15 +308,14 @@ void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const std::ve
         int j = floor(currentIdx / nbRows);
         int i = currentIdx - j * nbRows;
 
-        for(int ch = 0; ch < 3; ++ch)
+        for (int ch = 0; ch < 3; ++ch)
         {
             imageOut(ch, iterator) = imageIn(i, j)(ch);
         }
     }
 }
 
-void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::Image<float>& mask,
-                    Eigen::MatrixXf& imageOut)
+void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::Image<float>& mask, Eigen::MatrixXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -329,7 +329,7 @@ void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::
         {
             if ((!hasMask) || mask(i, j) > 0.7)
             {
-                for(int ch = 0; ch < 3; ++ch)
+                for (int ch = 0; ch < 3; ++ch)
                 {
                     imageOut(ch, index) = imageIn(i, j)(ch);
                 }
@@ -339,8 +339,7 @@ void image2PsMatrix(const image::Image<image::RGBfColor>& imageIn, const image::
     }
 }
 
-void image2PsMatrix(const image::Image<float>& imageIn, const image::Image<float>& mask,
-                    Eigen::VectorXf& imageOut)
+void image2PsMatrix(const image::Image<float>& imageIn, const image::Image<float>& mask, Eigen::VectorXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -379,8 +378,7 @@ void reshapeInImage(const Eigen::MatrixXf& matrixIn, image::Image<image::RGBfCol
     }
 }
 
-void convertNormalMap2png(const image::Image<image::RGBfColor>& normalsIm,
-                          image::Image<image::RGBColor>& normalsImPNG)
+void convertNormalMap2png(const image::Image<image::RGBfColor>& normalsIm, image::Image<image::RGBColor>& normalsImPNG)
 {
     int nbRows = normalsIm.rows();
     int nbCols = normalsIm.cols();
@@ -389,8 +387,7 @@ void convertNormalMap2png(const image::Image<image::RGBfColor>& normalsIm,
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            if (normalsIm(i, j)(0) * normalsIm(i, j)(0) + normalsIm(i, j)(1) * normalsIm(i, j)(1) +
-                    normalsIm(i, j)(2) * normalsIm(i, j)(2) == 0)
+            if (normalsIm(i, j)(0) * normalsIm(i, j)(0) + normalsIm(i, j)(1) * normalsIm(i, j)(1) + normalsIm(i, j)(2) * normalsIm(i, j)(2) == 0)
             {
                 normalsImPNG(i, j)(0) = 0;
                 normalsImPNG(i, j)(1) = 0;
@@ -429,31 +426,32 @@ void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix)
     matFile.close();
 }
 
-void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals,
-                    const image::Image<image::RGBfColor>& albedo)
+void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals, const image::Image<image::RGBfColor>& albedo)
 {
-    image::writeImage(outputPath + "/normals.exr", normals,
-                      image::ImageWriteOptions()
-                          .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
-                          .storageDataType(image::EStorageDataType::Float));
-    image::writeImage(outputPath + "/albedo.exr", albedo,
-                      image::ImageWriteOptions()
-                          .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
-                          .storageDataType(image::EStorageDataType::Float));
+    image::writeImage(
+      outputPath + "/normals.exr",
+      normals,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+    image::writeImage(
+      outputPath + "/albedo.exr",
+      albedo,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }
 
-void writePSResults(const std::string& outputPath, const image::Image<image::RGBfColor>& normals,
-                    const image::Image<image::RGBfColor>& albedo, const IndexT poseId)
+void writePSResults(const std::string& outputPath,
+                    const image::Image<image::RGBfColor>& normals,
+                    const image::Image<image::RGBfColor>& albedo,
+                    const IndexT poseId)
 {
-    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_normals.exr", normals,
-                      image::ImageWriteOptions()
-                          .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
-                          .storageDataType(image::EStorageDataType::Float));
-    image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.exr", albedo,
-                      image::ImageWriteOptions()
-                          .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
-                          .storageDataType(image::EStorageDataType::Float));
+    image::writeImage(
+      outputPath + "/" + std::to_string(poseId) + "_normals.exr",
+      normals,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+    image::writeImage(
+      outputPath + "/" + std::to_string(poseId) + "_albedo.exr",
+      albedo,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }
 
-}
-}
+}  // namespace photometricStereo
+}  // namespace aliceVision

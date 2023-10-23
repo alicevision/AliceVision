@@ -13,15 +13,13 @@
 
 #include <iostream>
 
-
 namespace aliceVision {
 namespace lightingEstimation {
 
 /**
  * @brief Evaluate albedo and normal product for one channel
  */
-void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel,
-                          const image::Image<AugmentedNormal>& augmentedNormals)
+void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, const image::Image<AugmentedNormal>& augmentedNormals)
 {
     std::size_t validIndex = 0;
     for (int i = 0; i < augmentedNormals.size(); ++i)
@@ -77,7 +75,8 @@ void prepareImageData(const MatrixXf& albedo,
     }
 }
 
-void LighthingEstimator::addImage(const image::Image<float>& albedo, const image::Image<float>& picture,
+void LighthingEstimator::addImage(const image::Image<float>& albedo,
+                                  const image::Image<float>& picture,
                                   const image::Image<image::RGBfColor>& normals)
 {
     using namespace Eigen;
@@ -119,8 +118,8 @@ void LighthingEstimator::addImage(const image::Image<image::RGBfColor>& albedo,
         MatrixXf colors;
 
         // map albedo, image
-        Map<const MatrixXf, 0, InnerStride<3>> channelAlbedo(static_cast<const float*>(&(albedo(0,0)(channel))), nbPixels, 1);
-        Map<const MatrixXf, 0, InnerStride<3>> channelPicture(static_cast<const float*>(&(picture(0,0)(channel))), nbPixels, 1);
+        Map<const MatrixXf, 0, InnerStride<3>> channelAlbedo(static_cast<const float*>(&(albedo(0, 0)(channel))), nbPixels, 1);
+        Map<const MatrixXf, 0, InnerStride<3>> channelPicture(static_cast<const float*>(&(picture(0, 0)(channel))), nbPixels, 1);
 
         prepareImageData(channelAlbedo, channelPicture, augmentedNormals, rhoTimesN, colors);
 
@@ -152,10 +151,10 @@ void LighthingEstimator::estimateLigthing(LightingVector& lighting) const
 
         // count and check matrices rows
         {
-            for(const MatrixXf& matrix : _all_rhoTimesN.at(channel))
+            for (const MatrixXf& matrix : _all_rhoTimesN.at(channel))
                 nbRows_all_rhoTimesN += matrix.rows();
 
-            for(const MatrixXf& matrix : _all_pictureChannel.at(channel))
+            for (const MatrixXf& matrix : _all_pictureChannel.at(channel))
                 nbRows_all_pictureChannel += matrix.rows();
 
             assert(nbRows_all_rhoTimesN == nbRows_all_pictureChannel);
@@ -179,13 +178,13 @@ void LighthingEstimator::estimateLigthing(LightingVector& lighting) const
             std::size_t nbRow = 0;
             for (const MatrixXf& matrix : _all_pictureChannel.at(channel))
             {
-                for(int matrixRow = 0; matrixRow < matrix.rows(); ++matrixRow)
+                for (int matrixRow = 0; matrixRow < matrix.rows(); ++matrixRow)
                     pictureChannel.row(nbRow + matrixRow) = matrix.row(matrixRow);
                 nbRow += matrix.rows();
             }
         }
 
-        ALICEVISION_LOG_INFO("Estimate ligthing channel: rhoTimesN(" << rhoTimesN.rows() << "x" << rhoTimesN.cols()<< ")");
+        ALICEVISION_LOG_INFO("Estimate ligthing channel: rhoTimesN(" << rhoTimesN.rows() << "x" << rhoTimesN.cols() << ")");
         Eigen::Matrix<float, 9, 1> lightingC = rhoTimesN.colPivHouseholderQr().solve(pictureChannel);
 
         // lighting vectors fusion
@@ -206,5 +205,5 @@ void LighthingEstimator::clear()
     _all_pictureChannel = std::array<std::vector<MatrixXf>, 3>();
 }
 
-} // namespace lightingEstimation
-} // namespace aliceVision
+}  // namespace lightingEstimation
+}  // namespace aliceVision

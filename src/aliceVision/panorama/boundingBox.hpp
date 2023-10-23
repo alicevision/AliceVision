@@ -12,12 +12,10 @@
 #include <cmath>
 #include <iostream>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 struct BoundingBox
 {
-
     int left;
     int top;
     int width;
@@ -32,32 +30,22 @@ struct BoundingBox
     };
 
     BoundingBox(int l, int t, int w, int h)
-        : left(l)
-        , top(t)
-        , width(w)
-        , height(h)
-    {
-    }
+      : left(l),
+        top(t),
+        width(w),
+        height(h)
+    {}
 
-    int getRight() const { 
-        return left + width - 1; 
-    }
+    int getRight() const { return left + width - 1; }
 
-    int getBottom() const { 
-        return top + height - 1; 
-    }
+    int getBottom() const { return top + height - 1; }
 
-    bool isEmpty() const {
-        return (width <= 0 || height <= 0);
-    }
+    bool isEmpty() const { return (width <= 0 || height <= 0); }
 
-    int area() const {
-        return width * height;
-    }
+    int area() const { return width * height; }
 
     void snapToGrid(uint32_t gridSize)
     {
-
         int right = getRight();
         int bottom = getBottom();
 
@@ -118,22 +106,25 @@ struct BoundingBox
         return intersection;
     }
 
-    bool isInside(const BoundingBox& other) const 
+    bool isInside(const BoundingBox& other) const
     {
+        if (other.left > left)
+            return false;
+        if (other.top > top)
+            return false;
 
-        if (other.left > left) return false;
-        if (other.top > top) return false;
-
-        if (other.getRight() < getRight()) return false;
-        if (other.getBottom() < getBottom()) return false;
+        if (other.getRight() < getRight())
+            return false;
+        if (other.getBottom() < getBottom())
+            return false;
 
         return true;
     }
 
-    BoundingBox dilate(int units) 
+    BoundingBox dilate(int units)
     {
         BoundingBox b;
-        
+
         b.left = left - units;
         b.top = top - units;
         b.width = width + units * 2;
@@ -142,9 +133,9 @@ struct BoundingBox
         return b;
     }
 
-    void clampLeft() 
+    void clampLeft()
     {
-        if (left < 0) 
+        if (left < 0)
         {
             width += left;
             left = 0;
@@ -160,9 +151,9 @@ struct BoundingBox
         }
     }
 
-    void clampTop() 
+    void clampTop()
     {
-        if (top < 0) 
+        if (top < 0)
         {
             height += top;
             top = 0;
@@ -218,37 +209,37 @@ struct BoundingBox
 
         int nwidth = getRight() - sleft;
         int nheight = getBottom() - stop;
-        
+
         b.width = int(ceil(double(nwidth) / double(factor)));
         b.height = int(ceil(double(nheight) / double(factor)));
 
         return b;
     }
 
-    BoundingBox limitInside(const BoundingBox & other) const
+    BoundingBox limitInside(const BoundingBox& other) const
     {
         BoundingBox b;
 
         b.left = left;
-        if (b.left < other.left) 
+        if (b.left < other.left)
         {
             b.left = other.left;
         }
 
         b.top = top;
-        if (b.top < other.top) 
+        if (b.top < other.top)
         {
             b.top = other.top;
         }
 
         int nright = getRight();
-        if (nright > other.getRight()) 
+        if (nright > other.getRight())
         {
             nright = other.getRight();
         }
 
         int nbottom = getBottom();
-        if (nbottom > other.getBottom()) 
+        if (nbottom > other.getBottom())
         {
             nbottom = other.getBottom();
         }
@@ -262,4 +253,4 @@ struct BoundingBox
 
 std::ostream& operator<<(std::ostream& os, const BoundingBox& in);
 
-}
+}  // namespace aliceVision

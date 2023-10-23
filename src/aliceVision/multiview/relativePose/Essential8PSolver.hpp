@@ -16,48 +16,41 @@ namespace relativePose {
 
 class Essential8PSolver : public robustEstimation::ISolver<robustEstimation::Mat3Model>
 {
-public:
+  public:
+    /**
+     * @brief Return the minimum number of required samples
+     * @return minimum number of required samples
+     */
+    inline std::size_t getMinimumNbRequiredSamples() const override { return 8; }
 
-  /**
-   * @brief Return the minimum number of required samples
-   * @return minimum number of required samples
-   */
-  inline std::size_t getMinimumNbRequiredSamples() const override
-  {
-    return 8;
-  }
+    /**
+     * @brief Return the maximum number of models
+     * @return maximum number of models
+     */
+    inline std::size_t getMaximumNbModels() const override { return 1; }
 
-  /**
-   * @brief Return the maximum number of models
-   * @return maximum number of models
-   */
-  inline std::size_t getMaximumNbModels() const override
-  {
-    return 1;
-  }
+    /**
+     * @brief Eight-point algorithm for solving for the essential matrix from normalized
+     *        image coordinates of point correspondences.
+     *        See page 294 in HZ Result 11.1.
+     *
+     * @param[in] x1 Points in the first image.  One per column.
+     * @param[in] x2 Corresponding points in the second image. One per column.
+     * @param[out] models  A list of at most 10 candidate essential matrix solutions.
+     */
+    void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const override;
 
-  /**
-   * @brief Eight-point algorithm for solving for the essential matrix from normalized
-   *        image coordinates of point correspondences.
-   *        See page 294 in HZ Result 11.1.
-   *
-   * @param[in] x1 Points in the first image.  One per column.
-   * @param[in] x2 Corresponding points in the second image. One per column.
-   * @param[out] models  A list of at most 10 candidate essential matrix solutions.
-   */
-   void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const override;
-
-   /**
-    * @brief Solve the problem.
-    * @param[in]  x1  A 2xN matrix of column vectors.
-    * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
-    * @param[out] models A vector into which the computed models are stored.
-    * @param[in]  weights.
-    */
-   void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models, const std::vector<double>& weights) const override
-   {
-      throw std::logic_error("Essential8PSolver does not support problem solving with weights.");
-   }
+    /**
+     * @brief Solve the problem.
+     * @param[in]  x1  A 2xN matrix of column vectors.
+     * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
+     * @param[out] models A vector into which the computed models are stored.
+     * @param[in]  weights.
+     */
+    void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models, const std::vector<double>& weights) const override
+    {
+        throw std::logic_error("Essential8PSolver does not support problem solving with weights.");
+    }
 };
 
 }  // namespace relativePose

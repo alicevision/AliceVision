@@ -22,7 +22,5 @@ int cpu_clock_by_os();
  */
 int get_total_cpus();
 
-}
-}
-
-
+}  // namespace system
+}  // namespace aliceVision

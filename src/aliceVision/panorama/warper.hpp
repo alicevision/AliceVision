@@ -9,13 +9,11 @@
 #include "coordinatesMap.hpp"
 #include "gaussian.hpp"
 
-
-namespace aliceVision
-{
+namespace aliceVision {
 
 class Warper
 {
-public:
+  public:
     virtual bool warp(const CoordinatesMap& map, const aliceVision::image::Image<image::RGBfColor>& source);
 
     const aliceVision::image::Image<image::RGBfColor>& getColor() const { return _color; }
@@ -26,7 +24,7 @@ public:
 
     size_t getOffsetY() const { return _offset_y; }
 
-protected:
+  protected:
     size_t _offset_x = 0;
     size_t _offset_y = 0;
 
@@ -36,8 +34,8 @@ protected:
 
 class GaussianWarper : public Warper
 {
-public:
+  public:
     virtual bool warp(const CoordinatesMap& map, const GaussianPyramidNoMask& pyramid, bool clamp);
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

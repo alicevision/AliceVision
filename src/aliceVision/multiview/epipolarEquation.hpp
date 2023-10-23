@@ -14,7 +14,7 @@
 
 namespace aliceVision {
 namespace multiview {
-	
+
 /**
  * @brief Build a 9 x n matrix from point matches, where each row is equivalent to the
  * equation x'T*F*x = 0 for a single correspondence pair (x', x). The domain of
@@ -33,68 +33,51 @@ namespace multiview {
  * appropriate size already.
  */
 template<typename TMatX, typename TMatA>
-inline void encodeEpipolarEquation(const TMatX& x1, const TMatX& x2, TMatA* A, const std::vector<double> *weights = nullptr)
-{
-  assert(x1.cols()==x2.cols());
-
-  if(weights != nullptr)
-  {
-    assert(x1.cols()==weights->size());
-  }
-
-  for(typename TMatX::Index i = 0; i < x1.cols(); ++i)
-  {
-    const Vec2 xx1 = x1.col(i);
-    const Vec2 xx2 = x2.col(i);
-
-    A->row(i) <<
-      xx2(0) * xx1(0),  // 0 represents x coords,
-      xx2(0) * xx1(1),  // 1 represents y coords.
-      xx2(0),
-      xx2(1) * xx1(0),
-      xx2(1) * xx1(1),
-      xx2(1),
-      xx1(0),
-      xx1(1),
-      1.0;
-
-    if(weights != nullptr)
-      A->row(i) *= (*weights)[i];
-  }
-}
-
-
-template <typename TMatX, typename TMatA>
-inline void encodeEpipolarSphericalEquation(const TMatX& x1, const TMatX& x2, TMatA* A,
-                                            const std::vector<double>* weights = nullptr)
+inline void encodeEpipolarEquation(const TMatX& x1, const TMatX& x2, TMatA* A, const std::vector<double>* weights = nullptr)
 {
     assert(x1.cols() == x2.cols());
-    if(weights)
+
+    if (weights != nullptr)
     {
         assert(x1.cols() == weights->size());
     }
-    for(typename TMatX::Index i = 0; i < x1.cols(); ++i)
+
+    for (typename TMatX::Index i = 0; i < x1.cols(); ++i)
+    {
+        const Vec2 xx1 = x1.col(i);
+        const Vec2 xx2 = x2.col(i);
+
+        A->row(i) << xx2(0) * xx1(0),  // 0 represents x coords,
+          xx2(0) * xx1(1),             // 1 represents y coords.
+          xx2(0), xx2(1) * xx1(0), xx2(1) * xx1(1), xx2(1), xx1(0), xx1(1), 1.0;
+
+        if (weights != nullptr)
+            A->row(i) *= (*weights)[i];
+    }
+}
+
+template<typename TMatX, typename TMatA>
+inline void encodeEpipolarSphericalEquation(const TMatX& x1, const TMatX& x2, TMatA* A, const std::vector<double>* weights = nullptr)
+{
+    assert(x1.cols() == x2.cols());
+    if (weights)
+    {
+        assert(x1.cols() == weights->size());
+    }
+    for (typename TMatX::Index i = 0; i < x1.cols(); ++i)
     {
         const Vec3 xx1 = x1.col(i);
         const Vec3 xx2 = x2.col(i);
-        A->row(i) <<
-            xx2(0) * xx1(0),  // 0 represents x coords,
-            xx2(0) * xx1(1),  // 1 represents y coords.
-            xx2(0) * xx1(2),
-            xx2(1) * xx1(0),
-            xx2(1) * xx1(1),
-            xx2(1) * xx1(2),
-            xx2(2) * xx1(0),
-            xx2(2) * xx1(1),
-            xx2(2) * xx1(2);
+        A->row(i) << xx2(0) * xx1(0),  // 0 represents x coords,
+          xx2(0) * xx1(1),             // 1 represents y coords.
+          xx2(0) * xx1(2), xx2(1) * xx1(0), xx2(1) * xx1(1), xx2(1) * xx1(2), xx2(2) * xx1(0), xx2(2) * xx1(1), xx2(2) * xx1(2);
 
-        if(weights)
+        if (weights)
         {
             A->row(i) *= (*weights)[i];
         }
     }
 }
 
-
-} // namespace multiview
-} // namespace aliceVision
+}  // namespace multiview
+}  // namespace aliceVision

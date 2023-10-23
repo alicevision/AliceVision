@@ -29,7 +29,7 @@ namespace image {
 template<typename T>
 class Image;
 
-} // namespace image
+}  // namespace image
 
 namespace keyframe {
 
@@ -37,7 +37,7 @@ namespace oiio = OIIO;
 
 class KeyframeSelector
 {
-public:
+  public:
     /**
      * @brief KeyframeSelector constructor
      * @param[in] mediaPaths video file path, image sequence directory or SfMData file
@@ -95,9 +95,12 @@ public:
      * @param[in] skipSharpnessComputation if true, the sharpness score computations will not be performed and a fixed
      *            sharpness score will be given to all the input frames
      */
-    void processSmart(const float pxDisplacement, const std::size_t rescaledWidthSharpness,
-                      const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
-                      const std::size_t flowCellSize, const bool skipSharpnessComputation = false);
+    void processSmart(const float pxDisplacement,
+                      const std::size_t rescaledWidthSharpness,
+                      const std::size_t rescaledWidthFlow,
+                      const std::size_t sharpnessWindowSize,
+                      const std::size_t flowCellSize,
+                      const bool skipSharpnessComputation = false);
 
     /**
      * @brief Compute the sharpness and optical flow scores for the input media paths
@@ -112,8 +115,10 @@ public:
      *            sharpness score will be given to all the input frames
      * @return true if the scores have been successfully computed for all frames, false otherwise
      */
-    bool computeScores(const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
-                       const std::size_t sharpnessWindowSize, const std::size_t flowCellSize,
+    bool computeScores(const std::size_t rescaledWidthSharpness,
+                       const std::size_t rescaledWidthFlow,
+                       const std::size_t sharpnessWindowSize,
+                       const std::size_t flowCellSize,
                        const bool skipSharpnessComputation);
 
     /**
@@ -126,8 +131,10 @@ public:
      * @param[in] storageDataType EXR storage data type for the output keyframes (ignored when the extension is not EXR)
      * @return true if all the selected keyframes were successfully written, false otherwise
      */
-    bool writeSelection(const std::vector<std::string>& brands, const std::vector<std::string>& models,
-                        const std::vector<float>& mmFocals, const bool renameKeyframes,
+    bool writeSelection(const std::vector<std::string>& brands,
+                        const std::vector<std::string>& models,
+                        const std::vector<float>& mmFocals,
+                        const bool renameKeyframes,
                         const std::string& outputExtension,
                         const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined);
 
@@ -151,84 +158,57 @@ public:
      * @brief Set the minimum frame step parameter for the processing algorithm
      * @param[in] frameStep minimum number of frames between two keyframes
      */
-    void setMinFrameStep(unsigned int frameStep)
-    {
-        _minFrameStep = frameStep;
-    }
+    void setMinFrameStep(unsigned int frameStep) { _minFrameStep = frameStep; }
 
     /**
      * @brief Set the maximum frame step parameter for the processing algorithm
      * @param[in] frameStep maximum number of frames between two keyframes
      */
-    void setMaxFrameStep(unsigned int frameStep)
-    {
-        _maxFrameStep = frameStep;
-    }
+    void setMaxFrameStep(unsigned int frameStep) { _maxFrameStep = frameStep; }
 
     /**
      * @brief Set the minimum output frame number parameter for the processing algorithm
      * @param[in] nbFrames minimum number of output frames
      */
-    void setMinOutFrames(unsigned int nbFrames)
-    {
-        _minOutFrames = nbFrames;
-    }
+    void setMinOutFrames(unsigned int nbFrames) { _minOutFrames = nbFrames; }
 
     /**
      * @brief Set the maximum output frame number parameter for the processing algorithm
      * @param[in] nbFrames maximum number of output frames (if 0, no limit for the regular algorithm)
      */
-    void setMaxOutFrames(unsigned int nbFrames)
-    {
-        _maxOutFrames = nbFrames;
-    }
+    void setMaxOutFrames(unsigned int nbFrames) { _maxOutFrames = nbFrames; }
 
     /**
      * @brief Set the minimum size of the blocks of frames for the multi-threading
      * @param[in] blockSize minimum number of frames in a block for a thread to be spawned
      */
-    void setMinBlockSize(std::size_t blockSize)
-    {
-        _minBlockSize = blockSize;
-    }
+    void setMinBlockSize(std::size_t blockSize) { _minBlockSize = blockSize; }
 
     /**
      * @brief Get the minimum frame step parameter for the processing algorithm
      * @return minimum number of frames between two keyframes
      */
-    unsigned int getMinFrameStep() const
-    {
-        return _minFrameStep;
-    }
+    unsigned int getMinFrameStep() const { return _minFrameStep; }
 
     /**
      * @brief Get the maximum output frame number parameter for the processing algorithm
      * @return maximum number of frames between two keyframes
      */
-    unsigned int getMaxFrameStep() const
-    {
-        return _maxFrameStep;
-    }
+    unsigned int getMaxFrameStep() const { return _maxFrameStep; }
 
     /**
      * @brief Get the minimum output frame for the processing algorithm
      * @return minimum number of output frames
      */
-    unsigned int getMinOutFrames() const
-    {
-        return _minOutFrames;
-    }
+    unsigned int getMinOutFrames() const { return _minOutFrames; }
 
     /**
      * @brief Get the maximum output frame number for the processing algorithm
      * @return maximum number of output frames (if 0, no limit for the regular algorithm)
      */
-    unsigned int getMaxOutFrames() const
-    {
-        return _maxOutFrames;
-    }
-    
-private:
+    unsigned int getMaxOutFrames() const { return _maxOutFrames; }
+
+  private:
     /**
      * @brief Read an image from a feed provider into a grayscale OpenCV matrix, and rescale it if a size is provided
      * @param[in] feed The feed provider
@@ -236,8 +216,7 @@ private:
      *                  There will be no resizing if this parameter is set to 0
      * @return An OpenCV Mat object containing the image
      */
-    cv::Mat readImage(dataio::FeedProvider &feed, std::size_t width = 0);
-
+    cv::Mat readImage(dataio::FeedProvider& feed, std::size_t width = 0);
 
     /**
      * @brief Compute the sharpness and optical flow scores for the input media paths for a given range of frames
@@ -255,9 +234,13 @@ private:
      *            sharpness score will be given to all the input frames
      * @return true if the scores have been successfully computed for all frames, false otherwise
      */
-    bool computeScoresProc(const std::size_t startFrame, const std::size_t endFrame, const std::size_t nbFrames,
-                           const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
-                           const std::size_t sharpnessWindowSize, const std::size_t flowCellSize,
+    bool computeScoresProc(const std::size_t startFrame,
+                           const std::size_t endFrame,
+                           const std::size_t nbFrames,
+                           const std::size_t rescaledWidthSharpness,
+                           const std::size_t rescaledWidthFlow,
+                           const std::size_t sharpnessWindowSize,
+                           const std::size_t flowCellSize,
                            const bool skipSharpnessComputation);
 
     /**
@@ -279,8 +262,12 @@ private:
      * @param[in] mask the mask associated to the frame the integral and integral images were calculated from
      * @return a const double value representating the local standard deviation of the Laplacian
      */
-    const double computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x, const int y,
-                                     const int windowSize, const cv::Mat& mask);
+    const double computeSharpnessStd(const cv::Mat& sum,
+                                     const cv::Mat& squaredSum,
+                                     const int x,
+                                     const int y,
+                                     const int windowSize,
+                                     const cv::Mat& mask);
 
     /**
      * @brief Estimate the optical flow score for an input grayscale frame based on its previous frame cell by cell
@@ -291,8 +278,11 @@ private:
      * @param[in] mask the mask associated to the current frame if it exists, an empty cv::Mat otherwise
      * @return a double value representing the median motion of all the image's cells
      */
-    double estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
-                        const cv::Mat& previousGrayscaleImage, const std::size_t cellSize, const cv::Mat& mask);
+    double estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow,
+                        const cv::Mat& grayscaleImage,
+                        const cv::Mat& previousGrayscaleImage,
+                        const std::size_t cellSize,
+                        const cv::Mat& mask);
 
     /**
      * @brief Write the output SfMData files with the selected and non-selected keyframes information
@@ -303,8 +293,11 @@ private:
      * @param[in] mmFocals focal in millimeters for each camera
      * @return true if the output SfMData files were written as expected, false otherwise
      */
-    bool writeSfMData(const std::string& mediaPath, dataio::FeedProvider &feed, const std::vector<std::string>& brands,
-                      const std::vector<std::string>& models, const std::vector<float>& mmFocals);
+    bool writeSfMData(const std::string& mediaPath,
+                      dataio::FeedProvider& feed,
+                      const std::vector<std::string>& brands,
+                      const std::vector<std::string>& models,
+                      const std::vector<float>& mmFocals);
 
     /**
      * @brief Copy the relevant information from the input SfMData file and fill the output SfMData files that will
@@ -325,8 +318,10 @@ private:
      * @param mmFocals focal in millimiters for each camera
      * @return true if the output SfMData files have successfully been filled, false otherwise
      */
-    bool writeSfMDataFromSequences(const std::string& mediaPath, dataio::FeedProvider &feed,
-                                   const std::vector<std::string>& brands, const std::vector<std::string>& models,
+    bool writeSfMDataFromSequences(const std::string& mediaPath,
+                                   dataio::FeedProvider& feed,
+                                   const std::vector<std::string>& brands,
+                                   const std::vector<std::string>& models,
                                    const std::vector<float>& mmFocals);
 
     /**
@@ -338,8 +333,11 @@ private:
      * @param imageHeight the height of the image corresponding to the view to create
      * @return a shared pointer to the created View
      */
-    std::shared_ptr<sfmData::View> createView(const std::string& imagePath, IndexT intrinsicId, IndexT previousFrameId,
-                    std::size_t imageWidth, std::size_t imageHeight);
+    std::shared_ptr<sfmData::View> createView(const std::string& imagePath,
+                                              IndexT intrinsicId,
+                                              IndexT previousFrameId,
+                                              std::size_t imageWidth,
+                                              std::size_t imageHeight);
 
     /**
      * @brief Create an Intrinsic object associated to a specific View
@@ -350,8 +348,11 @@ private:
      * @param mediaIndex the media index
      * @return a shared pointer to the created Intrinsic
      */
-    std::shared_ptr<camera::IntrinsicBase> createIntrinsic(const sfmData::View& view, const double focalLength, const double sensorWidth,
-                        const double imageRatio, std::size_t mediaIndex);
+    std::shared_ptr<camera::IntrinsicBase> createIntrinsic(const sfmData::View& view,
+                                                           const double focalLength,
+                                                           const double sensorWidth,
+                                                           const double imageRatio,
+                                                           std::size_t mediaIndex);
 
     /// Selected keyframes IDs
     std::vector<unsigned int> _selectedKeyframes;
@@ -416,5 +417,5 @@ private:
     mutable std::mutex _mutex;
 };
 
-} // namespace keyframe 
-} // namespace aliceVision
+}  // namespace keyframe
+}  // namespace aliceVision

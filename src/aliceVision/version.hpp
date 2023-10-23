@@ -21,28 +21,26 @@
 #define ALICEVISION_TO_STRING(x) ALICEVISION_TO_STRING_HELPER(x)
 
 // AliceVision version as a string; for example "0.9.0".
-#define ALICEVISION_VERSION_STRING ALICEVISION_TO_STRING(ALICEVISION_VERSION_MAJOR) "." \
-                             ALICEVISION_TO_STRING(ALICEVISION_VERSION_MINOR) "." \
-                             ALICEVISION_TO_STRING(ALICEVISION_VERSION_REVISION)
+#define ALICEVISION_VERSION_STRING                                                                                                                   \
+    ALICEVISION_TO_STRING(ALICEVISION_VERSION_MAJOR)                                                                                                 \
+    "." ALICEVISION_TO_STRING(ALICEVISION_VERSION_MINOR) "." ALICEVISION_TO_STRING(ALICEVISION_VERSION_REVISION)
 
 namespace aliceVision {
 
 class Version
 {
-public:
+  public:
     Version()
-        : _v(Vec3i::Zero())
+      : _v(Vec3i::Zero())
     {}
 
-    explicit Version(const Vec3i & v)
-        : _v(v)
-    {
-    }
+    explicit Version(const Vec3i& v)
+      : _v(v)
+    {}
 
     Version(int major, int minor, int micro)
-        : _v(major, minor, micro)
-    {
-    }
+      : _v(major, minor, micro)
+    {}
 
     Version& operator=(const Vec3i& other)
     {
@@ -63,13 +61,13 @@ public:
             {
                 return false;
             }
-        }    
+        }
 
         return false;
     }
 
-private:
+  private:
     Vec3i _v;
 };
 
-}
+}  // namespace aliceVision

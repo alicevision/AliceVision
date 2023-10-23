@@ -14,7 +14,6 @@
 namespace aliceVision {
 namespace sfmDataIO {
 
-
 /**
  * @brief Read the file containing the cameras (intrinsics and pose) in the middlebury format
  * @param[in] filename middlebury file (e.g. temple_par.txt)
@@ -25,8 +24,12 @@ namespace sfmDataIO {
  * @param[in] lockPoses set the poses to locked (i.e. they cannot change during e.g. structure from motion)
  * @return the corresponding SfMData representation of the scene
  */
-sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std::string& basePath,
-                                          bool uniqueIntrinsics, bool importPoses, bool lockIntrinsics, bool lockPoses);
+sfmData::SfMData middleburySceneToSfmData(const std::string& filename,
+                                          const std::string& basePath,
+                                          bool uniqueIntrinsics,
+                                          bool importPoses,
+                                          bool lockIntrinsics,
+                                          bool lockPoses);
 
 /**
  * @brief Parse a line of the middlebury file containing the calibration, the pose and the image name
@@ -36,8 +39,7 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std
  * @param[out] rotation the rotation matrix of the pose
  * @param[out] translation the translation vector of the pose
  */
-void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3& matK, Mat3& rotation,
-                           Vec3& translation);
+void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3& matK, Mat3& rotation, Vec3& translation);
 
 /**
  * @brief Helper function to parse the list of entries parsed from the file.
@@ -47,5 +49,5 @@ void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3
  */
 Mat3 extractMat3FromVec(const std::vector<std::string>& entries, std::size_t offset);
 
-}
-}
+}  // namespace sfmDataIO
+}  // namespace aliceVision

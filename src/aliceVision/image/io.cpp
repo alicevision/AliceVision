@@ -31,7 +31,6 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace image {
 
-
 EImageColorSpace getImageColorSpace(const std::string& imagePath)
 {
     oiio::ImageSpec metadataSpec;
@@ -41,7 +40,8 @@ EImageColorSpace getImageColorSpace(const std::string& imagePath)
     std::string colorSpace = metadataSpec.get_string_attribute("AliceVision:ColorSpace", ""); // default image color space is empty
     if (!colorSpace.empty())
     {
-        ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpace << " colorspace according to AliceVision:ColorSpace metadata).");
+        ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpace
+                                            << " colorspace according to AliceVision:ColorSpace metadata).");
     }
     else
     {
@@ -51,12 +51,14 @@ EImageColorSpace getImageColorSpace(const std::string& imagePath)
             const std::string colorSpaceFromFileName = getGlobalColorConfigOCIO().getColorSpaceFromFilepath(imagePath);
             if (!colorSpaceFromFileName.empty())
             {
-                ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpaceFromFileName << " colorspace according to file name).");
+                ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpaceFromFileName
+                                                    << " colorspace according to file name).");
                 colorSpace = colorSpaceFromFileName;
             }
             else if (!colorSpace.empty())
             {
-                ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpace << " colorspace according to oiio:ColorSpace metadata).");
+                ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpace
+                                                    << " colorspace according to oiio:ColorSpace metadata).");
             }
             else
             {
@@ -72,7 +74,8 @@ EImageColorSpace getImageColorSpace(const std::string& imagePath)
         const std::string ext = imagePath.substr(npos + 1);
         const std::string forcedColorSpace = (ext == "exr" || ext == "EXR") ? "linear" : "sRGB";
 
-        ALICEVISION_LOG_WARNING("The color space " << colorSpace << " detected for " << imagePath << " is not supported. Force Color space to " << forcedColorSpace << ".");
+        ALICEVISION_LOG_WARNING("The color space " << colorSpace << " detected for " << imagePath << " is not supported. Force Color space to "
+                                                   << forcedColorSpace << ".");
         colorSpace = forcedColorSpace;
     }
 
@@ -92,10 +95,14 @@ EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
 {
   const std::string type = boost::to_lower_copy(imageFileType);
 
-  if(type == "jpg" || type == "jpeg") return EImageFileType::JPEG;
-  if(type == "png")                   return EImageFileType::PNG;
-  if(type == "tif" || type == "tiff") return EImageFileType::TIFF;
-  if(type == "exr")                   return EImageFileType::EXR;
+    if (type == "jpg" || type == "jpeg")
+        return EImageFileType::JPEG;
+    if (type == "png")
+        return EImageFileType::PNG;
+    if (type == "tif" || type == "tiff")
+        return EImageFileType::TIFF;
+    if (type == "exr")
+        return EImageFileType::EXR;
 
   throw std::out_of_range("Invalid image file type: " + imageFileType);
 }
@@ -104,19 +111,21 @@ std::string EImageFileType_enumToString(const EImageFileType imageFileType)
 {
   switch(imageFileType)
   {
-    case EImageFileType::JPEG:  return "jpg";
-    case EImageFileType::PNG:   return "png";
-    case EImageFileType::TIFF:  return "tif";
-    case EImageFileType::EXR:   return "exr";
-    case EImageFileType::NONE:  return "none";
+        case EImageFileType::JPEG:
+            return "jpg";
+        case EImageFileType::PNG:
+            return "png";
+        case EImageFileType::TIFF:
+            return "tif";
+        case EImageFileType::EXR:
+            return "exr";
+        case EImageFileType::NONE:
+            return "none";
   }
   throw std::out_of_range("Invalid EImageType enum");
 }
 
-std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType)
-{
-  return os << EImageFileType_enumToString(imageFileType);
-}
+std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType) { return os << EImageFileType_enumToString(imageFileType); }
 
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
 {
@@ -133,8 +142,10 @@ std::vector<std::string> getSupportedExtensions()
   // Map containing the parsed "extension_list" with each supported format and its associated extensions
   static std::map<std::string, std::vector<std::string>> extensionList = oiio::get_extension_map();
 
-  for (auto& format : extensionList) {
-    for (auto& extension : format.second) {
+    for (auto& format : extensionList)
+    {
+        for (auto& extension : format.second)
+        {
         supportedExtensions.push_back(extension.insert(0, "."));
     }
   }
@@ -154,9 +165,7 @@ bool isVideoExtension(const std::string& extension)
     // List provided by OpenImageIO:
     // https://openimageio.readthedocs.io/en/latest/builtinplugins.html#movie-formats-using-ffmpeg
     static const std::array<std::string, 11> supportedExtensions = {
-        ".avi", ".qt", ".mov",  ".mp4", ".m4a", ".m4v",
-        ".3gp", ".3g2", ".mj2", ".m4v", ".mpg"
-    };
+      ".avi", ".qt", ".mov", ".mp4", ".m4a", ".m4v", ".3gp", ".3g2", ".mj2", ".m4v", ".mpg"};
     const auto start = supportedExtensions.begin();
     const auto end = supportedExtensions.end();
     return (std::find(start, end, boost::to_lower_copy(extension)) != end);
@@ -164,10 +173,8 @@ bool isVideoExtension(const std::string& extension)
 
 std::string EStorageDataType_informations()
 {
-    return EStorageDataType_enumToString(EStorageDataType::Float) + ", " +
-        EStorageDataType_enumToString(EStorageDataType::Half) + ", " +
-        EStorageDataType_enumToString(EStorageDataType::HalfFinite) + ", " +
-        EStorageDataType_enumToString(EStorageDataType::Auto) + ", " +
+    return EStorageDataType_enumToString(EStorageDataType::Float) + ", " + EStorageDataType_enumToString(EStorageDataType::Half) + ", " +
+           EStorageDataType_enumToString(EStorageDataType::HalfFinite) + ", " + EStorageDataType_enumToString(EStorageDataType::Auto) + ", " +
         EStorageDataType_enumToString(EStorageDataType::Undefined);
 }
 
@@ -176,11 +183,16 @@ EStorageDataType EStorageDataType_stringToEnum(const std::string& dataType)
     std::string type = dataType;
     std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
 
-    if (type == "float") return EStorageDataType::Float;
-    if (type == "half") return EStorageDataType::Half;
-    if (type == "halffinite") return EStorageDataType::HalfFinite;
-    if (type == "auto") return EStorageDataType::Auto;
-    if (type == "undefined") return EStorageDataType::Undefined;
+    if (type == "float")
+        return EStorageDataType::Float;
+    if (type == "half")
+        return EStorageDataType::Half;
+    if (type == "halffinite")
+        return EStorageDataType::HalfFinite;
+    if (type == "auto")
+        return EStorageDataType::Auto;
+    if (type == "undefined")
+        return EStorageDataType::Undefined;
 
     throw std::out_of_range("Invalid EStorageDataType: " + dataType);
 }
@@ -189,19 +201,21 @@ std::string EStorageDataType_enumToString(const EStorageDataType dataType)
 {
     switch (dataType)
     {
-    case EStorageDataType::Float:  return "float";
-    case EStorageDataType::Half:   return "half";
-    case EStorageDataType::HalfFinite:  return "halfFinite";
-    case EStorageDataType::Auto:   return "auto";
-    case EStorageDataType::Undefined: return "undefined";
+        case EStorageDataType::Float:
+            return "float";
+        case EStorageDataType::Half:
+            return "half";
+        case EStorageDataType::HalfFinite:
+            return "halfFinite";
+        case EStorageDataType::Auto:
+            return "auto";
+        case EStorageDataType::Undefined:
+            return "undefined";
     }
     throw std::out_of_range("Invalid EStorageDataType enum");
 }
 
-std::ostream& operator<<(std::ostream& os, EStorageDataType dataType)
-{
-    return os << EStorageDataType_enumToString(dataType);
-}
+std::ostream& operator<<(std::ostream& os, EStorageDataType dataType) { return os << EStorageDataType_enumToString(dataType); }
 
 std::istream& operator>>(std::istream& in, EStorageDataType& dataType)
 {
@@ -213,17 +227,13 @@ std::istream& operator>>(std::istream& in, EStorageDataType& dataType)
 
 std::string EImageExrCompression_informations()
 {
-    return EImageExrCompression_enumToString(EImageExrCompression::None) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::Auto) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::RLE) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::ZIP) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::ZIPS) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::PIZ) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::PXR24) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::B44) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::B44A) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::DWAA) + ", " +
-        EImageExrCompression_enumToString(EImageExrCompression::DWAB);
+    return EImageExrCompression_enumToString(EImageExrCompression::None) + ", " + EImageExrCompression_enumToString(EImageExrCompression::Auto) +
+           ", " + EImageExrCompression_enumToString(EImageExrCompression::RLE) + ", " + EImageExrCompression_enumToString(EImageExrCompression::ZIP) +
+           ", " + EImageExrCompression_enumToString(EImageExrCompression::ZIPS) + ", " +
+           EImageExrCompression_enumToString(EImageExrCompression::PIZ) + ", " + EImageExrCompression_enumToString(EImageExrCompression::PXR24) +
+           ", " + EImageExrCompression_enumToString(EImageExrCompression::B44) + ", " +
+           EImageExrCompression_enumToString(EImageExrCompression::B44A) + ", " + EImageExrCompression_enumToString(EImageExrCompression::DWAA) +
+           ", " + EImageExrCompression_enumToString(EImageExrCompression::DWAB);
 }
 
 EImageExrCompression EImageExrCompression_stringToEnum(const std::string& exrCompression)
@@ -231,17 +241,28 @@ EImageExrCompression EImageExrCompression_stringToEnum(const std::string& exrCom
     std::string type = exrCompression;
     std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
 
-    if (type == "none")  return EImageExrCompression::None;
-    if (type == "auto")  return EImageExrCompression::Auto;
-    if (type == "rle")   return EImageExrCompression::RLE;
-    if (type == "zip")   return EImageExrCompression::ZIP;
-    if (type == "zips")  return EImageExrCompression::ZIPS;
-    if (type == "piz")   return EImageExrCompression::PIZ;
-    if (type == "pxr24") return EImageExrCompression::PXR24;
-    if (type == "b44")   return EImageExrCompression::B44;
-    if (type == "b44a")  return EImageExrCompression::B44A;
-    if (type == "dwaa")  return EImageExrCompression::DWAA;
-    if (type == "dwab")  return EImageExrCompression::DWAB;
+    if (type == "none")
+        return EImageExrCompression::None;
+    if (type == "auto")
+        return EImageExrCompression::Auto;
+    if (type == "rle")
+        return EImageExrCompression::RLE;
+    if (type == "zip")
+        return EImageExrCompression::ZIP;
+    if (type == "zips")
+        return EImageExrCompression::ZIPS;
+    if (type == "piz")
+        return EImageExrCompression::PIZ;
+    if (type == "pxr24")
+        return EImageExrCompression::PXR24;
+    if (type == "b44")
+        return EImageExrCompression::B44;
+    if (type == "b44a")
+        return EImageExrCompression::B44A;
+    if (type == "dwaa")
+        return EImageExrCompression::DWAA;
+    if (type == "dwab")
+        return EImageExrCompression::DWAB;
 
     throw std::out_of_range("Invalid EImageExrCompression: " + exrCompression);
 }
@@ -250,25 +271,33 @@ std::string EImageExrCompression_enumToString(const EImageExrCompression exrComp
 {
     switch (exrCompression)
     {
-    case EImageExrCompression::None:  return "none";
-    case EImageExrCompression::Auto:  return "auto";
-    case EImageExrCompression::RLE:   return "rle";
-    case EImageExrCompression::ZIP:   return "zip";
-    case EImageExrCompression::ZIPS:  return "zips";
-    case EImageExrCompression::PIZ:   return "piz";
-    case EImageExrCompression::PXR24: return "pxr24";
-    case EImageExrCompression::B44:   return "b44";
-    case EImageExrCompression::B44A:  return "b44a";
-    case EImageExrCompression::DWAA:  return "dwaa";
-    case EImageExrCompression::DWAB:  return "dwab";
+        case EImageExrCompression::None:
+            return "none";
+        case EImageExrCompression::Auto:
+            return "auto";
+        case EImageExrCompression::RLE:
+            return "rle";
+        case EImageExrCompression::ZIP:
+            return "zip";
+        case EImageExrCompression::ZIPS:
+            return "zips";
+        case EImageExrCompression::PIZ:
+            return "piz";
+        case EImageExrCompression::PXR24:
+            return "pxr24";
+        case EImageExrCompression::B44:
+            return "b44";
+        case EImageExrCompression::B44A:
+            return "b44a";
+        case EImageExrCompression::DWAA:
+            return "dwaa";
+        case EImageExrCompression::DWAB:
+            return "dwab";
     }
     throw std::out_of_range("Invalid EImageExrCompression enum");
 }
 
-std::ostream& operator<<(std::ostream& os, EImageExrCompression exrCompression)
-{
-    return os << EImageExrCompression_enumToString(exrCompression);
-}
+std::ostream& operator<<(std::ostream& os, EImageExrCompression exrCompression) { return os << EImageExrCompression_enumToString(exrCompression); }
 
 std::istream& operator>>(std::istream& in, EImageExrCompression& exrCompression)
 {
@@ -302,16 +331,15 @@ std::string EImageQuality_enumToString(const EImageQuality imageQuality)
 {
     switch(imageQuality)
     {
-        case EImageQuality::OPTIMIZED:  return "optimized";
-        case EImageQuality::LOSSLESS:   return "lossless";
+        case EImageQuality::OPTIMIZED:
+            return "optimized";
+        case EImageQuality::LOSSLESS:
+            return "lossless";
     }
     throw std::out_of_range("Invalid EImageQuality enum");
 }
 
-std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality)
-{
-    return os << EImageQuality_enumToString(imageQuality);
-}
+std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality) { return os << EImageQuality_enumToString(imageQuality); }
 
 std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
 {
@@ -323,9 +351,7 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
 
 bool isSupportedUndistortFormat(const std::string &ext)
 {
-    static const std::array<std::string, 6> supportedExtensions = {
-        ".jpg", ".jpeg", ".png",  ".tif", ".tiff", ".exr"
-    };
+    static const std::array<std::string, 6> supportedExtensions = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".exr"};
     const auto start = supportedExtensions.begin();
     const auto end = supportedExtensions.end();
     return(std::find(start, end, boost::to_lower_copy(ext)) != end);
@@ -360,19 +386,24 @@ ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& 
         return ERawColorInterpretation::Auto;
 
     throw std::out_of_range("Invalid raw color interpretation : " + rawColorInterpretation);
-
 }
 
 std::string ERawColorInterpretation_enumToString(const ERawColorInterpretation rawColorInterpretation)
 {
     switch (rawColorInterpretation)
     {
-        case ERawColorInterpretation::None: return "none";
-        case ERawColorInterpretation::LibRawNoWhiteBalancing: return "librawnowhitebalancing";
-        case ERawColorInterpretation::LibRawWhiteBalancing: return "librawwhitebalancing";
-        case ERawColorInterpretation::DcpLinearProcessing: return "dcpLinearprocessing";
-        case ERawColorInterpretation::DcpMetadata: return "dcpmetadata";
-        case ERawColorInterpretation::Auto: return "auto";
+        case ERawColorInterpretation::None:
+            return "none";
+        case ERawColorInterpretation::LibRawNoWhiteBalancing:
+            return "librawnowhitebalancing";
+        case ERawColorInterpretation::LibRawWhiteBalancing:
+            return "librawwhitebalancing";
+        case ERawColorInterpretation::DcpLinearProcessing:
+            return "dcpLinearprocessing";
+        case ERawColorInterpretation::DcpMetadata:
+            return "dcpmetadata";
+        case ERawColorInterpretation::Auto:
+            return "auto";
     }
     throw std::out_of_range("Invalid ERawColorInterpretation enum");
 }
@@ -438,10 +469,7 @@ oiio::ImageSpec readImageSpec(const std::string& path)
   return spec;
 }
 
-oiio::ParamValueList readImageMetadata(const std::string& path)
-{
-    return readImageSpec(path).extra_attribs;
-}
+oiio::ParamValueList readImageMetadata(const std::string& path) { return readImageSpec(path).extra_attribs; }
 
 void readImageSize(const std::string& path, int& width, int& height)
 {
@@ -451,45 +479,24 @@ void readImageSize(const std::string& path, int& width, int& height)
 }
 
 template<typename T>
-void getBufferFromImage(Image<T>& image,
-                        oiio::TypeDesc format,
-                        int nchannels,
-                        oiio::ImageBuf& buffer)
+void getBufferFromImage(Image<T>& image, oiio::TypeDesc format, int nchannels, oiio::ImageBuf& buffer)
 {
   const oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, format);
   oiio::ImageBuf imageBuf(imageSpec, image.data());
   buffer.swap(imageBuf);
 }
 
-void getBufferFromImage(Image<float>& image, oiio::ImageBuf& buffer)
-{
-  getBufferFromImage(image, oiio::TypeDesc::FLOAT, 1, buffer);
-}
+void getBufferFromImage(Image<float>& image, oiio::ImageBuf& buffer) { getBufferFromImage(image, oiio::TypeDesc::FLOAT, 1, buffer); }
 
-void getBufferFromImage(Image<unsigned char>& image, oiio::ImageBuf& buffer)
-{
-  getBufferFromImage(image, oiio::TypeDesc::UINT8, 1, buffer);
-}
+void getBufferFromImage(Image<unsigned char>& image, oiio::ImageBuf& buffer) { getBufferFromImage(image, oiio::TypeDesc::UINT8, 1, buffer); }
 
-void getBufferFromImage(Image<RGBAfColor>& image, oiio::ImageBuf& buffer)
-{
-  getBufferFromImage(image, oiio::TypeDesc::FLOAT, 4, buffer);
-}
+void getBufferFromImage(Image<RGBAfColor>& image, oiio::ImageBuf& buffer) { getBufferFromImage(image, oiio::TypeDesc::FLOAT, 4, buffer); }
 
-void getBufferFromImage(Image<RGBAColor>& image, oiio::ImageBuf& buffer)
-{
-  getBufferFromImage(image, oiio::TypeDesc::UINT8, 4, buffer);
-}
+void getBufferFromImage(Image<RGBAColor>& image, oiio::ImageBuf& buffer) { getBufferFromImage(image, oiio::TypeDesc::UINT8, 4, buffer); }
 
-void getBufferFromImage(Image<RGBfColor>& image, oiio::ImageBuf& buffer)
-{
-  getBufferFromImage(image, oiio::TypeDesc::FLOAT, 3, buffer);
-}
+void getBufferFromImage(Image<RGBfColor>& image, oiio::ImageBuf& buffer) { getBufferFromImage(image, oiio::TypeDesc::FLOAT, 3, buffer); }
 
-void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer)
-{
-  getBufferFromImage(image, oiio::TypeDesc::UINT8, 3, buffer);
-}
+void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer) { getBufferFromImage(image, oiio::TypeDesc::UINT8, 3, buffer); }
 
 bool isRawFormat(const std::string& path)
 {
@@ -503,13 +510,8 @@ bool isRawFormat(const std::string& path)
     return (imgFormat.compare("raw") == 0);
 }
 
-
 template<typename T>
-void readImage(const std::string& path,
-               oiio::TypeDesc format,
-               int nchannels,
-               Image<T>& image,
-               const ImageReadOptions& imageReadOptions)
+void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Image<T>& image, const ImageReadOptions& imageReadOptions)
 {
     ALICEVISION_LOG_DEBUG("[IO] Read Image: " << path);
 
@@ -537,7 +539,8 @@ void readImage(const std::string& path,
             if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
             {
                 cam_mul = "{1024, 1024, 1024, 1024}";
-                ALICEVISION_LOG_WARNING("[readImage]: cam_mul metadata not available, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
+                ALICEVISION_LOG_WARNING(
+                  "[readImage]: cam_mul metadata not available, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
             }
 
             std::vector<float> v_mult;
@@ -560,7 +563,8 @@ void readImage(const std::string& path,
 
         // libRAW configuration
         // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
-        // and https://www.libraw.org/docs/API-datastruct-eng.html#libraw_raw_unpack_params_t for raw:balance_clamped and raw:adjust_maximum_thr behavior
+        // and https://www.libraw.org/docs/API-datastruct-eng.html#libraw_raw_unpack_params_t for raw:balance_clamped and raw:adjust_maximum_thr
+        // behavior
 
 #if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12) // OIIO_VERSION >= 2.4.12
 	    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
@@ -584,7 +588,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
-            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:adjust_maximum_thr",
+                                 static_cast<float>(1.0));  // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawNoWhiteBalancing)
@@ -596,7 +601,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
-            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:adjust_maximum_thr",
+                                 static_cast<float>(1.0));  // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing)
@@ -608,7 +614,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
-            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:adjust_maximum_thr",
+                                 static_cast<float>(1.0));  // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
@@ -617,8 +624,8 @@ void readImage(const std::string& path,
             {
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
-            float user_mul[4] = {static_cast<float>(neutral[0]), static_cast<float>(neutral[1]),
-                                 static_cast<float>(neutral[2]), static_cast<float>(neutral[1])};
+            float user_mul[4] = {
+              static_cast<float>(neutral[0]), static_cast<float>(neutral[1]), static_cast<float>(neutral[2]), static_cast<float>(neutral[1])};
             if (imageReadOptions.doWBAfterDemosaicing)
             {
                 for (int i = 0; i < 4; ++i)
@@ -634,7 +641,8 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:ColorSpace", "raw");
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
-            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:adjust_maximum_thr",
+                                 static_cast<float>(1.0));  // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata)
@@ -643,8 +651,8 @@ void readImage(const std::string& path,
             {
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
-            float user_mul[4] = {static_cast<float>(neutral[0]), static_cast<float>(neutral[1]),
-                                 static_cast<float>(neutral[2]), static_cast<float>(neutral[1])};
+            float user_mul[4] = {
+              static_cast<float>(neutral[0]), static_cast<float>(neutral[1]), static_cast<float>(neutral[2]), static_cast<float>(neutral[1])};
             if (imageReadOptions.doWBAfterDemosaicing)
             {
                 for (int i = 0; i < 4; ++i)
@@ -659,12 +667,14 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
-            configSpec.attribute("raw:adjust_maximum_thr", static_cast<float>(1.0)); // Use libRaw default value: values above 75% of max are clamped to max.
+            configSpec.attribute("raw:adjust_maximum_thr",
+                                 static_cast<float>(1.0));  // Use libRaw default value: values above 75% of max are clamped to max.
             configSpec.attribute("raw:Demosaic", imageReadOptions.demosaicingAlgo);
         }
         else
         {
-            ALICEVISION_THROW_ERROR("[image] readImage: invalid rawColorInterpretation " << ERawColorInterpretation_enumToString(imageReadOptions.rawColorInterpretation) << ".");
+            ALICEVISION_THROW_ERROR("[image] readImage: invalid rawColorInterpretation "
+                                    << ERawColorInterpretation_enumToString(imageReadOptions.rawColorInterpretation) << ".");
         }
     }
 
@@ -699,8 +709,7 @@ void readImage(const std::string& path,
     }
 
     // Apply DCP profile
-    if (!imageReadOptions.colorProfileFileName.empty() &&
-        imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+    if (!imageReadOptions.colorProfileFileName.empty() && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
     {
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
@@ -709,7 +718,8 @@ void readImage(const std::string& path,
         if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
         {
             cam_mul = "{1024, 1024, 1024, 1024}";
-            ALICEVISION_LOG_WARNING("[readImage]: cam_mul metadata not available, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
+            ALICEVISION_LOG_WARNING(
+              "[readImage]: cam_mul metadata not available, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
         }
 
         std::vector<float> v_mult;
@@ -740,12 +750,12 @@ void readImage(const std::string& path,
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
-    const std::string colorSpaceFromMetadata = inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"));
+    const std::string colorSpaceFromMetadata =
+      inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"));
 
     std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
                 ? "aces2065-1"
-                : (isRawImage
-                   ? "linear"
+                                       : (isRawImage ? "linear"
                    : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
                       ? colorSpaceFromMetadata
                       : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
@@ -776,7 +786,8 @@ void readImage(const std::string& path,
         // load DCP metadata from metadata. An error will be thrown if all required metadata are not there.
         dcpProf.Load(imageMetadata);
 
-        std::string cam_mul = map_has_non_empty_value(imageMetadata, "raw:cam_mul") ? imageMetadata.at("raw:cam_mul") : imageMetadata.at("AliceVision:raw:cam_mul");
+        std::string cam_mul =
+          map_has_non_empty_value(imageMetadata, "raw:cam_mul") ? imageMetadata.at("raw:cam_mul") : imageMetadata.at("AliceVision:raw:cam_mul");
         std::vector<float> v_mult;
         size_t last = 0;
         size_t next = 1;
@@ -804,8 +815,10 @@ void readImage(const std::string& path,
         // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
         // even if no conversion is needed.
     }
-    else if ((imageReadOptions.workingColorSpace == EImageColorSpace::ACES2065_1) || (imageReadOptions.workingColorSpace == EImageColorSpace::ACEScg) ||
-             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACES2065_1) || (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACEScg) ||
+    else if ((imageReadOptions.workingColorSpace == EImageColorSpace::ACES2065_1) ||
+             (imageReadOptions.workingColorSpace == EImageColorSpace::ACEScg) ||
+             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACES2065_1) ||
+             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACEScg) ||
              (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::REC709))
     {
         const auto colorConfigPath = getAliceVisionOCIOConfig();
@@ -815,16 +828,21 @@ void readImage(const std::string& path,
         }
         oiio::ImageBuf colorspaceBuf;
         oiio::ColorConfig colorConfig(colorConfigPath);
-        oiio::ImageBufAlgo::colorconvert(colorspaceBuf, inBuf,
+        oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
+                                         inBuf,
             fromColorSpaceName,
-            EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace), true, "", "",
+                                         EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace),
+                                         true,
+                                         "",
+                                         "",
             &colorConfig);
         inBuf = colorspaceBuf;
     }
     else
     {
         oiio::ImageBuf colorspaceBuf;
-        oiio::ImageBufAlgo::colorconvert(colorspaceBuf, inBuf, fromColorSpaceName, EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace));
+        oiio::ImageBufAlgo::colorconvert(
+          colorspaceBuf, inBuf, fromColorSpaceName, EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace));
         inBuf = colorspaceBuf;
     }
 
@@ -864,7 +882,8 @@ void readImage(const std::string& path,
         oiio::ImageBuf requestedBuf(requestedSpec);
         int channelOrder[] = { 0, 1, 2, -1 /*constant value*/ };
         float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0 };
-        oiio::ImageBufAlgo::channels(requestedBuf, inBuf,
+        oiio::ImageBufAlgo::channels(requestedBuf,
+                                     inBuf,
                                         4, // create an image with 4 channels
                                         channelOrder,
                                         channelValues); // only the 4th value is used
@@ -883,9 +902,7 @@ void readImage(const std::string& path,
 }
 
 template<typename T>
-void readImageNoFloat(const std::string& path,
-               oiio::TypeDesc format,
-               Image<T>& image)
+void readImageNoFloat(const std::string& path, oiio::TypeDesc format, Image<T>& image)
 {
   oiio::ImageSpec configSpec;
 
@@ -984,12 +1001,14 @@ void writeImage(const std::string& path,
                 break;
             case EImageExrCompression::DWAA:
             case EImageExrCompression::DWAB:
-                if (compressionLevel > 0) suffix = ":" + std::to_string(compressionLevel);
+                if (compressionLevel > 0)
+                    suffix = ":" + std::to_string(compressionLevel);
                 compressionMethod = methodName + suffix;
                 break;
             case EImageExrCompression::ZIP:
             case EImageExrCompression::ZIPS:
-                if (compressionLevel > 0) suffix = ":" + std::to_string(std::min(compressionLevel, 9));
+                if (compressionLevel > 0)
+                    suffix = ":" + std::to_string(std::min(compressionLevel, 9));
                 compressionMethod = methodName + suffix;
                 break;
             default:
@@ -1018,8 +1037,8 @@ void writeImage(const std::string& path,
     }
 
     imageSpec.attribute("AliceVision:ColorSpace",
-                        (toColorSpace == EImageColorSpace::NO_CONVERSION)
-                            ? EImageColorSpace_enumToString(fromColorSpace) : EImageColorSpace_enumToString(toColorSpace));
+                        (toColorSpace == EImageColorSpace::NO_CONVERSION) ? EImageColorSpace_enumToString(fromColorSpace)
+                                                                          : EImageColorSpace_enumToString(toColorSpace));
   
     const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
     const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
@@ -1040,15 +1059,20 @@ void writeImage(const std::string& path,
             throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
         }
         oiio::ColorConfig colorConfig(colorConfigPath);
-        oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf,
+        oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
+                                         *outBuf,
                                          EImageColorSpace_enumToOIIOString(fromColorSpace),
-                                         EImageColorSpace_enumToOIIOString(toColorSpace), true, "", "",
+                                         EImageColorSpace_enumToOIIOString(toColorSpace),
+                                         true,
+                                         "",
+                                         "",
                                          &colorConfig);
         outBuf = &colorspaceBuf;
     }
     else
     {
-        oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToOIIOString(fromColorSpace), EImageColorSpace_enumToOIIOString(toColorSpace));
+        oiio::ImageBufAlgo::colorconvert(
+          colorspaceBuf, *outBuf, EImageColorSpace_enumToOIIOString(fromColorSpace), EImageColorSpace_enumToOIIOString(toColorSpace));
         outBuf = &colorspaceBuf;
     }
 
@@ -1060,11 +1084,11 @@ void writeImage(const std::string& path,
         // is set and load it from attributes if it isn't set.
         if (options.getStorageDataType() != EStorageDataType::Undefined)
         {
-            imageSpec.attribute("AliceVision:storageDataType",
-                                EStorageDataType_enumToString(options.getStorageDataType()));
+            imageSpec.attribute("AliceVision:storageDataType", EStorageDataType_enumToString(options.getStorageDataType()));
         }
 
-        const std::string storageDataTypeStr = imageSpec.get_string_attribute("AliceVision:storageDataType", EStorageDataType_enumToString(EStorageDataType::HalfFinite));
+        const std::string storageDataTypeStr =
+          imageSpec.get_string_attribute("AliceVision:storageDataType", EStorageDataType_enumToString(EStorageDataType::HalfFinite));
         EStorageDataType storageDataType  = EStorageDataType_stringToEnum(storageDataTypeStr);
 
         if (storageDataType == EStorageDataType::Auto)
@@ -1086,8 +1110,7 @@ void writeImage(const std::string& path,
             outBuf = &colorspaceBuf;
         }
 
-        if (storageDataType == EStorageDataType::Half ||
-            storageDataType == EStorageDataType::HalfFinite)
+        if (storageDataType == EStorageDataType::Half || storageDataType == EStorageDataType::HalfFinite)
         {
             formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
             outBuf = &formatBuf;
@@ -1138,7 +1161,6 @@ void writeImageNoFloat(const std::string& path,
   oiio::ImageBuf formatBuf;  // buffer for image format modification
   if(isEXR)
   {
-    
     formatBuf.copy(*outBuf, typeDesc); // override format, use half instead of float
     outBuf = &formatBuf;
   }
@@ -1161,15 +1183,9 @@ void readImage(const std::string& path, Image<unsigned char>& image, const Image
   readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
 }
 
-void readImageDirect(const std::string& path, Image<unsigned char>& image)
-{
-  readImageNoFloat(path, oiio::TypeDesc::UINT8, image);
-}
+void readImageDirect(const std::string& path, Image<unsigned char>& image) { readImageNoFloat(path, oiio::TypeDesc::UINT8, image); }
 
-void readImageDirect(const std::string& path, Image<IndexT>& image)
-{
-  readImageNoFloat(path, oiio::TypeDesc::UINT32, image);
-}
+void readImageDirect(const std::string& path, Image<IndexT>& image) { readImageNoFloat(path, oiio::TypeDesc::UINT32, image); }
 
 void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions)
 {
@@ -1210,28 +1226,22 @@ void logOIIOImageCacheInfo()
   int64_t bytesRead = -1;
   cache->getattribute("stat:bytes_read", oiio::TypeDesc::INT64, &bytesRead);
 
-  ALICEVISION_LOG_INFO("OIIO image cache info: " << 
-                      "\n * max open files: " << maxOpenFiles << 
-                      "\n * total files: " << totalFiles << 
-                      "\n * max memory (MB): " << maxMemoryMB << 
-                      "\n * cache memory used: " << cacheMemoryUsed << 
-                      "\n * bytes read: " << bytesRead);
+    ALICEVISION_LOG_INFO("OIIO image cache info: "
+                         << "\n * max open files: " << maxOpenFiles << "\n * total files: " << totalFiles << "\n * max memory (MB): " << maxMemoryMB
+                         << "\n * cache memory used: " << cacheMemoryUsed << "\n * bytes read: " << bytesRead);
 }
 
-void writeImage(const std::string& path, const Image<unsigned char>& image,
-                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<unsigned char>& image, const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
     writeImageNoFloat(path, oiio::TypeDesc::UINT8, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<int>& image,
-                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<int>& image, const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
     writeImageNoFloat(path, oiio::TypeDesc::INT32, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<IndexT>& image,
-                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<IndexT>& image, const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
     writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, options, metadata);
 }
@@ -1256,8 +1266,7 @@ void writeImage(const std::string& path,
     writeImage(path, oiio::TypeDesc::FLOAT, 4, image, options, metadata, displayRoi, pixelRoi);
 }
 
-void writeImage(const std::string& path, const Image<RGBAColor>& image,
-                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<RGBAColor>& image, const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::UINT8, 4, image, options, metadata);
 }
@@ -1272,33 +1281,34 @@ void writeImage(const std::string& path,
     writeImage(path, oiio::TypeDesc::FLOAT, 3, image, options, metadata, displayRoi, pixelRoi);
 }
 
-void writeImage(const std::string& path, const Image<RGBColor>& image,
-                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<RGBColor>& image, const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::UINT8, 3, image, options, metadata);
 }
 
-void writeImageWithFloat(const std::string& path, const Image<unsigned char>& image,
-                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+void writeImageWithFloat(const std::string& path,
+                         const Image<unsigned char>& image,
+                         const ImageWriteOptions& options,
+                         const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::UINT8, 1, image, options, metadata);
 }
 
-void writeImageWithFloat(const std::string& path, const Image<int>& image,
-                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+void writeImageWithFloat(const std::string& path, const Image<int>& image, const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::INT32, 1, image, options, metadata);
 }
 
-void writeImageWithFloat(const std::string& path, const Image<IndexT>& image,
-                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+void writeImageWithFloat(const std::string& path, const Image<IndexT>& image, const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::UINT32, 1, image, options, metadata);
 }
 
-
-bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
-                 const IndexT viewId, const std::string& srcImage, const std::string& fileExtension)
+bool tryLoadMask(Image<unsigned char>* mask,
+                 const std::vector<std::string>& masksFolders,
+                 const IndexT viewId,
+                 const std::string& srcImage,
+                 const std::string& fileExtension)
 {
     for (const auto & masksFolder_str : masksFolders)
     {
@@ -1340,10 +1350,7 @@ std::string getAliceVisionOCIOConfig()
     return {};
 }
 
-void setAliceVisionRootOverride(const std::string& value)
-{
-    aliceVisionRootOverride = value;
-}
+void setAliceVisionRootOverride(const std::string& value) { aliceVisionRootOverride = value; }
 
 }  // namespace image
 }  // namespace aliceVision

@@ -20,50 +20,47 @@ namespace aliceVision {
  */
 struct NViewDataSet
 {
-  /// Internal parameters (fx, fy, etc).
-  std::vector<Mat3> _K;
-  /// Rotation.
-  std::vector<Mat3> _R;
-  /// Translation.
-  std::vector<Vec3> _t;
-  /// Camera centers.
-  std::vector<Vec3> _C;
-  /// 3D points.
-  Mat3X _X;
-  /// Projected points; may have noise added.
-  std::vector<Mat2X> _x;
-  /// Indexes of points corresponding to the projections
-  std::vector<Vecu>  _x_ids;
-  /// Actual number of cameras.
-  std::size_t _n;
+    /// Internal parameters (fx, fy, etc).
+    std::vector<Mat3> _K;
+    /// Rotation.
+    std::vector<Mat3> _R;
+    /// Translation.
+    std::vector<Vec3> _t;
+    /// Camera centers.
+    std::vector<Vec3> _C;
+    /// 3D points.
+    Mat3X _X;
+    /// Projected points; may have noise added.
+    std::vector<Mat2X> _x;
+    /// Indexes of points corresponding to the projections
+    std::vector<Vecu> _x_ids;
+    /// Actual number of cameras.
+    std::size_t _n;
 
-  /**
-   * @brief Return P=K*[R|t] for the Inth camera
-   * @param[in] i The Inth camera
-   * @return P=K*[R|t] for the Inth camera
-   */
-  Mat34 P(size_t i) const;
+    /**
+     * @brief Return P=K*[R|t] for the Inth camera
+     * @param[in] i The Inth camera
+     * @return P=K*[R|t] for the Inth camera
+     */
+    Mat34 P(size_t i) const;
 
-  /**
-   * @brief Export in PLY the point structure and camera and camera looking dir.
-   * @param[in] outFilename
-   */
-  void exportToPLY(const std::string& outFilename) const;
+    /**
+     * @brief Export in PLY the point structure and camera and camera looking dir.
+     * @param[in] outFilename
+     */
+    void exportToPLY(const std::string& outFilename) const;
 };
 
 struct NViewDatasetConfigurator
 {
-  /// Internal camera parameters (focal, principal point)
-  int _fx, _fy, _cx, _cy;
+    /// Internal camera parameters (focal, principal point)
+    int _fx, _fy, _cx, _cy;
 
-  /// Camera random position parameters
-  double _dist;
-  double _jitter_amount;
+    /// Camera random position parameters
+    double _dist;
+    double _jitter_amount;
 
-  NViewDatasetConfigurator(int fx = 1000,  int fy = 1000,
-                           int cx = 500,   int cy  = 500,
-                           double distance = 1.5,
-                           double jitter_amount = 0.01 );
+    NViewDatasetConfigurator(int fx = 1000, int fy = 1000, int cx = 500, int cy = 500, double distance = 1.5, double jitter_amount = 0.01);
 };
 
 /**
@@ -76,4 +73,4 @@ NViewDataSet NRealisticCamerasRing(std::size_t nviews, std::size_t npoints, cons
  */
 NViewDataSet NRealisticCamerasCardioid(std::size_t nviews, std::size_t npoints, const NViewDatasetConfigurator& config = NViewDatasetConfigurator());
 
-} // namespace aliceVision
+}  // namespace aliceVision

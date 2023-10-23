@@ -15,16 +15,14 @@ namespace camera {
 /**
  * @brief Class with "focal" (scale) and center offset
  */
-class IntrinsicScaleOffset: public IntrinsicBase
+class IntrinsicScaleOffset : public IntrinsicBase
 {
-public:
-    IntrinsicScaleOffset(unsigned int w, unsigned int h,
-                          double scaleX, double scaleY,
-                          double offsetX, double offsetY) :
-        IntrinsicBase(w, h),
-        _scale(scaleX, scaleY), _offset(offsetX, offsetY)
-    {
-    }
+  public:
+    IntrinsicScaleOffset(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY)
+      : IntrinsicBase(w, h),
+        _scale(scaleX, scaleY),
+        _offset(offsetX, offsetY)
+    {}
 
     ~IntrinsicScaleOffset() override = default;
 
@@ -82,12 +80,12 @@ public:
     /**
      * @brief Import a vector of params loaded from a file. It is similar to updateFromParams but it deals with file compatibility.
      */
-    bool importFromParams(const std::vector<double>& params, const Version & inputVersion) override;
+    bool importFromParams(const std::vector<double>& params, const Version& inputVersion) override;
 
     /**
      * @brief Set initial Scale (for constraining minimization)
      */
-    inline void setInitialScale(const Vec2 & initialScale) { _initialScale = initialScale; }
+    inline void setInitialScale(const Vec2& initialScale) { _initialScale = initialScale; }
 
     /**
      * @brief Get the intrinsic initial scale
@@ -103,12 +101,12 @@ public:
 
     inline bool isRatioLocked() const { return _ratioLocked; }
 
-protected:
+  protected:
     Vec2 _scale{1.0, 1.0};
     Vec2 _offset{0.0, 0.0};
     Vec2 _initialScale{-1.0, -1.0};
     bool _ratioLocked{true};
 };
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

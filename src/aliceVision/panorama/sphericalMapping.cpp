@@ -6,11 +6,9 @@
 
 #include "sphericalMapping.hpp"
 
-namespace aliceVision
-{
+namespace aliceVision {
 
-namespace SphericalMapping
-{
+namespace SphericalMapping {
 /**
  * Map from equirectangular to spherical coordinates
  * @param equirectangular equirectangular coordinates
@@ -39,7 +37,6 @@ Vec3 fromEquirectangular(const Vec2& equirectangular, int width, int height)
  */
 Vec2 toEquirectangular(const Vec3& spherical, int width, int height)
 {
-
     double vertical_angle = asin(spherical(1));
     double horizontal_angle = atan2(spherical(0), spherical(2));
 
@@ -49,5 +46,5 @@ Vec2 toEquirectangular(const Vec3& spherical, int width, int height)
     return Vec2(longitude, latitude);
 }
 
-} // namespace SphericalMapping
-} // namespace aliceVision
+}  // namespace SphericalMapping
+}  // namespace aliceVision

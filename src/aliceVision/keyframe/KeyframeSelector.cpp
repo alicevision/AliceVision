@@ -18,7 +18,6 @@
 #include <fstream>
 #include <thread>
 
-
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
@@ -31,7 +30,7 @@ namespace keyframe {
  */
 int getRandomInt()
 {
-    std::random_device rd;  // will be used to obtain a seed for the random number engine
+    std::random_device rd;              // will be used to obtain a seed for the random number engine
     std::mt19937 randomTwEngine(rd());  // standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<> randomDist(0, std::numeric_limits<int>::max());
     return randomDist(randomTwEngine);
@@ -45,7 +44,8 @@ int getRandomInt()
 double findMedian(const std::vector<double>& vec)
 {
     std::vector<double> vecCopy = vec;
-    if (vecCopy.size() > 0 && vecCopy.size() % 2 == 0) {
+    if (vecCopy.size() > 0 && vecCopy.size() % 2 == 0)
+    {
         const auto medianIt1 = vecCopy.begin() + vecCopy.size() / 2 - 1;
         std::nth_element(vecCopy.begin(), medianIt1, vecCopy.end());
         const auto med1 = *medianIt1;
@@ -55,7 +55,9 @@ double findMedian(const std::vector<double>& vec)
         const auto med2 = *medianIt2;
 
         return (med1 + med2) / 2.0;
-    } else if (vecCopy.size() > 0) {
+    }
+    else if (vecCopy.size() > 0)
+    {
         const auto medianIt = vecCopy.begin() + vecCopy.size() / 2;
         std::nth_element(vecCopy.begin(), medianIt, vecCopy.end());
         return *medianIt;
@@ -70,15 +72,16 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
                                    const std::string& outputFolder,
                                    const std::string& outputSfmKeyframes,
                                    const std::string& outputSfmFrames)
-    : _mediaPaths(mediaPaths),
-      _maskPaths(maskPaths),
-      _sensorDbPath(sensorDbPath),
-      _outputFolder(outputFolder),
-      _outputSfmKeyframesPath(outputSfmKeyframes),
-      _outputSfmFramesPath(outputSfmFrames)
+  : _mediaPaths(mediaPaths),
+    _maskPaths(maskPaths),
+    _sensorDbPath(sensorDbPath),
+    _outputFolder(outputFolder),
+    _outputSfmKeyframesPath(outputSfmKeyframes),
+    _outputSfmFramesPath(outputSfmFrames)
 {
     // Check that a least one media file path has been provided
-    if (mediaPaths.empty()) {
+    if (mediaPaths.empty())
+    {
         ALICEVISION_THROW(std::invalid_argument, "Cannot create KeyframeSelector without at least one media file path!");
     }
 
@@ -86,7 +89,8 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
     scoresMap["OpticalFlow"] = &_flowScores;
 
     // Parse the sensor database if the path is not empty
-    if (!_sensorDbPath.empty() && sensorDB::parseDatabase(_sensorDbPath, _sensorDatabase)) {
+    if (!_sensorDbPath.empty() && sensorDB::parseDatabase(_sensorDbPath, _sensorDatabase))
+    {
         _parsedSensorDb = true;
     }
 }
@@ -102,7 +106,8 @@ void KeyframeSelector::processRegular()
     std::size_t nbFrames = std::numeric_limits<unsigned int>::max();
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
 
-    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
+    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex)
+    {
         const auto& path = _mediaPaths.at(mediaIndex);
 
         // Create a feed provider per mediaPaths
@@ -110,7 +115,8 @@ void KeyframeSelector::processRegular()
         const auto& feed = *feeds.back();
 
         // Check if feed is initialized
-        if (!feed.isInit()) {
+        if (!feed.isInit())
+        {
             ALICEVISION_THROW(std::invalid_argument, "Cannot initialize the FeedProvider with " << path);
         }
 
@@ -119,7 +125,8 @@ void KeyframeSelector::processRegular()
     }
 
     // Check if minimum number of frame is zero
-    if (nbFrames == 0) {
+    if (nbFrames == 0)
+    {
         ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or empty!");
     }
 
@@ -128,7 +135,8 @@ void KeyframeSelector::processRegular()
     std::fill(_selectedFrames.begin(), _selectedFrames.end(), '0');
 
     unsigned int step = _minFrameStep;
-    if (_maxFrameStep > 0) {
+    if (_maxFrameStep > 0)
+    {
         // By default, if _maxFrameStep is set, set the step to be right between _minFrameStep and _maxFrameStep
         step = step + static_cast<unsigned int>((_maxFrameStep - _minFrameStep) / 2);
     }
@@ -141,9 +149,11 @@ void KeyframeSelector::processRegular()
      *   the step should be set to _maxFrameStep - in that case, _maxOutFrames might be reached before the end of
      *   the sequence
      */
-    if (_maxOutFrames > 0 && nbFrames / _maxOutFrames > step) {
+    if (_maxOutFrames > 0 && nbFrames / _maxOutFrames > step)
+    {
         step = (nbFrames / _maxOutFrames) + 1;  // + 1 to prevent ending up with more than _maxOutFrame selected frames
-        if (_maxFrameStep > 0 && step > _maxFrameStep) {
+        if (_maxFrameStep > 0 && step > _maxFrameStep)
+        {
             step = _maxFrameStep;
         }
     }
@@ -151,7 +161,8 @@ void KeyframeSelector::processRegular()
     // Ensure the step is always larger than 0, thus ensuring that the 'for' loop will always run smoothly
     step = std::max(step, static_cast<unsigned int>(1));
 
-    for (unsigned int id = 0; id < nbFrames; id += step) {
+    for (unsigned int id = 0; id < nbFrames; id += step)
+    {
         ALICEVISION_LOG_INFO("Selecting frame with ID " << id);
         _selectedKeyframes.push_back(id);
         _selectedFrames.at(id) = '1';
@@ -159,13 +170,15 @@ void KeyframeSelector::processRegular()
             break;
     }
 
-    ALICEVISION_LOG_INFO("Finished selecting all the keyframes! " << _selectedKeyframes.size() << "/" <<
-                         nbFrames << " frames have been selected.");
+    ALICEVISION_LOG_INFO("Finished selecting all the keyframes! " << _selectedKeyframes.size() << "/" << nbFrames << " frames have been selected.");
 }
 
-void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_t rescaledWidthSharpness,
-                                    const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
-                                    const std::size_t flowCellSize, const bool skipSharpnessComputation)
+void KeyframeSelector::processSmart(const float pxDisplacement,
+                                    const std::size_t rescaledWidthSharpness,
+                                    const std::size_t rescaledWidthFlow,
+                                    const std::size_t sharpnessWindowSize,
+                                    const std::size_t flowCellSize,
+                                    const bool skipSharpnessComputation)
 {
     _selectedKeyframes.clear();
     _selectedFrames.clear();
@@ -191,9 +204,11 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
 
     /* Starts at 1 because the first frame's motion score will be -1.
      * Ends at sequenceSize - 1 to ensure the last frame cannot be pushed twice. */
-    for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
+    for (std::size_t i = 1; i < sequenceSize - 1; ++i)
+    {
         motionAcc += _flowScores.at(i) > -1.f ? _flowScores.at(i) : 0.f;
-        if (motionAcc >= step) {
+        if (motionAcc >= step)
+        {
             subsequenceLimits.push_back(i);
             motionAcc = 0.0;  // Reset the motion accumulator
         }
@@ -201,33 +216,38 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
     subsequenceLimits.push_back(sequenceSize - 1);
 
     // Step 2: check whether the min/max output frames constraints are respected
-    if (!(subsequenceLimits.size() - 1 >= _minOutFrames && subsequenceLimits.size() - 1 <= _maxOutFrames)) {
+    if (!(subsequenceLimits.size() - 1 >= _minOutFrames && subsequenceLimits.size() - 1 <= _maxOutFrames))
+    {
         ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
-                             << subsequenceLimits.size() - 1 << " keyframes, should be between " << _minOutFrames
-                             << " and " << _maxOutFrames << ").");
+                             << subsequenceLimits.size() - 1 << " keyframes, should be between " << _minOutFrames << " and " << _maxOutFrames
+                             << ").");
 
         std::vector<unsigned int> newLimits = subsequenceLimits;  // Prevents first 'newLimits.size() - 1' from overflowing
-        const double displacementDiff = 0.5;  // The displacement must be 0.5px smaller/bigger than the previous one
+        const double displacementDiff = 0.5;                      // The displacement must be 0.5px smaller/bigger than the previous one
 
-        if (subsequenceLimits.size() - 1 < _minOutFrames) {
+        if (subsequenceLimits.size() - 1 < _minOutFrames)
+        {
             // Not enough frames, reduce the motion step
-            ALICEVISION_LOG_INFO("Not enough keyframes, the motion step will be reduced of " << displacementDiff
-                                 << "%.");
+            ALICEVISION_LOG_INFO("Not enough keyframes, the motion step will be reduced of " << displacementDiff << "%.");
             bool sampleRegularly = false;
-            while (newLimits.size() - 1 < _minOutFrames) {
+            while (newLimits.size() - 1 < _minOutFrames)
+            {
                 newLimits.clear();
                 newLimits.push_back(0);
                 step = std::max(0.0, step - displacementDiff);
 
-                if (step == 0.0) {  // The criterion does not make sense anymore, exit to sample regularly instead
+                if (step == 0.0)
+                {  // The criterion does not make sense anymore, exit to sample regularly instead
                     sampleRegularly = true;
                     break;
                 }
                 motionAcc = 0.0;
 
-                for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
+                for (std::size_t i = 1; i < sequenceSize - 1; ++i)
+                {
                     motionAcc += _flowScores.at(i) > -1.f ? _flowScores.at(i) : 0.f;
-                    if (motionAcc >= step) {
+                    if (motionAcc >= step)
+                    {
                         newLimits.push_back(i);
                         motionAcc = 0.0;
                     }
@@ -235,7 +255,8 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                 newLimits.push_back(sequenceSize - 1);
             }
 
-            if (sampleRegularly) {
+            if (sampleRegularly)
+            {
                 // Sample regularly the whole sequence to get minOutFrames subsequences
                 ALICEVISION_LOG_INFO("The motion step has been reduced to 0 and cannot be used anymore. Keyframes will "
                                      "be sampled regularly instead.");
@@ -247,19 +268,23 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
                     newLimits.push_back(i);
                 newLimits.push_back(sequenceSize - 1);
             }
-        } else {
+        }
+        else
+        {
             // Too many frames, increase the motion step
-            ALICEVISION_LOG_INFO("Too many keyframes, the motion step will be increased of " << displacementDiff
-                                 << "%.");
-            while (newLimits.size() - 1 > _maxOutFrames) {
+            ALICEVISION_LOG_INFO("Too many keyframes, the motion step will be increased of " << displacementDiff << "%.");
+            while (newLimits.size() - 1 > _maxOutFrames)
+            {
                 newLimits.clear();
                 newLimits.push_back(0);
                 step = step + displacementDiff;
                 motionAcc = 0.0;
 
-                for (std::size_t i = 1; i < sequenceSize - 1; ++i) {
+                for (std::size_t i = 1; i < sequenceSize - 1; ++i)
+                {
                     motionAcc += _flowScores.at(i) > -1.f ? _flowScores.at(i) : 0.f;
-                    if (motionAcc >= step) {
+                    if (motionAcc >= step)
+                    {
                         newLimits.push_back(i);
                         motionAcc = 0.0;
                     }
@@ -273,7 +298,8 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
     }
 
     // Step 3: for each subsequence, find the keyframe
-    for (std::size_t i = 1; i < subsequenceLimits.size(); ++i) {
+    for (std::size_t i = 1; i < subsequenceLimits.size(); ++i)
+    {
         double bestSharpness = 0.0;
         std::size_t bestIndex = 0;
         std::size_t subsequenceSize = subsequenceLimits.at(i) - subsequenceLimits.at(i - 1);
@@ -287,17 +313,20 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
             weights.push_back(2.0);  // For subsequences of even size, two frames are equally in the middle
 
         float currentWeight = 2.0;
-        while (weights.size() != subsequenceSize) {
+        while (weights.size() != subsequenceSize)
+        {
             currentWeight -= weightStep;
             weights.push_front(currentWeight);
             weights.push_back(currentWeight);
         }
 
         std::size_t weightPosition = 0;
-        for (std::size_t j = subsequenceLimits.at(i - 1); j < subsequenceLimits.at(i); ++j) {
+        for (std::size_t j = subsequenceLimits.at(i - 1); j < subsequenceLimits.at(i); ++j)
+        {
             auto sharpness = _sharpnessScores.at(j) * weights.at(weightPosition);
             ++weightPosition;
-            if (sharpness > bestSharpness) {
+            if (sharpness > bestSharpness)
+            {
                 bestIndex = j;
                 bestSharpness = sharpness;
             }
@@ -307,12 +336,14 @@ void KeyframeSelector::processSmart(const float pxDisplacement, const std::size_
         _selectedFrames.at(bestIndex) = '1';  // The frame has been selected, flip it to 1
     }
 
-    ALICEVISION_LOG_INFO("Finished selecting all the keyframes! " << _selectedKeyframes.size() << "/" <<
-                         sequenceSize << " frames have been selected.");
+    ALICEVISION_LOG_INFO("Finished selecting all the keyframes! " << _selectedKeyframes.size() << "/" << sequenceSize
+                                                                  << " frames have been selected.");
 }
 
-bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, const std::size_t rescaledWidthFlow,
-                                     const std::size_t sharpnessWindowSize, const std::size_t flowCellSize,
+bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness,
+                                     const std::size_t rescaledWidthFlow,
+                                     const std::size_t sharpnessWindowSize,
+                                     const std::size_t flowCellSize,
                                      const bool skipSharpnessComputation)
 {
     // Reset the computed scores
@@ -326,21 +357,24 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
     // Create single feed and count minimum number of frames
     std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
 
-    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
+    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex)
+    {
         const auto& path = _mediaPaths.at(mediaIndex);
 
         // Create a feed provider per mediaPaths
         auto feed = std::make_unique<dataio::FeedProvider>(path);
 
         // Check if feed is initialized
-        if (!feed->isInit()) {
+        if (!feed->isInit())
+        {
             ALICEVISION_THROW(std::invalid_argument, "Cannot initialize the FeedProvider with " << path);
         }
 
         // Number of frames in the rig might slightly differ
         nbFrames = std::min(nbFrames, static_cast<std::size_t>(feed->nbFrames()));
 
-        if (mediaIndex == 0) {
+        if (mediaIndex == 0)
+        {
             // Read first image and set _frameWidth and _frameHeight, since the feeds have been initialized
             feed->goToFrame(0);
             cv::Mat mat = readImage(*feed, rescaledWidthFlow);
@@ -349,23 +383,27 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
             _frameHeight = mat.size().height;
         }
 
-        if  (_maskPaths.size() > 0) {
+        if (_maskPaths.size() > 0)
+        {
             const auto& maskPath = _maskPaths.at(mediaIndex);
             auto maskFeed = std::make_unique<dataio::FeedProvider>(maskPath);
 
-            if (!maskFeed->isInit()) {
+            if (!maskFeed->isInit())
+            {
                 ALICEVISION_THROW(std::invalid_argument, "Invalid path to masks: " << maskPath);
             }
 
             const std::size_t nbMasks = static_cast<std::size_t>(feed->nbFrames());
-            if (nbMasks != nbFrames) {
+            if (nbMasks != nbFrames)
+            {
                 ALICEVISION_THROW_ERROR("The number of masks does not match the number of frames.");
             }
         }
     }
 
     // Check if minimum number of frame is zero
-    if (nbFrames == 0) {
+    if (nbFrames == 0)
+    {
         ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or is empty!");
     }
 
@@ -379,7 +417,8 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
     // of frames, for example), resize it: less threads will be spawned, but since new FeedProvider objects need to be
     // created for each thread, we prevent spawing thread that will need to create FeedProvider objects
     // for very few frames.
-    if (blockSize < _minBlockSize && nbFrames >= _minBlockSize) {
+    if (blockSize < _minBlockSize && nbFrames >= _minBlockSize)
+    {
         blockSize = _minBlockSize;
         nbThreads = static_cast<int>(nbFrames / blockSize) + 1;  // +1 to ensure that every frame in processed by a thread
     }
@@ -387,41 +426,56 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness, c
     std::vector<std::thread> threads;
     ALICEVISION_LOG_INFO("Splitting " << nbFrames << " frames into " << nbThreads << " threads of size " << blockSize << ".");
 
-    for (std::size_t i = 0; i < nbThreads; i++) {
+    for (std::size_t i = 0; i < nbThreads; i++)
+    {
         std::size_t startFrame = static_cast<std::size_t>(std::max(0, static_cast<int>(i * blockSize) - 1));
         std::size_t endFrame = std::min(i * blockSize + blockSize, nbFrames);
 
         // If there is an extra thread with no new frames to process, skip it.
         // This might occur as a consequence of the "+1" when adjusting the number of threads.
-        if (startFrame >= nbFrames) {
+        if (startFrame >= nbFrames)
+        {
             break;
         }
 
         ALICEVISION_LOG_DEBUG("Starting thread to compute scores for frame " << startFrame << " to " << endFrame << ".");
 
-        threads.push_back(std::thread(&KeyframeSelector::computeScoresProc, this, startFrame, endFrame, nbFrames,
-                                      rescaledWidthSharpness, rescaledWidthFlow, sharpnessWindowSize, flowCellSize,
+        threads.push_back(std::thread(&KeyframeSelector::computeScoresProc,
+                                      this,
+                                      startFrame,
+                                      endFrame,
+                                      nbFrames,
+                                      rescaledWidthSharpness,
+                                      rescaledWidthFlow,
+                                      sharpnessWindowSize,
+                                      flowCellSize,
                                       skipSharpnessComputation));
     }
 
-    for (auto &th : threads) {
+    for (auto& th : threads)
+    {
         th.join();
     }
 
     return true;
 }
 
-bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std::size_t endFrame,
-                                         const std::size_t nbFrames, const std::size_t rescaledWidthSharpness,
-                                         const std::size_t rescaledWidthFlow, const std::size_t sharpnessWindowSize,
-                                         const std::size_t flowCellSize, const bool skipSharpnessComputation)
+bool KeyframeSelector::computeScoresProc(const std::size_t startFrame,
+                                         const std::size_t endFrame,
+                                         const std::size_t nbFrames,
+                                         const std::size_t rescaledWidthSharpness,
+                                         const std::size_t rescaledWidthFlow,
+                                         const std::size_t sharpnessWindowSize,
+                                         const std::size_t flowCellSize,
+                                         const bool skipSharpnessComputation)
 {
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
     std::vector<std::unique_ptr<dataio::FeedProvider>> maskFeeds;
 
     const bool masksProvided = _maskPaths.size() > 0;
 
-    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
+    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex)
+    {
         const auto& path = _mediaPaths.at(mediaIndex);
 
         // Create a feed provider per mediaPaths
@@ -429,73 +483,83 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
         const auto& feed = *feeds.back();
 
         // Check if feed is initialized
-        if (!feed.isInit()) {
+        if (!feed.isInit())
+        {
             ALICEVISION_THROW(std::invalid_argument, "Cannot initialize the FeedProvider with " << path);
         }
 
-        if (masksProvided) {
+        if (masksProvided)
+        {
             const auto& maskPath = _maskPaths.at(mediaIndex);
 
             // Create a feed provider per mask directory
             maskFeeds.push_back(std::make_unique<dataio::FeedProvider>(maskPath));
             const auto& maskFeed = *maskFeeds.back();
 
-            if (!maskFeed.isInit()) {
+            if (!maskFeed.isInit())
+            {
                 ALICEVISION_THROW(std::invalid_argument, "Invalid path to masks: " << maskPath);
             }
         }
     }
 
     // Feed provider variables
-    camera::Pinhole queryIntrinsics;         // image associated camera intrinsics
-    bool hasIntrinsics = false;              // true if queryIntrinsics is valid
+    camera::Pinhole queryIntrinsics;  // image associated camera intrinsics
+    bool hasIntrinsics = false;       // true if queryIntrinsics is valid
 
     // Input feed provider variables
-    image::Image<image::RGBColor> image;     // original image
-    std::string currentImgName;              // current image name
+    image::Image<image::RGBColor> image;  // original image
+    std::string currentImgName;           // current image name
 
     // Mask feed provider variables
-    image::Image<image::RGBColor> mask;     // original mask
-    std::string currentMaskName;            // current mask name
-
+    image::Image<image::RGBColor> mask;  // original mask
+    std::string currentMaskName;         // current mask name
 
     // Feed and metadata initialization
-    for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
+    for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex)
+    {
         // First frame with offset
         feeds.at(mediaIndex)->goToFrame(startFrame);
 
-        if (!feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
+        if (!feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+        {
             ALICEVISION_THROW(std::invalid_argument, "Cannot read media first frame " << _mediaPaths[mediaIndex]);
         }
 
-        if (masksProvided) {
+        if (masksProvided)
+        {
             maskFeeds.at(mediaIndex)->goToFrame(startFrame);
-            if (!maskFeeds.at(mediaIndex)->readImage(mask, queryIntrinsics, currentMaskName, hasIntrinsics)) {
+            if (!maskFeeds.at(mediaIndex)->readImage(mask, queryIntrinsics, currentMaskName, hasIntrinsics))
+            {
                 ALICEVISION_THROW(std::invalid_argument, "Cannot read mask media first frame " << _maskPaths[mediaIndex]);
             }
         }
     }
 
     std::size_t currentFrame = startFrame;
-    cv::Mat currentMatSharpness;  // OpenCV matrix for the sharpness computation
+    cv::Mat currentMatSharpness;              // OpenCV matrix for the sharpness computation
     cv::Mat previousMatFlow, currentMatFlow;  // OpenCV matrices for the optical flow computation
     auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
 
     cv::Mat currentMatFlowMask, currentMatMask;  // OpenCV matrices that will contain the masks
 
-    while (currentFrame < endFrame) {
+    while (currentFrame < endFrame)
+    {
         double minimalSharpness = skipSharpnessComputation ? 1.0f : std::numeric_limits<double>::max();
         double minimalFlow = std::numeric_limits<double>::max();
 
-        for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
+        for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex)
+        {
             auto& feed = *feeds.at(mediaIndex);
 
-            if (currentFrame > startFrame) {  // Get currentFrame - 1 for the optical flow computation
+            if (currentFrame > startFrame)
+            {  // Get currentFrame - 1 for the optical flow computation
                 previousMatFlow = readImage(feed, rescaledWidthFlow);
                 feed.goToNextFrame();
 
-                if (masksProvided) {
-                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                if (masksProvided)
+                {
+                    auto& maskFeed = *maskFeeds.at(mediaIndex);
                     maskFeed.goToNextFrame();
                 }
             }
@@ -508,21 +572,27 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
              *   - otherwise (feed not correctly moved to the next frame), keep on going to the next frame until it is
              *     valid or the end of the feed is reached
              */
-            if (!skipSharpnessComputation) {
-                try {
+            if (!skipSharpnessComputation)
+            {
+                try
+                {
                     // Read image for sharpness and rescale it if requested
                     currentMatSharpness = readImage(feed, rescaledWidthSharpness);
-                    if (masksProvided) {
-                        auto &maskFeed = *maskFeeds.at(mediaIndex);
+                    if (masksProvided)
+                    {
+                        auto& maskFeed = *maskFeeds.at(mediaIndex);
                         currentMatMask = readImage(maskFeed, rescaledWidthSharpness);
                     }
-                } catch (const std::invalid_argument& ex) {
+                }
+                catch (const std::invalid_argument& ex)
+                {
                     bool success = false;
-                    while (!success && currentFrame < nbFrames) {
+                    while (!success && currentFrame < nbFrames)
+                    {
                         // currentFrame + 1 = currently evaluated frame with indexing starting at 1, for display reasons
                         // currentFrame + 2 = next frame to evaluate with indexing starting at 1, for display reasons
-                        ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
-                                                << ", attempting to read frame " << currentFrame + 2 << ".");
+                        ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1 << ", attempting to read frame " << currentFrame + 2
+                                                                            << ".");
 
                         {
                             // Push dummy scores for the frame that was skipped
@@ -532,11 +602,13 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
                         }
 
                         success = feed.goToFrame(++currentFrame);
-                        if (success) {
+                        if (success)
+                        {
                             currentMatSharpness = readImage(feed, rescaledWidthSharpness);
 
-                            if (masksProvided) {
-                                auto &maskFeed = *maskFeeds.at(mediaIndex);
+                            if (masksProvided)
+                            {
+                                auto& maskFeed = *maskFeeds.at(mediaIndex);
                                 maskFeed.goToFrame(currentFrame);
                                 currentMatMask = readImage(maskFeed, rescaledWidthSharpness);
                             }
@@ -545,30 +617,36 @@ bool KeyframeSelector::computeScoresProc(const std::size_t startFrame, const std
                 }
             }
 
-            if (rescaledWidthSharpness == rescaledWidthFlow && !skipSharpnessComputation) {
+            if (rescaledWidthSharpness == rescaledWidthFlow && !skipSharpnessComputation)
+            {
                 currentMatFlow = currentMatSharpness;
-                if (masksProvided) {
-                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                if (masksProvided)
+                {
+                    auto& maskFeed = *maskFeeds.at(mediaIndex);
                     currentMatFlowMask = currentMatMask;
                 }
-            } else {
+            }
+            else
+            {
                 currentMatFlow = readImage(feed, rescaledWidthFlow);
-                if (masksProvided) {
-                    auto &maskFeed = *maskFeeds.at(mediaIndex);
+                if (masksProvided)
+                {
+                    auto& maskFeed = *maskFeeds.at(mediaIndex);
                     currentMatFlowMask = readImage(maskFeed, rescaledWidthFlow);
                 }
             }
 
             // Compute sharpness
-            if (!skipSharpnessComputation) {
+            if (!skipSharpnessComputation)
+            {
                 const double sharpness = computeSharpness(currentMatSharpness, sharpnessWindowSize, currentMatMask);
                 minimalSharpness = std::min(minimalSharpness, sharpness);
             }
 
             // Compute optical flow
-            if (currentFrame > startFrame) {
-                const double flow = estimateFlow(ptrFlow, currentMatFlow, previousMatFlow, flowCellSize,
-                                                 currentMatFlowMask);
+            if (currentFrame > startFrame)
+            {
+                const double flow = estimateFlow(ptrFlow, currentMatFlow, previousMatFlow, flowCellSize, currentMatFlowMask);
                 minimalFlow = std::min(minimalFlow, flow);
             }
 
@@ -599,41 +677,50 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
     bool hasIntrinsics = false;
     std::string currentImgName;
 
-    for (std::size_t id = 0; id < _mediaPaths.size(); ++id) {
+    for (std::size_t id = 0; id < _mediaPaths.size(); ++id)
+    {
         const auto& path = _mediaPaths.at(id);
 
         // Create a feed provider per mediaPaths
         dataio::FeedProvider feed(path);
 
         // Check if feed is initialized
-        if (!feed.isInit()) {
+        if (!feed.isInit())
+        {
             ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
             return false;
         }
 
         // Ensure that we do want to write the keyframes on disk before going through this
-        if (outputExtension != "none") {
+        if (outputExtension != "none")
+        {
             std::string processedOutputFolder = _outputFolder;
-            if (_mediaPaths.size() > 1) {
+            if (_mediaPaths.size() > 1)
+            {
                 const std::string rigFolder = _outputFolder + "/rig/";
-                if (!fs::exists(rigFolder)) {
+                if (!fs::exists(rigFolder))
+                {
                     fs::create_directory(rigFolder);
                 }
 
                 processedOutputFolder = rigFolder + std::to_string(id);
-                if (!fs::exists(processedOutputFolder)) {
+                if (!fs::exists(processedOutputFolder))
+                {
                     fs::create_directory(processedOutputFolder);
                 }
             }
 
             unsigned int outputKeyframeCnt = 0;  // Used if the "renameKeyframes" option is enabled
-            for (const auto pos : _selectedKeyframes) {
-                if (!feed.goToFrame(pos)) {
+            for (const auto pos : _selectedKeyframes)
+            {
+                if (!feed.goToFrame(pos))
+                {
                     ALICEVISION_LOG_ERROR("Invalid frame position " << pos << ". Ignoring this frame.");
                     continue;
                 }
 
-                if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
+                if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+                {
                     ALICEVISION_LOG_ERROR("Error reading image");
                     return false;
                 }
@@ -662,12 +749,15 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
 
                 image::ImageWriteOptions options;
                 // If the feed is a video, frames are read as OpenCV RGB matrices before being converted to image::ImageRGB
-                if (feed.isVideo()) {
+                if (feed.isVideo())
+                {
                     options.fromColorSpace(image::EImageColorSpace::SRGB);
                     options.toColorSpace(image::EImageColorSpace::AUTO);
-                } else {  // Otherwise, the frames have been read without any conversion, they should be written as such
+                }
+                else
+                {  // Otherwise, the frames have been read without any conversion, they should be written as such
                     if (colorspace == "sRGB")
-                            options.fromColorSpace(image::EImageColorSpace::SRGB);
+                        options.fromColorSpace(image::EImageColorSpace::SRGB);
 
                     if (outputExtension == "exr")
                         options.toColorSpace(image::EImageColorSpace::NO_CONVERSION);
@@ -675,7 +765,8 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                         options.toColorSpace(image::EImageColorSpace::AUTO);
                 }
 
-                if (storageDataType != image::EStorageDataType::Undefined && outputExtension == "exr") {
+                if (storageDataType != image::EStorageDataType::Undefined && outputExtension == "exr")
+                {
                     options.storageDataType(storageDataType);
                 }
 
@@ -687,9 +778,11 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
         }
 
         // If the current media is a video and there is no output keyframe, the corresponding SfMData file will not be written
-        if (feed.isVideo() && outputExtension == "none") {
-            ALICEVISION_THROW(std::invalid_argument, "The keyframes selected from the input video have not been " <<
-                              "written on disk. The keyframes' SfMData file cannot be written.");
+        if (feed.isVideo() && outputExtension == "none")
+        {
+            ALICEVISION_THROW(std::invalid_argument,
+                              "The keyframes selected from the input video have not been "
+                                << "written on disk. The keyframes' SfMData file cannot be written.");
         }
 
         if (!writeSfMData(path, feed, brands, models, mmFocals))
@@ -702,7 +795,8 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
 bool KeyframeSelector::exportScoresToFile(const std::string& filename, const bool exportSelectedFrames) const
 {
     std::size_t sequenceSize = scoresMap.begin()->second->size();
-    if (sequenceSize == 0) {
+    if (sequenceSize == 0)
+    {
         ALICEVISION_LOG_ERROR("Nothing to export, scores do not seem to have been computed!");
         return false;
     }
@@ -710,16 +804,17 @@ bool KeyframeSelector::exportScoresToFile(const std::string& filename, const boo
     std::ofstream os;
     os.open((fs::path(_outputFolder) / filename).string(), std::ios::app);
 
-    if (!os.is_open()) {
+    if (!os.is_open())
+    {
         ALICEVISION_LOG_ERROR("Unable to open the scores file: " << filename << ".");
         return false;
     }
 
-    ALICEVISION_LOG_DEBUG("Exporting scores as CSV file: " << filename << " (export selected frames: "
-                          << exportSelectedFrames << ")");
+    ALICEVISION_LOG_DEBUG("Exporting scores as CSV file: " << filename << " (export selected frames: " << exportSelectedFrames << ")");
 
     os.seekp(0, std::ios::end);  // Put the cursor at the end of the file
-    if (os.tellp() == std::streampos(0)) {  // 'tellp' returns the cursor's position
+    if (os.tellp() == std::streampos(0))
+    {  // 'tellp' returns the cursor's position
         // If the file does not exist yet, add a header
         std::string header = "FrameNb;";
         for (const auto& mapIterator : scoresMap)
@@ -731,7 +826,8 @@ bool KeyframeSelector::exportScoresToFile(const std::string& filename, const boo
         os << header << "\n";
     }
 
-    for (std::size_t index = 0; index < sequenceSize; ++index) {
+    for (std::size_t index = 0; index < sequenceSize; ++index)
+    {
         os << index << ";";  // First column: frame index
 
         for (const auto& mapIterator : scoresMap)
@@ -752,7 +848,8 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
     std::vector<std::string> outputFolders;
 
-    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex) {
+    for (std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex)
+    {
         const auto& path = _mediaPaths.at(mediaIndex);
 
         // Create a feed provider per mediaPaths
@@ -760,7 +857,8 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
         auto& feed = *feeds.back();
 
         // Check if feed is initialized
-        if (!feed.isInit()) {
+        if (!feed.isInit())
+        {
             ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
             return false;
         }
@@ -772,14 +870,17 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
 
         // If there is a rig, create the corresponding folders
         std::string processedOutputFolder = _outputFolder;
-        if (_mediaPaths.size() > 1) {
+        if (_mediaPaths.size() > 1)
+        {
             const std::string rigFolder = _outputFolder + "/rig/";
-            if (!fs::exists(rigFolder)) {
+            if (!fs::exists(rigFolder))
+            {
                 fs::create_directory(rigFolder);
             }
 
             processedOutputFolder = rigFolder + std::to_string(mediaIndex);
-            if (!fs::exists(processedOutputFolder)) {
+            if (!fs::exists(processedOutputFolder))
+            {
                 fs::create_directory(processedOutputFolder);
             }
         }
@@ -788,7 +889,8 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
         outputFolders.push_back(processedOutputFolder);
     }
 
-    if (nbFrames == 0) {
+    if (nbFrames == 0)
+    {
         ALICEVISION_LOG_ERROR("No frame to visualise optical flow from!");
         return false;
     }
@@ -800,30 +902,35 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
     /* To be able to handle the rigs and to avoid storing the optical flow results for all frames in case
      * we might want to export them, we need to recompute the optical flow for all the frames, even if it has already
      * been computed in computeScores(). */
-    while (currentFrame < nbFrames) {
-        for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex) {
+    while (currentFrame < nbFrames)
+    {
+        for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex)
+        {
             auto& feed = *feeds.at(mediaIndex);
 
-            if (currentFrame > 0) {  // Get currentFrame - 1 for the optical flow computation
+            if (currentFrame > 0)
+            {  // Get currentFrame - 1 for the optical flow computation
                 previousMat = readImage(feed, rescaledWidth);
                 feed.goToNextFrame();
             }
 
             // Handle invalid or missing frames
-            try {
+            try
+            {
                 currentMat = readImage(feed, rescaledWidth);  // Read image and rescale it if requested
-            } catch (const std::invalid_argument& ex) {
-                ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1
-                                        << ", attempting to read frame " << currentFrame + 2 << ".");
+            }
+            catch (const std::invalid_argument& ex)
+            {
+                ALICEVISION_LOG_WARNING("Invalid or missing frame " << currentFrame + 1 << ", attempting to read frame " << currentFrame + 2 << ".");
                 bool success = feed.goToFrame(++currentFrame);
                 if (success)
                     currentMat = readImage(feed, rescaledWidth);
                 else
-                    ALICEVISION_THROW_ERROR("Could not go to frame " << currentFrame + 1
-                                            << " either. The feed might be corrupted.");
+                    ALICEVISION_THROW_ERROR("Could not go to frame " << currentFrame + 1 << " either. The feed might be corrupted.");
             }
 
-            if (currentFrame > 0) {
+            if (currentFrame > 0)
+            {
                 cv::Mat flow;
                 ptrFlow->calc(currentMat, previousMat, flow);
 
@@ -854,14 +961,15 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
     return true;
 }
 
-cv::Mat KeyframeSelector::readImage(dataio::FeedProvider &feed, std::size_t width)
+cv::Mat KeyframeSelector::readImage(dataio::FeedProvider& feed, std::size_t width)
 {
     image::Image<image::RGBColor> image;
     camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
 
-    if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
+    if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+    {
         ALICEVISION_THROW(std::invalid_argument, "Cannot read frame '" << currentImgName << "'!");
     }
 
@@ -877,30 +985,29 @@ cv::Mat KeyframeSelector::readImage(dataio::FeedProvider &feed, std::size_t widt
         return cvGrayscale;
 
     cv::Mat cvRescaled;
-    if (cvGrayscale.cols > width && width > 0) {
-        cv::resize(cvGrayscale, cvRescaled,
-                   cv::Size(width, double(cvGrayscale.rows) * double(width) / double(cvGrayscale.cols)));
+    if (cvGrayscale.cols > width && width > 0)
+    {
+        cv::resize(cvGrayscale, cvRescaled, cv::Size(width, double(cvGrayscale.rows) * double(width) / double(cvGrayscale.cols)));
     }
 
     return cvRescaled;
 }
 
-double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize,
-                                          const cv::Mat& mask)
+double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize, const cv::Mat& mask)
 {
-    if (windowSize > grayscaleImage.size().width || windowSize > grayscaleImage.size().height) {
+    if (windowSize > grayscaleImage.size().width || windowSize > grayscaleImage.size().height)
+    {
         ALICEVISION_THROW(std::invalid_argument,
                           "Cannot use a sliding window bigger than the image (sliding window size: "
-                          << windowSize << ", image size: " << grayscaleImage.size().width << "x"
-                          << grayscaleImage.size().height << ")");
+                            << windowSize << ", image size: " << grayscaleImage.size().width << "x" << grayscaleImage.size().height << ")");
     }
 
-    if (!mask.empty() && (mask.size().width != grayscaleImage.size().width ||
-                          mask.size().height != grayscaleImage.size().height)) {
+    if (!mask.empty() && (mask.size().width != grayscaleImage.size().width || mask.size().height != grayscaleImage.size().height))
+    {
         ALICEVISION_THROW(std::invalid_argument,
-                          "The sizes of the frame and the mask differ (image size: " << grayscaleImage.size().width
-                          << "x" << grayscaleImage.size().height << ", mask size: " << mask.size().width << "x"
-                          << mask.size().height << ")");
+                          "The sizes of the frame and the mask differ (image size: "
+                            << grayscaleImage.size().width << "x" << grayscaleImage.size().height << ", mask size: " << mask.size().width << "x"
+                            << mask.size().height << ")");
     }
 
     cv::Mat sum, squaredSum, laplacian;
@@ -913,7 +1020,8 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
     // If the mask exists, apply it directly on the integral and squared integral images:
     // The sharpness information will still be retained but the masked pixels will now appear as 0s,
     // and they will be counted out during the standard deviation computation.
-    if (!mask.empty()) {
+    if (!mask.empty())
+    {
         // The integral matrices are padded, so the mask needs it as well
         paddedMask = cv::Mat(sum.size(), CV_8UC1, 255);
         mask.copyTo(paddedMask(cv::Rect(1, 1, paddedMask.size().width - 1, paddedMask.size().height - 1)));
@@ -925,14 +1033,17 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
     int x, y;
 
     // Starts at 1 because the integral image is padded with 0s on the top and left borders
-    for (y = 1; y < sum.rows - windowSize; y += windowSize / 4) {
-        for (x = 1; x < sum.cols - windowSize; x += windowSize / 4) {
+    for (y = 1; y < sum.rows - windowSize; y += windowSize / 4)
+    {
+        for (x = 1; x < sum.cols - windowSize; x += windowSize / 4)
+        {
             maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
         }
 
         // Compute sharpness over the last part of the image for windowSize along the x-axis;
         // the overlap with the previous window might be greater than the previous ones
-        if (x >= sum.cols - windowSize) {
+        if (x >= sum.cols - windowSize)
+        {
             x = sum.cols - windowSize - 1;
             maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
         }
@@ -940,7 +1051,8 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
 
     // Compute sharpness over the last part of the image for windowSize along the y-axis;
     // the overlap with the previous window might be greater than the previous ones
-    if (y >= sum.rows - windowSize) {
+    if (y >= sum.rows - windowSize)
+    {
         y = sum.rows - windowSize - 1;
         maxstd = std::max(maxstd, computeSharpnessStd(maskedSum, maskedSquaredSum, x, y, windowSize, paddedMask));
     }
@@ -948,8 +1060,12 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
     return maxstd;
 }
 
-const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum, const cv::Mat& squaredSum, const int x,
-                                                   const int y, const int windowSize, const cv::Mat &mask)
+const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum,
+                                                   const cv::Mat& squaredSum,
+                                                   const int x,
+                                                   const int y,
+                                                   const int windowSize,
+                                                   const cv::Mat& mask)
 {
     double totalCount = windowSize * windowSize;
 
@@ -965,7 +1081,8 @@ const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum, const cv:
     br = squaredSum.at<double>(y + windowSize, x + windowSize);
     const double s2 = br + tl - tr - bl;
 
-    if (!mask.empty()) {
+    if (!mask.empty())
+    {
         // Count the number of pixels that are non-masked. Masked pixels are 0s.
         cv::Mat maskROI = mask(cv::Rect(x, y, windowSize, windowSize));
         totalCount = cv::countNonZero(maskROI);
@@ -974,37 +1091,41 @@ const double KeyframeSelector::computeSharpnessStd(const cv::Mat& sum, const cv:
     const double var = (s2 - (s1 * s1) / totalCount) / totalCount;
     // If the variance is negative or if less than 50% of the window is not covered by the mask,
     // return an invalid value.
-    if (var < 0.0 || totalCount < windowSize * windowSize * 0.5) {
+    if (var < 0.0 || totalCount < windowSize * windowSize * 0.5)
+    {
         return -1.0f;
     }
 
     return std::sqrt(var);
 }
 
-double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow, const cv::Mat& grayscaleImage,
-                                      const cv::Mat& previousGrayscaleImage, const std::size_t cellSize,
+double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFlow,
+                                      const cv::Mat& grayscaleImage,
+                                      const cv::Mat& previousGrayscaleImage,
+                                      const std::size_t cellSize,
                                       const cv::Mat& mask)
 {
-    if (cellSize > grayscaleImage.size().width) {  // If the cell size is bigger than the height, it will be adjusted
+    if (cellSize > grayscaleImage.size().width)
+    {  // If the cell size is bigger than the height, it will be adjusted
         ALICEVISION_THROW(std::invalid_argument,
-                          "Cannot use a cell size bigger than the image's width (cell size: " << cellSize
-                          << ", image's width: " << grayscaleImage.size().width << ")");
+                          "Cannot use a cell size bigger than the image's width (cell size: " << cellSize << ", image's width: "
+                                                                                              << grayscaleImage.size().width << ")");
     }
 
-    if (grayscaleImage.size() != previousGrayscaleImage.size()) {
+    if (grayscaleImage.size() != previousGrayscaleImage.size())
+    {
         ALICEVISION_THROW(std::invalid_argument,
                           "The images used for the optical flow computation have different sizes ("
-                          << grayscaleImage.size().width << "x" << grayscaleImage.size().height << " and "
-                          << previousGrayscaleImage.size().width << "x" << previousGrayscaleImage.size().height
-                          << ")");
+                            << grayscaleImage.size().width << "x" << grayscaleImage.size().height << " and " << previousGrayscaleImage.size().width
+                            << "x" << previousGrayscaleImage.size().height << ")");
     }
 
-    if (!mask.empty() && (grayscaleImage.size().width != mask.size().width ||
-        grayscaleImage.size().height != mask.size().height)) {
+    if (!mask.empty() && (grayscaleImage.size().width != mask.size().width || grayscaleImage.size().height != mask.size().height))
+    {
         ALICEVISION_THROW(std::invalid_argument,
-                          "The sizes of the framse and the masks differ (image size: " << grayscaleImage.size().width
-                          << "x" << grayscaleImage.size().height << ", mask size: " << mask.size().width << "x"
-                          << mask.size().height << ")");
+                          "The sizes of the framse and the masks differ (image size: "
+                            << grayscaleImage.size().width << "x" << grayscaleImage.size().height << ", mask size: " << mask.size().width << "x"
+                            << mask.size().height << ")");
     }
 
     cv::Mat flow;
@@ -1015,7 +1136,8 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
 
     cv::Mat maskedSumflow = sumflow;
     cv::Mat paddedMask;
-    if (!mask.empty()) {
+    if (!mask.empty())
+    {
         // The integral matrix is padded, so the mask needs it as well
         paddedMask = cv::Mat(sumflow.size(), CV_8UC1, 255);
         mask.copyTo(paddedMask(cv::Rect(1, 1, paddedMask.size().width - 1, paddedMask.size().height - 1)));
@@ -1030,7 +1152,7 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
         xyChannels[1].copyTo(yChannel, paddedMask);
 
         // Merge back the channels together
-        std::vector<cv::Mat> channels = { xyChannels[0], xyChannels[1] };
+        std::vector<cv::Mat> channels = {xyChannels[0], xyChannels[1]};
         cv::merge(channels, maskedSumflow);
     }
 
@@ -1038,12 +1160,14 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
     std::vector<double> motionByCell;
 
     // Starts at 1 because the integral matrix is padded with 0s on the top and left borders
-    for (std::size_t y = 1; y < maskedSumflow.size().height; y += cellSize) {
+    for (std::size_t y = 1; y < maskedSumflow.size().height; y += cellSize)
+    {
         std::size_t maxCellSizeHeight = cellSize;
         if (std::min(maskedSumflow.size().height, int(y + cellSize)) == maskedSumflow.size().height)
             maxCellSizeHeight = maskedSumflow.size().height - y;
 
-        for (std::size_t x = 1; x < maskedSumflow.size().width; x += cellSize) {
+        for (std::size_t x = 1; x < maskedSumflow.size().width; x += cellSize)
+        {
             std::size_t maxCellSizeWidth = cellSize;
             if (std::min(maskedSumflow.size().width, int(x + cellSize)) == maskedSumflow.size().width)
                 maxCellSizeWidth = maskedSumflow.size().width - x;
@@ -1056,17 +1180,21 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
             const double hypot = std::hypot(s.x, s.y);
             double totalCount = maxCellSizeWidth * maxCellSizeHeight;
 
-            if (!mask.empty()) {
+            if (!mask.empty())
+            {
                 // Count the number of pixels that are non-masked. Masked pixels are 0s.
                 cv::Mat maskROI = paddedMask(cv::Rect(x, y, maxCellSizeWidth, maxCellSizeHeight));
                 totalCount = cv::countNonZero(maskROI);
             }
 
-            if (totalCount > maxCellSizeWidth * maxCellSizeHeight * 0.5) {
+            if (totalCount > maxCellSizeWidth * maxCellSizeHeight * 0.5)
+            {
                 // If at least 50% of the cell is masked, then ignore it and skip to the next one
                 norm = hypot / totalCount;
                 motionByCell.push_back(norm);
-            } else {
+            }
+            else
+            {
                 ALICEVISION_LOG_DEBUG("At least 50\% of the cell is covered by the mask. Skipping it.");
             }
         }
@@ -1075,34 +1203,45 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
     return findMedian(motionByCell);
 }
 
-bool KeyframeSelector::writeSfMData(const std::string& mediaPath, dataio::FeedProvider &feed,
-                                    const std::vector<std::string>& brands, const std::vector<std::string>& models,
+bool KeyframeSelector::writeSfMData(const std::string& mediaPath,
+                                    dataio::FeedProvider& feed,
+                                    const std::vector<std::string>& brands,
+                                    const std::vector<std::string>& models,
                                     const std::vector<float>& mmFocals)
 {
     bool filledOutputs = false;
 
-    if (!feed.isSfMData()) {
+    if (!feed.isSfMData())
+    {
         filledOutputs = writeSfMDataFromSequences(mediaPath, feed, brands, models, mmFocals);
-    } else {
+    }
+    else
+    {
         filledOutputs = writeSfMDataFromSfMData(mediaPath);
     }
 
-    if (!filledOutputs) {
+    if (!filledOutputs)
+    {
         ALICEVISION_LOG_ERROR("Error while filling the output SfMData files.");
         return false;
     }
 
-    if (!sfmDataIO::Save(_outputSfmKeyframes, _outputSfmKeyframesPath, sfmDataIO::ESfMData::ALL)) {
+    if (!sfmDataIO::Save(_outputSfmKeyframes, _outputSfmKeyframesPath, sfmDataIO::ESfMData::ALL))
+    {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmKeyframesPath << "' could not be written.");
         return false;
     }
 
-    if (!feed.isVideo()) {
-        if (!sfmDataIO::Save(_outputSfmFrames, _outputSfmFramesPath, sfmDataIO::ESfMData::ALL)) {
+    if (!feed.isVideo())
+    {
+        if (!sfmDataIO::Save(_outputSfmFrames, _outputSfmFramesPath, sfmDataIO::ESfMData::ALL))
+        {
             ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmFramesPath << "' could not be written.");
             return false;
         }
-    } else {
+    }
+    else
+    {
         ALICEVISION_LOG_DEBUG("The input feed is a video. The SfMData file containing the unselected frames will not"
                               " be written.");
     }
@@ -1123,7 +1262,8 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
 
     sfmData::SfMData inputSfm;
     std::vector<std::shared_ptr<sfmData::View>> views;
-    if (!sfmDataIO::Load(inputSfm, mediaPath, sfmDataIO::ESfMData::ALL)) {
+    if (!sfmDataIO::Load(inputSfm, mediaPath, sfmDataIO::ESfMData::ALL))
+    {
         ALICEVISION_LOG_ERROR("Could not open input SfMData file " << mediaPath << ".");
         return false;
     }
@@ -1131,28 +1271,33 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
     // Order the views according to the frame ID and the intrinsics serial number
     std::map<std::string, std::vector<std::shared_ptr<sfmData::View>>> viewSequences;
     auto& intrinsics = inputSfm.getIntrinsics();
-    for(auto it = inputSfm.getViews().begin(); it != inputSfm.getViews().end(); ++it) {
+    for (auto it = inputSfm.getViews().begin(); it != inputSfm.getViews().end(); ++it)
+    {
         auto view = it->second;
         auto serialNumber = intrinsics.at(view->getIntrinsicId())->serialNumber();
         viewSequences[serialNumber].push_back(view);
     }
 
     // Sort the views with the same intrinsics together based on their frame ID and add them to the final global vector
-    for(auto& view : viewSequences) {
-        std::sort(view.second.begin(), view.second.end(),
-                  [](std::shared_ptr<sfmData::View> v1, std::shared_ptr<sfmData::View> v2) {
-                    return v1->getFrameId() < v2->getFrameId();
-                  });
+    for (auto& view : viewSequences)
+    {
+        std::sort(view.second.begin(), view.second.end(), [](std::shared_ptr<sfmData::View> v1, std::shared_ptr<sfmData::View> v2) {
+            return v1->getFrameId() < v2->getFrameId();
+        });
         views.insert(views.end(), view.second.begin(), view.second.end());
     }
 
-    for (int i = 0; i < views.size(); ++i) {
+    for (int i = 0; i < views.size(); ++i)
+    {
         viewId = views[i]->getViewId();
         intrinsicId = views[i]->getIntrinsicId();
-        if (_selectedFrames[i] == '1') {
+        if (_selectedFrames[i] == '1')
+        {
             keyframesViews.emplace(viewId, views[i]);
             keyframesIntrinsics.emplace(intrinsicId, inputSfm.getIntrinsics().at(intrinsicId));
-        } else {
+        }
+        else
+        {
             framesViews.emplace(viewId, views[i]);
             framesIntrinsics.emplace(intrinsicId, inputSfm.getIntrinsics().at(intrinsicId));
         }
@@ -1161,7 +1306,8 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
     return true;
 }
 
-bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, dataio::FeedProvider &feed,
+bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
+                                                 dataio::FeedProvider& feed,
                                                  const std::vector<std::string>& brands,
                                                  const std::vector<std::string>& models,
                                                  const std::vector<float>& mmFocals)
@@ -1178,8 +1324,8 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
     auto& keyframesRigs = _outputSfmKeyframes.getRigs();
     auto& framesRigs = _outputSfmFrames.getRigs();
 
-    const IndexT rigId = 0;   // 0 by convention
-    IndexT viewId = 0;  // Will be used to distinguish frames coming from videos
+    const IndexT rigId = 0;  // 0 by convention
+    IndexT viewId = 0;       // Will be used to distinguish frames coming from videos
     IndexT previousFrameId = UndefinedIndexT;
 
     feed.goToFrame(0);
@@ -1195,22 +1341,28 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
 
     // Create rig structure if it is needed and does not already exist
     // A rig structure is needed when there is more than one input path
-    if (_mediaPaths.size() > 1 && keyframesRigs.size() == 0 && framesRigs.size() == 0) {
+    if (_mediaPaths.size() > 1 && keyframesRigs.size() == 0 && framesRigs.size() == 0)
+    {
         sfmData::Rig rig(_mediaPaths.size());
         keyframesRigs[rigId] = rig;
         framesRigs[rigId] = rig;
     }
 
-    for (std::size_t i = 0; i < feed.nbFrames(); ++i) {
+    for (std::size_t i = 0; i < feed.nbFrames(); ++i)
+    {
         // Need to read the image to get its size and path
-        if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics)) {
+        if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+        {
             ALICEVISION_LOG_ERROR("Error reading image.");
 
             // Frames may be seldomly corrupted in the VideoFeeds, but this should not occur with other feeds
-            if (feed.isVideo()) {
+            if (feed.isVideo())
+            {
                 ALICEVISION_LOG_WARNING("Skipping to the next frame.");
                 continue;
-            } else {
+            }
+            else
+            {
                 return false;
             }
         }
@@ -1220,7 +1372,8 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
         previousFrameId = view->getFrameId();
 
         // If there is a rig, the view's rig and sub-pose IDs need to be set once it has been completed
-        if (keyframesRigs.size() > 0 && framesRigs.size() > 0) {
+        if (keyframesRigs.size() > 0 && framesRigs.size() > 0)
+        {
             view->setRigAndSubPoseId(rigId, mediaIndex);
         }
 
@@ -1239,22 +1392,23 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
         double sensorWidth = -1.0;
         sensorDB::Datasheet datasheet;
 
-        if (_parsedSensorDb && !make.empty() && !model.empty() &&
-            sensorDB::getInfo(make, model, _sensorDatabase, datasheet)) {
+        if (_parsedSensorDb && !make.empty() && !model.empty() && sensorDB::getInfo(make, model, _sensorDatabase, datasheet))
+        {
             sensorWidth = datasheet._sensorWidth;
         }
 
         // Create the intrinsic for the view
-        auto intrinsic = createIntrinsic(*view, focalLength == -1.0 ? 0 : focalLength, sensorWidth, mediaIndex,
-                                         imageRatio);
+        auto intrinsic = createIntrinsic(*view, focalLength == -1.0 ? 0 : focalLength, sensorWidth, mediaIndex, imageRatio);
 
         // Update intrinsics ID if this is a new one
         if (previousIntrinsic != nullptr && *previousIntrinsic != *intrinsic)
             view->setIntrinsicId(++intrinsicId);
 
         // Fill the SfMData files
-        if (_selectedFrames[i] == '1') {
-            if (feed.isVideo()) {
+        if (_selectedFrames[i] == '1')
+        {
+            if (feed.isVideo())
+            {
                 // If the feed is a video, all views will have the same view ID by default, this needs to be fixed
                 view->setViewId(view->getViewId() + viewId++);
                 view->setPoseId(view->getViewId());
@@ -1263,9 +1417,12 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
             }
             keyframesViews.emplace(view->getViewId(), view);
             keyframesIntrinsics.emplace(intrinsicId, intrinsic);
-        } else {
+        }
+        else
+        {
             // No rejected frames if the feed is a video one, as they are not written on disk
-            if (!feed.isVideo()) {
+            if (!feed.isVideo())
+            {
                 framesViews.emplace(view->getViewId(), view);
                 framesIntrinsics.emplace(intrinsicId, intrinsic);
             }
@@ -1281,20 +1438,22 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath, d
     return true;
 }
 
-std::shared_ptr<sfmData::View> KeyframeSelector::createView(const std::string& imagePath, IndexT intrinsicId,
-                                IndexT previousFrameId, std::size_t imageWidth, std::size_t imageHeight)
+std::shared_ptr<sfmData::View> KeyframeSelector::createView(const std::string& imagePath,
+                                                            IndexT intrinsicId,
+                                                            IndexT previousFrameId,
+                                                            std::size_t imageWidth,
+                                                            std::size_t imageHeight)
 {
     // Create the View object: most attributes are set with default values and will be updated later on
-    auto view = std::make_shared<sfmData::View>(
-        imagePath,                           // filepath
-        UndefinedIndexT,                     // view ID
-        intrinsicId,                         // intrinsics ID
-        UndefinedIndexT,                     // pose ID
-        imageWidth,                          // image width
-        imageHeight,                         // image height
-        UndefinedIndexT,                     // rig ID
-        UndefinedIndexT,                     // sub-pose ID
-        std::map<std::string, std::string>() // metadata
+    auto view = std::make_shared<sfmData::View>(imagePath,                            // filepath
+                                                UndefinedIndexT,                      // view ID
+                                                intrinsicId,                          // intrinsics ID
+                                                UndefinedIndexT,                      // pose ID
+                                                imageWidth,                           // image width
+                                                imageHeight,                          // image height
+                                                UndefinedIndexT,                      // rig ID
+                                                UndefinedIndexT,                      // sub-pose ID
+                                                std::map<std::string, std::string>()  // metadata
     );
 
     // Complete the View attributes
@@ -1307,28 +1466,38 @@ std::shared_ptr<sfmData::View> KeyframeSelector::createView(const std::string& i
     std::string prefix;
     std::string suffix;
     // Use the filename to determine the frame ID (if available)
-    if (sfmDataIO::extractNumberFromFileStem(fs::path(view->getImage().getImagePath()).stem().string(), frameId, prefix, suffix)) {
+    if (sfmDataIO::extractNumberFromFileStem(fs::path(view->getImage().getImagePath()).stem().string(), frameId, prefix, suffix))
+    {
         view->setFrameId(frameId);
     }
     // Otherwise, set it fully manually
-    if (view->getFrameId() == 1 && previousFrameId != UndefinedIndexT) {
+    if (view->getFrameId() == 1 && previousFrameId != UndefinedIndexT)
+    {
         view->setFrameId(previousFrameId + 1);
     }
 
     return view;
 }
 
-std::shared_ptr<camera::IntrinsicBase> KeyframeSelector::createIntrinsic(const sfmData::View& view, const double focalLength,
-                const double sensorWidth, const double imageRatio, const std::size_t mediaIndex)
+std::shared_ptr<camera::IntrinsicBase> KeyframeSelector::createIntrinsic(const sfmData::View& view,
+                                                                         const double focalLength,
+                                                                         const double sensorWidth,
+                                                                         const double imageRatio,
+                                                                         const std::size_t mediaIndex)
 {
     auto intrinsic = sfmDataIO::getViewIntrinsic(view, focalLength, sensorWidth);
-    if (imageRatio > 1.0 && sensorWidth > -1.0) {
+    if (imageRatio > 1.0 && sensorWidth > -1.0)
+    {
         intrinsic->setSensorWidth(sensorWidth);
         intrinsic->setSensorHeight(sensorWidth / imageRatio);
-    } else if (imageRatio <= 1.0 && sensorWidth > -1.0) {
+    }
+    else if (imageRatio <= 1.0 && sensorWidth > -1.0)
+    {
         intrinsic->setSensorWidth(sensorWidth);
         intrinsic->setSensorHeight(sensorWidth * imageRatio);
-    } else {
+    }
+    else
+    {
         // Set default values for the sensor width and sensor height
         intrinsic->setSensorWidth(36.0);
         intrinsic->setSensorHeight(24.0);
@@ -1340,5 +1509,5 @@ std::shared_ptr<camera::IntrinsicBase> KeyframeSelector::createIntrinsic(const s
     return intrinsic;
 }
 
-} // namespace keyframe 
-} // namespace aliceVision
+}  // namespace keyframe
+}  // namespace aliceVision

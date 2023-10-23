@@ -14,36 +14,36 @@ namespace depthMap {
  */
 struct RefineParams
 {
-  // user parameters
+    // user parameters
 
-  int scale = 1;
-  int stepXY = 1;
-  int wsh = 3;
-  int halfNbDepths = 15;
-  int nbSubsamples = 10;
-  int maxTCamsPerTile = 4;
-  int optimizationNbIterations = 100;
-  double sigma = 15.0;
-  double gammaC = 15.5;
-  double gammaP = 8.0;
-  bool interpolateMiddleDepth = false;
-  bool useConsistentScale = false;
-  bool useCustomPatchPattern = false;
-  bool useRefineFuse = true;
-  bool useColorOptimization = true;
+    int scale = 1;
+    int stepXY = 1;
+    int wsh = 3;
+    int halfNbDepths = 15;
+    int nbSubsamples = 10;
+    int maxTCamsPerTile = 4;
+    int optimizationNbIterations = 100;
+    double sigma = 15.0;
+    double gammaC = 15.5;
+    double gammaP = 8.0;
+    bool interpolateMiddleDepth = false;
+    bool useConsistentScale = false;
+    bool useCustomPatchPattern = false;
+    bool useRefineFuse = true;
+    bool useColorOptimization = true;
 
-  // intermediate results export parameters
+    // intermediate results export parameters
 
-  bool exportIntermediateDepthSimMaps = false;
-  bool exportIntermediateNormalMaps = false;
-  bool exportIntermediateCrossVolumes = false;
-  bool exportIntermediateTopographicCutVolumes = false;
-  bool exportIntermediateVolume9pCsv = false;
+    bool exportIntermediateDepthSimMaps = false;
+    bool exportIntermediateNormalMaps = false;
+    bool exportIntermediateCrossVolumes = false;
+    bool exportIntermediateTopographicCutVolumes = false;
+    bool exportIntermediateVolume9pCsv = false;
 
-  // constant parameters
+    // constant parameters
 
-  const bool useSgmNormalMap = false; // for experimentation purposes
+    const bool useSgmNormalMap = false;  // for experimentation purposes
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

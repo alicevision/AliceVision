@@ -22,18 +22,14 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
     hdr::rgbCurve gt_curve(quantization);
 
     gt_curve.setEmor(0);
-    std::array<double, 3> grossberg_params[3] = {
-                {0.8, 0.3, 0.2},
-                {-0.1, -0.3, 0.2},
-                {2.1, 0.05, 0.4}
-            };
+    std::array<double, 3> grossberg_params[3] = {{0.8, 0.3, 0.2}, {-0.1, -0.3, 0.2}, {2.1, 0.05, 0.4}};
 
-    for(int dim = 0; dim < 3; dim++)
+    for (int dim = 0; dim < 3; dim++)
     {
         hdr::rgbCurve dim_curve(quantization);
         dim_curve.setEmor(dim + 1);
 
-        for(int k = 0; k < quantization; k++)
+        for (int k = 0; k < quantization; k++)
         {
             gt_curve.getCurve(0)[k] += grossberg_params[0][dim] * dim_curve.getCurve(0)[k];
             gt_curve.getCurve(1)[k] += grossberg_params[1][dim] * dim_curve.getCurve(0)[k];
@@ -56,7 +52,7 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
     hdr::test::extractSamplesGroups(samples, all_paths, exposures, quantization);
     calib.process(samples, exposures, quantization, response);
 
-    for(int imageId = 0; imageId < paths.size() - 1; imageId++)
+    for (int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
         image::Image<image::RGBfColor> imgA, imgB;
         image::readImage(paths[imageId], imgA, image::EImageColorSpace::LINEAR);
@@ -66,13 +62,13 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
         double ratioExposures = times[imageId] / times[imageId + 1];
 
         double max_diff = 0.0;
-        for(int i = 0; i < imgA.Height(); i++)
+        for (int i = 0; i < imgA.Height(); i++)
         {
-            for(int j = 0; j < imgA.Width(); j++)
+            for (int j = 0; j < imgA.Width(); j++)
             {
                 image::RGBfColor Ba = imgA(i, j);
                 image::RGBfColor Bb = imgB(i, j);
-                for(int k = 0; k < 3; k++)
+                for (int k = 0; k < 3; k++)
                 {
                     double responseA = response(Ba(k), k);
                     double responseB = response(Bb(k), k);
@@ -80,16 +76,17 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
                     double hdrB = responseB / times[imageId + 1];
                     double diff = std::abs(responseA - ratioExposures * responseB);
 
-                    if (Bb(k) > 0.93) diff = 0.0;
-                    if (hdrA > 0.99) diff = 0.0;
-                    if (hdrB > 0.99) diff = 0.0;
+                    if (Bb(k) > 0.93)
+                        diff = 0.0;
+                    if (hdrA > 0.99)
+                        diff = 0.0;
+                    if (hdrB > 0.99)
+                        diff = 0.0;
 
                     max_diff = std::max(diff, max_diff);
-
                 }
             }
         }
-
 
         BOOST_CHECK(std::isfinite(max_diff));
         BOOST_CHECK_SMALL(max_diff, 2.0 * 1e-3);

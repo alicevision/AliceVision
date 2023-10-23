@@ -18,7 +18,7 @@ namespace resection {
 /**
  * @brief Usable solver for the 6pt Resection estimation
  */
-typedef robustEstimation::PointFittingKernel<Resection6PSolver, ProjectionDistanceError, robustEstimation::Mat34Model>  Resection6PKernel;
+typedef robustEstimation::PointFittingKernel<Resection6PSolver, ProjectionDistanceError, robustEstimation::Mat34Model> Resection6PKernel;
 
 }  // namespace resection
 }  // namespace multiview

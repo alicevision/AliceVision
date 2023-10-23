@@ -12,10 +12,8 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <random>
 
-namespace aliceVision
-{
-namespace geometry
-{
+namespace aliceVision {
+namespace geometry {
 
 /**
  * @brief Compose a similarity matrix given a scale factor, a rotation matrix and
@@ -45,11 +43,11 @@ inline bool decomposeRTS(const Mat4& RTS, double& S, Vec3& t, Mat3& R)
 {
     // Check critical cases
     R = RTS.topLeftCorner<3, 3>();
-    if(R.determinant() < 0)
+    if (R.determinant() < 0)
         return false;
     S = pow(R.determinant(), 1.0 / 3.0);
     // Check for degenerate case (if all points have the same value...)
-    if(S < std::numeric_limits<double>::epsilon())
+    if (S < std::numeric_limits<double>::epsilon())
         return false;
 
     // Extract transformation parameters
@@ -78,7 +76,7 @@ inline bool decomposeRTS(const Mat4& RTS, double& S, Vec3& t, Mat3& R)
 
 inline bool FindRTS(const Mat& x1, const Mat& x2, double& S, Vec3& t, Mat3& R)
 {
-    if(x1.cols() < 3 || x2.cols() < 3)
+    if (x1.cols() < 3 || x2.cols() < 3)
         return false;
 
     assert(3 == x1.rows());
@@ -99,16 +97,14 @@ inline bool FindRTS(const Mat& x1, const Mat& x2, double& S, Vec3& t, Mat3& R)
 // Eigen LM functor to refine translation, Rotation and Scale parameter.
 struct lm_SRTRefine_functor : LMFunctor<double>
 {
-    lm_SRTRefine_functor(int inputs, int values, const Mat& x1, const Mat& x2, const double& S, const Mat3& R,
-                         const Vec& t)
-        : LMFunctor<double>(inputs, values)
-        , _x1(x1)
-        , _x2(x2)
-        , _t(t)
-        , _R(R)
-        , _S(S)
-    {
-    }
+    lm_SRTRefine_functor(int inputs, int values, const Mat& x1, const Mat& x2, const double& S, const Mat3& R, const Vec& t)
+      : LMFunctor<double>(inputs, values),
+        _x1(x1),
+        _x2(x2),
+        _t(t),
+        _R(R),
+        _S(S)
+    {}
 
     int operator()(const Vec& x, Vec& fvec) const;
 
@@ -121,16 +117,14 @@ struct lm_SRTRefine_functor : LMFunctor<double>
 // Eigen LM functor to refine Rotation.
 struct lm_RRefine_functor : LMFunctor<double>
 {
-    lm_RRefine_functor(int inputs, int values, const Mat& x1, const Mat& x2, const double& S, const Mat3& R,
-                       const Vec& t)
-        : LMFunctor<double>(inputs, values)
-        , _x1(x1)
-        , _x2(x2)
-        , _t(t)
-        , _R(R)
-        , _S(S)
-    {
-    }
+    lm_RRefine_functor(int inputs, int values, const Mat& x1, const Mat& x2, const double& S, const Mat3& R, const Vec& t)
+      : LMFunctor<double>(inputs, values),
+        _x1(x1),
+        _x2(x2),
+        _t(t),
+        _R(R),
+        _S(S)
+    {}
 
     int operator()(const Vec& x, Vec& fvec) const;
 
@@ -159,7 +153,7 @@ void Refine_RTS(const Mat& x1, const Mat& x2, double& S, Vec3& t, Mat3& R);
  */
 class RTSSolver : public robustEstimation::ISolver<robustEstimation::MatrixModel<Mat4>>
 {
-public:
+  public:
     /**
      * @brief Return the minimum number of required samples
      * @return minimum number of required samples
@@ -178,7 +172,9 @@ public:
         models.push_back(robustEstimation::MatrixModel<Mat4>(Eigen::umeyama(pts1, pts2, true)));
     }
 
-    void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::MatrixModel<Mat4>>& models,
+    void solve(const Mat& x1,
+               const Mat& x2,
+               std::vector<robustEstimation::MatrixModel<Mat4>>& models,
                const std::vector<double>& weights) const override
     {
         throw std::logic_error("RTSSolver does not support problem solving with weights.");
@@ -213,18 +209,18 @@ struct RTSSquaredResidualError
 /**
  * @brief The kernel to use for ACRansac
  */
-template <typename SolverT_, typename ErrorT_, typename ModelT_ = robustEstimation::MatrixModel<Mat4>>
+template<typename SolverT_, typename ErrorT_, typename ModelT_ = robustEstimation::MatrixModel<Mat4>>
 class ACKernelAdaptor_PointsRegistrationSRT
 {
-public:
+  public:
     using SolverT = SolverT_;
     using ModelT = ModelT_;
     using ErrorT = ErrorT_;
 
     ACKernelAdaptor_PointsRegistrationSRT(const Mat& xA, const Mat& xB)
-        : x1_(xA)
-        , x2_(xB)
-        , _logalpha0(log10(M_PI)) //@todo  WTF?
+      : x1_(xA),
+        x2_(xB),
+        _logalpha0(log10(M_PI))  //@todo  WTF?
     {
         assert(3 == x1_.rows());
         assert(x1_.rows() == x2_.rows());
@@ -252,21 +248,18 @@ public:
         _kernelSolver.solve(x1, x2, models);
     }
 
-    double error(std::size_t sample, const ModelT& model) const
-    {
-        return Square(_errorEstimator.error(model, x1_.col(sample), x2_.col(sample)));
-    }
+    double error(std::size_t sample, const ModelT& model) const { return Square(_errorEstimator.error(model, x1_.col(sample), x2_.col(sample))); }
 
     void errors(const ModelT& model, std::vector<double>& vec_errors) const
     {
         vec_errors.resize(x1_.cols());
-        for(std::size_t sample = 0; sample < x1_.cols(); ++sample)
+        for (std::size_t sample = 0; sample < x1_.cols(); ++sample)
             vec_errors[sample] = error(sample, model);
     }
 
     std::size_t nbSamples() const { return static_cast<std::size_t>(x1_.cols()); }
 
-    void unnormalize(ModelT& model) const {} //-- Do nothing, no normalization
+    void unnormalize(ModelT& model) const {}  //-- Do nothing, no normalization
 
     double logalpha0() const { return _logalpha0; }
 
@@ -278,9 +271,9 @@ public:
 
     double unormalizeError(double val) const { return sqrt(val); }
 
-private:
-    Mat x1_, x2_;      // normalized input data
-    double _logalpha0; // alpha0 is used to make the error scale invariant
+  private:
+    Mat x1_, x2_;       // normalized input data
+    double _logalpha0;  // alpha0 is used to make the error scale invariant
 
     SolverT _kernelSolver;
     ErrorT _errorEstimator;
@@ -300,8 +293,14 @@ private:
  * @return true if the found transformation is a similarity
  * @see FindRTS()
  */
-bool ACRansac_FindRTS(const Mat& x1, const Mat& x2, std::mt19937& randomNumberGenerator, double& S, Vec3& t, Mat3& R,
-                      std::vector<std::size_t>& vec_inliers, bool refine = false);
+bool ACRansac_FindRTS(const Mat& x1,
+                      const Mat& x2,
+                      std::mt19937& randomNumberGenerator,
+                      double& S,
+                      Vec3& t,
+                      Mat3& R,
+                      std::vector<std::size_t>& vec_inliers,
+                      bool refine = false);
 
 /**
  * @brief Uses AC ransac to robustly estimate the similarity between two sets of
@@ -316,18 +315,22 @@ bool ACRansac_FindRTS(const Mat& x1, const Mat& x2, std::mt19937& randomNumberGe
  * @see geometry::FindRTS()
  * @see geometry::ACRansac_FindRTS()
  */
-inline bool ACRansac_FindRTS(const Mat& x1, const Mat& x2, std::mt19937& randomNumberGenerator, Mat4& RTS,
-                             std::vector<std::size_t>& vec_inliers, bool refine = false)
+inline bool ACRansac_FindRTS(const Mat& x1,
+                             const Mat& x2,
+                             std::mt19937& randomNumberGenerator,
+                             Mat4& RTS,
+                             std::vector<std::size_t>& vec_inliers,
+                             bool refine = false)
 {
     double S;
     Vec3 t;
     Mat3 R;
     const bool good = ACRansac_FindRTS(x1, x2, randomNumberGenerator, S, t, R, vec_inliers, refine);
-    if(good)
+    if (good)
         composeRTS(S, t, R, RTS);
 
     return good;
 }
 
-} // namespace geometry
-} // namespace aliceVision
+}  // namespace geometry
+}  // namespace aliceVision

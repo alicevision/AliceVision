@@ -21,22 +21,22 @@
 namespace aliceVision {
 namespace depthMap {
 
-Sgm::Sgm(const mvsUtils::MultiViewParams& mp, 
-         const mvsUtils::TileParams& tileParams, 
+Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
+         const mvsUtils::TileParams& tileParams,
          const SgmParams& sgmParams,
          bool computeDepthSimMap,
          bool computeNormalMap,
          cudaStream_t stream)
-    : _mp(mp)
-    , _tileParams(tileParams)
-    , _sgmParams(sgmParams)
-    , _computeDepthSimMap(computeDepthSimMap || sgmParams.exportIntermediateDepthSimMaps)
-    , _computeNormalMap(computeNormalMap || sgmParams.exportIntermediateNormalMaps)
-    , _stream(stream)
+  : _mp(mp),
+    _tileParams(tileParams),
+    _sgmParams(sgmParams),
+    _computeDepthSimMap(computeDepthSimMap || sgmParams.exportIntermediateDepthSimMaps),
+    _computeNormalMap(computeNormalMap || sgmParams.exportIntermediateNormalMaps),
+    _stream(stream)
 {
     // get tile maximum dimensions
     const int downscale = _sgmParams.scale * _sgmParams.stepXY;
-    const int maxTileWidth  = divideRoundUp(tileParams.bufferWidth , downscale);
+    const int maxTileWidth = divideRoundUp(tileParams.bufferWidth, downscale);
     const int maxTileHeight = divideRoundUp(tileParams.bufferHeight, downscale);
 
     // compute map maximum dimensions
@@ -54,11 +54,11 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     _depthThicknessMap_dmp.allocate(mapDim);
 
     // allocate depth/sim map in device memory
-    if(_computeDepthSimMap)
+    if (_computeDepthSimMap)
         _depthSimMap_dmp.allocate(mapDim);
 
     // allocate normal map in device memory
-    if(_computeNormalMap)
+    if (_computeNormalMap)
         _normalMap_dmp.allocate(mapDim);
 
     // allocate similarity volumes in device memory
@@ -70,7 +70,7 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     }
 
     // allocate similarity volume optimization buffers
-    if(sgmParams.doSgmOptimizeVolume)
+    if (sgmParams.doSgmOptimizeVolume)
     {
         const size_t maxTileSide = std::max(maxTileWidth, maxTileHeight);
 
@@ -118,14 +118,15 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
 {
     const IndexT viewId = _mp.getViewId(tile.rc);
 
-    ALICEVISION_LOG_INFO(tile << "SGM depth/thickness map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
+    ALICEVISION_LOG_INFO(tile << "SGM depth/thickness map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / "
+                              << _mp.ncams << ").");
 
     // check SGM depth list and T cameras
-    if(tile.sgmTCams.empty() || tileDepthList.getDepths().empty())
+    if (tile.sgmTCams.empty() || tileDepthList.getDepths().empty())
         ALICEVISION_THROW_ERROR(tile << "Cannot compute Semi-Global Matching, no depths or no T cameras (viewId: " << viewId << ").");
-    
+
     // copy rc depth data in page-locked host memory
-    for(int i = 0; i < tileDepthList.getDepths().size(); ++i)
+    for (int i = 0; i < tileDepthList.getDepths().size(); ++i)
         _depths_hmh(i, 0) = tileDepthList.getDepths()[i];
 
     // copy rc depth data in device memory
@@ -140,7 +141,7 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     // this is here for experimental purposes
     // to show how SGGC work on non optimized depthmaps
     // it must equals to true in normal case
-    if(_sgmParams.doSgmOptimizeVolume)                      
+    if (_sgmParams.doSgmOptimizeVolume)
     {
         optimizeSimilarityVolume(tile, tileDepthList);
     }
@@ -157,13 +158,13 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     retrieveBestDepth(tile, tileDepthList);
 
     // export intermediate depth/sim map (if requested by user)
-    if(_sgmParams.exportIntermediateDepthSimMaps)
+    if (_sgmParams.exportIntermediateDepthSimMaps)
     {
         writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _depthSimMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "sgm");
     }
 
     // compute normal map from depth/sim map if needed
-    if(_computeNormalMap)
+    if (_computeNormalMap)
     {
         // downscale the region of interest
         const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
@@ -172,11 +173,12 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
         DeviceCache& deviceCache = DeviceCache::getInstance();
         const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(tile.rc, _sgmParams.scale, _mp);
 
-        ALICEVISION_LOG_INFO(tile << "SGM compute normal map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
+        ALICEVISION_LOG_INFO(tile << "SGM compute normal map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / "
+                                  << _mp.ncams << ").");
         cuda_depthSimMapComputeNormal(_normalMap_dmp, _depthSimMap_dmp, rcDeviceCameraParamsId, _sgmParams.stepXY, downscaledRoi, _stream);
 
         // export intermediate normal map (if requested by user)
-        if(_sgmParams.exportIntermediateNormalMaps)
+        if (_sgmParams.exportIntermediateNormalMaps)
         {
             writeNormalMap(tile.rc, _mp, _tileParams, tile.roi, _normalMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "sgm");
         }
@@ -208,7 +210,7 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
     // initialize the two similarity volumes at 255
     cuda_volumeInitialize(_volumeBestSim_dmp, 255.f, _stream);
     cuda_volumeInitialize(_volumeSecBestSim_dmp, 255.f, _stream);
-  
+
     // get device cache instance
     DeviceCache& deviceCache = DeviceCache::getInstance();
 
@@ -219,12 +221,12 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
     const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp);
 
     // compute similarity volume per Rc Tc
-    for(std::size_t tci = 0; tci < tile.sgmTCams.size(); ++tci)
+    for (std::size_t tci = 0; tci < tile.sgmTCams.size(); ++tci)
     {
         const int tc = tile.sgmTCams.at(tci);
 
         const int firstDepth = tileDepthList.getDepthsTcLimits()[tci].x;
-        const int lastDepth  = firstDepth + tileDepthList.getDepthsTcLimits()[tci].y;
+        const int lastDepth = firstDepth + tileDepthList.getDepthsTcLimits()[tci].y;
 
         const Range tcDepthRange(firstDepth, lastDepth);
 
@@ -244,29 +246,29 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
                                    << "\t- tile range x: [" << downscaledRoi.x.begin << " - " << downscaledRoi.x.end << "]" << std::endl
                                    << "\t- tile range y: [" << downscaledRoi.y.begin << " - " << downscaledRoi.y.end << "]" << std::endl);
 
-        cuda_volumeComputeSimilarity(_volumeBestSim_dmp, 
-                                     _volumeSecBestSim_dmp, 
-                                     _depths_dmp, 
+        cuda_volumeComputeSimilarity(_volumeBestSim_dmp,
+                                     _volumeSecBestSim_dmp,
+                                     _depths_dmp,
                                      rcDeviceCameraParamsId,
                                      tcDeviceCameraParamsId,
                                      rcDeviceMipmapImage,
                                      tcDeviceMipmapImage,
-                                     _sgmParams, 
+                                     _sgmParams,
                                      tcDepthRange,
-                                     downscaledRoi, 
+                                     downscaledRoi,
                                      _stream);
     }
 
     // update second best uninitialized similarity volume values with first best similarity volume values
     // - allows to avoid the particular case with a single tc (second best volume has no valid similarity values)
     // - useful if a tc alone contributes to the calculation of a subpart of the similarity volume
-    if(_sgmParams.updateUninitializedSim) // should always be true, false for debug purposes
+    if (_sgmParams.updateUninitializedSim)  // should always be true, false for debug purposes
     {
         ALICEVISION_LOG_DEBUG(tile << "SGM Update uninitialized similarity volume values from best similarity volume.");
 
         cuda_volumeUpdateUninitializedSimilarity(_volumeBestSim_dmp, _volumeSecBestSim_dmp, _stream);
     }
-    
+
     ALICEVISION_LOG_INFO(tile << "SGM Compute similarity volume done.");
 }
 
@@ -280,14 +282,14 @@ void Sgm::optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDep
     // get R device mipmap image from cache
     DeviceCache& deviceCache = DeviceCache::getInstance();
     const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp);
-    
-    cuda_volumeOptimize(_volumeBestSim_dmp,    // output volume (reuse best sim to put optimized similarity)
-                        _volumeSliceAccA_dmp,  // slice A accumulation buffer pre-allocate
-                        _volumeSliceAccB_dmp,  // slice B accumulation buffer pre-allocate
-                        _volumeAxisAcc_dmp,    // axis accumulation buffer pre-allocate
-                        _volumeSecBestSim_dmp, // input volume
+
+    cuda_volumeOptimize(_volumeBestSim_dmp,     // output volume (reuse best sim to put optimized similarity)
+                        _volumeSliceAccA_dmp,   // slice A accumulation buffer pre-allocate
+                        _volumeSliceAccB_dmp,   // slice B accumulation buffer pre-allocate
+                        _volumeAxisAcc_dmp,     // axis accumulation buffer pre-allocate
+                        _volumeSecBestSim_dmp,  // input volume
                         rcDeviceMipmapImage,
-                        _sgmParams, 
+                        _sgmParams,
                         tileDepthList.getDepths().size(),
                         downscaledRoi,
                         _stream);
@@ -309,14 +311,14 @@ void Sgm::retrieveBestDepth(const Tile& tile, const SgmDepthList& tileDepthList)
     DeviceCache& deviceCache = DeviceCache::getInstance();
     const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(tile.rc, 1, _mp);
 
-    cuda_volumeRetrieveBestDepth(_depthThicknessMap_dmp, // output depth thickness map
-                                 _depthSimMap_dmp,      // output depth/sim map (or empty)
-                                 _depths_dmp,           // rc depth
-                                 _volumeBestSim_dmp,    // second best sim volume optimized in best sim volume
+    cuda_volumeRetrieveBestDepth(_depthThicknessMap_dmp,  // output depth thickness map
+                                 _depthSimMap_dmp,        // output depth/sim map (or empty)
+                                 _depths_dmp,             // rc depth
+                                 _volumeBestSim_dmp,      // second best sim volume optimized in best sim volume
                                  rcDeviceCameraParamsId,
                                  _sgmParams,
                                  depthRange,
-                                 downscaledRoi, 
+                                 downscaledRoi,
                                  _stream);
 
     ALICEVISION_LOG_INFO(tile << "SGM Retrieve best depth in volume done.");
@@ -327,9 +329,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
                                   const CudaDeviceMemoryPitched<TSim, 3>& in_volume_dmp,
                                   const std::string& name) const
 {
-    if(!_sgmParams.exportIntermediateVolumes && 
-       !_sgmParams.exportIntermediateCrossVolumes &&
-       !_sgmParams.exportIntermediateVolume9pCsv)
+    if (!_sgmParams.exportIntermediateVolumes && !_sgmParams.exportIntermediateCrossVolumes && !_sgmParams.exportIntermediateVolume9pCsv)
     {
         // nothing to do
         return;
@@ -339,7 +339,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
     int tileBeginX = -1;
     int tileBeginY = -1;
 
-    if(tile.nbTiles > 1)
+    if (tile.nbTiles > 1)
     {
         tileBeginX = tile.roi.x.begin;
         tileBeginY = tile.roi.y.begin;
@@ -349,18 +349,18 @@ void Sgm::exportVolumeInformation(const Tile& tile,
     CudaHostMemoryHeap<TSim, 3> volumeSim_hmh(in_volume_dmp.getSize());
     volumeSim_hmh.copyFrom(in_volume_dmp);
 
-    if(_sgmParams.exportIntermediateVolumes)
+    if (_sgmParams.exportIntermediateVolumes)
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume (" << name << ").");
 
         const std::string volumePath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volume, "_" + name, tileBeginX, tileBeginY);
-        
+
         exportSimilarityVolume(volumeSim_hmh, tileDepthList.getDepths(), _mp, tile.rc, _sgmParams, volumePath, tile.roi);
 
         ALICEVISION_LOG_INFO(tile << "Export similarity volume (" << name << ") done.");
     }
 
-    if(_sgmParams.exportIntermediateCrossVolumes)
+    if (_sgmParams.exportIntermediateCrossVolumes)
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ").");
 
@@ -371,18 +371,19 @@ void Sgm::exportVolumeInformation(const Tile& tile,
         ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ") done.");
     }
 
-    if(_sgmParams.exportIntermediateTopographicCutVolumes)
+    if (_sgmParams.exportIntermediateTopographicCutVolumes)
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume topographic cut (" << name << ").");
 
-        const std::string volumeCutPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeTopographicCut, "_" + name, tileBeginX, tileBeginY);
+        const std::string volumeCutPath =
+          getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeTopographicCut, "_" + name, tileBeginX, tileBeginY);
 
         exportSimilarityVolumeTopographicCut(volumeSim_hmh, tileDepthList.getDepths(), _mp, tile.rc, _sgmParams, volumeCutPath, tile.roi);
 
         ALICEVISION_LOG_INFO(tile << "Export similarity volume topographic cut (" << name << ") done.");
     }
 
-    if(_sgmParams.exportIntermediateVolume9pCsv)
+    if (_sgmParams.exportIntermediateVolume9pCsv)
     {
         ALICEVISION_LOG_INFO(tile << "Export similarity volume 9 points CSV (" << name << ").");
 
@@ -394,5 +395,5 @@ void Sgm::exportVolumeInformation(const Tile& tile,
     }
 }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

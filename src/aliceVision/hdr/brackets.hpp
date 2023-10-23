@@ -29,16 +29,16 @@ inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod cali
 {
     switch (calibrationMethod)
     {
-    case ECalibrationMethod::AUTO:
-        return "auto";
-    case ECalibrationMethod::LINEAR:
-        return "linear";
-    case ECalibrationMethod::DEBEVEC:
-        return "debevec";
-    case ECalibrationMethod::GROSSBERG:
-        return "grossberg";
-    case ECalibrationMethod::LAGUERRE:
-        return "laguerre";
+        case ECalibrationMethod::AUTO:
+            return "auto";
+        case ECalibrationMethod::LINEAR:
+            return "linear";
+        case ECalibrationMethod::DEBEVEC:
+            return "debevec";
+        case ECalibrationMethod::GROSSBERG:
+            return "grossberg";
+        case ECalibrationMethod::LAGUERRE:
+            return "laguerre";
     }
     throw std::out_of_range("Invalid method name enum");
 }
@@ -88,7 +88,7 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
  * @param[in] countBrackets the number of brackets
  * @return false if an error occurs (e.g. an invalid SfMData file has been provided), true otherwise
  */
-bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups,
+bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
                                  const sfmData::SfMData& sfmData,
                                  size_t countBrackets);
 
@@ -110,5 +110,5 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
                       const std::string& targetIndexesFilename = "",
                       const double meanTargetedLuma = 0.4);
 
-}
-}
+}  // namespace hdr
+}  // namespace aliceVision

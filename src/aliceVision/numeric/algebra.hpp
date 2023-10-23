@@ -21,31 +21,30 @@
 // AliceVision does not support Eigen with alignment, unless C++17 aligned new feature is enabled.
 // So ensure Eigen is used with the correct flags.
 #ifndef ALICEVISION_EIGEN_REQUIRE_ALIGNMENT
-#ifndef EIGEN_MAX_ALIGN_BYTES
-#error "EIGEN_MAX_ALIGN_BYTES is not defined"
-#elif EIGEN_MAX_ALIGN_BYTES != 0
-#error "EIGEN_MAX_ALIGN_BYTES is defined but not 0"
-#endif
+    #ifndef EIGEN_MAX_ALIGN_BYTES
+        #error "EIGEN_MAX_ALIGN_BYTES is not defined"
+    #elif EIGEN_MAX_ALIGN_BYTES != 0
+        #error "EIGEN_MAX_ALIGN_BYTES is defined but not 0"
+    #endif
 
-#ifndef EIGEN_MAX_STATIC_ALIGN_BYTES
-#error "EIGEN_MAX_STATIC_ALIGN_BYTES is not defined"
-#elif EIGEN_MAX_STATIC_ALIGN_BYTES != 0
-#error "EIGEN_MAX_STATIC_ALIGN_BYTES is defined but not 0"
-#endif
+    #ifndef EIGEN_MAX_STATIC_ALIGN_BYTES
+        #error "EIGEN_MAX_STATIC_ALIGN_BYTES is not defined"
+    #elif EIGEN_MAX_STATIC_ALIGN_BYTES != 0
+        #error "EIGEN_MAX_STATIC_ALIGN_BYTES is defined but not 0"
+    #endif
 #endif
 
 #include <Eigen/Core>
 #include <Eigen/SVD>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
-template <typename TMat, typename TVec>
-double Nullspace(const TMat & A, TVec & nullspace)
+template<typename TMat, typename TVec>
+double Nullspace(const TMat& A, TVec& nullspace)
 {
     Eigen::JacobiSVD<TMat> svd(A, Eigen::ComputeFullV);
-    const auto & vec = svd.singularValues();
-    const auto & V = svd.matrixV();
+    const auto& vec = svd.singularValues();
+    const auto& V = svd.matrixV();
 
     nullspace = V.col(V.cols() - 1);
 
@@ -53,7 +52,7 @@ double Nullspace(const TMat & A, TVec & nullspace)
     {
         return 0.0;
     }
-    
+
     return vec(vec.rows() - 1);
 }
 
@@ -63,12 +62,12 @@ double Nullspace(const TMat & A, TVec & nullspace)
 /// the singular value corresponding to the solution x1. Destroys A and resizes
 /// x if necessary.
 
-template <typename TMat, typename TVec1, typename TVec2>
+template<typename TMat, typename TVec1, typename TVec2>
 inline double Nullspace2(const TMat& A, TVec1& x1, TVec2& x2)
 {
     Eigen::JacobiSVD<TMat> svd(A, Eigen::ComputeFullV);
-    const auto & vec = svd.singularValues();
-    const auto & V = svd.matrixV();
+    const auto& vec = svd.singularValues();
+    const auto& V = svd.matrixV();
 
     x1 = V.col(V.cols() - 1);
     x2 = V.col(V.cols() - 2);
@@ -77,8 +76,8 @@ inline double Nullspace2(const TMat& A, TVec1& x1, TVec2& x2)
     {
         return 0.0;
     }
-    
+
     return vec(vec.rows() - 1);
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

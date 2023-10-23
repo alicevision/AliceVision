@@ -20,239 +20,243 @@ using namespace aliceVision::geometry;
 
 BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleOnly)
 {
-  makeRandomOperationsReproducible();
+    makeRandomOperationsReproducible();
 
-  const std::size_t nbPoints = 10;
-  Mat x1 = Mat::Random(3, nbPoints);
-  Mat x2 = x1;
+    const std::size_t nbPoints = 10;
+    Mat x1 = Mat::Random(3, nbPoints);
+    Mat x2 = x1;
 
-  const double scale = 2;
-  Mat3 rot = Mat3::Identity();
-  Vec3 t(0, 0, 0);
+    const double scale = 2;
+    Mat3 rot = Mat3::Identity();
+    Vec3 t(0, 0, 0);
 
-  for(std::size_t i = 0; i < nbPoints; ++i)
-  {
-    Vec3 pt = x1.col(i);
-    x2.col(i) = (scale * rot * pt + t);
-  }
+    for (std::size_t i = 0; i < nbPoints; ++i)
+    {
+        Vec3 pt = x1.col(i);
+        x2.col(i) = (scale * rot * pt + t);
+    }
 
-  // Compute the Similarity transform
-  double Sc = 0;
-  Mat3 Rc;
-  Vec3 tc;
-  FindRTS(x1, x2, Sc, tc, Rc);
-  Refine_RTS(x1, x2, Sc, tc, Rc);
+    // Compute the Similarity transform
+    double Sc = 0;
+    Mat3 Rc;
+    Vec3 tc;
+    FindRTS(x1, x2, Sc, tc, Rc);
+    Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  ALICEVISION_LOG_DEBUG(
-          "Scale " << Sc << "\n" <<
-          "Rot \n" << Rc << "\n" <<
-          "t " << tc.transpose());
+    ALICEVISION_LOG_DEBUG("Scale " << Sc << "\n"
+                                   << "Rot \n"
+                                   << Rc << "\n"
+                                   << "t " << tc.transpose());
 }
 
 BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleAndRot)
 {
-  makeRandomOperationsReproducible();
+    makeRandomOperationsReproducible();
 
-  const std::size_t nbPoints = 10;
-  Mat x1 = Mat::Random(3, nbPoints);
-  Mat x2 = x1;
+    const std::size_t nbPoints = 10;
+    Mat x1 = Mat::Random(3, nbPoints);
+    Mat x2 = x1;
 
-  const double scale = 2;
-  Mat3 rot = (Eigen::AngleAxis<double>(.2, Vec3::UnitX())
-          * Eigen::AngleAxis<double>(.3, Vec3::UnitY())
-          * Eigen::AngleAxis<double>(.6, Vec3::UnitZ())).toRotationMatrix();
-  Vec3 t(0, 0, 0);
+    const double scale = 2;
+    Mat3 rot =
+      (Eigen::AngleAxis<double>(.2, Vec3::UnitX()) * Eigen::AngleAxis<double>(.3, Vec3::UnitY()) * Eigen::AngleAxis<double>(.6, Vec3::UnitZ()))
+        .toRotationMatrix();
+    Vec3 t(0, 0, 0);
 
-  for(std::size_t i = 0; i < nbPoints; ++i)
-  {
-    Vec3 pt = x1.col(i);
-    x2.col(i) = (scale * rot * pt + t);
-  }
+    for (std::size_t i = 0; i < nbPoints; ++i)
+    {
+        Vec3 pt = x1.col(i);
+        x2.col(i) = (scale * rot * pt + t);
+    }
 
-  // Compute the Similarity transform
-  double Sc = 0;
-  Mat3 Rc;
-  Vec3 tc;
-  FindRTS(x1, x2, Sc, tc, Rc);
-  Refine_RTS(x1, x2, Sc, tc, Rc);
+    // Compute the Similarity transform
+    double Sc = 0;
+    Mat3 Rc;
+    Vec3 tc;
+    FindRTS(x1, x2, Sc, tc, Rc);
+    Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  ALICEVISION_LOG_DEBUG(
-          "Scale " << Sc << "\n" <<
-          "Rot \n" << Rc << "\n" <<
-          "t " << tc.transpose());
+    ALICEVISION_LOG_DEBUG("Scale " << Sc << "\n"
+                                   << "Rot \n"
+                                   << Rc << "\n"
+                                   << "t " << tc.transpose());
 
-  ALICEVISION_LOG_DEBUG("GT\n" <<
-          "Scale " << scale << "\n" <<
-          "Rot \n" << rot << "\n" <<
-          "t " << t.transpose());
+    ALICEVISION_LOG_DEBUG("GT\n"
+                          << "Scale " << scale << "\n"
+                          << "Rot \n"
+                          << rot << "\n"
+                          << "t " << t.transpose());
 }
 
 BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleRotTranslation)
 {
-  makeRandomOperationsReproducible();
+    makeRandomOperationsReproducible();
 
-  const std::size_t nbPoints = 10;
-  Mat x1 = Mat::Random(3, nbPoints);
-  Mat x2 = x1;
+    const std::size_t nbPoints = 10;
+    Mat x1 = Mat::Random(3, nbPoints);
+    Mat x2 = x1;
 
-  const double scale = 2;
-  Mat3 rot = (Eigen::AngleAxis<double>(.2, Vec3::UnitX())
-          * Eigen::AngleAxis<double>(.3, Vec3::UnitY())
-          * Eigen::AngleAxis<double>(.6, Vec3::UnitZ())).toRotationMatrix();
-  Vec3 t(0.5, -0.3, .38);
+    const double scale = 2;
+    Mat3 rot =
+      (Eigen::AngleAxis<double>(.2, Vec3::UnitX()) * Eigen::AngleAxis<double>(.3, Vec3::UnitY()) * Eigen::AngleAxis<double>(.6, Vec3::UnitZ()))
+        .toRotationMatrix();
+    Vec3 t(0.5, -0.3, .38);
 
-  for(std::size_t i = 0; i < nbPoints; ++i)
-  {
-    Vec3 pt = x1.col(i);
-    x2.col(i) = (scale * rot * pt + t);
-  }
+    for (std::size_t i = 0; i < nbPoints; ++i)
+    {
+        Vec3 pt = x1.col(i);
+        x2.col(i) = (scale * rot * pt + t);
+    }
 
-  // Compute the Similarity transform
-  double Sc = 0;
-  Mat3 Rc;
-  Vec3 tc;
-  FindRTS(x1, x2, Sc, tc, Rc);
-  Refine_RTS(x1, x2, Sc, tc, Rc);
+    // Compute the Similarity transform
+    double Sc = 0;
+    Mat3 Rc;
+    Vec3 tc;
+    FindRTS(x1, x2, Sc, tc, Rc);
+    Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  ALICEVISION_LOG_DEBUG(
-          "Scale " << Sc << "\n" <<
-          "Rot \n" << Rc << "\n" <<
-          "t " << tc.transpose());
+    ALICEVISION_LOG_DEBUG("Scale " << Sc << "\n"
+                                   << "Rot \n"
+                                   << Rc << "\n"
+                                   << "t " << tc.transpose());
 
-  ALICEVISION_LOG_DEBUG("GT\n" <<
-          "Scale " << scale << "\n" <<
-          "Rot \n" << rot << "\n" <<
-          "t " << t.transpose());
+    ALICEVISION_LOG_DEBUG("GT\n"
+                          << "Scale " << scale << "\n"
+                          << "Rot \n"
+                          << rot << "\n"
+                          << "t " << t.transpose());
 }
 
 BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
 {
-  makeRandomOperationsReproducible();
+    makeRandomOperationsReproducible();
 
-  std::mt19937 randomNumberGenerator;
-  const std::size_t nbPoints = 100;
-  Mat x1 = Mat::Random(3, nbPoints);
-  Mat x2 = x1;
+    std::mt19937 randomNumberGenerator;
+    const std::size_t nbPoints = 100;
+    Mat x1 = Mat::Random(3, nbPoints);
+    Mat x2 = x1;
 
-  const double scale = 2;
-  Mat3 rot = (Eigen::AngleAxis<double>(.2, Vec3::UnitX())
-          * Eigen::AngleAxis<double>(.3, Vec3::UnitY())
-          * Eigen::AngleAxis<double>(.6, Vec3::UnitZ())).toRotationMatrix();
-  Vec3 t(0.5, -0.3, .38);
+    const double scale = 2;
+    Mat3 rot =
+      (Eigen::AngleAxis<double>(.2, Vec3::UnitX()) * Eigen::AngleAxis<double>(.3, Vec3::UnitY()) * Eigen::AngleAxis<double>(.6, Vec3::UnitZ()))
+        .toRotationMatrix();
+    Vec3 t(0.5, -0.3, .38);
 
-  for(std::size_t i = 0; i < nbPoints; ++i)
-  {
-    const Vec3 &pt = x1.col(i);
-    x2.col(i) = (scale * rot * pt + t);
-  }
+    for (std::size_t i = 0; i < nbPoints; ++i)
+    {
+        const Vec3& pt = x1.col(i);
+        x2.col(i) = (scale * rot * pt + t);
+    }
 
-  // Compute the Similarity transform
-  double Sc;
-  Mat3 Rc;
-  Vec3 tc;
+    // Compute the Similarity transform
+    double Sc;
+    Mat3 Rc;
+    Vec3 tc;
 
-  std::vector<std::size_t> inliers;
-  const bool result = ACRansac_FindRTS(x1, x2, randomNumberGenerator, Sc, tc, Rc, inliers, true);
+    std::vector<std::size_t> inliers;
+    const bool result = ACRansac_FindRTS(x1, x2, randomNumberGenerator, Sc, tc, Rc, inliers, true);
 
-  BOOST_CHECK(result);
-  BOOST_CHECK(inliers.size() == nbPoints);
+    BOOST_CHECK(result);
+    BOOST_CHECK(inliers.size() == nbPoints);
 
-  ALICEVISION_LOG_DEBUG(
-          "Scale " << Sc << "\n" <<
-          "Rot \n" << Rc << "\n" <<
-          "t " << tc.transpose());
+    ALICEVISION_LOG_DEBUG("Scale " << Sc << "\n"
+                                   << "Rot \n"
+                                   << Rc << "\n"
+                                   << "t " << tc.transpose());
 
-  ALICEVISION_LOG_DEBUG("GT\n" <<
-          "Scale " << scale << "\n" <<
-          "Rot \n" << rot << "\n" <<
-          "t " << t.transpose());
+    ALICEVISION_LOG_DEBUG("GT\n"
+                          << "Scale " << scale << "\n"
+                          << "Rot \n"
+                          << rot << "\n"
+                          << "t " << t.transpose());
 
-  BOOST_CHECK_SMALL(scale - Sc, 1e-9);
-  
-  Mat4 RTS;
-  composeRTS(Sc, tc, Rc, RTS);
+    BOOST_CHECK_SMALL(scale - Sc, 1e-9);
 
-  robustEstimation::MatrixModel<Mat4> modelRTS(RTS);
-  geometry::RTSSquaredResidualError errorEstimator;
+    Mat4 RTS;
+    composeRTS(Sc, tc, Rc, RTS);
 
-  for(std::size_t i = 0; i < nbPoints; ++i)
-  {
-    const double error = errorEstimator.error(modelRTS, x1.col(i), x2.col(i));
-    BOOST_CHECK_SMALL(error, 1e-9);
-  }
+    robustEstimation::MatrixModel<Mat4> modelRTS(RTS);
+    geometry::RTSSquaredResidualError errorEstimator;
+
+    for (std::size_t i = 0; i < nbPoints; ++i)
+    {
+        const double error = errorEstimator.error(modelRTS, x1.col(i), x2.col(i));
+        BOOST_CHECK_SMALL(error, 1e-9);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
 {
-  makeRandomOperationsReproducible();
+    makeRandomOperationsReproducible();
 
-  std::mt19937 randomNumberGenerator;
-  // it generates some points x1, it only generates the corresponding 
-  // transformed points x2 for nbPoints-nbShuffles of them while the rest
-  // are again taken randomly in order to generate outliers
-  const std::size_t nbPoints = 100;
-  const std::size_t nbNoisy = 50;
+    std::mt19937 randomNumberGenerator;
+    // it generates some points x1, it only generates the corresponding
+    // transformed points x2 for nbPoints-nbShuffles of them while the rest
+    // are again taken randomly in order to generate outliers
+    const std::size_t nbPoints = 100;
+    const std::size_t nbNoisy = 50;
 
-  Mat x1 = Mat::Random(3, nbPoints);
-  Mat x2 = Mat::Random(3, nbPoints);
+    Mat x1 = Mat::Random(3, nbPoints);
+    Mat x2 = Mat::Random(3, nbPoints);
 
-  const double scale = 2;
-  Mat3 rot = (Eigen::AngleAxis<double>(.2, Vec3::UnitX())
-          * Eigen::AngleAxis<double>(.3, Vec3::UnitY())
-          * Eigen::AngleAxis<double>(.6, Vec3::UnitZ())).toRotationMatrix();
-  Vec3 t(0.5, -0.3, .38);
+    const double scale = 2;
+    Mat3 rot =
+      (Eigen::AngleAxis<double>(.2, Vec3::UnitX()) * Eigen::AngleAxis<double>(.3, Vec3::UnitY()) * Eigen::AngleAxis<double>(.6, Vec3::UnitZ()))
+        .toRotationMatrix();
+    Vec3 t(0.5, -0.3, .38);
 
-  for(std::size_t i = 0; i < nbPoints - nbNoisy; ++i)
-  {
-    const Vec3 &pt = x1.col(i);
-    x2.col(i) = (scale * rot * pt + t);
-  }
+    for (std::size_t i = 0; i < nbPoints - nbNoisy; ++i)
+    {
+        const Vec3& pt = x1.col(i);
+        x2.col(i) = (scale * rot * pt + t);
+    }
 
-  // Compute the Similarity transform
-  double Sc;
-  Mat3 Rc;
-  Vec3 tc;
+    // Compute the Similarity transform
+    double Sc;
+    Mat3 Rc;
+    Vec3 tc;
 
-  std::vector<std::size_t> inliers;
-  const bool result = ACRansac_FindRTS(x1, x2, randomNumberGenerator, Sc, tc, Rc, inliers, true);
+    std::vector<std::size_t> inliers;
+    const bool result = ACRansac_FindRTS(x1, x2, randomNumberGenerator, Sc, tc, Rc, inliers, true);
 
-  ALICEVISION_LOG_DEBUG(
-          "Scale " << Sc << "\n" <<
-          "Rot \n" << Rc << "\n" <<
-          "t " << tc.transpose());
+    ALICEVISION_LOG_DEBUG("Scale " << Sc << "\n"
+                                   << "Rot \n"
+                                   << Rc << "\n"
+                                   << "t " << tc.transpose());
 
-  ALICEVISION_LOG_DEBUG("GT\n" <<
-          "Scale " << scale << "\n" <<
-          "Rot \n" << rot << "\n" <<
-          "t " << t.transpose());
-  
-  BOOST_CHECK(result);
-  // all the points must be inliers (no noise)
-  const std::size_t nbInliers = inliers.size();
-  BOOST_CHECK(nbInliers == nbPoints - nbNoisy);
+    ALICEVISION_LOG_DEBUG("GT\n"
+                          << "Scale " << scale << "\n"
+                          << "Rot \n"
+                          << rot << "\n"
+                          << "t " << t.transpose());
 
-  Mat inliers1 = Mat3X(3, nbInliers);
-  Mat inliers2 = Mat3X(3, nbInliers);
+    BOOST_CHECK(result);
+    // all the points must be inliers (no noise)
+    const std::size_t nbInliers = inliers.size();
+    BOOST_CHECK(nbInliers == nbPoints - nbNoisy);
 
-  for(std::size_t i = 0; i < nbInliers; ++i)
-  {
-    inliers1.col(i) = x1.col(inliers[i]);
-    inliers2.col(i) = x2.col(inliers[i]);
-  }
+    Mat inliers1 = Mat3X(3, nbInliers);
+    Mat inliers2 = Mat3X(3, nbInliers);
 
-  // check scale
-  BOOST_CHECK_SMALL(scale - Sc, 1e-9);
-  
-  Mat4 RTS;
-  composeRTS(Sc, tc, Rc, RTS);
+    for (std::size_t i = 0; i < nbInliers; ++i)
+    {
+        inliers1.col(i) = x1.col(inliers[i]);
+        inliers2.col(i) = x2.col(inliers[i]);
+    }
 
-  robustEstimation::MatrixModel<Mat4> modelRTS(RTS);
-  geometry::RTSSquaredResidualError errorEstimator;
+    // check scale
+    BOOST_CHECK_SMALL(scale - Sc, 1e-9);
 
-  // check the residuals for the inliers
-  for(std::size_t i = 0; i < nbInliers; ++i)
-  {
-    const double error = errorEstimator.error(modelRTS, inliers1.col(i), inliers2.col(i));
-    BOOST_CHECK_SMALL(error, 1e-9);
-  }
+    Mat4 RTS;
+    composeRTS(Sc, tc, Rc, RTS);
+
+    robustEstimation::MatrixModel<Mat4> modelRTS(RTS);
+    geometry::RTSSquaredResidualError errorEstimator;
+
+    // check the residuals for the inliers
+    for (std::size_t i = 0; i < nbInliers; ++i)
+    {
+        const double error = errorEstimator.error(modelRTS, inliers1.col(i), inliers2.col(i));
+        BOOST_CHECK_SMALL(error, 1e-9);
+    }
 }

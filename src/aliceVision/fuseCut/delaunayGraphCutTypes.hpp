@@ -75,15 +75,9 @@ struct GC_vertexInfo
     inline bool isVirtual() const { return cams.empty(); }
     inline bool isReal() const { return !cams.empty(); }
 
-    inline std::size_t getNbCameras() const
-    {
-        return cams.size();
-    }
+    inline std::size_t getNbCameras() const { return cams.size(); }
 
-    inline int getCamera(std::size_t index) const
-    {
-        return cams[index];
-    }
+    inline int getCamera(std::size_t index) const { return cams[index]; }
 
     void fwriteinfo(FILE* f) const
     {
@@ -91,7 +85,7 @@ struct GC_vertexInfo
         fwrite(&nrc, sizeof(int), 1, f);
         int n = cams.size();
         fwrite(&n, sizeof(int), 1, f);
-        if(n > 0)
+        if (n > 0)
         {
             fwrite(&cams[0], sizeof(int), n, f);
         }
@@ -103,7 +97,7 @@ struct GC_vertexInfo
         fread(&nrc, sizeof(int), 1, f);
         int n;
         fread(&n, sizeof(int), 1, f);
-        if(n > 0)
+        if (n > 0)
         {
             cams.resize(n);
             fread(&cams[0], sizeof(int), n, f);
@@ -113,7 +107,7 @@ struct GC_vertexInfo
 
 struct GC_camVertexInfo
 {
-    float sim; // TODO FACA: default value?
+    float sim;  // TODO FACA: default value?
     int nrc = 0;
     int ncams = 0;
     Point3d point;
@@ -137,18 +131,12 @@ struct GC_camVertexInfo
 
 inline std::ostream& operator<<(std::ostream& stream, const GC_cellInfo& cellInfo)
 {
-    stream << "cellSWeight:" << cellInfo.cellSWeight
-           << ",cellTWeight:" << cellInfo.cellTWeight
-           << ",gEdgeVisWeight[0]:" << cellInfo.gEdgeVisWeight[0]
-           << ",gEdgeVisWeight[1]:" << cellInfo.gEdgeVisWeight[1]
-           << ",gEdgeVisWeight[2]:" << cellInfo.gEdgeVisWeight[2]
-           << ",gEdgeVisWeight[3]:" << cellInfo.gEdgeVisWeight[3]
-           << ",fullnessScore:" << cellInfo.fullnessScore
-           << ",emptinessScore:" << cellInfo.emptinessScore
-           << ",on:" << cellInfo.on
-        ;
+    stream << "cellSWeight:" << cellInfo.cellSWeight << ",cellTWeight:" << cellInfo.cellTWeight << ",gEdgeVisWeight[0]:" << cellInfo.gEdgeVisWeight[0]
+           << ",gEdgeVisWeight[1]:" << cellInfo.gEdgeVisWeight[1] << ",gEdgeVisWeight[2]:" << cellInfo.gEdgeVisWeight[2]
+           << ",gEdgeVisWeight[3]:" << cellInfo.gEdgeVisWeight[3] << ",fullnessScore:" << cellInfo.fullnessScore
+           << ",emptinessScore:" << cellInfo.emptinessScore << ",on:" << cellInfo.on;
     return stream;
 }
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

@@ -22,45 +22,24 @@ namespace aliceVision {
  *
  *          T = T2 T1^{-1}
  */
-void relativeCameraMotion(const Mat3& R1,
-                          const Vec3& t1,
-                          const Mat3& R2,
-                          const Vec3& t2,
-                          Mat3* R,
-                          Vec3* t);
+void relativeCameraMotion(const Mat3& R1, const Vec3& t1, const Mat3& R2, const Vec3& t2, Mat3* R, Vec3* t);
 /**
  * @brief Given F, Left/Right K matrix it compute the Essential matrix
  */
-void essentialFromFundamental(const Mat3& F,
-                              const Mat3& K1,
-                              const Mat3& K2,
-                              Mat3* E);
+void essentialFromFundamental(const Mat3& F, const Mat3& K1, const Mat3& K2, Mat3* E);
 /**
  * @brief Compute E as E = [t12]x R12.
  */
-void essentialFromRt(const Mat3& R1,
-                     const Vec3& t1,
-                     const Mat3& R2,
-                     const Vec3& t2,
-                     Mat3* E);
+void essentialFromRt(const Mat3& R1, const Vec3& t1, const Mat3& R2, const Vec3& t2, Mat3* E);
 /**
  * @brief Given E, Left/Right K matrix it compute the Fundamental matrix
  */
-void fundamentalFromEssential(const Mat3& E,
-                              const Mat3& K1,
-                              const Mat3& K2,
-                              Mat3* F);
+void fundamentalFromEssential(const Mat3& E, const Mat3& K1, const Mat3& K2, Mat3* F);
 /**
  * @brief Test the possible R|t configuration to have point in front of the cameras
  *        Return false if no possible configuration
  */
-bool motionFromEssentialAndCorrespondence(const Mat3& E,
-                                          const Mat3& K1,
-                                          const Vec2& x1,
-                                          const Mat3& K2,
-                                          const Vec2& x2,
-                                          Mat3* R,
-                                          Vec3* t);
+bool motionFromEssentialAndCorrespondence(const Mat3& E, const Mat3& K1, const Vec2& x1, const Mat3& K2, const Vec2& x2, Mat3* R, Vec3* t);
 /**
  * @brief Choose one of the four possible motion solutions from an essential matrix.
  *        Decides the right solution by checking that the triangulation of a match
@@ -78,4 +57,4 @@ int motionFromEssentialChooseSolution(const std::vector<Mat3>& Rs,
  */
 void motionFromEssential(const Mat3& E, std::vector<Mat3>* Rs, std::vector<Vec3>* ts);
 
-} // namespace aliceVision
+}  // namespace aliceVision

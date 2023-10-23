@@ -48,10 +48,10 @@ extern void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upscal
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_depthThicknessSmoothThickness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThicknessMap_dmp,
-                                             const SgmParams& sgmParams,
-                                             const RefineParams& refineParams,
-                                             const ROI& roi,
-                                             cudaStream_t stream);
+                                               const SgmParams& sgmParams,
+                                               const RefineParams& refineParams,
+                                               const ROI& roi,
+                                               cudaStream_t stream);
 
 /**
  * @brief Upscale the given depth/thickness map, filter masked pixels and compute pixSize from thickness.
@@ -111,5 +111,5 @@ extern void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<floa
                                                     const ROI& roi,
                                                     cudaStream_t stream);
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

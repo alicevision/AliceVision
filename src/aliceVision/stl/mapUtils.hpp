@@ -31,24 +31,24 @@ namespace stl {
 /// Allow to select the Keys of a map.
 struct RetrieveKey
 {
-  template <typename T>
-  typename T::first_type operator()(const T & keyValuePair) const
-  {
-    return keyValuePair.first;
-  }
+    template<typename T>
+    typename T::first_type operator()(const T& keyValuePair) const
+    {
+        return keyValuePair.first;
+    }
 };
 
 /// Allow to select the Values of a map.
 struct RetrieveValue
 {
-  template <typename T>
-  typename T::second_type operator()(const T & keyValuePair) const
-  {
-    return keyValuePair.second;
-  }
+    template<typename T>
+    typename T::second_type operator()(const T& keyValuePair) const
+    {
+        return keyValuePair.second;
+    }
 };
 
-}
+}  // namespace stl
 
 namespace aliceVision {
 
@@ -56,7 +56,7 @@ template<typename Map>
 const typename Map::mapped_type& map_get_with_default(const Map& m, const typename Map::key_type& key, const typename Map::mapped_type& defval)
 {
     auto it = m.find(key);
-    if(it == m.end())
+    if (it == m.end())
         return defval;
     return it->second;
 }
@@ -64,9 +64,9 @@ template<typename Map>
 bool map_has_non_empty_value(const Map& m, const typename Map::key_type& key)
 {
     auto it = m.find(key);
-    if(it == m.end())
+    if (it == m.end())
         return false;
     return !it->second.empty();
 }
 
-}
+}  // namespace aliceVision

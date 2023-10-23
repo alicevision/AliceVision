@@ -15,10 +15,10 @@ namespace utils {
 
 inline std::string toStringZeroPadded(std::size_t i, std::size_t zeroPadding)
 {
-  std::stringstream ss;
-  ss << std::setw(zeroPadding) << std::setfill('0') << i;
-  return ss.str();
+    std::stringstream ss;
+    ss << std::setw(zeroPadding) << std::setfill('0') << i;
+    return ss.str();
 }
 
-} // namespace utils
-} // namespace aliceVision
+}  // namespace utils
+}  // namespace aliceVision

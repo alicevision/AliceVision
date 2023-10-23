@@ -10,40 +10,42 @@
 
 #include <aliceVision/image/all.hpp>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 class LaplacianPyramid
 {
-public:
-    struct InputInfo 
+  public:
+    struct InputInfo
     {
-        aliceVision::image::Image<image::RGBfColor> color; 
+        aliceVision::image::Image<image::RGBfColor> color;
         aliceVision::image::Image<float> mask;
         aliceVision::image::Image<float> weights;
         int offsetX;
         int offsetY;
     };
 
-public:
+  public:
     LaplacianPyramid(size_t base_width, size_t base_height, size_t max_levels);
 
     virtual ~LaplacianPyramid();
 
     bool initialize();
-    
+
     bool apply(aliceVision::image::Image<image::RGBfColor>& source,
-               aliceVision::image::Image<float>& mask, 
+               aliceVision::image::Image<float>& mask,
                aliceVision::image::Image<float>& weights,
-               const BoundingBox &outputBoundingBox, const BoundingBox &contentBoudingBox);
+               const BoundingBox& outputBoundingBox,
+               const BoundingBox& contentBoudingBox);
 
-    bool merge(const aliceVision::image::Image<image::RGBfColor>& oimg, 
+    bool merge(const aliceVision::image::Image<image::RGBfColor>& oimg,
                const aliceVision::image::Image<float>& oweight,
-               size_t level, int offset_x, int offset_y);
+               size_t level,
+               int offset_x,
+               int offset_y);
 
-    bool rebuild(image::Image<image::RGBAfColor>& output, const BoundingBox & roi);
+    bool rebuild(image::Image<image::RGBAfColor>& output, const BoundingBox& roi);
 
-private:
+  private:
     int _baseWidth;
     int _baseHeight;
     int _maxLevels;
@@ -54,4 +56,4 @@ private:
     std::vector<InputInfo> _inputInfos;
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

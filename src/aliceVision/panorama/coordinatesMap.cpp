@@ -8,35 +8,32 @@
 
 #include "sphericalMapping.hpp"
 
-namespace aliceVision
-{
+namespace aliceVision {
 
-bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geometry::Pose3& pose,
-                           const aliceVision::camera::IntrinsicBase& intrinsics, const BoundingBox& coarseBbox)
+bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize,
+                           const geometry::Pose3& pose,
+                           const aliceVision::camera::IntrinsicBase& intrinsics,
+                           const BoundingBox& coarseBbox)
 {
-
     /* Effectively compute the warping map */
     _coordinates = aliceVision::image::Image<Eigen::Vector2f>(coarseBbox.width, coarseBbox.height, false);
     _mask = aliceVision::image::Image<unsigned char>(coarseBbox.width, coarseBbox.height, true, 0);
 
-    
     int max_x = 0;
     int max_y = 0;
     int min_x = std::numeric_limits<int>::max();
     int min_y = std::numeric_limits<int>::max();
 
-    for(int y = 0; y < coarseBbox.height; y++)
+    for (int y = 0; y < coarseBbox.height; y++)
     {
-
         int cy = y + coarseBbox.top;
         if (cy < 0 || cy >= panoramaSize.second)
         {
             continue;
         }
 
-        for(int x = 0; x < coarseBbox.width; x++)
+        for (int x = 0; x < coarseBbox.width; x++)
         {
-
             int cx = x + coarseBbox.left;
 
             Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(cx, cy), panoramaSize.first, panoramaSize.second);
@@ -46,7 +43,7 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
              * This test is camera type dependent
              */
             Vec3 transformedRay = pose(ray);
-            if(!intrinsics.isVisibleRay(transformedRay))
+            if (!intrinsics.isVisibleRay(transformedRay))
             {
                 continue;
             }
@@ -60,7 +57,7 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
             /**
              * Ignore invalid coordinates
              */
-            if(!intrinsics.isVisible(pix_disto))
+            if (!intrinsics.isVisible(pix_disto))
             {
                 continue;
             }
@@ -88,16 +85,15 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
 
 bool CoordinatesMap::computeScale(double& result, float ratioUpscale)
 {
-
     std::vector<double> scales;
     size_t real_height = _coordinates.Height();
     size_t real_width = _coordinates.Width();
 
-    for(int i = 1; i < real_height - 2; i++)
+    for (int i = 1; i < real_height - 2; i++)
     {
-        for(int j = 1; j < real_width - 2; j++)
+        for (int j = 1; j < real_width - 2; j++)
         {
-            if(!_mask(i, j) || !_mask(i, j + 1) || !_mask(i + 1, j))
+            if (!_mask(i, j) || !_mask(i, j + 1) || !_mask(i + 1, j))
             {
                 continue;
             }
@@ -108,14 +104,14 @@ bool CoordinatesMap::computeScale(double& result, float ratioUpscale)
             double dyy = _coordinates(i + 1, j).y() - _coordinates(i, j).y();
 
             double det = std::abs(dxx * dyy - dxy * dyx);
-            if(det < 1e-12)
+            if (det < 1e-12)
                 continue;
 
             scales.push_back(det);
         }
     }
 
-    if(scales.empty())
+    if (scales.empty())
         return false;
 
     std::sort(scales.begin(), scales.end());
@@ -125,4 +121,4 @@ bool CoordinatesMap::computeScale(double& result, float ratioUpscale)
     return true;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

@@ -14,6 +14,6 @@
 namespace aliceVision {
 
 /// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
-PairSet exhaustivePairs(const sfmData::Views& views, int rangeStart=-1, int rangeSize=0);
+PairSet exhaustivePairs(const sfmData::Views& views, int rangeStart = -1, int rangeSize = 0);
 
-}; // namespace aliceVision
+};  // namespace aliceVision

@@ -10,15 +10,15 @@
 namespace aliceVision {
 namespace sfmData {
 
-template <class T>
+template<class T>
 class HashMapPtr : public HashMap<IndexT, std::shared_ptr<T>>
 {
-public:
+  public:
     /**
      * We don't want the user to assume the object is created when the index does not exist in the map
-    */
-    std::shared_ptr<T> & operator[](const IndexT & index) = delete;
+     */
+    std::shared_ptr<T>& operator[](const IndexT& index) = delete;
 };
 
-}
-}
+}  // namespace sfmData
+}  // namespace aliceVision

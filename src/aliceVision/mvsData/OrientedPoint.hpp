@@ -12,9 +12,9 @@ namespace aliceVision {
 
 struct OrientedPoint
 {
-    Point3d p; // 3 * float : 3 * 4 = 12 Bytes : (one float is 4 Bytes : 3.4E +/- 38 (7 digits) )
-    Point3d n; // 3 * float : 3 * 4 = 12  Bytes
-    float sim; // 4-Bytes : 3.4E +/- 38 (7 digits)
+    Point3d p;  // 3 * float : 3 * 4 = 12 Bytes : (one float is 4 Bytes : 3.4E +/- 38 (7 digits) )
+    Point3d n;  // 3 * float : 3 * 4 = 12  Bytes
+    float sim;  // 4-Bytes : 3.4E +/- 38 (7 digits)
     // TOTAL: 12 + 12 + 4 = 28 Bytes
 
     OrientedPoint()
@@ -39,10 +39,7 @@ struct OrientedPoint
         return *this;
     }
 
-    bool operator>(const OrientedPoint& param) const
-    {
-        return (sim > param.sim);
-    }
+    bool operator>(const OrientedPoint& param) const { return (sim > param.sim); }
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

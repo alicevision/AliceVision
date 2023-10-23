@@ -28,8 +28,7 @@ namespace depthMap {
  */
 class Sgm
 {
-public:
-
+  public:
     /**
      * @brief Sgm constructor.
      * @param[in] mp the multi-view parameters
@@ -39,9 +38,9 @@ public:
      * @param[in] computeNormalMap Enable final normal map computation
      * @param[in] stream the stream for gpu execution
      */
-    Sgm(const mvsUtils::MultiViewParams& mp, 
-        const mvsUtils::TileParams& tileParams, 
-        const SgmParams& sgmParams, 
+    Sgm(const mvsUtils::MultiViewParams& mp,
+        const mvsUtils::TileParams& tileParams,
+        const SgmParams& sgmParams,
         bool computeDepthSimMap,
         bool computeNormalMap,
         cudaStream_t stream);
@@ -88,8 +87,7 @@ public:
      */
     void smoothThicknessMap(const Tile& tile, const RefineParams& refineParams);
 
-private:
-
+  private:
     // private methods
 
     /**
@@ -128,14 +126,13 @@ private:
                                  const CudaDeviceMemoryPitched<TSim, 3>& in_volume_dmp,
                                  const std::string& name) const;
 
+    // private members
 
-    // private members 
-
-    const mvsUtils::MultiViewParams& _mp;                       //< Multi-view parameters
-    const mvsUtils::TileParams& _tileParams;                    //< tile workflow parameters
-    const SgmParams& _sgmParams;                                //< Semi Global Matching parameters
-    const bool _computeDepthSimMap;                             //< needs to compute a final depth/sim map
-    const bool _computeNormalMap;                               //< needs to compute a final normal map
+    const mvsUtils::MultiViewParams& _mp;     //< Multi-view parameters
+    const mvsUtils::TileParams& _tileParams;  //< tile workflow parameters
+    const SgmParams& _sgmParams;              //< Semi Global Matching parameters
+    const bool _computeDepthSimMap;           //< needs to compute a final depth/sim map
+    const bool _computeNormalMap;             //< needs to compute a final normal map
 
     // private members in device memory
 
@@ -152,5 +149,5 @@ private:
     cudaStream_t _stream;                                       //< stream for gpu execution
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

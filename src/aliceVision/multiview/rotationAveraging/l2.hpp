@@ -11,7 +11,7 @@
 #include <vector>
 
 #ifdef _MSC_VER
-#pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+    #pragma warning(once : 4267)  // warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
 #endif
 
 //--
@@ -23,14 +23,14 @@
 //- Author : Daniel Martinec.
 //- Date : July 2, 2008.
 //--
-namespace aliceVision   {
-namespace rotationAveraging  {
-namespace l2  {
+namespace aliceVision {
+namespace rotationAveraging {
+namespace l2 {
 
 // [1] 6.7.2 Consistent Rotation page 89
 // Closest Rotation Estimation R = U*transpose(V)
 //  approximate rotation in the Frobenius norm using SVD
-Mat3 ClosestSVDRotationMatrix(const Mat3 & rotMat);
+Mat3 ClosestSVDRotationMatrix(const Mat3& rotMat);
 
 //-- Solve the Global Rotation matrix registration for each camera given a list
 //    of relative orientation using matrix parametrization
@@ -55,16 +55,14 @@ Mat3 ClosestSVDRotationMatrix(const Mat3 & rotMat);
 // vector.add( RelativeRotation(1,2, R12) );
 // vector.add( RelativeRotation(0,2, R02) );
 //
-bool L2RotationAveraging( size_t nCamera,
-  const RelativeRotations& vec_relativeRot,
-  // Output
-  std::vector<Mat3> & vec_ApprRotMatrix);
+bool L2RotationAveraging(size_t nCamera,
+                         const RelativeRotations& vec_relativeRot,
+                         // Output
+                         std::vector<Mat3>& vec_ApprRotMatrix);
 
 // None linear refinement of the rotation using an angle-axis representation
-bool L2RotationAveraging_Refine(
-  const RelativeRotations & vec_relativeRot,
-  std::vector<aliceVision::Mat3> & vec_ApprRotMatrix);
+bool L2RotationAveraging_Refine(const RelativeRotations& vec_relativeRot, std::vector<aliceVision::Mat3>& vec_ApprRotMatrix);
 
-} // namespace l2
-} // namespace rotationAveraging
-} // namespace aliceVision
+}  // namespace l2
+}  // namespace rotationAveraging
+}  // namespace aliceVision

@@ -17,8 +17,7 @@ namespace depthMap {
  */
 class DeviceMipmapImage
 {
-public:
-
+  public:
     // default constructor
     DeviceMipmapImage() = default;
 
@@ -72,18 +71,17 @@ public:
      */
     inline cudaTextureObject_t getTextureObject() const { return _textureObject; }
 
-private:
-
+  private:
     // private members
 
-    cudaMipmappedArray_t _mipmappedArray = nullptr;    //< mipmapped array in device memory
-    cudaTextureObject_t _textureObject = 0;            //< mipmapped array texture object with normalized coordinates
-    unsigned int _minDownscale = 0;                    //< the min downscale factor (must be power of two), first downscale level
-    unsigned int _maxDownscale = 0;                    //< the max downscale factor (must be power of two), last downscale level
-    unsigned int _levels = 0;                          //< the number of downscale levels in the mipmapped array
-    size_t _width  = 0;                                //< original image buffer width (no downscale)
-    size_t _height = 0;                                //< original image buffer heigh (no downscale)
+    cudaMipmappedArray_t _mipmappedArray = nullptr;  //< mipmapped array in device memory
+    cudaTextureObject_t _textureObject = 0;          //< mipmapped array texture object with normalized coordinates
+    unsigned int _minDownscale = 0;                  //< the min downscale factor (must be power of two), first downscale level
+    unsigned int _maxDownscale = 0;                  //< the max downscale factor (must be power of two), last downscale level
+    unsigned int _levels = 0;                        //< the number of downscale levels in the mipmapped array
+    size_t _width = 0;                               //< original image buffer width (no downscale)
+    size_t _height = 0;                              //< original image buffer heigh (no downscale)
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

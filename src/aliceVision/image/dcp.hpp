@@ -19,38 +19,14 @@ namespace image {
  * Source : Bruce Lindbloom's website : http://www.brucelindbloom.com/
  * @{
  */
-constexpr double xyz_sRGB[3][3] = {
-    {0.4360747,  0.3850649, 0.1430804},
-    {0.2225045,  0.7168786,  0.0606169},
-    {0.0139322,  0.0971045,  0.7141733}
-};      
-constexpr double sRGB_xyz[3][3] = {
-    {3.1338561, -1.6168667, -0.4906146},
-    { -0.9787684,  1.9161415,  0.0334540},
-    {0.0719453, -0.2289914,  1.4052427}
-};
+constexpr double xyz_sRGB[3][3] = {{0.4360747, 0.3850649, 0.1430804}, {0.2225045, 0.7168786, 0.0606169}, {0.0139322, 0.0971045, 0.7141733}};
+constexpr double sRGB_xyz[3][3] = {{3.1338561, -1.6168667, -0.4906146}, {-0.9787684, 1.9161415, 0.0334540}, {0.0719453, -0.2289914, 1.4052427}};
 
-constexpr double xyz_prophoto[3][3] = {
-    {0.7976749,  0.1351917,  0.0313534},
-    {0.2880402,  0.7118741,  0.0000857},
-    {0.0000000,  0.0000000,  0.8252100}
-};
-constexpr double prophoto_xyz[3][3] = {
-    {1.3459433, -0.2556075, -0.0511118},
-    { -0.5445989,  1.5081673,  0.0205351},
-    {0.0000000,  0.0000000,  1.2118128}
-};
+constexpr double xyz_prophoto[3][3] = {{0.7976749, 0.1351917, 0.0313534}, {0.2880402, 0.7118741, 0.0000857}, {0.0000000, 0.0000000, 0.8252100}};
+constexpr double prophoto_xyz[3][3] = {{1.3459433, -0.2556075, -0.0511118}, {-0.5445989, 1.5081673, 0.0205351}, {0.0000000, 0.0000000, 1.2118128}};
 
-constexpr double xyz_AdobeRGB[3][3] = {
-    {0.6097559,  0.2052401,  0.1492240},
-    {0.3111242,  0.6256560,  0.0632197},
-    {0.0194811,  0.0608902,  0.7448387}
-};
-constexpr double AdobeRGB_xyz[3][3] = {
-    { 1.9624274, -0.6105343, -0.3413404},
-    {-0.9787684,  1.9161415,  0.0334540},
-    { 0.0286869, -0.1406752,  1.3487655}
-};
+constexpr double xyz_AdobeRGB[3][3] = {{0.6097559, 0.2052401, 0.1492240}, {0.3111242, 0.6256560, 0.0632197}, {0.0194811, 0.0608902, 0.7448387}};
+constexpr double AdobeRGB_xyz[3][3] = {{1.9624274, -0.6105343, -0.3413404}, {-0.9787684, 1.9161415, 0.0334540}, {0.0286869, -0.1406752, 1.3487655}};
 /// @}
 
 enum class LightSource
@@ -63,11 +39,11 @@ enum class LightSource
     FINE_WEATHER = 9,
     CLOUDY_WEATHER = 10,
     SHADE = 11,
-    DAYLIGHT_FLUORESCENT = 12,   // D  5700 - 7100K
-    DAYWHITE_FLUORESCENT = 13,   // N  4600 - 5500K
-    COOL_WHITE_FLUORESCENT = 14, // W  3800 - 4500K
-    WHITE_FLUORESCENT = 15,      // WW 3250 - 3800K
-    WARM_WHITE_FLUORESCENT = 16, // L  2600 - 3250K
+    DAYLIGHT_FLUORESCENT = 12,    // D  5700 - 7100K
+    DAYWHITE_FLUORESCENT = 13,    // N  4600 - 5500K
+    COOL_WHITE_FLUORESCENT = 14,  // W  3800 - 4500K
+    WHITE_FLUORESCENT = 15,       // WW 3250 - 3800K
+    WARM_WHITE_FLUORESCENT = 16,  // L  2600 - 3250K
     STANDARD_LIGHT_A = 17,
     STANDARD_LIGHT_B = 18,
     STANDARD_LIGHT_C = 19,
@@ -81,13 +57,12 @@ enum class LightSource
 
 double calibrationIlluminantToTemperature(LightSource light);
 
-
 /**
  * @brief SplineToneCurve represents a tone curve that can be embedded within a DCP color profile
  */
 class SplineToneCurve final
 {
-public:
+  public:
     SplineToneCurve() = default;
     ~SplineToneCurve() = default;
 
@@ -95,8 +70,7 @@ public:
     void Apply(float& ir, float& ig, float& ib) const;
     float operator[](const float idx) const { return getval(idx); }
 
-private:
-
+  private:
     void RGBTone(float& maxval, float& medval, float& minval) const;
     float getval(const float idx) const;
 
@@ -115,9 +89,9 @@ struct DCPProfileApplyParams
     std::string working_space = "sRGB";
 };
 
- /**
-  * @brief DCPProfileInfo contains information about matrices, table and curves contained in the profile
-  */
+/**
+ * @brief DCPProfileInfo contains information about matrices, table and curves contained in the profile
+ */
 struct DCPProfileInfo
 {
     std::string filename = "";
@@ -141,13 +115,13 @@ struct DCPProfileInfo
 };
 
 /**
-* @brief DCPProfile contains a Dng Color Profile as specified by Adobe
-* DNG specification can be found here: https://helpx.adobe.com/content/dam/help/en/photoshop/pdf/dng_spec_1_6_0_0.pdf
-* Profiles with more than 2 illuminants are not supported
-*/
+ * @brief DCPProfile contains a Dng Color Profile as specified by Adobe
+ * DNG specification can be found here: https://helpx.adobe.com/content/dam/help/en/photoshop/pdf/dng_spec_1_6_0_0.pdf
+ * Profiles with more than 2 illuminants are not supported
+ */
 class DCPProfile final
 {
-public:
+  public:
     DCPProfileInfo info;
 
     using Triple = std::array<double, 3>;
@@ -156,22 +130,22 @@ public:
     DCPProfile();
 
     /**
-    * @brief DCPProfile constructor
-    * @param[in] filename The dcp path on disk
-    */
+     * @brief DCPProfile constructor
+     * @param[in] filename The dcp path on disk
+     */
     explicit DCPProfile(const std::string& filename);
     ~DCPProfile();
 
     /**
-    * @brief DCPProfile loader
-    * @param[in] filename The dcp path on disk
-    */
+     * @brief DCPProfile loader
+     * @param[in] filename The dcp path on disk
+     */
     void Load(const std::string& filename);
 
     /**
-    * @brief DCPProfile loader
-    * @param[in] map of metadata
-    */
+     * @brief DCPProfile loader
+     * @param[in] map of metadata
+     */
     void Load(const std::map<std::string, std::string>& metadata);
 
     /**
@@ -210,7 +184,11 @@ public:
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */
-    void applyLinear(OIIO::ImageBuf& image, const Triple& neutral, double& cct, const bool sourceIsRaw = false, const bool useColorMatrixOnly = true) const;
+    void applyLinear(OIIO::ImageBuf& image,
+                     const Triple& neutral,
+                     double& cct,
+                     const bool sourceIsRaw = false,
+                     const bool useColorMatrixOnly = true) const;
 
     /**
      * @brief applyLinear applies the linear part of a DCP profile on an aliceVision image
@@ -220,7 +198,11 @@ public:
      * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      * param[in] useColorMatrixOnly indicates to apply a DCP profile computed only from the color matrices
      */
-    void applyLinear(Image<image::RGBAfColor>& image, const Triple& neutral, double& cct, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
+    void applyLinear(Image<image::RGBAfColor>& image,
+                     const Triple& neutral,
+                     double& cct,
+                     const bool sourceIsRaw = false,
+                     const bool useColorMatrixOnly = false) const;
 
     /**
      * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer
@@ -243,7 +225,7 @@ public:
      */
     void getColorTemperatureAndTintFromNeutral(const Triple& neutral, double& cct, double& tint) const;
 
-private:
+  private:
     struct HsbModify
     {
         float hue_shift;
@@ -260,7 +242,8 @@ private:
         int val_step;
         unsigned int array_count;
         bool srgb_gamma;
-        struct {
+        struct
+        {
             float h_scale;
             float s_scale;
             float v_scale;
@@ -288,43 +271,46 @@ private:
     Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget) const;
     Matrix getCameraToXyzD50Matrix(const double x, const double y) const;
     Matrix getCameraToSrgbLinearMatrix(const double x, const double y) const;
-    Matrix getCameraToACES2065Matrix(const Triple& asShotNeutral, double& cct, const bool sourceIsRaw = false, const bool useColorMatrixOnly = false) const;
+    Matrix getCameraToACES2065Matrix(const Triple& asShotNeutral,
+                                     double& cct,
+                                     const bool sourceIsRaw = false,
+                                     const bool useColorMatrixOnly = false) const;
 
-    Matrix ws_sRGB; // working color space to sRGB
-    Matrix sRGB_ws; // sRGB to working color space
-    Matrix color_matrix_1; // Color matrix for illuminant 1
-    Matrix color_matrix_2; // Color matrix for illuminant 2
-    Matrix camera_calibration_1; // Calibration matrix for illuminant 1
-    Matrix camera_calibration_2; // Calibration matrix for illuminant 2
+    Matrix ws_sRGB;               // working color space to sRGB
+    Matrix sRGB_ws;               // sRGB to working color space
+    Matrix color_matrix_1;        // Color matrix for illuminant 1
+    Matrix color_matrix_2;        // Color matrix for illuminant 2
+    Matrix camera_calibration_1;  // Calibration matrix for illuminant 1
+    Matrix camera_calibration_2;  // Calibration matrix for illuminant 2
     Matrix analogBalance;
-    Matrix forward_matrix_1; // white balanced raw to xyzD50 for illumimant 1
-    Matrix forward_matrix_2; // white balanced raw to xyzD50 for illumimant 2
+    Matrix forward_matrix_1;  // white balanced raw to xyzD50 for illumimant 1
+    Matrix forward_matrix_2;  // white balanced raw to xyzD50 for illumimant 2
     double baseline_exposure_offset;
-    std::vector<HsbModify> deltas_1; // Basic Hue Sat update table for illumimant 1
-    std::vector<HsbModify> deltas_2; // Basic Hue Sat update table for illumimant 2
-    std::vector<HsbModify> look_table; // Hue Sat update table for look modification
-    HsdTableInfo delta_info; // Information for basic Hue Sat updates
-    HsdTableInfo look_info;  // Information for look modification 
+    std::vector<HsbModify> deltas_1;    // Basic Hue Sat update table for illumimant 1
+    std::vector<HsbModify> deltas_2;    // Basic Hue Sat update table for illumimant 2
+    std::vector<HsbModify> look_table;  // Hue Sat update table for look modification
+    HsdTableInfo delta_info;            // Information for basic Hue Sat updates
+    HsdTableInfo look_info;             // Information for look modification
 
-    SplineToneCurve AS_tone_curve; // Adobe standard tone curve
+    SplineToneCurve AS_tone_curve;  // Adobe standard tone curve
 
     SplineToneCurve gammatab_srgb;
     SplineToneCurve igammatab_srgb;
 };
 
 /**
-* @brief DCPDatabase manages DCP profiles loading and caching
-*/
+ * @brief DCPDatabase manages DCP profiles loading and caching
+ */
 class DCPDatabase final
 {
-public:
+  public:
     DCPDatabase() = default;
     DCPDatabase(const std::string& databaseDirPath);
 
     ~DCPDatabase() = default;
 
     /**
-     * @brief load stores in a file list all the valid dcp filenames found in a folder (including subfolders). 
+     * @brief load stores in a file list all the valid dcp filenames found in a folder (including subfolders).
      * None of them are loaded in cache.
      * param[in] database folder name.
      * param[in] if true loading is forced even if a database with the same folder name is already loaded.
@@ -351,7 +337,7 @@ public:
 
     /**
      * @brief add_or_replace adds or replaces an existing DCP profile in the cache.
-     * Update the DCP file list with dcpProf.info.filename. 
+     * Update the DCP file list with dcpProf.info.filename.
      * param[in] DCP profile to be stored.
      * param[in] DSLR Maker.
      * param[in] DSLR Model.
@@ -369,17 +355,13 @@ public:
      */
     bool retrieveDcpForCamera(const std::string& make, const std::string& model, DCPProfile& dcpProf);
 
-private:
-
+  private:
     std::string folderName;
 
     std::vector<std::string> dcpFilenamesList;
 
     std::map<std::string, DCPProfile> dcpStore;
-
 };
 
-
-
-}
-}
+}  // namespace image
+}  // namespace aliceVision

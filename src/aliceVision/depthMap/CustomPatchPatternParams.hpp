@@ -31,8 +31,8 @@ struct CustomPatchPatternParams
         float weight;
     };
 
-  std::vector<SubpartParams> subpartsParams;
-  bool groupSubpartsPerLevel;
+    std::vector<SubpartParams> subpartsParams;
+    bool groupSubpartsPerLevel;
 };
 
 // from istream
@@ -43,5 +43,5 @@ std::istream& operator>>(std::istream& is, CustomPatchPatternParams::SubpartPara
 // note: useful for command-line
 std::ostream& operator<<(std::ostream& os, const CustomPatchPatternParams::SubpartParams& sp);
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

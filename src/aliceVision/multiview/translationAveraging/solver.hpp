@@ -15,18 +15,15 @@ namespace translationAveraging {
  *
  * Implementation of [1] : "5. Solving the Translations Problem" equation (3)
  */
-bool solve_translations_problem_l2_chordal(
-  const int* edges,
-  const double* poses,
-  const double* weights,
-  int num_edges,
-  double loss_width,
-  double* X,
-  double function_tolerance,
-  double parameter_tolerance,
-  int max_iterations
-);
-
+bool solve_translations_problem_l2_chordal(const int* edges,
+                                           const double* poses,
+                                           const double* weights,
+                                           int num_edges,
+                                           double loss_width,
+                                           double* X,
+                                           double function_tolerance,
+                                           double parameter_tolerance,
+                                           int max_iterations);
 
 /**
  * @brief Registration of relative translations to global translations. It implements LInf minimization of  [2]
@@ -54,15 +51,11 @@ bool solve_translations_problem_l2_chordal(
  * @param[in] d_l1_loss_threshold optionnal threshold for SoftL1 loss (-1: no loss function)
  * @return True if the registration can be solved
  */
-bool
-solve_translations_problem_softl1
-(
-  const std::vector<relativeInfo> & vec_initial_estimates,
-  const bool b_translation_triplets,
-  const int nb_poses,
-  std::vector<Eigen::Vector3d> & translations,
-  const double d_l1_loss_threshold = 0.01
-);
+bool solve_translations_problem_softl1(const std::vector<relativeInfo>& vec_initial_estimates,
+                                       const bool b_translation_triplets,
+                                       const int nb_poses,
+                                       std::vector<Eigen::Vector3d>& translations,
+                                       const double d_l1_loss_threshold = 0.01);
 
-} // namespace translationAveraging
-} // namespace aliceVision
+}  // namespace translationAveraging
+}  // namespace aliceVision

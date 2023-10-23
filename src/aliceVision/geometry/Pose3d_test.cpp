@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(ConstructorTest)
 
     EXPECT_MATRIX_NEAR(pose.rotation(), rotation, precision);
     EXPECT_MATRIX_NEAR(pose.center(), center, precision);
-    EXPECT_MATRIX_NEAR(pose.translation(), Vec3(-rotation*center), precision);
+    EXPECT_MATRIX_NEAR(pose.translation(), Vec3(-rotation * center), precision);
 }
 
 BOOST_AUTO_TEST_CASE(RotationAccessorsTest)
@@ -138,7 +138,6 @@ BOOST_AUTO_TEST_CASE(InverseTest)
     EXPECT_MATRIX_NEAR(inverse.rotation(), expectedRotation, precision);
     EXPECT_MATRIX_NEAR(inverse.center(), expectedCenter, precision);
     EXPECT_MATRIX_NEAR((inverse * pose).getHomogeneous(), Mat4::Identity(), precision);
-
 }
 
 BOOST_AUTO_TEST_CASE(DepthTest)
@@ -153,7 +152,7 @@ BOOST_AUTO_TEST_CASE(DepthTest)
 
     const Mat3X points = Mat3X::Random(3, 10);
 
-    for(Eigen::Index i{0}; i < points.cols(); ++i)
+    for (Eigen::Index i{0}; i < points.cols(); ++i)
     {
         const auto& point = points.col(i);
         const auto& transformedPoint = (homogeneous * point.homogeneous()).hnormalized();
@@ -164,28 +163,28 @@ BOOST_AUTO_TEST_CASE(DepthTest)
     }
 }
 
-//BOOST_AUTO_TEST_CASE(TransformSRtTest)
+// BOOST_AUTO_TEST_CASE(TransformSRtTest)
 //{
-//    const double precision{1e-5};
-//    Mat3 rotation;
-//    rotation << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-//    const Vec3 center(1, 2, 3);
+//     const double precision{1e-5};
+//     Mat3 rotation;
+//     rotation << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+//     const Vec3 center(1, 2, 3);
 //
-//    const geometry::Pose3 pose(rotation, center);
+//     const geometry::Pose3 pose(rotation, center);
 //
-//    double scale{2.0};
-//    Mat3 newRotation;
-//    newRotation << 0, -1, 0, 1, 0, 0, 0, 0, 1;
-//    const Vec3 translation(4, 5, 6);
+//     double scale{2.0};
+//     Mat3 newRotation;
+//     newRotation << 0, -1, 0, 1, 0, 0, 0, 0, 1;
+//     const Vec3 translation(4, 5, 6);
 //
-//    const geometry::Pose3 transformedPose = pose.transformSRt(scale, newRotation, translation);
+//     const geometry::Pose3 transformedPose = pose.transformSRt(scale, newRotation, translation);
 //
-//    const Vec3 expectedCenter = scale * newRotation * center + translation;
-//    const Mat3 expectedRotation = rotation * newRotation.transpose();
+//     const Vec3 expectedCenter = scale * newRotation * center + translation;
+//     const Mat3 expectedRotation = rotation * newRotation.transpose();
 //
-//    EXPECT_MATRIX_NEAR(transformedPose.center(), expectedCenter, precision);
-//    EXPECT_MATRIX_NEAR(transformedPose.rotation(), expectedRotation, precision);
-//}
+//     EXPECT_MATRIX_NEAR(transformedPose.center(), expectedCenter, precision);
+//     EXPECT_MATRIX_NEAR(transformedPose.rotation(), expectedRotation, precision);
+// }
 
 BOOST_AUTO_TEST_CASE(GetHomogeneousTest)
 {
@@ -202,4 +201,3 @@ BOOST_AUTO_TEST_CASE(GetHomogeneousTest)
 
     EXPECT_MATRIX_NEAR(homogeneous, expectedHomogeneous, precision);
 }
-

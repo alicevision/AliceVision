@@ -12,16 +12,15 @@
 #include <aliceVision/depthMap/cuda/imageProcessing/deviceGaussianFilter.hpp>
 
 // maximum pre-computed Gaussian scales
-#define DEVICE_MAX_DOWNSCALE  ( MAX_CONSTANT_GAUSS_SCALES - 1 )
+#define DEVICE_MAX_DOWNSCALE (MAX_CONSTANT_GAUSS_SCALES - 1)
 
 namespace aliceVision {
 namespace depthMap {
 
 float3 M3x3mulV3(const float* M3x3, const float3& V)
 {
-    return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z,
-                       M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
-                       M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
+    return make_float3(
+      M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z, M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z, M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
 }
 
 void normalize(float3& a)
@@ -33,12 +32,12 @@ void normalize(float3& a)
 }
 
 /**
-  * @brief Fill the host-side camera parameters from multi-view parameters.
-  * @param[in,out] cameraParameters_h the host-side camera parameters
-  * @param[in] camId the camera index in the ImagesCache / MultiViewParams
-  * @param[in] downscale the downscale to apply on parameters
-  * @param[in] mp the multi-view parameters
-  */
+ * @brief Fill the host-side camera parameters from multi-view parameters.
+ * @param[in,out] cameraParameters_h the host-side camera parameters
+ * @param[in] camId the camera index in the ImagesCache / MultiViewParams
+ * @param[in] downscale the downscale to apply on parameters
+ * @param[in] mp the multi-view parameters
+ */
 void fillHostCameraParameters(DeviceCameraParams& cameraParameters_h, int camId, int downscale, const mvsUtils::MultiViewParams& mp)
 {
     Matrix3x3 scaleM;
@@ -135,29 +134,30 @@ void fillHostCameraParameters(DeviceCameraParams& cameraParameters_h, int camId,
 }
 
 /**
-  * @brief Fill the device-side camera parameters array (constant memory)
-  *        with the given host-side camera parameters.
-  * @param[in] cameraParameters_h the host-side camera parameters
-  * @param[in] deviceCameraParamsId the constant camera parameters array
-  */
+ * @brief Fill the device-side camera parameters array (constant memory)
+ *        with the given host-side camera parameters.
+ * @param[in] cameraParameters_h the host-side camera parameters
+ * @param[in] deviceCameraParamsId the constant camera parameters array
+ */
 void fillDeviceCameraParameters(const DeviceCameraParams& cameraParameters_h, int deviceCameraParamsId)
 {
     const cudaMemcpyKind kind = cudaMemcpyHostToDevice;
-    const cudaError_t err = cudaMemcpyToSymbol(constantCameraParametersArray_d, &cameraParameters_h, sizeof(DeviceCameraParams), deviceCameraParamsId * sizeof(DeviceCameraParams), kind);
+    const cudaError_t err = cudaMemcpyToSymbol(
+      constantCameraParametersArray_d, &cameraParameters_h, sizeof(DeviceCameraParams), deviceCameraParamsId * sizeof(DeviceCameraParams), kind);
     CHECK_CUDA_RETURN_ERROR(err);
     THROW_ON_CUDA_ERROR(err, "Failed to copy camera parameters from host to device.");
 }
 
 DeviceCache::SingleDeviceCache::SingleDeviceCache(int maxMipmapImages, int maxCameraParams)
-    : mipmapCache(maxMipmapImages)
-    , cameraParamCache(maxCameraParams)
+  : mipmapCache(maxMipmapImages),
+    cameraParamCache(maxCameraParams)
 {
     // get the current device id
     const int cudaDeviceId = getCudaDeviceId();
 
     ALICEVISION_LOG_TRACE("Initialize device cache (device id: " << cudaDeviceId << "):" << std::endl
-                          << "\t - # mipmap images: " << maxMipmapImages << std::endl
-                          << "\t - # cameras parameters: " << maxCameraParams);
+                                                                 << "\t - # mipmap images: " << maxMipmapImages << std::endl
+                                                                 << "\t - # cameras parameters: " << maxCameraParams);
 
     // initialize Gaussian filters in GPU constant memory
     // force at compilation to build with maximum pre-computed Gaussian scales
@@ -166,12 +166,14 @@ DeviceCache::SingleDeviceCache::SingleDeviceCache(int maxMipmapImages, int maxCa
 
     // the maximum number of camera parameters in device cache cannot be superior
     // to the number of camera parameters in the array in device constant memory
-    if(maxCameraParams > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
-        ALICEVISION_THROW_ERROR("Cannot initialize device cache with more than " << ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS << " camera parameters (device id: " << cudaDeviceId << ", # cameras parameters: " << maxCameraParams << ").")
+    if (maxCameraParams > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
+        ALICEVISION_THROW_ERROR("Cannot initialize device cache with more than " << ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS
+                                                                                 << " camera parameters (device id: " << cudaDeviceId
+                                                                                 << ", # cameras parameters: " << maxCameraParams << ").")
 
     // initialize cached mipmap image containers
     mipmaps.reserve(maxMipmapImages);
-    for(int i = 0; i < maxMipmapImages; ++i)
+    for (int i = 0; i < maxMipmapImages; ++i)
     {
         mipmaps.push_back(std::make_unique<DeviceMipmapImage>());
     }
@@ -186,7 +188,7 @@ void DeviceCache::clear()
     auto it = _cachePerDevice.find(cudaDeviceId);
 
     // if found, erase SingleDeviceCache data
-    if(it != _cachePerDevice.end())
+    if (it != _cachePerDevice.end())
         _cachePerDevice.erase(it);
 }
 
@@ -208,9 +210,9 @@ DeviceCache::SingleDeviceCache& DeviceCache::getCurrentDeviceCache()
     auto it = _cachePerDevice.find(cudaDeviceId);
 
     // check found and initialized
-    if(it == _cachePerDevice.end() || it->second == nullptr)
+    if (it == _cachePerDevice.end() || it->second == nullptr)
     {
-        ALICEVISION_THROW_ERROR("Device cache is not initialized (cuda device id: " << cudaDeviceId <<").")
+        ALICEVISION_THROW_ERROR("Device cache is not initialized (cuda device id: " << cudaDeviceId << ").")
     }
 
     // return current SingleDeviceCache reference
@@ -235,10 +237,10 @@ void DeviceCache::addMipmapImage(int camId,
     const bool newInsertion = currentDeviceCache.mipmapCache.insert(camId, &deviceMipmapId);
 
     // check if the camera is already in cache
-    if(!newInsertion)
+    if (!newInsertion)
     {
         ALICEVISION_LOG_TRACE("Add mipmap image on device cache: already on cache (id: " << camId << ", view id: " << viewId << ").");
-        return; // nothing to do
+        return;  // nothing to do
     }
 
     ALICEVISION_LOG_TRACE("Add mipmap image on device cache (id: " << camId << ", view id: " << viewId << ").");
@@ -252,9 +254,9 @@ void DeviceCache::addMipmapImage(int camId,
 
     // copy image from imageCache to CUDA host-side image buffer
 #pragma omp parallel for
-    for(int y = 0; y < imgSize.y(); ++y)
+    for (int y = 0; y < imgSize.y(); ++y)
     {
-        for(int x = 0; x < imgSize.x(); ++x)
+        for (int x = 0; x < imgSize.x(); ++x)
         {
             const image::RGBAfColor& floatRGBA = (*img)(y, x);
             CudaRGBA& cudaRGBA = img_hmh(x, y);
@@ -292,10 +294,11 @@ void DeviceCache::addCameraParams(int camId, int downscale, const mvsUtils::Mult
     const bool newInsertion = currentDeviceCache.cameraParamCache.insert(CameraPair(camId, downscale), &deviceCameraParamsId);
 
     // check if the camera is already in cache
-    if(!newInsertion)
+    if (!newInsertion)
     {
-        ALICEVISION_LOG_TRACE("Add camera parameters on device cache: already on cache (id: " << camId << ", view id: " << viewId << ", downscale: " << downscale << ").");
-        return; // nothing to do
+        ALICEVISION_LOG_TRACE("Add camera parameters on device cache: already on cache (id: " << camId << ", view id: " << viewId
+                                                                                              << ", downscale: " << downscale << ").");
+        return;  // nothing to do
     }
 
     ALICEVISION_LOG_TRACE("Add camera parameters on device cache (id: " << camId << ", view id: " << viewId << ", downscale: " << downscale << ").");
@@ -337,7 +340,7 @@ const DeviceMipmapImage& DeviceCache::requestMipmapImage(int camId, const mvsUti
     const bool notFound = currentDeviceCache.mipmapCache.insert(camId, &deviceMipmapId);
 
     // check if the mipmap image is in the cache
-    if(notFound)
+    if (notFound)
         ALICEVISION_THROW_ERROR("Request mipmap image on device cache: Not found (id: " << camId << ", view id: " << viewId << ").")
 
     // return the cached device mipmap image
@@ -352,7 +355,8 @@ const int DeviceCache::requestCameraParamsId(int camId, int downscale, const mvs
     // get view id for logs
     const IndexT viewId = mp.getViewId(camId);
 
-    ALICEVISION_LOG_TRACE("Request camera parameters on device cache (id: " << camId << ", view id: " << viewId << ", downscale: " << downscale << ").");
+    ALICEVISION_LOG_TRACE("Request camera parameters on device cache (id: " << camId << ", view id: " << viewId << ", downscale: " << downscale
+                                                                            << ").");
 
     // find out with the LRU (Least Recently Used) strategy if the camera parameters object is already in the cache
     // note: if not found in cache we need to throw an error: in that case we insert an orphan id in the cache
@@ -360,12 +364,13 @@ const int DeviceCache::requestCameraParamsId(int camId, int downscale, const mvs
     const bool notFound = currentDeviceCache.cameraParamCache.insert(CameraPair(camId, downscale), &deviceCameraParamsId);
 
     // check if the camera is in the cache
-    if(notFound)
-        ALICEVISION_THROW_ERROR("Request camera parameters on device cache: Not found (id: " << camId << ", view id: " << viewId << ", downscale: " << downscale << ").")
+    if (notFound)
+        ALICEVISION_THROW_ERROR("Request camera parameters on device cache: Not found (id: " << camId << ", view id: " << viewId
+                                                                                             << ", downscale: " << downscale << ").")
 
     // return the cached camera parameters id
     return deviceCameraParamsId;
 }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

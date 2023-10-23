@@ -9,18 +9,17 @@
 #include <iostream>
 #include <list>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
-bool PanoramaMap::append(IndexT index, const BoundingBox & box)
+bool PanoramaMap::append(IndexT index, const BoundingBox& box)
 {
     BoundingBox bbox = box;
-    
-    // if the reference bounding box is looping on the right of the panorama, 
+
+    // if the reference bounding box is looping on the right of the panorama,
     // make it loop on the left instead to reduce the number of further possibilities
-    if (bbox.getRight() >= _panoramaWidth && bbox.width < _panoramaWidth) 
+    if (bbox.getRight() >= _panoramaWidth && bbox.width < _panoramaWidth)
     {
-        bbox.left -= _panoramaWidth;    
+        bbox.left -= _panoramaWidth;
     }
 
     _map[index] = bbox;
@@ -28,9 +27,8 @@ bool PanoramaMap::append(IndexT index, const BoundingBox & box)
     return true;
 }
 
-bool PanoramaMap::intersect(const BoundingBox & box1, const BoundingBox & box2) const
+bool PanoramaMap::intersect(const BoundingBox& box1, const BoundingBox& box2) const
 {
-    
     BoundingBox extentedBox1 = box1.divide(_scale).dilate(_borderSize).multiply(_scale);
     BoundingBox extentedBox2 = box2.divide(_scale).dilate(_borderSize).multiply(_scale);
 
@@ -40,17 +38,17 @@ bool PanoramaMap::intersect(const BoundingBox & box1, const BoundingBox & box2) 
     BoundingBox otherBboxLoopRight = extentedBox2;
     otherBboxLoopRight.left = otherBbox.left + _panoramaWidth;
 
-    if (!extentedBox1.intersectionWith(otherBbox).isEmpty()) 
+    if (!extentedBox1.intersectionWith(otherBbox).isEmpty())
     {
         return true;
     }
 
-    if (!extentedBox1.intersectionWith(otherBboxLoop).isEmpty()) 
+    if (!extentedBox1.intersectionWith(otherBboxLoop).isEmpty())
     {
         return true;
     }
 
-    if (!extentedBox1.intersectionWith(otherBboxLoopRight).isEmpty()) 
+    if (!extentedBox1.intersectionWith(otherBboxLoopRight).isEmpty())
     {
         return true;
     }
@@ -58,7 +56,7 @@ bool PanoramaMap::intersect(const BoundingBox & box1, const BoundingBox & box2) 
     return false;
 }
 
-bool PanoramaMap::getOverlaps(std::vector<IndexT> & overlaps, IndexT reference) const
+bool PanoramaMap::getOverlaps(std::vector<IndexT>& overlaps, IndexT reference) const
 {
     if (_map.find(reference) == _map.end())
     {
@@ -70,7 +68,7 @@ bool PanoramaMap::getOverlaps(std::vector<IndexT> & overlaps, IndexT reference) 
     return getOverlaps(overlaps, bbref);
 }
 
-bool PanoramaMap::getOverlaps(std::vector<IndexT> & overlaps, const BoundingBox & referenceBoundingBox) const
+bool PanoramaMap::getOverlaps(std::vector<IndexT>& overlaps, const BoundingBox& referenceBoundingBox) const
 {
     for (auto it : _map)
     {
@@ -83,15 +81,20 @@ bool PanoramaMap::getOverlaps(std::vector<IndexT> & overlaps, const BoundingBox 
     return true;
 }
 
-
-bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const IndexT & referenceIndex, const IndexT & otherIndex) const
+bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox>& intersections,
+                                       std::vector<BoundingBox>& currentBoundingBoxes,
+                                       const IndexT& referenceIndex,
+                                       const IndexT& otherIndex) const
 {
     BoundingBox referenceBoundingBox = _map.at(referenceIndex);
-    
+
     return getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, otherIndex);
 }
 
-bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const BoundingBox & referenceBoundingBox, const IndexT & otherIndex) const
+bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox>& intersections,
+                                       std::vector<BoundingBox>& currentBoundingBoxes,
+                                       const BoundingBox& referenceBoundingBox,
+                                       const IndexT& otherIndex) const
 {
     BoundingBox referenceBoundingBoxReduced = referenceBoundingBox.divide(_scale).dilate(_borderSize);
 
@@ -106,7 +109,7 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
             BoundingBox intersection = intersectionSmall.multiply(_scale);
             intersection = intersection.limitInside(otherBoundingBox);
 
-            if (!intersection.isEmpty()) 
+            if (!intersection.isEmpty())
             {
                 intersections.push_back(intersection);
                 currentBoundingBoxes.push_back(otherBoundingBox);
@@ -120,13 +123,13 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
         otherBoundingBoxLoop.left -= _panoramaWidth;
         BoundingBox otherBoundingBoxReduced = otherBoundingBoxLoop.divide(_scale).dilate(_borderSize);
         BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
-        
+
         if (!intersectionSmall.isEmpty())
-        {            
+        {
             BoundingBox intersection = intersectionSmall.multiply(_scale);
             intersection = intersection.limitInside(otherBoundingBoxLoop);
 
-            if (!intersection.isEmpty()) 
+            if (!intersection.isEmpty())
             {
                 intersections.push_back(intersection);
                 currentBoundingBoxes.push_back(otherBoundingBoxLoop);
@@ -141,11 +144,11 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
         BoundingBox otherBoundingBoxReduced = otherBoundingBoxLoop.divide(_scale).dilate(_borderSize);
         BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
         if (!intersectionSmall.isEmpty())
-        {            
+        {
             BoundingBox intersection = intersectionSmall.multiply(_scale);
             intersection = intersection.limitInside(otherBoundingBoxLoop);
 
-            if (!intersection.isEmpty()) 
+            if (!intersection.isEmpty())
             {
                 intersections.push_back(intersection);
                 currentBoundingBoxes.push_back(otherBoundingBoxLoop);
@@ -160,11 +163,11 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
         BoundingBox otherBoundingBoxReduced = otherBoundingBoxLoop.divide(_scale).dilate(_borderSize);
         BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
         if (!intersectionSmall.isEmpty())
-        {            
+        {
             BoundingBox intersection = intersectionSmall.multiply(_scale);
             intersection = intersection.limitInside(otherBoundingBoxLoop);
 
-            if (!intersection.isEmpty()) 
+            if (!intersection.isEmpty())
             {
                 intersections.push_back(intersection);
                 currentBoundingBoxes.push_back(otherBoundingBoxLoop);
@@ -175,36 +178,33 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
     return true;
 }
 
-bool PanoramaMap::optimizeChunks(std::vector<std::vector<IndexT>> & chunks, int chunkSize) {
-
+bool PanoramaMap::optimizeChunks(std::vector<std::vector<IndexT>>& chunks, int chunkSize)
+{
     int countViews = _map.size();
     int countChunks = divideRoundUp(countViews, chunkSize);
 
     chunks.clear();
     chunks.resize(countChunks);
 
-    for (auto item : _map) 
+    for (auto item : _map)
     {
-        std::sort(chunks.begin(), chunks.end(), 
-            [this](const std::vector<IndexT> & first, const std::vector<IndexT> & second)
+        std::sort(chunks.begin(), chunks.end(), [this](const std::vector<IndexT>& first, const std::vector<IndexT>& second) {
+            size_t size_first = 0;
+            for (int i = 0; i < first.size(); i++)
             {
-                size_t size_first = 0;
-                for (int i = 0; i < first.size(); i++) 
-                {
-                    IndexT curIndex = first[i];
-                    size_first += _map.at(curIndex).area();
-                }
-
-                size_t size_second = 0;
-                for (int i = 0; i < second.size(); i++) 
-                {
-                    IndexT curIndex = second[i];
-                    size_second += _map.at(curIndex).area();
-                }
-
-                return (size_first < size_second);
+                IndexT curIndex = first[i];
+                size_first += _map.at(curIndex).area();
             }
-        );
+
+            size_t size_second = 0;
+            for (int i = 0; i < second.size(); i++)
+            {
+                IndexT curIndex = second[i];
+                size_second += _map.at(curIndex).area();
+            }
+
+            return (size_first < size_second);
+        });
 
         chunks[0].push_back(item.first);
     }
@@ -212,4 +212,4 @@ bool PanoramaMap::optimizeChunks(std::vector<std::vector<IndexT>> & chunks, int 
     return true;
 }
 
-}
+}  // namespace aliceVision

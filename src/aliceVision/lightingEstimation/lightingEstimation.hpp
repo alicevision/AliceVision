@@ -23,7 +23,7 @@ using Eigen::MatrixXf;
 /**
  * @brief Augmented lighting vetor for augmented Lambert's law (using Spherical Harmonics model)
  * Composed of 9 coefficients
- */ 
+ */
 using LightingVector = Eigen::Matrix<float, 9, 3>;
 
 /**
@@ -35,15 +35,14 @@ using LightingVector = Eigen::Matrix<float, 9, 3>;
  */
 class LighthingEstimator
 {
-public:
+  public:
     /**
      * @brief Aggregate image data
      * @param[in] albedo the corresponding albedo image (float image)
      * @param[in] picture the corresponding picture (float image)
      * @param[in] normals the corresponding normals image
      */
-    void addImage(const image::Image<float>& albedo, const image::Image<float>& picture,
-                  const image::Image<image::RGBfColor>& normals);
+    void addImage(const image::Image<float>& albedo, const image::Image<float>& picture, const image::Image<image::RGBfColor>& normals);
 
     /**
      * @brief Aggregate image data
@@ -51,7 +50,8 @@ public:
      * @param[in] picture the corresponding picture (RGBf image)
      * @param[in] normals the corresponding normals image
      */
-    void addImage(const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture,
+    void addImage(const image::Image<image::RGBfColor>& albedo,
+                  const image::Image<image::RGBfColor>& picture,
                   const image::Image<image::RGBfColor>& normals);
 
     /**
@@ -65,10 +65,10 @@ public:
      */
     void clear();
 
-private:
+  private:
     std::array<std::vector<MatrixXf>, 3> _all_rhoTimesN;
     std::array<std::vector<MatrixXf>, 3> _all_pictureChannel;
 };
 
-} // namespace lightingEstimation
-} // namespace aliceVision
+}  // namespace lightingEstimation
+}  // namespace aliceVision

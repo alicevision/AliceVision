@@ -29,7 +29,6 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
 
     for (int idGroup = 0; idGroup < imagePaths.size(); idGroup++)
     {
-
         int width = 0;
         int height = 0;
         image::readImageSize(imagePaths[idGroup][0], width, height);
@@ -45,10 +44,8 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
         }
 
         std::vector<ImageSample> groupSamples;
-        if (!Sampling::extractSamplesFromImages(groupSamples, imagePaths[idGroup], viewIds,
-                                                times[idGroup], width, height,
-                                                channelQuantization, imgReadOptions,
-                                                Sampling::Params{}))
+        if (!Sampling::extractSamplesFromImages(
+              groupSamples, imagePaths[idGroup], viewIds, times[idGroup], width, height, channelQuantization, imgReadOptions, Sampling::Params{}))
         {
             return false;
         }
@@ -58,11 +55,10 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
 
     for (int idGroup = 0; idGroup < imagePaths.size(); idGroup++)
     {
-
         std::vector<ImageSample>& groupSamples = nonFilteredSamples[idGroup];
 
-        for (int idSample = 0; idSample < groupSamples.size(); idSample++) {
-
+        for (int idSample = 0; idSample < groupSamples.size(); idSample++)
+        {
             SampleRef s;
             s.first = idGroup;
             s.second = idSample;
@@ -71,17 +67,15 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
 
             for (int idDesc = 0; idDesc < sample.descriptions.size(); idDesc++)
             {
-
                 UniqueDescriptor desc;
                 desc.exposure = sample.descriptions[idDesc].exposure;
 
-                for (int channel = 0; channel < 3; channel++) {
-
+                for (int channel = 0; channel < 3; channel++)
+                {
                     desc.channel = channel;
 
                     /* Get quantized value */
-                    desc.quantizedValue = int(std::round(sample.descriptions[idDesc].mean(channel) *
-                                                         (channelQuantization - 1)));
+                    desc.quantizedValue = int(std::round(sample.descriptions[idDesc].mean(channel) * (channelQuantization - 1)));
                     if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization)
                     {
                         continue;
@@ -96,16 +90,16 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
     const size_t maxCountSample = 100;
     std::random_device rd;
     std::mt19937 gen(rd());
-    for (auto & list : mapSampleRefList)
+    for (auto& list : mapSampleRefList)
     {
         if (list.second.size() > maxCountSample)
         {
-             /*Shuffle and ignore the exceeding samples*/
+            /*Shuffle and ignore the exceeding samples*/
             std::shuffle(list.second.begin(), list.second.end(), gen);
             list.second.resize(maxCountSample);
         }
 
-        for (auto & item : list.second)
+        for (auto& item : list.second)
         {
             if (nonFilteredSamples[item.first][item.second].descriptions.size() > 0)
             {
@@ -118,8 +112,7 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
     return true;
 }
 
-bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times,
-                   const rgbCurve& gt_response)
+bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times, const rgbCurve& gt_response)
 {
     /* Exposure time for each bracket */
     times = {0.05f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f};
@@ -134,11 +127,11 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times,
     /* Generate a random image made of flat blocks (to pass variancetest )*/
     image::Image<image::RGBfColor> img(512, 512, true, image::RGBfColor(0.0f));
     int val = 0;
-    for(int i = 0; i < img.Height(); i++)
+    for (int i = 0; i < img.Height(); i++)
     {
         int y = i / size_region;
 
-        for(int j = 0; j < img.Width(); j++)
+        for (int j = 0; j < img.Width(); j++)
         {
             int x = j / size_region;
             int val = y * regions_count_per_col + x;
@@ -152,16 +145,16 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times,
         }
     }
 
-    for(double time : times)
+    for (double time : times)
     {
         image::Image<image::RGBfColor> img_bracket(img.Width(), img.Height());
-        for(int i = 0; i < img.Height(); i++)
+        for (int i = 0; i < img.Height(); i++)
         {
-            for(int j = 0; j < img.Width(); j++)
+            for (int j = 0; j < img.Width(); j++)
             {
                 image::RGBfColor color = img(i, j);
 
-                for(int k = 0; k < 3; k++)
+                for (int k = 0; k < 3; k++)
                 {
                     float radiance = color[k];
                     float radiance_dt = radiance * time;
@@ -178,15 +171,13 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times,
 
         ALICEVISION_LOG_INFO("writing to " << temp.string());
 
-        image::writeImage(temp.string(), img_bracket,
-                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR));
+        image::writeImage(temp.string(), img_bracket, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR));
         paths.push_back(temp.string());
     }
 
     return true;
 }
 
-} // namespace test
-} // namespace hdr
-} // namespace aliceVision
-
+}  // namespace test
+}  // namespace hdr
+}  // namespace aliceVision

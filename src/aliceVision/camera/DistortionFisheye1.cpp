@@ -9,12 +9,12 @@
 namespace aliceVision {
 namespace camera {
 
-Vec2 DistortionFisheye1::addDistortion(const Vec2 & p) const
+Vec2 DistortionFisheye1::addDistortion(const Vec2& p) const
 {
     const double& k1 = _distortionParams.at(0);
     const double r = std::hypot(p(0), p(1));
     const double coef = (std::atan(2.0 * r * std::tan(0.5 * k1)) / k1) / r;
-    return  p * coef;
+    return p * coef;
 }
 
 Vec2 DistortionFisheye1::removeDistortion(const Vec2& p) const
@@ -22,8 +22,8 @@ Vec2 DistortionFisheye1::removeDistortion(const Vec2& p) const
     const double& k1 = _distortionParams.at(0);
     const double r = std::hypot(p(0), p(1));
     const double coef = 0.5 * std::tan(r * k1) / (std::tan(0.5 * k1) * r);
-    return  p * coef;
+    return p * coef;
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

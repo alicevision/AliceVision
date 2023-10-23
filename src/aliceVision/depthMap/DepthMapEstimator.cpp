@@ -34,11 +34,11 @@ DepthMapEstimator::DepthMapEstimator(const mvsUtils::MultiViewParams& mp,
                                      const DepthMapParams& depthMapParams,
                                      const SgmParams& sgmParams,
                                      const RefineParams& refineParams)
-  : _mp(mp)
-  , _tileParams(tileParams)
-  , _depthMapParams(depthMapParams)
-  , _sgmParams(sgmParams)
-  , _refineParams(refineParams)
+  : _mp(mp),
+    _tileParams(tileParams),
+    _depthMapParams(depthMapParams),
+    _sgmParams(sgmParams),
+    _refineParams(refineParams)
 {
     // compute maximum downscale (scaleStep)
     const int maxDownscale = std::max(_sgmParams.scale * _sgmParams.stepXY, _refineParams.scale * _refineParams.stepXY);
@@ -50,14 +50,12 @@ DepthMapEstimator::DepthMapEstimator(const mvsUtils::MultiViewParams& mp,
     logTileRoiList(_tileParams, _mp.getMaxImageWidth(), _mp.getMaxImageHeight(), maxDownscale, _tileRoiList);
 
     // log SGM downscale & stepXY
-    ALICEVISION_LOG_INFO("SGM parameters:" << std::endl
-                         << "\t- scale: " << _sgmParams.scale << std::endl
-                         << "\t- stepXY: " <<_sgmParams.stepXY);
+    ALICEVISION_LOG_INFO("SGM parameters:" << std::endl << "\t- scale: " << _sgmParams.scale << std::endl << "\t- stepXY: " << _sgmParams.stepXY);
 
     // log Refine downscale & stepXY
     ALICEVISION_LOG_INFO("Refine parameters:" << std::endl
-                         << "\t- scale: " << _refineParams.scale << std::endl
-                         << "\t- stepXY: " <<_refineParams.stepXY);
+                                              << "\t- scale: " << _refineParams.scale << std::endl
+                                              << "\t- stepXY: " << _refineParams.stepXY);
 }
 
 int DepthMapEstimator::getNbSimultaneousTiles() const
@@ -67,8 +65,8 @@ int DepthMapEstimator::getNbSimultaneousTiles() const
     // mipmap image cost
     // mipmap image should not exceed (1.5 * max_width) * max_height
     // TODO: special case first mipmap level != 1
-    const double mipmapCostMB = ((_mp.getMaxImageWidth() * 1.5) * _mp.getMaxImageHeight() * sizeof(CudaRGBA))
-                                / (1024.0 * 1024.0);  // process downscale apply
+    const double mipmapCostMB =
+      ((_mp.getMaxImageWidth() * 1.5) * _mp.getMaxImageHeight() * sizeof(CudaRGBA)) / (1024.0 * 1024.0);  // process downscale apply
 
     // cameras cost per R camera computation
     // Rc mipmap + Tcs mipmaps
@@ -78,8 +76,7 @@ int DepthMapEstimator::getNbSimultaneousTiles() const
     // (Rc + Tcs) * 2 (SGM + Refine downscale) + 1 (SGM needs downscale 1)
     // note: special case SGM downsccale = Refine downscale not handle
     const int rcNbCameraParams = (_depthMapParams.useRefine) ? 2 : 1;
-    const int rcCamParams = (1 /* rc */ + _depthMapParams.maxTCams) * rcNbCameraParams +
-                            ((_refineParams.scale > 1) ? 1 : 0);
+    const int rcCamParams = (1 /* rc */ + _depthMapParams.maxTCams) * rcNbCameraParams + ((_refineParams.scale > 1) ? 1 : 0);
 
     // single tile SGM cost
     double sgmTileCostMB = 0.0;
@@ -135,15 +132,13 @@ int DepthMapEstimator::getNbSimultaneousTiles() const
     }
 
     // check that we do not need more constant camera parameters than the ones in device constant memory
-    if (ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS <
-        ((nbSimultaneousFullRc + ((nbRemainingTiles > 0) ? 1 : 0)) * rcCamParams))
+    if (ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS < ((nbSimultaneousFullRc + ((nbRemainingTiles > 0) ? 1 : 0)) * rcCamParams))
     {
         const int previousNbSimultaneousFullRc = nbSimultaneousFullRc;
         nbSimultaneousFullRc = static_cast<int>(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS / rcCamParams);
 
         ALICEVISION_LOG_INFO("DepthMapEstimator::getNbSimultaneousTiles(): limit the number of simultaneous RC due to "
-                             << "the max constant memory for camera params from " << previousNbSimultaneousFullRc
-                             << " to " << nbSimultaneousFullRc);
+                             << "the max constant memory for camera params from " << previousNbSimultaneousFullRc << " to " << nbSimultaneousFullRc);
         nbRemainingTiles = 0;
     }
 
@@ -152,22 +147,23 @@ int DepthMapEstimator::getNbSimultaneousTiles() const
 
     // log memory information
     ALICEVISION_LOG_INFO("Device memory:" << std::endl
-                         << "\t- available: " << deviceMemoryMB << " MB" << std::endl
-                         << "\t- requirement for the first tile: " << rcMinCostMB << " MB" << std::endl
-                         << "\t- # computation buffers per tile: " << tileCostMB << " MB" << " (Sgm: "
-                         << sgmTileCostMB << " MB" << ", Refine: " << refineTileCostMB << " MB)" << std::endl
-                         << "\t- # input images (R + " << _depthMapParams.maxTCams << " Ts): " << rcCamsCostMB
-                         << " MB (single mipmap image size: " << mipmapCostMB << " MB)");
+                                          << "\t- available: " << deviceMemoryMB << " MB" << std::endl
+                                          << "\t- requirement for the first tile: " << rcMinCostMB << " MB" << std::endl
+                                          << "\t- # computation buffers per tile: " << tileCostMB << " MB"
+                                          << " (Sgm: " << sgmTileCostMB << " MB"
+                                          << ", Refine: " << refineTileCostMB << " MB)" << std::endl
+                                          << "\t- # input images (R + " << _depthMapParams.maxTCams << " Ts): " << rcCamsCostMB
+                                          << " MB (single mipmap image size: " << mipmapCostMB << " MB)");
 
-    ALICEVISION_LOG_DEBUG("Theoretical device memory cost for a tile without padding: " << tileCostUnpaddedMB
-                          << " MB" << " (Sgm: " << sgmTileCostUnpaddedMB << " MB" << ", Refine: "
-                          << refineTileCostUnpaddedMB << " MB)");
+    ALICEVISION_LOG_DEBUG("Theoretical device memory cost for a tile without padding: " << tileCostUnpaddedMB << " MB"
+                                                                                        << " (Sgm: " << sgmTileCostUnpaddedMB << " MB"
+                                                                                        << ", Refine: " << refineTileCostUnpaddedMB << " MB)");
 
     ALICEVISION_LOG_INFO("Parallelization:" << std::endl
-                         << "\t- # tiles per image: " << nbTilesPerCamera << std::endl
-                         << "\t- # simultaneous depth maps computation: " << ((nbRemainingTiles < 1) ?
-                         nbSimultaneousFullRc : (nbSimultaneousFullRc + 1)) << std::endl
-                         << "\t- # simultaneous tiles computation: " << out_nbSimultaneousTiles);
+                                            << "\t- # tiles per image: " << nbTilesPerCamera << std::endl
+                                            << "\t- # simultaneous depth maps computation: "
+                                            << ((nbRemainingTiles < 1) ? nbSimultaneousFullRc : (nbSimultaneousFullRc + 1)) << std::endl
+                                            << "\t- # simultaneous tiles computation: " << out_nbSimultaneousTiles);
 
     // check at least one single tile computation
     if (rcCamParams > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS || out_nbSimultaneousTiles < 1)
@@ -196,7 +192,7 @@ void DepthMapEstimator::getTilesList(const std::vector<int>& cams, std::vector<T
         // get R camera ROI
         const ROI rcImageRoi(Range(0, _mp.getWidth(rc)), Range(0, _mp.getHeight(rc)));
 
-        for (std::size_t i = 0;  i < nbTilesPerCamera; ++i)
+        for (std::size_t i = 0; i < nbTilesPerCamera; ++i)
         {
             Tile t;
 
@@ -250,27 +246,28 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
 
     // constants
     const bool hasRcSameDownscale = (_sgmParams.scale == _refineParams.scale);  // we only need one camera params per image
-    const bool hasRcWithoutDownscale = _sgmParams.scale == 1 || (_depthMapParams.useRefine && _refineParams.scale == 1);  // we need R camera params SGM (downscale = 1)
-    const int nbCameraParamsPerSgm = (1 + _depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1);  // number of Sgm camera parameters per R camera
-    const int nbCameraParamsPerRefine = (_depthMapParams.useRefine && !hasRcSameDownscale) ?
-                                        (1 + _depthMapParams.maxTCams) : 0;  // number of Refine camera parameters per R camera
+    const bool hasRcWithoutDownscale =
+      _sgmParams.scale == 1 || (_depthMapParams.useRefine && _refineParams.scale == 1);  // we need R camera params SGM (downscale = 1)
+    const int nbCameraParamsPerSgm =
+      (1 + _depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1);  // number of Sgm camera parameters per R camera
+    const int nbCameraParamsPerRefine =
+      (_depthMapParams.useRefine && !hasRcSameDownscale) ? (1 + _depthMapParams.maxTCams) : 0;  // number of Refine camera parameters per R camera
 
     // build device cache
     const int nbTilesPerCamera = static_cast<int>(_tileRoiList.size());
 
     int nbRcPerBatch = divideRoundUp(nbStreams, nbTilesPerCamera);  // number of R cameras in the same batch
-    if (nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine) >
-        ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
+    if (nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine) > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
     {
         int previousNbRcPerBatch = nbRcPerBatch;
-        nbRcPerBatch = ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS /
-                      (nbCameraParamsPerSgm + nbCameraParamsPerRefine);
+        nbRcPerBatch = ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS / (nbCameraParamsPerSgm + nbCameraParamsPerRefine);
         ALICEVISION_LOG_INFO("DepthMapEstimator::compute(): limit the number of simultaneous RC due to the max constant"
                              << " memory for camera params from " << previousNbRcPerBatch << " to " << nbRcPerBatch);
     }
 
-    const int nbCamerasParamsPerBatch = nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine);  // number of camera parameters in the same batch
-    const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera;  // number of tiles in the same batch
+    const int nbCamerasParamsPerBatch =
+      nbRcPerBatch * (nbCameraParamsPerSgm + nbCameraParamsPerRefine);                 // number of camera parameters in the same batch
+    const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera;                       // number of tiles in the same batch
     const int nbMipmapImagesPerBatch = nbRcPerBatch * (1 + _depthMapParams.maxTCams);  // number of camera mipmap image in the same batch
 
     DeviceCache& deviceCache = DeviceCache::getInstance();
@@ -294,8 +291,7 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
 
         // initialize Sgm objects
         for (int i = 0; i < nbStreams; ++i)
-            sgmPerStream.emplace_back(_mp, _tileParams, _sgmParams, sgmComputeDepthSimMap, sgmComputeNormalMap,
-                                      deviceStreamManager.getStream(i));
+            sgmPerStream.emplace_back(_mp, _tileParams, _sgmParams, sgmComputeDepthSimMap, sgmComputeNormalMap, deviceStreamManager.getStream(i));
 
         // initialize Refine objects
         if (_depthMapParams.useRefine)
@@ -330,8 +326,7 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     // compute number of batches
     const int nbBatches = divideRoundUp(static_cast<int>(tiles.size()), nbTilesPerBatch);
     const int minMipmapDownscale = std::min(_refineParams.scale, _sgmParams.scale);
-    const int maxMipmapDownscale = std::max(_refineParams.scale, _sgmParams.scale)
-                                   * std::pow(2, 6);  // we add 6 downscale levels
+    const int maxMipmapDownscale = std::max(_refineParams.scale, _sgmParams.scale) * std::pow(2, 6);  // we add 6 downscale levels
 
     // compute each batch of R cameras
     for (int b = 0; b < nbBatches; ++b)
@@ -469,11 +464,11 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             const int batchCamIndex = c % nbRcPerBatch;
 
             if (_depthMapParams.useRefine)
-                writeDepthSimMapFromTileList(c, _mp, _tileParams, _tileRoiList, depthSimMapTilePerCam.at(batchCamIndex),
-                                             _refineParams.scale, _refineParams.stepXY);
+                writeDepthSimMapFromTileList(
+                  c, _mp, _tileParams, _tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), _refineParams.scale, _refineParams.stepXY);
             else
-                writeDepthSimMapFromTileList(c, _mp, _tileParams, _tileRoiList, depthSimMapTilePerCam.at(batchCamIndex),
-                                             _sgmParams.scale, _sgmParams.stepXY);
+                writeDepthSimMapFromTileList(
+                  c, _mp, _tileParams, _tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), _sgmParams.scale, _sgmParams.stepXY);
 
             if (_depthMapParams.exportTilePattern)
                 exportDepthSimMapTilePatternObj(c, _mp, _tileRoiList, depthMinMaxTilePerCam.at(batchCamIndex));

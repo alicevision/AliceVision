@@ -6,8 +6,7 @@
 
 #include "boundingBox.hpp"
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 std::ostream& operator<<(std::ostream& os, const BoundingBox& in)
 {
@@ -19,4 +18,4 @@ std::ostream& operator<<(std::ostream& os, const BoundingBox& in)
     return os;
 }
 
-}
+}  // namespace aliceVision

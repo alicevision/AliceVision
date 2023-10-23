@@ -17,10 +17,10 @@ template<class T>
 stl::flat_map<size_t, T> flat_map_value_to(const boost::json::value& jv)
 {
     stl::flat_map<size_t, T> ret;
-    
+
     const boost::json::array obj = jv.as_array();
 
-    for (const auto & item: obj)
+    for (const auto& item : obj)
     {
         const boost::json::array inner = item.as_array();
         ret.insert({boost::json::value_to<std::size_t>(inner[0]), boost::json::value_to<T>(inner[1])});
@@ -39,5 +39,5 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, alic
  */
 aliceVision::track::Track tag_invoke(boost::json::value_to_tag<aliceVision::track::Track>, boost::json::value const& jv);
 
-} // namespace track
-} // namespace aliceVision
+}  // namespace track
+}  // namespace aliceVision

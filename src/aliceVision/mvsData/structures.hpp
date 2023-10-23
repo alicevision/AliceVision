@@ -28,11 +28,11 @@ struct ImageParams
     std::string path;
 
     ImageParams(IndexT _viewId, int _width, int _height, const std::string& _path)
-      : viewId(_viewId)
-      , width(_width)
-      , height(_height)
-      , size(_width * _height)
-      , path(_path)
+      : viewId(_viewId),
+        width(_width),
+        height(_height),
+        size(_width * _height),
+        path(_path)
     {}
 
     ImageParams& operator=(const ImageParams& param)
@@ -50,7 +50,7 @@ struct SortedId
     int id;
     float value;
 
-    SortedId(){}
+    SortedId() {}
 
     SortedId(int _id, float _value)
     {
@@ -65,15 +65,9 @@ struct SortedId
         return *this;
     }
 
-    inline bool operator>(const SortedId& param) const
-    {
-        return (value > param.value);
-    }
+    inline bool operator>(const SortedId& param) const { return (value > param.value); }
 
-    inline bool operator<(const SortedId& param) const
-    {
-        return (value < param.value);
-    }
+    inline bool operator<(const SortedId& param) const { return (value < param.value); }
 };
 
 int qSortCompareFloatAsc(const void* ia, const void* ib);
@@ -91,7 +85,7 @@ struct IdValue
     int id;
     float value;
 
-    IdValue(){}
+    IdValue() {}
 
     IdValue(int _id, float _value)
     {
@@ -106,15 +100,9 @@ struct IdValue
         return *this;
     }
 
-    inline bool operator>(const IdValue& param) const
-    {
-        return (value > param.value);
-    }
+    inline bool operator>(const IdValue& param) const { return (value > param.value); }
 
-    inline bool operator<(const IdValue& param) const
-    {
-        return (value < param.value);
-    }
+    inline bool operator<(const IdValue& param) const { return (value < param.value); }
 };
 
 struct mv2DTriangle
@@ -142,4 +130,4 @@ struct CameraMatrices
 
 int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>& values, int startId, int stopId);
 
-} // namespace aliceVision
+}  // namespace aliceVision

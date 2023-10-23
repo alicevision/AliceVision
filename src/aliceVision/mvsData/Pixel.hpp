@@ -12,7 +12,8 @@ namespace aliceVision {
 
 struct Pixel
 {
-    union {
+    union
+    {
         struct
         {
             int x, y;
@@ -28,7 +29,6 @@ struct Pixel
 
     explicit Pixel(const Point2d& p)
     {
-
         x = (int)floor(p.x + 0.5);
         y = (int)floor(p.y + 0.5);
     }
@@ -39,10 +39,7 @@ struct Pixel
         y = _y;
     }
 
-    inline int& operator[](const int index)
-    {
-        return m[index];
-    }
+    inline int& operator[](const int index) { return m[index]; }
 
     inline Pixel& operator=(const Pixel& param)
     {
@@ -51,29 +48,17 @@ struct Pixel
         return *this;
     }
 
-    inline bool operator==(const Pixel& param)
-    {
-        return ((x == param.x) && (y == param.y));
-    }
+    inline bool operator==(const Pixel& param) { return ((x == param.x) && (y == param.y)); }
 
-    inline Pixel operator-(const Pixel& _p)
-    {
-        return Pixel(x - _p.x, y - _p.y);
-    }
+    inline Pixel operator-(const Pixel& _p) { return Pixel(x - _p.x, y - _p.y); }
 
-    inline Pixel operator+(const Pixel& _p)
-    {
-        return Pixel(x + _p.x, y + _p.y);
-    }
+    inline Pixel operator+(const Pixel& _p) { return Pixel(x + _p.x, y + _p.y); }
 
-    inline Pixel operator*(const int& d)
-    {
-        return Pixel(x * d, y * d);
-    }
+    inline Pixel operator*(const int& d) { return Pixel(x * d, y * d); }
 
     inline Pixel operator/(int d)
     {
-        if(d == 0)
+        if (d == 0)
         {
             return Pixel(0, 0);
         }
@@ -86,19 +71,10 @@ struct Pixel
         };
     }
 
-    inline double size()
-    {
-        return sqrt((double)(x * x + y * y));
-    }
-    inline int size2()
-    {
-        return x * x + y * y;
-    }
+    inline double size() { return sqrt((double)(x * x + y * y)); }
+    inline int size2() { return x * x + y * y; }
 
-    friend int dot(const Pixel& p1, const Pixel& p2)
-    {
-        return p1.x * p2.x + p1.y * p2.y;
-    }
+    friend int dot(const Pixel& p1, const Pixel& p2) { return p1.x * p2.x + p1.y * p2.y; }
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

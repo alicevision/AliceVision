@@ -21,10 +21,8 @@ namespace multiview {
  * @param P2 a projection matrix K (R | t)
  * @param x2 a 2d observation vector
  * @param X_homogeneous a homogeneous 3d point
-*/
-void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
-                    const Mat34 &P2, const Vec2 &x2,
-                    Vec4 & X_homogeneous);
+ */
+void TriangulateDLT(const Mat34& P1, const Vec2& x1, const Mat34& P2, const Vec2& x2, Vec4& X_homogeneous);
 
 /**
  * Triangulate a point given a set of observations
@@ -34,11 +32,8 @@ void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
  * @param P2 a projection matrix K (R | t)
  * @param x2 a 2d observation vector
  * @param X_homogeneous a 3d point
-*/
-void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
-                    const Mat34 &P2, const Vec2 &x2,
-                    Vec3 & X_euclidean);
-
+ */
+void TriangulateDLT(const Mat34& P1, const Vec2& x1, const Mat34& P2, const Vec2& x2, Vec3& X_euclidean);
 
 /**
  * Triangulate a point given a set of bearing vectors
@@ -48,10 +43,8 @@ void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
  * @param P2 a projection matrix K (R | t)
  * @param x2 a unit bearing vector
  * @param X_homogeneous a homogeneous 3d point
-*/
-void TriangulateSphericalDLT(const Mat34 &P1, const Vec3 &x1,
-                    const Mat34 &P2, const Vec3 &x2,
-                    Vec4 & X_homogeneous);
+ */
+void TriangulateSphericalDLT(const Mat34& P1, const Vec3& x1, const Mat34& P2, const Vec3& x2, Vec4& X_homogeneous);
 
 /**
  * Triangulate a point given a set of bearing vectors
@@ -61,11 +54,8 @@ void TriangulateSphericalDLT(const Mat34 &P1, const Vec3 &x1,
  * @param P2 a projection matrix K (R | t)
  * @param x2 a unit bearing vector
  * @param X_homogeneous a 3d point
-*/
-void TriangulateSphericalDLT(const Mat34 &P1, const Vec3 &x1,
-                    const Mat34 &P2, const Vec3 &x2,
-                    Vec3 & X_euclidean);
+ */
+void TriangulateSphericalDLT(const Mat34& P1, const Vec3& x1, const Mat34& P2, const Vec3& x2, Vec3& X_euclidean);
 
-
-} // namespace multiview
-} // namespace aliceVision
+}  // namespace multiview
+}  // namespace aliceVision

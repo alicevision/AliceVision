@@ -11,14 +11,12 @@
 #include <string>
 #include <memory>
 
-namespace aliceVision
-{
-namespace dataio
-{
+namespace aliceVision {
+namespace dataio {
 
 class FeedProvider
 {
-public:
+  public:
     FeedProvider(const std::string& feedPath, const std::string& calibPath = "");
 
     /**
@@ -32,8 +30,7 @@ public:
      * is no intrinsics associated to \p imageRGB.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
-                   std::string& mediaPath, bool& hasIntrinsics);
+    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
     /**
      * @brief Provide a new float grayscale image from the feed.
@@ -46,8 +43,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath,
-                   bool& hasIntrinsics);
+    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
     /**
      * @brief Provide a new grayscale image from the feed.
@@ -60,8 +56,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
-                   std::string& mediaPath, bool& hasIntrinsics);
+    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
     /**
      * @brief It returns the number of frames contained of the video. It return infinity
@@ -113,12 +108,12 @@ public:
 
     virtual ~FeedProvider();
 
-private:
+  private:
     std::unique_ptr<IFeed> _feeder;
     bool _isVideo;
     bool _isLiveFeed;
     bool _isSfmData;
 };
 
-} // namespace dataio
-} // namespace aliceVision
+}  // namespace dataio
+}  // namespace aliceVision

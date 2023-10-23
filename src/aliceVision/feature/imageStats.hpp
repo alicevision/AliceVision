@@ -9,7 +9,6 @@
 
 #include <aliceVision/image/Image.hpp>
 
-
 namespace aliceVision {
 namespace feature {
 

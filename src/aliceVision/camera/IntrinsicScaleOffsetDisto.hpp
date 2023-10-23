@@ -22,28 +22,29 @@ namespace camera {
  */
 class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
 {
-public:
+  public:
+    IntrinsicScaleOffsetDisto(unsigned int w,
+                              unsigned int h,
+                              double scaleX,
+                              double scaleY,
+                              double offsetX,
+                              double offsetY,
+                              std::shared_ptr<Distortion> distortion = nullptr,
+                              std::shared_ptr<Undistortion> undistortion = nullptr)
+      : IntrinsicScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
+        _pDistortion(distortion),
+        _pUndistortion(undistortion)
+    {}
 
-    IntrinsicScaleOffsetDisto(unsigned int w, unsigned int h,
-                                double scaleX, double scaleY,
-                                double offsetX, double offsetY,
-                                std::shared_ptr<Distortion> distortion = nullptr,
-                                std::shared_ptr<Undistortion> undistortion = nullptr) :
-        IntrinsicScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY),
-        _pDistortion(distortion), _pUndistortion(undistortion)
-    {
-    }
-
-    IntrinsicScaleOffsetDisto(const IntrinsicScaleOffsetDisto &other) 
-    : 
-        IntrinsicScaleOffset(other),
+    IntrinsicScaleOffsetDisto(const IntrinsicScaleOffsetDisto& other)
+      : IntrinsicScaleOffset(other),
         _distortionInitializationMode(other._distortionInitializationMode)
     {
         if (other._pDistortion)
         {
             _pDistortion = std::shared_ptr<Distortion>(other._pDistortion->clone());
         }
-        else 
+        else
         {
             _pDistortion = nullptr;
         }
@@ -52,28 +53,19 @@ public:
         {
             _pUndistortion = std::shared_ptr<Undistortion>(other._pUndistortion->clone());
         }
-        else 
+        else
         {
             _pUndistortion = nullptr;
         }
     }
 
-    void assign(const IntrinsicBase& other) override
-    {
-        *this = dynamic_cast<const IntrinsicScaleOffsetDisto&>(other);
-    }
+    void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const IntrinsicScaleOffsetDisto&>(other); }
 
     bool operator==(const IntrinsicBase& otherBase) const override;
 
-    void setDistortionObject(std::shared_ptr<Distortion> object)
-    {
-        _pDistortion = object;
-    }
+    void setDistortionObject(std::shared_ptr<Distortion> object) { _pDistortion = object; }
 
-    bool hasDistortion() const override
-    {
-        return _pDistortion != nullptr || _pUndistortion != nullptr;
-    }
+    bool hasDistortion() const override { return _pDistortion != nullptr || _pUndistortion != nullptr; }
 
     /**
      * @brief Create a new point from a given point by adding distortion.
@@ -92,7 +84,7 @@ public:
         }
         return p;
     }
-  
+
     /**
      * @brief Create a new point from a given point by removing distortion.
      * @param[in] p Point in the camera plane.
@@ -128,13 +120,14 @@ public:
 
     std::vector<double> getDistortionParams() const
     {
-        if (!_pDistortion) {
+        if (!_pDistortion)
+        {
             return std::vector<double>();
         }
         return _pDistortion->getParameters();
     }
 
-    void setDistortionParams(const std::vector<double> & distortionParams)
+    void setDistortionParams(const std::vector<double>& distortionParams)
     {
         int expected = 0;
         if (_pDistortion != nullptr)
@@ -226,7 +219,7 @@ public:
         return _pDistortion->getUndistortedRadius(max_radius);
     }
 
-    Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt) const
+    Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2& pt) const
     {
         if (this->_pDistortion == nullptr)
         {
@@ -235,7 +228,7 @@ public:
         return this->_pDistortion->getDerivativeAddDistoWrtPt(pt);
     }
 
-    Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt) const
+    Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2& pt) const
     {
         if (this->_pDistortion == nullptr)
         {
@@ -245,7 +238,7 @@ public:
         return this->_pDistortion->getDerivativeRemoveDistoWrtPt(pt);
     }
 
-    Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt) const
+    Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2& pt) const
     {
         if (this->_pDistortion == nullptr)
         {
@@ -255,7 +248,7 @@ public:
         return this->_pDistortion->getDerivativeAddDistoWrtDisto(pt);
     }
 
-    Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt) const
+    Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2& pt) const
     {
         if (this->_pDistortion == nullptr)
         {
@@ -278,35 +271,22 @@ public:
      * @brief Get the intrinsic disto initialization mode
      * @return The intrinsic disto initialization mode
      */
-    inline EInitMode getDistortionInitializationMode() const override
-    {
-        return _distortionInitializationMode;
-    }
+    inline EInitMode getDistortionInitializationMode() const override { return _distortionInitializationMode; }
 
-    std::shared_ptr<Distortion> getDistortion() const
-    {
-        return _pDistortion;
-    }
+    std::shared_ptr<Distortion> getDistortion() const { return _pDistortion; }
 
     ~IntrinsicScaleOffsetDisto() override = default;
 
-    void setUndistortionObject(std::shared_ptr<Undistortion> object)
-    {
-        _pUndistortion = object;
-    }
+    void setUndistortionObject(std::shared_ptr<Undistortion> object) { _pUndistortion = object; }
 
-    std::shared_ptr<Undistortion> getUndistortion() const
-    {
-        return _pUndistortion;
-    }
+    std::shared_ptr<Undistortion> getUndistortion() const { return _pUndistortion; }
 
-protected:
+  protected:
     void throwSetDistortionParamsCountError(std::size_t expected, std::size_t received)
     {
         std::stringstream s;
         s << "IntrinsicScaleOffsetDisto::setDistortionParams*: "
-        << "wrong number of distortion parameters (expected: "
-        << expected << ", given:" << received << ").";
+          << "wrong number of distortion parameters (expected: " << expected << ", given:" << received << ").";
         throw std::runtime_error(s.str());
     }
 
@@ -317,5 +297,5 @@ protected:
     EInitMode _distortionInitializationMode = EInitMode::NONE;
 };
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

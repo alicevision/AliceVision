@@ -20,25 +20,26 @@ namespace camera {
 
 /**
  * @brief Basis class for all intrinsic parameters of a camera.
- * 
+ *
  * Store the image size & define all basis optical modelization of a camera
  */
 class IntrinsicBase
 {
-public:
-    explicit IntrinsicBase(unsigned int width, unsigned int height, const std::string& serialNumber = "") :
-        _w(width), _h(height), _serialNumber(serialNumber)
-    {
-    }
+  public:
+    explicit IntrinsicBase(unsigned int width, unsigned int height, const std::string& serialNumber = "")
+      : _w(width),
+        _h(height),
+        _serialNumber(serialNumber)
+    {}
 
     virtual ~IntrinsicBase() = default;
-  
+
     /**
      * @brief Get the lock state of the intrinsic
      * @return true if the intrinsic is locked
      */
     inline bool isLocked() const { return _locked; }
-  
+
     /**
      * @brief Get the intrinsic image width
      * @return The intrinsic image width
@@ -103,7 +104,7 @@ public:
      * @param[in] applyDistortion If true apply distrortion if any
      * @return The 2d projection in the camera plane
      */
-    virtual Vec2 project(const Eigen::Matrix4d & pose, const Vec4& pt3D, bool applyDistortion = true) const = 0;
+    virtual Vec2 project(const Eigen::Matrix4d& pose, const Vec4& pt3D, bool applyDistortion = true) const = 0;
 
     /**
      * @brief Back-projection of a 2D point at a specific depth into a 3D point
@@ -115,18 +116,9 @@ public:
      */
     Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const;
 
-    Vec4 getCartesianfromSphericalCoordinates(const Vec3 & pt);
+    Vec4 getCartesianfromSphericalCoordinates(const Vec3& pt);
 
-    Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(const Vec3 & pt);
-
-    /**
-     * @brief get derivative of a projection of a 3D point into the camera plane
-     * @param[in] pose The pose
-     * @param[in] pt3D The 3d point
-     * @param[in] applyDistortion If true apply distrortion if any
-     * @return The projection jacobian  wrt pose
-     */
-    virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const Eigen::Matrix4d & pose, const Vec4& pt3D) const = 0;
+    Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(const Vec3& pt);
 
     /**
      * @brief get derivative of a projection of a 3D point into the camera plane
@@ -135,7 +127,16 @@ public:
      * @param[in] applyDistortion If true apply distrortion if any
      * @return The projection jacobian  wrt pose
      */
-    virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d & pose, const Vec4& pt3D) const = 0;
+    virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
+
+    /**
+     * @brief get derivative of a projection of a 3D point into the camera plane
+     * @param[in] pose The pose
+     * @param[in] pt3D The 3d point
+     * @param[in] applyDistortion If true apply distrortion if any
+     * @return The projection jacobian  wrt pose
+     */
+    virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
 
     /**
      * @brief get derivative of a projection of a 3D point into the camera plane
@@ -144,7 +145,7 @@ public:
      * @param[in] applyDistortion If true apply distrortion if any
      * @return The projection jacobian  wrt point
      */
-    virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const Eigen::Matrix4d & pose, const Vec4& pt3D) const = 0;
+    virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
 
     /**
      * @brief get derivative of a projection of a 3D point into the camera plane
@@ -162,7 +163,7 @@ public:
      * @param[in] applyDistortion If true apply distrortion if any
      * @return The projection jacobian wrt params
      */
-    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const Eigen::Matrix4d & pos, const Vec4& pt3D) const = 0;
+    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const Eigen::Matrix4d& pos, const Vec4& pt3D) const = 0;
 
     /**
      * @brief Compute the residual between the 3D projected point X and an image observation x
@@ -189,7 +190,7 @@ public:
         assert(X.cols() == x.cols());
         const std::size_t numPts = x.cols();
         Mat2X residuals = Mat2X::Zero(2, numPts);
-        for(std::size_t i = 0; i < numPts; ++i)
+        for (std::size_t i = 0; i < numPts; ++i)
         {
             residuals.col(i) = residual(pose, ((const Vec3&)X.col(i)).homogeneous(), x.col(i));
         }
@@ -199,12 +200,12 @@ public:
     /**
      * @brief lock the intrinsic
      */
-    inline void lock() { _locked  = true; }
+    inline void lock() { _locked = true; }
 
     /**
      * @brief unlock the intrinsic
      */
-    inline void unlock() { _locked  = false; }
+    inline void unlock() { _locked = false; }
 
     /**
      * @brief Set intrinsic image width
@@ -229,7 +230,7 @@ public:
      * @param[in] height The sensor height
      */
     inline void setSensorHeight(double height) { _sensorHeight = height; }
-  
+
     /**
      * @brief Set the serial number
      * @param[in] serialNumber The serial number
@@ -292,7 +293,7 @@ public:
      * @param[in] inputVersion input source version (for optional transformation)
      * @return true if done
      */
-    virtual bool importFromParams(const std::vector<double>& params, const Version & inputVersion) = 0;
+    virtual bool importFromParams(const std::vector<double>& params, const Version& inputVersion) = 0;
 
     /**
      * @brief Transform a point from the camera plane to the image plane
@@ -372,24 +373,24 @@ public:
      * @param ray input ray to check for visibility
      * @return true if this ray is visible theorically
      */
-    virtual bool isVisibleRay(const Vec3 & ray) const = 0;
+    virtual bool isVisibleRay(const Vec3& ray) const = 0;
 
     /**
      * @brief Return true if these pixel coordinates should be visible in the image
      * @param pix input pixel coordinates to check for visibility
      * @return true if visible
      */
-    virtual bool isVisible(const Vec2 & pix) const;
+    virtual bool isVisible(const Vec2& pix) const;
 
     /**
      * @brief Return true if these pixel coordinates should be visible in the image
      * @param pix input pixel coordinates to check for visibility
      * @return true if visible
      */
-    virtual bool isVisible(const Vec2f & pix) const;
+    virtual bool isVisible(const Vec2f& pix) const;
 
     /**
-     * @brief Assuming the distortion is a function of radius, estimate the 
+     * @brief Assuming the distortion is a function of radius, estimate the
      * maximal undistorted radius for a range of distorted radius.
      * @param min_radius the minimal radius to consider
      * @param max_radius the maximal radius to consider
@@ -414,9 +415,9 @@ public:
      * @param pt the input point
      * @return a point on the unit sphere
      */
-    virtual Vec3 toUnitSphere(const Vec2 & pt) const = 0;
+    virtual Vec3 toUnitSphere(const Vec2& pt) const = 0;
 
-protected:
+  protected:
     /// initialization mode
     EInitMode _initializationMode = EInitMode::NONE;
     /// intrinsic lock
@@ -426,7 +427,6 @@ protected:
     double _sensorWidth = 36.0;
     double _sensorHeight = 24.0;
     std::string _serialNumber;
-
 };
 
 /**
@@ -437,9 +437,7 @@ protected:
  * @param[in] x Point in image
  * @return The unit vector in 3D space pointing out from the camera to the point
  */
-inline Vec3 applyIntrinsicExtrinsic(const geometry::Pose3& pose,
-                                    const IntrinsicBase* intrinsic,
-                                    const Vec2& x)
+inline Vec3 applyIntrinsicExtrinsic(const geometry::Pose3& pose, const IntrinsicBase* intrinsic, const Vec2& x)
 {
     // x = (u, v, 1.0)  // image coordinates
     // X = R.t() * K.inv() * x + C // Camera world point
@@ -458,7 +456,7 @@ inline double angleBetweenRays(const Vec3& ray1, const Vec3& ray2)
 {
     const double mag = ray1.norm() * ray2.norm();
     const double dotAngle = ray1.dot(ray2);
-    return radianToDegree(acos(clamp(dotAngle/mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
+    return radianToDegree(acos(clamp(dotAngle / mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
 }
 
 /**
@@ -490,21 +488,19 @@ inline double angleBetweenRays(const geometry::Pose3& pose1,
  * @param[in] pt3D The 3d point
  * @return The angle (degree) between two poses and a 3D point.
  */
-inline double angleBetweenRays(const geometry::Pose3& pose1,
-                               const geometry::Pose3& pose2,
-                               const Vec3& pt3D)
+inline double angleBetweenRays(const geometry::Pose3& pose1, const geometry::Pose3& pose2, const Vec3& pt3D)
 {
     const Vec3 ray1 = pt3D - pose1.center();
     const Vec3 ray2 = pt3D - pose2.center();
     return angleBetweenRays(ray1, ray2);
 }
 
-} // namespace camera
+}  // namespace camera
 
-template <size_t M, size_t N>
-Eigen::Matrix<double, M*N, M*N> getJacobian_At_wrt_A()
+template<size_t M, size_t N>
+Eigen::Matrix<double, M * N, M * N> getJacobian_At_wrt_A()
 {
-    Eigen::Matrix<double, M*N, M*N> ret;
+    Eigen::Matrix<double, M * N, M * N> ret;
 
     /** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
     /** vec(IAtB) = kron(B.t, I) * vec(A) */
@@ -527,10 +523,10 @@ Eigen::Matrix<double, M*N, M*N> getJacobian_At_wrt_A()
     return ret;
 }
 
-template <size_t M, size_t N, size_t K>
-Eigen::Matrix<double, M*K, M*N> getJacobian_AB_wrt_A(const Eigen::Matrix<double, M , N> & A, const Eigen::Matrix<double, N, K> & B)
+template<size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M * K, M * N> getJacobian_AB_wrt_A(const Eigen::Matrix<double, M, N>& A, const Eigen::Matrix<double, N, K>& B)
 {
-    Eigen::Matrix<double, M*K, M*N> ret;
+    Eigen::Matrix<double, M * K, M * N> ret;
 
     /** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
     /** vec(IAB) = kron(B.t, I) * vec(A) */
@@ -552,16 +548,16 @@ Eigen::Matrix<double, M*K, M*N> getJacobian_AB_wrt_A(const Eigen::Matrix<double,
     return ret;
 }
 
-template <size_t M, size_t N, size_t K>
-Eigen::Matrix<double, M*K, M*N> getJacobian_AtB_wrt_A(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, M, K> & B)
+template<size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M * K, M * N> getJacobian_AtB_wrt_A(const Eigen::Matrix<double, M, N>& A, const Eigen::Matrix<double, M, K>& B)
 {
     return getJacobian_AB_wrt_A<M, N, K>(A.transpose(), B) * getJacobian_At_wrt_A<M, N>();
 }
 
-template <size_t M, size_t N, size_t K>
-Eigen::Matrix<double, M*K, N*K> getJacobian_AB_wrt_B(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, N, K> & B)
+template<size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M * K, N * K> getJacobian_AB_wrt_B(const Eigen::Matrix<double, M, N>& A, const Eigen::Matrix<double, N, K>& B)
 {
-    Eigen::Matrix<double, M*K, N*K> ret;
+    Eigen::Matrix<double, M * K, N * K> ret;
 
     /** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
     /** vec(ABI) = kron(I, A) * vec(B) */
@@ -578,4 +574,4 @@ Eigen::Matrix<double, M*K, N*K> getJacobian_AB_wrt_B(const Eigen::Matrix<double,
     return ret;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

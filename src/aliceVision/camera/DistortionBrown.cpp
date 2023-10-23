@@ -13,7 +13,7 @@ namespace camera {
 
 Vec2 DistortionBrown::distoFunction(const std::vector<double>& params, const Vec2& p)
 {
-    const double& k1 = params[0], k2 = params[1], k3 = params[2], t1 = params[3], t2 = params[4];
+    const double &k1 = params[0], k2 = params[1], k3 = params[2], t1 = params[3], t2 = params[4];
     const double r2 = p(0) * p(0) + p(1) * p(1);
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
@@ -25,10 +25,7 @@ Vec2 DistortionBrown::distoFunction(const std::vector<double>& params, const Vec
     return d;
 }
 
-Vec2 DistortionBrown::addDistortion(const Vec2& p) const
-{
-    return (p + distoFunction(_distortionParams, p));
-}
+Vec2 DistortionBrown::addDistortion(const Vec2& p) const { return (p + distoFunction(_distortionParams, p)); }
 
 Vec2 DistortionBrown::removeDistortion(const Vec2& p) const
 {
@@ -43,5 +40,5 @@ Vec2 DistortionBrown::removeDistortion(const Vec2& p) const
     return p_u;
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

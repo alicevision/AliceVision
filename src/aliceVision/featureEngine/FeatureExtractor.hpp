@@ -13,21 +13,14 @@ namespace featureEngine {
 
 class FeatureExtractorViewJob
 {
-public:
-    FeatureExtractorViewJob(const sfmData::View& view,
-                            const std::string& outputFolder);
+  public:
+    FeatureExtractorViewJob(const sfmData::View& view, const std::string& outputFolder);
 
     ~FeatureExtractorViewJob();
 
-    bool useGPU() const
-    {
-        return !_gpuImageDescriberIndexes.empty();
-    }
+    bool useGPU() const { return !_gpuImageDescriberIndexes.empty(); }
 
-    bool useCPU() const
-    {
-        return !_cpuImageDescriberIndexes.empty();
-    }
+    bool useCPU() const { return !_cpuImageDescriberIndexes.empty(); }
 
     std::string getFeaturesPath(feature::EImageDescriberType imageDescriberType) const
     {
@@ -39,26 +32,18 @@ public:
         return _outputBasename + "." + EImageDescriberType_enumToString(imageDescriberType) + ".desc";
     }
 
-    void setImageDescribers(
-            const std::vector<std::shared_ptr<feature::ImageDescriber>>& imageDescribers);
+    void setImageDescribers(const std::vector<std::shared_ptr<feature::ImageDescriber>>& imageDescribers);
 
-    const sfmData::View& view() const
-    {
-        return _view;
-    }
+    const sfmData::View& view() const { return _view; }
 
-    std::size_t memoryConsuption() const
-    {
-        return _memoryConsuption;
-    }
+    std::size_t memoryConsuption() const { return _memoryConsuption; }
 
     const std::vector<std::size_t>& imageDescriberIndexes(bool useGPU) const
     {
-        return useGPU ? _gpuImageDescriberIndexes
-                      : _cpuImageDescriberIndexes;
+        return useGPU ? _gpuImageDescriberIndexes : _cpuImageDescriberIndexes;
     }
 
-private:
+  private:
     const sfmData::View& _view;
     std::size_t _memoryConsuption = 0;
     std::string _outputBasename;
@@ -68,39 +53,33 @@ private:
 
 class FeatureExtractor
 {
-public:
-
+  public:
     explicit FeatureExtractor(const sfmData::SfMData& sfmData);
     ~FeatureExtractor();
 
     void setRange(int rangeStart, int rangeSize)
     {
-      _rangeStart = rangeStart;
-      _rangeSize = rangeSize;
+        _rangeStart = rangeStart;
+        _rangeSize = rangeSize;
     }
 
     void setMasksFolder(const std::string& folder, const std::string& ext, bool invert)
     {
-      _masksFolder = folder;
-      _maskExtension = ext;
-      _maskInvert = invert;
+        _masksFolder = folder;
+        _maskExtension = ext;
+        _maskInvert = invert;
     }
 
-    void setOutputFolder(const std::string& folder)
-    {
-      _outputFolder = folder;
-    }
+    void setOutputFolder(const std::string& folder) { _outputFolder = folder; }
 
-    void addImageDescriber(std::shared_ptr<feature::ImageDescriber>& imageDescriber)
-    {
-      _imageDescribers.push_back(imageDescriber);
-    }
+    void addImageDescriber(std::shared_ptr<feature::ImageDescriber>& imageDescriber) { _imageDescribers.push_back(imageDescriber); }
 
-    void process(const HardwareContext & hcontext, const image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB);
+    void process(const HardwareContext& hcontext, const image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB);
 
-private:
-
-    void computeViewJob(const FeatureExtractorViewJob& job, bool useGPU, const image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB);
+  private:
+    void computeViewJob(const FeatureExtractorViewJob& job,
+                        bool useGPU,
+                        const image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB);
 
     const sfmData::SfMData& _sfmData;
     std::vector<std::shared_ptr<feature::ImageDescriber>> _imageDescribers;
@@ -112,5 +91,5 @@ private:
     int _rangeSize = -1;
 };
 
-} // namespace featureEngine
-} // namespace aliceVision
+}  // namespace featureEngine
+}  // namespace aliceVision

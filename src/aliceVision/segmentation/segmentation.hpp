@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <vector>
-#include <string> 
+#include <string>
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/types.hpp>
@@ -27,11 +27,8 @@ struct ScoredLabel
 
 class Segmentation
 {
-public:
-    const std::vector<std::string> & getClasses() 
-    {
-        return _parameters.classes;
-    }
+  public:
+    const std::vector<std::string>& getClasses() { return _parameters.classes; }
 
     struct Parameters
     {
@@ -44,8 +41,9 @@ public:
         double overlapRatio;
     };
 
-public:
-    Segmentation(const Parameters & parameters) : _parameters(parameters)
+  public:
+    Segmentation(const Parameters& parameters)
+      : _parameters(parameters)
     {
         if (!initialize())
         {
@@ -53,28 +51,24 @@ public:
         }
     }
 
-    virtual ~Segmentation()
-    {
-        terminate();
-    }
+    virtual ~Segmentation() { terminate(); }
 
     /**
      * Process an input image to estimate segmentation
      * @param labels the labels image resulting from the process
      * @param source is the input image to process
      */
-    bool processImage(image::Image<IndexT> &labels, const image::Image<image::RGBfColor> & source);
+    bool processImage(image::Image<IndexT>& labels, const image::Image<image::RGBfColor>& source);
 
-private:
-
+  private:
     /**
      * Onnx creation code
-    */
+     */
     bool initialize();
-    
+
     /**
      * Onnx destruction code
-    */
+     */
     bool terminate();
 
     /**
@@ -82,30 +76,30 @@ private:
      * @param labels the output label image
      * @param source the input image to process
      */
-    bool tiledProcess(image::Image<IndexT> &labels, const image::Image<image::RGBfColor> & source);
+    bool tiledProcess(image::Image<IndexT>& labels, const image::Image<image::RGBfColor>& source);
 
     /**
      * Transform model output to a label image
      * @param labels the output labels imaage
      * @param modeloutput the model output vector
      */
-    bool labelsFromModelOutput(image::Image<ScoredLabel> & labels, const std::vector<float> & modelOutput);
+    bool labelsFromModelOutput(image::Image<ScoredLabel>& labels, const std::vector<float>& modelOutput);
 
     /**
      * Process effectively a buffer of the model input size
      * param labels the output labels
      * @param source the source tile
      */
-    bool processTile(image::Image<ScoredLabel> & labels, const image::Image<image::RGBfColor>::Base & source);
+    bool processTile(image::Image<ScoredLabel>& labels, const image::Image<image::RGBfColor>::Base& source);
 
-    /**
-     * Process effectively a buffer of the model input size
-     * param labels the output labels
-     * @param source the source tile
-     */
-    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    bool processTileGPU(image::Image<ScoredLabel> & labels, const image::Image<image::RGBfColor>::Base & source);
-    #endif
+/**
+ * Process effectively a buffer of the model input size
+ * param labels the output labels
+ * @param source the source tile
+ */
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+    bool processTileGPU(image::Image<ScoredLabel>& labels, const image::Image<image::RGBfColor>::Base& source);
+#endif
 
     /**
      * Merge tile labels with global labels image
@@ -114,20 +108,20 @@ private:
      * @param tileX the position of the tile in the global image
      * @param tileY the position of the tile in the global image
      */
-    bool mergeLabels(image::Image<ScoredLabel> & labels, image::Image<ScoredLabel> & tileLabels, int tileX, int tileY);
+    bool mergeLabels(image::Image<ScoredLabel>& labels, image::Image<ScoredLabel>& tileLabels, int tileX, int tileY);
 
-protected:
+  protected:
     Parameters _parameters;
     std::unique_ptr<Ort::Env> _ortEnvironment;
     std::unique_ptr<Ort::Session> _ortSession;
-    
+
     std::vector<float> _output;
 
-    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    void * _cudaOutput;
-    void * _cudaInput;
-    #endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+    void* _cudaOutput;
+    void* _cudaInput;
+#endif
 };
 
-} //aliceVision
-} //segmentation
+}  // namespace segmentation
+}  // namespace aliceVision

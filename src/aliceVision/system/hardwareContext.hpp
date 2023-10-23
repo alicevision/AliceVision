@@ -9,50 +9,34 @@
 #include "Logger.hpp"
 #include "Timer.hpp"
 
-
 namespace aliceVision {
 
 class HardwareContext
 {
-public:
+  public:
     void displayHardware();
 
-    size_t getUserMaxMemoryAvailable() const
-    {
-        return _maxUserMemoryAvailable;
-    }
+    size_t getUserMaxMemoryAvailable() const { return _maxUserMemoryAvailable; }
 
-    void setUserMaxMemoryAvailable(size_t val)
-    {
-        _maxUserMemoryAvailable = val;
-    }
+    void setUserMaxMemoryAvailable(size_t val) { _maxUserMemoryAvailable = val; }
 
-    unsigned int getUserMaxCoresAvailable() const
-    {
-        return _maxUserCoresAvailable;
-    }
+    unsigned int getUserMaxCoresAvailable() const { return _maxUserCoresAvailable; }
 
-    void setUserMaxCoresAvailable(unsigned int val)
-    {
-        _maxUserCoresAvailable = val;
-    }
+    void setUserMaxCoresAvailable(unsigned int val) { _maxUserCoresAvailable = val; }
 
-    void setUserCoresLimit(unsigned int coresLimit)
-    {
-        _limitUserCores = coresLimit;
-    }
+    void setUserCoresLimit(unsigned int coresLimit) { _limitUserCores = coresLimit; }
 
     unsigned int getMaxThreads() const;
 
     /**
-     * @brief compute the maximum memory available 
+     * @brief compute the maximum memory available
      * @return the size in bytes
      */
     size_t getMaxMemory() const;
 
-private:
+  private:
     /**
-     * @brief This is the maximum memory available 
+     * @brief This is the maximum memory available
      * This information is passed to the application through command line parameters
      * if we want to override the system defined information (E.g. cgroups)
      */
@@ -72,4 +56,4 @@ private:
     unsigned int _limitUserCores = std::numeric_limits<unsigned int>::max();
 };
 
-}
+}  // namespace aliceVision

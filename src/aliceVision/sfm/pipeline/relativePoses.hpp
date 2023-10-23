@@ -9,51 +9,47 @@
 #include <boost/json.hpp>
 #include <aliceVision/geometry/lie.hpp>
 
-namespace Eigen
+namespace Eigen {
+template<typename T, int M, int N>
+Eigen::Matrix<T, M, N> tag_invoke(boost::json::value_to_tag<Eigen::Matrix<T, M, N>>, boost::json::value const& jv)
 {
-    template <typename T, int M, int N>
-    Eigen::Matrix<T, M, N> tag_invoke(boost::json::value_to_tag<Eigen::Matrix<T, M, N>>, boost::json::value const& jv)
+    Eigen::Matrix<T, M, N> ret;
+
+    std::vector<T> buf = boost::json::value_to<std::vector<T>>(jv);
+
+    int pos = 0;
+    for (int i = 0; i < M; i++)
     {
-        Eigen::Matrix<T, M, N> ret;
-        
-        std::vector<T> buf = boost::json::value_to<std::vector<T>>(jv);
-
-        int pos = 0;
-        for (int i = 0; i < M; i ++)
+        for (int j = 0; j < N; j++)
         {
-            for (int j = 0; j < N; j++)
-            {
-                ret(i, j) = buf[pos];
-                pos++;
-            }
+            ret(i, j) = buf[pos];
+            pos++;
         }
-
-        return ret;
     }
 
-    template <typename T, int M, int N>
-    void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, Eigen::Matrix<T, M, N> const& input)
-    {
-        std::vector<T> buf;
-
-        for (int i = 0; i < M; i ++)
-        {
-            for (int j = 0; j < N; j++)
-            {
-                buf.push_back(input(i, j));
-            }
-        }
-
-
-        jv = boost::json::value_from<std::vector<T>>(std::move(buf));
-    }
-
+    return ret;
 }
 
-namespace aliceVision
+template<typename T, int M, int N>
+void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, Eigen::Matrix<T, M, N> const& input)
 {
-namespace sfm
-{
+    std::vector<T> buf;
+
+    for (int i = 0; i < M; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            buf.push_back(input(i, j));
+        }
+    }
+
+    jv = boost::json::value_from<std::vector<T>>(std::move(buf));
+}
+
+}  // namespace Eigen
+
+namespace aliceVision {
+namespace sfm {
 
 struct ReconstructedPair
 {
@@ -64,16 +60,13 @@ struct ReconstructedPair
     double score;
 };
 
-
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, sfm::ReconstructedPair const& input)
 {
-    jv = {
-        {"reference", input.reference}, 
-        {"next", input.next}, 
-        {"R", boost::json::value_from(SO3::logm(input.R))}, 
-        {"t", boost::json::value_from(input.t)},
-        {"score", boost::json::value_from(input.score)}
-    };
+    jv = {{"reference", input.reference},
+          {"next", input.next},
+          {"R", boost::json::value_from(SO3::logm(input.R))},
+          {"t", boost::json::value_from(input.t)},
+          {"score", boost::json::value_from(input.score)}};
 }
 
 ReconstructedPair tag_invoke(boost::json::value_to_tag<ReconstructedPair>, boost::json::value const& jv)
@@ -91,5 +84,5 @@ ReconstructedPair tag_invoke(boost::json::value_to_tag<ReconstructedPair>, boost
     return ret;
 }
 
-}
-}
+}  // namespace sfm
+}  // namespace aliceVision

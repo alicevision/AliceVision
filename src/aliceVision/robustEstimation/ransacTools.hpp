@@ -11,7 +11,7 @@
 #include <cmath>
 
 namespace aliceVision {
-namespace robustEstimation{
+namespace robustEstimation {
 
 /**
  * @brief Number of samplings to have at least \a minProba probability of absence of
@@ -23,13 +23,13 @@ namespace robustEstimation{
  */
 inline std::size_t getNumSamples(double minProba, double outlierRatio, std::size_t sampleSize)
 {
-  return static_cast<std::size_t>(std::log(1.-minProba) / std::log(1.-std::pow(1.-outlierRatio, static_cast<int>(sampleSize))));
+    return static_cast<std::size_t>(std::log(1. - minProba) / std::log(1. - std::pow(1. - outlierRatio, static_cast<int>(sampleSize))));
 }
 
 inline std::size_t iterationsRequired(std::size_t min_samples, double outliersProbability, double inlierRatio)
 {
-  return static_cast<std::size_t>(std::log(outliersProbability) / std::log(1.0 - std::pow(inlierRatio, static_cast<int>(min_samples))));
+    return static_cast<std::size_t>(std::log(outliersProbability) / std::log(1.0 - std::pow(inlierRatio, static_cast<int>(min_samples))));
 }
 
-} // namespace robustEstimation
-} // namespace aliceVision
+}  // namespace robustEstimation
+}  // namespace aliceVision

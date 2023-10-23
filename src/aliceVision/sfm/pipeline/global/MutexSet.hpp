@@ -14,35 +14,35 @@ namespace aliceVision {
 namespace sfm {
 
 /// ThreadSafe Set thanks to a mutex
-template <typename T>
-class MutexSet {
+template<typename T>
+class MutexSet
+{
+    typedef std::mutex mutexT;
+    typedef std::lock_guard<mutexT> lockGuardT;
 
-  typedef std::mutex mutexT;
-  typedef std::lock_guard<mutexT> lockGuardT;
+  public:
+    void insert(const T& value)
+    {
+        lockGuardT guard(_mutex);
+        _set.insert(value);
+    }
 
-public:
-  void insert(const T& value)
-  {
-    lockGuardT guard(_mutex);
-    _set.insert(value);
-  }
+    int count(const T& value) const
+    {
+        lockGuardT guard(_mutex);
+        return _set.count(value);
+    }
 
-  int count(const T& value) const
-  {
-    lockGuardT guard(_mutex);
-    return _set.count(value);
-  }
+    std::size_t size() const
+    {
+        lockGuardT guard(_mutex);
+        return _set.size();
+    }
 
-  std::size_t size() const
-  {
-    lockGuardT guard(_mutex);
-    return _set.size();
-  }
-
-private:
-  std::set<T> _set;
-  mutable mutexT _mutex;
+  private:
+    std::set<T> _set;
+    mutable mutexT _mutex;
 };
 
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

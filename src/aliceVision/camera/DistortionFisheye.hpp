@@ -14,40 +14,31 @@ namespace camera {
 
 class DistortionFisheye : public Distortion
 {
-public:
-    DistortionFisheye()
-    {
-        _distortionParams = {0.0, 0.0, 0.0, 0.0};
-    }
+  public:
+    DistortionFisheye() { _distortionParams = {0.0, 0.0, 0.0, 0.0}; }
 
-    DistortionFisheye(double p1, double p2, double p3, double p4)
-    {
-        _distortionParams = {p1, p2, p3, p4};
-    }
+    DistortionFisheye(double p1, double p2, double p3, double p4) { _distortionParams = {p1, p2, p3, p4}; }
 
     EDISTORTION getType() const override { return EDISTORTION::DISTORTION_FISHEYE; }
 
-    DistortionFisheye* clone() const override
-    {
-        return new DistortionFisheye(*this);
-    }
+    DistortionFisheye* clone() const override { return new DistortionFisheye(*this); }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-    Vec2 addDistortion(const Vec2 & p) const override;
+    Vec2 addDistortion(const Vec2& p) const override;
 
-    Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2 & p) const override;
+    Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2& p) const override;
 
-    Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const override;
+    Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2& p) const override;
 
     /// Remove distortion (return p' such that disto(p') = p)
     Vec2 removeDistortion(const Vec2& p) const override;
 
-    Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override;
+    Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2& p) const override;
 
-    Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override;
+    Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2& p) const override;
 
     ~DistortionFisheye() override = default;
 };
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

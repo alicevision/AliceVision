@@ -35,14 +35,13 @@
 #define ALICEVISION_LOG_ERROR(a) ALICEVISION_LOG(ALICEVISION_LOG_ERROR_OBJ, a)
 #define ALICEVISION_LOG_FATAL(a) ALICEVISION_LOG(ALICEVISION_LOG_FATAL_OBJ, a)
 
-#define ALICEVISION_THROW(EXCEPTION, x) \
-{ \
-  std::stringstream s; \
-  s << x; \
-  throw EXCEPTION(s.str()); \
-}
+#define ALICEVISION_THROW(EXCEPTION, x)                                                                                                              \
+    {                                                                                                                                                \
+        std::stringstream s;                                                                                                                         \
+        s << x;                                                                                                                                      \
+        throw EXCEPTION(s.str());                                                                                                                    \
+    }
 #define ALICEVISION_THROW_ERROR(x) ALICEVISION_THROW(std::runtime_error, x)
-
 
 namespace aliceVision {
 namespace system {
@@ -77,47 +76,45 @@ std::istream& operator>>(std::istream& in, EVerboseLevel& verboseLevel);
 
 class Logger
 {
-public:
+  public:
+    /**
+     * @brief get Logger instance
+     * @return instance
+     */
+    static std::shared_ptr<Logger> get();
 
-  /**
-   * @brief get Logger instance
-   * @return instance
-   */
-  static std::shared_ptr<Logger> get();
+    /**
+     * @brief get default verbose level
+     * @return default verbose level
+     */
+    static EVerboseLevel getDefaultVerboseLevel();
 
-  /**
-   * @brief get default verbose level
-   * @return default verbose level
-   */
-  static EVerboseLevel getDefaultVerboseLevel();
+    /**
+     * @brief set Logger level with EVerboseLevel enum
+     * @param level EVerboseLevel enum
+     */
+    void setLogLevel(const EVerboseLevel level);
 
-  /**
-   * @brief set Logger level with EVerboseLevel enum
-   * @param level EVerboseLevel enum
-   */
-  void setLogLevel(const EVerboseLevel level);
+    /**
+     * @brief set Logger level with string
+     * @param level string
+     */
+    void setLogLevel(const std::string& level);
 
-  /**
-   * @brief set Logger level with string
-   * @param level string
-   */
-  void setLogLevel(const std::string& level);
+  private:
+    /**
+     * @brief Logger private constructor
+     */
+    Logger();
 
-private:
+    /**
+     * @brief setLogLevel with boost severity level
+     * @param level boost severity level
+     */
+    void setLogLevel(const boost::log::trivial::severity_level level);
 
-  /**
-   * @brief Logger private constructor
-   */
-  Logger();
-
-  /**
-   * @brief setLogLevel with boost severity level
-   * @param level boost severity level
-   */
-  void setLogLevel(const boost::log::trivial::severity_level level);
-
-  static std::shared_ptr<Logger> _instance;
+    static std::shared_ptr<Logger> _instance;
 };
 
-} // namespace system
-} // namespace aliceVision
+}  // namespace system
+}  // namespace aliceVision

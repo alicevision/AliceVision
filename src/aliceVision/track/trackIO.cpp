@@ -11,10 +11,7 @@ namespace track {
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, aliceVision::track::Track const& input)
 {
-    jv = {
-    	{"descType", EImageDescriberType_enumToString(input.descType)} ,
-        {"featPerView", boost::json::value_from(input.featPerView)}
-    };
+    jv = {{"descType", EImageDescriberType_enumToString(input.descType)}, {"featPerView", boost::json::value_from(input.featPerView)}};
 }
 
 aliceVision::track::Track tag_invoke(boost::json::value_to_tag<aliceVision::track::Track>, boost::json::value const& jv)
@@ -28,5 +25,5 @@ aliceVision::track::Track tag_invoke(boost::json::value_to_tag<aliceVision::trac
     return ret;
 }
 
-} // namespace track
-} // namespace aliceVision
+}  // namespace track
+}  // namespace aliceVision

@@ -38,7 +38,9 @@ extern void cuda_volumeInitialize(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_
  * @param[in] in_volume_dmp the input similarity volume in device memory
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_volumeAdd(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volume_dmp, const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volume_dmp, cudaStream_t stream);
+extern void cuda_volumeAdd(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volume_dmp,
+                           const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volume_dmp,
+                           cudaStream_t stream);
 
 /**
  * @brief Update second best similarity volume uninitialized values with first best volume values.
@@ -46,7 +48,9 @@ extern void cuda_volumeAdd(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volume_
  * @param[out] inout_volSecBestSim_dmp the second best similarity volume in device memory
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_volumeUpdateUninitializedSimilarity(const CudaDeviceMemoryPitched<TSim, 3>& in_volBestSim_dmp, CudaDeviceMemoryPitched<TSim, 3>& inout_volSecBestSim_dmp, cudaStream_t stream);
+extern void cuda_volumeUpdateUninitializedSimilarity(const CudaDeviceMemoryPitched<TSim, 3>& in_volBestSim_dmp,
+                                                     CudaDeviceMemoryPitched<TSim, 3>& inout_volSecBestSim_dmp,
+                                                     cudaStream_t stream);
 
 /**
  * @brief Compute the best / second best similarity volume for the given RC / TC.
@@ -62,14 +66,14 @@ extern void cuda_volumeUpdateUninitializedSimilarity(const CudaDeviceMemoryPitch
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out_volBestSim_dmp, 
+extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out_volBestSim_dmp,
                                          CudaDeviceMemoryPitched<TSim, 3>& out_volSecBestSim_dmp,
                                          const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp,
                                          const int rcDeviceCameraParamsId,
                                          const int tcDeviceCameraParamsId,
                                          const DeviceMipmapImage& rcDeviceMipmapImage,
                                          const DeviceMipmapImage& tcDeviceMipmapImage,
-                                         const SgmParams& sgmParams, 
+                                         const SgmParams& sgmParams,
                                          const Range& depthRange,
                                          const ROI& roi,
                                          cudaStream_t stream);
@@ -88,14 +92,14 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out_v
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp, 
+extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp,
                                         const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
                                         const CudaDeviceMemoryPitched<float3, 2>* in_sgmNormalMap_dmpPtr,
                                         const int rcDeviceCameraParamsId,
                                         const int tcDeviceCameraParamsId,
                                         const DeviceMipmapImage& rcDeviceMipmapImage,
                                         const DeviceMipmapImage& tcDeviceMipmapImage,
-                                        const RefineParams& refineParams, 
+                                        const RefineParams& refineParams,
                                         const Range& depthRange,
                                         const ROI& roi,
                                         cudaStream_t stream);
@@ -117,9 +121,9 @@ extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFilt
                                 CudaDeviceMemoryPitched<TSimAcc, 2>& inout_volSliceAccA_dmp,
                                 CudaDeviceMemoryPitched<TSimAcc, 2>& inout_volSliceAccB_dmp,
                                 CudaDeviceMemoryPitched<TSimAcc, 2>& inout_volAxisAcc_dmp,
-                                const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
+                                const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp,
                                 const DeviceMipmapImage& rcDeviceMipmapImage,
-                                const SgmParams& sgmParams, 
+                                const SgmParams& sgmParams,
                                 const int lastDepthIndex,
                                 const ROI& roi,
                                 cudaStream_t stream);
@@ -138,12 +142,12 @@ extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFilt
  */
 extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthThicknessMap_dmp,
                                          CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthSimMap_dmp,
-                                         const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp, 
-                                         const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
+                                         const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp,
+                                         const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp,
                                          const int rcDeviceCameraParamsId,
-                                         const SgmParams& sgmParams, 
+                                         const SgmParams& sgmParams,
                                          const Range& depthRange,
-                                         const ROI& roi, 
+                                         const ROI& roi,
                                          cudaStream_t stream);
 
 /**
@@ -158,10 +162,10 @@ extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out
  */
 extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_refineDepthSimMap_dmp,
                                        const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
-                                       const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp, 
-                                       const RefineParams& refineParams, 
-                                       const ROI& roi, 
+                                       const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp,
+                                       const RefineParams& refineParams,
+                                       const ROI& roi,
                                        cudaStream_t stream);
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

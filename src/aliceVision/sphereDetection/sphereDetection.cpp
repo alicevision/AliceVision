@@ -73,8 +73,7 @@ void modelExplore(Ort::Session& session)
         ALICEVISION_LOG_DEBUG("  Type : " << inputType);
 
         std::vector<int64_t> inputShape = inputInfo2.GetShape();
-        size_t inputSize =
-            std::accumulate(begin(inputShape), end(inputShape), 1, std::multiplies<float>());
+        size_t inputSize = std::accumulate(begin(inputShape), end(inputShape), 1, std::multiplies<float>());
         ALICEVISION_LOG_DEBUG("  Shape: " << inputShape);
         ALICEVISION_LOG_DEBUG("  Size : " << inputSize);
     }
@@ -98,8 +97,7 @@ void modelExplore(Ort::Session& session)
         ALICEVISION_LOG_DEBUG("  Type: " << outputType);
 
         std::vector<int64_t> outputShape = outputInfo2.GetShape();
-        const size_t outputSize =
-            std::accumulate(begin(outputShape), end(outputShape), 1, std::multiplies<float>());
+        const size_t outputSize = std::accumulate(begin(outputShape), end(outputShape), 1, std::multiplies<float>());
         ALICEVISION_LOG_DEBUG("  Shape: " << outputShape);
         ALICEVISION_LOG_DEBUG("  Size: " << outputSize);
     }
@@ -124,8 +122,7 @@ Prediction predict(Ort::Session& session, const fs::path imagePath, const float 
 
     // Inference on CPU
     // TODO: use GPU
-    Ort::MemoryInfo memoryInfo =
-        Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
+    Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
     // Initialize input tensor
     std::vector<int64_t> inputShape = {1, 3, imageAlice.Height(), imageAlice.Width()};
@@ -135,19 +132,15 @@ Prediction predict(Ort::Session& session, const fs::path imagePath, const float 
 
     // Create input data
     std::vector<Ort::Value> inputData;
-    inputData.push_back(
-        Ort::Value::CreateTensor<float>(
-            memoryInfo, inputTensor.data(), inputSize, inputShape.data(), inputShape.size()
-            )
-    );
+    inputData.push_back(Ort::Value::CreateTensor<float>(memoryInfo, inputTensor.data(), inputSize, inputShape.data(), inputShape.size()));
 
     // Select inputs and outputs
     std::vector<const char*> inputNames{"input"};
     std::vector<const char*> outputNames{"boxes", "scores", "masks"};
 
     // Run the inference
-    auto output = session.Run(Ort::RunOptions{nullptr}, inputNames.data(), inputData.data(), inputNames.size(),
-                              outputNames.data(), outputNames.size());
+    auto output =
+      session.Run(Ort::RunOptions{nullptr}, inputNames.data(), inputData.data(), inputNames.size(), outputNames.data(), outputNames.size());
 
     // Get pointers to outputs
     float* bboxesPtr = output.at(0).GetTensorMutableData<float>();
@@ -158,7 +151,7 @@ Prediction predict(Ort::Session& session, const fs::path imagePath, const float 
     const auto shape = infos.GetShape();
 
     // Get scores of detections
-    std::vector<float> allScores = { scoresPtr, scoresPtr + shape[0] };
+    std::vector<float> allScores = {scoresPtr, scoresPtr + shape[0]};
 
     // Initialize arrays
     std::vector<std::vector<float>> bboxes;
@@ -179,11 +172,10 @@ Prediction predict(Ort::Session& session, const fs::path imagePath, const float 
         }
     }
 
-    return Prediction { bboxes, scores, imageOpencvShape };
+    return Prediction{bboxes, scores, imageOpencvShape};
 }
 
-void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath,
-                     const float minScore)
+void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath, const float minScore)
 {
     // Main tree
     bpt::ptree fileTree;
@@ -234,8 +226,7 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
     bpt::write_json(outputPath.append("detection.json").string(), fileTree);
 }
 
-void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam,
-                           fs::path outputPath)
+void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath)
 {
     // Main tree
     bpt::ptree fileTree;
@@ -262,5 +253,5 @@ void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<flo
     bpt::write_json(outputPath.append("detection.json").string(), fileTree);
 }
 
-}
-}
+}  // namespace sphereDetection
+}  // namespace aliceVision

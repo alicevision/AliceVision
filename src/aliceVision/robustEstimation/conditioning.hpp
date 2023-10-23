@@ -31,12 +31,12 @@ void normalizePoints(const Mat& points, Mat* normalized_points, Mat3* T);
 /**
  * @brief Point conditioning (compute Transformation matrix)
  */
-void preconditionerFromImageSize(int width, int height, Mat3 *T);
+void preconditionerFromImageSize(int width, int height, Mat3* T);
 
 /**
  * @brief Normalize point from image coordinates to [-.5, .5]
  */
 void normalizePointsFromImageSize(const Mat& points, Mat* normalized_points, Mat3* T, int width, int height);
 
-} //namespace robustEstimation
-} //namespace aliceVision
+}  // namespace robustEstimation
+}  // namespace aliceVision

@@ -13,21 +13,16 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
-
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace image {
 
-namespace
-{
-    oiio::ColorConfig colorConfigOCIO(getDefaultColorConfigFilePath());
+namespace {
+oiio::ColorConfig colorConfigOCIO(getDefaultColorConfigFilePath());
 }
 
-oiio::ColorConfig& getGlobalColorConfigOCIO()
-{
-    return colorConfigOCIO;
-}
+oiio::ColorConfig& getGlobalColorConfigOCIO() { return colorConfigOCIO; }
 
 std::string getColorConfigFilePathFromSourceCode()
 {
@@ -45,7 +40,7 @@ std::string getDefaultColorConfigFilePath()
         configOCIOFilePath = std::string(ALICEVISION_OCIO);
         if (fs::exists(configOCIOFilePath))
         {
-            // Check if a sRGB linear color space named "scene-linear Rec.709-sRGB" is present and set as scene_linear role 
+            // Check if a sRGB linear color space named "scene-linear Rec.709-sRGB" is present and set as scene_linear role
             oiio::ColorConfig colorConfig(configOCIOFilePath);
             const std::string linearColorSpace = colorConfig.getColorSpaceNameByRole("scene_linear");
             if (linearColorSpace == "scene-linear Rec.709-sRGB")
@@ -55,9 +50,11 @@ std::string getDefaultColorConfigFilePath()
             }
             else
             {
-                ALICEVISION_LOG_WARNING("ALICEVISION_OCIO configuration file is not valid: '" << configOCIOFilePath << "'.\n"
-                                        "The scene_linear role named \"scene-linear Rec.709-sRGB\" is required.\n"
-                                        "Skip this OCIO configuration file and use the embedded one.");
+                ALICEVISION_LOG_WARNING("ALICEVISION_OCIO configuration file is not valid: '"
+                                        << configOCIOFilePath
+                                        << "'.\n"
+                                           "The scene_linear role named \"scene-linear Rec.709-sRGB\" is required.\n"
+                                           "Skip this OCIO configuration file and use the embedded one.");
             }
         }
         else if (configOCIOFilePath.empty())
@@ -71,18 +68,18 @@ std::string getDefaultColorConfigFilePath()
     }
 
     // To be enabled if we decide to take OCIO env var in consideration before using the enbedded config file
-    if(false)
+    if (false)
     {
         char const* OCIO = std::getenv("OCIO");
-        if(OCIO != NULL)
+        if (OCIO != NULL)
         {
             configOCIOFilePath = std::string(OCIO);
-            if(fs::exists(configOCIOFilePath))
+            if (fs::exists(configOCIOFilePath))
             {
                 ALICEVISION_LOG_TRACE("OCIO configuration file: '" << configOCIOFilePath << "' found.");
                 return configOCIOFilePath;
             }
-            else if(configOCIOFilePath == "")
+            else if (configOCIOFilePath == "")
             {
                 ALICEVISION_LOG_TRACE("OCIO is empty. Use embedded config...");
             }
@@ -97,7 +94,7 @@ std::string getDefaultColorConfigFilePath()
     if (ALICEVISION_ROOT == NULL)
     {
         const std::string configFromSource = getColorConfigFilePathFromSourceCode();
-        if(fs::exists(configFromSource))
+        if (fs::exists(configFromSource))
         {
             ALICEVISION_LOG_DEBUG("ALICEVISION_ROOT is not defined, use embedded OCIO config file from source code: " << configFromSource);
             return configFromSource;
@@ -112,7 +109,7 @@ std::string getDefaultColorConfigFilePath()
     if (!fs::exists(configOCIOFilePath))
     {
         const std::string configFromSource = getColorConfigFilePathFromSourceCode();
-        if(fs::exists(configFromSource))
+        if (fs::exists(configFromSource))
         {
             ALICEVISION_LOG_DEBUG("Embedded OCIO config file in ALICEVISION_ROOT does not exist, use config from source code: " << configFromSource);
             return configFromSource;
@@ -146,38 +143,34 @@ void initColorConfigOCIO(const std::string& colorConfigFilePath)
 
 std::string EImageColorSpace_informations()
 {
-    return EImageColorSpace_enumToString(EImageColorSpace::AUTO) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::LINEAR) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::SRGB) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::ACES2065_1) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::ACEScg) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::REC709) + " (ODT.Academy.Rec709_100nits), " +
-           EImageColorSpace_enumToString(EImageColorSpace::LAB) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::XYZ) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::NO_CONVERSION);
+    return EImageColorSpace_enumToString(EImageColorSpace::AUTO) + ", " + EImageColorSpace_enumToString(EImageColorSpace::LINEAR) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::SRGB) + ", " + EImageColorSpace_enumToString(EImageColorSpace::ACES2065_1) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::ACEScg) + ", " + EImageColorSpace_enumToString(EImageColorSpace::REC709) +
+           " (ODT.Academy.Rec709_100nits), " + EImageColorSpace_enumToString(EImageColorSpace::LAB) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::XYZ) + ", " + EImageColorSpace_enumToString(EImageColorSpace::NO_CONVERSION);
 }
 
 EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
 {
     const std::string type = boost::to_lower_copy(dataType);
 
-    if(type == "auto")
+    if (type == "auto")
         return EImageColorSpace::AUTO;
-    if(type == "linear")
+    if (type == "linear")
         return EImageColorSpace::LINEAR;
-    if(type == "srgb")
+    if (type == "srgb")
         return EImageColorSpace::SRGB;
-    if(type == "aces2065-1")
+    if (type == "aces2065-1")
         return EImageColorSpace::ACES2065_1;
     if (type == "acescg")
         return EImageColorSpace::ACEScg;
     if ((type == "aces_lut") || (type == "rec709"))
         return EImageColorSpace::REC709;
-    if(type == "lab")
+    if (type == "lab")
         return EImageColorSpace::LAB;
-    if(type == "xyz")
+    if (type == "xyz")
         return EImageColorSpace::XYZ;
-    if(type == "no_conversion")
+    if (type == "no_conversion")
         return EImageColorSpace::NO_CONVERSION;
 
     throw std::out_of_range("Invalid EImageColorSpace: " + dataType);
@@ -185,7 +178,7 @@ EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
 
 std::string EImageColorSpace_enumToString(const EImageColorSpace dataType)
 {
-    switch(dataType)
+    switch (dataType)
     {
         case EImageColorSpace::AUTO:
             return "auto";
@@ -211,57 +204,74 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace dataType)
 
 std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
 {
-    switch(colorSpace)
+    switch (colorSpace)
     {
-        case EImageColorSpace::SRGB: return "sRGB";
-        case EImageColorSpace::LINEAR: return "Linear";
-        case EImageColorSpace::ACES2065_1: return "aces2065-1";
-        case EImageColorSpace::ACEScg: return "ACEScg";
-        case EImageColorSpace::REC709: return "rec709";
-        default: ;
+        case EImageColorSpace::SRGB:
+            return "sRGB";
+        case EImageColorSpace::LINEAR:
+            return "Linear";
+        case EImageColorSpace::ACES2065_1:
+            return "aces2065-1";
+        case EImageColorSpace::ACEScg:
+            return "ACEScg";
+        case EImageColorSpace::REC709:
+            return "rec709";
+        default:;
     }
-    throw std::out_of_range("No string defined for EImageColorSpace to OIIO conversion: " +
-                            std::to_string(int(colorSpace)));
+    throw std::out_of_range("No string defined for EImageColorSpace to OIIO conversion: " + std::to_string(int(colorSpace)));
 }
 
 EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace)
 {
-    if (colorspace == "Linear") return EImageColorSpace::LINEAR;
-    if (colorspace == "sRGB") return EImageColorSpace::SRGB;
-    if (colorspace == "aces2065-1") return EImageColorSpace::ACES2065_1;
-    if (colorspace == "ACEScg") return EImageColorSpace::ACEScg;
-    if ((colorspace == "REC709") || (colorspace == "ACES_LUT")) return EImageColorSpace::REC709;
+    if (colorspace == "Linear")
+        return EImageColorSpace::LINEAR;
+    if (colorspace == "sRGB")
+        return EImageColorSpace::SRGB;
+    if (colorspace == "aces2065-1")
+        return EImageColorSpace::ACES2065_1;
+    if (colorspace == "ACEScg")
+        return EImageColorSpace::ACEScg;
+    if ((colorspace == "REC709") || (colorspace == "ACES_LUT"))
+        return EImageColorSpace::REC709;
 
     throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
 }
 
 bool EImageColorSpace_isSupportedOIIOEnum(const EImageColorSpace& colorspace)
 {
-    switch(colorspace)
+    switch (colorspace)
     {
-        case EImageColorSpace::SRGB: return true;
-        case EImageColorSpace::LINEAR: return true;
-        case EImageColorSpace::ACES2065_1: return true;
-        case EImageColorSpace::ACEScg: return true;
-        case EImageColorSpace::REC709: return true;
-        default: return false;
+        case EImageColorSpace::SRGB:
+            return true;
+        case EImageColorSpace::LINEAR:
+            return true;
+        case EImageColorSpace::ACES2065_1:
+            return true;
+        case EImageColorSpace::ACEScg:
+            return true;
+        case EImageColorSpace::REC709:
+            return true;
+        default:
+            return false;
     }
 }
 
 bool EImageColorSpace_isSupportedOIIOstring(const std::string& colorspace)
 {
-    if (colorspace == "Linear") return true;
-    if (colorspace == "sRGB") return true;
-    if (colorspace == "aces2065-1") return true;
-    if (colorspace == "ACEScg") return true;
-    if (colorspace == "REC709") return true;
+    if (colorspace == "Linear")
+        return true;
+    if (colorspace == "sRGB")
+        return true;
+    if (colorspace == "aces2065-1")
+        return true;
+    if (colorspace == "ACEScg")
+        return true;
+    if (colorspace == "REC709")
+        return true;
     return false;
 }
 
-std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType)
-{
-    return os << EImageColorSpace_enumToString(dataType);
-}
+std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType) { return os << EImageColorSpace_enumToString(dataType); }
 
 std::istream& operator>>(std::istream& in, EImageColorSpace& dataType)
 {
@@ -271,5 +281,5 @@ std::istream& operator>>(std::istream& in, EImageColorSpace& dataType)
     return in;
 }
 
-}
-}
+}  // namespace image
+}  // namespace aliceVision

@@ -8,7 +8,7 @@
 #pragma once
 
 namespace aliceVision {
-namespace robustEstimation{
+namespace robustEstimation {
 
 /**
  * @brief Templated Functor class to evaluate a given model over a set of samples.
@@ -16,50 +16,44 @@ namespace robustEstimation{
 template<typename Kernel>
 class ScoreEvaluator
 {
-public:
-  explicit ScoreEvaluator(double threshold)
-    : _threshold(threshold)
-  {}
+  public:
+    explicit ScoreEvaluator(double threshold)
+      : _threshold(threshold)
+    {}
 
-  template <typename T>
-  double score(const Kernel& kernel,
-               const typename Kernel::ModelT& model,
-               const std::vector<T>& samples,
-               std::vector<T>& inliers,
-               double threshold) const
-  {
-    double cost = 0.0;
-    for(std::size_t j = 0; j < samples.size(); ++j)
+    template<typename T>
+    double score(const Kernel& kernel, const typename Kernel::ModelT& model, const std::vector<T>& samples, std::vector<T>& inliers, double threshold)
+      const
     {
-      double error = kernel.error(samples.at(j), model);
-      if (error < threshold) 
-      {
-        cost += error;
-        inliers.push_back(samples[j]);
-      } 
-      else 
-      {
-//        cost += threshold;
-        cost += error;
-      }
+        double cost = 0.0;
+        for (std::size_t j = 0; j < samples.size(); ++j)
+        {
+            double error = kernel.error(samples.at(j), model);
+            if (error < threshold)
+            {
+                cost += error;
+                inliers.push_back(samples[j]);
+            }
+            else
+            {
+                //        cost += threshold;
+                cost += error;
+            }
+        }
+        return cost;
     }
-    return cost;
-  }
 
-  template <typename T>
-  double score(const Kernel &kernel,
-               const typename Kernel::ModelT& model,
-               const std::vector<T>& samples,
-               std::vector<T>& inliers) const
-  {
-    return score(kernel, model, samples, inliers, _threshold);
-  }
-  
-  double getThreshold() const {return _threshold;}
-  
-private:
-  double _threshold;
+    template<typename T>
+    double score(const Kernel& kernel, const typename Kernel::ModelT& model, const std::vector<T>& samples, std::vector<T>& inliers) const
+    {
+        return score(kernel, model, samples, inliers, _threshold);
+    }
+
+    double getThreshold() const { return _threshold; }
+
+  private:
+    double _threshold;
 };
 
-} // namespace robustEstimation
-} // namespace aliceVision
+}  // namespace robustEstimation
+}  // namespace aliceVision

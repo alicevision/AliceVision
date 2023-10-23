@@ -16,7 +16,6 @@
 #include <geogram/mesh/mesh_AABB.h>
 #include <geogram/mesh/mesh_reorder.h>
 
-
 namespace aliceVision {
 namespace mesh {
 
@@ -28,14 +27,13 @@ void getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>
     GEO::AdaptiveKdTree refMesh_kdTree(3);
     refMesh_kdTree.set_points(refMesh.pts.size(), refMesh.pts.front().m);
 
-    #pragma omp parallel for
-    for(int i = 0; i < mesh.pts.size(); ++i)
+#pragma omp parallel for
+    for (int i = 0; i < mesh.pts.size(); ++i)
     {
         out_nearestVertex[i] = refMesh_kdTree.get_nearest_neighbor(mesh.pts[i].m);
     }
     ALICEVISION_LOG_DEBUG("getNearestVertices done.");
 }
-
 
 void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh& mesh)
 {
@@ -49,16 +47,16 @@ void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh& mes
 
     out_ptsVisibilities.resize(mesh.pts.size());
 
-    #pragma omp parallel for
-    for(int i = 0; i < mesh.pts.size(); ++i)
+#pragma omp parallel for
+    for (int i = 0; i < mesh.pts.size(); ++i)
     {
         PointVisibility& pOut = out_ptsVisibilities[i];
 
         int iRef = refMesh_kdTree.get_nearest_neighbor(mesh.pts[i].m);
-        if(iRef == -1)
+        if (iRef == -1)
             continue;
         const PointVisibility& pRef = refPtsVisibilities[iRef];
-        if(pRef.empty())
+        if (pRef.empty())
             continue;
 
         pOut = pRef;
@@ -67,8 +65,7 @@ void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh& mes
     ALICEVISION_LOG_DEBUG("remapMeshVisibility done.");
 }
 
-
-double mesh_facet_edges_length(const GEO::Mesh &M, GEO::index_t f)
+double mesh_facet_edges_length(const GEO::Mesh& M, GEO::index_t f)
 {
     const GEO::vec3& p0 = M.vertices.point(M.facets.vertex(f, 0));
     const GEO::vec3& p1 = M.vertices.point(M.facets.vertex(f, 1));
@@ -89,7 +86,7 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
 
     // MeshFacetAABB will reorder the mesh, so we need to keep indices
     GEO::Attribute<GEO::index_t> reorderedVerticesAttr(meshG.vertices.attributes(), "reorder");
-    for(int i = 0; i < meshG.vertices.nb(); ++i)
+    for (int i = 0; i < meshG.vertices.nb(); ++i)
         reorderedVerticesAttr[i] = i;
 
     GEO::MeshFacetsAABB meshAABB(meshG);  // warning: mesh_reorder called inside
@@ -101,7 +98,7 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
         out_ptsVisibilities.resize(mesh.pts.size());
     }
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int rvi = 0; rvi < refMesh.pts.size(); ++rvi)
     {
         const PointVisibility& rpVis = refPtsVisibilities[rvi];
@@ -112,16 +109,16 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
         GEO::vec3 nearestPoint;
         double dist2 = 0.0;
         GEO::index_t f = meshAABB.nearest_facet(rp, nearestPoint, dist2);
-        if(f == GEO::NO_FACET)
+        if (f == GEO::NO_FACET)
             continue;
 
         double avgEdgeLength = mesh_facet_edges_length(meshG, f) / 3.0;
         // if average edge length is larger than the distance between the output mesh
         // and the closest point in the reference mesh.
-        if(std::sqrt(dist2) > avgEdgeLength)
+        if (std::sqrt(dist2) > avgEdgeLength)
             continue;
 
-        #pragma omp critical
+#pragma omp critical
         {
             for (int i = 0; i < 3; ++i)
             {
@@ -129,8 +126,8 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
                 if (v == GEO::NO_VERTEX)
                     continue;
                 PointVisibility& pOut = out_ptsVisibilities[reorderedVertices[v]];
-                
-                for(int j = 0; j < rpVis.size(); ++j)
+
+                for (int j = 0; j < rpVis.size(); ++j)
                     pOut.push_back_distinct(rpVis[j]);
             }
         }
@@ -151,14 +148,14 @@ void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh&
 
     // MeshFacetAABB will reorder the mesh, so we need to keep indices
     GEO::Attribute<GEO::index_t> reorderedVerticesAttr(meshG.vertices.attributes(), "reorder");
-    for(int i = 0; i < meshG.vertices.nb(); ++i)
+    for (int i = 0; i < meshG.vertices.nb(); ++i)
         reorderedVerticesAttr[i] = i;
 
-    GEO::MeshFacetsAABB meshAABB(meshG); // warning: mesh_reorder called inside
+    GEO::MeshFacetsAABB meshAABB(meshG);  // warning: mesh_reorder called inside
 
     GEO::vector<GEO::index_t> reorderedVertices = reorderedVerticesAttr.get_vector();
 
-    if(out_ptsVisibilities.size() != mesh.pts.size())
+    if (out_ptsVisibilities.size() != mesh.pts.size())
     {
         out_ptsVisibilities.resize(mesh.pts.size());
     }
@@ -168,20 +165,20 @@ void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh&
     mesh.computeNormalsForPts(normalsPerVertex);
 
 #pragma omp parallel for
-    for(int vi = 0; vi < mesh.pts.size(); ++vi)
+    for (int vi = 0; vi < mesh.pts.size(); ++vi)
     {
         const Point3d& v = mesh.pts[vi];
         PointVisibility& vertexVisibility = out_ptsVisibilities[vi];
         const Point3d& n = normalsPerVertex[vi];
 
         // Check by which camera the vertex is visible
-        for(std::size_t camIndex = 0; camIndex < nbCameras; ++camIndex)
+        for (std::size_t camIndex = 0; camIndex < nbCameras; ++camIndex)
         {
             const Point3d& c = mp.CArr[camIndex];
 
             // check vertex normal (another solution would be to check each neighboring triangle)
             const double angle = angleBetwV1andV2((c - v).normalize(), normalsPerVertex[vi]);
-            if(angle > 90.0)
+            if (angle > 90.0)
                 continue;
 
             const GEO::vec3 gv(v.x, v.y, v.z);
@@ -189,7 +186,7 @@ void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh&
             const GEO::vec3 vc = gc - gv;
             // check if there is an occlusion on the segment between the current mesh vertex and the camera
             const bool occlusion = meshAABB.ray_intersection(GEO::Ray(gv + (vc * 0.00001), vc), 1.0);
-            if(occlusion)
+            if (occlusion)
                 continue;
 
             vertexVisibility.push_back(camIndex);
@@ -197,5 +194,5 @@ void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh&
     }
 }
 
-} // namespace mesh
-} // namespace aliceVision
+}  // namespace mesh
+}  // namespace aliceVision

@@ -13,8 +13,8 @@
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
-namespace aliceVision{
-namespace sfm{
+namespace aliceVision {
+namespace sfm {
 
 enum ERelativeRotationMethod
 {
@@ -25,11 +25,14 @@ enum ERelativeRotationMethod
 
 inline std::string ERelativeRotationMethod_enumToString(const ERelativeRotationMethod rotationMethod)
 {
-    switch(rotationMethod)
+    switch (rotationMethod)
     {
-        case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_E:      return "essential_matrix";
-        case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_R:   return "rotation_matrix";
-        case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_H:   return "homography_matrix";
+        case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_E:
+            return "essential_matrix";
+        case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_R:
+            return "rotation_matrix";
+        case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_H:
+            return "homography_matrix";
     }
     throw std::out_of_range("Invalid method name enum");
 }
@@ -39,9 +42,12 @@ inline ERelativeRotationMethod ERelativeRotationMethod_stringToEnum(const std::s
     std::string methodName = rotationMethodName;
     std::transform(methodName.begin(), methodName.end(), methodName.begin(), ::tolower);
 
-    if (methodName == "essential_matrix") return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_E;
-    if (methodName == "rotation_matrix") return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_R;
-    if (methodName == "homography_matrix") return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_H;
+    if (methodName == "essential_matrix")
+        return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_E;
+    if (methodName == "rotation_matrix")
+        return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_R;
+    if (methodName == "homography_matrix")
+        return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_H;
 
     throw std::out_of_range("Invalid method name : '" + rotationMethodName + "'");
 }
@@ -59,7 +65,6 @@ inline std::istream& operator>>(std::istream& in, ERelativeRotationMethod& rotat
     rotationMethod = ERelativeRotationMethod_stringToEnum(token);
     return in;
 }
-
 
 /**
  * @brief A struct containing the information of the relative rotation.
@@ -81,9 +86,7 @@ struct RelativeRotationInfo
     double _initialResidualTolerance{std::numeric_limits<double>::infinity()};
     /// the estimated threshold found by acransac.
     double _foundResidualPrecision{std::numeric_limits<double>::infinity()};
-
 };
-
 
 /**
  * @brief Estimate the relative pose between two views.
@@ -98,12 +101,14 @@ struct RelativeRotationInfo
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
  */
-bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
-                                  const Mat & x1, const Mat & x2,
-                                  const std::pair<size_t, size_t> & size_ima1,
-                                  const std::pair<size_t, size_t> & size_ima2,
-                                  std::mt19937 &randomNumberGenerator,
-                                  RelativePoseInfo & relativePose_info,
+bool robustRelativeRotation_fromE(const Mat3& K1,
+                                  const Mat3& K2,
+                                  const Mat& x1,
+                                  const Mat& x2,
+                                  const std::pair<size_t, size_t>& size_ima1,
+                                  const std::pair<size_t, size_t>& size_ima2,
+                                  std::mt19937& randomNumberGenerator,
+                                  RelativePoseInfo& relativePose_info,
                                   const size_t max_iteration_count = 4096);
 
 /**
@@ -117,11 +122,12 @@ bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
  */
-bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2,
-                                  const std::pair<size_t, size_t> &imgSize1,
-                                  const std::pair<size_t, size_t> &imgSize2,
-                                  std::mt19937 &randomNumberGenerator,
-                                  RelativeRotationInfo &relativeRotationInfo,
+bool robustRelativeRotation_fromH(const Mat2X& x1,
+                                  const Mat2X& x2,
+                                  const std::pair<size_t, size_t>& imgSize1,
+                                  const std::pair<size_t, size_t>& imgSize2,
+                                  std::mt19937& randomNumberGenerator,
+                                  RelativeRotationInfo& relativeRotationInfo,
                                   const size_t max_iteration_count = 4096);
 
 /**
@@ -135,13 +141,13 @@ bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2,
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
  */
-bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2,
-                                  const std::pair<size_t, size_t> &imgSize1,
-                                  const std::pair<size_t, size_t> &imgSize2,
-                                  std::mt19937 &randomNumberGenerator,
-                                  RelativeRotationInfo &relativeRotationInfo,
+bool robustRelativeRotation_fromR(const Mat& x1,
+                                  const Mat& x2,
+                                  const std::pair<size_t, size_t>& imgSize1,
+                                  const std::pair<size_t, size_t>& imgSize2,
+                                  std::mt19937& randomNumberGenerator,
+                                  RelativeRotationInfo& relativeRotationInfo,
                                   const size_t max_iteration_count = 4096);
-
 
 /**
  * Panorama Pipeline Reconstruction Engine.
@@ -149,18 +155,18 @@ bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2,
  */
 class ReconstructionEngine_panorama : public ReconstructionEngine
 {
-public:
+  public:
     struct Params
     {
         ERotationAveragingMethod eRotationAveragingMethod = ROTATION_AVERAGING_L2;
         ERelativeRotationMethod eRelativeRotationMethod = RELATIVE_ROTATION_FROM_E;
         bool lockAllIntrinsics = false;
         bool rotationAveragingWeighting = true;
-        double maxAngleToPrior = 5.0;  //< max angle to input prior before refinement in degree
-        double maxAngleToPriorRefined = 2.0;  //< max angle to input prior after refinement in degree
-        double maxAngularError = 100.0;  //< max angular error in degree (in global rotation averaging)
-        bool intermediateRefineWithFocal = false; //< intermediate refine with rotation+focal
-        bool intermediateRefineWithFocalDist = false; //< intermediate refine with rotation+focal+distortion
+        double maxAngleToPrior = 5.0;                  //< max angle to input prior before refinement in degree
+        double maxAngleToPriorRefined = 2.0;           //< max angle to input prior after refinement in degree
+        double maxAngularError = 100.0;                //< max angular error in degree (in global rotation averaging)
+        bool intermediateRefineWithFocal = false;      //< intermediate refine with rotation+focal
+        bool intermediateRefineWithFocalDist = false;  //< intermediate refine with rotation+focal+distortion
     };
     ReconstructionEngine_panorama(const sfmData::SfMData& sfmData,
                                   const Params& params,
@@ -181,19 +187,19 @@ public:
 
     bool buildLandmarks();
 
-protected:
+  protected:
     /// Compute from relative rotations the global rotations of the camera poses
     bool Compute_Global_Rotations(const aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R, HashMap<IndexT, Mat3>& map_globalR);
 
-public:
+  public:
     /// Adjust the scene (& remove outliers)
     bool Adjust();
 
-private:
+  private:
     /// Compute relative rotations
     void Compute_Relative_Rotations(aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R);
     bool addConstraints2DWithKnownRotation();
-  
+
     // Logger
     std::shared_ptr<htmlDocument::htmlDocumentStream> _htmlDocStream;
     std::string _loggingFile;
@@ -208,5 +214,5 @@ private:
     sfmData::Poses _rotationPriors;
 };
 
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

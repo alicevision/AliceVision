@@ -19,7 +19,7 @@ struct UniqueDescriptor
     int channel;
     int quantizedValue;
 
-    bool operator<(const UniqueDescriptor &o) const;
+    bool operator<(const UniqueDescriptor& o) const;
 };
 
 struct PixelDescription
@@ -39,15 +39,14 @@ struct ImageSample
     ImageSample() = default;
 };
 
-std::ostream & operator<<(std::ostream& os, const ImageSample & s);
-std::ostream & operator<<(std::ostream& os, const PixelDescription & p);
-std::istream & operator>>(std::istream& os, ImageSample & s);
-std::istream & operator>>(std::istream& os, PixelDescription & p);
-
+std::ostream& operator<<(std::ostream& os, const ImageSample& s);
+std::ostream& operator<<(std::ostream& os, const PixelDescription& p);
+std::istream& operator>>(std::istream& os, ImageSample& s);
+std::istream& operator>>(std::istream& os, PixelDescription& p);
 
 class Sampling
 {
-public:
+  public:
     struct Coordinates
     {
         unsigned int imageIndex;
@@ -62,16 +61,25 @@ public:
 
     using MapSampleRefList = std::map<UniqueDescriptor, std::vector<Coordinates>>;
 
-public:
-    void analyzeSource(std::vector<ImageSample> & samples, int channelQuantization, int imageIndex);
+  public:
+    void analyzeSource(std::vector<ImageSample>& samples, int channelQuantization, int imageIndex);
     void filter(size_t maxTotalPoints);
-    void extractUsefulSamples(std::vector<ImageSample> & out_samples, const std::vector<ImageSample> & samples, int imageIndex) const;
-    
-    static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<IndexT>& viewIds, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::ImageReadOptions & imgReadOptions, const Params params, const bool simplified = false);
+    void extractUsefulSamples(std::vector<ImageSample>& out_samples, const std::vector<ImageSample>& samples, int imageIndex) const;
 
-private:
+    static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples,
+                                         const std::vector<std::string>& imagePaths,
+                                         const std::vector<IndexT>& viewIds,
+                                         const std::vector<double>& times,
+                                         const size_t imageWidth,
+                                         const size_t imageHeight,
+                                         const size_t channelQuantization,
+                                         const image::ImageReadOptions& imgReadOptions,
+                                         const Params params,
+                                         const bool simplified = false);
+
+  private:
     MapSampleRefList _positions;
 };
 
-} // namespace hdr
-} // namespace aliceVision
+}  // namespace hdr
+}  // namespace aliceVision

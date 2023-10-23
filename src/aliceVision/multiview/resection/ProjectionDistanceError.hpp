@@ -11,7 +11,6 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/multiview/resection/ISolverErrorResection.hpp>
 
-
 namespace aliceVision {
 namespace multiview {
 namespace resection {
@@ -22,10 +21,10 @@ namespace resection {
  */
 struct ProjectionDistanceError : public ISolverErrorResection<robustEstimation::Mat34Model>
 {
-  inline double error(const robustEstimation::Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
-  {
-    return (project(P.getMatrix(), p3d) - p2d).norm();
-  }
+    inline double error(const robustEstimation::Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
+    {
+        return (project(P.getMatrix(), p3d) - p2d).norm();
+    }
 };
 
 /**
@@ -34,10 +33,10 @@ struct ProjectionDistanceError : public ISolverErrorResection<robustEstimation::
  */
 struct ProjectionDistanceSquaredError : public ISolverErrorResection<robustEstimation::Mat34Model>
 {
-  inline double error(const robustEstimation::Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
-  {
-    return (project(P.getMatrix(), p3d) - p2d).squaredNorm();
-  }
+    inline double error(const robustEstimation::Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
+    {
+        return (project(P.getMatrix(), p3d) - p2d).squaredNorm();
+    }
 };
 
 }  // namespace resection

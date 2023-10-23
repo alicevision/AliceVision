@@ -8,7 +8,7 @@
 #pragma once
 
 namespace aliceVision {
-namespace sfm{
+namespace sfm {
 
 /// association of Ids to a contiguous set of Ids
 template<typename IterablePairs, typename PairValueType>
@@ -16,35 +16,35 @@ void reindex(const IterablePairs& pairs,
              HashMap<PairValueType, PairValueType>& _reindexForward,
              HashMap<PairValueType, PairValueType>& _reindexBackward)
 {
-  typedef std::pair<PairValueType,PairValueType> PairT;
+    typedef std::pair<PairValueType, PairValueType> PairT;
 
-  // get an unique set of Ids
-  std::set<std::size_t> _uniqueId;
+    // get an unique set of Ids
+    std::set<std::size_t> _uniqueId;
 
-  for(typename IterablePairs::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
-  {
-    _uniqueId.insert(iter->first);
-    _uniqueId.insert(iter->second);
-  }
-
-  // build the Forward and Backward mapping
-  for(typename IterablePairs::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
-  {
-    if(_reindexForward.find(iter->first) == _reindexForward.end())
+    for (typename IterablePairs::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
     {
-      const size_t dist = std::distance(_uniqueId.begin(), _uniqueId.find(iter->first));
-      _reindexForward[iter->first] = dist;
-      _reindexBackward[dist] = iter->first;
+        _uniqueId.insert(iter->first);
+        _uniqueId.insert(iter->second);
     }
 
-    if(_reindexForward.find(iter->second) == _reindexForward.end())
+    // build the Forward and Backward mapping
+    for (typename IterablePairs::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
     {
-      const size_t dist = std::distance(_uniqueId.begin(), _uniqueId.find(iter->second));
-      _reindexForward[iter->second] = dist;
-      _reindexBackward[dist] = iter->second;
+        if (_reindexForward.find(iter->first) == _reindexForward.end())
+        {
+            const size_t dist = std::distance(_uniqueId.begin(), _uniqueId.find(iter->first));
+            _reindexForward[iter->first] = dist;
+            _reindexBackward[dist] = iter->first;
+        }
+
+        if (_reindexForward.find(iter->second) == _reindexForward.end())
+        {
+            const size_t dist = std::distance(_uniqueId.begin(), _uniqueId.find(iter->second));
+            _reindexForward[iter->second] = dist;
+            _reindexBackward[dist] = iter->second;
+        }
     }
-  }
 }
 
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

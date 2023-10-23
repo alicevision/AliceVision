@@ -17,27 +17,25 @@ namespace sfmData {
  */
 struct RotationPrior
 {
-  RotationPrior() = default;
-  
-  RotationPrior(IndexT view_first = UndefinedIndexT,
-            IndexT view_second = UndefinedIndexT, 
-            Eigen::Matrix3d second_R_first = Eigen::Matrix3d::Identity())
-    : ViewFirst(view_first),
-      ViewSecond(view_second),
-      _second_R_first(second_R_first)
-  {}
+    RotationPrior() = default;
 
-  IndexT ViewFirst;
-  IndexT ViewSecond;
-  Eigen::Matrix3d _second_R_first;
-  
-  bool operator==(const RotationPrior& other) const
-  {
-    return (ViewFirst == other.ViewFirst) && 
-          (ViewSecond == other.ViewSecond) && 
-          (_second_R_first == other._second_R_first);
-  }
+    RotationPrior(IndexT view_first = UndefinedIndexT,
+                  IndexT view_second = UndefinedIndexT,
+                  Eigen::Matrix3d second_R_first = Eigen::Matrix3d::Identity())
+      : ViewFirst(view_first),
+        ViewSecond(view_second),
+        _second_R_first(second_R_first)
+    {}
+
+    IndexT ViewFirst;
+    IndexT ViewSecond;
+    Eigen::Matrix3d _second_R_first;
+
+    bool operator==(const RotationPrior& other) const
+    {
+        return (ViewFirst == other.ViewFirst) && (ViewSecond == other.ViewSecond) && (_second_R_first == other._second_R_first);
+    }
 };
 
-} // namespace sfmData
-} // namespace aliceVision
+}  // namespace sfmData
+}  // namespace aliceVision

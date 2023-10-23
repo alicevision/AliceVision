@@ -23,11 +23,8 @@ namespace sfmDataIO {
 void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const std::string& viewIdRegex)
 {
     // check if the view is complete
-    if(view.getViewId() != UndefinedIndexT &&
-       view.getIntrinsicId() != UndefinedIndexT &&
-       view.getPoseId() == view.getViewId() &&
-       view.getImage().getHeight() > 0 &&
-       view.getImage().getWidth() >  0)
+    if (view.getViewId() != UndefinedIndexT && view.getIntrinsicId() != UndefinedIndexT && view.getPoseId() == view.getViewId() &&
+        view.getImage().getHeight() > 0 && view.getImage().getWidth() > 0)
         return;
 
     int width, height;
@@ -37,20 +34,20 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
     view.getImage().setHeight(height);
 
     // reset metadata
-    if(view.getImage().getMetadata().empty())
+    if (view.getImage().getMetadata().empty())
         view.getImage().setMetadata(image::getMapFromMetadata(metadata));
 
     // Reset viewId
-    if(view.getViewId() == UndefinedIndexT)
+    if (view.getViewId() == UndefinedIndexT)
     {
-        if(viewIdMethod == EViewIdMethod::FILENAME)
+        if (viewIdMethod == EViewIdMethod::FILENAME)
         {
             std::regex re;
             try
             {
                 re = viewIdRegex;
             }
-            catch(const std::regex_error& e)
+            catch (const std::regex_error& e)
             {
                 throw std::invalid_argument("Invalid regex conversion, your regexfilename '" + viewIdRegex + "' may be invalid.");
             }
@@ -60,24 +57,28 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
 
             std::smatch match;
             std::regex_search(filename, match, re);
-            if(match.size() == 2)
+            if (match.size() == 2)
             {
                 try
                 {
                     const IndexT id(std::stoul(match.str(1)));
                     view.setViewId(id);
                 }
-                catch(std::invalid_argument& e)
+                catch (std::invalid_argument& e)
                 {
-                    ALICEVISION_LOG_ERROR("ViewId captured in the filename '" << filename << "' can't be converted to a number. "
-                                        "The regex '" << viewIdRegex << "' is probably incorrect.");
+                    ALICEVISION_LOG_ERROR("ViewId captured in the filename '" << filename
+                                                                              << "' can't be converted to a number. "
+                                                                                 "The regex '"
+                                                                              << viewIdRegex << "' is probably incorrect.");
                     throw;
                 }
             }
             else
             {
-                ALICEVISION_LOG_ERROR("The Regex '" << viewIdRegex << "' must match a unique number in the filename " << filename << "' to be used as viewId.");
-                throw std::invalid_argument("The Regex '" + viewIdRegex + "' must match a unique number in the filename " + filename + "' to be used as viewId.");
+                ALICEVISION_LOG_ERROR("The Regex '" << viewIdRegex << "' must match a unique number in the filename " << filename
+                                                    << "' to be used as viewId.");
+                throw std::invalid_argument("The Regex '" + viewIdRegex + "' must match a unique number in the filename " + filename +
+                                            "' to be used as viewId.");
             }
         }
         else
@@ -87,37 +88,37 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
         }
     }
 
-    if(view.getPoseId() == UndefinedIndexT)
+    if (view.getPoseId() == UndefinedIndexT)
     {
         // check if the rig poseId id is defined
-        if(view.isPartOfRig())
+        if (view.isPartOfRig())
         {
             ALICEVISION_LOG_ERROR("Error: Can't find poseId for'" << fs::path(view.getImage().getImagePath()).filename().string()
-                                  << "' marked as part of a rig." << std::endl);
-            throw std::invalid_argument("Error: Can't find poseId for'" + fs::path(view.getImage().getImagePath()).filename().string()
-                                        + "' marked as part of a rig.");
+                                                                  << "' marked as part of a rig." << std::endl);
+            throw std::invalid_argument("Error: Can't find poseId for'" + fs::path(view.getImage().getImagePath()).filename().string() +
+                                        "' marked as part of a rig.");
         }
         else
             view.setPoseId(view.getViewId());
     }
-    else if((!view.isPartOfRig()) && (view.getPoseId() != view.getViewId()))
+    else if ((!view.isPartOfRig()) && (view.getPoseId() != view.getViewId()))
     {
-        ALICEVISION_LOG_WARNING("PoseId and viewId are different for image '" << fs::path(view.getImage().getImagePath()).filename().string()
-                                << "'." << std::endl);
+        ALICEVISION_LOG_WARNING("PoseId and viewId are different for image '" << fs::path(view.getImage().getImagePath()).filename().string() << "'."
+                                                                              << std::endl);
     }
 }
 
-std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
-    const sfmData::View& view,
-    double mmFocalLength,
-    double sensorWidth,
-    double defaultFocalLength,
-    double defaultFieldOfView,
-    double defaultFocalRatio,
-    double defaultOffsetX, double defaultOffsetY,
-    LensParam* lensParam,
-    camera::EINTRINSIC defaultIntrinsicType,
-    camera::EINTRINSIC allowedEintrinsics)
+std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& view,
+                                                        double mmFocalLength,
+                                                        double sensorWidth,
+                                                        double defaultFocalLength,
+                                                        double defaultFieldOfView,
+                                                        double defaultFocalRatio,
+                                                        double defaultOffsetX,
+                                                        double defaultOffsetY,
+                                                        LensParam* lensParam,
+                                                        camera::EINTRINSIC defaultIntrinsicType,
+                                                        camera::EINTRINSIC allowedEintrinsics)
 {
     // can't combine defaultFocalLengthPx and defaultFieldOfView
     assert(defaultFocalLength < 0 || defaultFieldOfView < 0);
@@ -153,7 +154,8 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 
     bool isResized = false;
 
-    if (view.getImage().hasMetadata({"Exif:PixelXDimension", "PixelXDimension"}) && view.getImage().hasMetadata({"Exif:PixelYDimension", "PixelYDimension"})) // has dimension metadata
+    if (view.getImage().hasMetadata({"Exif:PixelXDimension", "PixelXDimension"}) &&
+        view.getImage().hasMetadata({"Exif:PixelYDimension", "PixelYDimension"}))  // has dimension metadata
     {
         // check if the image is resized
         int exifWidth = std::stoi(view.getImage().getMetadata({"Exif:PixelXDimension", "PixelXDimension"}));
@@ -161,17 +163,14 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 
         // if metadata is rotated
         if (exifWidth == view.getImage().getHeight() && exifHeight == view.getImage().getWidth())
-        std::swap(exifWidth, exifHeight);
+            std::swap(exifWidth, exifHeight);
 
-        if (exifWidth > 0 && exifHeight > 0 &&
-            (exifWidth != view.getImage().getWidth() || exifHeight != view.getImage().getHeight()))
+        if (exifWidth > 0 && exifHeight > 0 && (exifWidth != view.getImage().getWidth() || exifHeight != view.getImage().getHeight()))
         {
-            ALICEVISION_LOG_WARNING("Resized image detected: " << fs::path(view.getImage().getImagePath()).filename().string()
-                                                               << std::endl
-                                                               << "\t- real image size: " << view.getImage().getWidth()
-                                                               << "x" << view.getImage().getHeight() << std::endl
-                                                               << "\t- image size from exif metadata is: " << exifWidth
-                                                               << "x" << exifHeight << std::endl);
+            ALICEVISION_LOG_WARNING("Resized image detected: "
+                                    << fs::path(view.getImage().getImagePath()).filename().string() << std::endl
+                                    << "\t- real image size: " << view.getImage().getWidth() << "x" << view.getImage().getHeight() << std::endl
+                                    << "\t- image size from exif metadata is: " << exifWidth << "x" << exifHeight << std::endl);
             isResized = true;
         }
     }
@@ -180,8 +179,8 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     if (mmFocalLength <= 0.0)
     {
         ALICEVISION_LOG_WARNING("Image '" << fs::path(view.getImage().getImagePath()).filename().string()
-                                << "' focal length (in mm) metadata is missing." << std::endl
-                                << "Can't compute focal length, use default." << std::endl);
+                                          << "' focal length (in mm) metadata is missing." << std::endl
+                                          << "Can't compute focal length, use default." << std::endl);
     }
     else
     {
@@ -204,11 +203,9 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     // choose intrinsic type
 
     camera::EINTRINSIC lcpIntrinsicType =
-        (lensParam == nullptr || lensParam->isEmpty()) ?
-            camera::EINTRINSIC::UNKNOWN :
-            (lensParam->isFisheye() ?
-                camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE :
-                camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
+      (lensParam == nullptr || lensParam->isEmpty())
+        ? camera::EINTRINSIC::UNKNOWN
+        : (lensParam->isFisheye() ? camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE : camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
 
     if (cameraBrand == "Custom")
     {
@@ -226,13 +223,12 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     else if (intrinsicType == camera::EINTRINSIC::UNKNOWN)
     {
         // Choose a default camera model if no default type
-        static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities =
-            {camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 
-            camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
-            camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1, 
-            camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
-            camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1,
-            camera::EINTRINSIC::PINHOLE_CAMERA};
+        static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities = {camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,
+                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
+                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
+                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
+                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1,
+                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA};
 
         for (const auto& e : intrinsicsPriorities)
         {
@@ -251,17 +247,18 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     }
 
     // create the desired intrinsic
-    std::shared_ptr<camera::IntrinsicBase> intrinsic =
-        camera::createIntrinsic(
-            /*camera*/       intrinsicType,
-            /*dimensions*/   view.getImage().getWidth(), view.getImage().getHeight(),
-            /*focal length*/ pxFocalLength, pxFocalLength / focalRatio,
-            /*offset*/       0, 0);
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(
+      /*camera*/ intrinsicType,
+      /*dimensions*/ view.getImage().getWidth(),
+      view.getImage().getHeight(),
+      /*focal length*/ pxFocalLength,
+      pxFocalLength / focalRatio,
+      /*offset*/ 0,
+      0);
 
     if (hasFocalLengthInput)
     {
-        std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset =
-            std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
+        std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
 
         if (intrinsicScaleOffset)
         {
@@ -332,17 +329,17 @@ bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number,
 {
     // check if the image stem contains a number
     // regexFrame: ^(.*\D)?([0-9]+)([\-_\.].*[[:alpha:]].*)?$
-    std::regex regexFrame("^(.*\\D)?"       // the optional prefix which ends with a non digit character
-                          "([0-9]+)"        // the number
-                          "([\\-_\\.]"      // the suffix starts with a separator
-                          ".*[[:alpha:]].*" // at least one letter in the suffix
-                          ")?$"             // suffix is optional
+    std::regex regexFrame("^(.*\\D)?"        // the optional prefix which ends with a non digit character
+                          "([0-9]+)"         // the number
+                          "([\\-_\\.]"       // the suffix starts with a separator
+                          ".*[[:alpha:]].*"  // at least one letter in the suffix
+                          ")?$"              // suffix is optional
     );
 
     std::smatch matches;
     bool containsNumber = std::regex_search(imagePathStem, matches, regexFrame);
 
-    if(containsNumber)
+    if (containsNumber)
     {
         prefix = matches[1];
         suffix = matches[3];
@@ -360,5 +357,5 @@ bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number,
     return containsNumber;
 }
 
-} // namespace sfmDataIO
-} // namespace aliceVision
+}  // namespace sfmDataIO
+}  // namespace aliceVision

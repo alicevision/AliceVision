@@ -8,13 +8,10 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-
 namespace aliceVision {
 namespace image {
 
-CacheValue::CacheValue()
-{
-}
+CacheValue::CacheValue() {}
 
 CacheValue CacheValue::wrap(std::shared_ptr<Image<unsigned char>> img)
 {
@@ -116,15 +113,12 @@ unsigned long long int CacheValue::memorySize() const
     return 0;
 }
 
-ImageCache::ImageCache(float capacity_MiB, float maxSize_MiB, const ImageReadOptions& options) : 
-    _info(capacity_MiB, maxSize_MiB), 
+ImageCache::ImageCache(float capacity_MiB, float maxSize_MiB, const ImageReadOptions& options)
+  : _info(capacity_MiB, maxSize_MiB),
     _options(options)
-{
-}
+{}
 
-ImageCache::~ImageCache()
-{
-}
+ImageCache::~ImageCache() {}
 
 std::string ImageCache::toString() const
 {
@@ -132,30 +126,27 @@ std::string ImageCache::toString() const
 
     for (const CacheKey& key : _keys)
     {
-        std::string keyDesc = key.filename + 
-                              ", nbChannels: " + std::to_string(key.nbChannels) + 
-                              ", typeDesc: " + std::to_string(key.typeDesc) + 
-                              ", downscaleLevel: " + std::to_string(key.downscaleLevel) + 
-                              ", usages: " + std::to_string(_imagePtrs.at(key).useCount()) + 
+        std::string keyDesc = key.filename + ", nbChannels: " + std::to_string(key.nbChannels) + ", typeDesc: " + std::to_string(key.typeDesc) +
+                              ", downscaleLevel: " + std::to_string(key.downscaleLevel) +
+                              ", usages: " + std::to_string(_imagePtrs.at(key).useCount()) +
                               ", size: " + std::to_string(_imagePtrs.at(key).memorySize());
         description += "\n * " + keyDesc;
     }
 
     std::string memUsageDesc = "\nMemory usage: "
-                               "\n * capacity: " + std::to_string(_info.capacity) + 
-                               "\n * max size: " + std::to_string(_info.maxSize) + 
-                               "\n * nb images: " + std::to_string(_info.nbImages) + 
-                               "\n * content size: " + std::to_string(_info.contentSize);
+                               "\n * capacity: " +
+                               std::to_string(_info.capacity) + "\n * max size: " + std::to_string(_info.maxSize) +
+                               "\n * nb images: " + std::to_string(_info.nbImages) + "\n * content size: " + std::to_string(_info.contentSize);
     description += memUsageDesc;
 
     std::string statsDesc = "\nUsage statistics: "
-                            "\n * nb load from disk: " + std::to_string(_info.nbLoadFromDisk) + 
-                            "\n * nb load from cache: " + std::to_string(_info.nbLoadFromCache) + 
+                            "\n * nb load from disk: " +
+                            std::to_string(_info.nbLoadFromDisk) + "\n * nb load from cache: " + std::to_string(_info.nbLoadFromCache) +
                             "\n * nb remove unused: " + std::to_string(_info.nbRemoveUnused);
     description += statsDesc;
- 
+
     return description;
 }
 
-} // namespace image
-} // namespace aliceVision
+}  // namespace image
+}  // namespace aliceVision

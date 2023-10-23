@@ -9,7 +9,7 @@
 namespace aliceVision {
 namespace camera {
 
-Vec2 Distortion3DERadial4::addDistortion(const Vec2 & p) const
+Vec2 Distortion3DERadial4::addDistortion(const Vec2& p) const
 {
     const double& c2 = _distortionParams[0];
     const double& c4 = _distortionParams[1];
@@ -42,7 +42,7 @@ Vec2 Distortion3DERadial4::addDistortion(const Vec2 & p) const
     return np;
 }
 
-Eigen::Matrix2d Distortion3DERadial4::getDerivativeAddDistoWrtPt(const Vec2 & p) const
+Eigen::Matrix2d Distortion3DERadial4::getDerivativeAddDistoWrtPt(const Vec2& p) const
 {
     const double& c2 = _distortionParams[0];
     const double& c4 = _distortionParams[1];
@@ -61,7 +61,8 @@ Eigen::Matrix2d Distortion3DERadial4::getDerivativeAddDistoWrtPt(const Vec2 & p)
     const double r4 = r2 * r2;
 
     const double eps = 1e-16;
-    if (r2 < eps) {
+    if (r2 < eps)
+    {
         return Eigen::Matrix<double, 2, 2>::Zero();
     }
 
@@ -107,17 +108,13 @@ Eigen::Matrix2d Distortion3DERadial4::getDerivativeAddDistoWrtPt(const Vec2 & p)
     d_y_d_p(0, 1) = 1.0;
 
     Eigen::Matrix<double, 2, 2> ret;
-    ret.block<1, 2>(0, 0) = (x * d_p1_d_p + d_x_d_p * p1) +
-                            (p2 * d_p4_d_p + d_p2_d_p * p4) +
-                            (p6 * d_p5_d_p + d_p6_d_p * p5);
-    ret.block<1, 2>(1, 0) = (y * d_p1_d_p + d_y_d_p * p1) +
-                            (p3 * d_p5_d_p + d_p3_d_p * p5) +
-                            (p6 * d_p4_d_p + d_p6_d_p * p4);
+    ret.block<1, 2>(0, 0) = (x * d_p1_d_p + d_x_d_p * p1) + (p2 * d_p4_d_p + d_p2_d_p * p4) + (p6 * d_p5_d_p + d_p6_d_p * p5);
+    ret.block<1, 2>(1, 0) = (y * d_p1_d_p + d_y_d_p * p1) + (p3 * d_p5_d_p + d_p3_d_p * p5) + (p6 * d_p4_d_p + d_p6_d_p * p4);
 
     return ret;
 }
 
-Eigen::MatrixXd Distortion3DERadial4::getDerivativeAddDistoWrtDisto(const Vec2 & p) const
+Eigen::MatrixXd Distortion3DERadial4::getDerivativeAddDistoWrtDisto(const Vec2& p) const
 {
     const double& c2 = _distortionParams[0];
     const double& c4 = _distortionParams[1];
@@ -136,7 +133,8 @@ Eigen::MatrixXd Distortion3DERadial4::getDerivativeAddDistoWrtDisto(const Vec2 &
     const double r4 = r2 * r2;
 
     const double eps = 1e-8;
-    if (r2 < eps) {
+    if (r2 < eps)
+    {
         return Eigen::Matrix<double, 2, 6>::Zero();
     }
 
@@ -193,13 +191,14 @@ Vec2 Distortion3DERadial4::removeDistortion(const Vec2& p) const
         undistorted_value = undistorted_value - getDerivativeAddDistoWrtPt(undistorted_value).inverse() * diff;
         diff = addDistortion(undistorted_value) - p;
         iter++;
-        if (iter > 100) break;
+        if (iter > 100)
+            break;
     }
 
     return undistorted_value;
 }
 
-Vec2 Distortion3DEAnamorphic4::addDistortion(const Vec2 & p) const
+Vec2 Distortion3DEAnamorphic4::addDistortion(const Vec2& p) const
 {
     const double& cx02 = _distortionParams[0];
     const double& cy02 = _distortionParams[1];
@@ -234,7 +233,7 @@ Vec2 Distortion3DEAnamorphic4::addDistortion(const Vec2 & p) const
     const double& y = p.y();
 
     // First rotate axis
-    const double xr = cphi* x + sphi * y;
+    const double xr = cphi * x + sphi * y;
     const double yr = -sphi * x + cphi * y;
 
     const double xx = xr * xr;
@@ -252,15 +251,12 @@ Vec2 Distortion3DEAnamorphic4::addDistortion(const Vec2 & p) const
     const double squizzed_y = yd * sqy;
 
     // Unrotate axis
-    Vec2 np{
-        cphi* squizzed_x - sphi * squizzed_y,
-        sphi* squizzed_x + cphi * squizzed_y
-    };
+    Vec2 np{cphi * squizzed_x - sphi * squizzed_y, sphi * squizzed_x + cphi * squizzed_y};
 
     return np;
 }
 
-Eigen::Matrix2d Distortion3DEAnamorphic4::getDerivativeAddDistoWrtPt(const Vec2 & p) const
+Eigen::Matrix2d Distortion3DEAnamorphic4::getDerivativeAddDistoWrtPt(const Vec2& p) const
 {
     const double& cx02 = _distortionParams[0];
     const double& cy02 = _distortionParams[1];
@@ -295,7 +291,7 @@ Eigen::Matrix2d Distortion3DEAnamorphic4::getDerivativeAddDistoWrtPt(const Vec2 
     const double& y = p.y();
 
     // First rotate axis
-    double xr = cphi* x + sphi * y;
+    double xr = cphi * x + sphi * y;
     double yr = -sphi * x + cphi * y;
 
     const double xx = xr * xr;
@@ -332,7 +328,7 @@ Eigen::Matrix2d Distortion3DEAnamorphic4::getDerivativeAddDistoWrtPt(const Vec2 
     return d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p;
 }
 
-Eigen::MatrixXd Distortion3DEAnamorphic4::getDerivativeAddDistoWrtDisto(const Vec2 & p) const
+Eigen::MatrixXd Distortion3DEAnamorphic4::getDerivativeAddDistoWrtDisto(const Vec2& p) const
 {
     const double& cx02 = _distortionParams[0];
     const double& cy02 = _distortionParams[1];
@@ -366,7 +362,7 @@ Eigen::MatrixXd Distortion3DEAnamorphic4::getDerivativeAddDistoWrtDisto(const Ve
     const double& y = p.y();
 
     // First rotate axis
-    const double xr = cphi* x + sphi * y;
+    const double xr = cphi * x + sphi * y;
     const double yr = -sphi * x + cphi * y;
 
     const double xx = xr * xr;
@@ -453,9 +449,7 @@ Eigen::MatrixXd Distortion3DEAnamorphic4::getDerivativeAddDistoWrtDisto(const Ve
     d_distop_d_disto(9, 7) = -1.0;
     d_distop_d_disto(9, 9) = 1.0;
 
-    Eigen::Matrix<double, 2, 14> J =
-        (d_np_d_squizzed * d_squizzed_d_disto) +
-        (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto);
+    Eigen::Matrix<double, 2, 14> J = (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto);
 
     J.block(0, 10, 2, 4) = Eigen::Matrix<double, 2, 4>::Zero();
 
@@ -475,13 +469,14 @@ Vec2 Distortion3DEAnamorphic4::removeDistortion(const Vec2& p) const
         undistorted_value = undistorted_value - getDerivativeAddDistoWrtPt(undistorted_value).inverse() * diff;
         diff = addDistortion(undistorted_value) - p;
         iter++;
-        if (iter > 10) break;
+        if (iter > 10)
+            break;
     }
 
     return undistorted_value;
 }
 
-Vec2 Distortion3DEClassicLD::addDistortion(const Vec2 & p) const
+Vec2 Distortion3DEClassicLD::addDistortion(const Vec2& p) const
 {
     const double& delta = _distortionParams[0];
     const double& invepsilon = _distortionParams[1];
@@ -518,7 +513,7 @@ Vec2 Distortion3DEClassicLD::addDistortion(const Vec2 & p) const
     return np;
 }
 
-Eigen::Matrix2d Distortion3DEClassicLD::getDerivativeAddDistoWrtPt(const Vec2 & p) const
+Eigen::Matrix2d Distortion3DEClassicLD::getDerivativeAddDistoWrtPt(const Vec2& p) const
 {
     const double& delta = _distortionParams[0];
     const double& invepsilon = _distortionParams[1];
@@ -568,7 +563,7 @@ Eigen::Matrix2d Distortion3DEClassicLD::getDerivativeAddDistoWrtPt(const Vec2 & 
     return ret;
 }
 
-Eigen::MatrixXd Distortion3DEClassicLD::getDerivativeAddDistoWrtDisto(const Vec2 & p) const
+Eigen::MatrixXd Distortion3DEClassicLD::getDerivativeAddDistoWrtDisto(const Vec2& p) const
 {
     const double& delta = _distortionParams[0];
     const double& invepsilon = _distortionParams[1];
@@ -670,11 +665,12 @@ Vec2 Distortion3DEClassicLD::removeDistortion(const Vec2& p) const
         undistorted_value = undistorted_value - getDerivativeAddDistoWrtPt(undistorted_value).inverse() * diff;
         diff = addDistortion(undistorted_value) - p;
         iter++;
-        if (iter > 1000) break;
+        if (iter > 1000)
+            break;
     }
 
     return undistorted_value;
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

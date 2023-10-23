@@ -15,27 +15,26 @@ namespace depthMap {
 
 int listCudaDevices()
 {
-    int nbDevices = 0; // number of CUDA GPUs
+    int nbDevices = 0;  // number of CUDA GPUs
 
     // determine the number of CUDA capable GPUs
     cudaError_t err = cudaGetDeviceCount(&nbDevices);
     CHECK_CUDA_ERROR();
-    if(err != cudaSuccess)
+    if (err != cudaSuccess)
     {
         ALICEVISION_LOG_ERROR("Cannot get CUDA device count.");
         return 0;
     }
 
-    if(nbDevices < 1)
+    if (nbDevices < 1)
     {
         ALICEVISION_LOG_ERROR("No CUDA capable devices detected.");
         return 0;
     }
 
-
     // display CPU and GPU configuration
-    std::stringstream s; 
-    for(int i = 0; i < nbDevices; ++i)
+    std::stringstream s;
+    for (int i = 0; i < nbDevices; ++i)
     {
         cudaDeviceProp dprop;
         cudaGetDeviceProperties(&dprop, i);
@@ -50,19 +49,19 @@ int getCudaDeviceId()
 {
     int currentCudaDeviceId;
 
-    if(cudaGetDevice(&currentCudaDeviceId) != cudaSuccess)
+    if (cudaGetDevice(&currentCudaDeviceId) != cudaSuccess)
     {
         ALICEVISION_LOG_ERROR("Cannot get current CUDA device id.");
     }
 
     CHECK_CUDA_ERROR();
-   
+
     return currentCudaDeviceId;
 }
 
 void setCudaDeviceId(int cudaDeviceId)
 {
-    if(cudaSetDevice(cudaDeviceId) != cudaSuccess)
+    if (cudaSetDevice(cudaDeviceId) != cudaSuccess)
     {
         ALICEVISION_LOG_ERROR("Cannot set device id " << cudaDeviceId << " as current CUDA device.");
     }
@@ -72,14 +71,14 @@ void setCudaDeviceId(int cudaDeviceId)
 
 bool testCudaDeviceId(int cudaDeviceId)
 {
-  int currentCudaDeviceId;
-  cudaGetDevice(&currentCudaDeviceId);
-  if(currentCudaDeviceId != cudaDeviceId)
-  {
-      ALICEVISION_LOG_WARNING("CUDA device id should be: " << cudaDeviceId << ", program curently use device id: " << currentCudaDeviceId << ".");
-      return false;
-  }
-  return true;
+    int currentCudaDeviceId;
+    cudaGetDevice(&currentCudaDeviceId);
+    if (currentCudaDeviceId != cudaDeviceId)
+    {
+        ALICEVISION_LOG_WARNING("CUDA device id should be: " << cudaDeviceId << ", program curently use device id: " << currentCudaDeviceId << ".");
+        return false;
+    }
+    return true;
 }
 
 void logDeviceMemoryInfo()
@@ -96,10 +95,10 @@ void logDeviceMemoryInfo()
     int cudaDeviceId;
     cudaGetDevice(&cudaDeviceId);
 
-    ALICEVISION_LOG_INFO("Device memory (device id: "<< cudaDeviceId <<"):" << std::endl
-                      << "\t- used: " << usedMB << " MB" << std::endl
-                      << "\t- available: " << availableMB << " MB" << std::endl
-                      << "\t- total: " << totalMB << " MB");
+    ALICEVISION_LOG_INFO("Device memory (device id: " << cudaDeviceId << "):" << std::endl
+                                                      << "\t- used: " << usedMB << " MB" << std::endl
+                                                      << "\t- available: " << availableMB << " MB" << std::endl
+                                                      << "\t- total: " << totalMB << " MB");
 }
 
 void getDeviceMemoryInfo(double& availableMB, double& usedMB, double& totalMB)
@@ -114,5 +113,5 @@ void getDeviceMemoryInfo(double& availableMB, double& usedMB, double& totalMB)
     usedMB = double(itotal - iavail) / (1024.0 * 1024.0);
 }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

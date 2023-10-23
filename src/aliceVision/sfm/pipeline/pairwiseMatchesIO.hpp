@@ -29,43 +29,42 @@ namespace sfm {
  * @param[in] maxNbMatches Maximum number of matches per image pair (and per feature type), 0 = no limit
  * @param[in] useOnlyMatchesFromFolder If enabled, don't use sfmData matches folders
  */
-inline bool loadPairwiseMatches(
-    matching::PairwiseMatches& out_pairwiseMatches,
-    const sfmData::SfMData& sfmData,
-    const std::vector<std::string>& folders,
-    const std::vector<feature::EImageDescriberType>& descTypes,
-    const int maxNbMatches = 0,
-    const int minNbMatches = 0,
-    bool useOnlyMatchesFromFolder = false)
+inline bool loadPairwiseMatches(matching::PairwiseMatches& out_pairwiseMatches,
+                                const sfmData::SfMData& sfmData,
+                                const std::vector<std::string>& folders,
+                                const std::vector<feature::EImageDescriberType>& descTypes,
+                                const int maxNbMatches = 0,
+                                const int minNbMatches = 0,
+                                bool useOnlyMatchesFromFolder = false)
 {
-  std::vector<std::string> matchesFolders;
+    std::vector<std::string> matchesFolders;
 
-  ALICEVISION_LOG_DEBUG("List of provided match folders:");
-  for (auto it = folders.begin(); it != folders.end(); ++it)
-    ALICEVISION_LOG_DEBUG("\t - " << *it);
+    ALICEVISION_LOG_DEBUG("List of provided match folders:");
+    for (auto it = folders.begin(); it != folders.end(); ++it)
+        ALICEVISION_LOG_DEBUG("\t - " << *it);
 
-  if(!useOnlyMatchesFromFolder)
-    matchesFolders = sfmData.getMatchesFolders();
-  else
-    ALICEVISION_LOG_DEBUG("Load only matches from given folder.");
+    if (!useOnlyMatchesFromFolder)
+        matchesFolders = sfmData.getMatchesFolders();
+    else
+        ALICEVISION_LOG_DEBUG("Load only matches from given folder.");
 
-  matchesFolders.insert(matchesFolders.end(), folders.begin(), folders.end());
+    matchesFolders.insert(matchesFolders.end(), folders.begin(), folders.end());
 
-  ALICEVISION_LOG_DEBUG("List of match folders to load:");
-  for (auto it = matchesFolders.begin(); it != matchesFolders.end(); ++it)
-    ALICEVISION_LOG_DEBUG("\t - " << *it);
+    ALICEVISION_LOG_DEBUG("List of match folders to load:");
+    for (auto it = matchesFolders.begin(); it != matchesFolders.end(); ++it)
+        ALICEVISION_LOG_DEBUG("\t - " << *it);
 
-  ALICEVISION_LOG_DEBUG("Loading matches");
-  if (!matching::Load(out_pairwiseMatches, sfmData.getViewsKeys(), matchesFolders, descTypes, maxNbMatches, minNbMatches))
-  {
-    std::stringstream ss("Unable to read the matches file(s) from:\n");
-    for(const std::string& folder : matchesFolders)
-      ss << "\t- " << folder << "\n";
-    ALICEVISION_LOG_WARNING(ss.str());
-    return false;
-  }
-  return true;
+    ALICEVISION_LOG_DEBUG("Loading matches");
+    if (!matching::Load(out_pairwiseMatches, sfmData.getViewsKeys(), matchesFolders, descTypes, maxNbMatches, minNbMatches))
+    {
+        std::stringstream ss("Unable to read the matches file(s) from:\n");
+        for (const std::string& folder : matchesFolders)
+            ss << "\t- " << folder << "\n";
+        ALICEVISION_LOG_WARNING(ss.str());
+        return false;
+    }
+    return true;
 }
 
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

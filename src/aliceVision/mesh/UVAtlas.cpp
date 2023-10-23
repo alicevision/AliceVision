@@ -12,11 +12,10 @@
 namespace aliceVision {
 namespace mesh {
 
-UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp,
-                                 unsigned int textureSide, unsigned int gutterSize)
-    : _textureSide(textureSide)
-    , _gutterSize(gutterSize)
-    , _mesh(mesh)
+UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp, unsigned int textureSide, unsigned int gutterSize)
+  : _textureSide(textureSide),
+    _gutterSize(gutterSize),
+    _mesh(mesh)
 {
     std::vector<Chart> charts;
 
@@ -44,20 +43,20 @@ void UVAtlas::createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams
     // create one chart per triangle
     _triangleCameraIDs.resize(_mesh.tris.size());
     charts.resize(_mesh.tris.size());
-    #pragma omp parallel for
-    for(int i = 0; i < trisCams.size(); ++i)
+#pragma omp parallel for
+    for (int i = 0; i < trisCams.size(); ++i)
     {
         std::vector<std::pair<float, int>> commonCameraIDs;
 
         // project triangle in all cams
         auto cameras = trisCams[i];
-        for(int c = 0; c < cameras.size(); ++c)
+        for (int c = 0; c < cameras.size(); ++c)
         {
             int cameraID = cameras[c];
             // project triangle
             Mesh::triangle_proj tProj = _mesh.getTriangleProjection(i, mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
 
-            if(!_mesh.isTriangleProjectionInImage(mp, tProj, cameraID, 10))
+            if (!_mesh.isTriangleProjectionInImage(mp, tProj, cameraID, 10))
                 continue;
 
             const float area = _mesh.computeTriangleProjectionArea(tProj);
@@ -70,10 +69,10 @@ void UVAtlas::createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams
         Chart& chart = charts[i];
         for (int c = 0; c < commonCameraIDs.size(); ++c)
         {
-          // don't use visibility with less than half the resolution of the best one
-          if (c > 0 && commonCameraIDs[c].first < 0.5 * commonCameraIDs[0].first)
-            break;
-          chart.commonCameraIDs.emplace_back(commonCameraIDs[c].second);
+            // don't use visibility with less than half the resolution of the best one
+            if (c > 0 && commonCameraIDs[c].first < 0.5 * commonCameraIDs[0].first)
+                break;
+            chart.commonCameraIDs.emplace_back(commonCameraIDs[c].second);
         }
         // sort cameras by IDs
         std::sort(chart.commonCameraIDs.begin(), chart.commonCameraIDs.end());
@@ -82,18 +81,17 @@ void UVAtlas::createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams
         _triangleCameraIDs[i] = chart.commonCameraIDs;
 
         // store triangle ID
-        chart.triangleIDs.emplace_back(i); // one triangle per chart in a first place
+        chart.triangleIDs.emplace_back(i);  // one triangle per chart in a first place
     }
 }
 
 void UVAtlas::packCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
-    ALICEVISION_LOG_INFO("Packing texture charts (" <<  charts.size() << " charts).");
+    ALICEVISION_LOG_INFO("Packing texture charts (" << charts.size() << " charts).");
 
-    std::function<int(int)> findChart = [&](int cid)
-    {
+    std::function<int(int)> findChart = [&](int cid) {
         Chart& c = charts[cid];
-        if(c.mergedWith >= 0)
+        if (c.mergedWith >= 0)
         {
             int r = findChart(c.mergedWith);
             c.mergedWith = r;
@@ -104,7 +102,7 @@ void UVAtlas::packCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& 
 
     // list mesh edges (with duplicates)
     std::vector<Edge> alledges;
-    for(int i = 0; i < _mesh.tris.size(); ++i)
+    for (int i = 0; i < _mesh.tris.size(); ++i)
     {
         int a = _mesh.tris[i].v[0];
         int b = _mesh.tris[i].v[1];
@@ -127,11 +125,11 @@ void UVAtlas::packCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& 
     // merge edges (no duplicate)
     std::vector<Edge> edges;
     auto eit = alledges.begin() + 1;
-    while(eit != alledges.end())
+    while (eit != alledges.end())
     {
-        auto& a = *(eit-1);
+        auto& a = *(eit - 1);
         auto& b = *eit;
-        if(a == b)
+        if (a == b)
         {
             a.triangleIDs.insert(a.triangleIDs.end(), b.triangleIDs.begin(), b.triangleIDs.end());
             sort(a.triangleIDs.begin(), a.triangleIDs.end());
@@ -142,24 +140,25 @@ void UVAtlas::packCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& 
     alledges.clear();
 
     // merge charts
-    for(auto& e : edges)
+    for (auto& e : edges)
     {
-        if(e.triangleIDs.size() != 2)
+        if (e.triangleIDs.size() != 2)
             continue;
         int chartIDA = findChart(e.triangleIDs[0]);
         int chartIDB = findChart(e.triangleIDs[1]);
-        if(chartIDA == chartIDB)
+        if (chartIDA == chartIDB)
             continue;
         Chart& a = charts[chartIDA];
         Chart& b = charts[chartIDB];
         std::vector<int> cameraIntersection;
-        std::set_intersection(
-                    a.commonCameraIDs.begin(), a.commonCameraIDs.end(),
-                    b.commonCameraIDs.begin(), b.commonCameraIDs.end(),
-                    std::back_inserter(cameraIntersection));
-        if(cameraIntersection.empty()) // need at least 1 camera in common
+        std::set_intersection(a.commonCameraIDs.begin(),
+                              a.commonCameraIDs.end(),
+                              b.commonCameraIDs.begin(),
+                              b.commonCameraIDs.end(),
+                              std::back_inserter(cameraIntersection));
+        if (cameraIntersection.empty())  // need at least 1 camera in common
             continue;
-        if(a.triangleIDs.size() > b.triangleIDs.size())
+        if (a.triangleIDs.size() > b.triangleIDs.size())
         {
             // merge b in a
             a.commonCameraIDs = cameraIntersection;
@@ -177,24 +176,21 @@ void UVAtlas::packCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& 
     edges.clear();
 
     // remove merged charts
-    charts.erase(remove_if(charts.begin(), charts.end(), [](Chart& c)
-            {
-                return (c.mergedWith >= 0);
-            }), charts.end());
+    charts.erase(remove_if(charts.begin(), charts.end(), [](Chart& c) { return (c.mergedWith >= 0); }), charts.end());
 }
 
 void UVAtlas::finalizeCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
-    ALICEVISION_LOG_INFO("Finalize packed charts (" <<  charts.size() << " charts).");
+    ALICEVISION_LOG_INFO("Finalize packed charts (" << charts.size() << " charts).");
 
-    #pragma omp parallel for
-    for(int i = 0; i < charts.size(); ++i)
+#pragma omp parallel for
+    for (int i = 0; i < charts.size(); ++i)
     {
         auto& chart = charts[i];
 
         // select reference =am
-        if(chart.commonCameraIDs.empty())
-            continue; // skip triangles without visibility information
+        if (chart.commonCameraIDs.empty())
+            continue;  // skip triangles without visibility information
 
         // filter triangles (make unique)
         sort(chart.triangleIDs.begin(), chart.triangleIDs.end());
@@ -202,13 +198,13 @@ void UVAtlas::finalizeCharts(std::vector<Chart>& charts, mvsUtils::MultiViewPara
 
         chart.sourceLU = Pixel(0, 0);
         chart.sourceRD = Pixel(0, 0);
-        for(int camId: chart.commonCameraIDs)
+        for (int camId : chart.commonCameraIDs)
         {
             // store triangle projs and compute chart bounds (in refCamera space)
             Pixel sourceLU = Pixel(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
             Pixel sourceRD = Pixel(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
-        
-            for(auto it = chart.triangleIDs.begin(); it != chart.triangleIDs.end(); ++it)
+
+            for (auto it = chart.triangleIDs.begin(); it != chart.triangleIDs.end(); ++it)
             {
                 Mesh::triangle_proj tp = _mesh.getTriangleProjection(*it, mp, camId, mp.getWidth(camId), mp.getHeight(camId));
                 sourceLU.x = std::min(sourceLU.x, tp.lu.x);
@@ -225,11 +221,12 @@ void UVAtlas::finalizeCharts(std::vector<Chart>& charts, mvsUtils::MultiViewPara
         }
 
         const int largerSize = std::max(chart.sourceWidth(), chart.sourceHeight());
-        if(largerSize > chartMaxSize())
+        if (largerSize > chartMaxSize())
         {
             chart.downscale = static_cast<float>(chartMaxSize()) / static_cast<float>(largerSize);
-            ALICEVISION_LOG_WARNING("Downscaling chart (by " + std::to_string(chart.downscale) + ") to fit in texture."
-                "Set higher texture size for better results.");
+            ALICEVISION_LOG_WARNING("Downscaling chart (by " + std::to_string(chart.downscale) +
+                                    ") to fit in texture."
+                                    "Set higher texture size for better results.");
         }
     }
 }
@@ -239,21 +236,20 @@ void UVAtlas::createTextureAtlases(std::vector<Chart>& charts, mvsUtils::MultiVi
     ALICEVISION_LOG_INFO("Creating texture atlases.");
 
     // sort charts by size, descending
-    std::sort(charts.begin(), charts.end(), [](const Chart& a, const Chart& b)
-    {
+    std::sort(charts.begin(), charts.end(), [](const Chart& a, const Chart& b) {
         int wa = a.targetWidth();
         int wb = b.targetWidth();
-        if(wa == wb)
+        if (wa == wb)
             return a.targetHeight() > b.targetHeight();
         return wa > wb;
     });
 
-    std::size_t i = 0; // forward index
-    std::size_t j = charts.size() - 1; // backward index
+    std::size_t i = 0;                  // forward index
+    std::size_t j = charts.size() - 1;  // backward index
     std::size_t texCount = 0;
 
     // insert charts into one or more texture atlas
-    while(i <= j)
+    while (i <= j)
     {
         texCount++;
         // create a texture atlas
@@ -266,11 +262,10 @@ void UVAtlas::createTextureAtlases(std::vector<Chart>& charts, mvsUtils::MultiVi
         root->RD.x = _textureSide - 1;
         root->RD.y = _textureSide - 1;
 
-        const auto insertChart = [&](size_t idx) -> bool
-        {
+        const auto insertChart = [&](size_t idx) -> bool {
             Chart& chart = charts[idx];
             ChartRect* rect = root->insert(chart, _gutterSize);
-            if(!rect)
+            if (!rect)
                 return false;
 
             // store the final position
@@ -282,11 +277,17 @@ void UVAtlas::createTextureAtlases(std::vector<Chart>& charts, mvsUtils::MultiVi
             return true;
         };
         // insert as many charts as possible in forward direction (largest to smallest)
-        while(i <= j && insertChart(i)) { ++i; }
+        while (i <= j && insertChart(i))
+        {
+            ++i;
+        }
         // fill potential empty space (i != j) in backward direction
-        while(j > i && insertChart(j)) { --j; }
+        while (j > i && insertChart(j))
+        {
+            --j;
+        }
 
-        if(atlas.empty())
+        if (atlas.empty())
             throw std::runtime_error("Unable to add any chart to this atlas");
 
         // atlas is full or all charts have been handled
@@ -301,9 +302,9 @@ void UVAtlas::createTextureAtlases(std::vector<Chart>& charts, mvsUtils::MultiVi
 
 void UVAtlas::ChartRect::clear()
 {
-    if(child[0])
+    if (child[0])
         child[0]->clear();
-    if(child[1])
+    if (child[1])
         child[1]->clear();
     delete child[0];
     delete child[1];
@@ -311,13 +312,13 @@ void UVAtlas::ChartRect::clear()
 
 UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
 {
-    if(child[0] || child[1]) // not a leaf
+    if (child[0] || child[1])  // not a leaf
     {
-        if(child[0])
-            if(ChartRect* rect = child[0]->insert(chart, gutter))
+        if (child[0])
+            if (ChartRect* rect = child[0]->insert(chart, gutter))
                 return rect;
-        if(child[1])
-            if(ChartRect* rect = child[1]->insert(chart, gutter))
+        if (child[1])
+            if (ChartRect* rect = child[1]->insert(chart, gutter))
                 return rect;
         return nullptr;
     }
@@ -326,16 +327,17 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
         size_t chartWidth = chart.targetWidth() + gutter * 2;
         size_t chartHeight = chart.targetHeight() + gutter * 2;
         // if there is already a chart here
-        if(c) return nullptr;
-        // not enough space
-        if(chartWidth > (RD.x - LU.x))
+        if (c)
             return nullptr;
-        if(chartHeight > (RD.y - LU.y))
+        // not enough space
+        if (chartWidth > (RD.x - LU.x))
+            return nullptr;
+        if (chartHeight > (RD.y - LU.y))
             return nullptr;
         // split & create children
-        if(chartWidth >= chartHeight)
+        if (chartWidth >= chartHeight)
         {
-            if(chartWidth < (RD.x - LU.x))
+            if (chartWidth < (RD.x - LU.x))
             {
                 child[0] = new ChartRect();
                 child[0]->LU.x = LU.x + chartWidth;
@@ -343,7 +345,7 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
                 child[0]->RD.x = RD.x;
                 child[0]->RD.y = LU.y + chartHeight;
             }
-            if(chartHeight < (RD.y - LU.y))
+            if (chartHeight < (RD.y - LU.y))
             {
                 child[1] = new ChartRect();
                 child[1]->LU.x = LU.x;
@@ -352,9 +354,9 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
                 child[1]->RD.y = RD.y;
             }
         }
-        else 
+        else
         {
-            if(chartHeight < (RD.y - LU.y))
+            if (chartHeight < (RD.y - LU.y))
             {
                 child[0] = new ChartRect();
                 child[0]->LU.x = LU.x;
@@ -362,7 +364,7 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
                 child[0]->RD.x = LU.x + chartWidth;
                 child[0]->RD.y = RD.y;
             }
-            if(chartWidth < (RD.x - LU.x))
+            if (chartWidth < (RD.x - LU.x))
             {
                 child[1] = new ChartRect();
                 child[1]->LU.x = LU.x + chartWidth;
@@ -377,5 +379,5 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
     }
 }
 
-} // namespace mesh
-} // namespace aliceVision
+}  // namespace mesh
+}  // namespace aliceVision

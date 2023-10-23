@@ -9,7 +9,7 @@
 namespace aliceVision {
 namespace camera {
 
-Vec2 DistortionFisheye::addDistortion(const Vec2 & p) const
+Vec2 DistortionFisheye::addDistortion(const Vec2& p) const
 {
     const double eps = 1e-8;
     const double r = std::hypot(p(0), p(1));
@@ -24,21 +24,21 @@ Vec2 DistortionFisheye::addDistortion(const Vec2 & p) const
     const double& k4 = _distortionParams.at(3);
 
     const double theta = std::atan(r);
-    const double theta2 = theta*theta;
-    const double theta3 = theta2*theta;
-    const double theta4 = theta2*theta2;
-    const double theta5 = theta4*theta;
-    const double theta6 = theta3*theta3;
-    const double theta7 = theta6*theta;
-    const double theta8 = theta4*theta4;
-    const double theta9 = theta8*theta;
-    const double theta_dist = theta + k1*theta3 + k2*theta5 + k3*theta7 + k4*theta9;
+    const double theta2 = theta * theta;
+    const double theta3 = theta2 * theta;
+    const double theta4 = theta2 * theta2;
+    const double theta5 = theta4 * theta;
+    const double theta6 = theta3 * theta3;
+    const double theta7 = theta6 * theta;
+    const double theta8 = theta4 * theta4;
+    const double theta9 = theta8 * theta;
+    const double theta_dist = theta + k1 * theta3 + k2 * theta5 + k3 * theta7 + k4 * theta9;
     const double cdist = theta_dist / r;
 
     return p * cdist;
 }
 
-Eigen::Matrix2d DistortionFisheye::getDerivativeAddDistoWrtPt(const Vec2 & p) const
+Eigen::Matrix2d DistortionFisheye::getDerivativeAddDistoWrtPt(const Vec2& p) const
 {
     const double eps = 1e-8;
     const double r = sqrt(p(0) * p(0) + p(1) * p(1));
@@ -73,31 +73,30 @@ Eigen::Matrix2d DistortionFisheye::getDerivativeAddDistoWrtPt(const Vec2 & p) co
     const double d_cdist_d_theta_dist = 1.0 / r;
     const double d_theta_d_r = 1.0 / (r * r + 1.0);
 
-    const Eigen::Matrix<double, 1, 2> d_cdist_d_p =
-        d_cdist_d_r * d_r_d_p + d_cdist_d_theta_dist * d_theta_dist_d_theta * d_theta_d_r * d_r_d_p;
+    const Eigen::Matrix<double, 1, 2> d_cdist_d_p = d_cdist_d_r * d_r_d_p + d_cdist_d_theta_dist * d_theta_dist_d_theta * d_theta_d_r * d_r_d_p;
 
     return Eigen::Matrix2d::Identity() * cdist + p * d_cdist_d_p;
 }
 
-Eigen::MatrixXd DistortionFisheye::getDerivativeAddDistoWrtDisto(const Vec2 & p) const
+Eigen::MatrixXd DistortionFisheye::getDerivativeAddDistoWrtDisto(const Vec2& p) const
 {
     const double eps = 1e-8;
 
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double r = sqrt(p(0) * p(0) + p(1) * p(1));
     if (r < eps)
     {
         return Eigen::Matrix<double, 2, 4>::Zero();
     }
 
     const double theta = std::atan(r);
-    const double theta2 = theta*theta;
-    const double theta3 = theta2*theta;
-    const double theta4 = theta2*theta2;
-    const double theta5 = theta4*theta;
-    const double theta6 = theta3*theta3;
-    const double theta7 = theta6*theta;
-    const double theta8 = theta4*theta4;
-    const double theta9 = theta8*theta;
+    const double theta2 = theta * theta;
+    const double theta3 = theta2 * theta;
+    const double theta4 = theta2 * theta2;
+    const double theta5 = theta4 * theta;
+    const double theta6 = theta3 * theta3;
+    const double theta7 = theta6 * theta;
+    const double theta8 = theta4 * theta4;
+    const double theta9 = theta8 * theta;
 
     const double d_cdist_d_theta_dist = 1.0 / r;
 
@@ -122,21 +121,22 @@ Vec2 DistortionFisheye::removeDistortion(const Vec2& p) const
         double theta = theta_dist;
         for (int j = 0; j < 10; ++j)
         {
-            const double theta2 = theta*theta;
-            const double theta4 = theta2*theta2;
-            const double theta6 = theta4*theta2;
-            const double theta8 = theta6*theta2;
-            theta = theta_dist / (1 + _distortionParams.at(0) * theta2 + _distortionParams.at(1) * theta4 + _distortionParams.at(2) * theta6 + _distortionParams.at(3) * theta8);
+            const double theta2 = theta * theta;
+            const double theta4 = theta2 * theta2;
+            const double theta6 = theta4 * theta2;
+            const double theta8 = theta6 * theta2;
+            theta = theta_dist / (1 + _distortionParams.at(0) * theta2 + _distortionParams.at(1) * theta4 + _distortionParams.at(2) * theta6 +
+                                  _distortionParams.at(3) * theta8);
         }
         scale = std::tan(theta) / theta_dist;
     }
     return p * scale;
 }
 
-Eigen::Matrix2d DistortionFisheye::getDerivativeRemoveDistoWrtPt(const Vec2 & p) const
+Eigen::Matrix2d DistortionFisheye::getDerivativeRemoveDistoWrtPt(const Vec2& p) const
 {
     const double eps = 1e-8;
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double r = sqrt(p(0) * p(0) + p(1) * p(1));
     if (r < eps)
     {
         return Eigen::Matrix2d::Identity();
@@ -149,11 +149,12 @@ Eigen::Matrix2d DistortionFisheye::getDerivativeRemoveDistoWrtPt(const Vec2 & p)
     return Jinv.inverse();
 }
 
-Eigen::MatrixXd DistortionFisheye::getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const
+Eigen::MatrixXd DistortionFisheye::getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
 {
-    double r_dist = sqrt(p(0)*p(0) + p(1)*p(1));
+    double r_dist = sqrt(p(0) * p(0) + p(1) * p(1));
     const double eps = 1e-8;
-    if (r_dist < eps) {
+    if (r_dist < eps)
+    {
         return Eigen::Matrix<double, 2, 4>::Zero();
     }
 
@@ -166,14 +167,14 @@ Eigen::MatrixXd DistortionFisheye::getDerivativeRemoveDistoWrtDisto(const Vec2 &
     const double& k4 = _distortionParams.at(3);
 
     const double theta = std::atan(r);
-    const double theta2 = theta*theta;
-    const double theta3 = theta2*theta;
-    const double theta4 = theta2*theta2;
-    const double theta5 = theta4*theta;
-    const double theta6 = theta3*theta3;
-    const double theta7 = theta6*theta;
-    const double theta8 = theta4*theta4;
-    const double theta9 = theta8*theta;
+    const double theta2 = theta * theta;
+    const double theta3 = theta2 * theta;
+    const double theta4 = theta2 * theta2;
+    const double theta5 = theta4 * theta;
+    const double theta6 = theta3 * theta3;
+    const double theta7 = theta6 * theta;
+    const double theta8 = theta4 * theta4;
+    const double theta9 = theta8 * theta;
     const double theta_dist = theta + k1 * theta3 + k2 * theta5 + k3 * theta7 + k4 * theta9;
     const double r_coeff = theta_dist / r;
     double d_r_coeff_d_theta_dist = 1.0 / r;
@@ -187,17 +188,17 @@ Eigen::MatrixXd DistortionFisheye::getDerivativeRemoveDistoWrtDisto(const Vec2 &
     Eigen::Matrix<double, 1, 4> d_rcoeff_d_params = d_r_coeff_d_theta_dist * d_r_theta_dist_d_params;
 
     Eigen::Matrix<double, 2, 4> ret;
-    ret(0, 0) = - (p(0) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
-    ret(0, 1) = - (p(0) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
-    ret(0, 2) = - (p(0) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
-    ret(0, 3) = - (p(0) * d_rcoeff_d_params(0, 3)) / (r_coeff * r_coeff);
-    ret(1, 0) = - (p(1) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
-    ret(1, 1) = - (p(1) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
-    ret(1, 2) = - (p(1) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
-    ret(1, 3) = - (p(1) * d_rcoeff_d_params(0, 3)) / (r_coeff * r_coeff);
+    ret(0, 0) = -(p(0) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
+    ret(0, 1) = -(p(0) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
+    ret(0, 2) = -(p(0) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
+    ret(0, 3) = -(p(0) * d_rcoeff_d_params(0, 3)) / (r_coeff * r_coeff);
+    ret(1, 0) = -(p(1) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
+    ret(1, 1) = -(p(1) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
+    ret(1, 2) = -(p(1) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
+    ret(1, 3) = -(p(1) * d_rcoeff_d_params(0, 3)) / (r_coeff * r_coeff);
 
     return ret;
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

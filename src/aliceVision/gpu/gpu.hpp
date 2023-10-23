@@ -18,10 +18,7 @@ namespace gpu {
  * @param[in] minTotalDeviceMemory The minimum device total memory in MB
  * @return True if system support CUDA with the given parameters
  */
-bool gpuSupportCUDA(int minComputeCapabilityMajor,
-                    int minComputeCapabilityMinor,
-                    int minTotalDeviceMemory = 0);
-
+bool gpuSupportCUDA(int minComputeCapabilityMajor, int minComputeCapabilityMinor, int minTotalDeviceMemory = 0);
 
 /**
  * @brief gpuInformationCUDA
@@ -29,5 +26,5 @@ bool gpuSupportCUDA(int minComputeCapabilityMajor,
  */
 std::string gpuInformationCUDA();
 
-} // namespace gpu
-} // namespace aliceVision
+}  // namespace gpu
+}  // namespace aliceVision

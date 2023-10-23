@@ -13,10 +13,10 @@ namespace resection {
 /**
  * @brief Resection solver error interface.
  */
-template <typename ModelT>
+template<typename ModelT>
 struct ISolverErrorResection
 {
-  virtual double error(const ModelT& model, const Vec2& x2d, const Vec3& x3d) const = 0;
+    virtual double error(const ModelT& model, const Vec2& x2d, const Vec3& x3d) const = 0;
 };
 
 }  // namespace resection
