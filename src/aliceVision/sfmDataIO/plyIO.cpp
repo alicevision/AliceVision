@@ -20,15 +20,14 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
     if (!(b_structure || b_extrinsics))
         return false;
 
-    bool b_binary = false;
-    {
-        auto position = filename.find(".bin.");
-        if (position != std::string::npos)
-            b_binary = true;
-    }
+    bool b_binary = filename.find(".bin.") != std::string::npos;
+
+    auto flags = std::ios::out;
+    if (b_binary)
+        flags |= std::ios::binary;
 
     // Create the stream and check it is ok
-    std::ofstream stream(filename);
+    std::ofstream stream(filename, flags);
     if (!stream.is_open())
         return false;
 
@@ -67,12 +66,9 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
 
                     if (b_binary)
                     {
-                        auto point = pose.center().transpose();
-                        float values[3] = {point.x(), point.y(), point.z()};
-                        stream.write(reinterpret_cast<const char*>(&values), sizeof(float) * 3);
-
-                        uint8_t color[3] = {0, 255, 0};
-                        stream.write(reinterpret_cast<const char*>(&color), 3);
+                        Vec3f point = pose.center().cast<float>();
+                        stream.write(reinterpret_cast<const char*>(&point), sizeof(float) * 3);
+                        stream.write(reinterpret_cast<const char*>(&image::GREEN), sizeof(uint8_t) * 3);
                     }
                     else
                     {
@@ -88,21 +84,19 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
             const sfmData::Landmarks& landmarks = sfmData.getLandmarks();
 
             for (sfmData::Landmarks::const_iterator iterLandmarks = landmarks.begin(); iterLandmarks != landmarks.end(); ++iterLandmarks)
+
             {
+                const auto& landmark = iterLandmarks->second;
                 if (b_binary)
                 {
-                    const auto& point = iterLandmarks->second.X.transpose();
-                    float values[3] = {point.x(), point.y(), point.z()};
-                    stream.write(reinterpret_cast<const char*>(&values), sizeof(float) * 3);
-
-                    const auto& rgb = iterLandmarks->second.rgb;
-                    uint8_t color[3] = {rgb.r(), rgb.g(), rgb.b()};
-                    stream.write(reinterpret_cast<const char*>(&color), sizeof(uint8_t) * 3);
+                    Vec3f point = landmark.X.cast<float>();
+                    stream.write(reinterpret_cast<const char*>(&point), sizeof(float) * 3);
+                    stream.write(reinterpret_cast<const char*>(&landmark.rgb), sizeof(uint8_t) * 3);
                 }
                 else
                 {
-                    stream << iterLandmarks->second.X.transpose() << " " << (int)iterLandmarks->second.rgb.r() << " "
-                           << (int)iterLandmarks->second.rgb.g() << " " << (int)iterLandmarks->second.rgb.b() << "\n";
+                    stream << landmark.X.transpose() << " " << (int)landmark.rgb.r() << " " << (int)landmark.rgb.g() << " " << (int)landmark.rgb.b()
+                           << "\n";
                 }
             }
         }
