@@ -510,6 +510,8 @@ struct ColorTypeInfo<RGBAfColor>
     static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::FLOAT;
 };
 
+bool isRawFormat(const std::string& path);
+
 bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
                  const IndexT viewId, const std::string& srcImage, const std::string& fileExtension);
 
