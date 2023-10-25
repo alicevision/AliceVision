@@ -183,7 +183,8 @@ public:
      */
     const std::string& getMetadataModel() const
     {
-        return getMetadata({"Model", "cameraModel", "cameraModelName", "camera model", "camera model name"});
+        return getMetadata({"Model", "cameraModel", "cameraModelName", "CameraModel",
+                            "camera model", "camera_model", "camera model name"});
     }
 
     /**
@@ -219,7 +220,7 @@ public:
      */
     const std::string& getMetadataLensSerialNumber() const
     {
-        return getMetadata({ "Exif:LensSerialNumber", "lensSerialNumber", "lens serial number" });
+        return getMetadata({ "Exif:LensSerialNumber", "lensSerialNumber", "lens serial number", "lens_serial_number" });
     }
 
     /**
@@ -228,7 +229,34 @@ public:
      */
     double getMetadataFocalLength() const
     {
-        return getDoubleMetadata({"Exif:FocalLength", "focalLength", "focal length"});
+        double focalLength = getDoubleMetadata({"Exif:FocalLength", "focalLength", "focal length", "lens_focal_length"});
+
+        if (focalLength == -1)
+        {
+            // Sony metadata: the focal length is provided in meters
+            focalLength = getDoubleMetadata({"LensZoomActualFocalLength"});
+            if (focalLength != -1)
+            {
+                focalLength *= 1000;
+            }
+        }
+
+        // 32767 = (2^15 - 1) - Maximum of a signed short: means there is no available focal length
+        // 4294967295 = (2^32 - 1) - Maximum of a signed integer: means there is no available focal length
+        //   -> might be truncated and/or rounded up to 4.29497e+06
+        else if (focalLength == USHRT_MAX || focalLength == SHRT_MAX || focalLength == UINT_MAX || focalLength == INT_MAX || focalLength == 4294970)
+        {
+            focalLength = -1;
+        }
+
+        // Might be available and more precise (especially if the focal length was initially retrieved from a string)
+        double nominativeFocalLength = getDoubleMetadata({"AxialNominalFocalLength"});
+        if (nominativeFocalLength != -1)
+        {
+            focalLength = nominativeFocalLength;
+        }
+
+        return focalLength;
     }
 
     /**

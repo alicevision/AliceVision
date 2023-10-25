@@ -254,11 +254,23 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
     }
 
     // try to find / compute with 'FocalLengthIn35mmFilm' metadata
-    const bool hasFocalIn35mmMetadata = hasDigitMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"});
+    const bool hasFocalIn35mmMetadata = hasDigitMetadata({
+        "Exif:FocalLengthIn35mmFilm",
+        "FocalLengthIn35mmFilm",
+        "LensZoom35mmStillCameraEquivalent"
+    });
+
     if (hasFocalIn35mmMetadata)
     {
         const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
-        const double focalIn35mm = hasFocalIn35mmMetadata ? getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"}) : -1.0;
+
+        double focalIn35mm = getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"});
+        if (focalIn35mm == -1)
+        {
+            // Info not available in the "classic" metadata, look for the one that's specific to Sony.
+            // Sony metadata: the 35mm focal length equivalent is provided in meters.
+            focalIn35mm = getDoubleMetadata({"LensZoom35mmStillCameraEquivalent"}) * 1000;
+        }
 
         if (sensorWidth == -1.0)
         {
@@ -274,7 +286,7 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
             }
             else
             {
-                // no sensorWidth and no focalLength but valid focalLengthIn35mm, so consider sensorWith
+                // no sensorWidth and no focalLength but valid focalLengthIn35mm, so consider sensorWidth
                 // as 35mm
                 sensorWidth = diag24x36 * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
                 focalLengthmm = sensorWidth * (focalIn35mm) / 36.0;
@@ -314,6 +326,22 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
 
             intrinsicInitMode = camera::EInitMode::ESTIMATED;
         }
+    }
+
+    // If available, effective sensor width and height are provided in µm (Sony)
+    const double effectiveSensorWidth = getDoubleMetadata({ "ImageSensorEffectiveWidth" });
+    const double effectiveSensorHeight = getDoubleMetadata({ "ImageSensorEffectiveHeight "});
+
+    // If no sensor width has been found or computed yet and the effective sensor width is available, then use it
+    const bool effectiveSensorSizeApplied = effectiveSensorWidth != -1.0 && sensorWidth == -1.0;
+    if (effectiveSensorSizeApplied)
+    {
+        sensorWidth = effectiveSensorWidth / 1000.0;
+        if (effectiveSensorHeight != -1.0)
+        {
+            sensorHeight = effectiveSensorHeight / 1000.0;
+        }
+        sensorWidthSource = ESensorWidthSource::FROM_METADATA_ESTIMATION;
     }
 
     // error handling
@@ -369,7 +397,7 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
         sensorWidth = 36.0;
         sensorHeight = 24.0;
     }
-    else
+    else if (sensorHeight == -1.0)  // If the sensor height has already been set with the effective height, don't overwrite it
     {
         sensorHeight = (imageRatio > 1.0) ? sensorWidth / imageRatio : sensorWidth * imageRatio;
     }
