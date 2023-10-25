@@ -21,21 +21,21 @@ double ImageInfo::getEv() const
 std::map<std::string, std::string>::const_iterator ImageInfo::findMetadataIterator(const std::string& name) const
 {
     auto it = _metadata.find(name);
-    if(it != _metadata.end())
+    if (it != _metadata.end())
         return it;
     std::string nameLower = name;
     boost::algorithm::to_lower(nameLower);
-    for(auto mIt = _metadata.begin(); mIt != _metadata.end(); ++mIt)
+    for (auto mIt = _metadata.begin(); mIt != _metadata.end(); ++mIt)
     {
         std::string key = mIt->first;
         boost::algorithm::to_lower(key);
-        if(key.size() > name.size())
+        if (key.size() > name.size())
         {
             auto delimiterIt = key.find_last_of("/:");
-            if(delimiterIt != std::string::npos)
+            if (delimiterIt != std::string::npos)
                 key = key.substr(delimiterIt + 1);
         }
-        if(key == nameLower)
+        if (key == nameLower)
         {
             return mIt;
         }
@@ -46,7 +46,7 @@ std::map<std::string, std::string>::const_iterator ImageInfo::findMetadataIterat
 bool ImageInfo::hasMetadata(const std::vector<std::string>& names) const
 {
     return std::any_of(names.cbegin(), names.cend(),
-                       [this](const std::string& name){
+                       [this](const std::string& name) {
                            return (findMetadataIterator(name) != _metadata.end());
                        });
 }
@@ -56,11 +56,11 @@ bool ImageInfo::hasDigitMetadata(const std::vector<std::string>& names, bool isP
     bool hasDigitMetadata = false;
     double value = -1.0;
 
-    for(const std::string& name : names)
+    for (const std::string& name : names)
     {
         const auto it = findMetadataIterator(name);
 
-        if(it == _metadata.end() || it->second.empty())
+        if (it == _metadata.end() || it->second.empty())
         {
             continue;
         }
@@ -71,7 +71,7 @@ bool ImageInfo::hasDigitMetadata(const std::vector<std::string>& names, bool isP
             hasDigitMetadata = true;
             break;
         }
-        catch(std::exception&)
+        catch (std::exception&)
         {
             value = -1.0;
         }
@@ -82,10 +82,10 @@ bool ImageInfo::hasDigitMetadata(const std::vector<std::string>& names, bool isP
 const std::string& ImageInfo::getMetadata(const std::vector<std::string>& names) const
 {
     static const std::string emptyString;
-    for(const std::string& name : names)
+    for (const std::string& name : names)
     {
         const auto it = findMetadataIterator(name);
-        if(it != _metadata.end())
+        if (it != _metadata.end())
             return it->second;
     }
     return emptyString;
@@ -98,7 +98,7 @@ double ImageInfo::readRealNumber(const std::string& str) const
         std::smatch m;
         std::regex pattern_frac("([0-9]+)\\/([0-9]+)");
 
-        if(!std::regex_search(str, m, pattern_frac))
+        if (!std::regex_search(str, m, pattern_frac))
         {
             return std::stod(str);
         }
@@ -106,12 +106,12 @@ double ImageInfo::readRealNumber(const std::string& str) const
         const int num = std::stoi(m[1].str());
         const int denum = std::stoi(m[2].str());
 
-        if(denum != 0)
+        if (denum != 0)
             return double(num) / double(denum);
         else
             return 0.0;
     }
-    catch(std::exception&)
+    catch (std::exception&)
     {
         return -1.0;
     }
@@ -137,13 +137,13 @@ bool ImageInfo::getDoubleMetadata(const std::vector<std::string>& names, double&
 int ImageInfo::getIntMetadata(const std::vector<std::string>& names) const
 {
     const std::string value = getMetadata(names);
-    if(value.empty())
+    if (value.empty())
         return -1;
     try
     {
         return std::stoi(value);
     }
-    catch(std::exception&)
+    catch (std::exception&)
     {
         return -1;
     }
@@ -152,7 +152,7 @@ int ImageInfo::getIntMetadata(const std::vector<std::string>& names) const
 bool ImageInfo::hasGpsMetadata() const
 {
     const auto tags = GPSExifTags::all();
-    return std::all_of(tags.cbegin(), tags.cend(), [this](const std::string& t){ return hasMetadata({t}); });
+    return std::all_of(tags.cbegin(), tags.cend(), [this](const std::string& t) { return hasMetadata({t}); });
 }
 
 Vec3 ImageInfo::getGpsPositionFromMetadata() const
@@ -187,8 +187,9 @@ Vec3 ImageInfo::getGpsPositionWGS84FromMetadata() const
     return {lat, lon, alt};
 }
 
-int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, double& sensorWidth, double& sensorHeight,
-                        double& focalLengthmm, camera::EInitMode& intrinsicInitMode, bool verbose)
+int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, double& sensorWidth,
+                             double& sensorHeight, double& focalLengthmm, camera::EInitMode& intrinsicInitMode,
+                             bool verbose)
 {
     int errCode = 0;
 
@@ -214,10 +215,11 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
             if (verbose)
             {
                 // sensor is in the database
-                ALICEVISION_LOG_TRACE("Sensor width found in sensor database: " << std::endl
-                                                                                << "\t- brand: " << make << std::endl
-                                                                                << "\t- model: " << model << std::endl
-                                                                                << "\t- sensor width: " << datasheet._sensorWidth << " mm");
+                ALICEVISION_LOG_TRACE("Sensor width found in sensor database: "
+                                      << std::endl
+                                      << "\t- brand: " << make << std::endl
+                                      << "\t- model: " << model << std::endl
+                                      << "\t- sensor width: " << datasheet._sensorWidth << " mm");
             }
 
             if ((datasheet._model != model) && (datasheet._model != make + " " + model))
@@ -227,13 +229,17 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
 
                 if (verbose)
                 {
-                    ALICEVISION_LOG_WARNING("The camera found in the sensor database is slightly different for image " << getImagePath());
-                    ALICEVISION_LOG_WARNING("\t- image camera brand: " << make << std::endl
-                                                                       << "\t- image camera model: " << model << std::endl
-                                                                       << "\t- sensor database camera brand: " << datasheet._brand << std::endl
-                                                                       << "\t- sensor database camera model: " << datasheet._model << std::endl
-                                                                       << "\t- sensor database camera sensor width: " << datasheet._sensorWidth << " mm");
-                    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the sensor database." << std::endl);
+                    ALICEVISION_LOG_WARNING("The camera found in the sensor database is slightly different for image "
+                                            << getImagePath());
+                    ALICEVISION_LOG_WARNING("\t- image camera brand: "
+                                            << make << std::endl
+                                            << "\t- image camera model: " << model << std::endl
+                                            << "\t- sensor database camera brand: " << datasheet._brand << std::endl
+                                            << "\t- sensor database camera model: " << datasheet._model << std::endl
+                                            << "\t- sensor database camera sensor width: " << datasheet._sensorWidth
+                                            << " mm");
+                    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the sensor database."
+                                            << std::endl);
                 }
             }
 
@@ -248,11 +254,23 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
     }
 
     // try to find / compute with 'FocalLengthIn35mmFilm' metadata
-    const bool hasFocalIn35mmMetadata = hasDigitMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"});
+    const bool hasFocalIn35mmMetadata = hasDigitMetadata({
+        "Exif:FocalLengthIn35mmFilm",
+        "FocalLengthIn35mmFilm",
+        "LensZoom35mmStillCameraEquivalent"
+    });
+
     if (hasFocalIn35mmMetadata)
     {
         const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
-        const double focalIn35mm = hasFocalIn35mmMetadata ? getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"}) : -1.0;
+
+        double focalIn35mm = getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"});
+        if (focalIn35mm == -1)
+        {
+            // Info not available in the "classic" metadata, look for the one that's specific to Sony.
+            // Sony metadata: the 35mm focal length equivalent is provided in meters.
+            focalIn35mm = getDoubleMetadata({"LensZoom35mmStillCameraEquivalent"}) * 1000;
+        }
 
         if (sensorWidth == -1.0)
         {
@@ -268,7 +286,7 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
             }
             else
             {
-                // no sensorWidth and no focalLength but valid focalLengthIn35mm, so consider sensorWith
+                // no sensorWidth and no focalLength but valid focalLengthIn35mm, so consider sensorWidth
                 // as 35mm
                 sensorWidth = diag24x36 * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
                 focalLengthmm = sensorWidth * (focalIn35mm) / 36.0;
@@ -299,7 +317,8 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
             if (verbose)
             {
                 std::stringstream ss;
-                ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image " << getImagePath() << "\n";
+                ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image " << getImagePath()
+                   << "\n";
                 ss << "\t- sensor width: " << sensorWidth << "\n";
                 ss << "\t- focal length: " << focalLengthmm << "\n";
                 ALICEVISION_LOG_DEBUG(ss.str());
@@ -307,6 +326,22 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
 
             intrinsicInitMode = camera::EInitMode::ESTIMATED;
         }
+    }
+
+    // If available, effective sensor width and height are provided in µm (Sony)
+    const double effectiveSensorWidth = getDoubleMetadata({ "ImageSensorEffectiveWidth" });
+    const double effectiveSensorHeight = getDoubleMetadata({ "ImageSensorEffectiveHeight "});
+
+    // If no sensor width has been found or computed yet and the effective sensor width is available, then use it
+    const bool effectiveSensorSizeApplied = effectiveSensorWidth != -1.0 && sensorWidth == -1.0;
+    if (effectiveSensorSizeApplied)
+    {
+        sensorWidth = effectiveSensorWidth / 1000.0;
+        if (effectiveSensorHeight != -1.0)
+        {
+            sensorHeight = effectiveSensorHeight / 1000.0;
+        }
+        sensorWidthSource = ESensorWidthSource::FROM_METADATA_ESTIMATION;
     }
 
     // error handling
@@ -362,7 +397,7 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
         sensorWidth = 36.0;
         sensorHeight = 24.0;
     }
-    else
+    else if (sensorHeight == -1.0)  // If the sensor height has already been set with the effective height, don't overwrite it
     {
         sensorHeight = (imageRatio > 1.0) ? sensorWidth / imageRatio : sensorWidth * imageRatio;
     }
