@@ -8,6 +8,7 @@
 #include "plyIO.hpp"
 
 #include <fstream>
+#include <iostream>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -22,12 +23,8 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
 
     bool b_binary = filename.find(".bin.") != std::string::npos;
 
-    auto flags = std::ios::out;
-    if (b_binary)
-        flags |= std::ios::binary;
-
     // Create the stream and check it is ok
-    std::ofstream stream(filename, flags);
+    std::ofstream stream(filename, b_binary ? std::ios::out | std::ios::binary : std::ios::out);
     if (!stream.is_open())
         return false;
 
