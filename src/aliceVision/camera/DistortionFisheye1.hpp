@@ -14,29 +14,23 @@ namespace camera {
 
 class DistortionFisheye1 : public Distortion
 {
-public:
-    DistortionFisheye1()
-    {
-        _distortionParams = {0.0};
-    }
+  public:
+    DistortionFisheye1() { _distortionParams = {0.0}; }
 
-    explicit DistortionFisheye1(double p1)
-    {
-        _distortionParams = {p1};
-    }
+    explicit DistortionFisheye1(double p1) { _distortionParams = {p1}; }
 
     EDISTORTION getType() const override { return EDISTORTION::DISTORTION_FISHEYE1; }
 
     DistortionFisheye1* clone() const override { return new DistortionFisheye1(*this); }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-    Vec2 addDistortion(const Vec2 & p) const override;
+    Vec2 addDistortion(const Vec2& p) const override;
 
     /// Remove distortion (return p' such that disto(p') = p)
     Vec2 removeDistortion(const Vec2& p) const override;
 
-    ~DistortionFisheye1() override  = default;
+    ~DistortionFisheye1() override = default;
 };
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

@@ -6,11 +6,10 @@
 
 namespace aliceVision {
 
-
 void HardwareContext::displayHardware()
 {
     std::cout << "Hardware : " << std::endl;
-    
+
     std::cout << "\tDetected core count : " << system::get_total_cpus() << std::endl;
 
     if (_maxUserCoresAvailable < std::numeric_limits<unsigned int>::max())
@@ -21,8 +20,8 @@ void HardwareContext::displayHardware()
     std::cout << "\tOpenMP will use " << omp_get_max_threads() << " cores" << std::endl;
 
     auto meminfo = system::getMemoryInfo();
-    
-    std::cout << "\tDetected available memory : " << meminfo.availableRam / (1024 * 1024)  << " Mo" << std::endl;
+
+    std::cout << "\tDetected available memory : " << meminfo.availableRam / (1024 * 1024) << " Mo" << std::endl;
 
     if (_maxUserMemoryAvailable < std::numeric_limits<size_t>::max())
     {
@@ -33,17 +32,17 @@ void HardwareContext::displayHardware()
 }
 
 unsigned int HardwareContext::getMaxThreads() const
-{   
-    //Get hardware limit on threads
+{
+    // Get hardware limit on threads
     unsigned int count = system::get_total_cpus();
 
-    //Get User max threads
+    // Get User max threads
     if (count > _maxUserCoresAvailable)
     {
         count = _maxUserCoresAvailable;
     }
 
-    //Get User limit max threads
+    // Get User limit max threads
     if (_limitUserCores > 0 && count > _limitUserCores)
     {
         count = _limitUserCores;
@@ -52,7 +51,7 @@ unsigned int HardwareContext::getMaxThreads() const
     return count;
 }
 
-size_t HardwareContext::getMaxMemory() const 
+size_t HardwareContext::getMaxMemory() const
 {
     auto meminfo = system::getMemoryInfo();
 
@@ -62,4 +61,4 @@ size_t HardwareContext::getMaxMemory() const
     return ret;
 }
 
-}
+}  // namespace aliceVision

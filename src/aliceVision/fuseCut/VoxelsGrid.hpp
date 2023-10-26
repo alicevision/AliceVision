@@ -17,11 +17,11 @@ namespace fuseCut {
 
 class VoxelsGrid
 {
-public:
+  public:
     mvsUtils::MultiViewParams* mp;
 
     Voxel voxelDim;
-    Point3d space[8]; // TODO FACA: array
+    Point3d space[8];  // TODO FACA: array
     StaticVector<Point3d>* voxels;
     std::string spaceRootDir;
     std::string spaceCamsTracksDir;
@@ -43,8 +43,12 @@ public:
     StaticVector<OctreeTracks::trackStruct*>* loadTracksFromVoxelFiles(StaticVector<int>** cams, int id);
     void generateCamsPtsFromVoxelsTracks();
     void generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& RD, const std::string& depthMapsPtsSimsTmpDir);
-    void generateTracksForEachVoxel(StaticVector<Point3d>* ReconstructionPlan, int numSubVoxs, int maxPts, int level,
-                                    int& maxlevel, const std::string& depthMapsPtsSimsTmpDir);
+    void generateTracksForEachVoxel(StaticVector<Point3d>* ReconstructionPlan,
+                                    int numSubVoxs,
+                                    int maxPts,
+                                    int level,
+                                    int& maxlevel,
+                                    const std::string& depthMapsPtsSimsTmpDir);
     void vizualize();
 
     void cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpace);
@@ -56,5 +60,5 @@ public:
     void getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi);
 };
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

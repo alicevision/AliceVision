@@ -18,10 +18,10 @@ namespace calibration {
 
 /**
  * @brief Set of 2D points that belong to the same line.
- * 
+ *
  * The 2D points correspond to real-world points that are aligned and evenly spaced
  * observed with a camera which applies some distortion on them.
- * 
+ *
  * Therefore these 2D points may not actually be aligned and evenly spaced,
  * and this difference with the ideal line model is used to estimate distortion.
  */
@@ -44,9 +44,9 @@ struct Statistics
 
 /**
  * @brief Estimate the undistortion parameters of a camera using a set of line aligned points.
- * 
+ *
  * This algorithms minimizes a distance between points and lines using distortion.
- * 
+ *
  * @param[out] undistortionToEstimate Undistortion object with the parameters to estimate.
  * @param[out] statistics Statistics on the estimation error.
  * @param[in] lines Set of line aligned points used to estimate distortion.
@@ -60,5 +60,5 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               bool lockCenter,
               const std::vector<bool>& lockDistortions);
 
-} // namespace calibration
-} // namespace aliceVision
+}  // namespace calibration
+}  // namespace aliceVision

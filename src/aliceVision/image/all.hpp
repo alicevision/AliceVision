@@ -9,7 +9,7 @@
 
 // Get rid of the specific MSVC compiler warnings.
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
-# define _CRT_SECURE_NO_WARNINGS
+    #define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include "aliceVision/image/Image.hpp"

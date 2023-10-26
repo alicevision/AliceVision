@@ -10,11 +10,8 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
-
-namespace aliceVision
-{
-namespace sfmData
-{
+namespace aliceVision {
+namespace sfmData {
 
 /**
  * @brief EXIF Orientation to names
@@ -22,15 +19,15 @@ namespace sfmData
  */
 enum class EEXIFOrientation
 {
-  NONE = 1
-  , REVERSED = 2
-  , UPSIDEDOWN = 3
-  , UPSIDEDOWN_REVERSED = 4
-  , LEFT_REVERSED = 5
-  , LEFT = 6  
-  , RIGHT_REVERSED = 7
-  , RIGHT = 8
-  , UNKNOWN = -1
+    NONE = 1,
+    REVERSED = 2,
+    UPSIDEDOWN = 3,
+    UPSIDEDOWN_REVERSED = 4,
+    LEFT_REVERSED = 5,
+    LEFT = 6,
+    RIGHT_REVERSED = 7,
+    RIGHT = 8,
+    UNKNOWN = -1
 };
 
 struct GPSExifTags
@@ -44,5 +41,5 @@ struct GPSExifTags
     static std::vector<std::string> all();
 };
 
-}
-}
+}  // namespace sfmData
+}  // namespace aliceVision

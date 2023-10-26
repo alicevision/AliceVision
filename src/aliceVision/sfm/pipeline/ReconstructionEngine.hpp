@@ -18,79 +18,61 @@ namespace sfm {
 
 void retrieveMarkersId(sfmData::SfMData& sfmData);
 
-
 /**
  * @brief Basic Reconstruction Engine.
  * Process Function handle the reconstruction.
  */
 class ReconstructionEngine
 {
-public:
+  public:
+    /**
+     * @brief ReconstructionEngine Constructor
+     * @param[in] sfmData The input SfMData of the scene
+     * @param[in] outFolder The folder where outputs will be stored
+     */
+    ReconstructionEngine(const sfmData::SfMData& sfmData, const std::string& outFolder)
+      : _outputFolder(outFolder),
+        _sfmData(sfmData)
+    {}
 
-  /**
-   * @brief ReconstructionEngine Constructor
-   * @param[in] sfmData The input SfMData of the scene
-   * @param[in] outFolder The folder where outputs will be stored
-   */
-  ReconstructionEngine(const sfmData::SfMData& sfmData, const std::string& outFolder)
-    : _outputFolder(outFolder)
-    , _sfmData(sfmData)
-  {}
+    virtual ~ReconstructionEngine() {}
 
-  virtual ~ReconstructionEngine() {}
+    /**
+     * @brief Reconstruction process
+     * @return true if the scene is reconstructed
+     */
+    virtual bool process() = 0;
 
-  /**
-   * @brief Reconstruction process
-   * @return true if the scene is reconstructed
-   */
-  virtual bool process() = 0;
+    /**
+     * @brief Get the scene SfMData
+     * @return SfMData
+     */
+    inline const sfmData::SfMData& getSfMData() const { return _sfmData; }
 
-  /**
-   * @brief Get the scene SfMData
-   * @return SfMData
-   */
-  inline const sfmData::SfMData& getSfMData() const
-  {
-    return _sfmData;
-  }
+    /**
+     * @brief Get the scene SfMData
+     * @return SfMData
+     */
+    inline sfmData::SfMData& getSfMData() { return _sfmData; }
 
-  /**
-   * @brief Get the scene SfMData
-   * @return SfMData
-   */
-  inline sfmData::SfMData& getSfMData()
-  {
-    return _sfmData;
-  }
+    /**
+     * @brief Colorization of the reconstructed scene
+     * @return true if ok
+     */
+    inline void colorize() { sfmData::colorizeTracks(_sfmData); }
 
-  /**
-   * @brief Colorization of the reconstructed scene
-   * @return true if ok
-   */
-  inline void colorize()
-  {
-    sfmData::colorizeTracks(_sfmData);
-  }
+    void retrieveMarkersId() { aliceVision::sfm::retrieveMarkersId(_sfmData); }
 
-  void retrieveMarkersId()
-  {
-      aliceVision::sfm::retrieveMarkersId(_sfmData);
-  }
+    void initRandomSeed(int seed) { _randomNumberGenerator.seed(seed == -1 ? std::random_device()() : seed); }
 
-  void initRandomSeed(int seed)
-  {
-      _randomNumberGenerator.seed(seed == -1 ? std::random_device()() : seed);
-  }
-
-protected:
-  /// Output folder where outputs will be stored
-  std::string _outputFolder;
-  /// Internal SfMData
-  sfmData::SfMData _sfmData;
-  //Random engine
-  std::mt19937 _randomNumberGenerator;
+  protected:
+    /// Output folder where outputs will be stored
+    std::string _outputFolder;
+    /// Internal SfMData
+    sfmData::SfMData _sfmData;
+    // Random engine
+    std::mt19937 _randomNumberGenerator;
 };
 
-
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

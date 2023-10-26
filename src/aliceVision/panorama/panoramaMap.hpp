@@ -13,50 +13,35 @@
 #include <list>
 #include <map>
 
-namespace aliceVision
-{
-
+namespace aliceVision {
 
 class PanoramaMap
 {
-public:
-    PanoramaMap(int width, int height, int scale, int borderSize) : 
-    _panoramaWidth(width), 
-    _panoramaHeight(height),
-    _scale(scale),
-    _borderSize(borderSize)
+  public:
+    PanoramaMap(int width, int height, int scale, int borderSize)
+      : _panoramaWidth(width),
+        _panoramaHeight(height),
+        _scale(scale),
+        _borderSize(borderSize)
+    {}
+
+    bool append(IndexT index, const BoundingBox& box);
+
+    bool getOverlaps(std::vector<IndexT>& overlaps, IndexT reference) const;
+
+    bool getOverlaps(std::vector<IndexT>& overlaps, const BoundingBox& referenceBoundingBox) const;
+
+    int getWidth() const { return _panoramaWidth; }
+
+    int getHeight() const { return _panoramaHeight; }
+
+    size_t getScale() const { return _scale; }
+
+    size_t getBorderSize() const { return _borderSize; }
+
+    bool getBoundingBox(BoundingBox& bb, const IndexT& id) const
     {
-    }
-
-    bool append(IndexT index, const BoundingBox & box);
-
-    bool getOverlaps(std::vector<IndexT> & overlaps, IndexT reference) const;
-
-    bool getOverlaps(std::vector<IndexT> & overlaps, const BoundingBox & referenceBoundingBox) const;
-
-    int getWidth() const
-    {
-        return _panoramaWidth;
-    }
-
-    int getHeight() const
-    {
-        return _panoramaHeight;
-    }
-
-    size_t getScale() const
-    {
-        return _scale;
-    }
-
-    size_t getBorderSize() const
-    {
-        return _borderSize;
-    }
-
-    bool getBoundingBox(BoundingBox & bb, const IndexT & id) const
-    {
-        if (_map.find(id) == _map.end()) 
+        if (_map.find(id) == _map.end())
         {
             return false;
         }
@@ -66,16 +51,22 @@ public:
         return true;
     }
 
-    bool getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const IndexT & referenceIndex, const IndexT & otherIndex) const;
-    
-    bool getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const BoundingBox & referenceBoundingBox, const IndexT & otherIndex) const;
+    bool getIntersectionsList(std::vector<BoundingBox>& intersections,
+                              std::vector<BoundingBox>& currentBoundingBoxes,
+                              const IndexT& referenceIndex,
+                              const IndexT& otherIndex) const;
 
-    bool optimizeChunks(std::vector<std::vector<IndexT>> & chunks, int chunkSize);
+    bool getIntersectionsList(std::vector<BoundingBox>& intersections,
+                              std::vector<BoundingBox>& currentBoundingBoxes,
+                              const BoundingBox& referenceBoundingBox,
+                              const IndexT& otherIndex) const;
 
-private:
-    bool intersect(const BoundingBox & box1, const BoundingBox & box2) const;
+    bool optimizeChunks(std::vector<std::vector<IndexT>>& chunks, int chunkSize);
 
-private:
+  private:
+    bool intersect(const BoundingBox& box1, const BoundingBox& box2) const;
+
+  private:
     std::map<IndexT, BoundingBox> _map;
 
     int _panoramaWidth;
@@ -84,4 +75,4 @@ private:
     int _borderSize;
 };
 
-}
+}  // namespace aliceVision

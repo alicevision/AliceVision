@@ -13,13 +13,8 @@ namespace camera {
 
 bool IntrinsicBase::operator==(const IntrinsicBase& other) const
 {
-    return _w == other._w &&
-            _h == other._h &&
-            _sensorWidth == other._sensorWidth &&
-            _sensorHeight == other._sensorHeight &&
-            _serialNumber == other._serialNumber &&
-            _initializationMode == other._initializationMode &&
-            getType() == other.getType();
+    return _w == other._w && _h == other._h && _sensorWidth == other._sensorWidth && _sensorHeight == other._sensorHeight &&
+           _serialNumber == other._serialNumber && _initializationMode == other._initializationMode && getType() == other.getType();
 }
 
 Vec3 IntrinsicBase::backproject(const Vec2& pt2D, bool applyUndistortion, const geometry::Pose3& pose, double depth) const
@@ -32,7 +27,7 @@ Vec3 IntrinsicBase::backproject(const Vec2& pt2D, bool applyUndistortion, const 
     return output;
 }
 
-Vec4 IntrinsicBase::getCartesianfromSphericalCoordinates(const Vec3 & pt)
+Vec4 IntrinsicBase::getCartesianfromSphericalCoordinates(const Vec3& pt)
 {
     Vec4 rpt;
     rpt.x() = pt(0);
@@ -43,7 +38,7 @@ Vec4 IntrinsicBase::getCartesianfromSphericalCoordinates(const Vec3 & pt)
     return rpt;
 }
 
-Eigen::Matrix<double, 4, 3> IntrinsicBase::getDerivativeCartesianfromSphericalCoordinates(const Vec3 & pt)
+Eigen::Matrix<double, 4, 3> IntrinsicBase::getDerivativeCartesianfromSphericalCoordinates(const Vec3& pt)
 {
     Eigen::Matrix<double, 4, 3> ret = Eigen::Matrix<double, 4, 3>::Zero();
 
@@ -54,18 +49,20 @@ Eigen::Matrix<double, 4, 3> IntrinsicBase::getDerivativeCartesianfromSphericalCo
     return ret;
 }
 
-bool IntrinsicBase::isVisible(const Vec2 & pix) const
+bool IntrinsicBase::isVisible(const Vec2& pix) const
 {
-    if (pix(0) < 0 || pix(0) >= _w || pix(1) < 0 || pix(1) >= _h) {
+    if (pix(0) < 0 || pix(0) >= _w || pix(1) < 0 || pix(1) >= _h)
+    {
         return false;
     }
 
     return true;
 }
 
-bool IntrinsicBase::isVisible(const Vec2f & pix) const
+bool IntrinsicBase::isVisible(const Vec2f& pix) const
 {
-    if (pix(0) < 0 || pix(0) >= _w || pix(1) < 0 || pix(1) >= _h) {
+    if (pix(0) < 0 || pix(0) >= _w || pix(1) < 0 || pix(1) >= _h)
+    {
         return false;
     }
 
@@ -101,5 +98,5 @@ void IntrinsicBase::rescale(float factor)
     _h = static_cast<unsigned int>(floor(static_cast<float>(_h) * factor));
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

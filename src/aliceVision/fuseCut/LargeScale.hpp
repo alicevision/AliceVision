@@ -19,7 +19,7 @@ namespace fuseCut {
 
 class LargeScale
 {
-public:
+  public:
     mvsUtils::MultiViewParams* mp;
     std::string spaceFolderName;
     std::string spaceVoxelsFolderName;
@@ -41,15 +41,12 @@ public:
     bool generateSpace(int maxPts, int ocTreeDim, bool generateTracks);
     Point3d getSpaceSteps();
 
-    std::string getReconstructionVoxelFolder(int i) const
-    {
-        return spaceFolderName + "reconstructedVoxel" + mvsUtils::num2strFourDecimal(i) + "/";
-    }
+    std::string getReconstructionVoxelFolder(int i) const { return spaceFolderName + "reconstructedVoxel" + mvsUtils::num2strFourDecimal(i) + "/"; }
     std::vector<std::string> getRecsDirs(const StaticVector<Point3d>* voxelsArray) const
     {
         std::vector<std::string> recsDirs;
         recsDirs.reserve(voxelsArray->size() / 8);
-        for(int i = 0; i < voxelsArray->size() / 8; i++)
+        for (int i = 0; i < voxelsArray->size() / 8; i++)
         {
             recsDirs.push_back(getReconstructionVoxelFolder(i));
         }
@@ -57,5 +54,5 @@ public:
     }
 };
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

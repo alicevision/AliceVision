@@ -24,11 +24,11 @@ namespace feature {
  */
 enum class EImageDescriberPreset
 {
-  LOW = 0
-  , MEDIUM
-  , NORMAL
-  , HIGH
-  , ULTRA
+    LOW = 0,
+    MEDIUM,
+    NORMAL,
+    HIGH,
+    ULTRA
 };
 
 inline std::string EImageDescriberPreset_information()
@@ -38,7 +38,8 @@ inline std::string EImageDescriberPreset_information()
            "* MEDIUM: Low density (max 5K points).\n"
            "* NORMAL: Default feature density (max 10K points).\n"
            "* HIGH: High density (max 50K points).\n"
-           "* ULTRA: Very high density (max 100K points). Can use large amount of storage and large amount of computation. Use only on small datasets.\n";
+           "* ULTRA: Very high density (max 100K points). Can use large amount of storage and large amount of computation. Use only on small "
+           "datasets.\n";
 }
 
 EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& imageDescriberPreset);
@@ -72,7 +73,6 @@ EFeatureQuality EFeatureQuality_stringToEnum(const std::string& v);
 std::string EFeatureQuality_enumToString(const EFeatureQuality v);
 std::ostream& operator<<(std::ostream& os, EFeatureQuality v);
 std::istream& operator>>(std::istream& in, EFeatureQuality& v);
-
 
 /**
  * @brief The method used to filter out features with too low constrast (that can be considered as noise).
@@ -114,7 +114,6 @@ EFeatureConstrastFiltering EFeatureConstrastFiltering_stringToEnum(const std::st
 std::string EFeatureConstrastFiltering_enumToString(const EFeatureConstrastFiltering v);
 std::ostream& operator<<(std::ostream& os, EFeatureConstrastFiltering v);
 std::istream& operator>>(std::istream& in, EFeatureConstrastFiltering& v);
-
 
 struct ConfigurationPreset
 {
@@ -159,116 +158,106 @@ struct ConfigurationPreset
  */
 class ImageDescriber
 {
-public:
-  ImageDescriber() = default;
+  public:
+    ImageDescriber() = default;
 
-  virtual ~ImageDescriber() = default;
+    virtual ~ImageDescriber() = default;
 
-  /**
-   * @brief Check if the image describer use CUDA
-   * @return True if the image describer use CUDA
-   */
-  virtual bool useCuda() const = 0;
+    /**
+     * @brief Check if the image describer use CUDA
+     * @return True if the image describer use CUDA
+     */
+    virtual bool useCuda() const = 0;
 
-  /**
-   * @brief Check if the image describer use float image
-   * @return True if the image describer use float image
-   */
-  virtual bool useFloatImage() const = 0;
+    /**
+     * @brief Check if the image describer use float image
+     * @return True if the image describer use float image
+     */
+    virtual bool useFloatImage() const = 0;
 
-  /**
-   * @brief Get the corresponding EImageDescriberType
-   * @return EImageDescriberType
-   */
-  virtual EImageDescriberType getDescriberType() const = 0;
+    /**
+     * @brief Get the corresponding EImageDescriberType
+     * @return EImageDescriberType
+     */
+    virtual EImageDescriberType getDescriberType() const = 0;
 
-  /**
-   * @brief Get the total amount of RAM needed for a
-   * feature extraction of an image of the given dimension.
-   * @param[in] width The image width
-   * @param[in] height The image height
-   * @return total amount of memory needed
-   */
-  virtual std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const = 0;
+    /**
+     * @brief Get the total amount of RAM needed for a
+     * feature extraction of an image of the given dimension.
+     * @param[in] width The image width
+     * @param[in] height The image height
+     * @return total amount of memory needed
+     */
+    virtual std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const = 0;
 
-  /**
-   * @brief Set image describer always upRight
-   * @param[in] upRight
-   */
-  virtual void setUpRight(bool upRight) {}
+    /**
+     * @brief Set image describer always upRight
+     * @param[in] upRight
+     */
+    virtual void setUpRight(bool upRight) {}
 
-  /**
-   * @brief Set if yes or no imageDescriber need to use cuda implementation
-   * @param[in] useCuda
-   */
-  virtual void setUseCuda(bool useCuda) {}
+    /**
+     * @brief Set if yes or no imageDescriber need to use cuda implementation
+     * @param[in] useCuda
+     */
+    virtual void setUseCuda(bool useCuda) {}
 
-  /**
-   * @brief set the CUDA pipe
-   * @param[in] pipe The CUDA pipe id
-   */
-  virtual void setCudaPipe(int pipe) {}
+    /**
+     * @brief set the CUDA pipe
+     * @param[in] pipe The CUDA pipe id
+     */
+    virtual void setCudaPipe(int pipe) {}
 
-  /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration
-   */
-  virtual void setConfigurationPreset(ConfigurationPreset preset) = 0;
+    /**
+     * @brief Use a preset to control the number of detected regions
+     * @param[in] preset The preset configuration
+     */
+    virtual void setConfigurationPreset(ConfigurationPreset preset) = 0;
 
-  /**
-   * @brief Detect regions on the 8-bit image and compute their attributes (description)
-   * @param[in] image Image.
-   * @param[out] regions The detected regions and attributes
-   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
-   * Non-zero values depict the region of interest.
-   */
-  virtual bool describe(const image::Image<unsigned char>& image,
-                        std::unique_ptr<Regions>& regions,
-                        const image::Image<unsigned char>* mask = nullptr)
-  {
-    throw std::logic_error("Cannot use " + EImageDescriberType_enumToString(getDescriberType()) + " image describer with an 8-bit image.");
-    return false;
-  }
+    /**
+     * @brief Detect regions on the 8-bit image and compute their attributes (description)
+     * @param[in] image Image.
+     * @param[out] regions The detected regions and attributes
+     * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
+     * Non-zero values depict the region of interest.
+     */
+    virtual bool describe(const image::Image<unsigned char>& image,
+                          std::unique_ptr<Regions>& regions,
+                          const image::Image<unsigned char>* mask = nullptr)
+    {
+        throw std::logic_error("Cannot use " + EImageDescriberType_enumToString(getDescriberType()) + " image describer with an 8-bit image.");
+        return false;
+    }
 
-  /**
-   * @brief Detect regions on the float image and compute their attributes (description)
-   * @param[in] image Image.
-   * @param[out] regions The detected regions and attributes
-   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
-   * Non-zero values depict the region of interest.
-   */
-  virtual bool describe(const image::Image<float>& image,
-                        std::unique_ptr<Regions>& regions,
-                        const image::Image<unsigned char>* mask = nullptr)
-  {
-    throw std::logic_error("Cannot use " + EImageDescriberType_enumToString(getDescriberType()) + " image describer with a float image.");
-    return false;
-  }
+    /**
+     * @brief Detect regions on the float image and compute their attributes (description)
+     * @param[in] image Image.
+     * @param[out] regions The detected regions and attributes
+     * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
+     * Non-zero values depict the region of interest.
+     */
+    virtual bool describe(const image::Image<float>& image, std::unique_ptr<Regions>& regions, const image::Image<unsigned char>* mask = nullptr)
+    {
+        throw std::logic_error("Cannot use " + EImageDescriberType_enumToString(getDescriberType()) + " image describer with a float image.");
+        return false;
+    }
 
-  /**
-   * @brief Allocate Regions type depending of the ImageDescriber
-   * @param[in,out] regions
-   */
-  virtual void allocate(std::unique_ptr<Regions>& regions) const = 0;
+    /**
+     * @brief Allocate Regions type depending of the ImageDescriber
+     * @param[in,out] regions
+     */
+    virtual void allocate(std::unique_ptr<Regions>& regions) const = 0;
 
-  // IO - one file for region features, one file for region descriptors
+    // IO - one file for region features, one file for region descriptors
 
-  void Load(Regions* regions,
-    const std::string& sfileNameFeats,
-    const std::string& sfileNameDescs) const
-  {
-    regions->Load(sfileNameFeats, sfileNameDescs);
-  }
+    void Load(Regions* regions, const std::string& sfileNameFeats, const std::string& sfileNameDescs) const
+    {
+        regions->Load(sfileNameFeats, sfileNameDescs);
+    }
 
-  void Save(const Regions* regions,
-    const std::string& sfileNameFeats,
-    const std::string& sfileNameDescs) const;
+    void Save(const Regions* regions, const std::string& sfileNameFeats, const std::string& sfileNameDescs) const;
 
-  void LoadFeatures(Regions* regions,
-    const std::string& sfileNameFeats) const
-  {
-    regions->LoadFeatures(sfileNameFeats);
-  }
+    void LoadFeatures(Regions* regions, const std::string& sfileNameFeats) const { regions->LoadFeatures(sfileNameFeats); }
 };
 
 /**
@@ -277,5 +266,5 @@ public:
  */
 std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDescriberType);
 
-} // namespace feature
-} // namespace aliceVision
+}  // namespace feature
+}  // namespace aliceVision

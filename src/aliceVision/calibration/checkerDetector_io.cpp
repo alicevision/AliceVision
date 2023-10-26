@@ -9,8 +9,7 @@
 namespace aliceVision {
 namespace calibration {
 
-CheckerDetector::CheckerBoardCorner tag_invoke(boost::json::value_to_tag<CheckerDetector::CheckerBoardCorner>,
-                                               boost::json::value const& jv)
+CheckerDetector::CheckerBoardCorner tag_invoke(boost::json::value_to_tag<CheckerDetector::CheckerBoardCorner>, boost::json::value const& jv)
 {
     const boost::json::object& obj = jv.as_object();
 
@@ -26,15 +25,15 @@ CheckerDetector::CheckerBoardCorner tag_invoke(boost::json::value_to_tag<Checker
     return ret;
 }
 
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv,
-                CheckerDetector::CheckerBoardCorner const& t)
+void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, CheckerDetector::CheckerBoardCorner const& t)
 {
-    jv = {
-    	{"center_x", t.center.x()}, {"center_y", t.center.y()}, 
-    	{"dir1_x", t.dir1.x()}, {"dir1_y", t.dir1.y()}, 
-    	{"dir2_x", t.dir2.x()}, {"dir2_y", t.dir2.y()},
-        {"scale", t.scale}
-    };
+    jv = {{"center_x", t.center.x()},
+          {"center_y", t.center.y()},
+          {"dir1_x", t.dir1.x()},
+          {"dir1_y", t.dir1.y()},
+          {"dir2_x", t.dir2.x()},
+          {"dir2_y", t.dir2.y()},
+          {"scale", t.scale}};
 }
 
 CheckerDetector tag_invoke(boost::json::value_to_tag<CheckerDetector>, boost::json::value const& jv)
@@ -43,17 +42,17 @@ CheckerDetector tag_invoke(boost::json::value_to_tag<CheckerDetector>, boost::js
     boost::json::object const& obj = jv.as_object();
 
     ret.getCorners() = boost::json::value_to<std::vector<CheckerDetector::CheckerBoardCorner>>(obj.at("corners"));
-    
+
     std::vector<boost::json::value> jvs = boost::json::value_to<std::vector<boost::json::value>>(obj.at("boards"));
 
-    for(boost::json::value & ljv : jvs)
+    for (boost::json::value& ljv : jvs)
     {
-        boost::json::object const & lobj = ljv.as_object();
+        boost::json::object const& lobj = ljv.as_object();
 
         const int rows = boost::json::value_to<int>(lobj.at("rows"));
         const int cols = boost::json::value_to<int>(lobj.at("cols"));
         const std::vector<IndexT> values = boost::json::value_to<std::vector<IndexT>>(lobj.at("data"));
-        
+
         CheckerDetector::CheckerBoard board(rows, cols);
         std::size_t pos = 0;
         for (int i = 0; i < rows; ++i)
@@ -75,7 +74,7 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, Chec
 {
     std::vector<boost::json::value> jvs;
 
-    for(auto b : t.getBoards())
+    for (auto b : t.getBoards())
     {
         std::vector<IndexT> values;
         for (int i = 0; i < b.rows(); ++i)
@@ -86,18 +85,13 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, Chec
             }
         }
 
-        boost::json::value sjv = {
-            {"rows", b.rows()}, {"cols", b.cols()}, {"data", boost::json::value_from(values)}
-        };
+        boost::json::value sjv = {{"rows", b.rows()}, {"cols", b.cols()}, {"data", boost::json::value_from(values)}};
 
         jvs.push_back(sjv);
     }
 
-    jv = {
-        {"corners", boost::json::value_from(t.getCorners())},
-        {"boards", boost::json::value_from(jvs)}
-    };
+    jv = {{"corners", boost::json::value_from(t.getCorners())}, {"boards", boost::json::value_from(jvs)}};
 }
 
-} // namespace calibration
-} // namespace aliceVision
+}  // namespace calibration
+}  // namespace aliceVision

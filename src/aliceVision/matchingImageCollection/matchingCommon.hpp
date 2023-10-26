@@ -12,14 +12,13 @@
 
 namespace aliceVision {
 namespace matchingImageCollection {
-  
+
 /**
- * 
+ *
  * @param matcherType
- * @return 
+ * @return
  */
 std::unique_ptr<IImageCollectionMatcher> createImageCollectionMatcher(matching::EMatcherType matcherType, float distRatio, bool crossMatching);
 
-
-} // namespace matching
-} // namespace aliceVision
+}  // namespace matchingImageCollection
+}  // namespace aliceVision

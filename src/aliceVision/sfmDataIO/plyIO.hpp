@@ -21,9 +21,7 @@ namespace sfmDataIO {
  * @param[in] partFlag The ESfMData save flag
  * @return true if completed
  */
-bool savePLY(const sfmData::SfMData& sfmData,
-             const std::string& filename,
-             ESfMData partFlag);
+bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
-} // namespace sfmDataIO
-} // namespace aliceVision
+}  // namespace sfmDataIO
+}  // namespace aliceVision

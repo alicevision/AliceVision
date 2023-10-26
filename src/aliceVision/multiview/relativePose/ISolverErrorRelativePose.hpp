@@ -8,7 +8,6 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 
-
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
@@ -16,10 +15,10 @@ namespace relativePose {
 /**
  * @brief Relative pose solver error interface.
  */
-template <typename ModelT>
+template<typename ModelT>
 struct ISolverErrorRelativePose
 {
-  virtual double error(const ModelT& model, const Vec2& x1, const Vec2& x2) const = 0;
+    virtual double error(const ModelT& model, const Vec2& x1, const Vec2& x2) const = 0;
 };
 
 }  // namespace relativePose

@@ -39,18 +39,18 @@ float computeAutomaticContrastFactor(const image::Image<float>& image, const flo
 
     int nbValues = 0;
 
-    for(int i = 1; i < height - 1; ++i)
+    for (int i = 1; i < height - 1; ++i)
     {
-        for(int j = 1; j < width - 1; ++j)
+        for (int j = 1; j < width - 1; ++j)
         {
             const float val = grad(i, j);
 
-            if(val > 0)
+            if (val > 0)
             {
                 int binId = floor((val / gradMax) * static_cast<float>(nbBins));
 
                 // handle overflow (need to do it in a cleaner way)
-                if(binId == nbBins)
+                if (binId == nbBins)
                     --binId;
 
                 // accumulate
@@ -65,15 +65,15 @@ float computeAutomaticContrastFactor(const image::Image<float>& image, const flo
     int binId = 0;
     std::size_t acc = 0;
 
-    while(acc < searchId && binId < nbBins)
+    while (acc < searchId && binId < nbBins)
     {
         acc += histo[binId];
         ++binId;
     }
 
     // handle 0 bin search
-    if(acc < searchId)
-        return 0.03f; // only empiric value
+    if (acc < searchId)
+        return 0.03f;  // only empiric value
 
     return gradMax * static_cast<float>(binId) / static_cast<float>(nbBins);
 }

@@ -25,45 +25,45 @@ namespace sensorDB {
 
 bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& databaseStructure)
 {
-  std::ifstream fileIn(databaseFilePath);
-  if(!fileIn || !fs::exists(databaseFilePath) || !fs::is_regular_file(databaseFilePath))
-    return false;
+    std::ifstream fileIn(databaseFilePath);
+    if (!fileIn || !fs::exists(databaseFilePath) || !fs::is_regular_file(databaseFilePath))
+        return false;
 
-  std::string line;
-  while(fileIn.good())
-  {
-    getline( fileIn, line);
-    if(!line.empty())
+    std::string line;
+    while (fileIn.good())
     {
-      if(line[0] != '#')
-      {
-        std::vector<std::string> values;
-        boost::split(values, line, boost::is_any_of(";"));
-
-        if(values.size() >= 4)
+        getline(fileIn, line);
+        if (!line.empty())
         {
-          const std::string brand = values[0];
-          const std::string model = values[1];
-          const double sensorWidth = std::stod(values[2]);
-          databaseStructure.emplace_back(brand, model, sensorWidth);
+            if (line[0] != '#')
+            {
+                std::vector<std::string> values;
+                boost::split(values, line, boost::is_any_of(";"));
+
+                if (values.size() >= 4)
+                {
+                    const std::string brand = values[0];
+                    const std::string model = values[1];
+                    const double sensorWidth = std::stod(values[2]);
+                    databaseStructure.emplace_back(brand, model, sensorWidth);
+                }
+            }
         }
-      }
     }
-  }
-  return true;
+    return true;
 }
 
 bool getInfo(const std::string& brand, const std::string& model, const std::vector<Datasheet>& databaseStructure, Datasheet& datasheetContent)
 {
-  Datasheet refDatasheet(brand, model, -1.);
-  auto datasheet = std::find(databaseStructure.begin(), databaseStructure.end(), refDatasheet);
+    Datasheet refDatasheet(brand, model, -1.);
+    auto datasheet = std::find(databaseStructure.begin(), databaseStructure.end(), refDatasheet);
 
-  if(datasheet == databaseStructure.end())
-    return false;
+    if (datasheet == databaseStructure.end())
+        return false;
 
-  datasheetContent = *datasheet;
-  return true;
+    datasheetContent = *datasheet;
+    return true;
 }
 
-} // namespace sensorDB
-} // namespace aliceVision
+}  // namespace sensorDB
+}  // namespace aliceVision

@@ -33,7 +33,7 @@ Vec2 Undistortion3DEAnamorphic4::undistortNormalized(const Vec2& p) const
     const double cx_xxyy = 2 * cx04 - 6 * cx44;
     const double cx_xxxx = cx04 + cx24 + cx44;
     const double cx_yyyy = cx04 - cx24 + cx44;
-    
+
     const double cy_xx = cy02 + cy22;
     const double cy_yy = cy02 - cy22;
     const double cy_xxyy = 2 * cy04 - 6 * cy44;
@@ -44,7 +44,7 @@ Vec2 Undistortion3DEAnamorphic4::undistortNormalized(const Vec2& p) const
     const double& y = p.y();
 
     // First rotate axis
-    const double xr = cphi* x + sphi * y;
+    const double xr = cphi * x + sphi * y;
     const double yr = -sphi * x + cphi * y;
 
     const double xx = xr * xr;
@@ -56,20 +56,20 @@ Vec2 Undistortion3DEAnamorphic4::undistortNormalized(const Vec2& p) const
     // Compute dist
     const double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
     const double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
-    
+
     // Squeeze axis
     const double squizzed_x = xd * sqx;
     const double squizzed_y = yd * sqy;
 
     // Unrotate axis
     Vec2 np;
-    np.x() = cphi* squizzed_x - sphi * squizzed_y;
-    np.y() = sphi* squizzed_x + cphi * squizzed_y;
+    np.x() = cphi * squizzed_x - sphi * squizzed_y;
+    np.y() = sphi * squizzed_x + cphi * squizzed_y;
 
     return np;
 }
 
-Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNormalizedwrtPoint(const Vec2 &p) const
+Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNormalizedwrtPoint(const Vec2& p) const
 {
     const double& cx02 = _undistortionParams[0];
     const double& cy02 = _undistortionParams[1];
@@ -93,7 +93,7 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNo
     const double cx_xxyy = 2 * cx04 - 6 * cx44;
     const double cx_xxxx = cx04 + cx24 + cx44;
     const double cx_yyyy = cx04 - cx24 + cx44;
-    
+
     const double cy_xx = cy02 + cy22;
     const double cy_yy = cy02 - cy22;
     const double cy_xxyy = 2 * cy04 - 6 * cy44;
@@ -104,7 +104,7 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNo
     const double& y = p.y();
 
     // First rotate axis
-    const double xr = cphi* x + sphi * y;
+    const double xr = cphi * x + sphi * y;
     const double yr = -sphi * x + cphi * y;
 
     const double xx = xr * xr;
@@ -151,7 +151,7 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNo
     return d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p;
 }
 
-Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivativeUndistortNormalizedwrtParameters(const Vec2 &p) const
+Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivativeUndistortNormalizedwrtParameters(const Vec2& p) const
 {
     const double& cx02 = _undistortionParams[0];
     const double& cy02 = _undistortionParams[1];
@@ -186,7 +186,7 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivati
     const double& y = p.y();
 
     // First rotate axis
-    const double xr = cphi* x + sphi * y;
+    const double xr = cphi * x + sphi * y;
     const double yr = -sphi * x + cphi * y;
 
     const double xx = xr * xr;
@@ -223,7 +223,6 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivati
     d_np_d_squizzed(0, 1) = 0;
     d_np_d_squizzed(1, 0) = 0;
     d_np_d_squizzed(1, 1) = 1;
-
 
     Eigen::Matrix2d d_squizzed_d_d;
     d_squizzed_d_d(0, 0) = sqx;
@@ -280,9 +279,9 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivati
     d_distop_d_disto(8, 9) = 1.0;
     d_distop_d_disto(9, 5) = 1.0;
     d_distop_d_disto(9, 7) = -1.0;
-    d_distop_d_disto(9, 9) = 1.0; 
+    d_distop_d_disto(9, 9) = 1.0;
 
-    Eigen::Matrix<double, 2, 14> J = (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto) ;
+    Eigen::Matrix<double, 2, 14> J = (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto);
 
     return J;
 }
@@ -300,11 +299,12 @@ Vec2 Undistortion3DEAnamorphic4::inverseNormalized(const Vec2& p) const
         distorted_value = distorted_value - getDerivativeUndistortNormalizedwrtPoint(distorted_value).inverse() * diff;
         diff = undistortNormalized(distorted_value) - p;
         iter++;
-        if (iter > 100) break;
+        if (iter > 100)
+            break;
     }
 
     return distorted_value;
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

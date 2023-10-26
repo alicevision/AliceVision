@@ -14,24 +14,14 @@ namespace camera {
 
 class DistortionBrown : public Distortion
 {
-public:
-    DistortionBrown()
-    {
-        _distortionParams = {0.0, 0.0, 0.0, 0.0, 0.0};
-    }
+  public:
+    DistortionBrown() { _distortionParams = {0.0, 0.0, 0.0, 0.0, 0.0}; }
 
-    DistortionBrown(double p1, double p2, double p3, double p4, double p5)
-    {
-        _distortionParams = {p1, p2, p3, p4, p5};
-    }
-
+    DistortionBrown(double p1, double p2, double p3, double p4, double p5) { _distortionParams = {p1, p2, p3, p4, p5}; }
 
     EDISTORTION getType() const override { return EDISTORTION::DISTORTION_BROWN; }
 
-    DistortionBrown* clone() const override
-    {
-        return new DistortionBrown(*this);
-    }
+    DistortionBrown* clone() const override { return new DistortionBrown(*this); }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
     Vec2 addDistortion(const Vec2& p) const override;
@@ -45,5 +35,5 @@ public:
     ~DistortionBrown() override = default;
 };
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

@@ -18,12 +18,11 @@ namespace photometricStereo {
 
 struct PhotometricSteroParameters
 {
-    size_t SHOrder; // Order of spherical harmonics (lighting)
-    bool removeAmbiant; // Do we remove ambiant light ? (currently tested)
-    bool isRobust; // Do we use the robust version of the algorithm ? (currently tested)
-    int downscale; // Downscale factor
+    size_t SHOrder;      // Order of spherical harmonics (lighting)
+    bool removeAmbiant;  // Do we remove ambiant light ? (currently tested)
+    bool isRobust;       // Do we use the robust version of the algorithm ? (currently tested)
+    int downscale;       // Downscale factor
 };
-
 
 /**
  * @brief Load data from a given folder and prepare the PS algorithm parameters
@@ -34,8 +33,11 @@ struct PhotometricSteroParameters
  * @param[out] normals Normal map of the scene
  * @param[out] albedo Albedo map of the scene
  */
-void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath,
-                       const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals,
+void photometricStereo(const std::string& inputPath,
+                       const std::string& lightData,
+                       const std::string& outputPath,
+                       const PhotometricSteroParameters& PSParameters,
+                       image::Image<image::RGBfColor>& normals,
                        image::Image<image::RGBfColor>& albedo);
 
 /**
@@ -49,9 +51,13 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
  * @param[out] normals Normal map of the scene
  * @param[out] albedo Albedo map of the scene
  */
-void photometricStereo(const sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath,
-                       const std::string& outputPath, const PhotometricSteroParameters& PSParameters,
-                       image::Image<image::RGBfColor>& normals, image::Image<image::RGBfColor>& albedo);
+void photometricStereo(const sfmData::SfMData& sfmData,
+                       const std::string& lightData,
+                       const std::string& maskPath,
+                       const std::string& outputPath,
+                       const PhotometricSteroParameters& PSParameters,
+                       image::Image<image::RGBfColor>& normals,
+                       image::Image<image::RGBfColor>& albedo);
 
 /**
  * @brief Apply the PS algorithm for a given set of pictures sharing the same pose
@@ -64,9 +70,13 @@ void photometricStereo(const sfmData::SfMData& sfmData, const std::string& light
  * @param[out] normals Normal map of the scene
  * @param[out] albedo Albedo map of the scene
  */
-void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList,
-                       const Eigen::MatrixXf& lightMat, image::Image<float>& mask, const std::string& pathToAmbiant,
-                       const PhotometricSteroParameters& PSParameters, image::Image<image::RGBfColor>& normals,
+void photometricStereo(const std::vector<std::string>& imageList,
+                       const std::vector<std::array<float, 3>>& intList,
+                       const Eigen::MatrixXf& lightMat,
+                       image::Image<float>& mask,
+                       const std::string& pathToAmbiant,
+                       const PhotometricSteroParameters& PSParameters,
+                       image::Image<image::RGBfColor>& normals,
                        image::Image<image::RGBfColor>& albedo);
 
 /**
@@ -76,8 +86,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
  * @param[out] intList Intensities of lights
  * @param[out] lightMat Directions of lights
  */
-void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList,
-                Eigen::MatrixXf& lightMat);
+void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat);
 
 /**
  * @brief Get the name of the pictures in a given folder
@@ -109,9 +118,8 @@ void shrink(const Eigen::MatrixXf& mat, const float rho, Eigen::MatrixXf& E);
  */
 void median(const Eigen::MatrixXf& d, float& median);
 
-void slice(const std::vector<int>& inputVector, int start, int numberOfElements,
-           std::vector<int>& currentMaskIndices);
+void slice(const std::vector<int>& inputVector, int start, int numberOfElements, std::vector<int>& currentMaskIndices);
 
 void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColor>& normals);
-}
-}
+}  // namespace photometricStereo
+}  // namespace aliceVision

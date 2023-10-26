@@ -23,7 +23,7 @@ namespace depthMap {
  */
 class DeviceCache
 {
-public:
+  public:
     static DeviceCache& getInstance()
     {
         static DeviceCache instance;
@@ -88,8 +88,7 @@ public:
      */
     const int requestCameraParamsId(int camId, int downscale, const mvsUtils::MultiViewParams& mp);
 
-private:
-
+  private:
     // private members
 
     /*
@@ -102,12 +101,12 @@ private:
         ~SingleDeviceCache() = default;
 
         // caches Least Recently Used
-        LRUCameraIdCache mipmapCache;    //< device mipmap image id cached per (camera id)
-        LRUCameraCache cameraParamCache; //< device camera parameters id cached per (camera id, downscale)
+        LRUCameraIdCache mipmapCache;     //< device mipmap image id cached per (camera id)
+        LRUCameraCache cameraParamCache;  //< device camera parameters id cached per (camera id, downscale)
 
-        std::vector<std::unique_ptr<DeviceMipmapImage>> mipmaps; //< cached device mipmap images
+        std::vector<std::unique_ptr<DeviceMipmapImage>> mipmaps;  //< cached device mipmap images
     };
-    std::map <int, std::unique_ptr<SingleDeviceCache>> _cachePerDevice; // <cudaDeviceId, SingleDeviceCachePtr>
+    std::map<int, std::unique_ptr<SingleDeviceCache>> _cachePerDevice;  // <cudaDeviceId, SingleDeviceCachePtr>
 
     // private methods
 
@@ -124,5 +123,5 @@ private:
     SingleDeviceCache& getCurrentDeviceCache();
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

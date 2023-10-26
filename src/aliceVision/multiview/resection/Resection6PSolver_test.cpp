@@ -24,15 +24,13 @@ using namespace aliceVision::multiview;
 
 BOOST_AUTO_TEST_CASE(Resection6PSolver)
 {
-
     const std::size_t nbViews{3};
     const std::size_t nbPoints{30};
     // Suppose a camera with Unit matrix as K
-    const NViewDataSet d = NRealisticCamerasRing(
-        nbViews, nbPoints, NViewDatasetConfigurator(1, 1, 0, 0, 5, 0));
+    const NViewDataSet d = NRealisticCamerasRing(nbViews, nbPoints, NViewDatasetConfigurator(1, 1, 0, 0, 5, 0));
 
     // Solve the problem and check that fitted value are good enough
-    for(std::size_t camIndex = 0; camIndex < nbViews; ++camIndex)
+    for (std::size_t camIndex = 0; camIndex < nbViews; ++camIndex)
     {
         const Mat pts2d = d._x[camIndex];
         const Mat pts3d = d._X;
@@ -50,7 +48,7 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver)
         Mat34 estProjMat = projMats.at(0).getMatrix().array() / projMats.at(0).getMatrix().norm();
         EXPECT_MATRIX_NEAR(gtProjMat, estProjMat, 1e-8);
 
-        for(Mat::Index i = 0; i < pts2d.cols(); ++i)
+        for (Mat::Index i = 0; i < pts2d.cols(); ++i)
         {
             const auto error = (project(estProjMat, Vec3(pts3d.col(i))) - pts2d.col(i)).norm();
             BOOST_CHECK_SMALL(error, 1e-8);
@@ -60,17 +58,15 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver)
 
 BOOST_AUTO_TEST_CASE(Resection6PSolver_weights)
 {
-
     const std::size_t nbViews{3};
     const std::size_t nbPoints{30};
     // Suppose a camera with Unit matrix as K
-    const NViewDataSet d = NRealisticCamerasRing(
-        nbViews, nbPoints, NViewDatasetConfigurator(1, 1, 0, 0, 5, 0));
+    const NViewDataSet d = NRealisticCamerasRing(nbViews, nbPoints, NViewDatasetConfigurator(1, 1, 0, 0, 5, 0));
 
     const std::vector<double> weights(nbPoints, 1.);
 
     // Solve the problem and check that fitted value are good enough
-    for(std::size_t camIndex = 0; camIndex < nbViews; ++camIndex)
+    for (std::size_t camIndex = 0; camIndex < nbViews; ++camIndex)
     {
         const Mat pts2d = d._x[camIndex];
         const Mat pts3d = d._X;
@@ -88,7 +84,7 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver_weights)
         Mat34 estProjMat = projMats.at(0).getMatrix().array() / projMats.at(0).getMatrix().norm();
         EXPECT_MATRIX_NEAR(gtProjMat, estProjMat, 1e-8);
 
-        for(Mat::Index i = 0; i < pts2d.cols(); ++i)
+        for (Mat::Index i = 0; i < pts2d.cols(); ++i)
         {
             const auto error = (project(estProjMat, Vec3(pts3d.col(i))) - pts2d.col(i)).norm();
             BOOST_CHECK_SMALL(error, 1e-8);
@@ -100,9 +96,9 @@ using VectorOfPair = std::vector<std::pair<Mat::Index, Mat::Index>>;
 
 bool isIndexInVector(const VectorOfPair& vec, VectorOfPair::value_type::first_type val)
 {
-    for(const auto v : vec)
+    for (const auto v : vec)
     {
-        if(val == v.first || val == v.second)
+        if (val == v.first || val == v.second)
         {
             return true;
         }
@@ -118,17 +114,16 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver_weights_outliers)
     const std::size_t nbViews{3};
     const std::size_t nbPoints{30};
     // Suppose a camera with Unit matrix as K
-    const NViewDataSet d = NRealisticCamerasRing(
-        nbViews, nbPoints, NViewDatasetConfigurator(1, 1, 0, 0, 5, 0));
+    const NViewDataSet d = NRealisticCamerasRing(nbViews, nbPoints, NViewDatasetConfigurator(1, 1, 0, 0, 5, 0));
 
     std::vector<double> weights(nbPoints, 1.);
 
     Mat pts3d = d._X;
 
     // generate some outliers, simply swap the position of some 3d points
-    const VectorOfPair idx2swap{ {3, 10}, {15, 23} };
+    const VectorOfPair idx2swap{{3, 10}, {15, 23}};
 
-    for(const auto idx : idx2swap)
+    for (const auto idx : idx2swap)
     {
         // swap the relevant columns
         pts3d.col(idx.first).swap(pts3d.col(idx.second));
@@ -138,7 +133,7 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver_weights_outliers)
     }
 
     // Solve the problem and check that fitted value are good enough
-    for(std::size_t camIndex = 0; camIndex < nbViews; ++camIndex)
+    for (std::size_t camIndex = 0; camIndex < nbViews; ++camIndex)
     {
         const Mat pts2d = d._x[camIndex];
 
@@ -155,10 +150,10 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver_weights_outliers)
         Mat34 estProjMat = projMats.at(0).getMatrix().array() / projMats.at(0).getMatrix().norm();
         EXPECT_MATRIX_NEAR(gtProjMat, estProjMat, 1e-8);
 
-        for(Mat::Index i = 0; i < pts2d.cols(); ++i)
+        for (Mat::Index i = 0; i < pts2d.cols(); ++i)
         {
             const auto error = (project(estProjMat, Vec3(pts3d.col(i))) - pts2d.col(i)).norm();
-            if(isIndexInVector(idx2swap, i))
+            if (isIndexInVector(idx2swap, i))
             {
                 // if it is an outlier
                 BOOST_CHECK_GT(error, 1e-3);
@@ -186,8 +181,7 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver_weights_only6)
     const std::size_t nbViews{3};
     const std::size_t nbPoints{6};
     // Suppose a camera with Unit matrix as K
-    const NViewDataSet d = NRealisticCamerasRing(
-        nbViews, nbPoints, NViewDatasetConfigurator(1, 1, 0, 0, 5, 0));
+    const NViewDataSet d = NRealisticCamerasRing(nbViews, nbPoints, NViewDatasetConfigurator(1, 1, 0, 0, 5, 0));
 
     std::vector<double> weights(nbPoints, 1.);
 
@@ -197,9 +191,8 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver_weights_only6)
     weights[1] = .5;
     weights[2] = .5;
 
-
     // Solve the problem and check that fitted value are good enough
-    for(std::size_t camIndex = 0; camIndex < nbViews; ++camIndex)
+    for (std::size_t camIndex = 0; camIndex < nbViews; ++camIndex)
     {
         const Mat pts2d = d._x[camIndex];
 
@@ -216,7 +209,7 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver_weights_only6)
         Mat34 estProjMat = projMats.at(0).getMatrix().array() / projMats.at(0).getMatrix().norm();
         EXPECT_MATRIX_NEAR(gtProjMat, estProjMat, 1e-8);
 
-        for(Mat::Index i = 0; i < pts2d.cols(); ++i)
+        for (Mat::Index i = 0; i < pts2d.cols(); ++i)
         {
             const auto error = (project(estProjMat, Vec3(pts3d.col(i))) - pts2d.col(i)).norm();
             // given that all the associations 2d-3d are "perfect", even the ones with a smaller

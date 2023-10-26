@@ -36,9 +36,9 @@ void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPU
     }
     else
     {
-        //backup max threads to keep potentially previously set value
+        // backup max threads to keep potentially previously set value
         int previous_count_threads = omp_get_max_threads();
-        omp_set_num_threads(nbThreads); // create as many CPU threads as there are CUDA devices
+        omp_set_num_threads(nbThreads);  // create as many CPU threads as there are CUDA devices
 #pragma omp parallel
         {
             const int cpuThreadId = omp_get_thread_num();
@@ -49,7 +49,7 @@ void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPU
             const int nbCamsPerThread = (cams.size() / nbThreads);
             const int rcFrom = cudaDeviceId * nbCamsPerThread;
             int rcTo = (cudaDeviceId + 1) * nbCamsPerThread;
-            if(cudaDeviceId == nbThreads - 1)
+            if (cudaDeviceId == nbThreads - 1)
             {
                 rcTo = cams.size();
             }
@@ -68,5 +68,5 @@ void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPU
     }
 }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

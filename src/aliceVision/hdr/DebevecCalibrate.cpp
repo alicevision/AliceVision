@@ -18,25 +18,25 @@
 #include <fstream>
 #include <cassert>
 
-
 namespace aliceVision {
 namespace hdr {
 
-
 bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
-                               const std::vector<std::vector<double>>& times, const std::size_t channelQuantization,
-                               const rgbCurve& weight, float lambda, rgbCurve& response)
+                               const std::vector<std::vector<double>>& times,
+                               const std::size_t channelQuantization,
+                               const rgbCurve& weight,
+                               float lambda,
+                               rgbCurve& response)
 {
     // Always 3 channels for the input images
     static const std::size_t channelsCount = 3;
 
-
     // Count really extracted amount of points (observed in multiple brackets)
     std::vector<size_t> countPointPerGroup;
     size_t totalPoints = 0;
-    for(size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
+    for (size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
     {
-        const std::vector<ImageSample> & group = ldrSamples[groupId];
+        const std::vector<ImageSample>& group = ldrSamples[groupId];
         totalPoints += group.size();
     }
 
@@ -48,7 +48,7 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
     // Store intermediate data for all three channels
 
     // Initialize intermediate buffers
-    for(unsigned int channel = 0; channel < channelsCount; ++channel)
+    for (unsigned int channel = 0; channel < channelsCount; ++channel)
     {
         Eigen::MatrixXd A(channelQuantization, channelQuantization);
         Eigen::MatrixXd B(channelQuantization, totalPoints);
@@ -64,18 +64,18 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
         Dinv.setZero();
 
         size_t countPoints = 0;
-        for(size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
+        for (size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
         {
             /*Process a group of brackets*/
             const std::vector<ImageSample>& group = ldrSamples[groupId];
-            const std::vector<double> & local_times = times[groupId];
+            const std::vector<double>& local_times = times[groupId];
 
-            for (size_t sampleId = 0; sampleId < group.size(); sampleId++) {
-                
-                const ImageSample & sample = group[sampleId];
-                
-                for (size_t bracketPos = 0; bracketPos < sample.descriptions.size(); bracketPos++) {
-                    
+            for (size_t sampleId = 0; sampleId < group.size(); sampleId++)
+            {
+                const ImageSample& sample = group[sampleId];
+
+                for (size_t bracketPos = 0; bracketPos < sample.descriptions.size(); bracketPos++)
+                {
                     const float time = std::log(sample.descriptions[bracketPos].exposure);
 
                     const float value = clamp(sample.descriptions[bracketPos].mean(channel), 0.0f, 1.0f);
@@ -83,7 +83,7 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
                     const std::size_t index = quantizedValue;
 
                     const float w_ij = std::max(1e-6f, weight(value, channel));
-                    
+
                     const std::size_t pospoint = countPoints + sampleId;
 
                     const double w_ij_2 = w_ij * w_ij;
@@ -98,11 +98,10 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
             }
 
             countPoints += group.size();
-            
         }
 
         // Make sure the discrete response curve has a minimal second derivative
-        for(std::size_t k = 0; k < channelQuantization - 2; k++)
+        for (std::size_t k = 0; k < channelQuantization - 2; k++)
         {
             // Simple derivatives of second derivative wrt to the k+1 element
             // f''(x) = f(x + 1) - 2 * f(x) + f(x - 1)
@@ -146,7 +145,7 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
         // [h2]   [Atr^T bh + Abr^T bb]   [Abr^T bb]
         const Eigen::MatrixXd C = B.transpose();
 
-        for(int i = 0; i < Dinv.rows(); i++)
+        for (int i = 0; i < Dinv.rows(); i++)
         {
             Dinv.diagonal()[i] = 1.0 / Dinv.diagonal()[i];
         }
@@ -158,7 +157,7 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
         const Eigen::VectorXd x = left.lu().solve(right);
 
         // Copy the result to the response curve
-        for(std::size_t k = 0; k < channelQuantization; ++k)
+        for (std::size_t k = 0; k < channelQuantization; ++k)
         {
             response.setValue(k, channel, x(k));
         }
@@ -167,5 +166,5 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
     return true;
 }
 
-} // namespace hdr
-} // namespace aliceVision
+}  // namespace hdr
+}  // namespace aliceVision

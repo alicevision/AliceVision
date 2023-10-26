@@ -21,24 +21,21 @@ namespace fuseCut {
 namespace bfs = boost::filesystem;
 
 ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir)
-    : VoxelsGrid(dimmensions, space, _mp, _spaceRootDir)
+  : VoxelsGrid(dimmensions, space, _mp, _spaceRootDir)
 {
     nVoxelsTracks = getNVoxelsTracks();
 }
 
-ReconstructionPlan::~ReconstructionPlan()
-{
-    delete nVoxelsTracks;
-}
+ReconstructionPlan::~ReconstructionPlan() { delete nVoxelsTracks; }
 
 StaticVector<int>* ReconstructionPlan::voxelsIdsIntersectingHexah(Point3d* hexah)
 {
     StaticVector<int>* ids = new StaticVector<int>();
     ids->reserve(voxels->size() / 8);
 
-    for(int i = 0; i < voxels->size() / 8; i++)
+    for (int i = 0; i < voxels->size() / 8; i++)
     {
-        if(mvsUtils::intersectsHexahedronHexahedron(&(*voxels)[i * 8], hexah))
+        if (mvsUtils::intersectsHexahedronHexahedron(&(*voxels)[i * 8], hexah))
         {
             ids->push_back(i);
         }
@@ -51,11 +48,11 @@ unsigned long ReconstructionPlan::getNTracks(const Voxel& LU, const Voxel& RD)
 {
     unsigned long n = 0;
     Voxel v;
-    for(v.x = LU.x; v.x <= RD.x; v.x++)
+    for (v.x = LU.x; v.x <= RD.x; v.x++)
     {
-        for(v.y = LU.y; v.y <= RD.y; v.y++)
+        for (v.y = LU.y; v.y <= RD.y; v.y++)
         {
-            for(v.z = LU.z; v.z <= RD.z; v.z++)
+            for (v.z = LU.z; v.z <= RD.z; v.z++)
             {
                 n += (*nVoxelsTracks)[getIdForVoxel(v)];
             }
@@ -64,11 +61,10 @@ unsigned long ReconstructionPlan::getNTracks(const Voxel& LU, const Voxel& RD)
     return n;
 }
 
-bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel& RD2o, const Voxel& LUi,
-                                   const Voxel& RDi, unsigned long maxTracks)
+bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel& RD2o, const Voxel& LUi, const Voxel& RDi, unsigned long maxTracks)
 {
     unsigned long n = getNTracks(LUi, RDi);
-    if(n < maxTracks)
+    if (n < maxTracks)
     {
         return false;
     }
@@ -83,7 +79,7 @@ bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel&
     nz1 = 0;
     nz2 = 0;
 
-    if(RDi.x - LUi.x > 0)
+    if (RDi.x - LUi.x > 0)
     {
         LUt = LUi;
         RDt = RDi;
@@ -95,7 +91,7 @@ bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel&
         nx2 = getNTracks(LUt, RDt);
     }
 
-    if(RDi.y - LUi.y > 0)
+    if (RDi.y - LUi.y > 0)
     {
         LUt = LUi;
         RDt = RDi;
@@ -107,7 +103,7 @@ bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel&
         ny2 = getNTracks(LUt, RDt);
     }
 
-    if(RDi.z - LUi.z > 0)
+    if (RDi.z - LUi.z > 0)
     {
         LUt = LUi;
         RDt = RDi;
@@ -119,9 +115,9 @@ bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel&
         nz2 = getNTracks(LUt, RDt);
     }
 
-    if(RDi.x - LUi.x > 0)
+    if (RDi.x - LUi.x > 0)
     {
-        if((abs(RDi.x - LUi.x) >= abs(RDi.y - LUi.y)) && (abs(RDi.x - LUi.x) >= abs(RDi.z - LUi.z)))
+        if ((abs(RDi.x - LUi.x) >= abs(RDi.y - LUi.y)) && (abs(RDi.x - LUi.x) >= abs(RDi.z - LUi.z)))
         {
             LU1o = LUi;
             RD1o = RDi;
@@ -133,9 +129,9 @@ bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel&
         }
     }
 
-    if(RDi.y - LUi.y > 0)
+    if (RDi.y - LUi.y > 0)
     {
-        if((abs(RDi.y - LUi.y) >= abs(RDi.x - LUi.x)) && (abs(RDi.y - LUi.y) >= abs(RDi.z - LUi.z)))
+        if ((abs(RDi.y - LUi.y) >= abs(RDi.x - LUi.x)) && (abs(RDi.y - LUi.y) >= abs(RDi.z - LUi.z)))
         {
             LU1o = LUi;
             RD1o = RDi;
@@ -147,9 +143,9 @@ bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel&
         }
     }
 
-    if(RDi.z - LUi.z > 0)
+    if (RDi.z - LUi.z > 0)
     {
-        if((abs(RDi.z - LUi.z) >= abs(RDi.x - LUi.x)) && (abs(RDi.z - LUi.z) >= abs(RDi.y - LUi.y)))
+        if ((abs(RDi.z - LUi.z) >= abs(RDi.x - LUi.x)) && (abs(RDi.z - LUi.z) >= abs(RDi.y - LUi.y)))
         {
             LU1o = LUi;
             RD1o = RDi;
@@ -189,7 +185,7 @@ StaticVector<Point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
     toDivideLU->push_back(actHexahLU);
     toDivideRD->push_back(actHexahRD);
 
-    while(toDivideLU->size() > 0)
+    while (toDivideLU->size() > 0)
     {
         actHexahLU = toDivideLU->pop();
         actHexahRD = toDivideRD->pop();
@@ -201,7 +197,7 @@ StaticVector<Point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
         */
 
         Voxel LU1, RD1, LU2, RD2;
-        if(divideBox(LU1, RD1, LU2, RD2, actHexahLU, actHexahRD, maxTracks))
+        if (divideBox(LU1, RD1, LU2, RD2, actHexahLU, actHexahRD, maxTracks))
         {
             toDivideLU->push_back(LU1);
             toDivideRD->push_back(RD1);
@@ -230,7 +226,7 @@ StaticVector<Point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
 
             getHexah(hexah, actHexahLU, actHexahRD);
             mvsUtils::inflateHexahedron(hexah, hexahinf, 1.05);
-            for(int k = 0; k < 8; k++)
+            for (int k = 0; k < 8; k++)
             {
                 hexahsToReconstruct->push_back(hexahinf[k]);
             }
@@ -243,15 +239,12 @@ StaticVector<Point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
     return hexahsToReconstruct;
 }
 
-void ReconstructionPlan::getHexahedronForID(float dist, int id, Point3d* out)
-{
-    mvsUtils::inflateHexahedron(&(*voxels)[id * 8], out, dist);
-}
+void ReconstructionPlan::getHexahedronForID(float dist, int id, Point3d* out) { mvsUtils::inflateHexahedron(&(*voxels)[id * 8], out, dist); }
 
 StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs)
 {
     StaticVector<StaticVector<int>*>* ptsCamsFromDct = new StaticVector<StaticVector<int>*>();
-    for(int i = 0; i < recsDirs.size(); ++i)
+    for (int i = 0; i < recsDirs.size(); ++i)
     {
         std::string folderName = recsDirs[i];
 
@@ -264,18 +257,18 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
         }
         StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
         ptsCamsFromDct->reserveAdd(ptsCamsFromDcti->size());
-        for(int i = 0; i < ptsCamsFromDcti->size(); i++)
+        for (int i = 0; i < ptsCamsFromDcti->size(); i++)
         {
             ptsCamsFromDct->push_back((*ptsCamsFromDcti)[i]);
         }
-        delete ptsCamsFromDcti; //!!!NOT DELETE ARRAYOFARRAYS
+        delete ptsCamsFromDcti;  //!!!NOT DELETE ARRAYOFARRAYS
     }
     return ptsCamsFromDct;
 }
 
 void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVector<StaticVector<int>>& out_ptsCams)
 {
-    for(int i = 0; i < recsDirs.size(); ++i)
+    for (int i = 0; i < recsDirs.size(); ++i)
     {
         std::string folderName = recsDirs[i];
 
@@ -293,12 +286,12 @@ StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors
 {
     StaticVector<rgb>* trisColors = new StaticVector<rgb>();
     trisColors->resize(me->tris.size());
-    for(int i = 0; i < me->tris.size(); i++)
+    for (int i = 0; i < me->tris.size(); i++)
     {
         float r = 0.0f;
         float g = 0.0f;
         float b = 0.0f;
-        for(int j = 0; j < 3; j++)
+        for (int j = 0; j < 3; j++)
         {
             r += (float)(*ptsColors)[me->tris[i].v[j]].r;
             g += (float)(*ptsColors)[me->tris[i].v[j]].g;
@@ -311,15 +304,14 @@ StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors
     return trisColors;
 }
 
-mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray,
-                    LargeScale* ls)
+mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray, LargeScale* ls)
 {
     ReconstructionPlan rp(ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
 
     ALICEVISION_LOG_DEBUG("Detecting size of merged mesh.");
     int npts = 0;
     int ntris = 0;
-    for(int i = 0; i < recsDirs.size(); i++)
+    for (int i = 0; i < recsDirs.size(); i++)
     {
         std::string folderName = recsDirs[i];
 
@@ -353,9 +345,9 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     ptsCols->reserve(npts);
 
     ALICEVISION_LOG_DEBUG("Merging part to one mesh without connecting them.");
-    for(int i = 0; i < recsDirs.size(); i++)
+    for (int i = 0; i < recsDirs.size(); i++)
     {
-        if(ls->mp->verbose)
+        if (ls->mp->verbose)
             ALICEVISION_LOG_DEBUG("Merging part: " << i);
         std::string folderName = recsDirs[i];
 
@@ -371,7 +363,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             mvsUtils::inflateHexahedron(&(*voxelsArray)[i * 8], hexah, inflateFactor);
             mei->removeTrianglesOutsideHexahedron(hexah);
 
-            ALICEVISION_LOG_DEBUG("Adding mesh part "<< i << " to mesh");
+            ALICEVISION_LOG_DEBUG("Adding mesh part " << i << " to mesh");
             me->addMesh(*mei);
 
             ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
@@ -381,11 +373,11 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
                 StaticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(fileName);
                 StaticVector<rgb>* trisColsi = getTrisColorsRgb(mei, ptsColsi);
 
-                for(int j = 0; j < trisColsi->size(); j++)
+                for (int j = 0; j < trisColsi->size(); j++)
                 {
                     trisCols->push_back((*trisColsi)[j]);
                 }
-                for(int j = 0; j < ptsColsi->size(); j++)
+                for (int j = 0; j < ptsColsi->size(); j++)
                 {
                     ptsCols->push_back((*ptsColsi)[j]);
                 }
@@ -402,11 +394,11 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     delete ptsCols;
     delete trisCols;
 
-    //if(ls->mp->verbose)
-    //    printf("Creating QS\n");
-    // createQSfileFromMesh(ls->spaceFolderName + "reconstructedSpaceLevelJoinedMesh"+num2str(gridLevel)+".bin",
-    // ls->spaceFolderName+"meshAvImgCol.ply.ptsColors", ls->spaceFolderName +
-    // "reconstructedSpaceLevelJoinedMesh"+num2str(gridLevel)+".qs");
+    // if(ls->mp->verbose)
+    //     printf("Creating QS\n");
+    //  createQSfileFromMesh(ls->spaceFolderName + "reconstructedSpaceLevelJoinedMesh"+num2str(gridLevel)+".bin",
+    //  ls->spaceFolderName+"meshAvImgCol.ply.ptsColors", ls->spaceFolderName +
+    //  "reconstructedSpaceLevelJoinedMesh"+num2str(gridLevel)+".qs");
 #ifdef QSPLAT
     createQSfileFromMesh(spaceBinFileName, spacePtsColsBinFileName, outDir + "mesh.qs");
 #endif
@@ -416,19 +408,17 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 
 mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
 {
-    ReconstructionPlan* rp =
-        new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
+    ReconstructionPlan* rp = new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
     std::string param = "LargeScale:gridLevel" + mvsUtils::num2str(gl);
     int gridLevel = ls->mp->userParams.get<int>(param.c_str(), gl * 300);
 
-    std::string optimalReconstructionPlanFileName =
-        ls->spaceFolderName + "optimalReconstructionPlan" + mvsUtils::num2str(gridLevel) + ".bin";
+    std::string optimalReconstructionPlanFileName = ls->spaceFolderName + "optimalReconstructionPlan" + mvsUtils::num2str(gridLevel) + ".bin";
     StaticVector<SortedId>* optimalReconstructionPlan = loadArrayFromFile<SortedId>(optimalReconstructionPlanFileName);
 
     auto subFolderName = ls->mp->userParams.get<std::string>("LargeScale.subFolderName", "");
-    if(subFolderName.empty())
+    if (subFolderName.empty())
     {
-        if(ls->mp->userParams.get<bool>("global.LabatutCFG09", false))
+        if (ls->mp->userParams.get<bool>("global.LabatutCFG09", false))
         {
             subFolderName = "LabatutCFG09";
         }
@@ -439,16 +429,16 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
     voxelsArray->reserve(optimalReconstructionPlan->size() * 8);
 
     std::vector<std::string> recsDirs;
-    for(int i = 0; i < optimalReconstructionPlan->size(); i++)
+    for (int i = 0; i < optimalReconstructionPlan->size(); i++)
     {
         int id = (*optimalReconstructionPlan)[i].id;
         float inflateFactor = (*optimalReconstructionPlan)[i].value;
         std::string folderName = ls->spaceFolderName + "reconstructedSpacePart" + mvsUtils::num2strFourDecimal(id) + "/";
-        folderName +=  "GL_" + mvsUtils::num2str(gridLevel) + "_IF_" + mvsUtils::num2str((int)inflateFactor) + "/";
+        folderName += "GL_" + mvsUtils::num2str(gridLevel) + "_IF_" + mvsUtils::num2str((int)inflateFactor) + "/";
 
         Point3d hexah[8];
         rp->getHexahedronForID(inflateFactor, id, hexah);
-        for(int k = 0; k < 8; k++)
+        for (int k = 0; k < 8; k++)
         {
             voxelsArray->push_back(hexah[k]);
         }
@@ -475,5 +465,5 @@ mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
     return me;
 }
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

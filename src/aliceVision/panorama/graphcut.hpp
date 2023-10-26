@@ -16,8 +16,7 @@
 #include "imageOps.hpp"
 #include "seams.hpp"
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 /**
  * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
@@ -26,14 +25,14 @@ namespace aliceVision
  */
 class MaxFlow_AdjList
 {
-public:
+  public:
     using NodeType = int;
     using ValueType = float;
 
-    using Traits = boost::adjacency_list_traits<boost::vecS, // OutEdgeListS
-                                                boost::vecS, // VertexListS
+    using Traits = boost::adjacency_list_traits<boost::vecS,  // OutEdgeListS
+                                                boost::vecS,  // VertexListS
                                                 boost::directedS,
-                                                boost::vecS // EdgeListS
+                                                boost::vecS  // EdgeListS
                                                 >;
     using edge_descriptor = typename Traits::edge_descriptor;
     using vertex_descriptor = typename Traits::vertex_descriptor;
@@ -44,24 +43,24 @@ public:
         ValueType residual{};
         edge_descriptor reverse;
     };
-    using Graph = boost::adjacency_list<boost::vecS, // OutEdgeListS
-                                        boost::vecS, // VertexListS
+    using Graph = boost::adjacency_list<boost::vecS,  // OutEdgeListS
+                                        boost::vecS,  // VertexListS
                                         boost::directedS,
-                                        boost::no_property, // VertexProperty
-                                        Edge,               // EdgeProperty
-                                        boost::no_property, // GraphProperty
-                                        boost::vecS         // EdgeListS
+                                        boost::no_property,  // VertexProperty
+                                        Edge,                // EdgeProperty
+                                        boost::no_property,  // GraphProperty
+                                        boost::vecS          // EdgeListS
                                         >;
     using VertexIterator = typename boost::graph_traits<Graph>::vertex_iterator;
 
-public:
+  public:
     explicit MaxFlow_AdjList(size_t numNodes)
-        : _graph(numNodes + 2)
-        , _S(NodeType(numNodes))
-        , _T(NodeType(numNodes + 1))
+      : _graph(numNodes + 2),
+        _S(NodeType(numNodes)),
+        _T(NodeType(numNodes + 1))
     {
         VertexIterator vi, vi_end;
-        for(boost::tie(vi, vi_end) = vertices(_graph); vi != vi_end; ++vi)
+        for (boost::tie(vi, vi_end) = vertices(_graph); vi != vi_end; ++vi)
         {
             _graph.m_vertices[*vi].m_out_edges.reserve(9);
         }
@@ -118,10 +117,16 @@ public:
         std::vector<edge_descriptor> pred(nbVertices);
         std::vector<vertex_size_type> dist(nbVertices);
 
-        ValueType v = boost::boykov_kolmogorov_max_flow(_graph, boost::get(&Edge::capacity, _graph),
+        ValueType v = boost::boykov_kolmogorov_max_flow(_graph,
+                                                        boost::get(&Edge::capacity, _graph),
                                                         boost::get(&Edge::residual, _graph),
-                                                        boost::get(&Edge::reverse, _graph), &pred[0], &_color[0],
-                                                        &dist[0], boost::get(boost::vertex_index, _graph), _S, _T);
+                                                        boost::get(&Edge::reverse, _graph),
+                                                        &pred[0],
+                                                        &_color[0],
+                                                        &dist[0],
+                                                        boost::get(boost::vertex_index, _graph),
+                                                        _S,
+                                                        _T);
 
         return v;
     }
@@ -131,20 +136,19 @@ public:
     /// is full
     inline bool isTarget(NodeType n) const { return (_color[n] == boost::white_color); }
 
-protected:
+  protected:
     Graph _graph;
     std::vector<boost::default_color_type> _color;
-    const NodeType _S; //< emptyness
-    const NodeType _T; //< fullness
+    const NodeType _S;  //< emptyness
+    const NodeType _T;  //< fullness
 };
-
 
 bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<IndexT>& labels);
 
 class GraphcutSeams
 {
-public:
-    struct InputData 
+  public:
+    struct InputData
     {
         IndexT id;
         BoundingBox rect;
@@ -154,22 +158,20 @@ public:
 
     using IndexedColor = std::pair<IndexT, image::RGBfColor>;
     using PixelInfo = std::vector<IndexedColor>;
-    
 
-public:
+  public:
     GraphcutSeams(size_t outputWidth, size_t outputHeight)
-        : _outputWidth(outputWidth)
-        , _outputHeight(outputHeight)
-        , _maximal_distance_change(outputWidth + outputHeight)
-        , _labels(outputWidth, outputHeight, true, UndefinedIndexT)
-    {
-    }
+      : _outputWidth(outputWidth),
+        _outputHeight(outputHeight),
+        _maximal_distance_change(outputWidth + outputHeight),
+        _labels(outputWidth, outputHeight, true, UndefinedIndexT)
+    {}
 
     virtual ~GraphcutSeams() = default;
 
-    std::pair<IndexT, image::RGBfColor> findIndex(const PixelInfo & pix, IndexT id) 
+    std::pair<IndexT, image::RGBfColor> findIndex(const PixelInfo& pix, IndexT id)
     {
-        for (int i = 0; i  < pix.size(); i++)
+        for (int i = 0; i < pix.size(); i++)
         {
             if (pix[i].first == id)
             {
@@ -180,9 +182,9 @@ public:
         return std::make_pair(UndefinedIndexT, image::RGBfColor(0.0f));
     }
 
-    bool existIndex(const PixelInfo & pix, IndexT id) 
+    bool existIndex(const PixelInfo& pix, IndexT id)
     {
-        for (int i = 0; i  < pix.size(); i++)
+        for (int i = 0; i < pix.size(); i++)
         {
             if (pix[i].first == id)
             {
@@ -193,22 +195,25 @@ public:
         return false;
     }
 
-    bool setOriginalLabels(const image::Image<IndexT> & existing_labels)
-    {   
+    bool setOriginalLabels(const image::Image<IndexT>& existing_labels)
+    {
         _labels = existing_labels;
 
         return true;
     }
 
-    bool append(const image::Image<image::RGBfColor>& input, const image::Image<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
+    bool append(const image::Image<image::RGBfColor>& input,
+                const image::Image<unsigned char>& inputMask,
+                IndexT currentIndex,
+                size_t offset_x,
+                size_t offset_y)
     {
-
-        if(inputMask.Width() != input.Width())
+        if (inputMask.Width() != input.Width())
         {
             return false;
         }
 
-        if(inputMask.Height() != input.Height())
+        if (inputMask.Height() != input.Height())
         {
             return false;
         }
@@ -225,18 +230,14 @@ public:
 
         _inputs[currentIndex] = data;
 
-
         return true;
     }
 
-    void setMaximalDistance(int dist) 
-    { 
-        _maximal_distance_change = dist; 
-    }
+    void setMaximalDistance(int dist) { _maximal_distance_change = dist; }
 
-    bool createInputOverlappingObservations(image::Image<PixelInfo> & graphCutInput, const BoundingBox & interestBbox)
+    bool createInputOverlappingObservations(image::Image<PixelInfo>& graphCutInput, const BoundingBox& interestBbox)
     {
-        for (auto  & otherInput : _inputs)
+        for (auto& otherInput : _inputs)
         {
             BoundingBox otherBbox = otherInput.second.rect;
             BoundingBox otherBboxLoop = otherInput.second.rect;
@@ -255,15 +256,17 @@ public:
             {
                 continue;
             }
-            
+
             image::Image<image::RGBfColor> otherColor(otherInputBbox.width, otherInputBbox.height);
-            otherColor.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width) = otherInput.second.color.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width);
+            otherColor.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width) =
+              otherInput.second.color.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width);
 
             image::Image<unsigned char> otherMask(otherInputBbox.width, otherInputBbox.height);
-            otherMask.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width) = otherInput.second.mask.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width);
- 
+            otherMask.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width) =
+              otherInput.second.mask.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width);
+
             if (!intersection.isEmpty())
-            {        
+            {
                 BoundingBox interestOther = intersection;
                 interestOther.left -= otherBbox.left;
                 interestOther.top -= otherBbox.top;
@@ -281,14 +284,13 @@ public:
                     {
                         int x_other = interestOther.left + x;
                         int x_current = interestThis.left + x;
-                        
 
                         if (!otherMask(y_other, x_other))
                         {
                             continue;
                         }
-                      
-                        PixelInfo & pix = graphCutInput(y_current, x_current);
+
+                        PixelInfo& pix = graphCutInput(y_current, x_current);
                         pix.push_back(std::make_pair(otherInput.first, otherColor(y_other, x_other)));
                     }
                 }
@@ -304,7 +306,6 @@ public:
                 interestThis.left -= interestBbox.left;
                 interestThis.top -= interestBbox.top;
 
-                
                 for (int y = 0; y < intersectionLoop.height; y++)
                 {
                     int y_other = interestOther.top + y;
@@ -320,7 +321,7 @@ public:
                             continue;
                         }
 
-                        PixelInfo & pix = graphCutInput(y_current, x_current);
+                        PixelInfo& pix = graphCutInput(y_current, x_current);
                         pix.push_back(std::make_pair(otherInput.first, otherColor(y_other, x_other)));
                     }
                 }
@@ -336,7 +337,6 @@ public:
                 interestThis.left -= interestBbox.left;
                 interestThis.top -= interestBbox.top;
 
-                
                 for (int y = 0; y < intersectionLoopRight.height; y++)
                 {
                     int y_other = interestOther.top + y;
@@ -352,7 +352,7 @@ public:
                             continue;
                         }
 
-                        PixelInfo & pix = graphCutInput(y_current, x_current);
+                        PixelInfo& pix = graphCutInput(y_current, x_current);
                         pix.push_back(std::make_pair(otherInput.first, otherColor(y_other, x_other)));
                     }
                 }
@@ -362,13 +362,13 @@ public:
         return true;
     }
 
-    bool fixUpscaling(image::Image<IndexT> & labels, const image::Image<PixelInfo> & graphCutInput) 
+    bool fixUpscaling(image::Image<IndexT>& labels, const image::Image<PixelInfo>& graphCutInput)
     {
-        //Because of upscaling, some labels may be incorrect
-        //Some pixels may be affected to labels they don't see.
-        for (int y = 0; y < graphCutInput.Height(); y++) 
+        // Because of upscaling, some labels may be incorrect
+        // Some pixels may be affected to labels they don't see.
+        for (int y = 0; y < graphCutInput.Height(); y++)
         {
-            for (int x = 0; x < graphCutInput.Width(); x++) 
+            for (int x = 0; x < graphCutInput.Width(); x++)
             {
                 IndexT label = labels(y, x);
 
@@ -378,8 +378,8 @@ public:
                 }
 
                 // If there is no input for this pixel, we can't do anything
-                const PixelInfo & pix = graphCutInput(y, x);
-                
+                const PixelInfo& pix = graphCutInput(y, x);
+
                 // Check if the input associated to this label is seen by this pixel
                 auto it = existIndex(pix, label);
                 if (it)
@@ -390,36 +390,36 @@ public:
                 // Look for another label in the neighboorhood which is seen by this pixel
                 bool modified = false;
                 bool hadUndefined = false;
-                for (int l = -1; l <= 1; l++) 
+                for (int l = -1; l <= 1; l++)
                 {
                     int ny = y + l;
-                    if (ny < 0 || ny >= labels.Height()) 
+                    if (ny < 0 || ny >= labels.Height())
                     {
                         continue;
-                    } 
+                    }
 
                     for (int c = -1; c <= 1; c++)
                     {
                         int nx = x + c;
-                        if (nx < 0 || nx >= labels.Width()) 
+                        if (nx < 0 || nx >= labels.Width())
                         {
                             continue;
                         }
 
-                        IndexT otherLabel = labels(ny, nx);                     
+                        IndexT otherLabel = labels(ny, nx);
                         if (otherLabel == label)
                         {
                             continue;
                         }
 
-                        if (otherLabel == UndefinedIndexT) 
+                        if (otherLabel == UndefinedIndexT)
                         {
                             hadUndefined = true;
                             continue;
                         }
 
                         // Check that this other label is seen by our pixel
-                        const PixelInfo & pixOther = graphCutInput(ny, nx); 
+                        const PixelInfo& pixOther = graphCutInput(ny, nx);
                         auto itOther = existIndex(pixOther, otherLabel);
                         if (!itOther)
                         {
@@ -435,7 +435,7 @@ public:
                     }
                 }
 
-                if (!modified) 
+                if (!modified)
                 {
                     labels(y, x) = UndefinedIndexT;
                 }
@@ -445,17 +445,17 @@ public:
         return true;
     }
 
-    bool computeInputDistanceMap(image::Image<int> & distanceMap, const image::Image<IndexT> & localLabels, IndexT inputId)
+    bool computeInputDistanceMap(image::Image<int>& distanceMap, const image::Image<IndexT>& localLabels, IndexT inputId)
     {
         image::Image<IndexT> binarizedWorld(localLabels.Width(), localLabels.Height());
 
-        for(int y = 0; y < localLabels.Height(); y++)
+        for (int y = 0; y < localLabels.Height(); y++)
         {
-            for(int x = 0; x < localLabels.Width(); x++)
+            for (int x = 0; x < localLabels.Width(); x++)
             {
                 IndexT label = localLabels(y, x);
 
-                if(label == inputId)
+                if (label == inputId)
                 {
                     binarizedWorld(y, x) = 1;
                 }
@@ -467,12 +467,12 @@ public:
         }
 
         image::Image<unsigned char> seams(localLabels.Width(), localLabels.Height());
-        if(!computeSeamsMap(seams, binarizedWorld))
+        if (!computeSeamsMap(seams, binarizedWorld))
         {
             return false;
         }
 
-        if(!computeDistanceMap(distanceMap, seams))
+        if (!computeDistanceMap(distanceMap, seams))
         {
             return false;
         }
@@ -480,29 +480,28 @@ public:
         return true;
     }
 
-    bool processInput(double & newCost, InputData & input)
-    {       
-
-        //Get bounding box of input in panorama
-        //Dilate to have some pixels outside of the input
+    bool processInput(double& newCost, InputData& input)
+    {
+        // Get bounding box of input in panorama
+        // Dilate to have some pixels outside of the input
         BoundingBox localBbox = input.rect.dilate(3);
         localBbox.clampLeft();
         localBbox.clampTop();
         localBbox.clampBottom(_labels.Height() - 1);
-        
-        //Output must keep a margin also
+
+        // Output must keep a margin also
         BoundingBox outputBbox = input.rect;
         outputBbox.left = input.rect.left - localBbox.left;
         outputBbox.top = input.rect.top - localBbox.top;
 
-        //Extract labels for the ROI
+        // Extract labels for the ROI
         image::Image<IndexT> localLabels(localBbox.width, localBbox.height);
-        if (!loopyImageExtract(localLabels, _labels, localBbox)) 
+        if (!loopyImageExtract(localLabels, _labels, localBbox))
         {
             return false;
-        }   
+        }
 
-        //Build the input
+        // Build the input
         image::Image<PixelInfo> graphCutInput(localBbox.width, localBbox.height, true);
         if (!createInputOverlappingObservations(graphCutInput, localBbox))
         {
@@ -515,11 +514,11 @@ public:
             return false;
         }
 
-        // Backup update for upscaling 
+        // Backup update for upscaling
         BoundingBox inputBb = localBbox;
         inputBb.left = 0;
         inputBb.top = 0;
-        if (!loopyImageAssign(_labels, localLabels, localBbox, inputBb)) 
+        if (!loopyImageAssign(_labels, localLabels, localBbox, inputBb))
         {
             return false;
         }
@@ -531,8 +530,8 @@ public:
             return false;
         }
 
-        //Remove pixels too far from seams
-        for (int i = 0; i < graphCutInput.Height(); i++) 
+        // Remove pixels too far from seams
+        for (int i = 0; i < graphCutInput.Height(); i++)
         {
             for (int j = 0; j < graphCutInput.Width(); j++)
             {
@@ -543,31 +542,30 @@ public:
                 {
                     graphCutInput(i, j).clear();
                 }
-            } 
+            }
         }
-        
+
         double oldCost = cost(localLabels, graphCutInput, input.id);
-        if (!alphaExpansion(localLabels, distanceMap, graphCutInput, input.id)) 
+        if (!alphaExpansion(localLabels, distanceMap, graphCutInput, input.id))
         {
             return false;
         }
         newCost = cost(localLabels, graphCutInput, input.id);
 
-
         if (newCost < oldCost)
-        {   
+        {
             BoundingBox inputBb = localBbox;
             inputBb.left = 0;
             inputBb.top = 0;
-            
-            if (!loopyImageAssign(_labels, localLabels, localBbox, inputBb)) 
+
+            if (!loopyImageAssign(_labels, localLabels, localBbox, inputBb))
             {
                 return false;
             }
         }
-        else 
+        else
         {
-            newCost = oldCost;  
+            newCost = oldCost;
         }
 
         return true;
@@ -576,7 +574,7 @@ public:
     bool process()
     {
         std::map<IndexT, double> costs;
-        for (auto & info : _inputs)
+        for (auto& info : _inputs)
         {
             costs[info.first] = std::numeric_limits<double>::max();
         }
@@ -589,14 +587,13 @@ public:
             bool hasChange = false;
 
             int pos = 0;
-            for (auto & info : _inputs)
-            {   
+            for (auto& info : _inputs)
+            {
                 double cost;
-                if (!processInput(cost, info.second)) 
+                if (!processInput(cost, info.second))
                 {
                     return false;
                 }
-                
 
                 if (costs[info.first] != cost)
                 {
@@ -614,13 +611,13 @@ public:
         return true;
     }
 
-    double cost(const image::Image<IndexT> localLabels, const image::Image<PixelInfo> & input, IndexT currentLabel)
+    double cost(const image::Image<IndexT> localLabels, const image::Image<PixelInfo>& input, IndexT currentLabel)
     {
         double cost = 0.0;
 
         for (int y = 0; y < input.Height() - 1; y++)
         {
-            for(int x = 0; x < input.Width() - 1; x++) 
+            for (int x = 0; x < input.Width() - 1; x++)
             {
                 int xp = x + 1;
                 int yp = y + 1;
@@ -629,11 +626,11 @@ public:
                 IndexT labelx = localLabels(y, xp);
                 IndexT labely = localLabels(yp, x);
 
-                if(label == UndefinedIndexT)
+                if (label == UndefinedIndexT)
                     continue;
-                if(labelx == UndefinedIndexT)
+                if (labelx == UndefinedIndexT)
                     continue;
-                if(labely == UndefinedIndexT)
+                if (labely == UndefinedIndexT)
                     continue;
 
                 image::RGBfColor CColorLC;
@@ -650,7 +647,6 @@ public:
                 bool hasCLC = false;
                 bool hasCLX = false;
                 bool hasCLY = false;
-
 
                 auto it = findIndex(input(y, x), label);
                 if (it.first != UndefinedIndexT)
@@ -701,27 +697,27 @@ public:
                     YColorLY = it.second;
                 }
 
-                if(!hasCLC || !hasXLX || !hasYLY)
+                if (!hasCLC || !hasXLX || !hasYLY)
                 {
                     continue;
                 }
 
-                if(!hasCLX)
+                if (!hasCLX)
                 {
                     CColorLX = CColorLC;
                 }
 
-                if(!hasCLY)
+                if (!hasCLY)
                 {
                     CColorLY = CColorLC;
                 }
 
-                if(!hasXLC)
+                if (!hasXLC)
                 {
                     XColorLC = XColorLX;
                 }
 
-                if(!hasYLC)
+                if (!hasYLC)
                 {
                     YColorLC = YColorLY;
                 }
@@ -743,15 +739,14 @@ public:
         return cost;
     }
 
-    bool alphaExpansion(image::Image<IndexT> & labels, const image::Image<int> & distanceMap, const image::Image<PixelInfo> & input, IndexT currentLabel)
+    bool alphaExpansion(image::Image<IndexT>& labels, const image::Image<int>& distanceMap, const image::Image<PixelInfo>& input, IndexT currentLabel)
     {
         image::Image<unsigned char> mask(labels.Width(), labels.Height(), true, 0);
         image::Image<int> ids(labels.Width(), labels.Height(), true, -1);
         image::Image<image::RGBfColor> color_label(labels.Width(), labels.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
         image::Image<image::RGBfColor> color_other(labels.Width(), labels.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
 
-
-        for (int y = 0; y < labels.Height(); y++) 
+        for (int y = 0; y < labels.Height(); y++)
         {
             for (int x = 0; x < labels.Width(); x++)
             {
@@ -780,41 +775,41 @@ public:
                         {
                             mask(y, x) = 2;
                         }
-                        else 
+                        else
                         {
                             mask(y, x) |= 2;
                         }
                     }
                 }
 
-                // If the pixel may be a new kingdom for alpha 
-                if(mask(y, x) == 1)
+                // If the pixel may be a new kingdom for alpha
+                if (mask(y, x) == 1)
                 {
                     color_label(y, x) = currentColor;
                     color_other(y, x) = currentColor;
                 }
-                else if(mask(y, x) == 2)
+                else if (mask(y, x) == 2)
                 {
                     color_label(y, x) = otherColor;
                     color_other(y, x) = otherColor;
                 }
-                else if(mask(y, x) == 3)
+                else if (mask(y, x) == 3)
                 {
                     color_label(y, x) = currentColor;
                     color_other(y, x) = otherColor;
                 }
             }
-        }     
+        }
 
         // The rectangle is a grid.
         // However we want to ignore a lot of pixel.
         // Let's create an index per valid pixels for graph cut reference
         int count = 0;
-        for(int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.Height(); y++)
         {
-            for(int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.Width(); x++)
             {
-                if(mask(y, x) == 0)
+                if (mask(y, x) == 0)
                 {
                     continue;
                 }
@@ -822,24 +817,23 @@ public:
                 ids(y, x) = count;
                 count++;
             }
-        }  
+        }
 
-        //Create graph
+        // Create graph
         MaxFlow_AdjList gc(count);
         size_t countValid = 0;
 
-        for(int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.Height(); y++)
         {
-            for(int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.Width(); x++)
             {
-
-                // If this pixel is not valid, ignore 
-                if(mask(y, x) == 0)
+                // If this pixel is not valid, ignore
+                if (mask(y, x) == 0)
                 {
                     continue;
                 }
 
-                // Get this pixel ID 
+                // Get this pixel ID
                 int node_id = ids(y, x);
 
                 int ym1 = std::max(y - 1, 0);
@@ -847,40 +841,36 @@ public:
                 int yp1 = std::min(y + 1, labels.Height() - 1);
                 int xp1 = std::min(x + 1, labels.Width() - 1);
 
-                if(mask(y, x) == 1)
-                {
-                    // Only add nodes close to borders 
-                    if(mask(ym1, xm1) == 1 && mask(ym1, x) == 1 && mask(ym1, xp1) == 1 &&
-                       mask(y, xm1) == 1 && mask(y, xp1) == 1 && 
-                       mask(yp1, xm1) == 1 && mask(yp1, x) == 1 && mask(yp1, xp1) == 1)
-                    {
-                        continue;
-                    }
-
-                    
-                    //This pixel is only seen by alpha.
-                    //Enforce its domination by stating that removing this pixel
-                    //from alpha territoy is infinitly costly (impossible).
-                    gc.addNodeToSource(node_id, 100000);
-                }
-                else if(mask(y, x) == 2)
+                if (mask(y, x) == 1)
                 {
                     // Only add nodes close to borders
-                    if(mask(ym1, xm1) == 2 && mask(ym1, x) == 2 && mask(ym1, xp1) == 2 &&
-                       mask(y, xm1) == 2 && mask(y, xp1) == 2 && 
-                       mask(yp1, xm1) == 2 && mask(yp1, x) == 2 && mask(yp1, xp1) == 2)
+                    if (mask(ym1, xm1) == 1 && mask(ym1, x) == 1 && mask(ym1, xp1) == 1 && mask(y, xm1) == 1 && mask(y, xp1) == 1 &&
+                        mask(yp1, xm1) == 1 && mask(yp1, x) == 1 && mask(yp1, xp1) == 1)
                     {
                         continue;
                     }
 
-                    //This pixel is only seen by an ennemy.
-                    //Enforce its domination by stating that removing this pixel
-                    //from ennemy territory is infinitly costly (impossible).
+                    // This pixel is only seen by alpha.
+                    // Enforce its domination by stating that removing this pixel
+                    // from alpha territoy is infinitly costly (impossible).
+                    gc.addNodeToSource(node_id, 100000);
+                }
+                else if (mask(y, x) == 2)
+                {
+                    // Only add nodes close to borders
+                    if (mask(ym1, xm1) == 2 && mask(ym1, x) == 2 && mask(ym1, xp1) == 2 && mask(y, xm1) == 2 && mask(y, xp1) == 2 &&
+                        mask(yp1, xm1) == 2 && mask(yp1, x) == 2 && mask(yp1, xp1) == 2)
+                    {
+                        continue;
+                    }
+
+                    // This pixel is only seen by an ennemy.
+                    // Enforce its domination by stating that removing this pixel
+                    // from ennemy territory is infinitly costly (impossible).
                     gc.addNodeToSink(node_id, 100000);
                 }
-                else if(mask(y, x) == 3)
+                else if (mask(y, x) == 3)
                 {
-
                     // This pixel is seen by both alpha and enemies but is owned by ennemy.
                     // Make sure that changing node owner will have no direct cost.
                     // Connect it to both alpha and ennemy for the moment
@@ -892,26 +882,23 @@ public:
             }
         }
 
-
-        if(countValid == 0)
+        if (countValid == 0)
         {
-            // We have no possibility for territory expansion 
+            // We have no possibility for territory expansion
             // let's exit
             return true;
         }
-
 
         // Loop over alpha bounding box.
         // Let's define the transition cost.
         // When two neighboor pixels have different labels, there is a seam (border) cost.
         // Graph cut will try to make sure the territory will have a minimal border cost
 
-        for(int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.Height(); y++)
         {
-            for(int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.Width(); x++)
             {
-
-                if(mask(y, x) == 0)
+                if (mask(y, x) == 0)
                 {
                     continue;
                 }
@@ -919,16 +906,15 @@ public:
                 int node_id = ids(y, x);
 
                 // Make sure it is possible to estimate this horizontal border
-                if(y < mask.Height() - 1)
+                if (y < mask.Height() - 1)
                 {
                     // Make sure the other pixel is owned by someone
-                    if(mask(y + 1, x))
+                    if (mask(y + 1, x))
                     {
-
                         int other_node_id = ids(y + 1, x);
                         float w = 1000;
 
-                        if(((mask(y, x) & 1) && (mask(y + 1, x) & 2)) || ((mask(y, x) & 2) && (mask(y + 1, x) & 1)))
+                        if (((mask(y, x) & 1) && (mask(y + 1, x) & 2)) || ((mask(y, x) & 2) && (mask(y + 1, x) & 1)))
                         {
                             float d1 = (color_label(y, x) - color_other(y, x)).norm();
                             float d2 = (color_label(y + 1, x) - color_other(y + 1, x)).norm();
@@ -943,16 +929,14 @@ public:
                     }
                 }
 
-                if(x < mask.Width() - 1)
+                if (x < mask.Width() - 1)
                 {
-
-                    if(mask(y, x + 1))
+                    if (mask(y, x + 1))
                     {
-
                         int other_node_id = ids(y, x + 1);
                         float w = 1000;
 
-                        if(((mask(y, x) & 1) && (mask(y, x + 1) & 2)) || ((mask(y, x) & 2) && (mask(y, x + 1) & 1)))
+                        if (((mask(y, x) & 1) && (mask(y, x + 1) & 2)) || ((mask(y, x) & 2) && (mask(y, x + 1) & 1)))
                         {
                             float d1 = (color_label(y, x) - color_other(y, x)).norm();
                             float d2 = (color_label(y, x + 1) - color_other(y, x + 1)).norm();
@@ -972,17 +956,16 @@ public:
         gc.compute();
 
         int changeCount = 0;
-        for(int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.Height(); y++)
         {
-            for(int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.Width(); x++)
             {
                 IndexT label = labels(y, x);
                 int id = ids(y, x);
 
-                if(gc.isSource(id))
+                if (gc.isSource(id))
                 {
-
-                    if(label != currentLabel)
+                    if (label != currentLabel)
                     {
                         changeCount++;
                     }
@@ -995,13 +978,9 @@ public:
         return true;
     }
 
-    image::Image<IndexT> & getLabels() 
-    { 
-        return _labels; 
-    }
+    image::Image<IndexT>& getLabels() { return _labels; }
 
-private:
-
+  private:
     std::map<IndexT, InputData> _inputs;
 
     int _outputWidth;
@@ -1010,4 +989,4 @@ private:
     image::Image<IndexT> _labels;
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

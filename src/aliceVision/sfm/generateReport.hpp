@@ -13,7 +13,7 @@ namespace aliceVision {
 
 namespace sfmData {
 class SfMData;
-} // namespace sfmData
+}  // namespace sfmData
 
 namespace sfm {
 
@@ -25,5 +25,5 @@ namespace sfm {
  */
 bool generateSfMReport(const sfmData::SfMData& sfmData, const std::string& htmlFilename);
 
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

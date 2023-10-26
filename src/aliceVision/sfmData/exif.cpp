@@ -11,41 +11,27 @@
 namespace aliceVision {
 namespace sfmData {
 
+std::string GPSExifTags::latitude() { return "GPS:Latitude"; }
 
-std::string GPSExifTags::latitude()
-{
-    return "GPS:Latitude";
-}
+std::string GPSExifTags::latitudeRef() { return "GPS:LatitudeRef"; }
 
-std::string GPSExifTags::latitudeRef()
-{
-    return "GPS:LatitudeRef";
-}
+std::string GPSExifTags::longitude() { return "GPS:Longitude"; }
 
-std::string GPSExifTags::longitude()
-{
-    return "GPS:Longitude";
-}
-
-std::string GPSExifTags::longitudeRef()
-{
-    return "GPS:LongitudeRef";
-}
+std::string GPSExifTags::longitudeRef() { return "GPS:LongitudeRef"; }
 
 std::vector<std::string> GPSExifTags::all()
 {
-    return {GPSExifTags::latitude(), GPSExifTags::latitudeRef(), GPSExifTags::longitude(), GPSExifTags::longitudeRef(), GPSExifTags::altitude(), GPSExifTags::altitudeRef()};
+    return {GPSExifTags::latitude(),
+            GPSExifTags::latitudeRef(),
+            GPSExifTags::longitude(),
+            GPSExifTags::longitudeRef(),
+            GPSExifTags::altitude(),
+            GPSExifTags::altitudeRef()};
 }
 
-std::string GPSExifTags::altitude()
-{
-    return "GPS:Altitude";
-}
+std::string GPSExifTags::altitude() { return "GPS:Altitude"; }
 
-std::string GPSExifTags::altitudeRef()
-{
-    return "GPS:AltitudeRef";
-}
+std::string GPSExifTags::altitudeRef() { return "GPS:AltitudeRef"; }
 
-} // namespace sfmData
-} // namespace aliceVision
+}  // namespace sfmData
+}  // namespace aliceVision

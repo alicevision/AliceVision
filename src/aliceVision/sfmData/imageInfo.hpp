@@ -8,7 +8,6 @@
 
 #include <aliceVision/types.hpp>
 
-
 #include <aliceVision/image/dcp.hpp>
 #include <aliceVision/lensCorrectionProfile/lcp.hpp>
 #include <aliceVision/sfmData/exposureSetting.hpp>
@@ -23,28 +22,28 @@ namespace sfmData {
 
 class ImageInfo
 {
-public:
-
+  public:
     /**
      * @brief Image Constructor
      * @param[in] imagePath The image path on disk
      * @param[in] width The image width
      * @param[in] height The image height
      * @param[in] metadata The image metadata
-    */
+     */
     ImageInfo(const std::string& imagePath = "",
               std::size_t width = 0,
               std::size_t height = 0,
-              const std::map<std::string, std::string>& metadata = std::map<std::string, std::string>()) :
-             _imagePath(imagePath), _width(width), _height(height), _metadata(metadata)
+              const std::map<std::string, std::string>& metadata = std::map<std::string, std::string>())
+      : _imagePath(imagePath),
+        _width(width),
+        _height(height),
+        _metadata(metadata)
     {}
 
     bool operator==(const ImageInfo& other) const
     {
         // image paths can be different
-        return 
-            _width == other._width &&
-            _height == other._height;
+        return _width == other._width && _height == other._height;
     }
 
     inline bool operator!=(const ImageInfo& other) const { return !(*this == other); }
@@ -53,50 +52,32 @@ public:
      * @brief Get view image path
      * @return image path
      */
-    const std::string& getImagePath() const
-    {
-        return _imagePath;
-    }
+    const std::string& getImagePath() const { return _imagePath; }
 
     /**
      * @brief Get view image width
      * @return image width
      */
-    std::size_t getWidth() const
-    {
-        return _width;
-    }
+    std::size_t getWidth() const { return _width; }
 
     /**
      * @brief Get view image height
      * @return image height
      */
-    std::size_t getHeight() const
-    {
-        return _height;
-    }
+    std::size_t getHeight() const { return _height; }
 
     /**
      * @brief Get view image size
      * @return image size
      */
-    std::pair<std::size_t, std::size_t> getImgSize() const
-    {
-        return {_width, _height};
-    }
+    std::pair<std::size_t, std::size_t> getImgSize() const { return {_width, _height}; }
 
     /**
      * @brief Get the Camera Exposure Setting value.
      * For the same scene, this value is linearly proportional to the amount of light captured by the camera according to
      * the shooting parameters (shutter speed, f-number, iso).
      */
-    ExposureSetting getCameraExposureSetting() const
-    {
-        return ExposureSetting(
-            getMetadataShutter(),
-            getMetadataFNumber(),
-            getMetadataISO());
-    }
+    ExposureSetting getCameraExposureSetting() const { return ExposureSetting(getMetadataShutter(), getMetadataFNumber(), getMetadataISO()); }
 
     /**
      * @brief Get the Exposure Value. EV is a number that represents a combination of a camera's shutter speed and
@@ -172,10 +153,7 @@ public:
      * @brief Get the corresponding "Make" metadata value
      * @return the metadata value string or "" if no corresponding value
      */
-    const std::string& getMetadataMake() const
-    {
-        return getMetadata({"Make", "cameraMake", "camera make"});
-    }
+    const std::string& getMetadataMake() const { return getMetadata({"Make", "cameraMake", "camera make"}); }
 
     /**
      * @brief Get the corresponding "Model" metadata value
@@ -183,8 +161,7 @@ public:
      */
     const std::string& getMetadataModel() const
     {
-        return getMetadata({"Model", "cameraModel", "cameraModelName", "CameraModel",
-                            "camera model", "camera_model", "camera model name"});
+        return getMetadata({"Model", "cameraModel", "cameraModelName", "CameraModel", "camera model", "camera_model", "camera model name"});
     }
 
     /**
@@ -200,19 +177,13 @@ public:
      * @brief Get the corresponding "LensModel" metadata value
      * @return the metadata value string or "" if no corresponding value
      */
-    const std::string& getMetadataLensModel() const
-    {
-        return getMetadata({ "Exif:LensModel", "lensModel", "lens model" });
-    }
+    const std::string& getMetadataLensModel() const { return getMetadata({"Exif:LensModel", "lensModel", "lens model"}); }
 
     /**
      * @brief Get the corresponding "LensID" metadata value
      * @return the metadata value -1 if no corresponding value
      */
-    int getMetadataLensID() const
-    {
-        return getIntMetadata({ "Exif:LensID", "lensID", "lensType"});
-    }
+    int getMetadataLensID() const { return getIntMetadata({"Exif:LensID", "lensID", "lensType"}); }
 
     /**
      * @brief Get the corresponding "LensSerialNumber" metadata value
@@ -220,7 +191,7 @@ public:
      */
     const std::string& getMetadataLensSerialNumber() const
     {
-        return getMetadata({ "Exif:LensSerialNumber", "lensSerialNumber", "lens serial number", "lens_serial_number" });
+        return getMetadata({"Exif:LensSerialNumber", "lensSerialNumber", "lens serial number", "lens_serial_number"});
     }
 
     /**
@@ -263,10 +234,7 @@ public:
      * @brief Get the corresponding "ExposureTime" (shutter) metadata value
      * @return the metadata value float or -1 if no corresponding value
      */
-    double getMetadataShutter() const
-    {
-        return getDoubleMetadata({"ExposureTime", "Shutter Speed Value"});
-    }
+    double getMetadataShutter() const { return getDoubleMetadata({"ExposureTime", "Shutter Speed Value"}); }
 
     /**
      * @brief Get the corresponding "FNumber" (relative aperture) metadata value
@@ -328,19 +296,13 @@ public:
      */
     Vec3 getGpsPositionWGS84FromMetadata() const;
 
-    const std::string& getColorProfileFileName() const
-    {
-        return getMetadata({ "AliceVision:DCP:colorProfileFileName" });
-    }
+    const std::string& getColorProfileFileName() const { return getMetadata({"AliceVision:DCP:colorProfileFileName"}); }
 
-    const std::string& getRawColorInterpretation() const
-    {
-        return getMetadata({ "AliceVision:rawColorInterpretation" });
-    }
+    const std::string& getRawColorInterpretation() const { return getMetadata({"AliceVision:rawColorInterpretation"}); }
 
     const std::vector<int> getCameraMultiplicators() const
     {
-        const std::string cam_mul = getMetadata({ "raw:cam_mul" });
+        const std::string cam_mul = getMetadata({"raw:cam_mul"});
         std::vector<int> v_mult;
 
         size_t last = 0;
@@ -378,8 +340,7 @@ public:
         return valid;
     }
 
-    const bool getChromaticAberrationParams(std::vector<float>& v_caGParam, std::vector<float>& v_caBGParam,
-                                            std::vector<float>& v_caRGParam) const
+    const bool getChromaticAberrationParams(std::vector<float>& v_caGParam, std::vector<float>& v_caBGParam, std::vector<float>& v_caRGParam) const
     {
         v_caGParam.clear();
         v_caBGParam.clear();
@@ -439,8 +400,7 @@ public:
 
     const bool hasMetadataDateTimeOriginal() const
     {
-        return hasMetadata(
-            {"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date", "ctime"});
+        return hasMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date", "ctime"});
     }
 
     const std::string& getMetadataDateTimeOriginal() const
@@ -453,11 +413,12 @@ public:
         std::smatch sm;
         std::string dtstring = getMetadataDateTimeOriginal();
         std::regex regex("([\\d]+):([\\d]+):([\\d]+) ([\\d]+):([\\d]+):([\\d]+)");
-        
-        if (!std::regex_match(dtstring, sm, regex)) {
+
+        if (!std::regex_match(dtstring, sm, regex))
+        {
             return -1;
         }
-        
+
         int64_t year = std::stoi(sm[1]);
         int64_t month = std::stoi(sm[2]);
         int64_t day = std::stoi(sm[3]);
@@ -477,56 +438,38 @@ public:
      * @brief Get the view metadata structure
      * @return the view metadata
      */
-    const std::map<std::string, std::string>& getMetadata() const
-    {
-        return _metadata;
-    }
+    const std::map<std::string, std::string>& getMetadata() const { return _metadata; }
 
     /**
      * @brief Set the given view image path
      * @param[in] imagePath The given view image path
      */
-    void setImagePath(const std::string& imagePath)
-    {
-        _imagePath = imagePath;
-    }
+    void setImagePath(const std::string& imagePath) { _imagePath = imagePath; }
 
     /**
      * @brief  Set the given view image width
      * @param[in] width The given view image width
      */
-    void setWidth(std::size_t width)
-    {
-        _width = width;
-    }
+    void setWidth(std::size_t width) { _width = width; }
 
     /**
      * @brief  Set the given view image height
      * @param[in] height The given view image height
      */
-    void setHeight(std::size_t height)
-    {
-        _height = height;
-    }
+    void setHeight(std::size_t height) { _height = height; }
 
     /**
      * @brief Set view metadata
      * @param[in] metadata The metadata map
      */
-    void setMetadata(const std::map<std::string, std::string>& metadata)
-    {
-        _metadata = metadata;
-    }
+    void setMetadata(const std::map<std::string, std::string>& metadata) { _metadata = metadata; }
 
     /**
      * @brief Add view metadata
      * @param[in] key The metadata key
      * @param[in] value The metadata value
      */
-    void addMetadata(const std::string& key, const std::string& value)
-    {
-        _metadata[key] = value;
-    }
+    void addMetadata(const std::string& key, const std::string& value) { _metadata[key] = value; }
 
     /**
      * @brief Add DCP info in metadata
@@ -539,16 +482,16 @@ public:
         addMetadata("AliceVision:DCP:Temp1", std::to_string(dcpProf.info.temperature_1));
         addMetadata("AliceVision:DCP:Temp2", std::to_string(dcpProf.info.temperature_2));
 
-        const int colorMatrixNumber = (dcpProf.info.has_color_matrix_1 && dcpProf.info.has_color_matrix_2) ? 2 :
-            (dcpProf.info.has_color_matrix_1 ? 1 : 0);
+        const int colorMatrixNumber =
+          (dcpProf.info.has_color_matrix_1 && dcpProf.info.has_color_matrix_2) ? 2 : (dcpProf.info.has_color_matrix_1 ? 1 : 0);
         addMetadata("AliceVision:DCP:ColorMatrixNumber", std::to_string(colorMatrixNumber));
 
-        const int forwardMatrixNumber = (dcpProf.info.has_forward_matrix_1 && dcpProf.info.has_forward_matrix_2) ? 2 :
-            (dcpProf.info.has_forward_matrix_1 ? 1 : 0);
+        const int forwardMatrixNumber =
+          (dcpProf.info.has_forward_matrix_1 && dcpProf.info.has_forward_matrix_2) ? 2 : (dcpProf.info.has_forward_matrix_1 ? 1 : 0);
         addMetadata("AliceVision:DCP:ForwardMatrixNumber", std::to_string(forwardMatrixNumber));
 
-        const int calibMatrixNumber = (dcpProf.info.has_camera_calibration_1 && dcpProf.info.has_camera_calibration_2) ? 2 :
-            (dcpProf.info.has_camera_calibration_1 ? 1 : 0);
+        const int calibMatrixNumber =
+          (dcpProf.info.has_camera_calibration_1 && dcpProf.info.has_camera_calibration_2) ? 2 : (dcpProf.info.has_camera_calibration_1 ? 1 : 0);
         addMetadata("AliceVision:DCP:CameraCalibrationMatrixNumber", std::to_string(calibMatrixNumber));
 
         std::vector<std::string> v_strColorMatrix;
@@ -572,7 +515,6 @@ public:
             addMetadata("AliceVision:DCP:CameraCalibrationMat" + std::to_string(k + 1), v_strCalibMatrix[k]);
         }
     }
-
 
     /**
      * @brief Add vignetting model parameters in metadata
@@ -630,11 +572,14 @@ public:
      * @param[in] verbose Enable verbosity
      * @return An Error or Warning code: 1 - Unknown sensor, 2 - No metadata, 3 - Unsure sensor, 4 - Computation from 35mm Focal
      */
-    int getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase, double& sensorWidth, double& sensorHeight,
-                      double& focalLengthmm, camera::EInitMode& intrinsicInitMode, bool verbose = false);
+    int getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatabase,
+                      double& sensorWidth,
+                      double& sensorHeight,
+                      double& focalLengthmm,
+                      camera::EInitMode& intrinsicInitMode,
+                      bool verbose = false);
 
-private:
-
+  private:
     /// image path on disk
     std::string _imagePath;
     /// image width

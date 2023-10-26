@@ -31,4 +31,4 @@ rgb getRGBFromJetColorMap(float value);
  */
 image::RGBfColor getColorFromJetColorMap(float value);
 
-} // namespace aliceVision
+}  // namespace aliceVision

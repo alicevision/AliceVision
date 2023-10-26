@@ -10,7 +10,6 @@
 #include "emorCurve.hpp"
 #include "rgbCurve.hpp"
 
-
 namespace aliceVision {
 namespace hdr {
 
@@ -29,26 +28,25 @@ namespace hdr {
  */
 class GrossbergCalibrate
 {
-public:
-  explicit GrossbergCalibrate(unsigned int dimension);
+  public:
+    explicit GrossbergCalibrate(unsigned int dimension);
 
+    /**
+     * @brief
+     * @param[in] LDR images groups
+     * @param[in] exposure times
+     * @param[in] channel quantization
+     * @param[out] camera response function
+     */
+    void process(const std::vector<std::vector<ImageSample>>& ldrSamples,
+                 const std::vector<std::vector<double>>& times,
+                 std::size_t channelQuantization,
+                 rgbCurve& response);
 
-  /**
-   * @brief
-   * @param[in] LDR images groups
-   * @param[in] exposure times
-   * @param[in] channel quantization
-   * @param[out] camera response function
-   */
-  void process(const std::vector<std::vector<ImageSample>>& ldrSamples,
-               const std::vector< std::vector<double> > &times,
-               std::size_t channelQuantization,
-               rgbCurve &response);
-
-private:
-  /// Dimension of the response ie number of basis vectors to calculate the response function
-  unsigned int _dimension;
+  private:
+    /// Dimension of the response ie number of basis vectors to calculate the response function
+    unsigned int _dimension;
 };
 
-} // namespace hdr
-} // namespace aliceVision
+}  // namespace hdr
+}  // namespace aliceVision

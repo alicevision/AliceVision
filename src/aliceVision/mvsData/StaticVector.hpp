@@ -22,7 +22,7 @@
 
 namespace aliceVision {
 
-template <class T>
+template<class T>
 class StaticVector
 {
     std::vector<T> _data;
@@ -32,27 +32,20 @@ class StaticVector
     typedef typename std::vector<T>::reference Reference;
     typedef typename std::vector<T>::const_reference ConstReference;
 
-public:
-    StaticVector()
+  public:
+    StaticVector() {}
+
+    StaticVector(int n)
+      : _data(n)
     {}
 
-    StaticVector( int n )
-        : _data( n )
+    StaticVector(int n, const T& value)
+      : _data(n, value)
     {}
 
-    StaticVector( int n, const T& value )
-        : _data( n, value )
-    {}
+    const T& operator[](int index) const { return _data[index]; }
 
-    const T& operator[](int index) const
-    {
-        return _data[index];
-    }
-
-    T& operator[](int index)
-    {
-        return _data[index];
-    }
+    T& operator[](int index) { return _data[index]; }
 
     void clear() { _data.clear(); }
 
@@ -77,56 +70,35 @@ public:
     void resize(int n) { _data.resize(n); }
     void resize(int n, T value) { _data.resize(n, value); }
     void resize_with(int n, const T& val) { _data.resize(n, val); }
-    void swap( StaticVector& other ) { _data.swap(other._data); }
+    void swap(StaticVector& other) { _data.swap(other._data); }
     void assign(int n, T value) { _data.assign(n, value); }
 
-    void shrink_to_fit()
-    {
-        _data.shrink_to_fit();
-    }
+    void shrink_to_fit() { _data.shrink_to_fit(); }
 
     void reserveAddIfNeeded(int nplanned, int ntoallocated)
     {
-        if(size() + nplanned > capacity())
+        if (size() + nplanned > capacity())
         {
             reserveAdd(nplanned + ntoallocated);
         }
     }
 
-    void reserveAdd(int ntoallocated)
-    {
-        _data.reserve(capacity() + ntoallocated);
-    }
+    void reserveAdd(int ntoallocated) { _data.reserve(capacity() + ntoallocated); }
 
-    void push_back(const T& val)
-    {
-        _data.push_back(val);
-    }
+    void push_back(const T& val) { _data.push_back(val); }
 
-    void push_front(const T& val)
-    {
-        _data.insert(_data.begin(), val);
-    }
+    void push_front(const T& val) { _data.insert(_data.begin(), val); }
 
-    void push_back_arr(StaticVector<T>* arr)
-    {
-        _data.insert(_data.end(), arr->getData().begin(), arr->getData().end());
-    }
+    void push_back_arr(StaticVector<T>* arr) { _data.insert(_data.end(), arr->getData().begin(), arr->getData().end()); }
 
-    void push_back_arr(StaticVector<T>& arr)
-    {
-        _data.insert(_data.end(), arr.getData().begin(), arr.getData().end());
-    }
+    void push_back_arr(StaticVector<T>& arr) { _data.insert(_data.end(), arr.getData().begin(), arr.getData().end()); }
 
-    void remove(int i)
-    {
-        _data.erase(_data.begin() + i);
-    }
+    void remove(int i) { _data.erase(_data.begin() + i); }
 
     int push_back_distinct(const T& val)
     {
         int id = indexOf(val);
-        if(id == -1)
+        if (id == -1)
             _data.push_back(val);
         return id;
     }
@@ -144,19 +116,16 @@ public:
         return it != _data.end() ? std::distance(_data.begin(), it) : -1;
     }
 
-    int indexOfSorted(const T& value) const
-    {
-        return indexOf(value);
-    }
+    int indexOfSorted(const T& value) const { return indexOf(value); }
 
     int indexOfNearestSorted(const T& value) const
     {
         // Retrieve the first element >= value in _data
         auto it = std::lower_bound(_data.begin(), _data.end(), value);
-        if(it == _data.end())
+        if (it == _data.end())
             return -1;
         // If we're between two values...
-        if(it != _data.begin())
+        if (it != _data.begin())
         {
             // ...select the index of the closest value between it (>= value) and prevIt (< value)
             auto prevIt = std::prev(it);
@@ -167,7 +136,7 @@ public:
 
     int minValId() const
     {
-        if(_data.empty())
+        if (_data.empty())
             return -1;
         return std::distance(_data.begin(), std::min_element(_data.begin(), _data.end()));
     }
@@ -184,31 +153,31 @@ public:
 // Avoid the problematic case of std::vector<bool>::operator[]
 using StaticVectorBool = StaticVector<char>;
 
-template <class T>
+template<class T>
 int sizeOfStaticVector(const StaticVector<T>* a)
 {
-    if(a == nullptr)
+    if (a == nullptr)
         return 0;
     return a->size();
 }
 
-template <class T>
+template<class T>
 int sizeOfStaticVector(const StaticVector<T>& a)
 {
-    if(a.empty())
+    if (a.empty())
         return 0;
     return a.size();
 }
 
-template <class T>
+template<class T>
 int indexOf(T* arr, int n, const T& what)
 {
     int isthereindex = -1;
 
     int i = 0;
-    while((i < n) && (isthereindex == -1))
+    while ((i < n) && (isthereindex == -1))
     {
-        if(arr[i] == what)
+        if (arr[i] == what)
         {
             isthereindex = i;
         };
@@ -218,18 +187,18 @@ int indexOf(T* arr, int n, const T& what)
     return isthereindex;
 }
 
-template <class T>
+template<class T>
 void saveArrayOfArraysToFile(const std::string& fileName, StaticVector<StaticVector<T>*>* aa)
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayOfArraysToFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "wb");
     int n = aa->size();
     fwrite(&n, sizeof(int), 1, f);
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         int m = 0;
         StaticVector<T>* a = (*aa)[i];
-        if(a == NULL)
+        if (a == NULL)
         {
             fwrite(&m, sizeof(int), 1, f);
         }
@@ -237,7 +206,7 @@ void saveArrayOfArraysToFile(const std::string& fileName, StaticVector<StaticVec
         {
             m = a->size();
             fwrite(&m, sizeof(int), 1, f);
-            if(m > 0)
+            if (m > 0)
             {
                 fwrite(&(*a)[0], sizeof(T), m, f);
             };
@@ -246,18 +215,18 @@ void saveArrayOfArraysToFile(const std::string& fileName, StaticVector<StaticVec
     fclose(f);
 }
 
-template <class T>
+template<class T>
 void saveArrayOfArraysToFile(const std::string fileName, StaticVector<StaticVector<T>>& aa)
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayOfArraysToFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "wb");
     int n = aa.size();
     fwrite(&n, sizeof(int), 1, f);
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         int m = 0;
         StaticVector<T>& a = aa[i];
-        if(a.empty())
+        if (a.empty())
         {
             fwrite(&m, sizeof(int), 1, f);
         }
@@ -265,7 +234,7 @@ void saveArrayOfArraysToFile(const std::string fileName, StaticVector<StaticVect
         {
             m = a.size();
             fwrite(&m, sizeof(int), 1, f);
-            if(m > 0)
+            if (m > 0)
             {
                 fwrite(&a[0], sizeof(T), m, f);
             };
@@ -274,19 +243,19 @@ void saveArrayOfArraysToFile(const std::string fileName, StaticVector<StaticVect
     fclose(f);
 }
 
-template <class T>
+template<class T>
 StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(const std::string& fileName)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
+    if (f == nullptr)
     {
         ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't open file " << fileName);
     }
 
     int n = 0;
     size_t retval = fread(&n, sizeof(int), 1, f);
-    if( retval != 1 )
+    if (retval != 1)
     {
         fclose(f);
         ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read outer array size");
@@ -294,21 +263,21 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(const std::string& fil
     StaticVector<StaticVector<T>*>* aa = new StaticVector<StaticVector<T>*>();
     aa->reserve(n);
     aa->resize_with(n, NULL);
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         int m = 0;
         retval = fread(&m, sizeof(int), 1, f);
-        if( retval != 1 )
+        if (retval != 1)
         {
             fclose(f);
             ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read inner array size");
         }
-        if(m > 0)
+        if (m > 0)
         {
             StaticVector<T>* a = new StaticVector<T>();
             a->resize(m);
             retval = fread(&(*a)[0], sizeof(T), m, f);
-            if( retval != m )
+            if (retval != m)
             {
                 fclose(f);
                 ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read vector element");
@@ -321,19 +290,19 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(const std::string& fil
     return aa;
 }
 
-template <class T>
+template<class T>
 void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std::string& fileName)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
+    if (f == nullptr)
     {
         ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't open file " << fileName);
     }
 
     int n = 0;
     size_t retval = fread(&n, sizeof(int), 1, f);
-    if( retval != 1 )
+    if (retval != 1)
     {
         fclose(f);
         ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read outer array size");
@@ -341,21 +310,21 @@ void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std:
 
     out_aa.reserve(n);
     out_aa.resize(n);
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         int m = 0;
         retval = fread(&m, sizeof(int), 1, f);
-        if( retval != 1 )
+        if (retval != 1)
         {
             fclose(f);
             ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read inner array size");
         }
-        if(m > 0)
+        if (m > 0)
         {
             StaticVector<T>& a = out_aa[i];
             a.resize(m);
             retval = fread(&a[0], sizeof(T), m, f);
-            if( retval != m )
+            if (retval != m)
             {
                 fclose(f);
                 ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read vector element");
@@ -365,63 +334,61 @@ void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std:
     fclose(f);
 }
 
-
-template <class T>
+template<class T>
 void saveArrayToFile(const std::string& fileName, const StaticVector<T>& a, bool docompress = true)
 {
-    saveArrayToFile( fileName, &a, docompress );
+    saveArrayToFile(fileName, &a, docompress);
 }
 
-template <class T>
+template<class T>
 void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool docompress = true)
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile: " << fileName);
 
     boost::filesystem::path filepath = fileName;
-    boost::filesystem::create_directories( filepath.parent_path() );
+    boost::filesystem::create_directories(filepath.parent_path());
 
-    if( !a )
+    if (!a)
     {
         ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile called with NULL static vector");
         return;
     }
 
-    if( a->empty() )
+    if (a->empty())
     {
         ALICEVISION_LOG_WARNING("[IO] saveArrayToFile called with 0-sized static vector");
         return;
     }
 
-    if((docompress == false) || (a->size() < 1000))
+    if ((docompress == false) || (a->size() < 1000))
     {
         FILE* f = fopen(fileName.c_str(), "wb");
-        if( f == NULL )
+        if (f == NULL)
         {
-            ALICEVISION_THROW_ERROR( "[IO] file " << fileName << " could not be opened, msg: " << strerror(errno) );
+            ALICEVISION_THROW_ERROR("[IO] file " << fileName << " could not be opened, msg: " << strerror(errno));
         }
         int n = a->size();
-        if( n == 0 )
+        if (n == 0)
         {
             fclose(f);
             return;
         }
         int items = fwrite(&n, sizeof(int), 1, f);
-        if( items < 1 && ferror(f) != 0 )
+        if (items < 1 && ferror(f) != 0)
         {
             fclose(f);
-            ALICEVISION_THROW_ERROR( "[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno) );
+            ALICEVISION_THROW_ERROR("[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno));
         }
         items = fwrite(&(*a)[0], sizeof(T), n, f);
-        if( items < n && ferror(f) != 0 )
+        if (items < n && ferror(f) != 0)
         {
             fclose(f);
-            ALICEVISION_THROW_ERROR( "[IO] failed to write n items to " << fileName << ", msg: " << strerror(errno) );
+            ALICEVISION_THROW_ERROR("[IO] failed to write n items to " << fileName << ", msg: " << strerror(errno));
         }
         fclose(f);
     }
     else
     {
-
         /* ===========================================================================
         //from zlib - compress.c
              Compresses the source buffer into the destination buffer. The level
@@ -440,32 +407,32 @@ void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool
         Byte* compr = (Byte*)calloc((uInt)comprLen, 1);
         int err = compress(compr, &comprLen, (const Bytef*)(&(*a)[0]), sizeof(T) * a->size());
 
-        if(err != Z_OK)
+        if (err != Z_OK)
         {
             ALICEVISION_LOG_ERROR("compress error " << err << " : " << (sizeof(T) * a->size()) << " -> " << comprLen << ", n " << a->size());
 
             FILE* f = fopen(fileName.c_str(), "wb");
-            if( f == NULL )
+            if (f == NULL)
             {
                 free(compr);
-                ALICEVISION_THROW_ERROR( "[IO] file " << fileName << " could not be opened, msg: " << strerror(errno) );
+                ALICEVISION_THROW_ERROR("[IO] file " << fileName << " could not be opened, msg: " << strerror(errno));
             }
             int n = a->size();
-            if( n > 0 )
+            if (n > 0)
             {
                 int items = fwrite(&n, sizeof(int), 1, f);
-                if( items < 1 && ferror(f) != 0 )
+                if (items < 1 && ferror(f) != 0)
                 {
                     fclose(f);
                     free(compr);
-                    ALICEVISION_THROW_ERROR( "[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno) );
+                    ALICEVISION_THROW_ERROR("[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno));
                 }
                 items = fwrite(&(*a)[0], sizeof(T), n, f);
-                if( items < 1 && ferror(f) != 0 )
+                if (items < 1 && ferror(f) != 0)
                 {
                     fclose(f);
                     free(compr);
-                    ALICEVISION_THROW_ERROR( "[IO] failed to write " << n << " items to " << fileName << ", msg: " << strerror(errno) );
+                    ALICEVISION_THROW_ERROR("[IO] failed to write " << n << " items to " << fileName << ", msg: " << strerror(errno));
                 }
             }
             fclose(f);
@@ -473,40 +440,40 @@ void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool
         else
         {
             FILE* f = fopen(fileName.c_str(), "wb");
-            if( f == NULL )
+            if (f == NULL)
             {
                 free(compr);
-                ALICEVISION_THROW_ERROR( "[IO] file " << fileName << " could not be opened, msg: " << strerror(errno) );
+                ALICEVISION_THROW_ERROR("[IO] file " << fileName << " could not be opened, msg: " << strerror(errno));
             }
             int n = -1;
             int items = fwrite(&n, sizeof(int), 1, f);
-            if( items < 1 && ferror(f) != 0 )
+            if (items < 1 && ferror(f) != 0)
             {
                 fclose(f);
                 free(compr);
-                ALICEVISION_THROW_ERROR( "[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno) );
+                ALICEVISION_THROW_ERROR("[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno));
             }
             n = a->size();
             items = fwrite(&n, sizeof(int), 1, f);
-            if( items < 1 && ferror(f) != 0 )
+            if (items < 1 && ferror(f) != 0)
             {
                 fclose(f);
                 free(compr);
-                ALICEVISION_THROW_ERROR( "[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno) );
+                ALICEVISION_THROW_ERROR("[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno));
             }
             items = fwrite(&comprLen, sizeof(uLong), 1, f);
-            if( items < 1 && ferror(f) != 0 )
+            if (items < 1 && ferror(f) != 0)
             {
                 fclose(f);
                 free(compr);
-                ALICEVISION_THROW_ERROR( "[IO] failed to write 1 uLong to " << fileName << ", msg: " << strerror(errno) );
+                ALICEVISION_THROW_ERROR("[IO] failed to write 1 uLong to " << fileName << ", msg: " << strerror(errno));
             }
             items = fwrite(compr, sizeof(Byte), comprLen, f);
-            if( items < 1 && ferror(f) != 0 )
+            if (items < 1 && ferror(f) != 0)
             {
                 fclose(f);
                 free(compr);
-                ALICEVISION_THROW_ERROR( "[IO] failed to write " << comprLen << " items to " << fileName << ", msg: " << strerror(errno) );
+                ALICEVISION_THROW_ERROR("[IO] failed to write " << comprLen << " items to " << fileName << ", msg: " << strerror(errno));
             }
             fclose(f);
         };
@@ -515,13 +482,13 @@ void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool
     };
 }
 
-template <class T>
+template<class T>
 StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFile: " << fileName);
 
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == NULL)
+    if (f == NULL)
     {
         ALICEVISION_THROW_ERROR("loadArrayFromFile : can't open file " << fileName);
     }
@@ -529,17 +496,17 @@ StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarni
     {
         int n = 0;
         size_t retval = fread(&n, sizeof(int), 1, f);
-        if( retval != 1 )
+        if (retval != 1)
         {
             fclose(f);
             ALICEVISION_THROW_ERROR("[IO] loadArrayFromFile: can't read array size (1) from " << fileName);
         }
         StaticVector<T>* a = NULL;
 
-        if(n == -1)
+        if (n == -1)
         {
             retval = fread(&n, sizeof(int), 1, f);
-            if( retval != 1 )
+            if (retval != 1)
             {
                 fclose(f);
                 ALICEVISION_THROW_ERROR("[IO] loadArrayFromFile: can't read array size (2)");
@@ -549,7 +516,7 @@ StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarni
 
             uLong comprLen;
             retval = fread(&comprLen, sizeof(uLong), 1, f);
-            if( retval != 1 )
+            if (retval != 1)
             {
                 delete a;
                 fclose(f);
@@ -557,7 +524,7 @@ StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarni
             }
             Byte* compr = (Byte*)calloc((uInt)comprLen, 1);
             retval = fread(compr, sizeof(Byte), comprLen, f);
-            if( retval != comprLen )
+            if (retval != comprLen)
             {
                 delete a;
                 fclose(f);
@@ -567,14 +534,14 @@ StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarni
             uLong uncomprLen = sizeof(T) * n;
             int err = uncompress((Bytef*)(&(*a)[0]), &uncomprLen, compr, comprLen);
 
-            if(err != Z_OK)
+            if (err != Z_OK)
             {
                 delete a;
                 fclose(f);
                 ALICEVISION_THROW_ERROR("uncompress error " << err << " : " << (sizeof(T) * n) << " -> " << uncomprLen << ", n " << n);
             }
 
-            if(uncomprLen != sizeof(T) * n)
+            if (uncomprLen != sizeof(T) * n)
             {
                 delete a;
                 fclose(f);
@@ -588,7 +555,7 @@ StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarni
             a = new StaticVector<T>();
             a->resize(n);
             size_t retval = fread(&(*a)[0], sizeof(T), n, f);
-            if( retval != n )
+            if (retval != n)
             {
                 delete a;
                 fclose(f);
@@ -602,13 +569,13 @@ StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarni
     }
 }
 
-template <class T>
-bool loadArrayFromFile( StaticVector<T>& out, const std::string& fileName, bool printfWarning = false)
+template<class T>
+bool loadArrayFromFile(StaticVector<T>& out, const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFile: " << fileName);
 
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == NULL)
+    if (f == NULL)
     {
         throw std::runtime_error("loadArrayFromFile : can't open file " + fileName);
     }
@@ -616,35 +583,35 @@ bool loadArrayFromFile( StaticVector<T>& out, const std::string& fileName, bool 
     {
         int n = 0;
         size_t retval = fread(&n, sizeof(int), 1, f);
-        if( retval != 1 )
+        if (retval != 1)
             ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read array size (1) from " << fileName);
         out.clear();
 
-        if(n == -1)
+        if (n == -1)
         {
             retval = fread(&n, sizeof(int), 1, f);
-            if( retval != 1 )
+            if (retval != 1)
                 ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read array size (2)");
             out.resize(n);
 
             uLong comprLen;
             retval = fread(&comprLen, sizeof(uLong), 1, f);
-            if( retval != 1 )
+            if (retval != 1)
                 ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read ulong elem size");
             Byte* compr = (Byte*)calloc((uInt)comprLen, 1);
             retval = fread(compr, sizeof(Byte), comprLen, f);
-            if( retval != comprLen )
+            if (retval != comprLen)
                 ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read blob");
 
             uLong uncomprLen = sizeof(T) * n;
             int err = uncompress((Bytef*)out.getDataWritable().data(), &uncomprLen, compr, comprLen);
 
-            if(err != Z_OK)
+            if (err != Z_OK)
             {
                 ALICEVISION_LOG_ERROR("uncompress error " << err << " : " << (sizeof(T) * n) << " -> " << uncomprLen << ", n " << n);
             }
 
-            if(uncomprLen != sizeof(T) * n)
+            if (uncomprLen != sizeof(T) * n)
             {
                 fclose(f);
                 throw std::runtime_error("loadArrayFromFile: uncompression failed uncomprLen!=sizeof(T)*n");
@@ -656,7 +623,7 @@ bool loadArrayFromFile( StaticVector<T>& out, const std::string& fileName, bool 
         {
             out.resize(n);
             size_t retval = fread(out.getDataWritable().data(), sizeof(T), n, f);
-            if( retval != n )
+            if (retval != n)
                 ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read n elements");
         }
 
@@ -666,98 +633,98 @@ bool loadArrayFromFile( StaticVector<T>& out, const std::string& fileName, bool 
     }
 }
 
-template <class T>
+template<class T>
 void loadArrayFromFileIntoArray(StaticVector<T>* a, const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFileIntoArray: " << fileName);
 
     FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == NULL)
+    if (f == NULL)
     {
         ALICEVISION_THROW_ERROR("loadArrayFromFileIntoArray: can not open file: " << fileName);
     }
     int n = 0;
     fread(&n, sizeof(int), 1, f);
- 
-    if(n == -1)
+
+    if (n == -1)
     {
         fread(&n, sizeof(int), 1, f);
-        if(a->size() != n)
+        if (a->size() != n)
         {
             fclose(f);
             ALICEVISION_THROW_ERROR("loadArrayFromFileIntoArray: expected length " << a->size() << " loaded length " << n);
         }
- 
+
         uLong comprLen;
         fread(&comprLen, sizeof(uLong), 1, f);
         Byte* compr = (Byte*)calloc((uInt)comprLen, 1);
         fread(compr, sizeof(Byte), comprLen, f);
- 
+
         uLong uncomprLen = sizeof(T) * n;
         int err = uncompress((Bytef*)(&(*a)[0]), &uncomprLen, compr, comprLen);
- 
-        if(err != Z_OK)
+
+        if (err != Z_OK)
         {
             fclose(f);
             ALICEVISION_THROW_ERROR("uncompress error " << err << " : " << (sizeof(T) * n) << " -> " << uncomprLen << ", n " << n);
         }
- 
-        if(uncomprLen != sizeof(T) * n)
+
+        if (uncomprLen != sizeof(T) * n)
         {
             fclose(f);
             ALICEVISION_THROW_ERROR("loadArrayFromFileIntoArray: uncompression failed uncomprLen!=sizeof(T)*n");
         }
- 
+
         free(compr);
     }
     else
     {
-        if(a->size() != n)
+        if (a->size() != n)
         {
             fclose(f);
             ALICEVISION_THROW_ERROR("loadArrayFromFileIntoArray: expected length " << a->size() << " loaded length " << n);
         }
         fread(&(*a)[0], sizeof(T), n, f);
     }
- 
+
     fclose(f);
 }
 
 int getArrayLengthFromFile(const std::string& fileName);
 
-template <class T>
+template<class T>
 void deleteAllPointers(StaticVector<T*>& vec)
 {
-  for (int i = 0; i < vec.size(); ++i)
-  {
-    if (vec[i] != NULL)
+    for (int i = 0; i < vec.size(); ++i)
     {
-      delete(vec[i]);
-      vec[i] = NULL;
+        if (vec[i] != NULL)
+        {
+            delete (vec[i]);
+            vec[i] = NULL;
+        }
     }
-  }
 }
 
-template <class T>
+template<class T>
 void deleteArrayOfArrays(StaticVector<StaticVector<T>*>** aa)
 {
-    for(int i = 0; i < (*aa)->size(); i++)
+    for (int i = 0; i < (*aa)->size(); i++)
     {
-        if((*(*aa))[i] != NULL)
+        if ((*(*aa))[i] != NULL)
         {
-            delete((*(*aa))[i]);
+            delete ((*(*aa))[i]);
             (*(*aa))[i] = NULL;
         }
     }
-    delete(*aa);
+    delete (*aa);
 }
 
-template <class T>
+template<class T>
 void deleteArrayOfArrays(StaticVector<StaticVector<T>*>& aa)
 {
-    for(int i = 0; i < aa.size(); i++)
+    for (int i = 0; i < aa.size(); i++)
     {
-        if(aa[i] != NULL)
+        if (aa[i] != NULL)
         {
             delete aa[i];
             aa[i] = NULL;
@@ -766,15 +733,15 @@ void deleteArrayOfArrays(StaticVector<StaticVector<T>*>& aa)
     aa.clear();
 }
 
-template <class T>
+template<class T>
 StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*>* inAOA)
 {
     StaticVector<StaticVector<T>*>* outAOA = new StaticVector<StaticVector<T>*>();
     outAOA->reserve(inAOA->size());
     // copy
-    for(int i = 0; i < inAOA->size(); i++)
+    for (int i = 0; i < inAOA->size(); i++)
     {
-        if((*inAOA)[i] == NULL)
+        if ((*inAOA)[i] == NULL)
         {
             outAOA->push_back(NULL);
         }
@@ -790,4 +757,4 @@ StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*
     return outAOA;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

@@ -10,7 +10,6 @@
 
 #include <memory>
 
-
 namespace aliceVision {
 namespace track {
 
@@ -44,46 +43,46 @@ struct TracksBuilderData;
  */
 class TracksBuilder
 {
-public:
+  public:
     TracksBuilder();
     ~TracksBuilder();
 
     /**
-    * @brief Build tracks for a given series of pairWise matches
-    * @param[in] pairwiseMatches PairWise matches
-    */
+     * @brief Build tracks for a given series of pairWise matches
+     * @param[in] pairwiseMatches PairWise matches
+     */
     void build(const PairwiseMatches& pairwiseMatches);
 
     /**
-    * @brief Remove bad tracks (too short or track with ids collision)
-    * @param[in] clearForks: remove tracks with multiple observation in a single image
-    * @param[in] minTrackLength: minimal number of observations to keep the track
-    * @param[in] multithreaded Is multithreaded
-    */
+     * @brief Remove bad tracks (too short or track with ids collision)
+     * @param[in] clearForks: remove tracks with multiple observation in a single image
+     * @param[in] minTrackLength: minimal number of observations to keep the track
+     * @param[in] multithreaded Is multithreaded
+     */
     void filter(bool clearForks = true, std::size_t minTrackLength = 2, bool multithreaded = true);
 
     /**
-    * @brief Export data of tracks to stream
-    * @param[out] os char output stream
-    * @return true if no error flag are set
-    */
+     * @brief Export data of tracks to stream
+     * @param[out] os char output stream
+     * @return true if no error flag are set
+     */
     bool exportToStream(std::ostream& os);
 
     /**
-    * @brief Export tracks as a map (each entry is a sequence of imageId and keypointId):
-    *        {TrackIndex => {(imageIndex, keypointId), ... ,(imageIndex, keypointId)}
-    */
+     * @brief Export tracks as a map (each entry is a sequence of imageId and keypointId):
+     *        {TrackIndex => {(imageIndex, keypointId), ... ,(imageIndex, keypointId)}
+     */
     void exportToSTL(TracksMap& allTracks) const;
 
     /**
-    * @brief Return the number of connected set in the UnionFind structure (tree forest)
-    * @return number of connected set in the UnionFind structure
-    */
+     * @brief Return the number of connected set in the UnionFind structure (tree forest)
+     * @return number of connected set in the UnionFind structure
+     */
     std::size_t nbTracks() const;
 
-private:
+  private:
     std::unique_ptr<TracksBuilderData> _d;
 };
 
-} // namespace track
-} // namespace aliceVision
+}  // namespace track
+}  // namespace aliceVision

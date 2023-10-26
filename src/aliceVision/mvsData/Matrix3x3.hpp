@@ -17,8 +17,9 @@ namespace aliceVision {
 
 class Matrix3x3
 {
-public:
-    union {
+  public:
+    union
+    {
         struct
         {
             double m11, m12, m13, m21, m22, m23, m31, m32, m33;
@@ -169,15 +170,9 @@ public:
         return m11 * m22 * m33 - m11 * m23 * m32 - m12 * m21 * m33 + m12 * m23 * m31 + m13 * m21 * m32 - m13 * m22 * m31;
     }
 
-    inline bool isSingular() const
-    {
-        return (deteminant() == 0.0f);
-    }
+    inline bool isSingular() const { return (deteminant() == 0.0f); }
 
-    inline double det() const
-    {
-        return m11 * (m33 * m22 - m32 * m23) - m21 * (m33 * m12 - m32 * m13) + m31 * (m23 * m12 - m22 * m13);
-    }
+    inline double det() const { return m11 * (m33 * m22 - m32 * m23) - m21 * (m33 * m12 - m32 * m13) + m31 * (m23 * m12 - m22 * m13); }
 
     inline Matrix3x3 inverse() const
     {
@@ -188,7 +183,7 @@ public:
 
     inline Point3d mldivide(const Point3d& b)
     {
-        if(!isSingular())
+        if (!isSingular())
         {
             return inverse() * b;
         }
@@ -274,7 +269,7 @@ public:
     {
         double dt = det();
 
-        if((fabs(dt) < 0.00000001f) || std::isnan(dt))
+        if ((fabs(dt) < 0.00000001f) || std::isnan(dt))
         {
             return false;
         }
@@ -346,4 +341,4 @@ inline Matrix3x3 diag3x3(double d1, double d2, double d3)
     return m;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

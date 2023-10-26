@@ -24,15 +24,14 @@ namespace aliceVision {
 namespace camera {
 
 /// Undistort an image according a given camera and its distortion model
-template <typename T>
-void UndistortImage(
-    const image::Image<T>& imageIn,
-    const camera::IntrinsicBase * intrinsicSource,
-    const camera::IntrinsicBase * intrinsicOutput,
-    const camera::Undistortion * undistortionOutput,
-    image::Image<T>& image_ud,
-    T fillcolor,
-    const oiio::ROI & roi = oiio::ROI())
+template<typename T>
+void UndistortImage(const image::Image<T>& imageIn,
+                    const camera::IntrinsicBase* intrinsicSource,
+                    const camera::IntrinsicBase* intrinsicOutput,
+                    const camera::Undistortion* undistortionOutput,
+                    image::Image<T>& image_ud,
+                    T fillcolor,
+                    const oiio::ROI& roi = oiio::ROI())
 {
     if (!intrinsicSource->hasDistortion())  // no distortion, perform a direct copy
     {
@@ -58,7 +57,7 @@ void UndistortImage(
     image_ud.resize(widthRoi, heightRoi, true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int y = 0; y < heightRoi; ++y)
     {
         for (int x = 0; x < widthRoi; ++x)
@@ -66,10 +65,8 @@ void UndistortImage(
             const Vec2 undisto_pix(x + xOffset, y + yOffset);
 
             // compute coordinates with distortion
-            const Vec2 disto_pix = intrinsicSource->cam2ima(
-                intrinsicSource->addDistortion(
-                    intrinsicOutput->ima2cam(
-                        (undistortionOutput) ? undistortionOutput->inverse(undisto_pix) : undisto_pix)));
+            const Vec2 disto_pix = intrinsicSource->cam2ima(intrinsicSource->addDistortion(
+              intrinsicOutput->ima2cam((undistortionOutput) ? undistortionOutput->inverse(undisto_pix) : undisto_pix)));
 
             // pick pixel if it is in the image domain
             if (imageIn.Contains(disto_pix(1), disto_pix(0)))
@@ -81,14 +78,13 @@ void UndistortImage(
 }
 
 /// Undistort an image according a given camera and its distortion model
-template <typename T>
-void UndistortImage(
-    const image::Image<T>& imageIn,
-    const camera::IntrinsicBase* intrinsicPtr,
-    image::Image<T>& image_ud,
-    T fillcolor,
-    bool correctPrincipalPoint = false,
-    const oiio::ROI & roi = oiio::ROI())
+template<typename T>
+void UndistortImage(const image::Image<T>& imageIn,
+                    const camera::IntrinsicBase* intrinsicPtr,
+                    image::Image<T>& image_ud,
+                    T fillcolor,
+                    bool correctPrincipalPoint = false,
+                    const oiio::ROI& roi = oiio::ROI())
 {
     if (!intrinsicPtr->hasDistortion())  // no distortion, perform a direct copy
     {
@@ -124,7 +120,7 @@ void UndistortImage(
     image_ud.resize(widthRoi, heightRoi, true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int y = 0; y < heightRoi; ++y)
     {
         for (int x = 0; x < widthRoi; ++x)
@@ -142,5 +138,5 @@ void UndistortImage(
     }
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

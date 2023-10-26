@@ -29,19 +29,20 @@ void getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>
  * @param[in] refMesh input reference mesh
  * @param[in] mesh input target mesh
  */
-void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh &mesh);
+void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh& mesh);
 
 /**
-* @brief Transfer the visibility per vertex from one mesh to another.
-* For each vertex of the @p refMesh, we search the closest triangle in the @p mesh and copy its visibility information to each vertex of the triangle.
-* @note The visibility information is a list of camera IDs seeing the vertex.
-*
-* @param[in] refMesh input reference mesh
-* @param[in] mesh input target mesh
-*/
+ * @brief Transfer the visibility per vertex from one mesh to another.
+ * For each vertex of the @p refMesh, we search the closest triangle in the @p mesh and copy its visibility information to each vertex of the
+ * triangle.
+ * @note The visibility information is a list of camera IDs seeing the vertex.
+ *
+ * @param[in] refMesh input reference mesh
+ * @param[in] mesh input target mesh
+ */
 void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh, Mesh& mesh);
 
 void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh& mesh);
 
-} // namespace mesh
-} // namespace aliceVision
+}  // namespace mesh
+}  // namespace aliceVision

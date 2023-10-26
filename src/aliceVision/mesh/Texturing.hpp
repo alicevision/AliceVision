@@ -23,9 +23,9 @@
 namespace bfs = boost::filesystem;
 
 namespace GEO {
-    class MeshFacetsAABB;
-    class Mesh;
-}
+class MeshFacetsAABB;
+class Mesh;
+}  // namespace GEO
 
 namespace aliceVision {
 namespace mesh {
@@ -33,10 +33,11 @@ namespace mesh {
 /**
  * @brief Available mesh unwrapping methods
  */
-enum class EUnwrapMethod {
-    Basic = 0, //< Basic unwrapping based on visibilities
-    ABF = 1,   //< Geogram: ABF++
-    LSCM = 2   //< Geogram: Spectral LSCM
+enum class EUnwrapMethod
+{
+    Basic = 0,  //< Basic unwrapping based on visibilities
+    ABF = 1,    //< Geogram: ABF++
+    LSCM = 2    //< Geogram: Spectral LSCM
 };
 
 /**
@@ -63,7 +64,6 @@ std::string EBumpMappingType_enumToString(EBumpMappingType type);
 std::istream& operator>>(std::istream& in, EBumpMappingType& meshFileType);
 std::ostream& operator<<(std::ostream& os, EBumpMappingType meshFileType);
 
-
 struct BumpMappingParams
 {
     image::EImageFileType bumpMappingFileType = image::EImageFileType::NONE;
@@ -83,18 +83,18 @@ struct TexturingParams
     // Multi-band blending
     unsigned int nbBand = 4;
     unsigned int multiBandDownscale = 4;
-    std::vector<int> multiBandNbContrib = {1, 5, 10, 0}; // number of contributions per frequency band for the multi-band blending
+    std::vector<int> multiBandNbContrib = {1, 5, 10, 0};  // number of contributions per frequency band for the multi-band blending
 
     bool useScore = true;
-    double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
-    double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
+    double bestScoreThreshold = 0.1;   //< 0.0 to disable filtering based on threshold to relative best score
+    double angleHardThreshold = 90.0;  //< 0.0 to disable angle hard threshold filtering
 
     image::EImageFileType textureFileType = image::EImageFileType::NONE;
-    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB; // color space for the texturing internal computation
-    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO; // output file color space
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;  // color space for the texturing internal computation
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO;   // output file color space
     mvsUtils::ECorrectEV correctEV{mvsUtils::ECorrectEV::NO_CORRECTION};
 
-    bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
+    bool forceVisibleByAllVertices = false;  //< triangle visibility is based on the union of vertices visiblity
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
 
     float subdivisionTargetRatio = 0.8;
@@ -111,21 +111,17 @@ struct Texturing
     /// Material and texture information
     Material material;
 
-    ~Texturing()
-    {
-        delete mesh;
-    }
+    ~Texturing() { delete mesh; }
 
-public:
-
+  public:
     /// Clear internal mesh data
     void clear();
 
     /// Load a mesh from a .obj file and initialize internal structures
-    void loadWithAtlas(const std::string& filepath, bool flipNormals=false);
+    void loadWithAtlas(const std::string& filepath, bool flipNormals = false);
 
     /// Load a textured mesh from a .obj and .mtl files
-    void loadWithMaterial(const std::string& filepath, bool flipNormals=false);
+    void loadWithMaterial(const std::string& filepath, bool flipNormals = false);
 
     /**
      * @brief Remap visibilities
@@ -135,8 +131,7 @@ public:
      * @param[in] refMesh the reference mesh
      * @param[in] refPointsVisibilities the reference visibilities
      */
-    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const mvsUtils::MultiViewParams& mp,
-                           const Mesh& refMesh);
+    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const mvsUtils::MultiViewParams& mp, const Mesh& refMesh);
 
     /**
      * @brief Replace inner mesh with the mesh loaded from 'otherMeshPath'
@@ -145,7 +140,7 @@ public:
      * @param otherMeshPath the mesh to load
      * @param flipNormals whether to flip normals when loading the mesh
      */
-    void replaceMesh(const std::string& otherMeshPath, bool flipNormals=false);
+    void replaceMesh(const std::string& otherMeshPath, bool flipNormals = false);
 
     /// Returns whether UV coordinates are available
     inline bool hasUVs() const { return !mesh->uvCoords.empty(); }
@@ -164,7 +159,7 @@ public:
      *
      * @param mp
      */
-    void generateUVsBasicMethod(mvsUtils::MultiViewParams &mp);
+    void generateUVsBasicMethod(mvsUtils::MultiViewParams& mp);
 
     /**
      * @brief Update texture atlases, useful when the internal mesh has been sudivise
@@ -192,14 +187,14 @@ public:
         void init(int nbLevels, int imgWidth, int imgHeight)
         {
             pyramid.resize(nbLevels);
-            for(auto& accuImage : pyramid)
+            for (auto& accuImage : pyramid)
                 accuImage.resize(imgWidth, imgHeight);
         }
     };
 
     /// Generate texture files for all texture atlases
     void generateTextures(const mvsUtils::MultiViewParams& mp,
-                          const bfs::path &outPath,
+                          const bfs::path& outPath,
                           size_t memoryAvailable,
                           image::EImageFileType textureFileType = image::EImageFileType::PNG);
 
@@ -207,25 +202,32 @@ public:
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                 const std::vector<size_t>& atlasIDs,
                                 mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
-                                const bfs::path &outPath,
+                                const bfs::path& outPath,
                                 image::EImageFileType textureFileType = image::EImageFileType::PNG);
 
-    void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const Mesh& denseMesh,
-                                     const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
+    void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
+                                     const Mesh& denseMesh,
+                                     const bfs::path& outPath,
+                                     const mesh::BumpMappingParams& bumpMappingParams);
 
-    void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const GEO::MeshFacetsAABB& denseMeshAABB,
-                                      const GEO::Mesh& sparseMesh, size_t atlasID,
-                                      mvsUtils::ImagesCache<image::Image<image::RGBfColor> >& imageCache,
-                                      const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
+    void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
+                                      const GEO::MeshFacetsAABB& denseMeshAABB,
+                                      const GEO::Mesh& sparseMesh,
+                                      size_t atlasID,
+                                      mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
+                                      const bfs::path& outPath,
+                                      const mesh::BumpMappingParams& bumpMappingParams);
 
-    ///Fill holes and write texture files for the given texture atlas
-    void writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const bfs::path& outPath,
-                      image::EImageFileType textureFileType, const int level);
+    /// Fill holes and write texture files for the given texture atlas
+    void writeTexture(AccuImage& atlasTexture,
+                      const std::size_t atlasID,
+                      const bfs::path& outPath,
+                      image::EImageFileType textureFileType,
+                      const int level);
 
     /// Save textured mesh as an OBJ + MTL file
-    void saveAs(const bfs::path& dir, const std::string& basename,
-                aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::OBJ);
+    void saveAs(const bfs::path& dir, const std::string& basename, aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::OBJ);
 };
 
-} // namespace mesh
-} // namespace aliceVision
+}  // namespace mesh
+}  // namespace aliceVision

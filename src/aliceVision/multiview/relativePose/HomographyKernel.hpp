@@ -25,7 +25,8 @@ typedef robustEstimation::PointFittingKernel<Homography4PSolver, HomographyAsymm
 /**
  * @brief By default use the normalized version for increased robustness.
  */
-typedef robustEstimation::NormalizedPointFittingKernel<Homography4PSolver, HomographyAsymmetricError, UnnormalizerI, robustEstimation::Mat3Model> NormalizedHomography4PKernel;
+typedef robustEstimation::NormalizedPointFittingKernel<Homography4PSolver, HomographyAsymmetricError, UnnormalizerI, robustEstimation::Mat3Model>
+  NormalizedHomography4PKernel;
 
 }  // namespace relativePose
 }  // namespace multiview

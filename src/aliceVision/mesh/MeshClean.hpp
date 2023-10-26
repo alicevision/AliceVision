@@ -15,10 +15,10 @@ namespace mesh {
 
 class MeshClean : public Mesh
 {
-public:
+  public:
     class path
     {
-    public:
+      public:
         struct pathPart
         {
             int triId;
@@ -53,10 +53,8 @@ public:
         void printfState(StaticVector<pathPart>& path);
         bool addNextTriIdToPathBack(int nextTriId, StaticVector<pathPart>& path);
         bool addNextTriIdToPathFront(int nextTriId, StaticVector<pathPart>& path);
-        int getNextNeighBouringUnprocessedLast(StaticVector<int>& ptNeighTrisSortedAscToProcess,
-                                               StaticVector<pathPart>& out_path);
-        int getNextNeighBouringUnprocessedFirst(StaticVector<int>& ptNeighTrisSortedAscToProcess,
-                                                StaticVector<pathPart>& out_path);
+        int getNextNeighBouringUnprocessedLast(StaticVector<int>& ptNeighTrisSortedAscToProcess, StaticVector<pathPart>& out_path);
+        int getNextNeighBouringUnprocessedFirst(StaticVector<int>& ptNeighTrisSortedAscToProcess, StaticVector<pathPart>& out_path);
         int nCrossings(StaticVector<pathPart>& path);
         void removeCycleFromPath(StaticVector<MeshClean::path::pathPart>& inPath, StaticVector<MeshClean::path::pathPart>& outPath);
         void deployTriangle(int triId);
@@ -101,5 +99,5 @@ public:
     int cleanMesh(int maxIters);
 };
 
-} // namespace mesh
-} // namespace aliceVision
+}  // namespace mesh
+}  // namespace aliceVision

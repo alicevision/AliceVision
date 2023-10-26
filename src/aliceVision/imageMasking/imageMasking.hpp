@@ -8,13 +8,14 @@
 
 #include <string>
 
-namespace aliceVision{
+namespace aliceVision {
 
-namespace image{
-template <class> class Image;
+namespace image {
+template<class>
+class Image;
 }
 
-namespace imageMasking{
+namespace imageMasking {
 
 using OutImage = image::Image<unsigned char>;
 
@@ -30,13 +31,19 @@ using OutImage = image::Image<unsigned char>;
  * @param[in] minValue Hue is meaningless if value is low. Do not mask pixels below this threshold.
  * @param[in] Do not mask pixels above this threshold. It might be useful to mask white/black pixels.
  */
-void hsv(OutImage& result, const std::string& inputPath, float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue);
+void hsv(OutImage& result,
+         const std::string& inputPath,
+         float hue,
+         float hueRange,
+         float minSaturation,
+         float maxSaturation,
+         float minValue,
+         float maxValue);
 
 /**
  * @Brief Otsu's Binarization of an image in grayscale.
  */
 void autoGrayscaleThreshold(OutImage& result, const std::string& inputPath);
-
 
 /**
  * @brief Invert a binary image (white <-> black)
@@ -65,5 +72,5 @@ void postprocess_dilate(OutImage& result, int iterations);
  */
 void postprocess_erode(OutImage& result, int iterations);
 
-}//namespace imageMasking
-}//namespace aliceVision
+}  // namespace imageMasking
+}  // namespace aliceVision

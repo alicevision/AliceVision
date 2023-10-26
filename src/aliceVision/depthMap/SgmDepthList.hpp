@@ -19,8 +19,7 @@ namespace depthMap {
  */
 class SgmDepthList
 {
-public:
-
+  public:
     /**
      * @brief SgmDepthList constructor.
      * @param[in] mp the multi-view parameters
@@ -63,8 +62,7 @@ public:
      */
     void checkStartingAndStoppingDepth() const;
 
-private:
-
+  private:
     // private methods
 
     /**
@@ -74,10 +72,7 @@ private:
      * @param[out] out_mid The middle depth observation
      * @param[out] out_nbDepths The number of depth observation
      */
-    void getMinMaxMidNbDepthFromSfM(float& out_min,
-                                    float& out_max,
-                                    float& out_mid,
-                                    std::size_t& out_nbDepths) const;
+    void getMinMaxMidNbDepthFromSfM(float& out_min, float& out_max, float& out_mid, std::size_t& out_nbDepths) const;
 
     /**
      * @brief Compute min/max depth from common Rc/Tc SfM observations.
@@ -85,9 +80,7 @@ private:
      * @param[out] out_zmin The minimum depth
      * @param[out] out_zmax The maximum depth
      */
-    void getRcTcDepthRangeFromSfM(int tc,
-                                  double& out_zmin,
-                                  double& out_zmax) const;
+    void getRcTcDepthRangeFromSfM(int tc, double& out_zmin, double& out_zmax) const;
 
     /**
      * @brief Compute depths of the principal ray of reference camera rc visible by a pixel in a target camera tc
@@ -96,9 +89,7 @@ private:
      * @param[in] midDepth The middle depth observation
      * @param[out] out_depths the output depth list
      */
-    void computeRcTcDepths(int tc, 
-                           float midObsDepth,
-                           std::vector<float>& out_depths) const;
+    void computeRcTcDepths(int tc, float midObsDepth, std::vector<float>& out_depths) const;
 
     /**
      * @brief Compute a depth list from R camera pixel size.
@@ -107,23 +98,16 @@ private:
      * @param[in] maxObsDepth The max depth observation
      * @param[out] out_depths the output depth list
      */
-    void computePixelSizeDepths(float minObsDepth,
-                                float midObsDepth,
-                                float maxObsDepth, 
-                                std::vector<float>& out_depths) const;
+    void computePixelSizeDepths(float minObsDepth, float midObsDepth, float maxObsDepth, std::vector<float>& out_depths) const;
 
     /**
      * @brief Fill the list of "best" depths (_depths) for rc, from all tc cameras depths.
-     * @param[in] firstDepth The first depth 
+     * @param[in] firstDepth The first depth
      * @param[in] lastDepth The last depth
      * @param[in] scaleFactor The scale factor to apply between each depth
      * @param[in] dephtsPerTc The depth list per T camera
      */
-    void computeRcDepthList(float firstDepth, 
-                            float lastDepth, 
-                            float scaleFactor, 
-                            const std::vector<std::vector<float>>& dephtsPerTc);
-
+    void computeRcDepthList(float firstDepth, float lastDepth, float scaleFactor, const std::vector<std::vector<float>>& dephtsPerTc);
 
     /**
      * @brief Export multiple intermediate depth list txt files.
@@ -133,13 +117,13 @@ private:
 
     // private members
 
-    const mvsUtils::MultiViewParams& _mp;    //< Multi-view parameters
-    const SgmParams& _sgmParams;             //< Semi Global Matching parameters
-    const Tile& _tile;                       //< Tile for depth list computation
+    const mvsUtils::MultiViewParams& _mp;  //< Multi-view parameters
+    const SgmParams& _sgmParams;           //< Semi Global Matching parameters
+    const Tile& _tile;                     //< Tile for depth list computation
 
-    std::vector<float> _depths;              //< R camera depth list
-    std::vector<Pixel> _depthsTcLimits;      //< T camera depth limits
+    std::vector<float> _depths;          //< R camera depth list
+    std::vector<Pixel> _depthsTcLimits;  //< T camera depth limits
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

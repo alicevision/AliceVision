@@ -14,10 +14,7 @@
 namespace aliceVision {
 namespace matchingImageCollection {
 
-bool loadPairs(std::istream& stream,
-               PairSet & pairs,
-               int rangeStart,
-               int rangeSize)
+bool loadPairs(std::istream& stream, PairSet& pairs, int rangeStart, int rangeSize)
 {
     std::size_t nbLine = 0;
     std::string sValue;
@@ -43,26 +40,26 @@ bool loadPairs(std::istream& stream,
             return false;
         }
         std::stringstream oss;
-        oss.clear(); oss.str(vec_str[0]);
+        oss.clear();
+        oss.str(vec_str[0]);
         size_t I, J;
         oss >> I;
-        for (size_t i=1; i<str_size ; ++i)
+        for (size_t i = 1; i < str_size; ++i)
         {
-            oss.clear(); oss.str(vec_str[i]);
+            oss.clear();
+            oss.str(vec_str[i]);
             oss >> J;
-            if( I == J )
+            if (I == J)
             {
-                ALICEVISION_LOG_WARNING("loadPairs: Invalid input file. Image " << I
-                                        << " sees itself.");
+                ALICEVISION_LOG_WARNING("loadPairs: Invalid input file. Image " << I << " sees itself.");
                 return false;
             }
             Pair pairToInsert = (I < J) ? std::make_pair(I, J) : std::make_pair(J, I);
-            if(pairs.find(pairToInsert) != pairs.end())
+            if (pairs.find(pairToInsert) != pairs.end())
             {
                 // There is no reason to have the same image pair twice in the list of image pairs
-                //to match.
-                ALICEVISION_LOG_WARNING("loadPairs: image pair (" << I << ", " << J
-                                        << ") already added.");
+                // to match.
+                ALICEVISION_LOG_WARNING("loadPairs: image pair (" << I << ", " << J << ") already added.");
             }
             ALICEVISION_LOG_INFO("loadPairs: image pair (" << I << ", " << J << ") added.");
             pairs.insert(pairToInsert);
@@ -71,7 +68,7 @@ bool loadPairs(std::istream& stream,
     return true;
 }
 
-void savePairs(std::ostream& stream, const PairSet & pairs)
+void savePairs(std::ostream& stream, const PairSet& pairs)
 {
     if (pairs.empty())
     {
@@ -97,7 +94,7 @@ void savePairs(std::ostream& stream, const PairSet & pairs)
     stream << "\n";
 }
 
-bool loadPairsFromFile(const std::string& sFileName, // filename of the list file,
+bool loadPairsFromFile(const std::string& sFileName,  // filename of the list file,
                        PairSet& pairs,
                        int rangeStart,
                        int rangeSize)
@@ -105,8 +102,7 @@ bool loadPairsFromFile(const std::string& sFileName, // filename of the list fil
     std::ifstream in(sFileName);
     if (!in.is_open())
     {
-        ALICEVISION_LOG_WARNING("loadPairsFromFile: Impossible to read the specified file: \""
-                                << sFileName << "\".");
+        ALICEVISION_LOG_WARNING("loadPairsFromFile: Impossible to read the specified file: \"" << sFileName << "\".");
         return false;
     }
 
@@ -123,8 +119,7 @@ bool savePairsToFile(const std::string& sFileName, const PairSet& pairs)
     std::ofstream outStream(sFileName);
     if (!outStream.is_open())
     {
-        ALICEVISION_LOG_WARNING("savePairsToFile: Impossible to open the output specified file: \""
-                                << sFileName << "\".");
+        ALICEVISION_LOG_WARNING("savePairsToFile: Impossible to open the output specified file: \"" << sFileName << "\".");
         return false;
     }
 
@@ -133,5 +128,5 @@ bool savePairsToFile(const std::string& sFileName, const PairSet& pairs)
     return !outStream.bad();
 }
 
-} // namespace matchingImageCollection
-} // namespace aliceVision
+}  // namespace matchingImageCollection
+}  // namespace aliceVision

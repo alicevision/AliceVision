@@ -12,8 +12,8 @@
 #include <vector>
 #include <utility>
 
-namespace aliceVision   {
-namespace linearProgramming  {
+namespace aliceVision {
+namespace linearProgramming {
 
 /// Generic container for LP (Linear Programming problems).
 /// Embed :
@@ -24,26 +24,24 @@ namespace linearProgramming  {
 ///
 struct LPConstraints
 {
-  enum eLP_SIGN
-  {
-    LP_LESS_OR_EQUAL    = 1,  // (<=)
-    LP_GREATER_OR_EQUAL = 2,  // (>=)
-    LP_EQUAL            = 3,   // (=)
-    LP_FREE             = 4 //only supported in MOSEK
-  };
+    enum eLP_SIGN
+    {
+        LP_LESS_OR_EQUAL = 1,     // (<=)
+        LP_GREATER_OR_EQUAL = 2,  // (>=)
+        LP_EQUAL = 3,             // (=)
+        LP_FREE = 4               // only supported in MOSEK
+    };
 
-  LPConstraints() {
-    _bminimize = false;
-  }
+    LPConstraints() { _bminimize = false; }
 
-  int _nbParams; // The number of parameter/variable in constraint.
-  Mat _constraintMat; // Constraint under Matrix form.
-  Vec _Cst_objective; // Constraint objective value.
-  std::vector<eLP_SIGN> _vec_sign; // Constraint sign.
-  std::vector< std::pair<double, double> > _vec_bounds; // parameter/variable bounds.
+    int _nbParams;                                       // The number of parameter/variable in constraint.
+    Mat _constraintMat;                                  // Constraint under Matrix form.
+    Vec _Cst_objective;                                  // Constraint objective value.
+    std::vector<eLP_SIGN> _vec_sign;                     // Constraint sign.
+    std::vector<std::pair<double, double>> _vec_bounds;  // parameter/variable bounds.
 
-  bool _bminimize; // minimize is true or maximize is false.
-  std::vector<double> _vec_cost; // Objective function
+    bool _bminimize;                // minimize is true or maximize is false.
+    std::vector<double> _vec_cost;  // Objective function
 };
 
 /// Generic Sparse container for LP (Linear Programming problems).
@@ -55,21 +53,19 @@ struct LPConstraints
 ///
 struct LPConstraintsSparse
 {
-  LPConstraintsSparse() {
-    _bminimize = false;
-  }
+    LPConstraintsSparse() { _bminimize = false; }
 
-  // Variable part
-  int _nbParams; // The number of parameter/variable in constraint.
-  std::vector< std::pair<double, double> > _vec_bounds; // parameter/variable bounds.
+    // Variable part
+    int _nbParams;                                       // The number of parameter/variable in constraint.
+    std::vector<std::pair<double, double>> _vec_bounds;  // parameter/variable bounds.
 
-  // Constraint part
-  sRMat _constraintMat; // Constraint under Matrix form.
-  Vec _Cst_objective; // Constraint objective value.
-  std::vector<LPConstraints::eLP_SIGN> _vec_sign; // Constraint sign.
+    // Constraint part
+    sRMat _constraintMat;                            // Constraint under Matrix form.
+    Vec _Cst_objective;                              // Constraint objective value.
+    std::vector<LPConstraints::eLP_SIGN> _vec_sign;  // Constraint sign.
 
-  bool _bminimize; // minimize is true or maximize is false.
-  std::vector<double> _vec_cost; // Objective function
+    bool _bminimize;                // minimize is true or maximize is false.
+    std::vector<double> _vec_cost;  // Objective function
 };
 
 /// Generic LP solver (Linear Programming)
@@ -77,23 +73,23 @@ struct LPConstraintsSparse
 /// Embed constraint setup, problem solving, and parameters getter.
 class ISolver
 {
-public:
+  public:
+    ISolver(int nbParams)
+      : _nbParams(nbParams){};
 
-  ISolver(int nbParams):_nbParams(nbParams){};
+    /// Setup constraint for the given library.
+    virtual bool setup(const LPConstraints& constraints) = 0;
+    virtual bool setup(const LPConstraintsSparse& constraints) = 0;
 
-  /// Setup constraint for the given library.
-  virtual bool setup(const LPConstraints & constraints) = 0;
-  virtual bool setup(const LPConstraintsSparse & constraints) = 0;
+    /// Setup the feasibility and found the solution that best fit the constraint.
+    virtual bool solve() = 0;
 
-  /// Setup the feasibility and found the solution that best fit the constraint.
-  virtual bool solve() = 0;
+    /// Get back solution. Call it after solve.
+    virtual bool getSolution(std::vector<double>& estimatedParams) = 0;
 
-  /// Get back solution. Call it after solve.
-  virtual bool getSolution(std::vector<double> & estimatedParams) = 0;
-
-protected :
-  int _nbParams; // The number of parameter considered in constraint formulation.
+  protected:
+    int _nbParams;  // The number of parameter considered in constraint formulation.
 };
 
-} // namespace linearProgramming
-} // namespace aliceVision
+}  // namespace linearProgramming
+}  // namespace aliceVision

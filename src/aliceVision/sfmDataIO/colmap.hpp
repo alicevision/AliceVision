@@ -14,8 +14,8 @@
 #include <set>
 #include <unordered_set>
 
-namespace aliceVision{
-namespace sfmDataIO{
+namespace aliceVision {
+namespace sfmDataIO {
 
 using CompatibleList = std::unordered_set<IndexT>;
 
@@ -108,8 +108,7 @@ PerViewVisibility computePerViewVisibility(const sfmData::SfMData& sfmData, cons
  * @param[in] viewSelections  a selection of view IDs that have compatible intrinsics with Colmap.
  * @param[in] filename the filename where to save the scene (usually a images.txt file)
  */
-void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const CompatibleList& viewSelections,
-                                 const std::string& filename);
+void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const CompatibleList& viewSelections, const std::string& filename);
 
 /**
  * @brief Given an sfm scene and a selection of its views that are compatible with Colmap, it copies the source images to
@@ -118,8 +117,7 @@ void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const Compatib
  * @param[in] destinationFolder the folder where to copy the images.
  * @param[in] selection  a selection of view IDs that have compatible intrinsics with Colmap.
  */
-void copyImagesFromSfmData(const sfmData::SfMData& sfmData, const std::string& destinationFolder,
-                           const CompatibleList selection);
+void copyImagesFromSfmData(const sfmData::SfMData& sfmData, const std::string& destinationFolder, const CompatibleList selection);
 
 /**
  * @brief Given an sfm scene and a selection of its views that are compatible with Colmap, it generates the points3d.txt
@@ -128,8 +126,7 @@ void copyImagesFromSfmData(const sfmData::SfMData& sfmData, const std::string& d
  * @param[in] viewSelections a selection of view IDs that have compatible intrinsics with Colmap.
  * @param[in] filename the filename where to save the points (usually a points3d.txt file)
  */
-void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const CompatibleList& viewSelections,
-                                   const std::string& filename);
+void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const CompatibleList& viewSelections, const std::string& filename);
 
 /**
  * @brief Given an sfm scene and a selection of its views that are compatible with Colmap, it generates all the Colmap
@@ -138,8 +135,7 @@ void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const Compat
  * @param viewsSelection a selection of view IDs that have compatible intrinsics with Colmap.
  * @param colmapParams the configuration data for the Colmap scene.
  */
-void generateColmapSceneFiles(const sfmData::SfMData& sfmData, const CompatibleList& viewsSelection,
-                              const ColmapConfig& colmapParams);
+void generateColmapSceneFiles(const sfmData::SfMData& sfmData, const CompatibleList& viewsSelection, const ColmapConfig& colmapParams);
 
 /**
  * @brief iven an sfm scene it generate the folder structure and all the files in Colmap format.
@@ -151,5 +147,5 @@ void generateColmapSceneFiles(const sfmData::SfMData& sfmData, const CompatibleL
  */
 void convertToColmapScene(const sfmData::SfMData& sfmData, const std::string& colmapBaseDir, bool copyImages);
 
-}
-}
+}  // namespace sfmDataIO
+}  // namespace aliceVision

@@ -17,8 +17,7 @@ namespace depthMap {
  */
 class IGPUJob
 {
-public:
-
+  public:
     /**
      * @brief Perform computation from the given cameras.
      * @param[in] cudaDeviceId the CUDA device id
@@ -35,5 +34,5 @@ public:
  */
 void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPUsToUse);
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

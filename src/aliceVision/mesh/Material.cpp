@@ -53,8 +53,7 @@ void Material::addTexture(TextureType type, const std::string& textureName)
                 displacementPrefix = prefix;
                 displacementType = image::EImageFileType_stringToEnum(extension);
             }
-            else if (displacementPrefix != prefix ||
-                    displacementType != image::EImageFileType_stringToEnum(extension))
+            else if (displacementPrefix != prefix || displacementType != image::EImageFileType_stringToEnum(extension))
             {
                 throw std::runtime_error("All texture tiles must have the same prefix and extension!");
             }
@@ -97,10 +96,7 @@ const StaticVector<std::string>& Material::getTextures(TextureType type) const
 StaticVector<std::string> Material::getAllTextures() const
 {
     StaticVector<std::string> textures;
-    textures.resize(_bumpTextures.size()
-                    + _diffuseTextures.size()
-                    + _displacementTextures.size()
-                    + _normalTextures.size());
+    textures.resize(_bumpTextures.size() + _diffuseTextures.size() + _displacementTextures.size() + _normalTextures.size());
 
     auto last = std::copy(_bumpTextures.begin(), _bumpTextures.end(), textures.begin());
     last = std::copy(_diffuseTextures.begin(), _diffuseTextures.end(), last);
@@ -131,9 +127,8 @@ int Material::numAtlases() const
 {
     const int num = _diffuseTextures.size();
 
-    if ((!_displacementTextures.empty() && _displacementTextures.size() != num) ||
-       (!_normalTextures.empty() && _normalTextures.size() != num) ||
-       (!_bumpTextures.empty() && _bumpTextures.size() != num))
+    if ((!_displacementTextures.empty() && _displacementTextures.size() != num) || (!_normalTextures.empty() && _normalTextures.size() != num) ||
+        (!_bumpTextures.empty() && _bumpTextures.size() != num))
     {
         throw std::runtime_error("All texture maps must have same number of atlases!");
     }
@@ -179,5 +174,5 @@ std::string Material::textureName(TextureType type, int index) const
     return prefix + textureId(index) + "." + image::EImageFileType_enumToString(fileType);
 }
 
-} // namespace mesh
-} // namespace aliceVision
+}  // namespace mesh
+}  // namespace aliceVision

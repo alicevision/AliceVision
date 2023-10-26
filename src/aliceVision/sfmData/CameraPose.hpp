@@ -13,84 +13,64 @@ namespace sfmData {
 
 class CameraPose
 {
-public:
+  public:
+    /**
+     * @brief CameraPose default constructor
+     */
+    CameraPose() = default;
 
-  /**
-   * @brief CameraPose default constructor
-   */
-  CameraPose() = default;
+    /**
+     * @brief CameraPose constructor
+     * @param[in] transform The camera initial 3d transformation
+     * @param[in] locked If enable the camera pose is locked
+     */
+    explicit CameraPose(const geometry::Pose3& transform, bool locked = false)
+      : _transform(transform),
+        _locked(locked)
+    {}
 
-  /**
-   * @brief CameraPose constructor
-   * @param[in] transform The camera initial 3d transformation
-   * @param[in] locked If enable the camera pose is locked
-   */
-  explicit CameraPose(const geometry::Pose3& transform, bool locked = false)
-    : _transform(transform)
-    , _locked(locked)
-  {}
+    /**
+     * @brief Get the 3d transformation of the camera
+     * @return 3d transformation
+     */
+    inline const geometry::Pose3& getTransform() const { return _transform; }
 
-  /**
-   * @brief Get the 3d transformation of the camera
-   * @return 3d transformation
-   */
-  inline const geometry::Pose3& getTransform() const
-  {
-    return _transform;
-  }
+    /**
+     * @brief Get the lock state of the camera
+     * @return true if the camera pose is locked
+     */
+    inline bool isLocked() const { return _locked; }
 
-  /**
-   * @brief Get the lock state of the camera
-   * @return true if the camera pose is locked
-   */
-  inline bool isLocked() const
-  {
-    return _locked;
-  }
+    /**
+     * @brief operator ==
+     */
+    inline bool operator==(const CameraPose& other) const { return (_transform == other._transform && _locked == other._locked); }
 
-  /**
-   * @brief operator ==
-   */
-  inline bool operator==(const CameraPose& other) const
-  {
-    return (_transform == other._transform &&
-            _locked == other._locked);
-  }
+    /**
+     * @brief Set the 3d transformation of the camera
+     * @param[in] 3d transformation
+     */
+    inline void setTransform(const geometry::Pose3& transform) { _transform = transform; }
 
-  /**
-   * @brief Set the 3d transformation of the camera
-   * @param[in] 3d transformation
-   */
-  inline void setTransform(const geometry::Pose3& transform)
-  {
-    _transform = transform;
-  }
+    /**
+     * @brief lock the camera pose
+     */
+    inline void lock() { _locked = true; }
 
-  /**
-   * @brief lock the camera pose
-   */
-  inline void lock()
-  {
-    _locked  = true;
-  }
+    /**
+     * @brief unlock the camera pose
+     */
+    inline void unlock() { _locked = false; }
 
-  /**
-   * @brief unlock the camera pose
-   */
-  inline void unlock()
-  {
-    _locked  = false;
-  }
+  private:
+    /// camera 3d transformation
+    geometry::Pose3 _transform;
+    /// camera lock
+    bool _locked = false;
 
-private:
-  /// camera 3d transformation
-  geometry::Pose3 _transform;
-  /// camera lock
-  bool _locked = false;
-
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-} // namespace sfmData
-} // namespace aliceVision
+}  // namespace sfmData
+}  // namespace aliceVision

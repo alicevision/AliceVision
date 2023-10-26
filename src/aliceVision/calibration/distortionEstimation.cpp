@@ -17,9 +17,10 @@ namespace calibration {
 
 class CostLine : public ceres::CostFunction
 {
-public:
-    CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt) :
-        _pt(pt), _undistortion(undistortion)
+  public:
+    CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt)
+      : _pt(pt),
+        _undistortion(undistortion)
     {
         set_num_residuals(1);
 
@@ -41,7 +42,7 @@ public:
 
         const double cangle = std::cos(angle);
         const double sangle = std::sin(angle);
-    
+
         std::vector<double> cameraDistortionParams = _undistortion->getParameters();
         const std::size_t distortionSize = cameraDistortionParams.size();
         for (std::size_t idParam = 0; idParam < distortionSize; ++idParam)
@@ -102,16 +103,16 @@ public:
         return true;
     }
 
-private:
+  private:
     std::shared_ptr<camera::Undistortion> _undistortion;
     Vec2 _pt;
 };
 
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
-              Statistics & statistics,
-              std::vector<LineWithPoints> & lines,
+              Statistics& statistics,
+              std::vector<LineWithPoints>& lines,
               bool lockCenter,
-              const std::vector<bool> & lockDistortions)
+              const std::vector<bool>& lockDistortions)
 {
     if (!undistortionToEstimate)
     {
@@ -132,8 +133,8 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
 
     if (lockDistortions.size() != countUndistortionParams)
     {
-        ALICEVISION_LOG_ERROR("Invalid number of distortion parameters (lockDistortions=" << lockDistortions.size()
-                              << ", countDistortionParams=" << countUndistortionParams << ").");
+        ALICEVISION_LOG_ERROR("Invalid number of distortion parameters (lockDistortions=" << lockDistortions.size() << ", countDistortionParams="
+                                                                                          << countUndistortionParams << ").");
         return false;
     }
 
@@ -184,14 +185,14 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         }
     }
 
-    for (auto & l : lines)
+    for (auto& l : lines)
     {
         problem.AddParameterBlock(&l.angle, 1);
         problem.AddParameterBlock(&l.dist, 1);
 
         for (Vec2 pt : l.points)
         {
-            ceres::CostFunction * costFunction = new CostLine(undistortionToEstimate, pt);
+            ceres::CostFunction* costFunction = new CostLine(undistortionToEstimate, pt);
             problem.AddResidualBlock(costFunction, lossFunction, &l.angle, &l.dist, center, ptrUndistortionParameters);
         }
     }
@@ -216,7 +217,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     undistortionToEstimate->setParameters(undistortionParameters);
     std::vector<double> errors;
 
-    for (auto & l : lines)
+    for (auto& l : lines)
     {
         const double sangle = std::sin(l.angle);
         const double cangle = std::cos(l.angle);
@@ -232,7 +233,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     const double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / static_cast<double>(errors.size());
     const double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
     const double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
-    std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
+    std::nth_element(errors.begin(), errors.begin() + errors.size() / 2, errors.end());
     const double median = errors[errors.size() / 2];
 
     statistics.mean = mean;
@@ -242,5 +243,5 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     return true;
 }
 
-} // namespace calibration
-} // namespace aliceVision
+}  // namespace calibration
+}  // namespace aliceVision

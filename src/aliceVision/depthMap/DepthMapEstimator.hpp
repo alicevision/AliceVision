@@ -26,8 +26,7 @@ namespace depthMap {
  */
 class DepthMapEstimator : public IGPUJob
 {
-public:
-
+  public:
     /**
      * @brief Depth Map Estimator constructor.
      * @param[in] mp the multi-view parameters
@@ -58,8 +57,7 @@ public:
      */
     void compute(int cudaDeviceId, const std::vector<int>& cams) override;
 
-private:
-
+  private:
     // private methods
 
     /**
@@ -78,12 +76,12 @@ private:
 
     // private members
 
-    const mvsUtils::MultiViewParams& _mp;      //< multi-view parameters
-    const mvsUtils::TileParams& _tileParams;   //< tiling parameters
-    const DepthMapParams& _depthMapParams;     //< depth map estimation parameters
-    const SgmParams& _sgmParams;               //< parameters of Sgm process
-    const RefineParams& _refineParams;         //< parameters of Refine process
-    std::vector<ROI> _tileRoiList;             //< depth maps region-of-interest list
+    const mvsUtils::MultiViewParams& _mp;     //< multi-view parameters
+    const mvsUtils::TileParams& _tileParams;  //< tiling parameters
+    const DepthMapParams& _depthMapParams;    //< depth map estimation parameters
+    const SgmParams& _sgmParams;              //< parameters of Sgm process
+    const RefineParams& _refineParams;        //< parameters of Refine process
+    std::vector<ROI> _tileRoiList;            //< depth maps region-of-interest list
 };
 
 }  // namespace depthMap

@@ -15,7 +15,6 @@
 namespace aliceVision {
 namespace matching {
 
-
 /**
  * @brief Compute the n best matches ('best' = mean of features' scale)
  * @param[in] inputMatches Set of indices for (putative) matches.
@@ -65,18 +64,17 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
                           const aliceVision::feature::Regions& rRegions,
                           const std::pair<std::size_t, std::size_t>& rImgSize,
                           const aliceVision::Pair& indexImagePair,
-                          aliceVision::matching::IndMatches& outMatches, size_t gridSize = 3);
+                          aliceVision::matching::IndMatches& outMatches,
+                          size_t gridSize = 3);
 
 void matchesGridFilteringForAllPairs(const PairwiseMatches& geometricMatches,
                                      const sfmData::SfMData& sfmData,
                                      const feature::RegionsPerView& regionPerView,
-                                     bool useGridSort, std::size_t numMatchesToKeep,
+                                     bool useGridSort,
+                                     std::size_t numMatchesToKeep,
                                      PairwiseMatches& outPairwiseMatches);
 
+void filterMatchesByMin2DMotion(PairwiseMatches& mapPutativesMatches, const feature::RegionsPerView& regionPerView, double minRequired2DMotion);
 
-void filterMatchesByMin2DMotion(PairwiseMatches& mapPutativesMatches,
-                                const feature::RegionsPerView& regionPerView,
-                                double minRequired2DMotion);
-
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace matching
+}  // namespace aliceVision

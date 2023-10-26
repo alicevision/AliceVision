@@ -12,7 +12,6 @@
 namespace aliceVision {
 namespace sfm {
 
-
 struct RigParams
 {
     bool useRigConstraint = true;
@@ -21,64 +20,62 @@ struct RigParams
 
 class RigSequence
 {
-public:
+  public:
+    RigSequence(sfmData::SfMData& sfmData, IndexT rigId, RigParams params)
+      : _sfmData(sfmData),
+        _rigId(rigId),
+        _rig(sfmData.getRigs().at(rigId)),
+        _params(params)
+    {}
 
-  RigSequence(sfmData::SfMData& sfmData, IndexT rigId, RigParams params)
-    : _sfmData(sfmData)
-    , _rigId(rigId)
-    , _rig(sfmData.getRigs().at(rigId))
-    , _params(params)
-  {}
+    /**
+     * @brief RigSequence initialization
+     * build internal structures
+     */
+    void init(const track::TracksPerView& tracksPerView);
 
-  /**
-   * @brief RigSequence initialization
-   * build internal structures
-   */
-  void init(const track::TracksPerView& tracksPerView);
+    /**
+     * @brief Calibrate new possible rigs or update independent poses to rig poses
+     * @param[in,out] updatedViews add the updated view ids to the list
+     * @return set of updated views id
+     */
+    void updateSfM(std::set<IndexT>& updatedViews);
 
-  /**
-   * @brief Calibrate new possible rigs or update independent poses to rig poses
-   * @param[in,out] updatedViews add the updated view ids to the list
-   * @return set of updated views id
-   */
-  void updateSfM(std::set<IndexT>& updatedViews);
+  private:
+    void computeScores();
+    void setupRelativePoses();
+    void rigResection(std::set<IndexT>& updatedViews);
 
-private:
+    struct ViewInfo
+    {
+        IndexT viewId;
+        bool isPoseIndependant;
+        double score;
+    };
 
-  void computeScores();
-  void setupRelativePoses();
-  void rigResection(std::set<IndexT>& updatedViews);
+    struct SubPoseInfo
+    {
+        std::size_t nbPose = 0;
+        bool isInitialized = false;
+        IndexT maxFrameId = UndefinedIndexT;
+        double maxFrameScore = 0;
+        double totalScore = 0;
+    };
 
-  struct ViewInfo
-  {
-    IndexT viewId;
-    bool isPoseIndependant;
-    double score;
-  };
+    // <subPoseId, viewInfo>
+    using RigFrame = std::map<IndexT, ViewInfo>;
+    // <frame, RigFrame>
+    using RigInfoPerFrame = std::map<IndexT, RigFrame>;
 
-  struct SubPoseInfo
-  {
-    std::size_t nbPose = 0;
-    bool isInitialized = false;
-    IndexT maxFrameId = UndefinedIndexT;
-    double maxFrameScore = 0;
-    double totalScore = 0;
-  };
-
-  // <subPoseId, viewInfo>
-  using RigFrame = std::map<IndexT, ViewInfo>;
-  // <frame, RigFrame>
-  using RigInfoPerFrame = std::map<IndexT, RigFrame>;
-
-  IndexT _rigId;
-  sfmData::Rig& _rig;
-  sfmData::SfMData& _sfmData;
-  RigInfoPerFrame _rigInfoPerFrame;
-  std::map<IndexT, SubPoseInfo> _rigInfoPerSubPose;
-  RigParams _params;
+    IndexT _rigId;
+    sfmData::Rig& _rig;
+    sfmData::SfMData& _sfmData;
+    RigInfoPerFrame _rigInfoPerFrame;
+    std::map<IndexT, SubPoseInfo> _rigInfoPerSubPose;
+    RigParams _params;
 };
 
 IndexT getRigPoseId(IndexT rigId, IndexT frameId);
 
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

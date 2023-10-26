@@ -14,25 +14,24 @@
 namespace aliceVision {
 namespace sfmDataIO {
 
-class AlembicImporter 
+class AlembicImporter
 {
-public:
+  public:
+    explicit AlembicImporter(const std::string& filename);
 
-  explicit AlembicImporter(const std::string& filename);
+    ~AlembicImporter();
 
-  ~AlembicImporter();
+    /**
+     * @brief populate a SfMData from the alembic file
+     * @param[out] sfmData The output SfMData
+     * @param[in] flagsPart
+     */
+    void populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart = ESfMData::ALL);
 
-  /**
-   * @brief populate a SfMData from the alembic file
-   * @param[out] sfmData The output SfMData
-   * @param[in] flagsPart
-   */
-  void populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart = ESfMData::ALL);
-
-private:
-  struct DataImpl;
-  std::unique_ptr<DataImpl> _dataImpl;
+  private:
+    struct DataImpl;
+    std::unique_ptr<DataImpl> _dataImpl;
 };
 
-} // namespace sfmDataIO
-} // namespace aliceVision
+}  // namespace sfmDataIO
+}  // namespace aliceVision

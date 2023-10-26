@@ -16,14 +16,12 @@ namespace calibration {
 /**
  * @brief Deserialize JSON object to checkerboard corner.
  */
-CheckerDetector::CheckerBoardCorner tag_invoke(boost::json::value_to_tag<CheckerDetector::CheckerBoardCorner>,
-                                               boost::json::value const& jv);
+CheckerDetector::CheckerBoardCorner tag_invoke(boost::json::value_to_tag<CheckerDetector::CheckerBoardCorner>, boost::json::value const& jv);
 
 /**
  * @brief Serialize checkerboard corner to JSON object.
  */
-void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv,
-                CheckerDetector::CheckerBoardCorner const& t);
+void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, CheckerDetector::CheckerBoardCorner const& t);
 
 /**
  * @brief Deserialize JSON object to checkerboard detector.
@@ -35,6 +33,5 @@ CheckerDetector tag_invoke(boost::json::value_to_tag<CheckerDetector>, boost::js
  */
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, CheckerDetector const& t);
 
-} // namespace calibration
-} // namespace aliceVision
-
+}  // namespace calibration
+}  // namespace aliceVision

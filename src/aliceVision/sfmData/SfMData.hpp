@@ -45,10 +45,10 @@ using PosesUncertainty = HashMap<IndexT, Vec6>;
 /// Define uncertainty per landmark
 using LandmarksUncertainty = HashMap<IndexT, Vec3>;
 
-///Define a collection of constraints
+/// Define a collection of constraints
 using Constraints2D = std::vector<Constraint2D>;
 
-///Define a collection of rotation priors
+/// Define a collection of rotation priors
 using RotationPriors = std::vector<RotationPrior>;
 
 /**
@@ -57,7 +57,7 @@ using RotationPriors = std::vector<RotationPrior>;
  */
 class SfMData
 {
-public:
+  public:
     /// Uncertainty per pose
     PosesUncertainty _posesUncertainty;
     /// Uncertainty per landmark
@@ -82,68 +82,62 @@ public:
      * @brief Get views
      * @return views
      */
-    const Views& getViews() const {return _views;}
-    Views& getViews() {return _views;}
+    const Views& getViews() const { return _views; }
+    Views& getViews() { return _views; }
 
     /**
      * @brief Get poses
      * @return poses
-    */
-    const Poses& getPoses() const {return _poses;}
-    Poses& getPoses() {return _poses;}
+     */
+    const Poses& getPoses() const { return _poses; }
+    Poses& getPoses() { return _poses; }
 
     /**
      * @brief Get rigs
      * @return rigs
      */
-    const Rigs& getRigs() const {return _rigs;}
-    Rigs& getRigs() {return _rigs;}
+    const Rigs& getRigs() const { return _rigs; }
+    Rigs& getRigs() { return _rigs; }
 
     /**
      * @brief Get intrinsics
      * @return intrinsics
      */
-    const Intrinsics& getIntrinsics() const {return _intrinsics;}
-    Intrinsics& getIntrinsics() {return _intrinsics;}
+    const Intrinsics& getIntrinsics() const { return _intrinsics; }
+    Intrinsics& getIntrinsics() { return _intrinsics; }
 
     /**
      * @brief Get landmarks
      * @return landmarks
      */
-    const Landmarks& getLandmarks() const {return _structure;}
-    Landmarks& getLandmarks() {return _structure;}
+    const Landmarks& getLandmarks() const { return _structure; }
+    Landmarks& getLandmarks() { return _structure; }
 
     /**
      * @brief Get Constraints2D
      * @return Constraints2D
      */
-    const Constraints2D& getConstraints2D() const {return constraints2d;}
-    Constraints2D& getConstraints2D() {return constraints2d;}
+    const Constraints2D& getConstraints2D() const { return constraints2d; }
+    Constraints2D& getConstraints2D() { return constraints2d; }
 
     /**
      * @brief Get RotationPriors
      * @return RotationPriors
      */
-    const RotationPriors& getRotationPriors() const {return rotationpriors;}
-    RotationPriors& getRotationPriors() {return rotationpriors;}
+    const RotationPriors& getRotationPriors() const { return rotationpriors; }
+    RotationPriors& getRotationPriors() { return rotationpriors; }
 
     /**
      * @brief Get relative features folder paths
      * @return features folders paths
      */
-    const std::vector<std::string>& getRelativeFeaturesFolders() const
-    {
-        return _featuresFolders;
-    }
+    const std::vector<std::string>& getRelativeFeaturesFolders() const { return _featuresFolders; }
 
     /**
      * @brief Get relative matches folder paths
      * @return matches folder paths
      */
-    const std::vector<std::string>& getRelativeMatchesFolders() const
-    {
-        return _matchesFolders;
-    }
+    const std::vector<std::string>& getRelativeMatchesFolders() const { return _matchesFolders; }
 
     /**
      * @brief Get absolute features folder paths
@@ -186,7 +180,7 @@ public:
      */
     camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId)
     {
-        if(_intrinsics.count(intrinsicId))
+        if (_intrinsics.count(intrinsicId))
             return _intrinsics.at(intrinsicId).get();
         return nullptr;
     }
@@ -197,7 +191,7 @@ public:
      */
     std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId)
     {
-        if(_intrinsics.count(intrinsicId))
+        if (_intrinsics.count(intrinsicId))
             return _intrinsics.at(intrinsicId);
         return nullptr;
     }
@@ -208,7 +202,7 @@ public:
      */
     const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId) const
     {
-        if(_intrinsics.count(intrinsicId))
+        if (_intrinsics.count(intrinsicId))
             return _intrinsics.at(intrinsicId);
         return nullptr;
     }
@@ -220,7 +214,7 @@ public:
     std::set<IndexT> getViewsKeys() const
     {
         std::set<IndexT> viewKeys;
-        for (auto v: _views)
+        for (auto v : _views)
             viewKeys.insert(v.first);
         return viewKeys;
     }
@@ -234,13 +228,9 @@ public:
     {
         if (view == nullptr)
             return false;
-        return (
-            view->getIntrinsicId() != UndefinedIndexT &&
-            view->getPoseId() != UndefinedIndexT &&
-            (!view->isPartOfRig() || view->isPoseIndependant() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
-            _intrinsics.find(view->getIntrinsicId()) != _intrinsics.end() &&
-            _poses.find(view->getPoseId()) != _poses.end()
-        );
+        return (view->getIntrinsicId() != UndefinedIndexT && view->getPoseId() != UndefinedIndexT &&
+                (!view->isPartOfRig() || view->isPoseIndependant() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
+                _intrinsics.find(view->getIntrinsicId()) != _intrinsics.end() && _poses.find(view->getPoseId()) != _poses.end());
     }
 
     /**
@@ -248,60 +238,42 @@ public:
      * @param[in] viewID The given viewID
      * @return true if intrinsic and pose defined
      */
-    bool isPoseAndIntrinsicDefined(IndexT viewId) const
-    { 
-        return isPoseAndIntrinsicDefined(_views.at(viewId).get());
-    }
+    bool isPoseAndIntrinsicDefined(IndexT viewId) const { return isPoseAndIntrinsicDefined(_views.at(viewId).get()); }
 
     /**
      * @brief Check if the given view has an existing pose
      * @param[in] view The given view
      * @return true if the pose exists
      */
-    bool existsPose(const View& view) const
-    {
-        return (_poses.find(view.getPoseId()) != _poses.end());
-    }
+    bool existsPose(const View& view) const { return (_poses.find(view.getPoseId()) != _poses.end()); }
 
     /**
      * @brief Gives the view of the input view id.
      * @param[in] viewId The given view id
      * @return the corresponding view reference
      */
-    View& getView(IndexT viewId)
-    {
-        return *(_views.at(viewId));
-    }
+    View& getView(IndexT viewId) { return *(_views.at(viewId)); }
 
     /**
      * @brief Gives the view of the input view id.
      * @param[in] viewId The given view id
      * @return the corresponding view ptr
      */
-    View::ptr getViewPtr(IndexT viewId)
-    {
-        return _views.at(viewId).get();
-    }
+    View::ptr getViewPtr(IndexT viewId) { return _views.at(viewId).get(); }
 
     /**
      * @brief Gives the view of the input view id.
      * @param[in] viewId The given view id
      * @return the corresponding view ptr
      */
-    View::sptr getViewSharedPtr(IndexT viewId)
-    {
-        return _views.at(viewId);
-    }
+    View::sptr getViewSharedPtr(IndexT viewId) { return _views.at(viewId); }
 
     /**
      * @brief Gives the view of the input view id.
      * @param[in] viewId The given view id
      * @return the corresponding view reference
      */
-    const View& getView(IndexT viewId) const
-    {
-        return *(_views.at(viewId));
-    }
+    const View& getView(IndexT viewId) const { return *(_views.at(viewId)); }
 
     /**
      * @brief Gives the pose of the input view. If this view is part of a rig, it returns rigPose + rigSubPose.
@@ -331,10 +303,7 @@ public:
      * @brief  Gives the pose with the given pose id.
      * @param[in] poseId The given pose id
      */
-    const CameraPose& getAbsolutePose(IndexT poseId) const
-    {
-        return _poses.at(poseId);
-    }
+    const CameraPose& getAbsolutePose(IndexT poseId) const { return _poses.at(poseId); }
 
     /**
      * @brief Get the rig of the given view
@@ -383,7 +352,7 @@ public:
         std::vector<ExposureSetting> cameraExposureList;
         cameraExposureList.reserve(_views.size());
 
-        for(const auto& view : _views)
+        for (const auto& view : _views)
         {
             const ExposureSetting ce = view.second->getImage().getCameraExposureSetting();
             if (ce.isPartiallyDefined())
@@ -394,26 +363,23 @@ public:
             }
         }
 
-        std::nth_element(cameraExposureList.begin(), cameraExposureList.begin() + cameraExposureList.size()/2, cameraExposureList.end());
-        const ExposureSetting& ceMedian = cameraExposureList[cameraExposureList.size()/2];
+        std::nth_element(cameraExposureList.begin(), cameraExposureList.begin() + cameraExposureList.size() / 2, cameraExposureList.end());
+        const ExposureSetting& ceMedian = cameraExposureList[cameraExposureList.size() / 2];
 
         return ceMedian;
     }
 
     /**
      * @brief Add the given \p folder to features folders.
-     * @note If SfmData's absolutePath has been set, 
+     * @note If SfmData's absolutePath has been set,
      *       an absolute path will be converted to a relative one.
      * @param[in] folder path to a folder containing features
      */
-    inline void addFeaturesFolder(const std::string& folder)
-    {
-        addFeaturesFolders({folder});
-    }
+    inline void addFeaturesFolder(const std::string& folder) { addFeaturesFolders({folder}); }
 
     /**
      * @brief Add the given \p folders to features folders.
-     * @note If SfmData's absolutePath has been set, 
+     * @note If SfmData's absolutePath has been set,
      *       absolute paths will be converted to relative ones.
      * @param[in] folders paths to folders containing features
      */
@@ -421,18 +387,15 @@ public:
 
     /**
      * @brief Add the given \p folder to matches folders.
-     * @note If SfmData's absolutePath has been set, 
+     * @note If SfmData's absolutePath has been set,
      *       an absolute path will be converted to a relative one.
      * @param[in] folder path to a folder containing matches
      */
-    inline void addMatchesFolder(const std::string& folder)
-    {
-        addMatchesFolders({folder});
-    }
+    inline void addMatchesFolder(const std::string& folder) { addMatchesFolders({folder}); }
 
     /**
      * @brief Add the given \p folders to matches folders.
-     * @note If SfmData's absolutePath has been set, 
+     * @note If SfmData's absolutePath has been set,
      *       absolute paths will be converted to relative ones.
      * @param[in] folders paths to folders containing matches
      */
@@ -440,7 +403,7 @@ public:
 
     /**
      * @brief Replace the current features folders by the given ones.
-     * @note If SfmData's absolutePath has been set, 
+     * @note If SfmData's absolutePath has been set,
      *       absolute paths will be converted to relative ones.
      * @param[in] folders paths to folders containing features
      */
@@ -452,7 +415,7 @@ public:
 
     /**
      * @brief Replace the current matches folders by the given ones.
-     * @note If SfmData's absolutePath has been set, 
+     * @note If SfmData's absolutePath has been set,
      *       absolute paths will be converted to relative ones.
      * @param[in] folders paths to folders containing matches
      */
@@ -464,7 +427,7 @@ public:
 
     /**
      * @brief Set the SfMData file absolute path.
-     * @note Internal relative features/matches folders will be remapped 
+     * @note Internal relative features/matches folders will be remapped
      *       to be relative to the new absolute \p path.
      * @param[in] path The absolute path to the SfMData file folder
      */
@@ -478,16 +441,12 @@ public:
      */
     void setPose(const View& view, const CameraPose& pose);
 
-
     /**
      * @brief Set the given pose for the given poseId
      * @param[in] poseId The given poseId
      * @param[in] pose The given pose
      */
-    void setAbsolutePose(IndexT poseId, const CameraPose& pose)
-    {
-        _poses[poseId] = pose;
-    }
+    void setAbsolutePose(IndexT poseId, const CameraPose& pose) { _poses[poseId] = pose; }
 
     /**
      * @brief Erase yhe pose for the given poseId
@@ -496,7 +455,7 @@ public:
      */
     void erasePose(IndexT poseId, bool noThrow = false)
     {
-        auto it =_poses.find(poseId);
+        auto it = _poses.find(poseId);
         if (it != _poses.end())
             _poses.erase(it);
         else if (!noThrow)
@@ -521,7 +480,7 @@ public:
 
     void clear();
 
-private:
+  private:
     /// Structure (3D points with their 2D observations)
     Landmarks _structure;
     /// Considered camera intrinsics (indexed by view.getIntrinsicId())
@@ -544,10 +503,7 @@ private:
      * @param[in] view The given view
      * @return Rig pose of the given camera view
      */
-    const CameraPose& getRigPose(const View& view) const
-    {
-        return _poses.at(view.getPoseId());
-    }
+    const CameraPose& getRigPose(const View& view) const { return _poses.at(view.getPoseId()); }
 
     /**
      * @brief Get Rig subPose of a given camera view
@@ -566,10 +522,7 @@ private:
      * @param[in] view The given view
      * @return Rig pose of the given camera view
      */
-    CameraPose& getRigPose(const View& view)
-    {
-        return _poses.at(view.getPoseId());
-    }
+    CameraPose& getRigPose(const View& view) { return _poses.at(view.getPoseId()); }
 
     /**
      * @brief Get Rig subPose of a given camera view
@@ -589,5 +542,5 @@ using LandmarksPerView = stl::flat_map<std::size_t, LandmarkIdSet>;
 
 LandmarksPerView getLandmarksPerViews(const SfMData& sfmData);
 
-} // namespace sfmData
-} // namespace aliceVision
+}  // namespace sfmData
+}  // namespace aliceVision

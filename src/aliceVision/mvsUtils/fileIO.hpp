@@ -59,8 +59,7 @@ std::string getFileNameFromIndex(const MultiViewParams& mp,
 Matrix3x4 load3x4MatrixFromFile(std::istream& in);
 
 template<class Image>
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
-               image::EImageColorSpace colorspace, ECorrectEV correctEV);
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, image::EImageColorSpace colorspace, ECorrectEV correctEV);
 
-} // namespace mvsUtils
-} // namespace aliceVision
+}  // namespace mvsUtils
+}  // namespace aliceVision

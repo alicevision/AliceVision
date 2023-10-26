@@ -16,33 +16,38 @@
 namespace aliceVision {
 namespace feature {
 
-enum class EImageDescriberType: unsigned char
+enum class EImageDescriberType : unsigned char
 {
-  UNKNOWN = 0
-  , UNINITIALIZED = 1
-  , SIFT = 10
-  , SIFT_FLOAT = 11
-  , SIFT_UPRIGHT = 12
-  , DSPSIFT = 13
+    UNKNOWN = 0,
+    UNINITIALIZED = 1,
+    SIFT = 10,
+    SIFT_FLOAT = 11,
+    SIFT_UPRIGHT = 12,
+    DSPSIFT = 13
 
-  , AKAZE = 20
-  , AKAZE_LIOP = 21
-  , AKAZE_MLDB = 22
+    ,
+    AKAZE = 20,
+    AKAZE_LIOP = 21,
+    AKAZE_MLDB = 22
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-  , CCTAG3 = 30
-  , CCTAG4 = 31
+    ,
+    CCTAG3 = 30,
+    CCTAG4 = 31
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-  , SIFT_OCV = 40
-#endif
-  , AKAZE_OCV = 41
+    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
+    ,
+    SIFT_OCV = 40
+    #endif
+    ,
+    AKAZE_OCV = 41
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
-  , APRILTAG16H5 = 50
+    ,
+    APRILTAG16H5 = 50
 #endif
 };
 
@@ -54,7 +59,7 @@ std::string EImageDescriberType_informations();
 
 /**
  * @brief convert an enum EImageDescriberType to its corresponding string
- * @param EImageDescriberType 
+ * @param EImageDescriberType
  * @return String
  */
 std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberType);
@@ -66,26 +71,28 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
  */
 EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDescriberType);
 
- /**
-  * @brief EImageDescriberType_stringToEnums
-  * @param describerMethods
-  * @return EImageDescriberType vector
-  */
+/**
+ * @brief EImageDescriberType_stringToEnums
+ * @param describerMethods
+ * @return EImageDescriberType vector
+ */
 std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::string& describerMethods);
 
 inline bool isMarker(EImageDescriberType imageDescriberType)
 {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    if (imageDescriberType == EImageDescriberType::CCTAG3 || imageDescriberType == EImageDescriberType::CCTAG4) {
-      return true;
+    if (imageDescriberType == EImageDescriberType::CCTAG3 || imageDescriberType == EImageDescriberType::CCTAG4)
+    {
+        return true;
     }
 #endif
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
-    if (imageDescriberType == EImageDescriberType::APRILTAG16H5) {
-      return true;
+    if (imageDescriberType == EImageDescriberType::APRILTAG16H5)
+    {
+        return true;
     }
 #endif
-  return false;
+    return false;
 }
 
 /**
@@ -95,70 +102,73 @@ inline bool isMarker(EImageDescriberType imageDescriberType)
  */
 inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
 {
-  switch(imageDescriberType)
-  {
-    case EImageDescriberType::SIFT:
-    case EImageDescriberType::SIFT_FLOAT:
-    case EImageDescriberType::SIFT_UPRIGHT:
-    case EImageDescriberType::DSPSIFT:
-    case EImageDescriberType::AKAZE:
-    case EImageDescriberType::AKAZE_LIOP:
-    case EImageDescriberType::AKAZE_MLDB:
-        return 0.14f;
+    switch (imageDescriberType)
+    {
+        case EImageDescriberType::SIFT:
+        case EImageDescriberType::SIFT_FLOAT:
+        case EImageDescriberType::SIFT_UPRIGHT:
+        case EImageDescriberType::DSPSIFT:
+        case EImageDescriberType::AKAZE:
+        case EImageDescriberType::AKAZE_LIOP:
+        case EImageDescriberType::AKAZE_MLDB:
+            return 0.14f;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    case EImageDescriberType::CCTAG3:
-    case EImageDescriberType::CCTAG4:
-        return 1.0f;
+        case EImageDescriberType::CCTAG3:
+        case EImageDescriberType::CCTAG4:
+            return 1.0f;
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
-    case EImageDescriberType::APRILTAG16H5:
-        return 1.0f;
+        case EImageDescriberType::APRILTAG16H5:
+            return 1.0f;
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-    case EImageDescriberType::SIFT_OCV:      return 0.14f;
-#endif //ALICEVISION_HAVE_OCVSIFT
-    case EImageDescriberType::AKAZE_OCV:     return 0.14f;
-#endif //ALICEVISION_HAVE_OPENCV
+    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
+        case EImageDescriberType::SIFT_OCV:
+            return 0.14f;
+    #endif  // ALICEVISION_HAVE_OCVSIFT
+        case EImageDescriberType::AKAZE_OCV:
+            return 0.14f;
+#endif  // ALICEVISION_HAVE_OPENCV
 
-    case EImageDescriberType::UNKNOWN:
-        return 1.0f;
-    case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.
-  }
-  throw std::out_of_range("Invalid imageDescriber enum");
+        case EImageDescriberType::UNKNOWN:
+            return 1.0f;
+        case EImageDescriberType::UNINITIALIZED:
+            break;  // Should throw an error.
+    }
+    throw std::out_of_range("Invalid imageDescriber enum");
 }
 
 inline std::ostream& operator<<(std::ostream& os, const EImageDescriberType imageDescriberType)
 {
-  os << EImageDescriberType_enumToString(imageDescriberType);
-  return os;
+    os << EImageDescriberType_enumToString(imageDescriberType);
+    return os;
 }
 
-inline std::istream& operator>>(std::istream& in, EImageDescriberType &imageDescriberType)
+inline std::istream& operator>>(std::istream& in, EImageDescriberType& imageDescriberType)
 {
-  std::string token;
-  in >> token;
-  imageDescriberType = EImageDescriberType_stringToEnum(token);
-  return in;
+    std::string token;
+    in >> token;
+    imageDescriberType = EImageDescriberType_stringToEnum(token);
+    return in;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const std::vector<EImageDescriberType> &imageDescriberTypes)
+inline std::ostream& operator<<(std::ostream& os, const std::vector<EImageDescriberType>& imageDescriberTypes)
 {
-  for(const EImageDescriberType descType : imageDescriberTypes)
-    os << descType;
-  return os;
+    for (const EImageDescriberType descType : imageDescriberTypes)
+        os << descType;
+    return os;
 }
 
-inline std::istream& operator>>(std::istream &in, std::vector<EImageDescriberType> &imageDescriberTypes)
+inline std::istream& operator>>(std::istream& in, std::vector<EImageDescriberType>& imageDescriberTypes)
 {
-  std::string token;
-  in >> token;
-  imageDescriberTypes = EImageDescriberType_stringToEnums(token);
-  return in;
+    std::string token;
+    in >> token;
+    imageDescriberTypes = EImageDescriberType_stringToEnums(token);
+    return in;
 }
 
-} // namespace feature
-} // namespace aliceVision
+}  // namespace feature
+}  // namespace aliceVision

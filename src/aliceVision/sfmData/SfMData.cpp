@@ -20,13 +20,9 @@ using namespace aliceVision::image;
 
 namespace fs = boost::filesystem;
 
-SfMData::SfMData()
-{
-}
+SfMData::SfMData() {}
 
-SfMData::~SfMData()
-{
-}
+SfMData::~SfMData() {}
 
 bool SfMData::operator==(const SfMData& other) const
 {
@@ -118,7 +114,7 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
     // Else, convert relative paths to absolute paths
     std::vector<std::string> absolutePaths;
     absolutePaths.reserve(folders.size());
-    for (const auto& folder: folders)
+    for (const auto& folder : folders)
     {
         const fs::path f = fs::absolute(folder, fs::path(absolutePath).parent_path());
         if (fs::exists(f))
@@ -134,7 +130,7 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
     return absolutePaths;
 }
 
-/** 
+/**
  * @brief Add paths contained in \p folders to \p dst as relative paths to \p absolutePath.
  *        Paths already present in \p dst are omitted.
  * @param[in] dst list in which paths should be added
@@ -143,7 +139,7 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
  */
 void addAsRelativeFolders(std::vector<std::string>& dst, const std::vector<std::string>& folders, const std::string& absolutePath)
 {
-    for (auto folderPath: folders)
+    for (auto folderPath : folders)
     {
         // If absolutePath is set, convert to relative path
         if (!absolutePath.empty() && fs::path(folderPath).is_absolute())
@@ -158,25 +154,13 @@ void addAsRelativeFolders(std::vector<std::string>& dst, const std::vector<std::
     }
 }
 
-std::vector<std::string> SfMData::getFeaturesFolders() const
-{
-    return toAbsoluteFolders(_featuresFolders, _absolutePath);
-}
+std::vector<std::string> SfMData::getFeaturesFolders() const { return toAbsoluteFolders(_featuresFolders, _absolutePath); }
 
-std::vector<std::string> SfMData::getMatchesFolders() const
-{
-    return toAbsoluteFolders(_matchesFolders, _absolutePath);
-}
+std::vector<std::string> SfMData::getMatchesFolders() const { return toAbsoluteFolders(_matchesFolders, _absolutePath); }
 
-void SfMData::addFeaturesFolders(const std::vector<std::string>& folders)
-{
-    addAsRelativeFolders(_featuresFolders, folders, _absolutePath);
-}
+void SfMData::addFeaturesFolders(const std::vector<std::string>& folders) { addAsRelativeFolders(_featuresFolders, folders, _absolutePath); }
 
-void SfMData::addMatchesFolders(const std::vector<std::string>& folders)
-{
-    addAsRelativeFolders(_matchesFolders, folders, _absolutePath);
-}
+void SfMData::addMatchesFolders(const std::vector<std::string>& folders) { addAsRelativeFolders(_matchesFolders, folders, _absolutePath); }
 
 void SfMData::setAbsolutePath(const std::string& path)
 {
@@ -196,7 +180,7 @@ std::set<IndexT> SfMData::getValidViews() const
     std::set<IndexT> valid_idx;
     for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
-        const View * v = it->second.get();
+        const View* v = it->second.get();
         if (isPoseAndIntrinsicDefined(v))
         {
             valid_idx.insert(v->getViewId());
@@ -210,7 +194,7 @@ std::set<IndexT> SfMData::getReconstructedIntrinsics() const
     std::set<IndexT> valid_idx;
     for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
-        const View * v = it->second.get();
+        const View* v = it->second.get();
         if (isPoseAndIntrinsicDefined(v))
         {
             valid_idx.insert(v->getIntrinsicId());
@@ -249,7 +233,6 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
 
     throw std::runtime_error("SfMData::setPose: dependant view pose not part of an initialized rig.");
 }
-
 
 void SfMData::combine(const SfMData& sfmData)
 {
@@ -311,8 +294,8 @@ LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
         }
     }
 
-    // Sort landmark Ids in each view
-    #pragma omp parallel for
+// Sort landmark Ids in each view
+#pragma omp parallel for
     for (int i = 0; i < landmarksPerView.size(); ++i)
     {
         LandmarksPerView::iterator it = landmarksPerView.begin();
@@ -323,5 +306,5 @@ LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
     return landmarksPerView;
 }
 
-} // namespace sfmData
-} // namespace aliceVision
+}  // namespace sfmData
+}  // namespace aliceVision

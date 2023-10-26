@@ -61,5 +61,5 @@ bool affine2DFromCorrespondencesLinear(const Mat& x1, const Mat& x2, Mat3* M, do
  */
 bool affine3DFromCorrespondencesLinear(const Mat& x1, const Mat& x2, Mat4* M, double expected_precision = EigenDoubleTraits::dummy_precision());
 
-} // namespace multiview
-} // namespace aliceVision
+}  // namespace multiview
+}  // namespace aliceVision

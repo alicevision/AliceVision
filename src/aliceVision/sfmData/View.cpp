@@ -19,10 +19,5 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
 namespace aliceVision {
-namespace sfmData {
-
-
-
-
-} // namespace sfmData
-} // namespace aliceVision
+namespace sfmData {}  // namespace sfmData
+}  // namespace aliceVision

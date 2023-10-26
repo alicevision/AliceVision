@@ -15,11 +15,7 @@ namespace depthMap {
  * @param[in] b an integer value
  * @return nearest higher integer value of round a / b.
  */
-__host__ inline unsigned int divUp(unsigned int a, unsigned int b)
-{
-  return (a % b != 0) ? (a / b + 1) : (a / b);
-}
+__host__ inline unsigned int divUp(unsigned int a, unsigned int b) { return (a % b != 0) ? (a / b + 1) : (a / b); }
 
-} // namespace depthMap
-} // namespace aliceVision
-
+}  // namespace depthMap
+}  // namespace aliceVision

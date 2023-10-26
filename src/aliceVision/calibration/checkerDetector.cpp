@@ -16,13 +16,12 @@
 #include <algorithm>
 
 // TODO: to remove when moving to eigen 3.4
-namespace Eigen
-{
-template <typename Type, int Size>
+namespace Eigen {
+template<typename Type, int Size>
 using Vector = Matrix<Type, Size, 1>;
-template <typename Type, int Size>
+template<typename Type, int Size>
 using RowVector = Matrix<Type, 1, Size>;
-} // namespace Eigen
+}  // namespace Eigen
 
 namespace aliceVision {
 namespace calibration {
@@ -55,10 +54,10 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
         {
             bool keep = true;
 
-            for (const IntermediateCorner & oc : allCorners)
+            for (const IntermediateCorner& oc : allCorners)
             {
                 const double dist = (oc.center - c).norm();
-                
+
                 if (dist < distMerge)
                 {
                     keep = false;
@@ -66,7 +65,8 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
                 }
             }
 
-            if (!keep) continue;
+            if (!keep)
+                continue;
 
             allCorners.emplace_back(c, scale);
         }
@@ -85,12 +85,12 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
     const double distSamePosition = 2.0;
     for (std::size_t i = 0; i < fittedCorners.size(); ++i)
     {
-        const CheckerBoardCorner & ci = fittedCorners[i];
+        const CheckerBoardCorner& ci = fittedCorners[i];
 
         bool found = false;
         for (std::size_t j = i + 1; j < fittedCorners.size(); ++j)
         {
-            const CheckerBoardCorner & cj = fittedCorners[j];
+            const CheckerBoardCorner& cj = fittedCorners[j];
 
             if ((ci.center - cj.center).norm() < distSamePosition)
             {
@@ -147,10 +147,8 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
     return true;
 }
 
-
-
-bool CheckerDetector::processLevel(std::vector<Vec2> & corners, const image::Image<float> & input, double scale) const
-{       
+bool CheckerDetector::processLevel(std::vector<Vec2>& corners, const image::Image<float>& input, double scale) const
+{
     // Get resized size
     const unsigned int w = input.Width();
     const unsigned int h = input.Height();
@@ -165,7 +163,6 @@ bool CheckerDetector::processLevel(std::vector<Vec2> & corners, const image::Ima
     const oiio::ImageBuf inBuf(imageSpecOrigin, toUpdate.data());
     oiio::ImageBuf outBuf(imageSpecResized, rescaled.data());
     oiio::ImageBufAlgo::resize(outBuf, inBuf);
-
 
     // Normalize image between 0 and 1
     image::Image<float> normalized;
@@ -182,16 +179,16 @@ bool CheckerDetector::processLevel(std::vector<Vec2> & corners, const image::Ima
 
     pruneCorners(corners, refinedCorners, normalized);
 
-    for (Vec2 & v : corners)
+    for (Vec2& v : corners)
     {
         v.x() /= scale;
         v.y() /= scale;
-    } 
+    }
 
     return true;
 }
 
-void CheckerDetector::pruneCorners(std::vector<Vec2> & prunedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input) const
+void CheckerDetector::pruneCorners(std::vector<Vec2>& prunedCorners, const std::vector<Vec2>& rawCorners, const image::Image<float>& input) const
 {
     const image::Sampler2d<image::SamplerLinear> sampler;
     const int radius = 5;
@@ -199,7 +196,7 @@ void CheckerDetector::pruneCorners(std::vector<Vec2> & prunedCorners, const std:
 
     float vector[samples];
 
-    for (const Vec2 & corner : rawCorners)
+    for (const Vec2& corner : rawCorners)
     {
         float min = std::numeric_limits<float>::max();
         float max = std::numeric_limits<float>::min();
@@ -229,7 +226,8 @@ void CheckerDetector::pruneCorners(std::vector<Vec2> & prunedCorners, const std:
         for (int sample = 0; sample < samples; ++sample)
         {
             int next = sample + 1;
-            if (next == samples) next = 0;
+            if (next == samples)
+                next = 0;
 
             float test = vector[sample] * vector[next];
             if (test < 0.0)
@@ -239,17 +237,18 @@ void CheckerDetector::pruneCorners(std::vector<Vec2> & prunedCorners, const std:
         }
 
         // Count should be 4 to ensure the corner corresponds to an intersection of black and white tiles
-        if (count != 4) continue;
+        if (count != 4)
+            continue;
 
         prunedCorners.push_back(corner);
     }
 }
 
-void CheckerDetector::normalizeImage(image::Image<float> & output, const image::Image<float> & input) const
+void CheckerDetector::normalizeImage(image::Image<float>& output, const image::Image<float>& input) const
 {
     float min = 0.0f, max = 0.0f;
     getMinMax(min, max, input);
-    
+
     output.resize(input.Width(), input.Height());
     for (int y = 0; y < output.Height(); ++y)
     {
@@ -260,7 +259,7 @@ void CheckerDetector::normalizeImage(image::Image<float> & output, const image::
     }
 }
 
-void CheckerDetector::computeHessianResponse(image::Image<float> & output, const image::Image<float> & input) const
+void CheckerDetector::computeHessianResponse(image::Image<float>& output, const image::Image<float>& input) const
 {
     image::Image<float> smoothed;
     image::ImageGaussianFilter(input, 1.5, smoothed, 2);
@@ -286,7 +285,7 @@ void CheckerDetector::computeHessianResponse(image::Image<float> & output, const
     }
 }
 
-void CheckerDetector::extractCorners(std::vector<Vec2> & rawCorners, const image::Image<float> & hessianResponse) const
+void CheckerDetector::extractCorners(std::vector<Vec2>& rawCorners, const image::Image<float>& hessianResponse) const
 {
     float min = 0.0f, max = 0.0f;
     getMinMax(min, max, hessianResponse);
@@ -315,7 +314,8 @@ void CheckerDetector::extractCorners(std::vector<Vec2> & rawCorners, const image
                 }
             }
 
-            if (!isMaximal) continue;
+            if (!isMaximal)
+                continue;
 
             // Peak must be higher than a global threshold
             if (val > threshold)
@@ -326,7 +326,7 @@ void CheckerDetector::extractCorners(std::vector<Vec2> & rawCorners, const image
     }
 }
 
-void CheckerDetector::getMinMax(float &min, float &max, const image::Image<float> & input) const
+void CheckerDetector::getMinMax(float& min, float& max, const image::Image<float>& input) const
 {
     min = std::numeric_limits<float>::max();
     max = std::numeric_limits<float>::min();
@@ -340,7 +340,7 @@ void CheckerDetector::getMinMax(float &min, float &max, const image::Image<float
     }
 }
 
-void CheckerDetector::refineCorners(std::vector<Vec2> & refinedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input) const
+void CheckerDetector::refineCorners(std::vector<Vec2>& refinedCorners, const std::vector<Vec2>& rawCorners, const image::Image<float>& input) const
 {
     image::Image<float> gx, gy;
     ImageXDerivative(input, gx, true);
@@ -348,12 +348,16 @@ void CheckerDetector::refineCorners(std::vector<Vec2> & refinedCorners, const st
 
     const int radius = 5;
 
-    for (const Vec2 & pt: rawCorners)
+    for (const Vec2& pt : rawCorners)
     {
-        if (pt.x() < radius) continue;
-        if (pt.y() < radius) continue;
-        if (pt.x() >= gx.Width() - radius) continue;
-        if (pt.y() >= gx.Height() - radius) continue;
+        if (pt.x() < radius)
+            continue;
+        if (pt.y() < radius)
+            continue;
+        if (pt.x() >= gx.Width() - radius)
+            continue;
+        if (pt.y() >= gx.Height() - radius)
+            continue;
 
         Eigen::Matrix2d A = Eigen::Matrix2d::Zero();
         Eigen::Vector2d b = Eigen::Vector2d::Zero();
@@ -363,14 +367,16 @@ void CheckerDetector::refineCorners(std::vector<Vec2> & refinedCorners, const st
 
             for (int l = -radius; l <= radius; ++l)
             {
-                if (l == 0 && k == 0) continue;
+                if (l == 0 && k == 0)
+                    continue;
 
                 const int j = pt.x() + l;
 
                 float du = gx(i, j);
                 float dv = gy(i, j);
                 const float norm = std::sqrt(du * du + dv * dv);
-                if (norm < 0.01) continue;
+                if (norm < 0.01)
+                    continue;
 
                 du /= norm;
                 dv /= norm;
@@ -389,13 +395,16 @@ void CheckerDetector::refineCorners(std::vector<Vec2> & refinedCorners, const st
 
         // Make sure the update is coherent
         const double dist = (update - pt).norm();
-        if (dist > radius) continue;
+        if (dist > radius)
+            continue;
 
         refinedCorners.push_back(update);
     }
 }
 
-void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorners, const std::vector<IntermediateCorner> & rawCorners, const image::Image<float> & input) const
+void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner>& refinedCorners,
+                                 const std::vector<IntermediateCorner>& rawCorners,
+                                 const image::Image<float>& input) const
 {
     // Build kernel
     const int radius = 4;
@@ -427,7 +436,7 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
 
     const image::Sampler2d<image::SamplerLinear> sampler;
 
-    for (const IntermediateCorner & sc : rawCorners)
+    for (const IntermediateCorner& sc : rawCorners)
     {
         Vec2 corner = sc.center;
         bool isValid = true;
@@ -438,7 +447,7 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
         for (int iter = 0; iter < 20; ++iter)
         {
             AtA.fill(0);
-            Atb.fill(0);      
+            Atb.fill(0);
 
             for (int i = -radius; i <= radius; ++i)
             {
@@ -462,14 +471,14 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
 
             Eigen::Vector<double, 6> x = AtA.inverse() * Atb;
 
-            //f(x,y) = a1x**2 + a2xy + a3y**2 + a4x + a5y + a6
-            //df(x)/dx = 2a1x + a2y + a4
-            //df(x)/dy = 2a3y + a2x + a5
-            //H = |2a1 a2 |
-            //    |a2  2a3|
-            //det(H) = 2*2*a1*a3 - 2*a2
-            //inv(H) = |2a3 -a2|/det(H)
-            //         |-a2 2a1|
+            // f(x,y) = a1x**2 + a2xy + a3y**2 + a4x + a5y + a6
+            // df(x)/dx = 2a1x + a2y + a4
+            // df(x)/dy = 2a3y + a2x + a5
+            // H = |2a1 a2 |
+            //     |a2  2a3|
+            // det(H) = 2*2*a1*a3 - 2*a2
+            // inv(H) = |2a3 -a2|/det(H)
+            //          |-a2 2a1|
             const double a1 = x(0);
             const double a2 = x(1);
             const double a3 = x(2);
@@ -512,7 +521,8 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
                 break;
             }
 
-            if (update.norm() < 1e-5) break;
+            if (update.norm() < 1e-5)
+                break;
         }
 
         if (isValid)
@@ -521,7 +531,7 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
         }
     }
 
-    for (CheckerBoardCorner & corner : refinedCorners)
+    for (CheckerBoardCorner& corner : refinedCorners)
     {
         const double cx = corner.center(0);
         const double cy = corner.center(1);
@@ -534,8 +544,9 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
             const int di = corner.center(1) + i;
             for (int j = -radius; j <= radius; ++j)
             {
-                if (i == j) continue;
-                
+                if (i == j)
+                    continue;
+
                 const int dj = corner.center(0) + j;
 
                 Eigen::Vector<double, 6> rowA;
@@ -548,10 +559,10 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
 
                 AtA += rowA * rowA.transpose();
                 Atb += rowA * (2.0 * sampler(filtered, di, dj) - 1.0);
-            }                
+            }
         }
-        
-        Eigen::Vector<double, 6> x = AtA.inverse() * Atb;    
+
+        Eigen::Vector<double, 6> x = AtA.inverse() * Atb;
         const double c1 = x(0);
         const double c2 = x(1);
         const double c3 = x(2);
@@ -568,7 +579,8 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
         const double phi = acos(cos2phi) * 0.5;
         const double theta = atan2(sin2theta, cos2theta) * 0.5;
 
-        if (theta != theta || phi != phi) continue;
+        if (theta != theta || phi != phi)
+            continue;
 
         double angle = theta - phi;
         corner.dir1(0) = cos(angle);
@@ -580,7 +592,7 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
     }
 }
 
-IndexT CheckerDetector::findClosestCorner(const Vec2 & center, const Vec2 & dir, const std::vector<CheckerBoardCorner> & refinedCorners) const
+IndexT CheckerDetector::findClosestCorner(const Vec2& center, const Vec2& dir, const std::vector<CheckerBoardCorner>& refinedCorners) const
 {
     IndexT ret = UndefinedIndexT;
     double min = std::numeric_limits<double>::max();
@@ -588,12 +600,13 @@ IndexT CheckerDetector::findClosestCorner(const Vec2 & center, const Vec2 & dir,
 
     for (IndexT cid = 0; cid < refinedCorners.size(); ++cid)
     {
-        const CheckerBoardCorner & c = refinedCorners[cid];
+        const CheckerBoardCorner& c = refinedCorners[cid];
 
         Vec2 diff = c.center - center;
         const double dist = diff.norm();
-        if (dist < 5.0) continue;
-        
+        if (dist < 5.0)
+            continue;
+
         // Check that corner belongs to cone starting at center, directed at dir, with angle PI/8
         if (std::abs(std::atan2(diff.y(), diff.x()) - std::atan2(dir.y(), dir.x())) > boost::math::constants::pi<double>() * 0.125)
         {
@@ -611,10 +624,10 @@ IndexT CheckerDetector::findClosestCorner(const Vec2 & center, const Vec2 & dir,
     return ret;
 }
 
-bool CheckerDetector::getSeedCheckerboard(CheckerBoard & board, IndexT seed, const std::vector<CheckerBoardCorner> & refinedCorners) const
+bool CheckerDetector::getSeedCheckerboard(CheckerBoard& board, IndexT seed, const std::vector<CheckerBoardCorner>& refinedCorners) const
 {
     IndexT right, bottom, bottom_right, check;
-    const CheckerBoardCorner & referenceCorner = refinedCorners[seed];
+    const CheckerBoardCorner& referenceCorner = refinedCorners[seed];
 
     right = findClosestCorner(referenceCorner.center, referenceCorner.dir1, refinedCorners);
     if (right == UndefinedIndexT)
@@ -628,15 +641,15 @@ bool CheckerDetector::getSeedCheckerboard(CheckerBoard & board, IndexT seed, con
         return false;
     }
 
-    const CheckerBoardCorner & bottomCorner = refinedCorners[bottom];
-    const CheckerBoardCorner & rightCorner = refinedCorners[right];
+    const CheckerBoardCorner& bottomCorner = refinedCorners[bottom];
+    const CheckerBoardCorner& rightCorner = refinedCorners[right];
 
     bottom_right = findClosestCorner(bottomCorner.center, bottomCorner.dir2, refinedCorners);
     if (bottom_right == UndefinedIndexT)
     {
         return false;
     }
-    
+
     check = findClosestCorner(rightCorner.center, -rightCorner.dir1, refinedCorners);
     if (check == UndefinedIndexT)
     {
@@ -657,9 +670,8 @@ bool CheckerDetector::getSeedCheckerboard(CheckerBoard & board, IndexT seed, con
     return true;
 }
 
-
-bool CheckerDetector::getCandidates(std::vector<NewPoint> & candidates, const CheckerBoard & board, bool inside) const
-{   
+bool CheckerDetector::getCandidates(std::vector<NewPoint>& candidates, const CheckerBoard& board, bool inside) const
+{
     if (board.rows() < 2)
     {
         return false;
@@ -676,14 +688,18 @@ bool CheckerDetector::getCandidates(std::vector<NewPoint> & candidates, const Ch
 
             for (int row = 0; row < board.rows() - 2; ++row)
             {
-                if (board(row, col) != UndefinedIndexT) break;
+                if (board(row, col) != UndefinedIndexT)
+                    break;
 
                 srow = row;
             }
 
-            if (srow < 0) continue;
-            if (board(srow + 1, col) == UndefinedIndexT) continue;
-            if (board(srow + 2, col) == UndefinedIndexT) continue;
+            if (srow < 0)
+                continue;
+            if (board(srow + 1, col) == UndefinedIndexT)
+                continue;
+            if (board(srow + 2, col) == UndefinedIndexT)
+                continue;
 
             p.row = srow;
             candidates.push_back(p);
@@ -699,11 +715,14 @@ bool CheckerDetector::getCandidates(std::vector<NewPoint> & candidates, const Ch
 
             for (int row = board.rows() - 3; row >= 0; --row)
             {
-                if (board(row, col) != UndefinedIndexT) continue;
+                if (board(row, col) != UndefinedIndexT)
+                    continue;
 
-                if (board(row + 1, col) == UndefinedIndexT) continue;
+                if (board(row + 1, col) == UndefinedIndexT)
+                    continue;
 
-                if (board(row + 2, col) == UndefinedIndexT) continue;
+                if (board(row + 2, col) == UndefinedIndexT)
+                    continue;
 
                 p.row = row;
                 candidates.push_back(p);
@@ -714,13 +733,12 @@ bool CheckerDetector::getCandidates(std::vector<NewPoint> & candidates, const Ch
     return true;
 }
 
-
-bool CheckerDetector::growIterationUp(CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners, bool nested) const
+bool CheckerDetector::growIterationUp(CheckerBoard& board, const std::vector<CheckerBoardCorner>& refinedCorners, bool nested) const
 {
     const double referenceEnergy = computeEnergy(board, refinedCorners);
 
     // Enlarge board and fill with empty indices
-    CheckerBoard nboard(board.rows()  + 1, board.cols());
+    CheckerBoard nboard(board.rows() + 1, board.cols());
     nboard.fill(UndefinedIndexT);
     nboard.block(1, 0, board.rows(), board.cols()) = board;
     board = nboard;
@@ -741,25 +759,25 @@ bool CheckerDetector::growIterationUp(CheckerBoard & board, const std::vector<Ch
     }
 
     // Search for new corners
-    for (auto & candidate : candidates)
+    for (auto& candidate : candidates)
     {
         const IndexT rci = board(candidate.row + 2, candidate.col);
         const IndexT rcj = board(candidate.row + 1, candidate.col);
 
-        const CheckerBoardCorner & ci = refinedCorners[rci];
-        const CheckerBoardCorner & cj = refinedCorners[rcj];
+        const CheckerBoardCorner& ci = refinedCorners[rci];
+        const CheckerBoardCorner& cj = refinedCorners[rcj];
 
         IndexT minIndex = UndefinedIndexT;
         double minE = std::numeric_limits<double>::max();
 
         for (std::size_t id = 0; id < refinedCorners.size(); ++id)
-        {            
-            if (used.find(id) != used.end()) continue;
+        {
+            if (used.find(id) != used.end())
+                continue;
 
-            const CheckerBoardCorner & ck = refinedCorners[id];
+            const CheckerBoardCorner& ck = refinedCorners[id];
 
-            const double E =
-                ((ci.center - cj.center) + (ck.center - cj.center)).norm() / (ck.center - ci.center).norm();
+            const double E = ((ci.center - cj.center) + (ck.center - cj.center)).norm() / (ck.center - ci.center).norm();
             if (E < minE)
             {
                 minE = E;
@@ -769,11 +787,12 @@ bool CheckerDetector::growIterationUp(CheckerBoard & board, const std::vector<Ch
 
         // Check if this neighbor is aimed by another candidate (keep the best in this case)
         bool alreadyTook = false;
-        for (auto & candidateCheck : candidates)
+        for (auto& candidateCheck : candidates)
         {
             const IndexT idx = board(candidateCheck.row, candidateCheck.col);
-            if (idx != minIndex) continue;
-                
+            if (idx != minIndex)
+                continue;
+
             if (candidateCheck.score < minE)
             {
                 alreadyTook = true;
@@ -784,20 +803,19 @@ bool CheckerDetector::growIterationUp(CheckerBoard & board, const std::vector<Ch
             candidate.score = std::numeric_limits<double>::max();
         }
 
-        if (alreadyTook) continue;
+        if (alreadyTook)
+            continue;
 
         board(candidate.row, candidate.col) = minIndex;
         candidate.score = minE;
     }
-
 
     if (computeEnergy(board, refinedCorners) < referenceEnergy)
     {
         return true;
     }
 
-
-    std::sort(candidates.begin(), candidates.end(), [](const NewPoint & p1, const NewPoint p2) { return p1.score < p2.score; });
+    std::sort(candidates.begin(), candidates.end(), [](const NewPoint& p1, const NewPoint p2) { return p1.score < p2.score; });
     while (!candidates.empty())
     {
         const NewPoint c = candidates.back();
@@ -809,7 +827,8 @@ bool CheckerDetector::growIterationUp(CheckerBoard & board, const std::vector<Ch
         board(i, j) = UndefinedIndexT;
 
         // Check if the next candidate's score is below the threshold, otherwise continue
-        if (c.score > 1e6) continue;
+        if (c.score > 1e6)
+            continue;
 
         // After removal, some corners may be isolated, they should be removed
         bool changed = false;
@@ -845,10 +864,10 @@ bool CheckerDetector::growIterationUp(CheckerBoard & board, const std::vector<Ch
                 }
             }
         }
-        
+
         if (changed)
         {
-            std::sort(candidates.begin(), candidates.end(), [](const NewPoint & p1, const NewPoint p2) { return p1.score < p2.score; });
+            std::sort(candidates.begin(), candidates.end(), [](const NewPoint& p1, const NewPoint p2) { return p1.score < p2.score; });
             continue;
         }
 
@@ -863,7 +882,7 @@ bool CheckerDetector::growIterationUp(CheckerBoard & board, const std::vector<Ch
     return false;
 }
 
-double CheckerDetector::computeEnergy(const CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners) const
+double CheckerDetector::computeEnergy(const CheckerBoard& board, const std::vector<CheckerBoardCorner>& refinedCorners) const
 {
     // Count valid corners in board
     size_t countValid = 0;
@@ -897,12 +916,11 @@ double CheckerDetector::computeEnergy(const CheckerBoard & board, const std::vec
                     continue;
                 }
 
-                const CheckerBoardCorner & ci = refinedCorners[id1];
-                const CheckerBoardCorner & cj = refinedCorners[id2];
-                const CheckerBoardCorner & ck = refinedCorners[id3];
+                const CheckerBoardCorner& ci = refinedCorners[id1];
+                const CheckerBoardCorner& cj = refinedCorners[id2];
+                const CheckerBoardCorner& ck = refinedCorners[id3];
 
-                const double E =
-                    ((ci.center - cj.center) + (ck.center - cj.center)).norm() / (ck.center - ci.center).norm();
+                const double E = ((ci.center - cj.center) + (ck.center - cj.center)).norm() / (ck.center - ci.center).norm();
                 if (E > maxE)
                 {
                     maxE = E;
@@ -926,12 +944,11 @@ double CheckerDetector::computeEnergy(const CheckerBoard & board, const std::vec
                     continue;
                 }
 
-                const CheckerBoardCorner & ci = refinedCorners[id1];
-                const CheckerBoardCorner & cj = refinedCorners[id2];
-                const CheckerBoardCorner & ck = refinedCorners[id3];
+                const CheckerBoardCorner& ci = refinedCorners[id1];
+                const CheckerBoardCorner& cj = refinedCorners[id2];
+                const CheckerBoardCorner& ck = refinedCorners[id3];
 
-                const double E =
-                    ((ci.center - cj.center) + (ck.center - cj.center)).norm() / (ck.center - ci.center).norm();
+                const double E = ((ci.center - cj.center) + (ck.center - cj.center)).norm() / (ck.center - ci.center).norm();
                 if (E > maxE)
                 {
                     maxE = E;
@@ -944,10 +961,12 @@ double CheckerDetector::computeEnergy(const CheckerBoard & board, const std::vec
     return static_cast<double>(countValid) * (maxE - 1);
 }
 
-bool CheckerDetector::growIteration(CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners) const
+bool CheckerDetector::growIteration(CheckerBoard& board, const std::vector<CheckerBoardCorner>& refinedCorners) const
 {
-    if (board.rows() < 2) return false;
-    if (board.cols() < 2) return false;
+    if (board.rows() < 2)
+        return false;
+    if (board.cols() < 2)
+        return false;
 
     const double originalE = computeEnergy(board, refinedCorners);
     double minE = std::numeric_limits<double>::max();
@@ -1008,15 +1027,18 @@ bool CheckerDetector::growIteration(CheckerBoard & board, const std::vector<Chec
     return false;
 }
 
-void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, const std::vector<CheckerBoardCorner> & refinedCorners, const image::Image<float> & input) const
+void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard>& boards,
+                                         const std::vector<CheckerBoardCorner>& refinedCorners,
+                                         const image::Image<float>& input) const
 {
     double minE = std::numeric_limits<double>::max();
 
     std::vector<bool> used(refinedCorners.size(), false);
     for (IndexT cid = 0; cid < refinedCorners.size(); ++cid)
     {
-        const CheckerBoardCorner & seed = refinedCorners[cid];
-        if (used[cid]) continue;
+        const CheckerBoardCorner& seed = refinedCorners[cid];
+        if (used[cid])
+            continue;
 
         // Check if corner can be used as seed
         CheckerBoard board;
@@ -1038,12 +1060,11 @@ void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, con
             }
         }
 
-        if (!valid) continue;
+        if (!valid)
+            continue;
 
         // Extend board as much as possible
-        while (growIteration(board, refinedCorners))
-        {
-        }
+        while (growIteration(board, refinedCorners)) {}
 
         // Check that board has more than 10 corners
         int count = 0;
@@ -1051,19 +1072,22 @@ void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, con
         {
             for (int j = 0; j < board.cols(); ++j)
             {
-                if (board(i, j) == UndefinedIndexT) continue;
+                if (board(i, j) == UndefinedIndexT)
+                    continue;
                 count++;
             }
         }
 
-        if (count < 10) continue;
+        if (count < 10)
+            continue;
 
         // Update used corners
         for (int i = 0; i < board.rows(); ++i)
         {
             for (int j = 0; j < board.cols(); ++j)
             {
-                if (board(i, j) == UndefinedIndexT) continue;
+                if (board(i, j) == UndefinedIndexT)
+                    continue;
 
                 const IndexT id = board(i, j);
                 used[id] = true;
@@ -1080,14 +1104,13 @@ void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, con
     }
 }
 
-void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img, bool nestedCheckers) const
+void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor>& img, bool nestedCheckers) const
 {
     for (auto c : _corners)
     {
         image::DrawLine(c.center.x() + 2.0, c.center.y(), c.center.x() - 2.0, c.center.y(), image::RGBColor(255, 255, 0), &img);
-        image::DrawLine(c.center.x(), c.center.y() + 2.0, c.center.x(), c.center.y()- 2.0, image::RGBColor(255, 255, 0), &img);
+        image::DrawLine(c.center.x(), c.center.y() + 2.0, c.center.x(), c.center.y() - 2.0, image::RGBColor(255, 255, 0), &img);
     }
-
 
     std::vector<image::RGBColor> colors;
     colors.emplace_back(255, 0, 0);
@@ -1107,7 +1130,8 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img, bool
             for (int j = 0; j < board.cols() - delta.x(); ++j)
             {
                 const IndexT p1 = board(i, j);
-                if (p1 == UndefinedIndexT) continue;
+                if (p1 == UndefinedIndexT)
+                    continue;
 
                 IndexT p2 = board(i + delta.y(), j + delta.x());
 
@@ -1121,10 +1145,11 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img, bool
                     }
                 }
 
-                if (p2 == UndefinedIndexT) continue;
+                if (p2 == UndefinedIndexT)
+                    continue;
 
-                const CheckerBoardCorner & c1 = _corners[p1];
-                const CheckerBoardCorner & c2 = _corners[p2];
+                const CheckerBoardCorner& c1 = _corners[p1];
+                const CheckerBoardCorner& c2 = _corners[p2];
 
                 image::DrawLineThickness(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), color, 5, &img);
             }
@@ -1138,11 +1163,12 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img, bool
         drawEdges(board, colors[idx], false);
 
         idx++;
-        if (idx >= _boards.size()) idx = 0;
+        if (idx >= _boards.size())
+            idx = 0;
     }
 }
 
-CheckerDetector::CheckerBoard CheckerDetector::trimEmptyBorders(const CheckerBoard & board) const
+CheckerDetector::CheckerBoard CheckerDetector::trimEmptyBorders(const CheckerBoard& board) const
 {
     int miny = board.rows() - 1;
     int maxy = 0;
@@ -1169,7 +1195,10 @@ CheckerDetector::CheckerBoard CheckerDetector::trimEmptyBorders(const CheckerBoa
     return board.block(miny, minx, height, width);
 }
 
-bool CheckerDetector::findCommonCorner(const CheckerBoard& board, const std::unordered_map<IndexT, Vec2i>& cornerLookup, Vec2i& coordsRef, Vec2i& coordsBoard) const
+bool CheckerDetector::findCommonCorner(const CheckerBoard& board,
+                                       const std::unordered_map<IndexT, Vec2i>& cornerLookup,
+                                       Vec2i& coordsRef,
+                                       Vec2i& coordsBoard) const
 {
     for (int i = 0; i < board.rows(); ++i)
     {
@@ -1195,7 +1224,11 @@ bool CheckerDetector::findCommonCorner(const CheckerBoard& board, const std::uno
     return false;
 }
 
-bool CheckerDetector::mergeCheckerboardsPair(const CheckerBoard& boardRef, const CheckerBoard& board, const Vec2i& coordsRef, const Vec2i& coordsBoard, CheckerBoard& boardMerge) const
+bool CheckerDetector::mergeCheckerboardsPair(const CheckerBoard& boardRef,
+                                             const CheckerBoard& board,
+                                             const Vec2i& coordsRef,
+                                             const Vec2i& coordsBoard,
+                                             CheckerBoard& boardMerge) const
 {
     const Vec2i offset = coordsRef - coordsBoard;
 
@@ -1219,9 +1252,10 @@ bool CheckerDetector::mergeCheckerboardsPair(const CheckerBoard& boardRef, const
     for (int i = 0; i < board.rows(); ++i)
     {
         for (int j = 0; j < board.cols(); ++j)
-        {   
+        {
             const IndexT curval = board(i, j);
-            if (curval == UndefinedIndexT) continue;
+            if (curval == UndefinedIndexT)
+                continue;
 
             const int rx = j + shiftCurX;
             const int ry = i + shiftCurY;
@@ -1244,14 +1278,15 @@ void CheckerDetector::filterOverlapping(const std::vector<std::pair<CheckerBoard
     for (std::size_t idRef = 0; idRef < checkersWithScore.size(); ++idRef)
     {
         const CheckerBoard baseBoard = checkersWithScore[idRef].first;
-        
+
         std::set<IndexT> usedCorners;
         for (int i = 0; i < baseBoard.rows(); ++i)
         {
             for (int j = 0; j < baseBoard.cols(); ++j)
             {
                 const IndexT curval = baseBoard(i, j);
-                if (curval == UndefinedIndexT) continue;
+                if (curval == UndefinedIndexT)
+                    continue;
 
                 usedCorners.insert(curval);
             }
@@ -1260,7 +1295,8 @@ void CheckerDetector::filterOverlapping(const std::vector<std::pair<CheckerBoard
         bool keep = true;
         for (std::size_t idCur = 0; idCur < checkersWithScore.size(); ++idCur)
         {
-            if (idCur == idRef) continue;
+            if (idCur == idRef)
+                continue;
 
             const CheckerBoard& currentBoard = checkersWithScore[idCur].first;
 
@@ -1270,7 +1306,8 @@ void CheckerDetector::filterOverlapping(const std::vector<std::pair<CheckerBoard
                 for (int j = 0; j < currentBoard.cols(); ++j)
                 {
                     const IndexT curval = currentBoard(i, j);
-                    if (curval == UndefinedIndexT) continue;
+                    if (curval == UndefinedIndexT)
+                        continue;
 
                     if (usedCorners.find(curval) != usedCorners.end())
                     {
@@ -1310,7 +1347,7 @@ bool CheckerDetector::mergeCheckerboards()
         _boards[id] = trimEmptyBorders(b);
     }
 
-    if (_boards.size() <= 1) 
+    if (_boards.size() <= 1)
     {
         return true;
     }
@@ -1324,10 +1361,12 @@ bool CheckerDetector::mergeCheckerboards()
     }
 
     bool hadMerged;
-    do 
+    do
     {
         hadMerged = false;
-        std::sort(checkers.begin(), checkers.end(), [](const CheckerBoardWithScore & cb1, const CheckerBoardWithScore & cb2) { return cb1.second < cb2.second; } );
+        std::sort(checkers.begin(), checkers.end(), [](const CheckerBoardWithScore& cb1, const CheckerBoardWithScore& cb2) {
+            return cb1.second < cb2.second;
+        });
 
         for (std::size_t idRef = 0; idRef < checkers.size(); ++idRef)
         {
@@ -1348,18 +1387,20 @@ bool CheckerDetector::mergeCheckerboards()
 
             for (std::size_t idCur = idRef + 1; idCur < checkers.size(); ++idCur)
             {
-                const CheckerBoard & currentBoard = checkers[idCur].first;
+                const CheckerBoard& currentBoard = checkers[idCur].first;
 
                 // Find a common corner
                 Vec2i coordsRef;
                 Vec2i coordsCur;
                 bool foundCommon = findCommonCorner(currentBoard, baseCorners, coordsRef, coordsCur);
-                if (!foundCommon) continue;
+                if (!foundCommon)
+                    continue;
 
                 // Merge reference board with current one
                 CheckerBoard newBoard;
                 bool mergeSuccess = mergeCheckerboardsPair(baseBoard, currentBoard, coordsRef, coordsCur, newBoard);
-                if (!mergeSuccess) continue;
+                if (!mergeSuccess)
+                    continue;
 
                 const double newEnergy = computeEnergy(newBoard, _corners);
 
@@ -1376,10 +1417,10 @@ bool CheckerDetector::mergeCheckerboards()
                 }
             }
 
-            if (hadMerged) break;
+            if (hadMerged)
+                break;
         }
-    }
-    while (hadMerged);
+    } while (hadMerged);
 
     // Remove overlapping
     std::vector<std::size_t> toKeep;
@@ -1407,7 +1448,7 @@ bool CheckerDetector::removeInvalidCheckerboards()
 
         for (int i = 0; i < board.rows() - delta.y(); ++i)
         {
-            Vec2 sum {0, 0};
+            Vec2 sum{0, 0};
             int count = 0;
 
             std::vector<Vec2> dirs;
@@ -1418,7 +1459,8 @@ bool CheckerDetector::removeInvalidCheckerboards()
                 const IndexT c1 = board(i, j);
                 const IndexT c2 = board(i + delta.y(), j + delta.x());
 
-                if (c1 == UndefinedIndexT || c2 == UndefinedIndexT) continue;
+                if (c1 == UndefinedIndexT || c2 == UndefinedIndexT)
+                    continue;
 
                 const Vec2 dir = (_corners[c2].center - _corners[c1].center).normalized();
                 dirs.push_back(dir);
@@ -1437,7 +1479,8 @@ bool CheckerDetector::removeInvalidCheckerboards()
                     }
                 }
 
-                if (isInvalid) break;
+                if (isInvalid)
+                    break;
             }
         }
 
@@ -1467,7 +1510,8 @@ double CheckerDetector::minDistanceToCenter(const CheckerBoard& board, const Vec
         for (int j = 0; j < board.cols(); ++j)
         {
             const IndexT cid = board(i, j);
-            if (cid == UndefinedIndexT) continue;
+            if (cid == UndefinedIndexT)
+                continue;
 
             const CheckerBoardCorner& c = _corners[cid];
             double dist = (c.center - center).norm();
@@ -1477,18 +1521,15 @@ double CheckerDetector::minDistanceToCenter(const CheckerBoard& board, const Vec
     return mindist;
 }
 
-void CheckerDetector::sortCheckerBoardsByDistanceToCenter(const Vec2 & center)
+void CheckerDetector::sortCheckerBoardsByDistanceToCenter(const Vec2& center)
 {
     // Sort boards by their minimal distance to image center
-    std::sort(_boards.begin(), _boards.end(),
-        [this, &center](const CheckerBoard& first, const CheckerBoard& second)
-        {
-            return minDistanceToCenter(first, center) < minDistanceToCenter(second, center);
-        }
-    );
+    std::sort(_boards.begin(), _boards.end(), [this, &center](const CheckerBoard& first, const CheckerBoard& second) {
+        return minDistanceToCenter(first, center) < minDistanceToCenter(second, center);
+    });
 }
 
-void CheckerDetector::filterNestedCheckerBoards(const size_t & height, const size_t & width)
+void CheckerDetector::filterNestedCheckerBoards(const size_t& height, const size_t& width)
 {
     std::vector<CheckerBoard> updated_boards;
 
@@ -1501,13 +1542,14 @@ void CheckerDetector::filterNestedCheckerBoards(const size_t & height, const siz
 
         // Count the number of valid corners
         size_t count_points = 0;
-        Vec2 mean = { 0, 0 };
+        Vec2 mean = {0, 0};
         for (int i = 0; i < board.rows(); ++i)
         {
             for (int j = 0; j < board.cols(); ++j)
             {
                 const IndexT cid = board(i, j);
-                if (board(i, j) == UndefinedIndexT) continue;
+                if (board(i, j) == UndefinedIndexT)
+                    continue;
 
                 mean += _corners[cid].center;
 
@@ -1518,13 +1560,14 @@ void CheckerDetector::filterNestedCheckerBoards(const size_t & height, const siz
         mean /= static_cast<double>(count_points);
 
         // Filter out small checkerboards
-        if (count_points < 30) continue;
+        if (count_points < 30)
+            continue;
 
         // The first checkerboard must be in the center of the image
         // Other checkerboards more distant may have been separated because of point of view
         if (updated_boards.size() == 0)
         {
-            const Vec2 size = { width, height };
+            const Vec2 size = {width, height};
             const Vec2 dist = (mean - (size / 2));
 
             // Make it relative to the image size
@@ -1542,20 +1585,25 @@ void CheckerDetector::filterNestedCheckerBoards(const size_t & height, const siz
         {
             for (int j = 0; j < board.cols() - 1; ++j)
             {
-                if (board(i, j) == UndefinedIndexT) continue;
+                if (board(i, j) == UndefinedIndexT)
+                    continue;
 
-                if (board(i, j + 1) == UndefinedIndexT) continue;
+                if (board(i, j + 1) == UndefinedIndexT)
+                    continue;
 
-                if (board(i + 1, j) == UndefinedIndexT) continue;
+                if (board(i + 1, j) == UndefinedIndexT)
+                    continue;
 
-                if (board(i + 1, j + 1) == UndefinedIndexT) continue;
+                if (board(i + 1, j + 1) == UndefinedIndexT)
+                    continue;
 
                 const Vec2 pt11 = _corners[board(i, j)].center;
                 const Vec2 pt12 = _corners[board(i, j + 1)].center;
                 const Vec2 pt21 = _corners[board(i + 1, j)].center;
                 const Vec2 pt22 = _corners[board(i + 1, j + 1)].center;
 
-                const double area = 0.5 * std::abs(((pt11.x() * pt12.y() + pt12.x() * pt21.y() + pt21.x() * pt22.y() + pt22.x() * pt11.y()) - (pt12.x() * pt11.y() + pt21.x() * pt12.y() + pt22.x() * pt21.y() + pt11.x() * pt22.y())));
+                const double area = 0.5 * std::abs(((pt11.x() * pt12.y() + pt12.x() * pt21.y() + pt21.x() * pt22.y() + pt22.x() * pt11.y()) -
+                                                    (pt12.x() * pt11.y() + pt21.x() * pt12.y() + pt22.x() * pt21.y() + pt11.x() * pt22.y())));
                 mean_squares += area;
                 count_squares++;
             }
@@ -1563,8 +1611,9 @@ void CheckerDetector::filterNestedCheckerBoards(const size_t & height, const siz
 
         double mean_area = mean_squares / count_squares;
 
-        // Check that square size function is increasing 
-        if (mean_area < previous_area * 0.8) continue;
+        // Check that square size function is increasing
+        if (mean_area < previous_area * 0.8)
+            continue;
 
         previous_area = mean_area;
 
@@ -1584,7 +1633,7 @@ void CheckerDetector::buildNestedConnectors()
     // Try to extend boards with checkerboards links
     for (std::size_t idx_board = 0; idx_board < _boards.size(); ++idx_board)
     {
-        auto & board_original = _boards[idx_board];
+        auto& board_original = _boards[idx_board];
         double minE = computeEnergy(board_original, _corners);
 
         CheckerBoard board_up = board_original;
@@ -1615,7 +1664,8 @@ void CheckerDetector::buildNestedConnectors()
             const double E = computeEnergy(board_right, _corners);
             if (E < minE)
             {
-                board_original = board_right.colwise().reverse().transpose();;
+                board_original = board_right.colwise().reverse().transpose();
+                ;
                 minE = E;
             }
         }
@@ -1633,7 +1683,7 @@ void CheckerDetector::buildNestedConnectors()
     }
 }
 
-bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i & ref_center, const IndexT& other, int scale)
+bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i& ref_center, const IndexT& other, int scale)
 {
     const CheckerBoard ref_board = _boards[0];
     CheckerBoard cur_board = _boards[other];
@@ -1646,7 +1696,8 @@ bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i & ref_center, const Ind
         {
             bool found = false;
             const IndexT ref_val = ref_board(ref_i, ref_j);
-            if (ref_val == UndefinedIndexT) continue;
+            if (ref_val == UndefinedIndexT)
+                continue;
 
             for (int cur_i = 0; cur_i < cur_board.rows(); ++cur_i)
             {
@@ -1661,7 +1712,8 @@ bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i & ref_center, const Ind
                     }
                 }
 
-                if (found) break;
+                if (found)
+                    break;
             }
         }
     }
@@ -1670,10 +1722,7 @@ bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i & ref_center, const Ind
     std::map<std::pair<int, int>, int> votes;
     for (auto& p : list_same_corners)
     {
-        std::pair<int, int> offset{
-            p.first.x() - (p.second.x() * scale),
-            p.first.y() - (p.second.y() * scale)
-        };
+        std::pair<int, int> offset{p.first.x() - (p.second.x() * scale), p.first.y() - (p.second.y() * scale)};
 
         if (votes.find(offset) == votes.end())
         {
@@ -1794,12 +1843,12 @@ void CheckerDetector::groupNestedCheckerboards()
         return;
     }
 
-    Vec2i center = { _boards[0].cols() / 2, _boards[0].rows() / 2 };
+    Vec2i center = {_boards[0].cols() / 2, _boards[0].rows() / 2};
 
     while (change)
     {
         change = false;
-        
+
         // Try to find another checkerboard with the same level
         for (std::size_t idx_compare = 1; idx_compare < _boards.size(); ++idx_compare)
         {
@@ -1810,7 +1859,8 @@ void CheckerDetector::groupNestedCheckerboards()
             }
         }
 
-        if (change) continue;
+        if (change)
+            continue;
 
         current_scale *= 2;
 
@@ -1825,11 +1875,10 @@ void CheckerDetector::groupNestedCheckerboards()
         }
     }
 
-
     const int max_x = std::max(center.x(), static_cast<int>(_boards[0].cols() - 1 - center.x()));
     const int max_y = std::max(center.y(), static_cast<int>(_boards[0].rows() - 1 - center.y()));
 
-    const Vec2i newcenter = { max_x, max_y};
+    const Vec2i newcenter = {max_x, max_y};
     const Vec2i update = newcenter - center;
 
     CheckerBoard newboard(max_y * 2 + 1, max_x * 2 + 1);
@@ -1838,6 +1887,5 @@ void CheckerDetector::groupNestedCheckerboards()
     _boards[0] = newboard;
 }
 
-
-}//namespace calibration
-}//namespace aliceVision
+}  // namespace calibration
+}  // namespace aliceVision

@@ -18,18 +18,15 @@
 #include <iostream>
 #include <exception>
 
-namespace aliceVision
-{
-namespace dataio
-{
+namespace aliceVision {
+namespace dataio {
 
 class VideoFeed::FeederImpl
 {
-public:
+  public:
     FeederImpl()
-        : _isInit(false)
-    {
-    }
+      : _isInit(false)
+    {}
 
     FeederImpl(const std::string& videoPath, const std::string& calibPath);
 
@@ -37,14 +34,11 @@ public:
 
     bool isInit() const { return _isInit; }
 
-    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
-                   std::string& mediaPath, bool& hasIntrinsics);
+    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
-    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath,
-                   bool& hasIntrinsics);
+    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
-    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
-                   std::string& mediaPath, bool& hasIntrinsics);
+    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
     bool goToFrame(const unsigned int frame);
 
@@ -52,7 +46,7 @@ public:
 
     std::size_t nbFrames() const;
 
-private:
+  private:
     bool _isInit;
     bool _isLive;
     bool _withIntrinsics;
@@ -62,14 +56,14 @@ private:
 };
 
 VideoFeed::FeederImpl::FeederImpl(const std::string& videoPath, const std::string& calibPath)
-    : _isInit(false)
-    , _isLive(false)
-    , _withIntrinsics(false)
-    , _videoPath(videoPath)
+  : _isInit(false),
+    _isLive(false),
+    _withIntrinsics(false),
+    _videoPath(videoPath)
 {
     // load the video
     _videoCapture.open(videoPath);
-    if(!_videoCapture.isOpened())
+    if (!_videoCapture.isOpened())
     {
         ALICEVISION_LOG_WARNING("Unable to open the video : " << videoPath);
         throw std::invalid_argument("Unable to open the video : " + videoPath);
@@ -79,21 +73,21 @@ VideoFeed::FeederImpl::FeederImpl(const std::string& videoPath, const std::strin
 
     // load the calibration path
     _withIntrinsics = !calibPath.empty();
-    if(_withIntrinsics)
+    if (_withIntrinsics)
         readCalibrationFromFile(calibPath, _camIntrinsics);
 
     _isInit = true;
 }
 
 VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string& calibPath)
-    : _isInit(false)
-    , _isLive(true)
-    , _withIntrinsics(false)
-    , _videoPath(std::to_string(videoDevice))
+  : _isInit(false),
+    _isLive(true),
+    _withIntrinsics(false),
+    _videoPath(std::to_string(videoDevice))
 {
     // load the video
     _videoCapture.open(videoDevice);
-    if(!_videoCapture.isOpened())
+    if (!_videoCapture.isOpened())
     {
         ALICEVISION_LOG_WARNING("Unable to open the video : " << _videoPath);
         throw std::invalid_argument("Unable to open the video : " + _videoPath);
@@ -103,24 +97,26 @@ VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string& calibPath)
 
     // load the calibration path
     _withIntrinsics = !calibPath.empty();
-    if(_withIntrinsics)
+    if (_withIntrinsics)
         readCalibrationFromFile(calibPath, _camIntrinsics);
 
     _isInit = true;
 }
 
-bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
-                                      std::string& mediaPath, bool& hasIntrinsics)
+bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor>& imageRGB,
+                                      camera::Pinhole& camIntrinsics,
+                                      std::string& mediaPath,
+                                      bool& hasIntrinsics)
 {
     cv::Mat frame;
     const bool grabStatus = _videoCapture.retrieve(frame);
 
-    if(!grabStatus || !frame.data)
+    if (!grabStatus || !frame.data)
     {
         return false;
     }
 
-    if(frame.channels() == 3)
+    if (frame.channels() == 3)
     {
         cv::Mat color;
         resize(frame, color, cv::Size(frame.cols, frame.rows));
@@ -129,9 +125,9 @@ bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor>& imageRGB, c
         imageRGB.resize(color.cols, color.rows);
 
         unsigned char* pixelPtr = (unsigned char*)color.data;
-        for(int i = 0; i < color.rows; i++)
+        for (int i = 0; i < color.rows; i++)
         {
-            for(int j = 0; j < color.cols; j++)
+            for (int j = 0; j < color.cols; j++)
             {
                 const size_t index = i * color.cols * 3 + j * 3;
                 imageRGB(i, j) = image::RGBColor(pixelPtr[index], pixelPtr[index + 1], pixelPtr[index + 2]);
@@ -145,18 +141,17 @@ bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor>& imageRGB, c
     }
 
     hasIntrinsics = _withIntrinsics;
-    if(_withIntrinsics)
+    if (_withIntrinsics)
         camIntrinsics = _camIntrinsics;
 
     mediaPath = _videoPath;
     return true;
 }
 
-bool VideoFeed::FeederImpl::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
-                                      std::string& mediaPath, bool& hasIntrinsics)
+bool VideoFeed::FeederImpl::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics)
 {
     image::Image<unsigned char> imageGrayUChar;
-    if(FeederImpl::readImage(imageGrayUChar, camIntrinsics, mediaPath, hasIntrinsics))
+    if (FeederImpl::readImage(imageGrayUChar, camIntrinsics, mediaPath, hasIntrinsics))
     {
         imageGray = (imageGrayUChar.GetMat().cast<float>() / 255.f);
         return true;
@@ -164,18 +159,20 @@ bool VideoFeed::FeederImpl::readImage(image::Image<float>& imageGray, camera::Pi
     return false;
 }
 
-bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
-                                      std::string& mediaPath, bool& hasIntrinsics)
+bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char>& imageGray,
+                                      camera::Pinhole& camIntrinsics,
+                                      std::string& mediaPath,
+                                      bool& hasIntrinsics)
 {
     cv::Mat frame;
     const bool grabStatus = _videoCapture.retrieve(frame);
 
-    if(!grabStatus || !frame.data)
+    if (!grabStatus || !frame.data)
     {
         return false;
     }
 
-    if(frame.channels() == 3)
+    if (frame.channels() == 3)
     {
         // convert to gray
         cv::Mat grey;
@@ -191,7 +188,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char>& imageGray, ca
     }
 
     hasIntrinsics = _withIntrinsics;
-    if(_withIntrinsics)
+    if (_withIntrinsics)
         camIntrinsics = _camIntrinsics;
 
     mediaPath = _videoPath;
@@ -200,7 +197,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char>& imageGray, ca
 
 std::size_t VideoFeed::FeederImpl::nbFrames() const
 {
-    if(!_videoCapture.isOpened())
+    if (!_videoCapture.isOpened())
     {
         ALICEVISION_LOG_WARNING("The video file could not be opened.");
         return 0;
@@ -210,87 +207,63 @@ std::size_t VideoFeed::FeederImpl::nbFrames() const
 
 bool VideoFeed::FeederImpl::goToFrame(const unsigned int frame)
 {
-    if(!_videoCapture.isOpened())
+    if (!_videoCapture.isOpened())
     {
         ALICEVISION_LOG_WARNING("We cannot open the video file.");
         return false;
     }
 
-    if(_isLive)
+    if (_isLive)
         return goToNextFrame();
 
     _videoCapture.set(cv::CAP_PROP_POS_FRAMES, frame);
     return _videoCapture.grab();
 }
 
-bool VideoFeed::FeederImpl::goToNextFrame()
-{
-    return _videoCapture.grab();
-}
+bool VideoFeed::FeederImpl::goToNextFrame() { return _videoCapture.grab(); }
 
 /*******************************************************************************/
 /*                                 VideoFeed                                   */
 /*******************************************************************************/
 
 VideoFeed::VideoFeed()
-    : _feeder(new FeederImpl())
-{
-}
+  : _feeder(new FeederImpl())
+{}
 
 VideoFeed::VideoFeed(const std::string& videoPath, const std::string& calibPath)
-    : _feeder(new FeederImpl(videoPath, calibPath))
-{
-}
+  : _feeder(new FeederImpl(videoPath, calibPath))
+{}
 
 VideoFeed::VideoFeed(int videoDevice, const std::string& calibPath)
-    : _feeder(new FeederImpl(videoDevice, calibPath))
-{
-}
+  : _feeder(new FeederImpl(videoDevice, calibPath))
+{}
 
-bool VideoFeed::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
-                          std::string& mediaPath, bool& hasIntrinsics)
+bool VideoFeed::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool VideoFeed::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
-                          std::string& mediaPath, bool& hasIntrinsics)
+bool VideoFeed::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool VideoFeed::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
-                          std::string& mediaPath, bool& hasIntrinsics)
+bool VideoFeed::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics)
 {
     return (_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-std::size_t VideoFeed::nbFrames() const
-{
-    return _feeder->nbFrames();
-}
+std::size_t VideoFeed::nbFrames() const { return _feeder->nbFrames(); }
 
-bool VideoFeed::goToFrame(const unsigned int frame)
-{
-    return _feeder->goToFrame(frame);
-}
+bool VideoFeed::goToFrame(const unsigned int frame) { return _feeder->goToFrame(frame); }
 
-bool VideoFeed::goToNextFrame()
-{
-    return _feeder->goToNextFrame();
-}
+bool VideoFeed::goToNextFrame() { return _feeder->goToNextFrame(); }
 
-bool VideoFeed::isInit() const
-{
-    return (_feeder->isInit());
-}
+bool VideoFeed::isInit() const { return (_feeder->isInit()); }
 
-bool VideoFeed::isSupported(const std::string& extension)
-{
-    return image::isVideoExtension(extension);
-}
+bool VideoFeed::isSupported(const std::string& extension) { return image::isVideoExtension(extension); }
 
 VideoFeed::~VideoFeed() {}
 
-} // namespace dataio
-} // namespace aliceVision
+}  // namespace dataio
+}  // namespace aliceVision

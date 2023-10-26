@@ -26,8 +26,7 @@ namespace depthMap {
  */
 class Refine
 {
-public:
-
+  public:
     /**
      * @brief Refine constructor.
      * @param[in] mp the multi-view parameters
@@ -35,10 +34,7 @@ public:
      * @param[in] refineParams the Refine parameters
      * @param[in] stream the stream for gpu execution
      */
-    Refine(const mvsUtils::MultiViewParams& mp,
-           const mvsUtils::TileParams& tileParams,   
-           const RefineParams& refineParams, 
-           cudaStream_t stream);
+    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, cudaStream_t stream);
 
     // no default constructor
     Refine() = delete;
@@ -67,10 +63,11 @@ public:
      * @param[in] in_sgmDepthThicknessMap_dmp the SGM result depth/thickness map in device memory
      * @param[in] in_sgmNormalMap_dmp the SGM result normal map in device memory (or empty)
      */
-    void refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
+    void refineRc(const Tile& tile,
+                  const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp,
+                  const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
 
-private:
-
+  private:
     // private methods
 
     /**
@@ -102,9 +99,9 @@ private:
 
     // private members
 
-    const mvsUtils::MultiViewParams& _mp;                          //< Multi-view parameters
-    const mvsUtils::TileParams& _tileParams;                       //< tile workflow parameters
-    const RefineParams& _refineParams;                             //< Refine parameters
+    const mvsUtils::MultiViewParams& _mp;     //< Multi-view parameters
+    const mvsUtils::TileParams& _tileParams;  //< tile workflow parameters
+    const RefineParams& _refineParams;        //< Refine parameters
 
     // private members in device memory
 
@@ -119,5 +116,5 @@ private:
     cudaStream_t _stream;                                          //< stream for gpu execution
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

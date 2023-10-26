@@ -26,17 +26,34 @@ namespace mvsUtils {
  */
 std::string getMapNameFromFileType(EFileType fileType)
 {
-    switch(fileType)
+    switch (fileType)
     {
-        case EFileType::depthMap:            return "depth map";                break;
-        case EFileType::depthMapFiltered:    return "filtered depth map";       break;
-        case EFileType::simMap:              return "similarity map";           break;
-        case EFileType::simMapFiltered:      return "filtered similarity map";  break;
-        case EFileType::normalMap:           return "normal map";               break;
-        case EFileType::normalMapFiltered:   return "filtered normal map";      break;
-        case EFileType::thicknessMap:         return "thickness map";             break;
-        case EFileType::pixSizeMap:          return "pixSize map";              break;
-        default: break;
+        case EFileType::depthMap:
+            return "depth map";
+            break;
+        case EFileType::depthMapFiltered:
+            return "filtered depth map";
+            break;
+        case EFileType::simMap:
+            return "similarity map";
+            break;
+        case EFileType::simMapFiltered:
+            return "filtered similarity map";
+            break;
+        case EFileType::normalMap:
+            return "normal map";
+            break;
+        case EFileType::normalMapFiltered:
+            return "filtered normal map";
+            break;
+        case EFileType::thicknessMap:
+            return "thickness map";
+            break;
+        case EFileType::pixSizeMap:
+            return "pixSize map";
+            break;
+        default:
+            break;
     }
     return "unknown map";
 }
@@ -52,23 +69,23 @@ void getRoiFromMetadata(const std::string& mapTilePath, ROI& out_roi)
 
     const auto roiBeginXIt = metadata.find("AliceVision:roiBeginX");
     const auto roiBeginYIt = metadata.find("AliceVision:roiBeginY");
-    const auto roiEndXIt   = metadata.find("AliceVision:roiEndX");
-    const auto roiEndYIt   = metadata.find("AliceVision:roiEndY");
+    const auto roiEndXIt = metadata.find("AliceVision:roiEndX");
+    const auto roiEndYIt = metadata.find("AliceVision:roiEndY");
 
-    if(roiBeginXIt != metadata.end() && roiBeginXIt->type() == oiio::TypeDesc::INT)
+    if (roiBeginXIt != metadata.end() && roiBeginXIt->type() == oiio::TypeDesc::INT)
         out_roi.x.begin = roiBeginXIt->get_int();
 
-    if(roiBeginYIt != metadata.end() && roiBeginYIt->type() == oiio::TypeDesc::INT)
+    if (roiBeginYIt != metadata.end() && roiBeginYIt->type() == oiio::TypeDesc::INT)
         out_roi.y.begin = roiBeginYIt->get_int();
 
-    if(roiEndXIt != metadata.end() && roiEndXIt->type() == oiio::TypeDesc::INT)
+    if (roiEndXIt != metadata.end() && roiEndXIt->type() == oiio::TypeDesc::INT)
         out_roi.x.end = roiEndXIt->get_int();
 
-    if(roiEndYIt != metadata.end() && roiEndYIt->type() == oiio::TypeDesc::INT)
+    if (roiEndYIt != metadata.end() && roiEndYIt->type() == oiio::TypeDesc::INT)
         out_roi.y.end = roiEndYIt->get_int();
 
     // invalid or no roi metadata
-    if((out_roi.x.begin < 0) || (out_roi.y.begin < 0) || (out_roi.x.end <= 0) || (out_roi.y.end <= 0))
+    if ((out_roi.x.begin < 0) || (out_roi.y.begin < 0) || (out_roi.x.end <= 0) || (out_roi.y.end <= 0))
     {
         ALICEVISION_THROW_ERROR("Cannot find ROI information in file: " << fs::path(mapTilePath).filename().string());
     }
@@ -83,21 +100,21 @@ void getTileParamsFromMetadata(const std::string& mapTilePath, TileParams& out_t
 {
     const oiio::ParamValueList metadata = image::readImageMetadata(mapTilePath);
 
-    const auto tileWidthIt   = metadata.find("AliceVision:tileBufferWidth");
-    const auto tileHeightIt  = metadata.find("AliceVision:tileBufferHeight");
+    const auto tileWidthIt = metadata.find("AliceVision:tileBufferWidth");
+    const auto tileHeightIt = metadata.find("AliceVision:tileBufferHeight");
     const auto tilePaddingIt = metadata.find("AliceVision:tilePadding");
 
-    if(tileWidthIt != metadata.end() && tileWidthIt->type() == oiio::TypeDesc::INT)
+    if (tileWidthIt != metadata.end() && tileWidthIt->type() == oiio::TypeDesc::INT)
         out_tileParams.bufferWidth = tileWidthIt->get_int();
 
-    if(tileHeightIt != metadata.end() && tileHeightIt->type() == oiio::TypeDesc::INT)
+    if (tileHeightIt != metadata.end() && tileHeightIt->type() == oiio::TypeDesc::INT)
         out_tileParams.bufferHeight = tileHeightIt->get_int();
 
-    if(tilePaddingIt != metadata.end() && tilePaddingIt->type() == oiio::TypeDesc::INT)
+    if (tilePaddingIt != metadata.end() && tilePaddingIt->type() == oiio::TypeDesc::INT)
         out_tileParams.padding = tilePaddingIt->get_int();
 
     // invalid or no tile metadata
-    if((out_tileParams.bufferWidth <= 0) || (out_tileParams.bufferHeight <= 0) || (out_tileParams.padding < 0))
+    if ((out_tileParams.bufferWidth <= 0) || (out_tileParams.bufferHeight <= 0) || (out_tileParams.padding < 0))
     {
         ALICEVISION_THROW_ERROR("Cannot find tile parameters in file: " << fs::path(mapTilePath).filename().string());
     }
@@ -120,14 +137,14 @@ void getTilePathList(int rc,
     const fs::path mapPath(getFileNameFromIndex(mp, rc, fileType, customSuffix));
     const fs::path mapDirectory(mapPath.parent_path());
 
-    if(!is_directory(mapDirectory))
+    if (!is_directory(mapDirectory))
         ALICEVISION_THROW_ERROR("Cannot find " << getMapNameFromFileType(fileType) << " directory (rc: " << rc << ").");
 
     const boost::regex mapPattern(mapPath.stem().string() + "_\\d+_\\d+" + mapPath.extension().string());
 
-    for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(mapDirectory), {}))
+    for (auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(mapDirectory), {}))
     {
-        if(boost::regex_match(entry.path().filename().string(), mapPattern))
+        if (boost::regex_match(entry.path().filename().string(), mapPattern))
             out_mapTilePathList.push_back(entry.path().string());
     }
 }
@@ -148,12 +165,8 @@ void getTilePathList(int rc,
  * @param lu left-up corner of the intersection area in the tile coordinate system
  * @param in_tileMap image of the tile
  */
-template <typename T>
-void weightTileBorder(int a, int b, int c, int d, 
-                      int borderWidth, 
-                      int borderHeight,
-                      const Point2d& lu, 
-                      image::Image<T>& in_tileMap)
+template<typename T>
+void weightTileBorder(int a, int b, int c, int d, int borderWidth, int borderHeight, const Point2d& lu, image::Image<T>& in_tileMap)
 {
     const Point2d rd = lu + Point2d(borderWidth, borderHeight);
 
@@ -167,9 +180,9 @@ void weightTileBorder(int a, int b, int c, int d,
     const double borderWidth_m = borderWidth - 2.0 * margin;
     const double borderHeight_m = borderHeight - 2.0 * margin;
 
-    for(int x = lu.x; x < endX; ++x)
+    for (int x = lu.x; x < endX; ++x)
     {
-        for(int y = lu.y; y < endY; ++y)
+        for (int y = lu.y; y < endY; ++y)
         {
             // bilinear interpolation
             const float r_x = clamp((rd_m.x - x) / borderWidth_m, 0.0, 1.0);
@@ -195,7 +208,7 @@ void weightTileBorder(int a, int b, int c, int d,
  * @param[in] in_tileMap the tile map to add
  * @param[in,out] inout_map the full output map
  */
-template <typename T>
+template<typename T>
 void addSingleTileMapWeighted(int rc,
                               const MultiViewParams& mp,
                               const TileParams& tileParams,
@@ -219,7 +232,7 @@ void addSingleTileMapWeighted(int rc,
     const bool lastRow = (roi.y.end == mp.getHeight(rc));
 
     // weight the top left corner
-    if(!firstColumn || !firstRow)
+    if (!firstColumn || !firstRow)
     {
         const Point2d lu(0, 0);
         const int b = (firstRow) ? 1 : 0;
@@ -228,7 +241,7 @@ void addSingleTileMapWeighted(int rc,
     }
 
     // weight the bottom left corner
-    if(!firstColumn || !lastRow)
+    if (!firstColumn || !lastRow)
     {
         const Point2d lu(0, tileHeight - tilePadding);
         const int a = (firstColumn) ? 1 : 0;
@@ -237,7 +250,7 @@ void addSingleTileMapWeighted(int rc,
     }
 
     // weight the top right corner
-    if(!lastColumn || !firstRow)
+    if (!lastColumn || !firstRow)
     {
         const Point2d lu(tileWidth - tilePadding, 0);
         const int a = (firstRow) ? 1 : 0;
@@ -246,7 +259,7 @@ void addSingleTileMapWeighted(int rc,
     }
 
     // weight the bottom right corner
-    if(!lastColumn || !lastRow)
+    if (!lastColumn || !lastRow)
     {
         const Point2d lu(tileWidth - tilePadding, tileHeight - tilePadding);
         const int b = (lastColumn) ? 1 : 0;
@@ -255,37 +268,37 @@ void addSingleTileMapWeighted(int rc,
     }
 
     // weight the top border
-    if(!firstRow)
+    if (!firstRow)
     {
         const Point2d lu(tilePadding, 0);
         weightTileBorder(0, 0, 1, 1, tileWidth - 2 * tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the bottom border
-    if(!lastRow)
+    if (!lastRow)
     {
         const Point2d lu(tilePadding, tileHeight - tilePadding);
         weightTileBorder(1, 1, 0, 0, tileWidth - 2 * tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the left border
-    if(!firstColumn)
+    if (!firstColumn)
     {
         const Point2d lu(0, tilePadding);
         weightTileBorder(0, 1, 1, 0, tilePadding, tileHeight - 2 * tilePadding, lu, in_tileMap);
     }
 
     // weight the right border
-    if(!lastColumn)
+    if (!lastColumn)
     {
         const Point2d lu(tileWidth - tilePadding, tilePadding);
         weightTileBorder(1, 0, 0, 1, tilePadding, tileHeight - 2 * tilePadding, lu, in_tileMap);
     }
 
     // add weighted tile to the depth/sim map
-    for(int x = downscaledRoi.x.begin; x < downscaledRoi.x.end; ++x)
+    for (int x = downscaledRoi.x.begin; x < downscaledRoi.x.end; ++x)
     {
-        for(int y = downscaledRoi.y.begin; y < downscaledRoi.y.end; ++y)
+        for (int y = downscaledRoi.y.begin; y < downscaledRoi.y.end; ++y)
         {
             const int tx = x - downscaledRoi.x.begin;
             const int ty = y - downscaledRoi.y.begin;
@@ -295,7 +308,7 @@ void addSingleTileMapWeighted(int rc,
     }
 }
 
-template <typename T>
+template<typename T>
 void readMapFromFileOrTiles(int rc,
                             const MultiViewParams& mp,
                             EFileType fileType,
@@ -306,13 +319,13 @@ void readMapFromFileOrTiles(int rc,
 {
     // assert scale & step
     assert(scale > 0);
-    assert(step  > 0);
+    assert(step > 0);
 
     // single file fullsize map path
     const std::string mapPath = getFileNameFromIndex(mp, rc, fileType, customSuffix);
 
     // check single file fullsize map exists
-    if(fs::exists(mapPath))
+    if (fs::exists(mapPath))
     {
         ALICEVISION_LOG_TRACE("Load depth map (full image): " << mapPath << ", scale: " << scale << ", step: " << step);
         // read single file fullsize map
@@ -325,25 +338,26 @@ void readMapFromFileOrTiles(int rc,
     const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
 
     const int scaleStep = scale * step;
-    const int width  = divideRoundUp(mp.getWidth(rc) , scaleStep);
+    const int width = divideRoundUp(mp.getWidth(rc), scaleStep);
     const int height = divideRoundUp(mp.getHeight(rc), scaleStep);
 
     // the output full map
-    out_map.resize(width, height, true, T(0.f)); // should be initialized, additive process
+    out_map.resize(width, height, true, T(0.f));  // should be initialized, additive process
 
     // get tile map path list for the given R camera
     std::vector<std::string> mapTilePathList;
     getTilePathList(rc, mp, fileType, customSuffix, mapTilePathList);
 
-    if(mapTilePathList.empty())
+    if (mapTilePathList.empty())
     {
         // map can be empty
         ALICEVISION_LOG_INFO("Cannot find any " << getMapNameFromFileType(fileType) << " tile file (rc: " << rc << ").");
-        return; // nothing to do, already initialized
+        return;  // nothing to do, already initialized
     }
     else
     {
-        ALICEVISION_LOG_TRACE("Load depth map from " << mapTilePathList.size() << " tiles. First tile: " << mapTilePathList[0] << ", scale: " << scale << ", step: " << step);
+        ALICEVISION_LOG_TRACE("Load depth map from " << mapTilePathList.size() << " tiles. First tile: " << mapTilePathList[0] << ", scale: " << scale
+                                                     << ", step: " << step);
     }
 
     // get tileParams from first tile file metadata
@@ -353,18 +367,18 @@ void readMapFromFileOrTiles(int rc,
     // get tile roi list from each file metadata
     std::vector<ROI> tileRoiList;
     tileRoiList.resize(mapTilePathList.size());
-    for(size_t i = 0; i < mapTilePathList.size(); ++i)
+    for (size_t i = 0; i < mapTilePathList.size(); ++i)
     {
         getRoiFromMetadata(mapTilePathList.at(i), tileRoiList.at(i));
     }
 
     // read and add each tile to the full map
-    for(size_t i = 0; i < tileRoiList.size(); ++i)
+    for (size_t i = 0; i < tileRoiList.size(); ++i)
     {
         const ROI roi = intersect(tileRoiList.at(i), imageRoi);
         const std::string mapTilePath = getFileNameFromIndex(mp, rc, fileType, customSuffix, roi.x.begin, roi.y.begin);
 
-        if(roi.isEmpty())
+        if (roi.isEmpty())
             continue;
 
         try
@@ -376,14 +390,14 @@ void readMapFromFileOrTiles(int rc,
             // add tile to the full map
             addSingleTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileMap, out_map);
         }
-        catch(const std::exception& e)
+        catch (const std::exception& e)
         {
             ALICEVISION_LOG_WARNING("Cannot find map (rc: " << rc << "): " << fs::path(mapTilePath).filename().string());
         }
     }
 }
 
-template <typename T>
+template<typename T>
 void writeMapToFileOrTile(int rc,
                           const MultiViewParams& mp,
                           const EFileType fileType,
@@ -396,19 +410,19 @@ void writeMapToFileOrTile(int rc,
 {
     // assert scale & step
     assert(scale > 0);
-    assert(step  > 0);
+    assert(step > 0);
 
     const int scaleStep = scale * step;
 
     // get image dimensions at scale / stepXY
-    const int imageWidth  = divideRoundUp(mp.getWidth(rc) , scaleStep);
+    const int imageWidth = divideRoundUp(mp.getWidth(rc), scaleStep);
     const int imageHeight = divideRoundUp(mp.getHeight(rc), scaleStep);
 
     // get downscaled ROI
     const ROI downscaledROI = downscaleROI(roi, scaleStep);
 
     // check input map dimensions
-    assert(in_map.Width()  == downscaledROI.width()  && in_map.Width()  <= imageWidth);
+    assert(in_map.Width() == downscaledROI.width() && in_map.Width() <= imageWidth);
     assert(in_map.Height() == downscaledROI.height() && in_map.Height() <= imageHeight);
 
     // set OIIO ROI for map writing
@@ -421,7 +435,7 @@ void writeMapToFileOrTile(int rc,
     // output map path
     std::string mapPath;
 
-    if(downscaledROI.width() != imageWidth || downscaledROI.height() != imageHeight) // is a tile
+    if (downscaledROI.width() != imageWidth || downscaledROI.height() != imageHeight)  // is a tile
     {
         // tiled map
         mapPath = getFileNameFromIndex(mp, rc, fileType, customSuffix, roi.x.begin, roi.y.begin);
@@ -440,17 +454,17 @@ void writeMapToFileOrTile(int rc,
 
     // roi metadata
     {
-      metadata.push_back(oiio::ParamValue("AliceVision:roiBeginX", int(roi.x.begin)));
-      metadata.push_back(oiio::ParamValue("AliceVision:roiBeginY", int(roi.y.begin)));
-      metadata.push_back(oiio::ParamValue("AliceVision:roiEndX",   int(roi.x.end)));
-      metadata.push_back(oiio::ParamValue("AliceVision:roiEndY",   int(roi.y.end)));
+        metadata.push_back(oiio::ParamValue("AliceVision:roiBeginX", int(roi.x.begin)));
+        metadata.push_back(oiio::ParamValue("AliceVision:roiBeginY", int(roi.y.begin)));
+        metadata.push_back(oiio::ParamValue("AliceVision:roiEndX", int(roi.x.end)));
+        metadata.push_back(oiio::ParamValue("AliceVision:roiEndY", int(roi.y.end)));
     }
 
     // tile params metadata
     {
-        metadata.push_back(oiio::ParamValue("AliceVision:tileBufferWidth",  tileParams.bufferWidth));
+        metadata.push_back(oiio::ParamValue("AliceVision:tileBufferWidth", tileParams.bufferWidth));
         metadata.push_back(oiio::ParamValue("AliceVision:tileBufferHeight", tileParams.bufferHeight));
-        metadata.push_back(oiio::ParamValue("AliceVision:tilePadding",      tileParams.padding));
+        metadata.push_back(oiio::ParamValue("AliceVision:tilePadding", tileParams.padding));
     }
 
     // projection matrix metadata
@@ -464,7 +478,7 @@ void writeMapToFileOrTile(int rc,
         Point3d C = mp.CArr[rc];
         Matrix3x3 iP = mp.iCamArr[rc];
 
-        if(scaleStep > 1)
+        if (scaleStep > 1)
         {
             Matrix3x4 P = mp.camArr[rc];
             for (int i = 0; i < 8; ++i)
@@ -472,10 +486,10 @@ void writeMapToFileOrTile(int rc,
             Matrix3x3 K, iK;
             Matrix3x3 R, iR;
 
-            P.decomposeProjectionMatrix(K, R, C); // replace C
+            P.decomposeProjectionMatrix(K, R, C);  // replace C
             iK = K.inverse();
             iR = R.inverse();
-            iP = iR * iK; // replace iP
+            iP = iR * iK;  // replace iP
         }
 
         metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, C.m));
@@ -483,17 +497,17 @@ void writeMapToFileOrTile(int rc,
     }
 
     // min/max/nb depth metadata (for depth map only)
-    if((fileType == EFileType::depthMap) || (fileType == EFileType::depthMapFiltered))
+    if ((fileType == EFileType::depthMap) || (fileType == EFileType::depthMapFiltered))
     {
         const int nbDepthValues = std::count_if(in_map.data(), in_map.data() + in_map.size(), [](float v) { return v > 0.0f; });
         float maxDepth = -1.0f;
         float minDepth = std::numeric_limits<float>::max();
 
-        for(int i = 0; i < in_map.size(); ++i)
+        for (int i = 0; i < in_map.size(); ++i)
         {
             const float depth = in_map(i);
 
-            if(depth <= -1.0f)
+            if (depth <= -1.0f)
                 continue;
 
             maxDepth = std::max(maxDepth, depth);
@@ -505,13 +519,12 @@ void writeMapToFileOrTile(int rc,
         metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", maxDepth));
     }
 
-
     // set colorspace
     image::ImageWriteOptions mapWriteOptions;
     mapWriteOptions.toColorSpace(image::EImageColorSpace::NO_CONVERSION);
 
     // set storage type
-    if((fileType == EFileType::depthMap) || (fileType == EFileType::depthMapFiltered))
+    if ((fileType == EFileType::depthMap) || (fileType == EFileType::depthMapFiltered))
     {
         mapWriteOptions.storageDataType(image::EStorageDataType::Float);
     }
@@ -521,12 +534,7 @@ void writeMapToFileOrTile(int rc,
     }
 
     // write map
-    image::writeImage(mapPath,
-                      in_map,
-                      mapWriteOptions,
-                      metadata,
-                      displayRoi,
-                      pixelRoi);
+    image::writeImage(mapPath, in_map, mapWriteOptions, metadata, displayRoi, pixelRoi);
 }
 
 void addTileMapWeighted(int rc,
@@ -541,23 +549,23 @@ void addTileMapWeighted(int rc,
 }
 
 void readMap(int rc,
-              const MultiViewParams& mp,
-              const EFileType fileType,
-              image::Image<float>& out_map,
-              int scale,
-              int step,
-              const std::string& customSuffix)
+             const MultiViewParams& mp,
+             const EFileType fileType,
+             image::Image<float>& out_map,
+             int scale,
+             int step,
+             const std::string& customSuffix)
 {
     readMapFromFileOrTiles(rc, mp, fileType, out_map, scale, step, customSuffix);
 }
 
 void readMap(int rc,
-              const MultiViewParams& mp,
-              const EFileType fileType,
-              image::Image<image::RGBfColor>& out_map,
-              int scale,
-              int step,
-              const std::string& customSuffix)
+             const MultiViewParams& mp,
+             const EFileType fileType,
+             image::Image<image::RGBfColor>& out_map,
+             int scale,
+             int step,
+             const std::string& customSuffix)
 {
     readMapFromFileOrTiles(rc, mp, fileType, out_map, scale, step, customSuffix);
 }
@@ -588,11 +596,7 @@ void writeMap(int rc,
     writeMapToFileOrTile(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
 }
 
-unsigned long getNbDepthValuesFromDepthMap(int rc, 
-                                           const MultiViewParams& mp,
-                                           int scale,
-                                           int step,
-                                           const std::string& customSuffix)
+unsigned long getNbDepthValuesFromDepthMap(int rc, const MultiViewParams& mp, int scale, int step, const std::string& customSuffix)
 {
     const std::string depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMapFiltered, customSuffix);
     int nbDepthValues = -1;
@@ -600,20 +604,20 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
     bool fromTiles = false;
 
     // get nbDepthValues from metadata
-    if (fs::exists(depthMapPath)) // untilled
+    if (fs::exists(depthMapPath))  // untilled
     {
         fileExists = true;
         const oiio::ParamValueList metadata = image::readImageMetadata(depthMapPath);
         nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
     }
-    else // tilled
+    else  // tilled
     {
         std::vector<std::string> mapTilePathList;
         getTilePathList(rc, mp, EFileType::depthMapFiltered, customSuffix, mapTilePathList);
 
-        if(mapTilePathList.empty()) // depth map can be empty
+        if (mapTilePathList.empty())  // depth map can be empty
         {
-          ALICEVISION_LOG_INFO("Cannot find any depth map tile file (rc: " << rc << ").");
+            ALICEVISION_LOG_INFO("Cannot find any depth map tile file (rc: " << rc << ").");
         }
         else
         {
@@ -621,27 +625,29 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
             fromTiles = true;
         }
 
-        for(const std::string& mapTilePath : mapTilePathList)
+        for (const std::string& mapTilePath : mapTilePathList)
         {
             const oiio::ParamValueList metadata = image::readImageMetadata(mapTilePath);
 
             const int nbTileDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
 
-            if(nbTileDepthValues < 0)
+            if (nbTileDepthValues < 0)
                 ALICEVISION_THROW_ERROR("Cannot find or incorrect 'AliceVision:nbDepthValues' metadata in depth map tile (rc: " << rc << ")");
 
             nbDepthValues += nbTileDepthValues;
         }
     }
 
-    ALICEVISION_LOG_TRACE("DepthMap: " << depthMapPath << ", fileExists: " << fileExists << ", fromTiles: " << fromTiles << ", nbDepthValues (from metadata): " << nbDepthValues);
+    ALICEVISION_LOG_TRACE("DepthMap: " << depthMapPath << ", fileExists: " << fileExists << ", fromTiles: " << fromTiles
+                                       << ", nbDepthValues (from metadata): " << nbDepthValues);
 
     // no metadata compute number of depth values
-    if(fileExists && nbDepthValues < 0)
+    if (fileExists && nbDepthValues < 0)
     {
         image::Image<float> depthMap;
 
-        ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in depth map (rc: " << rc << "). Recompute the number of valid values.");
+        ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in depth map (rc: " << rc
+                                                                                                    << "). Recompute the number of valid values.");
 
         readMap(rc, mp, EFileType::depthMapFiltered, depthMap, scale, step, customSuffix);
 
@@ -652,20 +658,17 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
     return nbDepthValues;
 }
 
-void deleteMapTiles(int rc,
-                    const MultiViewParams& mp,
-                    const EFileType fileType,
-                    const std::string& customSuffix)
+void deleteMapTiles(int rc, const MultiViewParams& mp, const EFileType fileType, const std::string& customSuffix)
 {
     std::vector<std::string> mapTilePathList;
 
     getTilePathList(rc, mp, fileType, customSuffix, mapTilePathList);
 
-    if(mapTilePathList.empty()) // depth map can be empty
-      ALICEVISION_LOG_INFO("Cannot find any " << getMapNameFromFileType(fileType) << " tile file to delete (rc: " << rc << ").");
+    if (mapTilePathList.empty())  // depth map can be empty
+        ALICEVISION_LOG_INFO("Cannot find any " << getMapNameFromFileType(fileType) << " tile file to delete (rc: " << rc << ").");
 
     // delete map tile files
-    for(const std::string& mapTilePath : mapTilePathList)
+    for (const std::string& mapTilePath : mapTilePathList)
     {
         try
         {
@@ -678,5 +681,5 @@ void deleteMapTiles(int rc,
     }
 }
 
-} // namespace mvsUtils
-} // namespace aliceVision
+}  // namespace mvsUtils
+}  // namespace aliceVision

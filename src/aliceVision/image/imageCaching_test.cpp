@@ -13,7 +13,8 @@
 using namespace aliceVision;
 using namespace aliceVision::image;
 
-BOOST_AUTO_TEST_CASE(create_cache) {
+BOOST_AUTO_TEST_CASE(create_cache)
+{
     ImageCache cache(256, 1024, EImageColorSpace::LINEAR);
     BOOST_CHECK_EQUAL(cache.info().capacity, 256 * 1024 * 1024);
     BOOST_CHECK_EQUAL(cache.info().maxSize, 1024 * 1024 * 1024);
@@ -22,13 +23,15 @@ BOOST_AUTO_TEST_CASE(create_cache) {
     BOOST_CHECK_EQUAL(cache.info().contentSize, 0);
 }
 
-BOOST_AUTO_TEST_CASE(load_without_space) {
+BOOST_AUTO_TEST_CASE(load_without_space)
+{
     ImageCache cache(0, 0, EImageColorSpace::LINEAR);
     const std::string filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
     BOOST_CHECK_THROW(auto img = cache.get<RGBAfColor>(filename), std::exception);
 }
 
-BOOST_AUTO_TEST_CASE(load_image_twice) {
+BOOST_AUTO_TEST_CASE(load_image_twice)
+{
     ImageCache cache(256, 1024, EImageColorSpace::LINEAR);
     const std::string filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
     auto img1 = cache.get<RGBAfColor>(filename);
@@ -40,7 +43,8 @@ BOOST_AUTO_TEST_CASE(load_image_twice) {
     BOOST_CHECK_EQUAL(cache.info().nbLoadFromCache, 1);
 }
 
-BOOST_AUTO_TEST_CASE(load_all_pixel_types) {
+BOOST_AUTO_TEST_CASE(load_all_pixel_types)
+{
     ImageCache cache(256, 1024, EImageColorSpace::LINEAR);
     const std::string filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
     auto imgUChar = cache.get<unsigned char>(filename);

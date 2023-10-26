@@ -17,17 +17,26 @@
 namespace aliceVision {
 namespace photometricStereo {
 
-void normalIntegration(const std::string& inputPath, const bool& perspective, const int& downscale,
+void normalIntegration(const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFolder);
+
+void normalIntegration(const sfmData::SfMData& sfmData,
+                       const std::string& inputPath,
+                       const bool& perspective,
+                       const int& downscale,
                        const std::string& outputFolder);
 
-void normalIntegration(const sfmData::SfMData& sfmData, const std::string& inputPath, const bool& perspective,
-                       const int& downscale, const std::string& outputFolder);
+void DCTIntegration(const image::Image<image::RGBfColor>& normals,
+                    image::Image<float>& depth,
+                    bool perspective,
+                    const Eigen::Matrix3f& K,
+                    const image::Image<float>& normalsMask);
 
-void DCTIntegration(const image::Image<image::RGBfColor>& normals, image::Image<float>& depth, bool perspective,
-                    const Eigen::Matrix3f& K, const image::Image<float>& normalsMask);
-
-void normal2PQ(const image::Image<image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective,
-               const Eigen::Matrix3f& K, const image::Image<float>& normalsMask);
+void normal2PQ(const image::Image<image::RGBfColor>& normals,
+               Eigen::MatrixXf& p,
+               Eigen::MatrixXf& q,
+               bool perspective,
+               const Eigen::Matrix3f& K,
+               const image::Image<float>& normalsMask);
 
 void getDivergenceField(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, Eigen::MatrixXf& f);
 
@@ -35,22 +44,25 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
 
 void adjustScale(const sfmData::SfMData& sfmData, image::Image<float>& initDepth, size_t viewID);
 
-void getZ0FromLandmarks(const sfmData::SfMData& sfmData, image::Image<float>& z0, image::Image<float>& maskZ0,
-                        const size_t viewID, const image::Image<float>& mask);
+void getZ0FromLandmarks(const sfmData::SfMData& sfmData,
+                        image::Image<float>& z0,
+                        image::Image<float>& maskZ0,
+                        const size_t viewID,
+                        const image::Image<float>& mask);
 
-void smoothIntegration(const image::Image<image::RGBfColor>& normals, image::Image<float>& depth, bool perspective,
-                       const Eigen::Matrix3f& K, const image::Image<float>& mask, const image::Image<float>& z0,
+void smoothIntegration(const image::Image<image::RGBfColor>& normals,
+                       image::Image<float>& depth,
+                       bool perspective,
+                       const Eigen::Matrix3f& K,
+                       const image::Image<float>& mask,
+                       const image::Image<float>& z0,
                        const image::Image<float>& maskZ0);
 
-void convertZtoDistance(const image::Image<float>& zMap, image::Image<float>& distanceMap,
-                        const Eigen::Matrix3f& K);
+void convertZtoDistance(const image::Image<float>& zMap, image::Image<float>& distanceMap, const Eigen::Matrix3f& K);
 
-void convertDistanceToZ(const image::Image<float>& distanceMap, image::Image<float>& zMap,
-                        const Eigen::Matrix3f& K);
+void convertDistanceToZ(const image::Image<float>& distanceMap, image::Image<float>& zMap, const Eigen::Matrix3f& K);
 
-void loadNormalMap(image::Image<image::RGBColor> inputNormals, const image::Image<float>& normalsMask,
-                   image::Image<image::RGBfColor>& outputNormals);
+void loadNormalMap(image::Image<image::RGBColor> inputNormals, const image::Image<float>& normalsMask, image::Image<image::RGBfColor>& outputNormals);
 
-}
-}
-
+}  // namespace photometricStereo
+}  // namespace aliceVision

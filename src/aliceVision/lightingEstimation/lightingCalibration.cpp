@@ -21,7 +21,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-
 // Eigen
 #include <Eigen/Dense>
 #include <Eigen/Core>
@@ -34,9 +33,11 @@ namespace bpt = boost::property_tree;
 namespace aliceVision {
 namespace lightingEstimation {
 
-
-void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJSON, const std::string& outputPath,
-                      const std::string& method, const bool saveAsModel)
+void lightCalibration(const sfmData::SfMData& sfmData,
+                      const std::string& inputJSON,
+                      const std::string& outputPath,
+                      const std::string& method,
+                      const bool saveAsModel)
 {
     std::vector<std::string> imageList;
     std::vector<std::array<float, 3>> allSpheresParams;
@@ -50,7 +51,7 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
     bpt::read_json(inputJSONFullName, fileTree);
 
     std::map<std::string, sfmData::View> viewMap;
-    for (auto& viewIt: sfmData.getViews())
+    for (auto& viewIt : sfmData.getViews())
     {
         std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getImage().getMetadata();
         viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
@@ -67,12 +68,12 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
             auto sphereExists = (fileTree.get_child_optional(sphereName)).is_initialized();
             if (sphereExists)
             {
-                ALICEVISION_LOG_INFO ("  - " << imagePath.string ());
-                imageList.push_back (imagePath.string ());
+                ALICEVISION_LOG_INFO("  - " << imagePath.string());
+                imageList.push_back(imagePath.string());
 
                 std::array<float, 3> currentSphereParams;
 
-                for (auto& currentSphere: fileTree.get_child(sphereName))
+                for (auto& currentSphere : fileTree.get_child(sphereName))
                 {
                     currentSphereParams[0] = currentSphere.second.get_child("").get("x", 0.0);
                     currentSphereParams[1] = currentSphere.second.get_child("").get("y", 0.0);
@@ -86,7 +87,7 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
             }
             else
             {
-                ALICEVISION_LOG_WARNING ("No detected sphere found for '" << imagePath << "'.");
+                ALICEVISION_LOG_WARNING("No detected sphere found for '" << imagePath << "'.");
             }
         }
     }
@@ -97,7 +98,7 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
     for (size_t i = 0; i < imageList.size(); ++i)
     {
         std::string picturePath = imageList.at(i);
-        std::array<float,3> sphereParam = allSpheresParams.at(i);
+        std::array<float, 3> sphereParam = allSpheresParams.at(i);
         float focal = focals.at(i);
 
         Eigen::Vector3f lightingDirection;
@@ -110,8 +111,11 @@ void lightCalibration(const sfmData::SfMData& sfmData, const std::string& inputJ
     writeJSON(outputPath, sfmData, imageList, lightMat, intList, saveAsModel);
 }
 
-void lightCalibrationOneImage(const std::string& picturePath, const std::array<float, 3>& sphereParam,
-                              const float focal, const std::string& method, Eigen::Vector3f& lightingDirection)
+void lightCalibrationOneImage(const std::string& picturePath,
+                              const std::array<float, 3>& sphereParam,
+                              const float focal,
+                              const std::string& method,
+                              Eigen::Vector3f& lightingDirection)
 {
     // Read picture :
     image::Image<float> imageFloat;
@@ -162,16 +166,15 @@ void lightCalibrationOneImage(const std::string& picturePath, const std::array<f
             for (int i = 0; i < patch.rows(); ++i)
             {
                 float distanceToCenter = (i - radius) * (i - radius) + (j - radius) * (j - radius);
-                if ((distanceToCenter < (radius * radius - 0.05 * radius) ) && (patch(i, j) > 0.3) && (patch(i, j) < 0.8))
+                if ((distanceToCenter < (radius * radius - 0.05 * radius)) && (patch(i, j) > 0.3) && (patch(i, j) < 0.8))
                 {
                     // imSphere = normalSphere.s
                     imSphere(currentIndex) = patch(i, j);
 
                     normalSphere(currentIndex, 0) = (float(j) - radius) / radius;
                     normalSphere(currentIndex, 1) = (float(i) - radius) / radius;
-                    normalSphere(currentIndex, 2) =
-                        -sqrt(1 - normalSphere(currentIndex, 0) * normalSphere(currentIndex, 0) -
-                              normalSphere(currentIndex, 1) * normalSphere(currentIndex, 1));
+                    normalSphere(currentIndex, 2) = -sqrt(1 - normalSphere(currentIndex, 0) * normalSphere(currentIndex, 0) -
+                                                          normalSphere(currentIndex, 1) * normalSphere(currentIndex, 1));
 
                     ++currentIndex;
                 }
@@ -186,8 +189,7 @@ void lightCalibrationOneImage(const std::string& picturePath, const std::array<f
     }
 }
 
-void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::Image<float>& imageFloat,
-                          Eigen::Vector2f& brigthestPoint)
+void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint)
 {
     image::Image<float> patch;
     std::array<float, 2> patchOrigin;
@@ -197,7 +199,7 @@ void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::
     image::Image<float> convolutedPatch2;
 
     // Create Kernel
-    size_t kernelSize = round(sphereParam[2] / 20); // arbitrary
+    size_t kernelSize = round(sphereParam[2] / 20);  // arbitrary
     Eigen::VectorXf kernel(2 * kernelSize + 1);
     createTriangleKernel(kernelSize, kernel);
 
@@ -226,19 +228,20 @@ void createTriangleKernel(const size_t kernelSize, Eigen::VectorXf& kernel)
     }
 }
 
-void getNormalOnSphere(const float xPicture, const float yPicture, const std::array<float, 3>& sphereParam,
-                       Eigen::Vector3f& currentNormal)
+void getNormalOnSphere(const float xPicture, const float yPicture, const std::array<float, 3>& sphereParam, Eigen::Vector3f& currentNormal)
 {
     currentNormal(0) = (xPicture - sphereParam[0]) / sphereParam[2];
     currentNormal(1) = (yPicture - sphereParam[1]) / sphereParam[2];
     currentNormal(2) = -sqrt(1 - currentNormal(0) * currentNormal(0) - currentNormal(1) * currentNormal(1));
 }
 
-void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>& sphereParam,
-              image::Image<float>& patch, std::array<float, 2>& patchOrigin)
+void cutImage(const image::Image<float>& imageFloat,
+              const std::array<float, 3>& sphereParam,
+              image::Image<float>& patch,
+              std::array<float, 2>& patchOrigin)
 {
-    const int minISphere = floor(sphereParam[1] - sphereParam[2] + imageFloat.rows()/2);
-    const int minJSphere = floor(sphereParam[0] - sphereParam[2] + imageFloat.cols()/2);
+    const int minISphere = floor(sphereParam[1] - sphereParam[2] + imageFloat.rows() / 2);
+    const int minJSphere = floor(sphereParam[0] - sphereParam[2] + imageFloat.cols() / 2);
 
     patchOrigin[0] = minJSphere;
     patchOrigin[1] = minISphere;
@@ -251,8 +254,7 @@ void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>&
     {
         for (int j = 0; j < patch.cols(); ++j)
         {
-            const float distanceToCenter = (i - patch.rows() / 2) * (i - patch.rows() / 2) +
-                                           (j - patch.cols() / 2) * (j - patch.cols() / 2);
+            const float distanceToCenter = (i - patch.rows() / 2) * (i - patch.rows() / 2) + (j - patch.cols() / 2) * (j - patch.cols() / 2);
             if (distanceToCenter > radius * radius + 2)
             {
                 patch(i, j) = 0;
@@ -261,21 +263,25 @@ void cutImage(const image::Image<float>& imageFloat, const std::array<float, 3>&
     }
 }
 
-void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, const std::vector<std::string>& imageList,
-               const Eigen::MatrixXf& lightMat, const std::vector<float>& intList, const bool saveAsModel)
+void writeJSON(const std::string& fileName,
+               const sfmData::SfMData& sfmData,
+               const std::vector<std::string>& imageList,
+               const Eigen::MatrixXf& lightMat,
+               const std::vector<float>& intList,
+               const bool saveAsModel)
 {
     bpt::ptree lightsTree;
     bpt::ptree fileTree;
 
     int imgCpt = 0;
     std::map<std::string, sfmData::View> viewMap;
-    for (auto& viewIt: sfmData.getViews())
+    for (auto& viewIt : sfmData.getViews())
     {
         std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getImage().getMetadata();
         viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
     }
 
-    for (const auto& [currentTime, viewId]: viewMap)
+    for (const auto& [currentTime, viewId] : viewMap)
     {
         const fs::path imagePath = fs::path(viewId.getImage().getImagePath());
 
@@ -293,7 +299,7 @@ void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, con
             }
             else
             {
-                //const IndexT index = viewId.getViewId
+                // const IndexT index = viewId.getViewId
                 lightTree.put("viewId", viewId.getViewId());
                 lightTree.put("type", "directional");
             }
@@ -323,8 +329,8 @@ void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, con
         }
         else
         {
-            ALICEVISION_LOG_INFO("'" << imagePath << "' is in the input SfMData but has not been used for the lighting " <<
-                                 "calibration or contains 'ambiant' in its filename.");
+            ALICEVISION_LOG_INFO("'" << imagePath << "' is in the input SfMData but has not been used for the lighting "
+                                     << "calibration or contains 'ambiant' in its filename.");
         }
     }
 
@@ -332,5 +338,5 @@ void writeJSON(const std::string& fileName, const sfmData::SfMData& sfmData, con
     bpt::write_json(fileName, fileTree);
 }
 
-}
-}
+}  // namespace lightingEstimation
+}  // namespace aliceVision

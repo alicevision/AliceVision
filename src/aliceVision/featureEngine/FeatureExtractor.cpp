@@ -16,56 +16,51 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace featureEngine {
 
-FeatureExtractorViewJob::FeatureExtractorViewJob(const sfmData::View& view,
-                                                 const std::string& outputFolder) :
-    _view(view),
+FeatureExtractorViewJob::FeatureExtractorViewJob(const sfmData::View& view, const std::string& outputFolder)
+  : _view(view),
     _outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
 {}
 
 FeatureExtractorViewJob::~FeatureExtractorViewJob() = default;
 
-void FeatureExtractorViewJob::setImageDescribers(
-        const std::vector<std::shared_ptr<feature::ImageDescriber>>& imageDescribers)
+void FeatureExtractorViewJob::setImageDescribers(const std::vector<std::shared_ptr<feature::ImageDescriber>>& imageDescribers)
 {
     for (std::size_t i = 0; i < imageDescribers.size(); ++i)
     {
         const std::shared_ptr<feature::ImageDescriber>& imageDescriber = imageDescribers.at(i);
         feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
 
-        if (fs::exists(getFeaturesPath(imageDescriberType)) &&
-            fs::exists(getDescriptorPath(imageDescriberType)))
+        if (fs::exists(getFeaturesPath(imageDescriberType)) && fs::exists(getDescriptorPath(imageDescriberType)))
         {
             continue;
         }
 
-        _memoryConsuption += imageDescriber->getMemoryConsumption(_view.getImage().getWidth(),
-                                                                  _view.getImage().getHeight());
+        _memoryConsuption += imageDescriber->getMemoryConsumption(_view.getImage().getWidth(), _view.getImage().getHeight());
 
-        if(imageDescriber->useCuda())
+        if (imageDescriber->useCuda())
             _gpuImageDescriberIndexes.push_back(i);
         else
             _cpuImageDescriberIndexes.push_back(i);
     }
 }
 
-
-FeatureExtractor::FeatureExtractor(const sfmData::SfMData& sfmData) :
-    _sfmData(sfmData)
+FeatureExtractor::FeatureExtractor(const sfmData::SfMData& sfmData)
+  : _sfmData(sfmData)
 {}
 
 FeatureExtractor::~FeatureExtractor() = default;
 
-void FeatureExtractor::process(const HardwareContext & hContext, const image::EImageColorSpace workingColorSpace)
+void FeatureExtractor::process(const HardwareContext& hContext, const image::EImageColorSpace workingColorSpace)
 {
     size_t maxAvailableMemory = hContext.getUserMaxMemoryAvailable();
     unsigned int maxAvailableCores = hContext.getMaxThreads();
-    
+
     // iteration on each view in the range in order
     // to prepare viewJob stack
     sfmData::Views::const_iterator itViewBegin = _sfmData.getViews().begin();
     sfmData::Views::const_iterator itViewEnd = _sfmData.getViews().end();
 
-    if(_rangeStart != -1)
+    if (_rangeStart != -1)
     {
         std::advance(itViewBegin, _rangeStart);
         itViewEnd = itViewBegin;
@@ -95,14 +90,12 @@ void FeatureExtractor::process(const HardwareContext & hContext, const image::EI
     if (!cpuJobs.empty())
     {
         system::MemoryInfo memoryInformation = system::getMemoryInfo();
-        
 
-        //Put an upper bound with user specified memory
+        // Put an upper bound with user specified memory
         size_t maxMemory = std::min(memoryInformation.availableRam, maxAvailableMemory);
         size_t maxTotalMemory = std::min(memoryInformation.totalRam, maxAvailableMemory);
 
-        ALICEVISION_LOG_INFO("Job max memory consumption for one image: "
-                             << jobMaxMemoryConsuption / (1024*1024) << " MB");
+        ALICEVISION_LOG_INFO("Job max memory consumption for one image: " << jobMaxMemoryConsuption / (1024 * 1024) << " MB");
         ALICEVISION_LOG_INFO("Memory information: " << std::endl << memoryInformation);
 
         if (jobMaxMemoryConsuption == 0)
@@ -110,8 +103,7 @@ void FeatureExtractor::process(const HardwareContext & hContext, const image::EI
 
         // How many buffers can fit in 90% of the available RAM?
         // This is used to estimate how many jobs can be computed in parallel without SWAP.
-        const std::size_t memoryImageCapacity =
-                std::size_t((0.9 * maxMemory) / jobMaxMemoryConsuption);
+        const std::size_t memoryImageCapacity = std::size_t((0.9 * maxMemory) / jobMaxMemoryConsuption);
 
         std::size_t nbThreads = std::max(std::size_t(1), memoryImageCapacity);
         ALICEVISION_LOG_INFO("Max number of threads regarding memory usage: " << nbThreads);
@@ -124,9 +116,8 @@ void FeatureExtractor::process(const HardwareContext & hContext, const image::EI
                 ALICEVISION_LOG_WARNING("But the total amount of RAM is enough to extract features, "
                                         << "so you should close other running applications.");
                 ALICEVISION_LOG_WARNING(" => " << std::size_t(std::round((double(maxTotalMemory - maxMemory) / oneGB)))
-                                        << " GB are used by other applications for a total RAM capacity of "
-                                        << std::size_t(std::round(double(maxTotalMemory) / oneGB))
-                                        << " GB.");
+                                               << " GB are used by other applications for a total RAM capacity of "
+                                               << std::size_t(std::round(double(maxTotalMemory) / oneGB)) << " GB.");
             }
         }
         else
@@ -134,19 +125,17 @@ void FeatureExtractor::process(const HardwareContext & hContext, const image::EI
             if (maxMemory < 0.5 * maxTotalMemory)
             {
                 ALICEVISION_LOG_WARNING("More than half of the RAM is used by other applications. It would be more efficient to close them.");
-                ALICEVISION_LOG_WARNING(" => "
-                                        << std::size_t(std::round(double(maxTotalMemory - maxMemory) / oneGB))
-                                        << " GB are used by other applications for a total RAM capacity of "
-                                        << std::size_t(std::round(double(maxTotalMemory) / oneGB))
-                                        << " GB.");
+                ALICEVISION_LOG_WARNING(" => " << std::size_t(std::round(double(maxTotalMemory - maxMemory) / oneGB))
+                                               << " GB are used by other applications for a total RAM capacity of "
+                                               << std::size_t(std::round(double(maxTotalMemory) / oneGB)) << " GB.");
             }
         }
 
-        if(maxMemory == 0)
+        if (maxMemory == 0)
         {
-          ALICEVISION_LOG_WARNING("Cannot find available system memory, this can be due to OS limitation.\n"
-                                  "Use only one thread for CPU feature extraction.");
-          nbThreads = 1;
+            ALICEVISION_LOG_WARNING("Cannot find available system memory, this can be due to OS limitation.\n"
+                                    "Use only one thread for CPU feature extraction.");
+            nbThreads = 1;
         }
 
         // nbThreads should not be higher than the available cores
@@ -198,10 +187,8 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
     if (!_masksFolder.empty() && fs::exists(_masksFolder))
     {
         const auto masksFolder = fs::path(_masksFolder);
-        const auto idMaskPath = masksFolder /
-                fs::path(std::to_string(job.view().getViewId())).replace_extension(_maskExtension);
-        const auto nameMaskPath = masksFolder /
-                fs::path(job.view().getImage().getImagePath()).filename().replace_extension(_maskExtension);
+        const auto idMaskPath = masksFolder / fs::path(std::to_string(job.view().getViewId())).replace_extension(_maskExtension);
+        const auto nameMaskPath = masksFolder / fs::path(job.view().getImage().getImagePath()).filename().replace_extension(_maskExtension);
 
         if (fs::exists(idMaskPath))
         {
@@ -213,16 +200,15 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
         }
     }
 
-    for (const auto & imageDescriberIndex : job.imageDescriberIndexes(useGPU))
+    for (const auto& imageDescriberIndex : job.imageDescriberIndexes(useGPU))
     {
         const auto& imageDescriber = _imageDescribers.at(imageDescriberIndex);
         const feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
-        const std::string imageDescriberTypeName =
-                feature::EImageDescriberType_enumToString(imageDescriberType);
+        const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriberType);
 
         // Compute features and descriptors and export them to files
-        ALICEVISION_LOG_INFO("Extracting " << imageDescriberTypeName  << " features from view '"
-                             << job.view().getImage().getImagePath() << "' " << (useGPU ? "[gpu]" : "[cpu]"));
+        ALICEVISION_LOG_INFO("Extracting " << imageDescriberTypeName << " features from view '" << job.view().getImage().getImagePath() << "' "
+                                           << (useGPU ? "[gpu]" : "[cpu]"));
 
         std::unique_ptr<feature::Regions> regions;
         if (imageDescriber->useFloatImage())
@@ -233,7 +219,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
         else
         {
             // image buffer can't use float image
-            if (imageGrayUChar.Width() == 0) // the first time, convert the float buffer to uchar
+            if (imageGrayUChar.Width() == 0)  // the first time, convert the float buffer to uchar
                 imageGrayUChar = (imageGrayFloat.GetMat() * 255.f).cast<unsigned char>();
             imageDescriber->describe(imageGrayUChar, regions);
         }
@@ -241,7 +227,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
         if (pixelRatio != 1.0)
         {
             // Re-position point features on input image
-            for (auto & feat : regions->Features())
+            for (auto& feat : regions->Features())
             {
                 feat.x() /= pixelRatio;
             }
@@ -250,7 +236,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
         if (mask.Height() > 0)
         {
             std::vector<feature::FeatureInImage> selectedIndices;
-            for (size_t i=0, n=regions->RegionCount(); i != n; ++i)
+            for (size_t i = 0, n = regions->RegionCount(); i != n; ++i)
             {
                 const Vec2 position = regions->GetRegionPosition(i);
                 const int x = int(position.x());
@@ -273,17 +259,14 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
 
             std::vector<IndexT> out_associated3dPoint;
             std::map<IndexT, IndexT> out_mapFullToLocal;
-            regions = regions->createFilteredRegions(selectedIndices, out_associated3dPoint,
-                                                     out_mapFullToLocal);
+            regions = regions->createFilteredRegions(selectedIndices, out_associated3dPoint, out_mapFullToLocal);
         }
 
-        imageDescriber->Save(regions.get(), job.getFeaturesPath(imageDescriberType),
-                             job.getDescriptorPath(imageDescriberType));
-        ALICEVISION_LOG_INFO(std::left << std::setw(6) << " " << regions->RegionCount() << " "
-                             << imageDescriberTypeName  << " features extracted from view '"
-                             << job.view().getImage().getImagePath() << "'");
+        imageDescriber->Save(regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
+        ALICEVISION_LOG_INFO(std::left << std::setw(6) << " " << regions->RegionCount() << " " << imageDescriberTypeName
+                                       << " features extracted from view '" << job.view().getImage().getImagePath() << "'");
     }
 }
 
-} // namespace featureEngine
-} // namespace aliceVision
+}  // namespace featureEngine
+}  // namespace aliceVision

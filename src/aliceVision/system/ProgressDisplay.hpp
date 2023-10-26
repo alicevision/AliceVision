@@ -13,8 +13,9 @@
 namespace aliceVision {
 namespace system {
 
-class ProgressDisplayImpl {
-public:
+class ProgressDisplayImpl
+{
+  public:
     virtual ~ProgressDisplayImpl();
     virtual void restart(unsigned long expectedCount) = 0;
     virtual void increment(unsigned long count) = 0;
@@ -30,50 +31,38 @@ public:
  *
  * For ease of use value semantics are exposed.
  */
-class ProgressDisplay {
-public:
+class ProgressDisplay
+{
+  public:
     ProgressDisplay();
-    ProgressDisplay(const std::shared_ptr<ProgressDisplayImpl>& impl) : _impl{impl} {}
+    ProgressDisplay(const std::shared_ptr<ProgressDisplayImpl>& impl)
+      : _impl{impl}
+    {}
 
-    void restart(unsigned long expectedCount)
-    {
-        _impl->restart(expectedCount);
-    }
-
-    // Thread safe with respect to other calls to operator++ and to calls to count()
-    void operator++()
-    {
-        _impl->increment(1);
-    }
+    void restart(unsigned long expectedCount) { _impl->restart(expectedCount); }
 
     // Thread safe with respect to other calls to operator++ and to calls to count()
-    void operator+=(unsigned long increment)
-    {
-        _impl->increment(increment);
-    }
+    void operator++() { _impl->increment(1); }
+
+    // Thread safe with respect to other calls to operator++ and to calls to count()
+    void operator+=(unsigned long increment) { _impl->increment(increment); }
 
     // Thread safe with respect to calls to operator++
-    unsigned long count()
-    {
-        return _impl->count();
-    }
+    unsigned long count() { return _impl->count(); }
 
     // Thread safe
-    unsigned long expectedCount()
-    {
-        return _impl->expectedCount();
-    }
+    unsigned long expectedCount() { return _impl->expectedCount(); }
 
-private:
+  private:
     std::shared_ptr<ProgressDisplayImpl> _impl;
 };
 
 /// Creates console-based progress bar
 ProgressDisplay createConsoleProgressDisplay(unsigned long expectedCount,
                                              std::ostream& os,
-                                             const std::string& s1 = "\n", //leading strings
+                                             const std::string& s1 = "\n",  // leading strings
                                              const std::string& s2 = "",
                                              const std::string& s3 = "");
 
-} // namespace system
-} // namespace aliceVision
+}  // namespace system
+}  // namespace aliceVision

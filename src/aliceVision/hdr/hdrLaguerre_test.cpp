@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
     hdr::rgbCurve gt_curve(quantization);
 
     std::array<float, 3> laguerreParams = {-0.2, 0.4, -0.3};
-    for(int i = 0; i < quantization; i++)
+    for (int i = 0; i < quantization; i++)
     {
         float x = float(i) / float(quantization - 1);
         gt_curve.getCurve(0)[i] = hdr::laguerreFunction(laguerreParams[0], x);
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
     hdr::test::extractSamplesGroups(samples, all_paths, exposures, quantization);
     calib.process(samples, exposures, quantization, false, response);
 
-    for(int imageId = 0; imageId < paths.size() - 1; imageId++)
+    for (int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
         image::Image<image::RGBfColor> imgA, imgB;
         image::readImage(paths[imageId], imgA, image::EImageColorSpace::LINEAR);
@@ -53,13 +53,13 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
         double ratioExposures = times[imageId] / times[imageId + 1];
 
         double max_diff = 0.0;
-        for(int i = 0; i < imgA.Height(); i++)
+        for (int i = 0; i < imgA.Height(); i++)
         {
-            for(int j = 0; j < imgA.Width(); j++)
+            for (int j = 0; j < imgA.Width(); j++)
             {
                 image::RGBfColor Ba = imgA(i, j);
                 image::RGBfColor Bb = imgB(i, j);
-                for(int k = 0; k < 3; k++)
+                for (int k = 0; k < 3; k++)
                 {
                     double responseA = response(Ba(k), k);
                     double responseB = response(Bb(k), k);
@@ -67,16 +67,17 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
                     double hdrB = responseB / times[imageId + 1];
                     double diff = std::abs(responseA - ratioExposures * responseB);
 
-                    if (Bb(k) > 0.99) diff = 0.0;
-                    if (hdrA > 1.0) diff = 0.0;
-                    if (hdrB > 1.0) diff = 0.0;
+                    if (Bb(k) > 0.99)
+                        diff = 0.0;
+                    if (hdrA > 1.0)
+                        diff = 0.0;
+                    if (hdrB > 1.0)
+                        diff = 0.0;
 
                     max_diff = std::max(diff, max_diff);
-
                 }
             }
         }
-
 
         BOOST_CHECK(std::isfinite(max_diff));
         BOOST_CHECK_SMALL(max_diff, 1e-3);

@@ -19,8 +19,8 @@ namespace imageMatching {
 
 static const int DIMENSION = 128;
 
-using DescriptorFloat = feature::Descriptor<float, DIMENSION> ;
-using DescriptorUChar = feature::Descriptor<unsigned char, DIMENSION> ;
+using DescriptorFloat = feature::Descriptor<float, DIMENSION>;
+using DescriptorUChar = feature::Descriptor<unsigned char, DIMENSION>;
 
 using ImageID = std::size_t;
 
@@ -35,7 +35,6 @@ using PairList = std::map<ImageID, ListOfImageID>;
 
 // For each image ID it contains the ordered list of matching images
 using OrderedPairList = std::map<ImageID, OrderedListOfImageID>;
-
 
 /**
  * @brief Function that prints a PairList
@@ -114,15 +113,11 @@ EImageMatchingMode EImageMatchingMode_stringToEnum(const std::string& modeMultiS
  * @param[in] numMatches The maximum number of matching images to consider for each image (if 0, consider all matches)
  * @param[out] matches A processed version of allMatches that consider only the first numMatches without repetitions
  */
-void convertAllMatchesToPairList(const PairList &allMatches, std::size_t numMatches,
-                                 OrderedPairList &outPairList);
+void convertAllMatchesToPairList(const PairList& allMatches, std::size_t numMatches, OrderedPairList& outPairList);
 
-void generateSequentialMatches(const sfmData::SfMData& sfmData, size_t nbMatches,
-                               OrderedPairList& outPairList);
+void generateSequentialMatches(const sfmData::SfMData& sfmData, size_t nbMatches, OrderedPairList& outPairList);
 void generateAllMatchesInOneMap(const std::set<IndexT>& viewIds, OrderedPairList& outPairList);
-void generateAllMatchesBetweenTwoMap(const std::set<IndexT>& viewIdsA,
-                                     const std::set<IndexT>& viewIdsB,
-                                     OrderedPairList& outPairList);
+void generateAllMatchesBetweenTwoMap(const std::set<IndexT>& viewIdsA, const std::set<IndexT>& viewIdsB, OrderedPairList& outPairList);
 
 void generateFromVoctree(PairList& allMatches,
                          const std::map<IndexT, std::string>& descriptorsFiles,
@@ -132,7 +127,8 @@ void generateFromVoctree(PairList& allMatches,
                          std::size_t nbMaxDescriptors,
                          std::size_t numImageQuery);
 
-void conditionVocTree(const std::string& treeName, bool withWeights,
+void conditionVocTree(const std::string& treeName,
+                      bool withWeights,
                       const std::string& weightsName,
                       const EImageMatchingMode matchingMode,
                       const std::vector<std::string>& featuresFolders,
@@ -151,5 +147,5 @@ EImageMatchingMethod selectImageMatchingMethod(EImageMatchingMethod method,
                                                const sfmData::SfMData& sfmDataB,
                                                std::size_t minNbImages);
 
-} // namespace imageMatching
-} // namespace aliceVision
+}  // namespace imageMatching
+}  // namespace aliceVision

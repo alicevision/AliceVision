@@ -15,7 +15,7 @@ namespace mesh {
 /// Simple material type that supports only the data written out from Texturing pipeline
 class Material
 {
-public:
+  public:
     struct Color
     {
         float r = 0.0;
@@ -77,12 +77,12 @@ public:
         return index < 0 ? "<UDIM>" : std::to_string(1001 + index);
     }
 
-private:
+  private:
     StaticVector<std::string> _diffuseTextures;
     StaticVector<std::string> _normalTextures;
     StaticVector<std::string> _bumpTextures;
     StaticVector<std::string> _displacementTextures;
 };
 
-} // namespace mesh
-} // namespace aliceVision
+}  // namespace mesh
+}  // namespace aliceVision

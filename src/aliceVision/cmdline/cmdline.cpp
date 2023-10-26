@@ -10,19 +10,20 @@ bool CmdLine::execute(int argc, char** argv)
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
     boost::program_options::options_description logParams("Log parameters");
-    logParams.add_options()
-        ("verboseLevel,v", boost::program_options::value<std::string>(&verboseLevel)->default_value(verboseLevel), "verbosity level (fatal, error, warning, info, debug, trace).");
+    logParams.add_options()("verboseLevel,v",
+                            boost::program_options::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+                            "verbosity level (fatal, error, warning, info, debug, trace).");
 
     _allParams.add(logParams);
 
     boost::program_options::options_description hardwareParams("Hardware parameters");
-    
+
     size_t uma = _hContext.getUserMaxMemoryAvailable();
     unsigned int uca = _hContext.getUserMaxCoresAvailable();
 
-    hardwareParams.add_options()
-        ("maxMemoryAvailable", boost::program_options::value<size_t>(&uma)->default_value(uma), "User specified available RAM")
-        ("maxCoresAvailable", boost::program_options::value<unsigned int>(&uca)->default_value(uca), "User specified available number of cores");
+    hardwareParams.add_options()(
+      "maxMemoryAvailable", boost::program_options::value<size_t>(&uma)->default_value(uma), "User specified available RAM")(
+      "maxCoresAvailable", boost::program_options::value<unsigned int>(&uca)->default_value(uca), "User specified available number of cores");
 
     _allParams.add(hardwareParams);
 
@@ -64,4 +65,4 @@ bool CmdLine::execute(int argc, char** argv)
     return true;
 }
 
-}
+}  // namespace aliceVision

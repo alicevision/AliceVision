@@ -109,9 +109,9 @@ inline void writeMap(int rc,
                      int step = 1,
                      const std::string& customSuffix = "")
 {
-  const TileParams tileParams; // default tile parameters, no tiles
-  const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // fullsize roi
-  writeMap(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
+    const TileParams tileParams;                                   // default tile parameters, no tiles
+    const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc));  // fullsize roi
+    writeMap(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
 }
 
 inline void writeMap(int rc,
@@ -122,9 +122,9 @@ inline void writeMap(int rc,
                      int step = 1,
                      const std::string& customSuffix = "")
 {
-  const TileParams tileParams; // default tile parameters, no tiles
-  const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // fullsize roi
-  writeMap(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
+    const TileParams tileParams;                                   // default tile parameters, no tiles
+    const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc));  // fullsize roi
+    writeMap(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
 }
 
 /**
@@ -135,11 +135,7 @@ inline void writeMap(int rc,
  * @param[in] step the depth map step factor
  * @param[in] customSuffix the filename custom suffix
  */
-unsigned long getNbDepthValuesFromDepthMap(int rc, 
-                                           const MultiViewParams& mp,
-                                           int scale = 1,
-                                           int step = 1,
-                                           const std::string& customSuffix = "");
+unsigned long getNbDepthValuesFromDepthMap(int rc, const MultiViewParams& mp, int scale = 1, int step = 1, const std::string& customSuffix = "");
 
 /**
  * @brief Delete map tiles files.
@@ -148,10 +144,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
  * @param[in] fileType the map fileType enum
  * @param[in] customSuffix the filename custom suffix
  */
-void deleteMapTiles(int rc,
-                    const MultiViewParams& mp,
-                    const EFileType fileType,
-                    const std::string& customSuffix = "");
+void deleteMapTiles(int rc, const MultiViewParams& mp, const EFileType fileType, const std::string& customSuffix = "");
 
-} // namespace mvsUtils
-} // namespace aliceVision
+}  // namespace mvsUtils
+}  // namespace aliceVision

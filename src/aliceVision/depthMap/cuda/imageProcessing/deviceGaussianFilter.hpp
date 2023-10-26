@@ -14,20 +14,17 @@
 namespace aliceVision {
 namespace depthMap {
 
-#define MAX_CONSTANT_GAUSS_SCALES   10
+#define MAX_CONSTANT_GAUSS_SCALES 10
 #define MAX_CONSTANT_GAUSS_MEM_SIZE 128
 
 /*********************************************************************************
-* global / constant data structures
-*********************************************************************************/
-extern std::set<int>                 d_gaussianArrayInitialized;
-extern __device__ __constant__ int   d_gaussianArrayOffset[MAX_CONSTANT_GAUSS_SCALES];
+ * global / constant data structures
+ *********************************************************************************/
+extern std::set<int> d_gaussianArrayInitialized;
+extern __device__ __constant__ int d_gaussianArrayOffset[MAX_CONSTANT_GAUSS_SCALES];
 extern __device__ __constant__ float d_gaussianArray[MAX_CONSTANT_GAUSS_MEM_SIZE];
 
-__device__ inline float getGauss(int scale, int idx)
-{
-    return d_gaussianArray[d_gaussianArrayOffset[scale] + idx];
-}
+__device__ inline float getGauss(int scale, int idx) { return d_gaussianArray[d_gaussianArrayOffset[scale] + idx]; }
 
 /**
  * @brief Create Gaussian array in device constant memory.
@@ -56,9 +53,7 @@ extern void cuda_downscaleWithGaussianBlur(CudaDeviceMemoryPitched<CudaRGBA, 2>&
  * @param[in] gaussRadius the Gaussian radius
  * @param[in] stream the CUDA stream for gpu execution
  */
-extern void cuda_gaussianBlurVolumeZ(CudaDeviceMemoryPitched<float, 3>& inout_volume_dmp, 
-                                     int gaussRadius, 
-                                     cudaStream_t stream);
+extern void cuda_gaussianBlurVolumeZ(CudaDeviceMemoryPitched<float, 3>& inout_volume_dmp, int gaussRadius, cudaStream_t stream);
 
 /**
  * @brief Apply a Gaussion blur to the XYZ axis of the given volume.
@@ -66,9 +61,7 @@ extern void cuda_gaussianBlurVolumeZ(CudaDeviceMemoryPitched<float, 3>& inout_vo
  * @param[in] gaussRadius the Gaussian radius
  * @param[in] stream the CUDA stream for gpu execution
  */
-extern void cuda_gaussianBlurVolumeXYZ(CudaDeviceMemoryPitched<float, 3>& inout_volume_dmp, 
-                                       int gaussRadius, 
-                                       cudaStream_t stream);
+extern void cuda_gaussianBlurVolumeXYZ(CudaDeviceMemoryPitched<float, 3>& inout_volume_dmp, int gaussRadius, cudaStream_t stream);
 
 /**
  * @brief Apply a Median filter to the given image.
@@ -76,17 +69,15 @@ extern void cuda_gaussianBlurVolumeXYZ(CudaDeviceMemoryPitched<float, 3>& inout_
  */
 extern void cuda_medianFilter3(cudaTextureObject_t tex, CudaDeviceMemoryPitched<float, 2>& img);
 
-
 #ifdef ALICEVISION_TMP_WITH_BILATERALFILTER
 
-//Euclidean Distance (x, y, d) = exp((|x - y| / d)^2 / 2)
+// Euclidean Distance (x, y, d) = exp((|x - y| / d)^2 / 2)
 template<class Type>
 __device__ inline float euclideanLen(Type a, Type b, float d);
 
 template<>
 __device__ inline float euclideanLen<float>(float a, float b, float d)
 {
-
     float mod = (b - a) * (b - a);
 
     return __expf(-mod / (2.f * d * d));
@@ -95,10 +86,7 @@ __device__ inline float euclideanLen<float>(float a, float b, float d)
 template<>
 __device__ inline float euclideanLen<float4>(float4 a, float4 b, float d)
 {
-
-    float mod = (b.x - a.x) * (b.x - a.x) +
-        (b.y - a.y) * (b.y - a.y) +
-        (b.z - a.z) * (b.z - a.z);
+    float mod = (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z);
 
     return __expf(-mod / (2.f * d * d));
 }
@@ -127,7 +115,6 @@ __device__ inline float4 init_type<float4>(float v)
     return make_float4(v, v, v, v);
 }
 
-
 /**
  * Bilateral filter is an edge-preserving nonlinear smoothing filter. There
  * are three parameters distribute to the filter: gaussian delta, euclidean
@@ -145,12 +132,8 @@ __device__ inline float4 init_type<float4>(float v)
  * Filtering for Gray and Color Images".
  */
 template<class Type>
-__global__ void bilateralFilter_kernel(
-    cudaTextureObject_t rgbaTex,
-    Type* texLab, int texLab_p,
-    int width, int height,
-    float euclideanDelta,
-    int radius, int scale)
+__global__ void
+bilateralFilter_kernel(cudaTextureObject_t rgbaTex, Type* texLab, int texLab_p, int width, int height, float euclideanDelta, int radius, int scale)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -161,16 +144,16 @@ __global__ void bilateralFilter_kernel(
     Type centerPix = tex2D<Type>(rgbaTex, x, y);
 
     float s = 0.5f;
-    Type t = init_type<Type>(0.0f); // generic make_float4();
+    Type t = init_type<Type>(0.0f);  // generic make_float4();
     float sum = 0.0f;
     for (int i = -radius; i <= radius; i++)
     {
         for (int j = -radius; j <= radius; j++)
         {
             Type curPix = tex2D<Type>(rgbaTex, (float)(x * scale + j) + s, (float)(y * scale + i) + s);
-            float factor = getGauss(scale - 1, i + radius) // domain factor
-                            * getGauss(scale - 1, j + radius) // domain factor
-                            * euclideanLen(curPix, centerPix, euclideanDelta); //range factor
+            float factor = getGauss(scale - 1, i + radius)                     // domain factor
+                           * getGauss(scale - 1, j + radius)                   // domain factor
+                           * euclideanLen(curPix, centerPix, euclideanDelta);  // range factor
             t = t + curPix * factor;
             sum += factor;
         }
@@ -181,27 +164,16 @@ __global__ void bilateralFilter_kernel(
 }
 
 template<class Type>
-__host__ void ps_bilateralFilter(
-    cudaTextureObject_t rgbaTex,
-    CudaDeviceMemoryPitched<Type, 2>& img,
-    float euclideanDelta,
-    int radius)
+__host__ void ps_bilateralFilter(cudaTextureObject_t rgbaTex, CudaDeviceMemoryPitched<Type, 2>& img, float euclideanDelta, int radius)
 {
     int scale = 1;
     const dim3 block(32, 2, 1);
     const dim3 grid(divUp(img.getSize()[0], block.x), divUp(img.getSize()[1], block.y), 1);
 
-    bilateralFilter_kernel
-        <<<grid, block>>>
-        (rgbaTex,
-            img.getBuffer(), img.getPitch(),
-            img.getSize()[0], img.getSize()[1],
-            euclideanDelta,
-            radius, scale
-            );
+    bilateralFilter_kernel<<<grid, block>>>(
+      rgbaTex, img.getBuffer(), img.getPitch(), img.getSize()[0], img.getSize()[1], euclideanDelta, radius, scale);
 }
 #endif
 
-} // namespace depthMap
-} // namespace aliceVision
-
+}  // namespace depthMap
+}  // namespace aliceVision

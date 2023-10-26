@@ -48,6 +48,5 @@ extern void cuda_createMipmappedArrayDebugFlatImage(CudaDeviceMemoryPitched<Cuda
                                                     const int firstLevelHeight,
                                                     cudaStream_t stream);
 
-} // namespace depthMap
-} // namespace aliceVision
-
+}  // namespace depthMap
+}  // namespace aliceVision

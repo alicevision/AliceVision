@@ -19,7 +19,8 @@ using Matrix = Eigen::Matrix<double, 2, 2, Eigen::RowMajor>;
  * @param algebra the 1D vector
  * @return a 2*2 S0(2) matrix
  */
-inline Eigen::Matrix2d expm(double algebra) {
+inline Eigen::Matrix2d expm(double algebra)
+{
     Eigen::Matrix2d ret;
 
     ret(0, 0) = cos(algebra);
@@ -29,7 +30,7 @@ inline Eigen::Matrix2d expm(double algebra) {
 
     return ret;
 }
-} //namespace SO2
+}  // namespace SO2
 
 namespace SO3 {
 
@@ -40,7 +41,8 @@ using Matrix = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
  * @param in the 3D vector
  * @return a skew symmetric matrix
  */
-inline Eigen::Matrix3d skew(const Eigen::Vector3d& in) {
+inline Eigen::Matrix3d skew(const Eigen::Vector3d& in)
+{
     Eigen::Matrix3d ret;
 
     ret.fill(0);
@@ -60,10 +62,12 @@ inline Eigen::Matrix3d skew(const Eigen::Vector3d& in) {
  * @param algebra the 3D vector
  * @return a 3*3 SO(3) matrix
  */
-inline Eigen::Matrix3d expm(const Eigen::Vector3d& algebra) {
+inline Eigen::Matrix3d expm(const Eigen::Vector3d& algebra)
+{
     const double angle = algebra.norm();
 
-    if (angle < std::numeric_limits<double>::epsilon()) {
+    if (angle < std::numeric_limits<double>::epsilon())
+    {
         return Eigen::Matrix3d::Identity();
     }
 
@@ -80,7 +84,8 @@ inline Eigen::Matrix3d expm(const Eigen::Vector3d& algebra) {
  * @param R the input rotation matrix
  * @return the algebra
  */
-inline Eigen::Vector3d logm(const Eigen::Matrix3d& R) {
+inline Eigen::Vector3d logm(const Eigen::Matrix3d& R)
+{
     Eigen::Vector3d ret;
 
     const double p1 = R(2, 1) - R(1, 2);
@@ -88,15 +93,18 @@ inline Eigen::Vector3d logm(const Eigen::Matrix3d& R) {
     const double p3 = R(1, 0) - R(0, 1);
 
     double costheta = (R.trace() - 1.0) / 2.0;
-    if (costheta < -1.0) {
+    if (costheta < -1.0)
+    {
         costheta = -1.0;
     }
 
-    if (costheta > 1.0) {
+    if (costheta > 1.0)
+    {
         costheta = 1.0;
     }
 
-    if (1.0 - costheta < 1e-24) {
+    if (1.0 - costheta < 1e-24)
+    {
         ret.fill(0);
         return ret;
     }
@@ -110,8 +118,7 @@ inline Eigen::Vector3d logm(const Eigen::Matrix3d& R) {
 
     return ret;
 }
-} //namespace SO3
-
+}  // namespace SO3
 
 namespace SE3 {
 
@@ -122,7 +129,8 @@ using Matrix = Eigen::Matrix<double, 4, 4, Eigen::RowMajor>;
  * @param algebra the 6D vector
  * @return a 4*4 SE(3) matrix
  */
-inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1>& algebra) {
+inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1>& algebra)
+{
     Eigen::Matrix4d ret;
     ret.setIdentity();
 
@@ -130,15 +138,16 @@ inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1>& algebra) {
     const Eigen::Vector3d vecT = algebra.block<3, 1>(3, 0);
 
     double angle = vecR.norm();
-    if (angle < std::numeric_limits<double>::epsilon()) {
+    if (angle < std::numeric_limits<double>::epsilon())
+    {
         ret.setIdentity();
         ret.block<3, 1>(0, 3) = vecT;
         return ret;
     }
 
     const Eigen::Matrix3d omega = SO3::skew(vecR);
-    const Eigen::Matrix3d V = Eigen::Matrix3d::Identity() + ((1.0 - cos(angle)) / (angle * angle))
-        * omega + ((angle - sin(angle)) / (angle * angle * angle)) * omega * omega;
+    const Eigen::Matrix3d V =
+      Eigen::Matrix3d::Identity() + ((1.0 - cos(angle)) / (angle * angle)) * omega + ((angle - sin(angle)) / (angle * angle * angle)) * omega * omega;
 
     ret.block<3, 3>(0, 0) = SO3::expm(vecR);
     ret.block<3, 1>(0, 3) = V * vecT;
@@ -146,6 +155,6 @@ inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1>& algebra) {
     return ret;
 }
 
-} //namespace SE3
+}  // namespace SE3
 
-} //namespace aliceVision
+}  // namespace aliceVision

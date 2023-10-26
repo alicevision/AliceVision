@@ -39,4 +39,4 @@ double parseAltitudeFromString(const std::string& alt, const std::string& altRef
  */
 double parseGPSFromString(const std::string& gpsDegrees, const std::string& gpsRef);
 
-}
+}  // namespace aliceVision

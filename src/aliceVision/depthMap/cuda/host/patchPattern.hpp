@@ -17,5 +17,5 @@ namespace depthMap {
  */
 void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams);
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

@@ -18,9 +18,15 @@ namespace depthMap {
  */
 struct CameraPair : public std::pair<int, int>
 {
-    CameraPair() : std::pair<int, int>(0, 0) {}
-    CameraPair(int i) : std::pair<int, int>(i, i) {}
-    CameraPair(int i, int j) : std::pair<int, int>(i, j) {}
+    CameraPair()
+      : std::pair<int, int>(0, 0)
+    {}
+    CameraPair(int i)
+      : std::pair<int, int>(i, i)
+    {}
+    CameraPair(int i, int j)
+      : std::pair<int, int>(i, j)
+    {}
 
     CameraPair& operator=(int i)
     {
@@ -29,18 +35,12 @@ struct CameraPair : public std::pair<int, int>
     }
 };
 
-inline bool operator==(const CameraPair& l, const CameraPair& r)
-{
-    return (l.first == r.first && l.second == r.second);
-}
+inline bool operator==(const CameraPair& l, const CameraPair& r) { return (l.first == r.first && l.second == r.second); }
 
-inline bool operator<(const CameraPair& l, const CameraPair& r)
-{
-    return (l.first < r.first || (l.first == r.first && l.second < r.second));
-}
+inline bool operator<(const CameraPair& l, const CameraPair& r) { return (l.first < r.first || (l.first == r.first && l.second < r.second)); }
 
 using LRUCameraCache = LRUCache<CameraPair>;
 using LRUCameraIdCache = LRUCache<int>;
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

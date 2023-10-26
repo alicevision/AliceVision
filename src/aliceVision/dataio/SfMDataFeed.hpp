@@ -11,14 +11,12 @@
 #include <string>
 #include <memory>
 
-namespace aliceVision
-{
-namespace dataio
-{
+namespace aliceVision {
+namespace dataio {
 
 class SfMDataFeed : public IFeed
 {
-public:
+  public:
     /**
      * @brief Empty constructor
      */
@@ -56,8 +54,7 @@ public:
      * is no intrinsics associated to \p imageRGB.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
-                   std::string& mediaPath, bool& hasIntrinsics);
+    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
     /**
      * @brief Provide a new float grayscale image from the feed
@@ -69,8 +66,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath,
-                   bool& hasIntrinsics);
+    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
     /**
      * @brief Provide a new grayscale image from the feed
@@ -82,8 +78,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
-                   std::string& mediaPath, bool& hasIntrinsics);
+    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
     std::size_t nbFrames() const;
 
@@ -109,10 +104,10 @@ public:
      */
     static bool isSupported(const std::string& extension);
 
-private:
+  private:
     class FeederImpl;
     std::unique_ptr<FeederImpl> _sfmDataFeed;
 };
 
-} // namespace dataio
-} // namespace aliceVision
+}  // namespace dataio
+}  // namespace aliceVision

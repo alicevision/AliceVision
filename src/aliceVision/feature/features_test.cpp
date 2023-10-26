@@ -35,89 +35,97 @@ typedef std::vector<Desc_T> Descs_T;
 
 static const int CARD = 12;
 
-BOOST_AUTO_TEST_CASE(featureIO_NON_EXISTING_FILE) {
+BOOST_AUTO_TEST_CASE(featureIO_NON_EXISTING_FILE)
+{
+    // Try to read a non-existing feature file
+    Feats_T vec_feats;
+    BOOST_CHECK_THROW(loadFeatsFromFile("x.feat", vec_feats), std::exception);
 
-  // Try to read a non-existing feature file
-  Feats_T vec_feats;
-  BOOST_CHECK_THROW(loadFeatsFromFile("x.feat", vec_feats), std::exception);
-
-  // Try to read a non-existing descriptor file
-  Descs_T vec_descs;
-  BOOST_CHECK_THROW(loadDescsFromFile("x.desc", vec_descs), std::exception);
-  BOOST_CHECK_THROW(loadDescsFromBinFile("x.desc", vec_descs), std::exception);
+    // Try to read a non-existing descriptor file
+    Descs_T vec_descs;
+    BOOST_CHECK_THROW(loadDescsFromFile("x.desc", vec_descs), std::exception);
+    BOOST_CHECK_THROW(loadDescsFromBinFile("x.desc", vec_descs), std::exception);
 }
 
-BOOST_AUTO_TEST_CASE(featureIO_ASCII) {
-  Feats_T vec_feats;
-  for(int i = 0; i < CARD; ++i)  {
-    vec_feats.push_back(Feature_T(i, i*2, i*3, i*4));
-  }
+BOOST_AUTO_TEST_CASE(featureIO_ASCII)
+{
+    Feats_T vec_feats;
+    for (int i = 0; i < CARD; ++i)
+    {
+        vec_feats.push_back(Feature_T(i, i * 2, i * 3, i * 4));
+    }
 
-  //Save them to a file
-  BOOST_CHECK_NO_THROW(saveFeatsToFile("tempFeats.feat", vec_feats));
+    // Save them to a file
+    BOOST_CHECK_NO_THROW(saveFeatsToFile("tempFeats.feat", vec_feats));
 
-  //Read the saved data and compare to input (to check write/read IO)
-  Feats_T vec_feats_read;
-  BOOST_CHECK_NO_THROW(loadFeatsFromFile("tempFeats.feat", vec_feats_read));
-  BOOST_CHECK_EQUAL(CARD, vec_feats_read.size());
+    // Read the saved data and compare to input (to check write/read IO)
+    Feats_T vec_feats_read;
+    BOOST_CHECK_NO_THROW(loadFeatsFromFile("tempFeats.feat", vec_feats_read));
+    BOOST_CHECK_EQUAL(CARD, vec_feats_read.size());
 
-  for(int i = 0; i < CARD; ++i) {
-    BOOST_CHECK_EQUAL(vec_feats[i], vec_feats_read[i]);
-    BOOST_CHECK_EQUAL(vec_feats[i].coords(), vec_feats_read[i].coords());
-    BOOST_CHECK_EQUAL(vec_feats[i].scale(), vec_feats_read[i].scale());
-    BOOST_CHECK_EQUAL(vec_feats[i].orientation(), vec_feats_read[i].orientation());
-  }
+    for (int i = 0; i < CARD; ++i)
+    {
+        BOOST_CHECK_EQUAL(vec_feats[i], vec_feats_read[i]);
+        BOOST_CHECK_EQUAL(vec_feats[i].coords(), vec_feats_read[i].coords());
+        BOOST_CHECK_EQUAL(vec_feats[i].scale(), vec_feats_read[i].scale());
+        BOOST_CHECK_EQUAL(vec_feats[i].orientation(), vec_feats_read[i].orientation());
+    }
 }
 
 //--
 //-- Descriptors interface test
 //--
-BOOST_AUTO_TEST_CASE(descriptorIO_ASCII) {
-  // Create an input series of descriptor
-  Descs_T vec_descs;
-  for(int i = 0; i < CARD; ++i)  {
-    Desc_T desc;
-    for (int j = 0; j < DESC_LENGTH; ++j)
-      desc[j] = i*DESC_LENGTH+j;
-    vec_descs.push_back(desc);
-  }
+BOOST_AUTO_TEST_CASE(descriptorIO_ASCII)
+{
+    // Create an input series of descriptor
+    Descs_T vec_descs;
+    for (int i = 0; i < CARD; ++i)
+    {
+        Desc_T desc;
+        for (int j = 0; j < DESC_LENGTH; ++j)
+            desc[j] = i * DESC_LENGTH + j;
+        vec_descs.push_back(desc);
+    }
 
-  //Save them to a file
-  BOOST_CHECK_NO_THROW(saveDescsToFile("tempDescs.desc", vec_descs));
+    // Save them to a file
+    BOOST_CHECK_NO_THROW(saveDescsToFile("tempDescs.desc", vec_descs));
 
-  //Read the saved data and compare to input (to check write/read IO)
-  Descs_T vec_descs_read;
-  BOOST_CHECK_NO_THROW(loadDescsFromFile("tempDescs.desc", vec_descs_read));
-  BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
+    // Read the saved data and compare to input (to check write/read IO)
+    Descs_T vec_descs_read;
+    BOOST_CHECK_NO_THROW(loadDescsFromFile("tempDescs.desc", vec_descs_read));
+    BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
 
-  for(int i = 0; i < CARD; ++i) {
-    for (int j = 0; j < DESC_LENGTH; ++j)
-      BOOST_CHECK_EQUAL(vec_descs[i][j], vec_descs_read[i][j]);
-  }
+    for (int i = 0; i < CARD; ++i)
+    {
+        for (int j = 0; j < DESC_LENGTH; ++j)
+            BOOST_CHECK_EQUAL(vec_descs[i][j], vec_descs_read[i][j]);
+    }
 }
 
-//Test binary export of descriptor
-BOOST_AUTO_TEST_CASE(descriptorIO_BINARY) {
-  // Create an input series of descriptor
-  Descs_T vec_descs;
-  for(int i = 0; i < CARD; ++i)
-  {
-    Desc_T desc;
-    for (int j = 0; j < DESC_LENGTH; ++j)
-      desc[j] = i*DESC_LENGTH+j;
-    vec_descs.push_back(desc);
-  }
+// Test binary export of descriptor
+BOOST_AUTO_TEST_CASE(descriptorIO_BINARY)
+{
+    // Create an input series of descriptor
+    Descs_T vec_descs;
+    for (int i = 0; i < CARD; ++i)
+    {
+        Desc_T desc;
+        for (int j = 0; j < DESC_LENGTH; ++j)
+            desc[j] = i * DESC_LENGTH + j;
+        vec_descs.push_back(desc);
+    }
 
-  //Save them to a file
-  BOOST_CHECK_NO_THROW(saveDescsToBinFile("tempDescsBin.desc", vec_descs));
+    // Save them to a file
+    BOOST_CHECK_NO_THROW(saveDescsToBinFile("tempDescsBin.desc", vec_descs));
 
-  //Read the saved data and compare to input (to check write/read IO)
-  Descs_T vec_descs_read;
-  BOOST_CHECK_NO_THROW(loadDescsFromBinFile("tempDescsBin.desc", vec_descs_read));
-  BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
+    // Read the saved data and compare to input (to check write/read IO)
+    Descs_T vec_descs_read;
+    BOOST_CHECK_NO_THROW(loadDescsFromBinFile("tempDescsBin.desc", vec_descs_read));
+    BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
 
-  for(int i = 0; i < CARD; ++i) {
-    for (int j = 0; j < DESC_LENGTH; ++j)
-      BOOST_CHECK_EQUAL(vec_descs[i][j], vec_descs_read[i][j]);
-  }
+    for (int i = 0; i < CARD; ++i)
+    {
+        for (int j = 0; j < DESC_LENGTH; ++j)
+            BOOST_CHECK_EQUAL(vec_descs[i][j], vec_descs_read[i][j]);
+    }
 }

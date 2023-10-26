@@ -8,13 +8,11 @@
 
 #include <OpenImageIO/imagebufalgo.h>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
-GaussianPyramidNoMask::GaussianPyramidNoMask(const size_t width_base, const size_t height_base,
-                                             const size_t limit_scales)
-    : _width_base(width_base)
-    , _height_base(height_base)
+GaussianPyramidNoMask::GaussianPyramidNoMask(const size_t width_base, const size_t height_base, const size_t limit_scales)
+  : _width_base(width_base),
+    _height_base(height_base)
 {
     /**
      * Compute optimal scale
@@ -29,9 +27,8 @@ GaussianPyramidNoMask::GaussianPyramidNoMask(const size_t width_base, const size
      **/
     size_t new_width = _width_base;
     size_t new_height = _height_base;
-    for(int i = 0; i < _scales; i++)
+    for (int i = 0; i < _scales; i++)
     {
-
         _pyramid_color.push_back(image::Image<image::RGBfColor>(new_width, new_height, true, image::RGBfColor(0)));
         _filter_buffer.push_back(image::Image<image::RGBfColor>(new_width, new_height, true, image::RGBfColor(0)));
         new_height /= 2;
@@ -41,19 +38,17 @@ GaussianPyramidNoMask::GaussianPyramidNoMask(const size_t width_base, const size
 
 bool GaussianPyramidNoMask::process(const image::Image<image::RGBfColor>& input)
 {
-
-    if(input.Height() != _pyramid_color[0].Height())
+    if (input.Height() != _pyramid_color[0].Height())
         return false;
-    if(input.Width() != _pyramid_color[0].Width())
+    if (input.Width() != _pyramid_color[0].Width())
         return false;
 
     /**
      * Build pyramid
      */
     _pyramid_color[0] = input;
-    for(int lvl = 0; lvl < _scales - 1; lvl++)
+    for (int lvl = 0; lvl < _scales - 1; lvl++)
     {
-
         const image::Image<image::RGBfColor>& source = _pyramid_color[lvl];
         image::Image<image::RGBfColor>& dst = _filter_buffer[lvl];
 
@@ -64,15 +59,13 @@ bool GaussianPyramidNoMask::process(const image::Image<image::RGBfColor>& input)
     return true;
 }
 
-bool GaussianPyramidNoMask::downscale(image::Image<image::RGBfColor>& output,
-                                      const image::Image<image::RGBfColor>& input)
+bool GaussianPyramidNoMask::downscale(image::Image<image::RGBfColor>& output, const image::Image<image::RGBfColor>& input)
 {
-
-    for(int i = 0; i < output.Height(); i++)
+    for (int i = 0; i < output.Height(); i++)
     {
         int ui = i * 2;
 
-        for(int j = 0; j < output.Width(); j++)
+        for (int j = 0; j < output.Width(); j++)
         {
             int uj = j * 2;
 
@@ -83,4 +76,4 @@ bool GaussianPyramidNoMask::downscale(image::Image<image::RGBfColor>& output,
     return true;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

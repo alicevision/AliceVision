@@ -17,21 +17,18 @@ bool IntrinsicScaleOffset::operator==(const IntrinsicBase& otherBase) const
     {
         return false;
     }
-    
+
     if (typeid(*this) != typeid(otherBase))
     {
         return false;
     }
-    
+
     const IntrinsicScaleOffset& other = static_cast<const IntrinsicScaleOffset&>(otherBase);
 
     return _scale.isApprox(other._scale) && _offset.isApprox(other._offset);
 }
 
-Vec2 IntrinsicScaleOffset::cam2ima(const Vec2& p) const
-{
-    return p.cwiseProduct(_scale) + getPrincipalPoint();
-}
+Vec2 IntrinsicScaleOffset::cam2ima(const Vec2& p) const { return p.cwiseProduct(_scale) + getPrincipalPoint(); }
 
 Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeCam2ImaWrtScale(const Vec2& p) const
 {
@@ -53,10 +50,7 @@ Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeCam2ImaWrtPoint() const
     return M;
 }
 
-Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeCam2ImaWrtPrincipalPoint() const
-{
-    return Eigen::Matrix2d::Identity();
-}
+Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeCam2ImaWrtPrincipalPoint() const { return Eigen::Matrix2d::Identity(); }
 
 Vec2 IntrinsicScaleOffset::ima2cam(const Vec2& p) const
 {
@@ -96,8 +90,8 @@ Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeIma2CamWrtPrincipalPoint() co
 {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
-    M(0, 0) = - 1.0 / _scale(0);
-    M(1, 1) = - 1.0 / _scale(1);
+    M(0, 0) = -1.0 / _scale(0);
+    M(1, 1) = -1.0 / _scale(1);
 
     return M;
 }
@@ -125,7 +119,7 @@ bool IntrinsicScaleOffset::updateFromParams(const std::vector<double>& params)
     return true;
 }
 
-bool IntrinsicScaleOffset::importFromParams(const std::vector<double>& params, const Version & inputVersion)
+bool IntrinsicScaleOffset::importFromParams(const std::vector<double>& params, const Version& inputVersion)
 {
     std::vector<double> paramsLocal;
     if (inputVersion < Version(1, 2, 0))
@@ -158,5 +152,5 @@ bool IntrinsicScaleOffset::importFromParams(const std::vector<double>& params, c
     return true;
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

@@ -12,14 +12,14 @@
 
 namespace aliceVision {
 
-template <class T>
+template<class T>
 bool downscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor)
 {
-    for(int i = 0; i < outputColor.Height(); i++)
+    for (int i = 0; i < outputColor.Height(); i++)
     {
         int di = i * 2;
 
-        for(int j = 0; j < outputColor.Width(); j++)
+        for (int j = 0; j < outputColor.Width(); j++)
         {
             int dj = j * 2;
 
@@ -30,21 +30,19 @@ bool downscale(aliceVision::image::Image<T>& outputColor, const aliceVision::ima
     return true;
 }
 
-
-template <class T>
+template<class T>
 bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor)
 {
-
     size_t width = inputColor.Width();
     size_t height = inputColor.Height();
     size_t dwidth = outputColor.Width();
     size_t dheight = outputColor.Height();
 
-    for(int i = 0; i < height - 1; i++)
+    for (int i = 0; i < height - 1; i++)
     {
         int di = i * 2;
 
-        for(int j = 0; j < width - 1; j++)
+        for (int j = 0; j < width - 1; j++)
         {
             int dj = j * 2;
 
@@ -106,30 +104,26 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
     return true;
 }
 
-template <class T>
-bool substract(aliceVision::image::Image<T>& AminusB, const aliceVision::image::Image<T>& A,
-               const aliceVision::image::Image<T>& B)
+template<class T>
+bool substract(aliceVision::image::Image<T>& AminusB, const aliceVision::image::Image<T>& A, const aliceVision::image::Image<T>& B)
 {
-
     size_t width = AminusB.Width();
     size_t height = AminusB.Height();
 
-    if(AminusB.size() != A.size())
+    if (AminusB.size() != A.size())
     {
         return false;
     }
 
-    if(AminusB.size() != B.size())
+    if (AminusB.size() != B.size())
     {
         return false;
     }
 
-    for(int i = 0; i < height; i++)
+    for (int i = 0; i < height; i++)
     {
-
-        for(int j = 0; j < width; j++)
+        for (int j = 0; j < width; j++)
         {
-
             AminusB(i, j) = A(i, j) - B(i, j);
         }
     }
@@ -137,30 +131,26 @@ bool substract(aliceVision::image::Image<T>& AminusB, const aliceVision::image::
     return true;
 }
 
-template <class T>
-bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Image<T>& A,
-              const aliceVision::image::Image<T>& B)
+template<class T>
+bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Image<T>& A, const aliceVision::image::Image<T>& B)
 {
-
     size_t width = AplusB.Width();
     size_t height = AplusB.Height();
 
-    if(AplusB.size() != A.size())
+    if (AplusB.size() != A.size())
     {
         return false;
     }
 
-    if(AplusB.size() != B.size())
+    if (AplusB.size() != B.size())
     {
         return false;
     }
 
-    for(int i = 0; i < height; i++)
+    for (int i = 0; i < height; i++)
     {
-
-        for(int j = 0; j < width; j++)
+        for (int j = 0; j < width; j++)
         {
-
             AplusB(i, j) = A(i, j) + B(i, j);
         }
     }
@@ -170,27 +160,31 @@ bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Im
 
 void removeNegativeValues(image::Image<image::RGBfColor>& img);
 
-template <class T>
-bool loopyImageAssign(image::Image<T> & output, const aliceVision::image::Image<T> & input, const BoundingBox & assignedOutputBb, const BoundingBox & assignedInputBb) 
+template<class T>
+bool loopyImageAssign(image::Image<T>& output,
+                      const aliceVision::image::Image<T>& input,
+                      const BoundingBox& assignedOutputBb,
+                      const BoundingBox& assignedInputBb)
 {
     BoundingBox inputBb = assignedInputBb;
     BoundingBox outputBb = assignedOutputBb;
 
-    if (inputBb.width != outputBb.width) 
+    if (inputBb.width != outputBb.width)
     {
         return false;
     }
 
-    if (inputBb.height != outputBb.height) 
+    if (inputBb.height != outputBb.height)
     {
         return false;
     }
 
-    if (assignedOutputBb.getRight() < output.Width()) 
+    if (assignedOutputBb.getRight() < output.Width())
     {
-        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) =
+          input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
     }
-    else 
+    else
     {
         int left_1 = assignedOutputBb.left;
         int left_2 = 0;
@@ -202,48 +196,53 @@ bool loopyImageAssign(image::Image<T> & output, const aliceVision::image::Image<
         inputBb.width = width1;
         outputBb.width = width1;
 
-        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) =
+          input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
 
         inputBb.left = width1;
         outputBb.left = 0;
 
-        //no overlap
+        // no overlap
         int width2_clamped = std::min(width2, left_1);
         inputBb.width = width2_clamped;
         outputBb.width = width2_clamped;
-        if (width2_clamped == 0) return true;
+        if (width2_clamped == 0)
+            return true;
 
-        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) =
+          input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
     }
 
     return true;
 }
 
-template <class T>
-bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::Image<T> & input, const BoundingBox & assignedOutputBb, const BoundingBox & assignedInputBb) 
+template<class T>
+bool loopyCachedImageAssign(CachedImage<T>& output,
+                            const aliceVision::image::Image<T>& input,
+                            const BoundingBox& assignedOutputBb,
+                            const BoundingBox& assignedInputBb)
 {
     BoundingBox inputBb = assignedInputBb;
     BoundingBox outputBb = assignedOutputBb;
 
-    if (inputBb.width != outputBb.width) 
+    if (inputBb.width != outputBb.width)
     {
         return false;
     }
 
-    if (inputBb.height != outputBb.height) 
+    if (inputBb.height != outputBb.height)
     {
         return false;
     }
 
-    if (assignedOutputBb.getRight() < output.getWidth()) 
+    if (assignedOutputBb.getRight() < output.getWidth())
     {
-        
-        if (!output.assign(input, inputBb, outputBb)) 
+        if (!output.assign(input, inputBb, outputBb))
         {
             return false;
         }
     }
-    else 
+    else
     {
         int left_1 = assignedOutputBb.left;
         int left_2 = 0;
@@ -254,8 +253,7 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
         outputBb.left = left_1;
         inputBb.width = width1;
         outputBb.width = width1;
-    
-        
+
         if (!output.assign(input, inputBb, outputBb))
         {
             return false;
@@ -264,12 +262,12 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
         inputBb.left = width1;
         outputBb.left = 0;
 
-        //no overlap
+        // no overlap
         int width2_clamped = std::min(width2, left_1);
         inputBb.width = width2_clamped;
         outputBb.width = width2_clamped;
-        if (width2_clamped == 0) return true;
-
+        if (width2_clamped == 0)
+            return true;
 
         if (!output.assign(input, inputBb, outputBb))
         {
@@ -280,9 +278,9 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
     return true;
 }
 
-template <class T>
-bool loopyImageExtract(image::Image<T> & output, const image::Image<T> & input, const BoundingBox & extractedInputBb) 
-{   
+template<class T>
+bool loopyImageExtract(image::Image<T>& output, const image::Image<T>& input, const BoundingBox& extractedInputBb)
+{
     BoundingBox outputBb;
     BoundingBox inputBb;
 
@@ -292,30 +290,31 @@ bool loopyImageExtract(image::Image<T> & output, const image::Image<T> & input, 
     outputBb.height = std::min(extractedInputBb.height, output.Height());
 
     inputBb = extractedInputBb;
-    
-    if (inputBb.getRight() < input.Width()) 
+
+    if (inputBb.getRight() < input.Width())
     {
-        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) =
+          input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
     }
-    else 
-    {        
+    else
+    {
         int availableWidth = output.Width();
-        while (availableWidth > 0)   
+        while (availableWidth > 0)
         {
             inputBb.clampRight(input.Width() - 1);
             int extractedWidth = std::min(inputBb.width, availableWidth);
-            
 
             inputBb.width = extractedWidth;
             outputBb.width = extractedWidth;
 
-            output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
-            
-            //Update the bouding box for output
+            output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) =
+              input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+
+            // Update the bouding box for output
             outputBb.left += extractedWidth;
             availableWidth -= extractedWidth;
-            
-            //All the input is available.
+
+            // All the input is available.
             inputBb.left = 0;
             inputBb.width = input.Width();
         }
@@ -324,9 +323,9 @@ bool loopyImageExtract(image::Image<T> & output, const image::Image<T> & input, 
     return true;
 }
 
-template <class T>
-bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<T> & input, const BoundingBox & extractedInputBb) 
-{   
+template<class T>
+bool loopyCachedImageExtract(aliceVision::image::Image<T>& output, CachedImage<T>& input, const BoundingBox& extractedInputBb)
+{
     BoundingBox outputBb;
     BoundingBox inputBb;
 
@@ -336,36 +335,35 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
     outputBb.height = std::min(extractedInputBb.height, output.Height());
 
     inputBb = extractedInputBb;
-    
-    if (inputBb.getRight() < input.getWidth()) 
+
+    if (inputBb.getRight() < input.getWidth())
     {
-        if (!input.extract(output, outputBb, inputBb)) 
+        if (!input.extract(output, outputBb, inputBb))
         {
             return false;
         }
     }
-    else 
-    {        
+    else
+    {
         int availableWidth = output.Width();
-        while (availableWidth > 0)   
+        while (availableWidth > 0)
         {
             inputBb.clampRight(input.getWidth() - 1);
             int extractedWidth = std::min(inputBb.width, availableWidth);
-            
 
             inputBb.width = extractedWidth;
             outputBb.width = extractedWidth;
 
-            if (!input.extract(output, outputBb, inputBb)) 
+            if (!input.extract(output, outputBb, inputBb))
             {
                 return false;
             }
-            
-            //Update the bouding box for output
+
+            // Update the bouding box for output
             outputBb.left += extractedWidth;
             availableWidth -= extractedWidth;
-            
-            //All the input is available.
+
+            // All the input is available.
             inputBb.left = 0;
             inputBb.width = input.getWidth();
         }
@@ -374,17 +372,17 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
     return true;
 }
 
-
-template <class T>
-bool makeImagePyramidCompatible(image::Image<T>& output, 
-                                int & outOffsetX, int & outOffsetY,
+template<class T>
+bool makeImagePyramidCompatible(image::Image<T>& output,
+                                int& outOffsetX,
+                                int& outOffsetY,
                                 const image::Image<T>& input,
-                                int offsetX, int offsetY, 
+                                int offsetX,
+                                int offsetY,
                                 size_t borderSize,
                                 size_t num_levels)
 {
-
-    if(num_levels == 0)
+    if (num_levels == 0)
     {
         return false;
     }
@@ -436,5 +434,4 @@ bool makeImagePyramidCompatible(image::Image<T>& output,
     return true;
 }
 
-
-} // namespace aliceVision
+}  // namespace aliceVision

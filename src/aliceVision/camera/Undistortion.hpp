@@ -19,21 +19,20 @@ namespace camera {
 
 /**
  * @brief Abstract class to represent the inverse operation of a distortion model.
- * 
+ *
  * Contrary to distortion models, the undistortion process is a pixel-to-pixel operation
  * and thus it does not depend on the camera's focal length.
- * 
+ *
  * Its main purpose is to undistort images before they are used in other calculations
  * so that we can virtually "remove" distortion parameters from the camera.
  */
 class Undistortion
 {
-public:
-
+  public:
     Undistortion(int width, int height)
     {
         setSize(width, height);
-        setOffset({ 0.0, 0.0 });
+        setOffset({0.0, 0.0});
     }
 
     virtual EDISTORTION getType() const = 0;
@@ -41,37 +40,22 @@ public:
     virtual Undistortion* clone() const = 0;
 
     // not virtual as child classes do not hold any data
-    bool operator==(const Undistortion& other) const
-    {
-        return _undistortionParams == other._undistortionParams;
-    }
+    bool operator==(const Undistortion& other) const { return _undistortionParams == other._undistortionParams; }
 
-    void setOffset(const Vec2& offset)
-    {
-        _offset = offset;
-    }
+    void setOffset(const Vec2& offset) { _offset = offset; }
 
     void setSize(int width, int height)
     {
-        _size = { width, height };
+        _size = {width, height};
         _diagonal = sqrt(width * width + height * height) * 0.5;
         _center = {width / 2, height / 2};
     }
 
-    inline Vec2 getOffset() const
-    { 
-        return _offset;
-    }
+    inline Vec2 getOffset() const { return _offset; }
 
-    Vec2 getSize() const
-    {
-        return _size;
-    }
+    Vec2 getSize() const { return _size; }
 
-    const std::vector<double>& getParameters() const
-    {
-        return _undistortionParams;
-    }
+    const std::vector<double>& getParameters() const { return _undistortionParams; }
 
     void setParameters(const std::vector<double>& params)
     {
@@ -86,20 +70,17 @@ public:
         }
     }
 
-    std::size_t getUndistortionParametersCount() const
-    {
-        return _undistortionParams.size();
-    }
-    
+    std::size_t getUndistortionParametersCount() const { return _undistortionParams.size(); }
+
     Vec2 undistort(const Vec2& p) const;
 
-    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortWrtParameters(const Vec2 &p);
+    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortWrtParameters(const Vec2& p);
 
-    Eigen::Matrix<double, 2, 2> getDerivativeUndistortWrtOffset(const Vec2 &p);
+    Eigen::Matrix<double, 2, 2> getDerivativeUndistortWrtOffset(const Vec2& p);
 
     /// add distortion (return p' such that undisto(p') = p)
     Vec2 inverse(const Vec2& p) const;
-    
+
     virtual Vec2 inverseNormalized(const Vec2& p) const = 0;
     virtual Vec2 undistortNormalized(const Vec2& p) const = 0;
     virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortNormalizedwrtParameters(const Vec2& p) const = 0;
@@ -107,7 +88,7 @@ public:
 
     virtual ~Undistortion() = default;
 
-protected:
+  protected:
     Vec2 _size;
     Vec2 _center;
     Vec2 _offset;
@@ -115,5 +96,5 @@ protected:
     std::vector<double> _undistortionParams{};
 };
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

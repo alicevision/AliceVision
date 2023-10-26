@@ -6,7 +6,6 @@
 
 #pragma once
 
-
 namespace aliceVision {
 
 namespace mesh {
@@ -22,5 +21,5 @@ class MultiViewParams;
 
 void createRefMeshFromDenseSfMData(mesh::Mesh& outRefMesh, const sfmData::SfMData& sfmData, const mvsUtils::MultiViewParams& mp);
 
-} // namespace mvsUtils
-} // namespace aliceVision
+}  // namespace mvsUtils
+}  // namespace aliceVision

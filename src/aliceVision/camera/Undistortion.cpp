@@ -13,8 +13,8 @@ Vec2 Undistortion::undistort(const Vec2& p) const
 {
     Vec2 centered;
 
-    centered(0) = p(0) - _center(0) -_offset(0);
-    centered(1) = p(1) - _center(1) -_offset(1);
+    centered(0) = p(0) - _center(0) - _offset(0);
+    centered(1) = p(1) - _center(1) - _offset(1);
 
     Vec2 normalized;
     normalized(0) = centered(0) / _diagonal;
@@ -29,7 +29,7 @@ Vec2 Undistortion::undistort(const Vec2& p) const
     return unnormalized;
 }
 
-Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion::getDerivativeUndistortWrtParameters(const Vec2 &p)
+Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion::getDerivativeUndistortWrtParameters(const Vec2& p)
 {
     Vec2 centered = p - _center - _offset;
     Vec2 normalized = centered / _diagonal;
@@ -45,7 +45,7 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion::getDerivativeUndistortWrt
     return d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtParameters(normalized);
 }
 
-Eigen::Matrix<double, 2, 2> Undistortion::getDerivativeUndistortWrtOffset(const Vec2 &p)
+Eigen::Matrix<double, 2, 2> Undistortion::getDerivativeUndistortWrtOffset(const Vec2& p)
 {
     Vec2 centered = p - _center - _offset;
     Vec2 normalized = centered / _diagonal;
@@ -64,7 +64,8 @@ Eigen::Matrix<double, 2, 2> Undistortion::getDerivativeUndistortWrtOffset(const 
     d_normalized_d_centered(1, 0) = 0;
     d_normalized_d_centered(1, 1) = 1.0 / _diagonal;
 
-    return Eigen::Matrix2d::Identity() + d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtPoint(normalized) * d_normalized_d_centered * -1.0;
+    return Eigen::Matrix2d::Identity() +
+           d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtPoint(normalized) * d_normalized_d_centered * -1.0;
 }
 
 Vec2 Undistortion::inverse(const Vec2& p) const
@@ -87,5 +88,5 @@ Vec2 Undistortion::inverse(const Vec2& p) const
     return unnormalized;
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

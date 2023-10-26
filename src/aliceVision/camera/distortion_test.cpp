@@ -33,13 +33,13 @@ BOOST_AUTO_TEST_CASE(distortion_distort_undistort)
 
     const double epsilon = 1e-4;
     const std::size_t numPts{1000};
-    for(std::size_t i = 0; i < numPts; ++i)
+    for (std::size_t i = 0; i < numPts; ++i)
     {
         // random point in [-lim, lim]x[-lim, lim]
         const double lim{0.8};
-        const Vec2 ptImage = lim*Vec2::Random();
+        const Vec2 ptImage = lim * Vec2::Random();
 
-        for(const auto& model : distortionsModels)
+        for (const auto& model : distortionsModels)
         {
             const auto distorted = model->addDistortion(ptImage);
             const auto undistorted = model->removeDistortion(distorted);

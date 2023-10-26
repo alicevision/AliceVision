@@ -21,7 +21,7 @@ namespace depthMap {
 
 /**
  * @brief Copy an image from device memory to host memory and write on disk.
- * @note  This function can be useful for code analysis and debugging. 
+ * @note  This function can be useful for code analysis and debugging.
  * @param[in] in_img_dmp the image in device memory
  * @param[in] path the path of the output image on disk
  */
@@ -79,13 +79,13 @@ void writeNormalMapFiltered(int rc,
  * @param[in] name the export filename suffix
  */
 void writeDepthThicknessMap(int rc,
-                           const mvsUtils::MultiViewParams& mp,
-                           const mvsUtils::TileParams& tileParams,
-                           const ROI& roi,
-                           const CudaDeviceMemoryPitched<float2, 2>& in_depthThicknessMap_dmp,
-                           int scale,
-                           int step,
-                           const std::string& name = "");
+                            const mvsUtils::MultiViewParams& mp,
+                            const mvsUtils::TileParams& tileParams,
+                            const ROI& roi,
+                            const CudaDeviceMemoryPitched<float2, 2>& in_depthThicknessMap_dmp,
+                            int scale,
+                            int step,
+                            const std::string& name = "");
 
 /**
  * @brief Write a depth/pixSize map on disk from device memory.
@@ -121,7 +121,7 @@ void writeDepthPixSizeMap(int rc,
 void writeDepthSimMap(int rc,
                       const mvsUtils::MultiViewParams& mp,
                       const mvsUtils::TileParams& tileParams,
-                      const ROI& roi, 
+                      const ROI& roi,
                       const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
                       int scale,
                       int step,
@@ -163,11 +163,7 @@ void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, floa
  * @param[in] step the normal map step factor
  * @param[in] name the export filename suffix
  */
-void mergeNormalMapTiles(int rc,
-                         const mvsUtils::MultiViewParams& mp,
-                         int scale,
-                         int step,
-                         const std::string& name = "");
+void mergeNormalMapTiles(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const std::string& name = "");
 
 /**
  * @brief Merge depth/thickness map tiles on disk.
@@ -177,11 +173,7 @@ void mergeNormalMapTiles(int rc,
  * @param[in] step the depth/thickness map step factor
  * @param[in] name the export filename suffix
  */
-void mergeDepthThicknessMapTiles(int rc,
-                                const mvsUtils::MultiViewParams& mp,
-                                int scale,
-                                int step,
-                                const std::string& name = "");
+void mergeDepthThicknessMapTiles(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const std::string& name = "");
 
 /**
  * @brief Merge depth/pixSize map tiles on disk.
@@ -191,11 +183,7 @@ void mergeDepthThicknessMapTiles(int rc,
  * @param[in] step the depth/pixSize map step factor
  * @param[in] name the export filename suffix
  */
-void mergeDepthPixSizeMapTiles(int rc,
-                               const mvsUtils::MultiViewParams& mp,
-                               int scale,
-                               int step,
-                               const std::string& name = "");
+void mergeDepthPixSizeMapTiles(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const std::string& name = "");
 
 /**
  * @brief Merge depth/similarity map tiles on disk.
@@ -205,11 +193,7 @@ void mergeDepthPixSizeMapTiles(int rc,
  * @param[in] step the depth/similarity map step factor
  * @param[in] name the export filename suffix
  */
-void mergeDepthSimMapTiles(int rc,
-                           const mvsUtils::MultiViewParams& mp,
-                           int scale,
-                           int step,
-                           const std::string& name = "");
+void mergeDepthSimMapTiles(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const std::string& name = "");
 
 /**
  * @brief Build and write a debug OBJ file with all tiles areas
@@ -223,6 +207,5 @@ void exportDepthSimMapTilePatternObj(int rc,
                                      const std::vector<ROI>& tileRoiList,
                                      const std::vector<std::pair<float, float>>& tileMinMaxDepthsList);
 
-} // namespace depthMap
-} // namespace aliceVision
-
+}  // namespace depthMap
+}  // namespace aliceVision

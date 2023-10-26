@@ -10,14 +10,12 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
 
-namespace aliceVision
-{
-namespace dataio
-{
+namespace aliceVision {
+namespace dataio {
 
 class IFeed
 {
-public:
+  public:
     IFeed(){};
 
     /**
@@ -35,8 +33,7 @@ public:
      * is no intrinsics associated to \p imageRGB.
      * @return True if there is a new image, false otherwise.
      */
-    virtual bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics,
-                           std::string& mediaPath, bool& hasIntrinsics) = 0;
+    virtual bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics) = 0;
 
     /**
      * @brief Provide a new float grayscale image from the feed
@@ -47,8 +44,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    virtual bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics,
-                           std::string& mediaPath, bool& hasIntrinsics) = 0;
+    virtual bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics) = 0;
 
     /**
      * @brief Provide a new grayscale image from the feed
@@ -59,8 +55,7 @@ public:
      * is no intrinsics associated to \p imageGray.
      * @return True if there is a new image, false otherwise.
      */
-    virtual bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics,
-                           std::string& mediaPath, bool& hasIntrinsics) = 0;
+    virtual bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics) = 0;
 
     virtual std::size_t nbFrames() const = 0;
 
@@ -79,5 +74,5 @@ public:
  */
 void readCalibrationFromFile(const std::string& filename, camera::Pinhole& camIntrinsics);
 
-} // namespace dataio
-} // namespace aliceVision
+}  // namespace dataio
+}  // namespace aliceVision

@@ -33,41 +33,41 @@ namespace camera {
  * @param[in] params Distortion parameters.
  * @return Shared pointer of initialized distortion object.
  */
-inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType,
-    std::initializer_list<double> params = {})
+inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType, std::initializer_list<double> params = {})
 {
     std::shared_ptr<Distortion> distortion = nullptr;
 
     switch (distortionType)
     {
-    case EDISTORTION::DISTORTION_RADIALK1:
-        distortion = std::make_shared<DistortionRadialK1>();
-        break;
-    case EDISTORTION::DISTORTION_RADIALK3:
-        distortion = std::make_shared<DistortionRadialK3>();
-        break;
-    case EDISTORTION::DISTORTION_RADIALK3PT:
-        distortion = std::make_shared<DistortionRadialK3PT>();
-        break;
-    case EDISTORTION::DISTORTION_BROWN:
-        distortion = std::make_shared<DistortionBrown>();
-        break;
-    case EDISTORTION::DISTORTION_FISHEYE:
-        distortion = std::make_shared<DistortionFisheye>();
-        break;
-    case EDISTORTION::DISTORTION_FISHEYE1:
-        distortion = std::make_shared<DistortionFisheye1>();
-        break;
-    case EDISTORTION::DISTORTION_3DECLASSICLD:
-        distortion = std::make_shared<Distortion3DEClassicLD>();
-        break;
-    case EDISTORTION::DISTORTION_3DERADIAL4:
-        distortion = std::make_shared<Distortion3DERadial4>();
-        break;
-    case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
-        distortion = std::make_shared<Distortion3DEAnamorphic4>();
-        break;
-    default: break;
+        case EDISTORTION::DISTORTION_RADIALK1:
+            distortion = std::make_shared<DistortionRadialK1>();
+            break;
+        case EDISTORTION::DISTORTION_RADIALK3:
+            distortion = std::make_shared<DistortionRadialK3>();
+            break;
+        case EDISTORTION::DISTORTION_RADIALK3PT:
+            distortion = std::make_shared<DistortionRadialK3PT>();
+            break;
+        case EDISTORTION::DISTORTION_BROWN:
+            distortion = std::make_shared<DistortionBrown>();
+            break;
+        case EDISTORTION::DISTORTION_FISHEYE:
+            distortion = std::make_shared<DistortionFisheye>();
+            break;
+        case EDISTORTION::DISTORTION_FISHEYE1:
+            distortion = std::make_shared<DistortionFisheye1>();
+            break;
+        case EDISTORTION::DISTORTION_3DECLASSICLD:
+            distortion = std::make_shared<Distortion3DEClassicLD>();
+            break;
+        case EDISTORTION::DISTORTION_3DERADIAL4:
+            distortion = std::make_shared<Distortion3DERadial4>();
+            break;
+        case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+            distortion = std::make_shared<Distortion3DEAnamorphic4>();
+            break;
+        default:
+            break;
     }
 
     if (distortion && params.size() > 0)
@@ -90,17 +90,19 @@ inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType,
  * @return Shared pointer of initialized undistortion object.
  */
 inline std::shared_ptr<Undistortion> createUndistortion(EDISTORTION distortionType,
-    unsigned int w = 0, unsigned int h = 0,
-    std::initializer_list<double> params = {})
+                                                        unsigned int w = 0,
+                                                        unsigned int h = 0,
+                                                        std::initializer_list<double> params = {})
 {
     std::shared_ptr<Undistortion> undistortion = nullptr;
 
     switch (distortionType)
     {
-    case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
-        undistortion = std::make_shared<Undistortion3DEAnamorphic4>(w, h);
-        break;
-    default: break;
+        case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+            undistortion = std::make_shared<Undistortion3DEAnamorphic4>(w, h);
+            break;
+        default:
+            break;
     }
 
     if (undistortion && params.size() > 0)
@@ -125,18 +127,30 @@ inline EDISTORTION getDistortionType(EINTRINSIC intrinsicType)
 {
     switch (intrinsicType)
     {
-    case EINTRINSIC::PINHOLE_CAMERA:                return EDISTORTION::NONE;
-    case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:        return EDISTORTION::DISTORTION_RADIALK1;
-    case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:        return EDISTORTION::DISTORTION_RADIALK3;
-    case EINTRINSIC::PINHOLE_CAMERA_BROWN:          return EDISTORTION::DISTORTION_BROWN;
-    case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:        return EDISTORTION::DISTORTION_FISHEYE;
-    case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:       return EDISTORTION::DISTORTION_FISHEYE1;
-    case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4: return EDISTORTION::DISTORTION_3DEANAMORPHIC4;
-    case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:   return EDISTORTION::DISTORTION_3DECLASSICLD;
-    case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:     return EDISTORTION::DISTORTION_3DERADIAL4;
-    case EINTRINSIC::EQUIDISTANT_CAMERA:            return EDISTORTION::NONE;
-    case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:    return EDISTORTION::DISTORTION_RADIALK3PT;
-    default: break;
+        case EINTRINSIC::PINHOLE_CAMERA:
+            return EDISTORTION::NONE;
+        case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
+            return EDISTORTION::DISTORTION_RADIALK1;
+        case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
+            return EDISTORTION::DISTORTION_RADIALK3;
+        case EINTRINSIC::PINHOLE_CAMERA_BROWN:
+            return EDISTORTION::DISTORTION_BROWN;
+        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
+            return EDISTORTION::DISTORTION_FISHEYE;
+        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
+            return EDISTORTION::DISTORTION_FISHEYE1;
+        case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
+            return EDISTORTION::DISTORTION_3DEANAMORPHIC4;
+        case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
+            return EDISTORTION::DISTORTION_3DECLASSICLD;
+        case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
+            return EDISTORTION::DISTORTION_3DERADIAL4;
+        case EINTRINSIC::EQUIDISTANT_CAMERA:
+            return EDISTORTION::NONE;
+        case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:
+            return EDISTORTION::DISTORTION_RADIALK3PT;
+        default:
+            break;
     }
 
     throw std::out_of_range("Invalid intrinsic type");
@@ -154,30 +168,24 @@ inline EDISTORTION getDistortionType(EINTRINSIC intrinsicType)
  * @return Shared pointer of initialized intrinsic object.
  */
 inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
-    unsigned int w = 0, unsigned int h = 0,
-    double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
-    double offsetX = 0.0, double offsetY = 0.0)
+                                                      unsigned int w = 0,
+                                                      unsigned int h = 0,
+                                                      double focalLengthPixX = 0.0,
+                                                      double focalLengthPixY = 0.0,
+                                                      double offsetX = 0.0,
+                                                      double offsetY = 0.0)
 {
     auto distortion = createDistortion(getDistortionType(intrinsicType));
     auto undistortion = createUndistortion(getDistortionType(intrinsicType), w, h);
 
     if (isPinhole(intrinsicType))
     {
-        return std::make_shared<Pinhole>(
-            w, h,
-            focalLengthPixX, focalLengthPixY,
-            offsetX, offsetY,
-            distortion,
-            undistortion);
+        return std::make_shared<Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, undistortion);
     }
 
     if (isEquidistant(intrinsicType))
     {
-        return std::make_shared<Equidistant>(
-            w, h,
-            focalLengthPixX,
-            offsetX, offsetY,
-            distortion);
+        return std::make_shared<Equidistant>(w, h, focalLengthPixX, offsetX, offsetY, distortion);
     }
 
     return nullptr;
@@ -196,10 +204,13 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
  * @return Shared pointer of initialized pinhole camera object.
  */
 inline std::shared_ptr<Pinhole> createPinhole(EINTRINSIC intrinsicType,
-    unsigned int w = 0, unsigned int h = 0,
-    double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
-    double offsetX = 0.0, double offsetY = 0.0,
-    std::initializer_list<double> distortionParams = {})
+                                              unsigned int w = 0,
+                                              unsigned int h = 0,
+                                              double focalLengthPixX = 0.0,
+                                              double focalLengthPixY = 0.0,
+                                              double offsetX = 0.0,
+                                              double offsetY = 0.0,
+                                              std::initializer_list<double> distortionParams = {})
 {
     if (!isPinhole(intrinsicType))
     {
@@ -209,12 +220,7 @@ inline std::shared_ptr<Pinhole> createPinhole(EINTRINSIC intrinsicType,
     auto distortion = createDistortion(getDistortionType(intrinsicType), distortionParams);
     auto undistortion = createUndistortion(getDistortionType(intrinsicType), w, h, distortionParams);
 
-    return std::make_shared<Pinhole>(
-        w, h,
-        focalLengthPixX, focalLengthPixY,
-        offsetX, offsetY,
-        distortion,
-        undistortion);
+    return std::make_shared<Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, undistortion);
 }
 
 /**
@@ -230,10 +236,12 @@ inline std::shared_ptr<Pinhole> createPinhole(EINTRINSIC intrinsicType,
  * @return Shared pointer of initialized equidistant camera object.
  */
 inline std::shared_ptr<Equidistant> createEquidistant(EINTRINSIC intrinsicType,
-    unsigned int w = 0, unsigned int h = 0,
-    double focalLengthPix = 0.0,
-    double offsetX = 0.0, double offsetY = 0.0,
-    std::initializer_list<double> distortionParams = {})
+                                                      unsigned int w = 0,
+                                                      unsigned int h = 0,
+                                                      double focalLengthPix = 0.0,
+                                                      double offsetX = 0.0,
+                                                      double offsetY = 0.0,
+                                                      std::initializer_list<double> distortionParams = {})
 {
     if (!isEquidistant(intrinsicType))
     {
@@ -242,12 +250,8 @@ inline std::shared_ptr<Equidistant> createEquidistant(EINTRINSIC intrinsicType,
 
     auto distortion = createDistortion(getDistortionType(intrinsicType), distortionParams);
 
-    return std::make_shared<Equidistant>(
-        w, h,
-        focalLengthPix,
-        offsetX, offsetY,
-        distortion);
+    return std::make_shared<Equidistant>(w, h, focalLengthPix, offsetX, offsetY, distortion);
 }
 
-} // namespace camera
-} // namespace aliceVision
+}  // namespace camera
+}  // namespace aliceVision

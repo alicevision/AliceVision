@@ -7,8 +7,5 @@
 #include "MaxFlow_CSR.hpp"
 
 namespace aliceVision {
-namespace fuseCut {
-
-} // namespace fuseCut
-} // namespace aliceVision
-
+namespace fuseCut {}  // namespace fuseCut
+}  // namespace aliceVision

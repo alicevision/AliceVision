@@ -6,8 +6,7 @@
 
 #include "feathering.hpp"
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
                 const aliceVision::image::Image<image::RGBfColor>& color,
@@ -30,42 +29,41 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
         image::Image<image::RGBfColor> half(width / 2, height / 2);
         image::Image<unsigned char> half_mask(width / 2, height / 2);
 
-        for(int i = 0; i < half.Height(); i++)
+        for (int i = 0; i < half.Height(); i++)
         {
-
             int di = i * 2;
-            for(int j = 0; j < half.Width(); j++)
+            for (int j = 0; j < half.Width(); j++)
             {
                 int dj = j * 2;
 
                 int count = 0;
                 half(i, j) = image::RGBfColor(0.0, 0.0, 0.0);
 
-                if(src_mask(di, dj))
+                if (src_mask(di, dj))
                 {
                     half(i, j) += src(di, dj);
                     count++;
                 }
 
-                if(src_mask(di, dj + 1))
+                if (src_mask(di, dj + 1))
                 {
                     half(i, j) += src(di, dj + 1);
                     count++;
                 }
 
-                if(src_mask(di + 1, dj))
+                if (src_mask(di + 1, dj))
                 {
                     half(i, j) += src(di + 1, dj);
                     count++;
                 }
 
-                if(src_mask(di + 1, dj + 1))
+                if (src_mask(di + 1, dj + 1))
                 {
                     half(i, j) += src(di + 1, dj + 1);
                     count++;
                 }
 
-                if(count > 0)
+                if (count > 0)
                 {
                     half(i, j) /= float(count);
                     half_mask(i, j) = 1;
@@ -86,10 +84,10 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
         lvl++;
     }
 
-    //Now we want to make sure we have no masked pixel with undefined color
-    //So we compute the mean of all valid pixels, and set the invalid pixels to this value
-    image::Image<image::RGBfColor> & lastImage = feathering[feathering.size() - 1];
-    image::Image<unsigned char> & lastMask = feathering_mask[feathering_mask.size() - 1];
+    // Now we want to make sure we have no masked pixel with undefined color
+    // So we compute the mean of all valid pixels, and set the invalid pixels to this value
+    image::Image<image::RGBfColor>& lastImage = feathering[feathering.size() - 1];
+    image::Image<unsigned char>& lastMask = feathering_mask[feathering_mask.size() - 1];
     image::RGBfColor sum(0.0f);
     int count = 0;
     for (int y = 0; y < height; y++)
@@ -106,7 +104,7 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
         }
     }
 
-    if (count > 0) 
+    if (count > 0)
     {
         image::RGBfColor mean;
         mean.r() = sum.r() / float(count);
@@ -126,32 +124,30 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
         }
     }
 
-
-    //Now, level by level, we fill masked pixel with the estimated value from
-    //The lower level.
-    for(int lvl = feathering.size() - 2; lvl >= 0; lvl--)
+    // Now, level by level, we fill masked pixel with the estimated value from
+    // The lower level.
+    for (int lvl = feathering.size() - 2; lvl >= 0; lvl--)
     {
-
         image::Image<image::RGBfColor>& src = feathering[lvl];
         image::Image<unsigned char>& src_mask = feathering_mask[lvl];
         image::Image<image::RGBfColor>& ref = feathering[lvl + 1];
         image::Image<unsigned char>& ref_mask = feathering_mask[lvl + 1];
 
-        for(int i = 0; i < src_mask.Height(); i++)
+        for (int i = 0; i < src_mask.Height(); i++)
         {
-            for(int j = 0; j < src_mask.Width(); j++)
+            for (int j = 0; j < src_mask.Width(); j++)
             {
-                if(!src_mask(i, j))
+                if (!src_mask(i, j))
                 {
                     int mi = i / 2;
                     int mj = j / 2;
 
-                    if(mi >= ref_mask.Height())
+                    if (mi >= ref_mask.Height())
                     {
                         mi = ref_mask.Height() - 1;
                     }
 
-                    if(mj >= ref_mask.Width())
+                    if (mj >= ref_mask.Width())
                     {
                         mj = ref_mask.Width() - 1;
                     }
@@ -168,33 +164,32 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
     return true;
 }
 
-
-bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsigned char> & inputMask) 
+bool feathering(CachedImage<image::RGBfColor>& input_output, CachedImage<unsigned char>& inputMask)
 {
-    if (input_output.getTileSize() < 2) 
+    if (input_output.getTileSize() < 2)
     {
         return false;
     }
 
-    if (input_output.getTileSize() != inputMask.getTileSize()) 
+    if (input_output.getTileSize() != inputMask.getTileSize())
     {
         return false;
     }
 
-    if (input_output.getWidth() != inputMask.getWidth()) 
+    if (input_output.getWidth() != inputMask.getWidth())
     {
         return false;
     }
 
-    if (input_output.getHeight() != inputMask.getHeight()) 
+    if (input_output.getHeight() != inputMask.getHeight())
     {
         return false;
     }
 
-    std::vector<std::vector<image::CachedTile::smart_pointer>> & tilesColor = input_output.getTiles();
-    std::vector<std::vector<image::CachedTile::smart_pointer>> & tilesMask = inputMask.getTiles();
+    std::vector<std::vector<image::CachedTile::smart_pointer>>& tilesColor = input_output.getTiles();
+    std::vector<std::vector<image::CachedTile::smart_pointer>>& tilesMask = inputMask.getTiles();
 
-    if (tilesColor.empty()) 
+    if (tilesColor.empty())
     {
         return false;
     }
@@ -203,7 +198,7 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
     int gridWidth = tilesColor[0].size();
     int currentSize = input_output.getTileSize();
 
-    //Make sure the grid has a pow2 size, and is square
+    // Make sure the grid has a pow2 size, and is square
     gridWidth = pow(2.0, std::ceil(std::log2(float(gridWidth))));
     gridHeight = pow(2.0, std::ceil(std::log2(float(gridHeight))));
     int gridSize = std::max(gridWidth, gridHeight);
@@ -217,31 +212,31 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
 
     /*Build the grid color image */
     for (int i = 0; i < tilesColor.size(); i++)
-    {   
+    {
         std::vector<image::CachedTile::smart_pointer> rowColor = tilesColor[i];
         std::vector<image::CachedTile::smart_pointer> rowMask = tilesMask[i];
 
         for (int j = 0; j < rowColor.size(); j++)
         {
-            if (!CachedImage<image::RGBfColor>::getTileAsImage(colorTile, rowColor[j])) 
+            if (!CachedImage<image::RGBfColor>::getTileAsImage(colorTile, rowColor[j]))
             {
                 return false;
             }
 
-            if (!CachedImage<unsigned char>::getTileAsImage(maskTile, rowMask[j])) 
+            if (!CachedImage<unsigned char>::getTileAsImage(maskTile, rowMask[j]))
             {
                 return false;
             }
 
-            while (1) 
+            while (1)
             {
                 image::Image<image::RGBfColor> smallerTile(colorTile.Width() / 2, colorTile.Height() / 2);
                 image::Image<unsigned char> smallerMask(maskTile.Width() / 2, maskTile.Height() / 2);
 
-                for(int y = 0; y < smallerTile.Height(); y++)
+                for (int y = 0; y < smallerTile.Height(); y++)
                 {
                     int dy = y * 2;
-                    for(int x = 0; x < smallerTile.Width(); x++)
+                    for (int x = 0; x < smallerTile.Width(); x++)
                     {
                         int dx = x * 2;
 
@@ -249,31 +244,31 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
 
                         smallerTile(y, x) = image::RGBfColor(0.0, 0.0, 0.0);
 
-                        if(maskTile(dy, dx))
+                        if (maskTile(dy, dx))
                         {
                             smallerTile(y, x) += colorTile(dy, dx);
                             count++;
                         }
 
-                        if(maskTile(dy, dx + 1))
+                        if (maskTile(dy, dx + 1))
                         {
                             smallerTile(y, x) += colorTile(dy, dx + 1);
                             count++;
                         }
 
-                        if(maskTile(dy + 1, dx))
+                        if (maskTile(dy + 1, dx))
                         {
                             smallerTile(y, x) += colorTile(dy + 1, dx);
                             count++;
                         }
 
-                        if(maskTile(dy + 1, dx + 1))
+                        if (maskTile(dy + 1, dx + 1))
                         {
                             smallerTile(y, x) += colorTile(dy + 1, dx + 1);
                             count++;
                         }
 
-                        if(count > 0)
+                        if (count > 0)
                         {
                             smallerTile(y, x) /= float(count);
                             smallerMask(y, x) = 1;
@@ -298,25 +293,24 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
         }
     }
 
-
-    if (!feathering(featheredGrid, colorGrid, maskGrid)) 
+    if (!feathering(featheredGrid, colorGrid, maskGrid))
     {
         return false;
     }
-    
+
     for (int i = 0; i < tilesColor.size(); i++)
-    {   
+    {
         std::vector<image::CachedTile::smart_pointer> rowColor = tilesColor[i];
         std::vector<image::CachedTile::smart_pointer> rowMask = tilesMask[i];
 
         for (int j = 0; j < rowColor.size(); j++)
         {
-            if (!CachedImage<image::RGBfColor>::getTileAsImage(colorTile, rowColor[j])) 
+            if (!CachedImage<image::RGBfColor>::getTileAsImage(colorTile, rowColor[j]))
             {
                 return false;
             }
 
-            if (!CachedImage<unsigned char>::getTileAsImage(maskTile, rowMask[j])) 
+            if (!CachedImage<unsigned char>::getTileAsImage(maskTile, rowMask[j]))
             {
                 return false;
             }
@@ -327,18 +321,18 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
             pyramid_colors.push_back(colorTile);
             pyramid_masks.push_back(maskTile);
 
-            while (1) 
+            while (1)
             {
-                image::Image<image::RGBfColor> & largerTile = pyramid_colors[pyramid_colors.size() - 1];
-                image::Image<unsigned char> & largerMask = pyramid_masks[pyramid_masks.size() - 1];
+                image::Image<image::RGBfColor>& largerTile = pyramid_colors[pyramid_colors.size() - 1];
+                image::Image<unsigned char>& largerMask = pyramid_masks[pyramid_masks.size() - 1];
 
                 image::Image<image::RGBfColor> smallerTile(largerTile.Width() / 2, largerTile.Height() / 2);
                 image::Image<unsigned char> smallerMask(largerMask.Width() / 2, largerMask.Height() / 2);
 
-                for(int y = 0; y < smallerTile.Height(); y++)
+                for (int y = 0; y < smallerTile.Height(); y++)
                 {
                     int dy = y * 2;
-                    for(int x = 0; x < smallerTile.Width(); x++)
+                    for (int x = 0; x < smallerTile.Width(); x++)
                     {
                         int dx = x * 2;
 
@@ -346,31 +340,31 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
 
                         smallerTile(y, x) = image::RGBfColor(0.0, 0.0, 0.0);
 
-                        if(largerMask(dy, dx))
+                        if (largerMask(dy, dx))
                         {
                             smallerTile(y, x) += largerTile(dy, dx);
                             count++;
                         }
 
-                        if(largerMask(dy, dx + 1))
+                        if (largerMask(dy, dx + 1))
                         {
                             smallerTile(y, x) += largerTile(dy, dx + 1);
                             count++;
                         }
 
-                        if(largerMask(dy + 1, dx))
+                        if (largerMask(dy + 1, dx))
                         {
                             smallerTile(y, x) += largerTile(dy + 1, dx);
                             count++;
                         }
 
-                        if(largerMask(dy + 1, dx + 1))
+                        if (largerMask(dy + 1, dx + 1))
                         {
                             smallerTile(y, x) += largerTile(dy + 1, dx + 1);
                             count++;
                         }
 
-                        if(count > 0)
+                        if (count > 0)
                         {
                             smallerTile(y, x) /= float(count);
                             smallerMask(y, x) = 1;
@@ -382,49 +376,46 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
                     }
                 }
 
-
                 pyramid_colors.push_back(smallerTile);
                 pyramid_masks.push_back(smallerMask);
-                
+
                 if (smallerTile.Width() < 2 || smallerTile.Height() < 2)
                 {
                     break;
                 }
             }
 
-            image::Image<image::RGBfColor> & img = pyramid_colors[pyramid_colors.size() - 1];
-            image::Image<unsigned char> & mask = pyramid_masks[pyramid_masks.size() - 1];
+            image::Image<image::RGBfColor>& img = pyramid_colors[pyramid_colors.size() - 1];
+            image::Image<unsigned char>& mask = pyramid_masks[pyramid_masks.size() - 1];
 
-            if (!mask(0, 0)) 
+            if (!mask(0, 0))
             {
                 mask(0, 0) = 255;
                 img(0, 0) = featheredGrid(i, j);
             }
-            
 
-            for(int lvl = pyramid_colors.size() - 2; lvl >= 0; lvl--)
+            for (int lvl = pyramid_colors.size() - 2; lvl >= 0; lvl--)
             {
+                image::Image<image::RGBfColor>& src = pyramid_colors[lvl];
+                image::Image<unsigned char>& src_mask = pyramid_masks[lvl];
+                image::Image<image::RGBfColor>& ref = pyramid_colors[lvl + 1];
+                image::Image<unsigned char>& ref_mask = pyramid_masks[lvl + 1];
 
-                image::Image<image::RGBfColor> & src = pyramid_colors[lvl];
-                image::Image<unsigned char> & src_mask = pyramid_masks[lvl];
-                image::Image<image::RGBfColor> & ref = pyramid_colors[lvl + 1];
-                image::Image<unsigned char> & ref_mask = pyramid_masks[lvl + 1];
-
-                for(int i = 0; i < src_mask.Height(); i++)
+                for (int i = 0; i < src_mask.Height(); i++)
                 {
-                    for(int j = 0; j < src_mask.Width(); j++)
+                    for (int j = 0; j < src_mask.Width(); j++)
                     {
-                        if(!src_mask(i, j))
+                        if (!src_mask(i, j))
                         {
                             int mi = i / 2;
                             int mj = j / 2;
 
-                            if(mi >= ref_mask.Height())
+                            if (mi >= ref_mask.Height())
                             {
                                 mi = ref_mask.Height() - 1;
                             }
 
-                            if(mj >= ref_mask.Width())
+                            if (mj >= ref_mask.Width())
                             {
                                 mj = ref_mask.Width() - 1;
                             }
@@ -436,7 +427,7 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
                 }
             }
 
-            if (!CachedImage<image::RGBfColor>::setTileWithImage(rowColor[j], pyramid_colors[0])) 
+            if (!CachedImage<image::RGBfColor>::setTileWithImage(rowColor[j], pyramid_colors[0]))
             {
                 return false;
             }
@@ -446,4 +437,4 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
     return true;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

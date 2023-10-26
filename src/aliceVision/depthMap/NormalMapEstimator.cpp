@@ -22,24 +22,24 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace depthMap {
 
-NormalMapEstimator::NormalMapEstimator(const mvsUtils::MultiViewParams &mp)
+NormalMapEstimator::NormalMapEstimator(const mvsUtils::MultiViewParams& mp)
   : _mp(mp)
 {}
 
 void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
 {
     // set the device to use for GPU executions
-    // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
+    // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device
     setCudaDeviceId(cudaDeviceId);
 
     DeviceCache& deviceCache = DeviceCache::getInstance();
-    deviceCache.build(0, 1); // 0 mipmap image, 1 camera parameters
+    deviceCache.build(0, 1);  // 0 mipmap image, 1 camera parameters
 
-    for(const int rc : cams)
+    for (const int rc : cams)
     {
         const std::string normalMapFilepath = getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::normalMapFiltered);
 
-        if(!fs::exists(normalMapFilepath))
+        if (!fs::exists(normalMapFilepath))
         {
             const system::Timer timer;
 
@@ -57,7 +57,7 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMapFiltered, in_depthMap);
 
             // get input depth map width / height
-            const int width  = in_depthMap.Width();
+            const int width = in_depthMap.Width();
             const int height = in_depthMap.Height();
 
             // default tile parameters, no tiles
@@ -73,8 +73,8 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             {
                 CudaHostMemoryHeap<float2, 2> in_depthSimMap_hmh(in_depthSimMap_dmp.getSize());
 
-                for(int x = 0; x < width; ++x)
-                    for(int y = 0; y < height; ++y)
+                for (int x = 0; x < width; ++x)
+                    for (int y = 0; y < height; ++y)
                         in_depthSimMap_hmh(size_t(x), size_t(y)) = make_float2(in_depthMap(y, x), 1.f);
 
                 in_depthSimMap_dmp.copyFrom(in_depthSimMap_hmh);
@@ -98,5 +98,5 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     DeviceCache::getInstance().clear();
 }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision
