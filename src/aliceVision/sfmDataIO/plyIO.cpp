@@ -8,6 +8,7 @@
 #include "plyIO.hpp"
 
 #include <fstream>
+#include <iostream>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -20,8 +21,10 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
     if (!(b_structure || b_extrinsics))
         return false;
 
+    bool b_binary = filename.find(".bin.") != std::string::npos;
+
     // Create the stream and check it is ok
-    std::ofstream stream(filename);
+    std::ofstream stream(filename, b_binary ? std::ios::out | std::ios::binary : std::ios::out);
     if (!stream.is_open())
         return false;
 
@@ -36,8 +39,9 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
                 view_with_pose_count += sfmData.isPoseAndIntrinsicDefined(view.second.get());
             }
         }
+
         stream << "ply" << '\n'
-               << "format ascii 1.0" << '\n'
+               << "format " << (b_binary ? "binary_little_endian" : "ascii") << " 1.0 " << '\n'
                << "element vertex "
                // Vertex count: (#landmark + #view_with_valid_pose)
                << ((b_structure ? sfmData.getLandmarks().size() : 0) + view_with_pose_count) << '\n'
@@ -56,8 +60,18 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
                 if (sfmData.isPoseAndIntrinsicDefined(view.second.get()))
                 {
                     const geometry::Pose3 pose = sfmData.getPose(*(view.second.get())).getTransform();
-                    stream << pose.center().transpose() << " 0 255 0"
-                           << "\n";
+
+                    if (b_binary)
+                    {
+                        Vec3f point = pose.center().cast<float>();
+                        stream.write(reinterpret_cast<const char*>(&point), sizeof(float) * 3);
+                        stream.write(reinterpret_cast<const char*>(&image::GREEN), sizeof(uint8_t) * 3);
+                    }
+                    else
+                    {
+                        stream << pose.center().transpose() << " 0 255 0"
+                               << "\n";
+                    }
                 }
             }
         }
@@ -65,10 +79,22 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         if (b_structure)
         {
             const sfmData::Landmarks& landmarks = sfmData.getLandmarks();
+
             for (sfmData::Landmarks::const_iterator iterLandmarks = landmarks.begin(); iterLandmarks != landmarks.end(); ++iterLandmarks)
+
             {
-                stream << iterLandmarks->second.X.transpose() << " " << (int)iterLandmarks->second.rgb.r() << " "
-                       << (int)iterLandmarks->second.rgb.g() << " " << (int)iterLandmarks->second.rgb.b() << "\n";
+                const auto& landmark = iterLandmarks->second;
+                if (b_binary)
+                {
+                    Vec3f point = landmark.X.cast<float>();
+                    stream.write(reinterpret_cast<const char*>(&point), sizeof(float) * 3);
+                    stream.write(reinterpret_cast<const char*>(&landmark.rgb), sizeof(uint8_t) * 3);
+                }
+                else
+                {
+                    stream << landmark.X.transpose() << " " << (int)landmark.rgb.r() << " " << (int)landmark.rgb.g() << " " << (int)landmark.rgb.b()
+                           << "\n";
+                }
             }
         }
         stream.flush();
