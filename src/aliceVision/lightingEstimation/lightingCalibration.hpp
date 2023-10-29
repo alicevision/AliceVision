@@ -95,5 +95,7 @@ void writeJSON(const std::string& fileName,
                const std::vector<float>& intList,
                const bool saveAsModel);
 
+void sphereFromLighting(const Eigen::VectorXf& lightVector, const float intensity, const std::string outputFileName, const int outputSize);
+
 }  // namespace lightingEstimation
 }  // namespace aliceVision

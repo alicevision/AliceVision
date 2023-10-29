@@ -356,5 +356,52 @@ void writeJSON(const std::string& fileName,
     bpt::write_json(fileName, fileTree);
 }
 
+void sphereFromLighting(const Eigen::VectorXf& lightVector, const float intensity, const std::string outputFileName, const int outputSize)
+{
+    float radius = (outputSize * 0.9) / 2;
+    image::Image<float> pixelsValues(outputSize, outputSize);
+
+    for (size_t j = 0; j < outputSize; ++j)
+    {
+        for (size_t i = 0; i < outputSize; ++i)
+        {
+            float center_xy = outputSize / 2;
+            Eigen::VectorXf normalSphere(lightVector.size());
+            float distanceToCenter = sqrt((i - center_xy) * (i - center_xy) + (j - center_xy) * (j - center_xy));
+            pixelsValues(i, j) = 0;
+
+            if (distanceToCenter < radius)
+            {
+                normalSphere(0) = (float(j) - center_xy) / radius;
+                normalSphere(1) = (float(i) - center_xy) / radius;
+                normalSphere(2) = -sqrt(1 - normalSphere(0) * normalSphere(0) - normalSphere(1) * normalSphere(1));
+                if (lightVector.size() > 3)
+                {
+                    normalSphere(3) = 1;
+                }
+                if (lightVector.size() > 4)
+                {
+                    normalSphere(4) = normalSphere(0) * normalSphere(1);
+                    normalSphere(5) = normalSphere(0) * normalSphere(2);
+                    normalSphere(6) = normalSphere(1) * normalSphere(2);
+                    normalSphere(7) = normalSphere(0) * normalSphere(0) - normalSphere(1) * normalSphere(1);
+                    normalSphere(8) = 3 * normalSphere(2) * normalSphere(2) - 1;
+                }
+
+                for (size_t k = 0; k < lightVector.size(); ++k)
+                {
+                    pixelsValues(i, j) += normalSphere(k) * lightVector(k);
+                }
+                pixelsValues(i, j) *= intensity;
+            }
+        }
+    }
+
+    image::writeImage(
+      outputFileName,
+      pixelsValues,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+}
+
 }  // namespace lightingEstimation
 }  // namespace aliceVision
