@@ -489,6 +489,14 @@ void writePSResults(const std::string& outputPath, const image::Image<image::RGB
       outputPath + "/normals.exr",
       normals,
       image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
+    image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
+    convertNormalMap2png(normals, normalsImPNG);
+    image::writeImage(
+      outputPath + "/normals.png",
+      normalsImPNG,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
     image::writeImage(
       outputPath + "/albedo.exr",
       albedo,
@@ -504,6 +512,14 @@ void writePSResults(const std::string& outputPath,
       outputPath + "/" + std::to_string(poseId) + "_normals.exr",
       normals,
       image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
+    image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
+    convertNormalMap2png(normals, normalsImPNG);
+    image::writeImage(
+      outputPath + "/" + std::to_string(poseId) + "_normals.png",
+      normalsImPNG,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
     image::writeImage(
       outputPath + "/" + std::to_string(poseId) + "_albedo.exr",
       albedo,
