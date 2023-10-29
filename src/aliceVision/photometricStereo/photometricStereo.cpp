@@ -147,6 +147,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
             }
             else if (PSParameters.removeAmbiant)
             {
+                ALICEVISION_LOG_INFO("Remove ambiant light - " << imagePath.string());
                 pathToAmbiant = imagePath.string();
             }
         }
