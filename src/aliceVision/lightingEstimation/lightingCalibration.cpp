@@ -287,7 +287,16 @@ void writeJSON(const std::string& fileName,
     for (auto& viewIt : sfmData.getViews())
     {
         std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getImage().getMetadata();
-        viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
+
+        if (currentMetadata.find("Exif:DateTimeDigitized") == currentMetadata.end())
+        {
+            std::cout << "No metadata case" << std::endl;
+            viewMap[sfmData.getView(viewIt.first).getImage().getImagePath()] = sfmData.getView(viewIt.first);
+        }
+        else
+        {
+            viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
+        }
     }
 
     for (const auto& [currentTime, viewId] : viewMap)
