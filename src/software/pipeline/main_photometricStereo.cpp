@@ -118,7 +118,6 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read.");
             return EXIT_FAILURE;
         }
-
         photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, outputPath, PSParameters, normalsIm, albedoIm);
     }
 
