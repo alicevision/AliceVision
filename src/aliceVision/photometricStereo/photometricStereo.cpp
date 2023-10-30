@@ -528,10 +528,10 @@ void photometricStereo(const std::vector<std::string>& imageList,
             for (size_t ch = 0; ch < 3; ++ch)
             {
                 // Create I matrix for current pixel
-                Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
+                Eigen::MatrixXf pixelValues_channel(imageList.size(), currentMaskSize);
                 for (size_t i = 0; i < imageList.size(); ++i)
                 {
-                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3 * i, 0, 1, maskSize);
+                    pixelValues_channel.block(i, 0, 1, currentMaskSize) = imMat.block(ch + 3 * i, 0, 1, currentMaskSize);
                 }
 
                 M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(pixelValues_channel);
