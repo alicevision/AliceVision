@@ -81,7 +81,6 @@ void lightCalibration(const sfmData::SfMData& sfmData,
                 imageList.push_back(imagePath.string());
 
                 std::array<float, 3> currentSphereParams;
-
                 for (auto& currentSphere : fileTree.get_child(sphereName))
                 {
                     currentSphereParams[0] = currentSphere.second.get_child("").get("x", 0.0);
@@ -101,7 +100,11 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         }
     }
 
-    Eigen::MatrixXf lightMat(imageList.size(), 3);
+    int lightSize = 3;
+    if (!method.compare("HS"))
+        lightSize = 9;
+
+    Eigen::MatrixXf lightMat(imageList.size(), lightSize);
     std::vector<float> intList;
 
     for (size_t i = 0; i < imageList.size(); ++i)
@@ -110,21 +113,24 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         std::array<float, 3> sphereParam = allSpheresParams.at(i);
         float focal = focals.at(i);
 
-        Eigen::Vector3f lightingDirection;
-        lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection);
+        Eigen::VectorXf lightingDirection = Eigen::VectorXf::Zero(lightSize);
+        float intensity;
+        lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection, intensity);
+
         lightMat.row(i) = lightingDirection;
-        intList.push_back(lightingDirection.norm());
+        intList.push_back(intensity);
     }
 
     // Write in JSON file
-    writeJSON(outputPath, sfmData, imageList, lightMat, intList, saveAsModel);
+    writeJSON(outputPath, sfmData, imageList, lightMat, intList, saveAsModel, method);
 }
 
 void lightCalibrationOneImage(const std::string& picturePath,
                               const std::array<float, 3>& sphereParam,
                               const float focal,
                               const std::string& method,
-                              Eigen::Vector3f& lightingDirection)
+                              Eigen::VectorXf& lightingDirection,
+                              float& intensity)
 {
     // Read picture :
     image::Image<float> imageFloat;
@@ -151,8 +157,10 @@ void lightCalibrationOneImage(const std::string& picturePath,
         // Evaluate lighting direction :
         lightingDirection = 2 * normalBrightestPoint.dot(observationRayPersp) * normalBrightestPoint - observationRayPersp;
         lightingDirection = lightingDirection / lightingDirection.norm();
+
+        intensity = 1.0;
     }
-    // If method = HS :
+    // If method = whiteSphere :
     else if (!method.compare("whiteSphere"))
     {
         // Evaluate light direction and intensity by pseudo-inverse
@@ -174,8 +182,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
         {
             for (int i = 0; i < patch.rows(); ++i)
             {
-                float distanceToCenter = (i - radius) * (i - radius) + (j - radius) * (j - radius);
-                if ((distanceToCenter < (radius * radius - 0.05 * radius)) && (patch(i, j) > 0.3) && (patch(i, j) < 0.8))
+                const float distanceToCenter = std::sqrt((i - radius) * (i - radius) + (j - radius) * (j - radius));
+                if ((distanceToCenter < 0.95 * radius) && (patch(i, j) > 0.1) && (patch(i, j) < 0.98))
                 {
                     // imSphere = normalSphere.s
                     imSphere(currentIndex) = patch(i, j);
@@ -189,12 +197,74 @@ void lightCalibrationOneImage(const std::string& picturePath,
                 }
             }
         }
+
         Eigen::MatrixXf normalSphereMasked(currentIndex, 3);
         normalSphereMasked = normalSphere.block(0, 0, currentIndex, 3);
 
         Eigen::VectorXf imSphereMasked(currentIndex);
         imSphereMasked = imSphere.head(currentIndex);
         lightingDirection = normalSphere.colPivHouseholderQr().solve(imSphere);
+
+        intensity = lightingDirection.norm();
+        lightingDirection = lightingDirection / intensity;
+    }
+
+    // If method = HS :
+    else if (!method.compare("HS"))
+    {
+        size_t lightSize = lightingDirection.size();
+
+        // Evaluate light direction and intensity by pseudo-inverse
+        int minISphere = floor(sphereParam[1] - sphereParam[2] + imageFloat.rows() / 2);
+        int minJSphere = floor(sphereParam[0] - sphereParam[2] + imageFloat.cols() / 2);
+
+        float radius = sphereParam[2];
+
+        image::Image<float> patch;
+        patch = imageFloat.block(minISphere, minJSphere, 2 * radius, 2 * radius);
+
+        int nbPixelsPatch = 4 * radius * radius;
+        Eigen::VectorXf imSphere(nbPixelsPatch);
+        Eigen::MatrixXf normalSphere(nbPixelsPatch, lightSize);
+
+        int currentIndex = 0;
+
+        for (size_t j = 0; j < patch.cols(); ++j)
+        {
+            for (size_t i = 0; i < patch.rows(); ++i)
+            {
+                float distanceToCenter = sqrt((i - radius) * (i - radius) + (j - radius) * (j - radius));
+                if (distanceToCenter < 0.95 * radius && (patch(i, j) > 0.1) && (patch(i, j) < 0.98))
+                {
+                    imSphere(currentIndex) = patch(i, j);
+
+                    normalSphere(currentIndex, 0) = (float(j) - radius) / radius;
+                    normalSphere(currentIndex, 1) = (float(i) - radius) / radius;
+                    normalSphere(currentIndex, 2) = -sqrt(1 - normalSphere(currentIndex, 0) * normalSphere(currentIndex, 0) -
+                                                          normalSphere(currentIndex, 1) * normalSphere(currentIndex, 1));
+                    normalSphere(currentIndex, 3) = 1;
+                    if (lightSize > 4)
+                    {
+                        normalSphere(currentIndex, 4) = normalSphere(currentIndex, 0) * normalSphere(currentIndex, 1);
+                        normalSphere(currentIndex, 5) = normalSphere(currentIndex, 0) * normalSphere(currentIndex, 2);
+                        normalSphere(currentIndex, 6) = normalSphere(currentIndex, 1) * normalSphere(currentIndex, 2);
+                        normalSphere(currentIndex, 7) = normalSphere(currentIndex, 0) * normalSphere(currentIndex, 0) -
+                                                        normalSphere(currentIndex, 1) * normalSphere(currentIndex, 1);
+                        normalSphere(currentIndex, 8) = 3 * normalSphere(currentIndex, 2) * normalSphere(currentIndex, 2) - 1;
+                    }
+                    ++currentIndex;
+                }
+            }
+        }
+
+        Eigen::MatrixXf normalSphereMasked(currentIndex, lightSize);
+        normalSphereMasked = normalSphere.block(0, 0, currentIndex, lightSize);
+
+        Eigen::VectorXf imSphereMasked(currentIndex);
+        imSphereMasked = imSphere.head(currentIndex);
+
+        lightingDirection = normalSphereMasked.colPivHouseholderQr().solve(imSphereMasked);
+        intensity = lightingDirection.head(3).norm();
     }
 }
 
@@ -277,7 +347,8 @@ void writeJSON(const std::string& fileName,
                const std::vector<std::string>& imageList,
                const Eigen::MatrixXf& lightMat,
                const std::vector<float>& intList,
-               const bool saveAsModel)
+               const bool saveAsModel,
+               const std::string method)
 {
     bpt::ptree lightsTree;
     bpt::ptree fileTree;
@@ -290,7 +361,7 @@ void writeJSON(const std::string& fileName,
 
         if (currentMetadata.find("Exif:DateTimeDigitized") == currentMetadata.end())
         {
-            std::cout << "No metadata case" << std::endl;
+            ALICEVISION_LOG_INFO("No metadata case (Exif:DateTimeDigitized is missing)");
             viewMap[sfmData.getView(viewIt.first).getImage().getImagePath()] = sfmData.getView(viewIt.first);
         }
         else
@@ -313,18 +384,20 @@ void writeJSON(const std::string& fileName,
             if (saveAsModel)
             {
                 lightTree.put("lightId", imgCpt);
-                lightTree.put("type", "directional");
             }
             else
             {
-                // const IndexT index = viewId.getViewId
                 lightTree.put("viewId", viewId.getViewId());
-                lightTree.put("type", "directional");
             }
+            if (!method.compare("HS"))
+                lightTree.put("type", "HS");
+            else
+                lightTree.put("type", "directional");
 
             // Light direction
             bpt::ptree directionNode;
-            for (int i = 0; i < 3; ++i)
+            int lightMatSize = lightMat.cols();
+            for (int i = 0; i < lightMatSize; ++i)
             {
                 bpt::ptree cell;
                 cell.put_value<float>(lightMat(imgCpt, i));

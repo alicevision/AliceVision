@@ -35,9 +35,9 @@ void photometricStereo(const std::string& inputPath,
                        image::Image<image::RGBfColor>& albedo)
 {
     size_t dim = 3;
-    if (PSParameters.SHOrder == 2)
+    if (PSParameters.SHOrder != 0)
     {
-        dim = 9;
+        ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
     }
 
     std::vector<std::string> imageList;
@@ -92,9 +92,9 @@ void photometricStereo(const sfmData::SfMData& sfmData,
     bool skipAll = true;
     bool groupedImages = false;
     size_t dim = 3;
-    if (PSParameters.SHOrder == 2)
+    if (PSParameters.SHOrder != 0)
     {
-        dim = 9;
+        ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
     }
 
     std::string pathToAmbiant = "";
@@ -358,7 +358,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
         numberOfPixels = auxMaskSize * imageList.size() * 3;
     }
 
-    Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(), pictRows * pictCols);
+    Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(3, pictRows * pictCols);
     Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3, pictRows * pictCols);
 
     int remainingPixels = maskSize;
@@ -422,7 +422,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
                                                          currentPicture.block(2, 0, 1, currentMaskSize) * 0.0722;
         }
 
-        Eigen::MatrixXf M_channel(3, currentMaskSize);
+        Eigen::MatrixXf M_channel(lightMat.cols(), currentMaskSize);
         int currentIdx;
 
         if (PSParameters.isRobust)

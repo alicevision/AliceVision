@@ -40,7 +40,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
                               const std::array<float, 3>& sphereParam,
                               const float focal,
                               const std::string& method,
-                              Eigen::Vector3f& lightingDirection);
+                              Eigen::VectorXf& lightingDirection,
+                              float& intensity);
 
 /**
  * @brief Compute the brightest point on a sphere
@@ -87,13 +88,15 @@ void cutImage(const image::Image<float>& imageFloat,
  * @param[in] lightMat A matrix containing the directions of the light sources
  * @param[in] intList A vector of arrays containing the intensity of the light sources
  * @param[in] saveAsModel True to save the light IDs instead of the view IDs, false otherwise
+ * @param[in] method Name of the method for lighting estimation: whiteSphere, brightestPoint, SH
  */
 void writeJSON(const std::string& fileName,
                const sfmData::SfMData& sfmData,
                const std::vector<std::string>& imageList,
                const Eigen::MatrixXf& lightMat,
                const std::vector<float>& intList,
-               const bool saveAsModel);
+               const bool saveAsModel,
+               const std::string method);
 
 void sphereFromLighting(const Eigen::VectorXf& lightVector, const float intensity, const std::string outputFileName, const int outputSize);
 

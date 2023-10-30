@@ -211,7 +211,19 @@ void buildLightMatFromJSON(const std::string& fileName,
                 cpt = 0;
                 for (auto& direction : light.second.get_child("direction"))
                 {
-                    lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                    if (cpt < 3)
+                    {
+                        lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                    }
+                    else if (cpt == 4)
+                    {
+                        // no support for SH lighting :
+                        for (int pictureIndex = 0; pictureIndex < lightMat.rows(); ++pictureIndex)
+                        {
+                            lightMat.row(pictureIndex) = lightMat.row(pictureIndex) / lightMat.row(pictureIndex).norm();
+                        }
+                        ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
+                    }
                     ++cpt;
                 }
                 ++lineNumber;
@@ -233,7 +245,19 @@ void buildLightMatFromJSON(const std::string& fileName,
 
                     for (auto& direction : light.second.get_child("direction"))
                     {
-                        lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                        if (cpt < 3)
+                        {
+                            lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                        }
+                        else if (cpt == 4)
+                        {
+                            // no support for SH lighting :
+                            for (int pictureIndex = 0; pictureIndex < lightMat.rows(); ++pictureIndex)
+                            {
+                                lightMat.row(pictureIndex) = lightMat.row(pictureIndex) / lightMat.row(pictureIndex).norm();
+                            }
+                            ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
+                        }
                         ++cpt;
                     }
                     ++lineNumber;
