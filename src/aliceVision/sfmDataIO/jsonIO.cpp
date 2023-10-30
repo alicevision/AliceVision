@@ -95,7 +95,7 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
                 ancestorImageTree.add_child("metadata", metadataTree);
             }
 
-            ancestorImagesTree.add_child("", ancestorImageTree);
+            ancestorImagesTree.add_child("ancestorImage", ancestorImageTree);
         }
 
         viewTree.add_child("ancestorImages", ancestorImagesTree);
