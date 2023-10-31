@@ -125,7 +125,7 @@ inline void loadCameraPose(const std::string& name, sfmData::CameraPose& cameraP
     loadPose3(name + ".transform", pose, cameraPoseTree);
     cameraPose.setTransform(pose);
 
-    if (cameraPoseTree.get<bool>("locked", false))
+    if (cameraPoseTree.get<int>("locked", 0))
         cameraPose.lock();
     else
         cameraPose.unlock();
