@@ -330,6 +330,7 @@ struct ProcessingParams
     bool useDCPColorMatrixOnly = false;
     bool enableColorTempProcessing = false;
     double correlatedColorTemperature = -1.0;
+    bool reorient = false;
 
     LensCorrectionParams lensCorrection =
     {
@@ -603,6 +604,27 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
         image.swap(rescaled);
     }
     
+    if (pParams.reorient)
+    {
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        inBuf.set_orientation(std::stoi(imageMetadata["Orientation"]));
+        oiio::ImageBuf outBuf = oiio::ImageBufAlgo::reorient(inBuf);
+
+        if (outBuf.spec().get_int_attribute("orientation") != inBuf.spec().get_int_attribute("orientation"))
+        {
+            imageMetadata.at("Orientation") = std::to_string(outBuf.spec().get_int_attribute("orientation"));
+
+            image::Image<image::RGBAfColor> reoriented(outBuf.spec().width, outBuf.spec().height);
+
+            oiio::ROI exportROI = outBuf.roi();
+            exportROI.chbegin = 0;
+            exportROI.chend = nchannels;
+            outBuf.get_pixels(exportROI, oiio::TypeDesc::FLOAT, reoriented.data());
+
+            image.swap(reoriented);
+        }
+    }
+
     if (pParams.contrast != 1.0f)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
@@ -1090,6 +1112,9 @@ int aliceVision_main(int argc, char * argv[])
         ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
          "Camera sensor width database path.")
 
+        ("reorient", po::value<bool>(&pParams.reorient)->default_value(pParams.reorient),
+         "Enable automatic reorientation of images.")
+
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
 
@@ -1359,6 +1384,7 @@ int aliceVision_main(int argc, char * argv[])
             view.getImage().setWidth(image.Width());
             view.getImage().setHeight(image.Height());
             view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
+            view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
         }
 
         if (pParams.scaleFactor != 1.0f)
