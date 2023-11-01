@@ -8,7 +8,6 @@ Learn more details about the pipeline and tools based on it on [AliceVision webs
 
 See [results of the pipeline on sketchfab](http://sketchfab.com/AliceVision).
 
-
 ## Photogrammetry
 
 Photogrammetry is the science of making measurements from photographs.
@@ -18,31 +17,28 @@ The goal of photogrammetry is to reverse this process.
 
 See the [presentation of the pipeline steps](http://alicevision.github.io/#photogrammetry).
 
-
 ## License
 
 The project is released under MPLv2, see [**COPYING.md**](COPYING.md).
 
-
 ## Citation
 
 If you use this project for a publication, please cite the [paper](https://hal.archives-ouvertes.fr/hal-03351139):
-  ```
-  @inproceedings{alicevision2021,
-    title={{A}liceVision {M}eshroom: An open-source {3D} reconstruction pipeline},
-    author={Carsten Griwodz and Simone Gasparini and Lilian Calvet and Pierre Gurdjos and Fabien Castan and Benoit Maujean and Gregoire De Lillo and Yann Lanthony},
-    booktitle={Proceedings of the 12th ACM Multimedia Systems Conference - {MMSys '21}},
-    doi = {10.1145/3458305.3478443},
-    publisher = {ACM Press},
-    year = {2021}
-  }
-  ```
 
+```
+@inproceedings{alicevision2021,
+  title={{A}liceVision {M}eshroom: An open-source {3D} reconstruction pipeline},
+  author={Carsten Griwodz and Simone Gasparini and Lilian Calvet and Pierre Gurdjos and Fabien Castan and Benoit Maujean and Gregoire De Lillo and Yann Lanthony},
+  booktitle={Proceedings of the 12th ACM Multimedia Systems Conference - {MMSys '21}},
+  doi = {10.1145/3458305.3478443},
+  publisher = {ACM Press},
+  year = {2021}
+}
+```
 
 ## Bibliography
 
 See [**Bibliography**](BIBLIOGRAPHY.md) for the list of research papers and tools used in this project.
-
 
 ## Get the project
 
@@ -52,25 +48,23 @@ See [**INSTALL.md**](INSTALL.md) to build the project.
 
 Continuous integration status: [![Build Status](https://travis-ci.org/alicevision/AliceVision.png?branch=develop)](https://travis-ci.org/alicevision/AliceVision) [![Coverage Status](https://coveralls.io/repos/github/alicevision/AliceVision/badge.png?branch=develop)](https://coveralls.io/github/alicevision/AliceVision?branch=develop).
 
-
 ## Launch 3D reconstructions
 
 Use [Meshroom](https://github.com/alicevision/meshroom) to launch the AliceVision pipeline.
- - Meshroom provides a User Interface to create 3D reconstructions.
- - Meshroom provides a command line to launch all the steps of the pipeline.
- - Meshroom is written in python and can be used to create your own python scripts to customize the pipeline or create custom automation.
+
+- Meshroom provides a User Interface to create 3D reconstructions.
+- Meshroom provides a command line to launch all the steps of the pipeline.
+- Meshroom is written in python and can be used to create your own python scripts to customize the pipeline or create custom automation.
 
 The User Interface of Meshroom relies on Qt and PySide. The Meshroom engine and command line has no dependency to Qt.
-
 
 ## Contact
 
 Use the public mailing-list to ask questions or request features. It is also a good place for informal discussions like sharing results, interesting related technologies or publications:
-> [alicevision@googlegroups.com](mailto:alicevision@googlegroups.com)
-> [http://groups.google.com/group/alicevision](http://groups.google.com/group/alicevision)
+
+> [alicevision@googlegroups.com](mailto:alicevision@googlegroups.com) > [http://groups.google.com/group/alicevision](http://groups.google.com/group/alicevision)
 
 You can also contact the core team privately on: [alicevision-team@googlegroups.com](mailto:alicevision-team@googlegroups.com).
-
 
 ## Contributing
 
@@ -83,11 +77,12 @@ Please have a look at the [project code of conduct](CODE_OF_CONDUCT.md) to provi
 Please have a look at the [project contributing guide](CONTRIBUTING.md) to provide an efficient workflow that minimize waste of time for contributors and maintainers as well as maximizing the project quality and efficiency.
 
 Use github Pull Requests to submit contributions:
+
 > [http://github.com/alicevision/AliceVision/issues](http://github.com/alicevision/AliceVision/issues)
 
 Use the public mailing-list to ask questions or request features and use github issues to report bugs:
-> [http://github.com/alicevision/AliceVision/pulls](http://github.com/alicevision/AliceVision/pulls)
 
+> [http://github.com/alicevision/AliceVision/pulls](http://github.com/alicevision/AliceVision/pulls)
 
 ## Project history
 
@@ -99,3 +94,4 @@ In 2017, CTU join the team in the EU project LADIO to create a central hub with 
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the full list of contributors. We hope to see you in this list soon!
 
+Test changes in workflow
