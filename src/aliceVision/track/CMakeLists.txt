@@ -19,8 +19,9 @@ alicevision_add_library(aliceVision_track
     aliceVision_feature
     aliceVision_matching
     aliceVision_stl
-    ${LEMON_LIBRARY}
     Boost::json
+  PRIVATE_LINKS
+    ${LEMON_LIBRARY}
 )
 
 # Unit tests
