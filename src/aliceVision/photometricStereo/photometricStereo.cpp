@@ -328,6 +328,8 @@ void photometricStereo(const std::vector<std::string>& imageList,
 
         for (int i = 0; i < maskSize; ++i)
             indices.push_back(i);
+
+        hasMask = true;
     }
 
     // Read ambiant
@@ -348,14 +350,15 @@ void photometricStereo(const std::vector<std::string>& imageList,
 
     // Tiling
     int auxMaskSize = maskSize;
-    int numberOfPixels = auxMaskSize * imageList.size() * 3;
+    int numberOfPixels = auxMaskSize * 3;
+
     int numberOfMasks = 1;
 
-    while (numberOfPixels > sizeMax)
+    while (numberOfPixels > sizeMax / imageList.size())
     {
         numberOfMasks = numberOfMasks * 2;
-        auxMaskSize = floor(auxMaskSize / 4);
-        numberOfPixels = auxMaskSize * imageList.size() * 3;
+        auxMaskSize = floor(auxMaskSize / 2);
+        numberOfPixels = 3 * auxMaskSize;
     }
 
     Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(3, pictRows * pictCols);
