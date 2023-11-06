@@ -10,14 +10,38 @@
 #include <lemon/list_graph.h>
 #include <lemon/unionfind.h>
 
+/**
+ * @brief Contains necessary information to uniquely identify a duplicate feature
+ */
+struct DuplicateFeatureId
+{
+    DuplicateFeatureId(float x_, float y_, float scale_)
+      : x(x_),
+        y(y_),
+        scale(scale_)
+    {}
+
+    // for uniqueness test when used as a map key
+    bool operator<(const DuplicateFeatureId& other) const
+    {
+        if (x == other.x)
+        {
+            if (y == other.y)
+                return scale < other.scale;
+            return y < other.y;
+        }
+        return x < other.x;
+    }
+
+    float x, y, scale;
+};
+
 namespace aliceVision {
 namespace track {
 
 using namespace aliceVision::matching;
 using namespace lemon;
 
-/// IndexedFeaturePair is: map<viewId, keypointId>
-using IndexedFeaturePair = std::pair<std::size_t, KeypointId>;
 using IndexMap = lemon::ListDigraph::NodeMap<std::size_t>;
 using UnionFindObject = lemon::UnionFindEnum<IndexMap>;
 
@@ -42,7 +66,7 @@ TracksBuilder::TracksBuilder() { _d.reset(new TracksBuilderData()); }
 
 TracksBuilder::~TracksBuilder() = default;
 
-void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
+void buildTracks(const PairwiseMatches& pairwiseMatches, std::unique_ptr<TracksBuilderData>& _d, MapIndexToNode& map_indexToNode)
 {
     typedef std::set<IndexedFeaturePair> SetIndexedPair;
 
@@ -72,7 +96,6 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
     }
 
     // build the node indirection for each referenced feature
-    MapIndexToNode map_indexToNode;
     map_indexToNode.reserve(allFeatures.size());
     _d->map_nodeToIndex.reserve(allFeatures.size());
 
@@ -114,6 +137,122 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
     }
 }
 
+// Merge tracks that have corresponding duplicate features.
+// Make the union according to duplicate features
+// (same position, scale and describer type, but different orientations)
+void mergeTracks(const feature::MapFeaturesPerView& featuresPerView,
+                 const MapIndexToNode& map_indexToNode,
+                 const PairwiseMatches& pairwiseMatches,
+                 std::unique_ptr<TracksBuilderData>& _d,
+                 stl::flat_map<IndexedFeaturePair, size_t>& _duplicateFeaturesMap)
+{
+    // map of (viewId) to
+    //    map of (descType) to
+    //        map of DuplicateFeatureId(x, y, scale) to
+    //            pair of (set<featureId>, node)
+    HashMap<size_t, HashMap<feature::EImageDescriberType, HashMap<DuplicateFeatureId, std::pair<std::set<size_t>, MapIndexToNode::mapped_type>>>>
+      duplicateFeaturesPerView;
+
+    // per viewId pair
+    for (const auto& matchesPerDescIt : pairwiseMatches)
+    {
+        const std::size_t& I = matchesPerDescIt.first.first;
+        const std::size_t& J = matchesPerDescIt.first.second;
+        const MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
+
+        auto& featuresPerDescI = featuresPerView.at(I);
+        auto& featuresPerDescJ = featuresPerView.at(J);
+        auto& duplicateFeaturesPerDescI = duplicateFeaturesPerView[I];
+        auto& duplicateFeaturesPerDescJ = duplicateFeaturesPerView[J];
+
+        // per descType
+        for (const auto& matchesIt : matchesPerDesc)
+        {
+            const feature::EImageDescriberType descType = matchesIt.first;
+            const IndMatches& matches = matchesIt.second;
+
+            auto& featuresI = featuresPerDescI.at(descType);
+            auto& featuresJ = featuresPerDescJ.at(descType);
+            auto& duplicateFeaturesI = duplicateFeaturesPerDescI[descType];
+            auto& duplicateFeaturesJ = duplicateFeaturesPerDescJ[descType];
+
+            // per features match
+            for (const IndMatch& m : matches)
+            {
+                {
+                    auto& featureI = featuresI[m._i];
+                    IndexedFeaturePair pairI(I, KeypointId(descType, m._i));
+                    auto& nodeI = map_indexToNode.at(pairI);
+                    DuplicateFeatureId duplicateIdI(featureI.x(), featureI.y(), featureI.scale());
+                    const auto& duplicateFeaturesI_it = duplicateFeaturesI.find(duplicateIdI);
+                    // if no duplicates yet found, add to map and update values
+                    if (duplicateFeaturesI_it == duplicateFeaturesI.end())
+                        duplicateFeaturesI[duplicateIdI] = std::make_pair(std::set<size_t>({m._i}), nodeI);
+                    else
+                    {
+                        auto& duplicateFeatureIdsI = duplicateFeaturesI_it->second.first;
+                        auto& duplicateFeatureNodeI = duplicateFeaturesI_it->second.second;
+                        // if not already in corresponding duplicates set, add to set and join nodes
+                        if (duplicateFeatureIdsI.insert(m._i).second)
+                        {
+                            _d->tracksUF->join(nodeI, duplicateFeatureNodeI);
+                        }
+                    }
+                }
+                {
+                    auto& featureJ = featuresJ[m._j];
+                    IndexedFeaturePair pairJ(J, KeypointId(descType, m._j));
+                    auto& nodeJ = map_indexToNode.at(pairJ);
+                    DuplicateFeatureId duplicateIdJ(featureJ.x(), featureJ.y(), featureJ.scale());
+                    const auto& duplicateFeaturesJ_it = duplicateFeaturesJ.find(duplicateIdJ);
+                    // if no duplicates yet found, add to map and update values
+                    if (duplicateFeaturesJ_it == duplicateFeaturesJ.end())
+                        duplicateFeaturesJ[duplicateIdJ] = std::make_pair(std::set<size_t>({m._j}), nodeJ);
+                    else
+                    {
+                        auto& duplicateFeatureIdsJ = duplicateFeaturesJ_it->second.first;
+                        auto& duplicateFeatureNodeJ = duplicateFeaturesJ_it->second.second;
+                        // if not already in corresponding duplicates set, add to set and join nodes
+                        if (duplicateFeatureIdsJ.insert(m._j).second)
+                        {
+                            _d->tracksUF->join(nodeJ, duplicateFeatureNodeJ);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // fill duplicate features map
+    for (const auto& [viewId, duplicateFeaturesPerDesc] : duplicateFeaturesPerView)
+        for (const auto& [descType, duplicateFeatures] : duplicateFeaturesPerDesc)
+            for (const auto& [duplicateFeatureId, duplicateFeature] : duplicateFeatures)
+            {
+                auto& duplicateFeatureIdsSet = duplicateFeature.first;
+                size_t indexedFeaturePair_0 = *duplicateFeatureIdsSet.begin();
+                for (const auto& featureId : duplicateFeatureIdsSet)
+                {
+                    const auto& indexedFeaturePair_i = IndexedFeaturePair(viewId, KeypointId(descType, featureId));
+                    _duplicateFeaturesMap[indexedFeaturePair_i] = indexedFeaturePair_0;
+                }
+            }
+}
+
+void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
+{
+    // the node indirection for each referenced feature
+    MapIndexToNode map_indexToNode;
+    buildTracks(pairwiseMatches, _d, map_indexToNode);
+}
+
+void TracksBuilder::build(const PairwiseMatches& pairwiseMatches, const feature::MapFeaturesPerView& featuresPerView)
+{
+    // the node indirection for each referenced feature
+    MapIndexToNode map_indexToNode;
+    buildTracks(pairwiseMatches, _d, map_indexToNode);
+    mergeTracks(featuresPerView, map_indexToNode, pairwiseMatches, _d, _duplicateFeaturesMap);
+}
+
 void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool multithreaded)
 {
     // remove bad tracks:
@@ -129,14 +268,30 @@ void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool mul
     {
 #pragma omp single nowait
         {
-            std::size_t cpt = 0;
-            std::set<std::size_t> myset;
+            bool flag = false;
+            stl::flat_map<size_t, IndexedFeaturePair> myset;
             for (lemon::UnionFindEnum<IndexMap>::ItemIt iit(*_d->tracksUF, cit); iit != INVALID; ++iit)
             {
-                myset.insert(_d->map_nodeToIndex[iit].first);
-                ++cpt;
+                IndexedFeaturePair currentPair = _d->map_nodeToIndex[iit];
+                {
+                    const auto& duplicateIt = _duplicateFeaturesMap.find(currentPair);
+                    if (duplicateIt != _duplicateFeaturesMap.end())
+                        currentPair.second.featIndex = duplicateIt->second;
+                }
+                const auto& myIt = myset.find(currentPair.first);
+                if (myIt != myset.end())
+                {
+                    if (myIt->second < currentPair || currentPair < myIt->second)
+                    {
+                        flag = true;
+                    }
+                }
+                else
+                {
+                    myset[currentPair.first] = currentPair;
+                }
             }
-            if ((clearForks && myset.size() != cpt) || myset.size() < minTrackLength)
+            if ((clearForks && flag) || myset.size() < minTrackLength)
             {
 #pragma omp critical
                 set_classToErase.insert(cit.operator int());
@@ -186,7 +341,12 @@ void TracksBuilder::exportToSTL(TracksMap& allTracks) const
             const IndexedFeaturePair& currentPair = _d->map_nodeToIndex.at(iit);
             // all descType inside the track will be the same
             outTrack.descType = currentPair.second.descType;
-            outTrack.featPerView[currentPair.first] = currentPair.second.featIndex;
+            // Warning: overwrites featureIndex if clearForks is False
+            const auto& duplicateIt = _duplicateFeaturesMap.find(currentPair);
+            if (duplicateIt != _duplicateFeaturesMap.end())
+                outTrack.featPerView[currentPair.first] = duplicateIt->second;
+            else
+                outTrack.featPerView[currentPair.first] = currentPair.second.featIndex;
         }
     }
 }
