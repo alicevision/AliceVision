@@ -417,6 +417,18 @@ class IntrinsicBase
      */
     virtual Vec3 toUnitSphere(const Vec2& pt) const = 0;
 
+    /**
+     * @Brief get horizontal fov in radians
+     * @return  horizontal fov in radians
+    */
+    virtual double getHorizontalFov() const = 0;
+
+    /**
+     * @Brief get vertical fov in radians
+     * @return  vertical fov in radians
+    */
+    virtual double getVerticalFov() const = 0;
+
   protected:
     /// initialization mode
     EInitMode _initializationMode = EInitMode::NONE;
