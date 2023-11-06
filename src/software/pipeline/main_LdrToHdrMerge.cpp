@@ -339,7 +339,8 @@ int aliceVision_main(int argc, char** argv)
         outputSfm.getIntrinsics() = sfmData.getIntrinsics();
 
         // If we are on the first chunk, or we are computing all the dataset
-        // Export a new sfmData with HDR images as new Views.
+        // Export a new sfmData with HDR images as new Views and LDR images as ancestors
+        // ancestorIds are similar to viewIds because viewIds are computed only from image infos
         for (const auto & groupedViews : groupedViewsPerIntrinsics)
         {
             IndexT intrinsicId = groupedViews.first;
@@ -374,6 +375,11 @@ int aliceVision_main(int argc, char** argv)
                 }
                 hdrView->getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace));
                 outputSfm.getViews().emplace(hdrView->getViewId(), hdrView);
+
+                for (const auto& v : group)
+                {
+                    outputSfm.addAncestor(v->getViewId(), v->getImageInfo());
+                }
             }
         }
 

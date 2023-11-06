@@ -79,12 +79,6 @@ class View
     {
         View* v = new View(*this);
         v->_image = std::make_shared<ImageInfo>(*this->_image);
-
-        for (size_t i = 0; i < v->getAncestorImages().size(); i++)
-        {
-            (v->getAncestorImages())[i] = std::make_shared<ImageInfo>(*((this->getAncestorImages())[i]));
-        }
-
         return v;
     }
 
@@ -236,7 +230,7 @@ class View
      * lighting to get a more diffuse lighting, etc.
      * @param[in] new ancestor image
      */
-    void addAncestorImage(std::shared_ptr<ImageInfo> image)
+    void addAncestorImage(IndexT image)
     {
         if (std::find(_ancestorImages.begin(), _ancestorImages.end(), image) == _ancestorImages.end())
         {
@@ -248,13 +242,13 @@ class View
      * @Brief get all ancestor images for this view
      * @return ancestor images
      */
-    const std::vector<std::shared_ptr<ImageInfo>>& getAncestorImages() const { return _ancestorImages; }
+    const std::vector<IndexT>& getAncestorImages() const { return _ancestorImages; }
 
     /**
      * @Brief get all ancestor images for this view
      * @return ancestor images
      */
-    std::vector<std::shared_ptr<ImageInfo>>& getAncestorImages() { return _ancestorImages; }
+    std::vector<IndexT>& getAncestorImages() { return _ancestorImages; }
 
     /**
      * @brief Set the given resection id
@@ -282,12 +276,12 @@ class View
     IndexT _resectionId = UndefinedIndexT;
     /// pose independent of other view(s)
     bool _isPoseIndependent = true;
-    /// list of ancestors
+    /// list of ancestor views
     std::vector<IndexT> _ancestors;
-    /// Link  to imageinfo
+    /// Link to imageinfo
     std::shared_ptr<ImageInfo> _image;
-    /// Link to ancestor images info
-    std::vector<std::shared_ptr<ImageInfo>> _ancestorImages;
+    /// List of ancestor images info
+    std::vector<IndexT> _ancestorImages;
 };
 
 }  // namespace sfmData
