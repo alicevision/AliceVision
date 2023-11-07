@@ -58,7 +58,7 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
         viewTree.add_child("metadata", metadataTree);
     }
 
-    // ancestors
+    // ancestor images
     if (!view.getAncestors().empty())
     {
         bpt::ptree ancestorsTree;
@@ -71,21 +71,6 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
         }
 
         viewTree.add_child("ancestors", ancestorsTree);
-    }
-
-    // ancestor images
-    if (!view.getAncestorImages().empty())
-    {
-        bpt::ptree ancestorImagesTree;
-
-        for (const auto& ancestorImage : view.getAncestorImages())
-        {
-            bpt::ptree ancestorImageTree;
-            ancestorImageTree.put("", ancestorImage);
-            ancestorImagesTree.push_back(std::make_pair("", ancestorImageTree));
-        }
-
-        viewTree.add_child("ancestorImages", ancestorImagesTree);
     }
 
     parentTree.push_back(std::make_pair(name, viewTree));
@@ -122,14 +107,6 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
     if (viewTree.count("metadata"))
         for (bpt::ptree::value_type& metaDataNode : viewTree.get_child("metadata"))
             view.getImage().addMetadata(metaDataNode.first, metaDataNode.second.data());
-
-    if (viewTree.count("ancestorImages"))
-    {
-        for (bpt::ptree::value_type ancestorImageNode : viewTree.get_child("ancestorImages"))
-        {
-            view.addAncestorImage(ancestorImageNode.second.get_value<IndexT>());
-        }
-    }
 }
 
 void saveAncestor(const std::string& name, IndexT ancestorId, const std::shared_ptr<sfmData::ImageInfo>& ancestor, bpt::ptree& parentTree)

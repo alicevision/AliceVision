@@ -486,7 +486,6 @@ class SfMData
      */
     void addAncestor(IndexT ancestorId, std::shared_ptr<ImageInfo> image)
     {
-        //_ancestors.at(ancestorId) = image;
         _ancestors.emplace(ancestorId, image);
     }
 

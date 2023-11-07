@@ -45,9 +45,6 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
         view->addAncestor(static_cast<IndexT>(11));
         view->addAncestor(static_cast<IndexT>(22));
 
-        view->addAncestorImage(static_cast<IndexT>(11));
-        view->addAncestorImage(static_cast<IndexT>(22));
-
         sfm_data.getViews().emplace(id_view, view);
 
         // Add poses

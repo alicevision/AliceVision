@@ -207,16 +207,6 @@ class View
     void setFrameId(IndexT frameId) { _frameId = frameId; }
 
     /**
-     * @brief Get the list of viewID referencing the source views called "Ancestors"
-     * If an image is generated from multiple input images, "Ancestors" allows to keep track of the viewIDs of the original inputs views.
-     * For instance, the generated view can come from the fusion of multiple LDR images into one HDR image, the fusion from multi-focus
-     * stacking to get a fully focused image, fusion of images with multiple lighting to get a more diffuse lighting, etc.
-     * @return list of viewID of the ancestors
-     * @param[in] viewId the view ancestor id
-     */
-    void addAncestor(IndexT viewId) { _ancestors.push_back(viewId); }
-
-    /**
      * @Brief get all ancestors for this view
      * @return ancestors
      */
@@ -228,13 +218,13 @@ class View
      * of the original images. For instance, the generated view can come from the fusion of multiple LDR images into
      * one HDR image, the fusion from multi-focus stacking to get a fully focused image, fusion of images with multiple
      * lighting to get a more diffuse lighting, etc.
-     * @param[in] new ancestor image
+     * @param[in] new ancestor image Id
      */
-    void addAncestorImage(IndexT image)
+    void addAncestor(IndexT image)
     {
-        if (std::find(_ancestorImages.begin(), _ancestorImages.end(), image) == _ancestorImages.end())
+        if (std::find(_ancestors.begin(), _ancestors.end(), image) == _ancestors.end())
         {
-            _ancestorImages.push_back(image);
+            _ancestors.push_back(image);
         }
     }
 
@@ -242,13 +232,13 @@ class View
      * @Brief get all ancestor images for this view
      * @return ancestor images
      */
-    const std::vector<IndexT>& getAncestorImages() const { return _ancestorImages; }
+    //const std::vector<IndexT>& getAncestorImages() const { return _ancestorImages; }
 
     /**
      * @Brief get all ancestor images for this view
      * @return ancestor images
      */
-    std::vector<IndexT>& getAncestorImages() { return _ancestorImages; }
+    //std::vector<IndexT>& getAncestorImages() { return _ancestorImages; }
 
     /**
      * @brief Set the given resection id
@@ -276,12 +266,12 @@ class View
     IndexT _resectionId = UndefinedIndexT;
     /// pose independent of other view(s)
     bool _isPoseIndependent = true;
-    /// list of ancestor views
+    /// list of ancestor images
     std::vector<IndexT> _ancestors;
     /// Link to imageinfo
     std::shared_ptr<ImageInfo> _image;
     /// List of ancestor images info
-    std::vector<IndexT> _ancestorImages;
+    //std::vector<IndexT> _ancestorImages;
 };
 
 }  // namespace sfmData

@@ -401,7 +401,6 @@ bool readCamera(const Version& abcVersion,
     std::string mvg_intrinsicInitializationMode = EInitMode_enumToString(EInitMode::NONE);
     std::string mvg_intrinsicDistortionInitializationMode = EInitMode_enumToString(EInitMode::NONE);
     std::vector<double> mvg_intrinsicParams;
-    std::vector<IndexT> mvg_ancestorsParams;
     std::vector<IndexT> mvg_ancestorImagesParams;
     Vec2 initialFocalLengthPix = {-1, -1};
     double fisheyeCenterX = 0.0;
@@ -549,13 +548,6 @@ bool readCamera(const Version& abcVersion,
                 prop.get(sample, ISampleSelector(sampleFrame));
                 mvg_intrinsicParams.assign(sample->get(), sample->get() + sample->size());
             }
-            if (userProps.getPropertyHeader("mvg_ancestorsParams"))
-            {
-                Alembic::Abc::IUInt32ArrayProperty prop(userProps, "mvg_ancestorsParams");
-                Alembic::Abc::IUInt32ArrayProperty::sample_ptr_type sample;
-                prop.get(sample, ISampleSelector(sampleFrame));
-                mvg_ancestorsParams.assign(sample->get(), sample->get() + sample->size());
-            }
 
             if (userProps.getPropertyHeader("mvg_ancestorImagesParams"))
             {
@@ -669,16 +661,10 @@ bool readCamera(const Version& abcVersion,
             view->getImage().addMetadata(rawMetadata.at(i), rawMetadata.at(i + 1));
         }
 
-        // set ancestor viewIds
-        for (IndexT val : mvg_ancestorsParams)
-        {
-            view->addAncestor(val);
-        }
-
         // set ancestor image Ids
         for (IndexT val : mvg_ancestorImagesParams)
         {
-            view->addAncestorImage(val);
+            view->addAncestor(val);
         }
 
         sfmData.getViews().emplace(viewId, view);
