@@ -18,47 +18,40 @@ typedef Eigen::Matrix<double, 5, 1> Vec5;
 
 class P3PSolver : public robustEstimation::ISolver<robustEstimation::Mat34Model>
 {
-public:
+  public:
+    /**
+     * @brief Return the minimum number of required samples
+     * @return minimum number of required samples
+     */
+    inline std::size_t getMinimumNbRequiredSamples() const override { return 3; }
 
-  /**
-   * @brief Return the minimum number of required samples
-   * @return minimum number of required samples
-   */
-  inline std::size_t getMinimumNbRequiredSamples() const override
-  {
-    return 3;
-  }
+    /**
+     * @brief Return the maximum number of models
+     * @return maximum number of models
+     */
+    inline std::size_t getMaximumNbModels() const override { return 4; }
 
-  /**
-   * @brief Return the maximum number of models
-   * @return maximum number of models
-   */
-  inline std::size_t getMaximumNbModels() const override
-  {
-    return 4;
-  }
+    /**
+     * @brief Solve the problem of camera pose.
+     *
+     * @param[in] x2d 2d points in the first image. One per column.
+     * @param[in] x3d Corresponding 3d points in the second image. One per column.
+     * @param[out] models A list of at most 4 candidate solutions.
+     */
+    void solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models) const override;
 
-  /**
-   * @brief Solve the problem of camera pose.
-   *
-   * @param[in] x2d 2d points in the first image. One per column.
-   * @param[in] x3d Corresponding 3d points in the second image. One per column.
-   * @param[out] models A list of at most 4 candidate solutions.
-   */
-   void solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models) const override;
-
-   /**
-    * @brief Solve the problem.
-    *
-    * @param[in]  x2d 2d points in the first image. One per column.
-    * @param[in]  x3d Corresponding 3d points in the second image. One per column.
-    * @param[out] models A vector into which the computed models are stored.
-    * @param[in]  weights.
-    */
-   void solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, const std::vector<double>& weights) const override
-   {
-      throw std::logic_error("P3PSolver does not support problem solving with weights.");
-   }
+    /**
+     * @brief Solve the problem.
+     *
+     * @param[in]  x2d 2d points in the first image. One per column.
+     * @param[in]  x3d Corresponding 3d points in the second image. One per column.
+     * @param[out] models A vector into which the computed models are stored.
+     * @param[in]  weights.
+     */
+    void solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, const std::vector<double>& weights) const override
+    {
+        throw std::logic_error("P3PSolver does not support problem solving with weights.");
+    }
 };
 
 }  // namespace resection

@@ -1,12 +1,16 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
-namespace SphericalMapping
-{
+namespace SphericalMapping {
 /**
  * Map from equirectangular to spherical coordinates
  * @param equirectangular equirectangular coordinates
@@ -25,5 +29,5 @@ Vec3 fromEquirectangular(const Vec2& equirectangular, int width, int height);
  */
 Vec2 toEquirectangular(const Vec3& spherical, int width, int height);
 
-} // namespace SphericalMapping
-} // namespace aliceVision
+}  // namespace SphericalMapping
+}  // namespace aliceVision

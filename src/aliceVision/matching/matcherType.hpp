@@ -14,11 +14,11 @@ namespace matching {
 
 enum EMatcherType
 {
-  BRUTE_FORCE_L2,
-  ANN_L2,
-  CASCADE_HASHING_L2,
-  FAST_CASCADE_HASHING_L2,
-  BRUTE_FORCE_HAMMING
+    BRUTE_FORCE_L2,
+    ANN_L2,
+    CASCADE_HASHING_L2,
+    FAST_CASCADE_HASHING_L2,
+    BRUTE_FORCE_HAMMING
 };
 
 /**
@@ -28,14 +28,12 @@ enum EMatcherType
  */
 std::string EMatcherType_enumToString(EMatcherType matcherType);
 
-
 /**
  * @brief convert a string matcherType to it's corresponding enum EMatcherType
  * @param matcherType
  * @return EMatcherType
  */
- EMatcherType EMatcherType_stringToEnum(const std::string& matcherType);
- 
+EMatcherType EMatcherType_stringToEnum(const std::string& matcherType);
 
-} // namespace matching
-} // namespace aliceVision
+}  // namespace matching
+}  // namespace aliceVision

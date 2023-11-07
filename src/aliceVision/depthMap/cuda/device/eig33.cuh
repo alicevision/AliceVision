@@ -9,7 +9,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-__device__ static double cuda_hypot2(double x, double y)
+__device__ inline double cuda_hypot2(double x, double y)
 {
     return sqrt(x * x + y * y);
 }

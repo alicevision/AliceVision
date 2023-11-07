@@ -42,7 +42,7 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
  * @brief Given an non empty database, it queries the database with a set of images
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
- * 
+ *
  * @param[in] filepath A file containithe path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be usedng  for feature quantization
@@ -50,7 +50,7 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
  * @param[in] numResults The number of results to retrieve for each image
  * @param[out] allMatches The matches for all the images
  * @param[in] distanceMethod The distance method used to create the pair list
- * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded. 
+ * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  * @see queryDatabase()
  */
 template<class DescriptorT, class VocDescriptorT>
@@ -67,14 +67,14 @@ void queryDatabase(const sfmData::SfMData& sfmData,
  * @brief Given an non empty database, it queries the database with a set of images
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
- * 
+ *
  * @param[in] filepath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[in] db The built database
  * @param[in] numResults The number of results to retrieve for each image
  * @param[out] allMatches The matches for all the images
- * @param[out] documents For each document, it contains the list of associated visual words 
+ * @param[out] documents For each document, it contains the list of associated visual words
  * @param[in] distanceMethod The distance method used to create the pair list
  * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  */
@@ -90,14 +90,14 @@ void queryDatabase(const sfmData::SfMData& sfmData,
                    const int Nmax = 0);
 
 /**
- * @brief Returns some statistics (histogram) 
- * 
+ * @brief Returns some statistics (histogram)
+ *
  * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[in] db The built database
  * @param[in] distanceMethod The distance method used for create the pair list
- * @param[in/out] globalHistogram The histogram of the "population" of voctree leaves. 
+ * @param[in/out] globalHistogram The histogram of the "population" of voctree leaves.
  * @see queryDatabase()
  */
 template<class DescriptorT, class VocDescriptorT>
@@ -108,7 +108,7 @@ void voctreeStatistics(const sfmData::SfMData& sfmData,
                        const std::string& distanceMethod,
                        std::map<int, int>& globalHistogram);
 
-} //namespace voctree
-} //namespace aliceVision
+}  // namespace voctree
+}  // namespace aliceVision
 
 #include "databaseIO.tcc"

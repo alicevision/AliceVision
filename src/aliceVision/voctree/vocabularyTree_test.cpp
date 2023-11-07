@@ -19,41 +19,41 @@ using namespace aliceVision::voctree;
 
 BOOST_AUTO_TEST_CASE(database)
 {
-  const int cardDocuments = 10;
-  const int cardWords = 12;
+    const int cardDocuments = 10;
+    const int cardWords = 12;
 
-  // Create a documents vector
-  std::vector<std::vector<Word>> documentsToInsert;
-  documentsToInsert.resize(cardDocuments);
-  for(int i = 0; i < documentsToInsert.size(); ++i)
-  {
-    documentsToInsert[i].resize(cardWords);
-    for(int j = 0; j < cardWords; ++j)
+    // Create a documents vector
+    std::vector<std::vector<Word>> documentsToInsert;
+    documentsToInsert.resize(cardDocuments);
+    for (int i = 0; i < documentsToInsert.size(); ++i)
     {
-      documentsToInsert[i][j] = cardWords * i + j;
+        documentsToInsert[i].resize(cardWords);
+        for (int j = 0; j < cardWords; ++j)
+        {
+            documentsToInsert[i][j] = cardWords * i + j;
+        }
     }
-  }
 
-  // Create the databases
-  Database db(documentsToInsert.size() * documentsToInsert[0].size());
-  for(int i = 0; i < documentsToInsert.size(); ++i)
-  {
-    SparseHistogram histo;
-    computeSparseHistogram(documentsToInsert[i], histo);
-    db.insert(i, histo);
-  }
+    // Create the databases
+    Database db(documentsToInsert.size() * documentsToInsert[0].size());
+    for (int i = 0; i < documentsToInsert.size(); ++i)
+    {
+        SparseHistogram histo;
+        computeSparseHistogram(documentsToInsert[i], histo);
+        db.insert(i, histo);
+    }
 
-  // Compute weights
-  db.computeTfIdfWeights();
+    // Compute weights
+    db.computeTfIdfWeights();
 
-  // Check returned matches for a given document
-  for(int i = 0; i < documentsToInsert.size(); i++)
-  {
-    // Create match vectors
-    std::vector<DocMatch> match(1);
-    // Query both databases with the same document
-    db.find(documentsToInsert[i], 1, match, "classic");
-    // Check the matches scores are 0 (or near)
-    BOOST_CHECK_SMALL(static_cast<double>(match[0].score), 0.001);
-  }
+    // Check returned matches for a given document
+    for (int i = 0; i < documentsToInsert.size(); i++)
+    {
+        // Create match vectors
+        std::vector<DocMatch> match(1);
+        // Query both databases with the same document
+        db.find(documentsToInsert[i], 1, match, "classic");
+        // Check the matches scores are 0 (or near)
+        BOOST_CHECK_SMALL(static_cast<double>(match[0].score), 0.001);
+    }
 }

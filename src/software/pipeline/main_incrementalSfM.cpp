@@ -13,11 +13,12 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
-#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
+#include <aliceVision/sfm/utils/alignment.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -27,7 +28,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 4
 
 using namespace aliceVision;
 
@@ -56,8 +57,8 @@ bool retrieveViewIdFromImageName(const sfmData::SfMData& sfmData,
     const sfmData::View& v = *(viewPair.second.get());
     
     if(name == std::to_string(v.getViewId()) ||
-       name == fs::path(v.getImagePath()).filename().string() ||
-       name == v.getImagePath())
+       name == fs::path(v.getImage().getImagePath()).filename().string() ||
+       name == v.getImage().getImagePath())
     {
       out_viewId = v.getViewId();
       break;
@@ -84,6 +85,7 @@ int aliceVision_main(int argc, char **argv)
   std::string extraInfoFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::pair<std::string,std::string> initialPairString("","");
+  bool useAutoTransform = true;
 
   sfm::ReconstructionEngine_sequentialSfM::Params sfmParams;
   bool lockScenePreviouslyReconstructed = true;
@@ -93,6 +95,7 @@ int aliceVision_main(int argc, char **argv)
   bool computeStructureColor = true;
 
   int randomSeed = std::mt19937::default_seed;
+  bool logIntermediateSteps = false;
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -153,6 +156,16 @@ int aliceVision_main(int argc, char **argv)
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
     ("localBAGraphDistance", po::value<int>(&sfmParams.localBundelAdjustementGraphDistanceLimit)->default_value(sfmParams.localBundelAdjustementGraphDistanceLimit),
       "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
+    ("nbFirstUnstableCameras", po::value<std::size_t>(&sfmParams.nbFirstUnstableCameras)->default_value(sfmParams.nbFirstUnstableCameras),
+      "Number of cameras for which the bundle adjustment is performed every single time a camera is added, leading to more stable "
+      "results while the computations are not too expensive since there is not much data. Past this number, the bundle adjustment "
+      "will only be performed once for N added cameras.")
+    ("maxImagesPerGroup", po::value<std::size_t>(&sfmParams.maxImagesPerGroup)->default_value(sfmParams.maxImagesPerGroup),
+      "Maximum number of cameras that can be added before the bundle adjustment is performed. This prevents adding too much data "
+      "at once without performing the bundle adjustment.")
+    ("bundleAdjustmentMaxOutliers", po::value<int>(&sfmParams.bundleAdjustmentMaxOutliers)->default_value(sfmParams.bundleAdjustmentMaxOutliers),
+      "Threshold for the maximum number of outliers allowed at the end of a bundle adjustment iteration."
+      "Using a negative value for this threshold will disable BA iterations.")
     ("localizerEstimator", po::value<robustEstimation::ERobustEstimator>(&sfmParams.localizerEstimator)->default_value(sfmParams.localizerEstimator),
       "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)")
     ("localizerEstimatorError", po::value<double>(&sfmParams.localizerEstimatorError)->default_value(0.0),
@@ -174,8 +187,12 @@ int aliceVision_main(int argc, char **argv)
       "Use of an observation constraint : basic, scale the observation or use of the covariance.\n")
     ("computeStructureColor", po::value<bool>(&computeStructureColor)->default_value(computeStructureColor),
       "Compute each 3D point color.\n")
+    ("useAutoTransform", po::value<bool>(&useAutoTransform)->default_value(useAutoTransform),
+      "Transform the result with the alignment method 'AUTO'.\n")
     ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
       "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+    ("logIntermediateSteps", po::value<bool>(&sfmParams.logIntermediateSteps)->default_value(logIntermediateSteps),
+      "If set to true, the current state of the scene will be dumped as an SfMData file every 3 resections.")
     ;
 
   CmdLine cmdline("Sequential/Incremental reconstruction.\n"
@@ -295,6 +312,22 @@ int aliceVision_main(int argc, char **argv)
 
   if(!sfmEngine.process())
     return EXIT_FAILURE;
+
+  //Mimic sfmTransform "EAlignmentMethod::AUTO"
+  if (useAutoTransform)
+  {
+    double S = 1.0;
+    Mat3 R = Mat3::Identity();
+    Vec3 t = Vec3::Zero();
+
+    ALICEVISION_LOG_DEBUG("Align automatically");
+    sfm::computeNewCoordinateSystemAuto(sfmEngine.getSfMData(), S, R, t);
+    sfm::applyTransform(sfmEngine.getSfMData(), S, R, t);
+    
+    ALICEVISION_LOG_DEBUG("Align with ground");
+    sfm::computeNewCoordinateSystemGroundAuto(sfmEngine.getSfMData(), t);
+    sfm::applyTransform(sfmEngine.getSfMData(), 1.0, Eigen::Matrix3d::Identity(), t);
+  }
 
   // set featuresFolders and matchesFolders relative paths
   {

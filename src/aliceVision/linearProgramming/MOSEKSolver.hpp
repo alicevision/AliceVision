@@ -10,39 +10,39 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/linearProgramming/ISolver.hpp"
 
-extern "C"{
+extern "C"
+{
 #include "mosek.h"
 }
 
 #include <vector>
 
-namespace aliceVision   {
-namespace linearProgramming  {
+namespace aliceVision {
+namespace linearProgramming {
 
 /// MOSEK wrapper for the ISolver
 class MOSEKSolver : public ISolver
 {
-public :
-  MOSEKSolver(int nbParams);
+  public:
+    MOSEKSolver(int nbParams);
 
-  ~MOSEKSolver();
+    ~MOSEKSolver();
 
-  //--
-  // Inherited functions :
-  //--
+    //--
+    // Inherited functions :
+    //--
 
-  bool setup(const LPConstraints & constraints);
-  bool setup(const LPConstraintsSparse & constraints);
+    bool setup(const LPConstraints& constraints);
+    bool setup(const LPConstraintsSparse& constraints);
 
-  bool solve();
+    bool solve();
 
-  bool getSolution(std::vector<double> & estimatedParams);
+    bool getSolution(std::vector<double>& estimatedParams);
 
-private :
-  //MSKenv_t     env;
-  MSKtask_t    task; // Solver object.
+  private:
+    // MSKenv_t     env;
+    MSKtask_t task;  // Solver object.
 };
 
-
-} // namespace linearProgramming
-} // namespace aliceVision
+}  // namespace linearProgramming
+}  // namespace aliceVision

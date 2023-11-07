@@ -11,7 +11,7 @@
 #include <aliceVision/utils/regexFilter.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
@@ -213,7 +213,7 @@ int aliceVision_main(int argc, char** argv)
             {
                 const sfmData::View& view = *(viewIt.second);
 
-                ViewPaths.insert({view.getViewId(), view.getImagePath()});
+                ViewPaths.insert({view.getViewId(), view.getImage().getImagePath()});
             }
 
             const int size = ViewPaths.size();
@@ -236,7 +236,7 @@ int aliceVision_main(int argc, char** argv)
                 // Read image options and load image
                 image::ImageReadOptions options;
                 options.workingColorSpace = image::EImageColorSpace::NO_CONVERSION;
-                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
+                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
 
                 image::Image<image::RGBAfColor> image;
                 image::readImage(viewPath, image, options);
@@ -248,9 +248,9 @@ int aliceVision_main(int argc, char** argv)
                 saveImage(image, viewPath, outputfilePath, storageDataType);
 
                 // Update sfmdata view for this modification
-                view.setImagePath(outputfilePath);
-                view.setWidth(image.Width());
-                view.setHeight(image.Height());
+                view.getImage().setImagePath(outputfilePath);
+                view.getImage().setWidth(image.Width());
+                view.getImage().setHeight(image.Height());
             }
 
             // Save sfmData with modified path to images

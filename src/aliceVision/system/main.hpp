@@ -36,11 +36,11 @@ int main(int argc, char* argv[])
     {
         return aliceVision_main(argc, argv);
     }
-    catch(const std::exception& e)
+    catch (const std::exception& e)
     {
         ALICEVISION_LOG_FATAL(e.what());
     }
-    catch(...)
+    catch (...)
     {
         ALICEVISION_LOG_FATAL("Unknown exception");
     }

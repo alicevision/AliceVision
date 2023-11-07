@@ -9,7 +9,6 @@
 namespace aliceVision {
 namespace matching {
 
-
 void sortMatches_byFeaturesScale(const aliceVision::matching::IndMatches& inputMatches,
                                  const aliceVision::feature::Regions& regionsI,
                                  const aliceVision::feature::Regions& regionsJ,
@@ -25,7 +24,7 @@ void sortMatches_byFeaturesScale(const aliceVision::matching::IndMatches& inputM
     // It will be used to retrieve the correct matches after the sort.
     std::vector<std::pair<float, size_t>> vecFeatureScale;
 
-    for(size_t i = 0; i < inputMatches.size(); i++)
+    for (size_t i = 0; i < inputMatches.size(); i++)
     {
         float scale1 = vecFeatureI[inputMatches[i]._i].scale();
         float scale2 = vecFeatureJ[inputMatches[i]._j].scale();
@@ -35,7 +34,7 @@ void sortMatches_byFeaturesScale(const aliceVision::matching::IndMatches& inputM
     std::sort(vecFeatureScale.begin(), vecFeatureScale.end(), matchCompare);
 
     // The sorted match vector is filled according to the result of the sorting above.
-    for(size_t i = 0; i < vecFeatureScale.size(); i++)
+    for (size_t i = 0; i < vecFeatureScale.size(); i++)
     {
         outputMatches.push_back(inputMatches[vecFeatureScale[i].second]);
     }
@@ -45,10 +44,7 @@ void sortMatches_byDistanceRatio(aliceVision::matching::IndMatches& matches)
 {
     struct
     {
-        bool operator()(const matching::IndMatch& m1, const matching::IndMatch& m2) const
-        {
-            return m1._distanceRatio < m2._distanceRatio;
-        }
+        bool operator()(const matching::IndMatch& m1, const matching::IndMatch& m2) const { return m1._distanceRatio < m2._distanceRatio; }
     } increasingLoweRatio;
 
     std::sort(matches.begin(), matches.end(), increasingLoweRatio);
@@ -61,7 +57,7 @@ bool matchCompare(const std::pair<float, size_t>& firstElem, const std::pair<flo
 
 void thresholdMatches(aliceVision::matching::IndMatches& outputMatches, const std::size_t uNumMatchesToKeep)
 {
-    if(outputMatches.size() > uNumMatchesToKeep)
+    if (outputMatches.size() > uNumMatchesToKeep)
     {
         outputMatches.resize(uNumMatchesToKeep);
     }
@@ -72,7 +68,8 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
                           const aliceVision::feature::Regions& rRegions,
                           const std::pair<std::size_t, std::size_t>& rImgSize,
                           const aliceVision::Pair& indexImagePair,
-                          aliceVision::matching::IndMatches& outMatches, size_t gridSize)
+                          aliceVision::matching::IndMatches& outMatches,
+                          size_t gridSize)
 {
     const size_t leftCellWidth = divideRoundUp(lImgSize.first, gridSize);
     const size_t leftCellHeight = divideRoundUp(lImgSize.second, gridSize);
@@ -81,20 +78,19 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
 
     std::vector<aliceVision::matching::IndMatches> completeGrid(gridSize * gridSize * 2);
     // Reserve all cells
-    for(aliceVision::matching::IndMatches& cell : completeGrid)
+    for (aliceVision::matching::IndMatches& cell : completeGrid)
     {
         cell.reserve(outMatches.size() / completeGrid.size());
     }
     // Split matches in grid cells
-    for(const auto& match : outMatches)
+    for (const auto& match : outMatches)
     {
         const aliceVision::feature::PointFeature& leftPoint = lRegions.Features()[match._i];
         const aliceVision::feature::PointFeature& rightPoint = rRegions.Features()[match._j];
 
-        const float leftGridIndex_f = std::floor(leftPoint.x() / (float)leftCellWidth) +
-                                      std::floor(leftPoint.y() / (float)leftCellHeight) * gridSize;
-        const float rightGridIndex_f = std::floor(rightPoint.x() / (float)rightCellWidth) +
-                                       std::floor(rightPoint.y() / (float)rightCellHeight) * gridSize;
+        const float leftGridIndex_f = std::floor(leftPoint.x() / (float)leftCellWidth) + std::floor(leftPoint.y() / (float)leftCellHeight) * gridSize;
+        const float rightGridIndex_f =
+          std::floor(rightPoint.x() / (float)rightCellWidth) + std::floor(rightPoint.y() / (float)rightCellHeight) * gridSize;
         // clamp the values if we have feature/marker centers outside the image size.
         const std::size_t leftGridIndex = clamp(leftGridIndex_f, 0.f, float(gridSize - 1));
         const std::size_t rightGridIndex = clamp(rightGridIndex_f, 0.f, float(gridSize - 1));
@@ -102,7 +98,7 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
         aliceVision::matching::IndMatches& currentCaseL = completeGrid[leftGridIndex];
         aliceVision::matching::IndMatches& currentCaseR = completeGrid[rightGridIndex + gridSize * gridSize];
 
-        if(currentCaseL.size() <= currentCaseR.size())
+        if (currentCaseL.size() <= currentCaseR.size())
         {
             currentCaseL.push_back(match);
         }
@@ -114,9 +110,9 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
 
     // max Size of the cells:
     int maxSize = 0;
-    for(const auto& cell : completeGrid)
+    for (const auto& cell : completeGrid)
     {
-        if(cell.size() > maxSize)
+        if (cell.size() > maxSize)
         {
             maxSize = cell.size();
         }
@@ -126,11 +122,11 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
     finalMatches.reserve(outMatches.size());
 
     // Combine all cells into a global ordered vector
-    for(int cmpt = 0; cmpt < maxSize; ++cmpt)
+    for (int cmpt = 0; cmpt < maxSize; ++cmpt)
     {
-        for(const auto& cell : completeGrid)
+        for (const auto& cell : completeGrid)
         {
-            if(cmpt < cell.size())
+            if (cmpt < cell.size())
             {
                 finalMatches.push_back(cell[cmpt]);
             }
@@ -146,13 +142,13 @@ void matchesGridFilteringForAllPairs(const PairwiseMatches& geometricMatches,
                                      std::size_t numMatchesToKeep,
                                      PairwiseMatches& outPairwiseMatches)
 {
-    for (const auto& geometricMatch: geometricMatches)
+    for (const auto& geometricMatch : geometricMatches)
     {
-        //Get the image pair and their matches.
+        // Get the image pair and their matches.
         const Pair& indexImagePair = geometricMatch.first;
         const MatchesPerDescType& matchesPerDesc = geometricMatch.second;
 
-        for (const auto& match: matchesPerDesc)
+        for (const auto& match : matchesPerDesc)
         {
             const feature::EImageDescriberType descType = match.first;
             assert(descType != feature::EImageDescriberType::UNINITIALIZED);
@@ -162,18 +158,21 @@ void matchesGridFilteringForAllPairs(const PairwiseMatches& geometricMatches,
             const feature::Regions* lRegions = &regionPerView.getRegions(indexImagePair.first, descType);
 
             // get the regions for the current view pair:
-            if(rRegions && lRegions)
+            if (rRegions && lRegions)
             {
                 // sorting function:
                 aliceVision::matching::IndMatches outMatches;
                 sortMatches_byFeaturesScale(inputMatches, *lRegions, *rRegions, outMatches);
 
-                if(useGridSort)
+                if (useGridSort)
                 {
                     // TODO: rename as matchesGridOrdering
-                    matchesGridFiltering(*lRegions, sfmData.getView(indexImagePair.first).getImgSize(),
-                                         *rRegions, sfmData.getView(indexImagePair.second).getImgSize(),
-                                         indexImagePair, outMatches);
+                    matchesGridFiltering(*lRegions,
+                                         sfmData.getView(indexImagePair.first).getImage().getImgSize(),
+                                         *rRegions,
+                                         sfmData.getView(indexImagePair.second).getImage().getImgSize(),
+                                         indexImagePair,
+                                         outMatches);
                 }
 
                 if (numMatchesToKeep > 0)
@@ -182,46 +181,45 @@ void matchesGridFilteringForAllPairs(const PairwiseMatches& geometricMatches,
                     outMatches.resize(finalSize);
                 }
 
-                // std::cout << "Left features: " << lRegions->Features().size() << ", right features: " << rRegions->Features().size() << ", num matches: " << inputMatches.size() << ", num filtered matches: " << outMatches.size() << std::endl;
+                // std::cout << "Left features: " << lRegions->Features().size() << ", right features: " << rRegions->Features().size() << ", num
+                // matches: " << inputMatches.size() << ", num filtered matches: " << outMatches.size() << std::endl;
                 outPairwiseMatches[indexImagePair].insert(std::make_pair(descType, outMatches));
             }
             else
             {
-              ALICEVISION_LOG_INFO("You cannot perform the grid filtering with these regions");
+                ALICEVISION_LOG_INFO("You cannot perform the grid filtering with these regions");
             }
         }
     }
 }
 
-void filterMatchesByMin2DMotion(PairwiseMatches& mapPutativesMatches,
-                                const feature::RegionsPerView& regionPerView,
-                                double minRequired2DMotion)
+void filterMatchesByMin2DMotion(PairwiseMatches& mapPutativesMatches, const feature::RegionsPerView& regionPerView, double minRequired2DMotion)
 {
     if (minRequired2DMotion < 0.0f)
         return;
 
-    //For each image pair
-    for (auto& imgPair: mapPutativesMatches)
+    // For each image pair
+    for (auto& imgPair : mapPutativesMatches)
     {
         const Pair viewPair = imgPair.first;
         IndexT viewI = viewPair.first;
         IndexT viewJ = viewPair.second;
 
-        //For each descriptors in this image
-        for (auto& descType: imgPair.second)
+        // For each descriptors in this image
+        for (auto& descType : imgPair.second)
         {
             const feature::EImageDescriberType type = descType.first;
 
-            const feature::Regions & regions_I = regionPerView.getRegions(viewI, type);
-            const feature::Regions & regions_J = regionPerView.getRegions(viewJ, type);
+            const feature::Regions& regions_I = regionPerView.getRegions(viewI, type);
+            const feature::Regions& regions_J = regionPerView.getRegions(viewJ, type);
 
-            const auto & features_I = regions_I.Features();
-            const auto & features_J = regions_J.Features();
+            const auto& features_I = regions_I.Features();
+            const auto& features_J = regions_J.Features();
 
-            IndMatches & matches = descType.second;
+            IndMatches& matches = descType.second;
             IndMatches updated_matches;
 
-            for (auto & match : matches)
+            for (auto& match : matches)
             {
                 Vec2f pi = features_I[match._i].coords();
                 Vec2f pj = features_J[match._j].coords();
@@ -242,5 +240,5 @@ void filterMatchesByMin2DMotion(PairwiseMatches& mapPutativesMatches,
     }
 }
 
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace matching
+}  // namespace aliceVision

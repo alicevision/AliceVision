@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -327,7 +327,7 @@ int main(int argc, char** argv)
     const IndexT viewId = viewPair.first;
 
     const std::string picturePath = mp.getImagePath(mp.getIndexFromViewId(viewId));
-    const std::string normalsPath = mvsUtils::getFileNameFromViewId(mp, viewId, mvsUtils::EFileType::normalMap, 0);
+    const std::string normalsPath = mvsUtils::getFileNameFromViewId(mp, viewId, mvsUtils::EFileType::normalMapFiltered);
 
     image::Image<image::RGBfColor> normals;
     image::readImage(normalsPath, normals, image::EImageColorSpace::LINEAR);

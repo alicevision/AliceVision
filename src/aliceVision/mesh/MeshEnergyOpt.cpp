@@ -15,10 +15,10 @@ namespace mesh {
 namespace bfs = boost::filesystem;
 
 MeshEnergyOpt::MeshEnergyOpt(mvsUtils::MultiViewParams* _mp)
-    : MeshAnalyze(_mp)
+  : MeshAnalyze(_mp)
 {
-//    tmpDir = mp->mvDir + "meshEnergyOpt/";
-//    bfs::create_directory(tmpDir);
+    //    tmpDir = mp->mvDir + "meshEnergyOpt/";
+    //    bfs::create_directory(tmpDir);
 }
 
 MeshEnergyOpt::~MeshEnergyOpt() = default;
@@ -30,10 +30,10 @@ void MeshEnergyOpt::computeLaplacianPtsParallel(StaticVector<Point3d>& out_lapPt
     int nlabpts = 0;
 
 #pragma omp parallel for
-    for(int i = 0; i < pts.size(); i++)
+    for (int i = 0; i < pts.size(); i++)
     {
         Point3d lapPt;
-        if(getLaplacianSmoothingVector(i, lapPt))
+        if (getLaplacianSmoothingVector(i, lapPt))
         {
             out_lapPts[i] = lapPt;
             nlabpts++;
@@ -41,8 +41,7 @@ void MeshEnergyOpt::computeLaplacianPtsParallel(StaticVector<Point3d>& out_lapPt
     }
 }
 
-void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
-                                                const Point3d& RD, StaticVectorBool& ptsCanMove)
+void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU, const Point3d& RD, StaticVectorBool& ptsCanMove)
 {
     // printf("nlabpts %i of %i\n",nlabpts,pts->size());
     StaticVector<Point3d> lapPts;
@@ -53,16 +52,16 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
     newPts.push_back_arr(&pts);
 
 #pragma omp parallel for
-    for(int i = 0; i < pts.size(); ++i)
+    for (int i = 0; i < pts.size(); ++i)
     {
-        if( ptsCanMove.empty() || ptsCanMove[i] )
+        if (ptsCanMove.empty() || ptsCanMove[i])
         {
             Point3d n;
 
-            if(getBiLaplacianSmoothingVector(i, lapPts, n))
+            if (getBiLaplacianSmoothingVector(i, lapPts, n))
             {
                 Point3d p = newPts[i] + n * lambda;
-                if((p.x > LU.x) && (p.y > LU.y) && (p.z > LU.z) && (p.x < RD.x) && (p.y < RD.y) && (p.z < RD.z))
+                if ((p.x > LU.x) && (p.y > LU.y) && (p.z > LU.z) && (p.x < RD.x) && (p.y < RD.y) && (p.z < RD.z))
                 {
                     newPts[i] = p;
                 }
@@ -76,17 +75,17 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
 
 bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool& ptsCanMove)
 {
-    if(pts.size() <= 4)
+    if (pts.size() <= 4)
     {
         return false;
     }
 
-   // bool saveDebug = mp ? mp->userParams.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
+    // bool saveDebug = mp ? mp->userParams.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
 
     Point3d LU, RD;
     LU = pts[0];
     RD = pts[0];
-    for(int i = 0; i < pts.size(); i++)
+    for (int i = 0; i < pts.size(); i++)
     {
         LU.x = std::min(LU.x, pts[i].x);
         LU.y = std::min(LU.y, pts[i].y);
@@ -96,20 +95,18 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool& pt
         RD.z = std::max(RD.z, pts[i].z);
     }
 
-    ALICEVISION_LOG_INFO("Optimizing mesh smooth: " << std::endl
-                         << "\t- lamda: " << lambda << std::endl
-                         << "\t- niters: " << niter << std::endl);
+    ALICEVISION_LOG_INFO("Optimizing mesh smooth: " << std::endl << "\t- lamda: " << lambda << std::endl << "\t- niters: " << niter << std::endl);
 
-    for(int i = 0; i < niter; i++)
+    for (int i = 0; i < niter; i++)
     {
         ALICEVISION_LOG_INFO("Optimizing mesh smooth: iteration " << i);
         updateGradientParallel(lambda, LU, RD, ptsCanMove);
-        //if(saveDebug)
-        //    save(folder + "mesh_smoothed_" + std::to_string(i));
+        // if(saveDebug)
+        //     save(folder + "mesh_smoothed_" + std::to_string(i));
     }
 
     return true;
 }
 
-} // namespace mesh
-} // namespace aliceVision
+}  // namespace mesh
+}  // namespace aliceVision

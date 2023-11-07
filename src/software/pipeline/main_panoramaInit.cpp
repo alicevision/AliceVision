@@ -1,5 +1,11 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -22,7 +28,8 @@
 
 using namespace aliceVision;
 
-namespace std {
+namespace std
+{
 std::ostream& operator<<(std::ostream& os, const std::pair<double, double>& v)
 {
     os << v.first << " " << v.second;
@@ -38,7 +45,7 @@ std::istream& operator>>(std::istream& in, std::pair<double, double>& v)
     v.second = boost::lexical_cast<double>(token);
     return in;
 }
-}
+} // namespace std
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -655,6 +662,191 @@ private:
     size_t _minimal_size;
 };
 
+/**
+ * @brief Utility function for resizing an image.
+ */
+void resample(image::Image<image::RGBfColor>& output,
+              const image::Image<image::RGBfColor>& input)
+{
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),
+                               const_cast<image::RGBfColor*>(input.data()));
+    
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                          (image::RGBfColor*)output.data());
+
+    oiio::ImageBufAlgo::resample(outBuf, inBuf, false);
+}
+
+/**
+ * @brief Utility function for rotating an image given its orientation metadata.
+ */
+void applyOrientation(image::Image<image::RGBfColor>& output,
+                      const image::Image<image::RGBfColor>& input,
+                      sfmData::EEXIFOrientation orientation)
+{
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),
+                               const_cast<image::RGBfColor*>(input.data()));
+    
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                          (image::RGBfColor*)output.data());
+
+    switch (orientation)
+    {
+        case sfmData::EEXIFOrientation::UPSIDEDOWN:
+            oiio::ImageBufAlgo::rotate180(outBuf, inBuf);
+            break;
+        case sfmData::EEXIFOrientation::LEFT:
+            oiio::ImageBufAlgo::rotate90(outBuf, inBuf);
+            break;
+        case sfmData::EEXIFOrientation::RIGHT:
+            oiio::ImageBufAlgo::rotate270(outBuf, inBuf);
+            break;
+        default:
+            outBuf.copy(inBuf);
+            break;
+    }
+}
+
+/**
+ * @brief Utility struct for contact sheet elements.
+ */
+struct Contact
+{
+    int rank;
+    std::string path;
+    int width;
+    int height;
+    sfmData::EEXIFOrientation orientation;
+};
+
+/**
+ * @brief Width of contact sheet element, taking into account orientation metadata.
+ */
+int orientedWidth(const Contact& contact)
+{
+    switch (contact.orientation)
+    {
+        case sfmData::EEXIFOrientation::LEFT:
+        case sfmData::EEXIFOrientation::RIGHT:
+            return contact.height;
+        default:
+            return contact.width;
+    }
+}
+
+/**
+ * @brief Height of contact sheet element, taking into account orientation metadata.
+ */
+int orientedHeight(const Contact& contact)
+{
+    switch (contact.orientation)
+    {
+        case sfmData::EEXIFOrientation::LEFT:
+        case sfmData::EEXIFOrientation::RIGHT:
+            return contact.width;
+        default:
+            return contact.height;
+    }
+}
+
+bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
+                            const std::map<int, std::map<int, Contact>>& contactSheetInfo, int contactSheetItemMaxSize)
+{
+    const int space = 10;
+
+    // Compute ratio for resizing inputs
+    int maxdim = 0;
+    for(const auto& rowpair : contactSheetInfo)
+    {
+        for(const auto& item : rowpair.second)
+        {
+            maxdim = std::max(maxdim, orientedWidth(item.second));
+            maxdim = std::max(maxdim, orientedHeight(item.second));
+        }
+    }
+    double ratioResize = double(contactSheetItemMaxSize) / double(maxdim);
+
+    // Compute output size
+    int totalHeight = space;
+    int maxWidth = 0;
+    for(const auto& rowpair : contactSheetInfo)
+    {
+        int rowHeight = 0;
+        int rowWidth = space;
+
+        for(const auto& item : rowpair.second)
+        {
+            int resizedHeight = int(ratioResize * double(orientedHeight(item.second)));
+            int resizedWidth = int(ratioResize * double(orientedWidth(item.second)));
+
+            rowHeight = std::max(rowHeight, resizedHeight);
+            rowWidth += resizedWidth + space;
+        }
+
+        totalHeight += rowHeight + space;
+        maxWidth = std::max(maxWidth, rowWidth);
+    }
+
+    if(totalHeight == 0 || maxWidth == 0)
+    {
+        return false;
+    }
+
+    int rowCount = 0;
+    int posY = space;
+    output = image::Image<image::RGBfColor>(maxWidth, totalHeight, true);
+    for(const auto& rowpair : contactSheetInfo)
+    {
+        ALICEVISION_LOG_INFO("Build contact sheet row " << rowCount + 1 << "/" << contactSheetInfo.size());
+        int rowHeight = 0;
+        int rowWidth = space;
+
+        for(const auto& item : rowpair.second)
+        {
+            int resizedHeight = int(ratioResize * double(orientedHeight(item.second)));
+            int resizedWidth = int(ratioResize * double(orientedWidth(item.second)));
+
+            rowHeight = std::max(rowHeight, resizedHeight);
+            rowWidth += resizedWidth + space;
+        }
+
+        // Create row thumbnails
+        image::Image<image::RGBfColor> rowOutput(rowWidth, rowHeight, true);
+
+        int posX = space;
+        for(const auto& item : rowpair.second)
+        {
+            int rawResizedHeight = int(ratioResize * double(item.second.height));
+            int rawResizedWidth = int(ratioResize * double(item.second.width));
+
+            int resizedHeight = int(ratioResize * double(orientedHeight(item.second)));
+            int resizedWidth = int(ratioResize * double(orientedWidth(item.second)));
+
+            image::Image<image::RGBfColor> input;
+            image::Image<image::RGBfColor> rawThumbnail(rawResizedWidth, rawResizedHeight);
+            image::Image<image::RGBfColor> thumbnail(resizedWidth, resizedHeight);
+
+            image::readImage(item.second.path, input, image::EImageColorSpace::SRGB);
+
+            resample(rawThumbnail, input);
+            applyOrientation(thumbnail, rawThumbnail, item.second.orientation);
+
+            rowOutput.block(0, posX, resizedHeight, resizedWidth) = thumbnail;
+            posX += resizedWidth + space;
+        }
+
+        int centeredX = (maxWidth - rowWidth) / 2;
+
+        // Concatenate
+        output.block(posY, centeredX, rowOutput.Height(), rowOutput.Width()) = rowOutput;
+
+        posY += rowHeight + space;
+        rowCount++;
+    }
+
+    return true;
+}
+
 int main(int argc, char* argv[])
 {
     using namespace aliceVision;
@@ -673,6 +865,8 @@ int main(int argc, char* argv[])
     double fisheyeRadius = 96.0;
     float additionalAngle = 0.0f;
     bool debugFisheyeCircleEstimation = false;
+    bool buildContactSheet = false;
+    int contactSheetItemMaxSize = 256;
 
     // Command line parameters
 
@@ -688,7 +882,9 @@ int main(int argc, char* argv[])
         "yawCW", po::value<bool>(&yawCW), "Yaw rotation is ClockWise or ConterClockWise.")(
         "initializeCameras", po::value<std::string>(&initializeCameras), "Initialization type for the cameras poses.")(
         "nbViewsPerLine", po::value<std::string>(&nbViewsPerLineString),
-        "Number of views per line splitted by comma. For instance, \"2,4,*,4,2\".");
+        "Number of views per line splitted by comma. For instance, \"2,4,*,4,2\".")(
+        "buildContactSheet", po::value<bool>(&buildContactSheet)->default_value(buildContactSheet),
+        "Build a contact sheet");
 
     po::options_description fisheyeParams("Fisheye parameters");
     fisheyeParams.add_options()("useFisheye", po::value<bool>(&useFisheye),
@@ -703,7 +899,8 @@ int main(int argc, char* argv[])
         "debugFisheyeCircleEstimation", po::value<bool>(&debugFisheyeCircleEstimation),
         "Debug fisheye circle detection.");
 
-    CmdLine cmdline("Initialize information on the panorama pipeline's input images, specifically from a file generated by a motorized head system.\n"
+    CmdLine cmdline("Initialize information on the panorama pipeline's input images, specifically from a file "
+                    "generated by a motorized head system.\n"
                     "AliceVision panoramaInit");
     cmdline.add(requiredParams);
     cmdline.add(motorizedHeadParams);
@@ -725,6 +922,8 @@ int main(int argc, char* argv[])
     {
         additionalAngle = M_PI_2;
     }
+
+    std::map<int, std::map<int, Contact>> contactSheetInfo;
 
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
@@ -762,16 +961,56 @@ int main(int argc, char* argv[])
             }
 
             pt::ptree shoot = tree.get_child("papywizard.shoot");
-            for(auto it : shoot)
+
+            // Get a set of unique ids
+            std::set<int> uniqueIds;
+            for(const auto it : shoot)
             {
                 int id = it.second.get<double>("<xmlattr>.id");
-                int bracket = it.second.get<double>("<xmlattr>.bracket");
-
-                if(rotations.find(id) != rotations.end())
+                if(uniqueIds.find(id) != uniqueIds.end())
                 {
                     ALICEVISION_CERR("Multiple xml attributes with a same id: " << id);
                     return EXIT_FAILURE;
                 }
+
+                uniqueIds.insert(id);
+            }
+
+            // Make sure a map of id is available to get rank (position in ascending order)
+            // note that set is ordered automatically.
+            int pos = 0;
+            std::map<int, int> idToRank;
+            for(const auto id : uniqueIds)
+            {
+                idToRank[id] = pos;
+                pos++;
+            }
+
+            // Group shoots by "rows" (common pitch) assuming they are acquired row by row with a common pitch
+            if(buildContactSheet)
+            {
+                for(const auto it : shoot)
+                {
+                    int id = it.second.get<double>("<xmlattr>.id");
+                    int bracket = it.second.get<double>("<xmlattr>.bracket");
+                    int rank = idToRank[id];
+
+                    const double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
+                    const double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
+
+                    int ipitch_degree = -int(pitch_degree); // minus to be sure rows are going top to bottom
+                    int iyaw_degree = int(yaw_degree);
+
+                    // Store also the yaw to be able to sort left to right
+                    contactSheetInfo[ipitch_degree][iyaw_degree].rank = rank;
+                }
+            }
+
+            for(const auto it : shoot)
+            {
+                int id = it.second.get<double>("<xmlattr>.id");
+                int bracket = it.second.get<double>("<xmlattr>.bracket");
+                int rank = idToRank[id];
 
                 const double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
                 const double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
@@ -786,10 +1025,10 @@ int main(int argc, char* argv[])
                 const Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
                 const Eigen::AngleAxis<double> Mimage(additionalAngle - M_PI_2, Eigen::Vector3d::UnitZ());
 
-                const Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *
+                const Eigen::Matrix3d oRc = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *
                                             Mroll.toRotationMatrix() * Mimage.toRotationMatrix();
 
-                rotations[id] = cRo.transpose();
+                rotations[rank] = oRc.transpose();
             }
 
             if(sfmData.getViews().size() != rotations.size())
@@ -802,17 +1041,18 @@ int main(int argc, char* argv[])
         }
         else if(boost::algorithm::contains(initializeCameras, "horizontal"))
         {
-            constexpr double zenithPitch = -0.5 * boost::math::constants::pi<double>();
+            constexpr double zenithPitch = 0.5 * boost::math::constants::pi<double>();
             const Eigen::AngleAxis<double> zenithMpitch(zenithPitch, Eigen::Vector3d::UnitX());
             const Eigen::AngleAxis<double> zenithMroll(additionalAngle, Eigen::Vector3d::UnitZ());
-            const Eigen::Matrix3d zenithRo = zenithMpitch.toRotationMatrix() * zenithMroll.toRotationMatrix();
+            const Eigen::Matrix3d oRzenith = zenithMpitch.toRotationMatrix() * zenithMroll.toRotationMatrix();
 
             const bool withZenith = boost::algorithm::contains(initializeCameras, "zenith");
             if(initializeCameras == "zenith+horizontal")
             {
                 ALICEVISION_LOG_TRACE("Add zenith first");
-                rotations[rotations.size()] = zenithRo.transpose();
+                rotations[rotations.size()] = oRzenith.transpose();
             }
+
             const std::size_t nbHorizontalViews = sfmData.getViews().size() - int(withZenith);
             for(int x = 0; x < nbHorizontalViews; ++x)
             {
@@ -827,15 +1067,15 @@ int main(int argc, char* argv[])
                 const Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
                 const Eigen::AngleAxis<double> Mroll(additionalAngle, Eigen::Vector3d::UnitZ());
 
-                const Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mroll.toRotationMatrix();
+                const Eigen::Matrix3d oRc = Myaw.toRotationMatrix() * Mroll.toRotationMatrix();
 
                 ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw);
-                rotations[rotations.size()] = cRo.transpose();
+                rotations[rotations.size()] = oRc.transpose();
             }
             if(initializeCameras == "horizontal+zenith")
             {
                 ALICEVISION_LOG_TRACE("Add zenith");
-                rotations[rotations.size()] = zenithRo.transpose();
+                rotations[rotations.size()] = oRzenith.transpose();
             }
         }
         else if(initializeCameras == "spherical" || (initializeCameras.empty() && !nbViewsPerLineString.empty()))
@@ -926,15 +1166,17 @@ int main(int argc, char* argv[])
                     const Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
                     const Eigen::AngleAxis<double> Mroll(roll + additionalAngle, Eigen::Vector3d::UnitZ());
 
-                    const Eigen::Matrix3d cRo =
+                    const Eigen::Matrix3d oRc =
                         Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() * Mroll.toRotationMatrix();
 
                     ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw << ", pitch=" << pitch << ", roll=" << roll
                                                                << ".");
-                    rotations[i++] = cRo.transpose();
+                    rotations[i++] = oRc.transpose();
                 }
             }
         }
+
+        std::map<int, Contact> contacts;
 
         if(!rotations.empty())
         {
@@ -947,25 +1189,77 @@ int main(int argc, char* argv[])
                                       << sfmData.getViews().size() << ", nb rotations: " << rotations.size() << ").");
                 return EXIT_FAILURE;
             }
-            
+
             // HEURISTIC:
             // The xml file describe rotations for views which are not correlated with AliceVision views.
             // We assume that the order of the xml view ids correspond to the lexicographic order of the image names.
-            std::vector<std::pair<std::string, int>> names_with_id;
+            std::vector<std::pair<std::string, int>> namesWithRank;
             for(const auto& v : sfmData.getViews())
             {
-                boost::filesystem::path path_image(v.second->getImagePath());
-                names_with_id.push_back(std::make_pair(path_image.stem().string(), v.first));
+                boost::filesystem::path path_image(v.second->getImage().getImagePath());
+                namesWithRank.push_back(std::make_pair(path_image.stem().string(), v.first));
             }
-            std::sort(names_with_id.begin(), names_with_id.end());
+            std::sort(namesWithRank.begin(), namesWithRank.end());
+
+            // If we are trying to build a contact sheet
+            if(contactSheetInfo.size() > 0)
+            {
+                // Fill information in contact sheet
+                for(auto& rowpair : contactSheetInfo)
+                {
+                    for(auto& item : rowpair.second)
+                    {
+                        int rank = item.second.rank;
+                        IndexT viewId = namesWithRank[rank].second;
+
+                        const sfmData::View& v = sfmData.getView(viewId);
+
+                        item.second.path = v.getImage().getImagePath();
+                        item.second.width = v.getImage().getWidth();
+                        item.second.height = v.getImage().getHeight();
+                        item.second.orientation = v.getImage().getMetadataOrientation();
+                    }
+                }
+
+                image::Image<image::RGBfColor> contactSheetImage;
+                if(buildContactSheetImage(contactSheetImage, contactSheetInfo, contactSheetItemMaxSize))
+                {
+                    image::writeImage(
+                        (fs::path(sfmOutputDataFilepath).parent_path() / "contactSheetImage.jpg").string(),
+                        contactSheetImage, image::ImageWriteOptions());
+                }
+            }
 
             size_t index = 0;
             for(const auto& item_rotation : rotations)
             {
-                IndexT viewIdx = names_with_id[index].second;
-                if(item_rotation.second.trace() != 0)
+                IndexT viewIdx = namesWithRank[index].second;
+                const sfmData::View& v = sfmData.getView(viewIdx);
+
+                sfmData::EEXIFOrientation orientation = v.getImage().getMetadataOrientation();
+                double orientationAngle = 0.;
+                switch (orientation)
                 {
-                    sfmData::CameraPose pose(geometry::Pose3(item_rotation.second, Eigen::Vector3d::Zero()));
+                    case sfmData::EEXIFOrientation::UPSIDEDOWN:
+                        orientationAngle = boost::math::constants::pi<double>();
+                        break;
+                    case sfmData::EEXIFOrientation::LEFT:
+                        orientationAngle = boost::math::constants::pi<double>() * .5;
+                        break;
+                    case sfmData::EEXIFOrientation::RIGHT:
+                        orientationAngle = boost::math::constants::pi<double>() * -.5;
+                        break;
+                    default:
+                        break;
+                }
+
+                const Eigen::AngleAxis<double> Morientation(orientationAngle, Eigen::Vector3d::UnitZ());
+
+                const Eigen::Matrix3d viewRotation = Morientation.toRotationMatrix().transpose() * item_rotation.second;
+
+                if(viewRotation.trace() != 0)
+                {
+                    sfmData::CameraPose pose(geometry::Pose3(viewRotation, Eigen::Vector3d::Zero()));
                     sfmData.setAbsolutePose(viewIdx, pose);
                 }
                 ++index;
@@ -979,18 +1273,20 @@ int main(int argc, char* argv[])
         for(auto& intrinsic_pair : intrinsics)
         {
             std::shared_ptr<camera::IntrinsicBase>& intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicSO =
-                std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
-            std::shared_ptr<camera::EquiDistantRadialK3> equidistant =
-                std::dynamic_pointer_cast<camera::EquiDistantRadialK3>(intrinsic);
+            std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicSO =
+                std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
+            std::shared_ptr<camera::Equidistant> equidistant =
+                std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
 
             if(intrinsicSO != nullptr && equidistant == nullptr)
             {
                 ALICEVISION_LOG_INFO("Replace intrinsic " << intrinsic_pair.first << " of type "
                                                           << intrinsic->getTypeStr()
-                                                          << " to an EquiDistant camera model.");
-                // convert non-EquiDistant intrinsics to EquiDistant
-                std::shared_ptr<camera::EquiDistantRadialK3> newEquidistant(new camera::EquiDistantRadialK3());
+                                                          << " to an Equidistant camera model.");
+                // convert non-Equidistant intrinsics to Equidistant
+                std::shared_ptr<camera::Equidistant> newEquidistant =
+                    std::dynamic_pointer_cast<camera::Equidistant>(
+                        camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3));
 
                 newEquidistant->copyFrom(*intrinsicSO);
                 // "radius" and "center" will be set later from the input parameters in another loop
@@ -1031,7 +1327,7 @@ int main(int argc, char* argv[])
                 {
                     // Read original image
                     image::Image<float> grayscale;
-                    image::readImage(v.second->getImagePath(), grayscale, image::EImageColorSpace::SRGB);
+                    image::readImage(v.second->getImage().getImagePath(), grayscale, image::EImageColorSpace::SRGB);
 
                     const bool res = detector.appendImage(grayscale);
                     if(!res)
@@ -1066,14 +1362,14 @@ int main(int argc, char* argv[])
         for(const auto& intrinsic_pair : intrinsics)
         {
             std::shared_ptr<camera::IntrinsicBase> intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::EquiDistant> equidistant =
-                std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+            std::shared_ptr<camera::Equidistant> equidistant =
+                std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
             if(!equidistant)
             {
                 // skip non equidistant cameras
                 continue;
             }
-            ALICEVISION_LOG_INFO("Update EquiDistant camera intrinsic " << intrinsic_pair.first
+            ALICEVISION_LOG_INFO("Update Equidistant camera intrinsic " << intrinsic_pair.first
                                                                         << " with center and offset.");
 
             equidistant->setCircleCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset(0));

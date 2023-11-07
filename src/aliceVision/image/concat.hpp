@@ -13,38 +13,38 @@ namespace aliceVision {
 namespace image {
 
 /// Horizontal concatenation of images
-template < class Image >
-void ConcatH(const Image & imageA, const Image & imageB, Image & Out)
+template<class Image>
+void ConcatH(const Image& imageA, const Image& imageB, Image& Out)
 {
-  // Compute new dimensions // |imgA|+|imgB|
-  int ww = imageA.Width() + imageB.Width();
-  Out.resize(ww, std::max(imageA.Height(), imageB.Height()));
+    // Compute new dimensions // |imgA|+|imgB|
+    int ww = imageA.Width() + imageB.Width();
+    Out.resize(ww, std::max(imageA.Height(), imageB.Height()));
 
-  // Copy the first image |imgA|...|
-  Out.block(0,0, imageA.Height(), imageA.Width()) = imageA.GetMat();
-  // Copy the second image |imgA|imgB|
-  Out.block(0, imageA.Width(), imageB.Height(), imageB.Width()) = imageB.GetMat();
+    // Copy the first image |imgA|...|
+    Out.block(0, 0, imageA.Height(), imageA.Width()) = imageA.GetMat();
+    // Copy the second image |imgA|imgB|
+    Out.block(0, imageA.Width(), imageB.Height(), imageB.Width()) = imageB.GetMat();
 }
 
 /// Vertical concatenation of images
-template < class Image >
-void ConcatV(const Image & imageA, const Image & imageB, Image & Out)
+template<class Image>
+void ConcatV(const Image& imageA, const Image& imageB, Image& Out)
 {
-  // Compute new dimensions
-  // |imgA|
-  // |imgB|
-  int hh = imageA.Height() + imageB.Height();
-  Out.resize(max(imageA.Width(), imageB.Width()), hh);
+    // Compute new dimensions
+    // |imgA|
+    // |imgB|
+    int hh = imageA.Height() + imageB.Height();
+    Out.resize(max(imageA.Width(), imageB.Width()), hh);
 
-  // Copy the first image
-  // |imgA|
-  // |....|
-  Out.block(0,0, imageA.Height(), imageA.Width()) = imageA.GetMat();
-  // Copy the second image
-  // |imgA|
-  // |imgB|
-  Out.block(imageA.Height(), 0, imageB.Height(), imageB.Width()) = imageB.GetMat();
+    // Copy the first image
+    // |imgA|
+    // |....|
+    Out.block(0, 0, imageA.Height(), imageA.Width()) = imageA.GetMat();
+    // Copy the second image
+    // |imgA|
+    // |imgB|
+    Out.block(imageA.Height(), 0, imageB.Height(), imageB.Width()) = imageB.GetMat();
 }
 
-} // namespace image
-} // namespace aliceVision
+}  // namespace image
+}  // namespace aliceVision

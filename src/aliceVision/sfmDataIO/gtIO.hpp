@@ -29,5 +29,5 @@ bool read_Strecha_Camera(const std::string& camName, camera::Pinhole& cam, geome
 **/
 bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID = true);
 
-} // namespace sfmDataIO
-} // namespace aliceVision
+}  // namespace sfmDataIO
+}  // namespace aliceVision

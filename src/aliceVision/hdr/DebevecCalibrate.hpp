@@ -12,7 +12,6 @@
 #include <vector>
 #include <string>
 
-
 namespace aliceVision {
 namespace hdr {
 
@@ -28,25 +27,23 @@ namespace hdr {
  */
 class DebevecCalibrate
 {
-public:  
-
-  /**
-   * @brief
-   * @param[in] LDR images groups
-   * @param[in] exposure times
-   * @param[in] channel quantization
-   * @param[in] calibration weight function
-   * @param[in] lambda (parameter of smoothness)
-   * @param[out] camera response function
-   */
-  bool process(const std::vector<std::vector<ImageSample>> & ldrSamples,
-               const std::vector<std::vector<double>> &times,
-               std::size_t channelQuantization,
-               const rgbCurve &weight,
-               float lambda,
-               rgbCurve &response);
-
+  public:
+    /**
+     * @brief
+     * @param[in] LDR images groups
+     * @param[in] exposure times
+     * @param[in] channel quantization
+     * @param[in] calibration weight function
+     * @param[in] lambda (parameter of smoothness)
+     * @param[out] camera response function
+     */
+    bool process(const std::vector<std::vector<ImageSample>>& ldrSamples,
+                 const std::vector<std::vector<double>>& times,
+                 std::size_t channelQuantization,
+                 const rgbCurve& weight,
+                 float lambda,
+                 rgbCurve& response);
 };
 
-} // namespace hdr
-} // namespace aliceVision
+}  // namespace hdr
+}  // namespace aliceVision

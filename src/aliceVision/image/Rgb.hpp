@@ -22,15 +22,9 @@ struct rgb
         b = _b;
     }
 
-    inline rgb operator-(const rgb& _p) const
-    {
-        return rgb(r - _p.r, g - _p.g, b - _p.b);
-    }
+    inline rgb operator-(const rgb& _p) const { return rgb(r - _p.r, g - _p.g, b - _p.b); }
 
-    inline rgb operator+(const rgb& _p) const
-    {
-        return rgb(r + _p.r, g + _p.g, b + _p.b);
-    }
+    inline rgb operator+(const rgb& _p) const { return rgb(r + _p.r, g + _p.g, b + _p.b); }
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

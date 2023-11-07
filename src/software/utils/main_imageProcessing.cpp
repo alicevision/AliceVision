@@ -1,15 +1,23 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
-#include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
+#include <aliceVision/lensCorrectionProfile/lcp.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -26,14 +34,64 @@
 #include <OpenImageIO/imagebufalgo.h>
 #include <OpenImageIO/color.h>
 
+#include <string>
+#include <cmath>
+#include <vector>
+#include <map>
+#include <iostream>
+#include <algorithm>
+
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 3
 
 using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+
+struct LensCorrectionParams
+{
+    bool enabled = false;
+    bool geometry = false;
+    bool vignetting = false;
+    bool chromaticAberration = false;
+
+    std::vector<float> gParams;
+    std::vector<float> vParams;
+    std::vector<float> caGParams;
+    std::vector<float> caRGParams;
+    std::vector<float> caBGParams;
+
+    RectilinearModel geometryModel = RectilinearModel();
+
+    RectilinearModel caGModel = RectilinearModel();
+    RectilinearModel caBGModel = RectilinearModel();
+    RectilinearModel caRGModel = RectilinearModel();
+};
+
+std::istream& operator>>(std::istream& in, LensCorrectionParams& lcParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if (splitParams.size() != 4)
+        throw std::invalid_argument("Failed to parse LensCorrectionParams from: " + token);
+    lcParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    lcParams.geometry = boost::to_lower_copy(splitParams[1]) == "true";
+    lcParams.vignetting = boost::to_lower_copy(splitParams[2]) == "true";
+    lcParams.chromaticAberration = boost::to_lower_copy(splitParams[3]) == "true";
+
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const LensCorrectionParams& lcParams)
+{
+    os << lcParams.enabled << ":" << lcParams.geometry << ":" << lcParams.vignetting << ":" << lcParams.chromaticAberration;
+    return os;
+}
 
 struct SharpenParams
 {
@@ -258,14 +316,29 @@ struct ProcessingParams
     bool reconstructedViewsOnly = false;
     bool keepImageFilename = false;
     bool exposureCompensation = false;
+    bool rawAutoBright = false;
+    float rawExposureAdjust = 0.0;
     EImageFormat outputFormat = EImageFormat::RGBA;
     float scaleFactor = 1.0f;
+    unsigned int maxWidth = 0;
+    unsigned int maxHeight = 0;
     float contrast = 1.0f;
     int medianFilter = 0;
     bool fillHoles = false;
     bool fixNonFinite = false;
     bool applyDcpMetadata = false;
     bool useDCPColorMatrixOnly = false;
+    bool enableColorTempProcessing = false;
+    double correlatedColorTemperature = -1.0;
+    bool reorient = false;
+
+    LensCorrectionParams lensCorrection =
+    {
+        false, // enable
+        false, // geometry
+        false, // vignetting
+        false  // chromatic aberration
+    };
 
     SharpenParams sharpen = 
     {
@@ -308,13 +381,147 @@ struct ProcessingParams
     };
 };
 
-void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams, const std::map<std::string, std::string>& imageMetadata)
+void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColor>& img, const std::vector<float>& vparam)
+{
+    if (vparam.size() >= 7)
+    {
+        const float focX = vparam[0];
+        const float focY = vparam[1];
+        const float imageXCenter = vparam[2];
+        const float imageYCenter = vparam[3];
+
+        const float p1 = -vparam[4];
+        const float p2 = vparam[4] * vparam[4] - vparam[5];
+        const float p3 = -(vparam[4] * vparam[4] * vparam[4] - 2 * vparam[4] * vparam[5] + vparam[6]);
+        const float p4 = vparam[4] * vparam[4] * vparam[4] * vparam[4] + vparam[5] * vparam[5] + 2 * vparam[4] * vparam[6] - 3 * vparam[4] * vparam[4] * vparam[5];
+
+        #pragma omp parallel for
+        for (int j = 0; j < img.Height(); ++j)
+            for (int i = 0; i < img.Width(); ++i)
+            {
+                const aliceVision::Vec2 p(i, j);
+
+                aliceVision::Vec2 np;
+                np(0) = ((p(0) / img.Width()) - imageXCenter) / focX;
+                np(1) = ((p(1) / img.Height()) - imageYCenter) / focY;
+
+                const float rsqr = np(0) * np(0) + np(1) * np(1);
+                const float gain = 1.f + p1 * rsqr + p2 * rsqr * rsqr + p3 * rsqr * rsqr * rsqr + p4 * rsqr * rsqr * rsqr * rsqr;
+
+                img(j, i) *= gain;
+            }
+    }
+}
+
+void undistortRectilinearGeometryLCP(const aliceVision::image::Image<aliceVision::image::RGBAfColor>& img,
+                                     RectilinearModel& model,
+                                     aliceVision::image::Image<aliceVision::image::RGBAfColor>& img_ud,
+                                     const image::RGBAfColor fillcolor)
+{
+    if(!model.isEmpty && model.FocalLengthX != 0.0 && model.FocalLengthY != 0.0)
+    {
+        img_ud.resize(img.Width(), img.Height(), true, fillcolor);
+        const image::Sampler2d<image::SamplerLinear> sampler;
+
+        const float maxWH = std::max(img.Width(), img.Height());
+        const float ppX = model.ImageXCenter * img.Width();
+        const float ppY = model.ImageYCenter * img.Height();
+        const float scaleX = model.FocalLengthX * maxWH;
+        const float scaleY = model.FocalLengthY * maxWH;
+
+        #pragma omp parallel for
+        for(int v = 0; v < img.Height(); ++v)
+            for(int u = 0; u < img.Width(); ++u)
+            {
+                // image to camera
+                const float x = (u - ppX) / scaleX;
+                const float y = (v - ppY) / scaleY;
+
+                // disto
+                float xd, yd;
+                model.distort(x, y, xd, yd);
+
+                // camera to image
+                const Vec2 distoPix(xd * scaleX + ppX, yd * scaleY + ppY);
+
+                // pick pixel if it is in the image domain
+                if(img.Contains(distoPix(1), distoPix(0)))
+                {
+                    img_ud(v, u) = sampler(img, distoPix(1), distoPix(0));
+                }
+            }
+    }
+}
+
+void undistortChromaticAberrations(const aliceVision::image::Image<aliceVision::image::RGBAfColor>& img,
+                                   RectilinearModel& greenModel, RectilinearModel& blueGreenModel,
+                                   RectilinearModel& redGreenModel,
+                                   aliceVision::image::Image<aliceVision::image::RGBAfColor>& img_ud,
+                                   const image::RGBAfColor fillcolor, bool undistortGeometry = false)
+{
+    if(!greenModel.isEmpty && greenModel.FocalLengthX != 0.0 && greenModel.FocalLengthY != 0.0)
+    {
+        img_ud.resize(img.Width(), img.Height(), true, fillcolor);
+        const image::Sampler2d<image::SamplerLinear> sampler;
+
+        const float maxWH = std::max(img.Width(), img.Height());
+        const float ppX = greenModel.ImageXCenter * img.Width();
+        const float ppY = greenModel.ImageYCenter * img.Height();
+        const float scaleX = greenModel.FocalLengthX * maxWH;
+        const float scaleY = greenModel.FocalLengthY * maxWH;
+
+        #pragma omp parallel for
+        for(int v = 0; v < img.Height(); ++v)
+            for(int u = 0; u < img.Width(); ++u)
+            {
+                // image to camera
+                const float x = (u - ppX) / scaleX;
+                const float y = (v - ppY) / scaleY;
+
+                // disto
+                float xdRed,ydRed,xdGreen,ydGreen,xdBlue,ydBlue;
+                if(undistortGeometry)
+                {
+                    greenModel.distort(x, y, xdGreen, ydGreen);
+                }
+                else
+                {
+                    xdGreen = x;
+                    ydGreen = y;
+                }
+                redGreenModel.distort(xdGreen, ydGreen, xdRed, ydRed);
+                blueGreenModel.distort(xdGreen, ydGreen, xdBlue, ydBlue);
+
+                // camera to image
+                const Vec2 distoPixRed(xdRed * scaleX + ppX, ydRed * scaleY + ppY);
+                const Vec2 distoPixGreen(xdGreen * scaleX + ppX, ydGreen * scaleY + ppY);
+                const Vec2 distoPixBlue(xdBlue * scaleX + ppX, ydBlue * scaleY + ppY);
+
+                // pick pixel if it is in the image domain
+                if(img.Contains(distoPixRed(1), distoPixRed(0)))
+                {
+                    img_ud(v, u)[0] = sampler(img, distoPixRed(1), distoPixRed(0))[0];
+                }
+                if(img.Contains(distoPixGreen(1), distoPixGreen(0)))
+                {
+                    img_ud(v, u)[1] = sampler(img, distoPixGreen(1), distoPixGreen(0))[1];
+                }
+                if(img.Contains(distoPixBlue(1), distoPixBlue(0)))
+                {
+                    img_ud(v, u)[2] = sampler(img, distoPixBlue(1), distoPixBlue(0))[2];
+                }
+            }
+    }
+}
+
+void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pParams,
+                  std::map<std::string, std::string>& imageMetadata, std::shared_ptr<camera::IntrinsicBase> cam)
 {
     const unsigned int nchannels = 4;
 
     // Fix non-finite pixels
     // Note: fill holes needs to fix non-finite values first
-    if(pParams.fixNonFinite || pParams.fillHoles)
+    if (pParams.fixNonFinite || pParams.fillHoles)
     {
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         int pixelsFixed = 0;
@@ -323,12 +530,66 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         ALICEVISION_LOG_INFO("Fixed " << pixelsFixed << " non-finite pixels.");
     }
 
-    if (pParams.scaleFactor != 1.0f)
+    if (pParams.lensCorrection.enabled)
+    {
+        if (pParams.lensCorrection.vignetting && !pParams.lensCorrection.vParams.empty())
+        {
+            undistortVignetting(image, pParams.lensCorrection.vParams);
+        }
+        else if (pParams.lensCorrection.vignetting && pParams.lensCorrection.vParams.empty())
+        {
+            ALICEVISION_LOG_WARNING("No distortion model available for lens vignetting correction.");
+        }
+
+        if (pParams.lensCorrection.chromaticAberration && !pParams.lensCorrection.caGModel.isEmpty)
+        {
+            const image::RGBAfColor FBLACK_A(.0f, .0f, .0f, 1.0f);
+            image::Image<image::RGBAfColor> image_ud;
+            undistortChromaticAberrations(image, pParams.lensCorrection.caGModel, pParams.lensCorrection.caBGModel,
+                                            pParams.lensCorrection.caRGModel, image_ud, FBLACK_A, false);
+            image = image_ud;
+        }
+        else if(pParams.lensCorrection.chromaticAberration && pParams.lensCorrection.caGModel.isEmpty)
+        {
+            ALICEVISION_LOG_WARNING("No distortion model available for lens chromatic aberration correction.");
+        }
+        
+        if (pParams.lensCorrection.geometry && cam != NULL && cam->hasDistortion())
+        {
+            const image::RGBAfColor FBLACK_A(.0f, .0f, .0f, 1.0f);
+            image::Image<image::RGBAfColor> image_ud;
+            const image::Sampler2d<image::SamplerLinear> sampler;
+
+            image_ud.resize(image.Width(), image.Height(), true, FBLACK_A);
+
+            camera::UndistortImage(image, cam.get(), image_ud, FBLACK_A);
+
+            image = image_ud;
+        }
+        else if (pParams.lensCorrection.geometry && cam != NULL && !cam->hasDistortion())
+        {
+            ALICEVISION_LOG_WARNING("No distortion model available for lens geometry distortion correction.");
+        }
+        else if (pParams.lensCorrection.geometry && cam == NULL)
+        {
+            ALICEVISION_LOG_WARNING("No intrinsics data available for lens geometry distortion correction.");
+        }
+    }
+
+    const float sfw =
+        (pParams.maxWidth != 0 && pParams.maxWidth < image.Width()) ?
+            static_cast<float>(pParams.maxWidth) / static_cast<float>(image.Width()) : 1.0;
+    const float sfh =
+        (pParams.maxHeight != 0 && pParams.maxHeight < image.Height()) ?
+            static_cast<float>(pParams.maxHeight) / static_cast<float>(image.Height()) : 1.0;
+    const float scaleFactor = std::min(pParams.scaleFactor, std::min(sfw, sfh));
+
+    if (scaleFactor != 1.0f)
     {
         const unsigned int w = image.Width();
         const unsigned int h = image.Height();
-        const unsigned int nw = (unsigned int)(floor(float(w) * pParams.scaleFactor));
-        const unsigned int nh = (unsigned int)(floor(float(h) * pParams.scaleFactor));
+        const unsigned int nw = static_cast<unsigned int>(floor(static_cast<float>(image.Width()) * scaleFactor));
+        const unsigned int nh = static_cast<unsigned int>(floor(static_cast<float>(image.Height()) * scaleFactor));
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
@@ -343,6 +604,27 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         image.swap(rescaled);
     }
     
+    if (pParams.reorient)
+    {
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        inBuf.set_orientation(std::stoi(imageMetadata["Orientation"]));
+        oiio::ImageBuf outBuf = oiio::ImageBufAlgo::reorient(inBuf);
+
+        if (outBuf.spec().get_int_attribute("orientation") != inBuf.spec().get_int_attribute("orientation"))
+        {
+            imageMetadata.at("Orientation") = std::to_string(outBuf.spec().get_int_attribute("orientation"));
+
+            image::Image<image::RGBAfColor> reoriented(outBuf.spec().width, outBuf.spec().height);
+
+            oiio::ROI exportROI = outBuf.roi();
+            exportROI.chbegin = 0;
+            exportROI.chend = nchannels;
+            outBuf.get_pixels(exportROI, oiio::TypeDesc::FLOAT, reoriented.data());
+
+            image.swap(reoriented);
+        }
+    }
+
     if (pParams.contrast != 1.0f)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
@@ -361,7 +643,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image.swap(filtered);
     }
-    if(pParams.sharpen.enabled)
+    if (pParams.sharpen.enabled)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
@@ -389,7 +671,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     }
 
     // Contrast Limited Adaptive Histogram Equalization
-    if(pParams.claheFilter.enabled)
+    if (pParams.claheFilter.enabled)
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         // Convert alicevision::image to BGR openCV Mat
@@ -433,7 +715,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         throw std::invalid_argument( "Unsupported mode! If you intended to use a Clahe filter, please add OpenCV support.");
 #endif
     }
-    if(pParams.fillHoles)
+    if (pParams.fillHoles)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
@@ -446,13 +728,13 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         image.swap(filtered);
     }
 
-    if(pParams.noise.enabled)
+    if (pParams.noise.enabled)
     {   
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBufAlgo::noise(inBuf, ENoiseMethod_enumToString(pParams.noise.method), pParams.noise.A, pParams.noise.B, pParams.noise.mono);
     }
 
-    if(pParams.nlmFilter.enabled)
+    if (pParams.nlmFilter.enabled)
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         // Create temporary OpenCV Mat (keep only 3 channels) to handle Eigen data of our image
@@ -472,8 +754,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 #endif
     }
 
-
-    if (pParams.applyDcpMetadata)
+    if (pParams.applyDcpMetadata || (pParams.enableColorTempProcessing && pParams.correlatedColorTemperature <= 0.0))
     {
         bool dcpMetadataOK = map_has_non_empty_value(imageMetadata, "AliceVision:DCP:Temp1") &&
                              map_has_non_empty_value(imageMetadata, "AliceVision:DCP:Temp2") &&
@@ -548,13 +829,29 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
             neutral[i] = v_mult[i] / v_mult[1];
         }
 
-        dcpProf.applyLinear(image, neutral, true, pParams.useDCPColorMatrixOnly);
+        double cct = pParams.correlatedColorTemperature;
+        double tint;
+
+        if (pParams.enableColorTempProcessing)
+        {
+            dcpProf.getColorTemperatureAndTintFromNeutral(neutral, cct, tint);
+        }
+
+        if (pParams.applyDcpMetadata)
+        {
+            dcpProf.applyLinear(image, neutral, cct, true, pParams.useDCPColorMatrixOnly);
+        }
+
+        imageMetadata["AliceVision:ColorTemperature"] = std::to_string(cct);
+    }
+    else if (pParams.enableColorTempProcessing && pParams.correlatedColorTemperature > 0.0)
+    {
+        imageMetadata["AliceVision:ColorTemperature"] = std::to_string(pParams.correlatedColorTemperature);
     }
 }
 
 void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath, std::map<std::string, std::string> inputMetadata,
-               const std::vector<std::string>& metadataFolders, const image::EImageColorSpace workingColorSpace, const EImageFormat outputFormat,
-               const image::EImageColorSpace outputColorSpace, const image::EStorageDataType storageDataType)
+               const std::vector<std::string>& metadataFolders, const EImageFormat outputFormat, const image::ImageWriteOptions options)
 {
     // Read metadata path
     std::string metadataFilePath;
@@ -615,16 +912,6 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
         metadata = image::readImageMetadata(inputPath);
     }
 
-    image::ImageWriteOptions options;
-    options.fromColorSpace(workingColorSpace);
-    options.toColorSpace(outputColorSpace);
-
-    if(isEXR)
-    {
-        // Select storage data type
-        options.storageDataType(storageDataType);
-    }
-
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
     
@@ -654,9 +941,14 @@ int aliceVision_main(int argc, char * argv[])
     std::vector<std::string> metadataFolders;
     std::string outputPath;
     EImageFormat outputFormat = EImageFormat::RGBA;
+    image::EImageColorSpace inputColorSpace = image::EImageColorSpace::AUTO;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::LINEAR;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+    image::EImageExrCompression exrCompressionMethod = image::EImageExrCompression::Auto;
+    int exrCompressionLevel = 0;
+    bool jpegCompress = true;
+    int jpegQuality = 90;
     std::string extension;
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::DcpLinearProcessing;
     std::string colorProfileDatabaseDirPath = "";
@@ -665,6 +957,10 @@ int aliceVision_main(int argc, char * argv[])
     bool doWBAfterDemosaicing = false;
     std::string demosaicingAlgo = "AHD";
     int highlightMode = 0;
+    double correlatedColorTemperature = -1;
+    std::string lensCorrectionProfileInfo;
+    bool lensCorrectionProfileSearchIgnoreCameraModel = true;
+    std::string sensorDatabasePath;
 
     ProcessingParams pParams;
 
@@ -695,11 +991,31 @@ int aliceVision_main(int argc, char * argv[])
         ("scaleFactor", po::value<float>(&pParams.scaleFactor)->default_value(pParams.scaleFactor),
          "Scale Factor (1.0: no change).")
 
-        ("exposureCompensation", po::value<bool>(& pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
-         "Exposure Compensation.")
+        ("maxWidth", po::value<unsigned int>(&pParams.maxWidth)->default_value(pParams.maxWidth),
+         "Max width (0: no change).")
+
+        ("maxHeight", po::value<unsigned int>(&pParams.maxHeight)->default_value(pParams.maxHeight),
+         "Max height (0: no change).")
+
+        ("exposureCompensation", po::value<bool>(&pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
+         "Exposure Compensation. Valid only if a sfmdata is set as input.")
+
+        ("rawExposureAdjust", po::value<float>(&pParams.rawExposureAdjust)->default_value(pParams.rawExposureAdjust),
+         "Exposure Adjustment in fstops limited to the range from -2 to +3 fstops.")
+
+        ("rawAutoBright", po::value<bool>(&pParams.rawAutoBright)->default_value(pParams.rawAutoBright),
+         "Enable automatic exposure adjustment for raw images.")
+
+        ("lensCorrection", po::value<LensCorrectionParams>(&pParams.lensCorrection)->default_value(pParams.lensCorrection),
+            "Lens Correction parameters:\n"
+            " * Enabled: Use automatic lens correction.\n"
+            " * Geometry: For geometry if a model is available in sfm data.\n"
+            " * Vignetting: For vignetting if model parameters is available in metadata.\n "
+            " * Chromatic Aberration: For chromatic aberration (fringing) if model parameters is available in metadata.")
 
         ("contrast", po::value<float>(&pParams.contrast)->default_value(pParams.contrast),
          "Contrast Factor (1.0: no change).")
+
         ("medianFilter", po::value<int>(&pParams.medianFilter)->default_value(pParams.medianFilter),
          "Median Filter (0: no filter).")
 
@@ -744,6 +1060,9 @@ int aliceVision_main(int argc, char * argv[])
             " * templateWindowSize: Size in pixels of the template patch that is used to compute weights. Should be odd. \n"
             " * searchWindowSize:Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time.")
 
+        ("inputColorSpace", po::value<image::EImageColorSpace>(&inputColorSpace)->default_value(inputColorSpace),
+         ("Input image color space: " + image::EImageColorSpace_informations()).c_str())
+
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
 
@@ -779,9 +1098,40 @@ int aliceVision_main(int argc, char * argv[])
         ("highlightMode", po::value<int>(&highlightMode)->default_value(highlightMode),
          "Highlight management (see libRaw documentation).\n"
          "0 = clip (default), 1 = unclip, 2 = blend, 3+ = rebuild.")
+            
+        ("lensCorrectionProfileInfo", po::value<std::string>(&lensCorrectionProfileInfo)->default_value(""),
+         "Lens Correction Profile filepath or database directory path.")
+            
+        ("lensCorrectionProfileSearchIgnoreCameraModel", po::value<bool>(&lensCorrectionProfileSearchIgnoreCameraModel)->default_value(lensCorrectionProfileSearchIgnoreCameraModel),
+         "Automatic LCP Search considers only the camera maker and the lens name")
+
+        ("correlatedColorTemperature", po::value<double>(&correlatedColorTemperature)->default_value(correlatedColorTemperature),
+         "Correlated Color Temperature in Kelvin of scene illuminant.\n"
+         "If less than or equal to 0.0, the value extracted from the metadata will be used.")
+
+        ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
+         "Camera sensor width database path.")
+
+        ("reorient", po::value<bool>(&pParams.reorient)->default_value(pParams.reorient),
+         "Enable automatic reorientation of images.")
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+
+        ("exrCompressionMethod", po::value<image::EImageExrCompression>(&exrCompressionMethod)->default_value(exrCompressionMethod),
+         ("Compression method for EXR images: " + image::EImageExrCompression_informations()).c_str())
+
+        ("exrCompressionLevel", po::value<int>(&exrCompressionLevel)->default_value(exrCompressionLevel),
+         "Compression Level for EXR images.\n"
+         "Only dwaa, dwab, zip and zips compression methods are concerned.\n"
+         "dwaa/dwab: value must be strictly positive.\n"
+         "zip/zips: value must be between 1 and 9.")
+        
+        ("jpegCompress", po::value<bool>(&jpegCompress)->default_value(jpegCompress),
+         "Compress JPEG images.")
+        
+        ("jpegQuality", po::value<int>(&jpegQuality)->default_value(jpegQuality),
+         "JPEG quality after compression (between 0 and 100).")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
@@ -868,7 +1218,7 @@ int aliceVision_main(int argc, char * argv[])
             else
             {
                 // Otherwise use the existing path
-                ViewPaths.insert({view.getViewId(), view.getImagePath()});
+                ViewPaths.insert({view.getViewId(), view.getImage().getImagePath()});
             }
         }
 
@@ -881,15 +1231,17 @@ int aliceVision_main(int argc, char * argv[])
             const std::string viewPath = viewIt.second;
             sfmData::View& view = sfmData.getView(viewId);
 
+            const bool isRAW = image::isRawFormat(viewPath);
+
             const fs::path fsPath = viewPath;
             const std::string fileName = fsPath.stem().string();
             const std::string fileExt = fsPath.extension().string();
-            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
+            const std::string outputExt = extension.empty() ? (isRAW ? ".exr" : fileExt) : (std::string(".") + extension);
             const std::string outputfilePath = (fs::path(outputPath) / ((pParams.keepImageFilename ? fileName : std::to_string(viewId)) + outputExt)).generic_string();
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
 
-            auto metadata = view.getMetadata();
+            auto metadata = view.getImage().getMetadata();
 
             if (pParams.applyDcpMetadata && metadata["AliceVision:ColorSpace"] != "no_conversion")
             {
@@ -898,29 +1250,81 @@ int aliceVision_main(int argc, char * argv[])
 
             image::ImageReadOptions options;
             options.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
-            if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
+
+            if (isRAW)
             {
-                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
-                if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+                if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
                 {
-                    options.useDCPColorMatrixOnly = false;
-                    options.doWBAfterDemosaicing = true;
+                    options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
+                    if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+                    {
+                        options.useDCPColorMatrixOnly = false;
+                        options.doWBAfterDemosaicing = true;
+                    }
+                    else
+                    {
+                        options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                        options.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                    }
                 }
                 else
                 {
+                    options.rawColorInterpretation = rawColorInterpretation;
                     options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                     options.doWBAfterDemosaicing = doWBAfterDemosaicing;
                 }
+                options.colorProfileFileName = view.getImage().getColorProfileFileName();
+                options.demosaicingAlgo = demosaicingAlgo;
+                options.highlightMode = highlightMode;
+                options.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
+                options.rawAutoBright = pParams.rawAutoBright;
+                options.correlatedColorTemperature = correlatedColorTemperature;
+                pParams.correlatedColorTemperature = correlatedColorTemperature;
+                pParams.enableColorTempProcessing = options.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
             }
             else
             {
-                options.rawColorInterpretation = rawColorInterpretation;
-                options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-                options.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                options.inputColorSpace = inputColorSpace;
             }
-            options.colorProfileFileName = view.getColorProfileFileName();
-            options.demosaicingAlgo = demosaicingAlgo;
-            options.highlightMode = highlightMode;
+
+            if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
+            {
+                if (!view.getImage().getVignettingParams(pParams.lensCorrection.vParams))
+                {
+                    pParams.lensCorrection.vParams.clear();
+                }
+            }
+
+            if (pParams.lensCorrection.enabled && pParams.lensCorrection.chromaticAberration)
+            {
+                std::vector<float> caGParams, caBGParams, caRGParams;
+                view.getImage().getChromaticAberrationParams(caGParams,caBGParams,caRGParams);
+
+                pParams.lensCorrection.caGModel.init3(caGParams);
+                pParams.lensCorrection.caBGModel.init3(caBGParams);
+                pParams.lensCorrection.caRGModel.init3(caRGParams);
+
+                if(pParams.lensCorrection.caGModel.FocalLengthX == 0.0)
+                {
+                    float sensorWidth = view.getImage().getSensorWidth();
+                    pParams.lensCorrection.caGModel.FocalLengthX = view.getImage().getWidth() * view.getImage().getMetadataFocalLength() /
+                                                                   sensorWidth / std::max(view.getImage().getWidth(), view.getImage().getHeight());
+                }
+                if(pParams.lensCorrection.caGModel.FocalLengthY == 0.0)
+                {
+                    float sensorHeight = view.getImage().getSensorHeight();
+                    pParams.lensCorrection.caGModel.FocalLengthY = view.getImage().getHeight() * view.getImage().getMetadataFocalLength() /
+                                                                   sensorHeight / std::max(view.getImage().getWidth(), view.getImage().getHeight());
+                }
+
+                if((pParams.lensCorrection.caGModel.FocalLengthX <= 0.0) ||
+                   (pParams.lensCorrection.caGModel.FocalLengthY <= 0.0))
+                {
+                    pParams.lensCorrection.caGModel.reset();
+                    pParams.lensCorrection.caBGModel.reset();
+                    pParams.lensCorrection.caRGModel.reset();
+                }
+            }
 
             // Read original image
             image::Image<image::RGBAfColor> image;
@@ -930,32 +1334,57 @@ int aliceVision_main(int argc, char * argv[])
             if (pParams.exposureCompensation)
             {
                 const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
-                const double cameraExposure = view.getCameraExposureSetting().getExposure();
+                const double cameraExposure = view.getImage().getCameraExposureSetting().getExposure();
                 const double ev = std::log2(1.0 / cameraExposure);
-                const float exposureCompensation = float(medianCameraExposure / cameraExposure);
+                const float compensationFactor = static_cast<float>(medianCameraExposure / cameraExposure);
 
-                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
+                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << compensationFactor);
 
                 for (int i = 0; i < image.Width() * image.Height(); ++i)
-                    image(i) = image(i) * exposureCompensation;
+                {
+                    image(i)[0] *= compensationFactor;
+                    image(i)[1] *= compensationFactor;
+                    image(i)[2] *= compensationFactor;
+                }
             }
 
+            sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
+            std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+
+            std::map<std::string, std::string> viewMetadata = view.getImage().getMetadata();
+
             // Image processing
-            processImage(image, pParams, view.getMetadata());
+            processImage(image, pParams, viewMetadata, cam);
 
             if (pParams.applyDcpMetadata)
             {
                 workingColorSpace = image::EImageColorSpace::ACES2065_1;
             }
 
+            image::ImageWriteOptions writeOptions;
+
+            writeOptions.fromColorSpace(workingColorSpace);
+            writeOptions.toColorSpace(outputColorSpace);
+            writeOptions.exrCompressionMethod(exrCompressionMethod);
+            writeOptions.exrCompressionLevel(exrCompressionLevel);
+            writeOptions.jpegCompress(jpegCompress);
+            writeOptions.jpegQuality(jpegQuality);
+
+            if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
+            {
+                // Select storage data type
+                writeOptions.storageDataType(storageDataType);
+            }
+
             // Save the image
-            saveImage(image, viewPath, outputfilePath, view.getMetadata(), metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, viewPath, outputfilePath, viewMetadata, metadataFolders, outputFormat, writeOptions);
 
             // Update view for this modification
-            view.setImagePath(outputfilePath);
-            view.setWidth(image.Width());
-            view.setHeight(image.Height());
-            view.addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
+            view.getImage().setImagePath(outputfilePath);
+            view.getImage().setWidth(image.Width());
+            view.getImage().setHeight(image.Height());
+            view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
+            view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
         }
 
         if (pParams.scaleFactor != 1.0f)
@@ -1027,13 +1456,42 @@ int aliceVision_main(int argc, char * argv[])
         }
 
         image::DCPDatabase dcpDatabase;
+        LCPdatabase lcpStore(lensCorrectionProfileInfo, lensCorrectionProfileSearchIgnoreCameraModel);
+
+        // check sensor database
+        std::vector<sensorDB::Datasheet> sensorDatabase;
+        if (pParams.lensCorrection.enabled && (pParams.lensCorrection.geometry || pParams.lensCorrection.chromaticAberration))
+        {
+            if (sensorDatabasePath.empty())
+            {
+                const auto root = image::getAliceVisionRoot();
+                if (root.empty())
+                {
+                    ALICEVISION_LOG_WARNING(
+                        "ALICEVISION_ROOT is not defined, default sensor database cannot be accessed.");
+                }
+                else
+                {
+                    sensorDatabasePath = root + "/share/aliceVision/cameraSensors.db";
+                }
+            }
+            if (!sensorDatabasePath.empty() && !sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
+            {
+                ALICEVISION_LOG_ERROR("Invalid input sensor database '" << sensorDatabasePath
+                                                                        << "', please specify a valid file.");
+                return EXIT_FAILURE;
+            }
+        }
+
         int i = 0;
         for (const std::string& inputFilePath : filesStrPaths)
         {
+            const bool isRAW = image::isRawFormat(inputFilePath);
+
             const fs::path path = fs::path(inputFilePath);
             const std::string filename = path.stem().string();
             const std::string fileExt = path.extension().string();
-            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
+            const std::string outputExt = extension.empty() ? (isRAW ? ".exr" : fileExt) : (std::string(".") + extension);
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "'.");
 
@@ -1059,20 +1517,22 @@ int aliceVision_main(int argc, char * argv[])
 
             image::DCPProfile dcpProf;
             sfmData::View view; // used to extract and complete metadata
-            view.setImagePath(inputFilePath);
+            view.getImage().setImagePath(inputFilePath);
             int width, height;
             const auto metadata = image::readImageMetadata(inputFilePath, width, height);
-            view.setMetadata(image::getMapFromMetadata(metadata));
+            view.getImage().setMetadata(image::getMapFromMetadata(metadata));
+            view.getImage().setWidth(width);
+            view.getImage().setHeight(height);
+            std::shared_ptr<camera::IntrinsicBase> intrinsicBase;
+            // Get DSLR maker and model in view metadata.
+            const std::string& make = view.getImage().getMetadataMake();
+            const std::string& model = view.getImage().getMetadataModel();
 
-            if (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
-                rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+            if (isRAW && (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+                          rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
             {
                 // Load DCP color profiles database if not already loaded
                 dcpDatabase.load(colorProfileDatabaseDirPath.empty() ? getColorProfileDatabaseFolder() : colorProfileDatabaseDirPath, false);
-
-                // Get DSLR maker and model in view metadata.
-                const std::string& make = view.getMetadataMake();
-                const std::string& model = view.getMetadataModel();
 
                 // Get DCP profile
                 if (!dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
@@ -1089,53 +1549,200 @@ int aliceVision_main(int argc, char * argv[])
                 }
 
                 // Add color profile info in metadata
-                view.addDCPMetadata(dcpProf);
+                view.getImage().addDCPMetadata(dcpProf);
             }
+
+            if(isRAW && pParams.lensCorrection.enabled &&
+                (pParams.lensCorrection.geometry || pParams.lensCorrection.vignetting || pParams.lensCorrection.chromaticAberration))
+            {
+                // try to find an appropriate Lens Correction Profile
+                LCPinfo* lcpData = nullptr;
+                if (lcpStore.size() == 1)
+                {
+                    lcpData = lcpStore.retrieveLCP();
+                }
+                else if (!lcpStore.empty())
+                {
+                    // Find an LCP file that matches the camera model and the lens model.
+                    const std::string& lensModel = view.getImage().getMetadataLensModel();
+                    const int lensID = view.getImage().getMetadataLensID();
+
+                    if (!make.empty() && !lensModel.empty())
+                    {
+                        #pragma omp critical(lcp)
+                        lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
+                    }
+                }
+
+                if ((lcpData != nullptr) && !(lcpData->isEmpty()))
+                {
+                    double focalLengthmm = view.getImage().getMetadataFocalLength();
+                    const float apertureValue = 2.f * std::log(view.getImage().getMetadataFNumber()) / std::log(2.0);
+                    const float focusDistance = 0.f;
+
+                    LensParam lensParam;
+                    lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
+                    lcpData->getVignettingParams(focalLengthmm, apertureValue, lensParam);
+                    lcpData->getChromaticParams(focalLengthmm, focusDistance, lensParam);
+
+                    // Get sensor size by combining information from sensor database and view's metadata
+                    double sensorWidth = -1.0;
+                    double sensorHeight = -1.0;
+                    camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
+                    view.getImage().getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, true);
+
+                    if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty && pParams.lensCorrection.vignetting)
+                    {
+                        float FocX = lensParam.vignParams.FocalLengthX != 0.0
+                                         ? lensParam.vignParams.FocalLengthX
+                                         : width * focalLengthmm / sensorWidth / std::max(width, height);
+                        float FocY = lensParam.vignParams.FocalLengthY != 0.0
+                                         ? lensParam.vignParams.FocalLengthY
+                                         : height * focalLengthmm / sensorHeight / std::max(width, height);
+
+                        pParams.lensCorrection.vParams.clear();
+
+                        if (FocX == 0.0 || FocY == 0.0)
+                        {
+                            ALICEVISION_LOG_WARNING("Vignetting correction is requested but cannot be applied due to missing info.");
+                        }
+                        else
+                        {
+                            pParams.lensCorrection.vParams.push_back(FocX);
+                            pParams.lensCorrection.vParams.push_back(FocY);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageXCenter);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageYCenter);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam1);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam2);
+                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam3);
+                        }
+                    }
+
+                    if (pParams.lensCorrection.chromaticAberration && lensParam.hasChromaticParams() && !lensParam.ChromaticGreenParams.isEmpty)
+                    {
+                        if (lensParam.ChromaticGreenParams.FocalLengthX == 0.0)
+                        {
+                            lensParam.ChromaticGreenParams.FocalLengthX =
+                                width * focalLengthmm / sensorWidth / std::max(width, height);
+                        }
+                        if (lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
+                        {
+                            lensParam.ChromaticGreenParams.FocalLengthY =
+                                height * focalLengthmm / sensorHeight / std::max(width, height);
+                        }
+
+                        if(lensParam.ChromaticGreenParams.FocalLengthX == 0.0 ||
+                           lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
+                        {
+                            pParams.lensCorrection.caGModel.reset();
+                            pParams.lensCorrection.caBGModel.reset();
+                            pParams.lensCorrection.caRGModel.reset();
+
+                            ALICEVISION_LOG_WARNING(
+                                "Chromatic Aberration correction is requested but cannot be applied due to missing info.");
+                        }
+                        else
+                        {
+                            pParams.lensCorrection.caGModel = lensParam.ChromaticGreenParams;
+                            pParams.lensCorrection.caBGModel = lensParam.ChromaticBlueGreenParams;
+                            pParams.lensCorrection.caRGModel = lensParam.ChromaticRedGreenParams;
+                        }
+                    }
+
+                    if (pParams.lensCorrection.geometry)
+                    {
+                        // build intrinsic
+                        const camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
+                        const camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask("radial3,fisheye4");
+                        const double defaultFocalLength = -1.0;
+                        const double defaultFieldOfView = -1.0;
+                        const double defaultFocalRatio = 1.0;
+                        const double defaultOffsetX = 0.0;
+                        const double defaultOffsetY = 0.0;
+                        intrinsicBase = sfmDataIO::getViewIntrinsic(
+                            view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView, defaultFocalRatio,
+                            defaultOffsetX, defaultOffsetY, &lensParam, defaultCameraModel, allowedCameraModels);
+
+                        pParams.lensCorrection.geometryModel = lensParam.perspParams;
+                    }
+                }
+                else
+                {
+                    ALICEVISION_LOG_WARNING("No LCP file found for image " << inputFilePath);
+                    ALICEVISION_LOG_WARNING("Requested lens correction(s) won't be applied");
+                }
+            }
+
+            std::map<std::string, std::string> md = view.getImage().getMetadata();
 
             // set readOptions
             image::ImageReadOptions readOptions;
-            readOptions.colorProfileFileName = dcpProf.info.filename;
-            if (dcpProf.info.filename.empty() &&
-                ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
-                 (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
+
+            if (isRAW)
             {
-                // Fallback case of missing profile but no error requested
-                readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+                readOptions.colorProfileFileName = dcpProf.info.filename;
+                if (dcpProf.info.filename.empty() &&
+                    ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
+                        (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
+                {
+                    // Fallback case of missing profile but no error requested
+                    readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
+                }
+                else
+                {
+                    readOptions.rawColorInterpretation = rawColorInterpretation;
+                }
+
+                if (pParams.applyDcpMetadata && md["AliceVision::ColorSpace"] != "no_conversion")
+                {
+                    ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+                }
+
+                readOptions.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                readOptions.demosaicingAlgo = demosaicingAlgo;
+                readOptions.highlightMode = highlightMode;
+                readOptions.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
+                readOptions.rawAutoBright = pParams.rawAutoBright;
+                readOptions.correlatedColorTemperature = correlatedColorTemperature;
+                pParams.correlatedColorTemperature = correlatedColorTemperature;
+                pParams.enableColorTempProcessing = readOptions.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
+
+                pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                if (pParams.applyDcpMetadata)
+                {
+                    workingColorSpace = image::EImageColorSpace::ACES2065_1;
+                }
             }
             else
             {
-                readOptions.rawColorInterpretation = rawColorInterpretation;
-            }
-
-            std::map<std::string,std::string> md = view.getMetadata();
-
-            if (pParams.applyDcpMetadata && md["AliceVision::ColorSpace"] != "no_conversion")
-            {
-                ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+                readOptions.inputColorSpace = inputColorSpace;
             }
 
             readOptions.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
-            readOptions.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-            readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
-            readOptions.demosaicingAlgo = demosaicingAlgo;
-            readOptions.highlightMode = highlightMode;
 
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, readOptions);
 
-            pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-
             // Image processing
-            processImage(image, pParams, md);
+            processImage(image, pParams, md, intrinsicBase);
 
-            if (pParams.applyDcpMetadata)
+            image::ImageWriteOptions writeOptions;
+
+            writeOptions.fromColorSpace(workingColorSpace);
+            writeOptions.toColorSpace(outputColorSpace);
+            writeOptions.exrCompressionMethod(exrCompressionMethod);
+            writeOptions.exrCompressionLevel(exrCompressionLevel);
+
+            if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
             {
-                workingColorSpace = image::EImageColorSpace::ACES2065_1;
+                // Select storage data type
+                writeOptions.storageDataType(storageDataType);
             }
 
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, outputFormat, writeOptions);
         }
     }
 

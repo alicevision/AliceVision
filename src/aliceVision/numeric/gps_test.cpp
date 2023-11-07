@@ -17,7 +17,7 @@
 
 using namespace aliceVision;
 
-BOOST_AUTO_TEST_CASE ( conversionTest )
+BOOST_AUTO_TEST_CASE(conversionTest)
 {
     const Vec3 gps{43.597824, 1.4548992, 150};
     const Vec3 expected{4625021.304, 117467.403, 4375942.605};
@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE ( conversionTest )
     EXPECT_MATRIX_CLOSE_FRACTION(res, expected, 1e-5);
 }
 
-BOOST_AUTO_TEST_CASE ( parseGPSTest )
+BOOST_AUTO_TEST_CASE(parseGPSTest)
 {
     const std::string gps{"1, 27, 19.0008"};
     const double expected{1.45528};
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE ( parseGPSTest )
     BOOST_CHECK_THROW(parseGPSFromString(gps, "G"), std::invalid_argument);
 }
 
-BOOST_AUTO_TEST_CASE ( parseAltTest )
+BOOST_AUTO_TEST_CASE(parseAltTest)
 {
     const std::string gps{"10785.65"};
     const double expected{10785.65};

@@ -10,7 +10,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -132,7 +132,7 @@ bool exportToMVE2Format(
       }
 
       // We have a valid view with a corresponding camera & pose
-      const std::string srcImage = view->getImagePath();
+      const std::string srcImage = view->getImage().getImagePath();
       const std::string dstImage = (fs::path(sOutViewIteratorDirectory) / "undistorted.png").string();
 
       Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());

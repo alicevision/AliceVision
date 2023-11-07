@@ -7,7 +7,6 @@ set(sfm_files_headers
   pipeline/global/reindexGlobalSfM.hpp
   pipeline/global/TranslationTripletKernelACRansac.hpp
   pipeline/localization/SfMLocalizer.hpp
-  pipeline/localization/SfMLocalizationSingle3DTrackObservationDatabase.hpp
   pipeline/sequential/ReconstructionEngine_sequentialSfM.hpp
   pipeline/ReconstructionEngine.hpp
   pipeline/RigSequence.hpp
@@ -19,10 +18,9 @@ set(sfm_files_headers
   utils/alignment.hpp
   utils/statistics.hpp
   utils/syntheticScene.hpp
-  BundleAdjustment.hpp
-  BundleAdjustmentCeres.hpp
-  BundleAdjustmentPanoramaCeres.hpp
-  BundleAdjustmentSymbolicCeres.hpp
+  bundle/BundleAdjustment.hpp
+  bundle/BundleAdjustmentCeres.hpp
+  bundle/BundleAdjustmentSymbolicCeres.hpp
   LocalBundleAdjustmentGraph.hpp
   FrustumFilter.hpp
   ResidualErrorFunctor.hpp
@@ -40,7 +38,6 @@ set(sfm_files_sources
   pipeline/global/GlobalSfMTranslationAveragingSolver.cpp
   pipeline/global/ReconstructionEngine_globalSfM.cpp
   pipeline/localization/SfMLocalizer.cpp
-  pipeline/localization/SfMLocalizationSingle3DTrackObservationDatabase.cpp
   pipeline/sequential/ReconstructionEngine_sequentialSfM.cpp
   pipeline/ReconstructionEngine.cpp
   pipeline/RigSequence.cpp
@@ -51,9 +48,8 @@ set(sfm_files_sources
   utils/alignment.cpp
   utils/statistics.cpp
   utils/syntheticScene.cpp
-  BundleAdjustmentCeres.cpp
-  BundleAdjustmentPanoramaCeres.cpp
-  BundleAdjustmentSymbolicCeres.cpp
+  bundle/BundleAdjustmentCeres.cpp
+  bundle/BundleAdjustmentSymbolicCeres.cpp
   LocalBundleAdjustmentGraph.cpp
   FrustumFilter.cpp
   generateReport.cpp
@@ -81,17 +77,20 @@ alicevision_add_library(aliceVision_sfm
     Boost::filesystem
     Boost::boost
     ${CERES_LIBRARIES}
+  PRIVATE_LINKS
+    ${LEMON_LIBRARY}
 )
 
 # Unit tests
 
-alicevision_add_test(bundleAdjustment_test.cpp
+alicevision_add_test(bundle/bundleAdjustment_test.cpp
   NAME "sfm_bundleAdjustment"
   LINKS aliceVision_sfm
         aliceVision_multiview
         aliceVision_multiview_test_data
         aliceVision_feature
         aliceVision_system
+        ${LEMON_LIBRARY}
 )
 
 alicevision_add_test(utils/alignment_test.cpp
@@ -100,6 +99,7 @@ alicevision_add_test(utils/alignment_test.cpp
         aliceVision_sfm
         aliceVision_multiview
         aliceVision_multiview_test_data
+        ${LEMON_LIBRARY}
 )
 
 add_subdirectory(pipeline)

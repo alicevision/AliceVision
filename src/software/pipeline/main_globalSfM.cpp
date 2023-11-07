@@ -13,7 +13,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -116,7 +116,7 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(!sfmData.structure.empty())
+  if(!sfmData.getLandmarks().empty())
   {
     ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
     return EXIT_FAILURE;

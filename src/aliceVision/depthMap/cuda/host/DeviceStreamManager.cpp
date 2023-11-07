@@ -6,51 +6,46 @@
 
 #include "DeviceStreamManager.hpp"
 
-#include<aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
-DeviceStreamManager::DeviceStreamManager(int nbStreams) 
-   : _nbStreams(nbStreams)
+DeviceStreamManager::DeviceStreamManager(int nbStreams)
+  : _nbStreams(nbStreams)
 {
     assert(nbStreams > 0);
 
     _streams.resize(nbStreams);
 
-    for(int i = 0; i < nbStreams; ++i)
+    for (int i = 0; i < nbStreams; ++i)
     {
         cudaError_t err = cudaStreamCreate(&_streams.at(i));
-        if(err != cudaSuccess)
+        if (err != cudaSuccess)
         {
-            ALICEVISION_LOG_WARNING("DeviceStreamManager: Failed to create a CUDA stream object " << i << "/" << nbStreams << ", " << cudaGetErrorString(err));
+            ALICEVISION_LOG_WARNING("DeviceStreamManager: Failed to create a CUDA stream object " << i << "/" << nbStreams << ", "
+                                                                                                  << cudaGetErrorString(err));
             _streams.at(i) = 0;
         }
     }
 }
 
-DeviceStreamManager::~DeviceStreamManager() 
+DeviceStreamManager::~DeviceStreamManager()
 {
-    for(cudaStream_t& stream : _streams)
+    for (cudaStream_t& stream : _streams)
     {
         cudaStreamSynchronize(stream);
 
-        if(stream != 0) 
+        if (stream != 0)
         {
             cudaStreamDestroy(stream);
         }
     }
 }
 
-cudaStream_t DeviceStreamManager::getStream(int streamIndex)
-{
-    return _streams.at(streamIndex % _nbStreams);
-}
+cudaStream_t DeviceStreamManager::getStream(int streamIndex) { return _streams.at(streamIndex % _nbStreams); }
 
-void DeviceStreamManager::waitStream(int streamIndex)
-{
-    cudaStreamSynchronize(getStream(streamIndex));
-}
+void DeviceStreamManager::waitStream(int streamIndex) { cudaStreamSynchronize(getStream(streamIndex)); }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

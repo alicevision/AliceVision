@@ -14,7 +14,6 @@
 namespace aliceVision {
 namespace matching {
 
-
 /**
  * @brief Load a match file.
  *

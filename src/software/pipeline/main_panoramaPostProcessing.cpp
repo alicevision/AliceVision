@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2020 AliceVision contributors.
+// Copyright (c) 2023 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -9,12 +9,11 @@
 #include <aliceVision/image/all.hpp>
 
 // System
-#include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 // Reading command line options
 #include <boost/program_options.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
 #include <aliceVision/stl/mapUtils.hpp>
@@ -34,7 +33,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -90,55 +89,104 @@ bool downscaleTriangle(image::Image<image::RGBAfColor> & smaller, const image::I
 bool readFullTile(image::Image<image::RGBAfColor> & output, std::unique_ptr<oiio::ImageInput> & input, int tx, int ty)
 {
     const oiio::ImageSpec &inputSpec = input->spec();
-    int tileSize = inputSpec.tile_width; 
-    int width = inputSpec.width;
-    int height = inputSpec.height;
+    const int tileSize = inputSpec.tile_width; 
+    const int width = inputSpec.width;
+    const int height = inputSpec.height;
 
-    int countWidth = std::ceil(double(width) / double(tileSize));
-    int countHeight = std::ceil(double(height) / double(tileSize));
+    const int countWidth = std::ceil(double(width) / double(tileSize));
+    const int countHeight = std::ceil(double(height) / double(tileSize));
 
-    if (tx < 0 || tx >= countWidth || ty < 0 || ty >= countHeight)
+    // Utility lambda to load only part of a tile (before of after a given split position)
+    auto readTilePartial = [&](
+        image::Image<image::RGBAfColor> & buf,
+        int txLeft,
+        int xOutput, int xBuf, int sliceWidth) -> bool
     {
-        output.fill(image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
-        return true;
-    }
-
-    if (tx < 0)
-    {
-        tx = countWidth + tx;
-    }
-
-    if (tx >= countWidth)
-    {
-        tx = tx - countWidth;
-    }
-
-    /*int available = width - (tx * tileSize);
-
-    if (available < tileSize)
-    {
-        image::Image<image::RGBAfColor> buf(tileSize, tileSize);
-        if (!input->read_tile(tx * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
+        if (!input->read_tile(txLeft * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
         {
             return false;
         }
 
-        output.block(0, tileSize - available, tileSize, available) = buf.block(0, 0, tileSize, available);
-
-        if (!input->read_tile((tx - 1) * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, buf.data()))
-        {
-            return false;
-        }
-
-        output.block(0, 0, tileSize, tileSize - available) = buf.block(0, available, tileSize, tileSize - available);
+        output.block(0, xOutput, tileSize, sliceWidth) = buf.block(0, xBuf, tileSize, sliceWidth);
 
         return true;
-    }*/
+    };
 
+    // Default filling
     output.fill(image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
-    if (!input->read_tile(tx * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, output.data()))
+
+    // Make sure tile y-coordinate is in the right range
+    if (ty < 0 || ty >= countHeight)
     {
-        return false;
+        return true;
+    }
+
+    if (tx == -1)
+    {
+        // Wrap tile x-coordinate
+        const int offset = width - 1 - tileSize;
+        const int txLeft = offset / tileSize;
+
+        // Size of the left and right part of the tile
+        const int leftside = (txLeft + 1) * tileSize - offset;
+        const int rightside = tileSize - leftside;
+
+        image::Image<image::RGBAfColor> buf(tileSize, tileSize);
+
+        // Load left part tile
+        if (!readTilePartial(buf, txLeft, 0, rightside, leftside)) return false;
+
+        // Load right part tile to complete filling output
+        if (rightside > 0)
+        {
+            if (!readTilePartial(buf, txLeft + 1, leftside, 0, rightside)) return false;
+        }
+    }
+    else if (tx == countWidth - 1)
+    {
+        // Size of the left and right part of the tile
+        const int leftside = width - tx * tileSize;
+        const int rightside = tileSize - leftside;
+
+        image::Image<image::RGBAfColor> buf(tileSize, tileSize);
+
+        // Load last tile (which may be incomplete)
+        if (!readTilePartial(buf, tx, 0, 0, leftside)) return false;
+
+        // Load first tile to complete filling output
+        if (rightside > 0)
+        {
+            if (!readTilePartial(buf, 0, leftside, 0, rightside)) return false;
+        }
+    }
+    else if (tx == countWidth)
+    {
+        // Wrap tile x-coordinate
+        const int offset = countWidth * tileSize - width;
+        const int txLeft = offset / tileSize;
+
+        // Size of the left and right part of the tile
+        const int leftside = (txLeft + 1) * tileSize - offset;
+        const int rightside = tileSize - leftside;
+
+        image::Image<image::RGBAfColor> buf(tileSize, tileSize);
+
+        // Load left part tile
+        if (!readTilePartial(buf, txLeft, 0, rightside, leftside)) return false;
+
+        // Load right part tile to complete filling output
+        if (rightside > 0)
+        {
+            if (!readTilePartial(buf, txLeft + 1, leftside, 0, rightside)) return false;
+        }
+    }
+    else if (tx >= 0 && tx < countWidth - 1)
+    {
+        // Load tile data directly into output
+        if (!input->read_tile(tx * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, output.data()))
+        {
+            return false;
+        }
     }
 
     return true;
@@ -153,7 +201,8 @@ void colorSpaceTransform(image::Image<image::RGBAfColor>& inputImage, image::EIm
 
     if (fromColorSpace == image::EImageColorSpace::NO_CONVERSION)
     {
-        dcpProf.applyLinear(inBuf, neutral, true, true);
+        double cct;
+        dcpProf.applyLinear(inBuf, neutral, cct, true, true);
         fromColorSpace = image::EImageColorSpace::ACES2065_1;
     }
 
@@ -193,23 +242,40 @@ int aliceVision_main(int argc, char** argv)
 {
     std::string inputPanoramaPath;
     std::string outputPanoramaPath;
+    std::string outputPanoramaPreviewPath = "";
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+    image::EImageExrCompression compressionMethod = image::EImageExrCompression::Auto;
+    int compressionLevel = 0;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
-    const size_t maxProcessingSize = 2000;
-    bool fillHoles = false;  
+    size_t previewSize = 1000;
+    bool fillHoles = false;
+    bool exportLevels = false;
+    int lastLevelMaxSize = 3840;
 
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPanorama,i", po::value<std::string>(&inputPanoramaPath)->required(), "Input Panorama.")
-        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");;
+        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+
+        ("compressionMethod", po::value<image::EImageExrCompression>(&compressionMethod)->default_value(compressionMethod),
+         ("Compression Method: " + image::EImageExrCompression_informations()).c_str())
+
+        ("compressionLevel", po::value<int>(&compressionLevel)->default_value(compressionLevel),
+         "Compression Level (must be strictly positive to be considered)\n"
+         "Only dwaa, dwab, zip and zips compression methods are concerned.")
+
         ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
-        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.");
+        ("exportLevels", po::value<bool>(&exportLevels)->default_value(exportLevels), "Export downscaled panorama levels")
+        ("lastLevelMaxSize", po::value<int>(&lastLevelMaxSize)->default_value(lastLevelMaxSize), "Maximum width of smallest downscaled panorama level.")
+        ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.")
+        ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath), "Path of the output panorama preview.");
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
                     "AliceVision PanoramaPostProcessing");
@@ -271,7 +337,30 @@ int aliceVision_main(int argc, char** argv)
     oiio::ImageSpec outputSpec(inputSpec);
     outputSpec.tile_width = 0;
     outputSpec.tile_height = 0;
-	outputSpec.attribute("compression", "zip");
+
+    std::string compressionMethod_str = "none";
+
+    if (compressionMethod == image::EImageExrCompression::Auto)
+    {
+        compressionMethod_str = "zip";
+    }
+    else if (compressionMethod != image::EImageExrCompression::None)
+    {
+        compressionMethod_str = EImageExrCompression_enumToString(compressionMethod);
+        if (compressionLevel > 0)
+        {
+            if ((compressionMethod == image::EImageExrCompression::DWAA || compressionMethod == image::EImageExrCompression::DWAB))
+            {
+                compressionMethod_str += ":" + std::to_string(compressionLevel);
+            }
+            else if ((compressionMethod == image::EImageExrCompression::ZIP || compressionMethod == image::EImageExrCompression::ZIPS))
+            {
+                compressionMethod_str += ":" + std::to_string(std::min<int>(compressionLevel, 9));
+            }
+        }
+    }
+	outputSpec.attribute("compression", compressionMethod_str);
+
     outputSpec.extra_attribs.remove("openexr:lineOrder");
     outputSpec.attribute("AliceVision:ColorSpace",image::EImageColorSpace_enumToString(outputColorSpace));
 
@@ -288,6 +377,48 @@ int aliceVision_main(int argc, char** argv)
     const int countWidth = std::ceil(double(width) / double(tileSize));
     const int countHeight = std::ceil(double(height) / double(tileSize));
     const int rowSize = countWidth + 2;
+
+    if (previewSize > width || previewSize <= 0)
+    {
+        ALICEVISION_LOG_INFO("Preview size must be inferior to the original panorama size and superior to 0");
+        ALICEVISION_LOG_INFO("Falling back to recommended size of 1000");
+        previewSize = 1000;
+    }
+
+    const double ratioPreview = double(width) / double(previewSize);
+    image::Image<image::RGBAfColor> previewImage(previewSize, previewSize / 2);
+    int previewCurrentRow = 0;
+
+    // Create image outputs for downscaled panorama levels
+    const int nbLevels = exportLevels ?
+        static_cast<int>(std::min(
+            std::floor(std::log2(tileSize)),
+            std::ceil(std::log2(width) - std::log2(lastLevelMaxSize))))
+        : 0;
+    std::vector<std::unique_ptr<oiio::ImageOutput>> levelOutputs;
+
+    ALICEVISION_LOG_INFO("Number of downscaled panorama levels to generate: " << nbLevels);
+
+    fs::path outputFSPath(outputPanoramaPath);
+    for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
+    {
+        const int levelWidth = width / (1 << levelIdx);
+        
+        fs::path levelPath = outputFSPath.parent_path() /  (outputFSPath.stem().string() + "_level_" + std::to_string(levelWidth) + ".exr");
+        levelOutputs.push_back(std::move(oiio::ImageOutput::create(levelPath.string())));
+
+        oiio::ImageSpec levelSpec(outputSpec);
+        levelSpec.width /= (1 << levelIdx);
+        levelSpec.height /= (1 << levelIdx);
+        levelSpec.full_width /= (1 << levelIdx);
+        levelSpec.full_height /= (1 << levelIdx);
+
+        if (!levelOutputs[levelIdx-1]->open(levelPath.string(), levelSpec))
+        {
+            ALICEVISION_LOG_ERROR("Impossible to write downscaled panorama at level " << levelIdx);
+            return EXIT_FAILURE;
+        }
+    }
 
     if (fillHoles)
     {
@@ -367,8 +498,11 @@ int aliceVision_main(int argc, char** argv)
         //Process one full row of tiles each iteration
         for (int ty = 0; ty < countHeight; ty++)
         {
+            int ybegin = ty * tileSize;
+            int yend = (ty + 1) * tileSize - 1;
+            
             //Build subimage
-            image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);          
+            image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);
             image::Image<image::RGBAfColor> subFiled(rowSize, 3, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
             image::Image<image::RGBAfColor> final(width, tileSize, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
                 
@@ -490,52 +624,146 @@ int aliceVision_main(int argc, char** argv)
             }
 
             const image::Image<image::RGBAfColor> & finalTile = pyramid[0];
-            
             final.block(0, 0, tileSize, width) = finalTile.block(tileSize, tileSize, tileSize, width);
 
-            colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
+            //Fill preview image
+            while (previewCurrentRow < previewImage.rows())
+            {
+                double finalY = ratioPreview * double(previewCurrentRow) - ybegin;
+                if (finalY < 0 || finalY >= tileSize)
+                {
+                    break;
+                }
 
+                int by = int(finalY);
+                for (int px = 0; px < previewImage.cols(); px++)
+                {
+                    int bx = int(ratioPreview * double(px));
+                    previewImage(previewCurrentRow, px) = final(by, bx);
+                }
+
+                previewCurrentRow++;
+            }
+
+            // Write panorama output
+            colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
             panoramaOutput->write_scanlines(ty * tileSize, (ty + 1) * tileSize, 0, oiio::TypeDesc::FLOAT, final.data());
+
+            // Write downscaled panorama levels
+            for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
+            {
+                image::Image<image::RGBAfColor> & levelTile = pyramid[levelIdx];
+                const int levelTileSize = tileSize / (1 << levelIdx);
+                const int levelWidth = width / (1 << levelIdx);
+                image::Image<image::RGBAfColor> level(levelWidth, levelTileSize);
+                level.block(0, 0, levelTileSize, levelWidth) = levelTile.block(levelTileSize, levelTileSize, levelTileSize, levelWidth);
+                colorSpaceTransform(level, fromColorSpace, outputColorSpace, dcpProf, neutral);
+                levelOutputs[levelIdx-1]->write_scanlines(ty * levelTileSize, (ty + 1) * levelTileSize, 0, oiio::TypeDesc::FLOAT, level.data());
+            }
         }
     }
     else 
     {
-         //Process one full row of tiles each iteration
+        //Process one full row of tiles each iteration
         for (int ty = 0; ty < countHeight; ty++)
         {
             int ybegin = ty * tileSize;
-            int yend = (ty + 1) * tileSize;
+            int yend = (ty + 1) * tileSize - 1;
 
+            // Build subimage
+            image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);
             image::Image<image::RGBAfColor> final(width, tileSize, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
-            
-            #pragma omp parallel for
-            for (int tx = 0; tx < countWidth; tx++)
-            {
-                image::Image<image::RGBAfColor> tile(tileSize, tileSize);
-                if (!panoramaInput->read_tile(tx * tileSize, ybegin, 0, oiio::TypeDesc::FLOAT, tile.data()))
-                {
-                    ALICEVISION_LOG_ERROR("Error reading from image");
-                }
 
-                int available = width - tx*tileSize;
-                if (available < tileSize)
+            //Build a region           
+            for (int ry = 0; ry < 3; ry++)
+            {
+                int dy = ry - 1;
+                int cy = ty + dy;
+                
+                #pragma omp parallel for
+                for (int rx = 0; rx < rowSize; rx++)
                 {
-                    final.block(0, tx * tileSize, tileSize, available) = tile.block(0, 0, tileSize, available);
-                }
-                else
-                {
-                    final.block(0, tx * tileSize, tileSize, tileSize) = tile;
+                    int dx = rx - 1;
+                    int cx = dx;
+
+                    image::Image<image::RGBAfColor> tile(tileSize, tileSize);
+                    if (!readFullTile(tile, panoramaInput, cx, cy))
+                    {
+                        ALICEVISION_LOG_ERROR("Invalid tile");
+                        continue;
+                    }
+
+                    region.block(ry * tileSize, rx * tileSize, tileSize, tileSize) = tile;
                 }
             }
 
-            colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
+            //First level is original image
+            std::vector<image::Image<image::RGBAfColor>> pyramid;
+            pyramid.push_back(region);
 
-            panoramaOutput->write_scanlines(ybegin, yend, 0, oiio::TypeDesc::FLOAT, final.data());
+            //Build pyramid for tile
+            int cs = tileSize * rowSize;
+            while (cs != rowSize)
+            {
+                int ns = cs / 2;
+                image::Image<image::RGBAfColor> smaller;
+                downscaleTriangle(smaller, region);
+                pyramid.push_back(smaller);
+                region = smaller;
+                cs = ns;
+            }
+
+            const image::Image<image::RGBAfColor> & finalTile = pyramid[0];
+            final.block(0, 0, tileSize, width) = finalTile.block(tileSize, tileSize, tileSize, width);
+
+            //Fill preview image
+            while (previewCurrentRow < previewImage.rows())
+            {
+                double finalY = ratioPreview * double(previewCurrentRow) - ybegin;
+                if (finalY < 0 || finalY >= tileSize)
+                {
+                    break;
+                }
+
+                int by = int(finalY);
+                for (int px = 0; px < previewImage.cols(); px++)
+                {
+                    int bx = int(ratioPreview * double(px));
+                    previewImage(previewCurrentRow, px) = final(by, bx);
+                }
+
+                previewCurrentRow++;
+            }
+
+            // Write panorama output
+            colorSpaceTransform(final, fromColorSpace, outputColorSpace, dcpProf, neutral);
+            panoramaOutput->write_scanlines(ty * tileSize, (ty + 1) * tileSize, 0, oiio::TypeDesc::FLOAT, final.data());
+
+            // Write downscaled panorama levels
+            for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
+            {
+                image::Image<image::RGBAfColor> & levelTile = pyramid[levelIdx];
+                const int levelTileSize = tileSize / (1 << levelIdx);
+                const int levelWidth = width / (1 << levelIdx);
+                image::Image<image::RGBAfColor> level(levelWidth, levelTileSize);
+                level.block(0, 0, levelTileSize, levelWidth) = levelTile.block(levelTileSize, levelTileSize, levelTileSize, levelWidth);
+                colorSpaceTransform(level, fromColorSpace, outputColorSpace, dcpProf, neutral);
+                levelOutputs[levelIdx-1]->write_scanlines(ty * levelTileSize, (ty + 1) * levelTileSize, 0, oiio::TypeDesc::FLOAT, level.data());
+            }
         }
     }
 
     panoramaInput->close();
     panoramaOutput->close();
+    for (int levelIdx = 1; levelIdx <= nbLevels; ++levelIdx)
+    {
+        levelOutputs[levelIdx-1]->close();
+    }
+
+    if (outputPanoramaPreviewPath != "")
+    {
+        image::writeImage(outputPanoramaPreviewPath, previewImage, image::ImageWriteOptions());
+    }
 
     return EXIT_SUCCESS;
 }

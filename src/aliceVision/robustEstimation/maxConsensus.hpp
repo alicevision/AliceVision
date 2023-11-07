@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace robustEstimation{
+namespace robustEstimation {
 
 /// Naive implementation of RANSAC without noise and iteration reduction options
 /// Pick max_iteration times N_samples and Fit a solution.
@@ -32,10 +32,10 @@ namespace robustEstimation{
 template<typename Kernel, typename Scorer>
 typename Kernel::ModelT maxConsensus(const Kernel& kernel,
                                      const Scorer& scorer,
-                                     std::mt19937 & randomNumberGenerator,
+                                     std::mt19937& randomNumberGenerator,
                                      std::vector<std::size_t>* best_inliers = nullptr,
-                                     std::size_t max_iteration = 1024) {
-
+                                     std::size_t max_iteration = 1024)
+{
     const std::size_t min_samples = kernel.getMinimumNbRequiredSamples();
     const std::size_t total_samples = kernel.nbSamples();
 
@@ -43,52 +43,52 @@ typename Kernel::ModelT maxConsensus(const Kernel& kernel,
     typename Kernel::ModelT best_model;
 
     // Test if we have sufficient points to for the kernel.
-    if (total_samples < min_samples) 
+    if (total_samples < min_samples)
     {
-      if (best_inliers) 
-      {
-        best_inliers->resize(0);
-      }
-      return best_model;
+        if (best_inliers)
+        {
+            best_inliers->resize(0);
+        }
+        return best_model;
     }
 
     // In this robust estimator, the scorer always works on all the data points
     // at once. So precompute the list ahead of time.
     std::vector<std::size_t> all_samples;
-    for(std::size_t i = 0; i < total_samples; ++i)
+    for (std::size_t i = 0; i < total_samples; ++i)
     {
-      all_samples.push_back(i);
+        all_samples.push_back(i);
     }
 
-    for(std::size_t iteration = 0;  iteration < max_iteration; ++iteration) 
+    for (std::size_t iteration = 0; iteration < max_iteration; ++iteration)
     {
-      std::vector<std::size_t> sample;
-      uniformSample(randomNumberGenerator, min_samples, total_samples, sample);
+        std::vector<std::size_t> sample;
+        uniformSample(randomNumberGenerator, min_samples, total_samples, sample);
 
-      std::vector<typename Kernel::ModelT> models;
-      kernel.fit(sample, models);
+        std::vector<typename Kernel::ModelT> models;
+        kernel.fit(sample, models);
 
-      // Compute costs for each fit.
-      for(std::size_t i = 0; i < models.size(); ++i) 
-      {
-        std::vector<std::size_t> inliers;
-        scorer.score(kernel, models[i], all_samples, inliers);
-
-        if (best_num_inliers < inliers.size())
+        // Compute costs for each fit.
+        for (std::size_t i = 0; i < models.size(); ++i)
         {
-          //ALICEVISION_LOG_DEBUG("Fit cost: " << cost/inliers.size()
-          //  << ", number of inliers: " << inliers.size());
-          best_num_inliers = inliers.size();
-          best_model = models[i];
-          if (best_inliers) 
-          {
-            best_inliers->swap(inliers);
-          }
+            std::vector<std::size_t> inliers;
+            scorer.score(kernel, models[i], all_samples, inliers);
+
+            if (best_num_inliers < inliers.size())
+            {
+                // ALICEVISION_LOG_DEBUG("Fit cost: " << cost/inliers.size()
+                //   << ", number of inliers: " << inliers.size());
+                best_num_inliers = inliers.size();
+                best_model = models[i];
+                if (best_inliers)
+                {
+                    best_inliers->swap(inliers);
+                }
+            }
         }
-      }
     }
     return best_model;
 }
 
-} // namespace robustEstimation
-} // namespace aliceVision
+}  // namespace robustEstimation
+}  // namespace aliceVision

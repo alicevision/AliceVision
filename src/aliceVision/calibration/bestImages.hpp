@@ -10,8 +10,8 @@
 #include <map>
 #include <opencv2/opencv.hpp>
 
-namespace aliceVision{
-namespace calibration{
+namespace aliceVision {
+namespace calibration {
 
 /**
  * @brief This function computes cell indexes per image.
@@ -21,10 +21,10 @@ namespace calibration{
  * @param[in] calibGridSize The number of cells per each image dimension.
  * @param[out] cellIndexesPerImage The id of the cell for each point of the image sequence.
  */
-void precomputeCellIndexes(const std::vector<std::vector<cv::Point2f> >& imagePoints,
+void precomputeCellIndexes(const std::vector<std::vector<cv::Point2f>>& imagePoints,
                            const cv::Size& imageSize,
                            std::size_t calibGridSize,
-                           std::vector<std::vector<std::size_t> >& cellIndexesPerImage);
+                           std::vector<std::vector<std::size_t>>& cellIndexesPerImage);
 
 /**
  * @brief This function counts the number of points in each cell of the grid.
@@ -35,7 +35,7 @@ void precomputeCellIndexes(const std::vector<std::vector<cv::Point2f> >& imagePo
  * @param[out] cellsWeight The number of points for each cell id.
  */
 void computeCellsWeight(const std::vector<std::size_t>& imagesIndexes,
-                        const std::vector<std::vector<std::size_t> >& cellIndexesPerImage,
+                        const std::vector<std::vector<std::size_t>>& cellIndexesPerImage,
                         std::size_t calibGridSize,
                         std::map<std::size_t, std::size_t>& cellsWeight);
 
@@ -48,9 +48,9 @@ void computeCellsWeight(const std::vector<std::size_t>& imagesIndexes,
  * @param[out] imageScores The score of each image.
  */
 void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
-                        const std::vector<std::vector<std::size_t> >& cellIndexesPerImage,
+                        const std::vector<std::vector<std::size_t>>& cellIndexesPerImage,
                         const std::map<std::size_t, std::size_t>& cellsWeight,
-                        std::vector<std::pair<float, std::size_t> >& imageScores);
+                        std::vector<std::pair<float, std::size_t>>& imageScores);
 
 /**
  * @brief This function selects the best images based on distribution of calibration landmarks in images.
@@ -64,15 +64,14 @@ void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
  * @param[out] calibImagePoints Set of points for each selected image.
  * @param[out] remainingImagesIndexes Indexes of non-selected images from validFrames.
  */
-void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
+void selectBestImages(const std::vector<std::vector<cv::Point2f>>& imagePoints,
                       const cv::Size& imageSize,
                       std::size_t maxCalibFrames,
                       std::size_t calibGridSize,
                       std::vector<float>& calibImageScore,
                       std::vector<std::size_t>& calibInputFrames,
-                      std::vector<std::vector<cv::Point2f> >& calibImagePoints,
+                      std::vector<std::vector<cv::Point2f>>& calibImagePoints,
                       std::vector<std::size_t>& remainingImagesIndexes);
 
-}//namespace calibration
-}//namespace aliceVision
-
+}  // namespace calibration
+}  // namespace aliceVision

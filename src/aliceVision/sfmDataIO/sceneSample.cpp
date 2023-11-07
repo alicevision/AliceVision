@@ -9,17 +9,17 @@
 namespace aliceVision {
 namespace sfmDataIO {
 
-void generateSampleScene(sfmData::SfMData & output)
+void generateSampleScene(sfmData::SfMData& output)
 {
     // Generate points on a cube
     IndexT idpt = 0;
-    for(int x = -10; x <= 10; ++x)
+    for (int x = -10; x <= 10; ++x)
     {
-        for(int y = -10; y <= 10; ++y)
+        for (int y = -10; y <= 10; ++y)
         {
-            for(int z = -10; z <= 10; ++z)
+            for (int z = -10; z <= 10; ++z)
             {
-                output.getLandmarks().emplace(idpt, sfmData::Landmark(Vec3(x,y,z), feature::EImageDescriberType::UNKNOWN));
+                output.getLandmarks().emplace(idpt, sfmData::Landmark(Vec3(x, y, z), feature::EImageDescriberType::UNKNOWN));
                 ++idpt;
             }
         }
@@ -32,23 +32,25 @@ void generateSampleScene(sfmData::SfMData & output)
     const double offsetX = -26;
     const double offsetY = 16;
     output.getIntrinsics().emplace(
-        0, std::make_shared<camera::Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
-    output.getIntrinsics().emplace(1, std::make_shared<camera::PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY,
-                                                                                offsetX, offsetY, 0.1, 0.05, -0.001));
+      0, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
+    output.getIntrinsics().emplace(
+      1,
+      camera::createPinhole(
+        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, {0.1, 0.05, -0.001}));
 
     // Generate poses on another cube
     IndexT idpose = 0;
     IndexT idview = 0;
-    for(int x = -1; x <= 1; ++x)
+    for (int x = -1; x <= 1; ++x)
     {
-        for(int y = -1; y <= 1; ++y)
+        for (int y = -1; y <= 1; ++y)
         {
-            for(int z = -1; z <= 1; ++z)
+            for (int z = -1; z <= 1; ++z)
             {
                 const Eigen::Vector3d thetau(x, y, z);
                 const Eigen::AngleAxis<double> aa(thetau.norm(), thetau.normalized());
 
-                output.getPoses().emplace(idpose, geometry::Pose3(aa.toRotationMatrix(), Vec3(x,y,z)));
+                output.getPoses().emplace(idpose, geometry::Pose3(aa.toRotationMatrix(), Vec3(x, y, z)));
 
                 for (const auto itIntrinsic : output.getIntrinsics())
                 {
@@ -62,5 +64,5 @@ void generateSampleScene(sfmData::SfMData & output)
     }
 }
 
-} // namespace sfmDataIO
-} // namespace aliceVision
+}  // namespace sfmDataIO
+}  // namespace aliceVision

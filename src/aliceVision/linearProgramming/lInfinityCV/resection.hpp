@@ -25,8 +25,8 @@
 //- ICCV 2005.
 //--
 
-namespace aliceVision   {
-namespace lInfinityCV  {
+namespace aliceVision {
+namespace lInfinityCV {
 
 using namespace linearProgramming;
 
@@ -44,96 +44,96 @@ using namespace linearProgramming;
 //      (simplex) instead of using SOCP (second order cone programming).
 //      Implementation by Pierre Moulon
 //
-inline void EncodeResection(const Mat2X & Pt2D,
-                     const Mat3X & Pt3D,
-                     double gamma, // Start upper bound
-                     sRMat & A, Vec & C)
+inline void EncodeResection(const Mat2X& Pt2D,
+                            const Mat3X& Pt3D,
+                            double gamma,  // Start upper bound
+                            sRMat& A,
+                            Vec& C)
 {
-  // Build Constraint matrix.
+    // Build Constraint matrix.
 
-  const int Nobs = Pt2D.cols();
+    const int Nobs = Pt2D.cols();
 
-  assert(Pt2D.cols() == Pt3D.cols());
-  assert(Pt2D.cols() >= 6 && "The problem requires at least 6 points");
+    assert(Pt2D.cols() == Pt3D.cols());
+    assert(Pt2D.cols() >= 6 && "The problem requires at least 6 points");
 
-  A.resize(Nobs * 5, 11);
+    A.resize(Nobs * 5, 11);
 
-  C.resize(Nobs * 5, 1);
-  C.fill(0.0);
+    C.resize(Nobs * 5, 1);
+    C.fill(0.0);
 
-  for (int p=0; p <Nobs; ++p)
-  {
-    const Vec2 pt2d = Pt2D.col(p);
-    const Vec3 pt3d = Pt3D.col(p);
+    for (int p = 0; p < Nobs; ++p)
+    {
+        const Vec2 pt2d = Pt2D.col(p);
+        const Vec3 pt3d = Pt3D.col(p);
 
-    // Compute and setup constraint :
+        // Compute and setup constraint :
 
-    // Cheirality
-    // R^3 X + t >0
-    // - R^3 X - t < 0 => // - R^3 X < 1.0 because t3 = 1.0 by default
-    int cpti = 8;
-    int cptj = 5 * p;
-    A.coeffRef(cptj, cpti) = -pt3d(0);
-    A.coeffRef(cptj, cpti+1) = -pt3d(1);
-    A.coeffRef(cptj, cpti+2) = -pt3d(2);
-    C(cptj) = 1.0;
+        // Cheirality
+        // R^3 X + t >0
+        // - R^3 X - t < 0 => // - R^3 X < 1.0 because t3 = 1.0 by default
+        int cpti = 8;
+        int cptj = 5 * p;
+        A.coeffRef(cptj, cpti) = -pt3d(0);
+        A.coeffRef(cptj, cpti + 1) = -pt3d(1);
+        A.coeffRef(cptj, cpti + 2) = -pt3d(2);
+        C(cptj) = 1.0;
 
-    // First constraint <= s
-    // R1 * X + t1 + R3 * X *(-xij -s) <= xij t3 + s t3
-    cpti = 0;
-    cptj += 1;
-    A.coeffRef(cptj, cpti) = pt3d(0);
-    A.coeffRef(cptj, cpti+1) = pt3d(1);
-    A.coeffRef(cptj, cpti+2) = pt3d(2);
-    A.coeffRef(cptj, cpti+3) = 1.0;
-    cpti = 4;
-    A.coeffRef(cptj+1, cpti) = pt3d(0);
-    A.coeffRef(cptj+1, cpti+1) = pt3d(1);
-    A.coeffRef(cptj+1, cpti+2) = pt3d(2);
-    A.coeffRef(cptj+1, cpti+3) = 1.0;
+        // First constraint <= s
+        // R1 * X + t1 + R3 * X *(-xij -s) <= xij t3 + s t3
+        cpti = 0;
+        cptj += 1;
+        A.coeffRef(cptj, cpti) = pt3d(0);
+        A.coeffRef(cptj, cpti + 1) = pt3d(1);
+        A.coeffRef(cptj, cpti + 2) = pt3d(2);
+        A.coeffRef(cptj, cpti + 3) = 1.0;
+        cpti = 4;
+        A.coeffRef(cptj + 1, cpti) = pt3d(0);
+        A.coeffRef(cptj + 1, cpti + 1) = pt3d(1);
+        A.coeffRef(cptj + 1, cpti + 2) = pt3d(2);
+        A.coeffRef(cptj + 1, cpti + 3) = 1.0;
 
-    cpti = 8;
-    Mat temp;
-    temp = Vec2((-pt2d).array() - gamma) * pt3d.transpose();
-    A.coeffRef(cptj, cpti) = temp(0,0);
-    A.coeffRef(cptj, cpti+1) = temp(0,1);
-    A.coeffRef(cptj, cpti+2) = temp(0,2);
+        cpti = 8;
+        Mat temp;
+        temp = Vec2((-pt2d).array() - gamma) * pt3d.transpose();
+        A.coeffRef(cptj, cpti) = temp(0, 0);
+        A.coeffRef(cptj, cpti + 1) = temp(0, 1);
+        A.coeffRef(cptj, cpti + 2) = temp(0, 2);
 
-    A.coeffRef(cptj+1, cpti) = temp(1,0);
-    A.coeffRef(cptj+1, cpti+1) = temp(1,1);
-    A.coeffRef(cptj+1, cpti+2) = temp(1,2);
+        A.coeffRef(cptj + 1, cpti) = temp(1, 0);
+        A.coeffRef(cptj + 1, cpti + 1) = temp(1, 1);
+        A.coeffRef(cptj + 1, cpti + 2) = temp(1, 2);
 
-    C(cptj) = gamma + pt2d(0);
-    C(cptj+1) = gamma + pt2d(1);
+        C(cptj) = gamma + pt2d(0);
+        C(cptj + 1) = gamma + pt2d(1);
 
+        // Second constraint >= s
+        // -R1 * X - t1 + R3 * X *(xij -s) <= - xij t3 + s t3
+        cpti = 0;
+        cptj += 2;
+        A.coeffRef(cptj, cpti) = -pt3d(0);
+        A.coeffRef(cptj, cpti + 1) = -pt3d(1);
+        A.coeffRef(cptj, cpti + 2) = -pt3d(2);
+        A.coeffRef(cptj, cpti + 3) = -1.0;
+        cpti = 4;
+        A.coeffRef(cptj + 1, cpti) = -pt3d(0);
+        A.coeffRef(cptj + 1, cpti + 1) = -pt3d(1);
+        A.coeffRef(cptj + 1, cpti + 2) = -pt3d(2);
+        A.coeffRef(cptj + 1, cpti + 3) = -1.0;
 
-    // Second constraint >= s
-    // -R1 * X - t1 + R3 * X *(xij -s) <= - xij t3 + s t3
-    cpti = 0;
-    cptj += 2;
-    A.coeffRef(cptj, cpti) = - pt3d(0);
-    A.coeffRef(cptj, cpti+1) = - pt3d(1);
-    A.coeffRef(cptj, cpti+2) = - pt3d(2);
-    A.coeffRef(cptj, cpti+3) = - 1.0;
-    cpti = 4;
-    A.coeffRef(cptj+1, cpti) = - pt3d(0);
-    A.coeffRef(cptj+1, cpti+1) = - pt3d(1);
-    A.coeffRef(cptj+1, cpti+2) = - pt3d(2);
-    A.coeffRef(cptj+1, cpti+3) = - 1.0;
+        cpti = 8;
+        temp = Vec2(pt2d.array() - gamma) * pt3d.transpose();
+        A.coeffRef(cptj, cpti) = temp(0, 0);
+        A.coeffRef(cptj, cpti + 1) = temp(0, 1);
+        A.coeffRef(cptj, cpti + 2) = temp(0, 2);
 
-    cpti = 8;
-    temp = Vec2(pt2d.array() - gamma) * pt3d.transpose();
-    A.coeffRef(cptj, cpti) = temp(0,0);
-    A.coeffRef(cptj, cpti+1) = temp(0,1);
-    A.coeffRef(cptj, cpti+2) = temp(0,2);
+        A.coeffRef(cptj + 1, cpti) = temp(1, 0);
+        A.coeffRef(cptj + 1, cpti + 1) = temp(1, 1);
+        A.coeffRef(cptj + 1, cpti + 2) = temp(1, 2);
 
-    A.coeffRef(cptj+1, cpti) = temp(1,0);
-    A.coeffRef(cptj+1, cpti+1) = temp(1,1);
-    A.coeffRef(cptj+1, cpti+2) = temp(1,2);
-
-    C(cptj) = gamma - pt2d(0);
-    C(cptj+1) = gamma - pt2d(1);
-  }
+        C(cptj) = gamma - pt2d(0);
+        C(cptj + 1) = gamma - pt2d(1);
+    }
 }
 
 /// Kernel that set Linear constraints for the
@@ -146,47 +146,42 @@ inline void EncodeResection(const Mat2X & Pt2D,
 ///
 struct Resection_L1_ConstraintBuilder
 {
-  Resection_L1_ConstraintBuilder(
-    const Mat2X & Pt2D,
-    const Mat3X & Pt3D)
-  {
-    _2DPt = Pt2D;
-    _3DPt = Pt3D;
-  }
+    Resection_L1_ConstraintBuilder(const Mat2X& Pt2D, const Mat3X& Pt3D)
+    {
+        _2DPt = Pt2D;
+        _3DPt = Pt3D;
+    }
 
-  /// Setup constraints for the Resection problem,
-  ///  in the LPConstraints object.
-  bool Build(double gamma, LPConstraintsSparse & constraint)
-  {
-    EncodeResection(_2DPt, _3DPt,
-      gamma,
-      constraint._constraintMat,
-      constraint._Cst_objective);
+    /// Setup constraints for the Resection problem,
+    ///  in the LPConstraints object.
+    bool Build(double gamma, LPConstraintsSparse& constraint)
+    {
+        EncodeResection(_2DPt, _3DPt, gamma, constraint._constraintMat, constraint._Cst_objective);
 
-    //-- Setup additional information about the Linear Program constraint
-    // We look for:
-    // P = [P00 P01 P02 P03;
-    //      P10 P11 P12 P13;
-    //      P20 P21 P22 1.0];
-    const int NParams = 4 * 2 + 3;
+        //-- Setup additional information about the Linear Program constraint
+        // We look for:
+        // P = [P00 P01 P02 P03;
+        //      P10 P11 P12 P13;
+        //      P20 P21 P22 1.0];
+        const int NParams = 4 * 2 + 3;
 
-    constraint._nbParams = NParams;
-    constraint._vec_bounds = std::vector< std::pair<double,double> >(1);
-    fill(constraint._vec_bounds.begin(),constraint._vec_bounds.end(),
-      std::make_pair((double)-1e+30, (double)1e+30)); // lp_solve => getInfinite => DEF_INFINITE
-    // Constraint sign are all LESS or equal (<=)
-    constraint._vec_sign.resize(constraint._constraintMat.rows());
-    fill(constraint._vec_sign.begin(), constraint._vec_sign.end(),
-      LPConstraints::LP_LESS_OR_EQUAL);
+        constraint._nbParams = NParams;
+        constraint._vec_bounds = std::vector<std::pair<double, double>>(1);
+        fill(constraint._vec_bounds.begin(),
+             constraint._vec_bounds.end(),
+             std::make_pair((double)-1e+30, (double)1e+30));  // lp_solve => getInfinite => DEF_INFINITE
+        // Constraint sign are all LESS or equal (<=)
+        constraint._vec_sign.resize(constraint._constraintMat.rows());
+        fill(constraint._vec_sign.begin(), constraint._vec_sign.end(), LPConstraints::LP_LESS_OR_EQUAL);
 
-    return true;
-  }
+        return true;
+    }
 
-  Mat2X _2DPt;
-  Mat3X _3DPt;
+    Mat2X _2DPt;
+    Mat3X _3DPt;
 };
 
-} // namespace lInfinityCV
-} // namespace aliceVision
+}  // namespace lInfinityCV
+}  // namespace aliceVision
 
-#endif // ALICEVISION_LINFINITY_COMPUTER_VISION_RESECTION_H_
+#endif  // ALICEVISION_LINFINITY_COMPUTER_VISION_RESECTION_H_

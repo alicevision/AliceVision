@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace feature{
+namespace feature {
 
 /**
  * @brief Local Intensity Order Pattern
@@ -30,35 +30,28 @@ namespace feature{
 
 class DescriptorExtractor_LIOP
 {
-private:
-  std::map<int, unsigned char> m_LiopPatternMap;
-  std::vector<int> m_LiopPosWeight;
+  private:
+    std::map<int, unsigned char> m_LiopPatternMap;
+    std::vector<int> m_LiopPosWeight;
 
-  static const int _maxRegionNum = 10;
-  static const int _maxPixelNum  = 1681;
-  static const int _maxSampleNum = 10;
-  static const int _liopNum = 4;
-  static const int _regionNum = 6;
-public:
+    static const int _maxRegionNum = 10;
+    static const int _maxPixelNum = 1681;
+    static const int _maxSampleNum = 10;
+    static const int _liopNum = 4;
+    static const int _regionNum = 6;
 
-  DescriptorExtractor_LIOP();
+  public:
+    DescriptorExtractor_LIOP();
 
-  void extract(
-    const image::Image<float> & I,
-    const PointFeature & feat,
-    float desc[144]);
+    void extract(const image::Image<float>& I, const PointFeature& feat, float desc[144]);
 
-  void CreateLIOP_GOrder(
-    const image::Image<float> & outPatch,
-    const image::Image<unsigned char> & flagPatch,
-    const int inRadius,
-    float desc[144]) const;
+    void CreateLIOP_GOrder(const image::Image<float>& outPatch,
+                           const image::Image<unsigned char>& flagPatch,
+                           const int inRadius,
+                           float desc[144]) const;
 
-  void GeneratePatternMap(
-    std::map<int,unsigned char> & pattern_map,
-    std::vector<int> & pos_weight,
-    unsigned char n);
+    void GeneratePatternMap(std::map<int, unsigned char>& pattern_map, std::vector<int>& pos_weight, unsigned char n);
 };
 
-} // namespace LIO} // namespace feature
-} // namespace aliceVision
+}  // namespace feature
+}  // namespace aliceVision

@@ -7,7 +7,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
@@ -168,7 +168,7 @@ int aliceVision_main(int argc, char **argv)
   std::map<std::string, IndexT> viewIdPerStem;
   for(const auto viewIt : sfmData.getViews())
   {
-    const std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
+    const std::string stem = fs::path(viewIt.second->getImage().getImagePath()).stem().string();
     viewIdPerStem[stem] = viewIt.first;
   }
   fs::path knownPosesPath(knownPosesFilePath);
@@ -216,19 +216,19 @@ int aliceVision_main(int argc, char **argv)
               geometry::Pose3 pos3(R, pos_vec);
               pose.setTransform(pos3);
 
-              std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
+              std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsicBase);
               if (intrinsic == nullptr)
               {
                   ALICEVISION_THROW_ERROR("Invalid intrinsic");
               }
 
-              const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
+              const double imageRatio = static_cast<double>(view.getImage().getWidth()) / static_cast<double>(view.getImage().getHeight());
               const double sensorWidth = intrinsic->sensorWidth();
-              const double maxSize = std::max(view.getWidth(), view.getHeight());
+              const double maxSize = std::max(view.getImage().getWidth(), view.getImage().getHeight());
               const double focalLengthmm = (sensorWidth * xmp.focalLength35mm) / 36.0;
               const double focalLengthPix = maxSize * focalLengthmm / sensorWidth;
-              const double offsetX = (double(view.getWidth()) * 0.5) + (xmp.principalPointU *  maxSize);
-              const double offsetY = (double(view.getHeight()) * 0.5) + (xmp.principalPointV *  maxSize);
+              const double offsetX = (double(view.getImage().getWidth()) * 0.5) + (xmp.principalPointU *  maxSize);
+              const double offsetY = (double(view.getImage().getHeight()) * 0.5) + (xmp.principalPointV *  maxSize);
 
               intrinsic->setScale({focalLengthPix, focalLengthPix});
               intrinsic->setOffset({offsetX, offsetY});
@@ -237,10 +237,10 @@ int aliceVision_main(int argc, char **argv)
 
               if(xmp.distortionModel == "brown3t2")
               {
-                std::shared_ptr<camera::PinholeBrownT2> camera = std::dynamic_pointer_cast<camera::PinholeBrownT2>(intrinsic);
+                std::shared_ptr<camera::Pinhole> camera = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
                 if (camera == nullptr)
                 {
-                    camera = std::make_shared<camera::PinholeBrownT2>();
+                    camera = camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA);
                     camera->copyFrom(*intrinsic);
                     sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
                 }
@@ -264,10 +264,10 @@ int aliceVision_main(int argc, char **argv)
               }
               else if(xmp.distortionModel == "brown3")
               {
-                std::shared_ptr<camera::PinholeBrownT2> camera = std::dynamic_pointer_cast<camera::PinholeBrownT2>(intrinsic);
+                std::shared_ptr<camera::Pinhole> camera = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
                 if (camera == nullptr)
                 {
-                    camera = std::make_shared<camera::PinholeBrownT2>();
+                    camera = camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA);
                     camera->copyFrom(*intrinsic);
                     sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
                 }

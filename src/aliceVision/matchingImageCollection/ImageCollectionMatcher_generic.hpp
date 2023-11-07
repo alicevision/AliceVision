@@ -23,29 +23,24 @@ namespace matchingImageCollection {
 class ImageCollectionMatcher_generic : public IImageCollectionMatcher
 {
   public:
-  ImageCollectionMatcher_generic(
-    float dist_ratio,
-    bool crossMatching,
-    matching::EMatcherType matcherType
-  );
+    ImageCollectionMatcher_generic(float dist_ratio, bool crossMatching, matching::EMatcherType matcherType);
 
-  /// Find corresponding points between some pair of view Ids
-  void Match(
-    std::mt19937 & randomNumberGenerator,
-    const feature::RegionsPerView& regionsPerView,
-    const PairSet & pairs,
-    feature::EImageDescriberType descType,
-    matching::PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
+    /// Find corresponding points between some pair of view Ids
+    void Match(std::mt19937& randomNumberGenerator,
+               const feature::RegionsPerView& regionsPerView,
+               const PairSet& pairs,
+               feature::EImageDescriberType descType,
+               matching::PairwiseMatches& map_PutativesMatches  // the pairwise photometric corresponding points
     ) const;
 
   private:
-  // Distance ratio used to discard spurious correspondence
-  float _f_dist_ratio;
-  // Do we use cross matching (Symmetric matching test) ?
-  bool _useCrossMatching;
-  // Matcher Type
-  matching::EMatcherType _matcherType;
+    // Distance ratio used to discard spurious correspondence
+    float _f_dist_ratio;
+    // Do we use cross matching (Symmetric matching test) ?
+    bool _useCrossMatching;
+    // Matcher Type
+    matching::EMatcherType _matcherType;
 };
 
-} // namespace aliceVision
-} // namespace matchingImageCollection
+}  // namespace matchingImageCollection
+}  // namespace aliceVision

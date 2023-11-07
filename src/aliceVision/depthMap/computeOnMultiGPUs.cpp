@@ -12,7 +12,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, GPUJob gpujob, int nbGPUsToUse)
+void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPUsToUse)
 {
     const int nbGPUDevices = listCudaDevices();
     const int nbCPUThreads = omp_get_max_threads();
@@ -31,14 +31,14 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
     {
         // the GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
         // possible values: FASTEST_FIRST (default) or PCI_BUS_ID
-        const int cudaDeviceIndex = 0;
-        gpujob(cudaDeviceIndex, mp, cams);
+        const int cudaDeviceId = 0;
+        gpujob.compute(cudaDeviceId, cams);
     }
     else
     {
-        //backup max threads to keep potentially previously set value
+        // backup max threads to keep potentially previously set value
         int previous_count_threads = omp_get_max_threads();
-        omp_set_num_threads(nbThreads); // create as many CPU threads as there are CUDA devices
+        omp_set_num_threads(nbThreads);  // create as many CPU threads as there are CUDA devices
 #pragma omp parallel
         {
             const int cpuThreadId = omp_get_thread_num();
@@ -49,7 +49,7 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
             const int nbCamsPerThread = (cams.size() / nbThreads);
             const int rcFrom = cudaDeviceId * nbCamsPerThread;
             int rcTo = (cudaDeviceId + 1) * nbCamsPerThread;
-            if(cudaDeviceId == nbThreads - 1)
+            if (cudaDeviceId == nbThreads - 1)
             {
                 rcTo = cams.size();
             }
@@ -62,11 +62,11 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
                 subcams.push_back(cams[rc]);
             }
 
-            gpujob(cudaDeviceId, mp, subcams);
+            gpujob.compute(cudaDeviceId, subcams);
         }
         omp_set_num_threads(previous_count_threads);
     }
 }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

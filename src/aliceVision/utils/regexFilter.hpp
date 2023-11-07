@@ -14,18 +14,18 @@
 #include <string>
 
 namespace aliceVision {
-namespace utils
-{
- /**
- * @brief Create regex from a string filter (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more)
+namespace utils {
+/**
+ * @brief Create regex from a string filter (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or
+ * more)
  * @param[in] str - Input string filter
  * @return the resulting regex
  */
 inline std::regex filterToRegex(std::string str)
 {
-    boost::replace_all(str, ".", "\\."); // escape "."
-    boost::replace_all(str, "@", "[0-9]+"); // one @ correspond to one or more digits
-    boost::replace_all(str, "#", "[0-9]"); // each # in pattern correspond to a digit
+    boost::replace_all(str, ".", "\\.");     // escape "."
+    boost::replace_all(str, "@", "[0-9]+");  // one @ correspond to one or more digits
+    boost::replace_all(str, "#", "[0-9]");   // each # in pattern correspond to a digit
     boost::replace_all(str, "*", "(.*)");
     boost::replace_all(str, "?", "(.)");
     std::regex regexFilter;
@@ -33,7 +33,7 @@ inline std::regex filterToRegex(std::string str)
     {
         regexFilter = std::regex(str);
     }
-    catch(const std::regex_error& e)
+    catch (const std::regex_error& e)
     {
         ALICEVISION_LOG_ERROR("[filterToRegex] regex_error caught: " << std::string(e.what()));
         throw std::invalid_argument("Invalid regex conversion, your input filter may be invalid.\nGenerated regex: '" + str + "'");
@@ -54,5 +54,5 @@ inline void filterStrings(std::vector<std::string>& strVec, const std::string& f
     strVec.erase(std::remove_if(begin, end, [&regex](const std::string& str) { return !std::regex_match(str, regex); }), end);
 }
 
-} // namespace utils
-} // namespace aliceVision
+}  // namespace utils
+}  // namespace aliceVision

@@ -7,8 +7,9 @@
 #include "FeedProvider.hpp"
 #include <aliceVision/config.hpp>
 #include "ImageFeed.hpp"
+#include "SfMDataFeed.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#include "VideoFeed.hpp"
+    #include "VideoFeed.hpp"
 #endif
 
 #include <boost/filesystem.hpp>
@@ -19,108 +20,104 @@
 #include <limits>
 #include <ctype.h>
 
-namespace aliceVision{
-namespace dataio{
+namespace aliceVision {
+namespace dataio {
 
-FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calibPath) 
-: _isVideo(false), _isLiveFeed(false)
+FeedProvider::FeedProvider(const std::string& feedPath, const std::string& calibPath)
+  : _isVideo(false),
+    _isLiveFeed(false),
+    _isSfmData(false)
 {
-  namespace bf = boost::filesystem;
-  if(feedPath.empty())
-  {
-    throw std::invalid_argument("Empty filepath.");
-  }
-  if(bf::is_regular_file(bf::path(feedPath))) 
-  {
-    // Image or video file
-    const std::string extension = bf::path(feedPath).extension().string();
-    if(ImageFeed::isSupported(extension))
+    namespace bf = boost::filesystem;
+    if (feedPath.empty())
     {
-      _feeder.reset(new ImageFeed(feedPath, calibPath));
+        throw std::invalid_argument("Empty filepath.");
     }
-    else 
+    if (bf::is_regular_file(bf::path(feedPath)))
     {
+        // Image or video file
+        const std::string extension = bf::path(feedPath).extension().string();
+        if (SfMDataFeed::isSupported(extension))
+        {
+            _feeder.reset(new SfMDataFeed(feedPath, calibPath));
+            _isSfmData = true;
+        }
+        else if (ImageFeed::isSupported(extension))
+        {
+            _feeder.reset(new ImageFeed(feedPath, calibPath));
+        }
+        else
+        {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-      // let's try it with a video
-      _feeder.reset(new VideoFeed(feedPath, calibPath));
-      _isVideo = true;
+            if (VideoFeed::isSupported(extension))
+            {
+                // let's try it with a video
+                _feeder.reset(new VideoFeed(feedPath, calibPath));
+                _isVideo = true;
+            }
+            else
+            {
+                throw std::invalid_argument("Unsupported file format: " + feedPath);
+            }
 #else
-      throw std::invalid_argument("Unsupported mode! If you intended to use a video"
-                                  " please add OpenCV support");
+            throw std::invalid_argument("Unsupported mode! If you intended to use a video"
+                                        " please add OpenCV support");
 #endif
+        }
     }
-  }
-  // parent_path() returns "/foo/bar/" when input path equals to "/foo/bar/"
-  // if the user just gives the relative path as "bar", throws invalid argument exception.
-  else if(bf::is_directory(bf::path(feedPath)) || bf::is_directory(bf::path(feedPath).parent_path()))
-  {
-    // Folder or sequence of images
-    _feeder.reset(new ImageFeed(feedPath, calibPath));
-  }
+    // parent_path() returns "/foo/bar/" when input path equals to "/foo/bar/"
+    // if the user just gives the relative path as "bar", throws invalid argument exception.
+    else if (bf::is_directory(bf::path(feedPath)) || bf::is_directory(bf::path(feedPath).parent_path()))
+    {
+        // Folder or sequence of images
+        _feeder.reset(new ImageFeed(feedPath, calibPath));
+    }
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-  else if(isdigit(feedPath[0]))
-  {
-    // let's try it with a video
-    const int deviceNumber =  std::stoi(feedPath);
-    _feeder.reset(new VideoFeed(deviceNumber, calibPath));
-    _isVideo = true;
-    _isLiveFeed = true;
-  }
+    else if (isdigit(feedPath[0]))
+    {
+        // let's try it with a video
+        const int deviceNumber = std::stoi(feedPath);
+        _feeder.reset(new VideoFeed(deviceNumber, calibPath));
+        _isVideo = true;
+        _isLiveFeed = true;
+    }
 #endif
-  else
-  {
-    throw std::invalid_argument(std::string("Input filepath not supported: ") + feedPath);
-  }
+    else
+    {
+        throw std::invalid_argument(std::string("Input filepath not supported: ") + feedPath);
+    }
 }
 
-bool FeedProvider::readImage(image::Image<image::RGBColor> &imageRGB,
-      camera::PinholeRadialK3 &camIntrinsics,
-      std::string &mediaPath,
-      bool &hasIntrinsics)
+bool FeedProvider::readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics)
 {
-  return(_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
+    return (_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool FeedProvider::readImage(image::Image<float> &imageGray,
-      camera::PinholeRadialK3 &camIntrinsics,
-      std::string &mediaPath,
-      bool &hasIntrinsics)
+bool FeedProvider::readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics)
 {
-  return(_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
+    return (_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
-bool FeedProvider::readImage(image::Image<unsigned char> &imageGray,
-      camera::PinholeRadialK3 &camIntrinsics,
-      std::string &mediaPath,
-      bool &hasIntrinsics)
+bool FeedProvider::readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics)
 {
-  return(_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
+    return (_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
-  
+
 std::size_t FeedProvider::nbFrames() const
 {
-  if(_isLiveFeed)
-    return std::numeric_limits<std::size_t>::infinity();
-  
-  return _feeder->nbFrames();
+    if (_isLiveFeed)
+        return std::numeric_limits<std::size_t>::infinity();
+
+    return _feeder->nbFrames();
 }
 
-bool FeedProvider::goToFrame(const unsigned int frame)
-{
-  return _feeder->goToFrame(frame);
-}
+bool FeedProvider::goToFrame(const unsigned int frame) { return _feeder->goToFrame(frame); }
 
-bool FeedProvider::goToNextFrame()
-{
-  return _feeder->goToNextFrame();
-}
+bool FeedProvider::goToNextFrame() { return _feeder->goToNextFrame(); }
 
-bool FeedProvider::isInit() const
-{
-  return(_feeder->isInit());
-}
+bool FeedProvider::isInit() const { return (_feeder->isInit()); }
 
-FeedProvider::~FeedProvider( ) { }
+FeedProvider::~FeedProvider() {}
 
-}//namespace dataio 
-}//namespace aliceVision
+}  // namespace dataio
+}  // namespace aliceVision

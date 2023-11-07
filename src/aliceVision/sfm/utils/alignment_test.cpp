@@ -80,8 +80,7 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_checkRotation)
     double aS = 1.0;
 
     const Vec3 rAngles = Vec3::Random() * M_PI;
-    const Mat3 aR(Eigen::AngleAxisd(rAngles(0), Vec3::UnitX()) *
-                  Eigen::AngleAxisd(rAngles(1), Vec3::UnitY()) *
+    const Mat3 aR(Eigen::AngleAxisd(rAngles(0), Vec3::UnitX()) * Eigen::AngleAxisd(rAngles(1), Vec3::UnitY()) *
                   Eigen::AngleAxisd(rAngles(2), Vec3::UnitZ()));
     const Vec3 at = Vec3::Zero();
     applyTransform(sfmData, aS, aR, at);
@@ -97,10 +96,10 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_checkRotation)
         applyTransform(sfmDataCorrected, 1.0, bR, bt);
         ALICEVISION_LOG_INFO("aR: " << aR);
         ALICEVISION_LOG_INFO("bR: " << bR);
-        for(const auto& pose: sfmDataCorrected.getPoses())
+        for (const auto& pose : sfmDataCorrected.getPoses())
         {
             Vec3 camY(pose.second.getTransform().rotation() * Vec3::UnitY());
-            //EXPECT_MATRIX_NEAR(camY, -Vec3::UnitY(), 1e-3);
+            // EXPECT_MATRIX_NEAR(camY, -Vec3::UnitY(), 1e-3);
             ALICEVISION_LOG_INFO("camY: " << camY);
         }
         // Mat3 res = bR * aR;
@@ -140,57 +139,58 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_checkRotation)
 // Translation a synthetic scene into a valid SfMData scene.
 // => A synthetic scene is used:
 //    a random noise between [-.5,.5] is added on observed data points
-SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & config, EINTRINSIC eintrinsic)
+SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic)
 {
-  // Translate the input dataset to a SfMData scene
-  SfMData sfm_data;
+    // Translate the input dataset to a SfMData scene
+    SfMData sfm_data;
 
-  // 1. Views
-  // 2. Poses
-  // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
-  // 4. Landmarks
+    // 1. Views
+    // 2. Poses
+    // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
+    // 4. Landmarks
 
-  const int nviews = d._C.size();
-  const int npoints = d._X.cols();
+    const int nviews = d._C.size();
+    const int npoints = d._X.cols();
 
-  // 1. Views
-  for (int i = 0; i < nviews; ++i)
-  {
-    const IndexT id_view = i, id_pose = i, id_intrinsic = 0; //(shared intrinsics)
-    sfm_data.views[i] = std::make_shared<View>("", id_view, id_intrinsic, id_pose, config._cx *2, config._cy *2);
-  }
-
-  // 2. Poses
-  for (int i = 0; i < nviews; ++i)
-  {
-    Pose3 pose(d._R[i], d._C[i]);
-    sfm_data.setPose(*sfm_data.views.at(i), CameraPose(pose));
-  }
-
-  // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
-  {
-    const unsigned int w = config._cx *2;
-    const unsigned int h = config._cy *2;
-    sfm_data.intrinsics[0] = createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy);
-  }
-
-  // 4. Landmarks
-  const double unknownScale = 0.0;
-  for (int i = 0; i < npoints; ++i) {
-
-    // Collect the image of point i in each frame.
-    Landmark landmark;
-    landmark.X = d._X.col(i);
-    for (int j = 0; j < nviews; ++j) {
-      Vec2 pt = d._x[j].col(i);
-      // => random noise between [-.5,.5] is added
-      pt(0) += rand()/RAND_MAX - .5;
-      pt(1) += rand()/RAND_MAX - .5;
-
-      landmark.observations[j] = Observation(pt, i, unknownScale);
+    // 1. Views
+    for (int i = 0; i < nviews; ++i)
+    {
+        const IndexT id_view = i, id_pose = i, id_intrinsic = 0;  //(shared intrinsics)
+        sfm_data.getViews().emplace(i, std::make_shared<View>("", id_view, id_intrinsic, id_pose, config._cx * 2, config._cy * 2));
     }
-    sfm_data.structure[i] = landmark;
-  }
 
-  return sfm_data;
+    // 2. Poses
+    for (int i = 0; i < nviews; ++i)
+    {
+        Pose3 pose(d._R[i], d._C[i]);
+        sfm_data.setPose(*sfm_data.getViews().at(i), CameraPose(pose));
+    }
+
+    // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
+    {
+        const unsigned int w = config._cx * 2;
+        const unsigned int h = config._cy * 2;
+        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy));
+    }
+
+    // 4. Landmarks
+    const double unknownScale = 0.0;
+    for (int i = 0; i < npoints; ++i)
+    {
+        // Collect the image of point i in each frame.
+        Landmark landmark;
+        landmark.X = d._X.col(i);
+        for (int j = 0; j < nviews; ++j)
+        {
+            Vec2 pt = d._x[j].col(i);
+            // => random noise between [-.5,.5] is added
+            pt(0) += rand() / RAND_MAX - .5;
+            pt(1) += rand() / RAND_MAX - .5;
+
+            landmark.observations[j] = Observation(pt, i, unknownScale);
+        }
+        sfm_data.getLandmarks()[i] = landmark;
+    }
+
+    return sfm_data;
 }

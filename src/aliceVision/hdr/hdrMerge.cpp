@@ -14,7 +14,6 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-
 namespace aliceVision {
 namespace hdr {
 
@@ -42,117 +41,168 @@ inline float sigmoidInv(float zeroVal, float endVal, float sigwidth, float sigMi
     return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((sigMid - xval) / sigwidth))));
 }
 
-void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
-                        const std::vector<double> &times,
-                        const rgbCurve &weight,
-                        const rgbCurve &response,
-                        image::Image<image::RGBfColor> &radiance,
-                        float targetCameraExposure)
+void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images,
+                       const std::vector<double>& times,
+                       const rgbCurve& weight,
+                       const rgbCurve& response,
+                       image::Image<image::RGBfColor>& radiance,
+                       image::Image<image::RGBfColor>& lowLight,
+                       image::Image<image::RGBfColor>& highLight,
+                       image::Image<image::RGBfColor>& noMidLight,
+                       MergingParams& mergingParams)
 {
-  //checks
-  assert(!response.isEmpty());
-  assert(!images.empty());
-  assert(images.size() == times.size());
+    // checks
+    assert(!response.isEmpty());
+    assert(!images.empty());
+    assert(images.size() == times.size());
 
-  // get images width, height
-  const std::size_t width = images.front().Width();
-  const std::size_t height = images.front().Height();
+    // get images width, height
+    const std::size_t width = images.front().Width();
+    const std::size_t height = images.front().Height();
 
-  // resize and reset radiance image to 0.0
-  radiance.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
+    // resize and reset radiance image to 0.0
+    radiance.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
 
-  ALICEVISION_LOG_TRACE("[hdrMerge] Images to fuse:");
-  for(int i = 0; i < images.size(); ++i)
-  {
-    ALICEVISION_LOG_TRACE(images[i].Width() << "x" << images[i].Height() << ", time: " << times[i]);
-  }
-
-  rgbCurve weightShortestExposure = weight;
-  weightShortestExposure.freezeSecondPartValues();
-  rgbCurve weightLongestExposure = weight;
-  weightLongestExposure.freezeFirstPartValues();
-
-  #pragma omp parallel for
-  for(int y = 0; y < height; ++y)
-  {
-    for(int x = 0; x < width; ++x)
+    ALICEVISION_LOG_TRACE("[hdrMerge] Images to fuse:");
+    for (int i = 0; i < images.size(); ++i)
     {
-      //for each pixels
-      image::RGBfColor &radianceColor = radiance(y, x);
-
-      for(std::size_t channel = 0; channel < 3; ++channel)
-      {
-        double wsum = 0.0;
-        double wdiv = 0.0;
-
-        // Merge shortest exposure
-        {
-            int exposureIndex = 0;
-
-            // for each image
-            const double value = images[exposureIndex](y, x)(channel);
-            const double time = times[exposureIndex];
-            //
-            // weightShortestExposure:          _______
-            //                          _______/
-            //                                0      1
-            double w = std::max(0.001f, weightShortestExposure(value, channel));
-
-            const double r = response(value, channel);
-
-            wsum += w * r / time;
-            wdiv += w;
-        }
-        // Merge intermediate exposures
-        for(std::size_t i = 1; i < images.size() - 1; ++i)
-        {
-          // for each image
-          const double value = images[i](y, x)(channel);
-          const double time = times[i];
-          //
-          // weight:          ____
-          //          _______/    \________
-          //                0      1
-          double w = std::max(0.001f, weight(value, channel));
-
-          const double r = response(value, channel);
-          wsum += w * r / time;
-          wdiv += w;
-        }
-        // Merge longest exposure
-        {
-            int exposureIndex = images.size() - 1;
-
-            // for each image
-            const double value = images[exposureIndex](y, x)(channel);
-            const double time = times[exposureIndex];
-            //
-            // weightLongestExposure:  ____________
-            //                                      \_______
-            //                                0      1
-            double w = std::max(0.001f, weightLongestExposure(value, channel));
-
-            const double r = response(value, channel);
-
-            wsum += w * r / time;
-            wdiv += w;
-        }
-        radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetCameraExposure;
-      }
+        ALICEVISION_LOG_TRACE(images[i].Width() << "x" << images[i].Height() << ", time: " << times[i]);
     }
-  }
+
+    rgbCurve weightShortestExposure = weight;
+    weightShortestExposure.freezeSecondPartValues();
+    rgbCurve weightLongestExposure = weight;
+    weightLongestExposure.freezeFirstPartValues();
+
+    const std::vector<double> v_minValue = {
+      response(mergingParams.minSignificantValue, 0), response(mergingParams.minSignificantValue, 1), response(mergingParams.minSignificantValue, 2)};
+    const std::vector<double> v_maxValue = {
+      response(mergingParams.maxSignificantValue, 0), response(mergingParams.maxSignificantValue, 1), response(mergingParams.maxSignificantValue, 2)};
+
+    highLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
+    lowLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
+    noMidLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
+
+#pragma omp parallel for
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            // for each pixels
+            image::RGBfColor& radianceColor = radiance(y, x);
+            image::RGBfColor& highLightColor = highLight(y, x);
+            image::RGBfColor& lowLightColor = lowLight(y, x);
+            image::RGBfColor& noMidLightColor = noMidLight(y, x);
+
+            std::vector<std::vector<double>> vv_coeff;
+            std::vector<std::vector<double>> vv_value;
+            std::vector<std::vector<double>> vv_normalizedValue;
+
+            // Compute merging range
+            std::vector<int> v_firstIndex;
+            std::vector<int> v_lastIndex;
+            for (std::size_t channel = 0; channel < 3; ++channel)
+            {
+                int firstIndex = mergingParams.refImageIndex;
+                while (firstIndex > 0 &&
+                       (response(images[firstIndex](y, x)(channel), channel) > v_minValue[channel] || firstIndex == images.size() - 1))
+                {
+                    firstIndex--;
+                }
+                v_firstIndex.push_back(firstIndex);
+
+                int lastIndex = v_firstIndex[channel] + 1;
+                while (lastIndex < images.size() - 1 && response(images[lastIndex](y, x)(channel), channel) < v_maxValue[channel])
+                {
+                    lastIndex++;
+                }
+                v_lastIndex.push_back(lastIndex);
+            }
+
+            // Compute merging coeffs and values to be merged
+            for (std::size_t channel = 0; channel < 3; ++channel)
+            {
+                std::vector<double> v_coeff;
+                std::vector<double> v_normalizedValue;
+                std::vector<double> v_value;
+
+                for (std::size_t e = 0; e < images.size(); ++e)
+                {
+                    const double value = images[e](y, x)(channel);
+                    const double resp = response(value, channel);
+                    const double normalizedValue = resp / times[e];
+                    double coeff = std::max(0.001f,
+                                            e == 0 ? weightShortestExposure(value, channel)
+                                                   : (e == images.size() - 1 ? weightLongestExposure(value, channel) : weight(value, channel)));
+
+                    v_value.push_back(value);
+                    v_normalizedValue.push_back(normalizedValue);
+                    v_coeff.push_back(coeff);
+                }
+
+                vv_coeff.push_back(v_coeff);
+                vv_normalizedValue.push_back(v_normalizedValue);
+                vv_value.push_back(v_value);
+            }
+
+            // Compute light masks if required (monitoring and debug purposes)
+            if (mergingParams.computeLightMasks)
+            {
+                for (std::size_t channel = 0; channel < 3; ++channel)
+                {
+                    int idxMaxValue = 0;
+                    int idxMinValue = 0;
+                    double maxValue = 0.0;
+                    double minValue = 10000.0;
+                    bool jump = true;
+                    for (std::size_t e = 0; e < images.size(); ++e)
+                    {
+                        if (vv_value[channel][e] > maxValue)
+                        {
+                            maxValue = vv_value[channel][e];
+                            idxMaxValue = e;
+                        }
+                        if (vv_value[channel][e] < minValue)
+                        {
+                            minValue = vv_value[channel][e];
+                            idxMinValue = e;
+                        }
+                        jump = jump && ((vv_value[channel][e] < mergingParams.minSignificantValue && e < images.size() - 1) ||
+                                        (vv_value[channel][e] > mergingParams.maxSignificantValue && e > 0));
+                    }
+                    highLightColor(channel) = minValue > mergingParams.maxSignificantValue ? 1.0 : 0.0;
+                    lowLightColor(channel) = maxValue < mergingParams.minSignificantValue ? 1.0 : 0.0;
+                    noMidLightColor(channel) = jump ? 1.0 : 0.0;
+                }
+            }
+
+            // Compute the final result and adjust the exposure to the reference one.
+            for (std::size_t channel = 0; channel < 3; ++channel)
+            {
+                double v = 0.0;
+                double sumCoeff = 0.0;
+                for (std::size_t i = v_firstIndex[channel]; i <= v_lastIndex[channel]; ++i)
+                {
+                    v += vv_coeff[channel][i] * vv_normalizedValue[channel][i];
+                    sumCoeff += vv_coeff[channel][i];
+                }
+                radianceColor(channel) =
+                  mergingParams.targetCameraExposure * (sumCoeff != 0.0 ? v / sumCoeff : vv_normalizedValue[channel][mergingParams.refImageIndex]);
+            }
+        }
+    }
 }
 
-void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
-    const std::vector<double> &times,
-    const rgbCurve &weight,
-    const rgbCurve &response,
-    image::Image<image::RGBfColor> &radiance,
-    float targetCameraExposure,
-    float highlightCorrectionFactor,
-    float highlightTargetLux)
+void hdrMerge::postProcessHighlight(const std::vector<image::Image<image::RGBfColor>>& images,
+                                    const std::vector<double>& times,
+                                    const rgbCurve& weight,
+                                    const rgbCurve& response,
+                                    image::Image<image::RGBfColor>& radiance,
+                                    float targetCameraExposure,
+                                    float highlightCorrectionFactor,
+                                    float highlightTargetLux)
 {
-    //checks
+    // checks
     assert(!response.isEmpty());
     assert(!images.empty());
     assert(images.size() == times.size());
@@ -166,8 +216,8 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
 
     // get images width, height
     const std::size_t width = inputImage.Width();
-    const std::size_t height = inputImage.Height();
 
+    const std::size_t height = inputImage.Height();
     image::Image<float> isPixelClamped(width, height);
 
 #pragma omp parallel for
@@ -175,8 +225,8 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
     {
         for (int x = 0; x < width; ++x)
         {
-            //for each pixels
-            image::RGBfColor &radianceColor = radiance(y, x);
+            // for each pixels
+            image::RGBfColor& radianceColor = radiance(y, x);
 
             float& isClamped = isPixelClamped(y, x);
             isClamped = 0.0f;
@@ -189,7 +239,7 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
                 //                       ____
                 // sigmoid inv:  _______/
                 //                  0    1
-                const float isChannelClamped = sigmoidInv(0.0f, 1.0f, /*sigWidth=*/0.08f,  /*sigMid=*/0.95f, value);
+                const float isChannelClamped = sigmoidInv(0.0f, 1.0f, /*sigWidth=*/0.08f, /*sigMid=*/0.95f, value);
                 isClamped += isChannelClamped;
             }
             isPixelClamped(y, x) /= 3.0;
@@ -212,7 +262,7 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
 
             for (std::size_t channel = 0; channel < 3; ++channel)
             {
-                if(highlightTarget > radianceColor(channel))
+                if (highlightTarget > radianceColor(channel))
                 {
                     radianceColor(channel) = float(clampingCompensation * highlightTarget + clampingCompensationInv * radianceColor(channel));
                 }
@@ -221,5 +271,5 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
     }
 }
 
-} // namespace hdr
-} // namespace aliceVision
+}  // namespace hdr
+}  // namespace aliceVision

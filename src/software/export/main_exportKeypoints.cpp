@@ -13,7 +13,7 @@
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/image/all.hpp>
 
@@ -106,14 +106,14 @@ int aliceVision_main(int argc, char ** argv)
 
   fs::create_directory(outputFolder);
   ALICEVISION_LOG_INFO("Export extracted keypoints for all images");
-  auto myProgressBar = system::createConsoleProgressDisplay(sfmData.views.size(), std::cout);
-  for(const auto &iterViews : sfmData.views)
+  auto myProgressBar = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout);
+  for(const auto &iterViews : sfmData.getViews())
   {
     const View * view = iterViews.second.get();
-    const std::string viewImagePath = view->getImagePath();
+    const std::string viewImagePath = view->getImage().getImagePath();
 
     const std::pair<size_t, size_t>
-      dimImage = std::make_pair(view->getWidth(), view->getHeight());
+      dimImage = std::make_pair(view->getImage().getWidth(), view->getImage().getHeight());
 
     const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->getViewId());
 

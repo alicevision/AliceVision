@@ -27,4 +27,4 @@
 // Compute from global translation by using 3-views relative translations guess
 #include "aliceVision/linearProgramming/lInfinityCV/global_translations_fromTriplets.hpp"
 
-#endif // ALICEVISION_L_INFINITY_COMPUTER_VISION_H_
+#endif  // ALICEVISION_L_INFINITY_COMPUTER_VISION_H_

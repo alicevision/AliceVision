@@ -15,7 +15,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/sfmMvsUtils/visibility.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -52,9 +52,10 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string outputFolder;
     std::string imagesFolder;
-    std::string processColorspaceName = image::EImageColorSpace_enumToString(image::EImageColorSpace::SRGB);
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO;
     bool flipNormals = false;
-    bool correctEV = false;
+    bool correctEV = true;
 
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
@@ -117,8 +118,10 @@ int aliceVision_main(int argc, char* argv[])
             "(0.0 to disable filtering based on threshold to relative best score).")
         ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
             "(0.0 to disable angle hard threshold filtering).")
-        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
-            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+            "Color space for the texturing internal computation (does not impact the output file color space).")
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
+            "Output file colorspace.")
         ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
             "Option to uniformize images exposure.")
         ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
@@ -141,13 +144,21 @@ int aliceVision_main(int argc, char* argv[])
     {
         return EXIT_FAILURE;
     }
+
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
+    oiio::attribute("threads", std::min(4, static_cast<int>(hwc.getMaxThreads())));
+    oiio::attribute("exr_threads", std::min(4, static_cast<int>(hwc.getMaxThreads())));
+
     // set bump mapping file type
     bumpMappingParams.bumpMappingFileType = (bumpMappingParams.bumpType == mesh::EBumpMappingType::Normal) ? normalFileType : heightFileType;
 
     GEO::initialize();
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
-    texParams.processColorspace = image::EImageColorSpace_stringToEnum(processColorspaceName);
+    texParams.workingColorSpace = workingColorSpace;
+    texParams.outputColorSpace = outputColorSpace;
 
     texParams.correctEV = mvsUtils::ECorrectEV::NO_CORRECTION;
     if(correctEV) { texParams.correctEV = mvsUtils::ECorrectEV::APPLY_CORRECTION; }
@@ -192,12 +203,6 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Unwrapping done.");
     }
 
-    // save final obj file
-    if(!inputMeshFilepath.empty())
-    {
-        mesh.saveAs(outputFolder, "texturedMesh", outputMeshFileType, texParams.textureFileType, bumpMappingParams);
-    }
-
     if(texParams.subdivisionTargetRatio > 0)
     {
         const bool remapVisibilities = false;
@@ -222,7 +227,7 @@ int aliceVision_main(int argc, char* argv[])
     if(!inputMeshFilepath.empty() && !sfmDataFilename.empty() && texParams.textureFileType != image::EImageFileType::NONE)
     {
         ALICEVISION_LOG_INFO("Generate textures.");
-        mesh.generateTextures(mp, outputFolder, texParams.textureFileType);
+        mesh.generateTextures(mp, outputFolder, hwc.getMaxMemory(), texParams.textureFileType);
     }
 
 
@@ -236,6 +241,12 @@ int aliceVision_main(int argc, char* argv[])
         denseMesh.load(inputRefMeshFilepath);
 
         mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, bumpMappingParams);
+    }
+
+    // save final obj file
+    if(!inputMeshFilepath.empty())
+    {
+        mesh.saveAs(outputFolder, "texturedMesh", outputMeshFileType);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

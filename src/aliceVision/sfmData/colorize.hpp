@@ -20,5 +20,5 @@ class SfMData;
  */
 void colorizeTracks(SfMData& sfmData);
 
-} // namespace sfmData
-} // namespace aliceVision
+}  // namespace sfmData
+}  // namespace aliceVision

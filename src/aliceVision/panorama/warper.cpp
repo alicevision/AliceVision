@@ -1,3 +1,9 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include "warper.hpp"
 #include <aliceVision/half.hpp>
 
@@ -5,7 +11,6 @@ namespace aliceVision {
 
 bool Warper::warp(const CoordinatesMap& map, const aliceVision::image::Image<image::RGBfColor>& source)
 {
-
     /**
      * Copy additional info from map
      */
@@ -25,13 +30,12 @@ bool Warper::warp(const CoordinatesMap& map, const aliceVision::image::Image<ima
     /**
      * Simple warp
      */
-    for(size_t i = 0; i < _color.Height(); i++)
+    for (size_t i = 0; i < _color.Height(); i++)
     {
-        for(size_t j = 0; j < _color.Width(); j++)
+        for (size_t j = 0; j < _color.Width(); j++)
         {
-
             bool valid = _mask(i, j);
-            if(!valid)
+            if (!valid)
             {
                 continue;
             }
@@ -48,7 +52,6 @@ bool Warper::warp(const CoordinatesMap& map, const aliceVision::image::Image<ima
 
 bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask& pyramid, bool clamp)
 {
-
     /**
      * Copy additional info from map
      */
@@ -68,13 +71,12 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
     /**
      * Create buffer
      */
-    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height(), true,
-                                                         image::RGBfColor(1.0, 0.0, 0.0));
+    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height(), true, image::RGBfColor(1.0, 0.0, 0.0));
 
     /**
      * Multi level warp
      */
-    for(size_t i = 0; i < _color.Height(); i++)
+    for (size_t i = 0; i < _color.Height(); i++)
     {
         int next_i = i + 1;
 
@@ -83,25 +85,21 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
             next_i = i - 1;
         }
 
-
-        for(size_t j = 0; j < _color.Width(); j++)
+        for (size_t j = 0; j < _color.Width(); j++)
         {
-
             bool valid = _mask(i, j);
-            if(!valid)
+            if (!valid)
             {
                 continue;
             }
 
             int next_j = j + 1;
-            
 
             if (j == _color.Width() - 1)
             {
                 next_j = j - 1;
             }
 
-            
             if (!_mask(next_i, j) || !_mask(i, next_j))
             {
                 const Eigen::Vector2f& coord = coordinates(i, j);
@@ -120,9 +118,9 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
             float dyx = coord_pm(1) - coord_mm(1);
             float dyy = coord_mp(1) - coord_mm(1);
             float det = std::abs(dxx * dyy - dxy * dyx);
-            float scale = /*sqrtf*/(det); //logsqrt = 0.5log
+            float scale = /*sqrtf*/ (det);  // logsqrt = 0.5log
 
-            float flevel = std::max(0.0f,0.5f * log2f(scale));
+            float flevel = std::max(0.0f, 0.5f * log2f(scale));
             int blevel = std::min(max_level, int(floor(flevel)));
 
             float dscale, x, y;
@@ -131,19 +129,22 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
             y = coord_mm(1) * dscale;
 
             /*Fallback to first level if outside*/
-            if(x >= mlsource[blevel].Width() - 1 || y >= mlsource[blevel].Height() - 1)
+            if (x >= mlsource[blevel].Width() - 1 || y >= mlsource[blevel].Height() - 1)
             {
                 _color(i, j) = sampler(mlsource[0], coord_mm(1), coord_mm(0));
                 continue;
             }
 
             _color(i, j) = sampler(mlsource[blevel], y, x);
-            
+
             if (clamp)
             {
-                if (_color(i, j).r() > HALF_MAX) _color(i, j).r() = HALF_MAX;
-                if (_color(i, j).g() > HALF_MAX) _color(i, j).g() = HALF_MAX;
-                if (_color(i, j).b() > HALF_MAX) _color(i, j).b() = HALF_MAX;
+                if (_color(i, j).r() > HALF_MAX)
+                    _color(i, j).r() = HALF_MAX;
+                if (_color(i, j).g() > HALF_MAX)
+                    _color(i, j).g() = HALF_MAX;
+                if (_color(i, j).b() > HALF_MAX)
+                    _color(i, j).b() = HALF_MAX;
             }
         }
     }
@@ -151,4 +152,4 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
     return true;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

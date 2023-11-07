@@ -35,9 +35,10 @@ ENV AV_DEV=/opt/AliceVisionDeps_git \
 #
 RUN $YUM_INSTALL centos-release-scl-rh && \
     $YUM_INSTALL yum-utils && \
-    sed -i 's/7/7.6.1810/g; s|^#\s*\(baseurl=http://\)mirror|\1vault|g; /mirrorlist/d' /etc/yum.repos.d/CentOS-SCLo-*.repo && \
+    $YUM_INSTALL python3 && \
+    $YUM_INSTALL python3-devel && \
     yum clean all && \
-    $YUM_INSTALL devtoolset-6-toolchain --nogpgcheck && \
+    $YUM_INSTALL devtoolset-10-toolchain devtoolset-10-libatomic-devel --nogpgcheck && \
     $YUM_INSTALL --enablerepo=extras epel-release && \
     $YUM_INSTALL file \
 		git \
@@ -57,16 +58,23 @@ RUN $YUM_INSTALL centos-release-scl-rh && \
 #
 # See also `scl` man page for enabling multiple packages if desired:
 # https://linux.die.net/man/1/scl
-# SHELL [ "/usr/bin/scl", "enable", "devtoolset-6" ]
-ENV PATH="/opt/rh/devtoolset-6/root/usr/bin:${PATH}" \
-    LD_LIBRARY_PATH="/opt/rh/devtoolset-6/root/usr/lib:/opt/rh/devtoolset-6/root/usr/lib64:/opt/rh/devtoolset-6/root/usr/lib64/dyninst:${LD_LIBRARY_PATH}" \
-    MAKE=/opt/rh/devtoolset-6/root/usr/bin/make \
-    CMAKE_VERSION=3.21.3
-
-
+# SHELL [ "/usr/bin/scl", "enable", "devtoolset-10" ]
+ENV PATH="/opt/rh/devtoolset-10/root/usr/bin:${PATH}" \
+    LD_LIBRARY_PATH="/opt/rh/devtoolset-10/root/usr/lib:/opt/rh/devtoolset-10/root/usr/lib64:/opt/rh/devtoolset-10/root/usr/lib64/dyninst:${LD_LIBRARY_PATH}" \
+    MAKE=/opt/rh/devtoolset-10/root/usr/bin/make \
+    CMAKE_VERSION=3.26.0
 
 COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
+
+COPY dl/sphereDetection_Mask-RCNN.onnx ${AV_INSTALL}/share/aliceVision/
+RUN echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx" > /etc/profile.d/alicevision.sh
+
+COPY dl/fcn_resnet50.onnx ${AV_INSTALL}/share/aliceVision/
+RUN echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx" > /etc/profile.d/alicevision.sh
+
+COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
+RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh` && echo "Build multithreading number of cores: ${CPU_CORES}"
 
 # Manually install cmake
 WORKDIR /opt
@@ -74,13 +82,12 @@ COPY dl/cmake-${CMAKE_VERSION}.tar.gz /tmp
 RUN tar zxf /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
     rm /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
     cd cmake-${CMAKE_VERSION} && \
-    ./bootstrap --parallel="$(nproc)" --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && \
-    make -j"$(nproc)" && \
+    ./bootstrap --parallel=${CPU_CORES} --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && \
+    make -j ${CPU_CORES} && \
     make install
 
-
 COPY CMakeLists.txt ${AV_DEV}/
-COPY docker ${AV_DEV}/docker
+COPY src/cmake/Dependencies.cmake ${AV_DEV}/src/cmake/
 
 COPY dl/deps ${AV_BUILD}/external/download/
 
@@ -93,35 +100,36 @@ RUN cmake "${AV_DEV}" \
 
 # Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
 RUN mkdir -p "${AV_INSTALL}/lib" && \
-	ln -s lib "${AV_INSTALL}/lib64"
+    ln -s lib "${AV_INSTALL}/lib64"
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
-# RUN make -j"$(nproc)" cctag
-# RUN make -j"$(nproc)" openexr
-# RUN make -j"$(nproc)" tbb
-# RUN make -j"$(nproc)" assimp
-# RUN make -j"$(nproc)" zlib
-# RUN make -j"$(nproc)" geogram
-# RUN make -j"$(nproc)" eigen
-# RUN make -j"$(nproc)" opengv
-# RUN make -j"$(nproc)" lapack
-# RUN make -j"$(nproc)" suitesparse
-# RUN make -j"$(nproc)" ceres
-# RUN make -j"$(nproc)" tiff
-# RUN make -j"$(nproc)" png
-# RUN make -j"$(nproc)" turbojpeg
-# RUN make -j"$(nproc)" libraw
-# RUN make -j"$(nproc)" boost
-# RUN make -j"$(nproc)" openimageio
-# RUN make -j"$(nproc)" alembic
-# RUN make -j"$(nproc)" popsift
-# RUN make -j"$(nproc)" ffmpeg
-# RUN make -j"$(nproc)" opencv
-# RUN make -j"$(nproc)" expat
+# RUN make -j ${CPU_CORES} onnxruntime
+# RUN make -j ${CPU_CORES} pcl
+# RUN make -j ${CPU_CORES} turbojpeg
+# RUN make -j ${CPU_CORES} boost
+# RUN make -j ${CPU_CORES} openexr
+# RUN make -j ${CPU_CORES} tbb
+# RUN make -j ${CPU_CORES} assimp
+# RUN make -j ${CPU_CORES} geogram
+# RUN make -j ${CPU_CORES} eigen
+# RUN make -j ${CPU_CORES} opengv
+# RUN make -j ${CPU_CORES} lapack
+# RUN make -j ${CPU_CORES} suitesparse
+# RUN make -j ${CPU_CORES} ceres
+# RUN make -j ${CPU_CORES} tiff
+# RUN make -j ${CPU_CORES} png
+# RUN make -j ${CPU_CORES} libraw
+# RUN make -j ${CPU_CORES} boost
+# RUN make -j ${CPU_CORES} openimageio
+# RUN make -j ${CPU_CORES} alembic
+# RUN make -j ${CPU_CORES} ffmpeg
+# RUN make -j ${CPU_CORES} opencv
+# RUN make -j ${CPU_CORES} expat
+# 
+# RUN make -j ${CPU_CORES} cctag
+# RUN make -j ${CPU_CORES} popsift
 
-RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
-    cmake --build . -j "${CPU_CORES}" && \
+RUN cmake --build . -j ${CPU_CORES} && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
     rm -rf "${AV_BUILD}"
-

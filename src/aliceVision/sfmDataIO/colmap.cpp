@@ -15,11 +15,11 @@
 
 namespace fs = boost::filesystem;
 
-namespace aliceVision{
-namespace sfmDataIO{
+namespace aliceVision {
+namespace sfmDataIO {
 
 ColmapConfig::ColmapConfig(const std::string& basePath)
-    : _basePath(basePath)
+  : _basePath(basePath)
 {
     _sparseDirectory = (fs::path(_basePath) / fs::path("sparse/0")).string();
     _denseDirectory = (fs::path(_basePath) / fs::path("dense/0")).string();
@@ -31,12 +31,14 @@ ColmapConfig::ColmapConfig(const std::string& basePath)
 
 const std::set<camera::EINTRINSIC>& colmapCompatibleIntrinsics()
 {
-    static const std::set<camera::EINTRINSIC> compatibleIntrinsics{
-        camera::PINHOLE_CAMERA,       camera::PINHOLE_CAMERA_RADIAL1, camera::PINHOLE_CAMERA_RADIAL3,
-        camera::PINHOLE_CAMERA_BROWN, camera::PINHOLE_CAMERA_FISHEYE, camera::PINHOLE_CAMERA_FISHEYE1};
+    static const std::set<camera::EINTRINSIC> compatibleIntrinsics{camera::PINHOLE_CAMERA,
+                                                                   camera::PINHOLE_CAMERA_RADIAL1,
+                                                                   camera::PINHOLE_CAMERA_RADIAL3,
+                                                                   camera::PINHOLE_CAMERA_BROWN,
+                                                                   camera::PINHOLE_CAMERA_FISHEYE,
+                                                                   camera::PINHOLE_CAMERA_FISHEYE1};
     return compatibleIntrinsics;
 }
-
 
 bool isColmapCompatible(camera::EINTRINSIC intrinsicType)
 {
@@ -47,19 +49,19 @@ bool isColmapCompatible(camera::EINTRINSIC intrinsicType)
 CompatibleList getColmapCompatibleIntrinsics(const sfmData::SfMData& sfMData)
 {
     CompatibleList compatible;
-    for(const auto& iter : sfMData.getIntrinsics())
+    for (const auto& iter : sfMData.getIntrinsics())
     {
         const auto& intrinsics = iter.second;
         const auto intrID = iter.first;
         const auto intrType = intrinsics->getType();
-        if(isColmapCompatible(intrType))
+        if (isColmapCompatible(intrType))
         {
             compatible.insert(intrID);
         }
         else
         {
             ALICEVISION_LOG_INFO("The intrinsics " << intrID << " is of type " << intrType
-                                                      << " which is not supported in Colmap and it will be removed");
+                                                   << " which is not supported in Colmap and it will be removed");
         }
     }
     return compatible;
@@ -70,15 +72,15 @@ CompatibleList getColmapCompatibleViews(const sfmData::SfMData& sfmData)
     const auto compatibleIntrinsics = getColmapCompatibleIntrinsics(sfmData);
 
     CompatibleList compatibleViews;
-    for(const auto& iter : sfmData.getViews())
+    for (const auto& iter : sfmData.getViews())
     {
         const auto& view = iter.second;
         const auto viewID = iter.first;
-        if(!sfmData.isPoseAndIntrinsicDefined(view.get()))
+        if (!sfmData.isPoseAndIntrinsicDefined(view.get()))
         {
             continue;
         }
-        if(compatibleIntrinsics.count(view->getIntrinsicId()) > 0)
+        if (compatibleIntrinsics.count(view->getIntrinsicId()) > 0)
         {
             compatibleViews.insert(viewID);
         }
@@ -91,19 +93,18 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
     std::stringstream intrString;
 
     camera::EINTRINSIC current_type = intrinsic->getType();
-    switch(current_type)
+    switch (current_type)
     {
         case camera::PINHOLE_CAMERA:
             // PINHOLE_CAMERA corresponds to Colmap's PINHOLE
             // Parameters: f, cx, cy
             {
-                const camera::Pinhole* pinhole_intrinsic = dynamic_cast<const camera::Pinhole*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinhole_intrinsic = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "PINHOLE"
-                           << " " << pinhole_intrinsic->w() << " " << pinhole_intrinsic->h() << " "
-                           << pinhole_intrinsic->getFocalLengthPixX() << " " << pinhole_intrinsic->getFocalLengthPixY()
-                           << " " << pinhole_intrinsic->getPrincipalPoint().x() << " "
+                           << " " << pinhole_intrinsic->w() << " " << pinhole_intrinsic->h() << " " << pinhole_intrinsic->getFocalLengthPixX() << " "
+                           << pinhole_intrinsic->getFocalLengthPixY() << " " << pinhole_intrinsic->getPrincipalPoint().x() << " "
                            << pinhole_intrinsic->getPrincipalPoint().y() << "\n";
             }
             break;
@@ -111,16 +112,13 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_RADIAL1 can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
-                const camera::PinholeRadialK1* pinhole_intrinsic_radial =
-                    dynamic_cast<const camera::PinholeRadialK1*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinhole_intrinsic_radial = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
                            << " " << pinhole_intrinsic_radial->w() << " " << pinhole_intrinsic_radial->h() << " "
-                           << pinhole_intrinsic_radial->getFocalLengthPixX() << " "
-                           << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
-                           << pinhole_intrinsic_radial->getPrincipalPoint().x() << " "
-                           << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
+                           << pinhole_intrinsic_radial->getFocalLengthPixX() << " " << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
+                           << pinhole_intrinsic_radial->getPrincipalPoint().x() << " " << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
                            << pinhole_intrinsic_radial->getParams().at(4)
                            << " "
                            // k2, p1, p2, k3, k4, k5, k6
@@ -132,18 +130,14 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_RADIAL3 can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
-                const camera::PinholeRadialK3* pinhole_intrinsic_radial =
-                    dynamic_cast<const camera::PinholeRadialK3*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinhole_intrinsic_radial = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
                            << " " << pinhole_intrinsic_radial->w() << " " << pinhole_intrinsic_radial->h() << " "
-                           << pinhole_intrinsic_radial->getFocalLengthPixX() << " "
-                           << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
-                           << pinhole_intrinsic_radial->getPrincipalPoint().x() << " "
-                           << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
-                           << pinhole_intrinsic_radial->getParams().at(4) << " "
-                           << pinhole_intrinsic_radial->getParams().at(5)
+                           << pinhole_intrinsic_radial->getFocalLengthPixX() << " " << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
+                           << pinhole_intrinsic_radial->getPrincipalPoint().x() << " " << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
+                           << pinhole_intrinsic_radial->getParams().at(4) << " " << pinhole_intrinsic_radial->getParams().at(5)
                            << " "
                            // tangential params p1 and p2
                            << 0.0 << " " << 0.0
@@ -159,22 +153,17 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_BROWN can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
-                const camera::PinholeBrownT2* pinholeCameraBrownIntrinsics =
-                    dynamic_cast<const camera::PinholeBrownT2*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinholeCameraBrownIntrinsics = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
-                           << " " << pinholeCameraBrownIntrinsics->w() << " " << pinholeCameraBrownIntrinsics->h()
-                           << " " << pinholeCameraBrownIntrinsics->getFocalLengthPixX() << " "
-                           << pinholeCameraBrownIntrinsics->getFocalLengthPixY() << " "
-                           << pinholeCameraBrownIntrinsics->getPrincipalPoint().x() << " "
-                           << pinholeCameraBrownIntrinsics->getPrincipalPoint().y() << " "
-                           << pinholeCameraBrownIntrinsics->getParams().at(4) << " "
-                           << pinholeCameraBrownIntrinsics->getParams().at(5)
+                           << " " << pinholeCameraBrownIntrinsics->w() << " " << pinholeCameraBrownIntrinsics->h() << " "
+                           << pinholeCameraBrownIntrinsics->getFocalLengthPixX() << " " << pinholeCameraBrownIntrinsics->getFocalLengthPixY() << " "
+                           << pinholeCameraBrownIntrinsics->getPrincipalPoint().x() << " " << pinholeCameraBrownIntrinsics->getPrincipalPoint().y()
+                           << " " << pinholeCameraBrownIntrinsics->getParams().at(4) << " " << pinholeCameraBrownIntrinsics->getParams().at(5)
                            << " "
                            // tangential params p1 and p2
-                           << pinholeCameraBrownIntrinsics->getParams().at(7) << " "
-                           << pinholeCameraBrownIntrinsics->getParams().at(8)
+                           << pinholeCameraBrownIntrinsics->getParams().at(7) << " " << pinholeCameraBrownIntrinsics->getParams().at(8)
                            << " "
                            // k3
                            << pinholeCameraBrownIntrinsics->getParams().at(6)
@@ -187,42 +176,34 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // PINHOLE_CAMERA_FISHEYE is modeled by Colmap's OPENCV_FISHEYE
             // Parameters: fx, fy, cx, cy, k1, k2, k3, k4
             {
-                const camera::PinholeFisheye* pinholeIntrinsicFisheye =
-                    dynamic_cast<const camera::PinholeFisheye*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinholeIntrinsicFisheye = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "OPENCV_FISHEYE"
                            << " " << pinholeIntrinsicFisheye->w() << " " << pinholeIntrinsicFisheye->h() << " "
-                           << pinholeIntrinsicFisheye->getFocalLengthPixX() << " "
-                           << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
-                           << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " "
-                           << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
-                           << pinholeIntrinsicFisheye->getParams().at(4) << " "
-                           << pinholeIntrinsicFisheye->getParams().at(5) << " "
-                           << pinholeIntrinsicFisheye->getParams().at(6) << " "
-                           << pinholeIntrinsicFisheye->getParams().at(7) << "\n";
+                           << pinholeIntrinsicFisheye->getFocalLengthPixX() << " " << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
+                           << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " " << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
+                           << pinholeIntrinsicFisheye->getParams().at(4) << " " << pinholeIntrinsicFisheye->getParams().at(5) << " "
+                           << pinholeIntrinsicFisheye->getParams().at(6) << " " << pinholeIntrinsicFisheye->getParams().at(7) << "\n";
             }
             break;
         case camera::PINHOLE_CAMERA_FISHEYE1:
             // PINHOLE_CAMERA_FISHEYE corresponds to Colmap's FOV
             // Parameters: fx, fy, cx, cy, k1, k2, k3, k4
             {
-                const camera::PinholeFisheye1* pinholeIntrinsicFisheye =
-                    dynamic_cast<const camera::PinholeFisheye1*>(intrinsic.get());
+                std::shared_ptr<camera::Pinhole> pinholeIntrinsicFisheye = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
                 intrString << intrinsicsID << " "
                            << "FOV"
                            << " " << pinholeIntrinsicFisheye->w() << " " << pinholeIntrinsicFisheye->h() << " "
-                           << pinholeIntrinsicFisheye->getFocalLengthPixX() << " "
-                           << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
-                           << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " "
-                           << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
+                           << pinholeIntrinsicFisheye->getFocalLengthPixX() << " " << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
+                           << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " " << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
                            << pinholeIntrinsicFisheye->getParams().at(4) << "\n";
             }
             break;
         default:
-            throw std::invalid_argument("The intrinsics " + EINTRINSIC_enumToString(current_type) + " for camera " +
-                                     std::to_string(intrinsicsID) + " are not supported in Colmap");
+            throw std::invalid_argument("The intrinsics " + EINTRINSIC_enumToString(current_type) + " for camera " + std::to_string(intrinsicsID) +
+                                        " are not supported in Colmap");
     }
     return intrString.str();
 }
@@ -236,7 +217,7 @@ void generateColmapCamerasTxtFile(const sfmData::SfMData& sfmData, const std::st
 
     std::ofstream outfile(filename);
 
-    if(!outfile)
+    if (!outfile)
     {
         ALICEVISION_LOG_ERROR("Unable to create the cameras file " << filename);
         throw std::runtime_error("Unable to create the cameras file " + filename);
@@ -247,12 +228,12 @@ void generateColmapCamerasTxtFile(const sfmData::SfMData& sfmData, const std::st
 
     std::vector<std::string> camera_lines;
 
-    for(const auto& iter : sfmData.getIntrinsics())
+    for (const auto& iter : sfmData.getIntrinsics())
     {
         const IndexT intrID = iter.first;
         std::shared_ptr<camera::IntrinsicBase> intrinsic = iter.second;
 
-        if(isColmapCompatible(intrinsic->getType()))
+        if (isColmapCompatible(intrinsic->getType()))
         {
             outfile << convertIntrinsicsToColmapString(intrID, intrinsic);
         }
@@ -263,17 +244,17 @@ PerViewVisibility computePerViewVisibility(const sfmData::SfMData& sfmData, cons
 {
     PerViewVisibility perCameraVisibility;
 
-    for(const auto& land : sfmData.getLandmarks())
+    for (const auto& land : sfmData.getLandmarks())
     {
         const IndexT landID = land.first;
         const auto& observations = land.second.observations;
 
-        for(const auto& iter : observations)
+        for (const auto& iter : observations)
         {
             const IndexT viewID = iter.first;
             const auto& obs = iter.second;
 
-            if(viewSelections.find(viewID) != viewSelections.end())
+            if (viewSelections.find(viewID) != viewSelections.end())
             {
                 // for the current viewID add the feature point and its associate 3D point's ID
                 perCameraVisibility[viewID][landID] = obs.x;
@@ -283,8 +264,7 @@ PerViewVisibility computePerViewVisibility(const sfmData::SfMData& sfmData, cons
     return perCameraVisibility;
 }
 
-void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const CompatibleList& viewSelections,
-                                 const std::string& filename)
+void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const CompatibleList& viewSelections, const std::string& filename)
 {
     // adapted from Colmap's Reconstruction::WriteImagesText()
     // An images.txt file has the following format
@@ -294,7 +274,7 @@ void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const Compatib
 
     std::ofstream outfile(filename);
 
-    if(!outfile)
+    if (!outfile)
     {
         ALICEVISION_LOG_ERROR("Unable to create the image file " << filename);
         throw std::runtime_error("Unable to create the image file " + filename);
@@ -308,18 +288,18 @@ void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const Compatib
     const auto perViewVisibility = computePerViewVisibility(sfmData, viewSelections);
 
     // for each view to export add a line with the pose and the intrinsics ID and another with point visibility
-    for(const auto& iter : sfmData.getViews())
+    for (const auto& iter : sfmData.getViews())
     {
         const auto view = iter.second.get();
         const auto viewID = view->getViewId();
 
-        if(viewSelections.find(viewID) == viewSelections.end())
+        if (viewSelections.find(viewID) == viewSelections.end())
         {
             continue;
         }
 
         // this is necessary if we copy the images in the image folder because the image path is absolute in AV
-        const std::string imageFilename = fs::path(view->getImagePath()).filename().string();
+        const std::string imageFilename = fs::path(view->getImage().getImagePath()).filename().string();
         const IndexT intrID = view->getIntrinsicId();
 
         const auto pose = sfmData.getPose(*view).getTransform();
@@ -329,10 +309,10 @@ void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const Compatib
 
         //"#   IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, NAME\n"
         //"#   POINTS2D[] as (X, Y, POINT3D_ID)\n"
-        outfile << viewID << " " << quat.w() << " " << quat.x() << " " << quat.y() << " " << quat.z() << " " << tra[0]
-                << " " << tra[1] << " " << tra[2] << " " << intrID << " " << imageFilename << "\n";
+        outfile << viewID << " " << quat.w() << " " << quat.x() << " " << quat.y() << " " << quat.z() << " " << tra[0] << " " << tra[1] << " "
+                << tra[2] << " " << intrID << " " << imageFilename << "\n";
 
-        for(const auto& obs : perViewVisibility.at(viewID))
+        for (const auto& obs : perViewVisibility.at(viewID))
         {
             const auto& id = obs.first;
             const auto& pts = obs.second;
@@ -342,30 +322,27 @@ void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const Compatib
     }
 }
 
-void copyImagesFromSfmData(const sfmData::SfMData& sfmData, const std::string& destinationFolder,
-                           const CompatibleList selection)
+void copyImagesFromSfmData(const sfmData::SfMData& sfmData, const std::string& destinationFolder, const CompatibleList selection)
 {
-    for(const auto viewId : selection)
+    for (const auto viewId : selection)
     {
         const auto& view = sfmData.getView(viewId);
-        const auto& from = fs::path(view.getImagePath());
+        const auto& from = fs::path(view.getImage().getImagePath());
         const auto& to = fs::path(destinationFolder) / from.filename();
         fs::copy_file(from, to);
     }
 }
 
-void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const CompatibleList& viewSelections,
-                                   const std::string& filename)
+void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const CompatibleList& viewSelections, const std::string& filename)
 {
     // adapted from Colmap's Reconstruction::WritePoints3DText()
     // The points3D.txt file has the following header
-    static const std::string points3dHeader =
-        "# 3D point list with one line of data per point:\n"
-        "#   POINT3D_ID, X, Y, Z, R, G, B, ERROR, TRACK[] as (IMAGE_ID, POINT2D_IDX)\n";
+    static const std::string points3dHeader = "# 3D point list with one line of data per point:\n"
+                                              "#   POINT3D_ID, X, Y, Z, R, G, B, ERROR, TRACK[] as (IMAGE_ID, POINT2D_IDX)\n";
 
     std::ofstream outfile(filename);
 
-    if(!outfile)
+    if (!outfile)
     {
         ALICEVISION_LOG_ERROR("Unable to create the 3D point file " << filename);
         throw std::runtime_error("Unable to create the 3D point file " + filename);
@@ -375,23 +352,22 @@ void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const Compat
     // default reprojection error (not used)
     const double defaultError{-1.0};
 
-    for(const auto& iter : sfmData.getLandmarks())
+    for (const auto& iter : sfmData.getLandmarks())
     {
         const IndexT id = iter.first;
         const Vec3 exportPoint = iter.second.X;
         const auto pointColor = iter.second.rgb;
-        outfile << id << " " << exportPoint.x() << " " << exportPoint.y() << " " << exportPoint.z() << " "
-                << static_cast<int>(pointColor.r()) << " " << static_cast<int>(pointColor.g()) << " "
-                << static_cast<int>(pointColor.b()) << " ";
+        outfile << id << " " << exportPoint.x() << " " << exportPoint.y() << " " << exportPoint.z() << " " << static_cast<int>(pointColor.r()) << " "
+                << static_cast<int>(pointColor.g()) << " " << static_cast<int>(pointColor.b()) << " ";
 
         outfile << defaultError;
 
-        for(const auto& itObs : iter.second.observations)
+        for (const auto& itObs : iter.second.observations)
         {
             const IndexT viewId = itObs.first;
             const IndexT featId = itObs.second.id_feat;
 
-            if(viewSelections.find(viewId) != viewSelections.end())
+            if (viewSelections.find(viewId) != viewSelections.end())
             {
                 outfile << " " << viewId << " " << featId;
             }
@@ -400,8 +376,7 @@ void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const Compat
     }
 }
 
-void generateColmapSceneFiles(const sfmData::SfMData& sfmData, const CompatibleList& viewsSelection,
-                              const ColmapConfig& colmapParams)
+void generateColmapSceneFiles(const sfmData::SfMData& sfmData, const CompatibleList& viewsSelection, const ColmapConfig& colmapParams)
 {
     generateColmapCamerasTxtFile(sfmData, colmapParams._camerasTxtPath);
     generateColmapImagesTxtFile(sfmData, viewsSelection, colmapParams._imagesTxtPath);
@@ -411,7 +386,7 @@ void generateColmapSceneFiles(const sfmData::SfMData& sfmData, const CompatibleL
 void create_directories(const std::string& directory)
 {
     const bool ok = fs::create_directories(directory);
-    if(!ok)
+    if (!ok)
     {
         ALICEVISION_LOG_ERROR("Cannot create directory " << directory);
         throw std::runtime_error("Cannot create directory " + directory);
@@ -422,7 +397,7 @@ void convertToColmapScene(const sfmData::SfMData& sfmData, const std::string& co
 {
     // retrieve the views that are compatible with Colmap and that can be exported
     const auto views2export = getColmapCompatibleViews(sfmData);
-    if(views2export.empty())
+    if (views2export.empty())
     {
         ALICEVISION_LOG_WARNING("No camera in the scene is compatible with Colmap");
         return;
@@ -439,7 +414,7 @@ void convertToColmapScene(const sfmData::SfMData& sfmData, const std::string& co
     create_directories(colmapParams._denseDirectory);
     create_directories(colmapParams._imagesDirectory);
 
-    if(copyImages)
+    if (copyImages)
     {
         ALICEVISION_LOG_INFO("Copying source images...");
         copyImagesFromSfmData(sfmData, colmapParams._imagesDirectory, views2export);
@@ -449,5 +424,5 @@ void convertToColmapScene(const sfmData::SfMData& sfmData, const std::string& co
     generateColmapSceneFiles(sfmData, views2export, colmapParams);
 }
 
-}
-}
+}  // namespace sfmDataIO
+}  // namespace aliceVision

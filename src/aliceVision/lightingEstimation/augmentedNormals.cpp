@@ -9,7 +9,5 @@
 #include "augmentedNormals.hpp"
 
 namespace aliceVision {
-namespace lightingEstimation {
-
-}
-}
+namespace lightingEstimation {}
+}  // namespace aliceVision

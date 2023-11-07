@@ -27,10 +27,10 @@ int indexOfNearestSorted(const std::vector<float>& in_vector, const float value)
     // retrieve the first element >= value in _data
     auto it = std::lower_bound(in_vector.begin(), in_vector.end(), value);
 
-    if(it == in_vector.end())
+    if (it == in_vector.end())
         return -1;
 
-    if(it != in_vector.begin())
+    if (it != in_vector.begin())
     {
         // select the index of the closest value between it (>= value) and prevIt (< value)
         const auto prevIt = std::prev(it);
@@ -40,9 +40,9 @@ int indexOfNearestSorted(const std::vector<float>& in_vector, const float value)
 }
 
 SgmDepthList::SgmDepthList(const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const Tile& tile)
-    : _mp(mp)
-    , _sgmParams(sgmParams)
-    , _tile(tile)
+  : _mp(mp),
+    _sgmParams(sgmParams),
+    _tile(tile)
 {}
 
 void SgmDepthList::computeListRc()
@@ -58,23 +58,23 @@ void SgmDepthList::computeListRc()
     float minObsDepth, maxObsDepth, midObsDepth;
     getMinMaxMidNbDepthFromSfM(minObsDepth, maxObsDepth, midObsDepth, nbObsDepths);
 
-    if(nbObsDepths < 2)
+    if (nbObsDepths < 2)
     {
-       ALICEVISION_LOG_INFO(_tile << "Cannot get min/max/middle depth from SfM.");
-       return; // nothing to do
+        ALICEVISION_LOG_INFO(_tile << "Cannot get min/max/middle depth from SfM.");
+        return;  // nothing to do
     }
 
     // compute depth list for each T cameras
     std::vector<std::vector<float>> depthsPerTc(_tile.sgmTCams.size());
 
-    for(std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
-    {   
+    for (std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
+    {
         std::vector<float>& tcDepths = depthsPerTc.at(c);
 
         // compute depths of all meaningful points on the principal ray of the R camera regarding each T cameras
         computeRcTcDepths(_tile.sgmTCams.at(c), (nbObsDepths < 10) ? -1 : midObsDepth, tcDepths);
 
-        if(tcDepths.size() < 10) // fallback if we don't have enough valid samples over the epipolar line
+        if (tcDepths.size() < 10)  // fallback if we don't have enough valid samples over the epipolar line
         {
             ALICEVISION_LOG_DEBUG(_tile << "Not enough valid samples over the epipolar line. Compute depth list from R camera pixel size.");
 
@@ -88,9 +88,9 @@ void SgmDepthList::computeListRc()
     float minDepthAll = std::numeric_limits<float>::max();
     float maxDepthAll = std::numeric_limits<float>::min();
 
-    for(const std::vector<float>& tcDepths : depthsPerTc)
+    for (const std::vector<float>& tcDepths : depthsPerTc)
     {
-        for(const float depth : tcDepths)
+        for (const float depth : tcDepths)
         {
             minDepthAll = std::min(minDepthAll, depth);
             maxDepthAll = std::max(maxDepthAll, depth);
@@ -98,28 +98,28 @@ void SgmDepthList::computeListRc()
     }
 
     // no depths found
-    if(minDepthAll > maxDepthAll)
+    if (minDepthAll > maxDepthAll)
     {
         ALICEVISION_LOG_INFO(_tile << "No depths found.");
-        return; // nothing to do
+        return;  // nothing to do
     }
 
     ALICEVISION_LOG_DEBUG(_tile << "Depth candidates from seeds for R camera:" << std::endl
-                                << "\t- nb observations: " << nbObsDepths <<  std::endl
+                                << "\t- nb observations: " << nbObsDepths << std::endl
                                 << "\t- all depth range: [" << minDepthAll << "-" << maxDepthAll << "]" << std::endl
                                 << "\t- sfm depth range: [" << minObsDepth << "-" << maxObsDepth << "]");
 
     float firstDepth = minDepthAll;
-    float lastDepth  = maxDepthAll;
+    float lastDepth = maxDepthAll;
 
     // if we want to use SfM seeds anf if we get enough information from these seeds, adjust min/maxDepth
-    if(_sgmParams.useSfmSeeds && !_mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 10)
+    if (_sgmParams.useSfmSeeds && !_mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 10)
     {
-        const float margin = _sgmParams.seedsRangeInflate * (maxObsDepth-minObsDepth);
+        const float margin = _sgmParams.seedsRangeInflate * (maxObsDepth - minObsDepth);
         firstDepth = std::max(0.f, minObsDepth - margin);
-        lastDepth  = maxObsDepth + margin;
+        lastDepth = maxObsDepth + margin;
 
-        if(maxDepthAll < firstDepth || minDepthAll > lastDepth)
+        if (maxDepthAll < firstDepth || minDepthAll > lastDepth)
         {
             // no intersection between min/maxDepth and min/maxDepthSample
             // keep min/maxDepth value as is
@@ -128,16 +128,17 @@ void SgmDepthList::computeListRc()
         {
             // min/maxDepth intersection with min/maxDepthAll
             firstDepth = std::max(minDepthAll, firstDepth);
-            lastDepth  = std::min(maxDepthAll, lastDepth );
+            lastDepth = std::min(maxDepthAll, lastDepth);
         }
-        ALICEVISION_LOG_DEBUG(_tile << "Final depth range (intersection: frustums / landmarks with margin): [" << firstDepth << "-" << lastDepth << "]");
+        ALICEVISION_LOG_DEBUG(_tile << "Final depth range (intersection: frustums / landmarks with margin): [" << firstDepth << "-" << lastDepth
+                                    << "]");
     }
 
     // build the list of "best" depths for rc, from all tc cameras depths
     computeRcDepthList(firstDepth, lastDepth, (_sgmParams.stepZ > 0.0f ? _sgmParams.stepZ : 1.0f), depthsPerTc);
 
     // filter out depths if computeDepths gave too many values
-    if(_sgmParams.maxDepths > 0 && _depths.size() > _sgmParams.maxDepths)
+    if (_sgmParams.maxDepths > 0 && _depths.size() > _sgmParams.maxDepths)
     {
         const float scaleFactor = float(_depths.size()) / float(_sgmParams.maxDepths);
 
@@ -149,23 +150,21 @@ void SgmDepthList::computeListRc()
         computeRcDepthList(firstDepth, lastDepth, scaleFactor, depthsPerTc);
 
         // ensure depth list size is not greater than maxDepths
-        if(_depths.size() > _sgmParams.maxDepths)
-          _depths.resize(_sgmParams.maxDepths); // reduce to depth list first maxDepths elements
+        if (_depths.size() > _sgmParams.maxDepths)
+            _depths.resize(_sgmParams.maxDepths);  // reduce to depth list first maxDepths elements
     }
-
 
     ALICEVISION_LOG_DEBUG(_tile << "Final depth range for R camera:" << std::endl
                                 << "\t- nb selected depths: " << _depths.size() << std::endl
                                 << "\t- selected depth range: [" << firstDepth << "-" << lastDepth << "]");
-    
 
     // update depth tc limits
     _depthsTcLimits.resize(_tile.sgmTCams.size());
 
     // fill depthsTcamsLimits member variable with index range of depths to sweep
-    for(std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
+    for (std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
     {
-        if(depthsPerTc.empty())
+        if (depthsPerTc.empty())
         {
             _depthsTcLimits[c] = Pixel(-1, -1);
             continue;
@@ -177,22 +176,22 @@ void SgmDepthList::computeListRc()
         int id1 = indexOfNearestSorted(_depths, d1);
         int id2 = indexOfNearestSorted(_depths, d2);
 
-        if(id1 == -1)
+        if (id1 == -1)
             id1 = 0;
 
-        if(id2 == -1)
+        if (id2 == -1)
             id2 = _depths.size() - 1;
 
         _depthsTcLimits[c] = Pixel(id1, id2 - id1 + 1);
     }
 
-    if(_sgmParams.exportDepthsTxtFiles)
+    if (_sgmParams.exportDepthsTxtFiles)
         exportTxtFiles(depthsPerTc);
 
     ALICEVISION_LOG_DEBUG(_tile << "Compute SGM depths list done.");
 }
 
-void SgmDepthList::removeTcWithNoDepth(Tile& tile) 
+void SgmDepthList::removeTcWithNoDepth(Tile& tile)
 {
     assert(tile.rc == _tile.rc);
     assert(tile.sgmTCams.size() == _tile.sgmTCams.size());
@@ -200,12 +199,12 @@ void SgmDepthList::removeTcWithNoDepth(Tile& tile)
     std::vector<int> out_tCams;
     std::vector<Pixel> out_depthsTcLimits;
 
-    for(size_t c = 0; c < tile.sgmTCams.size(); ++c)
+    for (size_t c = 0; c < tile.sgmTCams.size(); ++c)
     {
         const Pixel& tcLimits = _depthsTcLimits.at(c);
         const int tc = tile.sgmTCams.at(c);
 
-        if(tcLimits.x != -1 && tcLimits.y != -1)
+        if (tcLimits.x != -1 && tcLimits.y != -1)
         {
             out_tCams.push_back(tc);
             out_depthsTcLimits.push_back(tcLimits);
@@ -231,13 +230,14 @@ void SgmDepthList::logRcTcDepthInformation() const
          << "\t   - depths range: [" << _depths[0] << "-" << _depths[_depths.size() - 1] << "]" << std::endl
          << "\t- T cameras:" << std::endl;
 
-    for(std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
+    for (std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
     {
         ostr << "\t   - T camera (" << (c + 1) << "/" << _tile.sgmTCams.size() << "):" << std::endl
              << "\t      - id: " << _tile.sgmTCams.at(c) << std::endl
              << "\t      - view id: " << _mp.getViewId(_tile.sgmTCams.at(c)) << std::endl
              << "\t      - depth planes: " << _depthsTcLimits[c].y << std::endl
-             << "\t      - depths range: [" << _depths[_depthsTcLimits[c].x] << "-" << _depths[_depthsTcLimits[c].x + _depthsTcLimits[c].y - 1] << "]" << std::endl
+             << "\t      - depths range: [" << _depths[_depthsTcLimits[c].x] << "-" << _depths[_depthsTcLimits[c].x + _depthsTcLimits[c].y - 1] << "]"
+             << std::endl
              << "\t      - depth indexes range: [" << _depthsTcLimits[c].x << "-" << _depthsTcLimits[c].x + _depthsTcLimits[c].y << "]" << std::endl;
     }
 
@@ -269,10 +269,7 @@ void SgmDepthList::checkStartingAndStoppingDepth() const
     assert(_depths.size() >= stoppingDepth);
 }
 
-void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
-                                              float& out_max,
-                                              float& out_mid,
-                                              std::size_t& out_nbDepths) const
+void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min, float& out_max, float& out_mid, std::size_t& out_nbDepths) const
 {
     using namespace boost::accumulators;
 
@@ -282,8 +279,9 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
 
     const IndexT viewId = _mp.getViewId(_tile.rc);
 
-    const ROI fullsizeRoi = upscaleROI(_tile.roi, _mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
-    //const ROI selectionRoi = inflateROI(fullsizeRoi, 1.4f); // we can inflate the image full-size roi to be more permissive for common landmark selection
+    const ROI fullsizeRoi = upscaleROI(_tile.roi, _mp.getProcessDownscale());  // landmark observations are in the full-size image coordinate system
+    // const ROI selectionRoi = inflateROI(fullsizeRoi, 1.4f); // we can inflate the image full-size roi to be more permissive for common landmark
+    // selection
 
     OrientedPoint cameraPlane;
     cameraPlane.p = _mp.CArr[_tile.rc];
@@ -294,7 +292,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
     out_nbDepths = 0;
 
     // for each landmark
-    for(const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
+    for (const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
     {
         const sfmData::Landmark& landmark = landmarkPair.second;
         const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
@@ -303,14 +301,14 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
         const auto it = landmark.observations.find(viewId);
 
         // no rc observation
-        if(it == landmark.observations.end())
-          continue;
+        if (it == landmark.observations.end())
+            continue;
 
         // get rc 2d observation
         const Vec2& obs2d = it->second.x;
 
         // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
-        if(!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
+        if (!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
         {
             const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
             accDistanceMin(distance);
@@ -320,18 +318,18 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
         }
     }
 
-    if(out_nbDepths > 0)
+    if (out_nbDepths > 0)
     {
-      out_min = quantile(accDistanceMin, quantile_probability = 1.0 - _sgmParams.seedsRangePercentile);
-      out_max = quantile(accDistanceMax, quantile_probability = _sgmParams.seedsRangePercentile);
-      midDepthPoint = midDepthPoint / static_cast<float>(out_nbDepths);
-      out_mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
+        out_min = quantile(accDistanceMin, quantile_probability = 1.0 - _sgmParams.seedsRangePercentile);
+        out_max = quantile(accDistanceMax, quantile_probability = _sgmParams.seedsRangePercentile);
+        midDepthPoint = midDepthPoint / static_cast<float>(out_nbDepths);
+        out_mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
     }
     else
     {
-      out_min = 0.f;
-      out_max = 0.f;
-      out_mid = 0.f;
+        out_min = 0.f;
+        out_max = 0.f;
+        out_mid = 0.f;
     }
 
     ALICEVISION_LOG_DEBUG(_tile << "Compute min/max/mid/nb observation depth from SfM for R camera:" << std::endl
@@ -343,9 +341,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
                                 << "\t- percentile: " << _sgmParams.seedsRangePercentile);
 }
 
-void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
-                                            double& out_zmin,
-                                            double& out_zmax) const
+void SgmDepthList::getRcTcDepthRangeFromSfM(int tc, double& out_zmin, double& out_zmax) const
 {
     // get Rc/Tc view ids
     const IndexT rcViewId = _mp.getViewId(_tile.rc);
@@ -354,7 +350,8 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
     // get R region-of-interest
     // landmark observations are in the full-size image coordinate system, we need to upcscale the tile ROI
     const ROI fullsizeRoi = upscaleROI(_tile.roi, _mp.getProcessDownscale());
-    //const ROI selectionRoi = inflateROI(fullsizeRoi, 1.4f); // we can inflate the image full-size roi to be more permissive for common landmark selection
+    // const ROI selectionRoi = inflateROI(fullsizeRoi, 1.4f); // we can inflate the image full-size roi to be more permissive for common landmark
+    // selection
 
     // build R camera plane
     OrientedPoint cameraPlane;
@@ -367,27 +364,27 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
     out_zmax = std::numeric_limits<double>::min();
 
     // for each landmark
-    for(const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
+    for (const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
     {
         const sfmData::Landmark& landmark = landmarkPair.second;
         const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
 
         // no tc observation
-        if(landmark.observations.find(tcViewId) == landmark.observations.end())
-          continue;
+        if (landmark.observations.find(tcViewId) == landmark.observations.end())
+            continue;
 
         // find rc observation
         const auto it = landmark.observations.find(rcViewId);
 
         // no rc observation
-        if(it == landmark.observations.end())
-          continue;
+        if (it == landmark.observations.end())
+            continue;
 
         // get rc 2d observation
         const Vec2& obs2d = it->second.x;
 
         // observation located inside the inflated image full-size ROI
-        if(!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
+        if (!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
         {
             // compute related depth
             const double depth = pointPlaneDistance(point, cameraPlane.p, cameraPlane.n);
@@ -399,7 +396,7 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
     }
 
     // no common observations found
-    if(out_zmin > out_zmax)
+    if (out_zmin > out_zmax)
     {
         ALICEVISION_THROW_ERROR(_tile << "Cannot compute min/max depth from common Rc/Tc SfM observations." << std::endl
                                       << "No common observations found (tc view id: " << tcViewId << ").");
@@ -407,14 +404,12 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
 
     ALICEVISION_LOG_DEBUG(_tile << "Compute min/max depth from common Rc/Tc SfM observations:" << std::endl
                                 << "\t- rc: " << _tile.rc << " (view id: " << rcViewId << ")" << std::endl
-                                << "\t- tc: " << tc       << " (view id: " << tcViewId << ")" << std::endl
-                                << "\t- min depth: "  << out_zmin << std::endl
-                                << "\t- max depth: "  << out_zmax);
+                                << "\t- tc: " << tc << " (view id: " << tcViewId << ")" << std::endl
+                                << "\t- min depth: " << out_zmin << std::endl
+                                << "\t- max depth: " << out_zmax);
 }
 
-void SgmDepthList::computeRcTcDepths(int tc,
-                                     float midDepth, 
-                                     std::vector<float>& out_depths) const
+void SgmDepthList::computeRcTcDepths(int tc, float midDepth, std::vector<float>& out_depths) const
 {
     assert(out_depths.empty());
 
@@ -423,12 +418,12 @@ void SgmDepthList::computeRcTcDepths(int tc,
     rcplane.n = _mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
     rcplane.n = rcplane.n.normalize();
 
-    // ROI center 
+    // ROI center
     const Point2d roiCenter((_tile.roi.x.begin + (_tile.roi.width() * 0.5)), _tile.roi.y.begin + (_tile.roi.height() * 0.5));
 
     // principal point of the rc camera
     const Point2d principalPoint(_mp.getWidth(_tile.rc) * 0.5, _mp.getHeight(_tile.rc) * 0.5);
-    
+
     // reference point for the epipolar line
     const Point2d referencePoint = (!_sgmParams.depthListPerTile) ? principalPoint : roiCenter;
 
@@ -436,7 +431,7 @@ void SgmDepthList::computeRcTcDepths(int tc,
     Point2d tcMidDepthPoint;
 
     // segment of epipolar line
-    Point2d tcFromPoint, tcToPoint; 
+    Point2d tcFromPoint, tcToPoint;
 
     {
         const Matrix3x4& rP = _mp.camArr[_tile.rc];
@@ -476,34 +471,34 @@ void SgmDepthList::computeRcTcDepths(int tc,
         Point3d p;
 
         // triangulate middle depth point
-        if(!triangulateMatch(p, referencePoint, tcMidDepthPoint, _tile.rc, tc, _mp))
+        if (!triangulateMatch(p, referencePoint, tcMidDepthPoint, _tile.rc, tc, _mp))
             return;
 
         const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
         // triangulate middle depth point + 1 pixelVect
-        if(!triangulateMatch(p, referencePoint, tcMidDepthPoint + pixelVect, _tile.rc, tc, _mp))
+        if (!triangulateMatch(p, referencePoint, tcMidDepthPoint + pixelVect, _tile.rc, tc, _mp))
             return;
 
         const float depthP1 = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
-        if(depth > depthP1)
+        if (depth > depthP1)
             depthDirection = -1;
     }
-   
+
     out_depths.reserve(nbSegmentPointsAtSgmScale);
 
     const Point3d refVect = _mp.iCamArr[_tile.rc] * referencePoint;
     float previousDepth = -1.0f;
 
     // compute depths for all pixels from one side of the epipolar segment to the other
-    for(int i = 0; i < nbSegmentPointsAtSgmScale; ++i)
+    for (int i = 0; i < nbSegmentPointsAtSgmScale; ++i)
     {
         const Point2d tcPoint = ((depthDirection > 0) ? tcFromPoint : tcToPoint) + (pixelVect * double(i) * double(depthDirection));
 
         // check if the epipolar segment point is in T camera
         // note: get2dLineImageIntersection can give points slightly out of the picture
-        if(!_mp.isPixelInImage(tcPoint, tc))
+        if (!_mp.isPixelInImage(tcPoint, tc))
             continue;
 
         const Point3d tarVect = _mp.iCamArr[tc] * tcPoint;
@@ -511,28 +506,28 @@ void SgmDepthList::computeRcTcDepths(int tc,
 
         // if vects are near parallel then this results to strange angles
         // this is the proper angle because it does not depend on the triangulated p
-        if(refTarVectAngle < _mp.getMinViewAngle() || refTarVectAngle > _mp.getMaxViewAngle())
+        if (refTarVectAngle < _mp.getMinViewAngle() || refTarVectAngle > _mp.getMaxViewAngle())
             continue;
 
         // epipolar segment point related 3d point
         Point3d p;
 
         // triangulate principal point from rc with tcPoint
-        if(!triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, _mp))
+        if (!triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, _mp))
             continue;
 
         // check the difference in pixel size between R and T and the angle size of p
         // note: disabled for now, this test is too strict and rejects too many points.
-        //if(!checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
+        // if(!checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
         //    continue;
 
         // compute related 3d point depth
         const float depth = float(orientedPointPlaneDistance(p, rcplane.p, rcplane.n));
 
-        if((depth > 0.0f) && (depth > previousDepth))
+        if ((depth > 0.0f) && (depth > previousDepth))
         {
-          out_depths.push_back(depth);
-          previousDepth = depth + std::numeric_limits<float>::epsilon();
+            out_depths.push_back(depth);
+            previousDepth = depth + std::numeric_limits<float>::epsilon();
         }
     }
 
@@ -545,14 +540,11 @@ void SgmDepthList::computeRcTcDepths(int tc,
                                 << "\t- # points of the epipolar segment at SGM scale: " << nbSegmentPointsAtSgmScale << std::endl
                                 << "\t- # depths to use: " << out_depths.size());
 
-    if(!out_depths.empty())
-      ALICEVISION_LOG_DEBUG(_tile << "Depth to use range [" << out_depths.front() << "-" << out_depths.back() << "]" << std::endl);
+    if (!out_depths.empty())
+        ALICEVISION_LOG_DEBUG(_tile << "Depth to use range [" << out_depths.front() << "-" << out_depths.back() << "]" << std::endl);
 }
 
-void SgmDepthList::computePixelSizeDepths(float minObsDepth,
-                                          float midObsDepth,
-                                          float maxObsDepth,
-                                          std::vector<float>& out_depths) const
+void SgmDepthList::computePixelSizeDepths(float minObsDepth, float midObsDepth, float maxObsDepth, std::vector<float>& out_depths) const
 {
     assert(out_depths.empty());
 
@@ -568,7 +560,7 @@ void SgmDepthList::computePixelSizeDepths(float minObsDepth,
 
     int ndepthsMidMax = 0;
     float maxdepth = midObsDepth;
-    while((maxdepth < maxObsDepth) && (ndepthsMidMax < maxDepthsHalf))
+    while ((maxdepth < maxObsDepth) && (ndepthsMidMax < maxDepthsHalf))
     {
         Point3d p = rcplane.p + rcplane.n * maxdepth;
         float pixSize = _mp.getCamPixelSize(p, _tile.rc, d);
@@ -578,7 +570,7 @@ void SgmDepthList::computePixelSizeDepths(float minObsDepth,
 
     int ndepthsMidMin = 0;
     float mindepth = midObsDepth;
-    while((mindepth > minObsDepth) && (ndepthsMidMin < maxDepthsHalf * 2 - ndepthsMidMax))
+    while ((mindepth > minObsDepth) && (ndepthsMidMin < maxDepthsHalf * 2 - ndepthsMidMax))
     {
         Point3d p = rcplane.p + rcplane.n * mindepth;
         float pixSize = _mp.getCamPixelSize(p, _tile.rc, d);
@@ -590,7 +582,7 @@ void SgmDepthList::computePixelSizeDepths(float minObsDepth,
     float depth = mindepth;
     int ndepths = 0;
     float pixSize = 1.0f;
-    while((depth < maxdepth) && (pixSize > 0.0f) && (ndepths < 2 * maxDepthsHalf))
+    while ((depth < maxdepth) && (pixSize > 0.0f) && (ndepths < 2 * maxDepthsHalf))
     {
         Point3d p = rcplane.p + rcplane.n * depth;
         pixSize = _mp.getCamPixelSize(p, _tile.rc, d);
@@ -604,7 +596,7 @@ void SgmDepthList::computePixelSizeDepths(float minObsDepth,
     depth = mindepth;
     pixSize = 1.0f;
     ndepths = 0;
-    while((depth < maxdepth) && (pixSize > 0.0f) && (ndepths < 2 * maxDepthsHalf))
+    while ((depth < maxdepth) && (pixSize > 0.0f) && (ndepths < 2 * maxDepthsHalf))
     {
         out_depths.push_back(depth);
         Point3d p = rcplane.p + rcplane.n * depth;
@@ -614,11 +606,11 @@ void SgmDepthList::computePixelSizeDepths(float minObsDepth,
     }
 
     // check if it is asc
-    for(int i = 0; i < out_depths.size() - 1; i++)
+    for (int i = 0; i < out_depths.size() - 1; i++)
     {
-        if(out_depths[i] >= out_depths[i + 1])
+        if (out_depths[i] >= out_depths[i + 1])
         {
-            for(int j = 0; j <= i + 1; j++)
+            for (int j = 0; j <= i + 1; j++)
             {
                 ALICEVISION_LOG_TRACE(_tile << "getDepthsByPixelSize: check if it is asc: " << out_depths[j]);
             }
@@ -627,16 +619,13 @@ void SgmDepthList::computePixelSizeDepths(float minObsDepth,
     }
 }
 
-void SgmDepthList::computeRcDepthList(float firstDepth, 
-                                      float lastDepth, 
-                                      float scaleFactor,
-                                      const std::vector<std::vector<float>>& dephtsPerTc)
+void SgmDepthList::computeRcDepthList(float firstDepth, float lastDepth, float scaleFactor, const std::vector<std::vector<float>>& dephtsPerTc)
 {
     _depths.clear();
 
     float depth = firstDepth;
 
-    while(depth < lastDepth)
+    while (depth < lastDepth)
     {
         _depths.push_back(depth);
 
@@ -644,17 +633,17 @@ void SgmDepthList::computeRcDepthList(float firstDepth,
         float minTcStep = lastDepth - firstDepth;
 
         // for each tc camera
-        for(const std::vector<float>& tcDepths : dephtsPerTc)
+        for (const std::vector<float>& tcDepths : dephtsPerTc)
         {
             // get the tc depth closest to the current depth
             const int id = indexOfNearestSorted(tcDepths, depth);
 
             // continue on no result or last element (we need id + 1)
-            if(id < 0 || id >= tcDepths.size() - 1)
+            if (id < 0 || id >= tcDepths.size() - 1)
                 continue;
 
             // enclosing depth range
-            const float tcStep = fabs(tcDepths.at(id) - tcDepths.at(id + 1)); // (closest - next) depths distance
+            const float tcStep = fabs(tcDepths.at(id) - tcDepths.at(id + 1));  // (closest - next) depths distance
 
             // keep this value if smallest step so far
             minTcStep = std::min(minTcStep, tcStep);
@@ -673,7 +662,7 @@ void SgmDepthList::exportTxtFiles(const std::vector<std::vector<float>>& dephtsP
     {
         const std::string fn = prefix + "depthsTcLimits" + suffix;
         FILE* f = fopen(fn.c_str(), "w");
-        for(int j = 0; j < _depthsTcLimits.size(); j++)
+        for (int j = 0; j < _depthsTcLimits.size(); j++)
         {
             Pixel l = _depthsTcLimits[j];
             fprintf(f, "%i %i\n", l.x, l.y);
@@ -685,7 +674,7 @@ void SgmDepthList::exportTxtFiles(const std::vector<std::vector<float>>& dephtsP
     {
         const std::string fn = prefix + "depths" + suffix;
         FILE* f = fopen(fn.c_str(), "w");
-        for(int j = 0; j < _depths.size(); j++)
+        for (int j = 0; j < _depths.size(); j++)
         {
             fprintf(f, "%f\n", _depths[j]);
         }
@@ -694,11 +683,11 @@ void SgmDepthList::exportTxtFiles(const std::vector<std::vector<float>>& dephtsP
 
     // export all depths per tc txt files
     {
-        for(int c = 0; c < dephtsPerTc.size(); ++c)
+        for (int c = 0; c < dephtsPerTc.size(); ++c)
         {
             const std::string fn = prefix + "depths_tc_" + mvsUtils::num2str(_mp.getViewId(_tile.sgmTCams.at(c))) + suffix;
             FILE* f = fopen(fn.c_str(), "w");
-            for(const float depth : dephtsPerTc.at(c))
+            for (const float depth : dephtsPerTc.at(c))
             {
                 fprintf(f, "%f\n", depth);
             }
@@ -707,5 +696,5 @@ void SgmDepthList::exportTxtFiles(const std::vector<std::vector<float>>& dephtsP
     }
 }
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

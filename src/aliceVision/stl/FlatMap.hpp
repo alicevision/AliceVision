@@ -9,11 +9,7 @@
 
 #include <boost/container/flat_map.hpp>
 
-namespace stl
-{
-  template <class Key
-         ,class T
-         ,class Compare = std::less<Key>
-         ,class Allocator = std::allocator<std::pair<Key, T> > >
-  using flat_map = boost::container::flat_map<Key, T, Compare, Allocator>;
+namespace stl {
+template<class Key, class T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<Key, T>>>
+using flat_map = boost::container::flat_map<Key, T, Compare, Allocator>;
 }

@@ -22,14 +22,15 @@ namespace image {
  */
 enum class EImageColorSpace
 {
-  AUTO,
-  LINEAR,
-  SRGB,
-  ACES2065_1,
-  ACEScg,
-  LAB,
-  XYZ,
-  NO_CONVERSION
+    AUTO,
+    LINEAR,
+    SRGB,
+    ACES2065_1,
+    ACEScg,
+    REC709,
+    LAB,
+    XYZ,
+    NO_CONVERSION
 };
 
 std::string EImageColorSpace_informations();
@@ -46,5 +47,5 @@ std::string getDefaultColorConfigFilePath();
 void initColorConfigOCIO(const std::string& colorConfigFilePath);
 oiio::ColorConfig& getGlobalColorConfigOCIO();
 
-}
-}
+}  // namespace image
+}  // namespace aliceVision

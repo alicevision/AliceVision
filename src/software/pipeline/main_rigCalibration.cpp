@@ -17,7 +17,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/convert.hpp>
 
@@ -341,7 +341,8 @@ int aliceVision_main(int argc, char** argv)
     //pointsFile = inputFolder + "/points.txt";
 
     image::Image<float> imageGrey;
-    std::shared_ptr<camera::PinholeRadialK3> queryIntrinsics = std::make_shared<camera::PinholeRadialK3>();
+    std::shared_ptr<camera::Pinhole> queryIntrinsics = std::dynamic_pointer_cast<camera::Pinhole>(
+        camera::createIntrinsic(camera::PINHOLE_CAMERA_RADIAL3));
     bool hasIntrinsics = false;
 
     std::size_t iInputFrame = 0;

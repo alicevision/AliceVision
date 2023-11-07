@@ -19,7 +19,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
-
 using namespace aliceVision;
 using namespace aliceVision::fuseCut;
 using namespace aliceVision::sfmData;
@@ -52,7 +51,9 @@ BOOST_AUTO_TEST_CASE(fuseCut_solidAngle)
     }
 }
 
-SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size = 3, camera::EINTRINSIC eintrinsic = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
+SfMData generateSfm(const NViewDatasetConfigurator& config,
+                    const size_t size = 3,
+                    camera::EINTRINSIC eintrinsic = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
 
 BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 {
@@ -80,9 +81,9 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     cams.resize(mp.getNbCameras());
     for (int i = 0; i < cams.size(); ++i)
         cams[i] = i;
-    
+
     const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
-    
+
     DelaunayGraphCut delaunayGC(mp);
     ALICEVISION_LOG_TRACE("Creating dense point cloud witout support pts.");
 
@@ -95,7 +96,8 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 
     ALICEVISION_LOG_TRACE("Generated pts:");
     for (size_t i = 0; i < delaunayGC._verticesCoords.size(); i++)
-        ALICEVISION_LOG_TRACE("[" << i << "]: " << delaunayGC._verticesCoords[i].x << ", " << delaunayGC._verticesCoords[i].y << ", " << delaunayGC._verticesCoords[i].z);
+        ALICEVISION_LOG_TRACE("[" << i << "]: " << delaunayGC._verticesCoords[i].x << ", " << delaunayGC._verticesCoords[i].y << ", "
+                                  << delaunayGC._verticesCoords[i].z);
 
     delaunayGC.createGraphCut(&hexah[0], cams, tempDirPath + "/", tempDirPath + "/SpaceCamsTracks/", false, false);
     /*
@@ -111,10 +113,10 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 
 /**
  * @brief Generate syntesize dataset with succesion of n(size) alignaed regular thetraedron and two camera on the last thetrahedron.
- * 
+ *
  * @param size
  * @param eintrinsic
- * @return 
+ * @return
  */
 SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, camera::EINTRINSIC eintrinsic)
 {
@@ -127,8 +129,8 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
 
     // Y axis UP
     std::vector<Vec3> camsPts;
-    camsPts.push_back({ static_cast<double>(size) + 10.0, 0.0, 0.0 });
-    camsPts.push_back({ static_cast<double>(size) - 0.5 + 10.0, 0.0, heightT - 0.0});
+    camsPts.push_back({static_cast<double>(size) + 10.0, 0.0, 0.0});
+    camsPts.push_back({static_cast<double>(size) - 0.5 + 10.0, 0.0, heightT - 0.0});
 
     const size_t ptsSize = 5 * size - 3;
     // Construct our pts (Y axis UP)
@@ -137,7 +139,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
     // Bottom down
     for (size_t i = 0; i < size; i++)
         matPts.col(i) << i, 0.0, 0.0;
-    
+
     // Bottom up
     for (size_t i = 0; i < size - 1; i++)
         matPts.col(size + i) << (i + 0.5), 0.0, heightT;
@@ -147,23 +149,22 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
         matPts.col(2 * size - 1 + i) << (i / 2.0 + 0.5), heightT, (i % 2 == 0 ? centerMinT : heightT - centerMinT);
 
     // Center
-    for (size_t i = 0; i < size - 1; i ++)
-        matPts.col(4 * size - 2 + i) << (i + (1 + (i % 2)) * 0.5), centerMinT + (i % 2) * 0.1, (i % 2 == 0 ? centerMinT : heightT - centerMinT); // center
+    for (size_t i = 0; i < size - 1; i++)
+        matPts.col(4 * size - 2 + i) << (i + (1 + (i % 2)) * 0.5), centerMinT + (i % 2) * 0.1,
+          (i % 2 == 0 ? centerMinT : heightT - centerMinT);  // center
 
     // jitters all pts
     matPts += Mat3X::Random(3, ptsSize) * 0.05;
 
     // Same internals parameters for all cams
     Mat3 internalParams;
-    internalParams << config._fx, 0, config._cx,
-        0, config._fy, config._cy,
-        0, 0, 1;
+    internalParams << config._fx, 0, config._cx, 0, config._fy, config._cy, 0, 0, 1;
 
     // 1. Views
     for (int i = 0; i < camsPts.size(); ++i)
     {
-        const IndexT id_view = i, id_pose = i, id_intrinsic = 0; // shared intrinsics
-        sfm_data.views[i] = std::make_shared<View>("", id_view, id_intrinsic, id_pose, config._cx * 2, config._cy * 2);
+        const IndexT id_view = i, id_pose = i, id_intrinsic = 0;  // shared intrinsics
+        sfm_data.getViews().emplace(i, std::make_shared<View>("", id_view, id_intrinsic, id_pose, config._cx * 2, config._cy * 2));
     }
 
     // 2. Poses
@@ -176,18 +177,18 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
         const Vec3 camCenter = camsPts[i];
         const Mat3 rotationMat = LookAt(matPts.col(0) - camCenter);
         const Vec3 translation = -rotationMat * camCenter;
-        P_from_KRt(internalParams, rotationMat, translation, &P);
+        P_from_KRt(internalParams, rotationMat, translation, P);
         projectedPtsPerCam.push_back(project(P, matPts));
 
         geometry::Pose3 pose(rotationMat, camCenter);
-        sfm_data.setPose(*sfm_data.views.at(i), CameraPose(pose));
+        sfm_data.setPose(*sfm_data.getViews().at(i), CameraPose(pose));
     }
 
     // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfm_data.intrinsics[0] = createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy);
+        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy));
     }
 
     // 4. Landmarks
@@ -201,7 +202,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
             const Vec2 pt = projectedPtsPerCam[j].col(i);
             landmark.observations[j] = Observation(pt, i, unknownScale);
         }
-        sfm_data.structure[i] = landmark;
+        sfm_data.getLandmarks()[i] = landmark;
     }
 
     return sfm_data;

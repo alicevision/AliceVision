@@ -13,7 +13,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
@@ -124,7 +124,7 @@ int aliceVision_main(int argc, char **argv)
   aliceVision::system::Timer timer;
 
   // clear previous 3D landmarks
-  sfmData.structure.clear();
+  sfmData.getLandmarks().clear();
 
   // compute Structure from known camera poses
   sfm::StructureEstimationFromKnownPoses structureEstimator;

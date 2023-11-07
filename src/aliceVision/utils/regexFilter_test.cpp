@@ -18,16 +18,13 @@ using namespace aliceVision;
 
 BOOST_AUTO_TEST_CASE(utils_regexMatching)
 {
-    const std::vector<std::string> exemplePaths
-    {
-        "C:/Users/img_0001.jpg", "C:/Users/img_0002.jpg", "C:/Users/img_0003.jpg", "C:/Users/img_0004.jpg",
-        "C:/Users/img_0005.jpg", "C:/Users/img_0006.jpg", "C:/Users/img_0007.jpg", "C:/Users/img_0008.jpg",
-        "C:/Users/img_0009.jpg", "C:/Users/img_0010.jpg", "C:/Users/img_0011.jpg", "C:/Users/img_0012.jpg",
+    const std::vector<std::string> exemplePaths{"C:/Users/img_0001.jpg", "C:/Users/img_0002.jpg", "C:/Users/img_0003.jpg", "C:/Users/img_0004.jpg",
+                                                "C:/Users/img_0005.jpg", "C:/Users/img_0006.jpg", "C:/Users/img_0007.jpg", "C:/Users/img_0008.jpg",
+                                                "C:/Users/img_0009.jpg", "C:/Users/img_0010.jpg", "C:/Users/img_0011.jpg", "C:/Users/img_0012.jpg",
 
-        "C:/Users/000001.png",   "C:/Users/000002.png",   "C:/Users/000003.png",   "C:/Users/000004.png",
+                                                "C:/Users/000001.png",   "C:/Users/000002.png",   "C:/Users/000003.png",   "C:/Users/000004.png",
 
-        "C:/Users/test00.exr",   "C:/Users/test01.exr",   "C:/Users/test02.exr",   "C:/Users/test03.exr"
-    };
+                                                "C:/Users/test00.exr",   "C:/Users/test01.exr",   "C:/Users/test02.exr",   "C:/Users/test03.exr"};
 
     {
         std::vector<std::string> test;

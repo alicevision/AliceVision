@@ -9,8 +9,8 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-namespace aliceVision{
-namespace calibration{
+namespace aliceVision {
+namespace calibration {
 
 /**
  * @brief This function computes the average of the reprojection errors.
@@ -24,10 +24,12 @@ namespace calibration{
  * @param[out] perViewErrors The reprojection errors for each image.
  * @return The average of the reprojection errors.
  */
-double computeReprojectionErrors(const std::vector<std::vector<cv::Point3f> >& objectPoints,
-                                 const std::vector<std::vector<cv::Point2f> >& imagePoints,
-                                 const std::vector<cv::Mat>& rvecs, const std::vector<cv::Mat>& tvecs,
-                                 const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs,
+double computeReprojectionErrors(const std::vector<std::vector<cv::Point3f>>& objectPoints,
+                                 const std::vector<std::vector<cv::Point2f>>& imagePoints,
+                                 const std::vector<cv::Mat>& rvecs,
+                                 const std::vector<cv::Mat>& tvecs,
+                                 const cv::Mat& cameraMatrix,
+                                 const cv::Mat& distCoeffs,
                                  std::vector<float>& perViewErrors);
 
 /**
@@ -46,8 +48,8 @@ double computeReprojectionErrors(const std::vector<std::vector<cv::Point3f> >& o
  * @param[out] totalAvgErr The average of the reprojection errors.
  * @return True if the calibration is a success, otherwise false.
  */
-bool runCalibration(const std::vector<std::vector<cv::Point2f> >& imagePoints,
-                    const std::vector<std::vector<cv::Point3f> >& objectPoints,
+bool runCalibration(const std::vector<std::vector<cv::Point2f>>& imagePoints,
+                    const std::vector<std::vector<cv::Point3f>>& objectPoints,
                     const cv::Size& imageSize,
                     float aspectRatio,
                     int cvCalibFlags,
@@ -91,10 +93,10 @@ bool calibrationIterativeOptimization(const cv::Size& imageSize,
                                       const double& maxTotalAvgErr,
                                       const std::size_t& minInputFrames,
                                       std::vector<std::size_t>& calibInputFrames,
-                                      std::vector<std::vector<cv::Point2f> >& calibImagePoints,
-                                      std::vector<std::vector<cv::Point3f> >& calibObjectPoints,
+                                      std::vector<std::vector<cv::Point2f>>& calibImagePoints,
+                                      std::vector<std::vector<cv::Point3f>>& calibObjectPoints,
                                       std::vector<float>& calibImageScore,
                                       std::vector<std::size_t>& rejectInputFrames);
 
-}//namespace calibration
-}//namespace aliceVision
+}  // namespace calibration
+}  // namespace aliceVision

@@ -22,41 +22,39 @@ using namespace aliceVision;
 
 // Check pairs follow a weak ordering pair.first < pair.second
 template<typename IterablePairs>
-bool checkPairOrder(const IterablePairs & pairs)
+bool checkPairOrder(const IterablePairs& pairs)
 {
-  for (typename IterablePairs::const_iterator iterP = pairs.begin(); iterP != pairs.end();
-    ++iterP)
-  {
-    if (iterP->first >= iterP->second)
-      return false;
-  }
-  return true;
+    for (typename IterablePairs::const_iterator iterP = pairs.begin(); iterP != pairs.end(); ++iterP)
+    {
+        if (iterP->first >= iterP->second)
+            return false;
+    }
+    return true;
 }
 
 BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
 {
-  sfmData::Views views;
-  {
-    // Empty
-    PairSet pairSet = exhaustivePairs(views);
-    BOOST_CHECK_EQUAL( 0, pairSet.size());
-  }
-  {
-    std::vector<IndexT> indexes = {{ 12, 54, 89, 65 }};
-    for( IndexT i: indexes )
+    sfmData::Views views;
     {
-      views[i] = std::make_shared<sfmData::View>("filepath", i);
+        // Empty
+        PairSet pairSet = exhaustivePairs(views);
+        BOOST_CHECK_EQUAL(0, pairSet.size());
     }
+    {
+        std::vector<IndexT> indexes = {{12, 54, 89, 65}};
+        for (IndexT i : indexes)
+        {
+            views.emplace(i, std::make_shared<sfmData::View>("filepath", i));
+        }
 
-
-    PairSet pairSet = exhaustivePairs(views);
-    BOOST_CHECK( checkPairOrder(pairSet) );
-    BOOST_CHECK_EQUAL( 6, pairSet.size());
-    BOOST_CHECK( pairSet.find(std::make_pair(12,54)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(12,89)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(12,65)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(54,89)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(54,65)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(65,89)) != pairSet.end() );
-  }
+        PairSet pairSet = exhaustivePairs(views);
+        BOOST_CHECK(checkPairOrder(pairSet));
+        BOOST_CHECK_EQUAL(6, pairSet.size());
+        BOOST_CHECK(pairSet.find(std::make_pair(12, 54)) != pairSet.end());
+        BOOST_CHECK(pairSet.find(std::make_pair(12, 89)) != pairSet.end());
+        BOOST_CHECK(pairSet.find(std::make_pair(12, 65)) != pairSet.end());
+        BOOST_CHECK(pairSet.find(std::make_pair(54, 89)) != pairSet.end());
+        BOOST_CHECK(pairSet.find(std::make_pair(54, 65)) != pairSet.end());
+        BOOST_CHECK(pairSet.find(std::make_pair(65, 89)) != pairSet.end());
+    }
 }

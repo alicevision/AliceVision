@@ -17,35 +17,34 @@ namespace aliceVision {
 namespace translationAveraging {
 
 /// Relative information [Rij|tij] for a pair
-typedef std::pair< Pair, std::pair<Mat3,Vec3> > relativeInfo;
+typedef std::pair<Pair, std::pair<Mat3, Vec3>> relativeInfo;
 
-typedef std::vector< relativeInfo > RelativeInfoVec;
-typedef std::map< Pair, std::pair<Mat3, Vec3> > RelativeInfoMap;
+typedef std::vector<relativeInfo> RelativeInfoVec;
+typedef std::map<Pair, std::pair<Mat3, Vec3>> RelativeInfoMap;
 
 // List the pairs used by the relative motions
-inline PairSet getPairs(const RelativeInfoVec & vec_relative)
+inline PairSet getPairs(const RelativeInfoVec& vec_relative)
 {
-  PairSet pair_set;
-  for(size_t i = 0; i < vec_relative.size(); ++i)
-  {
-    const relativeInfo & rel = vec_relative[i];
-    pair_set.insert(Pair(rel.first.first, rel.first.second));
-  }
-  return pair_set;
+    PairSet pair_set;
+    for (size_t i = 0; i < vec_relative.size(); ++i)
+    {
+        const relativeInfo& rel = vec_relative[i];
+        pair_set.insert(Pair(rel.first.first, rel.first.second));
+    }
+    return pair_set;
 }
 
 // List the index used by the relative motions
-inline std::set<IndexT> getIndexT(const RelativeInfoVec & vec_relative)
+inline std::set<IndexT> getIndexT(const RelativeInfoVec& vec_relative)
 {
-  std::set<IndexT> indexT_set;
-  for (RelativeInfoVec::const_iterator iter = vec_relative.begin();
-    iter != vec_relative.end(); ++iter)
-  {
-    indexT_set.insert(iter->first.first);
-    indexT_set.insert(iter->first.second);
-  }
-  return indexT_set;
+    std::set<IndexT> indexT_set;
+    for (RelativeInfoVec::const_iterator iter = vec_relative.begin(); iter != vec_relative.end(); ++iter)
+    {
+        indexT_set.insert(iter->first.first);
+        indexT_set.insert(iter->first.second);
+    }
+    return indexT_set;
 }
 
-} // namespace translationAveraging
-} // namespace aliceVision
+}  // namespace translationAveraging
+}  // namespace aliceVision

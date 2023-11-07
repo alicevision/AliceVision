@@ -12,13 +12,12 @@
 #include <OpenImageIO/imagebufalgo.h>
 #include <random>
 
-
 namespace aliceVision {
 namespace hdr {
 
 using namespace aliceVision::image;
 
-bool UniqueDescriptor::operator<(const UniqueDescriptor &o ) const
+bool UniqueDescriptor::operator<(const UniqueDescriptor& o) const
 {
     if (exposure < o.exposure)
         return true;
@@ -30,7 +29,7 @@ bool UniqueDescriptor::operator<(const UniqueDescriptor &o ) const
     return false;
 }
 
-std::ostream & operator<<(std::ostream& os, const ImageSample & s)
+std::ostream& operator<<(std::ostream& os, const ImageSample& s)
 {
     os.write((const char*)&s.x, sizeof(s.x));
     os.write((const char*)&s.y, sizeof(s.y));
@@ -38,7 +37,7 @@ std::ostream & operator<<(std::ostream& os, const ImageSample & s)
     std::size_t size = s.descriptions.size();
     os.write((const char*)&size, sizeof(size));
 
-    for (int i = 0; i  < s.descriptions.size(); ++i)
+    for (int i = 0; i < s.descriptions.size(); ++i)
     {
         os << s.descriptions[i];
     }
@@ -46,16 +45,16 @@ std::ostream & operator<<(std::ostream& os, const ImageSample & s)
     return os;
 }
 
-std::istream & operator>>(std::istream& is, ImageSample & s)
+std::istream& operator>>(std::istream& is, ImageSample& s)
 {
     std::size_t size;
 
-    is.read((char *)&s.x, sizeof(s.x));
-    is.read((char *)&s.y, sizeof(s.y));
-    is.read((char *)&size, sizeof(size));
+    is.read((char*)&s.x, sizeof(s.x));
+    is.read((char*)&s.y, sizeof(s.y));
+    is.read((char*)&size, sizeof(size));
     s.descriptions.resize(size);
 
-    for (int i = 0; i  < size; ++i)
+    for (int i = 0; i < size; ++i)
     {
         is >> s.descriptions[i];
     }
@@ -63,42 +62,42 @@ std::istream & operator>>(std::istream& is, ImageSample & s)
     return is;
 }
 
-std::ostream & operator<<(std::ostream& os, const PixelDescription & p)
+std::ostream& operator<<(std::ostream& os, const PixelDescription& p)
 {
     os.write((const char*)&p.srcId, sizeof(p.srcId));
     os.write((const char*)&p.exposure, sizeof(p.exposure));
-    os.write((const char *)&p.mean.r(), sizeof(p.mean.r()));
-    os.write((const char *)&p.mean.g(), sizeof(p.mean.g()));
-    os.write((const char *)&p.mean.b(), sizeof(p.mean.b()));
-    os.write((const char *)&p.variance.r(), sizeof(p.variance.r()));
-    os.write((const char *)&p.variance.g(), sizeof(p.variance.g()));
-    os.write((const char *)&p.variance.b(), sizeof(p.variance.b()));
+    os.write((const char*)&p.mean.r(), sizeof(p.mean.r()));
+    os.write((const char*)&p.mean.g(), sizeof(p.mean.g()));
+    os.write((const char*)&p.mean.b(), sizeof(p.mean.b()));
+    os.write((const char*)&p.variance.r(), sizeof(p.variance.r()));
+    os.write((const char*)&p.variance.g(), sizeof(p.variance.g()));
+    os.write((const char*)&p.variance.b(), sizeof(p.variance.b()));
 
     return os;
 }
 
-std::istream & operator>>(std::istream& is, PixelDescription & p)
+std::istream& operator>>(std::istream& is, PixelDescription& p)
 {
     is.read((char*)&p.srcId, sizeof(p.srcId));
     is.read((char*)&p.exposure, sizeof(p.exposure));
-    is.read((char *)&p.mean.r(), sizeof(p.mean.r()));
-    is.read((char *)&p.mean.g(), sizeof(p.mean.g()));
-    is.read((char *)&p.mean.b(), sizeof(p.mean.b()));
-    is.read((char *)&p.variance.r(), sizeof(p.variance.r()));
-    is.read((char *)&p.variance.g(), sizeof(p.variance.g()));
-    is.read((char *)&p.variance.b(), sizeof(p.variance.b()));
+    is.read((char*)&p.mean.r(), sizeof(p.mean.r()));
+    is.read((char*)&p.mean.g(), sizeof(p.mean.g()));
+    is.read((char*)&p.mean.b(), sizeof(p.mean.b()));
+    is.read((char*)&p.variance.r(), sizeof(p.variance.r()));
+    is.read((char*)&p.variance.g(), sizeof(p.variance.g()));
+    is.read((char*)&p.variance.b(), sizeof(p.variance.b()));
 
     return is;
 }
 
-void integral(image::Image<image::Rgb<double>> & dest, const Eigen::Matrix<image::RGBfColor, Eigen::Dynamic, Eigen::Dynamic> & source)
+void integral(image::Image<image::Rgb<double>>& dest, const Eigen::Matrix<image::RGBfColor, Eigen::Dynamic, Eigen::Dynamic>& source)
 {
     /*
-    A B C 
-    D E F 
+    A B C
+    D E F
     G H I
     J K L
-    = 
+    =
     A            A+B                A+B+C
     A+D          A+B+D+E            A+B+C+D+E+F
     A+D+G        A+B+D+E+G+H        A+B+C+D+E+F+G+H+I
@@ -133,7 +132,7 @@ void integral(image::Image<image::Rgb<double>> & dest, const Eigen::Matrix<image
     }
 }
 
-void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RGBfColor, Eigen::Dynamic, Eigen::Dynamic> & source)
+void square(image::Image<image::RGBfColor>& dest, const Eigen::Matrix<image::RGBfColor, Eigen::Dynamic, Eigen::Dynamic>& source)
 {
     dest.resize(source.cols(), source.rows());
 
@@ -148,7 +147,16 @@ void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RG
     }
 }
 
-bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string>& imagePaths, const std::vector<IndexT>& viewIds, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::ImageReadOptions & imgReadOptions, const Sampling::Params params, const bool simplified)
+bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
+                                        const std::vector<std::string>& imagePaths,
+                                        const std::vector<IndexT>& viewIds,
+                                        const std::vector<double>& times,
+                                        const size_t imageWidth,
+                                        const size_t imageHeight,
+                                        const size_t channelQuantization,
+                                        const image::ImageReadOptions& imgReadOptions,
+                                        const Sampling::Params params,
+                                        const bool simplified)
 {
     const int radiusp1 = params.radius + 1;
     const int diameter = (params.radius * 2) + 1;
@@ -157,9 +165,9 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
     std::vector<std::pair<int, int>> vec_blocks;
     const auto step = params.blockSize - diameter;
     vec_blocks.reserve(int(imageHeight / step) * int(imageWidth / step));
-    for(int cy = 0; cy < imageHeight; cy += step)
+    for (int cy = 0; cy < imageHeight; cy += step)
     {
-        for(int cx = 0; cx < imageWidth; cx += step)
+        for (int cx = 0; cx < imageWidth; cx += step)
         {
             vec_blocks.push_back(std::make_pair(cx, cy));
         }
@@ -176,12 +184,12 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         // Load image
         readImage(imagePaths[idBracket], img, imgReadOptions);
 
-        if(img.Width() != imageWidth || img.Height() != imageHeight)
+        if (img.Width() != imageWidth || img.Height() != imageHeight)
         {
             std::stringstream ss;
             ss << "Failed to extract samples, the images with multi-bracketing do not have the same image resolution.\n"
-               << " Current image resolution is: " << img.Width() << "x" << img.Height()
-               << ", instead of: " << imageWidth<< "x" << imageHeight << ".\n"
+               << " Current image resolution is: " << img.Width() << "x" << img.Height() << ", instead of: " << imageWidth << "x" << imageHeight
+               << ".\n"
                << "Current image path is: " << imagePaths[idBracket];
             throw std::runtime_error(ss.str());
         }
@@ -209,7 +217,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
             const int sampling = 16;
 
-            #pragma omp parallel for
+#pragma omp parallel for
             for (int r = rmin; r < rmax; r = r + sampling)
             {
                 const int cmin = (r < hH) ? a1 - r : r - a3;
@@ -236,7 +244,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         }
         else
         {
-            #pragma omp parallel for
+#pragma omp parallel for
             for (int idx = 0; idx < vec_blocks.size(); ++idx)
             {
                 int cx = vec_blocks[idx].first;
@@ -260,8 +268,11 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
                 {
                     for (int x = radiusp1; x < imgIntegral.Width() - params.radius; ++x)
                     {
-                        image::Rgb<double> S1 = imgIntegral(y + params.radius, x + params.radius) + imgIntegral(y - radiusp1, x - radiusp1) - imgIntegral(y + params.radius, x - radiusp1) - imgIntegral(y - radiusp1, x + params.radius);
-                        image::Rgb<double> S2 = imgIntegralSquare(y + params.radius, x + params.radius) + imgIntegralSquare(y - radiusp1, x - radiusp1) - imgIntegralSquare(y + params.radius, x - radiusp1) - imgIntegralSquare(y - radiusp1, x + params.radius);
+                        image::Rgb<double> S1 = imgIntegral(y + params.radius, x + params.radius) + imgIntegral(y - radiusp1, x - radiusp1) -
+                                                imgIntegral(y + params.radius, x - radiusp1) - imgIntegral(y - radiusp1, x + params.radius);
+                        image::Rgb<double> S2 = imgIntegralSquare(y + params.radius, x + params.radius) +
+                                                imgIntegralSquare(y - radiusp1, x - radiusp1) - imgIntegralSquare(y + params.radius, x - radiusp1) -
+                                                imgIntegralSquare(y - radiusp1, x + params.radius);
 
                         PixelDescription pd;
 
@@ -291,8 +302,8 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
     if (!simplified)
     {
-        // Create samples image
-        #pragma omp parallel for
+// Create samples image
+#pragma omp parallel for
         for (int y = params.radius; y < samples.Height() - params.radius; ++y)
         {
             for (int x = params.radius; x < samples.Width() - params.radius; ++x)
@@ -311,8 +322,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
                 const float maxVariance = 0.05f;
                 for (int k = 0; k < sample.descriptions.size(); ++k)
                 {
-                    if (sample.descriptions[k].variance.r() > maxVariance ||
-                        sample.descriptions[k].variance.g() > maxVariance ||
+                    if (sample.descriptions[k].variance.r() > maxVariance || sample.descriptions[k].variance.g() > maxVariance ||
                         sample.descriptions[k].variance.b() > maxVariance)
                     {
                         valid = false;
@@ -336,8 +346,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
                     // Threshold on the max values, to avoid using fully saturated pixels
                     // TODO: on RAW images, values can be higher. May need to be computed dynamically?
                     const float maxValue = 0.99f;
-                    if (sample.descriptions[k].mean.r() > maxValue ||
-                        sample.descriptions[k].mean.g() > maxValue ||
+                    if (sample.descriptions[k].mean.r() > maxValue || sample.descriptions[k].mean.g() > maxValue ||
                         sample.descriptions[k].mean.b() > maxValue)
                     {
                         continue;
@@ -371,7 +380,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
                         const float dot = sample.descriptions[k - 1].mean.dot(sample.descriptions[k].mean);
                         const float cosa = dot / (n1 * n2);
 
-                        const float maxCosa = 0.95f; // ~ 18deg
+                        const float maxCosa = 0.95f;  // ~ 18deg
                         if (cosa < maxCosa)
                         {
                             valid = false;
@@ -423,14 +432,14 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
     {
         std::vector<Counters> counters_vec(omp_get_max_threads());
 
-        #pragma omp parallel for
+#pragma omp parallel for
         for (int y = params.radius; y < samples.Height() - params.radius; ++y)
         {
-            Counters & counters_thread = counters_vec[omp_get_thread_num()];
+            Counters& counters_thread = counters_vec[omp_get_thread_num()];
 
             for (int x = params.radius; x < samples.Width() - params.radius; ++x)
             {
-                const ImageSample & sample = samples(y, x);
+                const ImageSample& sample = samples(y, x);
                 UniqueDescriptor desc;
 
                 for (int k = 0; k < sample.descriptions.size(); ++k)
@@ -441,11 +450,11 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
                     {
                         desc.channel = channel;
                         // Get quantized value
-                        desc.quantizedValue = int(std::round(sample.descriptions[k].mean(channel)  * (channelQuantization - 1)));
+                        desc.quantizedValue = int(std::round(sample.descriptions[k].mean(channel) * (channelQuantization - 1)));
                         if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization)
                         {
                             continue;
-                        }                        
+                        }
                         Coordinates coordinates = std::make_pair(sample.x, sample.y);
                         counters_thread[desc].push_back(coordinates);
                     }
@@ -453,9 +462,9 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             }
         }
 
-        for(int i = 0; i < counters_vec.size(); ++i)
+        for (int i = 0; i < counters_vec.size(); ++i)
         {
-            for (auto & item : counters_vec[i])
+            for (auto& item : counters_vec[i])
             {
                 auto found = counters.find(item.first);
                 if (found != counters.end())
@@ -473,7 +482,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
     std::random_device randomDevice;
     std::mt19937 rng(randomDevice());
 
-    for (auto & item : counters)
+    for (auto& item : counters)
     {
         if (item.second.size() > params.maxCountSample)
         {
@@ -497,21 +506,21 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
     return true;
 }
 
-void Sampling::analyzeSource(std::vector<ImageSample> & samples, int channelQuantization, int imageIndex)
+void Sampling::analyzeSource(std::vector<ImageSample>& samples, int channelQuantization, int imageIndex)
 {
     for (std::size_t sampleIndex = 0; sampleIndex < samples.size(); ++sampleIndex)
     {
-        ImageSample & sample = samples[sampleIndex];
+        ImageSample& sample = samples[sampleIndex];
 
-        for (auto & desc : sample.descriptions)
+        for (auto& desc : sample.descriptions)
         {
             UniqueDescriptor udesc;
             udesc.exposure = desc.exposure;
-            
+
             for (int channel = 0; channel < 3; ++channel)
             {
                 udesc.channel = channel;
-                udesc.quantizedValue = int(std::round(desc.mean(channel)  * (channelQuantization - 1)));
+                udesc.quantizedValue = int(std::round(desc.mean(channel) * (channelQuantization - 1)));
                 if (udesc.quantizedValue < 0 || udesc.quantizedValue >= channelQuantization)
                 {
                     continue;
@@ -529,11 +538,11 @@ void Sampling::analyzeSource(std::vector<ImageSample> & samples, int channelQuan
     std::random_device randomDevice;
     std::mt19937 rng(randomDevice());
 
-    for (auto & item : _positions)
+    for (auto& item : _positions)
     {
         // TODO: expose as parameters
         const std::size_t maxSamples = 500;
-        if(item.second.size() > maxSamples)
+        if (item.second.size() > maxSamples)
         {
             // Shuffle and ignore the exceeding samples
             std::shuffle(item.second.begin(), item.second.end(), rng);
@@ -556,7 +565,7 @@ void Sampling::filter(size_t maxTotalPoints)
         limitPerGroup = limitPerGroup - 10;
 
         total_points = 0;
-        for (auto & item : _positions)
+        for (auto& item : _positions)
         {
             if (item.second.size() > limitPerGroup)
             {
@@ -570,13 +579,13 @@ void Sampling::filter(size_t maxTotalPoints)
     }
 }
 
-void Sampling::extractUsefulSamples(std::vector<ImageSample> & out_samples, const std::vector<ImageSample> & samples, int imageIndex) const
+void Sampling::extractUsefulSamples(std::vector<ImageSample>& out_samples, const std::vector<ImageSample>& samples, int imageIndex) const
 {
     std::set<unsigned int> uniqueIndices;
 
-    for (auto & item : _positions)
+    for (auto& item : _positions)
     {
-        for (auto & pos : item.second)
+        for (auto& pos : item.second)
         {
             if (pos.imageIndex == imageIndex)
             {
@@ -586,7 +595,7 @@ void Sampling::extractUsefulSamples(std::vector<ImageSample> & out_samples, cons
     }
 
     // Export non-empty samples
-    for (auto & index : uniqueIndices)
+    for (auto& index : uniqueIndices)
     {
         if (!samples[index].descriptions.empty())
         {
@@ -595,5 +604,5 @@ void Sampling::extractUsefulSamples(std::vector<ImageSample> & out_samples, cons
     }
 }
 
-} // namespace hdr
-} // namespace aliceVision
+}  // namespace hdr
+}  // namespace aliceVision

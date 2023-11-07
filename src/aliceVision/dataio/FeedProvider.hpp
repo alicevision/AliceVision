@@ -11,113 +11,109 @@
 #include <string>
 #include <memory>
 
-namespace aliceVision{
-namespace dataio{
+namespace aliceVision {
+namespace dataio {
 
 class FeedProvider
 {
-public:
-  
-  FeedProvider(const std::string &feedPath, const std::string &calibPath = "");
-  
-  /**
-   * @brief Provide a new RGB image from the feed.
-   * 
-   * @param[out] imageRGB The new image from the feed.
-   * @param[out] camIntrinsics The associated camera intrinsics.
-   * @param[out] mediaPath The original media path, for a video is the path to the 
-   * file, for an image sequence is the path to the single image.
-   * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
-   * is no intrinsics associated to \p imageRGB.
-   * @return True if there is a new image, false otherwise.
-   */
-  bool readImage(image::Image<image::RGBColor> &imageRGB,
-        camera::PinholeRadialK3 &camIntrinsics,
-        std::string &mediaPath,
-        bool &hasIntrinsics);
+  public:
+    FeedProvider(const std::string& feedPath, const std::string& calibPath = "");
 
-  /**
-   * @brief Provide a new float grayscale image from the feed.
-   *
-   * @param[out] imageGray The new image from the feed.
-   * @param[out] camIntrinsics The associated camera intrinsics.
-   * @param[out] mediaPath The original media path, for a video is the path to the
-   * file, for an image sequence is the path to the single image.
-   * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
-   * is no intrinsics associated to \p imageGray.
-   * @return True if there is a new image, false otherwise.
-   */
-  bool readImage(image::Image<float> &imageGray,
-        camera::PinholeRadialK3 &camIntrinsics,
-        std::string &mediaPath,
-        bool &hasIntrinsics);
-  
-  /**
-   * @brief Provide a new grayscale image from the feed.
-   * 
-   * @param[out] imageGray The new image from the feed.
-   * @param[out] camIntrinsics The associated camera intrinsics.
-   * @param[out] mediaPath The original media path, for a video is the path to the 
-   * file, for an image sequence is the path to the single image.
-   * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
-   * is no intrinsics associated to \p imageGray.
-   * @return True if there is a new image, false otherwise.
-   */
-  bool readImage(image::Image<unsigned char> &imageGray,
-        camera::PinholeRadialK3 &camIntrinsics,
-        std::string &mediaPath,
-        bool &hasIntrinsics);
+    /**
+     * @brief Provide a new RGB image from the feed.
+     *
+     * @param[out] imageRGB The new image from the feed.
+     * @param[out] camIntrinsics The associated camera intrinsics.
+     * @param[out] mediaPath The original media path, for a video is the path to the
+     * file, for an image sequence is the path to the single image.
+     * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
+     * is no intrinsics associated to \p imageRGB.
+     * @return True if there is a new image, false otherwise.
+     */
+    bool readImage(image::Image<image::RGBColor>& imageRGB, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
-  /**
-   * @brief It returns the number of frames contained of the video. It return infinity
-   * if the feed is a live stream.
-   * @return the number of frames of the video or infinity if it is a live stream.
-   */
-  std::size_t nbFrames() const;
+    /**
+     * @brief Provide a new float grayscale image from the feed.
+     *
+     * @param[out] imageGray The new image from the feed.
+     * @param[out] camIntrinsics The associated camera intrinsics.
+     * @param[out] mediaPath The original media path, for a video is the path to the
+     * file, for an image sequence is the path to the single image.
+     * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
+     * is no intrinsics associated to \p imageGray.
+     * @return True if there is a new image, false otherwise.
+     */
+    bool readImage(image::Image<float>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
-  /**
-   * @brief It retrieve the given frame number. In case
-   * of live feeds, it just give the next available frame.
-   * @return true if successful.
-   */
-  bool goToFrame(const unsigned int frame);
+    /**
+     * @brief Provide a new grayscale image from the feed.
+     *
+     * @param[out] imageGray The new image from the feed.
+     * @param[out] camIntrinsics The associated camera intrinsics.
+     * @param[out] mediaPath The original media path, for a video is the path to the
+     * file, for an image sequence is the path to the single image.
+     * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
+     * is no intrinsics associated to \p imageGray.
+     * @return True if there is a new image, false otherwise.
+     */
+    bool readImage(image::Image<unsigned char>& imageGray, camera::Pinhole& camIntrinsics, std::string& mediaPath, bool& hasIntrinsics);
 
-  /**
-   * @brief It acquires the next available frame.
-   * @return true if successful.
-   */  
-  bool goToNextFrame();
+    /**
+     * @brief It returns the number of frames contained of the video. It return infinity
+     * if the feed is a live stream.
+     * @return the number of frames of the video or infinity if it is a live stream.
+     */
+    std::size_t nbFrames() const;
 
-  /**
-   * @brief Return true if the feed is correctly initialized.
-   * 
-   * @return True if the feed is correctly initialized.
-   */  
-  bool isInit() const;
+    /**
+     * @brief It retrieve the given frame number. In case
+     * of live feeds, it just give the next available frame.
+     * @return true if successful.
+     */
+    bool goToFrame(const unsigned int frame);
 
-  /**
-   * @brief Return true if the feed is a video.
-   * 
-   * @return True if the feed is a video.
-   */    
-  bool isVideo() const {return _isVideo; }
-  
-  /**
-   * @brief Return true if the feed is a live stream (e.g. a  webcam).
-   * 
-   * @return True if the feed is correctly initialized.
-   */    
-  bool isLiveFeed() const {return _isLiveFeed; }
+    /**
+     * @brief It acquires the next available frame.
+     * @return true if successful.
+     */
+    bool goToNextFrame();
 
-  virtual ~FeedProvider();
-    
-private:
-  std::unique_ptr<IFeed> _feeder;
-  bool _isVideo;
-  bool _isLiveFeed;
+    /**
+     * @brief Return true if the feed is correctly initialized.
+     *
+     * @return True if the feed is correctly initialized.
+     */
+    bool isInit() const;
 
+    /**
+     * @brief Return true if the feed is a video.
+     *
+     * @return True if the feed is a video.
+     */
+    bool isVideo() const { return _isVideo; }
+
+    /**
+     * @brief Return true if the feed is a live stream (e.g. a  webcam).
+     *
+     * @return True if the feed is correctly initialized.
+     */
+    bool isLiveFeed() const { return _isLiveFeed; }
+
+    /**
+     * @brief Return true if the feed is an SfMData one.
+     *
+     * @return True if the feed is an SfMData feed, false otherwise.
+     */
+    bool isSfMData() const { return _isSfmData; }
+
+    virtual ~FeedProvider();
+
+  private:
+    std::unique_ptr<IFeed> _feeder;
+    bool _isVideo;
+    bool _isLiveFeed;
+    bool _isSfmData;
 };
 
-}//namespace dataio 
-}//namespace aliceVision
-
+}  // namespace dataio
+}  // namespace aliceVision

@@ -13,5 +13,3 @@
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/feature/Regions.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
-
-

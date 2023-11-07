@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/Container.hpp>
 
 #include <vector>
 
@@ -19,36 +20,35 @@ namespace robustEstimation {
 template<typename ModelT_>
 class ISolver
 {
-public:
+  public:
+    /**
+     * @brief Return the minimum number of required samples
+     * @return minimum number of required samples
+     */
+    virtual std::size_t getMinimumNbRequiredSamples() const = 0;
 
-  /**
-   * @brief Return the minimum number of required samples
-   * @return minimum number of required samples
-   */
-  virtual std::size_t getMinimumNbRequiredSamples() const = 0;
+    /**
+     * @brief Return the maximum number of models
+     * @return maximum number of models
+     */
+    virtual std::size_t getMaximumNbModels() const = 0;
 
-  /**
-   * @brief Return the maximum number of models
-   * @return maximum number of models
-   */
-  virtual std::size_t getMaximumNbModels() const = 0;
+    /**
+     * @brief Solve the problem.
+     * @param[in]  x1  A 2xN matrix of column vectors.
+     * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
+     * @param[out] models A vector into which the computed models are stored.
+     */
+    virtual void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models) const = 0;
 
-  /**
-   * @brief Solve the problem.
-   * @param[in]  x1  A 2xN matrix of column vectors.
-   * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
-   * @param[out] models A vector into which the computed models are stored.
-   */
-  virtual void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models) const = 0;
-
-  /**
-   * @brief Solve the problem.
-   * @param[in]  x1  A 2xN matrix of column vectors.
-   * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
-   * @param[out] models A vector into which the computed models are stored.
-   * @param[in]  weights.
-   */
-  virtual void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models, const std::vector<double>& weights) const = 0;
+    /**
+     * @brief Solve the problem.
+     * @param[in]  x1  A 2xN matrix of column vectors.
+     * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
+     * @param[out] models A vector into which the computed models are stored.
+     * @param[in]  weights.
+     */
+    virtual void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models, const std::vector<double>& weights) const = 0;
 };
 
 /**
@@ -57,29 +57,28 @@ public:
 template<typename ModelT_>
 class UndefinedSolver : public ISolver<ModelT_>
 {
-public:
+  public:
+    std::size_t getMinimumNbRequiredSamples() const override
+    {
+        throw std::runtime_error("Undefined solver used in kernel.");
+        return 0;
+    }
 
-  std::size_t getMinimumNbRequiredSamples() const override
-  {
-    throw std::runtime_error("Undefined solver used in kernel.");
-    return 0;
-  }
+    std::size_t getMaximumNbModels() const override
+    {
+        throw std::runtime_error("Undefined solver used in kernel.");
+        return 0;
+    }
 
-  std::size_t getMaximumNbModels() const override
-  {
-    throw std::runtime_error("Undefined solver used in kernel.");
-    return 0;
-  }
+    void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models) const override
+    {
+        throw std::runtime_error("Undefined solver used in kernel.");
+    }
 
-  void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models) const override
-  {
-    throw std::runtime_error("Undefined solver used in kernel.");
-  }
-
-  void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models, const std::vector<double>& weights) const override
-  {
-    throw std::runtime_error("Undefined solver used in kernel.");
-  }
+    void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models, const std::vector<double>& weights) const override
+    {
+        throw std::runtime_error("Undefined solver used in kernel.");
+    }
 };
 
 /**
@@ -88,29 +87,20 @@ public:
 template<typename MatrixT>
 struct MatrixModel
 {
-  MatrixModel() = default;
+    MatrixModel() = default;
 
-  explicit MatrixModel(const MatrixT& matrix)
-    : _matrix(matrix)
-  {}
+    explicit MatrixModel(const MatrixT& matrix)
+      : _matrix(matrix)
+    {}
 
-  inline const MatrixT& getMatrix() const
-  {
-    return _matrix;
-  }
+    inline const MatrixT& getMatrix() const { return _matrix; }
 
-  inline MatrixT& getMatrix()
-  {
-    return _matrix;
-  }
+    inline MatrixT& getMatrix() { return _matrix; }
 
-  inline void setMatrix(const MatrixT& matrix)
-  {
-    _matrix = matrix;
-  }
+    inline void setMatrix(const MatrixT& matrix) { _matrix = matrix; }
 
-protected:
-  MatrixT _matrix{};
+  protected:
+    MatrixT _matrix{};
 };
 
 /**
@@ -123,6 +113,5 @@ using Mat3Model = MatrixModel<Mat3>;
  */
 using Mat34Model = MatrixModel<Mat34>;
 
-
-} // namespace robustEstimation
-} // namespace aliceVision
+}  // namespace robustEstimation
+}  // namespace aliceVision

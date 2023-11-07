@@ -17,12 +17,11 @@
 #include <aliceVision/image/imageAlgo.hpp>
 
 // System
-#include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 // Reading command line options
 #include <boost/program_options.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
 // IO
@@ -53,14 +52,17 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
     for (const auto& viewIt : views)
     {
         IndexT viewId = viewIt->getViewId();
-        const std::string warpedPath = viewIt->getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = viewIt->getImage().getMetadata().at("AliceVision:warpedPath");
 
         // Load mask
         const std::string maskPath = (fs::path(inputPath) / (warpedPath + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImageDirect(maskPath, mask);
-        image::downscaleImageInplace(mask, downscale);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, mask);
+        }
 
         // Get offset
         oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
@@ -72,7 +74,10 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
         image::Image<float> weights;
         image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
-        image::downscaleImageInplace(weights, downscale);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, weights);
+        }
 
         if (!seams.appendWithLoop(mask, weights, viewId, offsetX, offsetY)) 
         {
@@ -104,21 +109,27 @@ bool computeGCLabels(image::Image<IndexT>& labels, const std::vector<std::shared
     for (const auto& viewIt : views)
     {
         IndexT viewId = viewIt->getViewId();
-        const std::string warpedPath = viewIt->getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = viewIt->getImage().getMetadata().at("AliceVision:warpedPath");
 
         // Load mask
         const std::string maskPath = (fs::path(inputPath) / (warpedPath + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImageDirect(maskPath, mask);
-        image::downscaleImageInplace(mask, downscale);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, mask);
+        }
 
         // Load Color
         const std::string colorsPath = (fs::path(inputPath) / (warpedPath + ".exr")).string();
         ALICEVISION_LOG_TRACE("Load colors with path " << colorsPath);
         image::Image<image::RGBfColor> colors;
         image::readImage(colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
-        image::downscaleImageInplace(colors, downscale);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, colors);
+        }
 
         // Get offset
         oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
@@ -244,15 +255,15 @@ int aliceVision_main(int argc, char** argv)
 
         for (int idx = 0; idx < images.size(); idx++)
         {
-            std::shared_ptr<sfmData::View> newView(new sfmData::View(*pv.second));
+            std::shared_ptr<sfmData::View> newView(pv.second->clone());
             
-            newView->addMetadata("AliceVision:previousViewId", std::to_string(pv.first));
-            newView->addMetadata("AliceVision:imageCounter", std::to_string(idx));
-            newView->addMetadata("AliceVision:warpedPath", images[idx]);
+            newView->getImage().addMetadata("AliceVision:previousViewId", std::to_string(pv.first));
+            newView->getImage().addMetadata("AliceVision:imageCounter", std::to_string(idx));
+            newView->getImage().addMetadata("AliceVision:warpedPath", images[idx]);
             const IndexT newIndex = sfmData::computeViewUID(*newView);
 
             newView->setViewId(newIndex);
-            sfmData.getViews()[newIndex] = newView;
+            sfmData.getViews().emplace(newIndex, newView);
         }
     }
     
@@ -263,7 +274,7 @@ int aliceVision_main(int argc, char** argv)
     int downscaleFactor = 1;
     {
         const IndexT viewId = *sfmData.getValidViews().begin();
-        const std::string warpedPath = sfmData.getViews()[viewId]->getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = sfmData.getViews().at(viewId)->getImage().getMetadata().at("AliceVision:warpedPath");
 
         const std::string viewFilepath = (fs::path(warpingFolder) / (warpedPath + ".exr")).string();
         ALICEVISION_LOG_TRACE("Read panorama size from file: " << viewFilepath);
@@ -310,7 +321,7 @@ int aliceVision_main(int argc, char** argv)
             continue;
         }
 
-        const std::string warpedPath = view->getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = view->getImage().getMetadata().at("AliceVision:warpedPath");
 
         // Load mask
         const std::string maskPath = (fs::path(warpingFolder) / (warpedPath + "_mask.exr")).string();

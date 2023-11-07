@@ -21,75 +21,73 @@ namespace localization {
 template<class T>
 class BoundedBuffer
 {
-  
-private:
-  
-  typedef std::deque<T> Buffer;
-  
-  Buffer _buffer;
+  private:
+    typedef std::deque<T> Buffer;
 
-  /// The fixed maximum size for the buffer
-  std::size_t _maxSize;
-  
-public:
-  
-  /**
-   * @brief Build a bounded buffer of the given size.
-   * @param[in] maxSize The maximum size of the buffer. Whenever a new element is 
-   * pushed into the buffer, if the buffer is full, the first element is removed
-   * in a FIFO strategy in order to make place for the new element.
-   */
-  BoundedBuffer(std::size_t maxSize) : _maxSize(maxSize) { }
-  
-  typedef typename Buffer::iterator iterator;
-  typedef typename Buffer::const_iterator const_iterator;
+    Buffer _buffer;
 
-  /**
-   * @brief Returns an iterator pointing to the first element of the buffer.
-   * 
-   * @return the iterator pointing to the first element of the buffer.
-   */
-  iterator begin() { return _buffer.begin(); }
+    /// The fixed maximum size for the buffer
+    std::size_t _maxSize;
 
-  /**
-   * @brief Returns an iterator pointing to the last element of the buffer.
-   * 
-   * @return the iterator pointing to the last element of the buffer.
-   */
-  iterator end()  { return _buffer.end(); }
-  
-  /**
-   * @brief Returns a const iterator pointing to the first element of the buffer.
-   * 
-   * @return the const iterator pointing to the first element of the buffer.
-   */
-  const_iterator begin() const { return _buffer.begin(); }
+  public:
+    /**
+     * @brief Build a bounded buffer of the given size.
+     * @param[in] maxSize The maximum size of the buffer. Whenever a new element is
+     * pushed into the buffer, if the buffer is full, the first element is removed
+     * in a FIFO strategy in order to make place for the new element.
+     */
+    BoundedBuffer(std::size_t maxSize)
+      : _maxSize(maxSize)
+    {}
 
-  /**
-   * @brief Returns an iterator pointing to the last element of the buffer.
-   * 
-   * @return the iterator pointing to the last element of the buffer.
-   */
-  const_iterator end() const { return _buffer.end(); }
-  
-  /**
-   * @brief It add a new element at the end of the buffer. If the buffer is full
-   * the first element is removed before the insertion (FIFO strategy).
-   * @param[in] fm The element to add.
-   */
-  template <typename... Args>
-  void emplace_back(Args&&... args)
-  {
-    assert(_buffer.size() <= _maxSize);
+    typedef typename Buffer::iterator iterator;
+    typedef typename Buffer::const_iterator const_iterator;
 
-    if(_buffer.size() == _maxSize)
+    /**
+     * @brief Returns an iterator pointing to the first element of the buffer.
+     *
+     * @return the iterator pointing to the first element of the buffer.
+     */
+    iterator begin() { return _buffer.begin(); }
+
+    /**
+     * @brief Returns an iterator pointing to the last element of the buffer.
+     *
+     * @return the iterator pointing to the last element of the buffer.
+     */
+    iterator end() { return _buffer.end(); }
+
+    /**
+     * @brief Returns a const iterator pointing to the first element of the buffer.
+     *
+     * @return the const iterator pointing to the first element of the buffer.
+     */
+    const_iterator begin() const { return _buffer.begin(); }
+
+    /**
+     * @brief Returns an iterator pointing to the last element of the buffer.
+     *
+     * @return the iterator pointing to the last element of the buffer.
+     */
+    const_iterator end() const { return _buffer.end(); }
+
+    /**
+     * @brief It add a new element at the end of the buffer. If the buffer is full
+     * the first element is removed before the insertion (FIFO strategy).
+     * @param[in] fm The element to add.
+     */
+    template<typename... Args>
+    void emplace_back(Args&&... args)
     {
-      _buffer.pop_front();
-    }
-    _buffer.emplace_back(args...);
-  }
+        assert(_buffer.size() <= _maxSize);
 
+        if (_buffer.size() == _maxSize)
+        {
+            _buffer.pop_front();
+        }
+        _buffer.emplace_back(args...);
+    }
 };
 
-}
-}
+}  // namespace localization
+}  // namespace aliceVision

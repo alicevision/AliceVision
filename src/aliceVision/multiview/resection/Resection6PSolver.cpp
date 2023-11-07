@@ -7,6 +7,7 @@
 
 #include "Resection6PSolver.hpp"
 #include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -15,14 +16,14 @@ namespace resection {
 void translate(const Mat3X& X, const Vec3& vecTranslation, Mat3X* XPoints)
 {
     XPoints->resize(X.rows(), X.cols());
-    for(int i = 0; i < X.cols(); ++i)
+    for (int i = 0; i < X.cols(); ++i)
         XPoints->col(i) = X.col(i) + vecTranslation;
 }
 
-template <typename TMat, typename TVec>
+template<typename TMat, typename TVec>
 double nullspaceRatio(TMat* A, TVec* nullspace)
 {
-    if(A->rows() >= A->cols())
+    if (A->rows() >= A->cols())
     {
         Eigen::JacobiSVD<TMat> svd(*A, Eigen::ComputeFullV);
         (*nullspace) = svd.matrixV().col(A->cols() - 1);
@@ -35,18 +36,18 @@ double nullspaceRatio(TMat* A, TVec* nullspace)
     A_extended.block(A->rows(), 0, A->cols() - A->rows(), A->cols()).setZero();
     A_extended.block(0, 0, A->rows(), A->cols()) = (*A);
 
-    return Nullspace(&A_extended, nullspace);
+    return Nullspace(A_extended, *nullspace);
 }
 
 /**
  * @brief Setup the Direct Linear Transform.
  *        Use template in order to support fixed or dynamic sized matrix.
  */
-template <typename Matrix>
+template<typename Matrix>
 void buildActionMatrix(Matrix& A, const Mat& pt2D, const Mat& XPoints)
 {
     const size_t n = pt2D.cols();
-    for(size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; ++i)
     {
         size_t row_index = i * 2;
         const Vec3& X = XPoints.col(i);
@@ -71,12 +72,11 @@ void buildActionMatrix(Matrix& A, const Mat& pt2D, const Mat& XPoints)
         A(row_index, 11) = -1.0 * x(1);
     }
     // Normalize each row
-    for(size_t i = 0; i < static_cast<size_t>(A.rows()); ++i)
+    for (size_t i = 0; i < static_cast<size_t>(A.rows()); ++i)
         A.row(i).normalize();
 }
 
-void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, bool bcheck,
-                  const std::vector<double>& weights)
+void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, bool bcheck, const std::vector<double>& weights)
 {
     assert(2 == x2d.rows());
     assert(3 == x3d.rows());
@@ -87,8 +87,7 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
     //-- Translate 3D points in order to have X0 = (0,0,0,1).
     Vec3 vecTranslation = -x3d.col(0);
     Mat4 translationMatrix = Mat4::Identity();
-    translationMatrix << 1., .0, .0, vecTranslation(0), .0, 1., .0, vecTranslation(1), .0, .0, 1., vecTranslation(2),
-        .0, .0, .0, 1;
+    translationMatrix << 1., .0, .0, vecTranslation(0), .0, 1., .0, vecTranslation(1), .0, .0, 1., vecTranslation(2), .0, .0, .0, 1;
     Mat3X XPoints;
     translate(x3d, vecTranslation, &XPoints);
 
@@ -98,16 +97,16 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
     Vec12 p;
     double ratio = -1.0;
 
-    if(numPts == 6)
+    if (numPts == 6)
     {
         // In the case of minimal configuration we use fixed sized matrix to let
         // Eigen and the compiler doing the maximum of optimization.
         using Mat12 = Eigen::Matrix<double, 12, 12>;
         Mat12 A = Mat12::Zero(12, 12);
         buildActionMatrix(A, x2d, XPoints);
-        if(!weights.empty())
+        if (!weights.empty())
         {
-            for(Mat12::Index ptIdx = 0; ptIdx < numPts; ++ptIdx)
+            for (Mat12::Index ptIdx = 0; ptIdx < numPts; ++ptIdx)
             {
                 A.row(ptIdx * 2) *= weights[ptIdx];
                 A.row(ptIdx * 2 + 1) *= weights[ptIdx];
@@ -119,9 +118,9 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
     {
         Mat A = Mat::Zero(numPts * 2, 12);
         buildActionMatrix(A, x2d, XPoints);
-        if(!weights.empty())
+        if (!weights.empty())
         {
-            for(Mat::Index ptIdx = 0; ptIdx < numPts; ++ptIdx)
+            for (Mat::Index ptIdx = 0; ptIdx < numPts; ++ptIdx)
             {
                 A.row(ptIdx * 2) *= weights[ptIdx];
                 A.row(ptIdx * 2 + 1) *= weights[ptIdx];
@@ -130,9 +129,9 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
         ratio = nullspaceRatio(&A, &p);
     }
 
-    if(bcheck)
+    if (bcheck)
     {
-        if(ratio > 1e-5) // assert that at least only one solution if found by SVD
+        if (ratio > 1e-5)  // assert that at least only one solution if found by SVD
         {
             Mat34 P = Map<Mat>(p.data(), 4, 3).transpose();
             P = P * translationMatrix;
@@ -140,17 +139,17 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
 
             Mat3 K, R;
             Vec3 t;
-            KRt_from_P(P, &K, &R, &t);
+            KRt_from_P(P, K, R, t);
 
             // assert point in front of the cam
             std::size_t cpt = 0;
 
-            for(std::size_t i = 0; i < numPts; ++i)
+            for (std::size_t i = 0; i < numPts; ++i)
             {
                 cpt += (Depth(R, t, x3d.col(i)) > 0) ? 1 : 0;
             }
 
-            if(cpt == numPts)
+            if (cpt == numPts)
             {
                 models.emplace_back(P);
             }
@@ -171,12 +170,14 @@ void Resection6PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robust
     solveProblem(x2d, x3d, models, true, weights);
 }
 
-void Resection6PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models,
+void Resection6PSolver::solve(const Mat& x2d,
+                              const Mat& x3d,
+                              std::vector<robustEstimation::Mat34Model>& models,
                               const std::vector<double>& weights) const
 {
     solveProblem(x2d, x3d, models, true, weights);
 }
 
-} // namespace resection
-} // namespace multiview
-} // namespace aliceVision
+}  // namespace resection
+}  // namespace multiview
+}  // namespace aliceVision

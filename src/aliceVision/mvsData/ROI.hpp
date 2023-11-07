@@ -8,22 +8,22 @@
 
 // allows code sharing between NVCC and other compilers
 #if defined(__NVCC__)
-#define CUDA_HOST_DEVICE __host__ __device__
-#define CUDA_HOST __host__
-#define CUDA_CEIL(f)  ceil(f)
-#define CUDA_FLOOR(f) floor(f)
-#define CUDA_MIN(a,b) min(a,b)
-#define CUDA_MAX(a,b) max(a,b)
+    #define CUDA_HOST_DEVICE __host__ __device__
+    #define CUDA_HOST __host__
+    #define CUDA_CEIL(f) ceil(f)
+    #define CUDA_FLOOR(f) floor(f)
+    #define CUDA_MIN(a, b) min(a, b)
+    #define CUDA_MAX(a, b) max(a, b)
 #else
-#define CUDA_HOST_DEVICE
-#define CUDA_HOST
-#define CUDA_CEIL(f)  std::ceil(f)
-#define CUDA_FLOOR(f) std::floor(f)
-#define CUDA_MIN(a,b) std::min(a, b)
-#define CUDA_MAX(a,b) std::max(a, b)
-#include <algorithm>
-#include <cmath>
-#include <ostream>
+    #define CUDA_HOST_DEVICE
+    #define CUDA_HOST
+    #define CUDA_CEIL(f) std::ceil(f)
+    #define CUDA_FLOOR(f) std::floor(f)
+    #define CUDA_MIN(a, b) std::min(a, b)
+    #define CUDA_MAX(a, b) std::max(a, b)
+    #include <algorithm>
+    #include <cmath>
+    #include <ostream>
 #endif
 
 namespace aliceVision {
@@ -45,12 +45,11 @@ struct Range
      * @param[in] in_begin the range begin index
      * @param[in] in_end the range end index
      */
-    CUDA_HOST_DEVICE Range(unsigned int in_begin, 
-                           unsigned int in_end)
-        : begin(in_begin)
-        , end(in_end)
+    CUDA_HOST_DEVICE Range(unsigned int in_begin, unsigned int in_end)
+      : begin(in_begin),
+        end(in_end)
     {}
-    
+
     /**
      * @brief Return true if the given index is contained in the Range.
      * @param[in] i the given index
@@ -65,17 +64,10 @@ struct Range
      * @param[in] i the given index
      * @return true if the given index point is contained in the Range
      */
-    CUDA_HOST inline bool contains(unsigned int i) const
-    {
-        return ((begin <= i) && (end > i));
-    }
+    CUDA_HOST inline bool contains(unsigned int i) const { return ((begin <= i) && (end > i)); }
 };
 
-inline Range intersect(const Range& a, const Range& b)
-{
-    return Range(CUDA_MAX(a.begin, b.begin),
-                 CUDA_MIN(a.end, b.end));
-}
+inline Range intersect(const Range& a, const Range& b) { return Range(CUDA_MAX(a.begin, b.begin), CUDA_MIN(a.end, b.end)); }
 
 /*
  * @struct ROI
@@ -95,12 +87,9 @@ struct ROI
      * @param[in] in_beginY the range Y begin index
      * @param[in] in_endY the range Y end index
      */
-    CUDA_HOST_DEVICE ROI(unsigned int in_beginX, 
-                         unsigned int in_endX,
-                         unsigned int in_beginY,
-                         unsigned int in_endY)
-        : x(in_beginX, in_endX)
-        , y(in_beginY, in_endY)
+    CUDA_HOST_DEVICE ROI(unsigned int in_beginX, unsigned int in_endX, unsigned int in_beginY, unsigned int in_endY)
+      : x(in_beginX, in_endX),
+        y(in_beginY, in_endY)
     {}
 
     /**
@@ -108,17 +97,16 @@ struct ROI
      * @param[in] in_rangeX the X index range
      * @param[in] in_rangeY the Y index range
      */
-    CUDA_HOST_DEVICE ROI(const Range& in_rangeX, 
-                         const Range& in_rangeY)
-        : x(in_rangeX)
-        , y(in_rangeY)
+    CUDA_HOST_DEVICE ROI(const Range& in_rangeX, const Range& in_rangeY)
+      : x(in_rangeX),
+        y(in_rangeY)
     {}
 
     /**
      * @brief Get the ROI width
      * @return the X range size
      */
-    CUDA_HOST_DEVICE inline unsigned int width()  const { return x.size(); }
+    CUDA_HOST_DEVICE inline unsigned int width() const { return x.size(); }
 
     /**
      * @brief Get the ROI height
@@ -134,10 +122,7 @@ struct ROI
      * @param[in] in_y the given 2d point Y coordinate
      * @return true if the given 2d point is contained in the ROI
      */
-    CUDA_HOST inline bool contains(unsigned int in_x, unsigned int in_y) const
-    {
-        return (x.contains(in_x) && y.contains(in_y));
-    }
+    CUDA_HOST inline bool contains(unsigned int in_x, unsigned int in_y) const { return (x.contains(in_x) && y.contains(in_y)); }
 };
 
 /**
@@ -149,8 +134,7 @@ struct ROI
  */
 CUDA_HOST inline bool checkImageROI(const ROI& roi, int width, int height)
 {
-    return ((roi.x.end <= (unsigned int)(width))  && (roi.x.begin < roi.x.end) &&
-            (roi.y.end <= (unsigned int)(height)) && (roi.y.begin < roi.y.end));
+    return ((roi.x.end <= (unsigned int)(width)) && (roi.x.begin < roi.x.end) && (roi.y.end <= (unsigned int)(height)) && (roi.y.begin < roi.y.end));
 }
 
 /**
@@ -194,11 +178,7 @@ CUDA_HOST inline Range inflateRange(const Range& range, float factor)
  * @param[in] downscale the downscale factor to apply
  * @return the downscaled ROI
  */
-CUDA_HOST inline ROI downscaleROI(const ROI& roi, float downscale)
-{ 
-    return ROI(downscaleRange(roi.x, downscale), 
-               downscaleRange(roi.y, downscale));
-}
+CUDA_HOST inline ROI downscaleROI(const ROI& roi, float downscale) { return ROI(downscaleRange(roi.x, downscale), downscaleRange(roi.y, downscale)); }
 
 /**
  * @brief Upscale the given ROI with the given upscale factor
@@ -206,11 +186,7 @@ CUDA_HOST inline ROI downscaleROI(const ROI& roi, float downscale)
  * @param[in] upscale the upscale factor to apply
  * @return the upscaled ROI
  */
-CUDA_HOST inline ROI upscaleROI(const ROI& roi, float upscale)
-{
-    return ROI(upscaleRange(roi.x, upscale),
-               upscaleRange(roi.y, upscale));
-}
+CUDA_HOST inline ROI upscaleROI(const ROI& roi, float upscale) { return ROI(upscaleRange(roi.x, upscale), upscaleRange(roi.y, upscale)); }
 
 /**
  * @brief Inflate the given ROI with the given factor
@@ -218,17 +194,9 @@ CUDA_HOST inline ROI upscaleROI(const ROI& roi, float upscale)
  * @param[in] factor the inflate factor to apply
  * @return the Inflated ROI
  */
-CUDA_HOST inline ROI inflateROI(const ROI& roi, float factor)
-{
-    return ROI(inflateRange(roi.x, factor),
-               inflateRange(roi.y, factor));
-}
+CUDA_HOST inline ROI inflateROI(const ROI& roi, float factor) { return ROI(inflateRange(roi.x, factor), inflateRange(roi.y, factor)); }
 
-
-inline ROI intersect(const ROI& a, const ROI& b)
-{
-    return ROI(intersect(a.x, b.x), intersect(a.y, b.y));
-}
+inline ROI intersect(const ROI& a, const ROI& b) { return ROI(intersect(a.x, b.x), intersect(a.y, b.y)); }
 
 #if !defined(__NVCC__)
 inline std::ostream& operator<<(std::ostream& os, const Range& range)
@@ -243,5 +211,4 @@ inline std::ostream& operator<<(std::ostream& os, const ROI& roi)
 }
 #endif
 
-} // namespace aliceVision
-
+}  // namespace aliceVision

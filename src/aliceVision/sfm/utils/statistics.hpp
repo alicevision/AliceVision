@@ -11,7 +11,7 @@ namespace aliceVision {
 
 namespace sfmData {
 class SfMData;
-} // namespace sfmData
+}  // namespace sfmData
 
 namespace sfm {
 
@@ -22,5 +22,5 @@ namespace sfm {
  */
 double RMSE(const sfmData::SfMData& sfmData);
 
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

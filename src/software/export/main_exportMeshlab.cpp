@@ -10,7 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -96,7 +96,7 @@ int aliceVision_main(int argc, char **argv)
     Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
 
     // We have a valid view with a corresponding camera & pose
-    const std::string srcImage = view->getImagePath();
+    const std::string srcImage = view->getImage().getImagePath();
     std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
     std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
     if (!camPinHole) {
@@ -112,12 +112,12 @@ int aliceVision_main(int argc, char **argv)
 
     Mat3 R, K;
     Vec3 t;
-    KRt_from_P( P, &K, &R, &t);
+    KRt_from_P( P, K, R, t);
 
     const Vec3 optical_center = R.transpose() * t;
 
     outfile
-      << "  <MLRaster label=\"" << fs::path(view->getImagePath()).filename().string() << "\">" << std::endl
+      << "  <MLRaster label=\"" << fs::path(view->getImage().getImagePath()).filename().string() << "\">" << std::endl
       << "   <VCGCamera TranslationVector=\""
       << optical_center[0] << " "
       << optical_center[1] << " "

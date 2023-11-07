@@ -17,28 +17,26 @@ namespace sensorDB {
  */
 struct Datasheet
 {
-  Datasheet() = default;
+    Datasheet() = default;
 
-  /**
-   * @brief Datasheet Constructor
-   * @param[in] brand
-   * @param[in] model
-   * @param[in] sensorSize
-   */
-  Datasheet(const std::string& brand,
-            const std::string& model,
-            const double& sensorWidth)
-    : _brand(brand)
-    , _model(model)
-    , _sensorWidth(sensorWidth)
-  {}
+    /**
+     * @brief Datasheet Constructor
+     * @param[in] brand
+     * @param[in] model
+     * @param[in] sensorSize
+     */
+    Datasheet(const std::string& brand, const std::string& model, const double& sensorWidth)
+      : _brand(brand),
+        _model(model),
+        _sensorWidth(sensorWidth)
+    {}
 
-  bool operator==(const Datasheet& other) const;
+    bool operator==(const Datasheet& other) const;
 
-  std::string _brand;
-  std::string _model;
-  double _sensorWidth;
+    std::string _brand;
+    std::string _model;
+    double _sensorWidth;
 };
 
-} // namespace sensorDB
-} // namespace aliceVision
+}  // namespace sensorDB
+}  // namespace aliceVision

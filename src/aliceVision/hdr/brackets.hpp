@@ -17,39 +17,44 @@ enum class ECalibrationMethod
     DEBEVEC,
     GROSSBERG,
     LAGUERRE,
+    AUTO,
 };
 
 /**
- * @brief convert an enum ECalibrationMethod to its corresponding string
- * @param ECalibrationMethod
- * @return String
+ * @brief Convert a calibration method from an ECalibrationMethod enum to its corresponding string
+ * @param[in] calibrationMethod the ECalibrationMethod enum to convert to a string
+ * @return the string containing the calibration method corresponding to the input ECalibration enum
  */
 inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod calibrationMethod)
 {
     switch (calibrationMethod)
     {
-    case ECalibrationMethod::LINEAR:
-        return "linear";
-    case ECalibrationMethod::DEBEVEC:
-        return "debevec";
-    case ECalibrationMethod::GROSSBERG:
-        return "grossberg";
-    case ECalibrationMethod::LAGUERRE:
-        return "laguerre";
+        case ECalibrationMethod::AUTO:
+            return "auto";
+        case ECalibrationMethod::LINEAR:
+            return "linear";
+        case ECalibrationMethod::DEBEVEC:
+            return "debevec";
+        case ECalibrationMethod::GROSSBERG:
+            return "grossberg";
+        case ECalibrationMethod::LAGUERRE:
+            return "laguerre";
     }
     throw std::out_of_range("Invalid method name enum");
 }
 
 /**
- * @brief convert a string calibration method name to its corresponding enum ECalibrationMethod
- * @param ECalibrationMethod
- * @return String
+ * @brief Convert a string containing the calibration method name to its corresponding ECalibrationMethod enum
+ * @param[in] calibrationMethodName the string containing the calibration method name to convert to an ECalibrationMethod enum
+ * @return the ECalibrationMethod enum corresponding to the input calibration method
  */
 inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& calibrationMethodName)
 {
     std::string methodName = calibrationMethodName;
     std::transform(methodName.begin(), methodName.end(), methodName.begin(), ::tolower);
 
+    if (methodName == "auto")
+        return ECalibrationMethod::AUTO;
     if (methodName == "linear")
         return ECalibrationMethod::LINEAR;
     if (methodName == "debevec")
@@ -59,7 +64,7 @@ inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& cal
     if (methodName == "laguerre")
         return ECalibrationMethod::LAGUERRE;
 
-    throw std::out_of_range("Invalid method name : '" + calibrationMethodName + "'");
+    throw std::out_of_range("Invalid method name: '" + calibrationMethodName + "'");
 }
 
 inline std::ostream& operator<<(std::ostream& os, ECalibrationMethod calibrationMethodName)
@@ -77,24 +82,33 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
 }
 
 /**
- * @brief Estimate brackets information from sfm data
- * @param[out] groups: estimated groups
- * @param[in] sfmData
- * @param[in] countBrackets: number of brackets
- * @return false if an error occur, like an invalid sfm data
+ * @brief Estimate the brackets information from the SfM data
+ * @param[out] groups the estimated groups
+ * @param[in] sfmData SfM data to estimate the brackets from
+ * @param[in] countBrackets the number of brackets
+ * @return false if an error occurs (e.g. an invalid SfMData file has been provided), true otherwise
  */
-bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, const sfmData::SfMData& sfmData, size_t countBrackets);
+bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
+                                 const sfmData::SfMData& sfmData,
+                                 size_t countBrackets);
 
 /**
  * @brief Select the target views (used for instance to define the expoure)
- * @param[out] targetViews: estimated target views
- * @param[in] groups: groups of Views corresponding to multi-bracketing. Warning: Needs be sorted by exposure time.
- * @param[in] offsetRefBracketIndex: 0 mean center bracket and you can choose +N/-N to select the reference bracket
- * @param[in] targetIndexesFilename: in case offsetRefBracketIndex is out of range the number of views in a group target indexes can be read from a text file
- *                                   if the file cannot be read or does not contain the expected number of values (same as view group number) and
- *                                   if offsetRefBracketIndex is out of range the number of views then a clamped values of offsetRefBracketIndex is considered
+ * @param[out] targetViews the estimated target views
+ * @param[in] groups the groups of Views corresponding to multi-bracketing. Warning: Needs be sorted by exposure time.
+ * @param[in] offsetRefBracketIndex 0 means center bracket and you can choose +N/-N to select the reference bracket
+ * @param[in] targetIndexesFilename in case offsetRefBracketIndex is out of range, the number of views in a group target
+ *                                  indexes can be read from a text file. If the file cannot be read or does not contain
+ *                                  the expected number of values (same as view group number) and if
+ *                                  offsetRefBracketIndex is out of range, the number of views then a clamped value of
+ *                                  offsetRefBracketIndex is considered
+ * @return the index of the target view
  */
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex, const std::string& targetIndexesFilename = "", const double meanTargetedLuma = 0.4);
+int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
+                      std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
+                      int offsetRefBracketIndex,
+                      const std::string& targetIndexesFilename = "",
+                      const double meanTargetedLuma = 0.4);
 
-}
-}
+}  // namespace hdr
+}  // namespace aliceVision

@@ -21,22 +21,18 @@ namespace sfmData {
  */
 struct Observation
 {
-  Observation() {}
-  Observation(const Vec2 & p, IndexT idFeat, double scale_)
-    : x(p)
-    , id_feat(idFeat)
-    , scale(scale_)
-  {}
+    Observation() {}
+    Observation(const Vec2& p, IndexT idFeat, double scale_)
+      : x(p),
+        id_feat(idFeat),
+        scale(scale_)
+    {}
 
-  Vec2 x;
-  IndexT id_feat = UndefinedIndexT;
-  double scale = 0.0;
+    Vec2 x;
+    IndexT id_feat = UndefinedIndexT;
+    double scale = 0.0;
 
-  bool operator==(const Observation& other) const
-  {
-    return AreVecNearEqual(x, other.x, 1e-6) &&
-           id_feat == other.id_feat;
-  }
+    bool operator==(const Observation& other) const { return AreVecNearEqual(x, other.x, 1e-6) && id_feat == other.id_feat; }
 };
 
 /// Observations are indexed by their View_id
@@ -47,32 +43,32 @@ typedef stl::flat_map<IndexT, Observation> Observations;
  */
 struct Landmark
 {
-  Landmark() = default;
-  explicit Landmark(feature::EImageDescriberType descType): descType(descType) {}
-  Landmark(const Vec3& pos3d,
-           feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED,
-           const Observations& observations = Observations(),
-           const image::RGBColor &color = image::WHITE)
-    : X(pos3d)
-    , descType(descType)
-    , observations(observations)
-    , rgb(color)
-  {}
+    Landmark() = default;
+    explicit Landmark(feature::EImageDescriberType descType)
+      : descType(descType)
+    {}
+    Landmark(const Vec3& pos3d,
+             feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED,
+             const Observations& observations = Observations(),
+             const image::RGBColor& color = image::WHITE)
+      : X(pos3d),
+        descType(descType),
+        observations(observations),
+        rgb(color)
+    {}
 
-  Vec3 X;
-  feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
-  Observations observations;
-  image::RGBColor rgb = image::WHITE;    //!> the color associated to the point
-  
-  bool operator==(const Landmark& other) const
-  {
-    return AreVecNearEqual(X, other.X, 1e-3) &&
-           AreVecNearEqual(rgb, other.rgb, 1e-3) &&
-           observations == other.observations &&
-           descType == other.descType;
-  }
-  inline bool operator!=(const Landmark& other) const { return !(*this == other); }
+    Vec3 X;
+    feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
+    Observations observations;
+    image::RGBColor rgb = image::WHITE;  //!> the color associated to the point
+
+    bool operator==(const Landmark& other) const
+    {
+        return AreVecNearEqual(X, other.X, 1e-3) && AreVecNearEqual(rgb, other.rgb, 1e-3) && observations == other.observations &&
+               descType == other.descType;
+    }
+    inline bool operator!=(const Landmark& other) const { return !(*this == other); }
 };
 
-} // namespace sfmData
-} // namespace aliceVision
+}  // namespace sfmData
+}  // namespace aliceVision

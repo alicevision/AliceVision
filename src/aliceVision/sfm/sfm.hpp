@@ -11,8 +11,8 @@
 
 #include <aliceVision/sfm/filters.hpp>
 #include <aliceVision/sfm/FrustumFilter.hpp>
-#include <aliceVision/sfm/BundleAdjustment.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/sfm/generateReport.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
@@ -29,5 +29,3 @@
 #include <aliceVision/sfm/pipeline/sequential/ReconstructionEngine_sequentialSfM.hpp>
 #include <aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
-#include <aliceVision/sfm/pipeline/localization/SfMLocalizationSingle3DTrackObservationDatabase.hpp>
-

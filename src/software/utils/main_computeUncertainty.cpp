@@ -4,10 +4,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
@@ -91,7 +91,7 @@ int aliceVision_main(int argc, char **argv)
     // setPts2Fix(opt, mutable_points.size() / 3, mutable_points.data());
     options._numCams = sfmData.getValidViews().size();
     options._camParams = 6;
-    options._numPoints = sfmData.structure.size();
+    options._numPoints = sfmData.getLandmarks().size();
     options._numObs = jacobian.num_rows / 2;
     options._algorithm = cov::EAlgorithm_stringToEnum(algorithm);
     options._epsilon = 1e-10;
@@ -102,8 +102,8 @@ int aliceVision_main(int argc, char **argv)
 
     cov::Statistic statistic;
     std::vector<double> points3D;
-    points3D.reserve(sfmData.structure.size() * 3);
-    for(auto& landmarkIt: sfmData.structure)
+    points3D.reserve(sfmData.getLandmarks().size() * 3);
+    for(auto& landmarkIt: sfmData.getLandmarks())
     {
       double* p = landmarkIt.second.X.data();
       points3D.push_back(p[0]);

@@ -42,4 +42,5 @@ alicevision_add_library(aliceVision_panorama
   PRIVATE_LINKS
     aliceVision_system
     aliceVision_image
+    aliceVision_camera
 )

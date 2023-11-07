@@ -1,43 +1,44 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include "cachedImage.hpp"
 
-namespace aliceVision
-{
+namespace aliceVision {
 
-template <>
-bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
+template<>
+bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path, const image::EStorageDataType& storageDataType)
 {
-
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
-    if(!out)
+    if (!out)
     {
         return false;
     }
 
     oiio::TypeDesc typeColor = oiio::TypeDesc::FLOAT;
-    if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite) 
+    if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite)
     {
         typeColor = oiio::TypeDesc::HALF;
-    } 
-		
+    }
 
     oiio::ImageSpec spec(_width, _height, 4, typeColor);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
-    if(!out->open(path, spec))
+    if (!out->open(path, spec))
     {
         return false;
     }
-    
-    for(int i = 0; i < _tilesArray.size(); i++)
-    {
 
+    for (int i = 0; i < _tilesArray.size(); i++)
+    {
         std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
 
-        for(int j = 0; j < row.size(); j++)
+        for (int j = 0; j < row.size(); j++)
         {
-
-            if(!row[j]->acquire())
+            if (!row[j]->acquire())
             {
                 return false;
             }
@@ -53,40 +54,37 @@ bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path, const i
     return true;
 }
 
-template <>
-bool CachedImage<image::RGBfColor>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
+template<>
+bool CachedImage<image::RGBfColor>::writeImage(const std::string& path, const image::EStorageDataType& storageDataType)
 {
-
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
-    if(!out)
+    if (!out)
     {
         return false;
     }
 
     oiio::TypeDesc typeColor = oiio::TypeDesc::FLOAT;
-    if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite) 
+    if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite)
     {
         typeColor = oiio::TypeDesc::HALF;
-    } 
+    }
 
     oiio::ImageSpec spec(_width, _height, 3, typeColor);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
-    if(!out->open(path, spec))
+    if (!out->open(path, spec))
     {
         return false;
     }
-    
-    for(int i = 0; i < _tilesArray.size(); i++)
-    {
 
+    for (int i = 0; i < _tilesArray.size(); i++)
+    {
         std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
 
-        for(int j = 0; j < row.size(); j++)
+        for (int j = 0; j < row.size(); j++)
         {
-
-            if(!row[j]->acquire())
+            if (!row[j]->acquire())
             {
                 return false;
             }
@@ -102,12 +100,11 @@ bool CachedImage<image::RGBfColor>::writeImage(const std::string& path, const im
     return true;
 }
 
-template <>
-bool CachedImage<IndexT>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
+template<>
+bool CachedImage<IndexT>::writeImage(const std::string& path, const image::EStorageDataType& storageDataType)
 {
-
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
-    if(!out)
+    if (!out)
     {
         return false;
     }
@@ -116,20 +113,18 @@ bool CachedImage<IndexT>::writeImage(const std::string& path, const image::EStor
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
-    if(!out->open(path, spec))
+    if (!out->open(path, spec))
     {
         return false;
     }
-    
-    for(int i = 0; i < _tilesArray.size(); i++)
-    {
 
+    for (int i = 0; i < _tilesArray.size(); i++)
+    {
         std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
 
-        for(int j = 0; j < row.size(); j++)
+        for (int j = 0; j < row.size(); j++)
         {
-
-            if(!row[j]->acquire())
+            if (!row[j]->acquire())
             {
                 return false;
             }
@@ -145,12 +140,11 @@ bool CachedImage<IndexT>::writeImage(const std::string& path, const image::EStor
     return true;
 }
 
-template <>
-bool CachedImage<float>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
+template<>
+bool CachedImage<float>::writeImage(const std::string& path, const image::EStorageDataType& storageDataType)
 {
-
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
-    if(!out)
+    if (!out)
     {
         return false;
     }
@@ -159,20 +153,18 @@ bool CachedImage<float>::writeImage(const std::string& path, const image::EStora
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
-    if(!out->open(path, spec))
+    if (!out->open(path, spec))
     {
         return false;
     }
-    
-    for(int i = 0; i < _tilesArray.size(); i++)
-    {
 
+    for (int i = 0; i < _tilesArray.size(); i++)
+    {
         std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
 
-        for(int j = 0; j < row.size(); j++)
+        for (int j = 0; j < row.size(); j++)
         {
-
-            if(!row[j]->acquire())
+            if (!row[j]->acquire())
             {
                 return false;
             }
@@ -188,12 +180,11 @@ bool CachedImage<float>::writeImage(const std::string& path, const image::EStora
     return true;
 }
 
-template <>
-bool CachedImage<unsigned char>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
+template<>
+bool CachedImage<unsigned char>::writeImage(const std::string& path, const image::EStorageDataType& storageDataType)
 {
-
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
-    if(!out)
+    if (!out)
     {
         return false;
     }
@@ -202,20 +193,18 @@ bool CachedImage<unsigned char>::writeImage(const std::string& path, const image
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
-    if(!out->open(path, spec))
+    if (!out->open(path, spec))
     {
         return false;
     }
-    
-    for(int i = 0; i < _tilesArray.size(); i++)
-    {
 
+    for (int i = 0; i < _tilesArray.size(); i++)
+    {
         std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
 
-        for(int j = 0; j < row.size(); j++)
+        for (int j = 0; j < row.size(); j++)
         {
-
-            if(!row[j]->acquire())
+            if (!row[j]->acquire())
             {
                 return false;
             }
@@ -231,4 +220,4 @@ bool CachedImage<unsigned char>::writeImage(const std::string& path, const image
     return true;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

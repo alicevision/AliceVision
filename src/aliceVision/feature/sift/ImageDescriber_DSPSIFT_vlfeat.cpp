@@ -11,7 +11,8 @@
 #include <aliceVision/feature/regionsFactory.hpp>
 #include <aliceVision/feature/sift/SIFT.hpp>
 
-extern "C" {
+extern "C"
+{
 #include <nonFree/sift/vl/covdet.h>
 #include <nonFree/sift/vl/sift.h>
 }
@@ -21,7 +22,6 @@ extern "C" {
 
 namespace aliceVision {
 namespace feature {
-
 
 void DspSiftParams::setPreset(ConfigurationPreset preset)
 {
@@ -36,7 +36,7 @@ void DspSiftParams::setPreset(ConfigurationPreset preset)
     // Although the more samples the merrier, three size samples are sufficient to outperform ordinary SIFT,
     // and improvement beyond 10 samples is minimal. Additional samples do not further increase the mean average
     // precision, but incur more computational cost."
-    switch(preset.quality)
+    switch (preset.quality)
     {
         case EFeatureQuality::LOW:
         {
@@ -67,9 +67,12 @@ void DspSiftParams::setPreset(ConfigurationPreset preset)
     }
 }
 
-template <typename T>
-bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& regions, const DspSiftParams& params,
-                    bool orientation, const image::Image<unsigned char>* mask)
+template<typename T>
+bool extractDSPSIFT(const image::Image<float>& image,
+                    std::unique_ptr<Regions>& regions,
+                    const DspSiftParams& params,
+                    bool orientation,
+                    const image::Image<unsigned char>* mask)
 {
     const int w = image.Width(), h = image.Height();
     // Setup covariant SIFT detector.
@@ -83,12 +86,12 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
     vl_covdet_set_edge_threshold(covdet.get(), params._edgeThreshold);
     // vl_covdet_set_non_extrema_suppression_threshold(covdet.get(), 0.0f); // vl_covdet default is 0.5
 
-    switch(params._contrastFiltering)
+    switch (params._contrastFiltering)
     {
         case EFeatureConstrastFiltering::Static:
         {
             ALICEVISION_LOG_TRACE("SIFT constrastTreshold Static: " << params._peakThreshold);
-            if(params._peakThreshold >= 0)
+            if (params._peakThreshold >= 0)
             {
                 vl_covdet_set_peak_threshold(covdet.get(), params._peakThreshold / params._numScales);
             }
@@ -126,11 +129,11 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
     const double kBoundaryMargin = 2.0;
     vl_covdet_drop_features_outside(covdet.get(), kBoundaryMargin);
 
-    if(orientation)
+    if (orientation)
     {
         VlCovDetBuffer internalBuffer;
         vl_covdetbuffer_init(&internalBuffer);
-        if(params.estimateAffineShape)
+        if (params.estimateAffineShape)
         {
             vl_covdet_extract_affine_shape(covdet.get(), &internalBuffer);
         }
@@ -160,31 +163,31 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
     // Sorting the extracted features according to their scale
     {
         std::iota(indexSort.begin(), indexSort.end(), 0);
-        if(params._contrastFiltering == EFeatureConstrastFiltering::GridSortScaleSteps)
+        if (params._contrastFiltering == EFeatureConstrastFiltering::GridSortScaleSteps)
         {
             std::sort(indexSort.begin(), indexSort.end(), [&](std::size_t a, std::size_t b) {
-                const int scaleA = int(log2(features[a].sigma) * 3.0f); // 3 scale steps per octave
+                const int scaleA = int(log2(features[a].sigma) * 3.0f);  // 3 scale steps per octave
                 const int scaleB = int(log2(features[b].sigma) * 3.0f);
-                if(scaleA == scaleB)
+                if (scaleA == scaleB)
                 {
                     return features[a].peakScore > features[b].peakScore;
                 }
                 return scaleA > scaleB;
             });
         }
-        else if(params._contrastFiltering == EFeatureConstrastFiltering::GridSortOctaveSteps)
+        else if (params._contrastFiltering == EFeatureConstrastFiltering::GridSortOctaveSteps)
         {
             std::sort(indexSort.begin(), indexSort.end(), [&](std::size_t a, std::size_t b) {
-                const int scaleA = int(log2(features[a].sigma)); // 3 scale steps per octave
+                const int scaleA = int(log2(features[a].sigma));  // 3 scale steps per octave
                 const int scaleB = int(log2(features[b].sigma));
-                if(scaleA == scaleB)
+                if (scaleA == scaleB)
                 {
                     return features[a].peakScore > features[b].peakScore;
                 }
                 return scaleA > scaleB;
             });
         }
-        else if(params._contrastFiltering == EFeatureConstrastFiltering::GridSort)
+        else if (params._contrastFiltering == EFeatureConstrastFiltering::GridSort)
         {
             std::sort(indexSort.begin(), indexSort.end(), [&](std::size_t a, std::size_t b) {
                 return features[a].sigma * features[a].peakScore > features[b].sigma * features[b].peakScore;
@@ -193,52 +196,49 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
         else
         {
             // sort from largest scales to smallest ones
-            std::sort(indexSort.begin(), indexSort.end(),
-                      [&](std::size_t a, std::size_t b) { return features[a].sigma > features[b].sigma; });
+            std::sort(indexSort.begin(), indexSort.end(), [&](std::size_t a, std::size_t b) { return features[a].sigma > features[b].sigma; });
         }
     }
 
-    if(params._maxTotalKeypoints && params._contrastFiltering == EFeatureConstrastFiltering::NonExtremaFiltering)
+    if (params._maxTotalKeypoints && params._contrastFiltering == EFeatureConstrastFiltering::NonExtremaFiltering)
     {
         // Only filter features if we have more features than the maxTotalKeypoints
-        if(indexSort.size() > params._maxTotalKeypoints)
+        if (indexSort.size() > params._maxTotalKeypoints)
         {
             std::vector<float> radiusMaxima(indexSort.size(), std::numeric_limits<float>::max());
-            for(IndexT ii = 0; ii < indexSort.size(); ++ii)
+            for (IndexT ii = 0; ii < indexSort.size(); ++ii)
             {
                 const IndexT i = indexSort[ii];
                 const auto& keypointI = features[i];
-                for(IndexT jj = 0; jj < indexSort.size(); ++jj)
+                for (IndexT jj = 0; jj < indexSort.size(); ++jj)
                 {
                     const IndexT j = indexSort[jj];
                     const auto& keypointJ = features[j];
-                    if(featuresPeakValue[j] > featuresPeakValue[i])
+                    if (featuresPeakValue[j] > featuresPeakValue[i])
                     {
                         const float dx = (keypointJ.frame.x - keypointI.frame.x);
                         const float dy = (keypointJ.frame.y - keypointI.frame.y);
                         const float radius = dx * dx + dy * dy;
-                        if(radius < radiusMaxima[i])
+                        if (radius < radiusMaxima[i])
                             radiusMaxima[i] = radius;
                     }
                 }
             }
 
             std::size_t maxNbKeypoints = std::min(params._maxTotalKeypoints, indexSort.size());
-            std::partial_sort(indexSort.begin(), indexSort.begin() + maxNbKeypoints,
-                              indexSort.end(),
-                              [&](int a, int b) { return radiusMaxima[a] > radiusMaxima[b]; });
+            std::partial_sort(indexSort.begin(), indexSort.begin() + maxNbKeypoints, indexSort.end(), [&](int a, int b) {
+                return radiusMaxima[a] > radiusMaxima[b];
+            });
             indexSort.resize(maxNbKeypoints);
 
-            ALICEVISION_LOG_TRACE(
-                "DSPSIFT Features: before: " << nbFeatures
-                << ", after grid filtering: " << indexSort.size());
+            ALICEVISION_LOG_TRACE("DSPSIFT Features: before: " << nbFeatures << ", after grid filtering: " << indexSort.size());
         }
     }
     // Grid filtering of the keypoints to ensure a global repartition
-    else if(params._gridSize && params._maxTotalKeypoints && (params._contrastFiltering != EFeatureConstrastFiltering::Static))
+    else if (params._gridSize && params._maxTotalKeypoints && (params._contrastFiltering != EFeatureConstrastFiltering::Static))
     {
         // Only filter features if we have more features than the maxTotalKeypoints
-        if(nbFeatures > params._maxTotalKeypoints)
+        if (nbFeatures > params._maxTotalKeypoints)
         {
             std::vector<IndexT> filteredIndexes;
             std::vector<IndexT> rejectedIndexes;
@@ -251,7 +251,7 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
             const double regionWidth = image.Width() / double(params._gridSize);
             const double regionHeight = image.Height() / double(params._gridSize);
 
-            for(IndexT ii = 0; ii < indexSort.size(); ++ii)
+            for (IndexT ii = 0; ii < indexSort.size(); ++ii)
             {
                 const IndexT i = indexSort[ii];
                 const auto& keypoint = features[i];
@@ -262,30 +262,27 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
                 std::size_t& count = countFeatPerCell[cellX * params._gridSize + cellY];
                 ++count;
 
-                if(count < keypointsPerCell)
+                if (count < keypointsPerCell)
                     filteredIndexes.push_back(i);
                 else
                     rejectedIndexes.push_back(i);
             }
             // If we do not have enough features (less than maxTotalKeypoints) after the grid filtering (empty regions in
             // the grid for example). We add the best other ones, without repartition constraint.
-            if(filteredIndexes.size() < params._maxTotalKeypoints)
+            if (filteredIndexes.size() < params._maxTotalKeypoints)
             {
-                const std::size_t remainingElements =
-                    std::min(rejectedIndexes.size(), params._maxTotalKeypoints - filteredIndexes.size());
+                const std::size_t remainingElements = std::min(rejectedIndexes.size(), params._maxTotalKeypoints - filteredIndexes.size());
                 ALICEVISION_LOG_TRACE("Grid filtering -- Copy remaining points: " << remainingElements);
-                filteredIndexes.insert(filteredIndexes.end(), rejectedIndexes.begin(),
-                                        rejectedIndexes.begin() + remainingElements);
+                filteredIndexes.insert(filteredIndexes.end(), rejectedIndexes.begin(), rejectedIndexes.begin() + remainingElements);
             }
             indexSort.swap(filteredIndexes);
-            ALICEVISION_LOG_TRACE("SIFT Features: before: " << nbFeatures
-                                                            << ", after grid filtering: " << filteredIndexes.size());
+            ALICEVISION_LOG_TRACE("SIFT Features: before: " << nbFeatures << ", after grid filtering: " << filteredIndexes.size());
         }
     }
-    else if(params._maxTotalKeypoints)
+    else if (params._maxTotalKeypoints)
     {
         // Retrieve extracted features
-        if(indexSort.size() > params._maxTotalKeypoints)
+        if (indexSort.size() > params._maxTotalKeypoints)
             indexSort.resize(params._maxTotalKeypoints);
     }
 
@@ -294,8 +291,7 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
         regionsCasted->Features().resize(indexSort.size());
         regionsCasted->Descriptors().resize(indexSort.size());
 
-        std::unique_ptr<VlSiftFilt, void (*)(VlSiftFilt*)> sift(vl_sift_new(16, 16, 1, params._numScales, 0),
-                                                                &vl_sift_delete);
+        std::unique_ptr<VlSiftFilt, void (*)(VlSiftFilt*)> sift(vl_sift_new(16, 16, 1, params._numScales, 0), &vl_sift_delete);
 
         // All constant parameters
         const size_t kPatchResolution = 15;
@@ -308,7 +304,7 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
         float dspMinScale = 1;
         float dspScaleStep = 0;
         int dspNumScales = 1;
-        if(params.domainSizePooling)
+        if (params.domainSizePooling)
         {
             dspMinScale = params.dspMinScale;
             dspScaleStep = (params.dspMaxScale - params.dspMinScale) / params.dspNumScales;
@@ -324,12 +320,12 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
             std::vector<float> patchXY(2 * kPatchSide * kPatchSide);
 
 #pragma omp for
-            for(int oIndex = 0; oIndex < indexSort.size(); ++oIndex)
+            for (int oIndex = 0; oIndex < indexSort.size(); ++oIndex)
             {
                 const int iIndex = indexSort[oIndex];
                 const auto& inFeat = features[iIndex];
 
-                for(int s = 0; s < dspNumScales; ++s)
+                for (int s = 0; s < dspNumScales; ++s)
                 {
                     const double dspScale = dspMinScale + s * dspScaleStep;
 
@@ -339,18 +335,24 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
                     frameAtScale.a21 *= dspScale;
                     frameAtScale.a22 *= dspScale;
 
-                    vl_covdet_extract_patch_for_frame(covdet.get(), patch.data(), kPatchResolution, &internalBuffer,
-                                                      kPatchRelativeExtent, kPatchRelativeSmoothing, frameAtScale);
+                    vl_covdet_extract_patch_for_frame(
+                      covdet.get(), patch.data(), kPatchResolution, &internalBuffer, kPatchRelativeExtent, kPatchRelativeSmoothing, frameAtScale);
 
-                    vl_imgradient_polar_f(patchXY.data(), patchXY.data() + 1, 2, 2 * kPatchSide, patch.data(),
-                                          kPatchSide, kPatchSide, kPatchSide);
+                    vl_imgradient_polar_f(patchXY.data(), patchXY.data() + 1, 2, 2 * kPatchSide, patch.data(), kPatchSide, kPatchSide, kPatchSide);
 
-                    vl_sift_calc_raw_descriptor(sift.get(), patchXY.data(), descriptorsOverDspScales.row(s).data(),
-                                                kPatchSide, kPatchSide, kPatchResolution, kPatchResolution, kSigma, /*angle0=*/0);
+                    vl_sift_calc_raw_descriptor(sift.get(),
+                                                patchXY.data(),
+                                                descriptorsOverDspScales.row(s).data(),
+                                                kPatchSide,
+                                                kPatchSide,
+                                                kPatchResolution,
+                                                kPatchResolution,
+                                                kSigma,
+                                                /*angle0=*/0);
                 }
 
                 Eigen::Matrix<float, 1, 128> descriptor;
-                if(dspNumScales > 1)
+                if (dspNumScales > 1)
                 {
                     descriptor = descriptorsOverDspScales.colwise().mean();
                 }
@@ -359,7 +361,15 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
                     descriptor = descriptorsOverDspScales;
                 }
 
-                regionsCasted->Features()[oIndex] = PointFeature(inFeat.frame.x, inFeat.frame.y, inFeat.sigma, inFeat.orientationScore);
+                // [a0 a2] [r1 -r2]
+                // [a1 a3] [r2 r1]
+                Vec2 nx;
+                nx(0) = inFeat.frame.a11;
+                nx(1) = inFeat.frame.a21;
+                nx.normalize();
+                double angle = std::atan2(nx(1), nx(0));
+
+                regionsCasted->Features()[oIndex] = PointFeature(inFeat.frame.x, inFeat.frame.y, inFeat.sigma, angle);
                 Descriptor<T, 128>& outDescriptor = regionsCasted->Descriptors()[oIndex];
                 convertSIFT<T>(descriptor.data(), outDescriptor, params._rootSift);
             }
@@ -371,13 +381,17 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
     return true;
 }
 
-template bool extractDSPSIFT<float>(const image::Image<float>& image, std::unique_ptr<Regions>& regions,
-                                    const DspSiftParams& params, bool orientation, const image::Image<unsigned char>* mask);
+template bool extractDSPSIFT<float>(const image::Image<float>& image,
+                                    std::unique_ptr<Regions>& regions,
+                                    const DspSiftParams& params,
+                                    bool orientation,
+                                    const image::Image<unsigned char>* mask);
 
-template bool extractDSPSIFT<unsigned char>(const image::Image<float>& image, std::unique_ptr<Regions>& regions,
-                                            const DspSiftParams& params, bool orientation,
+template bool extractDSPSIFT<unsigned char>(const image::Image<float>& image,
+                                            std::unique_ptr<Regions>& regions,
+                                            const DspSiftParams& params,
+                                            bool orientation,
                                             const image::Image<unsigned char>* mask);
 
-
-} // namespace feature
-} // namespace aliceVision
+}  // namespace feature
+}  // namespace aliceVision

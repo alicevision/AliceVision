@@ -12,7 +12,6 @@
 
 #include <iostream>
 
-
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
@@ -28,11 +27,11 @@ void Rotation3PSolver::solve(const Mat& p1, const Mat& p2, std::vector<robustEst
 
     Eigen::Matrix3d M = Eigen::Matrix3d::Zero();
 
-    for(int i = 0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
-        for(int k = 0; k < 3; ++k)
+        for (int k = 0; k < 3; ++k)
         {
-            for(int l = 0; l < 3; ++l)
+            for (int l = 0; l < 3; ++l)
             {
                 M(k, l) += p2(k, i) * p1(l, i);
             }
@@ -54,6 +53,6 @@ void Rotation3PSolver::solve(const Mat& p1, const Mat& p2, std::vector<robustEst
     Rs.emplace_back(ret);
 }
 
-}  // namespace kernel
-}  // namespace rotation
+}  // namespace relativePose
+}  // namespace multiview
 }  // namespace aliceVision

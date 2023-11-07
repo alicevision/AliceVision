@@ -41,17 +41,17 @@ __device__ void cuda_swap_float(float& a, float& b)
 /*
  * @note This kernel implementation is not optimized because the Gaussian filter is separable.
  */
-__global__ void downscaleWithGaussianBlur_kernel(cudaTextureObject_t originalFrameTex, 
-                                                 CudaRGBA* downscaleFrame_d, int downscaleFrame_p,
-                                                 int downscaleFrameWidth, 
-                                                 int downscaleFrameHeight, 
+__global__ void downscaleWithGaussianBlur_kernel(cudaTextureObject_t in_img_tex,
+                                                 CudaRGBA* out_downscaledImg_d, int out_downscaledImg_p,
+                                                 unsigned int downscaledImgWidth,
+                                                 unsigned int downscaledImgHeight,
                                                  int downscale, 
                                                  int gaussRadius)
 {
-    const int x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x < downscaleFrameWidth) && (y < downscaleFrameHeight))
+    if((x < downscaledImgWidth) && (y < downscaledImgHeight))
     {
         const float s = float(downscale) * 0.5f;
 
@@ -62,7 +62,7 @@ __global__ void downscaleWithGaussianBlur_kernel(cudaTextureObject_t originalFra
         {
             for(int j = -gaussRadius; j <= gaussRadius; j++)
             {
-                const float4 curPix = tex2D_float4(originalFrameTex, float(x * downscale + j) + s, float(y * downscale + i) + s);
+                const float4 curPix = tex2D_float4(in_img_tex, float(x * downscale + j) + s, float(y * downscale + i) + s);
                 const float factor = getGauss(downscale - 1, i + gaussRadius) *
                                      getGauss(downscale - 1, j + gaussRadius); // domain factor
 
@@ -71,7 +71,7 @@ __global__ void downscaleWithGaussianBlur_kernel(cudaTextureObject_t originalFra
             }
         }
 
-        CudaRGBA& out = BufPtr<CudaRGBA>(downscaleFrame_d, downscaleFrame_p).at(x, y);
+        CudaRGBA& out = BufPtr<CudaRGBA>(out_downscaledImg_d, out_downscaledImg_p).at(size_t(x), size_t(y));
         out.x = accPix.x / sumFactor;
         out.y = accPix.y / sumFactor;
         out.z = accPix.z / sumFactor;
@@ -265,23 +265,21 @@ __host__ void cuda_createConstantGaussianArray(int cudaDeviceId, int scales) // 
     cudaFreeHost(h_gaussianArray);
 }
 
-__host__ void cuda_downscaleWithGaussianBlur(CudaDeviceMemoryPitched<CudaRGBA, 2>& out_downscaleFrame_dmp, 
-                                             cudaTextureObject_t originalFrameTex,
+__host__ void cuda_downscaleWithGaussianBlur(CudaDeviceMemoryPitched<CudaRGBA, 2>& out_downscaledImg_dmp,
+                                             cudaTextureObject_t in_img_tex,
                                              int downscale, 
-                                             int downscaleFrameWidth, 
-                                             int downscaleFrameHeight, 
                                              int gaussRadius,
                                              cudaStream_t stream)
 {
     const dim3 block(32, 2, 1);
-    const dim3 grid(divUp(downscaleFrameWidth, block.x), divUp(downscaleFrameHeight, block.y), 1);
+    const dim3 grid(divUp(out_downscaledImg_dmp.getSize().x(), block.x), divUp(out_downscaledImg_dmp.getSize().y(), block.y), 1);
 
     downscaleWithGaussianBlur_kernel<<<grid, block, 0, stream>>>(
-          originalFrameTex,
-          out_downscaleFrame_dmp.getBuffer(),
-          out_downscaleFrame_dmp.getPitch(),
-          downscaleFrameWidth, 
-          downscaleFrameHeight, 
+          in_img_tex,
+          out_downscaledImg_dmp.getBuffer(),
+          out_downscaledImg_dmp.getPitch(),
+          (unsigned int)(out_downscaledImg_dmp.getSize().x()),
+          (unsigned int)(out_downscaledImg_dmp.getSize().y()),
           downscale,
           gaussRadius);
 

@@ -4,17 +4,16 @@
 
 #include <geogram/mesh/mesh.h>
 
-
 namespace aliceVision {
 namespace mesh {
 
 /**
-* @brief Create a Geogram GEO::Mesh from an aliceVision::Mesh
-*
-* @note only initialize vertices and facets
-* @param[in] the source aliceVision mesh
-* @param[out] the destination GEO::Mesh
-*/
+ * @brief Create a Geogram GEO::Mesh from an aliceVision::Mesh
+ *
+ * @note only initialize vertices and facets
+ * @param[in] the source aliceVision mesh
+ * @param[out] the destination GEO::Mesh
+ */
 inline void toGeoMesh(const Mesh& src, GEO::Mesh& dst)
 {
     GEO::vector<double> vertices;
@@ -41,5 +40,5 @@ inline void toGeoMesh(const Mesh& src, GEO::Mesh& dst)
     assert(src.tris.size() == dst.facets.nb());
 }
 
-}
-}
+}  // namespace mesh
+}  // namespace aliceVision

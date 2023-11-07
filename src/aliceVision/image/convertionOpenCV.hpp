@@ -10,16 +10,13 @@
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 
-#include "aliceVision/image/Image.hpp"
-#include <aliceVision/numeric/numeric.hpp>
+    #include "aliceVision/image/Image.hpp"
+    #include <aliceVision/numeric/numeric.hpp>
 
+    #include <opencv2/core.hpp>
 
-#include <opencv2/core.hpp>
-
-namespace aliceVision{
-namespace image
-{
-
+namespace aliceVision {
+namespace image {
 
 /**
  * @brief Sets the value at the specified pixel of a OpenCV BGR image matrix
@@ -33,15 +30,13 @@ namespace image
  * @param[in] factor - optional scale factor
  * @param[in] delta - optional delta added to the scaled values
  */
-template <typename VecType, typename ValueType>
-inline void setValueCvMatBGR(cv::Mat& mat, int i, int j, const image::RGBAfColor& color, float factor = 1.f,
-                             float delta = 0.f)
+template<typename VecType, typename ValueType>
+inline void setValueCvMatBGR(cv::Mat& mat, int i, int j, const image::RGBAfColor& color, float factor = 1.f, float delta = 0.f)
 {
-    mat.at<VecType>(i, j)[0] = (ValueType) clamp(color.b() * factor + delta, 0.f, 255.f);
-    mat.at<VecType>(i, j)[1] = (ValueType) clamp(color.g() * factor + delta, 0.f, 255.f);
-    mat.at<VecType>(i, j)[2] = (ValueType) clamp(color.r() * factor + delta, 0.f, 255.f);
+    mat.at<VecType>(i, j)[0] = (ValueType)clamp(color.b() * factor + delta, 0.f, 255.f);
+    mat.at<VecType>(i, j)[1] = (ValueType)clamp(color.g() * factor + delta, 0.f, 255.f);
+    mat.at<VecType>(i, j)[2] = (ValueType)clamp(color.r() * factor + delta, 0.f, 255.f);
 }
-
 
 /**
  * @brief Converts an aliceVision image to an OpenCV image (cv::Mat) in BGR
@@ -53,11 +48,11 @@ inline void setValueCvMatBGR(cv::Mat& mat, int i, int j, const image::RGBAfColor
 inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, int cvtype = CV_32FC3)
 {
     cv::Mat mat(img.Height(), img.Width(), cvtype);
-    for(int i = 0; i < img.Height(); i++)
+    for (int i = 0; i < img.Height(); i++)
     {
-        for(int j = 0; j < img.Width(); j++)
+        for (int j = 0; j < img.Width(); j++)
         {
-            switch(cvtype)
+            switch (cvtype)
             {
                 case CV_32FC3:
                     setValueCvMatBGR<cv::Vec3f, float>(mat, i, j, img(i, j));
@@ -73,7 +68,6 @@ inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, i
     return mat;
 }
 
-
 /**
  * @brief Implements the conversion of an OpenCV image (cv::Mat) in BGR to an aliceVision image
  * Keeps the alpha channel of the output image unchanged
@@ -82,21 +76,19 @@ inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, i
  * @param[inout] imageOut - output RGBA aliceVision image
  * @param[in] factor - optional scale factor
  */
-template <typename VecType>
+template<typename VecType>
 inline void cvMatBGRToImageRGBAImpl(const cv::Mat& img, image::Image<image::RGBAfColor>& imageOut, float factor = 1.f)
 {
-    for(int row = 0; row < imageOut.Height(); row++)
+    for (int row = 0; row < imageOut.Height(); row++)
     {
         const VecType* rowPtr = img.ptr<VecType>(row);
-        for(int col = 0; col < imageOut.Width(); col++)
+        for (int col = 0; col < imageOut.Width(); col++)
         {
             const VecType& matPixel = rowPtr[col];
-            imageOut(row, col) = image::RGBAfColor(matPixel[2] * factor, matPixel[1] * factor,
-                                                   matPixel[0] * factor, imageOut(row, col).a());
+            imageOut(row, col) = image::RGBAfColor(matPixel[2] * factor, matPixel[1] * factor, matPixel[0] * factor, imageOut(row, col).a());
         }
     }
 }
-
 
 /**
  * @brief Converts an OpenCV image (cv::Mat) in BGR to an aliceVision image
@@ -107,7 +99,7 @@ inline void cvMatBGRToImageRGBAImpl(const cv::Mat& img, image::Image<image::RGBA
  */
 inline void cvMatBGRToImageRGBA(const cv::Mat& img, image::Image<image::RGBAfColor>& imageOut)
 {
-    switch(img.type())
+    switch (img.type())
     {
         case CV_32FC3:
             cvMatBGRToImageRGBAImpl<cv::Vec3f>(img, imageOut);
@@ -120,7 +112,7 @@ inline void cvMatBGRToImageRGBA(const cv::Mat& img, image::Image<image::RGBAfCol
     }
 }
 
-} // namespace image
-} // namespace aliceVision
+}  // namespace image
+}  // namespace aliceVision
 
-#endif // ALICEVISION_HAVE_OPENCV
+#endif  // ALICEVISION_HAVE_OPENCV

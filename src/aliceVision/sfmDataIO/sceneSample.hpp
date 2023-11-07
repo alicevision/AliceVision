@@ -15,7 +15,7 @@ namespace sfmDataIO {
  * @brief Create an SfmData with some arbitrary content.
  * This is used in unit tests to validate read/write sfmData files.
  */
-void generateSampleScene(sfmData::SfMData & output);
+void generateSampleScene(sfmData::SfMData& output);
 
-} // namespace sfmDataIO
-} // namespace aliceVision
+}  // namespace sfmDataIO
+}  // namespace aliceVision

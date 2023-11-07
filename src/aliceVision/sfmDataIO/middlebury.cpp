@@ -20,15 +20,14 @@ namespace bfs = boost::filesystem;
 Mat3 extractMat3FromVec(const std::vector<std::string>& entries, std::size_t offset)
 {
     // we are supposed to read 9 elements, so the offset must be coherent with the vector size
-    if(offset + 9 > entries.size())
+    if (offset + 9 > entries.size())
     {
-        ALICEVISION_LOG_ERROR("The vector has " << entries.size()
-                                                << " elements, tried to read out of bounds (offset: " << offset);
+        ALICEVISION_LOG_ERROR("The vector has " << entries.size() << " elements, tried to read out of bounds (offset: " << offset);
         throw std::out_of_range("Trying to read out of the bounds of the vector");
     }
     Mat3 rotation;
     const auto lastIdx{offset + 8};
-    for(std::size_t i = offset; i <= lastIdx; ++i)
+    for (std::size_t i = offset; i <= lastIdx; ++i)
     {
         const double val = std::stod(entries[i]);
         const auto row = (i - offset) / 3;
@@ -38,8 +37,7 @@ Mat3 extractMat3FromVec(const std::vector<std::string>& entries, std::size_t off
     return rotation;
 }
 
-void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3& matK, Mat3& rotation,
-                           Vec3& translation)
+void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3& matK, Mat3& rotation, Vec3& translation)
 {
     std::vector<std::string> entries{};
 
@@ -47,12 +45,12 @@ void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3
     std::string entry;
     const char spaceChar{' '};
     // tokenize the line extracting all the entries separated by a space
-    while(std::getline(sstream, entry, spaceChar))
+    while (std::getline(sstream, entry, spaceChar))
     {
         entries.push_back(entry);
         ALICEVISION_LOG_TRACE(entry);
     }
-    if(entries.size() != 22)
+    if (entries.size() != 22)
     {
         ALICEVISION_LOG_ERROR("read " << entries.size() << " entries, expected " << 22 << ". Incorrect file format");
         throw std::runtime_error("Error while reading the camera parameters, incorrect number of entries");
@@ -71,11 +69,15 @@ void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3
     translation(2) = std::stod(entries[21]);
 }
 
-sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std::string& basePath,
-                                          bool uniqueIntrinsics, bool importPoses, bool lockIntrinsics, bool lockPoses)
+sfmData::SfMData middleburySceneToSfmData(const std::string& filename,
+                                          const std::string& basePath,
+                                          bool uniqueIntrinsics,
+                                          bool importPoses,
+                                          bool lockIntrinsics,
+                                          bool lockPoses)
 {
     std::ifstream infile(filename);
-    if(!infile.is_open())
+    if (!infile.is_open())
     {
         ALICEVISION_LOG_ERROR("Unable to open " << filename);
         throw std::runtime_error("Unable to open " + filename);
@@ -96,7 +98,7 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std
     IndexT poseId = importPoses ? 0 : UndefinedIndexT;
 
     // parse all the other lines
-    while(std::getline(infile, line))
+    while (std::getline(infile, line))
     {
         std::string imageName;
         Mat3 matK;
@@ -110,20 +112,20 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std
         image::readImageSize(imagePath, imageWidth, imageHeight);
 
         // if uniqueIntrinsics do it once, otherwise always
-        if((uniqueIntrinsics && scene.intrinsics.empty()) || !uniqueIntrinsics)
+        if ((uniqueIntrinsics && scene.getIntrinsics().empty()) || !uniqueIntrinsics)
         {
             ALICEVISION_LOG_DEBUG("matK " << matK);
             // add the intrinsics
-            scene.intrinsics.insert({intrinsicsId, std::make_shared<camera::Pinhole>(imageWidth, imageHeight, matK)});
-            if(lockIntrinsics)
+            scene.getIntrinsics().insert({intrinsicsId, std::make_shared<camera::Pinhole>(imageWidth, imageHeight, matK)});
+            if (lockIntrinsics)
             {
-                scene.intrinsics[intrinsicsId]->lock();
+                scene.getIntrinsics().at(intrinsicsId)->lock();
             }
         }
         ALICEVISION_LOG_DEBUG("rotation " << rotation);
         ALICEVISION_LOG_DEBUG("translation " << translation);
 
-        if(importPoses)
+        if (importPoses)
         {
             // add the pose entry
             const auto pose = geometry::poseFromRT(rotation, translation);
@@ -131,32 +133,30 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std
         }
 
         // add view
-        scene.getViews().insert({viewId, std::make_shared<sfmData::View>(imagePath, viewId, intrinsicsId, poseId,
-                                                                         imageWidth, imageHeight)});
+        scene.getViews().insert({viewId, std::make_shared<sfmData::View>(imagePath, viewId, intrinsicsId, poseId, imageWidth, imageHeight)});
 
         // update the intrinsics id only if not unique
-        if(!uniqueIntrinsics)
+        if (!uniqueIntrinsics)
         {
             ++intrinsicsId;
         }
         ++viewId;
-        if(importPoses)
+        if (importPoses)
         {
             ++poseId;
         }
     }
     // just a safe guard
-    if(scene.getViews().size() != numViews)
+    if (scene.getViews().size() != numViews)
     {
         ALICEVISION_LOG_ERROR("Read " << scene.getViews().size() << " views, expected " << numViews);
         throw std::runtime_error("Unexpected number of cameras read");
     }
-    ALICEVISION_LOG_INFO("Scene contains: " << scene.getIntrinsics().size() << " intrinsics, "
-                                            << scene.getViews().size() << " views, " << scene.getPoses().size()
-                                            << " poses");
+    ALICEVISION_LOG_INFO("Scene contains: " << scene.getIntrinsics().size() << " intrinsics, " << scene.getViews().size() << " views, "
+                                            << scene.getPoses().size() << " poses");
 
     return scene;
 }
 
-}
-}
+}  // namespace sfmDataIO
+}  // namespace aliceVision

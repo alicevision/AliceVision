@@ -32,7 +32,6 @@ class SfMData;
 
 namespace fuseCut {
 
-
 struct FuseParams
 {
     /// Max input points loaded from images
@@ -60,10 +59,9 @@ struct FuseParams
     int maskBorderSize = 1;
 };
 
-
 class DelaunayGraphCut
 {
-public:
+  public:
     using VertexIndex = GEO::index_t;
     using CellIndex = GEO::index_t;
 
@@ -73,16 +71,13 @@ public:
         /// local opposite vertex index
         VertexIndex localVertexIndex = GEO::NO_VERTEX;
 
-        Facet(){}
+        Facet() {}
         Facet(CellIndex ci, VertexIndex lvi)
-            : cellIndex(ci)
-            , localVertexIndex(lvi)
+          : cellIndex(ci),
+            localVertexIndex(lvi)
         {}
 
-        bool operator==(const Facet& f) const
-        {
-            return cellIndex == f.cellIndex && localVertexIndex == f.localVertexIndex;
-        }
+        bool operator==(const Facet& f) const { return cellIndex == f.cellIndex && localVertexIndex == f.localVertexIndex; }
     };
 
     struct Edge
@@ -92,19 +87,12 @@ public:
 
         Edge() = default;
         Edge(VertexIndex v0_, VertexIndex v1_)
-            : v0{v0_}
-            , v1{v1_}
+          : v0{v0_},
+            v1{v1_}
         {}
 
-        bool operator==(const Edge& e) const
-        {
-            return v0 == e.v0 && v1 == e.v1;
-        }
-        bool isSameUndirectionalEdge(const Edge& e) const
-        {
-            return (v0 == e.v0 && v1 == e.v1) ||
-                   (v0 == e.v1 && v1 == e.v0);
-        }
+        bool operator==(const Edge& e) const { return v0 == e.v0 && v1 == e.v1; }
+        bool isSameUndirectionalEdge(const Edge& e) const { return (v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0); }
     };
 
     enum class EGeometryType
@@ -126,16 +114,16 @@ public:
         };
         GeometryIntersection() {}
         explicit GeometryIntersection(const Facet& f)
-            : facet{f}
-            , type{EGeometryType::Facet}
+          : facet{f},
+            type{EGeometryType::Facet}
         {}
         explicit GeometryIntersection(const VertexIndex& v)
-            : vertexIndex{v}
-            , type{EGeometryType::Vertex}
+          : vertexIndex{v},
+            type{EGeometryType::Vertex}
         {}
         explicit GeometryIntersection(const Edge& e)
-            : edge{e}
-            , type{EGeometryType::Edge}
+          : edge{e},
+            type{EGeometryType::Edge}
         {}
 
         bool operator==(const GeometryIntersection& g) const
@@ -145,21 +133,18 @@ public:
 
             switch (type)
             {
-            case EGeometryType::Vertex:
-                return vertexIndex == g.vertexIndex;
-            case EGeometryType::Edge:
-                return edge == g.edge;
-            case EGeometryType::Facet:
-                return facet == g.facet;
-            case EGeometryType::None:
-                break;
+                case EGeometryType::Vertex:
+                    return vertexIndex == g.vertexIndex;
+                case EGeometryType::Edge:
+                    return edge == g.edge;
+                case EGeometryType::Facet:
+                    return facet == g.facet;
+                case EGeometryType::None:
+                    break;
             }
             return true;
         }
-        bool operator!=(const GeometryIntersection& g) const
-        {
-            return !(*this == g);
-        }
+        bool operator!=(const GeometryIntersection& g) const { return !(*this == g); }
     };
 
     struct IntersectionHistory
@@ -174,8 +159,12 @@ public:
         std::vector<Point3d> vecToCam;
         std::vector<float> distToCam;
         std::vector<float> angleToCam;
-        IntersectionHistory(const Point3d& c, const Point3d& oPt, const Point3d& diV) : cam{c}, originPt{oPt}, dirVect{diV} {}
-        
+        IntersectionHistory(const Point3d& c, const Point3d& oPt, const Point3d& diV)
+          : cam{c},
+            originPt{oPt},
+            dirVect{diV}
+        {}
+
         void append(const GeometryIntersection& geom, const Point3d& intersectPt);
     };
 
@@ -228,19 +217,16 @@ public:
 
     /**
      * @brief Retrieve the global vertex index of the localVertexIndex of the facet.
-     * 
+     *
      * @param f the facet
      * @return the global vertex index
      */
-    inline VertexIndex getOppositeVertexIndex(const Facet& f) const
-    {
-        return _tetrahedralization->cell_vertex(f.cellIndex, f.localVertexIndex);
-    }
+    inline VertexIndex getOppositeVertexIndex(const Facet& f) const { return _tetrahedralization->cell_vertex(f.cellIndex, f.localVertexIndex); }
 
     /**
-     * @brief Retrieve the global vertex index of a vertex from a facet and an relative index 
+     * @brief Retrieve the global vertex index of a vertex from a facet and an relative index
      * compared to the localVertexIndex of the facet.
-     * 
+     *
      * @param f the facet
      * @param i the relative index (relative to the localVertexIndex of the facet)
      * @return the global vertex index
@@ -252,47 +238,28 @@ public:
 
     inline const std::array<const Point3d*, 3> getFacetsPoints(const Facet& f) const
     {
-        return {&(_verticesCoords[getVertexIndex(f, 0)]),
-                &(_verticesCoords[getVertexIndex(f, 1)]),
-                &(_verticesCoords[getVertexIndex(f, 2)])};
+        return {&(_verticesCoords[getVertexIndex(f, 0)]), &(_verticesCoords[getVertexIndex(f, 1)]), &(_verticesCoords[getVertexIndex(f, 2)])};
     }
 
-    inline std::size_t getNbVertices() const
-    {
-        return _verticesAttr.size();
-    }
+    inline std::size_t getNbVertices() const { return _verticesAttr.size(); }
 
     inline GEO::index_t nearestVertexInCell(GEO::index_t cellIndex, const Point3d& p) const
     {
         GEO::signed_index_t result = NO_TETRAHEDRON;
         double d = std::numeric_limits<double>::max();
-        for(GEO::index_t i = 0; i < 4; ++i)
+        for (GEO::index_t i = 0; i < 4; ++i)
         {
             GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(cellIndex, i);
-            if(currentVertex < 0)
+            if (currentVertex < 0)
                 continue;
             double currentDist = GEO::Geom::distance2(_verticesCoords[currentVertex].m, p.m, 3);
-            if(currentDist < d)
+            if (currentDist < d)
             {
                 d = currentDist;
                 result = currentVertex;
             }
         }
         return result;
-    }
-
-    inline GEO::index_t locateNearestVertex(const Point3d& p) const
-    {
-        if(_tetrahedralization->nb_vertices() == 0)
-            return GEO::NO_VERTEX;
-        /*
-        GEO::index_t cellIndex = ((const GEO::Delaunay3d*)_tetrahedralization.get())->locate(p.m); // TODO GEOGRAM: how to??
-        if(cellIndex == NO_TETRAHEDRON)
-            return GEO::NO_VERTEX;
-
-        return nearestVertexInCell(cellIndex, p);
-        */
-        return _tetrahedralization->nearest_vertex(p.m); // TODO GEOGRAM: this is a brute force approach!
     }
 
     /**
@@ -311,24 +278,20 @@ public:
 
     inline Facet mirrorFacet(const Facet& f) const
     {
-        const std::array<VertexIndex, 3> facetVertices = {
-            getVertexIndex(f, 0),
-            getVertexIndex(f, 1),
-            getVertexIndex(f, 2)
-        };
-        
+        const std::array<VertexIndex, 3> facetVertices = {getVertexIndex(f, 0), getVertexIndex(f, 1), getVertexIndex(f, 2)};
+
         Facet out;
         out.cellIndex = _tetrahedralization->cell_adjacent(f.cellIndex, f.localVertexIndex);
-        if(out.cellIndex != GEO::NO_CELL)
+        if (out.cellIndex != GEO::NO_CELL)
         {
             // Search for the vertex in adjacent cell which doesn't exist in input facet.
-            for(int k = 0; k < 4; ++k)
+            for (int k = 0; k < 4; ++k)
             {
                 CellIndex out_vi = _tetrahedralization->cell_vertex(out.cellIndex, k);
-                if(std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
+                if (std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
                 {
-                  out.localVertexIndex = k;
-                  return out;
+                    out.localVertexIndex = k;
+                    return out;
                 }
             }
         }
@@ -343,10 +306,10 @@ public:
         int coutInvalidVertices = 0;
         for (CellIndex ci = 0; ci < _tetrahedralization->nb_cells(); ++ci)
         {
-            for(VertexIndex k = 0; k < 4; ++k)
+            for (VertexIndex k = 0; k < 4; ++k)
             {
                 const VertexIndex vi = _tetrahedralization->cell_vertex(ci, k);
-                if(vi == GEO::NO_VERTEX || vi >= _verticesCoords.size())
+                if (vi == GEO::NO_VERTEX || vi >= _verticesCoords.size())
                 {
                     ++coutInvalidVertices;
                     continue;
@@ -358,7 +321,7 @@ public:
         ALICEVISION_LOG_INFO("neighboringCellsPerVertexTmp: " << neighboringCellsPerVertexTmp.size());
         _neighboringCellsPerVertex.resize(_verticesCoords.size());
         ALICEVISION_LOG_INFO("verticesCoords: " << _verticesCoords.size());
-        for(const auto& it: neighboringCellsPerVertexTmp)
+        for (const auto& it : neighboringCellsPerVertexTmp)
         {
             const std::set<CellIndex>& input = it.second;
             std::vector<CellIndex>& output = _neighboringCellsPerVertex[it.first];
@@ -378,11 +341,10 @@ public:
     inline CellIndex vertexToCells(VertexIndex vi, int lvi) const
     {
         const std::vector<CellIndex>& localCells = _neighboringCellsPerVertex.at(vi);
-        if(lvi >= localCells.size())
+        if (lvi >= localCells.size())
             return GEO::NO_CELL;
         return localCells[lvi];
     }
-
 
     /**
      * @brief Retrieves the global indexes of neighboring cells around a geometry.
@@ -402,16 +364,13 @@ public:
 
     /**
      * @brief Retrieves the global indexes of neighboring cells using the global index of a vertex.
-     * 
+     *
      * @param vi the global vertexIndex
      * @return a vector of neighboring cell indices
      */
-    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const
-    {
-        return _neighboringCellsPerVertex.at(vi);
-    }
+    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const { return _neighboringCellsPerVertex.at(vi); }
 
-     /**
+    /**
      * @brief Retrieves the global indexes of neighboring cells around one edge.
      *
      * @param e the concerned edge
@@ -460,7 +419,7 @@ public:
     /**
      * @brief Function that returns the next geometry intersected by the ray.
      * The function handles different cases, whether we come from an edge, a facet or a vertex.
-     * 
+     *
      * @param inGeometry the geometry we come from
      * @param originPt ray origin point
      * @param dirVect ray direction
@@ -468,15 +427,19 @@ public:
      * @param epsilonFactor a multiplicative factor on the smaller side of the facet  used to define the boundary when we
      * have to consider either a collision with an edge/vertex or a facet.
      * @param lastIntersectPt constant reference to the last intersection point used to test the direction.
-     * @return 
+     * @return
      */
-    GeometryIntersection intersectNextGeom(const GeometryIntersection& inGeometry, const Point3d& originPt,
-        const Point3d& dirVect, Point3d& intersectPt, const double epsilonFactor, const Point3d& lastIntersectPt) const;
+    GeometryIntersection intersectNextGeom(const GeometryIntersection& inGeometry,
+                                           const Point3d& originPt,
+                                           const Point3d& dirVect,
+                                           Point3d& intersectPt,
+                                           const double epsilonFactor,
+                                           const Point3d& lastIntersectPt) const;
 
     /**
      * @brief Function that returns the next geometry intersected by the ray on a given facet or None if there are no intersected geometry.
      * The function distinguishes the intersections cases using epsilon.
-     * 
+     *
      * @param originPt ray origin point
      * @param DirVec ray direction
      * @param facet the given facet to intersect with
@@ -485,10 +448,15 @@ public:
      * have to consider either a collision with an edge/vertex or a facet.
      * @param ambiguous boolean used to know if our intersection is ambiguous or not
      * @param lastIntersectPt pointer to the last intersection point used to test the direction (if not nulllptr)
-     * @return 
+     * @return
      */
-    GeometryIntersection rayIntersectTriangle(const Point3d& originPt, const Point3d& DirVec, const Facet& facet,
-        Point3d& intersectPt, const double epsilonFactor, bool& ambiguous, const Point3d* lastIntersectPt = nullptr) const;
+    GeometryIntersection rayIntersectTriangle(const Point3d& originPt,
+                                              const Point3d& DirVec,
+                                              const Facet& facet,
+                                              Point3d& intersectPt,
+                                              const double epsilonFactor,
+                                              bool& ambiguous,
+                                              const Point3d* lastIntersectPt = nullptr) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
@@ -496,14 +464,22 @@ public:
     double facetMaxEdgeLength(Facet& f1) const;
     double maxEdgeLength() const;
     Point3d cellCircumScribedSphereCentre(CellIndex ci) const;
-    double getFaceWeight(const Facet &f1) const;
+    double getFaceWeight(const Facet& f1) const;
 
     float weightFcn(float nrc, bool labatutWeights, int ncams);
 
-    void fillGraph(double nPixelSizeBehind, bool labatutWeights, bool fillOut, float distFcnHeight,
-                           float fullWeight);
-    void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam, float weight,
-                           float fullWeight, double nPixelSizeBehind, bool fillOut, float distFcnHeight);
+    void fillGraph(double nPixelSizeBehind, bool labatutWeights, bool fillOut, float distFcnHeight, float fullWeight);
+    void fillGraphPartPtRc(int& out_nstepsFront,
+                           int& out_nstepsBehind,
+                           GeometriesCount& outFrontCount,
+                           GeometriesCount& outBehindCount,
+                           int vertexIndex,
+                           int cam,
+                           float weight,
+                           float fullWeight,
+                           double nPixelSizeBehind,
+                           bool fillOut,
+                           float distFcnHeight);
 
     /**
      * @brief Estimate the cells property "on" based on the analysis of the visibility of neigbouring cells.
@@ -520,10 +496,17 @@ public:
 
     void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName);
 
-    void createDensePointCloud(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
+    void createDensePointCloud(const Point3d hexah[8],
+                               const StaticVector<int>& cams,
+                               const sfmData::SfMData* sfmData,
+                               const FuseParams* depthMapsFuseParams);
 
-    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName,
-                        const std::string& tmpCamsPtsFolderName, bool removeSmallSegments, bool exportDebugTetrahedralization);
+    void createGraphCut(const Point3d hexah[8],
+                        const StaticVector<int>& cams,
+                        const std::string& folderName,
+                        const std::string& tmpCamsPtsFolderName,
+                        bool removeSmallSegments,
+                        bool exportDebugTetrahedralization);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
@@ -535,7 +518,8 @@ public:
     void cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIterations, double minSolidAngleRatio);
 
     /**
-     * @brief Combine all post-processing steps results to reduce artefacts from the graph-cut (too large triangles, noisy tetrahedrons, isolated cells, etc).
+     * @brief Combine all post-processing steps results to reduce artefacts from the graph-cut (too large triangles, noisy tetrahedrons, isolated
+     * cells, etc).
      */
     void graphCutPostProcessing(const Point3d hexah[8], const std::string& folderName);
 
@@ -556,19 +540,31 @@ public:
 
     /**
      * @brief Create a mesh from the tetrahedral scores
-     * @param[in] maxNbConnectedHelperPoints: maximum number of connected helper points before we remove the group. 0 means that we remove all helper points. -1 means that we do not filter helper points at all.
+     * @param[in] maxNbConnectedHelperPoints: maximum number of connected helper points before we remove the group. 0 means that we remove all helper
+     * points. -1 means that we do not filter helper points at all.
      */
     mesh::Mesh* createMesh(int maxNbConnectedHelperPoints);
-    mesh::Mesh* createTetrahedralMesh(bool filter = true, const float& downscaleFactor = 0.95f, const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
+    mesh::Mesh* createTetrahedralMesh(
+      bool filter = true,
+      const float& downscaleFactor = 0.95f,
+      const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
 
     void displayCellsStats() const;
     void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);
-    void exportFullScoreMeshs(const std::string& outputFolder, const std::string& name) const;
 
-    void exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt);
+    /**
+     * @brief Export debug cells score as tetrahedral mesh.
+     * WARNING: Could create HUGE meshes, only use on very small datasets.
+     * @param[in] outputFolder: output directory (ending with path separator)
+     */
+    void exportFullScoreMeshs(const std::string& outputFolder) const;
+
+    void exportBackPropagationMesh(const std::string& filename,
+                                   std::vector<GeometryIntersection>& intersectedGeom,
+                                   const Point3d& fromPt,
+                                   const Point3d& toPt);
     void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);
 };
-
 
 std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type);
 std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Facet& facet);
@@ -576,5 +572,5 @@ std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Edge& edg
 std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometryIntersection& intersection);
 std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometriesCount& count);
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

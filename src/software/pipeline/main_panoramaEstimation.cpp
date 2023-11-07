@@ -14,7 +14,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
@@ -89,10 +89,12 @@ int aliceVision_main(int argc, char** argv)
                                      "Filter Matches before solving the Panorama.")(
         "refine", po::value<bool>(&refine)->default_value(refine), "Refine cameras with a Bundle Adjustment")(
         "lockAllIntrinsics", po::value<bool>(&params.lockAllIntrinsics)->default_value(params.lockAllIntrinsics),
-        "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")(
-        "maxAngleToPrior", po::value<double>(&params.maxAngleToPrior)->default_value(params.maxAngleToPrior),
-        "Maximal angle allowed regarding the input prior.")(
-        "maxAngularError", po::value<double>(&params.maxAngularError)->default_value(params.maxAngularError),
+        "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+        ("maxAngleToPrior", po::value<double>(&params.maxAngleToPrior)->default_value(params.maxAngleToPrior),
+        "Maximal angle allowed regarding the input prior.")
+        ("maxAngleToPriorRefined", po::value<double>(&params.maxAngleToPriorRefined)->default_value(params.maxAngleToPriorRefined),
+        "Maximal angle allowed regarding the input prior after refinement.")
+        ("maxAngularError", po::value<double>(&params.maxAngularError)->default_value(params.maxAngularError),
         "Maximal angular error in global rotation averaging.")(
         "intermediateRefineWithFocal",
         po::value<bool>(&params.intermediateRefineWithFocal)->default_value(params.intermediateRefineWithFocal),
@@ -137,7 +139,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if(!inputSfmData.structure.empty())
+    if(!inputSfmData.getLandmarks().empty())
     {
         ALICEVISION_LOG_ERROR("Partially computed SfMData is not currently supported in PanoramaEstimation.");
         return EXIT_FAILURE;
@@ -253,7 +255,7 @@ int aliceVision_main(int argc, char** argv)
                 // Sort views per timestamps
                 for(auto v : outSfmData.getViews())
                 {
-                    int64_t t = v.second->getMetadataDateTimestamp();
+                    int64_t t = v.second->getImage().getMetadataDateTimestamp();
                     sorted_views.push_back(std::make_pair(t, v.second->getPoseId()));
                 }
                 std::sort(sorted_views.begin(), sorted_views.end());
@@ -278,7 +280,7 @@ int aliceVision_main(int argc, char** argv)
 
             Eigen::Matrix3d c_R_oprior = p.rotation() * ocur_R_oprior;
 
-            p.rotation() = c_R_oprior;
+            p.setRotation(c_R_oprior);
             pose.second.setTransform(p);
         }
     }
@@ -297,7 +299,7 @@ int aliceVision_main(int argc, char** argv)
         Eigen::Matrix3d matLatitude =
             Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1, 0, 0)).toRotationMatrix();
         Eigen::Matrix3d newR = p.rotation() * matLongitude * matLatitude;
-        p.rotation() = newR;
+        p.setRotation(newR);
         pose.second.setTransform(p);
     }
 

@@ -9,7 +9,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/sfmMvsUtils/visibility.hpp>
@@ -24,7 +24,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -38,10 +38,12 @@ namespace fs = boost::filesystem;
  */
 struct MaskCache
 {
-    MaskCache(const mvsUtils::MultiViewParams& mp, const std::vector<std::string>& masksFolders, bool undistortMasks, int maxSize = 16)
+    MaskCache(const mvsUtils::MultiViewParams& mp, const std::vector<std::string>& masksFolders, bool undistortMasks,
+              const std::string maskExtension, int maxSize = 16)
         : _mp(mp)
         , _masksFolders(masksFolders)
         , _undistortMasks(undistortMasks)
+        , _maskExtension(maskExtension)
         , _maxSize(maxSize)
     {
     }
@@ -68,15 +70,15 @@ struct MaskCache
             item = &_cache.back();
             const IndexT viewId = _mp.getViewId(camId);
             auto * const mask = item->mask.get();
-            const bool loaded = tryLoadMask(mask, _masksFolders, viewId, _mp.getImagePath(camId));
+            const bool loaded = tryLoadMask(mask, _masksFolders, viewId, _mp.getImagePath(camId), _maskExtension);
             if (loaded)
             {
                 if (_undistortMasks)
                 {
                     const auto& sfm = _mp.getInputSfMData();
                     const IndexT intrinsicId = sfm.getView(viewId).getIntrinsicId();
-                    const auto intrinsicIt = sfm.intrinsics.find(intrinsicId);
-                    if (intrinsicIt != sfm.intrinsics.end())
+                    const auto intrinsicIt = sfm.getIntrinsics().find(intrinsicId);
+                    if (intrinsicIt != sfm.getIntrinsics().end())
                     {
                         const auto& intrinsic = intrinsicIt->second;
                         if (intrinsic->isValid() && intrinsic->hasDistortion())
@@ -147,6 +149,7 @@ private:
     mvsUtils::MultiViewParams _mp;
     std::vector<std::string> _masksFolders;
     bool _undistortMasks;
+    std::string _maskExtension;
     int _maxSize;
     std::vector<Item> _cache;
 };
@@ -347,6 +350,7 @@ void meshMasking(
     const mvsUtils::MultiViewParams & mp,
     mesh::Mesh & inputMesh,
     const std::vector<std::string> & masksFolders,
+    const std::string & maskExtension,
     const std::string & outputMeshPath,
     const int threshold,
     const bool invert,
@@ -355,7 +359,7 @@ void meshMasking(
     const bool usePointsVisibilities
     )
 {
-    MaskCache maskCache(mp, masksFolders, undistortMasks);
+    MaskCache maskCache(mp, masksFolders, undistortMasks, maskExtension);
 
     // compute visibility for every vertex
     // also update inputMesh.pointsVisibilities according to the masks
@@ -513,6 +517,7 @@ int main(int argc, char **argv)
     bool smoothBoundary = false;
     bool undistortMasks = false;
     bool usePointsVisibilities = false;
+    std::string maskExtension = "png";
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -539,6 +544,8 @@ int main(int argc, char **argv)
             "Undistort the masks with the same parameters as the matching image. Use it if the masks are drawn on the original images.")
         ("usePointsVisibilities", po::value<bool>(&usePointsVisibilities)->default_value(usePointsVisibilities),
             "Use the points visibilities from the meshing to filter triangles. Example: when they are occluded, back-face, etc.")
+        ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
+            "File extension for the masks to use.")
         ;
 
     CmdLine cmdline("AliceVision meshMasking");
@@ -613,7 +620,7 @@ int main(int argc, char **argv)
     }
 
     ALICEVISION_LOG_INFO("Mask mesh");
-    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks, usePointsVisibilities);
+    meshMasking(mp, inputMesh, masksFolders, maskExtension, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks, usePointsVisibilities);
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

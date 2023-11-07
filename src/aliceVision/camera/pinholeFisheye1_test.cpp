@@ -26,31 +26,33 @@ using namespace aliceVision::camera;
 //-----------------
 BOOST_AUTO_TEST_CASE(cameraPinholeFisheye_disto_undisto_Fisheye1)
 {
-  makeRandomOperationsReproducible();
-  const PinholeFisheye1 cam(1000, 1000, 1000, 1000, 0, 0,
-                                    0.1); // K1
+    makeRandomOperationsReproducible();
 
-  const double epsilon = 1e-4;
-  for (int i = 0; i < 10; ++i)
-  {
-    // generate random point inside the image domain (last random to avoid 0,0)
-    const Vec2 ptImage_gt = (Vec2::Random() * 800./2.) + Vec2(500,500) + Vec2::Random();
-    const Vec2 ptCamera = cam.ima2cam(ptImage_gt);
+    std::shared_ptr<Distortion> distortion = std::make_shared<DistortionFisheye1>(0.1);
 
-    // Check that adding and removing distortion allow to recover the provided point
-    EXPECT_MATRIX_NEAR( ptCamera, cam.removeDistortion(cam.addDistortion(ptCamera)), epsilon);
-    EXPECT_MATRIX_NEAR( ptImage_gt, cam.cam2ima(cam.removeDistortion(cam.addDistortion(ptCamera))), epsilon);
+    std::shared_ptr<Pinhole> cam = std::make_shared<Pinhole>(1000, 1000, 1000, 1000, 0, 0, distortion);
 
-    // Assert that distortion field is not null and it has moved the initial provided point
-    BOOST_CHECK(! (cam.addDistortion(ptCamera) == cam.removeDistortion(cam.addDistortion(ptCamera))) );
+    const double epsilon = 1e-4;
+    for (int i = 0; i < 10; ++i)
+    {
+        // generate random point inside the image domain (last random to avoid 0,0)
+        const Vec2 ptImage_gt = (Vec2::Random() * 800. / 2.) + Vec2(500, 500) + Vec2::Random();
+        const Vec2 ptCamera = cam->ima2cam(ptImage_gt);
 
-    // Check projection / back-projection
-    const double depth_gt = std::abs(Vec2::Random()(0)) * 100.0;
-    const geometry::Pose3 pose(geometry::randomPose());
+        // Check that adding and removing distortion allow to recover the provided point
+        EXPECT_MATRIX_NEAR(ptCamera, cam->removeDistortion(cam->addDistortion(ptCamera)), epsilon);
+        EXPECT_MATRIX_NEAR(ptImage_gt, cam->cam2ima(cam->removeDistortion(cam->addDistortion(ptCamera))), epsilon);
 
-    const Vec3 pt3d = cam.backproject(ptImage_gt, true, pose, depth_gt);
-    const Vec2 pt2d_proj = cam.project(pose, pt3d.homogeneous(), true);
+        // Assert that distortion field is not null and it has moved the initial provided point
+        BOOST_CHECK(!(cam->addDistortion(ptCamera) == cam->removeDistortion(cam->addDistortion(ptCamera))));
 
-    EXPECT_MATRIX_NEAR(ptImage_gt, pt2d_proj, epsilon);
-  }
+        // Check projection / back-projection
+        const double depth_gt = std::abs(Vec2::Random()(0)) * 100.0;
+        const geometry::Pose3 pose(geometry::randomPose());
+
+        const Vec3 pt3d = cam->backproject(ptImage_gt, true, pose, depth_gt);
+        const Vec2 pt2d_proj = cam->project(pose, pt3d.homogeneous(), true);
+
+        EXPECT_MATRIX_NEAR(ptImage_gt, pt2d_proj, epsilon);
+    }
 }

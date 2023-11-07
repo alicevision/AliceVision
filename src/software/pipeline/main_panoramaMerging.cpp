@@ -13,12 +13,11 @@
 #include <aliceVision/image/imageAlgo.hpp>
 
 // System
-#include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 // Reading command line options
 #include <boost/program_options.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
 // IO
@@ -71,6 +70,10 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    HardwareContext hwc = cmdline.getHardwareContext();
+    oiio::attribute("threads", static_cast<int>(hwc.getMaxThreads()));
+    oiio::attribute("exr_threads", static_cast<int>(hwc.getMaxThreads()));
+
     // load input scene
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
@@ -102,7 +105,7 @@ int aliceVision_main(int argc, char** argv)
                 continue;
             }
 
-            const std::string warpedPath = viewItem.second->getMetadata().at("AliceVision:warpedPath");
+            const std::string warpedPath = viewItem.second->getImage().getMetadata().at("AliceVision:warpedPath");
 
             // Get composited image path
             const std::string imagePath = (fs::path(compositingFolder) / (warpedPath + ".exr")).string();

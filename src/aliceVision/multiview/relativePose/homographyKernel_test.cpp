@@ -18,85 +18,75 @@ using namespace aliceVision::multiview;
 
 BOOST_AUTO_TEST_CASE(NormalizedHomography4PKernel_Fitting)
 {
-  // define 3 knows homographies (Use as GT).
-  std::vector<Mat3> H_gt(3);
+    // define 3 knows homographies (Use as GT).
+    std::vector<Mat3> H_gt(3);
 
-  H_gt[0] = Mat3::Identity();
-  H_gt[1] << 1,  0, -4,
-             0,  1,  5,
-             0,  0,  1;
-  H_gt[2] << 1, -2,  3,
-             4,  5, -6,
-            -7,  8,  1;
+    H_gt[0] = Mat3::Identity();
+    H_gt[1] << 1, 0, -4, 0, 1, 5, 0, 0, 1;
+    H_gt[2] << 1, -2, 3, 4, 5, -6, -7, 8, 1;
 
-  // define a set of points.
-  Mat x(2, 9), xh;
-  x << 0, 0, 0, 1, 1, 1, 2, 2, 2,
-       0, 1, 2, 0, 1, 2, 0, 1, 2;
+    // define a set of points.
+    Mat x(2, 9), xh;
+    x << 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2;
 
-  euclideanToHomogeneous(x, &xh);
+    euclideanToHomogeneous(x, xh);
 
-  for(int i = 0; i < H_gt.size(); ++i)
-  {
-    // transform points by the ground truth homography.
-    Mat y, yh = H_gt[i] * xh;
-    homogeneousToEuclidean(yh, &y);
-
-    const relativePose::NormalizedHomography4PKernel kernel(x, y);
-
-    std::size_t samples_[5] = { 0, 1, 2, 3, 4 };
-    std::vector<std::size_t> samples(samples_,samples_+5);
-    for(std::size_t j = 4; samples.size() < x.cols(); samples.push_back(j++))
+    for (int i = 0; i < H_gt.size(); ++i)
     {
-      std::vector<robustEstimation::Mat3Model> Hs;
-      kernel.fit(samples, Hs);
-      BOOST_CHECK_EQUAL(1, Hs.size());
+        // transform points by the ground truth homography.
+        Mat y, yh = H_gt[i] * xh;
+        homogeneousToEuclidean(yh, y);
 
-      // check that found matrix is equal to the GT
-      EXPECT_MATRIX_PROP(H_gt[i], Hs.at(0).getMatrix(), 1e-6);
+        const relativePose::NormalizedHomography4PKernel kernel(x, y);
+
+        std::size_t samples_[5] = {0, 1, 2, 3, 4};
+        std::vector<std::size_t> samples(samples_, samples_ + 5);
+        for (std::size_t j = 4; samples.size() < x.cols(); samples.push_back(j++))
+        {
+            std::vector<robustEstimation::Mat3Model> Hs;
+            kernel.fit(samples, Hs);
+            BOOST_CHECK_EQUAL(1, Hs.size());
+
+            // check that found matrix is equal to the GT
+            EXPECT_MATRIX_PROP(H_gt[i], Hs.at(0).getMatrix(), 1e-6);
+        }
     }
-  }
 }
 
 BOOST_AUTO_TEST_CASE(Homography4PKernel_Fitting)
 {
-  // define 3 knows homographies (Use as GT).
-  std::vector<Mat3> H_gt(3);
+    // define 3 knows homographies (Use as GT).
+    std::vector<Mat3> H_gt(3);
 
-  H_gt[0] = Mat3::Identity();
-  H_gt[1] << 1,  0, -4,
-             0,  1,  5,
-             0,  0,  1;
-  H_gt[2] << 1, -2,  3,
-             4,  5, -6,
-            -7,  8,  1;
+    H_gt[0] = Mat3::Identity();
+    H_gt[1] << 1, 0, -4, 0, 1, 5, 0, 0, 1;
+    H_gt[2] << 1, -2, 3, 4, 5, -6, -7, 8, 1;
 
-  // define a set of points.
-  Mat x(2, 9), xh;
-  x << 0, 0, 0, 1, 1, 1, 2, 2, 2,
-       0, 1, 2, 0, 1, 2, 0, 1, 2;
+    // define a set of points.
+    Mat x(2, 9), xh;
+    x << 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2;
 
-  euclideanToHomogeneous(x, &xh);
+    euclideanToHomogeneous(x, xh);
 
-  for(int i = 0; i < H_gt.size(); ++i)
-  {
-    // transform points by the ground truth homography.
-    Mat y, yh = H_gt[i] * xh;
-    homogeneousToEuclidean(yh, &y);
-
-    const relativePose::Homography4PKernel kernel(x, y);
-
-    std::size_t samples_[5]={0,1,2,3,4};
-    std::vector<std::size_t> samples(samples_,samples_+5);
-
-    for(std::size_t j = 4; samples.size() < x.cols(); samples.push_back(j++))
+    for (int i = 0; i < H_gt.size(); ++i)
     {
-      std::vector<robustEstimation::Mat3Model> Hs;
-      kernel.fit(samples, Hs);
-      BOOST_CHECK_EQUAL(1, Hs.size());
+        // transform points by the ground truth homography.
+        Mat y, yh = H_gt[i] * xh;
+        homogeneousToEuclidean(yh, y);
 
-      // check that found matrix is equal to the GT
-      EXPECT_MATRIX_PROP(H_gt[i], Hs.at(0).getMatrix(), 1e-6);
+        const relativePose::Homography4PKernel kernel(x, y);
+
+        std::size_t samples_[5] = {0, 1, 2, 3, 4};
+        std::vector<std::size_t> samples(samples_, samples_ + 5);
+
+        for (std::size_t j = 4; samples.size() < x.cols(); samples.push_back(j++))
+        {
+            std::vector<robustEstimation::Mat3Model> Hs;
+            kernel.fit(samples, Hs);
+            BOOST_CHECK_EQUAL(1, Hs.size());
+
+            // check that found matrix is equal to the GT
+            EXPECT_MATRIX_PROP(H_gt[i], Hs.at(0).getMatrix(), 1e-6);
+        }
     }
-  }
 }

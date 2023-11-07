@@ -18,11 +18,11 @@ namespace multiview {
  */
 struct UnnormalizerI
 {
-  /**
-   * @brief Denormalize the results.
-   * @see HZ page 109.
-   */
-  static void unnormalize(const Mat3& T1, const Mat3& T2, Mat3* H);
+    /**
+     * @brief Denormalize the results.
+     * @see HZ page 109.
+     */
+    static void unnormalize(const Mat3& T1, const Mat3& T2, Mat3* H);
 };
 
 /**
@@ -30,11 +30,11 @@ struct UnnormalizerI
  */
 struct UnnormalizerT
 {
-  /**
-   * @brief Denormalize the results.
-   * @see HZ page 109.
-   */
-  static void unnormalize(const Mat3& T1, const Mat3& T2, Mat3* H);
+    /**
+     * @brief Denormalize the results.
+     * @see HZ page 109.
+     */
+    static void unnormalize(const Mat3& T1, const Mat3& T2, Mat3* H);
 };
 
 /**
@@ -42,8 +42,8 @@ struct UnnormalizerT
  */
 struct UnnormalizerResection
 {
-  static void unnormalize(const Mat& T, const Mat& U, Mat34* P);
+    static void unnormalize(const Mat& T, const Mat& U, Mat34* P);
 };
 
-} //namespace multiview
-} //namespace aliceVision
+}  // namespace multiview
+}  // namespace aliceVision

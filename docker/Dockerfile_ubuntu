@@ -1,13 +1,14 @@
+ARG AV_DEPS_VERSION
 ARG AV_VERSION
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
-FROM alicevision/alicevision-deps:${AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+FROM alicevision/alicevision-deps:${AV_DEPS_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 # use CUDA_VERSION to select the image version to use
 # see https://hub.docker.com/r/nvidia/cuda/
 #
-# AV_VERSION=2.2.8.develop
+# AV_VERSION=2.2.8
 # CUDA_VERSION=11.0
 # UBUNTU_VERSION=20.04
 # docker build \

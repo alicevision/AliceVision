@@ -99,8 +99,8 @@ struct Stat3d
         d3 = (float)d[0];
     }
 
-private:
+  private:
     static void eigen_decomposition(double A[3][3], double V0[], double V1[], double V2[], double d[]);
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

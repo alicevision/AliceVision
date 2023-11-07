@@ -16,13 +16,13 @@
 namespace aliceVision {
 namespace system {
 
-  /**
-   * @brief Timer class with microsecond accuracy.
-   * Adapted from DO++, a basic set of libraries in C++ for computer vision, licensed under MPL2.
-   * See https://do-cv.github.io/sara
-   */
-  class Timer
-  {
+/**
+ * @brief Timer class with microsecond accuracy.
+ * Adapted from DO++, a basic set of libraries in C++ for computer vision, licensed under MPL2.
+ * See https://do-cv.github.io/sara
+ */
+class Timer
+{
   public:
     //! Default constructor
     Timer();
@@ -32,25 +32,24 @@ namespace system {
     double elapsed() const;
     //! Returns the elapsed time in milliseconds.
     double elapsedMs() const;
-  private:
 
+  private:
     std::chrono::high_resolution_clock::time_point start_;
-  };
-  
-  // print the elapsed time
-  std::ostream& operator << (std::ostream&, const Timer&);
-  
+};
+
+// print the elapsed time
+std::ostream& operator<<(std::ostream&, const Timer&);
+
 /**
  * @brief Prints the duration in the format #d #h #m #s #ms starting from the non-zero
  * most significant entity (ie it does not print #d if d is 0 and so on...).
- * 
+ *
  * @param durationMs the duration in milliseconds.
  * @return a formatted string
- */  
+ */
 std::string prettyTime(double durationMs);
 
-} // namespace system
-} // namespace aliceVision
+}  // namespace system
+}  // namespace aliceVision
 
-#endif // ALICEVISION_SYSTEM_TIMER_HPP
-
+#endif  // ALICEVISION_SYSTEM_TIMER_HPP

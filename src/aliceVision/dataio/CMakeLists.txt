@@ -3,6 +3,7 @@ set(dataio_files_headers
   FeedProvider.hpp
   IFeed.hpp
   ImageFeed.hpp
+  SfMDataFeed.hpp
 )
 
 # Sources
@@ -10,6 +11,7 @@ set(dataio_files_sources
   FeedProvider.cpp
   IFeed.cpp
   ImageFeed.cpp
+  SfMDataFeed.cpp
 )
 
 if(ALICEVISION_HAVE_OPENCV)
