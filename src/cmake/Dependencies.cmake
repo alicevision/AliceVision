@@ -1170,8 +1170,8 @@ if(AV_BUILD_SUITESPARSE)
     endif()
 
     ExternalProject_Add(${SUITESPARSE_TARGET}
-        URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v7.0.1.tar.gz
-        URL_HASH MD5=d31bbe2a26dced338b23e71f7c9b541a
+        URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v7.3.0.tar.gz
+        URL_HASH MD5=6ff86003a85d73eb383d82db04af7373
         DOWNLOAD_DIR ${BUILD_DIR}/download/suitesparse
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -1195,7 +1195,7 @@ if(AV_BUILD_CERES)
 
     ExternalProject_Add(${CERES_TARGET}
         GIT_REPOSITORY https://github.com/ceres-solver/ceres-solver
-        GIT_TAG a3a062d72cc8c0f5f1f09b36d8b7c1ea3bef4d73  # 2022/12/19
+        GIT_TAG 2.2.0
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
         BUILD_ALWAYS 0
