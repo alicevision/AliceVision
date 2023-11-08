@@ -815,11 +815,8 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
         // even if no conversion is needed.
     }
-    else if ((imageReadOptions.workingColorSpace == EImageColorSpace::ACES2065_1) ||
-             (imageReadOptions.workingColorSpace == EImageColorSpace::ACEScg) ||
-             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACES2065_1) ||
-             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::ACEScg) ||
-             (EImageColorSpace_stringToEnum(fromColorSpaceName) == EImageColorSpace::REC709))
+    else if (EImageColorSpace_isSupportedOIIOEnum(imageReadOptions.workingColorSpace) &&
+             EImageColorSpace_isSupportedOIIOEnum(EImageColorSpace_stringToEnum(fromColorSpaceName)))
     {
         const auto colorConfigPath = getAliceVisionOCIOConfig();
         if (colorConfigPath.empty())
@@ -830,13 +827,13 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         oiio::ColorConfig colorConfig(colorConfigPath);
         oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
                                          inBuf,
-            fromColorSpaceName,
+                                         fromColorSpaceName,
                                          EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace),
                                          true,
                                          "",
                                          "",
-            &colorConfig);
-        inBuf = colorspaceBuf;
+                                         &colorConfig);
+                                         inBuf = colorspaceBuf;
     }
     else
     {
@@ -1049,9 +1046,7 @@ void writeImage(const std::string& path,
         // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
         // even if no conversion is needed.
     }
-    else if ((toColorSpace == EImageColorSpace::ACES2065_1) || (toColorSpace == EImageColorSpace::ACEScg) ||
-             (fromColorSpace == EImageColorSpace::ACES2065_1) || (fromColorSpace == EImageColorSpace::ACEScg) ||
-             (fromColorSpace == EImageColorSpace::REC709))
+    else if (EImageColorSpace_isSupportedOIIOEnum(fromColorSpace) && EImageColorSpace_isSupportedOIIOEnum(toColorSpace))
     {
         const auto colorConfigPath = getAliceVisionOCIOConfig();
         if (colorConfigPath.empty())
