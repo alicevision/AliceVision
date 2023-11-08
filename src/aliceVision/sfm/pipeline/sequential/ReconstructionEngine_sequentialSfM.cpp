@@ -154,6 +154,19 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(const SfM
     // create sfm intermediate step folder
     if (!fs::exists(_sfmStepFolder) && _params.logIntermediateSteps)
         fs::create_directory(_sfmStepFolder);
+
+    // Set up the resection ID
+    _resectionId = 0;
+    for (const auto& viewPair : _sfmData.getViews())
+    {
+        IndexT viewResectionId = viewPair.second->getResectionId();
+
+        // Make sure we can use the higher resectionIds
+        if (viewResectionId != UndefinedIndexT && viewResectionId >= _resectionId)
+        {
+            _resectionId = viewResectionId + 1;
+        }
+    }
 }
 
 bool ReconstructionEngine_sequentialSfM::process()
@@ -442,8 +455,6 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
 
 double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
 {
-    IndexT resectionId = 0;
-
     // to be visited views
     std::set<IndexT> viewsToVisit;
 
@@ -458,18 +469,11 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
     for (const auto& viewPair : _sfmData.getViews())
     {
         IndexT viewId = viewPair.second->getViewId();
-        IndexT viewResectionId = viewPair.second->getResectionId();
 
         // Create a list of remaining views to estimate
         if (!_sfmData.isPoseAndIntrinsicDefined(viewId))
         {
             viewsToVisit.insert(viewId);
-        }
-
-        // Make sure we can use the higher resectionIds
-        if (viewResectionId != UndefinedIndexT && viewResectionId > resectionId)
-        {
-            resectionId = viewResectionId + 1;
         }
     }
 
@@ -502,7 +506,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
         nbValidPoses = _sfmData.getPoses().size();
 
         ALICEVISION_LOG_INFO("Incremental Reconstruction start iteration " << globalIteration << ":" << std::endl
-                                                                           << "\t- # number of resection groups: " << resectionId << std::endl
+                                                                           << "\t- # number of resection groups: " << _resectionId << std::endl
                                                                            << "\t- # number of poses: " << nbValidPoses << std::endl
                                                                            << "\t- # number of landmarks: " << _sfmData.getLandmarks().size()
                                                                            << std::endl);
@@ -523,7 +527,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
         while (findNextBestViews(bestViewCandidates, viewsToVisit))
         {
             ALICEVISION_LOG_INFO("Update Reconstruction:" << std::endl
-                                                          << "\t- resection id: " << resectionId << std::endl
+                                                          << "\t- resection id: " << _resectionId << std::endl
                                                           << "\t- # images in the resection group: " << bestViewCandidates.size() << std::endl
                                                           << "\t- # images remaining: " << viewsToVisit.size());
 
@@ -534,7 +538,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
             }
 
             // Return the difference between reconstructed views and prevReconstructedViews
-            std::set<IndexT> newReconstructedViews = resection(resectionId, bestViewCandidates, prevReconstructedViews);
+            std::set<IndexT> newReconstructedViews = resection(_resectionId, bestViewCandidates, prevReconstructedViews);
             if (newReconstructedViews.empty())
             {
                 continue;
@@ -572,11 +576,11 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
               potentials.begin(), potentials.end(), linkedViewIds.begin(), linkedViewIds.end(), std::inserter(potentials, potentials.end()));
 
             // scene logging for visual debug
-            if (_params.logIntermediateSteps && (resectionId % 3) == 0)
+            if (_params.logIntermediateSteps && (_resectionId % 3) == 0)
             {
                 auto chrono_start = std::chrono::steady_clock::now();
                 std::ostringstream os;
-                os << "sfm_" << std::setw(8) << std::setfill('0') << resectionId;
+                os << "sfm_" << std::setw(8) << std::setfill('0') << _resectionId;
                 sfmDataIO::Save(_sfmData, (fs::path(_sfmStepFolder) / (os.str() + _params.sfmStepFileExtension)).string(), _params.sfmStepFilter);
                 ALICEVISION_LOG_DEBUG(
                   "Save of file " << os.str() << " took "
@@ -584,7 +588,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
                                   << " msec.");
             }
 
-            ++resectionId;
+            ++_resectionId;
         }
 
         if (_params.rig.useRigConstraint && !_sfmData.getRigs().empty())
@@ -615,7 +619,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
     } while (nbValidPoses != _sfmData.getPoses().size());
 
     ALICEVISION_LOG_INFO("Incremental Reconstruction completed with " << globalIteration << " iterations:" << std::endl
-                                                                      << "\t- # number of resection groups: " << resectionId << std::endl
+                                                                      << "\t- # number of resection groups: " << _resectionId << std::endl
                                                                       << "\t- # number of poses: " << nbValidPoses << std::endl
                                                                       << "\t- # number of landmarks: " << _sfmData.getLandmarks().size()
                                                                       << std::endl);
