@@ -1385,6 +1385,15 @@ int aliceVision_main(int argc, char * argv[])
             view.getImage().setHeight(image.Height());
             view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
             view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
+
+            if (image.Width() != cam->w()) // The image has been rotated by automatic reorientation 
+            {
+                cam->setWidth(image.Width());
+                cam->setHeight(image.Height());
+                unsigned int sensorWidth = cam->sensorWidth();
+                cam->setSensorWidth(cam->sensorHeight());
+                cam->setSensorHeight(sensorWidth);
+            }
         }
 
         if (pParams.scaleFactor != 1.0f)
