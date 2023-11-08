@@ -351,5 +351,17 @@ EINTRINSIC Pinhole::getType() const
     return EINTRINSIC::PINHOLE_CAMERA;
 }
 
+double Pinhole::getHorizontalFov() const
+{
+    const double focalLengthMM = sensorWidth() * getScale().x() / double(w());
+    return 2.0 * atan2(sensorWidth() / 2.0, focalLengthMM);
+}
+
+double Pinhole::getVerticalFov() const
+{
+    const double focalLengthMM = sensorHeight() * getScale().y() / double(h());
+    return 2.0 * atan2(sensorHeight() / 2.0, focalLengthMM);
+}
+
 }  // namespace camera
 }  // namespace aliceVision

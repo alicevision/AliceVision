@@ -469,5 +469,21 @@ EINTRINSIC Equidistant::getType() const
     return EINTRINSIC::EQUIDISTANT_CAMERA;
 }
 
+
+double Equidistant::getHorizontalFov() const
+{
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    return fov;
+}
+
+double Equidistant::getVerticalFov() const
+{
+    return getHorizontalFov();
+}
+
 }  // namespace camera
 }  // namespace aliceVision

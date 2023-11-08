@@ -101,6 +101,18 @@ class Pinhole : public IntrinsicScaleOffsetDisto
      * @return true if this ray is visible theoretically
      */
     bool isVisibleRay(const Vec3& ray) const override;
+
+    /**
+     * @Brief get horizontal fov in radians
+     * @return  horizontal fov in radians
+    */
+    double getHorizontalFov() const override;
+
+    /**
+     * @Brief get vertical fov in radians
+     * @return  vertical fov in radians
+    */
+    double getVerticalFov() const override;
 };
 
 }  // namespace camera
