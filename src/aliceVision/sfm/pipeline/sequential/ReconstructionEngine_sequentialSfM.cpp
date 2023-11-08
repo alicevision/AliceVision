@@ -1414,11 +1414,12 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
         RelativePoseInfo relativePose_info;
         relativePose_info.initial_residual_tolerance = 4.0;
 
+        std::mt19937 randomNumberGenerator(_randomNumberGenerator);
         const bool relativePoseSuccess = robustRelativePose(camI->K(),
                                                             camJ->K(),
                                                             xI,
                                                             xJ,
-                                                            _randomNumberGenerator,
+                                                            randomNumberGenerator,
                                                             relativePose_info,
                                                             std::make_pair(camI->w(), camI->h()),
                                                             std::make_pair(camJ->w(), camJ->h()),
