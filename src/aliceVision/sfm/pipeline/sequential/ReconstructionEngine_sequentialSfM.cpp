@@ -346,6 +346,11 @@ void ReconstructionEngine_sequentialSfM::createInitialReconstruction(const std::
             updatedViews.insert(initialPairCandidate.first);
             updatedViews.insert(initialPairCandidate.second);
 
+            // Set the resection ID for the initial pair
+            _sfmData.getView(initialPairCandidate.first).setResectionId(_resectionId);
+            _sfmData.getView(initialPairCandidate.second).setResectionId(_resectionId);
+            ++_resectionId;
+
             return;
         }
     }
