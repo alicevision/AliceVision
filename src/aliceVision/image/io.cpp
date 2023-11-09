@@ -1034,7 +1034,8 @@ void writeImage(const std::string& path,
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << "\n"
                                                << "\t- width: " << image.width() << "\n"
                                                << "\t- height: " << image.height() << "\n"
-                                               << "\t- channels: " << nchannels);
+                                               << "\t- channels: " << nchannels << "\n"
+                                               << "\t- color space: " << EImageColorSpace_enumToOIIOString(toColorSpace));
 
     oiio::ImageSpec imageSpec(image.width(), image.height(), nchannels, typeDesc);
     imageSpec.extra_attribs = metadata;  // add custom metadata

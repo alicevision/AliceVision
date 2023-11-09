@@ -13,6 +13,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <filesystem>
+#include <vector>
 
 namespace aliceVision {
 namespace image {
@@ -147,8 +148,22 @@ std::string EImageColorSpace_informations()
     return EImageColorSpace_enumToString(EImageColorSpace::AUTO) + ", " + EImageColorSpace_enumToString(EImageColorSpace::LINEAR) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::SRGB) + ", " + EImageColorSpace_enumToString(EImageColorSpace::ACES2065_1) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::ACEScg) + ", " + EImageColorSpace_enumToString(EImageColorSpace::REC709) +
-           " (ODT.Academy.Rec709_100nits), " + EImageColorSpace_enumToString(EImageColorSpace::LAB) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::XYZ) + ", " + EImageColorSpace_enumToString(EImageColorSpace::NO_CONVERSION);
+           " (ODT.Academy.Rec709_100nits), " + EImageColorSpace_enumToString(EImageColorSpace::Linear_ARRI_Wide_Gamut_3) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::ARRI_LogC3_EI800) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::Linear_ARRI_Wide_Gamut_4) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::ARRI_LogC4) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::Linear_BMD_WideGamut_Gen5) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::BMDFilm_WideGamut_Gen5) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::CanonLog2_CinemaGamut_D55) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::CanonLog3_CinemaGamut_D55) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::Linear_CinemaGamut_D55) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::Linear_V_Gamut) + ", " + EImageColorSpace_enumToString(EImageColorSpace::V_Log_V_Gamut) +
+           ", " + EImageColorSpace_enumToString(EImageColorSpace::Linear_REDWideGamutRGB) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::Log3G10_REDWideGamutRGB) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::Linear_Venice_S_Gamut3_Cine) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::S_Log3_Venice_S_Gamut3_Cine) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::LAB) + ", " + EImageColorSpace_enumToString(EImageColorSpace::XYZ) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::NO_CONVERSION);
 }
 
 EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
@@ -167,6 +182,44 @@ EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
         return EImageColorSpace::ACEScg;
     if ((type == "aces_lut") || (type == "rec709"))
         return EImageColorSpace::REC709;
+    if ((type == "linear arri wide gamut 3") || (type == "lin_arri_wide_gamut_3") || (type == "input - arri - linear - alexa wide gamut") ||
+        (type == "lin_alexawide"))
+        return EImageColorSpace::Linear_ARRI_Wide_Gamut_3;
+    if ((type == "arri logc3 (ei800)") || (type == "arri_logc3_ei800") || (type == "input - arri - v3 logc(ei800) - wide gamut") ||
+        (type == "logc3ei800_alexawide"))
+        return EImageColorSpace::ARRI_LogC3_EI800;
+    if ((type == "linear arri wide gamut 4") || (type == "lin_arri_wide_gamut_4") || (type == "lin_awg4"))
+        return EImageColorSpace::Linear_ARRI_Wide_Gamut_4;
+    if ((type == "arri logc4") || (type == "arri_logc4"))
+        return EImageColorSpace::ARRI_LogC4;
+    if ((type == "linear bmd widegamut gen5") || (type == "lin_bmd_widegamut_gen5"))
+        return EImageColorSpace::Linear_BMD_WideGamut_Gen5;
+    if ((type == "bmdfilm widegamut gen5") || (type == "bmdfilm_widegamut_gen5"))
+        return EImageColorSpace::BMDFilm_WideGamut_Gen5;
+    if ((type == "canonlog2 cinemagamut d55") || (type == "canonlog2_cinemagamut_d55") ||
+        (type == "input - canon - canon - log2 - cinema gamut daylight") || (type == "canonlog2_cgamutday"))
+        return EImageColorSpace::CanonLog2_CinemaGamut_D55;
+    if ((type == "canonlog3 cinemagamut d55") || (type == "canonlog3_cinemagamut_d55") ||
+        (type == "input - canon - canon - log3 - cinema gamut daylight") || (type == "canonlog3_cgamutday"))
+        return EImageColorSpace::CanonLog3_CinemaGamut_D55;
+    if ((type == "linear cinemagamut d55") || (type == "lin_cinemagamut_d55") || (type == "input - canon - linear - canon cinema gamut daylight") ||
+        (type == "lin_canoncgamutday"))
+        return EImageColorSpace::Linear_CinemaGamut_D55;
+    if ((type == "linear v-gamut") || (type == "lin_vgamut") || (type == "input - panasonic - linear - v - gamut"))
+        return EImageColorSpace::Linear_V_Gamut;
+    if ((type == "v-log v-gamut") || (type == "vlog_vgamut") || (type == "input - panasonic - v - log - v - gamut"))
+        return EImageColorSpace::V_Log_V_Gamut;
+    if ((type == "linear redwidegamutrgb") || (type == "lin_redwidegamutrgb") || (type == "input - red - linear - redwidegamutrgb") ||
+        (type == "lin_rwg"))
+        return EImageColorSpace::Linear_REDWideGamutRGB;
+    if ((type == "log3g10 redwidegamutrgb") || (type == "log3g10_redwidegamutrgb") || (type == "input - red - redlog3g10 - redwidegamutrgb") ||
+        (type == "rl3g10_rwg"))
+        return EImageColorSpace::Log3G10_REDWideGamutRGB;
+    if ((type == "linear venice s-gamut3.cine") || (type == "lin_venice_sgamut3cine") || (type == "input - sony - linear - venice s-gamut3.cine"))
+        return EImageColorSpace::Linear_Venice_S_Gamut3_Cine;
+    if ((type == "s-log3 venice s-gamut3.cine") || (type == "slog3_venice_sgamut3cine") || (type == "input - sony - s-log3 - venice s-gamut3.cine") ||
+        (type == "slog3_venice_sgamutcine"))
+        return EImageColorSpace::S_Log3_Venice_S_Gamut3_Cine;
     if (type == "lab")
         return EImageColorSpace::LAB;
     if (type == "xyz")
@@ -193,6 +246,36 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace dataType)
             return "acescg";
         case EImageColorSpace::REC709:
             return "rec709";
+        case EImageColorSpace::Linear_ARRI_Wide_Gamut_3:
+            return "Linear ARRI Wide Gamut 3";
+        case EImageColorSpace::ARRI_LogC3_EI800:
+            return "ARRI LogC3 (EI800)";
+        case EImageColorSpace::Linear_ARRI_Wide_Gamut_4:
+            return "Linear ARRI Wide Gamut 4";
+        case EImageColorSpace::ARRI_LogC4:
+            return "ARRI LogC4";
+        case EImageColorSpace::Linear_BMD_WideGamut_Gen5:
+            return "Linear BMD WideGamut Gen5";
+        case EImageColorSpace::BMDFilm_WideGamut_Gen5:
+            return "BMDFilm WideGamut Gen5";
+        case EImageColorSpace::CanonLog2_CinemaGamut_D55:
+            return "CanonLog2 CinemaGamut D55";
+        case EImageColorSpace::CanonLog3_CinemaGamut_D55:
+            return "CanonLog3 CinemaGamut D55";
+        case EImageColorSpace::Linear_CinemaGamut_D55:
+            return "Linear CinemaGamut D55";
+        case EImageColorSpace::Linear_V_Gamut:
+            return "Linear V-Gamut";
+        case EImageColorSpace::V_Log_V_Gamut:
+            return "V-Log V-Gamut";
+        case EImageColorSpace::Linear_REDWideGamutRGB:
+            return "Linear REDWideGamutRGB";
+        case EImageColorSpace::Log3G10_REDWideGamutRGB:
+            return "Log3G10 REDWideGamutRGB";
+        case EImageColorSpace::Linear_Venice_S_Gamut3_Cine:
+            return "Linear Venice S-Gamut3.Cine";
+        case EImageColorSpace::S_Log3_Venice_S_Gamut3_Cine:
+            return "S-Log3 Venice S-Gamut3.Cine";
         case EImageColorSpace::LAB:
             return "lab";
         case EImageColorSpace::XYZ:
@@ -217,6 +300,36 @@ std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
             return "ACEScg";
         case EImageColorSpace::REC709:
             return "rec709";
+        case EImageColorSpace::Linear_ARRI_Wide_Gamut_3:
+            return "Linear ARRI Wide Gamut 3";
+        case EImageColorSpace::ARRI_LogC3_EI800:
+            return "ARRI LogC3 (EI800)";
+        case EImageColorSpace::Linear_ARRI_Wide_Gamut_4:
+            return "Linear ARRI Wide Gamut 4";
+        case EImageColorSpace::ARRI_LogC4:
+            return "ARRI LogC4";
+        case EImageColorSpace::Linear_BMD_WideGamut_Gen5:
+            return "Linear BMD WideGamut Gen5";
+        case EImageColorSpace::BMDFilm_WideGamut_Gen5:
+            return "BMDFilm WideGamut Gen5";
+        case EImageColorSpace::CanonLog2_CinemaGamut_D55:
+            return "CanonLog2 CinemaGamut D55";
+        case EImageColorSpace::CanonLog3_CinemaGamut_D55:
+            return "CanonLog3 CinemaGamut D55";
+        case EImageColorSpace::Linear_CinemaGamut_D55:
+            return "Linear CinemaGamut D55";
+        case EImageColorSpace::Linear_V_Gamut:
+            return "Linear V-Gamut";
+        case EImageColorSpace::V_Log_V_Gamut:
+            return "V-Log V-Gamut";
+        case EImageColorSpace::Linear_REDWideGamutRGB:
+            return "Linear REDWideGamutRGB";
+        case EImageColorSpace::Log3G10_REDWideGamutRGB:
+            return "Log3G10 REDWideGamutRGB";
+        case EImageColorSpace::Linear_Venice_S_Gamut3_Cine:
+            return "Linear Venice S-Gamut3.Cine";
+        case EImageColorSpace::S_Log3_Venice_S_Gamut3_Cine:
+            return "S-Log3 Venice S-Gamut3.Cine";
         default:;
     }
     throw std::out_of_range("No string defined for EImageColorSpace to OIIO conversion: " + std::to_string(int(colorSpace)));
@@ -236,6 +349,45 @@ EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace
         return EImageColorSpace::ACEScg;
     if ((cs == "rec709") || (colorspace == "aces_lut"))
         return EImageColorSpace::REC709;
+    if ((colorspace == "linear arri wide gamut 3") || (colorspace == "lin_arri_wide_gamut_3") ||
+        (colorspace == "input - arri - linear - alexa wide gamut") || (colorspace == "lin_alexawide"))
+        return EImageColorSpace::Linear_ARRI_Wide_Gamut_3;
+    if ((colorspace == "arri logc3 (ei800)") || (colorspace == "arri_logc3_ei800") || (colorspace == "input - arri - v3 logc(ei800) - wide gamut") ||
+        (colorspace == "logc3ei800_alexawide"))
+        return EImageColorSpace::ARRI_LogC3_EI800;
+    if ((colorspace == "linear arri wide gamut 4") || (colorspace == "lin_arri_wide_gamut_4") || (colorspace == "lin_awg4"))
+        return EImageColorSpace::Linear_ARRI_Wide_Gamut_4;
+    if ((colorspace == "arri logc4") || (colorspace == "arri_logc4"))
+        return EImageColorSpace::ARRI_LogC4;
+    if ((colorspace == "linear bmd widegamut gen5") || (colorspace == "lin_bmd_widegamut_gen5"))
+        return EImageColorSpace::Linear_BMD_WideGamut_Gen5;
+    if ((colorspace == "bmdfilm widegamut gen5") || (colorspace == "bmdfilm_widegamut_gen5"))
+        return EImageColorSpace::BMDFilm_WideGamut_Gen5;
+    if ((colorspace == "canonlog2 cinemagamut d55") || (colorspace == "canonlog2_cinemagamut_d55") ||
+        (colorspace == "input - canon - canon - log2 - cinema gamut daylight") || (colorspace == "canonlog2_cgamutday"))
+        return EImageColorSpace::CanonLog2_CinemaGamut_D55;
+    if ((colorspace == "canonlog3 cinemagamut d55") || (colorspace == "canonlog3_cinemagamut_d55") ||
+        (colorspace == "input - canon - canon - log3 - cinema gamut daylight") || (colorspace == "canonlog3_cgamutday"))
+        return EImageColorSpace::CanonLog3_CinemaGamut_D55;
+    if ((colorspace == "linear cinemagamut d55") || (colorspace == "lin_cinemagamut_d55") ||
+        (colorspace == "input - canon - linear - canon cinema gamut daylight") || (colorspace == "lin_canoncgamutday"))
+        return EImageColorSpace::Linear_CinemaGamut_D55;
+    if ((colorspace == "linear v-gamut") || (colorspace == "lin_vgamut") || (colorspace == "input - panasonic - linear - v - gamut"))
+        return EImageColorSpace::Linear_V_Gamut;
+    if ((colorspace == "v-log v-gamut") || (colorspace == "vlog_vgamut") || (colorspace == "input - panasonic - v - log - v - gamut"))
+        return EImageColorSpace::V_Log_V_Gamut;
+    if ((colorspace == "linear redwidegamutrgb") || (colorspace == "lin_redwidegamutrgb") ||
+        (colorspace == "input - red - linear - redwidegamutrgb") || (colorspace == "lin_rwg"))
+        return EImageColorSpace::Linear_REDWideGamutRGB;
+    if ((colorspace == "log3g10 redwidegamutrgb") || (colorspace == "log3g10_redwidegamutrgb") ||
+        (colorspace == "input - red - redlog3g10 - redwidegamutrgb") || (colorspace == "rl3g10_rwg"))
+        return EImageColorSpace::Log3G10_REDWideGamutRGB;
+    if ((colorspace == "linear venice s-gamut3.cine") || (colorspace == "lin_venice_sgamut3cine") ||
+        (colorspace == "input - sony - linear - venice s-gamut3.cine"))
+        return EImageColorSpace::Linear_Venice_S_Gamut3_Cine;
+    if ((colorspace == "s-log3 venice s-gamut3.cine") || (colorspace == "slog3_venice_sgamut3cine") ||
+        (colorspace == "input - sony - s-log3 - venice s-gamut3.cine") || (colorspace == "slog3_venice_sgamutcine"))
+        return EImageColorSpace::S_Log3_Venice_S_Gamut3_Cine;
 
     throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
 }
@@ -253,6 +405,36 @@ bool EImageColorSpace_isSupportedOIIOEnum(const EImageColorSpace& colorspace)
         case EImageColorSpace::ACEScg:
             return true;
         case EImageColorSpace::REC709:
+            return true;
+        case EImageColorSpace::Linear_ARRI_Wide_Gamut_3:
+            return true;
+        case EImageColorSpace::ARRI_LogC3_EI800:
+            return true;
+        case EImageColorSpace::Linear_ARRI_Wide_Gamut_4:
+            return true;
+        case EImageColorSpace::ARRI_LogC4:
+            return true;
+        case EImageColorSpace::Linear_BMD_WideGamut_Gen5:
+            return true;
+        case EImageColorSpace::BMDFilm_WideGamut_Gen5:
+            return true;
+        case EImageColorSpace::CanonLog2_CinemaGamut_D55:
+            return true;
+        case EImageColorSpace::CanonLog3_CinemaGamut_D55:
+            return true;
+        case EImageColorSpace::Linear_CinemaGamut_D55:
+            return true;
+        case EImageColorSpace::Linear_V_Gamut:
+            return true;
+        case EImageColorSpace::V_Log_V_Gamut:
+            return true;
+        case EImageColorSpace::Linear_REDWideGamutRGB:
+            return true;
+        case EImageColorSpace::Log3G10_REDWideGamutRGB:
+            return true;
+        case EImageColorSpace::Linear_Venice_S_Gamut3_Cine:
+            return true;
+        case EImageColorSpace::S_Log3_Venice_S_Gamut3_Cine:
             return true;
         default:
             return false;
@@ -275,6 +457,7 @@ bool EImageColorSpace_isSupportedOIIOstring(const std::string& colorspace)
     }
 
     return (std::find(knownColorSpaces.begin(), knownColorSpaces.end(), boost::to_lower_copy(colorspace)) != knownColorSpaces.end());
+                     avOCIOColorSpaceNamesAndAliases.end(), boost::to_lower_copy(colorspace)) != avOCIOColorSpaceNamesAndAliases.end();
 }
 
 std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType) { return os << EImageColorSpace_enumToString(dataType); }
