@@ -1392,7 +1392,7 @@ int aliceVision_main(int argc, char * argv[])
 
                 cam2->setWidth(image.Width());
                 cam2->setHeight(image.Height());
-                unsigned int sensorWidth = cam->sensorWidth();
+                double sensorWidth = cam->sensorWidth();
                 cam2->setSensorWidth(cam->sensorHeight());
                 cam2->setSensorHeight(sensorWidth);
 
