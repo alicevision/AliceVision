@@ -159,8 +159,8 @@ void buildInitialWorld(sfmData::SfMData& sfmData, const feature::FeaturesPerView
         const feature::PointFeatures& refFeatures = refFeaturesPerDesc.at(track.descType);
         const feature::PointFeatures& nextFeatures = nextFeaturesPerDesc.at(track.descType);
         
-        IndexT refFeatureId = track.featPerView.at(pair.reference);
-        IndexT nextFeatureId = track.featPerView.at(pair.next);
+        IndexT refFeatureId = track.featPerView.at(pair.reference).featureId;
+        IndexT nextFeatureId = track.featPerView.at(pair.next).featureId;
 
         Vec2 refV = refFeatures[refFeatureId].coords().cast<double>();
         Vec2 nextV = nextFeatures[nextFeatureId].coords().cast<double>();
@@ -248,7 +248,7 @@ bool localizeNext(sfmData::SfMData& sfmData, const feature::FeaturesPerView & fe
         const track::Track & track = trackMap.at(trackId);
 
         const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
-        IndexT newViewFeatureId = track.featPerView.at(newViewId);
+        IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
         Vec2 nvV = newViewFeatures[newViewFeatureId].coords().cast<double>();
         Vec3 camP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->get_ud_pixel(nvV)));
     
@@ -279,7 +279,7 @@ bool localizeNext(sfmData::SfMData& sfmData, const feature::FeaturesPerView & fe
         IndexT trackId = observedTracks[pos];
         const track::Track & track = trackMap.at(trackId);
         const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
-        IndexT newViewFeatureId = track.featPerView.at(newViewId);
+        IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
         auto & feat = newViewFeatures[newViewFeatureId];
         landmarks[trackId].observations[newViewId] = sfmData::Observation(feat.coords().cast<double>(), newViewFeatureId, feat.scale());
     }
@@ -333,8 +333,8 @@ bool addPoints(sfmData::SfMData& sfmData, const feature::FeaturesPerView & featu
             const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
             const feature::PointFeatures& refViewFeatures = refViewFeaturesPerDesc.at(track.descType);
 
-            IndexT newViewFeatureId = track.featPerView.at(newViewId);
-            IndexT refViewFeatureId = track.featPerView.at(pV.first);
+            IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
+            IndexT refViewFeatureId = track.featPerView.at(pV.first).featureId;
 
             auto & newFeat = newViewFeatures[newViewFeatureId];
             auto & refFeat = refViewFeatures[refViewFeatureId];

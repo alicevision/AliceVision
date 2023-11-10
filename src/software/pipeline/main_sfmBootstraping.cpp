@@ -128,8 +128,8 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData, const sfm::Reconstructe
         const track::Track& track = commonItem.second;
         const feature::PointFeatures& refFeatures = refFeaturesPerDesc.at(track.descType);
         const feature::PointFeatures& nextfeatures = nextFeaturesPerDesc.at(track.descType);
-        const IndexT refFeatureId = track.featPerView.at(pair.reference);
-        const IndexT nextfeatureId = track.featPerView.at(pair.next);
+        const IndexT refFeatureId = track.featPerView.at(pair.reference).featureId;
+        const IndexT nextfeatureId = track.featPerView.at(pair.next).featureId;
         const Vec2 refpt = refFeatures[refFeatureId].coords().cast<double>();
         const Vec2 nextpt = nextfeatures[nextfeatureId].coords().cast<double>();
 
@@ -182,7 +182,7 @@ double computeScore(const feature::FeaturesPerView & featuresPerView, const trac
 
         const feature::PointFeatures& features = featuresPerDesc.at(track.descType);
         
-        const IndexT featureId = track.featPerView.at(viewId);
+        const IndexT featureId = track.featPerView.at(viewId).featureId;
         const Vec2 pt = features[featureId].coords().cast<double>();
 
         unsigned int ptx = (unsigned int)(pt.x());
@@ -247,8 +247,8 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
 
         const feature::PointFeatures& refFeatures = refFeaturesPerDesc.at(track.descType);
         const feature::PointFeatures& nextFeatures = nextFeaturesPerDesc.at(track.descType);
-        const IndexT refFeatureId = track.featPerView.at(pair.reference);
-        const IndexT nextFeatureId = track.featPerView.at(pair.next);
+        const IndexT refFeatureId = track.featPerView.at(pair.reference).featureId;
+        const IndexT nextFeatureId = track.featPerView.at(pair.next).featureId;
         const Vec2 refpt = refFeatures[refFeatureId].coords().cast<double>();
         const Vec2 nextpt = nextFeatures[nextFeatureId].coords().cast<double>();
 

@@ -407,8 +407,8 @@ int aliceVision_main(int argc, char** argv)
             const feature::PointFeatures& refFeatures = refFeaturesPerDesc.at(track.descType);
             const feature::PointFeatures& nextfeatures = nextFeaturesPerDesc.at(track.descType);
 
-            IndexT refFeatureId = track.featPerView.at(refImage);
-            IndexT nextfeatureId = track.featPerView.at(nextImage);
+            IndexT refFeatureId = track.featPerView.at(refImage).featureId;
+            IndexT nextfeatureId = track.featPerView.at(nextImage).featureId;
 
             refX.col(pos) = refFeatures[refFeatureId].coords().cast<double>();
             nextX.col(pos) = nextfeatures[nextfeatureId].coords().cast<double>();
