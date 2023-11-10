@@ -604,7 +604,7 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
         image.swap(rescaled);
     }
     
-    if (pParams.reorient)
+    if ((pParams.reorient) && (imageMetadata.find("Orientation") != imageMetadata.end()))
     {
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         inBuf.set_orientation(std::stoi(imageMetadata["Orientation"]));
@@ -1384,7 +1384,8 @@ int aliceVision_main(int argc, char * argv[])
             view.getImage().setWidth(image.Width());
             view.getImage().setHeight(image.Height());
             view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
-            view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
+            if (viewMetadata.find("Orientation") != viewMetadata.end())
+                view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
 
             if (image.Width() != cam->w()) // The image has been rotated by automatic reorientation 
             {
