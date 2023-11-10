@@ -503,7 +503,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
                                         // extract camera indexes
                                         const size_t id_view_I = iter_I->first;
-                                        const size_t id_feat_I = iter_I->second;
+                                        const size_t id_feat_I = iter_I->second.featureId;
 
                                         // loop on subtracks
                                         for (size_t index_J = index_I + 1; index_J < track.featPerView.size(); ++index_J)
@@ -513,7 +513,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
                                             // extract camera indexes
                                             const size_t id_view_J = iter_J->first;
-                                            const size_t id_feat_J = iter_J->second;
+                                            const size_t id_feat_J = iter_J->second.featureId;
 
                                             newpairMatches[std::make_pair(id_view_I, id_view_J)][track.descType].emplace_back(id_feat_I, id_feat_J);
                                         }
@@ -606,7 +606,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(const SfMData& sfmD
         for (track::Track::FeatureIdPerView::const_iterator iter = track.featPerView.begin(); iter != track.featPerView.end(); ++iter, ++index)
         {
             const size_t idx_view = iter->first;
-            const feature::PointFeature pt = normalizedFeaturesPerView.getFeatures(idx_view, track.descType)[iter->second];
+            const feature::PointFeature pt = normalizedFeaturesPerView.getFeatures(idx_view, track.descType)[iter->second.featureId];
             xxx[index]->col(cpt) = pt.coords().cast<double>();
             const View* view = sfmData.getViews().at(idx_view).get();
             intrinsic_ids.insert(view->getIntrinsicId());

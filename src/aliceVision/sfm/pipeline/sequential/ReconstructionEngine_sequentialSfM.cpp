@@ -108,7 +108,7 @@ void computeTracksPyramidPerView(const track::TracksPerView& tracksPerView,
         {
             const std::size_t trackId = viewTracks.second[i];
             const track::Track& track = map_tracks.at(trackId);
-            const std::size_t featIndex = track.featPerView.at(viewId);
+            const std::size_t featIndex = track.featPerView.at(viewId).featureId;
             const auto& feature = featuresProvider.getFeatures(viewId, track.descType)[featIndex];
 
             for (std::size_t level = 0; level < pyramidDepth; ++level)
@@ -423,7 +423,7 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
 
         for (const auto& featView : track.featPerView)
         {
-            const ObsToLandmark::const_iterator it = obsToLandmark.find(ObsKey(featView.first, featView.second, track.descType));
+            const ObsToLandmark::const_iterator it = obsToLandmark.find(ObsKey(featView.first, featView.second.featureId, track.descType));
 
             if (it != obsToLandmark.end())
             {
@@ -1208,8 +1208,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
     {
         assert(iterT->second.featPerView.size() == 2);
         auto iter = iterT->second.featPerView.begin();
-        const std::size_t i = iter->second;
-        const std::size_t j = (++iter)->second;
+        const std::size_t i = iter->second.featureId;
+        const std::size_t j = (++iter)->second.featureId;
 
         Vec2 feat = _featuresPerView->getFeatures(I, iterT->second.descType)[i].coords().cast<double>();
         xI.col(cptIndex) = camI->get_ud_pixel(feat);
@@ -1397,8 +1397,8 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
         for (aliceVision::track::TracksMap::const_iterator iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end(); ++iterT, ++cptIndex)
         {
             auto iter = iterT->second.featPerView.begin();
-            const size_t i = iter->second;
-            const size_t j = (++iter)->second;
+            const size_t i = iter->second.featureId;
+            const size_t j = (++iter)->second.featureId;
             commonTracksIds[cptIndex] = iterT->first;
 
             const auto& viewI = _featuresPerView->getFeatures(I, iterT->second.descType);
@@ -1441,8 +1441,8 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
                 multiview::TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), X);
                 IndexT trackId = commonTracksIds[inlier_idx];
                 auto iter = map_tracksCommon[trackId].featPerView.begin();
-                const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second].coords().cast<double>();
-                const Vec2 featJ = _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second].coords().cast<double>();
+                const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second.featureId].coords().cast<double>();
+                const Vec2 featJ = _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second.featureId].coords().cast<double>();
                 vec_angles[i] = angleBetweenRays(pose_I, camI, pose_J, camJ, featI, featJ);
                 validCommonTracksIds[i] = trackId;
                 ++i;
@@ -1771,7 +1771,7 @@ ObservationData getObservationData(const SfMData& scene, feature::FeaturesPerVie
     Pose3 pose = scene.getPose(*view).getTransform();
     Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
-    const auto& feature = featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)];
+    const auto& feature = featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId).featureId];
     Vec2 x = feature.coords().cast<double>();
     Vec2 xUd = cam->get_ud_pixel(x);  // undistorted 2D point
 
@@ -1906,10 +1906,10 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
             landmark.descType = track.descType;
             for (const IndexT& viewId : inliers)  // add inliers as observations
             {
-                const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
-                const feature::PointFeature& p = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)];
+                const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId).featureId].coords().cast<double>();
+                const feature::PointFeature& p = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId).featureId];
                 const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p.scale();
-                landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId), scale);
+                landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId).featureId, scale);
             }
 #pragma omp critical
             {
@@ -1994,11 +1994,11 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
                 const std::size_t trackId = trackIt.first;
                 const track::Track& track = trackIt.second;
 
-                const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
-                const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
+                const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I).featureId].coords().cast<double>();
+                const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J).featureId].coords().cast<double>();
 
-                const feature::PointFeature& featI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)];
-                const feature::PointFeature& featJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)];
+                const feature::PointFeature& featI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I).featureId];
+                const feature::PointFeature& featJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J).featureId];
                 // test if the track already exists in 3D
                 bool trackIdExists;
 #pragma omp critical
@@ -2021,7 +2021,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
                             if (poseI.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
                             {
                                 const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featI.scale();
-                                landmark.observations[I] = Observation(xI, track.featPerView.at(I), scale);
+                                landmark.observations[I] = Observation(xI, track.featPerView.at(I).featureId, scale);
                                 ++extented_track;
                             }
                         }
@@ -2034,7 +2034,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
                             if (poseJ.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
                             {
                                 const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featJ.scale();
-                                landmark.observations[J] = Observation(xJ, track.featPerView.at(J), scale);
+                                landmark.observations[J] = Observation(xJ, track.featPerView.at(J).featureId, scale);
                                 ++extented_track;
                             }
                         }
@@ -2084,8 +2084,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
 
                             const double scaleI = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featI.scale();
                             const double scaleJ = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featJ.scale();
-                            landmark.observations[I] = Observation(xI, track.featPerView.at(I), scaleI);
-                            landmark.observations[J] = Observation(xJ, track.featPerView.at(J), scaleJ);
+                            landmark.observations[I] = Observation(xI, track.featPerView.at(I).featureId, scaleI);
+                            landmark.observations[J] = Observation(xJ, track.featPerView.at(J).featureId, scaleJ);
 
                             ++new_added_track;
                         }  // critical

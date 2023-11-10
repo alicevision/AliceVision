@@ -187,9 +187,9 @@ int aliceVision_main(int argc, char ** argv)
           const PointFeatures& featuresI = featuresPerView.getFeatures(viewI->getViewId(), descType);
           const PointFeatures& featuresJ = featuresPerView.getFeatures(viewJ->getViewId(), descType);
 
-          const PointFeature& imaA = featuresI[obsIt->second];
+          const PointFeature& imaA = featuresI[obsIt->second.featureId];
           ++obsIt;
-          const PointFeature& imaB = featuresJ[obsIt->second];
+          const PointFeature& imaB = featuresJ[obsIt->second.featureId];
 
           svgStream.drawLine(imaA.x(), imaA.y(), imaB.x()+dimImageI.first, imaB.y(), svgStyle().stroke("green", 2.0));
         }
@@ -205,9 +205,9 @@ int aliceVision_main(int argc, char ** argv)
           const PointFeatures& featuresI = featuresPerView.getFeatures(viewI->getViewId(), descType);
           const PointFeatures& featuresJ = featuresPerView.getFeatures(viewJ->getViewId(), descType);
 
-          const PointFeature& imaA = featuresI[obsIt->second];
+          const PointFeature& imaA = featuresI[obsIt->second.featureId];
           ++obsIt;
-          const PointFeature& imaB = featuresJ[obsIt->second];
+          const PointFeature& imaB = featuresJ[obsIt->second.featureId];
 
           const std::string featColor = describerTypeColor(descType);
 

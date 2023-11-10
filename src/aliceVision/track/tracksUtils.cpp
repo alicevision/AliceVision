@@ -199,7 +199,7 @@ bool getFeatureIdInViewPerTrack(const TracksMap& allTracks, const std::set<std::
         const Track& map_ref = iterT->second;
         auto iterSearch = map_ref.featPerView.find(viewId);
         if (iterSearch != map_ref.featPerView.end())
-            out_featId->emplace_back(map_ref.descType, iterSearch->second);
+            out_featId->emplace_back(map_ref.descType, iterSearch->second.featureId);
     }
     return !out_featId->empty();
 }
@@ -220,8 +220,8 @@ void tracksToIndexedMatches(const TracksMap& tracks, const std::vector<IndexT>& 
         // check we have 2 elements for a track.
         assert(map_ref.featPerView.size() == 2);
 
-        const IndexT indexI = (map_ref.featPerView.begin())->second;
-        const IndexT indexJ = (++map_ref.featPerView.begin())->second;
+        const IndexT indexI = (map_ref.featPerView.begin())->second.featureId;
+        const IndexT indexJ = (++map_ref.featPerView.begin())->second.featureId;
 
         vec_indexref.emplace_back(indexI, indexJ);
     }

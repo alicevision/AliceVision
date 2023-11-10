@@ -304,7 +304,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
             for (Track::FeatureIdPerView::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
             {
                 const size_t imaIndex = it->first;
-                const size_t featIndex = it->second;
+                const size_t featIndex = it->second.featureId;
                 const PointFeature& pt = _featuresPerView->getFeatures(imaIndex, track.descType)[featIndex];
 
                 const double scale = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : pt.scale();
