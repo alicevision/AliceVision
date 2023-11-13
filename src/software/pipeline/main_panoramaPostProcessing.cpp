@@ -212,8 +212,7 @@ void colorSpaceTransform(image::Image<image::RGBAfColor>& inputImage, image::EIm
         // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
         // even if no conversion is needed.
     }
-    else if ((toColorSpace == image::EImageColorSpace::ACES2065_1) || (toColorSpace == image::EImageColorSpace::ACEScg) ||
-        (fromColorSpace == image::EImageColorSpace::ACES2065_1) || (fromColorSpace == image::EImageColorSpace::ACEScg))
+    else if (EImageColorSpace_isSupportedOIIOEnum(toColorSpace) && EImageColorSpace_isSupportedOIIOEnum(fromColorSpace))
     {
         const auto colorConfigPath = image::getAliceVisionOCIOConfig();
         if (colorConfigPath.empty())
