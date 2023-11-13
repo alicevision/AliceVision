@@ -82,6 +82,84 @@ EImageColorSpace getImageColorSpace(const std::string& imagePath)
     return EImageColorSpace_stringToEnum(colorSpace);
 }
 
+std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::string& defaulColorSpace = "")
+{
+    std::string meta = oiioSpec.serialize(OIIO::ImageSpec::SerialText);
+
+    std::vector<std::string> lines;
+
+    auto el = meta.find("\n");
+    while (el != meta.npos)
+    {
+        std::string line = meta.substr(0, el);
+        meta = meta.substr(el + 1);
+        el = meta.find("\n");
+        lines.push_back(line);
+    }
+    if ((meta != "\n") && (meta != ""))
+    {
+        lines.push_back(meta);
+    }
+
+    std::map<std::string, std::string> mapColorSpaces;
+
+    for (const auto& line : lines)
+    {
+        auto it = line.find(": ");
+        if (it != line.npos)
+        {
+            std::string key = line.substr(0, it);
+            auto it_1 = key.find_first_not_of(" ");
+            key = key.substr(it_1);
+            auto it_2 = key.find_last_of(":");
+            std::string keyAuthor = "";
+            if (it_2 != key.npos)
+            {
+                keyAuthor = key.substr(0, it_2);
+                key = key.substr(it_2 + 1);
+                auto it_3 = keyAuthor.find_last_of(":");
+                if (it_3 != keyAuthor.npos)
+                {
+                    keyAuthor = keyAuthor.substr(it_3 + 1);
+                }
+            }
+            std::string val = line.substr(it + 2);
+
+            // We retain only the metadata of type "string" with a name containing "ColorSpace" or "ColourSpace"
+            if (((key.find("ColorSpace") != key.npos) || (key.find("ColourSpace") != key.npos)) && (val.find("\"") != val.npos))
+            {
+                if (keyAuthor == "AliceVision" || keyAuthor == "oiio")
+                {
+                    key = keyAuthor + ":" + key;
+                }
+                val = val.substr(val.find_first_of("\"") + 1, val.find_last_of("\"") - 1);
+                mapColorSpaces.emplace(key, val);
+            }
+        }
+    }
+
+    std::string colorSpace = defaulColorSpace;
+
+    if (mapColorSpaces.find("AliceVision:ColorSpace") != mapColorSpaces.end())
+    {
+        colorSpace = mapColorSpaces.at("AliceVision:ColorSpace");
+    }
+    else if (mapColorSpaces.find("workPlateColourSpace") != mapColorSpaces.end())
+    {
+        colorSpace = mapColorSpaces.at("workPlateColourSpace");
+    }
+    else if (mapColorSpaces.find("originalPlateColourSpace") != mapColorSpaces.end())
+    {
+        colorSpace = mapColorSpaces.at("originalPlateColourSpace");
+    }
+    else if (mapColorSpaces.find("oiio:ColorSpace") != mapColorSpaces.end())
+    {
+        colorSpace = mapColorSpaces.at("oiio:ColorSpace");
+    }
+
+    return colorSpace;
+}
+
 std::string EImageFileType_informations()
 {
   return "Image file type :\n"
@@ -750,8 +828,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
-    const std::string colorSpaceFromMetadata =
-      inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"));
+    const std::string colorSpaceFromMetadata = getImageColorSpace(inBuf.spec(), "sRGB");
 
     std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
                 ? "aces2065-1"
