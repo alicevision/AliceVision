@@ -868,7 +868,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
             // Rotation and normalization of normals
 #pragma omp parallel for
-            for (size_t i = 0; i < _atlases[atlasID].size(); ++i)
+            for (int i = 0; i < static_cast<int>(_atlases[atlasID].size()); ++i)
             {
                 int triangleId = _atlases[atlasID][i];
 
