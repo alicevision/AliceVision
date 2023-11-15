@@ -63,7 +63,6 @@ struct AlembicExporter::DataImpl
                    const sfmData::View& view,
                    const sfmData::CameraPose* pose = nullptr,
                    std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr,
-                   const Vec6* uncertainty = nullptr,
                    Alembic::Abc::OObject* parent = nullptr);
 
     Alembic::Abc::OArchive _archive;
@@ -87,7 +86,6 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
                                           const sfmData::View& view,
                                           const sfmData::CameraPose* pose,
                                           std::shared_ptr<camera::IntrinsicBase> intrinsic,
-                                          const Vec6* uncertainty,
                                           Alembic::Abc::OObject* parent)
 {
     if (parent == nullptr)
@@ -253,13 +251,6 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
         ODoubleProperty(userProps, "mvg_fisheyeCircleRadius").set(intrinsicEquiCasted->getCircleRadius());
     }
 
-    if (uncertainty)
-    {
-        std::vector<double> uncertaintyParams(uncertainty->data(), uncertainty->data() + 6);
-        ODoubleArrayProperty mvg_uncertaintyParams(userProps, "mvg_uncertaintyEigenValues");
-        mvg_uncertaintyParams.set(uncertaintyParams);
-    }
-
     if (pose == nullptr || intrinsicCasted == nullptr)
     {
         // hide camera
@@ -284,10 +275,7 @@ void AlembicExporter::addSfM(const sfmData::SfMData& sfmData, ESfMData flagsPart
 
     if (flagsPart & ESfMData::STRUCTURE)
     {
-        const sfmData::LandmarksUncertainty noUncertainty;
-
         addLandmarks(sfmData.getLandmarks(),
-                     (flagsPart & ESfMData::LANDMARKS_UNCERTAINTY) ? sfmData._landmarksUncertainty : noUncertainty,
                      ((flagsPart & ESfMData::OBSERVATIONS || flagsPart & ESfMData::OBSERVATIONS_WITH_FEATURES)),
                      (flagsPart & ESfMData::OBSERVATIONS_WITH_FEATURES));
     }
@@ -328,9 +316,9 @@ void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const 
       (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicsharedPtr(view.getIntrinsicId()) : nullptr;
 
     if (sfmData.isPoseAndIntrinsicDefined(&view) && (flagsPart & ESfMData::EXTRINSICS))
-        _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
+        _dataImpl->addCamera(name, view, pose, intrinsic, &_dataImpl->_mvgCameras);
     else
-        _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCamerasUndefined);
+        _dataImpl->addCamera(name, view, pose, intrinsic, &_dataImpl->_mvgCamerasUndefined);
 }
 
 void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT rigId, const std::vector<IndexT>& viewIds, ESfMData flagsPart)
@@ -411,14 +399,11 @@ void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT ri
                 OBoolProperty(userProps, "mvg_rigPoseLocked").set(rigPoseLocked);
             }
         }
-        _dataImpl->addCamera(name, view, subPosePtr.get(), intrinsic, nullptr, &(rigObj.at(isReconstructed)));
+        _dataImpl->addCamera(name, view, subPosePtr.get(), intrinsic, &(rigObj.at(isReconstructed)));
     }
 }
 
-void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
-                                   const sfmData::LandmarksUncertainty& landmarksUncertainty,
-                                   bool withVisibility,
-                                   bool withFeatures)
+void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, bool withVisibility, bool withFeatures)
 {
     if (landmarks.empty())
         return;
@@ -521,30 +506,14 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
             OFloatArrayProperty(userProps, "mvg_visibilityFeatScale").set(featScale);
         }
     }
-    if (!landmarksUncertainty.empty())
-    {
-        std::vector<V3d> uncertainties;
-
-        std::size_t indexLandmark = 0;
-        for (sfmData::Landmarks::const_iterator itLandmark = landmarks.begin(); itLandmark != landmarks.end(); ++itLandmark, ++indexLandmark)
-        {
-            const IndexT idLandmark = itLandmark->first;
-            const Vec3& u = landmarksUncertainty.at(idLandmark);
-            uncertainties.emplace_back(u[0], u[1], u[2]);
-        }
-        // Uncertainty eigen values (x,y,z)
-        OV3dArrayProperty propUncertainty(userProps, "mvg_uncertaintyEigenValues");
-        propUncertainty.set(uncertainties);
-    }
 }
 
 void AlembicExporter::addCamera(const std::string& name,
                                 const sfmData::View& view,
                                 const sfmData::CameraPose* pose,
-                                std::shared_ptr<camera::IntrinsicBase> intrinsic,
-                                const Vec6* uncertainty)
+                                std::shared_ptr<camera::IntrinsicBase> intrinsic)
 {
-    _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty);
+    _dataImpl->addCamera(name, view, pose, intrinsic);
 }
 
 void AlembicExporter::initAnimatedCamera(const std::string& cameraName, std::size_t startFrame)

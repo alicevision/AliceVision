@@ -39,12 +39,6 @@ using Landmarks = HashMap<IndexT, Landmark>;
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;
 
-/// Define uncertainty per pose
-using PosesUncertainty = HashMap<IndexT, Vec6>;
-
-/// Define uncertainty per landmark
-using LandmarksUncertainty = HashMap<IndexT, Vec3>;
-
 /// Define a collection of constraints
 using Constraints2D = std::vector<Constraint2D>;
 
@@ -58,10 +52,6 @@ using RotationPriors = std::vector<RotationPrior>;
 class SfMData
 {
   public:
-    /// Uncertainty per pose
-    PosesUncertainty _posesUncertainty;
-    /// Uncertainty per landmark
-    LandmarksUncertainty _landmarksUncertainty;
     /// 2D Constraints
     Constraints2D constraints2d;
     /// Rotation priors
