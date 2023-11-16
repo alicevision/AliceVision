@@ -484,10 +484,7 @@ class SfMData
     /**
      * @brief Add an ancestor image
      */
-    void addAncestor(IndexT ancestorId, std::shared_ptr<ImageInfo> image)
-    {
-        _ancestors.emplace(ancestorId, image);
-    }
+    void addAncestor(IndexT ancestorId, std::shared_ptr<ImageInfo> image) { _ancestors.emplace(ancestorId, image); }
 
     /**
      * @brief Insert data from the given sfmData if possible.

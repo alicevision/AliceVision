@@ -229,18 +229,6 @@ class View
     }
 
     /**
-     * @Brief get all ancestor images for this view
-     * @return ancestor images
-     */
-    //const std::vector<IndexT>& getAncestorImages() const { return _ancestorImages; }
-
-    /**
-     * @Brief get all ancestor images for this view
-     * @return ancestor images
-     */
-    //std::vector<IndexT>& getAncestorImages() { return _ancestorImages; }
-
-    /**
      * @brief Set the given resection id
      * @param[in] resectionId The given resection id
      */
@@ -268,10 +256,8 @@ class View
     bool _isPoseIndependent = true;
     /// list of ancestor images
     std::vector<IndexT> _ancestors;
-    /// Link to imageinfo
+    /// link to imageinfo
     std::shared_ptr<ImageInfo> _image;
-    /// List of ancestor images info
-    //std::vector<IndexT> _ancestorImages;
 };
 
 }  // namespace sfmData

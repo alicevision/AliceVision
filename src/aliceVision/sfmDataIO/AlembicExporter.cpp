@@ -67,9 +67,7 @@ struct AlembicExporter::DataImpl
                    const Vec6* uncertainty = nullptr,
                    Alembic::Abc::OObject* parent = nullptr);
 
-    void addAncestor(const std::string& name,
-                     std::shared_ptr<sfmData::ImageInfo> ancestor = nullptr,
-                     Alembic::Abc::OObject* parent = nullptr);
+    void addAncestor(const std::string& name, std::shared_ptr<sfmData::ImageInfo> ancestor = nullptr, Alembic::Abc::OObject* parent = nullptr);
 
     Alembic::Abc::OArchive _archive;
     Alembic::Abc::OObject _topObj;
@@ -273,9 +271,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     }
 }
 
-void AlembicExporter::DataImpl::addAncestor(const std::string& name,
-                                            std::shared_ptr<sfmData::ImageInfo> ancestor,
-                                            Alembic::Abc::OObject* parent)
+void AlembicExporter::DataImpl::addAncestor(const std::string& name, std::shared_ptr<sfmData::ImageInfo> ancestor, Alembic::Abc::OObject* parent)
 {
     if (parent == nullptr)
         parent = &_mvgAncestors;
@@ -295,7 +291,7 @@ void AlembicExporter::DataImpl::addAncestor(const std::string& name,
     unsigned int height = ancestor->getHeight();
 
     auto it = ancestor->getMetadata().cbegin();
-    for (std::size_t i = 0; i < ancestor->getMetadata().size() ; i++)
+    for (std::size_t i = 0; i < ancestor->getMetadata().size(); i++)
     {
         ancestorRawMetadata.push_back(it->first);
         ancestorRawMetadata.push_back(it->second);

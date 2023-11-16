@@ -48,8 +48,8 @@ bool SfMData::operator==(const SfMData& other) const
 
     for (ImageInfos::const_iterator it = _ancestors.begin(); it != _ancestors.end(); ++it)
     {
-        const ImageInfo& ancestor1 = *(it->second.get());
-        const ImageInfo& ancestor2 = *(other._ancestors.at(it->first).get());
+        const ImageInfo& ancestor1 = *(it->second);
+        const ImageInfo& ancestor2 = *(other._ancestors.at(it->first));
 
         if (ancestor1 != ancestor2)
             return false;
