@@ -26,7 +26,7 @@ using namespace sfmData;
 std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& folders, IndexT viewId, const feature::ImageDescriber& imageDescriber)
 {
     assert(!folders.empty());
-
+    
     const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriber.getDescriberType());
     const std::string basename = std::to_string(viewId);
 
@@ -228,7 +228,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
                     std::unique_ptr<feature::Regions> regionsPtr;
                     try
                     {
-                        regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *(imageDescribers.at(i)));
+                        regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *(imageDescribers.at(i)));                        
                     }
                     catch (const std::exception& e)
                     {

@@ -23,9 +23,8 @@ enum class EImageDescriberType : unsigned char
     SIFT = 10,
     SIFT_FLOAT = 11,
     SIFT_UPRIGHT = 12,
-    DSPSIFT = 13
-
-    ,
+    DSPSIFT = 13,
+    
     AKAZE = 20,
     AKAZE_LIOP = 21,
     AKAZE_MLDB = 22
