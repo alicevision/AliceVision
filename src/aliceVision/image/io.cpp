@@ -94,7 +94,7 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
 
     for (const auto& m : oiioSpec.extra_attribs)
     {
-        const std::string name = boost::to_lower_copy(m.name().string());
+        const std::string name = m.name().string();
 
         if (name.find("oiio:ColorSpace") != name.npos)
         {
