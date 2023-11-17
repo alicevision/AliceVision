@@ -353,6 +353,9 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
     // Parameters
     Params _params;
 
+    /// Current resection ID
+    IndexT _resectionId;
+
     // Data providers
 
     feature::FeaturesPerView* _featuresPerView;
