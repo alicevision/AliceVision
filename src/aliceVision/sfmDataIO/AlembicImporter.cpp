@@ -401,7 +401,7 @@ bool readCamera(const Version& abcVersion,
     std::string mvg_intrinsicInitializationMode = EInitMode_enumToString(EInitMode::NONE);
     std::string mvg_intrinsicDistortionInitializationMode = EInitMode_enumToString(EInitMode::NONE);
     std::vector<double> mvg_intrinsicParams;
-    std::vector<IndexT> mvg_ancestorsParams;
+    std::vector<IndexT> mvg_ancestorImagesParams;
     Vec2 initialFocalLengthPix = {-1, -1};
     double fisheyeCenterX = 0.0;
     double fisheyeCenterY = 0.0;
@@ -548,13 +548,15 @@ bool readCamera(const Version& abcVersion,
                 prop.get(sample, ISampleSelector(sampleFrame));
                 mvg_intrinsicParams.assign(sample->get(), sample->get() + sample->size());
             }
-            if (userProps.getPropertyHeader("mvg_ancestorsParams"))
+
+            if (userProps.getPropertyHeader("mvg_ancestorImagesParams"))
             {
-                Alembic::Abc::IUInt32ArrayProperty prop(userProps, "mvg_ancestorsParams");
+                Alembic::Abc::IUInt32ArrayProperty prop(userProps, "mvg_ancestorImagesParams");
                 Alembic::Abc::IUInt32ArrayProperty::sample_ptr_type sample;
                 prop.get(sample, ISampleSelector(sampleFrame));
-                mvg_ancestorsParams.assign(sample->get(), sample->get() + sample->size());
+                mvg_ancestorImagesParams.assign(sample->get(), sample->get() + sample->size());
             }
+
             if (userProps.getPropertyHeader("mvg_distortionParams"))
             {
                 // Distortion parameters
@@ -659,7 +661,8 @@ bool readCamera(const Version& abcVersion,
             view->getImage().addMetadata(rawMetadata.at(i), rawMetadata.at(i + 1));
         }
 
-        for (IndexT val : mvg_ancestorsParams)
+        // set ancestor image Ids
+        for (IndexT val : mvg_ancestorImagesParams)
         {
             view->addAncestor(val);
         }
@@ -712,6 +715,52 @@ bool readCamera(const Version& abcVersion,
         {
             sfmData.setPose(*view, sfmData::CameraPose(pose, poseLocked));
         }
+    }
+
+    return true;
+}
+
+bool readAncestor(const Version& abcVersion, const ICamera& camera, sfmData::SfMData& sfmdata)
+{
+    // Check if we have an associated image plane
+    ICameraSchema cs = camera.getSchema();
+    ICompoundProperty userProps = getAbcUserProperties(cs);
+
+    if (userProps)
+    {
+        std::string imagePath = "";
+        unsigned int width = 0;
+        unsigned int height = 0;
+        std::vector<std::string> rawMetadata;
+
+        if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_ancestorImagePath"))
+            imagePath = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_ancestorImagePath", 0);
+        if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_ancestorImageWidth"))
+            width = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_ancestorImageWidth", 0);
+        if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_ancestorImageHeight"))
+            height = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_ancestorImageHeight", 0);
+        if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_ancestorImageRawMetadata"))
+            getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_ancestorImageRawMetadata", 0, rawMetadata);
+
+        if (rawMetadata.size() % 2 != 0)
+        {
+            ALICEVISION_THROW_ERROR("[Alembic] 'metadata' property is supposed to be key/values. Number of values is " +
+                                    std::to_string(rawMetadata.size()) + ".");
+        }
+
+        std::map<std::string, std::string> metadata;
+        for (size_t mIndex = 0; mIndex < rawMetadata.size() / 2; mIndex++)
+        {
+            metadata.insert(
+                std::pair<std::string, std::string>(rawMetadata[2 * mIndex], rawMetadata[2 * mIndex + 1]));
+        }
+
+        sfmData::ImageInfo ancestor(imagePath, width, height, metadata);
+
+        const std::string name = camera.getName();
+        const IndexT Id = std::stoi(name.substr(name.find_last_of("_") + 1));
+
+        sfmdata.addAncestor(Id, std::make_shared<sfmData::ImageInfo>(ancestor));
     }
 
     return true;
@@ -855,13 +904,21 @@ void visitObject(const Version& abcVersion, IObject iObj, M44d mat, sfmData::SfM
         IXform xform(iObj, kWrapExisting);
         readXform(abcVersion, xform, mat, sfmdata, flagsPart, isReconstructed);
     }
-    else if (ICamera::matches(md) && ((flagsPart & ESfMData::VIEWS) || (flagsPart & ESfMData::INTRINSICS) || (flagsPart & ESfMData::EXTRINSICS)))
+    else if (ICamera::matches(md) && ((flagsPart & ESfMData::VIEWS) || (flagsPart & ESfMData::INTRINSICS) || (flagsPart & ESfMData::EXTRINSICS) ||
+                                      (flagsPart & ESfMData::ANCESTORS)))
     {
         ICamera check_cam(iObj, kWrapExisting);
-        // If it's not an animated camera we add it here
         if (check_cam.getSchema().getNumSamples() == 1)
         {
-            readCamera(abcVersion, check_cam, mat, sfmdata, flagsPart, 0, isReconstructed);
+            if (iObj.getName().find("camera_ancestor") != std::string::npos)
+            {
+                readAncestor(abcVersion, check_cam, sfmdata);
+            }
+            else
+            {
+                // If it's not an animated camera we add it here
+                readCamera(abcVersion, check_cam, mat, sfmdata, flagsPart, 0, isReconstructed);
+            }
         }
     }
 

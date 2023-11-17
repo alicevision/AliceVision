@@ -62,7 +62,7 @@ class View
         _poseId(poseId),
         _rigId(rigId),
         _subPoseId(subPoseId),
-        _image(new ImageInfo(imagePath, width, height))
+        _image(new ImageInfo(imagePath, width, height, metadata))
     {}
 
     /**
@@ -79,7 +79,6 @@ class View
     {
         View* v = new View(*this);
         v->_image = std::make_shared<ImageInfo>(*this->_image);
-
         return v;
     }
 
@@ -93,16 +92,22 @@ class View
     inline bool operator!=(const View& other) const { return !(*this == other); }
 
     /**
-     * @brief Get Image object
+     * @brief Get Image info object
      * @return an object
      */
     const ImageInfo& getImage() const { return *_image; }
 
     /**
-     * @brief Get Image object
+     * @brief Get Image info object
      * @return an object
      */
     ImageInfo& getImage() { return *_image; }
+
+    /**
+     * @brief Get Image info pointer
+     * @return a shared pointer
+     */
+    std::shared_ptr<ImageInfo> getImageInfo() { return _image; }
 
     /**
      * @brief Get the view id
@@ -202,20 +207,26 @@ class View
     void setFrameId(IndexT frameId) { _frameId = frameId; }
 
     /**
-     * @brief Get the list of viewID referencing the source views called "Ancestors"
-     * If an image is generated from multiple input images, "Ancestors" allows to keep track of the viewIDs of the original inputs views.
-     * For instance, the generated view can come from the fusion of multiple LDR images into one HDR image, the fusion from multi-focus
-     * stacking to get a fully focused image, fusion of images with multiple lighting to get a more diffuse lighting, etc.
-     * @return list of viewID of the ancestors
-     * @param[in] viewId the view ancestor id
-     */
-    void addAncestor(IndexT viewId) { _ancestors.push_back(viewId); }
-
-    /**
      * @Brief get all ancestors for this view
      * @return ancestors
      */
     const std::vector<IndexT>& getAncestors() const { return _ancestors; }
+
+    /**
+     * @brief Add an ancestor images to the existing ones.
+     * If an image is generated from multiple input images, "Ancestor Images" allows to keep track of all features
+     * of the original images. For instance, the generated view can come from the fusion of multiple LDR images into
+     * one HDR image, the fusion from multi-focus stacking to get a fully focused image, fusion of images with multiple
+     * lighting to get a more diffuse lighting, etc.
+     * @param[in] new ancestor image Id
+     */
+    void addAncestor(IndexT image)
+    {
+        if (std::find(_ancestors.begin(), _ancestors.end(), image) == _ancestors.end())
+        {
+            _ancestors.push_back(image);
+        }
+    }
 
     /**
      * @brief Set the given resection id
@@ -243,9 +254,9 @@ class View
     IndexT _resectionId = UndefinedIndexT;
     /// pose independent of other view(s)
     bool _isPoseIndependent = true;
-    /// list of ancestors
+    /// list of ancestor images
     std::vector<IndexT> _ancestors;
-    /// Link  to imageinfo
+    /// link to imageinfo
     std::shared_ptr<ImageInfo> _image;
 };
 
