@@ -101,7 +101,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
     }
 
     int lightSize = 3;
-    if (!method.compare("HS"))
+    if (!method.compare("SH"))
         lightSize = 9;
 
     Eigen::MatrixXf lightMat(imageList.size(), lightSize);
@@ -209,8 +209,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
         lightingDirection = lightingDirection / intensity;
     }
 
-    // If method = HS :
-    else if (!method.compare("HS"))
+    // If method = SH :
+    else if (!method.compare("SH"))
     {
         size_t lightSize = lightingDirection.size();
 
@@ -389,8 +389,8 @@ void writeJSON(const std::string& fileName,
             {
                 lightTree.put("viewId", viewId.getViewId());
             }
-            if (!method.compare("HS"))
-                lightTree.put("type", "HS");
+            if (!method.compare("SH"))
+                lightTree.put("type", "SH");
             else
                 lightTree.put("type", "directional");
 

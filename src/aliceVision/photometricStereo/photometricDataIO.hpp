@@ -40,7 +40,7 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
  * @param[in] dirFileName Path to the direction file
  * @param[out] lightMat Matrix of directions of light
  */
-void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
+void loadLightSH(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
 
 /**
  * @brief Load light data from a JSON file to an Eigen matrix (with a list of images)

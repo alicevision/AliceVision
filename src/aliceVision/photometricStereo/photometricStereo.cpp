@@ -566,7 +566,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
     albedo = albedoIm;
 }
 
-void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat)
+void loadPSData(const std::string& folderPath, const size_t SH_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat)
 {
     std::string intFileName;
     std::string pathToCM;
@@ -585,15 +585,15 @@ void loadPSData(const std::string& folderPath, const size_t HS_order, std::vecto
     }
 
     // Light directions
-    if (HS_order == 0)
+    if (SH_order == 0)
     {
         dirFileName = folderPath + "/light_directions.txt";
         loadLightDirections(dirFileName, convertionMatrix, lightMat);
     }
-    else if (HS_order == 2)
+    else if (SH_order == 2)
     {
-        dirFileName = folderPath + "/light_directions_HS.txt";
-        loadLightHS(dirFileName, lightMat);
+        dirFileName = folderPath + "/light_directions_SH.txt";
+        loadLightSH(dirFileName, lightMat);
     }
 }
 

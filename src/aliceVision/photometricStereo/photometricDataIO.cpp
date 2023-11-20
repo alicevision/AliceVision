@@ -94,7 +94,7 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
     }
 }
 
-void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
+void loadLightSH(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
 {
     std::stringstream stream;
     std::string line;
