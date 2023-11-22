@@ -549,6 +549,8 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
                 continue;
             }
 
+            int minimalResectionedViewsForBundle = 10;
+
             // The beginning of the incremental SfM is a well known risky and
             // unstable step which has a big impact on the final result.
             // The Bundle Adjustment is an intensive computing step so we only use it
@@ -556,9 +558,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
             // We make an exception for the first 'nbFirstUnstableCameras' cameras
             // and perform a BA for each camera because it makes the results
             // more stable and it's quite cheap because we have few data.
-            static const std::size_t nbFirstUnstableCameras = 30;
-            int minimalResectionedViewsForBundle = 10;
-            if (_sfmData.getPoses().size() < nbFirstUnstableCameras)
+            if (_sfmData.getPoses().size() < _params.nbFirstUnstableCameras)
             {
                 minimalResectionedViewsForBundle = 1;
             }
