@@ -70,9 +70,6 @@ class SfMData
     /// Rotation priors
     RotationPriors rotationpriors;
 
-    SfMData();
-    ~SfMData();
-
     // Operators
 
     bool operator==(const SfMData& other) const;
