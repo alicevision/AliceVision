@@ -263,8 +263,27 @@ void lightCalibrationOneImage(const std::string& picturePath,
         Eigen::VectorXf imSphereMasked(currentIndex);
         imSphereMasked = imSphere.head(currentIndex);
 
-        lightingDirection = normalSphereMasked.colPivHouseholderQr().solve(imSphereMasked);
-        intensity = lightingDirection.head(3).norm();
+        // 1) Directionnal part estimation :
+        Eigen::MatrixXf normalOrdre1(currentIndex, 3);
+        normalOrdre1 = normalSphereMasked.leftCols(3);
+        Eigen::Vector3f directionnalPart = normalOrdre1.colPivHouseholderQr().solve(imSphereMasked);
+        intensity = directionnalPart.norm();
+        directionnalPart = directionnalPart / intensity;
+
+        // 2) Other order estimation :
+        Eigen::VectorXf imSphereModif(currentIndex);
+        imSphereModif = imSphereMasked;
+        for (size_t i = 0; i < currentIndex; ++i)
+        {
+            for (size_t k = 0; k < 3; ++k)
+            {
+                imSphereModif(i) -= normalSphereMasked(i, k) * directionnalPart(k);
+            }
+        }
+        Eigen::VectorXf secondOrder(6);
+        secondOrder = normalSphereMasked.rightCols(6).colPivHouseholderQr().solve(imSphereModif);
+
+        lightingDirection << directionnalPart, secondOrder;
     }
 }
 
