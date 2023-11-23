@@ -14,7 +14,7 @@
 
 // Version status could be "release" or "develop".
 // When moving from release to develop, always increment the minor version.
-#define ALICEVISION_VERSION_STATUS "develop"
+#define ALICEVISION_VERSION_STATUS "release"
 
 // Preprocessor to string conversion
 #define ALICEVISION_TO_STRING_HELPER(x) #x
