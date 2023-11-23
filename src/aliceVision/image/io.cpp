@@ -124,10 +124,6 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
     {
         colorSpace = mapColorSpaces.at("workPlateColourSpace");
     }
-    else if (mapColorSpaces.find("originalPlateColourSpace") != mapColorSpaces.end())
-    {
-        colorSpace = mapColorSpaces.at("originalPlateColourSpace");
-    }
     else if (!colorSpaceFromFileName.empty())
     {
         colorSpace = colorSpaceFromFileName;
@@ -136,10 +132,17 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
     {
         colorSpace = mapColorSpaces.at("oiio:ColorSpace");
     }
+    else if (mapColorSpaces.find("originalPlateColourSpace") != mapColorSpaces.end())
+    {
+        colorSpace = mapColorSpaces.at("originalPlateColourSpace");
+    }
+
+    ALICEVISION_LOG_TRACE("Detected image color space: " << colorSpace);
 
     if (!EImageColorSpace_isSupportedOIIOstring(colorSpace))
     {
         colorSpace = defaultColorSpace;
+        ALICEVISION_LOG_WARNING("Detected color space " << colorSpace << " is not supported. Set image color space to " << defaultColorSpace);
     }
 
     return colorSpace;
@@ -813,14 +816,16 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
-    const std::string colorSpaceFromMetadata = getImageColorSpace(inBuf.spec(), "sRGB", path);
+    const std::string ext = boost::to_lower_copy(fs::path(path).extension().string());
+    const std::string colorSpaceFromMetadata = getImageColorSpace(inBuf.spec(), ext == ".exr" ? "linear" : "sRGB", path);
 
     std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
                 ? "aces2065-1"
-                                       : (isRawImage ? "linear"
-                   : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
-                      ? colorSpaceFromMetadata
-                      : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
+                : (isRawImage
+                    ? "linear"
+                    : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
+                        ? colorSpaceFromMetadata
+                        : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
 

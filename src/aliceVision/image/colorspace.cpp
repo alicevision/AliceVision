@@ -260,19 +260,20 @@ bool EImageColorSpace_isSupportedOIIOEnum(const EImageColorSpace& colorspace)
 
 bool EImageColorSpace_isSupportedOIIOstring(const std::string& colorspace)
 {
-    const std::string cs = boost::to_lower_copy(colorspace);
+    const OIIO::ColorConfig& ocioConf = getGlobalColorConfigOCIO();
 
-    if (cs == "linear")
-        return true;
-    if (cs == "srgb")
-        return true;
-    if (cs == "aces2065-1")
-        return true;
-    if (cs == "acescg")
-        return true;
-    if (cs == "rec709")
-        return true;
-    return false;
+    std::vector<std::string> knownColorSpaces = {"linear"};
+
+    for (auto cs : ocioConf.getColorSpaceNames())
+    {
+        knownColorSpaces.push_back(boost::to_lower_copy(cs));
+        for (auto alias : ocioConf.getAliases(cs))
+        {
+            knownColorSpaces.push_back(boost::to_lower_copy(alias));
+        }
+    }
+
+    return (std::find(knownColorSpaces.begin(), knownColorSpaces.end(), boost::to_lower_copy(colorspace)) != knownColorSpaces.end());
 }
 
 std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType) { return os << EImageColorSpace_enumToString(dataType); }

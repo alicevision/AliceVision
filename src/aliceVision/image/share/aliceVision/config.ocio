@@ -91,7 +91,7 @@ colorspaces:
     #
   - !<ColorSpace>
     name: ACES2065-1
-    aliases: [ aces ]
+    aliases: [ aces, ACES 2065-1 (AP0) ]
     family: ACES
     description: |
       The Academy Color Encoding System reference color space
@@ -101,6 +101,7 @@ colorspaces:
 
   - !<ColorSpace>
     name: ACEScg
+    aliases: [ ACEScg (AP1) ]
     family: ACES
     description: |
       ACEScg working space
