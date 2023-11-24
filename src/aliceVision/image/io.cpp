@@ -108,10 +108,6 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
         {
             mapColorSpaces.emplace("workPlateColourSpace", m.get_string());
         }
-        else if (name.find(":originalPlateColourSpace") != name.npos)
-        {
-            mapColorSpaces.emplace("originalPlateColourSpace", m.get_string());
-        }
     }
 
     std::string colorSpace = defaultColorSpace;
@@ -131,10 +127,6 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
     else if (mapColorSpaces.find("oiio:ColorSpace") != mapColorSpaces.end())
     {
         colorSpace = mapColorSpaces.at("oiio:ColorSpace");
-    }
-    else if (mapColorSpaces.find("originalPlateColourSpace") != mapColorSpaces.end())
-    {
-        colorSpace = mapColorSpaces.at("originalPlateColourSpace");
     }
 
     ALICEVISION_LOG_TRACE("Detected image color space: " << colorSpace);
