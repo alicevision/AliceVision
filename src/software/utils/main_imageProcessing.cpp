@@ -1384,7 +1384,10 @@ int aliceVision_main(int argc, char * argv[])
             view.getImage().setWidth(image.Width());
             view.getImage().setHeight(image.Height());
             view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
-            view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
+            if(viewMetadata.count("Orientation"))
+            {
+                view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
+            }
         }
 
         if (pParams.scaleFactor != 1.0f)
