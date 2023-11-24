@@ -262,6 +262,7 @@ class SfMData
      * @param[in] viewId The given view id
      * @return the corresponding view reference
      */
+    const View& getView(IndexT viewId) const { return *(_views.at(viewId)); }
     View& getView(IndexT viewId) { return *(_views.at(viewId)); }
 
     /**
@@ -269,6 +270,7 @@ class SfMData
      * @param[in] viewId The given view id
      * @return the corresponding view ptr
      */
+    const View::ptr getViewPtr(IndexT viewId) const { return _views.at(viewId).get(); }
     View::ptr getViewPtr(IndexT viewId) { return _views.at(viewId).get(); }
 
     /**
@@ -277,13 +279,6 @@ class SfMData
      * @return the corresponding view ptr
      */
     View::sptr getViewSharedPtr(IndexT viewId) { return _views.at(viewId); }
-
-    /**
-     * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
-     * @return the corresponding view reference
-     */
-    const View& getView(IndexT viewId) const { return *(_views.at(viewId)); }
 
     /**
      * @brief Gives the pose of the input view. If this view is part of a rig, it returns rigPose + rigSubPose.
