@@ -20,9 +20,6 @@ using namespace aliceVision::image;
 
 namespace fs = boost::filesystem;
 
-SfMData::SfMData() {}
-
-SfMData::~SfMData() {}
 
 bool SfMData::operator==(const SfMData& other) const
 {
