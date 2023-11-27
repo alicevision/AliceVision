@@ -327,7 +327,7 @@ if (AV_BUILD_ONNXRUNTIME)
     ##!/usr/bin/env bash
     # AV_ONNX_VERSION="1.12.0"
     # BASE_URL="https://github.com/microsoft/onnxruntime/releases/download/v${AV_ONNX_VERSION}"
-    # platforms=("onnxruntime-linux-x64"  "onnxruntime-osx-arm64"  "onnxruntime-osx-x86_64")
+    # platforms=("onnxruntime-linux-x64"  "onnxruntime-osx-arm64"  "onnxruntime-osx-x86_64" "onnxruntime-linux-aarch64")
     # # Iterate over the main options
     # for platform in "${platforms[@]}"; do
     #     AV_ONNX_FILENAME="${platform}-${AV_ONNX_VERSION}.tgz"
@@ -346,8 +346,14 @@ if (AV_BUILD_ONNXRUNTIME)
             message(FATAL_ERROR "Unsupported arch version ${AV_ONNX_APPLE_ARCH} for Apple")
         endif()
     else()
-        set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-x64")
-        set(AV_ONNX_HASH "5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+        string(FIND "${CMAKE_HOST_SYSTEM_PROCESSOR}" "aarch64" POSITION)
+        if(NOT POSITION EQUAL -1)
+            set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-aarch64")
+            set(AV_ONNX_HASH "638e2ec3122a8deac4808670be51e607c5aaacbb662d54ede77bffa0a239d300")
+        else()        
+            set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-x64")
+            set(AV_ONNX_HASH "5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+        endif()
     endif()
 
     set(AV_ONNX_FILENAME "${AV_ONNX_FILENAME_PREFIX}-${AV_ONNX_VERSION}.tgz")
