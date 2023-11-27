@@ -270,13 +270,13 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
         const sfmData::CameraPose& pose = posePair.second;
 
         // skip camera pose set as Ignored in the Local strategy
-        if (getPoseState(poseId) == EParameterState::IGNORED)
+        if (pose.getState() == EParameterState::IGNORED)
         {
             _statistics.addState(EParameter::POSE, EParameterState::IGNORED);
             continue;
         }
 
-        const bool isConstant = (getPoseState(poseId) == EParameterState::CONSTANT);
+        const bool isConstant = (pose.getState() == EParameterState::CONSTANT);
 
         addPose(pose, isConstant, _posesBlocks[poseId], problem, refineTranslation, refineRotation);
     }
@@ -341,7 +341,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         const std::size_t usageCount = usageIt->second;
 
         // do not refine an intrinsic does not used by any reconstructed view
-        if (usageCount <= 0 || getIntrinsicState(intrinsicId) == EParameterState::IGNORED)
+        if (usageCount <= 0 || intrinsicPtr->getState() == EParameterState::IGNORED)
         {
             _statistics.addState(EParameter::INTRINSIC, EParameterState::IGNORED);
             continue;
@@ -361,7 +361,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         _allParametersBlocks.push_back(intrinsicBlockPtr);
 
         // keep the camera intrinsic constant
-        if (intrinsicPtr->isLocked() || !refineIntrinsics || getIntrinsicState(intrinsicId) == EParameterState::CONSTANT)
+        if (intrinsicPtr->isLocked() || !refineIntrinsics || intrinsicPtr->getState() == EParameterState::CONSTANT)
         {
             // set the whole parameter block as constant.
             _statistics.addState(EParameter::INTRINSIC, EParameterState::CONSTANT);
@@ -469,7 +469,7 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
 
         // do not create a residual block if the landmark
         // have been set as Ignored by the Local BA strategy
-        if (getLandmarkState(landmarkId) == EParameterState::IGNORED)
+        if (landmark.state == EParameterState::IGNORED)
         {
             _statistics.addState(EParameter::LANDMARK, EParameterState::IGNORED);
             continue;
@@ -497,13 +497,14 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
 
             // Get shared object clone
             const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[view.getIntrinsicId()];
+            const auto & pose = sfmData.getPose(view);
 
             // each residual block takes a point and a camera as input and outputs a 2
             // dimensional residual. Internally, the cost function stores the observed
             // image location and compares the reprojection against the observation.
 
-            assert(getPoseState(view.getPoseId()) != EParameterState::IGNORED);
-            assert(getIntrinsicState(view.getIntrinsicId()) != EParameterState::IGNORED);
+            assert(pose.getState() != EParameterState::IGNORED);
+            assert(intrinsic->getState() != EParameterState::IGNORED);
 
             // needed parameters to create a residual block (K, pose)
             double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
@@ -539,7 +540,7 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
                 problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
             }
 
-            if (!refineStructure || getLandmarkState(landmarkId) == EParameterState::CONSTANT)
+            if (!refineStructure || landmark.state == EParameterState::CONSTANT)
             {
                 // set the whole landmark parameter block as constant.
                 _statistics.addState(EParameter::LANDMARK, EParameterState::CONSTANT);
@@ -564,10 +565,15 @@ void BundleAdjustmentSymbolicCeres::addConstraints2DToProblem(const sfmData::SfM
         const sfmData::View& view_1 = sfmData.getView(constraint.ViewFirst);
         const sfmData::View& view_2 = sfmData.getView(constraint.ViewSecond);
 
-        assert(getPoseState(view_1.getPoseId()) != EParameterState::IGNORED);
-        assert(getIntrinsicState(view_1.getIntrinsicId()) != EParameterState::IGNORED);
-        assert(getPoseState(view_2.getPoseId()) != EParameterState::IGNORED);
-        assert(getIntrinsicState(view_2.getIntrinsicId()) != EParameterState::IGNORED);
+        const auto & pose_1 = sfmData.getPose(view_1);
+        const auto & pose_2 = sfmData.getPose(view_2);
+        const auto & intrinsic_1 = sfmData.getIntrinsicsharedPtr(view_1);
+        const auto & intrinsic_2 = sfmData.getIntrinsicsharedPtr(view_2);
+
+        assert(pose_1.getState() != EParameterState::IGNORED);
+        assert(intrinsic_1->getState() != EParameterState::IGNORED);
+        assert(pose_2.getState() != EParameterState::IGNORED);
+        assert(intrinsic_2->getState() != EParameterState::IGNORED);
 
         /* Get pose */
         double* poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
@@ -621,8 +627,11 @@ void BundleAdjustmentSymbolicCeres::addRotationPriorsToProblem(const sfmData::Sf
         const sfmData::View& view_1 = sfmData.getView(prior.ViewFirst);
         const sfmData::View& view_2 = sfmData.getView(prior.ViewSecond);
 
-        assert(getPoseState(view_1.getPoseId()) != EParameterState::IGNORED);
-        assert(getPoseState(view_2.getPoseId()) != EParameterState::IGNORED);
+        const auto & pose_1 = sfmData.getPose(view_1);
+        const auto & pose_2 = sfmData.getPose(view_2);
+
+        assert(pose_1.getState() != EParameterState::IGNORED);
+        assert(pose_2.getState() != EParameterState::IGNORED);
 
         double* poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
         double* poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
@@ -675,8 +684,10 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
             const IndexT poseId = posePair.first;
 
             // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (getPoseState(poseId) != EParameterState::REFINED)
+            if (posePair.second.getState() != EParameterState::REFINED)
+            {
                 continue;
+            }
 
             const SE3::Matrix& poseBlock = _posesBlocks.at(poseId);
 
@@ -707,11 +718,15 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
         {
             const IndexT intrinsicId = intrinsicBlockPair.first;
 
-            // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (getIntrinsicState(intrinsicId) != EParameterState::REFINED)
-                continue;
+            const auto & intrinsic = sfmData.getIntrinsicsharedPtr(intrinsicId);
 
-            sfmData.getIntrinsics().at(intrinsicId)->updateFromParams(intrinsicBlockPair.second);
+            // do not update a camera pose set as Ignored or Constant in the Local strategy
+            if (intrinsic->getState() != EParameterState::REFINED)
+            {
+                continue;
+            }
+
+            intrinsic->updateFromParams(intrinsicBlockPair.second);
         }
     }
 
@@ -724,7 +739,7 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
             sfmData::Landmark& landmark = sfmData.getLandmarks().at(landmarkId);
 
             // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (getLandmarkState(landmarkId) != EParameterState::REFINED)
+            if (landmark.state != EParameterState::REFINED)
             {
                 continue;
             }
@@ -798,12 +813,6 @@ bool BundleAdjustmentSymbolicCeres::adjust(sfmData::SfMData& sfmData, ERefineOpt
     _statistics.nbResidualBlocks = summary.num_residuals;
     _statistics.RMSEinitial = std::sqrt(summary.initial_cost / summary.num_residuals);
     _statistics.RMSEfinal = std::sqrt(summary.final_cost / summary.num_residuals);
-
-    // store distance histogram for local strategy
-    if (useLocalStrategy())
-    {
-        _statistics.nbCamerasPerDistance = _localGraph->getDistancesHistogram();
-    }
 
     return true;
 }

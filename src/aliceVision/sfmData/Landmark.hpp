@@ -31,7 +31,6 @@ struct Observation
     Vec2 x;
     IndexT id_feat = UndefinedIndexT;
     double scale = 0.0;
-
     bool operator==(const Observation& other) const { return AreVecNearEqual(x, other.x, 1e-6) && id_feat == other.id_feat; }
 };
 
@@ -61,6 +60,7 @@ struct Landmark
     feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
     Observations observations;
     image::RGBColor rgb = image::WHITE;  //!> the color associated to the point
+    EParameterState state = EParameterState::REFINED;
 
     bool operator==(const Landmark& other) const
     {

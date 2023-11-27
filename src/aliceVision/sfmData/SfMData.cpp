@@ -291,6 +291,24 @@ void SfMData::clear()
     _rigs.clear();
 }
 
+void SfMData::resetParameterStates()
+{
+    for (auto & pp : _poses)
+    {
+        pp.second.initializeState();
+    }
+
+    for (auto & pl : _structure)
+    {
+        pl.second.state = EParameterState::REFINED;
+    }
+
+    for (auto & pi : _intrinsics)
+    {
+        pi.second->initializeState();
+    }
+}
+
 LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
 {
     LandmarksPerView landmarksPerView;
@@ -315,6 +333,7 @@ LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
 
     return landmarksPerView;
 }
+
 
 }  // namespace sfmData
 }  // namespace aliceVision

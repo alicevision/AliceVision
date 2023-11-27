@@ -773,8 +773,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
         // use the graph-distances to assign a state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
         _localStrategyGraph->convertDistancesToStates(_sfmData);
 
-        const std::size_t nbRefinedPoses = _localStrategyGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED);
-        const std::size_t nbConstantPoses = _localStrategyGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT);
+        const std::size_t nbRefinedPoses = _localStrategyGraph->getNbPosesPerState(EParameterState::REFINED);
+        const std::size_t nbConstantPoses = _localStrategyGraph->getNbPosesPerState(EParameterState::CONSTANT);
 
         // restore the Dense linear solver type if the number of cameras in the solver is <= 20
         if (nbRefinedPoses + nbConstantPoses <= 20)
@@ -795,8 +795,10 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     BundleAdjustmentCeres BA(options, _params.minNbCamerasToRefinePrincipalPoint);
 
     // give the local strategy graph is local strategy is enable
-    if (enableLocalStrategy)
-        BA.useLocalStrategyGraph(_localStrategyGraph);
+    if (!enableLocalStrategy)
+    {
+        _sfmData.resetParameterStates();
+    }
 
     // perform BA until all point are under the given precision
     do

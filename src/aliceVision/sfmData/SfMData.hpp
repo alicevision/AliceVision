@@ -205,10 +205,36 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
+     * @param[in] v
+     */
+    std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(const View & v)
+    {   
+        IndexT intrinsicId = v.getIntrinsicId();
+
+        if (_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId);
+        return nullptr;
+    }
+
+    /**
+     * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
      * @param[in] intrinsicId
      */
     const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId) const
     {
+        if (_intrinsics.count(intrinsicId))
+            return _intrinsics.at(intrinsicId);
+        return nullptr;
+    }
+
+    /**
+     * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
+     * @param[in] v
+     */
+    const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(const View & v) const
+    {   
+        IndexT intrinsicId = v.getIntrinsicId();
+
         if (_intrinsics.count(intrinsicId))
             return _intrinsics.at(intrinsicId);
         return nullptr;
@@ -486,6 +512,12 @@ class SfMData
     void combine(const SfMData& sfmData);
 
     void clear();
+
+    /**
+     * @Brief For all required items, update the
+     * state with respect to the associated lock
+    */
+    void resetParameterStates();
 
   private:
     /// Structure (3D points with their 2D observations)

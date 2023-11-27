@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <aliceVision/types.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
@@ -429,11 +430,34 @@ class IntrinsicBase
     */
     virtual double getVerticalFov() const = 0;
 
+    virtual void initializeState() 
+    {
+        if (_locked)
+        {
+            _state = EParameterState::CONSTANT;
+        }
+        else
+        {
+            _state = EParameterState::REFINED;
+        }
+    }
+
+    EParameterState getState() const 
+    {
+        return _state;
+    }
+
+    void setState(EParameterState state) 
+    {
+        _state = state;
+    }
+
   protected:
     /// initialization mode
     EInitMode _initializationMode = EInitMode::NONE;
     /// intrinsic lock
     bool _locked = false;
+    EParameterState _state = EParameterState::REFINED;
     unsigned int _w = 0;
     unsigned int _h = 0;
     double _sensorWidth = 36.0;
