@@ -65,6 +65,7 @@ trilean_option(ALICEVISION_USE_OPENGV "Enable use of OpenGV algorithms" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
+option(ALICEVISION_USE_ONNX_GPU "Use CUDA with ONNX Runtime" ON)
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
@@ -385,6 +386,7 @@ endif()
 # onnxruntime
 # ==============================================================================
 set(ALICEVISION_HAVE_ONNX 0)
+set(ALICEVISION_HAVE_ONNX_GPU 1)
 
 if(NOT ALICEVISION_USE_ONNX STREQUAL "OFF")
   find_package(ONNXRuntime)
@@ -395,6 +397,10 @@ if(NOT ALICEVISION_USE_ONNX STREQUAL "OFF")
   elseif(ALICEVISION_USE_ONNX STREQUAL "ON")
     message(SEND_ERROR "Failed to find ONNX Runtime.")
   endif()
+endif()
+
+if(ALICEVISION_USE_ONNX_GPU STREQUAL "OFF" OR ALICEVISION_USE_CUDA STREQUAL "OFF")
+  set(ALICEVISION_HAVE_ONNX_GPU 0)
 endif()
 
 # ==============================================================================
@@ -935,6 +941,8 @@ message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
 message("** Use AprilTag markers: " ${ALICEVISION_HAVE_APRILTAG})
 message("** Use OpenGV for rig localization: " ${ALICEVISION_HAVE_OPENGV})
+message("** Use ONNX: " ${ALICEVISION_HAVE_ONNX})
+message("** Use ONNX with CUDA: " ${ALICEVISION_HAVE_ONNX_GPU})
 message("\n")
 
 message(STATUS "EIGEN: " ${EIGEN_VERSION} "")
