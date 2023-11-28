@@ -168,7 +168,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
         const double focalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getScale().x() / double(intrinsic->w());
         const double focalRatio = intrinsicScaleOffset->getScale().x() / intrinsicScaleOffset->getScale().y();
         const double pixelAspectRatio = 1.0 / focalRatio;
-
+        
         intrinsicTree.put("initialFocalLength", initialFocalLengthMM);
         intrinsicTree.put("focalLength", focalLengthMM);
         intrinsicTree.put("pixelRatio", pixelAspectRatio);
@@ -182,7 +182,6 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     if (intrinsicScaleOffsetDisto)
     {
         bpt::ptree distParamsTree;
-
         std::shared_ptr<camera::Distortion> distortionObject = intrinsicScaleOffsetDisto->getDistortion();
         if (distortionObject)
         {
@@ -202,8 +201,9 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
 
         std::shared_ptr<camera::Undistortion> undistortionObject = intrinsicScaleOffsetDisto->getUndistortion();
         if (undistortionObject)
-        {
+        {   
             saveMatrix("undistortionOffset", undistortionObject->getOffset(), intrinsicTree);
+            intrinsicTree.put("undistortionDiagonal", undistortionObject->getDiagonal());
 
             for (double param : undistortionObject->getParameters())
             {
@@ -358,6 +358,11 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
                 Vec2 offset;
                 loadMatrix("undistortionOffset", offset, intrinsicTree);
                 undistortionObject->setOffset(offset);
+
+                if (version >= Version(1, 2, 7))
+                {
+                    undistortionObject->setDiagonal(intrinsicTree.get<double>("undistortionDiagonal"));
+                }
             }
 
             // If undistortion exists, distortion does not

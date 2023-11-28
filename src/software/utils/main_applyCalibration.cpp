@@ -207,8 +207,14 @@ int aliceVision_main(int argc, char** argv)
         // Check that aspect ratios are approximately equal
         if (std::abs(aspect - calibrationAspect) > 1e-2)
         {
-            ALICEVISION_LOG_ERROR("Intrinsic from input SfMData and calibrated SfMData are incompatible.");
-            return EXIT_FAILURE;
+            bool distortionOnly = (isDistortionCalibrated && !isIntrinsicCalibrated);
+            bool smaller = (width <= calibrationWidth && height <= calibrationHeight);
+            
+            if (distortionOnly == false || smaller == false)
+            {
+                ALICEVISION_LOG_ERROR("Intrinsic from input SfMData and calibrated SfMData are incompatible.");
+                return EXIT_FAILURE;
+            }
         }
 
         // Copy original intrinsic
@@ -237,6 +243,8 @@ int aliceVision_main(int argc, char** argv)
             auto undistortion = camera::createUndistortion(calibratedUndistortion->getType());
             undistortion->setSize(width, height);
             undistortion->setParameters(calibratedUndistortion->getParameters());
+
+
             newIntrinsic->setUndistortionObject(undistortion);
             newIntrinsic->setDistortionInitializationMode(camera::EInitMode::CALIBRATED);
         }

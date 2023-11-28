@@ -65,6 +65,10 @@ class Version
 
         return false;
     }
+    bool operator>=(const Version& other) const
+    {
+        return !operator<(other);
+    }
 
   private:
     Vec3i _v;

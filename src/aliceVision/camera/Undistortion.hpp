@@ -51,9 +51,19 @@ class Undistortion
         _center = {width / 2, height / 2};
     }
 
+    void setDiagonal(double diagonal)
+    {
+        //May be used for plates with a different size than lens grid
+        _diagonal = diagonal;
+    }
+
     inline Vec2 getOffset() const { return _offset; }
 
     Vec2 getSize() const { return _size; }
+
+    inline double getDiagonal() const { return _diagonal; }
+
+    
 
     const std::vector<double>& getParameters() const { return _undistortionParams; }
 
