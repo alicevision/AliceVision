@@ -28,17 +28,51 @@ bool IntrinsicScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) const
         return false;
     }
 
+    int countNonNull = 0;
+    if (_pDistortion == nullptr)
+    {
+        countNonNull++;
+    }
+    if (other._pDistortion == nullptr)
+    {
+        countNonNull++;
+    }
+    if (countNonNull == 1)
+    {
+        return false;
+    }
+
+    countNonNull = 0;
+    if (_pUndistortion == nullptr)
+    {
+        countNonNull++;
+    }
+    if (other._pUndistortion == nullptr)
+    {
+        countNonNull++;
+    }
+    if (countNonNull == 1)
+    {
+        return false;
+    }
+
     if (_pDistortion && other._pDistortion)
     {
-        return (*_pDistortion) == (*other._pDistortion);
+        if (!((*_pDistortion) == (*other._pDistortion)))
+        {
+            return false;
+        }
     }
 
     if (_pUndistortion && other._pUndistortion)
     {
-        return (*_pUndistortion) == (*other._pUndistortion);
+        if (!((*_pUndistortion) == (*other._pUndistortion)))
+        {
+            return false;
+        }
     }
 
-    return _pDistortion == nullptr && other._pDistortion == nullptr && _pUndistortion == nullptr && other._pUndistortion == nullptr;
+    return true;
 }
 
 Vec2 IntrinsicScaleOffsetDisto::get_ud_pixel(const Vec2& p) const { return cam2ima(removeDistortion(ima2cam(p))); }
