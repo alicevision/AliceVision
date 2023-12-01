@@ -338,7 +338,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
 
                     // Add observation
                     sfmData::Observation obs(p, idxlandmark, 1.0);
-                    sfmData.getLandmarks()[idxlandmark].observations[viewId] = obs;
+                    sfmData.getLandmarks()[idxlandmark].getObservations()[viewId] = obs;
                 }
             }
         }

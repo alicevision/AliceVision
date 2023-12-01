@@ -277,8 +277,8 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
         nextObs.setScale(nextFeatures[nextFeatureId].scale());
         nextObs.setCoordinates(nextpt);
 
-        landmark.observations[pair.reference] = refObs;
-        landmark.observations[pair.next] = nextObs;
+        landmark.getObservations()[pair.reference] = refObs;
+        landmark.getObservations()[pair.next] = nextObs;
         
         sfmData.getLandmarks()[trackId] = landmark;
     }

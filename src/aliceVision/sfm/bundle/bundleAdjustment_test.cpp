@@ -154,12 +154,12 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
     //          |     |     =>     /  \ /  \ /  \
   //          v1 - v2           v0   v1   v2   v3
     // removing adequate observations:
-    sfmData.getLandmarks().at(0).observations.erase(2);
-    sfmData.getLandmarks().at(0).observations.erase(3);
-    sfmData.getLandmarks().at(1).observations.erase(0);
-    sfmData.getLandmarks().at(1).observations.erase(3);
-    sfmData.getLandmarks().at(2).observations.erase(0);
-    sfmData.getLandmarks().at(2).observations.erase(1);
+    sfmData.getLandmarks().at(0).getObservations().erase(2);
+    sfmData.getLandmarks().at(0).getObservations().erase(3);
+    sfmData.getLandmarks().at(1).getObservations().erase(0);
+    sfmData.getLandmarks().at(1).getObservations().erase(3);
+    sfmData.getLandmarks().at(2).getObservations().erase(0);
+    sfmData.getLandmarks().at(2).getObservations().erase(1);
 
     // lock common intrinsic
     // if it's not locked, all views will have a distance of 1 as all views share a common intrinsic.
@@ -250,7 +250,7 @@ double RMSE(const SfMData& sfm_data)
     std::vector<double> vec;
     for (Landmarks::const_iterator iterTracks = sfm_data.getLandmarks().begin(); iterTracks != sfm_data.getLandmarks().end(); ++iterTracks)
     {
-        const Observations& observations = iterTracks->second.observations;
+        const Observations& observations = iterTracks->second.getObservations();
         for (Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
         {
             const View* view = sfm_data.getViews().find(itObs->first)->second.get();
@@ -317,7 +317,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
             pt(0) += rand() / RAND_MAX - .5;
             pt(1) += rand() / RAND_MAX - .5;
 
-            landmark.observations[j] = Observation(pt, i, unknownScale);
+            landmark.getObservations()[j] = Observation(pt, i, unknownScale);
         }
         sfm_data.getLandmarks()[i] = landmark;
     }

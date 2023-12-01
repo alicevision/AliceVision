@@ -53,7 +53,7 @@ bool exportToMatlab(
       const IndexT landmarkId = s.first;
       const Landmark& landmark = s.second;
       landmarksFile << landmarkId << " " << landmark.X[0] << " " << landmark.X[1] << " " << landmark.X[2] << "\n";
-      for(const auto& obs: landmark.observations)
+      for(const auto& obs: landmark.getObservations())
       {
         const IndexT obsView = obs.first; // The ID of the view that provides this 2D observation.
         observationsPerView[obsView].push_back(Observation(obs.second.getCoordinates(), landmarkId, unknownScale));

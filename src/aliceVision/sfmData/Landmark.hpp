@@ -20,33 +20,58 @@ namespace sfmData {
 /**
  * @brief Landmark is a 3D point with its 2d observations.
  */
-struct Landmark
+class Landmark
 {
-    Landmark() = default;
+public:
+    Landmark()
+    {
+
+    }
+
     explicit Landmark(feature::EImageDescriberType descType)
       : descType(descType)
-    {}
+    {
+
+    }
+
     Landmark(const Vec3& pos3d,
              feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED,
-             const Observations& observations = Observations(),
              const image::RGBColor& color = image::WHITE)
       : X(pos3d),
         descType(descType),
-        observations(observations),
         rgb(color)
-    {}
+    {
+    }
 
     Vec3 X;
     feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
-    Observations observations;
     image::RGBColor rgb = image::WHITE;  //!> the color associated to the point
 
     bool operator==(const Landmark& other) const
     {
-        return AreVecNearEqual(X, other.X, 1e-3) && AreVecNearEqual(rgb, other.rgb, 1e-3) && observations == other.observations &&
-               descType == other.descType;
+        return AreVecNearEqual(X, other.X, 1e-3) && 
+                AreVecNearEqual(rgb, other.rgb, 1e-3) && 
+                _observations == other._observations &&
+                descType == other.descType;
     }
-    inline bool operator!=(const Landmark& other) const { return !(*this == other); }
+
+    inline bool operator!=(const Landmark& other) const 
+    { 
+        return !(*this == other); 
+    }
+    
+    const Observations & getObservations() const
+    {
+        return _observations;
+    }
+
+    Observations & getObservations()
+    {
+        return _observations;
+    }
+
+private:
+    Observations _observations;
 };
 
 }  // namespace sfmData

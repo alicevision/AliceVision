@@ -296,7 +296,7 @@ LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
     LandmarksPerView landmarksPerView;
     for (const auto& landIt : sfmData.getLandmarks())
     {
-        for (const auto& obsIt : landIt.second.observations)
+        for (const auto& obsIt : landIt.second.getObservations())
         {
             IndexT viewId = obsIt.first;
             LandmarkIdSet& landmarksSet = landmarksPerView[viewId];

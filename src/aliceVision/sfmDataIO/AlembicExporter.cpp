@@ -517,7 +517,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
         visibilitySize.reserve(positions.size());
         for (const auto& landmark : landmarks)
         {
-            visibilitySize.emplace_back(landmark.second.observations.size());
+            visibilitySize.emplace_back(landmark.second.getObservations().size());
         }
         std::size_t nbObservations = std::accumulate(visibilitySize.begin(), visibilitySize.end(), 0);
 
@@ -538,7 +538,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
 
         for (const auto& landmark : landmarks)
         {
-            const sfmData::Observations& observations = landmark.second.observations;
+            const sfmData::Observations& observations = landmark.second.getObservations();
             for (const auto& vObs : observations)
             {
                 const sfmData::Observation& obs = vObs.second;

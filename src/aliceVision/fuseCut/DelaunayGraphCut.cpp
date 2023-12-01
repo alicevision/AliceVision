@@ -775,10 +775,10 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
         {
             *vCoordsIt = p;
 
-            vAttrIt->nrc = landmark.observations.size();
+            vAttrIt->nrc = landmark.getObservations().size();
             vAttrIt->cams.reserve(vAttrIt->nrc);
 
-            for (const auto& observationPair : landmark.observations)
+            for (const auto& observationPair : landmark.getObservations())
                 vAttrIt->cams.push_back(_mp.getIndexFromViewId(observationPair.first));
 
             vAttrIt->pixSize = _mp.getCamsMinPixelSize(p, vAttrIt->cams);
