@@ -257,7 +257,7 @@ PerViewVisibility computePerViewVisibility(const sfmData::SfMData& sfmData, cons
             if (viewSelections.find(viewID) != viewSelections.end())
             {
                 // for the current viewID add the feature point and its associate 3D point's ID
-                perCameraVisibility[viewID][landID] = obs.x;
+                perCameraVisibility[viewID][landID] = obs.getCoordinates();
             }
         }
     }
@@ -365,7 +365,7 @@ void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const Compat
         for (const auto& itObs : iter.second.observations)
         {
             const IndexT viewId = itObs.first;
-            const IndexT featId = itObs.second.id_feat;
+            const IndexT featId = itObs.second.getFeatureId();
 
             if (viewSelections.find(viewId) != viewSelections.end())
             {

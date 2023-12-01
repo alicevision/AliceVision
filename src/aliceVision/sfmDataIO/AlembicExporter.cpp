@@ -549,13 +549,13 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
                 if (withFeatures)
                 {
                     // featureId
-                    visibilityFeatId.emplace_back(obs.id_feat);
+                    visibilityFeatId.emplace_back(obs.getFeatureId());
 
                     // feature 2D position (x, y))
-                    featPos2d.emplace_back(obs.x[0]);
-                    featPos2d.emplace_back(obs.x[1]);
+                    featPos2d.emplace_back(obs.getCoordinates()[0]);
+                    featPos2d.emplace_back(obs.getCoordinates()[1]);
 
-                    featScale.emplace_back(obs.scale);
+                    featScale.emplace_back(obs.getScale());
                 }
             }
         }

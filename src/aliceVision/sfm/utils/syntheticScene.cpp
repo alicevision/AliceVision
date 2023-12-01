@@ -36,7 +36,7 @@ void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, co
 
                 const sfmData::Observation& obsJ = obsItJ->second;
 
-                out_pairwiseMatches[Pair(obsItI->first, obsItJ->first)][descType].emplace_back(obsItI->second.id_feat, obsItJ->second.id_feat);
+                out_pairwiseMatches[Pair(obsItI->first, obsItJ->first)][descType].emplace_back(obsItI->second.getFeatureId(), obsItJ->second.getFeatureId());
             }
         }
     }

@@ -268,14 +268,14 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
         landmark.X = X;
         
         sfmData::Observation refObs;
-        refObs.id_feat = refFeatureId;
-        refObs.scale = refFeatures[refFeatureId].scale();
-        refObs.x = refpt;
+        refObs.setFeatureId(refFeatureId);
+        refObs.setScale(refFeatures[refFeatureId].scale());
+        refObs.setCoordinates(refpt);
 
         sfmData::Observation nextObs;
-        nextObs.id_feat = nextFeatureId;
-        nextObs.scale = nextFeatures[nextFeatureId].scale();
-        nextObs.x = nextpt;
+        nextObs.setFeatureId(nextFeatureId);
+        nextObs.setScale(nextFeatures[nextFeatureId].scale());
+        nextObs.setCoordinates(nextpt);
 
         landmark.observations[pair.reference] = refObs;
         landmark.observations[pair.next] = nextObs;

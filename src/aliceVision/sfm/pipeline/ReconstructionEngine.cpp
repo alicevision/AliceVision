@@ -61,7 +61,7 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
         const feature::APRILTAG_Regions* apriltagRegions = dynamic_cast<const feature::APRILTAG_Regions*>(&regions);
         if (cctagRegions)
         {
-            const auto& d = cctagRegions->Descriptors()[obs->second.id_feat];
+            const auto& d = cctagRegions->Descriptors()[obs->second.getFeatureId()];
             for (int i = 0; i < d.size(); ++i)
             {
                 if (d[i] == 255)
@@ -74,7 +74,7 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
         }
         else if (apriltagRegions)
         {
-            const auto& d = apriltagRegions->Descriptors()[obs->second.id_feat];
+            const auto& d = apriltagRegions->Descriptors()[obs->second.getFeatureId()];
             for (int i = 0; i < d.size(); ++i)
             {
                 if (d[i] == 255)

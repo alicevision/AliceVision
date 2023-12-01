@@ -68,7 +68,7 @@ double computeCameraScore(const SfMData& sfmData, const track::TracksPerView& tr
 
         if (itObs != landmark.observations.end())
         {
-            const Vec2 residual = intrinsic->residual(pose, landmark.X.homogeneous(), itObs->second.x);
+            const Vec2 residual = intrinsic->residual(pose, landmark.X.homogeneous(), itObs->second.getCoordinates());
             score += std::min(1.0 / residual.norm(), 4.0);
         }
     }

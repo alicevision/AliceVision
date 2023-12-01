@@ -203,7 +203,7 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
         auto undistortion = intrinsicDistortionPtr->getUndistortion();
         if (undistortion)
         {
-            obsUndistorted.x = undistortion->undistort(observation.x);
+            obsUndistorted.setCoordinates(undistortion->undistort(observation.getCoordinates()));
 
             if (intrinsicDistortionPtr->getDistortion() != nullptr)
             {
@@ -263,7 +263,7 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
         auto undistortion = intrinsicDistortionPtr->getUndistortion();
         if (undistortion)
         {
-            obsUndistorted.x = undistortion->undistort(observation.x);
+            obsUndistorted.setCoordinates(undistortion->undistort(observation.getCoordinates()));
         }
     }
 
@@ -894,7 +894,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
         assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
 
         ceres::CostFunction* costFunction = createConstraintsCostFunctionFromIntrinsics(
-          sfmData.getIntrinsicPtr(view_1.getIntrinsicId()), constraint.ObservationFirst.x, constraint.ObservationSecond.x);
+          sfmData.getIntrinsicPtr(view_1.getIntrinsicId()), constraint.ObservationFirst.getCoordinates(), constraint.ObservationSecond.getCoordinates());
         problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
     }
 }

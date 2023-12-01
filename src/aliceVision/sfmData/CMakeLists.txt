@@ -10,6 +10,7 @@ set(sfmData_files_headers
   exif.hpp
   imageInfo.hpp
   exposureSetting.hpp
+  Observation.hpp
 )
 
 # Sources
@@ -20,6 +21,7 @@ set(sfmData_files_sources
   colorize.cpp
   exif.cpp
   imageInfo.cpp
+  Observation.cpp
 )
 
 alicevision_add_library(aliceVision_sfmData
