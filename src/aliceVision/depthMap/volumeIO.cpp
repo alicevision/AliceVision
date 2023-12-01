@@ -183,7 +183,7 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                     continue;
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
                 pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(
-                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
                 ++landmarkId;
             }
@@ -235,7 +235,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim
 
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
                 pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(
-                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
                 ++landmarkId;
             }
@@ -293,7 +293,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
 
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
                 pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(
-                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
                 ++landmarkId;
             }
@@ -365,7 +365,7 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim, 3>& in_
 
             const rgb c = getRGBFromJetColorMap(simValueNorm);
             pointCloud.getLandmarks()[landmarkId] =
-              sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+              sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
             ++landmarkId;
         }
@@ -430,7 +430,7 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3
 
             const rgb c = getRGBFromJetColorMap(simValueColor);
             pointCloud.getLandmarks()[landmarkId] =
-              sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+              sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
             ++landmarkId;
         }
@@ -491,7 +491,7 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& in_volumeSim_hmh,
                 float4 colorValue = *get3DBufferAt_h<float4>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
                 const rgb c = float4_to_rgb(colorValue);  // TODO: convert Lab color into sRGB color
                 pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(
-                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
                 ++landmarkId;
             }

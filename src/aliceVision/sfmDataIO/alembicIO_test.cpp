@@ -135,7 +135,7 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
         Observations observations;
         observations[0] = Observation(Vec2(std::rand() % 10000, std::rand() % 10000), 0, unknownScale);
         observations[1] = Observation(Vec2(std::rand() % 10000, std::rand() % 10000), 1, unknownScale);
-        sfm_data.getLandmarks()[i].observations = observations;
+        sfm_data.getLandmarks()[i].getObservations() = observations;
         sfm_data.getLandmarks()[i].X = Vec3(std::rand() % 10000, std::rand() % 10000, std::rand() % 10000);
         sfm_data.getLandmarks()[i].rgb = image::RGBColor((std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0);
         sfm_data.getLandmarks()[i].descType = feature::EImageDescriberType::SIFT;

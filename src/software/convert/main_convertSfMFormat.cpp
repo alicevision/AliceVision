@@ -150,10 +150,10 @@ int aliceVision_main(int argc, char **argv)
       sfmData::Landmark& landmark = landmarkPair.second;
       for(const IndexT viewId : viewsToRemove)
       {
-        if(landmark.observations.find(viewId) != landmark.observations.end())
-          landmark.observations.erase(viewId);
+        if(landmark.getObservations().find(viewId) != landmark.getObservations().end())
+          landmark.getObservations().erase(viewId);
       }
-      if(landmark.observations.empty())
+      if(landmark.getObservations().empty())
         landmarksToRemove.push_back(landmarkPair.first);
     }
 

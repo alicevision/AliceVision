@@ -301,21 +301,21 @@ int aliceVision_main(int argc, char **argv)
                             aliceVision::sfmData::Landmark newLandmark = landIt.second;
 
                             // Clear all observations :
-                            newLandmark.observations.clear();
+                            newLandmark.getObservations().clear();
 
                             // For all observations of the ref landmark :
-                            for (const auto& obsIt : landIt.second.observations)
+                            for (const auto& obsIt : landIt.second.getObservations())
                             {
                                   const IndexT viewId = obsIt.first;
                                   // If the observation view has a correspondance in the other sfmData, we copy it :
                                   if (commonViewsMap.find(viewId) != commonViewsMap.end() )
                                   {
-                                      newLandmark.observations.emplace(commonViewsMap.at(viewId), landIt.second.observations.at(viewId));
+                                      newLandmark.getObservations().emplace(commonViewsMap.at(viewId), landIt.second.getObservations().at(viewId));
                                   }
                             }
 
                             // If the landmark has at least one observation in the new scene, we copy it :
-                            if(newLandmark.observations.size() > 0)
+                            if(newLandmark.getObservations().size() > 0)
                             {
                                 newLandmarks.emplace(landIt.first,newLandmark);
                             }

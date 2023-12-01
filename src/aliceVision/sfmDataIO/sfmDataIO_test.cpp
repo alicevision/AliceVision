@@ -62,7 +62,7 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
         observations[i] = sfmData::Observation(Vec2(i, i), i, unknownScale);
     }
 
-    sfmData.getLandmarks()[0].observations = observations;
+    sfmData.getLandmarks()[0].getObservations() = observations;
     sfmData.getLandmarks()[0].X = Vec3(11, 22, 33);
     sfmData.getLandmarks()[0].descType = feature::EImageDescriberType::SIFT;
 

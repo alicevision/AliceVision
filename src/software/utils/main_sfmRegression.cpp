@@ -113,8 +113,8 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
                 continue;
             }
 
-            pl.second.observations[pp.first] = obs;
-            lEst.observations[pp.first] = obs;
+            pl.second.getObservations()[pp.first] = obs;
+            lEst.getObservations()[pp.first] = obs;
         }
     }
 

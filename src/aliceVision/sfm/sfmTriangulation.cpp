@@ -46,7 +46,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
             }
             // Triangulate each landmark
             multiview::Triangulation trianObj;
-            const sfmData::Observations& observations = iterTracks->second.observations;
+            const sfmData::Observations& observations = iterTracks->second.getObservations();
             for (const auto& itObs : observations)
             {
                 const sfmData::View* view = sfmData.getViews().at(itObs.first).get();
@@ -126,7 +126,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
                 ++(progressDisplay);
             }
             Vec3 X;
-            if (robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X))
+            if (robust_triangulation(sfmData, iterTracks->second.getObservations(), randomNumberGenerator, X))
             {
                 iterTracks->second.X = X;
             }

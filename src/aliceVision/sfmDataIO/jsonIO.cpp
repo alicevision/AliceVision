@@ -452,7 +452,7 @@ void saveLandmark(const std::string& name,
     if (saveObservations)
     {
         bpt::ptree observationsTree;
-        for (const auto& obsPair : landmark.observations)
+        for (const auto& obsPair : landmark.getObservations())
         {
             bpt::ptree obsTree;
 
@@ -501,7 +501,7 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
                 observation.setScale(obsTree.get<double>("scale", 0.0));
             }
 
-            landmark.observations.emplace(obsTree.get<IndexT>("observationId"), observation);
+            landmark.getObservations().emplace(obsTree.get<IndexT>("observationId"), observation);
         }
     }
 }

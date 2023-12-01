@@ -42,7 +42,7 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
         {
             const sfmData::Landmark& landmark = it.second;
 
-            for (const auto& obsIt : landmark.observations)
+            for (const auto& obsIt : landmark.getObservations())
             {
                 const IndexT viewId = obsIt.first;
                 const sfmData::Observation& obs = obsIt.second;
@@ -65,7 +65,7 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
     {
         const sfmData::Landmark& landmark = it.second;
 
-        for (const auto& obsIt : landmark.observations)
+        for (const auto& obsIt : landmark.getObservations())
         {
             const IndexT viewId = obsIt.first;
             const sfmData::Observation& obs = obsIt.second;

@@ -310,7 +310,7 @@ int aliceVision_main(int argc, char** argv)
         std::set<IndexT> viewsWithObservations;
         for(const auto& landmarkIt : outSfmData.getLandmarks())
         {
-            for(const auto& obsIt : landmarkIt.second.observations)
+            for(const auto& obsIt : landmarkIt.second.getObservations())
             {
                 viewsWithObservations.insert(obsIt.first);
             }

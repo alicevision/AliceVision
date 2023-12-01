@@ -806,7 +806,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
         _allParametersBlocks.push_back(landmarkBlockPtr);
 
         // iterate over 2D observation associated to the 3D landmark
-        for (const auto& observationPair : landmark.observations)
+        for (const auto& observationPair : landmark.getObservations())
         {
             const sfmData::View& view = sfmData.getView(observationPair.first);
             const sfmData::Observation& observation = observationPair.second;

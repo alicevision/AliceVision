@@ -247,7 +247,7 @@ PerViewVisibility computePerViewVisibility(const sfmData::SfMData& sfmData, cons
     for (const auto& land : sfmData.getLandmarks())
     {
         const IndexT landID = land.first;
-        const auto& observations = land.second.observations;
+        const auto& observations = land.second.getObservations();
 
         for (const auto& iter : observations)
         {
@@ -362,7 +362,7 @@ void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const Compat
 
         outfile << defaultError;
 
-        for (const auto& itObs : iter.second.observations)
+        for (const auto& itObs : iter.second.getObservations())
         {
             const IndexT viewId = itObs.first;
             const IndexT featId = itObs.second.getFeatureId();
