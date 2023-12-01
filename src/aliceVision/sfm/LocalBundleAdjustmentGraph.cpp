@@ -413,7 +413,7 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
     for (auto& itLandmark : sfmData.getLandmarks())
     {
         const IndexT landmarkId = itLandmark.first;
-        const sfmData::Observations& observations = itLandmark.second.observations;
+        const sfmData::Observations& observations = itLandmark.second.getObservations();
 
         assert(observations.size() >= 2);
 
@@ -475,7 +475,7 @@ std::vector<Pair> LocalBundleAdjustmentGraph::getNewEdges(const sfmData::SfMData
         // retrieve the common track Ids
         for (IndexT landmarkId : newViewLandmarks)
         {
-            for (const auto& observations : sfmData.getLandmarks().at(landmarkId).observations)
+            for (const auto& observations : sfmData.getLandmarks().at(landmarkId).getObservations())
             {
                 if (observations.first == viewId)
                     continue;  // do not compare an observation with itself

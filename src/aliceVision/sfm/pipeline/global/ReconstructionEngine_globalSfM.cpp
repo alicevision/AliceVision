@@ -300,7 +300,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
             const Track& track = itTracks->second;
             Landmark& newLandmark = structure[idx];
             newLandmark.descType = track.descType;
-            Observations& obs = newLandmark.observations;
+            Observations& obs = newLandmark.getObservations();
             for (Track::FeatureIdPerView::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
             {
                 const size_t imaIndex = it->first;
@@ -601,7 +601,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
                         obs[view_J->getViewId()] = Observation(x2_, match._j, scaleJ);
                         Landmark& newLandmark = landmarks[landmarkId++];
                         newLandmark.descType = descType;
-                        newLandmark.observations = obs;
+                        newLandmark.getObservations() = obs;
                         newLandmark.X = X;
                     }
                 }

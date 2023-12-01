@@ -187,7 +187,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
             pt(0) += rand() / RAND_MAX - .5;
             pt(1) += rand() / RAND_MAX - .5;
 
-            landmark.observations[j] = Observation(pt, i, unknownScale);
+            landmark.getObservations()[j] = Observation(pt, i, unknownScale);
         }
         sfm_data.getLandmarks()[i] = landmark;
     }

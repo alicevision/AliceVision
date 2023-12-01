@@ -49,13 +49,13 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
     for (auto& landmarkIt : sfmData.getLandmarks())
     {
         auto& landmark = landmarkIt.second;
-        if (landmark.observations.empty())
+        if (landmark.getObservations().empty())
             continue;
         if (markerDescTypes_set.find(landmark.descType) == markerDescTypes_set.end())
             continue;
         landmark.rgb = image::BLACK;
 
-        const auto obs = landmark.observations.begin();
+        const auto obs = landmark.getObservations().begin();
         const feature::Regions& regions = regionPerView.getRegions(obs->first, landmark.descType);
         const feature::CCTAG_Regions* cctagRegions = dynamic_cast<const feature::CCTAG_Regions*>(&regions);
         const feature::APRILTAG_Regions* apriltagRegions = dynamic_cast<const feature::APRILTAG_Regions*>(&regions);

@@ -110,7 +110,7 @@ void createDenseSfMData(const sfmData::SfMData& sfmData,
         const sfmData::View& view = sfmData.getView(mp.getViewId(cam));
         const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
         const sfmData::Observation observation(intrinsicPtr->project(sfmData.getPose(view).getTransform(), pt3D.homogeneous(), true), UndefinedIndexT, unknownScale); // apply distortion
-        landmark.observations[view.getViewId()] = observation;
+        landmark.getObservations()[view.getViewId()] = observation;
       }
     }
     outSfmData.getLandmarks()[i] = landmark;
@@ -123,7 +123,7 @@ void removeLandmarksWithoutObservations(sfmData::SfMData& sfmData)
   auto& landmarks = sfmData.getLandmarks();
   for(auto it = landmarks.begin(); it != landmarks.end();)
   {
-    if(it->second.observations.empty())
+    if(it->second.getObservations().empty())
       it = landmarks.erase(it);
     else
       ++it;

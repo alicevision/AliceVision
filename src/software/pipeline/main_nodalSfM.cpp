@@ -179,8 +179,8 @@ void buildInitialWorld(sfmData::SfMData& sfmData, const feature::FeaturesPerView
 
         sfmData::Landmark l(track.descType);
         l.X = refP;
-        l.observations[pair.reference] = sfmData::Observation(refV, refFeatureId, refFeatures[refFeatureId].scale());
-        l.observations[pair.next] = sfmData::Observation(nextV, nextFeatureId, nextFeatures[nextFeatureId].scale());
+        l.getObservations()[pair.reference] = sfmData::Observation(refV, refFeatureId, refFeatures[refFeatureId].scale());
+        l.getObservations()[pair.next] = sfmData::Observation(nextV, nextFeatureId, nextFeatures[nextFeatureId].scale());
 
         landmarks[id] = l;
     }
@@ -281,7 +281,7 @@ bool localizeNext(sfmData::SfMData& sfmData, const feature::FeaturesPerView & fe
         const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
         IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
         auto & feat = newViewFeatures[newViewFeatureId];
-        landmarks[trackId].observations[newViewId] = sfmData::Observation(feat.coords().cast<double>(), newViewFeatureId, feat.scale());
+        landmarks[trackId].getObservations()[newViewId] = sfmData::Observation(feat.coords().cast<double>(), newViewFeatureId, feat.scale());
     }
 
     return true;
@@ -355,8 +355,8 @@ bool addPoints(sfmData::SfMData& sfmData, const feature::FeaturesPerView & featu
 
             sfmData::Landmark l(track.descType);
             l.X = world_R_new * newP;
-            l.observations[newViewId] = sfmData::Observation(newV, newViewFeatureId, refViewFeatures[refViewFeatureId].scale());
-            l.observations[pV.first] = sfmData::Observation(refV, refViewFeatureId, newViewFeatures[newViewFeatureId].scale());
+            l.getObservations()[newViewId] = sfmData::Observation(newV, newViewFeatureId, refViewFeatures[refViewFeatureId].scale());
+            l.getObservations()[pV.first] = sfmData::Observation(refV, refViewFeatureId, newViewFeatures[newViewFeatureId].scale());
             
             landmarks[trackId] = l;
         }

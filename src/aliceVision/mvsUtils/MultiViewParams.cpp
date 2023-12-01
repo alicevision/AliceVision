@@ -528,7 +528,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
 
     for (const auto& landmarkPair : _sfmData.getLandmarks())
     {
-        const auto& observations = landmarkPair.second.observations;
+        const auto& observations = landmarkPair.second.getObservations();
 
         auto viewObsIt = observations.find(viewId);
         if (viewObsIt == observations.end())
@@ -604,7 +604,7 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
 
     for (const auto& landmarkPair : sfmData.getLandmarks())
     {
-        const auto& observations = landmarkPair.second.observations;
+        const auto& observations = landmarkPair.second.getObservations();
 
         auto viewObsIt = observations.find(viewId);
 

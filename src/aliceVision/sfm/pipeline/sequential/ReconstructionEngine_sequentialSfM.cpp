@@ -376,7 +376,7 @@ void ReconstructionEngine_sequentialSfM::registerChanges(std::set<IndexT>& linke
 
             // Check that this view is a registered observation of this landmark (confirmed track)
             const Landmark& l = landmarks.at(idTrack);
-            if (l.observations.find(id) == l.observations.end())
+            if (l.getObservations().find(id) == l.getObservations().end())
             {
                 continue;
             }
@@ -424,8 +424,8 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
     for (const auto& landmarkPair : landmarks)
     {
         const IndexT landmarkId = landmarkPair.first;
-        const IndexT firstViewId = landmarkPair.second.observations.begin()->first;
-        const IndexT firstFeatureId = landmarkPair.second.observations.begin()->second.getFeatureId();
+        const IndexT firstViewId = landmarkPair.second.getObservations().begin()->first;
+        const IndexT firstFeatureId = landmarkPair.second.getObservations().begin()->second.getFeatureId();
         const feature::EImageDescriberType descType = landmarkPair.second.descType;
 
         obsToLandmark.emplace(ObsKey(firstViewId, firstFeatureId, descType), landmarkId);
@@ -953,7 +953,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
         std::map<std::size_t, std::size_t> obsHistogram;
         for (const auto& iterTracks : _sfmData.getLandmarks())
         {
-            const Observations& obs = iterTracks.second.observations;
+            const Observations& obs = iterTracks.second.getObservations();
             if (obsHistogram.count(obs.size()))
                 obsHistogram[obs.size()]++;
             else
@@ -961,7 +961,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
         }
 
         for (std::size_t i = 2; i < obsHistogram.size(); ++i)
-            _jsonLogTree.add("sfm.observationsHistogram." + std::to_string(i), obsHistogram[i]);
+            _jsonLogTree.add("sfm.getObservations()Histogram." + std::to_string(i), obsHistogram[i]);
 
         _jsonLogTree.put("sfm.time", reconstructionTime);                         // process time
         _jsonLogTree.put("hardware.cpu.freq", system::cpu_clock_by_os());         // cpu frequency
@@ -1673,7 +1673,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
                                    ? 0.0
                                    : _featuresPerView->getFeatures(viewIndex, landmark.descType)[idFeat].scale();
             // Inlier, add the point to the reconstructed track
-            landmark.observations[viewIndex] = Observation(x, idFeat, scale);
+            landmark.getObservations()[viewIndex] = Observation(x, idFeat, scale);
         }
     }
 }
@@ -1922,7 +1922,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
                 const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId).featureId].coords().cast<double>();
                 const feature::PointFeature& p = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId).featureId];
                 const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p.scale();
-                landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId).featureId, scale);
+                landmark.getObservations()[viewId] = Observation(x, track.featPerView.at(viewId).featureId, scale);
             }
 #pragma omp critical
             {
@@ -2024,7 +2024,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
 #pragma omp critical
                     {
                         Landmark& landmark = scene.getLandmarks().at(trackId);
-                        if (landmark.observations.count(I) == 0)
+                        if (landmark.getObservations().count(I) == 0)
                         {
                             const Vec2 residual = camI->residual(poseI, landmark.X.homogeneous(), xI);
                             // TODO: scale in residual
@@ -2034,11 +2034,11 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
                             if (poseI.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
                             {
                                 const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featI.scale();
-                                landmark.observations[I] = Observation(xI, track.featPerView.at(I).featureId, scale);
+                                landmark.getObservations()[I] = Observation(xI, track.featPerView.at(I).featureId, scale);
                                 ++extented_track;
                             }
                         }
-                        if (landmark.observations.count(J) == 0)
+                        if (landmark.getObservations().count(J) == 0)
                         {
                             const Vec2 residual = camJ->residual(poseJ, landmark.X.homogeneous(), xJ);
                             const auto& acThresholdIt = _map_ACThreshold.find(J);
@@ -2047,7 +2047,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
                             if (poseJ.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
                             {
                                 const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featJ.scale();
-                                landmark.observations[J] = Observation(xJ, track.featPerView.at(J).featureId, scale);
+                                landmark.getObservations()[J] = Observation(xJ, track.featPerView.at(J).featureId, scale);
                                 ++extented_track;
                             }
                         }
@@ -2097,8 +2097,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
 
                             const double scaleI = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featI.scale();
                             const double scaleJ = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featJ.scale();
-                            landmark.observations[I] = Observation(xI, track.featPerView.at(I).featureId, scaleI);
-                            landmark.observations[J] = Observation(xJ, track.featPerView.at(J).featureId, scaleJ);
+                            landmark.getObservations()[I] = Observation(xI, track.featPerView.at(I).featureId, scaleI);
+                            landmark.getObservations()[J] = Observation(xJ, track.featPerView.at(J).featureId, scaleJ);
 
                             ++new_added_track;
                         }  // critical

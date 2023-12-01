@@ -262,7 +262,7 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
             {
                 const int viewID = sampleVisibilityIds[obsGlobal_i];
                 const int featID = sampleVisibilityIds[obsGlobal_i + 1];
-                sfmData::Observation& observations = landmark.observations[viewID];
+                sfmData::Observation& observations = landmark.getObservations()[viewID];
                 observations.setFeatureId(featID);
 
                 const float posX = (*sampleFeatPos2d)[obsGlobal_i];
@@ -348,7 +348,7 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
                 if (hasFeatures)
                 {
                     const std::size_t featId = sampleVisibilityFeatId[obsGlobalIndex];
-                    sfmData::Observation& observation = landmark.observations[viewId];
+                    sfmData::Observation& observation = landmark.getObservations()[viewId];
                     observation.setFeatureId(featId);
 
                     const float posX = (*sampleVisibilityFeatPos)[2 * obsGlobalIndex];
@@ -363,7 +363,7 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
                 }
                 else
                 {
-                    landmark.observations[viewId] = sfmData::Observation();
+                    landmark.getObservations()[viewId] = sfmData::Observation();
                 }
             }
         }
