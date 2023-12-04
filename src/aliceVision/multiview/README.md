@@ -7,43 +7,40 @@ The multiview module consists of:
 
 First accessible solvers are listed and explained and the "Kernel" concept is documented.
 
-
 ## 2-view solvers (2d-2d correspondences)
 
 This project provides solver for the following geometric estimation:
 
-* affine,
-* homographic,
-* fundamental,
+- affine,
+- homographic,
+- fundamental,
 
-  * 7 to n pt,
-  * 8 to n pt (Direct Linear Transform) [HZ].
+  - 7 to n pt,
+  - 8 to n pt (Direct Linear Transform) [HZ].
   
-* essential,
+- essential,
 
-  * 8 to n pt (Direct Linear Transform) [HZ],
-  * 5pt + intrinsic [Stewenius], [Nister].
-
+  - 8 to n pt (Direct Linear Transform) [HZ],
+  - 5pt + intrinsic [Stewenius], [Nister].
 
 ## N-View geometry estimation
 
-* Triangulation
+- Triangulation
 
-  * 2 to n view (Direct Linear Transform),
-  * 2 to n view (Iterated least square).
+  - 2 to n view (Direct Linear Transform),
+  - 2 to n view (Iterated least square).
   
-* Rotation averaging
+- Rotation averaging
 
-  * L2 (sparse) [Martinec],
-  * L1 (sparse) [Chatterjee].
+  - L2 (sparse) [Martinec],
+  - L1 (sparse) [Chatterjee].
 
-* Translation averaging
+- Translation averaging
 
-  * L2 Chordal [Kyle2014],
-  * SoftL1 'approximation of the LInf method of [GlobalACSfM]'.
+  - L2 Chordal [Kyle2014],
+  - SoftL1 'approximation of the LInf method of [GlobalACSfM]'.
 
-
-### Homography matrix:
+### Homography matrix
 
 The homography matrix maps the relation between two projections of a plane.
 
@@ -54,8 +51,7 @@ The homography matrix maps the relation between two projections of a plane.
 This project implementation follows the DLT (Direct Linear Transform) explained in [HZ] book:
 `H` can be estimated from 4 to `n` corresponding points.
 
-
-### Fundamental matrix:
+### Fundamental matrix
 
 The fundamental matrix is a relation between two images viewing the same scene where those point's
 projections are visible in the two images. Given a point correspondence between two views $(x_i,x'_i)$:
@@ -85,7 +81,6 @@ This essential matrix links the relative position of the camera to the fundament
 
 ![The essential matrix geometric relation.](../../../docs/img/essentialMatrix.png)
 
-
 ## Absolute pose estimation/Camera resection (Pose matrix)
 
 Given a list of 3D-2D point correspondences it is possible to compute a camera pose estimation.
@@ -101,38 +96,34 @@ $$
 
 This project provides 3 different solvers for this problem:
 
-* 6pt Direct Linear Transform [HZ],
-* 4pt with intrinsic EPnP [EPnP],  
-* 3pt with intrinsic P3P [Kneip].
-
+- 6pt Direct Linear Transform [HZ],
+- 4pt with intrinsic EPnP [EPnP],  
+- 3pt with intrinsic P3P [Kneip].
 
 ### Kernel concept
 
-In order to use the solver in a generic robust estimation framework, we use them in conjuction with the Kernel class that allow to link:
+In order to use the solver in a generic robust estimation framework, we use them in conjunction with the Kernel class that allow to link:
 
-* data points,
+- data points,
 
-  * the set of correspondences that are used for a robust estimation problem.
+  - the set of correspondences that are used for a robust estimation problem.
 
-* a model solver/estimator,
-* a metric to measure data fitting to a putative model.
+- a model solver/estimator,
+- a metric to measure data fitting to a putative model.
 
 ![The Kernel concept (the two view case).](../../../docs/img/kernelConcept.png)
 
-
 Solver:
 
-MINIMUM_SAMPLES: The minimal number of point required for the model estimation,
+`MINIMUM_SAMPLES`: The minimal number of point required for the model estimation,
 
-MAX_MODELS: The number of models that the minimal solver could return,
+`MAX_MODELS`: The number of models that the minimal solver could return,
 
-A Solve function that estimates a model from MINIMUM_SAMPLES to n vector data.
-
+A Solve function that estimates a model from `MINIMUM_SAMPLES` to n vector data.
 
 ErrorModel: 
 
 A metric function that returns the error of a sample data to the provided model.
-
 
 Kernel: 
 

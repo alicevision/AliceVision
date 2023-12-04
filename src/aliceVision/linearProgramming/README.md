@@ -10,7 +10,6 @@ $$
 
 where ``x`` represents the vector of variables (to be determined), ``c`` and ``b`` are vectors of (known) coefficients, ``A`` is a (known) matrix of coefficients.
 
-
 ## Linear programming tools
 
 This project provides tools to:
@@ -18,12 +17,11 @@ This project provides tools to:
 - configure Linear programs (LP container),
 - solve Linear Programs (convex or quasi convex ones).
 
-
 ### Linear program container
 
 This project provides a generic container for LP (Linear Programming problems) that can be dense of sparse.
 
-```
+```cpp
 // Dense LP
 LPConstraints
 // Sparse LP
@@ -36,7 +34,6 @@ It allows to embed:
 - constraints (coefficients ``A``, Sign, objective value ``b``),
 - bounds over ``x`` parameters (<=, =, >=).
 
-
 ### Linear program solvers
 
 This project provides access to different solvers (not exhaustive):
@@ -48,20 +45,19 @@ Those solver have been choosen due to the stability of their results and ability
 
 See examples from linearProgramming_test.cpp.
 
-
 ### Linear programming module usage
 
 The linear programming module of openMVG can be used for:
 
-- solve classical linear problem (optimization),
+- solve classic linear problem (optimization),
 - test the feasibility of linear problem,
 - optimize upper bound of feasible problem (quasi-convex linear programs).
 
-**classical linear problem solving (optimization)**
+#### classic linear problem solving (optimization)
 
 Here an example of usage of the framework:
 
-```  
+```cpp
 // Setup the LP (fill A,b,c and the constraint over x)
 LPConstraints cstraint;
 BuildLinearProblem(cstraint);
@@ -82,7 +78,7 @@ if (solver.solve())
 solver.getSolution(vec_solution);
 ```
 
-**Linear programming, feasible problem**
+#### Linear programming, feasible problem
 
 This project can be use also to test only the feasibility of a given LP problem
 
@@ -92,49 +88,47 @@ $$
 & \text{and} && \mathbf{x} \ge \mathbf{0} \end{align}
 $$
 
-**Linear programming, quasi convex optimization**
+#### Linear programming, quasi convex optimization
 
 This project used a lot of L infinity minimisation formulation.
 Often the posed problems are quasi-convex and dependent of an external parameter that we are looking for (i.e the maximal re-projection error for which the set of contraint is still feasible).
 
 Optimization of this upper bound parameter can be done by iterating over all the possible value or by using a bisection that reduce the search range at each iteration.
 
-```
-Require: gammaLow, gammUp (Low and upper bound of the parameter to optimize)
-Require: the LP problem (cstraintBuilder)
-Ensure: the optimal gamma value, or return infeasibility of the contraints set.
+```c+pp
+// Require: gammaLow, gammUp (Low and upper bound of the parameter to optimize)
+// Require: the LP problem (cstraintBuilder)
+//Ensure: the optimal gamma value, or return infeasibility of the contraints set.
 
-BisectionLP(
-ISolver & solver,
-ConstraintBuilder & cstraintBuilder,
-double gammaUp  = 1.0,  // Upper bound
-double gammaLow = 0.0,  // lower bound
-double eps      = 1e-8, // precision that stop dichotomy
-const int maxIteration = 20) // max number of iteration
+BisectionLP(ISolver & solver,
+            ConstraintBuilder & cstraintBuilder,
+            double gammaUp  = 1.0,  // Upper bound
+            double gammaLow = 0.0,  // lower bound
+            double eps      = 1e-8, // precision that stop dichotomy
+            const int maxIteration = 20) // max number of iteration
 {
-ConstraintType constraint;
-do
-{
-  ++k; // One more iteration
+    ConstraintType constraint;
+    do
+    {
+        ++k; // One more iteration
 
-  double gamma = (gammaLow + gammaUp) / 2.0;
+        double gamma = (gammaLow + gammaUp) / 2.0;
 
-  //-- Setup constraint and solver
-  cstraintBuilder.Build(gamma, constraint);
-  solver.setup( constraint );
-  
-  //-- Solving
-  bool bFeasible = solver.solve();
+        //-- Setup constraint and solver
+        cstraintBuilder.Build(gamma, constraint);
+        solver.setup( constraint );
+        
+        //-- Solving
+        bool bFeasible = solver.solve();
 
-  //-- According feasibility update the corresponding bound
-  //-> Feasible, update the upper bound
-  //-> Not feasible, update the lower bound
-  (bFeasible) ? gammaUp = gamma; : gammaLow = gamma;
-  
-} while (k < maxIteration && gammaUp - gammaLow > eps);
+        //-- According feasibility update the corresponding bound
+        //-> Feasible, update the upper bound
+        //-> Not feasible, update the lower bound
+        (bFeasible) ? gammaUp = gamma; : gammaLow = gamma;
+      
+    } while (k < maxIteration && gammaUp - gammaLow > eps);
 }
 ```
-
 
 ## Multiple View Geometry solvers based on L-Infinity minimization
 
@@ -157,5 +151,3 @@ This project proposes solvers for the following problems:
 
 - Translation averaging:
   - Registration of relative translations to compute global translations [GlobalACSfM].
-
-
