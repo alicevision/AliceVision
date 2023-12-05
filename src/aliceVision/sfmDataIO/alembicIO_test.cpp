@@ -41,6 +41,10 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
         view->getImage().addMetadata("A", "A");
         view->getImage().addMetadata("B", "B");
         view->getImage().addMetadata("C", "C");
+
+        view->addAncestor(static_cast<IndexT>(11));
+        view->addAncestor(static_cast<IndexT>(22));
+
         sfm_data.getViews().emplace(id_view, view);
 
         // Add poses
@@ -63,6 +67,17 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
               i, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
         }
     }
+
+    sfmData::ImageInfo ancestorImg_1("path_1.jpg", 1024, 640);
+    ancestorImg_1.addMetadata("D", "D");
+    ancestorImg_1.addMetadata("E", "E");
+    sfm_data.addAncestor(static_cast<IndexT>(11), std::make_shared<sfmData::ImageInfo>(ancestorImg_1));
+
+    sfmData::ImageInfo ancestorImg_2("path_2.jpg", 1024, 640);
+    ancestorImg_2.addMetadata("F", "F");
+    ancestorImg_2.addMetadata("G", "G");
+    ancestorImg_2.addMetadata("H", "H");
+    sfm_data.addAncestor(static_cast<IndexT>(22), std::make_shared<sfmData::ImageInfo>(ancestorImg_2));
 
     std::size_t nbIntrinsics = (bSharedIntrinsic ? 1 : singleViewsCount);
     std::size_t nbPoses = singleViewsCount;

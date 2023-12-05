@@ -36,6 +36,7 @@ struct AlembicExporter::DataImpl
         _mvgCamerasUndefined = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCamerasUndefined");
         _mvgCloud = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCloud");
         _mvgPointCloud = Alembic::AbcGeom::OXform(_mvgCloud, "mvgPointCloud");
+        _mvgAncestors = Alembic::AbcGeom::OXform(_mvgRoot, "mvgAncestors");
 
         // add version as custom property
         const std::vector<::uint32_t> abcVersion = {
@@ -66,11 +67,14 @@ struct AlembicExporter::DataImpl
                    const Vec6* uncertainty = nullptr,
                    Alembic::Abc::OObject* parent = nullptr);
 
+    void addAncestor(const std::string& name, std::shared_ptr<sfmData::ImageInfo> ancestor = nullptr, Alembic::Abc::OObject* parent = nullptr);
+
     Alembic::Abc::OArchive _archive;
     Alembic::Abc::OObject _topObj;
     Alembic::AbcGeom::OXform _mvgRoot;
     Alembic::AbcGeom::OXform _mvgCameras;
     Alembic::AbcGeom::OXform _mvgCamerasUndefined;
+    Alembic::AbcGeom::OXform _mvgAncestors;
     Alembic::AbcGeom::OXform _mvgCloud;
     Alembic::AbcGeom::OXform _mvgPointCloud;
     Alembic::AbcGeom::OXform _xform;
@@ -171,7 +175,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
         OStringArrayProperty(userProps, "mvg_metadata").set(rawMetadata);
     }
 
-    // Export ancestors
+    // Export ancestors View Ids
     OUInt32ArrayProperty(userProps, "mvg_ancestorsParams").set(view.getAncestors());
 
     // set intrinsic properties
@@ -267,6 +271,43 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     }
 }
 
+void AlembicExporter::DataImpl::addAncestor(const std::string& name, std::shared_ptr<sfmData::ImageInfo> ancestor, Alembic::Abc::OObject* parent)
+{
+    if (parent == nullptr)
+        parent = &_mvgAncestors;
+
+    std::stringstream ssLabel;
+    ssLabel << "ancestorxform_" << name;
+
+    Alembic::AbcGeom::OXform xform(*parent, ssLabel.str());
+    OCamera camObj(xform, "camera_" + ssLabel.str());
+
+    auto userProps = camObj.getSchema().getUserProperties();
+
+    std::vector<std::string> ancestorRawMetadata;
+
+    std::string path = ancestor->getImagePath();
+    unsigned int width = ancestor->getWidth();
+    unsigned int height = ancestor->getHeight();
+
+    auto it = ancestor->getMetadata().cbegin();
+    for (std::size_t i = 0; i < ancestor->getMetadata().size(); i++)
+    {
+        ancestorRawMetadata.push_back(it->first);
+        ancestorRawMetadata.push_back(it->second);
+        std::advance(it, 1);
+    }
+
+    OStringProperty(userProps, "mvg_ancestorImagePath").set(path);
+    OUInt32Property(userProps, "mvg_ancestorImageWidth").set(width);
+    OUInt32Property(userProps, "mvg_ancestorImageHeight").set(height);
+    OStringArrayProperty(userProps, "mvg_ancestorImageRawMetadata").set(ancestorRawMetadata);
+
+    CameraSample camSample;
+    camSample.setFocalLength(-1.0);
+    camObj.getSchema().set(camSample);
+}
+
 AlembicExporter::AlembicExporter(const std::string& filename)
   : _dataImpl(new DataImpl(filename))
 {}
@@ -315,6 +356,14 @@ void AlembicExporter::addSfM(const sfmData::SfMData& sfmData, ESfMData flagsPart
         {
             for (const auto& poseViewIds : rigPair.second)
                 addSfMCameraRig(sfmData, rigPair.first, poseViewIds.second, flagsPart);  // add one camera rig per rig pose
+        }
+    }
+
+    if (flagsPart & ESfMData::ANCESTORS)
+    {
+        for (const auto& ancestorPair : sfmData.getAncestors())
+        {
+            _dataImpl->addAncestor(std::to_string(ancestorPair.first), ancestorPair.second);
         }
     }
 }

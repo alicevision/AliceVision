@@ -27,6 +27,9 @@ namespace sfmData {
 /// Define a collection of View
 using Views = HashMapPtr<View>;
 
+/// Define a collection of Image Info
+using ImageInfos = HashMapPtr<ImageInfo>;
+
 /// Define a collection of Pose (indexed by view.getPoseId())
 using Poses = HashMap<IndexT, CameraPose>;
 
@@ -67,9 +70,6 @@ class SfMData
     /// Rotation priors
     RotationPriors rotationpriors;
 
-    SfMData();
-    ~SfMData();
-
     // Operators
 
     bool operator==(const SfMData& other) const;
@@ -84,6 +84,13 @@ class SfMData
      */
     const Views& getViews() const { return _views; }
     Views& getViews() { return _views; }
+
+    /**
+     * @brief Get ancestors
+     * @return ancestors
+     */
+    const ImageInfos& getAncestors() const { return _ancestors; }
+    ImageInfos& getAncestors() { return _ancestors; }
 
     /**
      * @brief Get poses
@@ -252,6 +259,7 @@ class SfMData
      * @param[in] viewId The given view id
      * @return the corresponding view reference
      */
+    const View& getView(IndexT viewId) const { return *(_views.at(viewId)); }
     View& getView(IndexT viewId) { return *(_views.at(viewId)); }
 
     /**
@@ -259,6 +267,7 @@ class SfMData
      * @param[in] viewId The given view id
      * @return the corresponding view ptr
      */
+    const View::ptr getViewPtr(IndexT viewId) const { return _views.at(viewId).get(); }
     View::ptr getViewPtr(IndexT viewId) { return _views.at(viewId).get(); }
 
     /**
@@ -267,13 +276,6 @@ class SfMData
      * @return the corresponding view ptr
      */
     View::sptr getViewSharedPtr(IndexT viewId) { return _views.at(viewId); }
-
-    /**
-     * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
-     * @return the corresponding view reference
-     */
-    const View& getView(IndexT viewId) const { return *(_views.at(viewId)); }
 
     /**
      * @brief Gives the pose of the input view. If this view is part of a rig, it returns rigPose + rigSubPose.
@@ -472,6 +474,11 @@ class SfMData
     }
 
     /**
+     * @brief Add an ancestor image
+     */
+    void addAncestor(IndexT ancestorId, std::shared_ptr<ImageInfo> image) { _ancestors.emplace(ancestorId, image); }
+
+    /**
      * @brief Insert data from the given sfmData if possible.
      * note: This operation doesn't override existing data.
      * @param[in] sfmData A given SfMData
@@ -487,6 +494,8 @@ class SfMData
     Intrinsics _intrinsics;
     /// Considered views
     Views _views;
+    /// Ancestor images
+    ImageInfos _ancestors;
     /// Absolute path to the SfMData file (should not be saved)
     std::string _absolutePath;
     /// Features folders path

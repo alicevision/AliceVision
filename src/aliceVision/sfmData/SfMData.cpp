@@ -20,9 +20,6 @@ using namespace aliceVision::image;
 
 namespace fs = boost::filesystem;
 
-SfMData::SfMData() {}
-
-SfMData::~SfMData() {}
 
 bool SfMData::operator==(const SfMData& other) const
 {
@@ -39,6 +36,19 @@ bool SfMData::operator==(const SfMData& other) const
 
         // Image paths
         if (view1.getImage().getImagePath() != view2.getImage().getImagePath())
+            return false;
+    }
+
+    // Ancestors
+    if (_ancestors.size() != other._ancestors.size())
+        return false;
+
+    for (ImageInfos::const_iterator it = _ancestors.begin(); it != _ancestors.end(); ++it)
+    {
+        const ImageInfo& ancestor1 = *(it->second);
+        const ImageInfo& ancestor2 = *(other._ancestors.at(it->first));
+
+        if (ancestor1 != ancestor2)
             return false;
     }
 

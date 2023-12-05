@@ -58,7 +58,7 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
         viewTree.add_child("metadata", metadataTree);
     }
 
-    // ancestors
+    // ancestor images
     if (!view.getAncestors().empty())
     {
         bpt::ptree ancestorsTree;
@@ -107,6 +107,40 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
     if (viewTree.count("metadata"))
         for (bpt::ptree::value_type& metaDataNode : viewTree.get_child("metadata"))
             view.getImage().addMetadata(metaDataNode.first, metaDataNode.second.data());
+}
+
+void saveAncestor(const std::string& name, IndexT ancestorId, const std::shared_ptr<sfmData::ImageInfo>& ancestor, bpt::ptree& parentTree)
+{
+    bpt::ptree ancestorImageTree;
+    ancestorImageTree.put("ancestorId", ancestorId);
+    ancestorImageTree.put("path", ancestor->getImagePath());
+    ancestorImageTree.put("width", ancestor->getWidth());
+    ancestorImageTree.put("height", ancestor->getHeight());
+
+    // metadata
+    {
+        bpt::ptree metadataTree;
+
+        for (const auto& metadataPair : ancestor->getMetadata())
+            metadataTree.put(metadataPair.first, metadataPair.second);
+
+        ancestorImageTree.add_child("metadata", metadataTree);
+    }
+
+    parentTree.push_back(std::make_pair(name, ancestorImageTree));
+}
+
+void loadAncestor(IndexT& ancestorId, std::shared_ptr<sfmData::ImageInfo>& ancestor, bpt::ptree& ancestorTree)
+{
+    ancestorId = ancestorTree.get<IndexT>("ancestorId");
+    ancestor->setImagePath(ancestorTree.get<std::string>("path"));
+    ancestor->setWidth(ancestorTree.get<size_t>("width"));
+    ancestor->setHeight(ancestorTree.get<size_t>("height"));
+
+    // metadata
+    if (ancestorTree.count("metadata"))
+        for (bpt::ptree::value_type& metaDataNode : ancestorTree.get_child("metadata"))
+            ancestor->addMetadata(metaDataNode.first, metaDataNode.second.data());
 }
 
 void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::shared_ptr<camera::IntrinsicBase>& intrinsic, bpt::ptree& parentTree)
@@ -475,6 +509,7 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
 
     // save flags
     const bool saveViews = (partFlag & VIEWS) == VIEWS;
+    const bool saveAncestors = (partFlag & ANCESTORS) == ANCESTORS;
     const bool saveIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
     const bool saveExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
     const bool saveStructure = (partFlag & STRUCTURE) == STRUCTURE;
@@ -525,6 +560,17 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
             saveView("", *(viewPair.second), viewsTree);
 
         fileTree.add_child("views", viewsTree);
+    }
+
+    // ancestors
+    if (saveAncestors && !sfmData.getAncestors().empty())
+    {
+        bpt::ptree ancestorsTree;
+
+        for (const auto& ancestorPair : sfmData.getAncestors())
+            saveAncestor(std::to_string(ancestorPair.first), ancestorPair.first, ancestorPair.second, ancestorsTree);
+
+        fileTree.add_child("ancestors", ancestorsTree);
     }
 
     // intrinsics
@@ -599,6 +645,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
 
     // load flags
     const bool loadViews = (partFlag & VIEWS) == VIEWS;
+    const bool loadAncestors = (partFlag & ANCESTORS) == ANCESTORS;
     const bool loadIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
     const bool loadExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
     const bool loadStructure = (partFlag & STRUCTURE) == STRUCTURE;
@@ -640,6 +687,23 @@ bool loadJSON(sfmData::SfMData& sfmData,
             loadIntrinsic(version, intrinsicId, intrinsic, intrinsicNode.second);
 
             intrinsics.emplace(intrinsicId, intrinsic);
+        }
+    }
+
+    // ancestors
+    if (loadAncestors && fileTree.count("ancestors"))
+    {
+        sfmData::ImageInfos& ancestors = sfmData.getAncestors();
+
+        for (bpt::ptree::value_type& ancestorNode : fileTree.get_child("ancestors"))
+        {
+            IndexT ancestorId;
+            sfmData::ImageInfo img;
+            std::shared_ptr<sfmData::ImageInfo> ancestor = std::make_shared<sfmData::ImageInfo>(img);
+
+            loadAncestor(ancestorId, ancestor, ancestorNode.second);
+
+            ancestors.emplace(ancestorId, ancestor);
         }
     }
 

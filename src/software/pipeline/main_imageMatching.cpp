@@ -176,7 +176,7 @@ int aliceVision_main(int argc, char** argv)
 
   std::map<IndexT, std::string> descriptorsFilesA, descriptorsFilesB;
 
-  if(method != EImageMatchingMethod::EXHAUSTIVE)
+  if(method != EImageMatchingMethod::EXHAUSTIVE && method != EImageMatchingMethod::SEQUENTIAL)
   {
       // load descriptor filenames
       aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);

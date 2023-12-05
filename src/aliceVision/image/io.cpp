@@ -1036,7 +1036,7 @@ void writeImage(const std::string& path,
     imageSpec.attribute("AliceVision:ColorSpace",
                         (toColorSpace == EImageColorSpace::NO_CONVERSION) ? EImageColorSpace_enumToString(fromColorSpace)
                                                                           : EImageColorSpace_enumToString(toColorSpace));
-  
+
     const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
     const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
         

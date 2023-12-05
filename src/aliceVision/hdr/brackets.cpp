@@ -273,7 +273,7 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
 
     for (auto& group : groups)
     {
-        // Set the ldr ancestors id
+        // Set the ldr ancestors
         for (auto v : group)
         {
             group[targetIndex]->addAncestor(v->getViewId());
