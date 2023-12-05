@@ -86,8 +86,8 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
         IndexT intrinsicId = pi.first;
 
         // Convert to pinhole
-        std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = pi.second;
-        std::shared_ptr<camera::Pinhole> cameraPinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);
+        const std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = pi.second;
+        const std::shared_ptr<camera::Pinhole> cameraPinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);
         if (!cameraPinhole)
         {
             ALICEVISION_LOG_ERROR("Only work for pinhole cameras");
@@ -517,9 +517,14 @@ int aliceVision_main(int argc, char* argv[])
     // Mark all intrinsics as calibrated
     for (auto& pi : sfmData.getIntrinsics())
     {
-        std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = pi.second;
-        intrinsicPtr->setInitializationMode(camera::EInitMode::CALIBRATED);
+        const std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = pi.second;
+
+        std::shared_ptr<camera::IntrinsicBase> newIntrinsic(intrinsicPtr->clone());
+        newIntrinsic->setInitializationMode(camera::EInitMode::CALIBRATED);
+        sfmData.setIntrinsic(pi.first, newIntrinsic);
     }
+
+
 
     // Mark all rig sub-poses as constant
     for (auto& pr : sfmData.getRigs())

@@ -1389,7 +1389,7 @@ int aliceVision_main(int argc, char * argv[])
 
             if (image.Width() != cam->w()) // The image has been rotated by automatic reorientation 
             {
-                camera::IntrinsicBase* cam2 = cam->clone();
+                std::shared_ptr<camera::IntrinsicBase> cam2(cam->clone());
 
                 cam2->setWidth(image.Width());
                 cam2->setHeight(image.Height());
@@ -1399,7 +1399,7 @@ int aliceVision_main(int argc, char * argv[])
 
                 IndexT intrinsicId = cam2->hashValue();
                 view.setIntrinsicId(intrinsicId);
-                sfmData.getIntrinsics().emplace(intrinsicId, cam2);
+                sfmData.setIntrinsic(intrinsicId, cam2);
             }
         }
 

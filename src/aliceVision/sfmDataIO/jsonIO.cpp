@@ -680,7 +680,6 @@ bool loadJSON(sfmData::SfMData& sfmData,
     // intrinsics
     if (loadIntrinsics && fileTree.count("intrinsics"))
     {
-        sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
 
         for (bpt::ptree::value_type& intrinsicNode : fileTree.get_child("intrinsics"))
         {
@@ -689,7 +688,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
 
             loadIntrinsic(version, intrinsicId, intrinsic, intrinsicNode.second);
 
-            intrinsics.emplace(intrinsicId, intrinsic);
+            sfmData.setIntrinsic(intrinsicId, intrinsic);
         }
     }
 

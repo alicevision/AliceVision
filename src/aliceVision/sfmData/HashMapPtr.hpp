@@ -6,7 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/types.hpp>
-
+#include <utility>
 namespace aliceVision {
 namespace sfmData {
 
@@ -53,6 +53,12 @@ class HashMapPtr : public HashMap<IndexT, std::shared_ptr<T>>
      * We don't want the user to assume the object is created when the index does not exist in the map
      */
     std::shared_ptr<T>& operator[](const IndexT& index) = delete;
+
+    template< class... Args >
+    std::pair<typename HashMap<IndexT, std::shared_ptr<T>>::iterator, bool> emplace(Args&&... args)
+    {
+        return HashMap<IndexT, std::shared_ptr<T>>::emplace(std::forward<Args>(args)...);
+    }
 };
 
 }  // namespace sfmData

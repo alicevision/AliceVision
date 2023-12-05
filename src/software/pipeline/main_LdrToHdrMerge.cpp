@@ -336,7 +336,7 @@ int aliceVision_main(int argc, char** argv)
     {
         int pos = 0;
         sfmData::SfMData outputSfm;
-        outputSfm.getIntrinsics() = sfmData.getIntrinsics();
+        outputSfm.setIntrinsics(sfmData.getIntrinsics());
 
         // If we are on the first chunk, or we are computing all the dataset
         // Export a new sfmData with HDR images as new Views and LDR images as ancestors

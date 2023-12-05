@@ -277,7 +277,11 @@ int aliceVision_main(int argc, char **argv)
                 if (transferIntrinsics)
                 {
                     ALICEVISION_LOG_TRACE("Transfer intrinsics (intrinsic id: " << viewA.getIntrinsicId() << " <- " << viewB.getIntrinsicId() << ", " << viewA.getImage().getImagePath() << " <- " << viewB.getImage().getImagePath() << ").");
-                    sfmData.getIntrinsicPtr(viewA.getIntrinsicId())->assign(*sfmDataRef.getIntrinsicPtr(viewB.getIntrinsicId()));
+
+                    const std::shared_ptr<camera::IntrinsicBase> oldIntrinsic = sfmDataRef.getIntrinsicsharedPtr(viewB.getIntrinsicId());
+                    std::shared_ptr<camera::IntrinsicBase> newIntrinsic(oldIntrinsic->clone());
+
+                    sfmData.updateIntrinsic(viewA.getIntrinsicId(), newIntrinsic);
                 }
 
                 if (transferLandmarks)

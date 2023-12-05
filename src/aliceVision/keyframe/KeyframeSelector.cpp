@@ -1294,12 +1294,12 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
         if (_selectedFrames[i] == '1')
         {
             keyframesViews.emplace(viewId, views[i]);
-            keyframesIntrinsics.emplace(intrinsicId, inputSfm.getIntrinsics().at(intrinsicId));
+            _outputSfmKeyframes.setIntrinsic(intrinsicId, inputSfm.getIntrinsics().at(intrinsicId));
         }
         else
         {
             framesViews.emplace(viewId, views[i]);
-            framesIntrinsics.emplace(intrinsicId, inputSfm.getIntrinsics().at(intrinsicId));
+            _outputSfmFrames.setIntrinsic(intrinsicId, inputSfm.getIntrinsics().at(intrinsicId));
         }
     }
 
@@ -1416,7 +1416,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
                 view->getImage().setImagePath(_keyframesPaths[mediaIndex][selectedKeyframesCounter++]);
             }
             keyframesViews.emplace(view->getViewId(), view);
-            keyframesIntrinsics.emplace(intrinsicId, intrinsic);
+            _outputSfmKeyframes.setIntrinsic(intrinsicId, intrinsic);
         }
         else
         {
@@ -1424,7 +1424,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
             if (!feed.isVideo())
             {
                 framesViews.emplace(view->getViewId(), view);
-                framesIntrinsics.emplace(intrinsicId, intrinsic);
+                _outputSfmFrames.setIntrinsic(intrinsicId, intrinsic);
             }
         }
 

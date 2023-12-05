@@ -12,6 +12,7 @@
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/version.hpp>
+#include <aliceVision/types.hpp>
 
 #include <vector>
 
@@ -429,6 +430,16 @@ class IntrinsicBase
     */
     virtual double getVerticalFov() const = 0;
 
+    void setId(IndexT id)
+    {
+        _id = id;
+    }
+    
+    IndexT getId()
+    {
+        return _id;
+    }
+
   protected:
     /// initialization mode
     EInitMode _initializationMode = EInitMode::NONE;
@@ -439,6 +450,7 @@ class IntrinsicBase
     double _sensorWidth = 36.0;
     double _sensorHeight = 24.0;
     std::string _serialNumber;
+    IndexT _id = UndefinedIndexT;
 };
 
 /**
