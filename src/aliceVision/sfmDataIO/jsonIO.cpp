@@ -342,22 +342,6 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
 
         intrinsicWithDistoEnabled->setDistortionInitializationMode(distortionInitializationMode);
 
-        std::shared_ptr<camera::Distortion> distortionObject = intrinsicWithDistoEnabled->getDistortion();
-        if (distortionObject)
-        {
-            std::vector<double> distortionParams;
-            for (bpt::ptree::value_type& paramNode : intrinsicTree.get_child("distortionParams"))
-            {
-                distortionParams.emplace_back(paramNode.second.get_value<double>());
-            }
-
-            // ensure that we have the right number of params
-            if (distortionParams.size() == distortionObject->getParameters().size())
-            {
-                distortionObject->setParameters(distortionParams);
-            }
-        }
-
         std::shared_ptr<camera::Undistortion> undistortionObject = intrinsicWithDistoEnabled->getUndistortion();
         if (undistortionObject)
         {
@@ -374,6 +358,25 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
                 Vec2 offset;
                 loadMatrix("undistortionOffset", offset, intrinsicTree);
                 undistortionObject->setOffset(offset);
+            }
+
+            //If undistortion exists, distortion does not
+            intrinsicWithDistoEnabled->setDistortionObject(nullptr);
+        }
+
+        std::shared_ptr<camera::Distortion> distortionObject = intrinsicWithDistoEnabled->getDistortion();
+        if (distortionObject)
+        {
+            std::vector<double> distortionParams;
+            for (bpt::ptree::value_type& paramNode : intrinsicTree.get_child("distortionParams"))
+            {
+                distortionParams.emplace_back(paramNode.second.get_value<double>());
+            }
+
+            // ensure that we have the right number of params
+            if (distortionParams.size() == distortionObject->getParameters().size())
+            {
+                distortionObject->setParameters(distortionParams);
             }
         }
     }
