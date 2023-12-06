@@ -1086,7 +1086,7 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename, EFileT
     for (int atlasId = 0; atlasId < _atlases.size(); ++atlasId)
     {
         // Set material for this atlas
-        const aiString texName(Material::textureId(atlasId));
+        const aiString texName("material_" + Material::textureId(atlasId));
 
         scene.mMaterials[atlasId] = new aiMaterial;
         scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_AMBIENT);
