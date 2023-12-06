@@ -204,6 +204,11 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
         if (undistortion)
         {
             obsUndistorted.x = undistortion->undistort(observation.x);
+
+            if (intrinsicDistortionPtr->getDistortion() != nullptr)
+            {
+                throw std::runtime_error("Distortion should not be there when undistortion exists");
+            }
         }
     }
 
