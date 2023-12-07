@@ -170,8 +170,8 @@ bool computeSimilarityFromCommonCameras_poseId(const sfmData::SfMData& sfmDataA,
     for (std::size_t i = 0; i < commonPoseIds.size(); ++i)
     {
         const IndexT poseId = commonPoseIds[i];
-        xA.col(i) = sfmDataA.getAbsolutePose(poseId).getTransform().center();
-        xB.col(i) = sfmDataB.getAbsolutePose(poseId).getTransform().center();
+        xA.col(i) = sfmDataA.getCameraPose(poseId).getTransform().center();
+        xB.col(i) = sfmDataB.getCameraPose(poseId).getTransform().center();
     }
     if (commonPoseIds.size() == 1)
     {
@@ -773,9 +773,9 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
 
     Mat3 R_image = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
 
-    out_R = R_image.transpose() * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+    out_R = R_image.transpose() * sfmData.getCameraPose(viewId).getTransform().rotation();
 
-    out_t = -out_R * sfmData.getAbsolutePose(viewId).getTransform().center();
+    out_t = -out_R * sfmData.getCameraPose(viewId).getTransform().center();
     out_S = 1.0;
 }
 

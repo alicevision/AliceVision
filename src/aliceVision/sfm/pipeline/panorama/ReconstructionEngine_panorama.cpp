@@ -503,8 +503,8 @@ bool ReconstructionEngine_panorama::addConstraints2DWithKnownRotation()
         const sfmData::View& vI = _sfmData.getView(viewI);
         const sfmData::View& vJ = _sfmData.getView(viewJ);
 
-        sfmData::CameraPose iTo = _sfmData.getAbsolutePose(vI.getPoseId());
-        sfmData::CameraPose jTo = _sfmData.getAbsolutePose(vJ.getPoseId());
+        sfmData::CameraPose iTo = _sfmData.getCameraPose(vI.getPoseId());
+        sfmData::CameraPose jTo = _sfmData.getCameraPose(vJ.getPoseId());
 
         std::shared_ptr<camera::IntrinsicBase> intrinsicI = _sfmData.getIntrinsicsharedPtr(vI.getIntrinsicId());
         std::shared_ptr<camera::IntrinsicBase> intrinsicJ = _sfmData.getIntrinsicsharedPtr(vJ.getIntrinsicId());
@@ -586,8 +586,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             IndexT pid1 = iter_v1.second->getPoseId();
             IndexT pid2 = iter_v2.second->getPoseId();
 
-            CameraPose oneTo = _sfmData.getAbsolutePose(iter_v1.second->getPoseId());
-            CameraPose twoTo = _sfmData.getAbsolutePose(iter_v2.second->getPoseId());
+            CameraPose oneTo = _sfmData.getCameraPose(iter_v1.second->getPoseId());
+            CameraPose twoTo = _sfmData.getCameraPose(iter_v2.second->getPoseId());
             Eigen::Matrix3d oneRo = oneTo.getTransform().rotation();
             Eigen::Matrix3d twoRo = twoTo.getTransform().rotation();
             Eigen::Matrix3d twoRone = twoRo * oneRo.transpose();
@@ -790,8 +790,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             double weight = _params.rotationAveragingWeighting ? relativePose_info.vec_inliers.size() : 1.0;
             if (_sfmData.isPoseAndIntrinsicDefined(view_I) && _sfmData.isPoseAndIntrinsicDefined(view_J))
             {
-                CameraPose iTo = _sfmData.getAbsolutePose(view_I->getPoseId());
-                CameraPose jTo = _sfmData.getAbsolutePose(view_J->getPoseId());
+                CameraPose iTo = _sfmData.getCameraPose(view_I->getPoseId());
+                CameraPose jTo = _sfmData.getCameraPose(view_J->getPoseId());
                 Eigen::Matrix3d iRo = iTo.getTransform().rotation();
                 Eigen::Matrix3d jRo = jTo.getTransform().rotation();
                 Eigen::Matrix3d jRi = jRo * iRo.transpose();

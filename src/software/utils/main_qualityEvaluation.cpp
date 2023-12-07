@@ -108,7 +108,7 @@ int aliceVision_main(int argc, char **argv)
     const int idPoseGT = sfmData_gt.getViews().at(view->getViewId())->getPoseId();
 
     // gt
-    const geometry::Pose3& pose_gt = sfmData_gt.getAbsolutePose(idPoseGT).getTransform();
+    const geometry::Pose3& pose_gt = sfmData_gt.getCameraPose(idPoseGT).getTransform();
     vec_camPosGT.push_back(pose_gt.center());
     vec_camRotGT.push_back(pose_gt.rotation());
 

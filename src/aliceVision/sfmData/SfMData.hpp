@@ -260,7 +260,10 @@ class SfMData
      * @brief  Gives the pose with the given pose id.
      * @param[in] poseId The given pose id
      */
-    const CameraPose& getAbsolutePose(IndexT poseId) const { return _poses.at(poseId); }
+    const CameraPose& getCameraPose(IndexT poseId) const 
+    { 
+        return _poses.at(poseId); 
+    }
 
     /**
      * @brief Get the rig of the given view
