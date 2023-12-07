@@ -90,6 +90,7 @@ int aliceVision_main(int argc, char** argv)
     bool maskInvert = false;
     int rangeStart = -1;
     int rangeSize = 1;
+    bool useGpu = true;
     
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -104,6 +105,8 @@ int aliceVision_main(int argc, char** argv)
          "Names of classes which are to be considered.")
         ("maskInvert", po::value<bool>(&maskInvert)->default_value(maskInvert),
          "Invert mask values. If selected, the pixels corresponding to the mask will be set to 0.0 instead of 1.0.")
+        ("useGpu", po::value<bool>(&useGpu)->default_value(useGpu),
+         "Use GPU if available.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), 
         "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), 
@@ -178,6 +181,7 @@ int aliceVision_main(int argc, char** argv)
     parameters.modelWidth = 1280;
     parameters.modelHeight = 720;
     parameters.overlapRatio = 0.3;
+    parameters.useGpu = useGpu;
 
     aliceVision::segmentation::Segmentation seg(parameters);
 

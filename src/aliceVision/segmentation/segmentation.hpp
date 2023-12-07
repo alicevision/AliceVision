@@ -39,12 +39,18 @@ class Segmentation
         int modelWidth;
         int modelHeight;
         double overlapRatio;
+        bool useGpu = true;
     };
 
   public:
     Segmentation(const Parameters& parameters)
       : _parameters(parameters)
     {
+        //Disable gpu if disabled on compilation side
+        #if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ONNX_GPU)
+            _parameters.useGpu = false;
+        #endif
+
         if (!initialize())
         {
             throw std::runtime_error("Error on segmentation initialization");
@@ -92,14 +98,12 @@ class Segmentation
      */
     bool processTile(image::Image<ScoredLabel>& labels, const image::Image<image::RGBfColor>::Base& source);
 
-/**
- * Process effectively a buffer of the model input size
- * param labels the output labels
- * @param source the source tile
- */
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+    /**
+     * Process effectively a buffer of the model input size
+     * param labels the output labels
+     * @param source the source tile
+     */
     bool processTileGPU(image::Image<ScoredLabel>& labels, const image::Image<image::RGBfColor>::Base& source);
-#endif
 
     /**
      * Merge tile labels with global labels image
