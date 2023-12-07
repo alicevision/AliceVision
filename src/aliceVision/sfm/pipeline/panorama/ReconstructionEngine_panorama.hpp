@@ -211,7 +211,7 @@ class ReconstructionEngine_panorama : public ReconstructionEngine
     feature::FeaturesPerView* _featuresPerView;
     matching::PairwiseMatches* _pairwiseMatches;
 
-    sfmData::Poses _rotationPriors;
+    sfmData::CameraPoses _rotationPriors;
 };
 
 }  // namespace sfm

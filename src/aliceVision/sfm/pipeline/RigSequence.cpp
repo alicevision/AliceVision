@@ -309,7 +309,7 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
             View& view = _sfmData.getView(viewInfo.viewId);
 
             {
-                Poses::iterator itPose = _sfmData.getPoses().find(view.getPoseId());
+                CameraPoses::iterator itPose = _sfmData.getPoses().find(view.getPoseId());
 
                 if (itPose != _sfmData.getPoses().end())
                 {

@@ -59,7 +59,7 @@ void LocalBundleAdjustmentGraph::setAllParametersToRefine(const sfmData::SfMData
     _statePerLandmarkId.clear();
 
     // poses
-    for (sfmData::Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
+    for (sfmData::CameraPoses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
         _statePerPoseId[itPose->first] = BundleAdjustment::EParameterState::REFINED;
 
     // instrinsics

@@ -35,7 +35,7 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
             stream << '\n';
         }
 
-        const sfmData::Poses& poses = sfmData.getPoses();
+        const sfmData::CameraPoses& poses = sfmData.getPoses();
         for (sfmData::Views::const_iterator iterV = sfmData.getViews().begin(); iterV != sfmData.getViews().end(); ++iterV)
         {
             const sfmData::View* view = iterV->second.get();

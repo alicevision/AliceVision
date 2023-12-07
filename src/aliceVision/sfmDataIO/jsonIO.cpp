@@ -770,7 +770,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
         // poses
         if (fileTree.count("poses"))
         {
-            sfmData::Poses& poses = sfmData.getPoses();
+            sfmData::CameraPoses& poses = sfmData.getPoses();
 
             for (bpt::ptree::value_type& poseNode : fileTree.get_child("poses"))
             {

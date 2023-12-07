@@ -152,7 +152,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     /* Store the pose c1_R_o of the prior */
-    sfmData::Poses& initial_poses = inputSfmData.getPoses();
+    sfmData::CameraPoses& initial_poses = inputSfmData.getPoses();
     Eigen::Matrix3d c1_R_oprior = Eigen::Matrix3d::Identity();
     if(!initial_poses.empty())
     {
@@ -232,7 +232,7 @@ int aliceVision_main(int argc, char** argv)
 
     // If an initial set of poses was available, make sure at least one pose is aligned with it
     // Otherwise take the middle view (sorted over time)
-    sfmData::Poses& final_poses = outSfmData.getPoses();
+    sfmData::CameraPoses& final_poses = outSfmData.getPoses();
 
     if(!final_poses.empty())
     {

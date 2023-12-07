@@ -368,7 +368,7 @@ bool estimateRigs(sfmData::SfMData& sfmData)
     if (sfmData.getRigs().size() > 0)
     {
         // Initialize rig poses
-        sfmData::Poses rigPoses;
+        sfmData::CameraPoses rigPoses;
         for (auto& pv : sfmData.getViews())
         {
             auto view = pv.second;

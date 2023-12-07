@@ -31,7 +31,7 @@ using Views = HashMapPtr<View>;
 using ImageInfos = HashMapPtr<ImageInfo>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
-using Poses = HashMap<IndexT, CameraPose>;
+using CameraPoses = HashMap<IndexT, CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
 using Intrinsics = HashMapPtr<camera::IntrinsicBase>;
@@ -96,8 +96,8 @@ class SfMData
      * @brief Get poses
      * @return poses
      */
-    const Poses& getPoses() const { return _poses; }
-    Poses& getPoses() { return _poses; }
+    const CameraPoses& getPoses() const { return _poses; }
+    CameraPoses& getPoses() { return _poses; }
 
     /**
      * @brief Get rigs
@@ -571,7 +571,7 @@ class SfMData
     /// Matches folders path
     std::vector<std::string> _matchesFolders;
     /// Considered poses (indexed by view.getPoseId())
-    Poses _poses;
+    CameraPoses _poses;
     /// Considered rigs
     Rigs _rigs;
 

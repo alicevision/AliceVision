@@ -161,7 +161,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
     HashMap<IndexT, IndexT> posesCount;
 
     // Init with 0 count, undefined rig id (in order to be able to remove non referenced elements)
-    for (sfmData::Poses::const_iterator itPoses = sfmData.getPoses().begin(); itPoses != sfmData.getPoses().end(); ++itPoses)
+    for (sfmData::CameraPoses::const_iterator itPoses = sfmData.getPoses().begin(); itPoses != sfmData.getPoses().end(); ++itPoses)
         posesCount[itPoses->first] = 0;
 
     // Count occurrence of the poses in the Landmark observations
