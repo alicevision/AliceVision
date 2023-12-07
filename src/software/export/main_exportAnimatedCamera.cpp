@@ -462,7 +462,7 @@ int aliceVision_main(int argc, char** argv)
                 }
                 const camera::Pinhole & refcam = ocam.value();
 
-                const sfmData::CameraPose pose = sfmData.getPose(*findViewIt->second);
+                const sfmData::CameraPose pose = sfmData.getComputedPose(*findViewIt->second);
                 const std::string& imagePath = findViewIt->second->getImage().getImagePath();
                 const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(intrinsicId) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
@@ -491,7 +491,7 @@ int aliceVision_main(int argc, char** argv)
             }
             const camera::Pinhole & refcam = ocam.value();
 
-            const sfmData::CameraPose pose = sfmData.getPose(view);
+            const sfmData::CameraPose pose = sfmData.getComputedPose(view);
             const std::string& imagePath = view.getImage().getImagePath();
             const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 

@@ -189,7 +189,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
 
         if (sfmData.getPoses().size() > 0)
         {
-            const Mat3 rotation = sfmData.getPose(sfmData.getView(viewIds[0])).getTransform().rotation().transpose();
+            const Mat3 rotation = sfmData.getComputedPose(sfmData.getView(viewIds[0])).getTransform().rotation().transpose();
             applyRotation(rotation, normals);
         }
 

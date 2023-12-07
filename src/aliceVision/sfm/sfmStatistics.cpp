@@ -46,7 +46,7 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData,
                     continue;
             }
             const sfmData::View& view = sfmData.getView(obs.first);
-            const aliceVision::geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+            const aliceVision::geometry::Pose3 pose = sfmData.getComputedPose(view).getTransform();
             const std::shared_ptr<aliceVision::camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId())->second;
             const Vec2 residual = intrinsic->residual(pose, track.second.X.homogeneous(), obs.second.getCoordinates());
             vec_residuals.push_back(residual.norm());
@@ -338,7 +338,7 @@ void computeResidualsPerView(const sfmData::SfMData& sfmData,
         for (const auto& obs : observations)
         {
             const sfmData::View& view = sfmData.getView(obs.first);
-            const aliceVision::geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+            const aliceVision::geometry::Pose3 pose = sfmData.getComputedPose(view).getTransform();
             const std::shared_ptr<aliceVision::camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId())->second;
             const Vec2 residual = intrinsic->residual(pose, landmark.second.X.homogeneous(), obs.second.getCoordinates());
             residualsPerView[obs.first].push_back(residual.norm());

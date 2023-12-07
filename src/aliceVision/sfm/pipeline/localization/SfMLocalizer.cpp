@@ -224,7 +224,7 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
     if (!success)
         return false;
 
-    pose = tinyScene.getPose(*view).getTransform();
+    pose = tinyScene.getComputedPose(*view).getTransform();
 
     if (refineIntrinsic)
         intrinsics->assign(*localIntrinsics);

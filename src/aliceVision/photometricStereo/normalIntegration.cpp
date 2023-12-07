@@ -534,7 +534,7 @@ void adjustScale(const sfmData::SfMData& sfmData, image::Image<float>& initDepth
     Eigen::VectorXf knownDepths(numberOf3dPoints);
     Eigen::VectorXf estimatedDepths(numberOf3dPoints);
 
-    const sfmData::CameraPose& currentPose = sfmData.getPose(sfmData.getView(viewID));
+    const sfmData::CameraPose& currentPose = sfmData.getComputedPose(sfmData.getView(viewID));
     const geometry::Pose3& pose = currentPose.getTransform();
 
     for (int i = 0; i < numberOf3dPoints; ++i)
@@ -569,7 +569,7 @@ void getZ0FromLandmarks(const sfmData::SfMData& sfmData,
 
     size_t numberOf3dPoints = visibleLandmarks.size();
 
-    const sfmData::CameraPose& currentPose = sfmData.getPose(sfmData.getView(viewID));
+    const sfmData::CameraPose& currentPose = sfmData.getComputedPose(sfmData.getView(viewID));
     const geometry::Pose3& pose = currentPose.getTransform();
 
     for (int i = 0; i < numberOf3dPoints; ++i)

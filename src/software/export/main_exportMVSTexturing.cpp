@@ -72,7 +72,7 @@ int aliceVision_main(int argc, char **argv)
         continue;
     
     // Valid view, we can ask a pose & intrinsic data
-    const Pose3 pose = sfm_data.getPose(*view).getTransform();
+    const Pose3 pose = sfm_data.getComputedPose(*view).getTransform();
     Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     

@@ -70,7 +70,7 @@ bool refinePoseAsItShouldbe(const Mat& pt3D,
     const bool b_BA_Status = bundle_adjustment_obj.adjust(sfm_data, refineOptions);
     if (b_BA_Status)
     {
-        pose = sfm_data.getPose(*view).getTransform();
+        pose = sfm_data.getComputedPose(*view).getTransform();
     }
     return b_BA_Status;
 }

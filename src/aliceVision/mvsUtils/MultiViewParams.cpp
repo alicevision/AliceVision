@@ -307,7 +307,7 @@ void MultiViewParams::loadMatricesFromSfM(int index)
         return;
     }
 
-    const Mat34 P = ptrPinHole->getProjectiveEquivalent(_sfmData.getPose(view).getTransform());
+    const Mat34 P = ptrPinHole->getProjectiveEquivalent(_sfmData.getComputedPose(view).getTransform());
     std::vector<double> vP(P.size());
     Eigen::Map<RowMatrixXd>(vP.data(), P.rows(), P.cols()) = P;
 
@@ -523,7 +523,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
 
     const IndexT viewId = getViewId(rc);
     const sfmData::View& view = *(_sfmData.getViews().at(viewId));
-    const geometry::Pose3 pose = _sfmData.getPose(view).getTransform();
+    const geometry::Pose3 pose = _sfmData.getComputedPose(view).getTransform();
     const camera::IntrinsicBase* intrinsicPtr = _sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
     for (const auto& landmarkPair : _sfmData.getLandmarks())
@@ -542,7 +542,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
                 continue;
 
             const sfmData::View& otherView = *(_sfmData.getViews().at(otherViewId));
-            const geometry::Pose3 otherPose = _sfmData.getPose(otherView).getTransform();
+            const geometry::Pose3 otherPose = _sfmData.getComputedPose(otherView).getTransform();
             const camera::IntrinsicBase* otherIntrinsicPtr = _sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
 
             const double angle =
@@ -597,7 +597,7 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
 
     const IndexT viewId = getViewId(rc);
     const sfmData::View& view = *(sfmData.getViews().at(viewId));
-    const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+    const geometry::Pose3 pose = sfmData.getComputedPose(view).getTransform();
     const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
     const ROI fullsizeRoi = upscaleROI(roi, getProcessDownscale());  // landmark observations are in the full-size image coordinate system
@@ -631,7 +631,7 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
                 continue;
 
             const sfmData::View& otherView = *(sfmData.getViews().at(otherViewId));
-            const geometry::Pose3 otherPose = sfmData.getPose(otherView).getTransform();
+            const geometry::Pose3 otherPose = sfmData.getComputedPose(otherView).getTransform();
             const camera::IntrinsicBase* otherIntrinsicPtr = sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
 
             const double angle =

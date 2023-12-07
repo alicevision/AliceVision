@@ -88,10 +88,10 @@ void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
             // - by considering geometric error and descriptor distance ratio.
 
             const View* viewL = sfmData.getViews().at(it->first).get();
-            const Pose3 poseL = sfmData.getPose(*viewL).getTransform();
+            const Pose3 poseL = sfmData.getComputedPose(*viewL).getTransform();
             const Intrinsics::const_iterator iterIntrinsicL = sfmData.getIntrinsics().find(viewL->getIntrinsicId());
             const View* viewR = sfmData.getViews().at(it->second).get();
-            const Pose3 poseR = sfmData.getPose(*viewR).getTransform();
+            const Pose3 poseR = sfmData.getComputedPose(*viewR).getTransform();
             const Intrinsics::const_iterator iterIntrinsicR = sfmData.getIntrinsics().find(viewR->getIntrinsicId());
 
             if (sfmData.getIntrinsics().count(viewL->getIntrinsicId()) != 0 || sfmData.getIntrinsics().count(viewR->getIntrinsicId()) != 0)
@@ -224,7 +224,7 @@ void StructureEstimationFromKnownPoses::filter(const SfMData& sfmData, const Pai
                                 continue;
                             }
 
-                            const Pose3 pose = sfmData.getPose(*view).getTransform();
+                            const Pose3 pose = sfmData.getComputedPose(*view).getTransform();
                             const Vec2 pt = regionsPerView.getRegions(imaIndex, subTrack.descType).GetRegionPosition(featIndex);
                             trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(pt));
                         }

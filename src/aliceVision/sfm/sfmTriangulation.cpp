@@ -60,7 +60,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
                         continue;
                     }
 
-                    const Pose3 pose = sfmData.getPose(*view).getTransform();
+                    const Pose3 pose = sfmData.getComputedPose(*view).getTransform();
                     trianObj.add(pinHoleCam->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs.second.getCoordinates()));
                 }
             }
@@ -194,7 +194,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
             std::advance(itObs, it);
             const sfmData::View* view = sfmData.getViews().at(itObs->first).get();
             const IntrinsicBase* cam = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
-            const Pose3 pose = sfmData.getPose(*view).getTransform();
+            const Pose3 pose = sfmData.getComputedPose(*view).getTransform();
             const double z = pose.depth(current_model);  // TODO: cam->depth(pose(X));
             bChierality &= z > 0;
         }
@@ -210,7 +210,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
         {
             const sfmData::View* view = sfmData.getViews().at(itObs.first).get();
             const IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
-            const Pose3 pose = sfmData.getPose(*view).getTransform();
+            const Pose3 pose = sfmData.getComputedPose(*view).getTransform();
             const Vec2 residual = intrinsic->residual(pose, current_model.homogeneous(), itObs.second.getCoordinates());
             const double residual_d = residual.norm();
 
@@ -256,7 +256,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMD
             return Vec3();
         }
 
-        const Pose3 pose = sfmData.getPose(*view).getTransform();
+        const Pose3 pose = sfmData.getComputedPose(*view).getTransform();
         trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs->second.getCoordinates()));
     }
     return trianObj.compute();

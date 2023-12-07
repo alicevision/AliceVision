@@ -271,7 +271,7 @@ int aliceVision_main(int argc, char **argv)
                             viewA.setPoseId(viewA.getViewId());
                             viewA.setIndependantPose(true);
                         }
-                        sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getPose(viewB);
+                        sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getComputedPose(viewB);
                     }
                 }
                 if (transferIntrinsics)

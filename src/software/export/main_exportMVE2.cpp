@@ -162,7 +162,7 @@ bool exportToMVE2Format(
       }
 
       // Prepare to write an MVE 'meta.ini' file for the current view
-      const Pose3 pose = sfm_data.getPose(*view).getTransform();
+      const Pose3 pose = sfm_data.getComputedPose(*view).getTransform();
       const Pinhole * pinhole_cam = static_cast<const Pinhole *>(cam);
 
       const Mat3& rotation = pose.rotation();

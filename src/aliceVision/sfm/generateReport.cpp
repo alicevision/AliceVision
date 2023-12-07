@@ -30,7 +30,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData, const std::string& htmlF
         for (sfmData::Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
         {
             const sfmData::View* view = sfmData.getViews().at(itObs->first).get();
-            const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
+            const geometry::Pose3 pose = sfmData.getComputedPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
             // Use absolute values
             const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates()).array().abs();

@@ -154,7 +154,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfi
         for (int viewId = 0; viewId < nbViews; ++viewId)
         {
             const sfmData::View& view = *sfmData.getViews().at(viewId);
-            const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
+            const geometry::Pose3 camPose = sfmData.getComputedPose(view).getTransform();
 
             std::shared_ptr<camera::IntrinsicBase> cam = sfmData.getIntrinsics().at(0);
             std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);

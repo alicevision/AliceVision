@@ -83,7 +83,7 @@ bool exportToPMVSFormat(
       if (!sfm_data.isPoseAndIntrinsicDefined(view))
         continue;
 
-      const Pose3 pose = sfm_data.getPose(*view).getTransform();
+      const Pose3 pose = sfm_data.getComputedPose(*view).getTransform();
       Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
 
       // View Id re-indexing
@@ -259,7 +259,7 @@ bool exportToBundlerFormat(
       if (!sfm_data.isPoseAndIntrinsicDefined(view))
         continue;
 
-      const Pose3 pose = sfm_data.getPose(*view).getTransform();
+      const Pose3 pose = sfm_data.getComputedPose(*view).getTransform();
       Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
 
       // Must export focal, k1, k2, R, t

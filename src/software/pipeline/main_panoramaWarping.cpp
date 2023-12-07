@@ -53,7 +53,7 @@ bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData:
         }
 
         // Get intrinsics and extrinsics
-        const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
+        const geometry::Pose3 camPose = sfmData.getComputedPose(view).getTransform();
         const camera::IntrinsicBase& intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
         // Compute coarse bounding box
@@ -253,7 +253,7 @@ int aliceVision_main(int argc, char** argv)
                                  << view.getViewId() << " (" << i + 1 << "/" << viewsOrderedByName.size() << ")");
 
         // Get intrinsics and extrinsics
-        geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
+        geometry::Pose3 camPose = sfmData.getComputedPose(view).getTransform();
         std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
 
         // Compute coarse bounding box to make computations faster

@@ -55,7 +55,7 @@ double computeCameraScore(const SfMData& sfmData, const track::TracksPerView& tr
     }
 
     const sfmData::View& view = sfmData.getView(viewId);
-    const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+    const geometry::Pose3 pose = sfmData.getComputedPose(view).getTransform();
     const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view.getIntrinsicId()).get();
 
     double score = 0.0;

@@ -618,8 +618,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
                     // Save(tiny_scene, os.str(), ESfMData(STRUCTURE | EXTRINSICS));
                     //
 
-                    const geometry::Pose3 poseI = tinyScene.getPose(*view_I).getTransform();
-                    const geometry::Pose3 poseJ = tinyScene.getPose(*view_J).getTransform();
+                    const geometry::Pose3 poseI = tinyScene.getComputedPose(*view_I).getTransform();
+                    const geometry::Pose3 poseJ = tinyScene.getComputedPose(*view_J).getTransform();
 
                     const Mat3 R1 = poseI.rotation();
                     const Mat3 R2 = poseJ.rotation();

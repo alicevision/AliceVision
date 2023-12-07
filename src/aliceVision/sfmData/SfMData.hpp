@@ -239,7 +239,7 @@ class SfMData
      * @warning: This function returns a CameraPose (a temporary object and not a reference),
      *           because in the RIG context, this pose is the composition of the rig pose and the sub-pose.
      */
-    CameraPose getPose(const View& view) const
+    CameraPose getComputedPose(const View& view) const
     {
         // check the view has valid pose / rig etc
         if (!view.isPartOfRig() || view.isPoseIndependant())

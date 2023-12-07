@@ -510,7 +510,7 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
     {
         const IndexT I = observationPairI.first;
         const sfmData::View& viewI = *(sfmData.getViews().at(I));
-        const geometry::Pose3 poseI = sfmData.getPose(viewI).getTransform();
+        const geometry::Pose3 poseI = sfmData.getComputedPose(viewI).getTransform();
         const camera::IntrinsicBase* intrinsicPtrI = sfmData.getIntrinsicPtr(viewI.getIntrinsicId());
 
         for (const auto& observationPairJ : landmark.getObservations())
@@ -522,7 +522,7 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
                 continue;
 
             const sfmData::View& viewJ = *(sfmData.getViews().at(J));
-            const geometry::Pose3 poseJ = sfmData.getPose(viewJ).getTransform();
+            const geometry::Pose3 poseJ = sfmData.getComputedPose(viewJ).getTransform();
             const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
 
             const double angle =

@@ -145,7 +145,7 @@ bool prepareDenseScene(const SfMData& sfmData,
         if(saveMetadata || saveMatricesFiles)
         {
             // get camera pose / projection
-            const Pose3 pose = sfmData.getPose(*view).getTransform();
+            const Pose3 pose = sfmData.getComputedPose(*view).getTransform();
 
             std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
             std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);

@@ -90,8 +90,8 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     for (std::size_t i = 0; i < reconstructedCommonViewIds.size(); ++i)
     {
         auto viewIdPair = reconstructedCommonViewIds[i];
-        xA.col(i) = sfmDataA.getPose(sfmDataA.getView(viewIdPair.first)).getTransform().center();
-        xB.col(i) = sfmDataB.getPose(sfmDataB.getView(viewIdPair.second)).getTransform().center();
+        xA.col(i) = sfmDataA.getComputedPose(sfmDataA.getView(viewIdPair.first)).getTransform().center();
+        xB.col(i) = sfmDataB.getComputedPose(sfmDataB.getView(viewIdPair.second)).getTransform().center();
     }
 
     if (reconstructedCommonViewIds.size() == 1)
@@ -507,7 +507,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
         if (sfmData.isPoseAndIntrinsicDefined(&view))
         {
             const sfmData::EEXIFOrientation orientation = view.getImage().getMetadataOrientation();
-            const sfmData::CameraPose camPose = sfmData.getPose(view);
+            const sfmData::CameraPose camPose = sfmData.getComputedPose(view);
             const geometry::Pose3& p = camPose.getTransform();
 
             // Rotation of image
@@ -549,7 +549,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
         if (sfmData.isPoseAndIntrinsicDefined(&view))
         {
             const sfmData::EEXIFOrientation orientation = view.getImage().getMetadataOrientation();
-            const sfmData::CameraPose camPose = sfmData.getPose(view);
+            const sfmData::CameraPose camPose = sfmData.getComputedPose(view);
             const geometry::Pose3& p = camPose.getTransform();
 
             Mat3 R_image = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
@@ -754,7 +754,7 @@ IndexT getCenterCameraView(const sfmData::SfMData& sfmData)
         const sfmData::View& v = *viewIt.second;
         if (!sfmData.isPoseAndIntrinsicDefined(&v))
             continue;
-        const auto& pose = sfmData.getPose(v);
+        const auto& pose = sfmData.getComputedPose(v);
         const double dist = (pose.getTransform().center() - camerasCenter).norm();
 
         if (dist < minDist)
@@ -922,7 +922,7 @@ bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData,
         // extract the gps position
         gpsPositions.push_back(view->getImage().getGpsPositionFromMetadata());
         // get the center
-        centers.push_back(sfmData.getPose(*view.get()).getTransform().center());
+        centers.push_back(sfmData.getComputedPose(*view.get()).getTransform().center());
     }
 
     // if enough data try to find the transformation
@@ -1040,7 +1040,7 @@ void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3&
         for (const auto& pObs : plandmark.second.getObservations())
         {
             const IndexT viewId = pObs.first;
-            const Vec3 camCenter = sfmData.getPose(sfmData.getView(viewId)).getTransform().center();
+            const Vec3 camCenter = sfmData.getComputedPose(sfmData.getView(viewId)).getTransform().center();
 
             if (X(1) > camCenter(1))
             {

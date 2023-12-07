@@ -21,7 +21,7 @@ double RMSE(const sfmData::SfMData& sfmData)
         for (sfmData::Observations::const_iterator itObs = obs.begin(); itObs != obs.end(); ++itObs)
         {
             const sfmData::View* view = sfmData.getViews().find(itObs->first)->second.get();
-            const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
+            const geometry::Pose3 pose = sfmData.getComputedPose(*view).getTransform();
             const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId());
             const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates());
             vec.push_back(residual(0));

@@ -223,13 +223,13 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
 
     // Check views:
     BOOST_CHECK(
-      !(sfmData.getPose(*sfmData.getViews().at(0).get()) == sfmData_notRefined.getPose(*sfmData_notRefined.getViews().at(0).get())));  // v0 refined
+      !(sfmData.getComputedPose(*sfmData.getViews().at(0).get()) == sfmData_notRefined.getComputedPose(*sfmData_notRefined.getViews().at(0).get())));  // v0 refined
     BOOST_CHECK(
-      !(sfmData.getPose(*sfmData.getViews().at(1).get()) == sfmData_notRefined.getPose(*sfmData_notRefined.getViews().at(1).get())));  // v1 refined
-    BOOST_CHECK(sfmData.getPose(*sfmData.getViews().at(2).get()) ==
-                sfmData_notRefined.getPose(*sfmData_notRefined.getViews().at(2).get()));  // v2 constant
-    BOOST_CHECK(sfmData.getPose(*sfmData.getViews().at(2).get()) ==
-                sfmData_notRefined.getPose(*sfmData_notRefined.getViews().at(2).get()));  // v2 ignored
+      !(sfmData.getComputedPose(*sfmData.getViews().at(1).get()) == sfmData_notRefined.getComputedPose(*sfmData_notRefined.getViews().at(1).get())));  // v1 refined
+    BOOST_CHECK(sfmData.getComputedPose(*sfmData.getViews().at(2).get()) ==
+                sfmData_notRefined.getComputedPose(*sfmData_notRefined.getViews().at(2).get()));  // v2 constant
+    BOOST_CHECK(sfmData.getComputedPose(*sfmData.getViews().at(2).get()) ==
+                sfmData_notRefined.getComputedPose(*sfmData_notRefined.getViews().at(2).get()));  // v2 ignored
 
     // Check 3D points
     BOOST_CHECK(sfmData.getLandmarks()[0].X != sfmData_notRefined.getLandmarks()[0].X);      // p0 refined
@@ -254,7 +254,7 @@ double RMSE(const SfMData& sfm_data)
         for (Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
         {
             const View* view = sfm_data.getViews().find(itObs->first)->second.get();
-            const Pose3 pose = sfm_data.getPose(*view).getTransform();
+            const Pose3 pose = sfm_data.getComputedPose(*view).getTransform();
             const std::shared_ptr<IntrinsicBase> intrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second;
             const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates());
             vec.push_back(residual(0));

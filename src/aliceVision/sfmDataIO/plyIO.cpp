@@ -59,7 +59,7 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
             {
                 if (sfmData.isPoseAndIntrinsicDefined(view.second.get()))
                 {
-                    const geometry::Pose3 pose = sfmData.getPose(*(view.second.get())).getTransform();
+                    const geometry::Pose3 pose = sfmData.getComputedPose(*(view.second.get())).getTransform();
 
                     if (b_binary)
                     {

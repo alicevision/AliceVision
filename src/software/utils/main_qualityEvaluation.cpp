@@ -113,7 +113,7 @@ int aliceVision_main(int argc, char **argv)
     vec_camRotGT.push_back(pose_gt.rotation());
 
     // data to evaluate
-    const geometry::Pose3 pose_eval = sfmData.getPose(*view).getTransform();
+    const geometry::Pose3 pose_eval = sfmData.getComputedPose(*view).getTransform();
     vec_C.push_back(pose_eval.center());
     vec_camRot.push_back(pose_eval.rotation());
   }

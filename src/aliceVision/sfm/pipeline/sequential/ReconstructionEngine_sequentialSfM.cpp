@@ -1679,7 +1679,7 @@ bool ReconstructionEngine_sequentialSfM::checkChieralities(const Vec3& pt3D, con
     for (const IndexT& viewId : viewsId)
     {
         const View* view = scene.getViews().at(viewId).get();
-        const Pose3 pose = scene.getPose(*view).getTransform();
+        const Pose3 pose = scene.getComputedPose(*view).getTransform();
         // Check that the point is in front of all the cameras.
         if (pose.depth(pt3D) < 0)
             return false;
@@ -1695,8 +1695,8 @@ bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3& pt3D, const std
         {
             if (viewIdA < viewIdB)
             {
-                double angle_deg = angleBetweenRays(scene.getPose(*scene.getViews().at(viewIdA).get()).getTransform(),
-                                                    scene.getPose(*scene.getViews().at(viewIdB).get()).getTransform(),
+                double angle_deg = angleBetweenRays(scene.getComputedPose(*scene.getViews().at(viewIdA).get()).getTransform(),
+                                                    scene.getComputedPose(*scene.getViews().at(viewIdB).get()).getTransform(),
                                                     pt3D);
                 if (angle_deg >= kMinAngle)
                     return true;
@@ -1777,7 +1777,7 @@ ObservationData getObservationData(const SfMData& scene, feature::FeaturesPerVie
         return {nullptr, {}, {}, {}, {}};
     }
 
-    Pose3 pose = scene.getPose(*view).getTransform();
+    Pose3 pose = scene.getComputedPose(*view).getTransform();
     Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
     const auto& feature = featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId).featureId];
@@ -1994,8 +1994,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
                 continue;
             }
 
-            const Pose3 poseI = scene.getPose(*viewI).getTransform();
-            const Pose3 poseJ = scene.getPose(*viewJ).getTransform();
+            const Pose3 poseI = scene.getComputedPose(*viewI).getTransform();
+            const Pose3 poseJ = scene.getComputedPose(*viewJ).getTransform();
 
             std::size_t new_putative_track = 0, new_added_track = 0, extented_track = 0;
             for (const std::pair<std::size_t, track::Track>& trackIt : map_tracksCommonIJ)

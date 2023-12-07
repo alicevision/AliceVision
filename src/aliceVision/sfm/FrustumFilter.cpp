@@ -45,7 +45,7 @@ void FrustumFilter::initFrustum(const sfmData::SfMData& sfmData)
         if (!isPinhole(iterIntrinsic->second.get()->getType()))
             continue;
 
-        const Pose3 pose = sfmData.getPose(*view).getTransform();
+        const Pose3 pose = sfmData.getComputedPose(*view).getTransform();
 
         const Pinhole* cam = dynamic_cast<const Pinhole*>(iterIntrinsic->second.get());
         if (cam == nullptr)
@@ -178,7 +178,7 @@ void FrustumFilter::init_z_near_z_far_depth(const sfmData::SfMData& sfmData, con
                     continue;
 
                 sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view->getIntrinsicId());
-                const Pose3 pose = sfmData.getPose(*view).getTransform();
+                const Pose3 pose = sfmData.getComputedPose(*view).getTransform();
                 const double z = pose.depth(X);
                 NearFarPlanesT::iterator itZ = z_near_z_far_perView.find(id_view);
                 if (itZ != z_near_z_far_perView.end())

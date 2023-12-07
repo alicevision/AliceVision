@@ -302,7 +302,7 @@ void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const Compatib
         const std::string imageFilename = fs::path(view->getImage().getImagePath()).filename().string();
         const IndexT intrID = view->getIntrinsicId();
 
-        const auto pose = sfmData.getPose(*view).getTransform();
+        const auto pose = sfmData.getComputedPose(*view).getTransform();
         const Mat3 rot = pose.rotation();
         const Vec3 tra = pose.translation();
         Eigen::Quaterniond quat(rot);

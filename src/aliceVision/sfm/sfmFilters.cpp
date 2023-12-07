@@ -32,7 +32,7 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
         while (itObs != observations.end())
         {
             const sfmData::View* view = sfmData.getViews().at(itObs->first).get();
-            const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
+            const geometry::Pose3 pose = sfmData.getComputedPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
 
             Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates());
@@ -93,7 +93,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
         for (itObs = observations.begin(), i = 0; itObs != observations.end(); ++itObs, ++i)
         {
             const sfmData::View* view = sfmData.getViews().at(itObs->first).get();
-            const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
+            const geometry::Pose3 pose = sfmData.getComputedPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
 
             viewDirections.col(i) = applyIntrinsicExtrinsic(pose, intrinsic, itObs->second.getCoordinates());

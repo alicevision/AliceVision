@@ -389,7 +389,7 @@ int aliceVision_main(int argc, char **argv)
 
         const IndexT refViewId = getReferenceViewId(sfmData, transform);
 
-        const Eigen::Matrix3d ref_R_world = sfmData.getPose(sfmData.getView(refViewId)).getTransform().rotation();
+        const Eigen::Matrix3d ref_R_world = sfmData.getComputedPose(sfmData.getView(refViewId)).getTransform().rotation();
 
         // Apply x axis alignment before doing the y alignment
         const Eigen::Matrix3d refcam_R_updatedWorld = ref_R_world * R.transpose();
