@@ -80,12 +80,12 @@ bool SfMData::operator==(const SfMData& other) const
     }
 
     // Points IDs are not preserved
-    if (_structure.size() != other._structure.size())
+    if (_landmarks.size() != other._landmarks.size())
         return false;
 
-    Landmarks::const_iterator landMarkIt = _structure.begin();
-    Landmarks::const_iterator otherLandmarkIt = other._structure.begin();
-    for (; landMarkIt != _structure.end() && otherLandmarkIt != other._structure.end(); ++landMarkIt, ++otherLandmarkIt)
+    Landmarks::const_iterator landMarkIt = _landmarks.begin();
+    Landmarks::const_iterator otherLandmarkIt = other._landmarks.begin();
+    for (; landMarkIt != _landmarks.end() && otherLandmarkIt != other._landmarks.end(); ++landMarkIt, ++otherLandmarkIt)
     {
         // Points IDs are not preserved
         // Landmark
@@ -268,7 +268,7 @@ void SfMData::combine(const SfMData& sfmData)
     _rigs.insert(sfmData._rigs.begin(), sfmData._rigs.end());
 
     // structure
-    _structure.insert(sfmData._structure.begin(), sfmData._structure.end());
+    _landmarks.insert(sfmData._landmarks.begin(), sfmData._landmarks.end());
 
     // constraints
     _constraints2d.insert(_constraints2d.end(), sfmData._constraints2d.begin(), sfmData._constraints2d.end());
@@ -283,7 +283,7 @@ void SfMData::clear()
 {
     _views.clear();
     _intrinsics.clear();
-    _structure.clear();
+    _landmarks.clear();
     _posesUncertainty.clear();
     _landmarksUncertainty.clear();
     _constraints2d.clear();
