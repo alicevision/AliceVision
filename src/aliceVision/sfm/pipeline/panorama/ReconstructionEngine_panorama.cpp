@@ -301,7 +301,7 @@ bool ReconstructionEngine_panorama::process()
         const Vec3 t(0.0, 0.0, 0.0);
         const IndexT poseId = gR.first;
         const Mat3& Ri = gR.second;
-        _sfmData.setAbsolutePose(poseId, CameraPose(Pose3(Ri, t)));
+        _sfmData.setPose(poseId, CameraPose(Pose3(Ri, t)));
     }
 
     //-- Export statistics about the SfM process

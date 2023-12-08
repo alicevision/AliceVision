@@ -715,7 +715,7 @@ bool readCamera(const Version& abcVersion,
         }
         else
         {
-            sfmData.setPose(*view, sfmData::CameraPose(pose, poseLocked));
+            sfmData.applyPose(*view, sfmData::CameraPose(pose, poseLocked));
         }
     }
 

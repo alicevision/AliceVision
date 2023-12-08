@@ -163,7 +163,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
     for (int i = 0; i < nviews; ++i)
     {
         Pose3 pose(d._R[i], d._C[i]);
-        sfm_data.setPose(*sfm_data.getViews().at(i), CameraPose(pose));
+        sfm_data.applyPose(*sfm_data.getViews().at(i), CameraPose(pose));
     }
 
     // 3. Intrinsic data (shared, so only one camera intrinsic is defined)

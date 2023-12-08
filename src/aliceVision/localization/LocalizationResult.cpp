@@ -365,7 +365,7 @@ void updateRigPoses(std::vector<LocalizationResult>& vec_localizationResults,
             pose = vec_subPoses[camID - 1] * rigPose;
         }
 
-        vec_localizationResults[camID].setPose(pose);
+        vec_localizationResults[camID].applyPose(pose);
     }
 }
 

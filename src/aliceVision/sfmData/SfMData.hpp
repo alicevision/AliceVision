@@ -69,7 +69,9 @@ class SfMData
 
     inline bool operator!=(const SfMData& other) const { return !(*this == other); }
 
-    // Accessors
+    // 
+    // Access for containers
+    // 
 
     /**
      * @brief Get views
@@ -166,6 +168,53 @@ class SfMData
     std::vector<std::string> getMatchesFolders() const;
 
 
+
+
+
+
+
+    //
+    // ******** Containers cleanup ******
+    //
+
+    /**
+     * Clear all containers
+    */
+    void clear();
+
+    /**
+     * Clean intrinsics container
+    */
+    void clearIntrinsics()
+    {
+        _intrinsics.clear();
+    }
+
+    /**
+     * Clear rigs container
+    */
+    void clearRigs()
+    {
+        _rigs.clear();
+    }
+
+    /**
+     * Clear landmarks container
+    */
+    void clearLandmarks()
+    {
+        _landmarks.clear();
+    }
+
+
+
+
+
+
+    //
+    // ********* Per object accessors ******
+    //
+
     /**
      * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
      * @param[in] intrinsicId
@@ -177,6 +226,11 @@ class SfMData
         return nullptr;
     }
 
+    /**
+     * Get Intrinsic const reference
+     * @param intrinsicId the id of the intrinsic
+     * @return an optional reference
+    */
     template <class T>
     const std::optional<std::reference_wrapper<const T>> getIntrinsic(IndexT intrinsicId) const
     {
@@ -198,24 +252,7 @@ class SfMData
         if (_intrinsics.count(intrinsicId))
             return _intrinsics.at(intrinsicId);
         return nullptr;
-    }
-
-    /**
-     * @brief Get a set of views keys
-     * @return set of views keys
-     */
-    std::set<IndexT> getViewsKeys() const
-    {
-        std::set<IndexT> viewKeys;
-        for (auto v : _views)
-        {
-            viewKeys.insert(v.first);
-        }
-
-        return viewKeys;
-    }
-
-    
+    }    
 
     /**
      * @brief Gives the view of the input view id.
@@ -230,17 +267,31 @@ class SfMData
      * @param[in] viewId The given view id
      * @return the corresponding view ptr
      */
-    const View::ptr getViewPtr(IndexT viewId) const { return _views.at(viewId).get(); }
-    View::ptr getViewPtr(IndexT viewId) { return _views.at(viewId).get(); }
-
-    /**
-     * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
-     * @return the corresponding view ptr
-     */
     View::sptr getViewSharedPtr(IndexT viewId) { return _views.at(viewId); }
 
+
     /**
+     * @brief  Gives the pose with the given pose id.
+     * @param[in] poseId The given pose id
+     */
+    const CameraPose& getCameraPose(IndexT poseId) const 
+    { 
+        return _poses.at(poseId); 
+    }
+
+    /**
+     * @brief Get the rig of the given view
+     * @param[in] view The given view
+     * @return rig of the given view
+     */
+    const Rig& getRig(const View& view) const
+    {
+        assert(view.isPartOfRig());
+        return _rigs.at(view.getRigId());
+    }
+
+
+     /**
      * @brief Gives the pose of the input view. If this view is part of a rig, it returns rigPose + rigSubPose.
      * @param[in] view The given view
      *
@@ -265,33 +316,15 @@ class SfMData
     }
 
     /**
-     * @brief  Gives the pose with the given pose id.
-     * @param[in] poseId The given pose id
-     */
-    const CameraPose& getCameraPose(IndexT poseId) const 
-    { 
-        return _poses.at(poseId); 
-    }
-
-    /**
-     * @brief Get the rig of the given view
-     * @param[in] view The given view
-     * @return rig of the given view
-     */
-    const Rig& getRig(const View& view) const
-    {
-        assert(view.isPartOfRig());
-        return _rigs.at(view.getRigId());
-    }
-
-
-    /**
      * @brief Add the given \p folder to features folders.
      * @note If SfmData's absolutePath has been set,
      *       an absolute path will be converted to a relative one.
      * @param[in] folder path to a folder containing features
      */
-    inline void addFeaturesFolder(const std::string& folder) { addFeaturesFolders({folder}); }
+    inline void addFeaturesFolder(const std::string& folder) 
+    { 
+        addFeaturesFolders({folder}); 
+    }
 
     /**
      * @brief Add the given \p folders to features folders.
@@ -385,14 +418,14 @@ class SfMData
      * @param[in] view The given view
      * @param[in] pose The given pose
      */
-    void setPose(const View& view, const CameraPose& pose);
+    void applyPose(const View& view, const CameraPose& pose);
 
     /**
      * @brief Set the given pose for the given poseId
      * @param[in] poseId The given poseId
      * @param[in] pose The given pose
      */
-    void setAbsolutePose(IndexT poseId, const CameraPose& pose) 
+    void setPose(IndexT poseId, const CameraPose& pose) 
     { 
         _poses[poseId] = pose; 
     }
@@ -417,17 +450,10 @@ class SfMData
     void resetRigs()
     {
         for (auto rigIt : _rigs)
+        {
             rigIt.second.reset();
+        }
     }
-
-    /**
-     * @brief Reset rigs sub-poses parameters
-     */
-    /*void reset()
-    {
-        for (auto rigIt : _rigs)
-            rigIt.second.reset();
-    }*/
 
     /**
      * @brief List the view indexes that have valid camera intrinsic and pose.
@@ -562,41 +588,24 @@ class SfMData
     void combine(const SfMData& sfmData);
     void combineIntrinsics(const Intrinsics & intrinsics);
 
-    void clear();
+    
 
-    void clearIntrinsics()
+    /**
+     * @brief Get a set of views keys
+     * @return set of views keys
+     */
+    std::set<IndexT> getViewsKeys() const
     {
-        _intrinsics.clear();
+        std::set<IndexT> viewKeys;
+        for (auto v : _views)
+        {
+            viewKeys.insert(v.first);
+        }
+
+        return viewKeys;
     }
 
   private:
-    /// Structure (3D points with their 2D observations)
-    Landmarks _landmarks;
-    /// Considered camera intrinsics (indexed by view.getIntrinsicId())
-    Intrinsics _intrinsics;
-    /// Considered views
-    Views _views;
-    /// Ancestor images
-    ImageInfos _ancestors;
-    /// Absolute path to the SfMData file (should not be saved)
-    std::string _absolutePath;
-    /// Features folders path
-    std::vector<std::string> _featuresFolders;
-    /// Matches folders path
-    std::vector<std::string> _matchesFolders;
-    /// Considered poses (indexed by view.getPoseId())
-    CameraPoses _poses;
-    /// Considered rigs
-    Rigs _rigs;
-    /// 2D Constraints
-    Constraints2D _constraints2d;
-    /// Rotation priors
-    RotationPriors _rotationpriors;
-    /// Uncertainty per pose
-    PosesUncertainty _posesUncertainty;
-    /// Uncertainty per landmark
-    LandmarksUncertainty _landmarksUncertainty;
-
     /**
      * @brief Get Rig pose of a given camera view
      * @param[in] view The given view
@@ -634,6 +643,34 @@ class SfMData
         Rig& rig = _rigs.at(view.getRigId());
         return rig.getSubPose(view.getSubPoseId());
     }
+
+  private:
+    /// Structure (3D points with their 2D observations)
+    Landmarks _landmarks;
+    /// Considered camera intrinsics (indexed by view.getIntrinsicId())
+    Intrinsics _intrinsics;
+    /// Considered views
+    Views _views;
+    /// Ancestor images
+    ImageInfos _ancestors;
+    /// Absolute path to the SfMData file (should not be saved)
+    std::string _absolutePath;
+    /// Features folders path
+    std::vector<std::string> _featuresFolders;
+    /// Matches folders path
+    std::vector<std::string> _matchesFolders;
+    /// Considered poses (indexed by view.getPoseId())
+    CameraPoses _poses;
+    /// Considered rigs
+    Rigs _rigs;
+    /// 2D Constraints
+    Constraints2D _constraints2d;
+    /// Rotation priors
+    RotationPriors _rotationpriors;
+    /// Uncertainty per pose
+    PosesUncertainty _posesUncertainty;
+    /// Uncertainty per landmark
+    LandmarksUncertainty _landmarksUncertainty;
 };
 
 using LandmarkIdSet = std::vector<std::size_t>;

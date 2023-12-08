@@ -64,7 +64,7 @@ class LocalizationResult
 
     const geometry::Pose3& getPose() const { return _pose; }
 
-    void setPose(const geometry::Pose3& pose) { _pose = pose; }
+    void applyPose(const geometry::Pose3& pose) { _pose = pose; }
 
     const camera::Pinhole& getIntrinsics() const { return _intrinsics; }
 

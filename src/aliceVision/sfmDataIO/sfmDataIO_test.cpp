@@ -45,7 +45,7 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
         sfmData.getViews().emplace(viewId, view);
 
         // Add poses
-        sfmData.setPose(*view, sfmData::CameraPose());
+        sfmData.applyPose(*view, sfmData::CameraPose());
 
         // Add intrinsics
         if (!sharedIntrinsic || (i == 0))

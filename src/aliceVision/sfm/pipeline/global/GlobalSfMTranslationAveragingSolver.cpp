@@ -178,7 +178,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(ETranslationAver
                     const Vec3 t(vec_camTranslation[i * 3], vec_camTranslation[i * 3 + 1], vec_camTranslation[i * 3 + 2]);
                     const IndexT pose_id = _reindexBackward[i];
                     const Mat3& Ri = map_globalR.at(pose_id);
-                    sfmData.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, -Ri.transpose() * t)));
+                    sfmData.setPose(pose_id, CameraPose(Pose3(Ri, -Ri.transpose() * t)));
                 }
             }
             break;
@@ -199,7 +199,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(ETranslationAver
                     const Vec3& t = vec_translations[i];
                     const IndexT pose_id = _reindexBackward[i];
                     const Mat3& Ri = map_globalR.at(pose_id);
-                    sfmData.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, -Ri.transpose() * t)));
+                    sfmData.setPose(pose_id, CameraPose(Pose3(Ri, -Ri.transpose() * t)));
                 }
             }
             break;
@@ -258,7 +258,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(ETranslationAver
                     const Vec3 C(X[i * 3], X[i * 3 + 1], X[i * 3 + 2]);
                     const IndexT pose_id = _reindexBackward[i];  // undo the reindexing
                     const Mat3& Ri = map_globalR.at(pose_id);
-                    sfmData.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, C)));
+                    sfmData.setPose(pose_id, CameraPose(Pose3(Ri, C)));
                 }
             }
             break;

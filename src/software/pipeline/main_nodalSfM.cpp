@@ -135,8 +135,8 @@ void buildInitialWorld(sfmData::SfMData& sfmData, const feature::FeaturesPerView
     const sfmData::View & nextView = sfmData.getView(pair.next);
 
     //Make sure initial camera pose is identity
-    sfmData.setPose(refView, sfmData::CameraPose());
-    sfmData.setPose(nextView, sfmData::CameraPose(geometry::Pose3(pair.R,Vec3::Zero())));
+    sfmData.applyPose(refView, sfmData::CameraPose());
+    sfmData.applyPose(nextView, sfmData::CameraPose(geometry::Pose3(pair.R,Vec3::Zero())));
 
     std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicsharedPtr(refView.getIntrinsicId());
     std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicsharedPtr(nextView.getIntrinsicId());
@@ -269,7 +269,7 @@ bool localizeNext(sfmData::SfMData& sfmData, const feature::FeaturesPerView & fe
     }
 
     //Assign pose
-    sfmData.setPose(newView, sfmData::CameraPose(geometry::Pose3(R,Vec3::Zero())));
+    sfmData.applyPose(newView, sfmData::CameraPose(geometry::Pose3(R,Vec3::Zero())));
 
     std::cout << vecInliers.size() << std::endl;
 

@@ -213,7 +213,7 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
 
         // Update intrinsics with width and height of image
         sfmData.getViews().emplace(viewPtr->getViewId(), viewPtr);
-        sfmData.setPose(*sfmData.getViews().at(viewPtr->getViewId()), sfmData::CameraPose(pose));
+        sfmData.applyPose(*sfmData.getViews().at(viewPtr->getViewId()), sfmData::CameraPose(pose));
         sfmData.setIntrinsic(index, pinholeIntrinsic);
     }
     return true;

@@ -120,7 +120,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         std::shared_ptr<sfmData::View> view = std::make_shared<sfmData::View>("", viewID, intrinsicID, viewID);
         tinyScene.getViews().insert(std::make_pair(viewID, view));
         // pose
-        tinyScene.setPose(*view, sfmData::CameraPose(currResult.getPose()));
+        tinyScene.applyPose(*view, sfmData::CameraPose(currResult.getPose()));
 
         if (!allTheSameIntrinsics)
         {
@@ -284,7 +284,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         for (const auto& pose : tinyScene.getPoses())
         {
             const IndexT idPose = pose.first;
-            vec_localizationResult[idPose].setPose(pose.second.getTransform());
+            vec_localizationResult[idPose].applyPose(pose.second.getTransform());
         }
 
         if (!outputFilename.empty())

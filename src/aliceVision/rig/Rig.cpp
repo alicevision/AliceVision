@@ -121,7 +121,7 @@ bool Rig::initializeCalibration()
                 const geometry::Pose3& relativePose = _vRelativePoses[iRelativePose];
 
                 const geometry::Pose3 poseWitnessCamera = poseFromMainToWitness(_vLocalizationResults[0][iView].getPose(), relativePose);
-                _vLocalizationResults[iRes][iView].setPose(poseWitnessCamera);
+                _vLocalizationResults[iRes][iView].applyPose(poseWitnessCamera);
             }
         }
     }
@@ -508,7 +508,7 @@ bool Rig::optimizeCalibration()
             aliceVision::Vec3 t_refined(vMainPoses[iView][3], vMainPoses[iView][4], vMainPoses[iView][5]);
             // Push the optimized pose
             geometry::Pose3 pose = geometry::Pose3(R_refined, -R_refined.transpose() * t_refined);
-            _vLocalizationResults[0][iView].setPose(pose);
+            _vLocalizationResults[0][iView].applyPose(pose);
             _vPoses.push_back(pose);
         }
     }
@@ -529,7 +529,7 @@ bool Rig::optimizeCalibration()
                 // Retrieve the witness camera pose from the main camera one.
                 const geometry::Pose3 poseWitnessCamera =
                   poseFromMainToWitness(_vLocalizationResults[0][iView].getPose(), _vRelativePoses[iRelativePose]);
-                _vLocalizationResults[iLocalizer][iView].setPose(poseWitnessCamera);
+                _vLocalizationResults[iLocalizer][iView].applyPose(poseWitnessCamera);
             }
         }
         displayRelativePoseReprojection(_vRelativePoses[iRelativePose], iLocalizer);

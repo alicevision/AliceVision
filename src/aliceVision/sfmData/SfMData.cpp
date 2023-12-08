@@ -213,7 +213,7 @@ std::set<IndexT> SfMData::getReconstructedIntrinsics() const
     return valid_idx;
 }
 
-void SfMData::setPose(const View& view, const CameraPose& absolutePose)
+void SfMData::applyPose(const View& view, const CameraPose& absolutePose)
 {
     // const bool knownPose = existsPose(view);
     CameraPose& viewPose = _poses[view.getPoseId()];

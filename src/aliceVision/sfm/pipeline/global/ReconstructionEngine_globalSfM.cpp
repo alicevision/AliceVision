@@ -570,8 +570,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
                 const Pose3& poseI = Pose3(Mat3::Identity(), Vec3::Zero());
                 const Pose3& poseJ = relativePose_info.relativePose;
 
-                tinyScene.setPose(*view_I, CameraPose(poseI));
-                tinyScene.setPose(*view_J, CameraPose(poseJ));
+                tinyScene.applyPose(*view_I, CameraPose(poseI));
+                tinyScene.applyPose(*view_J, CameraPose(poseJ));
 
                 // Init structure
                 const Mat34 P1 = camIPinHole->getProjectiveEquivalent(poseI);

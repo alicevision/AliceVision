@@ -181,7 +181,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
         projectedPtsPerCam.push_back(project(P, matPts));
 
         geometry::Pose3 pose(rotationMat, camCenter);
-        sfm_data.setPose(*sfm_data.getViews().at(i), CameraPose(pose));
+        sfm_data.applyPose(*sfm_data.getViews().at(i), CameraPose(pose));
     }
 
     // 3. Intrinsic data (shared, so only one camera intrinsic is defined)

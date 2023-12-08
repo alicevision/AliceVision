@@ -1247,8 +1247,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
         const Pose3& initPoseI = Pose3(Mat3::Identity(), Vec3::Zero());
         const Pose3& initPoseJ = relativePoseInfo.relativePose;
 
-        _sfmData.setPose(viewI, CameraPose(initPoseI));
-        _sfmData.setPose(viewJ, CameraPose(initPoseJ));
+        _sfmData.applyPose(viewI, CameraPose(initPoseI));
+        _sfmData.applyPose(viewJ, CameraPose(initPoseJ));
 
         // triangulate
         const std::set<IndexT> prevImageIndex = {static_cast<IndexT>(I)};
@@ -1649,7 +1649,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
     _map_ACThreshold.insert(std::make_pair(viewIndex, resectionData.error_max));
 
     const View& view = *_sfmData.getViews().at(viewIndex);
-    _sfmData.setPose(view, CameraPose(resectionData.pose));
+    _sfmData.applyPose(view, CameraPose(resectionData.pose));
 
     std::shared_ptr<camera::IntrinsicBase> intrinsics = _sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
 
