@@ -125,7 +125,7 @@ int aliceVision_main(int argc, char **argv)
       for (Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose, ++indexPose)
       {
         const IndexT idPose = itPose->first;
-        Vec6& u = sfmData._posesUncertainty[idPose]; // create uncertainty entry
+        Vec6& u = sfmData.getPosesUncertainty()[idPose]; // create uncertainty entry
         const double* uIn = &posesUncertainty[indexPose*6];
         u << uIn[0],  uIn[1],  uIn[2],  uIn[3],  uIn[4],  uIn[5];
       }

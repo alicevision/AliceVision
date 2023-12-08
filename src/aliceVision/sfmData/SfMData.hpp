@@ -15,6 +15,7 @@
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfmData/HashMapPtr.hpp>
+#include <aliceVision/sfmData/HashMapLocked.hpp>
 #include <aliceVision/types.hpp>
 
 #include <stdexcept>
@@ -31,7 +32,7 @@ using Views = HashMapPtr<View>;
 using ImageInfos = HashMapPtr<ImageInfo>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
-using CameraPoses = HashMap<IndexT, CameraPose>;
+using CameraPoses = HashMapLocked<CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
 using Intrinsics = HashMapPtr<camera::IntrinsicBase>;
@@ -61,14 +62,6 @@ using RotationPriors = std::vector<RotationPrior>;
 class SfMData
 {
   public:
-    /// Uncertainty per pose
-    PosesUncertainty _posesUncertainty;
-    /// Uncertainty per landmark
-    LandmarksUncertainty _landmarksUncertainty;
-    /// 2D Constraints
-    Constraints2D constraints2d;
-    /// Rotation priors
-    RotationPriors rotationpriors;
 
     // Operators
 
@@ -123,15 +116,30 @@ class SfMData
      * @brief Get Constraints2D
      * @return Constraints2D
      */
-    const Constraints2D& getConstraints2D() const { return constraints2d; }
-    Constraints2D& getConstraints2D() { return constraints2d; }
+    const Constraints2D& getConstraints2D() const { return _constraints2d; }
+    Constraints2D& getConstraints2D() { return _constraints2d; }
 
     /**
      * @brief Get RotationPriors
      * @return RotationPriors
      */
-    const RotationPriors& getRotationPriors() const { return rotationpriors; }
-    RotationPriors& getRotationPriors() { return rotationpriors; }
+    const RotationPriors& getRotationPriors() const { return _rotationpriors; }
+    RotationPriors& getRotationPriors() { return _rotationpriors; }
+
+    /**
+     * @brief Get Poses Uncertainty
+     * @return Poses Uncertainty
+     */
+    const PosesUncertainty& getPosesUncertainty() const { return _posesUncertainty; }
+    PosesUncertainty& getPoseUncertainty() { return _posesUncertainty; }
+
+
+    /**
+     * @brief Get Landmarks Uncertainty
+     * @return Landmarks Uncertainty
+     */
+    const LandmarksUncertainty& getLandmarksUncertainty() const { return _landmarksUncertainty; }
+    LandmarksUncertainty& getLandmarksUncertainty() { return _landmarksUncertainty; }
 
     /**
      * @brief Get relative features folder paths
@@ -384,7 +392,10 @@ class SfMData
      * @param[in] poseId The given poseId
      * @param[in] pose The given pose
      */
-    void setAbsolutePose(IndexT poseId, const CameraPose& pose) { _poses[poseId] = pose; }
+    void setAbsolutePose(IndexT poseId, const CameraPose& pose) 
+    { 
+        _poses[poseId] = pose; 
+    }
 
     /**
      * @brief Erase yhe pose for the given poseId
@@ -412,11 +423,11 @@ class SfMData
     /**
      * @brief Reset rigs sub-poses parameters
      */
-    void reset()
+    /*void reset()
     {
         for (auto rigIt : _rigs)
             rigIt.second.reset();
-    }
+    }*/
 
     /**
      * @brief List the view indexes that have valid camera intrinsic and pose.
@@ -577,6 +588,14 @@ class SfMData
     CameraPoses _poses;
     /// Considered rigs
     Rigs _rigs;
+    /// 2D Constraints
+    Constraints2D _constraints2d;
+    /// Rotation priors
+    RotationPriors _rotationpriors;
+    /// Uncertainty per pose
+    PosesUncertainty _posesUncertainty;
+    /// Uncertainty per landmark
+    LandmarksUncertainty _landmarksUncertainty;
 
     /**
      * @brief Get Rig pose of a given camera view

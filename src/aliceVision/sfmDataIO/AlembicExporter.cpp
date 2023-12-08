@@ -328,7 +328,7 @@ void AlembicExporter::addSfM(const sfmData::SfMData& sfmData, ESfMData flagsPart
         const sfmData::LandmarksUncertainty noUncertainty;
 
         addLandmarks(sfmData.getLandmarks(),
-                     (flagsPart & ESfMData::LANDMARKS_UNCERTAINTY) ? sfmData._landmarksUncertainty : noUncertainty,
+                     (flagsPart & ESfMData::LANDMARKS_UNCERTAINTY) ? sfmData.getLandmarksUncertainty() : noUncertainty,
                      ((flagsPart & ESfMData::OBSERVATIONS || flagsPart & ESfMData::OBSERVATIONS_WITH_FEATURES)),
                      (flagsPart & ESfMData::OBSERVATIONS_WITH_FEATURES));
     }
