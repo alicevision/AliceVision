@@ -44,7 +44,7 @@ inline void getCommonPoseId(const sfmData::SfMData& sfmDataA, const sfmData::SfM
 {
     for (const auto& poseA : sfmDataA.getPoses())
     {
-        if (sfmDataB.getPoses().find(poseA.first) != sfmDataB.getPoses().end())
+        if (sfmDataB.existsPose(poseA.first))
         {
             outIndexes.push_back(poseA.first);
         }

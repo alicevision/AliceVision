@@ -17,6 +17,8 @@ namespace sfmData {
 template<class T>
 class HashMapLocked : public HashMap<IndexT, T>
 {
+  friend class SfMData;
+  
   public:
     HashMapLocked<T>() : HashMap<IndexT, T>()
     {
@@ -26,6 +28,17 @@ class HashMapLocked : public HashMap<IndexT, T>
      * We don't want the user to assume the object is created when the index does not exist in the map
      */
     //std::shared_ptr<T>& operator[](const IndexT& index) = delete;
+
+  private:
+    /*typename HashMap<IndexT, T>::iterator find(const IndexT & k)
+    {
+        return HashMap<IndexT, T>::find(k);
+    }
+
+    typename HashMap<IndexT, T>::const_iterator find(const IndexT & k) const
+    {
+        return HashMap<IndexT, T>::find(k);
+    }*/
 };
 
 }  // namespace sfmData

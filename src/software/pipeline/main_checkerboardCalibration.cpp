@@ -380,7 +380,7 @@ bool estimateRigs(sfmData::SfMData& sfmData)
                 sfmData::RigSubPose& subPose = rig.getSubPose(subPoseId);
                 if (subPoseId == 0)
                 {
-                    if (sfmData.getPoses().find(view->getPoseId()) == sfmData.getPoses().end())
+                    if (!sfmData.isPoseValid(*view))
                     {
                         continue;
                     }
@@ -404,7 +404,7 @@ bool estimateRigs(sfmData::SfMData& sfmData)
                 sfmData::RigSubPose& subPose = rig.getSubPose(subPoseId);
                 if (subPoseId > 0)
                 {
-                    if (sfmData.getPoses().find(view->getPoseId()) == sfmData.getPoses().end())
+                    if (!sfmData.isPoseValid(*view))
                     {
                         continue;
                     }

@@ -552,6 +552,16 @@ class SfMData
         return (_poses.find(view.getPoseId()) != _poses.end()); 
     }
 
+    /**
+     * @brief Check if the given Poseid exists
+     * @param[in] poseId The given id
+     * @return true if the pose exists
+     */
+    bool existsPose(const IndexT& poseId) const 
+    { 
+        return (_poses.find(poseId) != _poses.end()); 
+    }
+
     std::set<feature::EImageDescriberType> getLandmarkDescTypes() const
     {
         std::set<feature::EImageDescriberType> output;

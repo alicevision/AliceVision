@@ -876,7 +876,7 @@ bool readXform(const Version& abcVersion, IXform& xform, M44d& mat, sfmData::SfM
 
         Pose3 pose(T2);
 
-        if (sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
+        if (!sfmData.existsPose(poseId))
         {
             sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
         }

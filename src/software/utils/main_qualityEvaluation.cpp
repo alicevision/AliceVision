@@ -93,7 +93,7 @@ int aliceVision_main(int argc, char **argv)
   {
     const auto &view = iter.second;
     // jump to next view if there is no correponding pose in reconstruction
-    if(sfmData.getPoses().find(view->getPoseId()) == sfmData.getPoses().end())
+    if (!sfmData.isPoseValid(*view))
     {
       ALICEVISION_LOG_INFO("no pose in input for view " << view->getPoseId());
       continue;

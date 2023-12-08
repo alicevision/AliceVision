@@ -258,7 +258,7 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
         const IndexT rigPoseId = getRigPoseId(_rigId, frameId);
 
         // if no rig pose, compute and add it
-        if (_sfmData.getPoses().find(rigPoseId) == _sfmData.getPoses().end())
+        if (!_sfmData.existsPose(rigPoseId))
         {
             // TODO: use opengv resection for more than one valid view
             IndexT bestSubPoseId = UndefinedIndexT;
@@ -308,16 +308,13 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
 
             View& view = _sfmData.getView(viewInfo.viewId);
 
+            
+            if (_sfmData.existsPose(view.getPoseId()))
             {
-                CameraPoses::iterator itPose = _sfmData.getPoses().find(view.getPoseId());
-
-                if (itPose != _sfmData.getPoses().end())
-                {
-                    _sfmData.getPoses().erase(itPose);
-                    ALICEVISION_LOG_TRACE("Erase independant pose:"
-                                          << "\n\t- pose id: " << view.getPoseId() << "\n\t- frame id: " << frameId
-                                          << "\n\t- sub-pose id: " << subPoseId);
-                }
+                _sfmData.erasePose(view.getPoseId(), true);
+                ALICEVISION_LOG_TRACE("Erase independant pose:"
+                                        << "\n\t- pose id: " << view.getPoseId() << "\n\t- frame id: " << frameId
+                                        << "\n\t- sub-pose id: " << subPoseId);
             }
 
             view.setIndependantPose(false);

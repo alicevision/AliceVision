@@ -393,7 +393,7 @@ void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT ri
     const IndexT rigPoseId = firstView.getPoseId();
     bool rigPoseLocked = false;
 
-    if (sfmData.getPoses().find(rigPoseId) != sfmData.getPoses().end())
+    if (sfmData.existsPose(rigPoseId))
     {
         // rig pose
         const sfmData::CameraPose& rigPose = sfmData.getCameraPose(rigPoseId);
