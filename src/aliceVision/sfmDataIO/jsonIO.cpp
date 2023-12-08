@@ -599,6 +599,11 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
             {
                 bpt::ptree poseTree;
 
+                if (!posePair.second.isValid())
+                {
+                    continue;
+                }
+
                 poseTree.put("poseId", posePair.first);
                 saveCameraPose("pose", posePair.second, poseTree);
                 posesTree.push_back(std::make_pair("", poseTree));

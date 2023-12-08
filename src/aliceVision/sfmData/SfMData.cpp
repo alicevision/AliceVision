@@ -222,6 +222,7 @@ void SfMData::applyPose(const View& view, const CameraPose& absolutePose)
     if (view.isPoseIndependant())
     {
         viewPose = absolutePose;
+        viewPose.setValid(true);
         return;
     }
 

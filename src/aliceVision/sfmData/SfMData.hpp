@@ -491,6 +491,7 @@ class SfMData
 
         if (!_poses.at(view.getPoseId()).isValid())
         {
+            std::cout << "invalid pose" << std::endl;
             return false;
         }
 

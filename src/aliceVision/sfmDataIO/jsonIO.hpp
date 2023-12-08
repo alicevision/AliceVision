@@ -107,8 +107,6 @@ inline void saveCameraPose(const std::string& name, const sfmData::CameraPose& c
 
     savePose3("transform", cameraPose.getTransform(), cameraPoseTree);
     cameraPoseTree.put("locked", static_cast<int>(cameraPose.isLocked()));
-    cameraPoseTree.put("valid", static_cast<int>(cameraPose.isValid()));
-
     parentTree.add_child(name, cameraPoseTree);
 }
 
@@ -132,15 +130,6 @@ inline void loadCameraPose(const std::string& name, sfmData::CameraPose& cameraP
     else
     {
         cameraPose.unlock();
-    }
-
-    if (cameraPoseTree.get<int>("valid", 1))
-    {
-        cameraPose.setValid(true);
-    }
-    else
-    {
-        cameraPose.setValid(false);
     }
 }
 

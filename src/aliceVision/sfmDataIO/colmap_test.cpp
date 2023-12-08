@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
             {
                 const auto camID = intrID * 10 + cam;
                 sfmTest.getViews().emplace(camID, std::make_shared<sfmData::View>("", cam, intrID, camID));
-                sfmTest.getPoses().emplace(camID, sfmData::CameraPose());
+                sfmTest.getPoses().emplace(camID, sfmData::CameraPose(geometry::Pose3(), false));
             }
         }
 
