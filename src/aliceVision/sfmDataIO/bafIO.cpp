@@ -39,7 +39,7 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         for (sfmData::Views::const_iterator iterV = sfmData.getViews().begin(); iterV != sfmData.getViews().end(); ++iterV)
         {
             const sfmData::View* view = iterV->second.get();
-            if (!sfmData.isPoseAndIntrinsicDefined(view))
+            if (!sfmData.isPoseAndIntrinsicValid(view))
             {
                 const Mat3 R = Mat3::Identity();
                 const double* rotation = R.data();

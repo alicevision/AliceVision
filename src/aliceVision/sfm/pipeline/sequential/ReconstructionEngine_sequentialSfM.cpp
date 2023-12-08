@@ -390,7 +390,7 @@ void ReconstructionEngine_sequentialSfM::registerChanges(std::set<IndexT>& linke
                     continue;
                 }
 
-                if (_sfmData.isPoseAndIntrinsicDefined(oview))
+                if (_sfmData.isPoseAndIntrinsicValid(oview))
                 {
                     continue;
                 }
@@ -476,7 +476,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
         IndexT viewId = viewPair.second->getViewId();
 
         // Create a list of remaining views to estimate
-        if (!_sfmData.isPoseAndIntrinsicDefined(viewId))
+        if (!_sfmData.isPoseAndIntrinsicValid(viewId))
         {
             viewsToVisit.insert(viewId);
         }
@@ -518,7 +518,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
 
         for (auto v : potentials)
         {
-            if (!_sfmData.isPoseAndIntrinsicDefined(v))
+            if (!_sfmData.isPoseAndIntrinsicValid(v))
             {
                 viewsToVisit.insert(v);
             }
@@ -648,7 +648,7 @@ std::set<IndexT> ReconstructionEngine_sequentialSfM::resection(IndexT resectionI
         if (view.isPartOfRig())
         {
             // some views can become indirectly localized when the sub-pose becomes defined
-            if (_sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
+            if (_sfmData.isPoseAndIntrinsicValid(view.getViewId()))
             {
                 ALICEVISION_LOG_DEBUG("Resection of image " << i << " was skipped." << std::endl
                                                             << "View indirectly localized, sub-pose and pose already defined." << std::endl
@@ -1023,7 +1023,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(std::vector<ViewConn
             if (view.isPartOfRig())
             {
                 // Some views can become indirectly localized when the sub-pose becomes defined
-                if (_sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
+                if (_sfmData.isPoseAndIntrinsicValid(view.getViewId()))
                 {
                     continue;
                 }

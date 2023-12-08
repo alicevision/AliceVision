@@ -58,7 +58,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         {
             const sfmData::View& view = *(viewPair.second.get());
 
-            if (!sfmData.isPoseAndIntrinsicDefined(&view))
+            if (!sfmData.isPoseAndIntrinsicValid(&view))
                 continue;
 
             std::string path = view.getImage().getImagePath();

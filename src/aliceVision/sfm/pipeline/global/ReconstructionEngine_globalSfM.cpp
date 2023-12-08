@@ -278,7 +278,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
         {
             const View* vI = _sfm_data.getViews().at(pairwiseMatchesIt.first.first).get();
             const View* vJ = _sfm_data.getViews().at(pairwiseMatchesIt.first.second).get();
-            if (_sfm_data.isPoseAndIntrinsicDefined(vI) && _sfm_data.isPoseAndIntrinsicDefined(vJ))
+            if (_sfm_data.isPoseAndIntrinsicValid(vI) && _sfm_data.isPoseAndIntrinsicValid(vJ))
             {
                 pose_supported_matches.insert(pairwiseMatchesIt);
             }

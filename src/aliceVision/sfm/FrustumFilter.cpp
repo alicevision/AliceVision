@@ -39,7 +39,7 @@ void FrustumFilter::initFrustum(const sfmData::SfMData& sfmData)
     for (NearFarPlanesT::const_iterator it = z_near_z_far_perView.begin(); it != z_near_z_far_perView.end(); ++it)
     {
         const sfmData::View* view = sfmData.getViews().at(it->first).get();
-        if (!sfmData.isPoseAndIntrinsicDefined(view))
+        if (!sfmData.isPoseAndIntrinsicValid(view))
             continue;
         sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view->getIntrinsicId());
         if (!isPinhole(iterIntrinsic->second.get()->getType()))
@@ -174,7 +174,7 @@ void FrustumFilter::init_z_near_z_far_depth(const sfmData::SfMData& sfmData, con
                 const IndexT id_view = iterO->first;
                 const sfmData::Observation& ob = iterO->second;
                 const sfmData::View* view = sfmData.getViews().at(id_view).get();
-                if (!sfmData.isPoseAndIntrinsicDefined(view))
+                if (!sfmData.isPoseAndIntrinsicValid(view))
                     continue;
 
                 sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view->getIntrinsicId());
@@ -199,7 +199,7 @@ void FrustumFilter::init_z_near_z_far_depth(const sfmData::SfMData& sfmData, con
         for (sfmData::Views::const_iterator it = sfmData.getViews().begin(); it != sfmData.getViews().end(); ++it)
         {
             const sfmData::View* view = it->second.get();
-            if (!sfmData.isPoseAndIntrinsicDefined(view))
+            if (!sfmData.isPoseAndIntrinsicValid(view))
                 continue;
             z_near_z_far_perView[view->getViewId()] = std::make_pair(zNear, zFar);
         }

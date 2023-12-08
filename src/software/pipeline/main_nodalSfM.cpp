@@ -197,7 +197,7 @@ IndexT findBestNext(sfmData::SfMData& sfmData, const feature::FeaturesPerView & 
     IndexT bestId = UndefinedIndexT;
     for (const auto & pV : sfmData.getViews())
     {
-        if (sfmData.isPoseAndIntrinsicDefined(pV.first))
+        if (sfmData.isPoseAndIntrinsicValid(pV.first))
         {
             continue;
         }
@@ -307,7 +307,7 @@ bool addPoints(sfmData::SfMData& sfmData, const feature::FeaturesPerView & featu
     //For all reconstructed views
     for (auto & pV : sfmData.getViews())
     {
-        if (!sfmData.isPoseAndIntrinsicDefined(pV.first))
+        if (!sfmData.isPoseAndIntrinsicValid(pV.first))
         {
             continue;
         }

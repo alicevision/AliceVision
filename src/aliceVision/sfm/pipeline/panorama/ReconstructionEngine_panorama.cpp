@@ -566,7 +566,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     sfmData::RotationPriors& rotationpriors = _sfmData.getRotationPriors();
     for (auto& iter_v1 : _sfmData.getViews())
     {
-        if (!_sfmData.isPoseAndIntrinsicDefined(iter_v1.first))
+        if (!_sfmData.isPoseAndIntrinsicValid(iter_v1.first))
         {
             continue;
         }
@@ -578,7 +578,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
                 continue;
             }
 
-            if (!_sfmData.isPoseAndIntrinsicDefined(iter_v2.first))
+            if (!_sfmData.isPoseAndIntrinsicValid(iter_v2.first))
             {
                 continue;
             }
@@ -788,7 +788,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
             // If an existing prior on rotation exists, then make sure the found detected rotation is not stupid
             double weight = _params.rotationAveragingWeighting ? relativePose_info.vec_inliers.size() : 1.0;
-            if (_sfmData.isPoseAndIntrinsicDefined(view_I) && _sfmData.isPoseAndIntrinsicDefined(view_J))
+            if (_sfmData.isPoseAndIntrinsicValid(view_I) && _sfmData.isPoseAndIntrinsicValid(view_J))
             {
                 CameraPose iTo = _sfmData.getCameraPose(view_I->getPoseId());
                 CameraPose jTo = _sfmData.getCameraPose(view_J->getPoseId());

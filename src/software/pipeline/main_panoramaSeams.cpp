@@ -315,7 +315,7 @@ int aliceVision_main(int argc, char** argv)
         auto view = it.second;
         IndexT viewId = view->getViewId();
 
-        if(!sfmData.isPoseAndIntrinsicDefined(view.get()))
+        if(!sfmData.isPoseAndIntrinsicValid(view.get()))
         {
             // skip unreconstructed views
             continue;

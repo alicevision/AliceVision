@@ -100,7 +100,7 @@ int aliceVision_main(int argc, char** argv)
         for (auto viewItem : sfmData.getViews())
         {
             IndexT viewId = viewItem.first;
-            if(!sfmData.isPoseAndIntrinsicDefined(viewId))
+            if(!sfmData.isPoseAndIntrinsicValid(viewId))
             {
                 continue;
             }

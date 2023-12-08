@@ -1188,7 +1188,7 @@ int aliceVision_main(int argc, char * argv[])
         {
             const sfmData::View& view = *(viewIt.second);
             // Only valid views if needed
-            if(pParams.reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicDefined(&view))
+            if(pParams.reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicValid(&view))
             {
                 continue;
             }

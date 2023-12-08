@@ -76,7 +76,7 @@ CompatibleList getColmapCompatibleViews(const sfmData::SfMData& sfmData)
     {
         const auto& view = iter.second;
         const auto viewID = iter.first;
-        if (!sfmData.isPoseAndIntrinsicDefined(view.get()))
+        if (!sfmData.isPoseAndIntrinsicValid(view.get()))
         {
             continue;
         }

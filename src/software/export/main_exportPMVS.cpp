@@ -80,7 +80,7 @@ bool exportToPMVSFormat(
       iter != sfm_data.getViews().end(); ++iter, ++progressDisplay)
     {
       const View * view = iter->second.get();
-      if (!sfm_data.isPoseAndIntrinsicDefined(view))
+      if (!sfm_data.isPoseAndIntrinsicValid(view))
         continue;
 
       const Pose3 pose = sfm_data.getComputedPose(*view).getTransform();
@@ -112,7 +112,7 @@ bool exportToPMVSFormat(
       iter != sfm_data.getViews().end(); ++iter, ++progressDisplay)
     {
       const View * view = iter->second.get();
-      if (!sfm_data.isPoseAndIntrinsicDefined(view))
+      if (!sfm_data.isPoseAndIntrinsicValid(view))
         continue;
 
       Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
@@ -240,7 +240,7 @@ bool exportToBundlerFormat(
       iter != sfm_data.getViews().end(); ++iter)
     {
       const View * view = iter->second.get();
-      if (!sfm_data.isPoseAndIntrinsicDefined(view))
+      if (!sfm_data.isPoseAndIntrinsicValid(view))
         continue;
 
       // View Id re-indexing
@@ -256,7 +256,7 @@ bool exportToBundlerFormat(
       iter != sfm_data.getViews().end(); ++iter)
     {
       const View * view = iter->second.get();
-      if (!sfm_data.isPoseAndIntrinsicDefined(view))
+      if (!sfm_data.isPoseAndIntrinsicValid(view))
         continue;
 
       const Pose3 pose = sfm_data.getComputedPose(*view).getTransform();

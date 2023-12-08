@@ -106,7 +106,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     for(auto it = itViewBegin; it != itViewEnd; ++it)
     {
         const View* view = it->second.get();
-        if (!sfmData.isPoseAndIntrinsicDefined(view))
+        if (!sfmData.isPoseAndIntrinsicValid(view))
             continue;
         viewIds.insert(view->getViewId());
     }

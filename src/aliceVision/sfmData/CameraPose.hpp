@@ -26,47 +26,81 @@ class CameraPose
      */
     explicit CameraPose(const geometry::Pose3& transform, bool locked = false)
       : _transform(transform),
-        _locked(locked)
-    {}
+        _locked(locked),
+        _isValid(true)
+    {
+
+    }
 
     /**
      * @brief Get the 3d transformation of the camera
      * @return 3d transformation
      */
-    inline const geometry::Pose3& getTransform() const { return _transform; }
+    inline const geometry::Pose3& getTransform() const 
+    { 
+        return _transform; 
+    }
 
     /**
      * @brief Get the lock state of the camera
      * @return true if the camera pose is locked
      */
-    inline bool isLocked() const { return _locked; }
+    inline bool isLocked() const 
+    { 
+        return _locked; 
+    }
 
     /**
      * @brief operator ==
      */
-    inline bool operator==(const CameraPose& other) const { return (_transform == other._transform && _locked == other._locked); }
+    inline bool operator==(const CameraPose& other) const
+    { 
+        return (_transform == other._transform && _locked == other._locked); 
+    }
 
     /**
      * @brief Set the 3d transformation of the camera
      * @param[in] 3d transformation
      */
-    inline void setTransform(const geometry::Pose3& transform) { _transform = transform; }
+    inline void setTransform(const geometry::Pose3& transform) 
+    { 
+        _isValid = true;
+        _transform = transform; 
+    }
 
     /**
      * @brief lock the camera pose
      */
-    inline void lock() { _locked = true; }
+    inline void lock() 
+    { 
+        _locked = true; 
+    }
 
     /**
      * @brief unlock the camera pose
      */
-    inline void unlock() { _locked = false; }
+    inline void unlock() 
+    { 
+        _locked = false; 
+    }
+
+    bool isValid() const
+    {
+        return _isValid;
+    }
+
+    void setValid(bool valid) 
+    {
+        _isValid = valid;
+    }
 
   private:
     /// camera 3d transformation
     geometry::Pose3 _transform;
+
     /// camera lock
     bool _locked = false;
+    bool _isValid = false;
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

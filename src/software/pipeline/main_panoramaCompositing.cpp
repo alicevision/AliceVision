@@ -89,7 +89,7 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
 
     for(const auto& viewIt : sfmData.getViews())
     {
-        if(!sfmData.isPoseAndIntrinsicDefined(viewIt.first))
+        if(!sfmData.isPoseAndIntrinsicValid(viewIt.first))
             continue;
 
         const std::string warpedPath = viewIt.second->getImage().getMetadata().at("AliceVision:warpedPath");
@@ -806,7 +806,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());
 
             const IndexT viewReference = chunk[posReference];
-            if(!sfmData.isPoseAndIntrinsicDefined(viewReference))
+            if(!sfmData.isPoseAndIntrinsicValid(viewReference))
                 continue;
 
             BoundingBox referenceBoundingBox;

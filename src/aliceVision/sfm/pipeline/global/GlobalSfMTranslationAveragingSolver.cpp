@@ -57,7 +57,7 @@ bool GlobalSfMTranslationAveragingSolver::Run(ETranslationAveragingMethod eTrans
     std::set<IndexT> valid_view_ids;
     for (const auto& view : sfmData.getViews())
     {
-        if (sfmData.isPoseAndIntrinsicDefined(view.second.get()))
+        if (sfmData.isPoseAndIntrinsicValid(view.second.get()))
             valid_view_ids.insert(view.first);
     }
     KeepOnlyReferencedElement(valid_view_ids, tripletWise_matches);

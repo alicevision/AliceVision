@@ -50,7 +50,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
             for (const auto& itObs : observations)
             {
                 const sfmData::View* view = sfmData.getViews().at(itObs.first).get();
-                if (sfmData.isPoseAndIntrinsicDefined(view))
+                if (sfmData.isPoseAndIntrinsicValid(view))
                 {
                     std::shared_ptr<IntrinsicBase> cam = sfmData.getIntrinsics().at(view->getIntrinsicId());
                     std::shared_ptr<camera::Pinhole> pinHoleCam = std::dynamic_pointer_cast<camera::Pinhole>(cam);

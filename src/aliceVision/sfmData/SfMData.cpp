@@ -191,7 +191,7 @@ std::set<IndexT> SfMData::getValidViews() const
     for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View* v = it->second.get();
-        if (isPoseAndIntrinsicDefined(v))
+        if (isPoseAndIntrinsicValid(v))
         {
             valid_idx.insert(v->getViewId());
         }
@@ -205,7 +205,7 @@ std::set<IndexT> SfMData::getReconstructedIntrinsics() const
     for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View* v = it->second.get();
-        if (isPoseAndIntrinsicDefined(v))
+        if (isPoseAndIntrinsicValid(v))
         {
             valid_idx.insert(v->getIntrinsicId());
         }

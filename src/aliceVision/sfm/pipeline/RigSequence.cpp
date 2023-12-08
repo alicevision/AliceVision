@@ -86,7 +86,7 @@ void RigSequence::init(const track::TracksPerView& tracksPerView)
             double score = 0.0;
 
             // compute pose score, sum of inverse reprojection errors
-            if (_sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
+            if (_sfmData.isPoseAndIntrinsicValid(view.getViewId()))
             {
                 score = computeCameraScore(_sfmData, tracksPerView, view.getViewId());
 

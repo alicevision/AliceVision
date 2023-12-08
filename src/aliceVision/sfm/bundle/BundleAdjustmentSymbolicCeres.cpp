@@ -326,7 +326,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         if (intrinsicsUsage.find(view.getIntrinsicId()) == intrinsicsUsage.end())
             intrinsicsUsage[view.getIntrinsicId()] = 0;
 
-        if (sfmData.isPoseAndIntrinsicDefined(&view))
+        if (sfmData.isPoseAndIntrinsicValid(&view))
             ++intrinsicsUsage.at(view.getIntrinsicId());
     }
 

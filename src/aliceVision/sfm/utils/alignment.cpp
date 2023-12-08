@@ -72,7 +72,7 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     std::vector<std::pair<IndexT, IndexT>> reconstructedCommonViewIds;
     for (const auto& c : commonViewIds)
     {
-        if (sfmDataA.isPoseAndIntrinsicDefined(c.first) && sfmDataB.isPoseAndIntrinsicDefined(c.second))
+        if (sfmDataA.isPoseAndIntrinsicValid(c.first) && sfmDataB.isPoseAndIntrinsicValid(c.second))
         {
             reconstructedCommonViewIds.emplace_back(c);
         }
@@ -504,7 +504,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     {
         const sfmData::View& view = *viewIt.second.get();
 
-        if (sfmData.isPoseAndIntrinsicDefined(&view))
+        if (sfmData.isPoseAndIntrinsicValid(&view))
         {
             const sfmData::EEXIFOrientation orientation = view.getImage().getMetadataOrientation();
             const sfmData::CameraPose camPose = sfmData.getComputedPose(view);
@@ -546,7 +546,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     {
         const sfmData::View& view = *viewIt.second.get();
 
-        if (sfmData.isPoseAndIntrinsicDefined(&view))
+        if (sfmData.isPoseAndIntrinsicValid(&view))
         {
             const sfmData::EEXIFOrientation orientation = view.getImage().getMetadataOrientation();
             const sfmData::CameraPose camPose = sfmData.getComputedPose(view);
@@ -727,7 +727,7 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
 
     if (viewId == -1)
         throw std::invalid_argument("The camera name \"" + camName + "\" is not found in the sfmData.");
-    else if (!sfmData.isPoseAndIntrinsicDefined(viewId))
+    else if (!sfmData.isPoseAndIntrinsicValid(viewId))
         throw std::invalid_argument("The camera \"" + camName + "\" exists in the sfmData but is not reconstructed.");
 
     return viewId;
@@ -752,7 +752,7 @@ IndexT getCenterCameraView(const sfmData::SfMData& sfmData)
     for (auto& viewIt : sfmData.getViews())
     {
         const sfmData::View& v = *viewIt.second;
-        if (!sfmData.isPoseAndIntrinsicDefined(&v))
+        if (!sfmData.isPoseAndIntrinsicValid(&v))
             continue;
         const auto& pose = sfmData.getComputedPose(v);
         const double dist = (pose.getTransform().center() - camerasCenter).norm();
@@ -913,9 +913,9 @@ bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData,
         const auto viewID = v.first;
         const auto& view = v.second;
         // skip no pose
-        if (!(sfmData.isPoseAndIntrinsicDefined(viewID) && view->getImage().hasGpsMetadata()))
+        if (!(sfmData.isPoseAndIntrinsicValid(viewID) && view->getImage().hasGpsMetadata()))
         {
-            ALICEVISION_LOG_TRACE("Skipping view " << viewID << " because pose " << sfmData.isPoseAndIntrinsicDefined(viewID) << " and gps "
+            ALICEVISION_LOG_TRACE("Skipping view " << viewID << " because pose " << sfmData.isPoseAndIntrinsicValid(viewID) << " and gps "
                                                    << view->getImage().hasGpsMetadata());
             continue;
         }
@@ -978,7 +978,7 @@ Vec3 computeCameraCentersMean(const sfmData::SfMData& sfmData)
 
     for (auto v : sfmData.getViews())
     {
-        if (!sfmData.isPoseAndIntrinsicDefined(v.first))
+        if (!sfmData.isPoseAndIntrinsicValid(v.first))
         {
             continue;
         }
@@ -1003,7 +1003,7 @@ void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3& mean, Eig
 
     for (auto v : sfmData.getViews())
     {
-        if (!sfmData.isPoseAndIntrinsicDefined(v.first))
+        if (!sfmData.isPoseAndIntrinsicValid(v.first))
         {
             continue;
         }
@@ -1114,7 +1114,7 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
     std::list<std::pair<Vec3, Vec3>> list_pairs;
     for (const auto v : sfmData.getViews())
     {
-        if (!sfmData.isPoseAndIntrinsicDefined(v.first))
+        if (!sfmData.isPoseAndIntrinsicValid(v.first))
         {
             continue;
         }

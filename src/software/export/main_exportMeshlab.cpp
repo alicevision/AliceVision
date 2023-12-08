@@ -89,7 +89,7 @@ int aliceVision_main(int argc, char **argv)
       iter != sfm_data.getViews().end(); ++iter)
   {
     const View * view = iter->second.get();
-    if (!sfm_data.isPoseAndIntrinsicDefined(view))
+    if (!sfm_data.isPoseAndIntrinsicValid(view))
       continue;
 
     const Pose3 pose = sfm_data.getComputedPose(*view).getTransform();

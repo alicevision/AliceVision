@@ -121,7 +121,7 @@ void extractCamerasPositions(std::vector<std::pair<std::string, Vec3>>& outputPo
 
     for (const auto& viewIt: sfmData.getViews())
     {
-        if (!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+        if (!sfmData.isPoseAndIntrinsicValid(viewIt.second.get()))
             continue;
         const std::string viewIdStr = std::to_string(viewIt.second->getViewId());
         if(searchSet.count(viewIdStr))

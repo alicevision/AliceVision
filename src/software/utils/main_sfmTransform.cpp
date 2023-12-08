@@ -197,7 +197,7 @@ IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & 
     try
     {
         refViewId = sfm::getViewIdFromExpression(sfmData, transform);
-        if (!sfmData.isPoseAndIntrinsicDefined(refViewId))
+        if (!sfmData.isPoseAndIntrinsicValid(refViewId))
         {   
             return UndefinedIndexT;
         }
@@ -213,7 +213,7 @@ IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & 
         // Sort views with poses per timestamps
         std::vector<std::pair<int64_t, IndexT>> sorted_views;
         for (auto v : sfmData.getViews()) {
-            if (!sfmData.isPoseAndIntrinsicDefined(v.first))
+            if (!sfmData.isPoseAndIntrinsicValid(v.first))
             {   
                 continue;
             }
@@ -328,7 +328,7 @@ int aliceVision_main(int argc, char **argv)
   int count = 0;
   for (const auto p : sfmData.getViews())
   {
-    if(sfmData.isPoseAndIntrinsicDefined(p.first))
+    if(sfmData.isPoseAndIntrinsicValid(p.first))
     {
         count++;
     }

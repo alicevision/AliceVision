@@ -92,7 +92,7 @@ bool exportToMVE2Format(
     // Get cameras and features from AliceVision
     size_t cameraCount = 0;
     for(const auto& view: sfm_data.getViews())
-        if(sfm_data.isPoseAndIntrinsicDefined(view.second.get()))
+        if(sfm_data.isPoseAndIntrinsicValid(view.second.get()))
             ++cameraCount;
     // Tally global set of feature landmarks
     const Landmarks & landmarks = sfm_data.getLandmarks();
@@ -116,7 +116,7 @@ bool exportToMVE2Format(
     {
       const View * view = iter->second.get();
 
-      if (!sfm_data.isPoseAndIntrinsicDefined(view))
+      if (!sfm_data.isPoseAndIntrinsicValid(view))
         continue;
 
       viewIdToviewIndex[view->getViewId()] = view_index;

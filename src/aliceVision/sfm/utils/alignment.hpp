@@ -30,10 +30,10 @@ inline void getCommonViewsWithPoses(const sfmData::SfMData& sfmDataA, const sfmD
     {
         // check there is a view with the same ID and both of them have pose and
         // intrinsics defined
-        if (!sfmDataA.isPoseAndIntrinsicDefined(viewA.second.get()))
+        if (!sfmDataA.isPoseAndIntrinsicValid(viewA.second.get()))
             continue;
 
-        if (sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end() && sfmDataB.isPoseAndIntrinsicDefined(viewA.first))
+        if (sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end() && sfmDataB.isPoseAndIntrinsicValid(viewA.first))
         {
             outIndexes.push_back(viewA.first);
         }

@@ -215,7 +215,7 @@ int aliceVision_main(int argc, char **argv)
         }
         for (const auto& matchingViews: commonViewIds)
         {
-            if(sfmDataRef.isPoseAndIntrinsicDefined(matchingViews.second))
+            if(sfmDataRef.isPoseAndIntrinsicValid(matchingViews.second))
             {
                 // Missing pose in sfmData and valid pose in sfmDataRef,
                 // so we can transfer the pose.

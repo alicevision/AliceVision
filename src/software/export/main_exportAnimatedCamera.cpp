@@ -206,7 +206,7 @@ int aliceVision_main(int argc, char** argv)
         sfmDataExport.getViews().emplace(view.getViewId(), viewPair.second);
 
         // Export intrinsics with at least one view with a valid pose
-        if(sfmData.isPoseAndIntrinsicDefined(&view))
+        if(sfmData.isPoseAndIntrinsicValid(&view))
         {
             // std::map::emplace does nothing if the key already exist
             sfmDataExport.setIntrinsic(view.getIntrinsicId(), sfmData.getIntrinsics().at(view.getIntrinsicId()));
@@ -355,7 +355,7 @@ int aliceVision_main(int argc, char** argv)
 
         // Pose and intrinsic defined
         // Note: we use "sfmData" and not "sfmDataExport" to have access to poses
-        if(!sfmData.isPoseAndIntrinsicDefined(&view))
+        if(!sfmData.isPoseAndIntrinsicValid(&view))
             continue;
 
         std::string cameraName =  view.getImage().getMetadataMake() + "_" + view.getImage().getMetadataModel();

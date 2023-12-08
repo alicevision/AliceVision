@@ -36,7 +36,7 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         {
             for (const auto& view : sfmData.getViews())
             {
-                view_with_pose_count += sfmData.isPoseAndIntrinsicDefined(view.second.get());
+                view_with_pose_count += sfmData.isPoseAndIntrinsicValid(view.second.get());
             }
         }
 
@@ -57,7 +57,7 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         {
             for (const auto& view : sfmData.getViews())
             {
-                if (sfmData.isPoseAndIntrinsicDefined(view.second.get()))
+                if (sfmData.isPoseAndIntrinsicValid(view.second.get()))
                 {
                     const geometry::Pose3 pose = sfmData.getComputedPose(*(view.second.get())).getTransform();
 

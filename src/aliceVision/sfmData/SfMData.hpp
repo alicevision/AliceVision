@@ -468,39 +468,28 @@ class SfMData
     std::set<IndexT> getReconstructedIntrinsics() const;
     
     /**
-     * @brief Check if the given view have defined intrinsic and pose
+     * @brief Check if the given view have a reconstructed pose
      * @param[in] view The given view
-     * @return true if intrinsic and pose defined
+     * @return true if pose valid
      */
-    bool isPoseAndIntrinsicDefined(const View* view) const
+    bool isPoseValid(const View & view) const
     {
-        if (view == nullptr)
+        if (view.getPoseId() == UndefinedIndexT)
         {
             return false;
         }
 
-        if (view->getIntrinsicId() == UndefinedIndexT)
+        if ((view.isPartOfRig() || view.isPoseIndependant() || getRigSubPose(view).status != ERigSubPoseStatus::UNINITIALIZED) == false)
         {
             return false;
         }
 
-        if (view->getPoseId() == UndefinedIndexT)
+        if (_poses.find(view.getPoseId()) == _poses.end())
         {
             return false;
         }
 
-        if ((view->isPartOfRig() || view->isPoseIndependant() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) == false)
-        {
-            return false;
-        }
-
-   
-        if (_intrinsics.find(view->getIntrinsicId()) == _intrinsics.end())
-        {   
-            return false;
-        }
-
-        if (_poses.find(view->getPoseId()) == _poses.end())
+        if (!_poses.at(view.getPoseId()).isValid())
         {
             return false;
         }
@@ -509,18 +498,59 @@ class SfMData
     }
 
     /**
+     * @brief Check if the given view have valid intrinsic
+     * @param[in] view The given view
+     * @return true if intrinsic valid
+     */
+    bool isIntrinsicValid(const View & view) const
+    {
+        if (view.getIntrinsicId() == UndefinedIndexT)
+        {
+            return false;
+        }
+   
+        if (_intrinsics.find(view.getIntrinsicId()) == _intrinsics.end())
+        {   
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @brief Check if the given view have defined intrinsic and pose
+     * @param[in] view The given view
+     * @return true if intrinsic and pose defined
+     */
+    bool isPoseAndIntrinsicValid(const View* view) const
+    {
+        if (view == nullptr)
+        {
+            return false;
+        }
+
+        return (isIntrinsicValid(*view) && isPoseValid(*view));
+    }
+
+    /**
      * @brief Check if the given view have defined intrinsic and pose
      * @param[in] viewID The given viewID
      * @return true if intrinsic and pose defined
      */
-    bool isPoseAndIntrinsicDefined(IndexT viewId) const { return isPoseAndIntrinsicDefined(_views.at(viewId).get()); }
+    bool isPoseAndIntrinsicValid(IndexT viewId) const 
+    { 
+        return isPoseAndIntrinsicValid(_views.at(viewId).get()); 
+    }
 
     /**
      * @brief Check if the given view has an existing pose
      * @param[in] view The given view
      * @return true if the pose exists
      */
-    bool existsPose(const View& view) const { return (_poses.find(view.getPoseId()) != _poses.end()); }
+    bool existsPose(const View& view) const 
+    { 
+        return (_poses.find(view.getPoseId()) != _poses.end()); 
+    }
 
     std::set<feature::EImageDescriberType> getLandmarkDescTypes() const
     {

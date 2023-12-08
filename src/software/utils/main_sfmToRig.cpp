@@ -90,7 +90,7 @@ int aliceVision_main(int argc, char **argv)
     for (const auto & pv : sfmData.getViews())
     {
         std::shared_ptr<sfmData::View> view = pv.second;
-        if (!sfmData.isPoseAndIntrinsicDefined(view.get()))
+        if (!sfmData.isPoseAndIntrinsicValid(view.get()))
         {
             continue;
         }

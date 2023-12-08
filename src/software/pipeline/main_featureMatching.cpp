@@ -306,7 +306,7 @@ int aliceVision_main(int argc, char **argv)
   {
       for(const auto& p: pairs)
       {
-        if(sfmData.isPoseAndIntrinsicDefined(p.first) && sfmData.isPoseAndIntrinsicDefined(p.second))
+        if(sfmData.isPoseAndIntrinsicValid(p.first) && sfmData.isPoseAndIntrinsicValid(p.second))
         {
             pairsPoseKnown.insert(p);
         }

@@ -80,7 +80,7 @@ void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData&
     {
         const sfmData::View* view = itView.second.get();
 
-        if (sfmData.isPoseAndIntrinsicDefined(view))
+        if (sfmData.isPoseAndIntrinsicValid(view))
         {
             auto itIntr = intrinsicUsage.find(view->getIntrinsicId());
             if (itIntr == intrinsicUsage.end())
@@ -248,7 +248,7 @@ void LocalBundleAdjustmentGraph::updateGraphWithNewViews(const sfmData::SfMData&
         ALICEVISION_LOG_DEBUG("The graph is empty: initial pair & new view(s) added.");
         for (const auto& x : sfmData.getViews())
         {
-            if (sfmData.isPoseAndIntrinsicDefined(x.first))
+            if (sfmData.isPoseAndIntrinsicValid(x.first))
                 addedViewsId.insert(x.first);
         }
     }
@@ -268,7 +268,7 @@ void LocalBundleAdjustmentGraph::updateGraphWithNewViews(const sfmData::SfMData&
         }
 
         // check if the node corresponds to a posed views
-        if (!sfmData.isPoseAndIntrinsicDefined(viewId))
+        if (!sfmData.isPoseAndIntrinsicValid(viewId))
         {
             ALICEVISION_LOG_WARNING("Cannot add the view id: " << viewId << " to the graph, its pose & intrinsic are not defined.");
             continue;

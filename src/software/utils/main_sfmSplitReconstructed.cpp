@@ -62,7 +62,7 @@ int aliceVision_main(int argc, char** argv)
         auto it = views.begin();
         while (it != views.end())
         {
-            if (sfmData.isPoseAndIntrinsicDefined(it->first))
+            if (sfmData.isPoseAndIntrinsicValid(it->first))
             {
                 it++;
                 continue;
@@ -90,7 +90,7 @@ int aliceVision_main(int argc, char** argv)
         auto it = views.begin();
         while (it != views.end())
         {
-            if (!sfmData.isPoseAndIntrinsicDefined(it->first))
+            if (!sfmData.isPoseAndIntrinsicValid(it->first))
             {
                 it++;
                 continue;
