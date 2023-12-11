@@ -425,9 +425,31 @@ class SfMData
      * @param[in] poseId The given poseId
      * @param[in] pose The given pose
      */
-    void setPose(IndexT poseId, const CameraPose& pose) 
+    void createPose(IndexT poseId, const CameraPose& pose) 
     { 
-        _poses[poseId] = pose; 
+        if (existsPose(poseId))
+        {
+            ALICEVISION_LOG_ERROR("Creating an existing pose");
+            ALICEVISION_THROW_ERROR("Creating an existing pose");
+        }
+
+        _poses.insert({poseId, pose}); 
+    }
+
+    /**
+     * @brief Update for the given poseId
+     * @param[in] poseId The given poseId
+     * @param[in] pose The given pose parameters
+     */
+    void updatePose(IndexT poseId, const geometry::Pose3 & pose)
+    {
+        if (!existsPose(poseId))
+        {
+            ALICEVISION_LOG_ERROR("modifying an unknown pose");
+            ALICEVISION_THROW_ERROR("modifying an unknown pose");
+        }
+
+        _poses.at(poseId).setTransform(pose);
     }
 
     /**

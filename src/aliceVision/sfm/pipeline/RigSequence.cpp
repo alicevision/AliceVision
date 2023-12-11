@@ -293,7 +293,7 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
             ALICEVISION_LOG_DEBUG("Add rig pose:"
                                   << "\n\t- rig pose id: " << rigPoseId << "\n\t- frame id: " << frameId << "\n\t- sub-pose id: " << bestSubPoseId);
 
-            _sfmData.getPoses()[rigPoseId] = rigPose;
+            _sfmData.createPose(rigPoseId, rigPose);
         }
 
         // remove independant poses and replace with rig pose

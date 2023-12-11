@@ -265,7 +265,7 @@ int aliceVision_main(int argc, char** argv)
                 IndexT poseId = sorted_views[median].second;
 
                 // Set as reference
-                ocur_R_oprior = final_poses[poseId].getTransform().rotation().transpose();
+                ocur_R_oprior = final_poses.at(poseId).getTransform().rotation().transpose();
             }
         }
         else

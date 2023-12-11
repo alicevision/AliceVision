@@ -1260,7 +1260,7 @@ int main(int argc, char* argv[])
                 if(viewRotation.trace() != 0)
                 {
                     sfmData::CameraPose pose(geometry::Pose3(viewRotation, Eigen::Vector3d::Zero()));
-                    sfmData.setPose(viewIdx, pose);
+                    sfmData.createPose(viewIdx, pose);
                 }
                 ++index;
             }

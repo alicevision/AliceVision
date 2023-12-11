@@ -134,7 +134,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfi
     // 3. Poses
     for (int poseId = 0; poseId < nbPoses; ++poseId)
     {
-        sfmData.setPose(static_cast<IndexT>(poseId), sfmData::CameraPose(geometry::Pose3(d._R[poseId], d._C[poseId])));
+        sfmData.createPose(static_cast<IndexT>(poseId), sfmData::CameraPose(geometry::Pose3(d._R[poseId], d._C[poseId])));
     }
 
     // 4. Intrinsic data (shared, so only one camera intrinsic is defined)
