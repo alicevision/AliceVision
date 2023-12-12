@@ -434,20 +434,20 @@ class IntrinsicBase
     {
         if (_locked)
         {
-            _state = EParameterState::CONSTANT;
+            _state = EEstimatorParameterState::CONSTANT;
         }
         else
         {
-            _state = EParameterState::REFINED;
+            _state = EEstimatorParameterState::REFINED;
         }
     }
 
-    EParameterState getState() const 
+    EEstimatorParameterState getState() const
     {
         return _state;
     }
 
-    void setState(EParameterState state) 
+    void setState(EEstimatorParameterState state)
     {
         _state = state;
     }
@@ -457,7 +457,7 @@ class IntrinsicBase
     EInitMode _initializationMode = EInitMode::NONE;
     /// intrinsic lock
     bool _locked = false;
-    EParameterState _state = EParameterState::REFINED;
+    EEstimatorParameterState _state = EEstimatorParameterState::REFINED;
     unsigned int _w = 0;
     unsigned int _h = 0;
     double _sensorWidth = 36.0;

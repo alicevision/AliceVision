@@ -773,8 +773,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
         // use the graph-distances to assign a state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
         _localStrategyGraph->convertDistancesToStates(_sfmData);
 
-        const std::size_t nbRefinedPoses = _localStrategyGraph->getNbPosesPerState(EParameterState::REFINED);
-        const std::size_t nbConstantPoses = _localStrategyGraph->getNbPosesPerState(EParameterState::CONSTANT);
+        const std::size_t nbRefinedPoses = _localStrategyGraph->getNbPosesPerState(EEstimatorParameterState::REFINED);
+        const std::size_t nbConstantPoses = _localStrategyGraph->getNbPosesPerState(EEstimatorParameterState::CONSTANT);
 
         // restore the Dense linear solver type if the number of cameras in the solver is <= 20
         if (nbRefinedPoses + nbConstantPoses <= 20)

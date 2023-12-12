@@ -68,20 +68,20 @@ class CameraPose
     {
         if (_locked)
         {
-            _state = EParameterState::CONSTANT;
+            _state = EEstimatorParameterState::CONSTANT;
         }
         else
         {
-            _state = EParameterState::REFINED;
+            _state = EEstimatorParameterState::REFINED;
         }
     }
 
-    EParameterState getState() const 
+    EEstimatorParameterState getState() const
     {
         return _state;
     }
 
-    void setState(EParameterState state) 
+    void setState(EEstimatorParameterState state)
     {
         _state = state;
     }
@@ -92,7 +92,7 @@ class CameraPose
     /// camera lock
     bool _locked = false;
     /// Estimator state
-    EParameterState _state = EParameterState::REFINED;
+    EEstimatorParameterState _state = EEstimatorParameterState::REFINED;
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

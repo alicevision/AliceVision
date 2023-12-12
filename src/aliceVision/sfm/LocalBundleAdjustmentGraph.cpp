@@ -60,15 +60,15 @@ void LocalBundleAdjustmentGraph::setAllParametersToRefine(const sfmData::SfMData
 
     // poses
     for (sfmData::Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
-        _statePerPoseId[itPose->first] = EParameterState::REFINED;
+        _statePerPoseId[itPose->first] = EEstimatorParameterState::REFINED;
 
     // instrinsics
     for (const auto& itIntrinsic : sfmData.getIntrinsics())
-        _statePerIntrinsicId[itIntrinsic.first] = EParameterState::REFINED;
+        _statePerIntrinsicId[itIntrinsic.first] = EEstimatorParameterState::REFINED;
 
     // landmarks
     for (const auto& itLandmark : sfmData.getLandmarks())
-        _statePerLandmarkId[itLandmark.first] = EParameterState::REFINED;
+        _statePerLandmarkId[itLandmark.first] = EEstimatorParameterState::REFINED;
 }
 
 void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData& sfmData)
@@ -215,15 +215,15 @@ int LocalBundleAdjustmentGraph::getViewDistance(const IndexT viewId) const
     return _distancePerViewId.at(viewId);
 }
 
-EParameterState LocalBundleAdjustmentGraph::getStateFromDistance(int distance) const
+EEstimatorParameterState LocalBundleAdjustmentGraph::getStateFromDistance(int distance) const
 {
     if (distance >= 0 && distance <= _graphDistanceLimit)  // [0; D]
-        return EParameterState::REFINED;
+        return EEstimatorParameterState::REFINED;
     else if (distance == _graphDistanceLimit + 1)  // {D+1}
-        return EParameterState::CONSTANT;
+        return EEstimatorParameterState::CONSTANT;
 
     // [-inf; 0[ U [D+2; +inf.[  (-1: not connected to the new views)
-    return EParameterState::IGNORED;
+    return EEstimatorParameterState::IGNORED;
 }
 
 void LocalBundleAdjustmentGraph::updateGraphWithNewViews(const sfmData::SfMData& sfmData,
@@ -385,7 +385,7 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
     {
         const IndexT poseId = posePair.first;
         const int distance = getPoseDistance(poseId);
-        const EParameterState state = getStateFromDistance(distance);
+        const EEstimatorParameterState state = getStateFromDistance(distance);
 
         posePair.second.setState(state);
 
@@ -399,13 +399,13 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
     {
         if (isFocalLengthConstant(itIntrinsic.first))
         {
-            itIntrinsic.second->setState(EParameterState::CONSTANT);
-            _statePerIntrinsicId[itIntrinsic.first] = EParameterState::CONSTANT;
+            itIntrinsic.second->setState(EEstimatorParameterState::CONSTANT);
+            _statePerIntrinsicId[itIntrinsic.first] = EEstimatorParameterState::CONSTANT;
         }
         else
         {
-            itIntrinsic.second->setState(EParameterState::REFINED);
-            _statePerIntrinsicId[itIntrinsic.first] = EParameterState::REFINED;
+            itIntrinsic.second->setState(EEstimatorParameterState::REFINED);
+            _statePerIntrinsicId[itIntrinsic.first] = EEstimatorParameterState::REFINED;
         }
     }
 
@@ -421,7 +421,7 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
         for (const auto& observationIt : observations)
         {
             const int distance = getViewDistance(observationIt.first);
-            const EParameterState viewState = getStateFromDistance(distance);
+            const EEstimatorParameterState viewState = getStateFromDistance(distance);
             states.at(static_cast<std::size_t>(viewState)) = true;
         }
 
@@ -431,16 +431,16 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
         // for these particular cases, we can have landmarks with refined AND ignored cameras.
         // in this particular case, we prefer to ignore the landmark to avoid wrong/unconstraint refinements.
 
-        if (!states.at(static_cast<std::size_t>(EParameterState::REFINED)) ||
-            states.at(static_cast<std::size_t>(EParameterState::IGNORED)))
+        if (!states.at(static_cast<std::size_t>(EEstimatorParameterState::REFINED)) ||
+            states.at(static_cast<std::size_t>(EEstimatorParameterState::IGNORED)))
         {
-            itLandmark.second.state = EParameterState::IGNORED;
-            _statePerLandmarkId[landmarkId] = EParameterState::IGNORED;
+            itLandmark.second.state = EEstimatorParameterState::IGNORED;
+            _statePerLandmarkId[landmarkId] = EEstimatorParameterState::IGNORED;
         }
         else
         {
-            itLandmark.second.state = EParameterState::REFINED;
-            _statePerLandmarkId[landmarkId] = EParameterState::REFINED;
+            itLandmark.second.state = EEstimatorParameterState::REFINED;
+            _statePerLandmarkId[landmarkId] = EEstimatorParameterState::REFINED;
         }
     }
 }

@@ -58,7 +58,7 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
     if (cameraPose.isLocked() || isConstant || (!refineTranslation && !refineRotation))
     {
         // set the whole parameter block as constant.
-        _statistics.addState(EParameter::POSE, EParameterState::CONSTANT);
+        _statistics.addState(EParameter::POSE, EEstimatorParameterState::CONSTANT);
 
         problem.SetParameterBlockConstant(poseBlockPtr);
         return;
@@ -73,7 +73,7 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
         ALICEVISION_THROW_ERROR("BundleAdjustmentSymbolicCeres: Constant extrinsics not supported at this time");
     }
 
-    _statistics.addState(EParameter::POSE, EParameterState::REFINED);
+    _statistics.addState(EParameter::POSE, EEstimatorParameterState::REFINED);
 }
 
 void BundleAdjustmentSymbolicCeres::CeresOptions::setDenseBA()
@@ -142,7 +142,7 @@ bool BundleAdjustmentSymbolicCeres::Statistics::exportToFile(const std::string& 
               "d=5;d=6;d=7;d=8;d=9;d=10+;\n";
     }
 
-    std::map<EParameter, std::map<EParameterState, std::size_t>> states = parametersStates;
+    std::map<EParameter, std::map<EEstimatorParameterState, std::size_t>> states = parametersStates;
     std::size_t posesWithDistUpperThanTen = 0;
 
     for (const auto& it : nbCamerasPerDistance)
@@ -153,11 +153,11 @@ bool BundleAdjustmentSymbolicCeres::Statistics::exportToFile(const std::string& 
         }
     }
 
-    os << time << ";" << states[EParameter::POSE][EParameterState::REFINED] << ";" << states[EParameter::POSE][EParameterState::CONSTANT] << ";"
-       << states[EParameter::POSE][EParameterState::IGNORED] << ";" << states[EParameter::LANDMARK][EParameterState::REFINED] << ";"
-       << states[EParameter::LANDMARK][EParameterState::CONSTANT] << ";" << states[EParameter::LANDMARK][EParameterState::IGNORED] << ";"
-       << states[EParameter::INTRINSIC][EParameterState::REFINED] << ";" << states[EParameter::INTRINSIC][EParameterState::CONSTANT] << ";"
-       << states[EParameter::INTRINSIC][EParameterState::IGNORED] << ";" << nbResidualBlocks << ";" << nbSuccessfullIterations << ";"
+    os << time << ";" << states[EParameter::POSE][EEstimatorParameterState::REFINED] << ";" << states[EParameter::POSE][EEstimatorParameterState::CONSTANT] << ";"
+       << states[EParameter::POSE][EEstimatorParameterState::IGNORED] << ";" << states[EParameter::LANDMARK][EEstimatorParameterState::REFINED] << ";"
+       << states[EParameter::LANDMARK][EEstimatorParameterState::CONSTANT] << ";" << states[EParameter::LANDMARK][EEstimatorParameterState::IGNORED] << ";"
+       << states[EParameter::INTRINSIC][EEstimatorParameterState::REFINED] << ";" << states[EParameter::INTRINSIC][EEstimatorParameterState::CONSTANT] << ";"
+       << states[EParameter::INTRINSIC][EEstimatorParameterState::IGNORED] << ";" << nbResidualBlocks << ";" << nbSuccessfullIterations << ";"
        << nbUnsuccessfullIterations << ";" << RMSEinitial << ";" << RMSEfinal << ";";
 
     for (int i = -1; i < 10; ++i)
@@ -177,7 +177,7 @@ bool BundleAdjustmentSymbolicCeres::Statistics::exportToFile(const std::string& 
 
 void BundleAdjustmentSymbolicCeres::Statistics::show() const
 {
-    std::map<EParameter, std::map<EParameterState, std::size_t>> states = parametersStates;
+    std::map<EParameter, std::map<EEstimatorParameterState, std::size_t>> states = parametersStates;
     std::stringstream ss;
 
     if (!nbCamerasPerDistance.empty())
@@ -214,17 +214,17 @@ void BundleAdjustmentSymbolicCeres::Statistics::show() const
     ALICEVISION_LOG_INFO("Bundle Adjustment Statistics:\n"
                          << ss.str() << "\t- adjustment duration: " << time << " s\n"
                          << "\t- poses:\n"
-                         << "\t    - # refined:  " << states[EParameter::POSE][EParameterState::REFINED] << "\n"
-                         << "\t    - # constant: " << states[EParameter::POSE][EParameterState::CONSTANT] << "\n"
-                         << "\t    - # ignored:  " << states[EParameter::POSE][EParameterState::IGNORED] << "\n"
+                         << "\t    - # refined:  " << states[EParameter::POSE][EEstimatorParameterState::REFINED] << "\n"
+                         << "\t    - # constant: " << states[EParameter::POSE][EEstimatorParameterState::CONSTANT] << "\n"
+                         << "\t    - # ignored:  " << states[EParameter::POSE][EEstimatorParameterState::IGNORED] << "\n"
                          << "\t- landmarks:\n"
-                         << "\t    - # refined:  " << states[EParameter::LANDMARK][EParameterState::REFINED] << "\n"
-                         << "\t    - # constant: " << states[EParameter::LANDMARK][EParameterState::CONSTANT] << "\n"
-                         << "\t    - # ignored:  " << states[EParameter::LANDMARK][EParameterState::IGNORED] << "\n"
+                         << "\t    - # refined:  " << states[EParameter::LANDMARK][EEstimatorParameterState::REFINED] << "\n"
+                         << "\t    - # constant: " << states[EParameter::LANDMARK][EEstimatorParameterState::CONSTANT] << "\n"
+                         << "\t    - # ignored:  " << states[EParameter::LANDMARK][EEstimatorParameterState::IGNORED] << "\n"
                          << "\t- intrinsics:\n"
-                         << "\t    - # refined:  " << states[EParameter::INTRINSIC][EParameterState::REFINED] << "\n"
-                         << "\t    - # constant: " << states[EParameter::INTRINSIC][EParameterState::CONSTANT] << "\n"
-                         << "\t    - # ignored:  " << states[EParameter::INTRINSIC][EParameterState::IGNORED] << "\n"
+                         << "\t    - # refined:  " << states[EParameter::INTRINSIC][EEstimatorParameterState::REFINED] << "\n"
+                         << "\t    - # constant: " << states[EParameter::INTRINSIC][EEstimatorParameterState::CONSTANT] << "\n"
+                         << "\t    - # ignored:  " << states[EParameter::INTRINSIC][EEstimatorParameterState::IGNORED] << "\n"
                          << "\t- # residual blocks: " << nbResidualBlocks << "\n"
                          << "\t- # successful iterations: " << nbSuccessfullIterations << "\n"
                          << "\t- # unsuccessful iterations: " << nbUnsuccessfullIterations << "\n"
@@ -270,13 +270,13 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
         const sfmData::CameraPose& pose = posePair.second;
 
         // skip camera pose set as Ignored in the Local strategy
-        if (pose.getState() == EParameterState::IGNORED)
+        if (pose.getState() == EEstimatorParameterState::IGNORED)
         {
-            _statistics.addState(EParameter::POSE, EParameterState::IGNORED);
+            _statistics.addState(EParameter::POSE, EEstimatorParameterState::IGNORED);
             continue;
         }
 
-        const bool isConstant = (pose.getState() == EParameterState::CONSTANT);
+        const bool isConstant = (pose.getState() == EEstimatorParameterState::CONSTANT);
 
         addPose(pose, isConstant, _posesBlocks[poseId], problem, refineTranslation, refineRotation);
     }
@@ -341,9 +341,9 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         const std::size_t usageCount = usageIt->second;
 
         // do not refine an intrinsic does not used by any reconstructed view
-        if (usageCount <= 0 || intrinsicPtr->getState() == EParameterState::IGNORED)
+        if (usageCount <= 0 || intrinsicPtr->getState() == EEstimatorParameterState::IGNORED)
         {
-            _statistics.addState(EParameter::INTRINSIC, EParameterState::IGNORED);
+            _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::IGNORED);
             continue;
         }
 
@@ -361,10 +361,10 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         _allParametersBlocks.push_back(intrinsicBlockPtr);
 
         // keep the camera intrinsic constant
-        if (intrinsicPtr->isLocked() || !refineIntrinsics || intrinsicPtr->getState() == EParameterState::CONSTANT)
+        if (intrinsicPtr->isLocked() || !refineIntrinsics || intrinsicPtr->getState() == EEstimatorParameterState::CONSTANT)
         {
             // set the whole parameter block as constant.
-            _statistics.addState(EParameter::INTRINSIC, EParameterState::CONSTANT);
+            _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::CONSTANT);
             problem.SetParameterBlockConstant(intrinsicBlockPtr);
             continue;
         }
@@ -448,7 +448,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         IntrinsicsManifoldSymbolic* subsetManifold =
           new IntrinsicsManifoldSymbolic(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
         problem.SetManifold(intrinsicBlockPtr, subsetManifold);
-        _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
+        _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::REFINED);
     }
 }
 
@@ -469,9 +469,9 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
 
         // do not create a residual block if the landmark
         // have been set as Ignored by the Local BA strategy
-        if (landmark.state == EParameterState::IGNORED)
+        if (landmark.state == EEstimatorParameterState::IGNORED)
         {
-            _statistics.addState(EParameter::LANDMARK, EParameterState::IGNORED);
+            _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::IGNORED);
             continue;
         }
 
@@ -503,8 +503,8 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
             // dimensional residual. Internally, the cost function stores the observed
             // image location and compares the reprojection against the observation.
 
-            assert(pose.getState() != EParameterState::IGNORED);
-            assert(intrinsic->getState() != EParameterState::IGNORED);
+            assert(pose.getState() != EEstimatorParameterState::IGNORED);
+            assert(intrinsic->getState() != EEstimatorParameterState::IGNORED);
 
             // needed parameters to create a residual block (K, pose)
             double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
@@ -540,15 +540,15 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
                 problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
             }
 
-            if (!refineStructure || landmark.state == EParameterState::CONSTANT)
+            if (!refineStructure || landmark.state == EEstimatorParameterState::CONSTANT)
             {
                 // set the whole landmark parameter block as constant.
-                _statistics.addState(EParameter::LANDMARK, EParameterState::CONSTANT);
+                _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::CONSTANT);
                 problem.SetParameterBlockConstant(landmarkBlockPtr);
             }
             else
             {
-                _statistics.addState(EParameter::LANDMARK, EParameterState::REFINED);
+                _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::REFINED);
             }
         }
     }
@@ -570,10 +570,10 @@ void BundleAdjustmentSymbolicCeres::addConstraints2DToProblem(const sfmData::SfM
         const auto & intrinsic_1 = sfmData.getIntrinsicsharedPtr(view_1);
         const auto & intrinsic_2 = sfmData.getIntrinsicsharedPtr(view_2);
 
-        assert(pose_1.getState() != EParameterState::IGNORED);
-        assert(intrinsic_1->getState() != EParameterState::IGNORED);
-        assert(pose_2.getState() != EParameterState::IGNORED);
-        assert(intrinsic_2->getState() != EParameterState::IGNORED);
+        assert(pose_1.getState() != EEstimatorParameterState::IGNORED);
+        assert(intrinsic_1->getState() != EEstimatorParameterState::IGNORED);
+        assert(pose_2.getState() != EEstimatorParameterState::IGNORED);
+        assert(intrinsic_2->getState() != EEstimatorParameterState::IGNORED);
 
         /* Get pose */
         double* poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
@@ -630,8 +630,8 @@ void BundleAdjustmentSymbolicCeres::addRotationPriorsToProblem(const sfmData::Sf
         const auto & pose_1 = sfmData.getPose(view_1);
         const auto & pose_2 = sfmData.getPose(view_2);
 
-        assert(pose_1.getState() != EParameterState::IGNORED);
-        assert(pose_2.getState() != EParameterState::IGNORED);
+        assert(pose_1.getState() != EEstimatorParameterState::IGNORED);
+        assert(pose_2.getState() != EEstimatorParameterState::IGNORED);
 
         double* poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
         double* poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
@@ -684,7 +684,7 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
             const IndexT poseId = posePair.first;
 
             // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (posePair.second.getState() != EParameterState::REFINED)
+            if (posePair.second.getState() != EEstimatorParameterState::REFINED)
             {
                 continue;
             }
@@ -721,7 +721,7 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
             const auto & intrinsic = sfmData.getIntrinsicsharedPtr(intrinsicId);
 
             // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (intrinsic->getState() != EParameterState::REFINED)
+            if (intrinsic->getState() != EEstimatorParameterState::REFINED)
             {
                 continue;
             }
@@ -739,7 +739,7 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
             sfmData::Landmark& landmark = sfmData.getLandmarks().at(landmarkId);
 
             // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (landmark.state != EParameterState::REFINED)
+            if (landmark.state != EEstimatorParameterState::REFINED)
             {
                 continue;
             }

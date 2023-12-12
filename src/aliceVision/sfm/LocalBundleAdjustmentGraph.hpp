@@ -36,32 +36,32 @@ class LocalBundleAdjustmentGraph
     std::map<int, std::size_t> getDistancesHistogram() const;
 
     /**
-     * @brief Return the EParameterState for a specific pose.
+     * @brief Return the EEstimatorParameterState for a specific pose.
      * @param[in] poseId The given pose Id
-     * @return EParameterState
+     * @return EEstimatorParameterState
      */
-    inline EParameterState getPoseState(const IndexT poseId) const { return _statePerPoseId.at(poseId); }
+    inline EEstimatorParameterState getPoseState(const IndexT poseId) const { return _statePerPoseId.at(poseId); }
 
     /**
-     * @brief Return the EParameterState for a specific intrinsic.
+     * @brief Return the EEstimatorParameterState for a specific intrinsic.
      * @param[in] intrinsicId The given intrinsic Id
-     * @return EParameterState
+     * @return EEstimatorParameterState
      */
-    inline EParameterState getIntrinsicState(const IndexT intrinsicId) const { return _statePerIntrinsicId.at(intrinsicId); }
+    inline EEstimatorParameterState getIntrinsicState(const IndexT intrinsicId) const { return _statePerIntrinsicId.at(intrinsicId); }
 
     /**
-     * @brief Return the EParameterState for a specific landmark.
+     * @brief Return the EEstimatorParameterState for a specific landmark.
      * @param[in] landmarkId The given landmark Id
-     * @return EParameterState
+     * @return EEstimatorParameterState
      */
-    inline EParameterState getLandmarkState(const IndexT landmarkId) const { return _statePerLandmarkId.at(landmarkId); }
+    inline EEstimatorParameterState getLandmarkState(const IndexT landmarkId) const { return _statePerLandmarkId.at(landmarkId); }
 
     /**
-     * @brief Return the number of poses with the given EParameterState.
-     * @param[in] state The given EParameterState.
-     * @return number of poses with the given EParameterState.
+     * @brief Return the number of poses with the given EEstimatorParameterState.
+     * @param[in] state The given EEstimatorParameterState.
+     * @return number of poses with the given EEstimatorParameterState.
      */
-    inline std::size_t getNbPosesPerState(EParameterState state) const
+    inline std::size_t getNbPosesPerState(EEstimatorParameterState state) const
     {
         std::size_t nb = 0;
         for (const auto& poseStatePair : _statePerPoseId)
@@ -71,11 +71,11 @@ class LocalBundleAdjustmentGraph
     }
 
     /**
-     * @brief Return the number of intrinsics with the given EParameterState.
-     * @param[in] state The given EParameterState.
-     * @return number of intrinsics with the given EParameterState.
+     * @brief Return the number of intrinsics with the given EEstimatorParameterState.
+     * @param[in] state The given EEstimatorParameterState.
+     * @return number of intrinsics with the given EEstimatorParameterState.
      */
-    inline std::size_t getNbIntrinsicsPerState(EParameterState state) const
+    inline std::size_t getNbIntrinsicsPerState(EEstimatorParameterState state) const
     {
         std::size_t nb = 0;
         for (const auto& intrinsicStatePair : _statePerIntrinsicId)
@@ -85,11 +85,11 @@ class LocalBundleAdjustmentGraph
     }
 
     /**
-     * @brief Return the number of landmarks with the given EParameterState.
-     * @param[in] state The given EParameterState.
-     * @return number of landmarks with the given EParameterState.
+     * @brief Return the number of landmarks with the given EEstimatorParameterState.
+     * @param[in] state The given EEstimatorParameterState.
+     * @return number of landmarks with the given EEstimatorParameterState.
      */
-    inline std::size_t getNbLandmarksPerState(EParameterState state) const
+    inline std::size_t getNbLandmarksPerState(EEstimatorParameterState state) const
     {
         std::size_t nb = 0;
         for (const auto& landmarkStatePair : _statePerLandmarkId)
@@ -218,9 +218,9 @@ class LocalBundleAdjustmentGraph
     /**
      * @brief Return the state for a given distance
      * @param[in] distance between two views
-     * @return EParameterState
+     * @return EEstimatorParameterState
      */
-    EParameterState getStateFromDistance(int distance) const;
+    EEstimatorParameterState getStateFromDistance(int distance) const;
 
     /**
      * @brief Draw the current graph in the given directory.
@@ -307,12 +307,12 @@ class LocalBundleAdjustmentGraph
     std::map<IndexT, int> _distancePerViewId;
     /// Store the graph-distances from the new poses (0: is a new pose, -1: is not connected to the new poses)
     std::map<IndexT, int> _distancePerPoseId;
-    /// Store the \c EParameterState of each pose in the scene.
-    std::map<IndexT, EParameterState> _statePerPoseId;
-    /// Store the \c EParameterState of each intrinsic in the scene.
-    std::map<IndexT, EParameterState> _statePerIntrinsicId;
-    /// Store the \c EParameterState of each landmark in the scene.
-    std::map<IndexT, EParameterState> _statePerLandmarkId;
+    /// Store the \c EEstimatorParameterState of each pose in the scene.
+    std::map<IndexT, EEstimatorParameterState> _statePerPoseId;
+    /// Store the \c EEstimatorParameterState of each intrinsic in the scene.
+    std::map<IndexT, EEstimatorParameterState> _statePerIntrinsicId;
+    /// Store the \c EEstimatorParameterState of each landmark in the scene.
+    std::map<IndexT, EEstimatorParameterState> _statePerLandmarkId;
 
     // Intrinsics data
     // - Local BA needs to know the evolution of all the intrinsics parameters.

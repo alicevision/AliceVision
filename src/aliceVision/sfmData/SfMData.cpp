@@ -300,7 +300,7 @@ void SfMData::resetParameterStates()
 
     for (auto & pl : _structure)
     {
-        pl.second.state = EParameterState::REFINED;
+        pl.second.state = EEstimatorParameterState::REFINED;
     }
 
     for (auto & pi : _intrinsics)

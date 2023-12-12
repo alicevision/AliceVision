@@ -49,7 +49,7 @@ struct EstimationStatus
 /**
  * @brief Defines the state of a parameter for an estimator
  */
-enum class EParameterState : std::uint8_t
+enum class EEstimatorParameterState : std::uint8_t
 {
     REFINED = 0,   //< will be adjusted by the estimator
     CONSTANT = 1,  //< will be set as constant in the estimator

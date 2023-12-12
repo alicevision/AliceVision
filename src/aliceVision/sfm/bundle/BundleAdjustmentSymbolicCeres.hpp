@@ -76,7 +76,7 @@ class BundleAdjustmentSymbolicCeres : public BundleAdjustment, ceres::Evaluation
          * @param[in] parameter A bundle adjustment parameter
          * @param[in] state A bundle adjustment state
          */
-        inline void addState(EParameter parameter, EParameterState state) { ++parametersStates[parameter][state]; }
+        inline void addState(EParameter parameter, EEstimatorParameterState state) { ++parametersStates[parameter][state]; }
 
         /**
          * @brief Export statistics about bundle adjustment in a CSV file
@@ -109,7 +109,7 @@ class BundleAdjustmentSymbolicCeres : public BundleAdjustment, ceres::Evaluation
         /// time spent to solve the BA (s)
         double time = 0.0;
         /// number of states per parameter
-        std::map<EParameter, std::map<EParameterState, std::size_t>> parametersStates;
+        std::map<EParameter, std::map<EEstimatorParameterState, std::size_t>> parametersStates;
         /// The distribution of the cameras for each graph distance <distance, numOfCam>
         std::map<int, std::size_t> nbCamerasPerDistance;
     };

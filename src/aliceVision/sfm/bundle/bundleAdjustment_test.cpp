@@ -209,12 +209,12 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
     BOOST_CHECK_EQUAL(localBAGraph->countNodes(), 4);  // 4 views => 4 nodes
     BOOST_CHECK_EQUAL(localBAGraph->countEdges(), 6);  // landmarks connections: 6 edges created (see scheme)
 
-    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EParameterState::REFINED), 2);      // v0 & v1
-    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EParameterState::CONSTANT), 1);     // v2
-    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EParameterState::IGNORED), 1);      // v3
-    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EParameterState::REFINED), 2);  // p0 & p1
-    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EParameterState::CONSTANT), 0);
-    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EParameterState::IGNORED), 1);  // p2
+    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EEstimatorParameterState::REFINED), 2);      // v0 & v1
+    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EEstimatorParameterState::CONSTANT), 1);     // v2
+    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EEstimatorParameterState::IGNORED), 1);      // v3
+    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EEstimatorParameterState::REFINED), 2);  // p0 & p1
+    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EEstimatorParameterState::CONSTANT), 0);
+    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EEstimatorParameterState::IGNORED), 1);  // p2
 
     std::shared_ptr<BundleAdjustmentCeres> BA = std::make_shared<BundleAdjustmentCeres>(options);
     BOOST_CHECK(BA->adjust(sfmData));
