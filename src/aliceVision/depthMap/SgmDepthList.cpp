@@ -305,7 +305,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min, float& out_max, fl
             continue;
 
         // get rc 2d observation
-        const Vec2& obs2d = it->second.x;
+        const Vec2& obs2d = it->second.getCoordinates();
 
         // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
         if (!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
@@ -381,7 +381,7 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc, double& out_zmin, double& ou
             continue;
 
         // get rc 2d observation
-        const Vec2& obs2d = it->second.x;
+        const Vec2& obs2d = it->second.getCoordinates();
 
         // observation located inside the inflated image full-size ROI
         if (!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))

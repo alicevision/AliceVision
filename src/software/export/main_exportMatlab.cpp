@@ -56,7 +56,7 @@ bool exportToMatlab(
       for(const auto& obs: landmark.observations)
       {
         const IndexT obsView = obs.first; // The ID of the view that provides this 2D observation.
-        observationsPerView[obsView].push_back(Observation(obs.second.x, landmarkId, unknownScale));
+        observationsPerView[obsView].push_back(Observation(obs.second.getCoordinates(), landmarkId, unknownScale));
       }
     }
     landmarksFile.close();
@@ -73,7 +73,7 @@ bool exportToMatlab(
     viewFeatFile << "# landmarkId x y\n";
     for(const Observation& obs: viewObservations)
     {
-      viewFeatFile << obs.id_feat << " " << obs.x[0] << " " << obs.x[1] << "\n";
+      viewFeatFile << obs.getFeatureId() << " " << obs.getX() << " " << obs.getY() << "\n";
     }
     viewFeatFile.close();
   }

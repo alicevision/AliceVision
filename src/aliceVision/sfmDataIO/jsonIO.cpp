@@ -463,9 +463,9 @@ void saveLandmark(const std::string& name,
             // features
             if (saveFeatures)
             {
-                obsTree.put("featureId", observation.id_feat);
-                saveMatrix("x", observation.x, obsTree);
-                obsTree.put("scale", observation.scale);
+                obsTree.put("featureId", observation.getFeatureId());
+                saveMatrix("x", observation.getCoordinates(), obsTree);
+                obsTree.put("scale", observation.getScale());
             }
 
             observationsTree.push_back(std::make_pair("", obsTree));
@@ -496,9 +496,9 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
 
             if (loadFeatures)
             {
-                observation.id_feat = obsTree.get<IndexT>("featureId");
-                loadMatrix("x", observation.x, obsTree);
-                observation.scale = obsTree.get<double>("scale", 0.0);
+                observation.setFeatureId(obsTree.get<IndexT>("featureId"));
+                loadMatrix("x", observation.getCoordinates(), obsTree);
+                observation.setScale(obsTree.get<double>("scale", 0.0));
             }
 
             landmark.observations.emplace(obsTree.get<IndexT>("observationId"), observation);

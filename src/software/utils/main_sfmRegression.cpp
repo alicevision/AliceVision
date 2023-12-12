@@ -106,11 +106,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
         
         for (auto & pp : sfmDataGT.getPoses())
         {
-            sfmData::Observation obs;
-            obs.x = phPinholeGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true);
-            obs.scale = 1.0;
-            obs.id_feat = pl.first;
-
+            sfmData::Observation obs(phPinholeGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true), pl.first, 1.0);
             
             if (pp.second.getTransform()(pl.second.X)(2) < 0.1)
             {

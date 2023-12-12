@@ -235,7 +235,7 @@ bool exportToMVE2Format(
       {
           const IndexT viewId = itObs->first;
           const IndexT viewIndex = viewIdToviewIndex[viewId];
-          const IndexT featId = itObs->second.id_feat;
+          const IndexT featId = itObs->second.getFeatureId();
           out << " " << viewIndex << " " << featId << " 0";
       }
       out << "\n";

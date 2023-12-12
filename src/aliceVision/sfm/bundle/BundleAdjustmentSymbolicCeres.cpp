@@ -594,19 +594,19 @@ void BundleAdjustmentSymbolicCeres::addConstraints2DToProblem(const sfmData::SfM
         if (equidistant != nullptr)
         {
             ceres::CostFunction* costFunction =
-              new CostPanoramaEquidistant(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant);
+              new CostPanoramaEquidistant(constraint.ObservationFirst.getCoordinates(), constraint.ObservationSecond.getCoordinates(), equidistant);
             problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
 
             /* Symmetry */
-            costFunction = new CostPanoramaEquidistant(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant);
+            costFunction = new CostPanoramaEquidistant(constraint.ObservationSecond.getCoordinates(), constraint.ObservationFirst.getCoordinates(), equidistant);
             problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
         }
         else if (pinhole != nullptr)
         {
-            ceres::CostFunction* costFunction = new CostPanoramaPinHole(constraint.ObservationFirst.x, constraint.ObservationSecond.x, pinhole);
+            ceres::CostFunction* costFunction = new CostPanoramaPinHole(constraint.ObservationFirst.getCoordinates(), constraint.ObservationSecond.getCoordinates(), pinhole);
             problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
             /* Symmetry */
-            costFunction = new CostPanoramaPinHole(constraint.ObservationSecond.x, constraint.ObservationFirst.x, pinhole);
+            costFunction = new CostPanoramaPinHole(constraint.ObservationSecond.getCoordinates(), constraint.ObservationFirst.getCoordinates(), pinhole);
             problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
         }
         else

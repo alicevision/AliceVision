@@ -73,7 +73,7 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
             {
                 const IndexT id_view = iterOb->first;
                 const sfmData::View* v = sfmData.getViews().at(id_view).get();
-                stream << v->getIntrinsicId() << ' ' << v->getPoseId() << ' ' << iterOb->second.x(0) << ' ' << iterOb->second.x(1) << ' ';
+                stream << v->getIntrinsicId() << ' ' << v->getPoseId() << ' ' << iterOb->second.getCoordinates()(0) << ' ' << iterOb->second.getCoordinates()(1) << ' ';
             }
             stream << '\n';
         }

@@ -290,7 +290,7 @@ bool VoctreeLocalizer::initDatabase(const std::string& vocTreeFilepath, const st
         {
             const IndexT viewId = obs.first;
             const sfmData::Observation& obs2d = obs.second;
-            observationsPerView[viewId][landmark.descType].emplace_back(obs2d.id_feat, trackId);
+            observationsPerView[viewId][landmark.descType].emplace_back(obs2d.getFeatureId(), trackId);
         }
     }
     for (auto& featuresPerTypeInImage : observationsPerView)
