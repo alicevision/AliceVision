@@ -63,8 +63,7 @@ class CameraPose
      */
     inline void unlock() { _locked = false; }
 
-    
-    void initializeState() 
+    void initializeState()
     {
         if (_locked)
         {
@@ -76,15 +75,9 @@ class CameraPose
         }
     }
 
-    EEstimatorParameterState getState() const
-    {
-        return _state;
-    }
+    EEstimatorParameterState getState() const { return _state; }
 
-    void setState(EEstimatorParameterState state)
-    {
-        _state = state;
-    }
+    void setState(EEstimatorParameterState state) { _state = state; }
 
   private:
     /// camera 3d transformation

@@ -421,16 +421,16 @@ class IntrinsicBase
     /**
      * @Brief get horizontal fov in radians
      * @return  horizontal fov in radians
-    */
+     */
     virtual double getHorizontalFov() const = 0;
 
     /**
      * @Brief get vertical fov in radians
      * @return  vertical fov in radians
-    */
+     */
     virtual double getVerticalFov() const = 0;
 
-    virtual void initializeState() 
+    virtual void initializeState()
     {
         if (_locked)
         {
@@ -442,15 +442,9 @@ class IntrinsicBase
         }
     }
 
-    EEstimatorParameterState getState() const
-    {
-        return _state;
-    }
+    EEstimatorParameterState getState() const { return _state; }
 
-    void setState(EEstimatorParameterState state)
-    {
-        _state = state;
-    }
+    void setState(EEstimatorParameterState state) { _state = state; }
 
   protected:
     /// initialization mode

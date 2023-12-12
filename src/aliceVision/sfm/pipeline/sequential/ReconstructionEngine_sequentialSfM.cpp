@@ -1452,8 +1452,10 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
                 multiview::TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), X);
                 IndexT trackId = commonTracksIds[inlier_idx];
                 auto iter = map_tracksCommon[trackId].featPerView.begin();
-                const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second.featureId].coords().cast<double>();
-                const Vec2 featJ = _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second.featureId].coords().cast<double>();
+                const Vec2 featI =
+                  _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second.featureId].coords().cast<double>();
+                const Vec2 featJ =
+                  _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second.featureId].coords().cast<double>();
                 vec_angles[i] = angleBetweenRays(pose_I, camI, pose_J, camJ, featI, featJ);
                 validCommonTracksIds[i] = trackId;
                 ++i;

@@ -153,11 +153,12 @@ bool BundleAdjustmentSymbolicCeres::Statistics::exportToFile(const std::string& 
         }
     }
 
-    os << time << ";" << states[EParameter::POSE][EEstimatorParameterState::REFINED] << ";" << states[EParameter::POSE][EEstimatorParameterState::CONSTANT] << ";"
-       << states[EParameter::POSE][EEstimatorParameterState::IGNORED] << ";" << states[EParameter::LANDMARK][EEstimatorParameterState::REFINED] << ";"
-       << states[EParameter::LANDMARK][EEstimatorParameterState::CONSTANT] << ";" << states[EParameter::LANDMARK][EEstimatorParameterState::IGNORED] << ";"
-       << states[EParameter::INTRINSIC][EEstimatorParameterState::REFINED] << ";" << states[EParameter::INTRINSIC][EEstimatorParameterState::CONSTANT] << ";"
-       << states[EParameter::INTRINSIC][EEstimatorParameterState::IGNORED] << ";" << nbResidualBlocks << ";" << nbSuccessfullIterations << ";"
+    os << time << ";" << states[EParameter::POSE][EEstimatorParameterState::REFINED] << ";"
+       << states[EParameter::POSE][EEstimatorParameterState::CONSTANT] << ";" << states[EParameter::POSE][EEstimatorParameterState::IGNORED] << ";"
+       << states[EParameter::LANDMARK][EEstimatorParameterState::REFINED] << ";" << states[EParameter::LANDMARK][EEstimatorParameterState::CONSTANT]
+       << ";" << states[EParameter::LANDMARK][EEstimatorParameterState::IGNORED] << ";"
+       << states[EParameter::INTRINSIC][EEstimatorParameterState::REFINED] << ";" << states[EParameter::INTRINSIC][EEstimatorParameterState::CONSTANT]
+       << ";" << states[EParameter::INTRINSIC][EEstimatorParameterState::IGNORED] << ";" << nbResidualBlocks << ";" << nbSuccessfullIterations << ";"
        << nbUnsuccessfullIterations << ";" << RMSEinitial << ";" << RMSEfinal << ";";
 
     for (int i = -1; i < 10; ++i)
@@ -497,7 +498,7 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
 
             // Get shared object clone
             const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[view.getIntrinsicId()];
-            const auto & pose = sfmData.getPose(view);
+            const auto& pose = sfmData.getPose(view);
 
             // each residual block takes a point and a camera as input and outputs a 2
             // dimensional residual. Internally, the cost function stores the observed
@@ -565,10 +566,10 @@ void BundleAdjustmentSymbolicCeres::addConstraints2DToProblem(const sfmData::SfM
         const sfmData::View& view_1 = sfmData.getView(constraint.ViewFirst);
         const sfmData::View& view_2 = sfmData.getView(constraint.ViewSecond);
 
-        const auto & pose_1 = sfmData.getPose(view_1);
-        const auto & pose_2 = sfmData.getPose(view_2);
-        const auto & intrinsic_1 = sfmData.getIntrinsicsharedPtr(view_1);
-        const auto & intrinsic_2 = sfmData.getIntrinsicsharedPtr(view_2);
+        const auto& pose_1 = sfmData.getPose(view_1);
+        const auto& pose_2 = sfmData.getPose(view_2);
+        const auto& intrinsic_1 = sfmData.getIntrinsicsharedPtr(view_1);
+        const auto& intrinsic_2 = sfmData.getIntrinsicsharedPtr(view_2);
 
         assert(pose_1.getState() != EEstimatorParameterState::IGNORED);
         assert(intrinsic_1->getState() != EEstimatorParameterState::IGNORED);
@@ -627,8 +628,8 @@ void BundleAdjustmentSymbolicCeres::addRotationPriorsToProblem(const sfmData::Sf
         const sfmData::View& view_1 = sfmData.getView(prior.ViewFirst);
         const sfmData::View& view_2 = sfmData.getView(prior.ViewSecond);
 
-        const auto & pose_1 = sfmData.getPose(view_1);
-        const auto & pose_2 = sfmData.getPose(view_2);
+        const auto& pose_1 = sfmData.getPose(view_1);
+        const auto& pose_2 = sfmData.getPose(view_2);
 
         assert(pose_1.getState() != EEstimatorParameterState::IGNORED);
         assert(pose_2.getState() != EEstimatorParameterState::IGNORED);
@@ -718,7 +719,7 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
         {
             const IndexT intrinsicId = intrinsicBlockPair.first;
 
-            const auto & intrinsic = sfmData.getIntrinsicsharedPtr(intrinsicId);
+            const auto& intrinsic = sfmData.getIntrinsicsharedPtr(intrinsicId);
 
             // do not update a camera pose set as Ignored or Constant in the Local strategy
             if (intrinsic->getState() != EEstimatorParameterState::REFINED)
