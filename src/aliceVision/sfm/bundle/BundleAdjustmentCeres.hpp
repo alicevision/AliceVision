@@ -69,7 +69,7 @@ class BundleAdjustmentCeres : public BundleAdjustment
          * @param[in] parameter A bundle adjustment parameter
          * @param[in] state A bundle adjustment state
          */
-        inline void addState(EParameter parameter, EParameterState state) { ++parametersStates[parameter][state]; }
+        inline void addState(EParameter parameter, EEstimatorParameterState state) { ++parametersStates[parameter][state]; }
 
         /**
          * @brief Export statistics about bundle adjustment in a CSV file
@@ -102,7 +102,7 @@ class BundleAdjustmentCeres : public BundleAdjustment
         /// time spent to solve the BA (s)
         double time = 0.0;
         /// number of states per parameter
-        std::map<EParameter, std::map<EParameterState, std::size_t>> parametersStates;
+        std::map<EParameter, std::map<EEstimatorParameterState, std::size_t>> parametersStates;
         /// The distribution of the cameras for each graph distance <distance, numOfCam>
         std::map<int, std::size_t> nbCamerasPerDistance;
     };
@@ -135,22 +135,10 @@ class BundleAdjustmentCeres : public BundleAdjustment
     bool adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions = REFINE_ALL);
 
     /**
-     * @brief Ajust parameters according to the local reconstruction graph in order do perfomr an optimezed bundle adjustmentor
-     * @param[in] localGraph The Local bundle adjustment graph pointer or nullptr (will refine everything)
-     */
-    inline void useLocalStrategyGraph(const std::shared_ptr<const LocalBundleAdjustmentGraph>& localGraph) { _localGraph = localGraph; }
-
-    /**
      * @brief Get bundle adjustment statistics structure
      * @return statistics structure const ptr
      */
     inline const Statistics& getStatistics() const { return _statistics; }
-
-    /**
-     * @brief Return true if the bundle adjustment use an external local graph
-     * @return true if use an external local graph
-     */
-    inline bool useLocalStrategy() const { return (_localGraph != nullptr); }
 
   private:
     /**
@@ -221,40 +209,7 @@ class BundleAdjustmentCeres : public BundleAdjustment
      */
     void updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const;
 
-    /**
-     * @brief Return the BundleAdjustment::EParameterState for a specific pose.
-     * @param[in] poseId The pose id
-     * @return BundleAdjustment::EParameterState (always REFINED if no local strategy)
-     */
-    inline BundleAdjustment::EParameterState getPoseState(IndexT poseId) const
-    {
-        return (_localGraph != nullptr ? _localGraph->getPoseState(poseId) : BundleAdjustment::EParameterState::REFINED);
-    }
-
-    /**
-     * @brief Return the BundleAdjustment::EParameterState for a specific intrinsic.
-     * @param[in] intrinsicId The intrinsic id
-     * @return BundleAdjustment::EParameterState (always REFINED if no local strategy)
-     */
-    inline BundleAdjustment::EParameterState getIntrinsicState(IndexT intrinsicId) const
-    {
-        return (_localGraph != nullptr ? _localGraph->getIntrinsicState(intrinsicId) : BundleAdjustment::EParameterState::REFINED);
-    }
-
-    /**
-     * @brief Return the BundleAdjustment::EParameterState for a specific landmark.
-     * @param[in] landmarkId The landmark id
-     * @return BundleAdjustment::EParameterState (always REFINED if no local strategy)
-     */
-    inline BundleAdjustment::EParameterState getLandmarkState(IndexT landmarkId) const
-    {
-        return (_localGraph != nullptr ? _localGraph->getLandmarkState(landmarkId) : BundleAdjustment::EParameterState::REFINED);
-    }
-
     // private members
-
-    /// use or not the local budle adjustment strategy
-    std::shared_ptr<const LocalBundleAdjustmentGraph> _localGraph = nullptr;
 
     /// user Ceres options to use in the solver
     CeresOptions _ceresOptions;

@@ -46,4 +46,14 @@ struct EstimationStatus
     bool hasStrongSupport = false;
 };
 
+/**
+ * @brief Defines the state of a parameter for an estimator
+ */
+enum class EEstimatorParameterState : std::uint8_t
+{
+    REFINED = 0,   //< will be adjusted by the estimator
+    CONSTANT = 1,  //< will be set as constant in the estimator
+    IGNORED = 2    //< will not be set into the estimator
+};
+
 }  // namespace aliceVision

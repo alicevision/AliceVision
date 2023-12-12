@@ -20,7 +20,6 @@ using namespace aliceVision::image;
 
 namespace fs = boost::filesystem;
 
-
 bool SfMData::operator==(const SfMData& other) const
 {
     // Views
@@ -289,6 +288,24 @@ void SfMData::clear()
     _matchesFolders.clear();
     _poses.clear();
     _rigs.clear();
+}
+
+void SfMData::resetParameterStates()
+{
+    for (auto& pp : _poses)
+    {
+        pp.second.initializeState();
+    }
+
+    for (auto& pl : _structure)
+    {
+        pl.second.state = EEstimatorParameterState::REFINED;
+    }
+
+    for (auto& pi : _intrinsics)
+    {
+        pi.second->initializeState();
+    }
 }
 
 LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)

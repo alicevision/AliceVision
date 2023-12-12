@@ -773,8 +773,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
         // use the graph-distances to assign a state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
         _localStrategyGraph->convertDistancesToStates(_sfmData);
 
-        const std::size_t nbRefinedPoses = _localStrategyGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED);
-        const std::size_t nbConstantPoses = _localStrategyGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT);
+        const std::size_t nbRefinedPoses = _localStrategyGraph->getNbPosesPerState(EEstimatorParameterState::REFINED);
+        const std::size_t nbConstantPoses = _localStrategyGraph->getNbPosesPerState(EEstimatorParameterState::CONSTANT);
 
         // restore the Dense linear solver type if the number of cameras in the solver is <= 20
         if (nbRefinedPoses + nbConstantPoses <= 20)
@@ -795,8 +795,10 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     BundleAdjustmentCeres BA(options, _params.minNbCamerasToRefinePrincipalPoint);
 
     // give the local strategy graph is local strategy is enable
-    if (enableLocalStrategy)
-        BA.useLocalStrategyGraph(_localStrategyGraph);
+    if (!enableLocalStrategy)
+    {
+        _sfmData.resetParameterStates();
+    }
 
     // perform BA until all point are under the given precision
     do
@@ -1450,8 +1452,10 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
                 multiview::TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), X);
                 IndexT trackId = commonTracksIds[inlier_idx];
                 auto iter = map_tracksCommon[trackId].featPerView.begin();
-                const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second.featureId].coords().cast<double>();
-                const Vec2 featJ = _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second.featureId].coords().cast<double>();
+                const Vec2 featI =
+                  _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second.featureId].coords().cast<double>();
+                const Vec2 featJ =
+                  _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second.featureId].coords().cast<double>();
                 vec_angles[i] = angleBetweenRays(pose_I, camI, pose_J, camJ, featI, featJ);
                 validCommonTracksIds[i] = trackId;
                 ++i;
