@@ -1,6 +1,5 @@
 # image
 
-
 ## Image Container
 
 `Image<T>` class is a generic image container based on an Eigen aligned row-major matrix of template pixel type `T`. Images can store grayscale, RGB, RGBA or custom data.
@@ -9,7 +8,7 @@
 
 See examples from image_test.cpp:
 
-```
+```cpp
 // A 8-bit gray image: 
 Image<unsigned char> grayscale_image_8bit;
 
@@ -30,7 +29,6 @@ Image<Rgba<unsigned char> > rgba_image2_8bit;
 Image<Rgb<double> > rgb_image_32bit;
 ```
 
-
 ## Image I/O
 
 Loading and writing of 8 bits (gray and color) images are supported in the following formats:
@@ -42,7 +40,7 @@ Loading and writing of 8 bits (gray and color) images are supported in the follo
 
 See examples from io_test.cpp:
 
-```
+```cpp
 // Read a grayscale image (if conversion need, it is done on the fly)
 Image<unsigned char> gray_image;
 bool bRet = ReadImage("Foo.imgExtension", &gray_image);
@@ -51,7 +49,6 @@ bool bRet = ReadImage("Foo.imgExtension", &gray_image);
 Image<RGBColor> rgb_image_gray;
 bool bRet = ReadImage("Foo.imgExtension", &rgb_image);
 ```
-
 
 ## Drawing operations
 
@@ -63,7 +60,7 @@ The following operations are available:
 
 See examples from drawing_test.cpp:
 
-```
+```cpp
 Image<unsigned char> image(10,10);
 image.fill(0);
 
