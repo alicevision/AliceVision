@@ -425,7 +425,7 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
     {
         const IndexT landmarkId = landmarkPair.first;
         const IndexT firstViewId = landmarkPair.second.observations.begin()->first;
-        const IndexT firstFeatureId = landmarkPair.second.observations.begin()->second.id_feat;
+        const IndexT firstFeatureId = landmarkPair.second.observations.begin()->second.getFeatureId();
         const feature::EImageDescriberType descType = landmarkPair.second.descType;
 
         obsToLandmark.emplace(ObsKey(firstViewId, firstFeatureId, descType), landmarkId);
