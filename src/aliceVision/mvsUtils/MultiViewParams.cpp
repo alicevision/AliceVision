@@ -613,7 +613,7 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
             continue;
 
         // landmark R camera observation is in the image full-size ROI
-        if (!fullsizeRoi.contains(viewObsIt->second.getCoordinates().x(), viewObsIt->second.getCoordinates().y()))
+        if (!fullsizeRoi.contains(viewObsIt->second.getX(), viewObsIt->second.getY()))
             continue;
 
         for (const auto& observationPair : observations)

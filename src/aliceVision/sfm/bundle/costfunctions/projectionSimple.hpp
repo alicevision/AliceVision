@@ -41,8 +41,8 @@ class CostProjectionSimple : public ceres::CostFunction
         Vec2 pt_est = _intrinsics->project(T, pth, false);
         const double scale = (_measured.getScale() > 1e-12) ? _measured.getScale() : 1.0;
 
-        residuals[0] = (pt_est(0) - _measured.getCoordinates()(0)) / scale;
-        residuals[1] = (pt_est(1) - _measured.getCoordinates()(1)) / scale;
+        residuals[0] = (pt_est(0) - _measured.getX()) / scale;
+        residuals[1] = (pt_est(1) - _measured.getY()) / scale;
 
         if (jacobians == nullptr)
         {

@@ -71,7 +71,7 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
             const sfmData::Observation& obs = obsIt.second;
 
             out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.getFeatureId()] =
-              feature::PointFeature(obs.getCoordinates()(0) + noise(generator), obs.getCoordinates()(1) + noise(generator), scale, orientation);
+              feature::PointFeature(obs.getX() + noise(generator), obs.getY() + noise(generator), scale, orientation);
         }
     }
 }

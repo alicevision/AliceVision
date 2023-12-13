@@ -315,7 +315,7 @@ bool exportToBundlerFormat(
       {
         const Observation & ob = iterObs->second;
         // ViewId, FeatId, x, y
-        os << map_viewIdToContiguous[iterObs->first] << " " << ob.getFeatureId() << " " << ob.getCoordinates()(0) << " " << ob.getCoordinates()(1) << " ";
+        os << map_viewIdToContiguous[iterObs->first] << " " << ob.getFeatureId() << " " << ob.getX() << " " << ob.getY() << " ";
       }
       os << os.widen('\n');
     }
