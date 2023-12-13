@@ -4,6 +4,7 @@ ARG CUDA_VERSION
 ARG UBUNTU_VERSION
 FROM alicevision/alicevision-deps:${AV_DEPS_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
+ARG TARGET_ARCHITECTURE=core
 
 # use CUDA_VERSION to select the image version to use
 # see https://hub.docker.com/r/nvidia/cuda/
@@ -42,7 +43,7 @@ COPY docker ${AV_DEV}/docker
 RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
          cmake -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS:BOOL=ON \
-        -DTARGET_ARCHITECTURE=core \
+        -DTARGET_ARCHITECTURE=${TARGET_ARCHITECTURE} \
         -DALICEVISION_BUILD_DEPENDENCIES:BOOL=OFF \
         -DCMAKE_PREFIX_PATH:PATH="${AV_INSTALL}" \
         -DCMAKE_INSTALL_PREFIX:PATH="${AV_INSTALL}" \
