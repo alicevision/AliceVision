@@ -82,6 +82,64 @@ EImageColorSpace getImageColorSpace(const std::string& imagePath)
     return EImageColorSpace_stringToEnum(colorSpace);
 }
 
+std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::string& defaultColorSpace = "", const std::string& imagePath = "")
+{
+    std::string colorSpaceFromFileName = "";
+    if (!imagePath.empty())
+    {
+        colorSpaceFromFileName = getGlobalColorConfigOCIO().getColorSpaceFromFilepath(imagePath);
+    }
+
+    std::map<std::string, std::string> mapColorSpaces;
+
+    for (const auto& m : oiioSpec.extra_attribs)
+    {
+        const std::string name = m.name().string();
+
+        if (name.find("oiio:ColorSpace") != name.npos)
+        {
+            mapColorSpaces.emplace("oiio:ColorSpace", m.get_string());
+        }
+        else if (name.find("AliceVision:ColorSpace") != name.npos)
+        {
+            mapColorSpaces.emplace("AliceVision:ColorSpace", m.get_string());
+        }
+        else if (name.find(":workPlateColourSpace") != name.npos)
+        {
+            mapColorSpaces.emplace("workPlateColourSpace", m.get_string());
+        }
+    }
+
+    std::string colorSpace = defaultColorSpace;
+
+    if (mapColorSpaces.find("AliceVision:ColorSpace") != mapColorSpaces.end())
+    {
+        colorSpace = mapColorSpaces.at("AliceVision:ColorSpace");
+    }
+    else if (mapColorSpaces.find("workPlateColourSpace") != mapColorSpaces.end())
+    {
+        colorSpace = mapColorSpaces.at("workPlateColourSpace");
+    }
+    else if (!colorSpaceFromFileName.empty())
+    {
+        colorSpace = colorSpaceFromFileName;
+    }
+    else if (mapColorSpaces.find("oiio:ColorSpace") != mapColorSpaces.end())
+    {
+        colorSpace = mapColorSpaces.at("oiio:ColorSpace");
+    }
+
+    ALICEVISION_LOG_TRACE("Detected image color space: " << colorSpace);
+
+    if (!EImageColorSpace_isSupportedOIIOstring(colorSpace))
+    {
+        colorSpace = defaultColorSpace;
+        ALICEVISION_LOG_WARNING("Detected color space " << colorSpace << " is not supported. Set image color space to " << defaultColorSpace);
+    }
+
+    return colorSpace;
+}
+
 std::string EImageFileType_informations()
 {
   return "Image file type :\n"
@@ -750,15 +808,16 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
-    const std::string colorSpaceFromMetadata =
-      inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"));
+    const std::string ext = boost::to_lower_copy(fs::path(path).extension().string());
+    const std::string colorSpaceFromMetadata = getImageColorSpace(inBuf.spec(), ext == ".exr" ? "linear" : "sRGB", path);
 
     std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
                 ? "aces2065-1"
-                                       : (isRawImage ? "linear"
-                   : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
-                      ? colorSpaceFromMetadata
-                      : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
+                : (isRawImage
+                    ? "linear"
+                    : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
+                        ? colorSpaceFromMetadata
+                        : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
 
