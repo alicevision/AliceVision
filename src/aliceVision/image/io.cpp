@@ -577,10 +577,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     if (nchannels == 0)
         ALICEVISION_THROW_ERROR("Requested channels is 0. Image file: '" + path + "'.");
     if (nchannels == 2)
-        ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image file: '" + path + "'.");
-
-    if(!fs::exists(path))
-        ALICEVISION_THROW_ERROR("No such image file: '" << path << "'.");
+        ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image file: '" + path + "'.")
 
     oiio::ImageSpec configSpec;
 
@@ -740,8 +737,8 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 
     inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
-    if(!inBuf.initialized())
-        ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'.");
+    if (!inBuf.initialized())
+        ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'. The file might not exist.");
 
     // check picture channels number
     if (inBuf.spec().nchannels == 0)
