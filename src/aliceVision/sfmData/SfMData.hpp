@@ -117,8 +117,8 @@ class SfMData
      * @brief Get landmarks
      * @return landmarks
      */
-    const Landmarks& getLandmarks() const { return _structure; }
-    Landmarks& getLandmarks() { return _structure; }
+    const Landmarks& getLandmarks() const { return _landmarks; }
+    Landmarks& getLandmarks() { return _landmarks; }
 
     /**
      * @brief Get Constraints2D
@@ -521,7 +521,7 @@ class SfMData
 
   private:
     /// Structure (3D points with their 2D observations)
-    Landmarks _structure;
+    Landmarks _landmarks;
     /// Considered camera intrinsics (indexed by view.getIntrinsicId())
     Intrinsics _intrinsics;
     /// Considered views
