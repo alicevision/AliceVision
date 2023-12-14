@@ -239,7 +239,7 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Pinhole::getDerivativeProjectWrtParams(
     ret.block<2, 2>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
     ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
 
-    if (hasDistortion())
+    if (_pDistortion != nullptr)
     {
         const size_t distortionSize = _pDistortion->getDistortionParametersCount();
         ret.block(0, 4, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
