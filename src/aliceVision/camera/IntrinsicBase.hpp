@@ -407,9 +407,10 @@ class IntrinsicBase
 
     /**
      * @brief Rescale intrinsics to reflect a rescale of the camera image
-     * @param factor a scale factor
+     * @param factorW a scale factor for Width
+     * @param factorH a scale factor for Height
      */
-    virtual void rescale(float factor);
+    virtual void rescale(float factorW, float factorH);
 
     /**
      * @brief transform a given point (in pixels) to unit sphere in meters
