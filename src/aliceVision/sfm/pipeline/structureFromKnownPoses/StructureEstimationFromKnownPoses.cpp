@@ -275,7 +275,7 @@ void StructureEstimationFromKnownPoses::triangulate(SfMData& sfmData,
     {
         const track::Track& track = itTracks->second;
         structure[idx] = Landmark(track.descType);
-        Observations& observations = structure.at(idx).observations;
+        Observations& observations = structure.at(idx).getObservations();
         for (auto it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
         {
             const size_t imaIndex = it->first;

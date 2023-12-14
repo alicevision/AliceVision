@@ -26,7 +26,7 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
 
     while (iterTracks != sfmData.getLandmarks().end())
     {
-        sfmData::Observations& observations = iterTracks->second.observations;
+        sfmData::Observations& observations = iterTracks->second.getObservations();
         sfmData::Observations::iterator itObs = observations.begin();
 
         while (itObs != observations.end())
@@ -35,12 +35,12 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
             const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
 
-            Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.x);
-            if (featureConstraint == EFeatureConstraint::SCALE && itObs->second.scale > 0.0)
+            Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates());
+            if (featureConstraint == EFeatureConstraint::SCALE && itObs->second.getScale() > 0.0)
             {
                 // Apply the scale of the feature to get a residual value
                 // relative to the feature precision.
-                residual /= itObs->second.scale;
+                residual /= itObs->second.getScale();
             }
 
             if ((pose.depth(iterTracks->second.X) < 0) || (residual.norm() > dThresholdPixel))
@@ -75,7 +75,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
 #pragma omp parallel for
     for (int landmarkIndex = 0; landmarkIndex < v_keys.size(); ++landmarkIndex)
     {
-        const sfmData::Observations& observations = sfmData.getLandmarks().at(v_keys[landmarkIndex]).observations;
+        const sfmData::Observations& observations = sfmData.getLandmarks().at(v_keys[landmarkIndex]).getObservations();
 
         // create matrix for observation directions from camera to point
         Mat3X viewDirections(3, observations.size());
@@ -96,7 +96,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
             const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
 
-            viewDirections.col(i) = applyIntrinsicExtrinsic(pose, intrinsic, itObs->second.x);
+            viewDirections.col(i) = applyIntrinsicExtrinsic(pose, intrinsic, itObs->second.getCoordinates());
 
             double dCosAngle = viewDirections.col(i).transpose() * viewDirections.col(greedyI);
             if (dCosAngle < dMaxAcceptedCosAngle)
@@ -167,7 +167,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
     // Count occurrence of the poses in the Landmark observations
     for (sfmData::Landmarks::const_iterator itLandmarks = landmarks.begin(); itLandmarks != landmarks.end(); ++itLandmarks)
     {
-        const sfmData::Observations& observations = itLandmarks->second.observations;
+        const sfmData::Observations& observations = itLandmarks->second.getObservations();
         for (sfmData::Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
         {
             const IndexT viewId = itObs->first;
@@ -229,7 +229,7 @@ bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT m
 
     while (itLandmarks != sfmData.getLandmarks().end())
     {
-        sfmData::Observations& observations = itLandmarks->second.observations;
+        sfmData::Observations& observations = itLandmarks->second.getObservations();
         sfmData::Observations::iterator itObs = observations.begin();
 
         while (itObs != observations.end())

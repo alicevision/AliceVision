@@ -28,8 +28,8 @@ void createRefMeshFromDenseSfMData(mesh::Mesh& refMesh, const sfmData::SfMData& 
         const sfmData::Landmark& landmark = landmarkPair.second;
         mesh::PointVisibility pointVisibility;
 
-        pointVisibility.reserve(landmark.observations.size());
-        for (const auto& observationPair : landmark.observations)
+        pointVisibility.reserve(landmark.getObservations().size());
+        for (const auto& observationPair : landmark.getObservations())
             pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
 
         refVisibilities.push_back(pointVisibility);

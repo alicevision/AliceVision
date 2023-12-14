@@ -286,11 +286,11 @@ bool VoctreeLocalizer::initDatabase(const std::string& vocTreeFilepath, const st
         IndexT trackId = landmarkValue.first;
         const sfmData::Landmark& landmark = landmarkValue.second;
 
-        for (const auto& obs : landmark.observations)
+        for (const auto& obs : landmark.getObservations())
         {
             const IndexT viewId = obs.first;
             const sfmData::Observation& obs2d = obs.second;
-            observationsPerView[viewId][landmark.descType].emplace_back(obs2d.id_feat, trackId);
+            observationsPerView[viewId][landmark.descType].emplace_back(obs2d.getFeatureId(), trackId);
         }
     }
     for (auto& featuresPerTypeInImage : observationsPerView)

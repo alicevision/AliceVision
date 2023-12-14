@@ -12,62 +12,67 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/stl/FlatMap.hpp>
 #include <aliceVision/types.hpp>
+#include <aliceVision/sfmData/Observation.hpp>
 
 namespace aliceVision {
 namespace sfmData {
 
 /**
- * @brief 2D observation of a 3D landmark.
- */
-struct Observation
-{
-    Observation() {}
-    Observation(const Vec2& p, IndexT idFeat, double scale_)
-      : x(p),
-        id_feat(idFeat),
-        scale(scale_)
-    {}
-
-    Vec2 x;
-    IndexT id_feat = UndefinedIndexT;
-    double scale = 0.0;
-    bool operator==(const Observation& other) const { return AreVecNearEqual(x, other.x, 1e-6) && id_feat == other.id_feat; }
-};
-
-/// Observations are indexed by their View_id
-typedef stl::flat_map<IndexT, Observation> Observations;
-
-/**
  * @brief Landmark is a 3D point with its 2d observations.
  */
-struct Landmark
+class Landmark
 {
-    Landmark() = default;
+public:
+    Landmark()
+    {
+
+    }
+
     explicit Landmark(feature::EImageDescriberType descType)
       : descType(descType)
-    {}
+    {
+
+    }
+
     Landmark(const Vec3& pos3d,
              feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED,
-             const Observations& observations = Observations(),
              const image::RGBColor& color = image::WHITE)
       : X(pos3d),
         descType(descType),
-        observations(observations),
         rgb(color)
-    {}
+    {
+    }
 
     Vec3 X;
     feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
-    Observations observations;
     image::RGBColor rgb = image::WHITE;  //!> the color associated to the point
     EEstimatorParameterState state = EEstimatorParameterState::REFINED;
 
     bool operator==(const Landmark& other) const
     {
-        return AreVecNearEqual(X, other.X, 1e-3) && AreVecNearEqual(rgb, other.rgb, 1e-3) && observations == other.observations &&
-               descType == other.descType;
+        return AreVecNearEqual(X, other.X, 1e-3) && 
+                AreVecNearEqual(rgb, other.rgb, 1e-3) && 
+                _observations == other._observations &&
+                descType == other.descType;
     }
-    inline bool operator!=(const Landmark& other) const { return !(*this == other); }
+
+    inline bool operator!=(const Landmark& other) const 
+    { 
+        return !(*this == other); 
+    }
+    
+    const Observations & getObservations() const
+    {
+        return _observations;
+    }
+
+    Observations & getObservations()
+    {
+        return _observations;
+    }
+
+private:
+    Observations _observations;
 };
 
 }  // namespace sfmData

@@ -49,19 +49,19 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
     for (auto& landmarkIt : sfmData.getLandmarks())
     {
         auto& landmark = landmarkIt.second;
-        if (landmark.observations.empty())
+        if (landmark.getObservations().empty())
             continue;
         if (markerDescTypes_set.find(landmark.descType) == markerDescTypes_set.end())
             continue;
         landmark.rgb = image::BLACK;
 
-        const auto obs = landmark.observations.begin();
+        const auto obs = landmark.getObservations().begin();
         const feature::Regions& regions = regionPerView.getRegions(obs->first, landmark.descType);
         const feature::CCTAG_Regions* cctagRegions = dynamic_cast<const feature::CCTAG_Regions*>(&regions);
         const feature::APRILTAG_Regions* apriltagRegions = dynamic_cast<const feature::APRILTAG_Regions*>(&regions);
         if (cctagRegions)
         {
-            const auto& d = cctagRegions->Descriptors()[obs->second.id_feat];
+            const auto& d = cctagRegions->Descriptors()[obs->second.getFeatureId()];
             for (int i = 0; i < d.size(); ++i)
             {
                 if (d[i] == 255)
@@ -74,7 +74,7 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
         }
         else if (apriltagRegions)
         {
-            const auto& d = apriltagRegions->Descriptors()[obs->second.id_feat];
+            const auto& d = apriltagRegions->Descriptors()[obs->second.getFeatureId()];
             for (int i = 0; i < d.size(); ++i)
             {
                 if (d[i] == 255)

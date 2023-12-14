@@ -42,11 +42,11 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
         {
             const sfmData::Landmark& landmark = it.second;
 
-            for (const auto& obsIt : landmark.observations)
+            for (const auto& obsIt : landmark.getObservations())
             {
                 const IndexT viewId = obsIt.first;
                 const sfmData::Observation& obs = obsIt.second;
-                nbFeatPerView[viewId] = std::max(nbFeatPerView[viewId], std::size_t(obs.id_feat + 1));
+                nbFeatPerView[viewId] = std::max(nbFeatPerView[viewId], std::size_t(obs.getFeatureId() + 1));
             }
         }
         for (auto& it : nbFeatPerView)
@@ -65,13 +65,13 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
     {
         const sfmData::Landmark& landmark = it.second;
 
-        for (const auto& obsIt : landmark.observations)
+        for (const auto& obsIt : landmark.getObservations())
         {
             const IndexT viewId = obsIt.first;
             const sfmData::Observation& obs = obsIt.second;
 
-            out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.id_feat] =
-              feature::PointFeature(obs.x(0) + noise(generator), obs.x(1) + noise(generator), scale, orientation);
+            out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.getFeatureId()] =
+              feature::PointFeature(obs.getX() + noise(generator), obs.getY() + noise(generator), scale, orientation);
         }
     }
 }

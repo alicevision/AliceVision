@@ -37,7 +37,7 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData,
 
     for (const auto& track : sfmData.getLandmarks())
     {
-        const aliceVision::sfmData::Observations& observations = track.second.observations;
+        const aliceVision::sfmData::Observations& observations = track.second.getObservations();
         for (const auto& obs : observations)
         {
             if (!specificViews.empty())
@@ -48,7 +48,7 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData,
             const sfmData::View& view = sfmData.getView(obs.first);
             const aliceVision::geometry::Pose3 pose = sfmData.getPose(view).getTransform();
             const std::shared_ptr<aliceVision::camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId())->second;
-            const Vec2 residual = intrinsic->residual(pose, track.second.X.homogeneous(), obs.second.x);
+            const Vec2 residual = intrinsic->residual(pose, track.second.X.homogeneous(), obs.second.getCoordinates());
             vec_residuals.push_back(residual.norm());
             // ALICEVISION_LOG_INFO("[AliceVision] sfmtstatistics::computeResidualsHistogram track: " << track.first << ", residual: " <<
             // residual.norm());
@@ -92,7 +92,7 @@ void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData,
 
     for (const auto& landmark : sfmData.getLandmarks())
     {
-        const aliceVision::sfmData::Observations& observations = landmark.second.observations;
+        const aliceVision::sfmData::Observations& observations = landmark.second.getObservations();
         if (!specificViews.empty())
         {
             int nbObsSpecificViews = 0;
@@ -144,7 +144,7 @@ void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, BoxStats<
 
     for (const auto& landmark : sfmData.getLandmarks())
     {
-        for (const auto& obsIt : landmark.second.observations)
+        for (const auto& obsIt : landmark.second.getObservations())
         {
             const auto& viewId = obsIt.first;
             auto it = nbLandmarksPerView.find(viewId);
@@ -184,7 +184,7 @@ void computeLandmarksPerView(const sfmData::SfMData& sfmData, std::vector<int>& 
 
     for (const auto& landmark : sfmData.getLandmarks())
     {
-        const aliceVision::sfmData::Observations& observations = landmark.second.observations;
+        const aliceVision::sfmData::Observations& observations = landmark.second.getObservations();
         for (const auto& obs : observations)
         {
             auto it = nbLandmarksPerView.find(obs.first);
@@ -283,7 +283,7 @@ void computeScaleHistogram(const sfmData::SfMData& sfmData,
     vec_scaleObservations.reserve(sfmData.getLandmarks().size());
     for (const auto& landmark : sfmData.getLandmarks())
     {
-        const aliceVision::sfmData::Observations& observations = landmark.second.observations;
+        const aliceVision::sfmData::Observations& observations = landmark.second.getObservations();
 
         for (const auto& obs : observations)
         {
@@ -292,7 +292,7 @@ void computeScaleHistogram(const sfmData::SfMData& sfmData,
                 if (specificViews.count(obs.first) == 0)
                     continue;
             }
-            vec_scaleObservations.push_back(obs.second.scale);
+            vec_scaleObservations.push_back(obs.second.getScale());
         }
     }
 
@@ -334,13 +334,13 @@ void computeResidualsPerView(const sfmData::SfMData& sfmData,
 
     for (const auto& landmark : sfmData.getLandmarks())
     {
-        const aliceVision::sfmData::Observations& observations = landmark.second.observations;
+        const aliceVision::sfmData::Observations& observations = landmark.second.getObservations();
         for (const auto& obs : observations)
         {
             const sfmData::View& view = sfmData.getView(obs.first);
             const aliceVision::geometry::Pose3 pose = sfmData.getPose(view).getTransform();
             const std::shared_ptr<aliceVision::camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId())->second;
-            const Vec2 residual = intrinsic->residual(pose, landmark.second.X.homogeneous(), obs.second.x);
+            const Vec2 residual = intrinsic->residual(pose, landmark.second.X.homogeneous(), obs.second.getCoordinates());
             residualsPerView[obs.first].push_back(residual.norm());
         }
     }
@@ -397,7 +397,7 @@ void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData,
 
     for (const auto& landmark : sfmData.getLandmarks())
     {
-        const aliceVision::sfmData::Observations& observations = landmark.second.observations;
+        const aliceVision::sfmData::Observations& observations = landmark.second.getObservations();
         for (const auto& obs : observations)
         {
             observationLengthsPerView[obs.first].push_back(observations.size());

@@ -360,7 +360,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, const sfmData::
         const sfmData::Landmark& landmark = landmarkPair.second;
         const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
 
-        for (const auto& observationPair : landmark.observations)
+        for (const auto& observationPair : landmark.getObservations())
         {
             const IndexT viewId = observationPair.first;
 
@@ -506,14 +506,14 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
 
 bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfmData::Landmark& landmark, float minObservationAngle)
 {
-    for (const auto& observationPairI : landmark.observations)
+    for (const auto& observationPairI : landmark.getObservations())
     {
         const IndexT I = observationPairI.first;
         const sfmData::View& viewI = *(sfmData.getViews().at(I));
         const geometry::Pose3 poseI = sfmData.getPose(viewI).getTransform();
         const camera::IntrinsicBase* intrinsicPtrI = sfmData.getIntrinsicPtr(viewI.getIntrinsicId());
 
-        for (const auto& observationPairJ : landmark.observations)
+        for (const auto& observationPairJ : landmark.getObservations())
         {
             const IndexT J = observationPairJ.first;
 
@@ -526,7 +526,7 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
             const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
 
             const double angle =
-              camera::angleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.x, observationPairJ.second.x);
+              camera::angleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.getCoordinates(), observationPairJ.second.getCoordinates());
 
             // check angle between two observation
             if (angle < minObservationAngle)
@@ -562,7 +562,7 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
         const sfmData::Landmark& landmark = landmarkPair.second;
 
         // check number of observations
-        if (landmark.observations.size() < minObservations)
+        if (landmark.getObservations().size() < minObservations)
             continue;
 
         // check angle between observations

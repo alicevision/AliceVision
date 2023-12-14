@@ -227,7 +227,7 @@ bool exportToMVE2Format(
       out << 250 << " " << 100 << " " << 150 << "\n";  // Write arbitrary RGB color, see above note
 
       // Tally set of feature observations
-      const Observations & observations = iterLandmarks->second.observations;
+      const Observations & observations = iterLandmarks->second.getObservations();
       const size_t featureCount = std::distance(observations.begin(), observations.end());
       out << featureCount;
 
@@ -235,7 +235,7 @@ bool exportToMVE2Format(
       {
           const IndexT viewId = itObs->first;
           const IndexT viewIndex = viewIdToviewIndex[viewId];
-          const IndexT featId = itObs->second.id_feat;
+          const IndexT featId = itObs->second.getFeatureId();
           out << " " << viewIndex << " " << featId << " 0";
       }
       out << "\n";

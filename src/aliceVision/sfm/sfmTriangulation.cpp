@@ -46,7 +46,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
             }
             // Triangulate each landmark
             multiview::Triangulation trianObj;
-            const sfmData::Observations& observations = iterTracks->second.observations;
+            const sfmData::Observations& observations = iterTracks->second.getObservations();
             for (const auto& itObs : observations)
             {
                 const sfmData::View* view = sfmData.getViews().at(itObs.first).get();
@@ -61,7 +61,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
                     }
 
                     const Pose3 pose = sfmData.getPose(*view).getTransform();
-                    trianObj.add(pinHoleCam->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs.second.x));
+                    trianObj.add(pinHoleCam->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs.second.getCoordinates()));
                 }
             }
             if (trianObj.size() < 2)
@@ -126,7 +126,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
                 ++(progressDisplay);
             }
             Vec3 X;
-            if (robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X))
+            if (robust_triangulation(sfmData, iterTracks->second.getObservations(), randomNumberGenerator, X))
             {
                 iterTracks->second.X = X;
             }
@@ -211,7 +211,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
             const sfmData::View* view = sfmData.getViews().at(itObs.first).get();
             const IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
             const Pose3 pose = sfmData.getPose(*view).getTransform();
-            const Vec2 residual = intrinsic->residual(pose, current_model.homogeneous(), itObs.second.x);
+            const Vec2 residual = intrinsic->residual(pose, current_model.homogeneous(), itObs.second.getCoordinates());
             const double residual_d = residual.norm();
 
             if (residual_d < dThresholdPixel)
@@ -257,7 +257,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMD
         }
 
         const Pose3 pose = sfmData.getPose(*view).getTransform();
-        trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs->second.x));
+        trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs->second.getCoordinates()));
     }
     return trianObj.compute();
 }

@@ -262,13 +262,12 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
             {
                 const int viewID = sampleVisibilityIds[obsGlobal_i];
                 const int featID = sampleVisibilityIds[obsGlobal_i + 1];
-                sfmData::Observation& observations = landmark.observations[viewID];
-                observations.id_feat = featID;
+                sfmData::Observation& observations = landmark.getObservations()[viewID];
+                observations.setFeatureId(featID);
 
                 const float posX = (*sampleFeatPos2d)[obsGlobal_i];
                 const float posY = (*sampleFeatPos2d)[obsGlobal_i + 1];
-                observations.x[0] = posX;
-                observations.x[1] = posY;
+                observations.setCoordinates(posX, posY);
             }
         }
     }
@@ -349,23 +348,22 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
                 if (hasFeatures)
                 {
                     const std::size_t featId = sampleVisibilityFeatId[obsGlobalIndex];
-                    sfmData::Observation& observation = landmark.observations[viewId];
-                    observation.id_feat = featId;
+                    sfmData::Observation& observation = landmark.getObservations()[viewId];
+                    observation.setFeatureId(featId);
 
                     const float posX = (*sampleVisibilityFeatPos)[2 * obsGlobalIndex];
                     const float posY = (*sampleVisibilityFeatPos)[2 * obsGlobalIndex + 1];
-                    observation.x[0] = posX;
-                    observation.x[1] = posY;
+                    observation.setCoordinates(posX, posY);
 
                     // for compatibility with previous version without scale
                     if (sampleVisibilityFeatScale)
                     {
-                        observation.scale = (*sampleVisibilityFeatScale)[obsGlobalIndex];
+                        observation.setScale((*sampleVisibilityFeatScale)[obsGlobalIndex]);
                     }
                 }
                 else
                 {
-                    landmark.observations[viewId] = sfmData::Observation();
+                    landmark.getObservations()[viewId] = sfmData::Observation();
                 }
             }
         }

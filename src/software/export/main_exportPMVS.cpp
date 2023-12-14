@@ -173,7 +173,7 @@ bool exportToPMVSFormat(
         itL != sfm_data.getLandmarks().end(); ++itL)
       {
         const Landmark & landmark = itL->second;
-        const Observations & observations = landmark.observations;
+        const Observations & observations = landmark.getObservations();
         for (Observations::const_iterator itOb = observations.begin();
           itOb != observations.end(); ++itOb)
         {
@@ -304,7 +304,7 @@ bool exportToBundlerFormat(
       iter != sfm_data.getLandmarks().end(); ++iter)
     {
       const Landmark & landmark = iter->second;
-      const Observations & observations = landmark.observations;
+      const Observations & observations = landmark.getObservations();
       const Vec3 & X = landmark.X;
       // X, color, obsCount
       os << X[0] << " " << X[1] << " " << X[2] << os.widen('\n')
@@ -315,7 +315,7 @@ bool exportToBundlerFormat(
       {
         const Observation & ob = iterObs->second;
         // ViewId, FeatId, x, y
-        os << map_viewIdToContiguous[iterObs->first] << " " << ob.id_feat << " " << ob.x(0) << " " << ob.x(1) << " ";
+        os << map_viewIdToContiguous[iterObs->first] << " " << ob.getFeatureId() << " " << ob.getX() << " " << ob.getY() << " ";
       }
       os << os.widen('\n');
     }
