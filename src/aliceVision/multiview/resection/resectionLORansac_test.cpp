@@ -61,7 +61,7 @@ bool refinePoseAsItShouldbe(const Mat& pt3D,
         sfm_data.getLandmarks()[i] = std::move(landmark);
     }
 
-    BundleAdjustmentCeres bundle_adjustment_obj;
+    BundleAdjustmentSymbolicCeres bundle_adjustment_obj;
     BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
     if (b_refine_pose)
         refineOptions |= sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_TRANSLATION;

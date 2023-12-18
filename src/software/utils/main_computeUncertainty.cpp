@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
@@ -80,7 +80,7 @@ int aliceVision_main(int argc, char **argv)
 
   ceres::CRSMatrix jacobian;
   {
-    BundleAdjustmentCeres bundleAdjustmentObj;
+    BundleAdjustmentSymbolicCeres bundleAdjustmentObj;
     BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
     bundleAdjustmentObj.createJacobian(sfmData, refineOptions, jacobian);
   }

@@ -6,7 +6,7 @@
 
 #include "Rig.hpp"
 #include "ResidualError.hpp"
-#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <ceres/rotation.h>
@@ -443,7 +443,7 @@ bool Rig::optimizeCalibration()
 
     // Configure a BA engine and run it
     // todo: Set the most appropriate options
-    aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options(true);
+    aliceVision::sfm::BundleAdjustmentSymbolicCeres::CeresOptions aliceVision_options(true);
 
     ceres::Solver::Options options;
 

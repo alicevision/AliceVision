@@ -9,7 +9,7 @@
 #include <aliceVision/sfm/filters.hpp>
 #include <aliceVision/sfm/sfmTriangulation.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/sfm/pipeline/global/reindexGlobalSfM.hpp>
 #include <aliceVision/sfm/pipeline/global/MutexSet.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
@@ -716,9 +716,9 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(const SfMData& sfmD
     }
 
     // Refine structure and poses (keep intrinsic constant)
-    BundleAdjustmentCeres::BA_options options(false, false);
+    BundleAdjustmentSymbolicCeres::BA_options options(false, false);
     options._linear_solver_type = ceres::SPARSE_SCHUR;
-    BundleAdjustmentCeres bundle_adjustment_obj(options);
+    BundleAdjustmentSymbolicCeres bundle_adjustment_obj(options);
     if (bundle_adjustment_obj.Adjust(tiny_scene, REFINE_TRANSLATION | REFINE_STRUCTURE))
     {
         // export scene for visualization
