@@ -117,7 +117,9 @@ int aliceVision_main(int argc, char* argv[])
 {
     std::string sfmInputDataFilepath;
     std::string outputFilePath;
-    bool exportUndistortedGrids = true;
+    bool exportLensGridsUndistorted = true;
+    bool exportNukeNode = true;
+    bool exportSTMaps = true;
 
     // Command line parameters
     po::options_description requiredParams("Required parameters");
@@ -129,7 +131,10 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("exportUndistortedGrids,e", po::value<bool>(&exportUndistortedGrids)->default_value(exportUndistortedGrids),  "Export undistorted lens grids");
+        ("exportNukeNode", po::value<bool>(&exportNukeNode)->default_value(exportLensGridsUndistorted), "Export Nuke node as FILE.nk")
+        ("exportSTMaps", po::value<bool>(&exportSTMaps)->default_value(exportLensGridsUndistorted), "Export STMaps")
+        ("exportLensGridsUndistorted,e", po::value<bool>(&exportLensGridsUndistorted)->default_value(exportLensGridsUndistorted), "Export lens grids undistorted for validation")
+        ;
     
     
     CmdLine cmdline("AliceVision export distortion");
@@ -152,48 +157,52 @@ int aliceVision_main(int argc, char* argv[])
     {
         ALICEVISION_LOG_INFO("Exporting distortion for intrinsic " << intrinsicId);
 
-        auto intrinsicDisto = std::dynamic_pointer_cast<IntrinsicScaleOffsetDisto>(intrinsicPtr);
+        const auto intrinsicDisto = std::dynamic_pointer_cast<IntrinsicScaleOffsetDisto>(intrinsicPtr);
         if (!intrinsicDisto) continue;
 
-        auto undistortion = intrinsicDisto->getUndistortion();
+        const auto undistortion = intrinsicDisto->getUndistortion();
         if (!undistortion) continue;
 
-        ALICEVISION_LOG_INFO("Computing Nuke LensDistortion node");
-
-        std::string nukeNodeStr = toNuke(undistortion, intrinsicDisto->getType());
-
+        if(exportNukeNode)
         {
+            ALICEVISION_LOG_INFO("Computing Nuke LensDistortion node");
+
+            const std::string nukeNodeStr = toNuke(undistortion, intrinsicDisto->getType());
+
             ALICEVISION_LOG_INFO("Writing Nuke LensDistortion node in " << intrinsicId << ".nk");
             std::stringstream ss;
-            ss << outputFilePath << "/" << intrinsicId << ".nk";
+            ss << outputFilePath << "/nukeLensDistortion_" << intrinsicId << ".nk";
             std::ofstream of(ss.str());
             of << nukeNodeStr;
             of.close();
         }
 
-        ALICEVISION_LOG_INFO("Computing STMaps");
-
-        image::Image<image::RGBAfColor> stmap_distort;
-        toSTMap(stmap_distort, intrinsicDisto, true);
-
-        image::Image<image::RGBAfColor> stmap_undistort;
-        toSTMap(stmap_undistort, intrinsicDisto, false);
-
+        if(exportSTMaps)
         {
-            ALICEVISION_LOG_INFO("Writing distortion STMap in " << intrinsicId << "_distort.exr");
-            std::stringstream ss;
-            ss << outputFilePath << "/" << intrinsicId << "_distort.exr";
-            image::writeImage(ss.str(), stmap_distort, image::ImageWriteOptions());
+            ALICEVISION_LOG_INFO("Computing STMaps");
+
+            image::Image<image::RGBAfColor> stmap_distort;
+            toSTMap(stmap_distort, intrinsicDisto, true);
+
+            image::Image<image::RGBAfColor> stmap_undistort;
+            toSTMap(stmap_undistort, intrinsicDisto, false);
+
+            {
+                ALICEVISION_LOG_INFO("Export distortion STMap: stmap_" << intrinsicId << "_distort.exr");
+                std::stringstream ss;
+                ss << outputFilePath << "/stmap_" << intrinsicId << "_distort.exr";
+                image::writeImage(ss.str(), stmap_distort, image::ImageWriteOptions());
+            }
+
+            {
+                ALICEVISION_LOG_INFO("Export undistortion STMap: stmap_" << intrinsicId << "_undistort.exr");
+                std::stringstream ss;
+                ss << outputFilePath << "/stmap_" << intrinsicId << "_undistort.exr";
+                image::writeImage(ss.str(), stmap_undistort, image::ImageWriteOptions());
+            }
         }
 
-        {
-            ALICEVISION_LOG_INFO("Writing distortion STMap in " << intrinsicId << "_distort.exr");
-            std::stringstream ss;
-            ss << outputFilePath << "/" << intrinsicId << "_undistort.exr";
-            image::writeImage(ss.str(), stmap_undistort, image::ImageWriteOptions());
-        }
-
-        if (exportUndistortedGrids)
+        if (exportLensGridsUndistorted)
         {
             for (const auto & pv : sfmData.getViews())
             {
@@ -211,8 +220,8 @@ int aliceVision_main(int argc, char* argv[])
 
                     //Save undistorted
                     std::stringstream ss;
-                    ss << outputFilePath << "/lens" << pv.first << "_undistort.exr";
-                    ALICEVISION_LOG_INFO("Exporting lens undistorted image of " << path << " as " << ss.str());
+                    ss << outputFilePath << "/lensgrid_" << pv.first << "_undistort.exr";
+                    ALICEVISION_LOG_INFO("Export lens grid undistorted (Source image: " << path << ", Undistorted image: " << ss.str() << ").");
                     image::writeImage(ss.str(), image_ud, image::ImageWriteOptions(), metadata);
                 }
             }
