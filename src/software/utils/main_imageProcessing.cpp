@@ -305,6 +305,32 @@ inline std::ostream& operator<<(std::ostream& os, const NLMeansFilterParams& nlm
     return os;
 }
 
+struct pixelAspectRatioParams
+{
+    bool enabled;
+    bool rowDecimation;
+    float value;
+};
+
+std::istream& operator>>(std::istream& in, pixelAspectRatioParams& parParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if (splitParams.size() != 2)
+        throw std::invalid_argument("Failed to parse pixelAspectRatioParams from: " + token);
+    parParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    parParams.rowDecimation = boost::to_lower_copy(splitParams[1]) == "true";
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const pixelAspectRatioParams& parParams)
+{
+    os << parParams.enabled << ":" << parParams.rowDecimation;
+    return os;
+}
+
 std::string getColorProfileDatabaseFolder()
 {
     const char* value = std::getenv("ALICEVISION_COLOR_PROFILE_DB");
@@ -378,6 +404,12 @@ struct ProcessingParams
         10.0f, // filterStrengthColor
         7,     // templateWindowSize
         21     // searchWindowSize
+    };
+
+    pixelAspectRatioParams par = {
+      false,  // enable
+      false,  // rowDecimation
+      1.0f    // value
     };
 };
 
@@ -584,12 +616,19 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
             static_cast<float>(pParams.maxHeight) / static_cast<float>(image.Height()) : 1.0;
     const float scaleFactor = std::min(pParams.scaleFactor, std::min(sfw, sfh));
 
-    if (scaleFactor != 1.0f)
+    if (scaleFactor != 1.0f || pParams.par.enabled)
     {
+        const bool parRowDecimation = pParams.par.enabled && pParams.par.rowDecimation;
+        const float widthRatio = scaleFactor * ((parRowDecimation || !pParams.par.enabled) ? 1.0 : pParams.par.value);
+        const float heightRatio = scaleFactor * (parRowDecimation ? (1.0 / pParams.par.value) : 1.0);
+
+        ALICEVISION_LOG_TRACE("widthRatio " << widthRatio);
+        ALICEVISION_LOG_TRACE("heightRatio " << heightRatio);
+
         const unsigned int w = image.Width();
         const unsigned int h = image.Height();
-        const unsigned int nw = static_cast<unsigned int>(floor(static_cast<float>(image.Width()) * scaleFactor));
-        const unsigned int nh = static_cast<unsigned int>(floor(static_cast<float>(image.Height()) * scaleFactor));
+        const unsigned int nw = static_cast<unsigned int>(floor(static_cast<float>(image.Width()) * widthRatio));
+        const unsigned int nh = static_cast<unsigned int>(floor(static_cast<float>(image.Height()) * heightRatio));
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
@@ -1060,6 +1099,11 @@ int aliceVision_main(int argc, char * argv[])
             " * templateWindowSize: Size in pixels of the template patch that is used to compute weights. Should be odd. \n"
             " * searchWindowSize:Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time.")
 
+        ("parFilter", po::value<pixelAspectRatioParams>(&pParams.par)->default_value(pParams.par),
+            "Pixel Aspect Ratio parameters:\n"
+            " * Enabled: Apply Pixel Aspect Ratio.\n"
+            " * RowDecimation: Decimate rows (reduce image height) instead of upsampling columns (increase image width).")
+
         ("inputColorSpace", po::value<image::EImageColorSpace>(&inputColorSpace)->default_value(inputColorSpace),
          ("Input image color space: " + image::EImageColorSpace_informations()).c_str())
 
@@ -1353,6 +1397,11 @@ int aliceVision_main(int argc, char * argv[])
 
             std::map<std::string, std::string> viewMetadata = view.getImage().getMetadata();
 
+            if (pParams.par.enabled)
+            {
+                pParams.par.value = cam->getParams()[1] / cam->getParams()[0];
+            }
+
             // Image processing
             processImage(image, pParams, viewMetadata, cam);
 
@@ -1387,7 +1436,7 @@ int aliceVision_main(int argc, char * argv[])
             if (viewMetadata.find("Orientation") != viewMetadata.end())
                 view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
 
-            if (image.Width() != cam->w()) // The image has been rotated by automatic reorientation 
+            if (pParams.reorient && image.Width() != cam->w() && image.Width() == cam->h())  // The image has been rotated by automatic reorientation 
             {
                 camera::IntrinsicBase* cam2 = cam->clone();
 
@@ -1403,11 +1452,15 @@ int aliceVision_main(int argc, char * argv[])
             }
         }
 
-        if (pParams.scaleFactor != 1.0f)
+        if ((pParams.scaleFactor != 1.0f) || (pParams.par.enabled && pParams.par.value != 1.0))
         {
-            for (auto & i : sfmData.getIntrinsics())
+            const bool parRowDecimation = pParams.par.enabled && pParams.par.rowDecimation;
+
+            const float scaleFactorW = pParams.scaleFactor * ((!pParams.par.enabled || parRowDecimation) ? 1.0 : pParams.par.value);
+            const float scaleFactorH = pParams.scaleFactor * (parRowDecimation ? (1.0 / pParams.par.value) : 1.0);
+            for (auto& i : sfmData.getIntrinsics())
             {
-                i.second->rescale(pParams.scaleFactor);
+                i.second->rescale(scaleFactorW, scaleFactorH);
             }
         }
 
@@ -1690,6 +1743,15 @@ int aliceVision_main(int argc, char * argv[])
             }
 
             std::map<std::string, std::string> md = view.getImage().getMetadata();
+
+            pParams.par.value = 1.0;
+            if (pParams.par.enabled)
+            {
+                double pixelAspectRatio = 1.0;
+                view.getImage().getDoubleMetadata({"PixelAspectRatio"}, pixelAspectRatio);
+                pParams.par.value = pixelAspectRatio;
+                md["PixelAspectRatio"] = "1.0";
+            }
 
             // set readOptions
             image::ImageReadOptions readOptions;

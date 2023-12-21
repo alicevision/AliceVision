@@ -70,9 +70,10 @@ class IntrinsicScaleOffset : public IntrinsicBase
 
     /**
      * @brief Rescale intrinsics to reflect a rescale of the camera image
-     * @param factor a scale factor
+     * @param factorW a scale factor for Width
+     * @param factorH a scale factor for Height
      */
-    void rescale(float factor) override;
+    void rescale(float factorW, float factorH) override;
 
     // Data wrapper for non linear optimization (update from data)
     bool updateFromParams(const std::vector<double>& params) override;

@@ -96,12 +96,16 @@ Eigen::Matrix2d IntrinsicScaleOffset::getDerivativeIma2CamWrtPrincipalPoint() co
     return M;
 }
 
-void IntrinsicScaleOffset::rescale(float factor)
+void IntrinsicScaleOffset::rescale(float factorW, float factorH)
 {
-    IntrinsicBase::rescale(factor);
+    IntrinsicBase::rescale(factorW, factorH);
 
-    _scale *= factor;
-    _offset *= factor;
+    _scale(0) *= factorW;
+    _scale(1) *= factorH;
+    _offset(0) *= factorW;
+    _offset(1) *= factorH;
+    _initialScale(0) *= factorW;
+    _initialScale(1) *= factorH;
 }
 
 bool IntrinsicScaleOffset::updateFromParams(const std::vector<double>& params)
