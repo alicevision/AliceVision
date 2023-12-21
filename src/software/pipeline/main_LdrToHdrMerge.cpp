@@ -37,17 +37,17 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const std::string& rootname = "")
+std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const std::string& rootname = "", bool macbeth = false)
 {
     // Output image file path
     std::stringstream sstream;
     if (rootname == "")
     {
-        sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
+        sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << (macbeth ? "_macbeth" : "") << ".exr";
     }
     else
     {
-        sstream << rootname << ".exr";
+        sstream << rootname << (macbeth ? "_macbeth" : "") << ".exr";
     }
     const std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
     return hdrImagePath;
@@ -353,7 +353,7 @@ int aliceVision_main(int argc, char** argv)
                 std::shared_ptr<sfmData::View> hdrView;
 
                 const auto & group = groups[g];
-                
+
                 if (group.size() == 1)
                 {
                     hdrView.reset(group.at(0)->clone());
@@ -369,8 +369,18 @@ int aliceVision_main(int argc, char** argv)
                 }
                 if (!byPass)
                 {
-                    boost::filesystem::path p(targetViews[g]->getImage().getImagePath());
-                    const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
+                    bool macbeth = false;
+                    for(int k = 0; k < group.size(); k++)
+                    {
+                        const std::string fname = group[k]->getImage().getImagePath();
+                        boost::filesystem::path p(fname);
+                        macbeth = macbeth || (p.stem().string().find("_macbeth") != std::string::npos);
+                    }
+                    const std::string tgt_name = targetViews[g]->getImage().getImagePath();
+                    macbeth = macbeth && ((tgt_name.find("_macbeth") == std::string::npos) || !keepSourceImageName);
+                
+                    boost::filesystem::path p(tgt_name);
+                    const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "", macbeth);
                     hdrView->getImage().setImagePath(hdrImagePath);
                 }
                 hdrView->getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace));
@@ -431,11 +441,14 @@ int aliceVision_main(int argc, char** argv)
             std::shared_ptr<sfmData::View> targetView = targetViews[g];
             std::vector<sfmData::ExposureSetting> exposuresSetting(group.size());
 
+            bool macbeth = false;
             // Load all images of the group
             for(std::size_t i = 0; i < group.size(); ++i)
             {
                 const std::string filepath = group[i]->getImage().getImagePath();
                 ALICEVISION_LOG_INFO("Load " << filepath);
+                boost::filesystem::path p(filepath);
+                macbeth = macbeth || (p.stem().string().find("_macbeth") != std::string::npos);
 
                 image::ImageReadOptions options;
                 options.workingColorSpace = workingColorSpace;
@@ -497,7 +510,8 @@ int aliceVision_main(int argc, char** argv)
             }
 
             boost::filesystem::path p(targetView->getImage().getImagePath());
-            const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
+            macbeth = macbeth && ((p.stem().string().find("_macbeth") == std::string::npos) || !keepSourceImageName);
+            const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "", macbeth);
 
             // Write an image with parameters from the target view
             std::map<std::string, std::string> viewMetadata = targetView->getImage().getMetadata();
