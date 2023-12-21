@@ -61,15 +61,6 @@ using RotationPriors = std::vector<RotationPrior>;
 class SfMData
 {
   public:
-    /// Uncertainty per pose
-    PosesUncertainty _posesUncertainty;
-    /// Uncertainty per landmark
-    LandmarksUncertainty _landmarksUncertainty;
-    /// 2D Constraints
-    Constraints2D constraints2d;
-    /// Rotation priors
-    RotationPriors rotationpriors;
-
     // Operators
 
     bool operator==(const SfMData& other) const;
@@ -100,6 +91,12 @@ class SfMData
     Poses& getPoses() { return _poses; }
 
     /**
+     * @brief Get poses uncertainty
+     * @return poses uncertainty
+     */
+    const PosesUncertainty& getPosesUncertainty() const { return _posesUncertainty; }
+
+    /**
      * @brief Get rigs
      * @return rigs
      */
@@ -121,18 +118,25 @@ class SfMData
     Landmarks& getLandmarks() { return _landmarks; }
 
     /**
+     * @brief Get landmarks Uncertainty
+     * @return landmarks uncertainty
+     */
+    const LandmarksUncertainty& getLandmarksUncertainty() const { return _landmarksUncertainty; }
+    LandmarksUncertainty& getLandmarksUncertainty() { return _landmarksUncertainty; }
+
+    /**
      * @brief Get Constraints2D
      * @return Constraints2D
      */
-    const Constraints2D& getConstraints2D() const { return constraints2d; }
-    Constraints2D& getConstraints2D() { return constraints2d; }
+    const Constraints2D& getConstraints2D() const { return _constraints2d; }
+    Constraints2D& getConstraints2D() { return _constraints2d; }
 
     /**
      * @brief Get RotationPriors
      * @return RotationPriors
      */
-    const RotationPriors& getRotationPriors() const { return rotationpriors; }
-    RotationPriors& getRotationPriors() { return rotationpriors; }
+    const RotationPriors& getRotationPriors() const { return _rotationpriors; }
+    RotationPriors& getRotationPriors() { return _rotationpriors; }
 
     /**
      * @brief Get relative features folder paths
@@ -538,6 +542,14 @@ class SfMData
     Poses _poses;
     /// Considered rigs
     Rigs _rigs;
+    /// Uncertainty per pose
+    PosesUncertainty _posesUncertainty;
+    /// Uncertainty per landmark
+    LandmarksUncertainty _landmarksUncertainty;
+    /// 2D Constraints
+    Constraints2D _constraints2d;
+    /// Rotation priors
+    RotationPriors _rotationpriors;
 
     /**
      * @brief Get Rig pose of a given camera view

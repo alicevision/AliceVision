@@ -94,12 +94,12 @@ bool SfMData::operator==(const SfMData& other) const
             return false;
     }
 
-    if (constraints2d.size() != other.constraints2d.size())
+    if (_constraints2d.size() != other._constraints2d.size())
         return false;
 
-    Constraints2D::const_iterator constraint2dIt = constraints2d.begin();
-    Constraints2D::const_iterator otherconstraint2dIt = other.constraints2d.begin();
-    for (; constraint2dIt != constraints2d.end() && otherconstraint2dIt != other.constraints2d.end(); ++constraint2dIt, ++otherconstraint2dIt)
+    Constraints2D::const_iterator constraint2dIt = _constraints2d.begin();
+    Constraints2D::const_iterator otherconstraint2dIt = other._constraints2d.begin();
+    for (; constraint2dIt != _constraints2d.end() && otherconstraint2dIt != other._constraints2d.end(); ++constraint2dIt, ++otherconstraint2dIt)
     {
         if (*constraint2dIt != *otherconstraint2dIt)
             return false;
@@ -270,7 +270,7 @@ void SfMData::combine(const SfMData& sfmData)
     _landmarks.insert(sfmData._landmarks.begin(), sfmData._landmarks.end());
 
     // constraints
-    constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
+    _constraints2d.insert(_constraints2d.end(), sfmData._constraints2d.begin(), sfmData._constraints2d.end());
 }
 
 void SfMData::clear()
@@ -280,8 +280,8 @@ void SfMData::clear()
     _landmarks.clear();
     _posesUncertainty.clear();
     _landmarksUncertainty.clear();
-    constraints2d.clear();
-    rotationpriors.clear();
+    _constraints2d.clear();
+    _rotationpriors.clear();
 
     _absolutePath.clear();
     _featuresFolders.clear();
