@@ -388,7 +388,6 @@ bool EImageColorSpace_isSupportedOIIOstring(const std::string& colorspace)
     }
 
     return (std::find(knownColorSpaces.begin(), knownColorSpaces.end(), boost::to_lower_copy(colorspace)) != knownColorSpaces.end());
-                     avOCIOColorSpaceNamesAndAliases.end(), boost::to_lower_copy(colorspace)) != avOCIOColorSpaceNamesAndAliases.end();
 }
 
 std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType) { return os << EImageColorSpace_enumToString(dataType); }
