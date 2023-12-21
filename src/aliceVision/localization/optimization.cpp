@@ -68,7 +68,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
             ALICEVISION_LOG_DEBUG("Optical distortion won't be considered");
             // just add a simple pinhole camera with the same K as the input camera
             Vec2 pp = currIntrinsics->getPrincipalPoint();
-            tinyScene.getIntrinsics().emplace(intrinsicID,
+            tinyScene.setIntrinsic(intrinsicID,
                                               camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA,
                                                                     currIntrinsics->w(),
                                                                     currIntrinsics->h(),
@@ -80,7 +80,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         else
         {
             // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-            tinyScene.getIntrinsics().emplace(intrinsicID, std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*) {}));
+            tinyScene.setIntrinsic(intrinsicID, std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*) {}));
             ALICEVISION_LOG_DEBUG("Type of intrinsics " << tinyScene.getIntrinsics().at(0).get()->getType());
         }
     }
@@ -126,7 +126,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         {
             camera::Pinhole* currIntrinsics = &currResult.getIntrinsics();
             // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-            tinyScene.getIntrinsics().emplace(intrinsicID, std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*) {}));
+            tinyScene.setIntrinsic(intrinsicID, std::shared_ptr<camera::Pinhole>(currIntrinsics, [](camera::Pinhole*) {}));
             ++intrinsicID;
         }
 

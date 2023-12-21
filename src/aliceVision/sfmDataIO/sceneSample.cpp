@@ -31,9 +31,9 @@ void generateSampleScene(sfmData::SfMData& output)
     const double focalLengthPixY = 2000.0;
     const double offsetX = -26;
     const double offsetY = 16;
-    output.getIntrinsics().emplace(
+    output.setIntrinsic(
       0, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
-    output.getIntrinsics().emplace(
+    output.setIntrinsic(
       1,
       camera::createPinhole(
         camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, {0.1, 0.05, -0.001}));

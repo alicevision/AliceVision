@@ -111,12 +111,12 @@ int aliceVision_main(int argc, char **argv)
 
     // Update intrinsics
     sfmData::Intrinsics intrinsics = sfmData.getIntrinsics();
-    sfmData.getIntrinsics().clear();
+    sfmData.clearIntrinsics();
     for (const auto & pi : intrinsics)
     {
         size_t intrinsicId = pi.first;
         stl::hash_combine(intrinsicId, indexRig);
-        sfmData.getIntrinsics().emplace(intrinsicId, pi.second);
+        sfmData.setIntrinsic(intrinsicId, pi.second);
     }
 
     // Remove all poses

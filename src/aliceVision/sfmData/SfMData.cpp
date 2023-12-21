@@ -273,6 +273,11 @@ void SfMData::combine(const SfMData& sfmData)
     _constraints2d.insert(_constraints2d.end(), sfmData._constraints2d.begin(), sfmData._constraints2d.end());
 }
 
+void SfMData::combineIntrinsics(const Intrinsics & other)
+{
+    _intrinsics.insert(other.begin(), other.end());
+}
+
 void SfMData::clear()
 {
     _views.clear();
@@ -306,6 +311,30 @@ void SfMData::resetParameterStates()
     {
         pi.second->initializeState();
     }
+}
+
+void SfMData::setIntrinsic(IndexT id, const std::shared_ptr<camera::IntrinsicBase> & intrinsic)
+{
+    if (_intrinsics.find(id) != _intrinsics.end())
+    {
+        _intrinsics.at(id) = intrinsic;
+    }
+    else
+    {
+        _intrinsics.emplace(id, intrinsic);
+    }
+
+    if (intrinsic) 
+    {
+        intrinsic->setId(id);
+    }
+}
+
+bool SfMData::updateIntrinsic(IndexT id, const std::shared_ptr<camera::IntrinsicBase> & input)
+{
+    setIntrinsic(id, input);
+
+    return true;
 }
 
 LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)

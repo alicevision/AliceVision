@@ -108,7 +108,6 @@ class SfMData
      * @return intrinsics
      */
     const Intrinsics& getIntrinsics() const { return _intrinsics; }
-    Intrinsics& getIntrinsics() { return _intrinsics; }
 
     /**
      * @brief Get landmarks
@@ -162,17 +161,6 @@ class SfMData
      */
     std::vector<std::string> getMatchesFolders() const;
 
-    /**
-     * @brief List the view indexes that have valid camera intrinsic and pose.
-     * @return view indexes list
-     */
-    std::set<IndexT> getValidViews() const;
-
-    /**
-     * @brief List the intrinsic indexes that have valid camera intrinsic and pose.
-     * @return intrinsic indexes list
-     */
-    std::set<IndexT> getReconstructedIntrinsics() const;
 
     /**
      * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
@@ -185,26 +173,16 @@ class SfMData
         return nullptr;
     }
 
-    /**
-     * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
-     */
-    camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId)
+    template <class T>
+    const std::optional<std::reference_wrapper<const T>> getIntrinsic(IndexT intrinsicId) const
     {
-        if (_intrinsics.count(intrinsicId))
-            return _intrinsics.at(intrinsicId).get();
-        return nullptr;
-    }
+        std::shared_ptr<T> obj = std::dynamic_pointer_cast<T>(_intrinsics.at(intrinsicId));
+        if (obj)
+        {
+            return *obj;
+        }
 
-    /**
-     * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
-     */
-    std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId)
-    {
-        if (_intrinsics.count(intrinsicId))
-            return _intrinsics.at(intrinsicId);
-        return nullptr;
+        return std::nullopt;
     }
 
     /**
@@ -252,37 +230,14 @@ class SfMData
     {
         std::set<IndexT> viewKeys;
         for (auto v : _views)
+        {
             viewKeys.insert(v.first);
+        }
+
         return viewKeys;
     }
 
-    /**
-     * @brief Check if the given view have defined intrinsic and pose
-     * @param[in] view The given view
-     * @return true if intrinsic and pose defined
-     */
-    bool isPoseAndIntrinsicDefined(const View* view) const
-    {
-        if (view == nullptr)
-            return false;
-        return (view->getIntrinsicId() != UndefinedIndexT && view->getPoseId() != UndefinedIndexT &&
-                (!view->isPartOfRig() || view->isPoseIndependant() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
-                _intrinsics.find(view->getIntrinsicId()) != _intrinsics.end() && _poses.find(view->getPoseId()) != _poses.end());
-    }
-
-    /**
-     * @brief Check if the given view have defined intrinsic and pose
-     * @param[in] viewID The given viewID
-     * @return true if intrinsic and pose defined
-     */
-    bool isPoseAndIntrinsicDefined(IndexT viewId) const { return isPoseAndIntrinsicDefined(_views.at(viewId).get()); }
-
-    /**
-     * @brief Check if the given view has an existing pose
-     * @param[in] view The given view
-     * @return true if the pose exists
-     */
-    bool existsPose(const View& view) const { return (_poses.find(view.getPoseId()) != _poses.end()); }
+    
 
     /**
      * @brief Gives the view of the input view id.
@@ -348,58 +303,6 @@ class SfMData
         return _rigs.at(view.getRigId());
     }
 
-    std::set<feature::EImageDescriberType> getLandmarkDescTypes() const
-    {
-        std::set<feature::EImageDescriberType> output;
-        for (auto s : getLandmarks())
-        {
-            output.insert(s.second.descType);
-        }
-        return output;
-    }
-
-    std::map<feature::EImageDescriberType, int> getLandmarkDescTypesUsages() const
-    {
-        std::map<feature::EImageDescriberType, int> output;
-        for (auto s : getLandmarks())
-        {
-            if (output.find(s.second.descType) == output.end())
-            {
-                output[s.second.descType] = 1;
-            }
-            else
-            {
-                ++output[s.second.descType];
-            }
-        }
-        return output;
-    }
-
-    /**
-     * @brief Get the median Camera Exposure Setting
-     * @return
-     */
-    ExposureSetting getMedianCameraExposureSetting() const
-    {
-        std::vector<ExposureSetting> cameraExposureList;
-        cameraExposureList.reserve(_views.size());
-
-        for (const auto& view : _views)
-        {
-            const ExposureSetting ce = view.second->getImage().getCameraExposureSetting();
-            if (ce.isPartiallyDefined())
-            {
-                auto find = std::find(std::begin(cameraExposureList), std::end(cameraExposureList), ce);
-                if (find == std::end(cameraExposureList))
-                    cameraExposureList.emplace_back(ce);
-            }
-        }
-
-        std::nth_element(cameraExposureList.begin(), cameraExposureList.begin() + cameraExposureList.size() / 2, cameraExposureList.end());
-        const ExposureSetting& ceMedian = cameraExposureList[cameraExposureList.size() / 2];
-
-        return ceMedian;
-    }
 
     /**
      * @brief Add the given \p folder to features folders.
@@ -466,6 +369,36 @@ class SfMData
     void setAbsolutePath(const std::string& path);
 
     /**
+     * Attach a created intrinsic to the set, with a given id
+     * @param id the id of the intrinsic
+     * @param intrinsic the intrisic object
+    */
+    void setIntrinsic(IndexT id, const std::shared_ptr<camera::IntrinsicBase> & intrinsic);
+
+    /**
+     * Attach a created intrinsic to the set, with a given id
+     * @param pair the id + object of the intrinsic
+    */
+    void setIntrinsic(const std::pair<IndexT, const std::shared_ptr<camera::IntrinsicBase> &> & input)
+    {
+        setIntrinsic(input.first, input.second);
+    }
+    
+
+    /**
+     * Update an intrinsic with input content if and only if the existing intrinsic has the same type
+     * @param id the existing intrinsic id
+     * @param input the input content;
+     * @return false if the conditions were not met
+    */
+    bool updateIntrinsic(IndexT id, const std::shared_ptr<camera::IntrinsicBase> & input);
+
+    void setIntrinsics(const Intrinsics & intrinsics)
+    {
+        _intrinsics = intrinsics;
+    }
+
+    /**
      * @brief Set the given pose for the given view
      * if the view is part of a rig, this method update rig pose/sub-pose
      * @param[in] view The given view
@@ -504,6 +437,135 @@ class SfMData
     }
 
     /**
+     * @brief Reset rigs sub-poses parameters
+     */
+    void reset()
+    {
+        for (auto rigIt : _rigs)
+            rigIt.second.reset();
+    }
+
+    /**
+     * @brief List the view indexes that have valid camera intrinsic and pose.
+     * @return view indexes list
+     */
+    std::set<IndexT> getValidViews() const;
+
+    /**
+     * @brief List the intrinsic indexes that have valid camera intrinsic and pose.
+     * @return intrinsic indexes list
+     */
+    std::set<IndexT> getReconstructedIntrinsics() const;
+    
+    /**
+     * @brief Check if the given view have defined intrinsic and pose
+     * @param[in] view The given view
+     * @return true if intrinsic and pose defined
+     */
+    bool isPoseAndIntrinsicDefined(const View* view) const
+    {
+        if (view == nullptr)
+        {
+            return false;
+        }
+
+        if (view->getIntrinsicId() == UndefinedIndexT)
+        {
+            return false;
+        }
+
+        if (view->getPoseId() == UndefinedIndexT)
+        {
+            return false;
+        }
+
+        if ((view->isPartOfRig() || view->isPoseIndependant() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) == false)
+        {
+            return false;
+        }
+
+   
+        if (_intrinsics.find(view->getIntrinsicId()) == _intrinsics.end())
+        {   
+            return false;
+        }
+
+        if (_poses.find(view->getPoseId()) == _poses.end())
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @brief Check if the given view have defined intrinsic and pose
+     * @param[in] viewID The given viewID
+     * @return true if intrinsic and pose defined
+     */
+    bool isPoseAndIntrinsicDefined(IndexT viewId) const { return isPoseAndIntrinsicDefined(_views.at(viewId).get()); }
+
+    /**
+     * @brief Check if the given view has an existing pose
+     * @param[in] view The given view
+     * @return true if the pose exists
+     */
+    bool existsPose(const View& view) const { return (_poses.find(view.getPoseId()) != _poses.end()); }
+
+    std::set<feature::EImageDescriberType> getLandmarkDescTypes() const
+    {
+        std::set<feature::EImageDescriberType> output;
+        for (auto s : getLandmarks())
+        {
+            output.insert(s.second.descType);
+        }
+        return output;
+    }
+
+    std::map<feature::EImageDescriberType, int> getLandmarkDescTypesUsages() const
+    {
+        std::map<feature::EImageDescriberType, int> output;
+        for (auto s : getLandmarks())
+        {
+            if (output.find(s.second.descType) == output.end())
+            {
+                output[s.second.descType] = 1;
+            }
+            else
+            {
+                ++output[s.second.descType];
+            }
+        }
+        return output;
+    }
+
+    /**
+     * @brief Get the median Camera Exposure Setting
+     * @return
+     */
+    ExposureSetting getMedianCameraExposureSetting() const
+    {
+        std::vector<ExposureSetting> cameraExposureList;
+        cameraExposureList.reserve(_views.size());
+
+        for (const auto& view : _views)
+        {
+            const ExposureSetting ce = view.second->getImage().getCameraExposureSetting();
+            if (ce.isPartiallyDefined())
+            {
+                auto find = std::find(std::begin(cameraExposureList), std::end(cameraExposureList), ce);
+                if (find == std::end(cameraExposureList))
+                    cameraExposureList.emplace_back(ce);
+            }
+        }
+
+        std::nth_element(cameraExposureList.begin(), cameraExposureList.begin() + cameraExposureList.size() / 2, cameraExposureList.end());
+        const ExposureSetting& ceMedian = cameraExposureList[cameraExposureList.size() / 2];
+
+        return ceMedian;
+    }
+
+    /**
      * @brief Add an ancestor image
      */
     void addAncestor(IndexT ancestorId, std::shared_ptr<ImageInfo> image) { _ancestors.emplace(ancestorId, image); }
@@ -515,6 +577,8 @@ class SfMData
      */
     void combine(const SfMData& sfmData);
 
+    void combineIntrinsics(const Intrinsics & intrinsics);
+
     void clear();
 
     /**
@@ -522,6 +586,11 @@ class SfMData
      * state with respect to the associated lock
     */
     void resetParameterStates();
+    
+    void clearIntrinsics()
+    {
+        _intrinsics.clear();
+    }
 
   private:
     /// Structure (3D points with their 2D observations)

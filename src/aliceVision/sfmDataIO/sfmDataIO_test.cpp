@@ -50,7 +50,7 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
         // Add intrinsics
         if (!sharedIntrinsic || (i == 0))
         {
-            sfmData.getIntrinsics().emplace(i, std::make_shared<Pinhole>(1500, 1000, 700, 600, 10, -20));
+            sfmData.setIntrinsic(i, std::make_shared<Pinhole>(1500, 1000, 700, 600, 10, -20));
         }
     }
 
