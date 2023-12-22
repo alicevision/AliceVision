@@ -1001,9 +1001,9 @@ int aliceVision_main(int argc, char* argv[])
     std::vector<std::string> metadataFolders;
     std::string outputPath;
     EImageFormat outputFormat = EImageFormat::RGBA;
-    std::string inputColorSpaceStr = "AUTO";
-    std::string workingColorSpaceStr = "Linear";
-    std::string outputColorSpaceStr = "Linear";
+    image::EImageColorSpace inputColorSpace = image::EImageColorSpace::AUTO;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::LINEAR;
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     image::EImageExrCompression exrCompressionMethod = image::EImageExrCompression::Auto;
     int exrCompressionLevel = 0;
@@ -1132,16 +1132,16 @@ int aliceVision_main(int argc, char* argv[])
          " * Enabled: Apply pixel aspect ratio.\n"
          " * RowDecimation: Decimate rows (reduce image height) instead of upsampling columns (increase image width).")
 
-        ("inputColorSpace", po::value<std::string>(&inputColorSpaceStr)->default_value(inputColorSpaceStr),
+        ("inputColorSpace", po::value<image::EImageColorSpace>(&inputColorSpace)->default_value(inputColorSpace),
          ("Input image color space: " + image::EImageColorSpace_informations()).c_str())
 
-        ("workingColorSpace", po::value<std::string>(&workingColorSpaceStr)->default_value(workingColorSpaceStr),
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
 
         ("outputFormat", po::value<EImageFormat>(&outputFormat)->default_value(outputFormat),
          "Output image format (rgba, rgb, grayscale).")
 
-        ("outputColorSpace", po::value<std::string>(&outputColorSpaceStr)->default_value(outputColorSpaceStr),
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
          ("Output color space: " + image::EImageColorSpace_informations()).c_str())
 
         ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
@@ -1216,6 +1216,12 @@ int aliceVision_main(int argc, char* argv[])
     CmdLine cmdline("AliceVision imageProcessing");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
+
+    // Boost program option does not support space characters in non string parameters like enum (eg. inputColorSpace)
+    // Need to filter argv accordingly
+    const std::vector<std::string> enumParams = {"--inputColorSpace", "--outputColorSpace", "--workingColorSpace"};
+    cmdline.spaceFilter(argc, argv, enumParams);
+
     if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
@@ -1241,10 +1247,6 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_ERROR("Invalid scale factor, it should be in range [0.0001, 1].");
         return EXIT_FAILURE;
     }
-
-    image::EImageColorSpace inputColorSpace = image::EImageColorSpace_stringToEnum(inputColorSpaceStr);
-    image::EImageColorSpace workingColorSpace = image::EImageColorSpace_stringToEnum(workingColorSpaceStr);
-    image::EImageColorSpace outputColorSpace = image::EImageColorSpace_stringToEnum(outputColorSpaceStr);
 
     // Check if sfmInputDataFilename exist and is recognized as sfm data file
     const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());

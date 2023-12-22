@@ -187,6 +187,11 @@ int aliceVision_main(int argc, char** argv)
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
                     "AliceVision LdrToHdrCalibration");
 
+    // Boost program option does not support space characters in non string parameters like enum (eg. inputColorSpace)
+    // Need to filter argv accordingly
+    const std::vector<std::string> enumParams = {"--workingColorSpace"};
+    cmdline.spaceFilter(argc, argv, enumParams);
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

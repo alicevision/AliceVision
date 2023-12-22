@@ -65,4 +65,19 @@ bool CmdLine::execute(int argc, char** argv)
     return true;
 }
 
+void CmdLine::spaceFilter(int argc, char** argv, const std::vector<std::string>& optionNames)
+{
+    bool enableFiltering = false;
+    for (size_t i = 0; i < argc; i++)
+    {
+        std::string s(argv[i]);
+        if (enableFiltering)
+        {
+            s.erase(remove_if(s.begin(), s.end(), isspace), s.end());
+            argv[i][s.copy(argv[i], s.size())] = '\0';
+        }
+        enableFiltering = std::find(optionNames.begin(), optionNames.end(), s) != optionNames.end();
+    }
+}
+
 }  // namespace aliceVision
