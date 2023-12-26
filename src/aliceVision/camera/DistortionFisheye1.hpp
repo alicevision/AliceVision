@@ -29,6 +29,14 @@ class DistortionFisheye1 : public Distortion
     /// Remove distortion (return p' such that disto(p') = p)
     Vec2 removeDistortion(const Vec2& p) const override;
 
+    Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2& p) const override;
+
+    Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2& p) const override;
+
+    Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2& p) const override;
+
+    Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2& p) const override;
+
     ~DistortionFisheye1() override = default;
 };
 

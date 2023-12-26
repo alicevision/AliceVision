@@ -17,51 +17,28 @@ double DistortionRadialK1::distoFunctor(const std::vector<double>& params, doubl
 
 Vec2 DistortionRadialK1::addDistortion(const Vec2& p) const
 {
-    const double& k1 = _distortionParams.at(0);
-
+    const double k1 = _distortionParams.at(0);
     const double r2 = p(0) * p(0) + p(1) * p(1);
     const double r_coeff = (1. + k1 * r2);
-
     return (p * r_coeff);
 }
 
 Eigen::Matrix2d DistortionRadialK1::getDerivativeAddDistoWrtPt(const Vec2& p) const
 {
     const double k1 = _distortionParams[0];
-
-    const double r = sqrt(p(0) * p(0) + p(1) * p(1));
-    const double eps = 1e-8;
-    if (r < eps)
-    {
-        return Eigen::Matrix2d::Identity();
-    }
-
-    Eigen::Matrix<double, 1, 2> d_r_d_p;
-    d_r_d_p(0) = p(0) / r;
-    d_r_d_p(1) = p(1) / r;
-
-    const double r2 = r * r;
+    const double r2 = p(0) * p(0) + p(1) * p(1);
     const double r_coeff = 1.0 + k1 * r2;
-
-    const double d_r_coeff_d_r = 2.0 * k1 * r;
-    const Eigen::Matrix<double, 1, 2> d_r_coeff_d_p = d_r_coeff_d_r * d_r_d_p;
-
+    Eigen::Matrix<double, 1, 2> d_r_coeff_d_p;
+    d_r_coeff_d_p(0, 0) = 2.0 * k1 * p(0);
+    d_r_coeff_d_p(0, 1) = 2.0 * k1 * p(1);
     return Eigen::Matrix2d::Identity() * r_coeff + p * d_r_coeff_d_p;
 }
 
 Eigen::MatrixXd DistortionRadialK1::getDerivativeAddDistoWrtDisto(const Vec2& p) const
 {
-    const double& k1 = _distortionParams[0];
-
-    const double r = sqrt(p(0) * p(0) + p(1) * p(1));
-    const double eps = 1e-8;
-    if (r < eps)
-    {
-        return Eigen::Matrix<double, 2, 1>::Zero();
-    }
-
-    const Eigen::MatrixXd ret = p * r * r;
-
+    const double k1 = _distortionParams[0];
+    const double r2 = p(0) * p(0) + p(1) * p(1);
+    const Eigen::MatrixXd ret = p * r2;
     return ret;
 }
 

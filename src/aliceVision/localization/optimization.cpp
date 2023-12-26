@@ -6,7 +6,7 @@
 
 #include "optimization.hpp"
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/rig/ResidualError.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -268,7 +268,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
             ALICEVISION_CERR("Could not save " << outfile);
     }
 
-    sfm::BundleAdjustmentCeres bundle_adjustment_obj;
+    sfm::BundleAdjustmentSymbolicCeres bundle_adjustment_obj;
     sfm::BundleAdjustment::ERefineOptions refineOptions = sfm::BundleAdjustment::REFINE_NONE;
     if (b_refine_pose)
         refineOptions |= sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_TRANSLATION;
@@ -416,7 +416,7 @@ bool refineRigPose(const std::vector<geometry::Pose3>& vec_subPoses,
 
     // Configure a BA engine and run it
     // todo: Set the most appropriate options
-    aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options;  // Set all
+    aliceVision::sfm::BundleAdjustmentSymbolicCeres::CeresOptions aliceVision_options;  // Set all
     // the options field in our owm struct - unnecessary dependancy to aliceVision here
 
     ceres::Solver::Options options;
@@ -554,7 +554,7 @@ bool refineRigPose(const std::vector<Mat>& pts2d,
 
     // Configure a BA engine and run it
     // todo: Set the most appropriate options
-    aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options;  // Set all
+    aliceVision::sfm::BundleAdjustmentSymbolicCeres::CeresOptions aliceVision_options;  // Set all
     // the options field in our owm struct - unnecessary dependancy to aliceVision here
 
     ceres::Solver::Options options;

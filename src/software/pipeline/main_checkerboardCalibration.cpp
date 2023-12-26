@@ -35,7 +35,7 @@
 
 
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 
 
 #include <boost/program_options.hpp>
@@ -344,9 +344,9 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
         }
 
         // Compute non linear refinement
-        sfm::BundleAdjustmentCeres::CeresOptions options;
+        sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
         options.summary = true;
-        sfm::BundleAdjustmentCeres ba(options);
+        sfm::BundleAdjustmentSymbolicCeres ba(options);
         sfm::BundleAdjustment::ERefineOptions boptions =
             sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
             sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
@@ -428,9 +428,9 @@ bool estimateRigs(sfmData::SfMData& sfmData)
         }
 
         // Compute non-linear refinements
-        sfm::BundleAdjustmentCeres::CeresOptions options;
+        sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
         options.summary = true;
-        sfm::BundleAdjustmentCeres ba(options);
+        sfm::BundleAdjustmentSymbolicCeres ba(options);
         sfm::BundleAdjustment::ERefineOptions boptions =
             sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
             sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |

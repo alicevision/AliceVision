@@ -26,7 +26,7 @@ using namespace aliceVision::sfmData;
 
 double RMSE(const SfMData& sfmData);
 
-SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic);
+SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic, double noise = 1.0);
 
 // Test summary:
 // - Create a SfMData scene from a synthetic dataset
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole)
     const double dResidual_before = RMSE(sfmData);
 
     // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
-    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
     BOOST_CHECK(ba_object->adjust(sfmData));
 
     const double dResidual_after = RMSE(sfmData);
@@ -67,11 +67,36 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
     const double dResidual_before = RMSE(sfmData);
 
     // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
-    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
     BOOST_CHECK(ba_object->adjust(sfmData));
 
     const double dResidual_after = RMSE(sfmData);
     BOOST_CHECK_LT(dResidual_after, dResidual_before);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_DistoCheck_PinholeRadialK1)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_RADIAL1, 0.0);
+
+
+    auto camBase = sfmData.getIntrinsicsharedPtr(0);
+    auto cam = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camBase);
+    cam->setDistortionParams({1.2});
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData, BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+    BOOST_CHECK_LT(dResidual_after, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
@@ -87,14 +112,39 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
     const double dResidual_before = RMSE(sfmData);
 
     // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
-    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
     BOOST_CHECK(ba_object->adjust(sfmData));
 
     const double dResidual_after = RMSE(sfmData);
     BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
-BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_DistoCheck_PinholeRadialK3)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 0.0);
+
+
+    auto camBase = sfmData.getIntrinsicsharedPtr(0);
+    auto cam = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camBase);
+    cam->setDistortionParams({1.2, -0.5, 0.9});
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData, BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+    BOOST_CHECK_LT(dResidual_after, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialBrown)
 {
     const int nviews = 3;
     const int npoints = 6;
@@ -107,11 +157,35 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
     const double dResidual_before = RMSE(sfmData);
 
     // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
-    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
     BOOST_CHECK(ba_object->adjust(sfmData));
-
     const double dResidual_after = RMSE(sfmData);
     BOOST_CHECK_LT(dResidual_after, dResidual_before);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_DistoCheck_PinholeBrown)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_BROWN, 0.0);
+
+
+    auto camBase = sfmData.getIntrinsicsharedPtr(0);
+    auto cam = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camBase);
+    cam->setDistortionParams({1.2, -0.5, 0.9, 1.0, -0.5});
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData, BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+    BOOST_CHECK_LT(dResidual_after, 1e-5);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
@@ -127,11 +201,213 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
     const double dResidual_before = RMSE(sfmData);
 
     // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
-    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_DistoCheck_PinholeFisheye)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_FISHEYE, 0.0);
+
+
+    auto camBase = sfmData.getIntrinsicsharedPtr(0);
+    auto cam = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camBase);
+    cam->setDistortionParams({1.2, -0.5, 0.9, 1.0});
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData, BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+    BOOST_CHECK_LT(dResidual_after, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye1)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_FISHEYE1);
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_DistoCheck_PinholeFisheye1)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_FISHEYE1, 0.0);
+
+
+    auto camBase = sfmData.getIntrinsicsharedPtr(0);
+    auto cam = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camBase);
+    cam->setDistortionParams({1.2});
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData, BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+    BOOST_CHECK_LT(dResidual_after, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeAnamorphic4)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4);
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_DistoCheck_PinholeAnamorphic4)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4, 0.0);
+
+
+    auto camBase = sfmData.getIntrinsicsharedPtr(0);
+    auto cam = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camBase);
+    cam->setDistortionParams({0.4, 0.5, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0});
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData, BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+    BOOST_CHECK_LT(dResidual_after, 1e-1);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole3deClassicLd)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD);
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
     BOOST_CHECK(ba_object->adjust(sfmData));
 
     const double dResidual_after = RMSE(sfmData);
     BOOST_CHECK_LT(dResidual_after, dResidual_before);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_DistoCheck_Pinhole3deClassicLd)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD, 0.0);
+
+
+    auto camBase = sfmData.getIntrinsicsharedPtr(0);
+    auto cam = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camBase);
+    cam->setDistortionParams({0.5, 1.1, 0.3, 0.2, -0.5});
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData, BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+    BOOST_CHECK_LT(dResidual_after, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole3deRadial4)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4);
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+}
+
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_DistoCheck_Pinhole3deRadial4)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4, 0.0);
+
+
+    auto camBase = sfmData.getIntrinsicsharedPtr(0);
+    auto cam = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camBase);
+    cam->setDistortionParams({0.5, 1.1, 0.3, 0.2, -0.5, 0.1});
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentSymbolicCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData, BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION));
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+    BOOST_CHECK_LT(dResidual_after, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_CamerasRing)
@@ -174,7 +450,7 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
     const double dResidual_before = RMSE(sfmData);
 
     // Call the Local BA interface and let it refine
-    BundleAdjustmentCeres::CeresOptions options;
+    BundleAdjustmentSymbolicCeres::CeresOptions options;
     options.setDenseBA();
 
     std::shared_ptr<LocalBundleAdjustmentGraph> localBAGraph = std::make_shared<LocalBundleAdjustmentGraph>(sfmData);
@@ -216,7 +492,7 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
     BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EEstimatorParameterState::CONSTANT), 0);
     BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EEstimatorParameterState::IGNORED), 1);  // p2
 
-    std::shared_ptr<BundleAdjustmentCeres> BA = std::make_shared<BundleAdjustmentCeres>(options);
+    std::shared_ptr<BundleAdjustmentSymbolicCeres> BA = std::make_shared<BundleAdjustmentSymbolicCeres>(options);
     BOOST_CHECK(BA->adjust(sfmData));
 
     // Check views:
@@ -267,7 +543,7 @@ double RMSE(const SfMData& sfm_data)
 // Translation a synthetic scene into a valid SfMData scene.
 // => A synthetic scene is used:
 //    a random noise between [-.5,.5] is added on observed data points
-SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic)
+SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic, double noise)
 {
     // Translate the input dataset to a SfMData scene
     SfMData sfm_data;
@@ -300,7 +576,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
         const unsigned int h = config._cy * 2;
         sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, w, h, config._fx, config._fx, 0, 0));
     }
-
+    
     // 4. Landmarks
     const double unknownScale = 0.0;
     for (int i = 0; i < npoints; ++i)
@@ -312,8 +588,9 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
         {
             Vec2 pt = d._x[j].col(i);
             // => random noise between [-.5,.5] is added
-            pt(0) += rand() / RAND_MAX - .5;
-            pt(1) += rand() / RAND_MAX - .5;
+
+            pt(0) += (rand() / RAND_MAX - .5) * noise;
+            pt(1) += (rand() / RAND_MAX - .5) * noise;
 
             landmark.getObservations()[j] = Observation(pt, i, unknownScale);
         }

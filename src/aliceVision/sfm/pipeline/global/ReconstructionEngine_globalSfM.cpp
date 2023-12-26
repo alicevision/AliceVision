@@ -15,6 +15,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/config.hpp>
@@ -370,10 +371,10 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
 bool ReconstructionEngine_globalSfM::Adjust()
 {
     // refine sfm  scene (in a 3 iteration process (free the parameters regarding their incertainty order)):
-    BundleAdjustmentCeres::CeresOptions options;
+    BundleAdjustmentSymbolicCeres::CeresOptions options;
     options.useParametersOrdering = false;  // disable parameters ordering
 
-    BundleAdjustmentCeres BA(options);
+    BundleAdjustmentSymbolicCeres BA(options);
     // - refine only Structure and translations
     bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
     if (success)
@@ -606,9 +607,9 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
                     }
                 }
                 // - refine only Structure and Rotations & translations (keep intrinsic constant)
-                BundleAdjustmentCeres::CeresOptions options(false, false);
+                BundleAdjustmentSymbolicCeres::CeresOptions options(false, false);
                 options.linearSolverType = ceres::DENSE_SCHUR;
-                BundleAdjustmentCeres bundle_adjustment_obj(options);
+                BundleAdjustmentSymbolicCeres bundle_adjustment_obj(options);
                 if (bundle_adjustment_obj.adjust(
                       tinyScene, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE))
                 {
