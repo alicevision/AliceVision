@@ -141,7 +141,7 @@ Eigen::Matrix<double, 2, 16> Equidistant::getDerivativeProjectWrtPoseLeft(const 
     Eigen::Matrix4d T = pose;
     const Vec4 X = T * pt;  // apply pose
 
-    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(T, pt);
+    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(Eigen::Matrix4d::Identity(), X);
 
     /* Compute angle with optical center */
     double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
