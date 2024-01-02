@@ -157,7 +157,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://gdirect.cc/d/xnDHH&type=1"
+          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2023.10.02.zip?ref_type=heads&inline=false"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 
