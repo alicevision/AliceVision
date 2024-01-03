@@ -93,6 +93,16 @@ alicevision_add_test(bundle/bundleAdjustment_test.cpp
         ${LEMON_LIBRARY}
 )
 
+alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
+  NAME "sfm_bundleAdjustment_Enhanced"
+  LINKS aliceVision_sfm
+        aliceVision_multiview
+        aliceVision_multiview_test_data
+        aliceVision_feature
+        aliceVision_system
+        ${LEMON_LIBRARY}
+)
+
 alicevision_add_test(utils/alignment_test.cpp
   NAME "sfm_alignment"
   LINKS
