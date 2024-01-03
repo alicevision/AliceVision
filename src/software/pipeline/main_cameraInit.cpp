@@ -903,7 +903,7 @@ int aliceVision_main(int argc, char **argv)
   }
   
   // store SfMData views & intrinsic data
-  if(!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  if(!save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     return EXIT_FAILURE;
   }

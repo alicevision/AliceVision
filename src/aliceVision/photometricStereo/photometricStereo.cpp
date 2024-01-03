@@ -235,7 +235,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
     for (auto r : viewIdsToRemove)
         albedoSfmData.getViews().erase(r);
 
-    sfmDataIO::Save(
+    sfmDataIO::save(
       albedoSfmData, outputPath + "/albedoMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS));
 
     // Create Normal SfmData
@@ -250,7 +250,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         view->getImage().setImagePath(imagePath);
     }
 
-    sfmDataIO::Save(
+    sfmDataIO::save(
       normalSfmData, outputPath + "/normalMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS));
 }
 

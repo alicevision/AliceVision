@@ -98,7 +98,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -186,7 +186,7 @@ int aliceVision_main(int argc, char **argv)
       sfmData.getLandmarks().erase(landmarkId);
   }
   // export the SfMData scene in the expected format
-  if(!sfmDataIO::Save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData(flags)))
+  if(!sfmDataIO::save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData(flags)))
   {
     ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputSfMDataFilename << "'");
     return EXIT_FAILURE;

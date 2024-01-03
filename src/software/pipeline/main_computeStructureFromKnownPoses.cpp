@@ -78,7 +78,7 @@ int aliceVision_main(int argc, char **argv)
   
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -147,12 +147,12 @@ int aliceVision_main(int argc, char **argv)
 
   if(fs::path(outSfMDataFilename).extension() != ".ply")
   {
-    sfmDataIO::Save(sfmData,
+    sfmDataIO::save(sfmData,
          (fs::path(outSfMDataFilename).parent_path() / (fs::path(outSfMDataFilename).stem().string() + ".ply")).string(),
          sfmDataIO::ESfMData::ALL);
   }
 
-  if(sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+  if(sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     return EXIT_SUCCESS;
   
   ALICEVISION_LOG_ERROR("Can't save the output SfMData.");

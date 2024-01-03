@@ -27,7 +27,7 @@ namespace aliceVision {
 namespace sfmDataIO {
 
 /// Check that each view references a declared intrinsic
-bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
+bool validIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
 {
     const bool bCheck_Intrinsic = (partFlag & INTRINSICS);
     const bool bCheck_Rig = (partFlag & EXTRINSICS);
@@ -106,7 +106,7 @@ bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
     return bRet;
 }
 
-bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
     const std::string extension = fs::path(filename).extension().string();
     bool status = false;
@@ -139,12 +139,12 @@ bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partF
 
     // Assert that loaded intrinsics are linked to valid view
     if (status && (partFlag & VIEWS) && (partFlag & INTRINSICS))
-        return ValidIds(sfmData, partFlag);
+        return validIds(sfmData, partFlag);
 
     return status;
 }
 
-bool Save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
     const fs::path bPath = fs::path(filename);
     const std::string extension = bPath.extension().string();

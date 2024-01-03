@@ -132,7 +132,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input SfMData scene
     sfmData::SfMData inputSfmData;
-    if(!sfmDataIO::Load(inputSfmData, sfmDataFilename,
+    if(!sfmDataIO::load(inputSfmData, sfmDataFilename,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
@@ -218,13 +218,13 @@ int aliceVision_main(int argc, char** argv)
 
     if(refine)
     {
-        sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(),
+        sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(),
                         sfmDataIO::ESfMData::ALL);
         if(!sfmEngine.Adjust())
         {
             return EXIT_FAILURE;
         }
-        sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(),
+        sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(),
                         sfmDataIO::ESfMData::ALL);
     }
 
@@ -326,12 +326,12 @@ int aliceVision_main(int argc, char** argv)
 
     // Export to disk computed scene (data & visualizable results)
     ALICEVISION_LOG_INFO("Export SfMData to disk");
-    sfmDataIO::Save(outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
-    sfmDataIO::Save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
     if(!outputViewsAndPosesFilepath.empty())
     {
-        sfmDataIO::Save(outSfmData, outputViewsAndPosesFilepath,
+        sfmDataIO::save(outSfmData, outputViewsAndPosesFilepath,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
     }
 

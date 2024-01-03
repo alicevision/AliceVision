@@ -48,7 +48,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
         return EXIT_FAILURE;
@@ -72,7 +72,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // Export the SfMData scene in the expected format
-        if(!sfmDataIO::Save(outReconstructed, outRSfMDataFilename, sfmDataIO::ESfMData::ALL))
+        if(!sfmDataIO::save(outReconstructed, outRSfMDataFilename, sfmDataIO::ESfMData::ALL))
         {
             ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outRSfMDataFilename << "'");
             return EXIT_FAILURE;
@@ -101,7 +101,7 @@ int aliceVision_main(int argc, char** argv)
 
 
         // Export the SfMData scene in the expected format
-        if(!sfmDataIO::Save(outNonReconstructed, outNRSfMDataFilename, sfmDataIO::ESfMData::ALL))
+        if(!sfmDataIO::save(outNonReconstructed, outNRSfMDataFilename, sfmDataIO::ESfMData::ALL))
         {
             ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outNRSfMDataFilename << "'");
             return EXIT_FAILURE;

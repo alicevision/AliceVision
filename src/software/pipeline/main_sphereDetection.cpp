@@ -83,7 +83,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Load SFMData file
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, inputSfMDataPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
+    if(!sfmDataIO::load(sfmData, inputSfMDataPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + inputSfMDataPath + "' cannot be read");
         return EXIT_FAILURE;

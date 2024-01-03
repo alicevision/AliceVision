@@ -190,7 +190,7 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
         }
     }
 
-    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+    sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
@@ -242,7 +242,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim
         }
     }
 
-    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+    sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
@@ -300,7 +300,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
         }
     }
 
-    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+    sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
@@ -372,7 +372,7 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim, 3>& in_
     }
 
     // write point cloud
-    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+    sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
@@ -437,7 +437,7 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3
     }
 
     // write point cloud
-    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+    sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 inline unsigned char float_to_uchar(float v)
@@ -498,7 +498,7 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& in_volumeSim_hmh,
         }
     }
 
-    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+    sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 }  // namespace depthMap

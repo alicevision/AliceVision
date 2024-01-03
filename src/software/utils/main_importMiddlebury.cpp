@@ -90,7 +90,7 @@ int aliceVision_main(int argc, char** argv)
     const auto sfmData =
         sfmDataIO::middleburySceneToSfmData(middleburyFile, basePath, uniqueIntrinsics, importPoses, lockIntrinsics, lockPoses);
 
-    if(!sfmDataIO::Save(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::save(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("Unable to save " << sfmDataFilename);
         return EXIT_FAILURE;

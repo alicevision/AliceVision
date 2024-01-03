@@ -503,7 +503,7 @@ int aliceVision_main(int argc, char** argv)
                 if (inputExt == ".sfm" || inputExt == ".abc")
                 {
                     sfmData::SfMData sfmData;
-                    if (!sfmDataIO::Load(sfmData, path.string(), sfmDataIO::VIEWS))
+                    if (!sfmDataIO::load(sfmData, path.string(), sfmDataIO::VIEWS))
                     {
                         ALICEVISION_LOG_ERROR("The input SfMData file '" << inputPath << "' cannot be read.");
                         return EXIT_FAILURE;
@@ -646,7 +646,7 @@ int aliceVision_main(int argc, char** argv)
 
 
     // Save sfmData with modified path to images
-    if(!sfmDataIO::Save(outSfmData, outSfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if(!sfmDataIO::save(outSfmData, outSfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfmDataFilepath << "' cannot be written.");
         return EXIT_FAILURE;

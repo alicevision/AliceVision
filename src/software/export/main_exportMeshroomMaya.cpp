@@ -60,7 +60,7 @@ int aliceVision_main(int argc, char **argv)
 
   // read the SfM scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
@@ -68,7 +68,7 @@ int aliceVision_main(int argc, char **argv)
 
   // export the SfM scene to an alembic at the root of the output folder
   ALICEVISION_LOG_INFO("Exporting SfM scene for MeshroomMaya ...");
-  sfmDataIO::Save(sfmData, outputFolder + "/scene.abc", sfmDataIO::ESfMData::ALL);
+  sfmDataIO::save(sfmData, outputFolder + "/scene.abc", sfmDataIO::ESfMData::ALL);
 
   // export undistorted images and thumbnail images
   auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,

@@ -101,7 +101,7 @@ int aliceVision_main(int argc, char** argv)
 
   // load SfMData
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
@@ -152,7 +152,7 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_LOG_INFO("Getting some stats for " << querySfmDataFilename);
 
   sfmData::SfMData querySfmData;
-  if(!sfmDataIO::Load(querySfmData, querySfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(querySfmData, querySfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + querySfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;

@@ -463,7 +463,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
 
   // a. Read input scenes views
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, _sfmDataFilename, sfmDataIO::ESfMData::VIEWS))
+  if(!sfmDataIO::load(sfmData, _sfmDataFilename, sfmDataIO::ESfMData::VIEWS))
   {
     std::cerr << "The input file \""<< _sfmDataFilename << "\" cannot be read" << std::endl;
     return false;

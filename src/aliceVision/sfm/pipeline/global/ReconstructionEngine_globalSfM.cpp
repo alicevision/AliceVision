@@ -257,7 +257,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Translations(const HashMap<I
 
     if (!_loggingFile.empty())
     {
-        sfmDataIO::Save(_sfmData,
+        sfmDataIO::save(_sfmData,
                         (fs::path(_loggingFile).parent_path() / "cameraPath_translation_averaging.ply").string(),
                         sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS));
     }
@@ -358,7 +358,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
         // Export initial structure
         if (!_loggingFile.empty())
         {
-            sfmDataIO::Save(_sfmData,
+            sfmDataIO::save(_sfmData,
                             (fs::path(_loggingFile).parent_path() / "initial_structure.ply").string(),
                             sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
         }
@@ -379,7 +379,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
     if (success)
     {
         if (!_loggingFile.empty())
-            sfmDataIO::Save(_sfmData,
+            sfmDataIO::save(_sfmData,
                             (fs::path(_loggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(),
                             sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
@@ -387,7 +387,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
         success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
 
         if (success && !_loggingFile.empty())
-            sfmDataIO::Save(_sfmData,
+            sfmDataIO::save(_sfmData,
                             (fs::path(_loggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(),
                             sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
@@ -397,7 +397,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
         // refine all: Structure, motion:{rotations, translations} and optics:{intrinsics}
         success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ALL);
         if (success && !_loggingFile.empty())
-            sfmDataIO::Save(_sfmData,
+            sfmDataIO::save(_sfmData,
                             (fs::path(_loggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(),
                             sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
@@ -419,7 +419,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
                           << pointcount_angular_filter);
 
     if (!_loggingFile.empty())
-        sfmDataIO::Save(_sfmData,
+        sfmDataIO::save(_sfmData,
                         (fs::path(_loggingFile).parent_path() / "structure_03_outlier_removed.ply").string(),
                         sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
@@ -442,7 +442,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
     success = BA.adjust(_sfmData, refineOptions);
 
     if (success && !_loggingFile.empty())
-        sfmDataIO::Save(_sfmData,
+        sfmDataIO::save(_sfmData,
                         (fs::path(_loggingFile).parent_path() / "structure_04_outlier_removed.ply").string(),
                         sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 

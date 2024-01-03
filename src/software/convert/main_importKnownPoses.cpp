@@ -153,7 +153,7 @@ int aliceVision_main(int argc, char **argv)
 
 
   // Loading the sfmData to modify it
-  if(!sfmDataIO::Load(sfmData, sfmDataFilePath, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilePath, sfmDataIO::ESfMData::ALL))
   {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilePath << "' cannot be read.");
       return EXIT_FAILURE;
@@ -492,7 +492,7 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // export the SfMData scene in the expected format
-  if(!sfmDataIO::Save(sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::save(sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
   {
       ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputFilename << "'");
       return EXIT_FAILURE;
