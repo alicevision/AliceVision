@@ -637,10 +637,8 @@ void ReconstructionEngine_globalSfM::computeRelativeRotations(rotationAveraging:
             {
                 // Add the relative rotation to the relative 'rotation' pose graph
                 using namespace aliceVision::rotationAveraging;
-                vecRelativesR.emplace_back(relativePosePair.first,
-                                           relativePosePair.second,
-                                           relativePoseInfo.relativePose.rotation(),
-                                           relativePoseInfo.vec_inliers.size());
+                vecRelativesR.emplace_back(
+                  relativePosePair.first, relativePosePair.second, relativePoseInfo.relativePose.rotation(), relativePoseInfo.vec_inliers.size());
             }
         }
     }  // for all relative pose
@@ -668,8 +666,7 @@ void ReconstructionEngine_globalSfM::computeRelativeRotations(rotationAveraging:
         // Log a relative view graph
         {
             std::set<IndexT> setViewIds;
-            std::transform(
-              _sfmData.getViews().begin(), _sfmData.getViews().end(), std::inserter(setViewIds, setViewIds.begin()), stl::RetrieveKey());
+            std::transform(_sfmData.getViews().begin(), _sfmData.getViews().end(), std::inserter(setViewIds, setViewIds.begin()), stl::RetrieveKey());
             graph::indexedGraph putativeGraph(setViewIds, getImagePairs(*_pairwiseMatches));
             graph::exportToGraphvizData((fs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
         }

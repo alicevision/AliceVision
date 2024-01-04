@@ -61,9 +61,7 @@ struct StructureComputationRobust : public StructureComputationBasis
 
   private:
     /// Triangulate a given track from a selection of observations
-    Vec3 trackSampleTriangulation(const sfmData::SfMData& sfmData,
-                                  const sfmData::Observations& observations,
-                                  const std::set<IndexT>& samples) const;
+    Vec3 trackSampleTriangulation(const sfmData::SfMData& sfmData, const sfmData::Observations& observations, const std::set<IndexT>& samples) const;
 };
 
 }  // namespace sfm

@@ -1794,8 +1794,8 @@ ObservationData getObservationData(const SfMData& scene, feature::FeaturesPerVie
 }  // namespace
 
 void ReconstructionEngine_sequentialSfM::triangulateMultiViewsLORANSAC(SfMData& scene,
-                                                                        const std::set<IndexT>& previousReconstructedViews,
-                                                                        const std::set<IndexT>& newReconstructedViews)
+                                                                       const std::set<IndexT>& previousReconstructedViews,
+                                                                       const std::set<IndexT>& newReconstructedViews)
 {
     ALICEVISION_LOG_DEBUG("Triangulating (mode: multi-view LO-RANSAC)... ");
 
@@ -1941,8 +1941,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViewsLORANSAC(SfMData& 
 }
 
 void ReconstructionEngine_sequentialSfM::triangulate2Views(SfMData& scene,
-                                                            const std::set<IndexT>& previousReconstructedViews,
-                                                            const std::set<IndexT>& newReconstructedViews)
+                                                           const std::set<IndexT>& previousReconstructedViews,
+                                                           const std::set<IndexT>& newReconstructedViews)
 {
     {
         std::vector<IndexT> intersection;
@@ -2120,7 +2120,8 @@ void ReconstructionEngine_sequentialSfM::triangulate2Views(SfMData& scene,
 
 std::size_t ReconstructionEngine_sequentialSfM::removeOutliers()
 {
-    const std::size_t nbOutliersResidualErr = removeOutliersWithPixelResidualError(_sfmData, _params.featureConstraint, _params.maxReprojectionError, 2);
+    const std::size_t nbOutliersResidualErr =
+      removeOutliersWithPixelResidualError(_sfmData, _params.featureConstraint, _params.maxReprojectionError, 2);
     const std::size_t nbOutliersAngleErr = removeOutliersWithAngleError(_sfmData, _params.minAngleForLandmark);
 
     ALICEVISION_LOG_INFO("Remove outliers: " << std::endl

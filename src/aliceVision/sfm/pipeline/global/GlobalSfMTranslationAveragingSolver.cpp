@@ -166,8 +166,7 @@ bool GlobalSfMTranslationAveragingSolver::translationAveraging(ETranslationAvera
                 std::vector<double> vecCamTranslation(iNview * 3, 0);
                 std::copy(&vecSolution[0], &vecSolution[iNview * 3], &vecCamTranslation[0]);
 
-                std::vector<double> vecCamRelLambdas(&vecSolution[iNview * 3],
-                                                     &vecSolution[iNview * 3 + vecInitialRijTijEstimatesCpy.size() / 3]);
+                std::vector<double> vecCamRelLambdas(&vecSolution[iNview * 3], &vecSolution[iNview * 3 + vecInitialRijTijEstimatesCpy.size() / 3]);
 
                 ALICEVISION_LOG_DEBUG("cam position: " << vecCamTranslation);
                 ALICEVISION_LOG_DEBUG("cam Lambdas: " << vecCamRelLambdas);

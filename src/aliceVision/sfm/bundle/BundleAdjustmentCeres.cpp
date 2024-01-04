@@ -900,8 +900,9 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
         // For the moment assume a unique camera
         assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
 
-        ceres::CostFunction* costFunction = createConstraintsCostFunctionFromIntrinsics(
-          sfmData.getIntrinsicPtr(view_1.getIntrinsicId()), constraint.ObservationFirst.getCoordinates(), constraint.ObservationSecond.getCoordinates());
+        ceres::CostFunction* costFunction = createConstraintsCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view_1.getIntrinsicId()),
+                                                                                        constraint.ObservationFirst.getCoordinates(),
+                                                                                        constraint.ObservationSecond.getCoordinates());
         problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
     }
 }

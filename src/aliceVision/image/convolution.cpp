@@ -32,9 +32,8 @@ void separableConvolution2d(const RowMatrixXf& image,
                       reverseKernelY.tail(reverseSize) * image.block(1, 0, reverseSize, image.cols());
 
         // Apply the same technique for the end rows.
-        out->row(image.rows() - i - 1) =
-          kernelY.head(forwardSize) * image.block(image.rows() - forwardSize, 0, forwardSize, image.cols()) +
-          reverseKernelY.head(reverseSize) * image.block(image.rows() - reverseSize - 1, 0, reverseSize, image.cols());
+        out->row(image.rows() - i - 1) = kernelY.head(forwardSize) * image.block(image.rows() - forwardSize, 0, forwardSize, image.cols()) +
+                                         reverseKernelY.head(reverseSize) * image.block(image.rows() - reverseSize - 1, 0, reverseSize, image.cols());
     }
 
 // Applying the rest of the y filter.

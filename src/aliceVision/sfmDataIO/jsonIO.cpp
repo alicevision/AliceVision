@@ -360,7 +360,7 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
                 undistortionObject->setOffset(offset);
             }
 
-            //If undistortion exists, distortion does not
+            // If undistortion exists, distortion does not
             intrinsicWithDistoEnabled->setDistortionObject(nullptr);
         }
 

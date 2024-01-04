@@ -38,7 +38,7 @@ EImageColorSpace getImageColorSpace(const std::string& imagePath)
 
     metadataSpec.extra_attribs = readImageMetadata(imagePath);
 
-    std::string colorSpace = metadataSpec.get_string_attribute("AliceVision:ColorSpace", ""); // default image color space is empty
+    std::string colorSpace = metadataSpec.get_string_attribute("AliceVision:ColorSpace", "");  // default image color space is empty
     if (!colorSpace.empty())
     {
         ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpace
@@ -46,7 +46,7 @@ EImageColorSpace getImageColorSpace(const std::string& imagePath)
     }
     else
     {
-        colorSpace = metadataSpec.get_string_attribute("oiio:ColorSpace", ""); // Check oiio metadata
+        colorSpace = metadataSpec.get_string_attribute("oiio:ColorSpace", "");  // Check oiio metadata
         if ((colorSpace == "Linear") || (colorSpace == ""))
         {
             const std::string colorSpaceFromFileName = getGlobalColorConfigOCIO().getColorSpaceFromFilepath(imagePath);
@@ -143,16 +143,16 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
 
 std::string EImageFileType_informations()
 {
-  return "Image file type :\n"
-         "* jpg \n"
-         "* png \n"
-         "* tif \n"
-         "* exr (half)";
+    return "Image file type :\n"
+           "* jpg \n"
+           "* png \n"
+           "* tif \n"
+           "* exr (half)";
 }
 
 EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
 {
-  const std::string type = boost::to_lower_copy(imageFileType);
+    const std::string type = boost::to_lower_copy(imageFileType);
 
     if (type == "jpg" || type == "jpeg")
         return EImageFileType::JPEG;
@@ -163,13 +163,13 @@ EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
     if (type == "exr")
         return EImageFileType::EXR;
 
-  throw std::out_of_range("Invalid image file type: " + imageFileType);
+    throw std::out_of_range("Invalid image file type: " + imageFileType);
 }
 
 std::string EImageFileType_enumToString(const EImageFileType imageFileType)
 {
-  switch(imageFileType)
-  {
+    switch (imageFileType)
+    {
         case EImageFileType::JPEG:
             return "jpg";
         case EImageFileType::PNG:
@@ -180,43 +180,43 @@ std::string EImageFileType_enumToString(const EImageFileType imageFileType)
             return "exr";
         case EImageFileType::NONE:
             return "none";
-  }
-  throw std::out_of_range("Invalid EImageType enum");
+    }
+    throw std::out_of_range("Invalid EImageType enum");
 }
 
 std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType) { return os << EImageFileType_enumToString(imageFileType); }
 
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
 {
-  std::string token;
-  in >> token;
-  imageFileType = EImageFileType_stringToEnum(token);
-  return in;
+    std::string token;
+    in >> token;
+    imageFileType = EImageFileType_stringToEnum(token);
+    return in;
 }
 
 std::vector<std::string> getSupportedExtensions()
 {
-  std::vector<std::string> supportedExtensions;
+    std::vector<std::string> supportedExtensions;
 
-  // Map containing the parsed "extension_list" with each supported format and its associated extensions
-  static std::map<std::string, std::vector<std::string>> extensionList = oiio::get_extension_map();
+    // Map containing the parsed "extension_list" with each supported format and its associated extensions
+    static std::map<std::string, std::vector<std::string>> extensionList = oiio::get_extension_map();
 
     for (auto& format : extensionList)
     {
         for (auto& extension : format.second)
         {
-        supportedExtensions.push_back(extension.insert(0, "."));
+            supportedExtensions.push_back(extension.insert(0, "."));
+        }
     }
-  }
-  return supportedExtensions;
+    return supportedExtensions;
 }
 
 bool isSupported(const std::string& extension)
 {
-  static const std::vector<std::string> supportedExtensions = getSupportedExtensions();
-  const auto start = supportedExtensions.begin();
-  const auto end = supportedExtensions.end();
-  return (std::find(start, end, boost::to_lower_copy(extension)) != end);
+    static const std::vector<std::string> supportedExtensions = getSupportedExtensions();
+    const auto start = supportedExtensions.begin();
+    const auto end = supportedExtensions.end();
+    return (std::find(start, end, boost::to_lower_copy(extension)) != end);
 }
 
 bool isVideoExtension(const std::string& extension)
@@ -234,13 +234,13 @@ std::string EStorageDataType_informations()
 {
     return EStorageDataType_enumToString(EStorageDataType::Float) + ", " + EStorageDataType_enumToString(EStorageDataType::Half) + ", " +
            EStorageDataType_enumToString(EStorageDataType::HalfFinite) + ", " + EStorageDataType_enumToString(EStorageDataType::Auto) + ", " +
-        EStorageDataType_enumToString(EStorageDataType::Undefined);
+           EStorageDataType_enumToString(EStorageDataType::Undefined);
 }
 
 EStorageDataType EStorageDataType_stringToEnum(const std::string& dataType)
 {
     std::string type = dataType;
-    std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
 
     if (type == "float")
         return EStorageDataType::Float;
@@ -298,7 +298,7 @@ std::string EImageExrCompression_informations()
 EImageExrCompression EImageExrCompression_stringToEnum(const std::string& exrCompression)
 {
     std::string type = exrCompression;
-    std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
 
     if (type == "none")
         return EImageExrCompression::None;
@@ -376,7 +376,7 @@ std::string EImageQuality_informations()
 EImageQuality EImageQuality_stringToEnum(const std::string& imageQuality)
 {
     std::string type = imageQuality;
-    std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
 
     if (type == "optimized")
         return EImageQuality::OPTIMIZED;
@@ -388,7 +388,7 @@ EImageQuality EImageQuality_stringToEnum(const std::string& imageQuality)
 
 std::string EImageQuality_enumToString(const EImageQuality imageQuality)
 {
-    switch(imageQuality)
+    switch (imageQuality)
     {
         case EImageQuality::OPTIMIZED:
             return "optimized";
@@ -408,12 +408,12 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
     return in;
 }
 
-bool isSupportedUndistortFormat(const std::string &ext)
+bool isSupportedUndistortFormat(const std::string& ext)
 {
     static const std::array<std::string, 6> supportedExtensions = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".exr"};
     const auto start = supportedExtensions.begin();
     const auto end = supportedExtensions.end();
-    return(std::find(start, end, boost::to_lower_copy(ext)) != end);
+    return (std::find(start, end, boost::to_lower_copy(ext)) != end);
 }
 
 std::string ERawColorInterpretation_informations()
@@ -429,7 +429,7 @@ std::string ERawColorInterpretation_informations()
 ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& rawColorInterpretation)
 {
     std::string type = rawColorInterpretation;
-    std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
 
     if (type == "none" || type == "")
         return ERawColorInterpretation::None;
@@ -483,10 +483,10 @@ std::istream& operator>>(std::istream& in, ERawColorInterpretation& rawColorInte
 // Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
 {
-  oiio::ParamValueList metadata;
-  for(const auto& metadataPair : metadataMap)
-    metadata.push_back(oiio::ParamValue(metadataPair.first, metadataPair.second));
-  return metadata;
+    oiio::ParamValueList metadata;
+    for (const auto& metadataPair : metadataMap)
+        metadata.push_back(oiio::ParamValue(metadataPair.first, metadataPair.second));
+    return metadata;
 }
 
 std::map<std::string, std::string> getMapFromMetadata(const oiio::ParamValueList& metadata)
@@ -509,23 +509,23 @@ oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int&
 
 oiio::ImageSpec readImageSpec(const std::string& path)
 {
-  oiio::ImageSpec configSpec;
-#if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12) // OIIO_VERSION >= 2.4.12
+    oiio::ImageSpec configSpec;
+#if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12)  // OIIO_VERSION >= 2.4.12
     // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
     // so we can disable the auto orientation and keep the metadata.
-    configSpec.attribute("raw:user_flip", 0); // disable auto rotation of the image buffer but keep exif metadata orientation valid  
-#endif 
+    configSpec.attribute("raw:user_flip", 0);  // disable auto rotation of the image buffer but keep exif metadata orientation valid
+#endif
 
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
+    std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
 
-  if(!in)
-    throw std::runtime_error("Can't find/open image file '" + path + "'.");
+    if (!in)
+        throw std::runtime_error("Can't find/open image file '" + path + "'.");
 
-  oiio::ImageSpec spec = in->spec();
+    oiio::ImageSpec spec = in->spec();
 
-  in->close();
+    in->close();
 
-  return spec;
+    return spec;
 }
 
 oiio::ParamValueList readImageMetadata(const std::string& path) { return readImageSpec(path).extra_attribs; }
@@ -540,9 +540,9 @@ void readImageSize(const std::string& path, int& width, int& height)
 template<typename T>
 void getBufferFromImage(Image<T>& image, oiio::TypeDesc format, int nchannels, oiio::ImageBuf& buffer)
 {
-  const oiio::ImageSpec imageSpec(image.width(), image.height(), nchannels, format);
-  oiio::ImageBuf imageBuf(imageSpec, image.data());
-  buffer.swap(imageBuf);
+    const oiio::ImageSpec imageSpec(image.width(), image.height(), nchannels, format);
+    oiio::ImageBuf imageBuf(imageSpec, image.data());
+    buffer.swap(imageBuf);
 }
 
 void getBufferFromImage(Image<float>& image, oiio::ImageBuf& buffer) { getBufferFromImage(image, oiio::TypeDesc::FLOAT, 1, buffer); }
@@ -560,7 +560,7 @@ void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer) { getBuf
 bool isRawFormat(const std::string& path)
 {
     std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
-    if(!in)
+    if (!in)
     {
         ALICEVISION_THROW_ERROR("The input image file '" << path << "' cannot be opened or does not exist.");
     }
@@ -583,7 +583,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     oiio::ImageSpec configSpec;
 
     const bool isRawImage = isRawFormat(path);
-    image::DCPProfile::Triple neutral = {1.0,1.0,1.0};
+    image::DCPProfile::Triple neutral = {1.0, 1.0, 1.0};
 
     if (isRawImage)
     {
@@ -622,10 +622,10 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         // and https://www.libraw.org/docs/API-datastruct-eng.html#libraw_raw_unpack_params_t for raw:balance_clamped and raw:adjust_maximum_thr
         // behavior
 
-#if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12) // OIIO_VERSION >= 2.4.12
-	    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
-	    // so we can disable the auto orientation and keep the metadata.
-        configSpec.attribute("raw:user_flip", 0); // disable auto rotation of the image buffer but keep exif metadata orientation valid 
+#if OIIO_VERSION >= (10000 * 2 + 100 * 4 + 12)  // OIIO_VERSION >= 2.4.12
+        // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
+        // so we can disable the auto orientation and keep the metadata.
+        configSpec.attribute("raw:user_flip", 0);  // disable auto rotation of the image buffer but keep exif metadata orientation valid
 #endif
 
         if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::None)
@@ -637,11 +637,11 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 
             float user_mul[4] = {1.f, 1.f, 1.f, 1.f};
 
-            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
-            configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul); // no neutralization
-            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
-            configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
+            configSpec.attribute("raw:auto_bright", 0);                                                // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 0);                                              // no white balance correction
+            configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul);  // no neutralization
+            configSpec.attribute("raw:use_camera_matrix", 0);                                          // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", "raw");                                             // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
             configSpec.attribute("raw:adjust_maximum_thr",
@@ -650,11 +650,11 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawNoWhiteBalancing)
         {
-            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright); // automatic exposure correction
-            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment); // manual exposure adjustment
-            configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
-            configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright);       // automatic exposure correction
+            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment);  // manual exposure adjustment
+            configSpec.attribute("raw:use_camera_wb", 0);                                  // no white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 1);  // do not use embeded color profile if any, except for dng files
+            configSpec.attribute("raw:ColorSpace", "Linear");  // use linear colorspace with sRGB primaries
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
             configSpec.attribute("raw:adjust_maximum_thr",
@@ -663,11 +663,11 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing)
         {
-            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright); // automatic exposure correction
-            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment); // manual exposure adjustment
-            configSpec.attribute("raw:use_camera_wb", 1); // white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 1); // do not use embeded color profile if any, except for dng files
-            configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright);       // automatic exposure correction
+            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment);  // manual exposure adjustment
+            configSpec.attribute("raw:use_camera_wb", 1);                                  // white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 1);  // do not use embeded color profile if any, except for dng files
+            configSpec.attribute("raw:ColorSpace", "Linear");  // use linear colorspace with sRGB primaries
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
             configSpec.attribute("raw:adjust_maximum_thr",
@@ -689,11 +689,11 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
                     user_mul[i] = 1.0;
                 }
             }
-            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright); // automatic exposure correction
-            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment); // manual exposure adjustment
-            configSpec.attribute("raw:use_camera_wb", 0); // No White balance correction => user_mul is used
+            configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright);       // automatic exposure correction
+            configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment);  // manual exposure adjustment
+            configSpec.attribute("raw:use_camera_wb", 0);                                  // No White balance correction => user_mul is used
             configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul);
-            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:use_camera_matrix", 0);  // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
@@ -716,11 +716,11 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
                     user_mul[i] = 1.0;
                 }
             }
-            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
-            configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul); // no neutralization
-            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
-            configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
+            configSpec.attribute("raw:auto_bright", 0);                                                // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 0);                                              // no white balance correction
+            configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul);  // no neutralization
+            configSpec.attribute("raw:use_camera_matrix", 0);                                          // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", "raw");                                             // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
             configSpec.attribute("raw:adjust_maximum_thr",
@@ -736,7 +736,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
-    inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
+    inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT);  // force image convertion to float (for grayscale and color space convertion)
 
     if (!inBuf.initialized())
         ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'. The file might not exist.");
@@ -769,7 +769,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     {
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
-        //oiio::ParamValueList imgMetadata = readImageMetadata(path);
+        // oiio::ParamValueList imgMetadata = readImageMetadata(path);
         std::string cam_mul = "";
         if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
         {
@@ -802,7 +802,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     }
 
     // color conversion
-    if(imageReadOptions.workingColorSpace == EImageColorSpace::AUTO)
+    if (imageReadOptions.workingColorSpace == EImageColorSpace::AUTO)
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
@@ -810,12 +810,11 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     const std::string colorSpaceFromMetadata = getImageColorSpace(inBuf.spec(), ext == ".exr" ? "linear" : "sRGB", path);
 
     std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
-                ? "aces2065-1"
-                : (isRawImage
-                    ? "linear"
-                    : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
-                        ? colorSpaceFromMetadata
-                        : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
+                                       ? "aces2065-1"
+                                       : (isRawImage ? "linear"
+                                                     : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
+                                                          ? colorSpaceFromMetadata
+                                                          : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
 
@@ -890,7 +889,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
                                          "",
                                          "",
                                          &colorConfig);
-                                         inBuf = colorspaceBuf;
+        inBuf = colorspaceBuf;
     }
     else
     {
@@ -901,7 +900,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     }
 
     // convert to grayscale if needed
-    if(nchannels == 1 && inBuf.spec().nchannels >= 3)
+    if (nchannels == 1 && inBuf.spec().nchannels >= 3)
     {
         // convertion region of interest (for inBuf.spec().nchannels > 3)
         oiio::ROI convertionROI = inBuf.roi();
@@ -910,7 +909,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 
         // compute luminance via a weighted sum of R,G,B
         // (assuming Rec709 primaries and a linear scale)
-        const float weights[3] = {.2126f, .7152f, .0722f}; // To be changed if not sRGB Rec 709 Linear.
+        const float weights[3] = {.2126f, .7152f, .0722f};  // To be changed if not sRGB Rec 709 Linear.
         oiio::ImageBuf grayscaleBuf;
         oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
         inBuf.copy(grayscaleBuf);
@@ -923,8 +922,8 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     {
         oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
         oiio::ImageBuf requestedBuf(requestedSpec);
-        int channelOrder[] = { 0, 0, 0 };
-        float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/ };
+        int channelOrder[] = {0, 0, 0};
+        float channelValues[] = {0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/};
         oiio::ImageBufAlgo::channels(requestedBuf, inBuf, 3, channelOrder, channelValues);
         inBuf.swap(requestedBuf);
     }
@@ -934,13 +933,13 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     {
         oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
         oiio::ImageBuf requestedBuf(requestedSpec);
-        int channelOrder[] = { 0, 1, 2, -1 /*constant value*/ };
-        float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0 };
+        int channelOrder[] = {0, 1, 2, -1 /*constant value*/};
+        float channelValues[] = {0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0};
         oiio::ImageBufAlgo::channels(requestedBuf,
                                      inBuf,
-                                        4, // create an image with 4 channels
-                                        channelOrder,
-                                        channelValues); // only the 4th value is used
+                                     4,  // create an image with 4 channels
+                                     channelOrder,
+                                     channelValues);  // only the 4th value is used
         inBuf.swap(requestedBuf);
     }
 
@@ -958,44 +957,44 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 template<typename T>
 void readImageNoFloat(const std::string& path, oiio::TypeDesc format, Image<T>& image)
 {
-  oiio::ImageSpec configSpec;
+    oiio::ImageSpec configSpec;
 
-  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+    oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
-  inBuf.read(0, 0, true, format);
+    inBuf.read(0, 0, true, format);
 
-  if(!inBuf.initialized())
-  {
-    throw std::runtime_error("Cannot find/open image file '" + path + "'.");
-  }
+    if (!inBuf.initialized())
+    {
+        throw std::runtime_error("Cannot find/open image file '" + path + "'.");
+    }
 
-  // check picture channels number
-  if(inBuf.spec().nchannels != 1)
-  {
-    throw std::runtime_error("Can't load channels of image file '" + path + "'.");
-  }
-    
-  // copy pixels from oiio to eigen
-  image.resize(inBuf.spec().width, inBuf.spec().height, false);
-  {
-    oiio::ROI exportROI = inBuf.roi();
-    exportROI.chbegin = 0;
-    exportROI.chend = 1;
+    // check picture channels number
+    if (inBuf.spec().nchannels != 1)
+    {
+        throw std::runtime_error("Can't load channels of image file '" + path + "'.");
+    }
 
-    inBuf.get_pixels(exportROI, format, image.data());
-  }
+    // copy pixels from oiio to eigen
+    image.resize(inBuf.spec().width, inBuf.spec().height, false);
+    {
+        oiio::ROI exportROI = inBuf.roi();
+        exportROI.chbegin = 0;
+        exportROI.chend = 1;
+
+        inBuf.get_pixels(exportROI, format, image.data());
+    }
 }
 
 bool containsHalfFloatOverflow(const oiio::ImageBuf& image)
 {
     auto stats = oiio::ImageBufAlgo::computePixelStats(image);
 
-    for(auto maxValue: stats.max)
+    for (auto maxValue : stats.max)
     {
-        if(maxValue > HALF_MAX)
+        if (maxValue > HALF_MAX)
             return true;
     }
-    for (auto minValue: stats.min)
+    for (auto minValue : stats.min)
     {
         if (minValue < -HALF_MAX)
             return true;
@@ -1010,14 +1009,14 @@ void writeImage(const std::string& path,
                 const Image<T>& image,
                 const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
-                const oiio::ROI& displayRoi = oiio::ROI(), 
+                const oiio::ROI& displayRoi = oiio::ROI(),
                 const oiio::ROI& pixelRoi = oiio::ROI())
 {
     const fs::path bPath = fs::path(path);
     const std::string extension = boost::to_lower_copy(bPath.extension().string());
     const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
     const bool isEXR = (extension == ".exr");
-    //const bool isTIF = (extension == ".tif");
+    // const bool isTIF = (extension == ".tif");
     const bool isJPG = (extension == ".jpg");
     const bool isPNG = (extension == ".png");
 
@@ -1033,14 +1032,14 @@ void writeImage(const std::string& path,
     }
 
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << "\n"
-                        << "\t- width: " << image.width() << "\n"
-                        << "\t- height: " << image.height() << "\n"
-                        << "\t- channels: " << nchannels);
+                                               << "\t- width: " << image.width() << "\n"
+                                               << "\t- height: " << image.height() << "\n"
+                                               << "\t- channels: " << nchannels);
 
     oiio::ImageSpec imageSpec(image.width(), image.height(), nchannels, typeDesc);
-    imageSpec.extra_attribs = metadata; // add custom metadata
+    imageSpec.extra_attribs = metadata;  // add custom metadata
 
-    imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
+    imageSpec.attribute("jpeg:subsampling", "4:4:4");  // if possible, always subsampling 4:4:4 for jpeg
 
     std::string compressionMethod = "none";
     if (isEXR)
@@ -1080,12 +1079,12 @@ void writeImage(const std::string& path,
 
     imageSpec.attribute("compression", compressionMethod);
 
-    if(displayRoi.defined() && isEXR)
+    if (displayRoi.defined() && isEXR)
     {
         imageSpec.set_roi_full(displayRoi);
     }
 
-    if(pixelRoi.defined() && isEXR)
+    if (pixelRoi.defined() && isEXR)
     {
         imageSpec.set_roi(pixelRoi);
     }
@@ -1094,10 +1093,10 @@ void writeImage(const std::string& path,
                         (toColorSpace == EImageColorSpace::NO_CONVERSION) ? EImageColorSpace_enumToString(fromColorSpace)
                                                                           : EImageColorSpace_enumToString(toColorSpace));
 
-    const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
-    const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
-        
-    oiio::ImageBuf colorspaceBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // buffer for image colorspace modification
+    const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data()));  // original image buffer
+    const oiio::ImageBuf* outBuf = &imgBuf;                                                 // buffer to write
+
+    oiio::ImageBuf colorspaceBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data()));  // buffer for image colorspace modification
     if ((fromColorSpace == toColorSpace) || (toColorSpace == EImageColorSpace::NO_CONVERSION))
     {
         // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
@@ -1129,7 +1128,7 @@ void writeImage(const std::string& path,
     }
 
     oiio::ImageBuf formatBuf;  // buffer for image format modification
-    if(isEXR)
+    if (isEXR)
     {
         // Storage data type may be saved as attributes to formats that support it and then come back
         // as metadata to this function. Therefore we store the storage data type to attributes if it
@@ -1141,7 +1140,7 @@ void writeImage(const std::string& path,
 
         const std::string storageDataTypeStr =
           imageSpec.get_string_attribute("AliceVision:storageDataType", EStorageDataType_enumToString(EStorageDataType::HalfFinite));
-        EStorageDataType storageDataType  = EStorageDataType_stringToEnum(storageDataTypeStr);
+        EStorageDataType storageDataType = EStorageDataType_stringToEnum(storageDataTypeStr);
 
         if (storageDataType == EStorageDataType::Auto)
         {
@@ -1164,13 +1163,13 @@ void writeImage(const std::string& path,
 
         if (storageDataType == EStorageDataType::Half || storageDataType == EStorageDataType::HalfFinite)
         {
-            formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
+            formatBuf.copy(*outBuf, oiio::TypeDesc::HALF);  // override format, use half instead of float
             outBuf = &formatBuf;
         }
     }
 
     // write image
-    if(!outBuf->write(tmpPath))
+    if (!outBuf->write(tmpPath))
         ALICEVISION_THROW_ERROR("Can't write output image file '" + path + "'.");
 
     // rename temporary filename
@@ -1179,104 +1178,104 @@ void writeImage(const std::string& path,
 
 template<typename T>
 void writeImageNoFloat(const std::string& path,
-                oiio::TypeDesc typeDesc,
-                const Image<T>& image,
-                const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList())
+                       oiio::TypeDesc typeDesc,
+                       const Image<T>& image,
+                       const ImageWriteOptions& options,
+                       const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
-  const fs::path bPath = fs::path(path);
-  const std::string extension = boost::to_lower_copy(bPath.extension().string());
-  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
-  const bool isEXR = (extension == ".exr");
-  //const bool isTIF = (extension == ".tif");
-  const bool isJPG = (extension == ".jpg");
-  const bool isPNG = (extension == ".png");
+    const fs::path bPath = fs::path(path);
+    const std::string extension = boost::to_lower_copy(bPath.extension().string());
+    const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
+    const bool isEXR = (extension == ".exr");
+    //const bool isTIF = (extension == ".tif");
+    const bool isJPG = (extension == ".jpg");
+    const bool isPNG = (extension == ".png");
 
-  auto imageColorSpace = options.getToColorSpace();
-  if(imageColorSpace == EImageColorSpace::AUTO)
-  {
-    if(isJPG || isPNG)
-      imageColorSpace = EImageColorSpace::SRGB;
-    else
-      imageColorSpace = EImageColorSpace::LINEAR;
-  }
+    auto imageColorSpace = options.getToColorSpace();
+    if (imageColorSpace == EImageColorSpace::AUTO)
+    {
+        if (isJPG || isPNG)
+            imageColorSpace = EImageColorSpace::SRGB;
+        else
+            imageColorSpace = EImageColorSpace::LINEAR;
+    }
 
-  oiio::ImageSpec imageSpec(image.width(), image.height(), 1, typeDesc);
-  imageSpec.extra_attribs = metadata; // add custom metadata
+    oiio::ImageSpec imageSpec(image.width(), image.height(), 1, typeDesc);
+    imageSpec.extra_attribs = metadata;  // add custom metadata
 
-  imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
-  imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
+    imageSpec.attribute("jpeg:subsampling", "4:4:4");             // if possible, always subsampling 4:4:4 for jpeg
+    imageSpec.attribute("compression", isEXR ? "zips" : "none");  // if possible, set compression (zips for EXR, none for the other)
 
-  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
-  const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+    const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data()));  // original image buffer
+    const oiio::ImageBuf* outBuf = &imgBuf;                                                 // buffer to write
 
-  oiio::ImageBuf formatBuf;  // buffer for image format modification
-  if(isEXR)
-  {
-    formatBuf.copy(*outBuf, typeDesc); // override format, use half instead of float
-    outBuf = &formatBuf;
-  }
+    oiio::ImageBuf formatBuf;  // buffer for image format modification
+    if (isEXR)
+    {
+        formatBuf.copy(*outBuf, typeDesc);  // override format, use half instead of float
+        outBuf = &formatBuf;
+    }
 
-  // write image
-  if(!outBuf->write(tmpPath))
-    throw std::runtime_error("Can't write output image file '" + path + "'.");
+    // write image
+    if (!outBuf->write(tmpPath))
+        throw std::runtime_error("Can't write output image file '" + path + "'.");
 
-  // rename temporary filename
-  fs::rename(tmpPath, path);
+    // rename temporary filename
+    fs::rename(tmpPath, path);
 }
 
-void readImage(const std::string& path, Image<float>& image, const ImageReadOptions & imageReadOptions)
+void readImage(const std::string& path, Image<float>& image, const ImageReadOptions& imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
+    readImage(path, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions)
+void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions& imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
+    readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
 }
 
 void readImageDirect(const std::string& path, Image<unsigned char>& image) { readImageNoFloat(path, oiio::TypeDesc::UINT8, image); }
 
 void readImageDirect(const std::string& path, Image<IndexT>& image) { readImageNoFloat(path, oiio::TypeDesc::UINT32, image); }
 
-void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions)
+void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions& imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 4, image, imageReadOptions);
+    readImage(path, oiio::TypeDesc::FLOAT, 4, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions & imageReadOptions)
+void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions& imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 4, image, imageReadOptions);
+    readImage(path, oiio::TypeDesc::UINT8, 4, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions & imageReadOptions)
+void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions& imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 3, image, imageReadOptions);
+    readImage(path, oiio::TypeDesc::FLOAT, 3, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions & imageReadOptions)
+void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions& imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
+    readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
 }
 
 void logOIIOImageCacheInfo()
 {
-  oiio::ImageCache* cache = oiio::ImageCache::create(true);
+    oiio::ImageCache* cache = oiio::ImageCache::create(true);
 
-  int maxOpenFiles = -1;
-  cache->getattribute("max_open_files", maxOpenFiles);
+    int maxOpenFiles = -1;
+    cache->getattribute("max_open_files", maxOpenFiles);
 
-  int totalFiles = -1;
-  cache->getattribute("total_files", totalFiles);
+    int totalFiles = -1;
+    cache->getattribute("total_files", totalFiles);
 
-  float maxMemoryMB = -1.f;
-  cache->getattribute("max_memory_MB", maxMemoryMB);
+    float maxMemoryMB = -1.f;
+    cache->getattribute("max_memory_MB", maxMemoryMB);
 
-  int64_t cacheMemoryUsed = -1;
-  cache->getattribute("stat:cache_memory_used", oiio::TypeDesc::INT64, &cacheMemoryUsed);
+    int64_t cacheMemoryUsed = -1;
+    cache->getattribute("stat:cache_memory_used", oiio::TypeDesc::INT64, &cacheMemoryUsed);
 
-  int64_t bytesRead = -1;
-  cache->getattribute("stat:bytes_read", oiio::TypeDesc::INT64, &bytesRead);
+    int64_t bytesRead = -1;
+    cache->getattribute("stat:bytes_read", oiio::TypeDesc::INT64, &bytesRead);
 
     ALICEVISION_LOG_INFO("OIIO image cache info: "
                          << "\n * max open files: " << maxOpenFiles << "\n * total files: " << totalFiles << "\n * max memory (MB): " << maxMemoryMB
@@ -1298,21 +1297,21 @@ void writeImage(const std::string& path, const Image<IndexT>& image, const Image
     writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, options, metadata);
 }
 
-void writeImage(const std::string& path, 
+void writeImage(const std::string& path,
                 const Image<float>& image,
                 const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata,
-                const oiio::ROI& displayRoi, 
+                const oiio::ROI& displayRoi,
                 const oiio::ROI& pixelRoi)
 {
     writeImage(path, oiio::TypeDesc::FLOAT, 1, image, options, metadata, displayRoi, pixelRoi);
 }
 
-void writeImage(const std::string& path, 
+void writeImage(const std::string& path,
                 const Image<RGBAfColor>& image,
-                const ImageWriteOptions& options, 
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata,
-                const oiio::ROI& displayRoi, 
+                const oiio::ROI& displayRoi,
                 const oiio::ROI& pixelRoi)
 {
     writeImage(path, oiio::TypeDesc::FLOAT, 4, image, options, metadata, displayRoi, pixelRoi);
@@ -1323,9 +1322,9 @@ void writeImage(const std::string& path, const Image<RGBAColor>& image, const Im
     writeImage(path, oiio::TypeDesc::UINT8, 4, image, options, metadata);
 }
 
-void writeImage(const std::string& path, 
+void writeImage(const std::string& path,
                 const Image<RGBfColor>& image,
-                const ImageWriteOptions& options, 
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata,
                 const oiio::ROI& displayRoi,
                 const oiio::ROI& pixelRoi)
@@ -1362,7 +1361,7 @@ bool tryLoadMask(Image<unsigned char>* mask,
                  const std::string& srcImage,
                  const std::string& fileExtension)
 {
-    for (const auto & masksFolder_str : masksFolders)
+    for (const auto& masksFolder_str : masksFolders)
     {
         if (!masksFolder_str.empty() && fs::exists(masksFolder_str))
         {
