@@ -722,9 +722,9 @@ void ReconstructionEngine_sequentialSfM::triangulate(const std::set<IndexT>& pre
 
     // allow to use to the old triangulatation algorithm (using 2 views only)
     if (_params.minNbObservationsForTriangulation == 0)
-        triangulate_2Views(_sfmData, prevReconstructedViews, newReconstructedViews);
+        triangulate2Views(_sfmData, prevReconstructedViews, newReconstructedViews);
     else
-        triangulate_multiViewsLORANSAC(_sfmData, prevReconstructedViews, newReconstructedViews);
+        triangulateMultiViewsLORANSAC(_sfmData, prevReconstructedViews, newReconstructedViews);
 
     ALICEVISION_LOG_DEBUG(
       "Triangulation of the " << newReconstructedViews.size() << " newly reconstructed views took "
@@ -1255,7 +1255,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
         // triangulate
         const std::set<IndexT> prevImageIndex = {static_cast<IndexT>(I)};
         const std::set<IndexT> newImageIndex = {static_cast<IndexT>(J)};
-        triangulate_2Views(_sfmData, prevImageIndex, newImageIndex);
+        triangulate2Views(_sfmData, prevImageIndex, newImageIndex);
 
         // refine only structure & rotations & translations (keep intrinsic constant)
         {
@@ -1597,7 +1597,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
     // C. Do the resectioning: compute the camera pose.
     ALICEVISION_LOG_INFO("[" << _sfmData.getValidViews().size() + 1 << "/" << _sfmData.getViews().size() << "] Robust Resection of view: " << viewId);
 
-    const bool bResection = sfm::SfMLocalizer::Localize(Pair(view_I->getImage().getWidth(), view_I->getImage().getHeight()),
+    const bool bResection = sfm::SfMLocalizer::localize(Pair(view_I->getImage().getWidth(), view_I->getImage().getHeight()),
                                                         intrinsics.get(),
                                                         _randomNumberGenerator,
                                                         resectionData,
@@ -1636,7 +1636,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
         // If we use a camera intrinsic for the first time we need to refine it.
         const bool intrinsicsFirstUsage = (reconstructedIntrinsics.count(view_I->getIntrinsicId()) == 0);
 
-        if (!sfm::SfMLocalizer::RefinePose(intrinsics.get(), resectionData.pose, resectionData, true, intrinsicsFirstUsage))
+        if (!sfm::SfMLocalizer::refinePose(intrinsics.get(), resectionData.pose, resectionData, true, intrinsicsFirstUsage))
         {
             ALICEVISION_LOG_INFO("Resection of view " << viewId << " failed during pose refinement.");
             return false;
@@ -1777,7 +1777,7 @@ ObservationData getObservationData(const SfMData& scene, feature::FeaturesPerVie
 
     if (!camPinHole)
     {
-        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulateMultiViewsLORANSAC");
         return {nullptr, {}, {}, {}, {}};
     }
 
@@ -1793,7 +1793,7 @@ ObservationData getObservationData(const SfMData& scene, feature::FeaturesPerVie
 
 }  // namespace
 
-void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData& scene,
+void ReconstructionEngine_sequentialSfM::triangulateMultiViewsLORANSAC(SfMData& scene,
                                                                         const std::set<IndexT>& previousReconstructedViews,
                                                                         const std::set<IndexT>& newReconstructedViews)
 {
@@ -1940,7 +1940,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
     }  // for all shared tracks
 }
 
-void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
+void ReconstructionEngine_sequentialSfM::triangulate2Views(SfMData& scene,
                                                             const std::set<IndexT>& previousReconstructedViews,
                                                             const std::set<IndexT>& newReconstructedViews)
 {
@@ -1986,7 +1986,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
             std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camI);
             if (!camIPinHole)
             {
-                ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+                ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulateMultiViewsLORANSAC");
                 continue;
             }
 
@@ -1994,7 +1994,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
             std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camJ);
             if (!camJPinHole)
             {
-                ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+                ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulateMultiViewsLORANSAC");
                 continue;
             }
 
@@ -2120,8 +2120,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene,
 
 std::size_t ReconstructionEngine_sequentialSfM::removeOutliers()
 {
-    const std::size_t nbOutliersResidualErr = RemoveOutliers_PixelResidualError(_sfmData, _params.featureConstraint, _params.maxReprojectionError, 2);
-    const std::size_t nbOutliersAngleErr = RemoveOutliers_AngleError(_sfmData, _params.minAngleForLandmark);
+    const std::size_t nbOutliersResidualErr = removeOutliersWithPixelResidualError(_sfmData, _params.featureConstraint, _params.maxReprojectionError, 2);
+    const std::size_t nbOutliersAngleErr = removeOutliersWithAngleError(_sfmData, _params.minAngleForLandmark);
 
     ALICEVISION_LOG_INFO("Remove outliers: " << std::endl
                                              << "\t- # outliers residual error: " << nbOutliersResidualErr << std::endl

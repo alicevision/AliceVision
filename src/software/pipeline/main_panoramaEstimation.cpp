@@ -196,8 +196,8 @@ int aliceVision_main(int argc, char** argv)
     sfmEngine.initRandomSeed(randomSeed);
 
     // configure the featuresPerView & the matches_provider
-    sfmEngine.SetFeaturesProvider(&featuresPerView);
-    sfmEngine.SetMatchesProvider(&pairwiseMatches);
+    sfmEngine.setFeaturesProvider(&featuresPerView);
+    sfmEngine.setMatchesProvider(&pairwiseMatches);
 
     if(filterMatches)
     {
@@ -220,7 +220,7 @@ int aliceVision_main(int argc, char** argv)
     {
         sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(),
                         sfmDataIO::ESfMData::ALL);
-        if(!sfmEngine.Adjust())
+        if(!sfmEngine.adjust())
         {
             return EXIT_FAILURE;
         }

@@ -125,7 +125,7 @@ aliceVision::Mat3 decomposePureRotationHomography(const Mat3& homography)
  * @param[in] imgSize1 The size of the first image.
  * @param[in] imgSize2 The size of the second image.
  * @param[out] H The estimated homography.
- * @param[out] vec_inliers The inliers satisfying the homography as a list of indices.
+ * @param[out] vecInliers The inliers satisfying the homography as a list of indices.
  * @return the status of the estimation.
  */
 aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X& x1,
@@ -134,7 +134,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X& x1,
                                                            const std::pair<std::size_t, std::size_t>& imgSize2,
                                                            std::mt19937& randomNumberGenerator,
                                                            Mat3& H,
-                                                           std::vector<std::size_t>& vec_inliers)
+                                                           std::vector<std::size_t>& vecInliers)
 {
     using KernelType = multiview::RelativePoseKernel<multiview::relativePose::Homography4PSolver,
                                                      multiview::relativePose::HomographyAsymmetricError,
@@ -145,12 +145,12 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X& x1,
 
     robustEstimation::Mat3Model model;
     /*const std::pair<double, double> ACRansacOut = */ robustEstimation::ACRANSAC(
-      kernel, randomNumberGenerator, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
+      kernel, randomNumberGenerator, vecInliers, 1024, &model, std::numeric_limits<double>::infinity());
     H = model.getMatrix();
 
-    const bool valid{!vec_inliers.empty()};
+    const bool valid{!vecInliers.empty()};
 
-    const bool hasStrongSupport{vec_inliers.size() > kernel.getMinimumNbRequiredSamples() * 2.5};  // consider ALICEVISION_MINIMUM_SAMPLES_COEF
+    const bool hasStrongSupport{vecInliers.size() > kernel.getMinimumNbRequiredSamples() * 2.5};  // consider ALICEVISION_MINIMUM_SAMPLES_COEF
 
     return {valid, hasStrongSupport};
 }
@@ -162,7 +162,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X& x1,
  * @param[in] imgSize1 The size of the first image.
  * @param[in] imgSize2 The size of the second image.
  * @param[out] R The estimated rotttion.
- * @param[out] vec_inliers The inliers satisfying the rotation as a list of indices.
+ * @param[out] vecInliers The inliers satisfying the rotation as a list of indices.
  * @return the status of the estimation.
  */
 aliceVision::EstimationStatus robustRotationEstimationAC(const Mat& x1,
@@ -171,7 +171,7 @@ aliceVision::EstimationStatus robustRotationEstimationAC(const Mat& x1,
                                                          const std::pair<std::size_t, std::size_t>& imgSize2,
                                                          std::mt19937& randomNumberGenerator,
                                                          Mat3& R,
-                                                         std::vector<std::size_t>& vec_inliers)
+                                                         std::vector<std::size_t>& vecInliers)
 {
     // using KernelType = multiview::RelativePoseKernel<
     using KernelType = multiview::
@@ -183,12 +183,12 @@ aliceVision::EstimationStatus robustRotationEstimationAC(const Mat& x1,
 
     robustEstimation::Mat3Model model;
     /*const std::pair<double, double> ACRansacOut =*/robustEstimation::ACRANSAC(
-      kernel, randomNumberGenerator, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
+      kernel, randomNumberGenerator, vecInliers, 1024, &model, std::numeric_limits<double>::infinity());
     R = model.getMatrix();
 
-    const bool valid{!vec_inliers.empty()};
+    const bool valid{!vecInliers.empty()};
 
-    const bool hasStrongSupport{vec_inliers.size() > kernel.getMinimumNbRequiredSamples() * 2.5};  // consider ALICEVISION_MINIMUM_SAMPLES_COEF
+    const bool hasStrongSupport{vecInliers.size() > kernel.getMinimumNbRequiredSamples() * 2.5};  // consider ALICEVISION_MINIMUM_SAMPLES_COEF
 
     return {valid, hasStrongSupport};
 }
@@ -199,10 +199,8 @@ bool robustRelativeRotation_fromH(const Mat2X& x1,
                                   const std::pair<size_t, size_t>& imgSize2,
                                   std::mt19937& randomNumberGenerator,
                                   RelativeRotationInfo& relativeRotationInfo,
-                                  const size_t max_iteration_count)
+                                  const size_t maxIterationCount)
 {
-    std::vector<std::size_t> vec_inliers{};
-
     // estimate the homography
     const auto status = robustHomographyEstimationAC(
       x1, x2, imgSize1, imgSize2, randomNumberGenerator, relativeRotationInfo._homography, relativeRotationInfo._inliers);
@@ -222,10 +220,8 @@ bool robustRelativeRotation_fromR(const Mat& x1,
                                   const std::pair<size_t, size_t>& imgSize2,
                                   std::mt19937& randomNumberGenerator,
                                   RelativeRotationInfo& relativeRotationInfo,
-                                  const size_t max_iteration_count)
+                                  const size_t maxIterationCount)
 {
-    std::vector<std::size_t> vec_inliers{};
-
     const auto status = robustRotationEstimationAC(
       x1, x2, imgSize1, imgSize2, randomNumberGenerator, relativeRotationInfo._relativeRotation, relativeRotationInfo._inliers);
     if (!status.isValid && !status.hasStrongSupport)
@@ -265,38 +261,38 @@ ReconstructionEngine_panorama::~ReconstructionEngine_panorama()
     }
 }
 
-void ReconstructionEngine_panorama::SetFeaturesProvider(feature::FeaturesPerView* featuresPerView) { _featuresPerView = featuresPerView; }
+void ReconstructionEngine_panorama::setFeaturesProvider(feature::FeaturesPerView* featuresPerView) { _featuresPerView = featuresPerView; }
 
-void ReconstructionEngine_panorama::SetMatchesProvider(matching::PairwiseMatches* provider) { _pairwiseMatches = provider; }
+void ReconstructionEngine_panorama::setMatchesProvider(matching::PairwiseMatches* provider) { _pairwiseMatches = provider; }
 
 void ReconstructionEngine_panorama::filterMatches()
 {
     // keep only the largest biedge connected subgraph
     const PairSet pairs = matching::getImagePairs(*_pairwiseMatches);
-    const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _outputFolder);
-    if (set_remainingIds.empty())
+    const std::set<IndexT> setRemainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _outputFolder);
+    if (setRemainingIds.empty())
     {
         ALICEVISION_LOG_DEBUG("Invalid input image graph for panorama, no remaining match after filtering.");
     }
-    KeepOnlyReferencedElement(set_remainingIds, *_pairwiseMatches);
+    keepOnlyReferencedElement(setRemainingIds, *_pairwiseMatches);
 }
 
 bool ReconstructionEngine_panorama::process()
 {
     _rotationPriors = _sfmData.getPoses();
 
-    aliceVision::rotationAveraging::RelativeRotations relatives_R;
-    Compute_Relative_Rotations(relatives_R);
+    aliceVision::rotationAveraging::RelativeRotations relativesR;
+    computeRelativeRotations(relativesR);
 
-    HashMap<IndexT, Mat3> global_rotations;
-    if (!Compute_Global_Rotations(relatives_R, global_rotations))
+    HashMap<IndexT, Mat3> globalRotations;
+    if (!computeGlobalRotations(relativesR, globalRotations))
     {
         ALICEVISION_LOG_WARNING("Panorama: Rotation Averaging failure!");
         return false;
     }
 
     // we set translation vector to zero
-    for (const auto& gR : global_rotations)
+    for (const auto& gR : globalRotations)
     {
         const Vec3 t(0.0, 0.0, 0.0);
         const IndexT poseId = gR.first;
@@ -329,68 +325,68 @@ bool ReconstructionEngine_panorama::process()
 }
 
 /// Compute from relative rotations the global rotations of the camera poses
-bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAveraging::RelativeRotations& relatives_R,
-                                                             HashMap<IndexT, Mat3>& global_rotations)
+bool ReconstructionEngine_panorama::computeGlobalRotations(const rotationAveraging::RelativeRotations& relativesR,
+                                                           HashMap<IndexT, Mat3>& globalRotations)
 {
-    if (relatives_R.empty())
+    if (relativesR.empty())
     {
         return false;
     }
 
-    rotationAveraging::RelativeRotations local_relatives_R = relatives_R;
+    rotationAveraging::RelativeRotations localRelativesR = relativesR;
 
-    std::set<IndexT> set_pose_ids;
-    for (const auto& relative_R : local_relatives_R)
+    std::set<IndexT> setPoseIds;
+    for (const auto& relativeR : localRelativesR)
     {
-        set_pose_ids.insert(relative_R.i);
-        set_pose_ids.insert(relative_R.j);
+        setPoseIds.insert(relativeR.i);
+        setPoseIds.insert(relativeR.j);
     }
 
     ALICEVISION_LOG_INFO("Global rotations computation: "
                          << "\n"
                             "\t- relative rotations: "
-                         << relatives_R.size()
+                         << relativesR.size()
                          << "\n"
                             "\t- global rotations: "
-                         << set_pose_ids.size());
+                         << setPoseIds.size());
 
     // Global Rotation solver
     const ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod =
       TRIPLET_ROTATION_INFERENCE_NONE;  // TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR;
 
-    GlobalSfMRotationAveragingSolver rotationAveraging_solver;
+    GlobalSfMRotationAveragingSolver rotationAveragingSolver;
     //-- Rejection triplet that are 'not' identity rotation (error to identity > 50deg)
-    const bool b_rotationAveraging = rotationAveraging_solver.Run(
-      _params.eRotationAveragingMethod, eRelativeRotationInferenceMethod, local_relatives_R, _params.maxAngularError, global_rotations);
+    const bool bRotationAveraging = rotationAveragingSolver.run(
+      _params.eRotationAveragingMethod, eRelativeRotationInferenceMethod, localRelativesR, _params.maxAngularError, globalRotations);
 
-    ALICEVISION_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
+    ALICEVISION_LOG_DEBUG("Found #global_rotations: " << globalRotations.size());
 
-    if (b_rotationAveraging)
+    if (bRotationAveraging)
     {
         // Log input graph to the HTML report
         if (!_loggingFile.empty() && !_outputFolder.empty())
         {
             // Log a relative pose graph
             {
-                std::set<IndexT> set_pose_ids;
-                PairSet relative_pose_pairs;
+                std::set<IndexT> setPoseIds;
+                PairSet relativePosePairs;
                 for (const auto& view : _sfmData.getViews())
                 {
-                    const IndexT pose_id = view.second->getPoseId();
-                    set_pose_ids.insert(pose_id);
+                    const IndexT poseId = view.second->getPoseId();
+                    setPoseIds.insert(poseId);
                 }
-                const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
-                graph::indexedGraph putativeGraph(set_pose_ids, rotationAveraging_solver.GetUsedPairs());
-                graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
+                const std::string sGraphName = "global_relative_rotation_pose_graph_final";
+                graph::indexedGraph putativeGraph(setPoseIds, rotationAveragingSolver.getUsedPairs());
+                graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraphName + ".dot")).string(), putativeGraph.g);
             }
         }
     }
 
-    return b_rotationAveraging;
+    return bRotationAveraging;
 }
 
 // Adjust the scene (& remove outliers)
-bool ReconstructionEngine_panorama::Adjust()
+bool ReconstructionEngine_panorama::adjust()
 {
     BundleAdjustmentSymbolicCeres::CeresOptions options;
     options.summary = true;
@@ -555,7 +551,7 @@ bool ReconstructionEngine_panorama::addConstraints2DWithKnownRotation()
     return true;
 }
 
-void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging::RelativeRotations& vec_relatives_R)
+void ReconstructionEngine_panorama::computeRelativeRotations(rotationAveraging::RelativeRotations& vecRelativesR)
 {
     //
     // Build the Relative pose graph from matches:
@@ -563,40 +559,40 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     /// pairwise view relation between poseIds
     typedef std::map<Pair, PairSet> PoseWiseMatches;
 
-    sfmData::RotationPriors& rotationpriors = _sfmData.getRotationPriors();
-    for (auto& iter_v1 : _sfmData.getViews())
+    sfmData::RotationPriors& rotationPriors = _sfmData.getRotationPriors();
+    for (auto& iterV1 : _sfmData.getViews())
     {
-        if (!_sfmData.isPoseAndIntrinsicDefined(iter_v1.first))
+        if (!_sfmData.isPoseAndIntrinsicDefined(iterV1.first))
         {
             continue;
         }
 
-        for (auto& iter_v2 : _sfmData.getViews())
+        for (auto& iterV2 : _sfmData.getViews())
         {
-            if (iter_v1.first == iter_v2.first)
+            if (iterV1.first == iterV2.first)
             {
                 continue;
             }
 
-            if (!_sfmData.isPoseAndIntrinsicDefined(iter_v2.first))
+            if (!_sfmData.isPoseAndIntrinsicDefined(iterV2.first))
             {
                 continue;
             }
 
-            IndexT pid1 = iter_v1.second->getPoseId();
-            IndexT pid2 = iter_v2.second->getPoseId();
+            IndexT pid1 = iterV1.second->getPoseId();
+            IndexT pid2 = iterV2.second->getPoseId();
 
-            CameraPose oneTo = _sfmData.getAbsolutePose(iter_v1.second->getPoseId());
-            CameraPose twoTo = _sfmData.getAbsolutePose(iter_v2.second->getPoseId());
+            CameraPose oneTo = _sfmData.getAbsolutePose(iterV1.second->getPoseId());
+            CameraPose twoTo = _sfmData.getAbsolutePose(iterV2.second->getPoseId());
             Eigen::Matrix3d oneRo = oneTo.getTransform().rotation();
             Eigen::Matrix3d twoRo = twoTo.getTransform().rotation();
             Eigen::Matrix3d twoRone = twoRo * oneRo.transpose();
 
-            sfmData::RotationPrior prior(iter_v1.first, iter_v2.first, twoRone);
-            rotationpriors.push_back(prior);
+            sfmData::RotationPrior prior(iterV1.first, iterV2.first, twoRone);
+            rotationPriors.push_back(prior);
 
             // Add prior on relative rotations with a low weight
-            vec_relatives_R.emplace_back(iter_v1.first, iter_v2.first, twoRone, _params.rotationAveragingWeighting ? 1.0 : 0.01);
+            vecRelativesR.emplace_back(iterV1.first, iterV2.first, twoRone, _params.rotationAveragingWeighting ? 1.0 : 0.01);
         }
     }
 
@@ -611,7 +607,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     }
 
     sfm::Constraints2D& constraints2d = _sfmData.getConstraints2D();
-    std::map<IndexT, size_t> connection_size;
+    std::map<IndexT, size_t> connectionSize;
 
     ALICEVISION_LOG_INFO("Relative pose computation:");
     // For each pair of matching views, compute the relative pose
@@ -620,12 +616,12 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         {
             PoseWiseMatches::const_iterator iter(poseWiseMatches.begin());
             std::advance(iter, i);
-            const auto& relative_pose_iterator(*iter);
-            const Pair relative_pose_pair = relative_pose_iterator.first;
-            const PairSet& match_pairs = relative_pose_iterator.second;
+            const auto& relativePoseIterator(*iter);
+            const Pair relativePosePair = relativePoseIterator.first;
+            const PairSet& matchPairs = relativePoseIterator.second;
 
             // If a pair has the same ID, discard it
-            if (relative_pose_pair.first == relative_pose_pair.second)
+            if (relativePosePair.first == relativePosePair.second)
             {
                 continue;
             }
@@ -633,33 +629,33 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             // Select common bearing vectors
 
             // if multiple views are sharing the same camera pose, we may end-up with multiple view pairs
-            if (match_pairs.size() > 1)
+            if (matchPairs.size() > 1)
             {
                 ALICEVISION_LOG_INFO("Compute relative pose: multiple views sharing the same pose. "
-                                     << match_pairs.size() << " image matching pairs between the 2 poses (" << relative_pose_pair.first << ", "
-                                     << relative_pose_pair.second << ").");
+                                     << matchPairs.size() << " image matching pairs between the 2 poses (" << relativePosePair.first << ", "
+                                     << relativePosePair.second << ").");
             }
 
-            const Pair pairIterator = *(match_pairs.begin());
+            const Pair pairIterator = *(matchPairs.begin());
             const IndexT I = pairIterator.first;
             const IndexT J = pairIterator.second;
-            const View* view_I = _sfmData.getViews().at(I).get();
-            const View* view_J = _sfmData.getViews().at(J).get();
+            const View* viewI = _sfmData.getViews().at(I).get();
+            const View* viewJ = _sfmData.getViews().at(J).get();
 
             // Check that valid cameras are existing for the pair of view
-            if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 || _sfmData.getIntrinsics().count(view_J->getIntrinsicId()) == 0)
+            if (_sfmData.getIntrinsics().count(viewI->getIntrinsicId()) == 0 || _sfmData.getIntrinsics().count(viewJ->getIntrinsicId()) == 0)
             {
                 continue;
             }
 
-            std::shared_ptr<IntrinsicBase> cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId());
-            std::shared_ptr<IntrinsicBase> cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId());
+            std::shared_ptr<IntrinsicBase> camI = _sfmData.getIntrinsics().at(viewI->getIntrinsicId());
+            std::shared_ptr<IntrinsicBase> camJ = _sfmData.getIntrinsics().at(viewJ->getIntrinsicId());
 
-            std::shared_ptr<camera::Equidistant> cam_I_equidistant = std::dynamic_pointer_cast<camera::Equidistant>(cam_I);
-            std::shared_ptr<camera::Equidistant> cam_J_equidistant = std::dynamic_pointer_cast<camera::Equidistant>(cam_J);
+            std::shared_ptr<camera::Equidistant> camIEquidistant = std::dynamic_pointer_cast<camera::Equidistant>(camI);
+            std::shared_ptr<camera::Equidistant> camJEquidistant = std::dynamic_pointer_cast<camera::Equidistant>(camJ);
 
             bool useSpherical = false;
-            if (cam_I_equidistant && cam_J_equidistant)
+            if (camIEquidistant && camJEquidistant)
             {
                 useSpherical = true;
             }
@@ -671,9 +667,9 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
             // Build a list of pairs in meters
             std::size_t nbBearing = 0;
-            for (const auto& match_pair : match_pairs)
+            for (const auto& matchPair : matchPairs)
             {
-                const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(match_pair);
+                const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(matchPair);
                 nbBearing += matchesPerDesc.getNbAllMatches();
             }
             std::size_t iBearing = 0;
@@ -689,45 +685,45 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
                 x2 = Mat(2, nbBearing);
             }
 
-            for (const auto& match_pair : match_pairs)
+            for (const auto& matchPair : matchPairs)
             {
-                const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(match_pair);
+                const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(matchPair);
                 for (const auto& matchesPerDescIt : matchesPerDesc)
                 {
                     const feature::EImageDescriberType descType = matchesPerDescIt.first;
                     assert(descType != feature::EImageDescriberType::UNINITIALIZED);
                     const matching::IndMatches& matches = matchesPerDescIt.second;
 
-                    const feature::PointFeatures& feats_I = _featuresPerView->getFeatures(I, descType);
-                    const feature::PointFeatures& feats_J = _featuresPerView->getFeatures(J, descType);
+                    const feature::PointFeatures& featsI = _featuresPerView->getFeatures(I, descType);
+                    const feature::PointFeatures& featsJ = _featuresPerView->getFeatures(J, descType);
 
                     for (const auto& match : matches)
                     {
-                        const feature::PointFeature& feat_I = feats_I[match._i];
-                        const feature::PointFeature& feat_J = feats_J[match._j];
+                        const feature::PointFeature& featI = featsI[match._i];
+                        const feature::PointFeature& featJ = featsJ[match._j];
 
-                        const Vec3 bearingVector_I = cam_I->toUnitSphere(cam_I->removeDistortion(cam_I->ima2cam(feat_I.coords().cast<double>())));
-                        const Vec3 bearingVector_J = cam_J->toUnitSphere(cam_J->removeDistortion(cam_J->ima2cam(feat_J.coords().cast<double>())));
+                        const Vec3 bearingVectorI = camI->toUnitSphere(camI->removeDistortion(camI->ima2cam(featI.coords().cast<double>())));
+                        const Vec3 bearingVectorJ = camJ->toUnitSphere(camJ->removeDistortion(camJ->ima2cam(featJ.coords().cast<double>())));
 
                         if (useSpherical)
                         {
-                            x1.col(iBearing) = bearingVector_I;
-                            x2.col(iBearing++) = bearingVector_J;
+                            x1.col(iBearing) = bearingVectorI;
+                            x2.col(iBearing++) = bearingVectorJ;
                         }
                         else
                         {
-                            x1.col(iBearing) = bearingVector_I.head(2) / bearingVector_I(2);
-                            x2.col(iBearing++) = bearingVector_J.head(2) / bearingVector_J(2);
+                            x1.col(iBearing) = bearingVectorI.head(2) / bearingVectorI(2);
+                            x2.col(iBearing++) = bearingVectorJ.head(2) / bearingVectorJ(2);
                         }
                     }
                 }
             }
             assert(nbBearing == iBearing);
 
-            RelativePoseInfo relativePose_info;
+            RelativePoseInfo relativePoseInfo;
             // Compute max authorized error as geometric mean of camera plane tolerated residual error
-            relativePose_info.initial_residual_tolerance =
-              std::sqrt(std::sqrt(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5)));
+            relativePoseInfo.initial_residual_tolerance =
+              std::sqrt(std::sqrt(camI->imagePlaneToCameraPlaneError(2.5) * camJ->imagePlaneToCameraPlaneError(2.5)));
 
             // Since we use normalized features, we will use unit image size and intrinsic matrix:
             const std::pair<size_t, size_t> imageSize(1., 1.);
@@ -737,7 +733,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             {
                 case RELATIVE_ROTATION_FROM_E:
                 {
-                    if (!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, _randomNumberGenerator, relativePose_info))
+                    if (!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, _randomNumberGenerator, relativePoseInfo))
                     {
                         ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J << ") => FAILED");
                         continue;
@@ -746,39 +742,39 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
                 break;
                 case RELATIVE_ROTATION_FROM_H:
                 {
-                    RelativeRotationInfo relativeRotation_info;
-                    relativeRotation_info._initialResidualTolerance =
-                      std::sqrt(std::sqrt(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5)));
+                    RelativeRotationInfo relativeRotationInfo;
+                    relativeRotationInfo._initialResidualTolerance =
+                      std::sqrt(std::sqrt(camI->imagePlaneToCameraPlaneError(2.5) * camJ->imagePlaneToCameraPlaneError(2.5)));
 
-                    if (!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
+                    if (!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotationInfo))
                     {
                         ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J << ") => FAILED");
                         continue;
                     }
 
-                    relativePose_info.relativePose = geometry::Pose3(relativeRotation_info._relativeRotation, Vec3::Zero());
-                    relativePose_info.initial_residual_tolerance = relativeRotation_info._initialResidualTolerance;
-                    relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
-                    relativePose_info.vec_inliers = relativeRotation_info._inliers;
+                    relativePoseInfo.relativePose = geometry::Pose3(relativeRotationInfo._relativeRotation, Vec3::Zero());
+                    relativePoseInfo.initial_residual_tolerance = relativeRotationInfo._initialResidualTolerance;
+                    relativePoseInfo.found_residual_precision = relativeRotationInfo._foundResidualPrecision;
+                    relativePoseInfo.vec_inliers = relativeRotationInfo._inliers;
                 }
                 break;
                 case RELATIVE_ROTATION_FROM_R:
                 {
-                    RelativeRotationInfo relativeRotation_info;
-                    relativeRotation_info._initialResidualTolerance =
-                      std::sqrt(std::sqrt(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5)));
+                    RelativeRotationInfo relativeRotationInfo;
+                    relativeRotationInfo._initialResidualTolerance =
+                      std::sqrt(std::sqrt(camI->imagePlaneToCameraPlaneError(2.5) * camJ->imagePlaneToCameraPlaneError(2.5)));
 
-                    if (!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
+                    if (!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotationInfo))
                     {
                         ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J << ") => FAILED");
-                        ALICEVISION_LOG_INFO("I: " << view_I->getImage().getImagePath() << ", J: " << view_J->getImage().getImagePath());
+                        ALICEVISION_LOG_INFO("I: " << viewI->getImage().getImagePath() << ", J: " << viewJ->getImage().getImagePath());
                         continue;
                     }
 
-                    relativePose_info.relativePose = geometry::Pose3(relativeRotation_info._relativeRotation, Vec3::Zero());
-                    relativePose_info.initial_residual_tolerance = relativeRotation_info._initialResidualTolerance;
-                    relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
-                    relativePose_info.vec_inliers = relativeRotation_info._inliers;
+                    relativePoseInfo.relativePose = geometry::Pose3(relativeRotationInfo._relativeRotation, Vec3::Zero());
+                    relativePoseInfo.initial_residual_tolerance = relativeRotationInfo._initialResidualTolerance;
+                    relativePoseInfo.found_residual_precision = relativeRotationInfo._foundResidualPrecision;
+                    relativePoseInfo.vec_inliers = relativeRotationInfo._inliers;
                 }
                 break;
                 default:
@@ -787,50 +783,50 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             }
 
             // If an existing prior on rotation exists, then make sure the found detected rotation is not stupid
-            double weight = _params.rotationAveragingWeighting ? relativePose_info.vec_inliers.size() : 1.0;
-            if (_sfmData.isPoseAndIntrinsicDefined(view_I) && _sfmData.isPoseAndIntrinsicDefined(view_J))
+            double weight = _params.rotationAveragingWeighting ? relativePoseInfo.vec_inliers.size() : 1.0;
+            if (_sfmData.isPoseAndIntrinsicDefined(viewI) && _sfmData.isPoseAndIntrinsicDefined(viewJ))
             {
-                CameraPose iTo = _sfmData.getAbsolutePose(view_I->getPoseId());
-                CameraPose jTo = _sfmData.getAbsolutePose(view_J->getPoseId());
+                CameraPose iTo = _sfmData.getAbsolutePose(viewI->getPoseId());
+                CameraPose jTo = _sfmData.getAbsolutePose(viewJ->getPoseId());
                 Eigen::Matrix3d iRo = iTo.getTransform().rotation();
                 Eigen::Matrix3d jRo = jTo.getTransform().rotation();
                 Eigen::Matrix3d jRi = jRo * iRo.transpose();
 
-                Eigen::Matrix3d jRi_est = relativePose_info.relativePose.rotation();
+                Eigen::Matrix3d jRiEst = relativePoseInfo.relativePose.rotation();
 
                 Eigen::AngleAxisd checker;
-                checker.fromRotationMatrix(jRi_est * jRi.transpose());
+                checker.fromRotationMatrix(jRiEst * jRi.transpose());
                 if (std::abs(radianToDegree(checker.angle())) > _params.maxAngleToPrior)
                 {
-                    relativePose_info.relativePose = geometry::Pose3(jRi, Vec3::Zero());
-                    relativePose_info.vec_inliers.clear();
+                    relativePoseInfo.relativePose = geometry::Pose3(jRi, Vec3::Zero());
+                    relativePoseInfo.vec_inliers.clear();
                     weight = 1.0;
                 }
             }
 
             // Add connection to find best constraints
-            if (connection_size.find(I) == connection_size.end())
+            if (connectionSize.find(I) == connectionSize.end())
             {
-                connection_size[I] = 0;
+                connectionSize[I] = 0;
             }
-            connection_size[I] += relativePose_info.vec_inliers.size();
-            if (connection_size.find(J) == connection_size.end())
+            connectionSize[I] += relativePoseInfo.vec_inliers.size();
+            if (connectionSize.find(J) == connectionSize.end())
             {
-                connection_size[J] = 0;
+                connectionSize[J] = 0;
             }
-            connection_size[J] += relativePose_info.vec_inliers.size();
+            connectionSize[J] += relativePoseInfo.vec_inliers.size();
 
             // Sort all inliers by increasing ids
-            if (!relativePose_info.vec_inliers.empty())
+            if (!relativePoseInfo.vec_inliers.empty())
             {
-                std::sort(relativePose_info.vec_inliers.begin(), relativePose_info.vec_inliers.end());
+                std::sort(relativePoseInfo.vec_inliers.begin(), relativePoseInfo.vec_inliers.end());
 
                 size_t index = 0;
-                size_t index_inlier = 0;
+                size_t indexInlier = 0;
 
-                for (const auto& match_pair : match_pairs)
+                for (const auto& matchPair : matchPairs)
                 {
-                    const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(match_pair);
+                    const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(matchPair);
                     for (const auto& matchesPerDescIt : matchesPerDesc)
                     {
                         const feature::EImageDescriberType descType = matchesPerDescIt.first;
@@ -838,10 +834,10 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
                         for (const auto& match : matches)
                         {
-                            if (index_inlier >= relativePose_info.vec_inliers.size())
+                            if (indexInlier >= relativePoseInfo.vec_inliers.size())
                                 break;
-                            size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
-                            if (index == next_inlier)
+                            size_t nextInlier = relativePoseInfo.vec_inliers[indexInlier];
+                            if (index == nextInlier)
                             {
                                 Vec2 pt1 = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
                                 Vec2 pt2 = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
@@ -853,7 +849,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
                                   I, sfm::Observation(pt1, match._i, pI.scale()), J, sfm::Observation(pt2, match._j, pJ.scale()), descType);
                                 constraints2d.push_back(constraint);
 
-                                ++index_inlier;
+                                ++indexInlier;
                             }
 
                             ++index;
@@ -866,14 +862,14 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             {
                 // Add the relative rotation to the relative 'rotation' pose graph
                 using namespace aliceVision::rotationAveraging;
-                vec_relatives_R.emplace_back(relative_pose_pair.first, relative_pose_pair.second, relativePose_info.relativePose.rotation(), weight);
+                vecRelativesR.emplace_back(relativePosePair.first, relativePosePair.second, relativePoseInfo.relativePose.rotation(), weight);
             }
         }
     }  // for all relative pose
 
     // Debug result
-    ALICEVISION_LOG_DEBUG("Compute_Relative_Rotations: vec_relatives_R.size(): " << vec_relatives_R.size());
-    for (rotationAveraging::RelativeRotation& rotation : vec_relatives_R)
+    ALICEVISION_LOG_DEBUG("computeRelativeRotations: vecRelativesR.size(): " << vecRelativesR.size());
+    for (rotationAveraging::RelativeRotation& rotation : vecRelativesR)
     {
         ALICEVISION_LOG_DEBUG("Relative_Rotation:\n"
                               << "i: " << rotation.i << ", j: " << rotation.j << ", weight: " << rotation.weight << "\n"
@@ -885,27 +881,27 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     {
         // Log a relative view graph
         {
-            std::set<IndexT> set_ViewIds;
+            std::set<IndexT> setViewIds;
             std::transform(
-              _sfmData.getViews().begin(), _sfmData.getViews().end(), std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
-            graph::indexedGraph putativeGraph(set_ViewIds, getImagePairs(*_pairwiseMatches));
+              _sfmData.getViews().begin(), _sfmData.getViews().end(), std::inserter(setViewIds, setViewIds.begin()), stl::RetrieveKey());
+            graph::indexedGraph putativeGraph(setViewIds, getImagePairs(*_pairwiseMatches));
             graph::exportToGraphvizData((fs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
         }
 
         // Log a relative pose graph
         {
-            std::set<IndexT> set_pose_ids;
-            PairSet relative_pose_pairs;
-            for (const auto& relative_R : vec_relatives_R)
+            std::set<IndexT> setPoseIds;
+            PairSet relativePosePairs;
+            for (const auto& relativeR : vecRelativesR)
             {
-                const Pair relative_pose_indices(relative_R.i, relative_R.j);
-                relative_pose_pairs.insert(relative_pose_indices);
-                set_pose_ids.insert(relative_R.i);
-                set_pose_ids.insert(relative_R.j);
+                const Pair relativePoseIndices(relativeR.i, relativeR.j);
+                relativePosePairs.insert(relativePoseIndices);
+                setPoseIds.insert(relativeR.i);
+                setPoseIds.insert(relativeR.j);
             }
-            const std::string sGraph_name = "global_relative_rotation_pose_graph";
-            graph::indexedGraph putativeGraph(set_pose_ids, relative_pose_pairs);
-            graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
+            const std::string sGraphName = "global_relative_rotation_pose_graph";
+            graph::indexedGraph putativeGraph(setPoseIds, relativePosePairs);
+            graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraphName + ".dot")).string(), putativeGraph.g);
         }
     }
 }

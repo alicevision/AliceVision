@@ -288,7 +288,7 @@ void StructureEstimationFromKnownPoses::triangulate(SfMData& sfmData,
     }
 
     // Triangulate them using a robust triangulation scheme
-    StructureComputation_robust structure_estimator(true);
+    StructureComputationRobust structure_estimator(true);
     structure_estimator.triangulate(sfmData, randomNumberGenerator);
 }
 

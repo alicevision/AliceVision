@@ -68,25 +68,25 @@ class GlobalSfMTranslationAveragingSolver
     /**
      * @brief Use features in normalized camera frames
      */
-    bool Run(ETranslationAveragingMethod eTranslationAveragingMethod,
+    bool run(ETranslationAveragingMethod eTranslationAveragingMethod,
              sfmData::SfMData& sfmData,
              const feature::FeaturesPerView& normalizedFeaturesPerView,
              const matching::PairwiseMatches& pairwiseMatches,
-             const HashMap<IndexT, Mat3>& map_globalR,
+             const HashMap<IndexT, Mat3>& mapGlobalR,
              std::mt19937& randomNumberGenerator,
-             matching::PairwiseMatches& tripletWise_matches);
+             matching::PairwiseMatches& tripletWiseMatches);
 
   private:
-    bool Translation_averaging(ETranslationAveragingMethod eTranslationAveragingMethod,
-                               sfmData::SfMData& sfmData,
-                               const HashMap<IndexT, Mat3>& map_globalR);
+    bool translationAveraging(ETranslationAveragingMethod eTranslationAveragingMethod,
+                              sfmData::SfMData& sfmData,
+                              const HashMap<IndexT, Mat3>& mapGlobalR);
 
-    void Compute_translations(const sfmData::SfMData& sfmData,
-                              const feature::FeaturesPerView& normalizedFeaturesPerView,
-                              const matching::PairwiseMatches& pairwiseMatches,
-                              const HashMap<IndexT, Mat3>& map_globalR,
-                              std::mt19937& randomNumberGenerator,
-                              matching::PairwiseMatches& tripletWise_matches);
+    void computeTranslations(const sfmData::SfMData& sfmData,
+                             const feature::FeaturesPerView& normalizedFeaturesPerView,
+                             const matching::PairwiseMatches& pairwiseMatches,
+                             const HashMap<IndexT, Mat3>& mapGlobalR,
+                             std::mt19937& randomNumberGenerator,
+                             matching::PairwiseMatches& tripletWiseMatches);
 
     /**
      * @brief Compute the relative translations on the rotations graph.
@@ -94,28 +94,28 @@ class GlobalSfMTranslationAveragingSolver
      * Use an edge coverage algorithm to reduce the graph covering complexity
      * Complexity: sub-linear in term of edges count.
      */
-    void ComputePutativeTranslation_EdgesCoverage(const sfmData::SfMData& sfmData,
-                                                  const HashMap<IndexT, Mat3>& map_globalR,
-                                                  const feature::FeaturesPerView& normalizedFeaturesPerView,
-                                                  const matching::PairwiseMatches& pairwiseMatches,
-                                                  std::mt19937& randomNumberGenerator,
-                                                  translationAveraging::RelativeInfoVec& vec_initialEstimates,
-                                                  matching::PairwiseMatches& newpairMatches);
+    void computePutativeTranslationEdgesCoverage(const sfmData::SfMData& sfmData,
+                                                 const HashMap<IndexT, Mat3>& mapGlobalR,
+                                                 const feature::FeaturesPerView& normalizedFeaturesPerView,
+                                                 const matching::PairwiseMatches& pairwiseMatches,
+                                                 std::mt19937& randomNumberGenerator,
+                                                 translationAveraging::RelativeInfoVec& vecInitialEstimates,
+                                                 matching::PairwiseMatches& newpairMatches);
 
     /**
      * @brief Robust estimation and refinement of a translation and 3D points of an image triplets.
      */
-    bool Estimate_T_triplet(const sfmData::SfMData& sfmData,
-                            const HashMap<IndexT, Mat3>& map_globalR,
-                            const feature::FeaturesPerView& normalizedFeaturesPerView,
-                            const matching::PairwiseMatches& pairwiseMatches,
-                            const graph::Triplet& poses_id,
-                            std::mt19937& randomNumberGenerator,
-                            std::vector<Vec3>& vec_tis,
-                            double& precision,  // UpperBound of the precision found by the AContrario estimator
-                            std::vector<size_t>& vec_inliers,
-                            aliceVision::track::TracksMap& rig_tracks,
-                            const std::string& outDirectory) const;
+    bool estimateTTriplet(const sfmData::SfMData& sfmData,
+                          const HashMap<IndexT, Mat3>& mapGlobalR,
+                          const feature::FeaturesPerView& normalizedFeaturesPerView,
+                          const matching::PairwiseMatches& pairwiseMatches,
+                          const graph::Triplet& posesId,
+                          std::mt19937& randomNumberGenerator,
+                          std::vector<Vec3>& vecTis,
+                          double& precision,  // UpperBound of the precision found by the AContrario estimator
+                          std::vector<size_t>& vecInliers,
+                          aliceVision::track::TracksMap& rigTracks,
+                          const std::string& outDirectory) const;
 };
 
 }  // namespace sfm

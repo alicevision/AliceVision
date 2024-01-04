@@ -516,7 +516,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
         // Do the resectioning: compute the camera pose.
         resectionData.error_max = param._errorMax;
         ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-        bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
+        bool bResection = sfm::SfMLocalizer::localize(queryImageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                       randomNumberGenerator,
@@ -554,7 +554,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
 
         // D. refine the estimated pose
         ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
-        bool refineStatus = sfm::SfMLocalizer::RefinePose(
+        bool refineStatus = sfm::SfMLocalizer::refinePose(
           &queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
         if (!refineStatus)
         {
@@ -633,7 +633,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
     // Do the resectioning: compute the camera pose.
     resectionData.error_max = param._errorMax;
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-    const bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
+    const bool bResection = sfm::SfMLocalizer::localize(queryImageSize,
                                                         // pass the input intrinsic if they are valid, null otherwise
                                                         (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                         randomNumberGenerator,
@@ -678,7 +678,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
     // E. refine the estimated pose
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
     bool refineStatus =
-      sfm::SfMLocalizer::RefinePose(&queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
+      sfm::SfMLocalizer::refinePose(&queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
     if (!refineStatus)
         ALICEVISION_LOG_DEBUG("Refine pose failed.");
 

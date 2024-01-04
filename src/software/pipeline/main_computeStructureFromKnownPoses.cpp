@@ -119,7 +119,7 @@ int aliceVision_main(int argc, char **argv)
     pairs = matching::getImagePairs(matches);
     // keep only Pairs that belong to valid view indexes.
     const std::set<IndexT> valid_viewIdx = sfmData.getValidViews();
-    pairs = sfm::Pair_filter(pairs, valid_viewIdx);
+    pairs = sfm::filterPairs(pairs, valid_viewIdx);
   }
 
   aliceVision::system::Timer timer;
@@ -140,7 +140,7 @@ int aliceVision_main(int argc, char **argv)
   // create 3D landmarks
   structureEstimator.triangulate(sfmData, regionsPerView, randomNumberGenerator);
 
-  sfm::RemoveOutliers_AngleError(sfmData, 2.0);
+  sfm::removeOutliersWithAngleError(sfmData, 2.0);
 
   ALICEVISION_LOG_INFO("Structure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "\t- # landmarks found: " << sfmData.getLandmarks().size());

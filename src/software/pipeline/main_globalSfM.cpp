@@ -164,15 +164,15 @@ int aliceVision_main(int argc, char **argv)
   sfmEngine.initRandomSeed(randomSeed);
 
   // configure the featuresPerView & the matches_provider
-  sfmEngine.SetFeaturesProvider(&featuresPerView);
-  sfmEngine.SetMatchesProvider(&pairwiseMatches);
+  sfmEngine.setFeaturesProvider(&featuresPerView);
+  sfmEngine.setMatchesProvider(&pairwiseMatches);
 
   // configure reconstruction parameters
   sfmEngine.setLockAllIntrinsics(lockAllIntrinsics); // TODO: rename param
 
   // configure motion averaging method
-  sfmEngine.SetRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
-  sfmEngine.SetTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
+  sfmEngine.setRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
+  sfmEngine.setTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
 
   if(!sfmEngine.process())
     return EXIT_FAILURE;

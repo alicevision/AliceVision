@@ -23,7 +23,7 @@
 namespace aliceVision {
 namespace sfm {
 
-bool SfMLocalizer::Localize(const Pair& imageSize,
+bool SfMLocalizer::localize(const Pair& imageSize,
                             const camera::IntrinsicBase* optionalIntrinsics,
                             std::mt19937& randomNumberGenerator,
                             ImageLocalizerMatchData& resectionData,
@@ -180,7 +180,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     return resection;
 }
 
-bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
+bool SfMLocalizer::refinePose(camera::IntrinsicBase* intrinsics,
                               geometry::Pose3& pose,
                               const ImageLocalizerMatchData& matchingData,
                               bool refinePose,

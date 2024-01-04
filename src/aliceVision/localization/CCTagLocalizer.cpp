@@ -287,7 +287,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc& genQueryRegions,
     // estimate the pose
     resectionData.error_max = param->_errorMax;
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-    const bool bResection = sfm::SfMLocalizer::Localize(imageSize,
+    const bool bResection = sfm::SfMLocalizer::localize(imageSize,
                                                         // pass the input intrinsic if they are valid, null otherwise
                                                         (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                         randomNumberGenerator,
@@ -334,7 +334,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc& genQueryRegions,
     // refine the estimated pose
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
     const bool b_refine_pose = true;
-    const bool refineStatus = sfm::SfMLocalizer::RefinePose(&queryIntrinsics, pose, resectionData, b_refine_pose, param->_refineIntrinsics);
+    const bool refineStatus = sfm::SfMLocalizer::refinePose(&queryIntrinsics, pose, resectionData, b_refine_pose, param->_refineIntrinsics);
     if (!refineStatus)
         ALICEVISION_LOG_DEBUG("Refine pose failed.");
 

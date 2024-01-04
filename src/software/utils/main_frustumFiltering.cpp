@@ -63,7 +63,7 @@ PairSet BuildPairsFromFrustumsIntersections(
 {
   const FrustumFilter frustum_filter(sfmData, z_near, z_far);
   if (!sOutDirectory.empty())
-    frustum_filter.export_Ply((fs::path(sOutDirectory) / "frustums.ply").string());
+    frustum_filter.exportPly((fs::path(sOutDirectory) / "frustums.ply").string());
   return frustum_filter.getFrustumIntersectionPairs();
 }
 

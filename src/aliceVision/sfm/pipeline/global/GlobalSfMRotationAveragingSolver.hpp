@@ -72,27 +72,27 @@ class GlobalSfMRotationAveragingSolver
 {
   private:
     /// pair that are considered as valid by the rotation averaging solver
-    mutable PairSet used_pairs;
+    mutable PairSet usedPairs;
 
   public:
-    bool Run(ERotationAveragingMethod eRotationAveragingMethod,
+    bool run(ERotationAveragingMethod eRotationAveragingMethod,
              ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
-             const rotationAveraging::RelativeRotations& relativeRot_In,
-             const double max_angular_error,
-             HashMap<IndexT, Mat3>& map_globalR) const;
+             const rotationAveraging::RelativeRotations& relativeRotIn,
+             const double maxAngularError,
+             HashMap<IndexT, Mat3>& mapGlobalR) const;
 
     /**
      * @brief Reject edges of the view graph that do not produce triplets with tiny
      * angular error once rotation composition have been computed.
      */
-    void TripletRotationRejection(const double max_angular_error,
-                                  std::vector<graph::Triplet>& vec_triplets,
+    void tripletRotationRejection(const double maxAngularError,
+                                  std::vector<graph::Triplet>& vecTriplets,
                                   rotationAveraging::RelativeRotations& relativeRotations) const;
     /**
      * @brief Return the pairs validated by the GlobalRotation routine (inference can remove some)
      * @return pairs validated by the GlobalRotation routine
      */
-    PairSet GetUsedPairs() const;
+    PairSet getUsedPairs() const;
 };
 
 }  // namespace sfm

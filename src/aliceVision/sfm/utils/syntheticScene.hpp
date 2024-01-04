@@ -17,13 +17,13 @@ namespace sfm {
 
 /**
  * @brief Create features from a known SfMData (synthetic scene).
- * @param[out] out_featuresPerView
+ * @param[out] outFeaturesPerView
  * @param[in] sfmData synthetic SfM dataset
  * @param[in] descType
  * @param[in] noise
  */
 template<typename NoiseGenerator>
-void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
+void generateSyntheticFeatures(feature::FeaturesPerView& outFeaturesPerView,
                                feature::EImageDescriberType descType,
                                const sfmData::SfMData& sfmData,
                                NoiseGenerator& noise)
@@ -53,7 +53,7 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
         {
             // create Point Features vectors at the right size
             feature::PointFeatures pointFeatures(it.second);
-            out_featuresPerView.addFeatures(it.first, descType, pointFeatures);
+            outFeaturesPerView.addFeatures(it.first, descType, pointFeatures);
         }
     }
     // Use arbitrary values for feature scale and orientation
@@ -70,7 +70,7 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
             const IndexT viewId = obsIt.first;
             const sfmData::Observation& obs = obsIt.second;
 
-            out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.getFeatureId()] =
+            outFeaturesPerView.getFeaturesPerDesc(viewId)[descType][obs.getFeatureId()] =
               feature::PointFeature(obs.getX() + noise(generator), obs.getY() + noise(generator), scale, orientation);
         }
     }
@@ -78,11 +78,11 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
 
 /**
  * @brief Generate features matches between views from a known SfMData (synthetic scene).
- * @param[out] out_pairwiseMatches The output pairwiseMatches
+ * @param[out] outPairwiseMatches The output pairwiseMatches
  * @param[in] sfmData The synthetic SfM dataset
  * @param[in] descType The desciptor type
  */
-void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType);
+void generateSyntheticMatches(matching::PairwiseMatches& outPairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType);
 
 // Translate a synthetic scene into a valid SfMData scene
 // As only one intrinsic is defined we used shared intrinsic

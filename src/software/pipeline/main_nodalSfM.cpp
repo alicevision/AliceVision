@@ -533,7 +533,7 @@ int aliceVision_main(int argc, char** argv)
     {
         sfm::BundleAdjustmentSymbolicCeres BA(options, 3);
         const bool success = BA.adjust(sfmData, refineOptions);
-        countRemoved = sfm::RemoveOutliers_PixelResidualError(sfmData, sfm::EFeatureConstraint::SCALE, 2.0, 2);
+        countRemoved = sfm::removeOutliersWithPixelResidualError(sfmData, sfm::EFeatureConstraint::SCALE, 2.0, 2);
         std::cout << countRemoved << std::endl;
     }
     while (countRemoved > 0);

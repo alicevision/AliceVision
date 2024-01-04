@@ -64,15 +64,15 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
     generateSyntheticMatches(pairwiseMatches, sfmData, feature::EImageDescriberType::UNKNOWN);
 
     // Configure data provider (Features and Matches)
-    sfmEngine.SetFeaturesProvider(&featuresPerView);
-    sfmEngine.SetMatchesProvider(&pairwiseMatches);
+    sfmEngine.setFeaturesProvider(&featuresPerView);
+    sfmEngine.setMatchesProvider(&pairwiseMatches);
 
     // Configure reconstruction parameters
     sfmEngine.setLockAllIntrinsics(true);
 
     // Configure motion averaging method
-    sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);
-    sfmEngine.SetTranslationAveragingMethod(TRANSLATION_AVERAGING_L1);
+    sfmEngine.setRotationAveragingMethod(ROTATION_AVERAGING_L2);
+    sfmEngine.setTranslationAveragingMethod(TRANSLATION_AVERAGING_L1);
 
     BOOST_CHECK(sfmEngine.process());
 
@@ -113,15 +113,15 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
     generateSyntheticMatches(pairwiseMatches, sfmData, feature::EImageDescriberType::UNKNOWN);
 
     // Configure data provider (Features and Matches)
-    sfmEngine.SetFeaturesProvider(&featuresPerView);
-    sfmEngine.SetMatchesProvider(&pairwiseMatches);
+    sfmEngine.setFeaturesProvider(&featuresPerView);
+    sfmEngine.setMatchesProvider(&pairwiseMatches);
 
     // Configure reconstruction parameters
     sfmEngine.setLockAllIntrinsics(true);
 
     // Configure motion averaging method
-    sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L1);
-    sfmEngine.SetTranslationAveragingMethod(TRANSLATION_AVERAGING_L1);
+    sfmEngine.setRotationAveragingMethod(ROTATION_AVERAGING_L1);
+    sfmEngine.setTranslationAveragingMethod(TRANSLATION_AVERAGING_L1);
 
     BOOST_CHECK(sfmEngine.process());
 
@@ -162,15 +162,15 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
     generateSyntheticMatches(pairwiseMatches, sfmData, feature::EImageDescriberType::UNKNOWN);
 
     // Configure data provider (Features and Matches)
-    sfmEngine.SetFeaturesProvider(&featuresPerView);
-    sfmEngine.SetMatchesProvider(&pairwiseMatches);
+    sfmEngine.setFeaturesProvider(&featuresPerView);
+    sfmEngine.setMatchesProvider(&pairwiseMatches);
 
     // Configure reconstruction parameters
     sfmEngine.setLockAllIntrinsics(true);
 
     // Configure motion averaging method
-    sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);
-    sfmEngine.SetTranslationAveragingMethod(TRANSLATION_AVERAGING_L2_DISTANCE_CHORDAL);
+    sfmEngine.setRotationAveragingMethod(ROTATION_AVERAGING_L2);
+    sfmEngine.setTranslationAveragingMethod(TRANSLATION_AVERAGING_L2_DISTANCE_CHORDAL);
 
     BOOST_CHECK(sfmEngine.process());
 
@@ -211,15 +211,15 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
     generateSyntheticMatches(pairwiseMatches, sfmData, feature::EImageDescriberType::UNKNOWN);
 
     // Configure data provider (Features and Matches)
-    sfmEngine.SetFeaturesProvider(&featuresPerView);
-    sfmEngine.SetMatchesProvider(&pairwiseMatches);
+    sfmEngine.setFeaturesProvider(&featuresPerView);
+    sfmEngine.setMatchesProvider(&pairwiseMatches);
 
     // Configure reconstruction parameters
     sfmEngine.setLockAllIntrinsics(true);
 
     // Configure motion averaging method
-    sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);
-    sfmEngine.SetTranslationAveragingMethod(TRANSLATION_AVERAGING_SOFTL1);
+    sfmEngine.setRotationAveragingMethod(ROTATION_AVERAGING_L2);
+    sfmEngine.setTranslationAveragingMethod(TRANSLATION_AVERAGING_SOFTL1);
 
     BOOST_CHECK(sfmEngine.process());
 
