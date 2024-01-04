@@ -7,7 +7,7 @@
 #include "VideoFeed.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/image/convertion.hpp>
+#include <aliceVision/image/conversion.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <opencv2/core.hpp>

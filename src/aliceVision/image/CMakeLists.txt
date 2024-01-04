@@ -7,7 +7,7 @@ set(image_files_headers
   imageAlgo.hpp
   colorspace.hpp
   concat.hpp
-  convertion.hpp
+  conversion.hpp
   convolutionBase.hpp
   convolution.hpp
   dcp.hpp
