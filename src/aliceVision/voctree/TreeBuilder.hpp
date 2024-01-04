@@ -18,14 +18,14 @@ namespace voctree {
  * @brief Class for building a new vocabulary by hierarchically clustering
  * a set of training features.
  */
-template<class Feature, template<typename, typename> class DistanceT = L2, class FeatureAllocator = typename DefaultAllocator<Feature>::type>
+template<class Feature, template<typename, typename> class DistanceT = L2>
 class TreeBuilder
 {
   public:
-    typedef MutableVocabularyTree<Feature, DistanceT, FeatureAllocator> Tree;
+    typedef MutableVocabularyTree<Feature, DistanceT> Tree;
     typedef DistanceT<Feature, Feature> Distance;
-    typedef SimpleKmeans<Feature, Distance, FeatureAllocator> Kmeans;
-    typedef std::vector<Feature, FeatureAllocator> FeatureVector;
+    typedef SimpleKmeans<Feature, Distance> Kmeans;
+    typedef std::vector<Feature> FeatureVector;
 
     /**
      * @brief Constructor
@@ -74,15 +74,15 @@ class TreeBuilder
     unsigned char verbose_;
 };
 
-template<class Feature, template<typename, typename> class DistanceT, class FeatureAllocator>
-TreeBuilder<Feature, DistanceT, FeatureAllocator>::TreeBuilder(const Feature& zero, Distance d, unsigned char verbose)
+template<class Feature, template<typename, typename> class DistanceT>
+TreeBuilder<Feature, DistanceT>::TreeBuilder(const Feature& zero, Distance d, unsigned char verbose)
   : kmeans_(zero, d, verbose),
     zero_(zero),
     verbose_(verbose)
 {}
 
-template<class Feature, template<typename, typename> class DistanceT, class FeatureAllocator>
-void TreeBuilder<Feature, DistanceT, FeatureAllocator>::build(const FeatureVector& training_features, uint32_t k, uint32_t levels)
+template<class Feature, template<typename, typename> class DistanceT>
+void TreeBuilder<Feature, DistanceT>::build(const FeatureVector& training_features, uint32_t k, uint32_t levels)
 {
     // Initial setup and memory allocation for the tree
     tree_.clear();

@@ -97,12 +97,9 @@ inline IVocabularyTree::~IVocabularyTree() {}
  * \c Distance is a functor that computes the distance between two Feature objects. It must have a \c result_type
  * typedef specifying the type of the returned distance. For the purposes of VocabularyTree, this need not even be
  * a metric; distances simply need to be comparable.
- *
- * \c FeatureAllocator is an STL-compatible allocator used to allocate Features internally.
  */
 template<class Feature,
-         template<typename, typename> class Distance = L2,  // TODO: rename Feature into Descriptor
-         class FeatureAllocator = typename DefaultAllocator<Feature>::type>
+         template<typename, typename> class Distance = L2>  // TODO: rename Feature into Descriptor
 class VocabularyTree : public IVocabularyTree
 {
   public:
@@ -154,7 +151,7 @@ class VocabularyTree : public IVocabularyTree
     }
 
   protected:
-    std::vector<Feature, FeatureAllocator> centers_;
+    std::vector<Feature> centers_;
     std::vector<uint8_t> valid_centers_;  /// @todo Consider bit-vector
 
     uint32_t k_;  // splits, or branching factor
@@ -167,16 +164,16 @@ class VocabularyTree : public IVocabularyTree
     void setNodeCounts();
 };
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-VocabularyTree<Feature, Distance, FeatureAllocator>::VocabularyTree()
+template<class Feature, template<typename, typename> class Distance>
+VocabularyTree<Feature, Distance>::VocabularyTree()
   : k_(0),
     levels_(0),
     num_words_(0),
     word_start_(0)
 {}
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-VocabularyTree<Feature, Distance, FeatureAllocator>::VocabularyTree(const std::string& file)
+template<class Feature, template<typename, typename> class Distance>
+VocabularyTree<Feature, Distance>::VocabularyTree(const std::string& file)
   : k_(0),
     levels_(0),
     num_words_(0),
@@ -185,9 +182,9 @@ VocabularyTree<Feature, Distance, FeatureAllocator>::VocabularyTree(const std::s
     load(file);
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
+template<class Feature, template<typename, typename> class Distance>
 template<class DescriptorT>
-Word VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const DescriptorT& feature) const
+Word VocabularyTree<Feature, Distance>::quantize(const DescriptorT& feature) const
 {
     typedef typename Distance<Feature, DescriptorT>::result_type distance_type;
 
@@ -219,9 +216,9 @@ Word VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const Descrip
     return index - word_start_;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
+template<class Feature, template<typename, typename> class Distance>
 template<class DescriptorT>
-std::vector<Word> VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const std::vector<DescriptorT>& features) const
+std::vector<Word> VocabularyTree<Feature, Distance>::quantize(const std::vector<DescriptorT>& features) const
 {
     // ALICEVISION_LOG_DEBUG("VocabularyTree quantize: " << features.size());
     std::vector<Word> imgVisualWords(features.size(), 0);
@@ -238,9 +235,9 @@ std::vector<Word> VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(
     return imgVisualWords;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
+template<class Feature, template<typename, typename> class Distance>
 template<class DescriptorT>
-SparseHistogram VocabularyTree<Feature, Distance, FeatureAllocator>::quantizeToSparse(const std::vector<DescriptorT>& features) const
+SparseHistogram VocabularyTree<Feature, Distance>::quantizeToSparse(const std::vector<DescriptorT>& features) const
 {
     SparseHistogram histo;
     std::vector<Word> doc = quantize(features);
@@ -248,34 +245,34 @@ SparseHistogram VocabularyTree<Feature, Distance, FeatureAllocator>::quantizeToS
     return histo;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-uint32_t VocabularyTree<Feature, Distance, FeatureAllocator>::levels() const
+template<class Feature, template<typename, typename> class Distance>
+uint32_t VocabularyTree<Feature, Distance>::levels() const
 {
     return levels_;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-uint32_t VocabularyTree<Feature, Distance, FeatureAllocator>::splits() const
+template<class Feature, template<typename, typename> class Distance>
+uint32_t VocabularyTree<Feature, Distance>::splits() const
 {
     return k_;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-uint32_t VocabularyTree<Feature, Distance, FeatureAllocator>::words() const
+template<class Feature, template<typename, typename> class Distance>
+uint32_t VocabularyTree<Feature, Distance>::words() const
 {
     return num_words_;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::clear()
+template<class Feature, template<typename, typename> class Distance>
+void VocabularyTree<Feature, Distance>::clear()
 {
     centers_.clear();
     valid_centers_.clear();
     k_ = levels_ = num_words_ = word_start_ = 0;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::save(const std::string& file) const
+template<class Feature, template<typename, typename> class Distance>
+void VocabularyTree<Feature, Distance>::save(const std::string& file) const
 {
     /// @todo Support serializing of non-"simple" feature classes
     /// @todo Some identifying name for the distance used
@@ -290,8 +287,8 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::save(const std::string
     out.write((char*)(&valid_centers_[0]), valid_centers_.size());
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string& file)
+template<class Feature, template<typename, typename> class Distance>
+void VocabularyTree<Feature, Distance>::load(const std::string& file)
 {
     clear();
 
@@ -319,8 +316,8 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string
     assert(size == num_words_ + word_start_);
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::setNodeCounts()
+template<class Feature, template<typename, typename> class Distance>
+void VocabularyTree<Feature, Distance>::setNodeCounts()
 {
     num_words_ = k_;
     word_start_ = 0;

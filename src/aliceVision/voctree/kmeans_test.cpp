@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(kmeanInitializer)
     const std::size_t K = 10;
 
     typedef Eigen::Matrix<float, 1, DIMENSION> FeatureFloat;
-    typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat>> FeatureFloatVector;
+    typedef std::vector<FeatureFloat> FeatureFloatVector;
     typedef std::vector<FeatureFloat*> FeaturePointerVector;
 
     FeatureFloatVector features;
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(kmeanInitializerVarying)
         ALICEVISION_LOG_DEBUG("\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION);
 
         typedef Eigen::RowVectorXf FeatureFloat;
-        typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat>> FeatureFloatVector;
+        typedef std::vector<FeatureFloat> FeatureFloatVector;
         typedef std::vector<FeatureFloat*> FeaturePointerVector;
 
         FeatureFloatVector features;
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(kmeanSimple)
     const std::size_t STEP = 5 * K;
 
     typedef Eigen::Matrix<float, 1, DIMENSION> FeatureFloat;
-    typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat>> FeatureFloatVector;
+    typedef std::vector<FeatureFloat> FeatureFloatVector;
     typedef std::vector<FeatureFloat*> FeaturePointerVector;
 
     // generate a random vector of features
@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(kmeanVarying)
         ALICEVISION_LOG_DEBUG("\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION);
 
         typedef Eigen::RowVectorXf FeatureFloat;
-        typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat>> FeatureFloatVector;
+        typedef std::vector<FeatureFloat> FeatureFloatVector;
         typedef std::vector<FeatureFloat*> FeaturePointerVector;
 
         // generate a random vector of features
