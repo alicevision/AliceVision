@@ -92,14 +92,14 @@ bool ImageDescriber_CCTAG::describe(const image::Image<unsigned char>& image,
     // cctag::CCTagMarkersBank bank(_params._nCrowns);
 
 #ifndef CPU_ADAPT_OF_GPU_PART
-    const cv::Mat graySrc(cv::Size(image.Width(), image.Height()), CV_8UC1, (unsigned char*)image.data(), cv::Mat::AUTO_STEP);
+    const cv::Mat graySrc(cv::Size(image.width(), image.height()), CV_8UC1, (unsigned char*)image.data(), cv::Mat::AUTO_STEP);
     //// Invert the image
     // cv::Mat invertImg;
     // cv::bitwise_not(graySrc,invertImg);
     cctag::cctagDetection(cctags, _cudaPipe, 1, graySrc, *_params._internalParams, durations);
 #else  // todo: #ifdef depreciated
     cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
-    cctag::View cctagView((const unsigned char*)image.data(), image.Width(), image.Height(), image.Depth() * image.Width());
+    cctag::View cctagView((const unsigned char*)image.data(), image.width(), image.height(), image.depth() * image.width());
     cctag::cctagDetection(cctags, _cudaPipe, 1, cctagView._grayView, *_params._internalParams, durations);
 #endif
     durations->print(std::cerr);

@@ -31,7 +31,7 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
     image::Image<float> grayscale;
     image::ConvertPixelType(source, &grayscale);
 
-    const Vec2 center(grayscale.Width() / 2, grayscale.Height() / 2);
+    const Vec2 center(grayscale.width() / 2, grayscale.height() / 2);
 
     const double scales[] = {1.0, 0.75, 0.5, 0.25};
 
@@ -150,8 +150,8 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
 bool CheckerDetector::processLevel(std::vector<Vec2>& corners, const image::Image<float>& input, double scale) const
 {
     // Get resized size
-    const unsigned int w = input.Width();
-    const unsigned int h = input.Height();
+    const unsigned int w = input.width();
+    const unsigned int h = input.height();
     const unsigned int nw = static_cast<unsigned int>(floor(static_cast<float>(w) * scale));
     const unsigned int nh = static_cast<unsigned int>(floor(static_cast<float>(h) * scale));
 
@@ -249,10 +249,10 @@ void CheckerDetector::normalizeImage(image::Image<float>& output, const image::I
     float min = 0.0f, max = 0.0f;
     getMinMax(min, max, input);
 
-    output.resize(input.Width(), input.Height());
-    for (int y = 0; y < output.Height(); ++y)
+    output.resize(input.width(), input.height());
+    for (int y = 0; y < output.height(); ++y)
     {
-        for (int x = 0; x < output.Width(); ++x)
+        for (int x = 0; x < output.width(); ++x)
         {
             output(y, x) = (input(y, x) - min) / (max - min);
         }
@@ -262,23 +262,23 @@ void CheckerDetector::normalizeImage(image::Image<float>& output, const image::I
 void CheckerDetector::computeHessianResponse(image::Image<float>& output, const image::Image<float>& input) const
 {
     image::Image<float> smoothed;
-    image::ImageGaussianFilter(input, 1.5, smoothed, 2);
+    image::imageGaussianFilter(input, 1.5, smoothed, 2);
 
     // First order derivatives
     image::Image<float> gx, gy;
-    ImageXDerivative(smoothed, gx, true);
-    ImageYDerivative(smoothed, gy, true);
+    imageXDerivative(smoothed, gx, true);
+    imageYDerivative(smoothed, gy, true);
 
     // Second order derivatives
     image::Image<float> gxx, gxy, gyy;
-    ImageXDerivative(gx, gxx, true);
-    ImageXDerivative(gy, gxy, true);
-    ImageYDerivative(gy, gyy, true);
+    imageXDerivative(gx, gxx, true);
+    imageXDerivative(gy, gxy, true);
+    imageYDerivative(gy, gyy, true);
 
-    output.resize(input.Width(), input.Height());
-    for (int y = 0; y < input.Height(); ++y)
+    output.resize(input.width(), input.height());
+    for (int y = 0; y < input.height(); ++y)
     {
-        for (int x = 0; x < input.Width(); ++x)
+        for (int x = 0; x < input.width(); ++x)
         {
             output(y, x) = std::abs(gxx(y, x) * gyy(y, x) - 2.0 * gxy(y, x));
         }
@@ -294,10 +294,10 @@ void CheckerDetector::extractCorners(std::vector<Vec2>& rawCorners, const image:
     const int radius = 7;
 
     // Find peaks (local maxima) of the Hessian response
-    image::Image<float> output(hessianResponse.Width(), hessianResponse.Height(), true, 0.0f);
-    for (int i = radius; i < hessianResponse.Height() - radius; ++i)
+    image::Image<float> output(hessianResponse.width(), hessianResponse.height(), true, 0.0f);
+    for (int i = radius; i < hessianResponse.height() - radius; ++i)
     {
-        for (int j = radius; j < hessianResponse.Width() - radius; ++j)
+        for (int j = radius; j < hessianResponse.width() - radius; ++j)
         {
             bool isMaximal = true;
             const float val = hessianResponse(i, j);
@@ -330,9 +330,9 @@ void CheckerDetector::getMinMax(float& min, float& max, const image::Image<float
 {
     min = std::numeric_limits<float>::max();
     max = std::numeric_limits<float>::min();
-    for (int y = 0; y < input.Height(); ++y)
+    for (int y = 0; y < input.height(); ++y)
     {
-        for (int x = 0; x < input.Width(); ++x)
+        for (int x = 0; x < input.width(); ++x)
         {
             min = std::min(min, input(y, x));
             max = std::max(max, input(y, x));
@@ -343,8 +343,8 @@ void CheckerDetector::getMinMax(float& min, float& max, const image::Image<float
 void CheckerDetector::refineCorners(std::vector<Vec2>& refinedCorners, const std::vector<Vec2>& rawCorners, const image::Image<float>& input) const
 {
     image::Image<float> gx, gy;
-    ImageXDerivative(input, gx, true);
-    ImageYDerivative(input, gy, true);
+    imageXDerivative(input, gx, true);
+    imageYDerivative(input, gy, true);
 
     const int radius = 5;
 
@@ -354,9 +354,9 @@ void CheckerDetector::refineCorners(std::vector<Vec2>& refinedCorners, const std
             continue;
         if (pt.y() < radius)
             continue;
-        if (pt.x() >= gx.Width() - radius)
+        if (pt.x() >= gx.width() - radius)
             continue;
-        if (pt.y() >= gx.Height() - radius)
+        if (pt.y() >= gx.height() - radius)
             continue;
 
         Eigen::Matrix2d A = Eigen::Matrix2d::Zero();
@@ -429,7 +429,7 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner>& refinedCorners
     kernel /= norm;
 
     image::Image<float> filtered;
-    image::ImageConvolution(input, kernel, filtered);
+    image::imageConvolution(input, kernel, filtered);
 
     Eigen::MatrixXd AtA(6, 6);
     Eigen::Vector<double, 6> Atb;
@@ -515,7 +515,7 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner>& refinedCorners
                 break;
             }
 
-            if (corner(0) < radius || corner(0) >= input.Width() - radius || corner(1) < radius || corner(1) >= input.Height() - radius)
+            if (corner(0) < radius || corner(0) >= input.width() - radius || corner(1) < radius || corner(1) >= input.height() - radius)
             {
                 isValid = false;
                 break;
@@ -1108,8 +1108,8 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor>& img, bool 
 {
     for (auto c : _corners)
     {
-        image::DrawLine(c.center.x() + 2.0, c.center.y(), c.center.x() - 2.0, c.center.y(), image::RGBColor(255, 255, 0), &img);
-        image::DrawLine(c.center.x(), c.center.y() + 2.0, c.center.x(), c.center.y() - 2.0, image::RGBColor(255, 255, 0), &img);
+        image::drawLine(c.center.x() + 2.0, c.center.y(), c.center.x() - 2.0, c.center.y(), image::RGBColor(255, 255, 0), &img);
+        image::drawLine(c.center.x(), c.center.y() + 2.0, c.center.x(), c.center.y() - 2.0, image::RGBColor(255, 255, 0), &img);
     }
 
     std::vector<image::RGBColor> colors;
@@ -1151,7 +1151,7 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor>& img, bool 
                 const CheckerBoardCorner& c1 = _corners[p1];
                 const CheckerBoardCorner& c2 = _corners[p2];
 
-                image::DrawLineThickness(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), color, 5, &img);
+                image::drawLineThickness(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), color, 5, &img);
             }
         }
     };

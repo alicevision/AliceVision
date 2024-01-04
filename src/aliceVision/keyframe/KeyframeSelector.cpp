@@ -1367,7 +1367,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         }
 
         // Create the view
-        auto view = createView(currentImgName, intrinsicId, previousFrameId, image.Width(), image.Height());
+        auto view = createView(currentImgName, intrinsicId, previousFrameId, image.width(), image.height());
         previousFrameId = view->getFrameId();
 
         // If there is a rig, the view's rig and sub-pose IDs need to be set once it has been completed
@@ -1387,7 +1387,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         if (model.empty() && !models[mediaIndex].empty())
             model = models[mediaIndex];
 
-        const double imageRatio = static_cast<double>(image.Width()) / static_cast<double>(image.Height());
+        const double imageRatio = static_cast<double>(image.width()) / static_cast<double>(image.height());
         double sensorWidth = -1.0;
         sensorDB::Datasheet datasheet;
 

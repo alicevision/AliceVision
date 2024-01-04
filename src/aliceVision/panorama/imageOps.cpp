@@ -12,9 +12,9 @@ namespace aliceVision {
 
 void removeNegativeValues(image::Image<image::RGBfColor>& img)
 {
-    for (int i = 0; i < img.Height(); i++)
+    for (int i = 0; i < img.height(); i++)
     {
-        for (int j = 0; j < img.Width(); j++)
+        for (int j = 0; j < img.width(); j++)
         {
             image::RGBfColor rpix;
             image::RGBfColor ret = img(i, j);

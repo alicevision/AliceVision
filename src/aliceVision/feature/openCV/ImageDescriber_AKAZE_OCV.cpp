@@ -20,7 +20,7 @@ bool ImageDescriber_AKAZE_OCV::describe(const image::Image<unsigned char>& image
                                         const image::Image<unsigned char>* mask)
 {
     cv::Mat img;
-    cv::eigen2cv(image.GetMat(), img);
+    cv::eigen2cv(image.getMat(), img);
 
     std::vector<cv::KeyPoint> vec_keypoints;
     cv::Mat m_desc;

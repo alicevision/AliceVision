@@ -28,27 +28,27 @@ inline bool fGrayComp(const Pixel& p1, const Pixel& p2) { return p1.f_gray < p2.
 bool BilinearInterpolation_BorderCheck(float& val, float x, float y, const image::Image<float>& image, const image::Image<unsigned char>& flagImage)
 {
     val = 0.0f;
-    if (!(x >= 0 && y >= 0 && x <= image.Width() - 1 && y <= image.Height() - 1))
+    if (!(x >= 0 && y >= 0 && x <= image.width() - 1 && y <= image.height() - 1))
         return false;
 
     const int x1 = (int)x;
     const int y1 = (int)y;
 
     int x2, y2;
-    if (x1 == image.Width() - 1)
+    if (x1 == image.width() - 1)
         x2 = x1;
     else
         x2 = x1 + 1;
 
-    if (y1 == image.Height() - 1)
+    if (y1 == image.height() - 1)
         y2 = y1;
     else
         y2 = y1 + 1;
 
-    const int step = image.Width();
+    const int step = image.width();
     const float* data = image.data();
 
-    const int flag_step = flagImage.Width();
+    const int flag_step = flagImage.width();
     const unsigned char* flag_data = flagImage.data();
 
     if (flag_data[y1 * flag_step + x1] == 0 || flag_data[y1 * flag_step + x2] == 0 || flag_data[y2 * flag_step + x1] == 0 ||
@@ -146,12 +146,12 @@ void DescriptorExtractor_LIOP::CreateLIOP_GOrder(const image::Image<float>& outP
                                                  float desc[144]) const
 {
     const float* out_data = outPatch.data();
-    const int out_step = outPatch.Width();
+    const int out_step = outPatch.width();
     const unsigned char* flag_data = flagPatch.data();
-    const int flag_step = flagPatch.Width();
+    const int flag_step = flagPatch.width();
 
     const float inRadius2 = float(inRadius * inRadius);
-    const int outRadius = outPatch.Width() / 2;
+    const int outRadius = outPatch.width() / 2;
 
     const int lsRadius = 6;
     const float theta = 2.0f * M_PI / (float)_liopNum;
@@ -294,7 +294,7 @@ void DescriptorExtractor_LIOP::extract(const image::Image<float>& I, const Point
     for (int y = -outRadius; y <= outRadius; ++y)
     {
         const float ys = y * scale + feat.y();
-        if (ys < 0 || ys > I.Height() - 1)
+        if (ys < 0 || ys > I.height() - 1)
             continue;
 
         for (int x = -outRadius; x <= outRadius; ++x)
@@ -304,14 +304,14 @@ void DescriptorExtractor_LIOP::extract(const image::Image<float>& I, const Point
                 continue;
 
             const float xs = x * scale + feat.x();
-            if (xs < 0 || xs > I.Width() - 1)
+            if (xs < 0 || xs > I.width() - 1)
                 continue;
 
             outPatch_data[(y + outRadius) * outPatchWidth + x + outRadius] = sampler(I, ys, xs);
             flagPatch_data[(y + outRadius) * outPatchWidth + x + outRadius] = 1;
         }
     }
-    image::ImageGaussianFilter(image::Image<float>(outPatch), 1.2, outPatch);
+    image::imageGaussianFilter(image::Image<float>(outPatch), 1.2, outPatch);
 
     // b. creation of the LIOP ordering
     const int inRadius = scalePatchWidth / 2;

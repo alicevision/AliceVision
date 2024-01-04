@@ -74,7 +74,7 @@ bool extractDSPSIFT(const image::Image<float>& image,
                     bool orientation,
                     const image::Image<unsigned char>* mask)
 {
-    const int w = image.Width(), h = image.Height();
+    const int w = image.width(), h = image.height();
     // Setup covariant SIFT detector.
     std::unique_ptr<VlCovDet, void (*)(VlCovDet*)> covdet(vl_covdet_new(VL_COVDET_METHOD_DOG), &vl_covdet_delete);
 
@@ -122,7 +122,7 @@ bool extractDSPSIFT(const image::Image<float>& image,
         }
     }
 
-    vl_covdet_put_image(covdet.get(), image.data(), image.Width(), image.Height());
+    vl_covdet_put_image(covdet.get(), image.data(), image.width(), image.height());
 
     vl_covdet_detect(covdet.get());
 
@@ -248,8 +248,8 @@ bool extractDSPSIFT(const image::Image<float>& image,
             const std::size_t sizeMat = params._gridSize * params._gridSize;
             std::vector<std::size_t> countFeatPerCell(sizeMat, 0);
             const std::size_t keypointsPerCell = params._maxTotalKeypoints / sizeMat;
-            const double regionWidth = image.Width() / double(params._gridSize);
-            const double regionHeight = image.Height() / double(params._gridSize);
+            const double regionWidth = image.width() / double(params._gridSize);
+            const double regionHeight = image.height() / double(params._gridSize);
 
             for (IndexT ii = 0; ii < indexSort.size(); ++ii)
             {

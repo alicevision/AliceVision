@@ -128,11 +128,11 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times, 
     /* Generate a random image made of flat blocks (to pass variancetest )*/
     image::Image<image::RGBfColor> img(512, 512, true, image::RGBfColor(0.0f));
     int val = 0;
-    for (int i = 0; i < img.Height(); i++)
+    for (int i = 0; i < img.height(); i++)
     {
         int y = i / size_region;
 
-        for (int j = 0; j < img.Width(); j++)
+        for (int j = 0; j < img.width(); j++)
         {
             int x = j / size_region;
             int val = y * regions_count_per_col + x;
@@ -148,10 +148,10 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times, 
 
     for (double time : times)
     {
-        image::Image<image::RGBfColor> img_bracket(img.Width(), img.Height());
-        for (int i = 0; i < img.Height(); i++)
+        image::Image<image::RGBfColor> img_bracket(img.width(), img.height());
+        for (int i = 0; i < img.height(); i++)
         {
-            for (int j = 0; j < img.Width(); j++)
+            for (int j = 0; j < img.width(); j++)
             {
                 image::RGBfColor color = img(i, j);
 

@@ -109,10 +109,10 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
     // - both dimensions are larger or equal than the model dimensions
     int resizedHeight = 0;
     int resizedWidth = 0;
-    if (source.Height() < source.Width())
+    if (source.height() < source.width())
     {
         resizedWidth =
-          static_cast<int>(static_cast<double>(source.Width()) * static_cast<double>(_parameters.modelHeight) / static_cast<double>(source.Height()));
+          static_cast<int>(static_cast<double>(source.width()) * static_cast<double>(_parameters.modelHeight) / static_cast<double>(source.height()));
         if (resizedWidth < _parameters.modelWidth)
         {
             resizedWidth = _parameters.modelWidth;
@@ -127,7 +127,7 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
     else
     {
         resizedHeight =
-          static_cast<int>(static_cast<double>(source.Height()) * static_cast<double>(_parameters.modelWidth) / static_cast<double>(source.Width()));
+          static_cast<int>(static_cast<double>(source.height()) * static_cast<double>(_parameters.modelWidth) / static_cast<double>(source.width()));
         if (resizedHeight < _parameters.modelHeight)
         {
             resizedHeight = _parameters.modelHeight;
@@ -160,7 +160,7 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
         return false;
     }
 
-    imageAlgo::resampleImage(source.Width(), source.Height(), resizedLabels, labels, false);
+    imageAlgo::resampleImage(source.width(), source.height(), resizedLabels, labels, false);
 
     return true;
 }
@@ -168,10 +168,10 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
 bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image<image::RGBfColor>& source)
 {
     // Compute the theorical tiles count
-    int cwidth = divideRoundUp(source.Width(), _parameters.modelWidth);
-    int cheight = divideRoundUp(source.Height(), _parameters.modelHeight);
+    int cwidth = divideRoundUp(source.width(), _parameters.modelWidth);
+    int cheight = divideRoundUp(source.height(), _parameters.modelHeight);
 
-    image::Image<ScoredLabel> scoredLabels(source.Width(), source.Height(), true, {0, 0.0f});
+    image::Image<ScoredLabel> scoredLabels(source.width(), source.height(), true, {0, 0.0f});
 
     // Loop over tiles
     for (int i = 0; i < cheight; i++)
@@ -181,7 +181,7 @@ bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image
         int ly = y + _parameters.modelHeight;
 
         // If we are on the end border, shift on the other side
-        int shifty = source.Height() - ly;
+        int shifty = source.height() - ly;
         if (shifty < 0)
         {
             y = std::max(0, y + shifty);
@@ -194,7 +194,7 @@ bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image
             int lx = x + _parameters.modelWidth;
 
             // If we are on the end border, shift on the other side
-            int shiftx = source.Width() - lx;
+            int shiftx = source.width() - lx;
             if (shiftx < 0)
             {
                 x = std::max(0, x + shiftx);
@@ -227,10 +227,10 @@ bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image
 
 bool Segmentation::mergeLabels(image::Image<ScoredLabel>& labels, image::Image<ScoredLabel>& tileLabels, int tileX, int tileY)
 {
-    for (int i = 0; i < tileLabels.Height(); i++)
+    for (int i = 0; i < tileLabels.height(); i++)
     {
         int y = i + tileY;
-        for (int j = 0; j < tileLabels.Width(); j++)
+        for (int j = 0; j < tileLabels.width(); j++)
         {
             int x = j + tileX;
 

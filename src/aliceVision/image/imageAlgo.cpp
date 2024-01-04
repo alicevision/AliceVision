@@ -194,7 +194,7 @@ void colorconvert(oiio::ImageBuf& imgBuf, image::EImageColorSpace fromColorSpace
 
 void colorconvert(image::Image<image::RGBfColor>& image, image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace)
 {
-    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 3, oiio::TypeDesc::FLOAT);
+    oiio::ImageSpec imageSpec(image.width(), image.height(), 3, oiio::TypeDesc::FLOAT);
     auto* buffer = image.data();
     oiio::ImageBuf imageBuf(imageSpec, buffer->data());
 
@@ -203,7 +203,7 @@ void colorconvert(image::Image<image::RGBfColor>& image, image::EImageColorSpace
 
 void colorconvert(image::Image<image::RGBAfColor>& image, image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace)
 {
-    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 4, oiio::TypeDesc::FLOAT);
+    oiio::ImageSpec imageSpec(image.width(), image.height(), 4, oiio::TypeDesc::FLOAT);
     auto* buffer = image.data();
     oiio::ImageBuf imageBuf(imageSpec, buffer->data());
 
@@ -240,11 +240,11 @@ void resizeImage(int downscale,
                  const std::string& filter,
                  float filterSize)
 {
-    const int outWidth = inImage.Width() / downscale;
-    const int outHeight = inImage.Height() / downscale;
+    const int outWidth = inImage.width() / downscale;
+    const int outHeight = inImage.height() / downscale;
     outImage.resize(outWidth, outHeight);
     resizeImage(
-      oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), outWidth, outHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inImage.width(), inImage.height(), outWidth, outHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(int downscale, image::Image<unsigned char>& inoutImage, const std::string& filter, float filterSize)
@@ -254,24 +254,24 @@ void resizeImage(int downscale, image::Image<unsigned char>& inoutImage, const s
         ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
-    const int outWidth = inoutImage.Width() / downscale;
-    const int outHeight = inoutImage.Height() / downscale;
+    const int outWidth = inoutImage.width() / downscale;
+    const int outHeight = inoutImage.height() / downscale;
 
     image::Image<unsigned char> rescaled(outWidth, outHeight);
 
     resizeImage(
-      oiio::TypeDesc::UINT8, inoutImage.Width(), inoutImage.Height(), outWidth, outHeight, 1, inoutImage.data(), rescaled.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inoutImage.width(), inoutImage.height(), outWidth, outHeight, 1, inoutImage.data(), rescaled.data(), filter, filterSize);
 
     inoutImage.swap(rescaled);
 }
 
 void resizeImage(int downscale, const image::Image<float>& inImage, image::Image<float>& outImage, const std::string& filter, float filterSize)
 {
-    const int outWidth = inImage.Width() / downscale;
-    const int outHeight = inImage.Height() / downscale;
+    const int outWidth = inImage.width() / downscale;
+    const int outHeight = inImage.height() / downscale;
     outImage.resize(outWidth, outHeight);
     resizeImage(
-      oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), outWidth, outHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(int downscale, image::Image<float>& inoutImage, const std::string& filter, float filterSize)
@@ -281,13 +281,13 @@ void resizeImage(int downscale, image::Image<float>& inoutImage, const std::stri
         ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
-    const int outWidth = inoutImage.Width() / downscale;
-    const int outHeight = inoutImage.Height() / downscale;
+    const int outWidth = inoutImage.width() / downscale;
+    const int outHeight = inoutImage.height() / downscale;
 
     image::Image<float> rescaled(outWidth, outHeight);
 
     resizeImage(
-      oiio::TypeDesc::FLOAT, inoutImage.Width(), inoutImage.Height(), outWidth, outHeight, 1, inoutImage.data(), rescaled.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inoutImage.width(), inoutImage.height(), outWidth, outHeight, 1, inoutImage.data(), rescaled.data(), filter, filterSize);
 
     inoutImage.swap(rescaled);
 }
@@ -298,11 +298,11 @@ void resizeImage(int downscale,
                  const std::string& filter,
                  float filterSize)
 {
-    const int outWidth = inImage.Width() / downscale;
-    const int outHeight = inImage.Height() / downscale;
+    const int outWidth = inImage.width() / downscale;
+    const int outHeight = inImage.height() / downscale;
     outImage.resize(outWidth, outHeight);
     resizeImage(
-      oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), outWidth, outHeight, 3, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inImage.width(), inImage.height(), outWidth, outHeight, 3, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(int downscale, image::Image<image::RGBColor>& inoutImage, const std::string& filter, float filterSize)
@@ -312,13 +312,13 @@ void resizeImage(int downscale, image::Image<image::RGBColor>& inoutImage, const
         ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
-    const int outWidth = inoutImage.Width() / downscale;
-    const int outHeight = inoutImage.Height() / downscale;
+    const int outWidth = inoutImage.width() / downscale;
+    const int outHeight = inoutImage.height() / downscale;
 
     image::Image<image::RGBColor> rescaled(outWidth, outHeight);
 
     resizeImage(
-      oiio::TypeDesc::UINT8, inoutImage.Width(), inoutImage.Height(), outWidth, outHeight, 3, inoutImage.data(), rescaled.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inoutImage.width(), inoutImage.height(), outWidth, outHeight, 3, inoutImage.data(), rescaled.data(), filter, filterSize);
 
     inoutImage.swap(rescaled);
 }
@@ -329,11 +329,11 @@ void resizeImage(int downscale,
                  const std::string& filter,
                  float filterSize)
 {
-    const int outWidth = inImage.Width() / downscale;
-    const int outHeight = inImage.Height() / downscale;
+    const int outWidth = inImage.width() / downscale;
+    const int outHeight = inImage.height() / downscale;
     outImage.resize(outWidth, outHeight);
     resizeImage(
-      oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 3, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), outWidth, outHeight, 3, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(int downscale, image::Image<image::RGBfColor>& inoutImage, const std::string& filter, float filterSize)
@@ -343,13 +343,13 @@ void resizeImage(int downscale, image::Image<image::RGBfColor>& inoutImage, cons
         ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
-    const int outWidth = inoutImage.Width() / downscale;
-    const int outHeight = inoutImage.Height() / downscale;
+    const int outWidth = inoutImage.width() / downscale;
+    const int outHeight = inoutImage.height() / downscale;
 
     image::Image<image::RGBfColor> rescaled(outWidth, outHeight);
 
     resizeImage(
-      oiio::TypeDesc::FLOAT, inoutImage.Width(), inoutImage.Height(), outWidth, outHeight, 3, inoutImage.data(), rescaled.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inoutImage.width(), inoutImage.height(), outWidth, outHeight, 3, inoutImage.data(), rescaled.data(), filter, filterSize);
 
     inoutImage.swap(rescaled);
 }
@@ -360,11 +360,11 @@ void resizeImage(int downscale,
                  const std::string& filter,
                  float filterSize)
 {
-    const int outWidth = inImage.Width() / downscale;
-    const int outHeight = inImage.Height() / downscale;
+    const int outWidth = inImage.width() / downscale;
+    const int outHeight = inImage.height() / downscale;
     outImage.resize(outWidth, outHeight);
     resizeImage(
-      oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), outWidth, outHeight, 4, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inImage.width(), inImage.height(), outWidth, outHeight, 4, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(int downscale, image::Image<image::RGBAColor>& inoutImage, const std::string& filter, float filterSize)
@@ -374,13 +374,13 @@ void resizeImage(int downscale, image::Image<image::RGBAColor>& inoutImage, cons
         ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
-    const int outWidth = inoutImage.Width() / downscale;
-    const int outHeight = inoutImage.Height() / downscale;
+    const int outWidth = inoutImage.width() / downscale;
+    const int outHeight = inoutImage.height() / downscale;
 
     image::Image<image::RGBAColor> rescaled(outWidth, outHeight);
 
     resizeImage(
-      oiio::TypeDesc::UINT8, inoutImage.Width(), inoutImage.Height(), outWidth, outHeight, 4, inoutImage.data(), rescaled.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inoutImage.width(), inoutImage.height(), outWidth, outHeight, 4, inoutImage.data(), rescaled.data(), filter, filterSize);
 
     inoutImage.swap(rescaled);
 }
@@ -391,11 +391,11 @@ void resizeImage(int downscale,
                  const std::string& filter,
                  float filterSize)
 {
-    const int outWidth = inImage.Width() / downscale;
-    const int outHeight = inImage.Height() / downscale;
+    const int outWidth = inImage.width() / downscale;
+    const int outHeight = inImage.height() / downscale;
     outImage.resize(outWidth, outHeight);
     resizeImage(
-      oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 4, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), outWidth, outHeight, 4, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(int downscale, image::Image<image::RGBAfColor>& inoutImage, const std::string& filter, float filterSize)
@@ -405,13 +405,13 @@ void resizeImage(int downscale, image::Image<image::RGBAfColor>& inoutImage, con
         ALICEVISION_THROW_ERROR("[image] resizeImage: downscale must be larger than 1, but function was called with downscale=" << downscale);
     }
 
-    const int outWidth = inoutImage.Width() / downscale;
-    const int outHeight = inoutImage.Height() / downscale;
+    const int outWidth = inoutImage.width() / downscale;
+    const int outHeight = inoutImage.height() / downscale;
 
     image::Image<image::RGBAfColor> rescaled(outWidth, outHeight);
 
     resizeImage(
-      oiio::TypeDesc::FLOAT, inoutImage.Width(), inoutImage.Height(), outWidth, outHeight, 4, inoutImage.data(), rescaled.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inoutImage.width(), inoutImage.height(), outWidth, outHeight, 4, inoutImage.data(), rescaled.data(), filter, filterSize);
 
     inoutImage.swap(rescaled);
 }
@@ -425,7 +425,7 @@ void resizeImage(const int newWidth,
 {
     outImage.resize(newWidth, newHeight);
     resizeImage(
-      oiio::TypeDesc::UINT32, inImage.Width(), inImage.Height(), newWidth, newHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::UINT32, inImage.width(), inImage.height(), newWidth, newHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(const int newWidth,
@@ -437,7 +437,7 @@ void resizeImage(const int newWidth,
 {
     outImage.resize(newWidth, newHeight);
     resizeImage(
-      oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inImage.width(), inImage.height(), newWidth, newHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(const int newWidth,
@@ -449,7 +449,7 @@ void resizeImage(const int newWidth,
 {
     outImage.resize(newWidth, newHeight);
     resizeImage(
-      oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), newWidth, newHeight, 1, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(const int newWidth,
@@ -461,7 +461,7 @@ void resizeImage(const int newWidth,
 {
     outImage.resize(newWidth, newHeight);
     resizeImage(
-      oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 3, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inImage.width(), inImage.height(), newWidth, newHeight, 3, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(const int newWidth,
@@ -473,7 +473,7 @@ void resizeImage(const int newWidth,
 {
     outImage.resize(newWidth, newHeight);
     resizeImage(
-      oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 3, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), newWidth, newHeight, 3, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(const int newWidth,
@@ -485,7 +485,7 @@ void resizeImage(const int newWidth,
 {
     outImage.resize(newWidth, newHeight);
     resizeImage(
-      oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), newWidth, newHeight, 4, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::UINT8, inImage.width(), inImage.height(), newWidth, newHeight, 4, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 void resizeImage(const int newWidth,
@@ -497,7 +497,7 @@ void resizeImage(const int newWidth,
 {
     outImage.resize(newWidth, newHeight);
     resizeImage(
-      oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), newWidth, newHeight, 4, inImage.data(), outImage.data(), filter, filterSize);
+      oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), newWidth, newHeight, 4, inImage.data(), outImage.data(), filter, filterSize);
 }
 
 template<typename T>
@@ -520,7 +520,7 @@ void resampleImage(oiio::TypeDesc typeDesc,
 void resampleImage(int outWidth, int outHeight, const image::Image<IndexT>& inImage, image::Image<IndexT>& outImage, bool interpolate)
 {
     outImage.resize(outWidth, outHeight);
-    resampleImage(oiio::TypeDesc::UINT32, inImage.Width(), inImage.Height(), outWidth, outHeight, 1, inImage.data(), outImage.data(), interpolate);
+    resampleImage(oiio::TypeDesc::UINT32, inImage.width(), inImage.height(), outWidth, outHeight, 1, inImage.data(), outImage.data(), interpolate);
 }
 
 template<typename T>
@@ -548,16 +548,16 @@ void convolveImage(const image::Image<unsigned char>& inBuffer,
                    float kernelWidth,
                    float kernelHeight)
 {
-    outBuffer.resize(inBuffer.Width(), inBuffer.Height());
+    outBuffer.resize(inBuffer.width(), inBuffer.height());
     convolveImage(
-      oiio::TypeDesc::UCHAR, inBuffer.Width(), inBuffer.Height(), 1, inBuffer.data(), outBuffer.data(), kernel, kernelWidth, kernelHeight);
+      oiio::TypeDesc::UCHAR, inBuffer.width(), inBuffer.height(), 1, inBuffer.data(), outBuffer.data(), kernel, kernelWidth, kernelHeight);
 }
 
 void convolveImage(const image::Image<rgb>& inBuffer, image::Image<rgb>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
 {
-    outBuffer.resize(inBuffer.Width(), inBuffer.Height());
+    outBuffer.resize(inBuffer.width(), inBuffer.height());
     convolveImage(
-      oiio::TypeDesc::UCHAR, inBuffer.Width(), inBuffer.Height(), 3, inBuffer.data(), outBuffer.data(), kernel, kernelWidth, kernelHeight);
+      oiio::TypeDesc::UCHAR, inBuffer.width(), inBuffer.height(), 3, inBuffer.data(), outBuffer.data(), kernel, kernelWidth, kernelHeight);
 }
 
 void convolveImage(const image::Image<float>& inBuffer,
@@ -566,9 +566,9 @@ void convolveImage(const image::Image<float>& inBuffer,
                    float kernelWidth,
                    float kernelHeight)
 {
-    outBuffer.resize(inBuffer.Width(), inBuffer.Height());
+    outBuffer.resize(inBuffer.width(), inBuffer.height());
     convolveImage(
-      oiio::TypeDesc::FLOAT, inBuffer.Width(), inBuffer.Height(), 1, inBuffer.data(), outBuffer.data(), kernel, kernelWidth, kernelHeight);
+      oiio::TypeDesc::FLOAT, inBuffer.width(), inBuffer.height(), 1, inBuffer.data(), outBuffer.data(), kernel, kernelWidth, kernelHeight);
 }
 
 void convolveImage(const image::Image<image::RGBfColor>& inBuffer,
@@ -577,9 +577,9 @@ void convolveImage(const image::Image<image::RGBfColor>& inBuffer,
                    float kernelWidth,
                    float kernelHeight)
 {
-    outBuffer.resize(inBuffer.Width(), inBuffer.Height());
+    outBuffer.resize(inBuffer.width(), inBuffer.height());
     convolveImage(
-      oiio::TypeDesc::FLOAT, inBuffer.Width(), inBuffer.Height(), 3, inBuffer.data(), outBuffer.data(), kernel, kernelWidth, kernelHeight);
+      oiio::TypeDesc::FLOAT, inBuffer.width(), inBuffer.height(), 3, inBuffer.data(), outBuffer.data(), kernel, kernelWidth, kernelHeight);
 }
 
 void fillHoles(int inWidth, int inHeight, image::RGBfColor* colorBuffer, const std::vector<float>& alphaBuffer)
@@ -604,7 +604,7 @@ void fillHoles(int inWidth, int inHeight, image::RGBfColor* colorBuffer, const s
 
 void fillHoles(image::Image<image::RGBfColor>& image, const std::vector<float>& alphaBuffer)
 {
-    fillHoles(image.Width(), image.Height(), image.data(), alphaBuffer);
+    fillHoles(image.width(), image.height(), image.data(), alphaBuffer);
 }
 
 void imageDiff(const image::Image<image::RGBfColor>& inImg,
@@ -612,11 +612,11 @@ void imageDiff(const image::Image<image::RGBfColor>& inImg,
                image::Image<image::RGBfColor>& outImg,
                unsigned int downscale)
 {
-    outImg.resize(inImg.Width(), inImg.Height());
+    outImg.resize(inImg.width(), inImg.height());
 
-    for (int iy = 0; iy < inImg.Height(); iy++)
+    for (int iy = 0; iy < inImg.height(); iy++)
     {
-        for (int ix = 0; ix < inImg.Width(); ix++)
+        for (int ix = 0; ix < inImg.width(); ix++)
         {
             outImg(iy, ix) = inImg(iy, ix) - getInterpolateColor(inImgDownscaled, iy / downscale, ix / downscale);
         }
@@ -631,8 +631,8 @@ void laplacianPyramid(std::vector<image::Image<image::RGBfColor>>& out_pyramidL,
     assert(nbBand >= 1);
 
     image::Image<image::RGBfColor> img(image);
-    int outW = static_cast<int>(img.Width() / downscale);
-    int outH = static_cast<int>(img.Height() / downscale);
+    int outW = static_cast<int>(img.width() / downscale);
+    int outH = static_cast<int>(img.height() / downscale);
 
     image::Image<image::RGBfColor> imgDownscaled(outW, outH);
     out_pyramidL.resize(nbBand);
@@ -652,7 +652,7 @@ void laplacianPyramid(std::vector<image::Image<image::RGBfColor>>& out_pyramidL,
     out_pyramidL[nbBand - 1] = img;
 
     for (std::size_t i = 0; i < out_pyramidL.size(); ++i)
-        ALICEVISION_LOG_DEBUG("laplacianDownscalePyramid: Size level " << i << " : " << out_pyramidL[i].Width() << "x" << out_pyramidL[i].Height());
+        ALICEVISION_LOG_DEBUG("laplacianDownscalePyramid: Size level " << i << " : " << out_pyramidL[i].width() << "x" << out_pyramidL[i].height());
 }
 
 }  // namespace imageAlgo

@@ -16,11 +16,11 @@ bool distanceToCenter(aliceVision::image::Image<float>& _weights, const Coordina
     float cx = width / 2.0f;
     float cy = height / 2.0f;
 
-    _weights = aliceVision::image::Image<float>(coordinates.Width(), coordinates.Height());
+    _weights = aliceVision::image::Image<float>(coordinates.width(), coordinates.height());
 
-    for (int i = 0; i < _weights.Height(); i++)
+    for (int i = 0; i < _weights.height(); i++)
     {
-        for (int j = 0; j < _weights.Width(); j++)
+        for (int j = 0; j < _weights.width(); j++)
         {
             _weights(i, j) = 0.0f;
 
@@ -52,8 +52,8 @@ static inline int sep(int i, int u, int gi, int gu, int) noexcept { return (u * 
 /// Code adapted from VFLib: https://github.com/vinniefalco/VFLib (Licence MIT)
 bool computeDistanceMap(image::Image<int>& distance, const image::Image<unsigned char>& mask)
 {
-    int width = mask.Width();
-    int height = mask.Height();
+    int width = mask.width();
+    int height = mask.height();
 
     int maxval = width + height;
     image::Image<int> buf(width, height);

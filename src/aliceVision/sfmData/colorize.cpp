@@ -112,8 +112,8 @@ void colorizeTracks(SfMData& sfmData)
                 // color the point
                 Vec2 pt = landmark.getObservations().at(view.getViewId()).getCoordinates();
                 // clamp the pixel position if the feature/marker center is outside the image.
-                pt.x() = clamp(pt.x(), 0.0, static_cast<double>(image.Width() - 1));
-                pt.y() = clamp(pt.y(), 0.0, static_cast<double>(image.Height() - 1));
+                pt.x() = clamp(pt.x(), 0.0, static_cast<double>(image.width() - 1));
+                pt.y() = clamp(pt.y(), 0.0, static_cast<double>(image.height() - 1));
                 landmark.rgb = image(pt.y(), pt.x());
             }
 

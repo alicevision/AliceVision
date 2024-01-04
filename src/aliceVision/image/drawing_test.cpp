@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_Scanlines)
     //  |         |
     //  |_________|
     const int y = 5;
-    DrawLine(0, y, w - 1, y, 255, &image);
+    drawLine(0, y, w - 1, y, 255, &image);
     for (int i = 0; i < w; ++i)
         BOOST_CHECK_EQUAL(image(y, i), 255);
 
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_Scanlines)
     //  |    r|   |
     //  |____e|___|
     const int x = 5;
-    DrawLine(x, 0, x, h - 1, 255, &image);
+    drawLine(x, 0, x, h - 1, 255, &image);
     for (int i = 0; i < h; ++i)
         BOOST_CHECK_EQUAL(image(i, y), 255);
 }
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_Scanlines_RGB)
     //  |         |
     //  |_________|
     const int y = 5;
-    DrawLine(0, y, w - 1, y, RGBColor(GREEN), &image);
+    drawLine(0, y, w - 1, y, RGBColor(GREEN), &image);
     for (int i = 0; i < w; ++i)
         BOOST_CHECK_EQUAL(image(y, i), RGBColor(GREEN));
 
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_Scanlines_RGB)
     //  |    r|   |
     //  |____e|___|
     const int x = 5;
-    DrawLine(x, 0, x, h - 1, RGBColor(YELLOW), &image);
+    drawLine(x, 0, x, h - 1, RGBColor(YELLOW), &image);
     for (int i = 0; i < h; ++i)
         BOOST_CHECK_EQUAL(image(i, y), RGBColor(YELLOW));
 }
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_Lines45)
     //  | \ |
     //  |__\|
 
-    DrawLine(0, 0, w - 1, h - 1, 255, &image);
+    drawLine(0, 0, w - 1, h - 1, 255, &image);
     for (int i = 0; i < w; ++i)
         BOOST_CHECK_EQUAL(image(i, i), 255);
 
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_Lines45)
     //  |  / |
     //  | /  |
     //  |/___|_
-    DrawLine(0, h - 1, w - 1, 0, 255, &image);
+    drawLine(0, h - 1, w - 1, 0, 255, &image);
     for (int i = 0; i < h; ++i)
         BOOST_CHECK_EQUAL(image(h - 1 - i, i), 255);
 }
@@ -117,11 +117,11 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_Circle)
     const int radius = 3;
     const int x = 5, y = 5;
 
-    DrawCircle(x, y, radius, (unsigned char)255, &image);
+    drawCircle(x, y, radius, (unsigned char)255, &image);
 
     // Distance checking :
-    for (int j = 0; j < image.Height(); ++j)
-        for (int i = 0; i < image.Width(); ++i)
+    for (int j = 0; j < image.height(); ++j)
+        for (int i = 0; i < image.width(); ++i)
         {
             if (image(j, i) == 255)
             {
@@ -143,12 +143,12 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_Ellipse)
     const int radius = 3, angle = 0;
     const int x = 5, y = 5;
 
-    DrawEllipse(x, y, radius, radius, (unsigned char)255, &image, (double)angle);
+    drawEllipse(x, y, radius, radius, (unsigned char)255, &image, (double)angle);
 
     // Distance checking :
-    for (int j = 0; j < image.Height(); ++j)
+    for (int j = 0; j < image.height(); ++j)
     {
-        for (int i = 0; i < image.Width(); ++i)
+        for (int i = 0; i < image.width(); ++i)
         {
             if (image(j, i) == 255)
             {
@@ -171,12 +171,12 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_RotatedEllipse)
     const int radius = 6;
     const int x = 10, y = 10;
 
-    DrawEllipse(x, y, radius, radius / 2.0, static_cast<unsigned char>(255), &image, M_PI / 4.0);
+    drawEllipse(x, y, radius, radius / 2.0, static_cast<unsigned char>(255), &image, M_PI / 4.0);
 
     // Distance checking :
-    for (int j = 0; j < image.Height(); ++j)
+    for (int j = 0; j < image.height(); ++j)
     {
-        for (int i = 0; i < image.Width(); ++i)
+        for (int i = 0; i < image.width(); ++i)
         {
             if (image(j, i) == 255)
             {
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_RotatedEllipse)
     }
 }
 
-/// Assert that the DrawLine function do not crash
+/// Assert that the drawLine function does not crash
 /// when one point is outside the image
 BOOST_AUTO_TEST_CASE(ImageDrawing_DrawLine_PointOutsideTheImage)
 {
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_DrawLine_PointOutsideTheImage)
     {
         int x1 = int(cos(i) * radius + 0.5);
         int y1 = int(sin(i) * radius + 0.5);
-        DrawLine(x, y, x + x1, y + y1, 255, &image);
+        drawLine(x, y, x + x1, y + y1, 255, &image);
     }
     // Translate :
     x += int(15 / 2.0 + 0.5);
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_DrawLine_PointOutsideTheImage)
     {
         int x1 = int(cos(i) * radius + 0.5);
         int y1 = int(sin(i) * radius + 0.5);
-        DrawLine(x, y, x + x1, y + y1, 255, &image);
+        drawLine(x, y, x + x1, y + y1, 255, &image);
     }
     // Translate :
     x += int(15 / 2.0 + 0.5);
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_DrawLine_PointOutsideTheImage)
     {
         int x1 = int(cos(i) * radius + 0.5);
         int y1 = int(sin(i) * radius + 0.5);
-        DrawLine(x, y, x + x1, y + y1, 255, &image);
+        drawLine(x, y, x + x1, y + y1, 255, &image);
     }
 
     // Point totally outside the image
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(ImageDrawing_DrawLine_PointOutsideTheImage)
     {
         int x1 = int(cos(i) * radius + 0.5);
         int y1 = int(sin(i) * radius + 0.5);
-        DrawLine(x, y, x + x1, y + y1, 255, &image);
+        drawLine(x, y, x + x1, y + y1, 255, &image);
     }
     // writeImage( image, "toto.png");
 }

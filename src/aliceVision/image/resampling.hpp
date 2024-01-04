@@ -30,16 +30,16 @@ namespace image {
 template<typename SamplerType, typename Image>
 void downscaleImage(const Image& src, Image& out, int downscale)
 {
-    const int new_width = src.Width() / downscale;
-    const int new_height = src.Height() / downscale;
+    const int newWidth = src.width() / downscale;
+    const int newHeight = src.height() / downscale;
 
-    out.resize(new_width, new_height);
+    out.resize(newWidth, newHeight);
 
     const Sampler2d<SamplerType> sampler;
     const float downscalef = downscale;
-    for (int i = 0; i < new_height; ++i)
+    for (int i = 0; i < newHeight; ++i)
     {
-        for (int j = 0; j < new_width; ++j)
+        for (int j = 0; j < newWidth; ++j)
         {
             // Use .5f offset to ensure mid pixel and correct sampling
             out(i, j) = sampler(src, downscalef * (i + .5f), downscalef * (j + .5f));
@@ -53,43 +53,43 @@ void downscaleImage(const Image& src, Image& out, int downscale)
  ** @param[out] out output image
  **/
 template<typename Image>
-void ImageHalfSample(const Image& src, Image& out)
+void imageHalfSample(const Image& src, Image& out)
 {
     downscaleImage<SamplerLinear, Image>(src, out, 2);
 }
 
 /**
- ** @brief Ressample an image using given sampling positions
+ ** @brief Resample an image using given sampling positions
  ** @param src Input image
- ** @param sampling_pos A list of coordinates where the image needs to be ressampled (samples are (Y,X) )
- ** @param output_width Width of the output image.
- ** @param output_height Height of the output image
- ** @param sampling_func Ressampling functor used to sample the Input image
- ** @param[out] Output image
- ** @note sampling_pos.size() must be equal to output_width * output_height
+ ** @param samplingPos A list of coordinates where the image needs to be resampled (samples are (Y,X) )
+ ** @param outputWidth Width of the output image.
+ ** @param outputHeight Height of the output image
+ ** @param samplingFunc Resampling functor used to sample the Input image
+ ** @param[out] out Output image
+ ** @note samplingPos.size() must be equal to output_width * output_height
  **/
-template<typename Image, typename RessamplingFunctor>
-void GenericRessample(const Image& src,
-                      const std::vector<std::pair<float, float>>& sampling_pos,
-                      const int output_width,
-                      const int output_height,
-                      const RessamplingFunctor& sampling_func,
-                      Image& out)
+template<typename Image, typename ResamplingFunctor>
+void genericResample(const Image& src,
+                     const std::vector<std::pair<float, float>>& samplingPos,
+                     const int outputWidth,
+                     const int outputHeight,
+                     const ResamplingFunctor& samplingFunc,
+                     Image& out)
 {
-    assert(sampling_pos.size() == output_width * output_height);
+    assert(samplingPos.size() == outputWidth * outputHeight);
 
-    out.resize(output_width, output_height);
+    out.resize(outputWidth, outputHeight);
 
-    std::vector<std::pair<float, float>>::const_iterator it_pos = sampling_pos.begin();
+    std::vector<std::pair<float, float>>::const_iterator itPos = samplingPos.begin();
 
-    for (int i = 0; i < output_height; ++i)
+    for (int i = 0; i < outputHeight; ++i)
     {
-        for (int j = 0; j < output_width; ++j, ++it_pos)
+        for (int j = 0; j < outputWidth; ++j, ++itPos)
         {
-            const float input_x = it_pos->second;
-            const float input_y = it_pos->first;
+            const float inputX = itPos->second;
+            const float inputY = itPos->first;
 
-            out(i, j) = sampling_func(src, input_y, input_x);
+            out(i, j) = samplingFunc(src, inputY, inputX);
         }
     }
 }

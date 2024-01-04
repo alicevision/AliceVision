@@ -26,13 +26,13 @@ class AlphaCompositer : public Compositer
         offsetX -= _outputRoi.left;
         offsetY -= _outputRoi.top;
 
-        for (int i = 0; i < color.Height(); i++)
+        for (int i = 0; i < color.height(); i++)
         {
             int y = i + offsetY;
             if (y < 0 || y >= _outputRoi.height)
                 continue;
 
-            for (int j = 0; j < color.Width(); j++)
+            for (int j = 0; j < color.width(); j++)
             {
                 int x = j + offsetX;
                 if (x < 0 || x >= _outputRoi.width)
@@ -57,9 +57,9 @@ class AlphaCompositer : public Compositer
 
     virtual bool terminate()
     {
-        for (int i = 0; i < _panorama.Height(); i++)
+        for (int i = 0; i < _panorama.height(); i++)
         {
-            for (int j = 0; j < _panorama.Width(); j++)
+            for (int j = 0; j < _panorama.width(); j++)
             {
                 image::RGBAfColor r;
                 image::RGBAfColor c = _panorama(i, j);

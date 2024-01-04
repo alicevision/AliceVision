@@ -16,11 +16,11 @@ namespace image {
 ///  is inside the image.
 /// /!\ Be careful at the order (Y,X).
 template<typename Image, typename Color>
-inline void SafePutPixel(int yc, int xc, const Color& col, Image* pim)
+inline void safePutPixel(int yc, int xc, const Color& col, Image* pim)
 {
     if (pim)
     {
-        if (pim->Contains(yc, xc))
+        if (pim->contains(yc, xc))
             (*pim)(yc, xc) = col;
     }
 }
@@ -30,7 +30,7 @@ inline void SafePutPixel(int yc, int xc, const Color& col, Image* pim)
 // Add the rotation of the ellipse.
 // As the algo. use symmetry we must use 4 rotations.
 template<typename Image, typename Color>
-void DrawEllipse(int xc, int yc, int radiusA, int radiusB, const Color& col, Image* pim, double angle = 0.0)
+void drawEllipse(int xc, int yc, int radiusA, int radiusB, const Color& col, Image* pim, double angle = 0.0)
 {
     int a = radiusA, b = radiusB;
 
@@ -44,16 +44,16 @@ void DrawEllipse(int xc, int yc, int radiusA, int radiusB, const Color& col, Ima
 
     int rotX = ceil(matXY[0] * x + matXY[1] * y);
     int rotY = ceil(matXY[2] * x + matXY[3] * y);
-    SafePutPixel(yc + rotY, xc + rotX, col, pim);
+    safePutPixel(yc + rotY, xc + rotX, col, pim);
     rotX = matXY[0] * x - matXY[1] * y;
     rotY = matXY[2] * x - matXY[3] * y;
-    SafePutPixel(yc + rotY, xc + rotX, col, pim);
+    safePutPixel(yc + rotY, xc + rotX, col, pim);
     rotX = -matXY[0] * x - matXY[1] * y;
     rotY = -matXY[2] * x - matXY[3] * y;
-    SafePutPixel(yc + rotY, xc + rotX, col, pim);
+    safePutPixel(yc + rotY, xc + rotX, col, pim);
     rotX = -matXY[0] * x + matXY[1] * y;
     rotY = -matXY[2] * x + matXY[3] * y;
-    SafePutPixel(yc + rotY, xc + rotX, col, pim);
+    safePutPixel(yc + rotY, xc + rotX, col, pim);
 
     while (a * a * (y - .5) > b * b * (x + 1))
     {
@@ -70,16 +70,16 @@ void DrawEllipse(int xc, int yc, int radiusA, int radiusB, const Color& col, Ima
         }
         rotX = matXY[0] * x + matXY[1] * y;
         rotY = matXY[2] * x + matXY[3] * y;
-        SafePutPixel(yc + rotY, xc + rotX, col, pim);
+        safePutPixel(yc + rotY, xc + rotX, col, pim);
         rotX = matXY[0] * x - matXY[1] * y;
         rotY = matXY[2] * x - matXY[3] * y;
-        SafePutPixel(yc + rotY, xc + rotX, col, pim);
+        safePutPixel(yc + rotY, xc + rotX, col, pim);
         rotX = -matXY[0] * x - matXY[1] * y;
         rotY = -matXY[2] * x - matXY[3] * y;
-        SafePutPixel(yc + rotY, xc + rotX, col, pim);
+        safePutPixel(yc + rotY, xc + rotX, col, pim);
         rotX = -matXY[0] * x + matXY[1] * y;
         rotY = -matXY[2] * x + matXY[3] * y;
-        SafePutPixel(yc + rotY, xc + rotX, col, pim);
+        safePutPixel(yc + rotY, xc + rotX, col, pim);
     }
     d2 = b * b * (x + .5) * (x + .5) + a * a * (y - 1) * (y - 1) - a * a * b * b;
     while (y > 0)
@@ -97,16 +97,16 @@ void DrawEllipse(int xc, int yc, int radiusA, int radiusB, const Color& col, Ima
         }
         rotX = matXY[0] * x + matXY[1] * y;
         rotY = matXY[2] * x + matXY[3] * y;
-        SafePutPixel(yc + rotY, xc + rotX, col, pim);
+        safePutPixel(yc + rotY, xc + rotX, col, pim);
         rotX = matXY[0] * x - matXY[1] * y;
         rotY = matXY[2] * x - matXY[3] * y;
-        SafePutPixel(yc + rotY, xc + rotX, col, pim);
+        safePutPixel(yc + rotY, xc + rotX, col, pim);
         rotX = -matXY[0] * x - matXY[1] * y;
         rotY = -matXY[2] * x - matXY[3] * y;
-        SafePutPixel(yc + rotY, xc + rotX, col, pim);
+        safePutPixel(yc + rotY, xc + rotX, col, pim);
         rotX = -matXY[0] * x + matXY[1] * y;
         rotY = -matXY[2] * x + matXY[3] * y;
-        SafePutPixel(yc + rotY, xc + rotX, col, pim);
+        safePutPixel(yc + rotY, xc + rotX, col, pim);
     }
 }
 
@@ -114,11 +114,11 @@ void DrawEllipse(int xc, int yc, int radiusA, int radiusB, const Color& col, Ima
 // So it's better the use the Andres method.
 // http://fr.wikipedia.org/wiki/Algorithme_de_tracé_de_cercle_d'Andres.
 template<typename Image, typename Color>
-void DrawCircle(int x, int y, int radius, const Color& col, Image* pim)
+void drawCircle(int x, int y, int radius, const Color& col, Image* pim)
 {
     Image& im = *pim;
-    if (im.Contains(y + radius, x + radius) || im.Contains(y + radius, x - radius) || im.Contains(y - radius, x + radius) ||
-        im.Contains(y - radius, x - radius))
+    if (im.contains(y + radius, x + radius) || im.contains(y + radius, x - radius) || im.contains(y - radius, x + radius) ||
+        im.contains(y - radius, x - radius))
     {
         int x1 = 0;
         int y1 = radius;
@@ -126,14 +126,14 @@ void DrawCircle(int x, int y, int radius, const Color& col, Image* pim)
         while (y1 >= x1)
         {
             // Draw the point for each octant.
-            SafePutPixel(y1 + y, x1 + x, col, pim);
-            SafePutPixel(x1 + y, y1 + x, col, pim);
-            SafePutPixel(y1 + y, -x1 + x, col, pim);
-            SafePutPixel(x1 + y, -y1 + x, col, pim);
-            SafePutPixel(-y1 + y, x1 + x, col, pim);
-            SafePutPixel(-x1 + y, y1 + x, col, pim);
-            SafePutPixel(-y1 + y, -x1 + x, col, pim);
-            SafePutPixel(-x1 + y, -y1 + x, col, pim);
+            safePutPixel(y1 + y, x1 + x, col, pim);
+            safePutPixel(x1 + y, y1 + x, col, pim);
+            safePutPixel(y1 + y, -x1 + x, col, pim);
+            safePutPixel(x1 + y, -y1 + x, col, pim);
+            safePutPixel(-y1 + y, x1 + x, col, pim);
+            safePutPixel(-x1 + y, y1 + x, col, pim);
+            safePutPixel(-y1 + y, -x1 + x, col, pim);
+            safePutPixel(-x1 + y, -y1 + x, col, pim);
             if (d >= 2 * x1)
             {
                 d = d - 2 * x1 - 1;
@@ -159,16 +159,16 @@ void DrawCircle(int x, int y, int radius, const Color& col, Image* pim)
 
 // Bresenham algorithm
 template<typename Image, typename Color>
-void DrawLine(int xa, int ya, int xb, int yb, const Color& col, Image* pim)
+void drawLine(int xa, int ya, int xb, int yb, const Color& col, Image* pim)
 {
     Image& im = *pim;
 
     // If one point is outside the image
     // Replace the outside point by the intersection of the line and
     // the limit (either x=width or y=height).
-    if (!im.Contains(ya, xa) || !im.Contains(yb, xb))
+    if (!im.contains(ya, xa) || !im.contains(yb, xb))
     {
-        int width = pim->Width(), height = pim->Height();
+        int width = pim->width(), height = pim->height();
         const bool xdir = xa < xb, ydir = ya < yb;
         float nx0 = float(xa), nx1 = float(xb), ny0 = float(ya), ny1 = float(yb), &xleft = xdir ? nx0 : nx1, &yleft = xdir ? ny0 : ny1,
               &xright = xdir ? nx1 : nx0, &yright = xdir ? ny1 : ny0, &xup = ydir ? nx0 : nx1, &yup = ydir ? ny0 : ny1, &xdown = ydir ? nx1 : nx0,
@@ -251,7 +251,7 @@ void DrawLine(int xa, int ya, int xb, int yb, const Color& col, Image* pim)
         x = xbas;
         while (x != xhaut)
         {
-            SafePutPixel(y, x, col, pim);
+            safePutPixel(y, x, col, pim);
             x += incrmX;
             if (dp <= 0)
             {  // Go in direction of the South Pixel.
@@ -273,7 +273,7 @@ void DrawLine(int xa, int ya, int xb, int yb, const Color& col, Image* pim)
         y = ybas;
         while (y < yhaut)
         {
-            SafePutPixel(y, x, col, pim);
+            safePutPixel(y, x, col, pim);
             y += incrmY;
             if (dp <= 0)
             {  // Go in direction of the South Pixel.
@@ -286,28 +286,28 @@ void DrawLine(int xa, int ya, int xb, int yb, const Color& col, Image* pim)
             }
         }
     }
-    SafePutPixel(y, x, col, pim);
+    safePutPixel(y, x, col, pim);
 }
 
 // Filled circle
 // Exterior point computed with bresenham approach
 // i.e: DrawCircle
 template<typename Image, typename Color>
-void FilledCircle(int x, int y, int radius, const Color& col, Image* pim)
+void filledCircle(int x, int y, int radius, const Color& col, Image* pim)
 {
     Image& im = *pim;
-    if (im.Contains(y + radius, x + radius) || im.Contains(y + radius, x - radius) || im.Contains(y - radius, x + radius) ||
-        im.Contains(y - radius, x - radius))
+    if (im.contains(y + radius, x + radius) || im.contains(y + radius, x - radius) || im.contains(y - radius, x + radius) ||
+        im.contains(y - radius, x - radius))
     {
         int x1 = 0;
         int y1 = radius;
         int d = radius - 1;
         while (y1 >= x1)
         {
-            DrawLine(x1 + x, y1 + y, x1 + x, -y1 + y, col, pim);
-            DrawLine(y1 + x, x1 + y, y1 + x, -x1 + y, col, pim);
-            DrawLine(-x1 + x, y1 + y, -x1 + x, -y1 + y, col, pim);
-            DrawLine(-y1 + x, x1 + y, -y1 + x, -x1 + y, col, pim);
+            drawLine(x1 + x, y1 + y, x1 + x, -y1 + y, col, pim);
+            drawLine(y1 + x, x1 + y, y1 + x, -x1 + y, col, pim);
+            drawLine(-x1 + x, y1 + y, -x1 + x, -y1 + y, col, pim);
+            drawLine(-y1 + x, x1 + y, -y1 + x, -x1 + y, col, pim);
             if (d >= 2 * x1)
             {
                 d = d - 2 * x1 - 1;
@@ -333,7 +333,7 @@ void FilledCircle(int x, int y, int radius, const Color& col, Image* pim)
 
 // Draw a serie of circles along the line, the algorithm is slow but accurate
 template<typename Image, typename Color>
-void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thickness, Image* pim)
+void drawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thickness, Image* pim)
 {
     Image& im = *pim;
     int halfThickness = (thickness + 1) / 2;
@@ -341,9 +341,9 @@ void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thi
     // If one point is outside the image
     // Replace the outside point by the intersection of the line and
     // the limit (either x=width or y=height).
-    if (!im.Contains(ya, xa) || !im.Contains(yb, xb))
+    if (!im.contains(ya, xa) || !im.contains(yb, xb))
     {
-        int width = pim->Width(), height = pim->Height();
+        int width = pim->width(), height = pim->height();
         const bool xdir = xa < xb, ydir = ya < yb;
         float nx0 = float(xa), nx1 = float(xb), ny0 = float(ya), ny1 = float(yb), &xleft = xdir ? nx0 : nx1, &yleft = xdir ? ny0 : ny1,
               &xright = xdir ? nx1 : nx0, &yright = xdir ? ny1 : ny0, &xup = ydir ? nx0 : nx1, &yup = ydir ? ny0 : ny1, &xdown = ydir ? nx1 : nx0,
@@ -426,7 +426,7 @@ void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thi
         x = xbas;
         while (x != xhaut)
         {
-            DrawCircle(x, y, halfThickness, col, pim);
+            drawCircle(x, y, halfThickness, col, pim);
             x += incrmX;
             if (dp <= 0)
             {  // Go in direction of the South Pixel.
@@ -448,7 +448,7 @@ void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thi
         y = ybas;
         while (y < yhaut)
         {
-            DrawCircle(x, y, halfThickness, col, pim);
+            drawCircle(x, y, halfThickness, col, pim);
             y += incrmY;
             if (dp <= 0)
             {  // Go in direction of the South Pixel.
@@ -461,7 +461,7 @@ void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thi
             }
         }
     }
-    DrawCircle(x, y, halfThickness, col, pim);
+    drawCircle(x, y, halfThickness, col, pim);
 }
 
 }  // namespace image

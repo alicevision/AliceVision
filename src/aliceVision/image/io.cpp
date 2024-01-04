@@ -540,7 +540,7 @@ void readImageSize(const std::string& path, int& width, int& height)
 template<typename T>
 void getBufferFromImage(Image<T>& image, oiio::TypeDesc format, int nchannels, oiio::ImageBuf& buffer)
 {
-  const oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, format);
+  const oiio::ImageSpec imageSpec(image.width(), image.height(), nchannels, format);
   oiio::ImageBuf imageBuf(imageSpec, image.data());
   buffer.swap(imageBuf);
 }
@@ -1033,11 +1033,11 @@ void writeImage(const std::string& path,
     }
 
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << "\n"
-                        << "\t- width: " << image.Width() << "\n"
-                        << "\t- height: " << image.Height() << "\n"
+                        << "\t- width: " << image.width() << "\n"
+                        << "\t- height: " << image.height() << "\n"
                         << "\t- channels: " << nchannels);
 
-    oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
+    oiio::ImageSpec imageSpec(image.width(), image.height(), nchannels, typeDesc);
     imageSpec.extra_attribs = metadata; // add custom metadata
 
     imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
@@ -1201,7 +1201,7 @@ void writeImageNoFloat(const std::string& path,
       imageColorSpace = EImageColorSpace::LINEAR;
   }
 
-  oiio::ImageSpec imageSpec(image.Width(), image.Height(), 1, typeDesc);
+  oiio::ImageSpec imageSpec(image.width(), image.height(), 1, typeDesc);
   imageSpec.extra_attribs = metadata; // add custom metadata
 
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg

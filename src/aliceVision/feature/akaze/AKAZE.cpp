@@ -73,7 +73,7 @@ void computeAKAZESlice(const image::Image<float>& src,
     if (p == 0 && q == 0)
     {
         // compute new image
-        image::ImageGaussianFilter(src, sigma0, Li, 0, 0);
+        image::imageGaussianFilter(src, sigma0, Li, 0, 0);
     }
     else
     {
@@ -81,7 +81,7 @@ void computeAKAZESlice(const image::Image<float>& src,
         image::Image<float> in;
         if (q == 0)
         {
-            image::ImageHalfSample(src, in);
+            image::imageHalfSample(src, in);
         }
         else
         {
@@ -96,18 +96,18 @@ void computeAKAZESlice(const image::Image<float>& src,
         const float total_cycle_time = t_cur - t_prev;
 
         // compute first derivatives (Scharr scale 1, non normalized) for diffusion coef
-        image::ImageGaussianFilter(in, 1.f, smoothed, 0, 0);
-        image::ImageScharrXDerivative(smoothed, Lx, false);
-        image::ImageScharrYDerivative(smoothed, Ly, false);
+        image::imageGaussianFilter(in, 1.f, smoothed, 0, 0);
+        image::imageScharrXDerivative(smoothed, Lx, false);
+        image::imageScharrYDerivative(smoothed, Ly, false);
 
         // compute diffusion coefficient
         image::Image<float>& diff = smoothed;  // diffusivity image (reuse existing memory)
-        image::ImagePeronaMalikG2DiffusionCoef(Lx, Ly, contrastFactor, diff);
+        image::imagePeronaMalikG2DiffusionCoef(Lx, Ly, contrastFactor, diff);
 
         // compute FED cycles
         std::vector<float> tau;
-        image::FEDCycleTimings(total_cycle_time, 0.25f, tau);
-        image::ImageFEDCycle(in, diff, tau);
+        image::fedCycleTimings(total_cycle_time, 0.25f, tau);
+        image::imageFEDCycle(in, diff, tau);
         Li = in;  // evolution image
     }
 
@@ -119,24 +119,24 @@ void computeAKAZESlice(const image::Image<float>& src,
     else
     {
         // add a little smooth to image (for robustness of Scharr derivatives)
-        image::ImageGaussianFilter(Li, 1.f, smoothed, 0, 0);
+        image::imageGaussianFilter(Li, 1.f, smoothed, 0, 0);
     }
 
     // compute true first derivatives
-    image::ImageScaledScharrXDerivative(smoothed, Lx, sigmaScale);
-    image::ImageScaledScharrYDerivative(smoothed, Ly, sigmaScale);
+    image::imageScaledScharrXDerivative(smoothed, Lx, sigmaScale);
+    image::imageScaledScharrYDerivative(smoothed, Ly, sigmaScale);
 
     // second order spatial derivatives
     image::Image<float> Lxx, Lyy, Lxy;
-    image::ImageScaledScharrXDerivative(Lx, Lxx, sigmaScale);
-    image::ImageScaledScharrYDerivative(Lx, Lxy, sigmaScale);
-    image::ImageScaledScharrYDerivative(Ly, Lyy, sigmaScale);
+    image::imageScaledScharrXDerivative(Lx, Lxx, sigmaScale);
+    image::imageScaledScharrYDerivative(Lx, Lxy, sigmaScale);
+    image::imageScaledScharrYDerivative(Ly, Lyy, sigmaScale);
 
     Lx *= static_cast<float>(sigmaScale);
     Ly *= static_cast<float>(sigmaScale);
 
     // compute Determinant of the Hessian
-    Lhess.resize(Li.Width(), Li.Height());
+    Lhess.resize(Li.width(), Li.height());
     const float sigmaSizeQuad = Square(sigmaScale) * Square(sigmaScale);
     Lhess.array() = (Lxx.array() * Lyy.array() - Lxy.array().square()) * sigmaSizeQuad;
 }
@@ -158,7 +158,7 @@ AKAZE::AKAZE(const image::Image<float>& image, const AKAZEOptions& options)
     _options.descFactor = std::max(6.f * sqrtf(2.f), _options.descFactor);
 
     // safety check to limit the computable octave count
-    const int nbOctaveMax = ceil(std::log2(std::min(_input.Width(), _input.Height())));
+    const int nbOctaveMax = ceil(std::log2(std::min(_input.width(), _input.height())));
     _options.nbOctaves = std::min(_options.nbOctaves, nbOctaveMax);
 }
 
@@ -238,9 +238,9 @@ void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
             // check that the point is under the image limits for the descriptor computation
             const float borderLimit = MathTrait<float>::round(_options.descFactor * sigma_cur * derivativeFactor / ratio) + 1;
 
-            for (int jx = borderLimit; jx < LDetHess.Height() - borderLimit; ++jx)
+            for (int jx = borderLimit; jx < LDetHess.height() - borderLimit; ++jx)
             {
-                for (int ix = borderLimit; ix < LDetHess.Width() - borderLimit; ++ix)
+                for (int ix = borderLimit; ix < LDetHess.width() - borderLimit; ++ix)
                 {
                     const float value = LDetHess(jx, ix);
 
@@ -301,8 +301,8 @@ void AKAZE::gridFiltering(std::vector<AKAZEKeypoint>& keypoints) const
 
     const std::size_t sizeMat = _options.gridSize * _options.gridSize;
     const std::size_t keypointsPerCell = _options.maxTotalKeypoints / sizeMat;
-    const double regionWidth = _input.Width() / static_cast<double>(_options.gridSize);
-    const double regionHeight = _input.Height() / static_cast<double>(_options.gridSize);
+    const double regionWidth = _input.width() / static_cast<double>(_options.gridSize);
+    const double regionHeight = _input.height() / static_cast<double>(_options.gridSize);
 
     std::vector<std::size_t> countFeatPerCell(sizeMat, 0);
     std::vector<std::size_t> rejectedIndexes;

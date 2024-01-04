@@ -15,11 +15,11 @@ namespace aliceVision {
 template<class T>
 bool downscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor)
 {
-    for (int i = 0; i < outputColor.Height(); i++)
+    for (int i = 0; i < outputColor.height(); i++)
     {
         int di = i * 2;
 
-        for (int j = 0; j < outputColor.Width(); j++)
+        for (int j = 0; j < outputColor.width(); j++)
         {
             int dj = j * 2;
 
@@ -33,10 +33,10 @@ bool downscale(aliceVision::image::Image<T>& outputColor, const aliceVision::ima
 template<class T>
 bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor)
 {
-    size_t width = inputColor.Width();
-    size_t height = inputColor.Height();
-    size_t dwidth = outputColor.Width();
-    size_t dheight = outputColor.Height();
+    size_t width = inputColor.width();
+    size_t height = inputColor.height();
+    size_t dwidth = outputColor.width();
+    size_t dheight = outputColor.height();
 
     for (int i = 0; i < height - 1; i++)
     {
@@ -107,8 +107,8 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
 template<class T>
 bool substract(aliceVision::image::Image<T>& AminusB, const aliceVision::image::Image<T>& A, const aliceVision::image::Image<T>& B)
 {
-    size_t width = AminusB.Width();
-    size_t height = AminusB.Height();
+    size_t width = AminusB.width();
+    size_t height = AminusB.height();
 
     if (AminusB.size() != A.size())
     {
@@ -134,8 +134,8 @@ bool substract(aliceVision::image::Image<T>& AminusB, const aliceVision::image::
 template<class T>
 bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Image<T>& A, const aliceVision::image::Image<T>& B)
 {
-    size_t width = AplusB.Width();
-    size_t height = AplusB.Height();
+    size_t width = AplusB.width();
+    size_t height = AplusB.height();
 
     if (AplusB.size() != A.size())
     {
@@ -179,7 +179,7 @@ bool loopyImageAssign(image::Image<T>& output,
         return false;
     }
 
-    if (assignedOutputBb.getRight() < output.Width())
+    if (assignedOutputBb.getRight() < output.width())
     {
         output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) =
           input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
@@ -188,8 +188,8 @@ bool loopyImageAssign(image::Image<T>& output,
     {
         int left_1 = assignedOutputBb.left;
         int left_2 = 0;
-        int width1 = output.Width() - assignedOutputBb.left;
-        int width2 = input.Width() - width1;
+        int width1 = output.width() - assignedOutputBb.left;
+        int width2 = input.width() - width1;
 
         inputBb.left = 0;
         outputBb.left = left_1;
@@ -247,7 +247,7 @@ bool loopyCachedImageAssign(CachedImage<T>& output,
         int left_1 = assignedOutputBb.left;
         int left_2 = 0;
         int width1 = output.getWidth() - assignedOutputBb.left;
-        int width2 = input.Width() - width1;
+        int width2 = input.width() - width1;
 
         inputBb.left = 0;
         outputBb.left = left_1;
@@ -286,22 +286,22 @@ bool loopyImageExtract(image::Image<T>& output, const image::Image<T>& input, co
 
     outputBb.left = 0;
     outputBb.top = 0;
-    outputBb.width = output.Width();
-    outputBb.height = std::min(extractedInputBb.height, output.Height());
+    outputBb.width = output.width();
+    outputBb.height = std::min(extractedInputBb.height, output.height());
 
     inputBb = extractedInputBb;
 
-    if (inputBb.getRight() < input.Width())
+    if (inputBb.getRight() < input.width())
     {
         output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) =
           input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
     }
     else
     {
-        int availableWidth = output.Width();
+        int availableWidth = output.width();
         while (availableWidth > 0)
         {
-            inputBb.clampRight(input.Width() - 1);
+            inputBb.clampRight(input.width() - 1);
             int extractedWidth = std::min(inputBb.width, availableWidth);
 
             inputBb.width = extractedWidth;
@@ -316,7 +316,7 @@ bool loopyImageExtract(image::Image<T>& output, const image::Image<T>& input, co
 
             // All the input is available.
             inputBb.left = 0;
-            inputBb.width = input.Width();
+            inputBb.width = input.width();
         }
     }
 
@@ -331,8 +331,8 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T>& output, CachedImage<T
 
     outputBb.left = 0;
     outputBb.top = 0;
-    outputBb.width = output.Width();
-    outputBb.height = std::min(extractedInputBb.height, output.Height());
+    outputBb.width = output.width();
+    outputBb.height = std::min(extractedInputBb.height, output.height());
 
     inputBb = extractedInputBb;
 
@@ -345,7 +345,7 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T>& output, CachedImage<T
     }
     else
     {
-        int availableWidth = output.Width();
+        int availableWidth = output.width();
         while (availableWidth > 0)
         {
             inputBb.clampRight(input.getWidth() - 1);
@@ -409,8 +409,8 @@ bool makeImagePyramidCompatible(image::Image<T>& output,
     double doffsetY = double(offsetY) - double(outOffsetY);
 
     /* update size with border update */
-    double large_width = double(input.Width()) + doffsetX;
-    double large_height = double(input.Height()) + doffsetY;
+    double large_width = double(input.width()) + doffsetX;
+    double large_height = double(input.height()) + doffsetY;
 
     /* compute size at largest scale */
     double low_width = large_width * maxScale;
@@ -429,7 +429,7 @@ bool makeImagePyramidCompatible(image::Image<T>& output,
     size_t height = size_t(correctedLowHeight / maxScale);
 
     output = image::Image<T>(width, height, true, T(0.0f));
-    output.block(doffsetY, doffsetX, input.Height(), input.Width()) = input;
+    output.block(doffsetY, doffsetX, input.height(), input.width()) = input;
 
     return true;
 }

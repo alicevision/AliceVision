@@ -44,8 +44,8 @@ class CommonDataByPair_vldSegment : public CommonDataByPair
         image::readImage(_sLeftImage, imageL, image::EImageColorSpace::LINEAR);
         image::readImage(_sRightImage, imageR, image::EImageColorSpace::LINEAR);
 
-        image::Image<float> imgA(imageL.GetMat().cast<float>());
-        image::Image<float> imgB(imageR.GetMat().cast<float>());
+        image::Image<float> imgA(imageL.getMat().cast<float>());
+        image::Image<float> imgB(imageR.getMat().cast<float>());
 
         std::vector<Pair> matchesFiltered, matchesPair;
 

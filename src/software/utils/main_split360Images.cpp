@@ -107,16 +107,16 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
     auto metadataSource = image::readImageMetadata(imagePath);
 
     // Retrieve useful dimensions for cropping
-    bool vertical = (imageSource.Height() > imageSource.Width());
+    bool vertical = (imageSource.height() > imageSource.width());
     const int outSide = vertical
-        ? std::min(imageSource.Height() / 2, imageSource.Width())
-        : std::min(imageSource.Height(), imageSource.Width() / 2);
+        ? std::min(imageSource.height() / 2, imageSource.width())
+        : std::min(imageSource.height(), imageSource.width() / 2);
     const int offset_x = vertical
-        ? (imageSource.Width() - outSide)
-        : ((imageSource.Width() / 2) - outSide);
+        ? (imageSource.width() - outSide)
+        : ((imageSource.width() / 2) - outSide);
     const int offset_y = vertical
-        ? ((imageSource.Height() / 2) - outSide)
-        : (imageSource.Height() - outSide);
+        ? ((imageSource.height() / 2) - outSide)
+        : (imageSource.height() - outSide);
 
     // Make sure rig folder exists
     std::string rigFolder = outputFolder + "/rig";
@@ -193,8 +193,8 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
     image::Image<image::RGBColor> imageSource;
     image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
-    const int inWidth = imageSource.Width();
-    const int inHeight = imageSource.Height();
+    const int inWidth = imageSource.width();
+    const int inHeight = imageSource.height();
 
     std::vector<PinholeCameraR> cameras;
 
@@ -294,8 +294,8 @@ bool splitEquirectangularPreview(const std::string& imagePath, const std::string
     image::Image<image::RGBColor> imageSource;
     image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
-    const int inWidth = imageSource.Width();
-    const int inHeight = imageSource.Height();
+    const int inWidth = imageSource.width();
+    const int inHeight = imageSource.height();
 
     std::vector<PinholeCameraR> cameras;
 

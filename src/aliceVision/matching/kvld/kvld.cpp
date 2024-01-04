@@ -27,7 +27,7 @@ ImageScale::ImageScale(const Image<float>& I, double r)
     IntegralImages inter(I);
     radius_size = r;
     step = std::sqrt(2.0);
-    int size = std::max(I.Width(), I.Height());
+    int size = std::max(I.width(), I.height());
 
     int number = int(log(size / r) / log(2.0)) + 1;
     angles.resize(number);
@@ -42,13 +42,13 @@ ImageScale::ImageScale(const Image<float>& I, double r)
     {
         Image<float> I2;
         double ratio = 1 * pow(step, k);
-        I2.resize(int(I.Width() / ratio), int(I.Height() / ratio));
-        angles[k].resize(int(I.Width() / ratio), int(I.Height() / ratio));
-        magnitudes[k].resize(int(I.Width() / ratio), int(I.Height() / ratio));
+        I2.resize(int(I.width() / ratio), int(I.height() / ratio));
+        angles[k].resize(int(I.width() / ratio), int(I.height() / ratio));
+        magnitudes[k].resize(int(I.width() / ratio), int(I.height() / ratio));
 
-        for (int i = 0; i < I2.Width(); i++)
+        for (int i = 0; i < I2.width(); i++)
         {
-            for (int j = 0; j < I2.Height(); j++)
+            for (int j = 0; j < I2.height(); j++)
             {
                 I2(j, i) = inter(double(i + 0.5) * ratio, double(j + 0.5) * ratio, ratio);
             }
@@ -60,15 +60,15 @@ ImageScale::ImageScale(const Image<float>& I, double r)
 
 void ImageScale::GradAndNorm(const Image<float>& I, Image<float>& angle, Image<float>& m)
 {
-    angle = Image<float>(I.Width(), I.Height());
-    m = Image<float>(I.Width(), I.Height());
+    angle = Image<float>(I.width(), I.height());
+    m = Image<float>(I.width(), I.height());
     angle.fill(0);
     m.fill(0);
 
 #pragma omp parallel for
-    for (int y = 1; y < I.Height() - 1; y++)
+    for (int y = 1; y < I.height() - 1; y++)
     {
-        for (int x = 1; x < I.Width() - 1; x++)
+        for (int x = 1; x < I.width() - 1; x++)
         {
             const float gx = I(y, x + 1) - I(y, x - 1);
             const float gy = I(y + 1, x) - I(y - 1, x);
@@ -132,8 +132,8 @@ VLD::VLD(const ImageScale& series, T const& P1, T const& P2)
     const Image<float>& m = series.magnitudes[image_index];
     const double ratio = series.ratios[image_index];
 
-    const int w = m.Width();
-    const int h = m.Height();
+    const int w = m.width();
+    const int h = m.height();
     const float r = float(radius / ratio);
     const float sigma2 = r * r;
     //======calculating the descriptor=====//

@@ -57,8 +57,8 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMapFiltered, in_depthMap);
 
             // get input depth map width / height
-            const int width = in_depthMap.Width();
-            const int height = in_depthMap.Height();
+            const int width = in_depthMap.width();
+            const int height = in_depthMap.height();
 
             // default tile parameters, no tiles
             const mvsUtils::TileParams tileParams;

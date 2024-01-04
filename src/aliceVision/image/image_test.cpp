@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(Image_Basis)
     Image<unsigned char> imageGray3 = matrix;
 
     //- Get back matrix contained in the image
-    matrix = imaGray.GetMat();
+    matrix = imaGray.getMat();
 
     // clone of a matrix
     Image<unsigned char> imageGray4;
@@ -61,8 +61,8 @@ BOOST_AUTO_TEST_CASE(Image_Basis)
     // Image resizing
     Image<unsigned char> imaToResize;
     imaToResize.resize(5, 10);
-    BOOST_CHECK_EQUAL(10, imaToResize.Height());
-    BOOST_CHECK_EQUAL(5, imaToResize.Width());
+    BOOST_CHECK_EQUAL(10, imaToResize.height());
+    BOOST_CHECK_EQUAL(5, imaToResize.width());
 }
 
 BOOST_AUTO_TEST_CASE(Image_PixelTypes)

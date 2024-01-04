@@ -249,8 +249,8 @@ int aliceVision_main(int argc, char** argv)
 
                 // Update sfmdata view for this modification
                 view.getImage().setImagePath(outputfilePath);
-                view.getImage().setWidth(image.Width());
-                view.getImage().setHeight(image.Height());
+                view.getImage().setWidth(image.width());
+                view.getImage().setHeight(image.height());
             }
 
             // Save sfmData with modified path to images

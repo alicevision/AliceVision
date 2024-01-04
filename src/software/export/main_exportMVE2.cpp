@@ -298,8 +298,8 @@ create_thumbnail
   int thumb_height
 )
 {
-  const int width = image.Width();
-  const int height = image.Height();
+  const int width = image.width();
+  const int height = image.height();
   const float image_aspect = static_cast<float>(width) / height;
   const float thumb_aspect = static_cast<float>(thumb_width) / thumb_height;
 
@@ -330,6 +330,6 @@ create_thumbnail
 
   const Sampler2d<SamplerLinear> sampler;
   ImageT imageOut;
-  GenericRessample(image, sampling_grid, rescale_width, rescale_height, sampler, imageOut);
+  genericResample(image, sampling_grid, rescale_width, rescale_height, sampler, imageOut);
   return imageOut;
 }

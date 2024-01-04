@@ -207,7 +207,7 @@ bool CCTagLocalizer::localize(const image::Image<float>& imageGrey,
     ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image");
 
     image::Image<unsigned char> imageGrayUChar;  // cctag image describer don't support float image
-    imageGrayUChar = (imageGrey.GetMat() * 255.f).cast<unsigned char>();
+    imageGrayUChar = (imageGrey.getMat() * 255.f).cast<unsigned char>();
 
     feature::MapRegionsPerDesc tmpQueryRegions;
 
@@ -216,7 +216,7 @@ bool CCTagLocalizer::localize(const image::Image<float>& imageGrey,
     _imageDescriber.describe(imageGrayUChar, tmpQueryRegions[_cctagDescType]);
     ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions.at(_cctagDescType)->RegionCount() << " features");
 
-    std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.Width(), imageGrey.Height());
+    std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.width(), imageGrey.height());
 
     if (!param->_visualDebug.empty() && !imagePath.empty())
     {
@@ -391,7 +391,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<float>>& vec_ima
     for (size_t i = 0; i < numCams; ++i)
     {
         image::Image<unsigned char> imageGrayUChar;  // cctag image describer don't support float image
-        imageGrayUChar = (vec_imageGrey.at(i).GetMat() * 255.f).cast<unsigned char>();
+        imageGrayUChar = (vec_imageGrey.at(i).getMat() * 255.f).cast<unsigned char>();
 
         // extract descriptors and features from each image
         ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image...");
@@ -400,7 +400,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<float>>& vec_ima
         ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " << vec_queryRegions[i].at(_imageDescriber.getDescriberType())->RegionCount()
                                                                        << " features");
         // add the image size for this image
-        vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
+        vec_imageSize.emplace_back(vec_imageGrey[i].width(), vec_imageGrey[i].height());
     }
     assert(vec_imageSize.size() == vec_queryRegions.size());
 

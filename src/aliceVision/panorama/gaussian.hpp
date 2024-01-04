@@ -121,7 +121,7 @@ bool convolveGaussian5x5(image::Image<T>& output, const image::Image<T>& input, 
     kernel[4] = 1.0f;
     kernel = kernel / kernel.sum();
 
-    image::Image<T> buf(output.Width(), 5);
+    image::Image<T> buf(output.width(), 5);
 
     int radius = 2;
 
@@ -131,7 +131,7 @@ bool convolveGaussian5x5(image::Image<T>& output, const image::Image<T>& input, 
     convolveRow<T>(buf.row(3), input.row(1), kernel, loop);
     convolveRow<T>(buf.row(4), input.row(2), kernel, loop);
 
-    for (int i = 0; i < output.Height() - 3; i++)
+    for (int i = 0; i < output.height() - 3; i++)
     {
         convolveColumns<T>(output.row(i), buf, kernel);
 
@@ -147,21 +147,21 @@ bool convolveGaussian5x5(image::Image<T>& output, const image::Image<T>& input, 
     next 1 : -4 -3 -2 -1 -2
     next 2 : -3 -2 -1 -2 -3
     */
-    convolveColumns<T>(output.row(output.Height() - 3), buf, kernel);
+    convolveColumns<T>(output.row(output.height() - 3), buf, kernel);
 
     buf.row(0) = buf.row(1);
     buf.row(1) = buf.row(2);
     buf.row(2) = buf.row(3);
     buf.row(3) = buf.row(4);
-    convolveRow<T>(buf.row(4), input.row(output.Height() - 2), kernel, loop);
-    convolveColumns<T>(output.row(output.Height() - 2), buf, kernel);
+    convolveRow<T>(buf.row(4), input.row(output.height() - 2), kernel, loop);
+    convolveColumns<T>(output.row(output.height() - 2), buf, kernel);
 
     buf.row(0) = buf.row(1);
     buf.row(1) = buf.row(2);
     buf.row(2) = buf.row(3);
     buf.row(3) = buf.row(4);
-    convolveRow<T>(buf.row(4), input.row(output.Height() - 3), kernel, loop);
-    convolveColumns<T>(output.row(output.Height() - 1), buf, kernel);
+    convolveRow<T>(buf.row(4), input.row(output.height() - 3), kernel, loop);
+    convolveColumns<T>(output.row(output.height() - 1), buf, kernel);
 
     return true;
 }

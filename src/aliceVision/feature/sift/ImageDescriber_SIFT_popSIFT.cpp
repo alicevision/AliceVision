@@ -35,7 +35,7 @@ bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<float>& image,
     if (_popSift == nullptr)
         resetConfiguration();
 
-    std::unique_ptr<SiftJob> job(_popSift->enqueue(image.Width(), image.Height(), &image(0, 0)));
+    std::unique_ptr<SiftJob> job(_popSift->enqueue(image.width(), image.height(), &image(0, 0)));
     std::unique_ptr<popsift::Features> popFeatures(job->get());
 
     allocate(regions);

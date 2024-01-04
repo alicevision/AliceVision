@@ -97,8 +97,8 @@ int aliceVision_main(int argc, char **argv)
     oiio::ImageBuf imageBuf;
     image::getBufferFromImage(imageUd, imageBuf);
 
-    image::Image<image::RGBColor> imageProxy(image.Width()/2, image.Height()/2);
-    image::Image<image::RGBColor> imageThumbnail(256, image.Height() / (image.Width() / 256.0f)); // width = 256px, keep height ratio
+    image::Image<image::RGBColor> imageProxy(image.width()/2, image.height()/2);
+    image::Image<image::RGBColor> imageThumbnail(256, image.height() / (image.width() / 256.0f)); // width = 256px, keep height ratio
 
     oiio::ImageBuf proxyBuf;
     oiio::ImageBuf thumbnailBuf;
@@ -106,8 +106,8 @@ int aliceVision_main(int argc, char **argv)
     image::getBufferFromImage(imageProxy, proxyBuf);
     image::getBufferFromImage(imageThumbnail, thumbnailBuf);
 
-    const oiio::ROI proxyROI(0, imageProxy.Width(), 0, imageProxy.Height(), 0, 1, 0, 3);
-    const oiio::ROI thumbnailROI(0, imageThumbnail.Width(), 0, imageThumbnail.Height(), 0, 1, 0, 3);
+    const oiio::ROI proxyROI(0, imageProxy.width(), 0, imageProxy.height(), 0, 1, 0, 3);
+    const oiio::ROI thumbnailROI(0, imageThumbnail.width(), 0, imageThumbnail.height(), 0, 1, 0, 3);
 
     oiio::ImageBufAlgo::resample(proxyBuf,     imageBuf, false,     proxyROI); // no interpolation
     oiio::ImageBufAlgo::resample(thumbnailBuf, imageBuf, false, thumbnailROI); // no interpolation

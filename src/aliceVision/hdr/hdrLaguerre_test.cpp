@@ -53,9 +53,9 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
         double ratioExposures = times[imageId] / times[imageId + 1];
 
         double max_diff = 0.0;
-        for (int i = 0; i < imgA.Height(); i++)
+        for (int i = 0; i < imgA.height(); i++)
         {
-            for (int j = 0; j < imgA.Width(); j++)
+            for (int j = 0; j < imgA.width(); j++)
             {
                 image::RGBfColor Ba = imgA(i, j);
                 image::RGBfColor Bb = imgB(i, j);

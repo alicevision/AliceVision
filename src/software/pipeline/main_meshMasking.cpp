@@ -379,7 +379,7 @@ void meshMasking(
         }
 
         const auto& mask = *maskPtr;
-        if (mp.getWidth(camId) != mask.Width() || mp.getHeight(camId) != mask.Height())
+        if (mp.getWidth(camId) != mask.width() || mp.getHeight(camId) != mask.height())
         {
             ALICEVISION_LOG_WARNING("Invalid mask size: mask is ignored.");
             if (usePointsVisibilities)
@@ -406,8 +406,8 @@ void meshMasking(
             // project vertex on mask
             Pixel projectedPixel;
             mp.getPixelFor3DPoint(&projectedPixel, vertex, camId);
-            if (projectedPixel.x < 0 || projectedPixel.x >= mask.Width()
-             || projectedPixel.y < 0 || projectedPixel.y >= mask.Height())
+            if (projectedPixel.x < 0 || projectedPixel.x >= mask.width()
+             || projectedPixel.y < 0 || projectedPixel.y >= mask.height())
             {
                 if (usePointsVisibilities)
                 {

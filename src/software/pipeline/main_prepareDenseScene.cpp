@@ -50,7 +50,7 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
     // exposure correction
     if(evCorrection)
     {
-        for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+        for(int pix = 0; pix < image.width() * image.height(); ++pix)
         {
             image(pix)[0] *= exposureCompensation;
             image(pix)[1] *= exposureCompensation;
@@ -251,13 +251,13 @@ bool prepareDenseScene(const SfMData& sfmData,
             {
                 process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
                 {
-                    if(image.Width() * image.Height() != mask.Width() * mask.Height())
+                    if(image.width() * image.height() != mask.width() * mask.height())
                     {
                         ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
                         return;
                     }
 
-                    for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+                    for(int pix = 0; pix < image.width() * image.height(); ++pix)
                     {
                         const bool masked = (mask(pix) == 0);
                         image(pix).a() = masked ? 0.f : 1.f;

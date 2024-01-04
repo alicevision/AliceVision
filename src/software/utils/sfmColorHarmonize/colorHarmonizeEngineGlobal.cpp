@@ -427,9 +427,9 @@ bool ColorHarmonizationEngineGlobal::Process()
     readImage( _fileNames[ imaNum ], image_c , image::EImageColorSpace::LINEAR);
 
     #pragma omp parallel for
-    for( int j = 0; j < image_c.Height(); ++j )
+    for( int j = 0; j < image_c.height(); ++j )
     {
-      for( int i = 0; i < image_c.Width(); ++i )
+      for( int i = 0; i < image_c.width(); ++i )
       {
         image_c(j, i)[0] = clamp(vec_map_lut[0][image_c(j, i)[0]], 0., 255.);
         image_c(j, i)[1] = clamp(vec_map_lut[1][image_c(j, i)[1]], 0., 255.);

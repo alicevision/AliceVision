@@ -84,7 +84,7 @@ void LighthingEstimator::addImage(const image::Image<float>& albedo,
     // augmented normales
     image::Image<AugmentedNormal> augmentedNormals(normals.cast<AugmentedNormal>());
 
-    const std::size_t nbPixels = augmentedNormals.Width() * augmentedNormals.Height();
+    const std::size_t nbPixels = augmentedNormals.width() * augmentedNormals.height();
 
     MatrixXf rhoTimesN;
     MatrixXf colors;
@@ -109,7 +109,7 @@ void LighthingEstimator::addImage(const image::Image<image::RGBfColor>& albedo,
     // augmented normales
     image::Image<AugmentedNormal> augmentedNormals(normals.cast<AugmentedNormal>());
 
-    const std::size_t nbPixels = augmentedNormals.Width() * augmentedNormals.Height();
+    const std::size_t nbPixels = augmentedNormals.width() * augmentedNormals.height();
 
     // estimate lighting per channel
     for (std::size_t channel = 0; channel < 3; ++channel)

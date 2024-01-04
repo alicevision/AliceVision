@@ -428,14 +428,14 @@ void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColo
         const float p4 = vparam[4] * vparam[4] * vparam[4] * vparam[4] + vparam[5] * vparam[5] + 2 * vparam[4] * vparam[6] - 3 * vparam[4] * vparam[4] * vparam[5];
 
         #pragma omp parallel for
-        for (int j = 0; j < img.Height(); ++j)
-            for (int i = 0; i < img.Width(); ++i)
+        for (int j = 0; j < img.height(); ++j)
+            for (int i = 0; i < img.width(); ++i)
             {
                 const aliceVision::Vec2 p(i, j);
 
                 aliceVision::Vec2 np;
-                np(0) = ((p(0) / img.Width()) - imageXCenter) / focX;
-                np(1) = ((p(1) / img.Height()) - imageYCenter) / focY;
+                np(0) = ((p(0) / img.width()) - imageXCenter) / focX;
+                np(1) = ((p(1) / img.height()) - imageYCenter) / focY;
 
                 const float rsqr = np(0) * np(0) + np(1) * np(1);
                 const float gain = 1.f + p1 * rsqr + p2 * rsqr * rsqr + p3 * rsqr * rsqr * rsqr + p4 * rsqr * rsqr * rsqr * rsqr;
@@ -452,18 +452,18 @@ void undistortRectilinearGeometryLCP(const aliceVision::image::Image<aliceVision
 {
     if(!model.isEmpty && model.FocalLengthX != 0.0 && model.FocalLengthY != 0.0)
     {
-        img_ud.resize(img.Width(), img.Height(), true, fillcolor);
+        img_ud.resize(img.width(), img.height(), true, fillcolor);
         const image::Sampler2d<image::SamplerLinear> sampler;
 
-        const float maxWH = std::max(img.Width(), img.Height());
-        const float ppX = model.ImageXCenter * img.Width();
-        const float ppY = model.ImageYCenter * img.Height();
+        const float maxWH = std::max(img.width(), img.height());
+        const float ppX = model.ImageXCenter * img.width();
+        const float ppY = model.ImageYCenter * img.height();
         const float scaleX = model.FocalLengthX * maxWH;
         const float scaleY = model.FocalLengthY * maxWH;
 
         #pragma omp parallel for
-        for(int v = 0; v < img.Height(); ++v)
-            for(int u = 0; u < img.Width(); ++u)
+        for(int v = 0; v < img.height(); ++v)
+            for(int u = 0; u < img.width(); ++u)
             {
                 // image to camera
                 const float x = (u - ppX) / scaleX;
@@ -477,7 +477,7 @@ void undistortRectilinearGeometryLCP(const aliceVision::image::Image<aliceVision
                 const Vec2 distoPix(xd * scaleX + ppX, yd * scaleY + ppY);
 
                 // pick pixel if it is in the image domain
-                if(img.Contains(distoPix(1), distoPix(0)))
+                if(img.contains(distoPix(1), distoPix(0)))
                 {
                     img_ud(v, u) = sampler(img, distoPix(1), distoPix(0));
                 }
@@ -493,18 +493,18 @@ void undistortChromaticAberrations(const aliceVision::image::Image<aliceVision::
 {
     if(!greenModel.isEmpty && greenModel.FocalLengthX != 0.0 && greenModel.FocalLengthY != 0.0)
     {
-        img_ud.resize(img.Width(), img.Height(), true, fillcolor);
+        img_ud.resize(img.width(), img.height(), true, fillcolor);
         const image::Sampler2d<image::SamplerLinear> sampler;
 
-        const float maxWH = std::max(img.Width(), img.Height());
-        const float ppX = greenModel.ImageXCenter * img.Width();
-        const float ppY = greenModel.ImageYCenter * img.Height();
+        const float maxWH = std::max(img.width(), img.height());
+        const float ppX = greenModel.ImageXCenter * img.width();
+        const float ppY = greenModel.ImageYCenter * img.height();
         const float scaleX = greenModel.FocalLengthX * maxWH;
         const float scaleY = greenModel.FocalLengthY * maxWH;
 
         #pragma omp parallel for
-        for(int v = 0; v < img.Height(); ++v)
-            for(int u = 0; u < img.Width(); ++u)
+        for(int v = 0; v < img.height(); ++v)
+            for(int u = 0; u < img.width(); ++u)
             {
                 // image to camera
                 const float x = (u - ppX) / scaleX;
@@ -530,15 +530,15 @@ void undistortChromaticAberrations(const aliceVision::image::Image<aliceVision::
                 const Vec2 distoPixBlue(xdBlue * scaleX + ppX, ydBlue * scaleY + ppY);
 
                 // pick pixel if it is in the image domain
-                if(img.Contains(distoPixRed(1), distoPixRed(0)))
+                if(img.contains(distoPixRed(1), distoPixRed(0)))
                 {
                     img_ud(v, u)[0] = sampler(img, distoPixRed(1), distoPixRed(0))[0];
                 }
-                if(img.Contains(distoPixGreen(1), distoPixGreen(0)))
+                if(img.contains(distoPixGreen(1), distoPixGreen(0)))
                 {
                     img_ud(v, u)[1] = sampler(img, distoPixGreen(1), distoPixGreen(0))[1];
                 }
-                if(img.Contains(distoPixBlue(1), distoPixBlue(0)))
+                if(img.contains(distoPixBlue(1), distoPixBlue(0)))
                 {
                     img_ud(v, u)[2] = sampler(img, distoPixBlue(1), distoPixBlue(0))[2];
                 }
@@ -555,7 +555,7 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
     // Note: fill holes needs to fix non-finite values first
     if (pParams.fixNonFinite || pParams.fillHoles)
     {
-        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         int pixelsFixed = 0;
         // Works inplace
         oiio::ImageBufAlgo::fixNonFinite(inBuf, inBuf, oiio::ImageBufAlgo::NonFiniteFixMode::NONFINITE_BOX3, &pixelsFixed);
@@ -592,7 +592,7 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
             image::Image<image::RGBAfColor> image_ud;
             const image::Sampler2d<image::SamplerLinear> sampler;
 
-            image_ud.resize(image.Width(), image.Height(), true, FBLACK_A);
+            image_ud.resize(image.width(), image.height(), true, FBLACK_A);
 
             camera::UndistortImage(image, cam.get(), image_ud, FBLACK_A);
 
@@ -609,11 +609,11 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
     }
 
     const float sfw =
-        (pParams.maxWidth != 0 && pParams.maxWidth < image.Width()) ?
-            static_cast<float>(pParams.maxWidth) / static_cast<float>(image.Width()) : 1.0;
+        (pParams.maxWidth != 0 && pParams.maxWidth < image.width()) ?
+            static_cast<float>(pParams.maxWidth) / static_cast<float>(image.width()) : 1.0;
     const float sfh =
-        (pParams.maxHeight != 0 && pParams.maxHeight < image.Height()) ?
-            static_cast<float>(pParams.maxHeight) / static_cast<float>(image.Height()) : 1.0;
+        (pParams.maxHeight != 0 && pParams.maxHeight < image.height()) ?
+            static_cast<float>(pParams.maxHeight) / static_cast<float>(image.height()) : 1.0;
     const float scaleFactor = std::min(pParams.scaleFactor, std::min(sfw, sfh));
 
     if (scaleFactor != 1.0f || pParams.par.enabled)
@@ -625,10 +625,10 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
         ALICEVISION_LOG_TRACE("widthRatio " << widthRatio);
         ALICEVISION_LOG_TRACE("heightRatio " << heightRatio);
 
-        const unsigned int w = image.Width();
-        const unsigned int h = image.Height();
-        const unsigned int nw = static_cast<unsigned int>(floor(static_cast<float>(image.Width()) * widthRatio));
-        const unsigned int nh = static_cast<unsigned int>(floor(static_cast<float>(image.Height()) * heightRatio));
+        const unsigned int w = image.width();
+        const unsigned int h = image.height();
+        const unsigned int nw = static_cast<unsigned int>(floor(static_cast<float>(image.width()) * widthRatio));
+        const unsigned int nh = static_cast<unsigned int>(floor(static_cast<float>(image.height()) * heightRatio));
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
@@ -645,7 +645,7 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
     
     if ((pParams.reorient) && (imageMetadata.find("Orientation") != imageMetadata.end()))
     {
-        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         inBuf.set_orientation(std::stoi(imageMetadata["Orientation"]));
         oiio::ImageBuf outBuf = oiio::ImageBufAlgo::reorient(inBuf);
 
@@ -666,27 +666,27 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
 
     if (pParams.contrast != 1.0f)
     {
-        image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
-        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
-        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+        image::Image<image::RGBAfColor> filtered(image.width(), image.height());
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
         oiio::ImageBufAlgo::contrast_remap(outBuf, inBuf, 0.0f, 1.0f, 0.0f, 1.0f, pParams.contrast);
 
         image.swap(filtered);
     }
     if (pParams.medianFilter >= 3)
     {
-        image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
-        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
-        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+        image::Image<image::RGBAfColor> filtered(image.width(), image.height());
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
         oiio::ImageBufAlgo::median_filter(outBuf, inBuf, pParams.medianFilter);
 
         image.swap(filtered);
     }
     if (pParams.sharpen.enabled)
     {
-        image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
-        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
-        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+        image::Image<image::RGBAfColor> filtered(image.width(), image.height());
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
         oiio::ImageBufAlgo::unsharp_mask(outBuf, inBuf, "gaussian", pParams.sharpen.width, pParams.sharpen.contrast, pParams.sharpen.threshold);
 
         image.swap(filtered);
@@ -697,7 +697,7 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
             // Create temporary OpenCV Mat (keep only 3 Channels) to handled Eigen data of our image
             cv::Mat openCVMatIn = image::imageRGBAToCvMatBGR(image, CV_32FC3);
-            cv::Mat openCVMatOut(image.Width(), image.Height(), CV_32FC3);
+            cv::Mat openCVMatOut(image.width(), image.height(), CV_32FC3);
 
             cv::bilateralFilter(openCVMatIn, openCVMatOut, pParams.bilateralFilter.distance, pParams.bilateralFilter.sigmaColor, pParams.bilateralFilter.sigmaSpace);
 
@@ -756,9 +756,9 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
     }
     if (pParams.fillHoles)
     {
-        image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
-        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
-        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+        image::Image<image::RGBAfColor> filtered(image.width(), image.height());
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
 
         // Premult necessary to ensure that the fill holes works as expected
         oiio::ImageBufAlgo::premult(inBuf, inBuf);
@@ -769,7 +769,7 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
 
     if (pParams.noise.enabled)
     {   
-        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.width(), image.height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBufAlgo::noise(inBuf, ENoiseMethod_enumToString(pParams.noise.method), pParams.noise.A, pParams.noise.B, pParams.noise.mono);
     }
 
@@ -778,7 +778,7 @@ void processImage(image::Image<image::RGBAfColor>& image, ProcessingParams& pPar
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         // Create temporary OpenCV Mat (keep only 3 channels) to handle Eigen data of our image
         cv::Mat openCVMatIn = image::imageRGBAToCvMatBGR(image, CV_8UC3);
-        cv::Mat openCVMatOut(image.Width(), image.Height(), CV_8UC3);
+        cv::Mat openCVMatOut(image.width(), image.height(), CV_8UC3);
 
         cv::fastNlMeansDenoisingColored(openCVMatIn, openCVMatOut, pParams.nlmFilter.filterStrength,
                                         pParams.nlmFilter.filterStrengthColor, pParams.nlmFilter.templateWindowSize,
@@ -1384,7 +1384,7 @@ int aliceVision_main(int argc, char * argv[])
 
                 ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << compensationFactor);
 
-                for (int i = 0; i < image.Width() * image.Height(); ++i)
+                for (int i = 0; i < image.width() * image.height(); ++i)
                 {
                     image(i)[0] *= compensationFactor;
                     image(i)[1] *= compensationFactor;
@@ -1430,18 +1430,18 @@ int aliceVision_main(int argc, char * argv[])
 
             // Update view for this modification
             view.getImage().setImagePath(outputfilePath);
-            view.getImage().setWidth(image.Width());
-            view.getImage().setHeight(image.Height());
+            view.getImage().setWidth(image.width());
+            view.getImage().setHeight(image.height());
             view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
             if (viewMetadata.find("Orientation") != viewMetadata.end())
                 view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
 
-            if (pParams.reorient && image.Width() != cam->w() && image.Width() == cam->h())  // The image has been rotated by automatic reorientation 
+            if (pParams.reorient && image.width() != cam->w() && image.width() == cam->h())  // The image has been rotated by automatic reorientation 
             {
                 camera::IntrinsicBase* cam2 = cam->clone();
 
-                cam2->setWidth(image.Width());
-                cam2->setHeight(image.Height());
+                cam2->setWidth(image.width());
+                cam2->setHeight(image.height());
                 double sensorWidth = cam->sensorWidth();
                 cam2->setSensorWidth(cam->sensorHeight());
                 cam2->setSensorHeight(sensorWidth);

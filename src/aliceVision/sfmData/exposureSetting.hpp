@@ -77,11 +77,11 @@ class ExposureSetting
         aperture2^2 = (iso1 / iso2)
         aperture2 = sqrt(iso1 / iso2)
         */
-        double iso_2_aperture = 1.0;
+        double iso2Aperture = 1.0;
         if (iso > 1e-6 && referenceISO > 1e-6)
         {
             // Need to have both iso and reference iso to use it
-            iso_2_aperture = std::sqrt(iso / referenceISO);
+            iso2Aperture = std::sqrt(iso / referenceISO);
         }
 
         /*
@@ -90,8 +90,8 @@ class ExposureSetting
         (aperture2 / aperture1)^2 = (area1 / pi) / (area2 / pi)
         area2 = (aperture1 / aperture2)^2
         */
-        double new_fnumber = fnumber * iso_2_aperture;
-        double exp_increase = (lReferenceFNumber / new_fnumber) * (lReferenceFNumber / new_fnumber);
+        double newFnumber = fnumber * iso2Aperture;
+        double expIncrease = (lReferenceFNumber / newFnumber) * (lReferenceFNumber / newFnumber);
 
         // If the aperture was more important for this image, this means that it received less light than with a default aperture
         // This means also that if we want to simulate that all the image have the same aperture, we have to increase virtually th
@@ -105,7 +105,7 @@ class ExposureSetting
         // iso 20, f/2 = 2500
         // iso 40, f/2.8 = 2500
 
-        return shutter * exp_increase;
+        return shutter * expIncrease;
     }
     bool operator<(const ExposureSetting& other) const { return getExposure() < other.getExposure(); }
     bool operator==(const ExposureSetting& other) const { return getExposure() == other.getExposure(); }

@@ -101,8 +101,8 @@ void computeLuminanceInfoFromImage(image::Image<image::RGBfColor>& image, lumina
     double minLuminance = 1000.0;
     int sampleNb = 0;
 
-    const int imgH = image.Height();
-    const int imgW = image.Width();
+    const int imgH = image.height();
+    const int imgW = image.width();
 
     const int a1 = (imgH <= imgW) ? imgW / 2 : imgH / 2;
     const int a2 = (imgH <= imgW) ? imgW / 2 : imgW - (imgH / 2);

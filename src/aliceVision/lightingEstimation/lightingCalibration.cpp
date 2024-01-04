@@ -203,8 +203,8 @@ void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::
     Eigen::VectorXf kernel(2 * kernelSize + 1);
     createTriangleKernel(kernelSize, kernel);
 
-    image::ImageVerticalConvolution(patch, kernel, convolutedPatch1);
-    image::ImageHorizontalConvolution(convolutedPatch1, kernel, convolutedPatch2);
+    image::imageVerticalConvolution(patch, kernel, convolutedPatch1);
+    image::imageHorizontalConvolution(convolutedPatch1, kernel, convolutedPatch2);
 
     Eigen::Index maxRow, maxCol;
     static_cast<void>(convolutedPatch2.maxCoeff(&maxRow, &maxCol));

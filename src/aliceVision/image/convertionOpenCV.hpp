@@ -47,10 +47,10 @@ inline void setValueCvMatBGR(cv::Mat& mat, int i, int j, const image::RGBAfColor
  */
 inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, int cvtype = CV_32FC3)
 {
-    cv::Mat mat(img.Height(), img.Width(), cvtype);
-    for (int i = 0; i < img.Height(); i++)
+    cv::Mat mat(img.height(), img.width(), cvtype);
+    for (int i = 0; i < img.height(); i++)
     {
-        for (int j = 0; j < img.Width(); j++)
+        for (int j = 0; j < img.width(); j++)
         {
             switch (cvtype)
             {
@@ -79,10 +79,10 @@ inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, i
 template<typename VecType>
 inline void cvMatBGRToImageRGBAImpl(const cv::Mat& img, image::Image<image::RGBAfColor>& imageOut, float factor = 1.f)
 {
-    for (int row = 0; row < imageOut.Height(); row++)
+    for (int row = 0; row < imageOut.height(); row++)
     {
         const VecType* rowPtr = img.ptr<VecType>(row);
-        for (int col = 0; col < imageOut.Width(); col++)
+        for (int col = 0; col < imageOut.width(); col++)
         {
             const VecType& matPixel = rowPtr[col];
             imageOut(row, col) = image::RGBAfColor(matPixel[2] * factor, matPixel[1] * factor, matPixel[0] * factor, imageOut(row, col).a());

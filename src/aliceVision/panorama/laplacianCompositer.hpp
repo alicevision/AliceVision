@@ -57,9 +57,9 @@ class LaplacianCompositer : public Compositer
         color = aliceVision::image::Image<image::RGBfColor>();
 
         //  To log space for hdr
-        for (int i = 0; i < feathered.Height(); i++)
+        for (int i = 0; i < feathered.height(); i++)
         {
-            for (int j = 0; j < feathered.Width(); j++)
+            for (int j = 0; j < feathered.width(); j++)
             {
                 feathered(i, j).r() = std::log(std::max(1e-8f, feathered(i, j).r()));
                 feathered(i, j).g() = std::log(std::max(1e-8f, feathered(i, j).g()));
@@ -68,10 +68,10 @@ class LaplacianCompositer : public Compositer
         }
 
         // Convert mask to alpha layer
-        image::Image<float> maskFloat(inputMask.Width(), inputMask.Height());
-        for (int i = 0; i < inputMask.Height(); i++)
+        image::Image<float> maskFloat(inputMask.width(), inputMask.height());
+        for (int i = 0; i < inputMask.height(); i++)
         {
-            for (int j = 0; j < inputMask.Width(); j++)
+            for (int j = 0; j < inputMask.width(); j++)
             {
                 if (inputMask(i, j))
                 {
@@ -87,8 +87,8 @@ class LaplacianCompositer : public Compositer
         BoundingBox bb;
         bb.left = offsetX;
         bb.top = offsetY;
-        bb.width = feathered.Width();
-        bb.height = feathered.Height();
+        bb.width = feathered.width();
+        bb.height = feathered.height();
 
         int scale = _bands - 1;
         BoundingBox potbb = bb.divide(scale).dilate(getBorderSize()).multiply(scale);

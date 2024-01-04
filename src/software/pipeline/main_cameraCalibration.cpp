@@ -192,7 +192,7 @@ int aliceVision_main(int argc, char** argv)
     while(feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
     {
         cv::Mat viewGray;
-        cv::eigen2cv(imageGrey.GetMat(), viewGray);
+        cv::eigen2cv(imageGrey.getMat(), viewGray);
 
         // Check image is correctly loaded
         if(viewGray.size() == cv::Size(0, 0))

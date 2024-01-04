@@ -208,12 +208,12 @@ class GraphcutSeams
                 size_t offset_x,
                 size_t offset_y)
     {
-        if (inputMask.Width() != input.Width())
+        if (inputMask.width() != input.width())
         {
             return false;
         }
 
-        if (inputMask.Height() != input.Height())
+        if (inputMask.height() != input.height())
         {
             return false;
         }
@@ -223,8 +223,8 @@ class GraphcutSeams
         data.id = currentIndex;
         data.color = input;
         data.mask = inputMask;
-        data.rect.width = input.Width();
-        data.rect.height = input.Height();
+        data.rect.width = input.width();
+        data.rect.height = input.height();
         data.rect.left = offset_x;
         data.rect.top = offset_y;
 
@@ -366,9 +366,9 @@ class GraphcutSeams
     {
         // Because of upscaling, some labels may be incorrect
         // Some pixels may be affected to labels they don't see.
-        for (int y = 0; y < graphCutInput.Height(); y++)
+        for (int y = 0; y < graphCutInput.height(); y++)
         {
-            for (int x = 0; x < graphCutInput.Width(); x++)
+            for (int x = 0; x < graphCutInput.width(); x++)
             {
                 IndexT label = labels(y, x);
 
@@ -393,7 +393,7 @@ class GraphcutSeams
                 for (int l = -1; l <= 1; l++)
                 {
                     int ny = y + l;
-                    if (ny < 0 || ny >= labels.Height())
+                    if (ny < 0 || ny >= labels.height())
                     {
                         continue;
                     }
@@ -401,7 +401,7 @@ class GraphcutSeams
                     for (int c = -1; c <= 1; c++)
                     {
                         int nx = x + c;
-                        if (nx < 0 || nx >= labels.Width())
+                        if (nx < 0 || nx >= labels.width())
                         {
                             continue;
                         }
@@ -447,11 +447,11 @@ class GraphcutSeams
 
     bool computeInputDistanceMap(image::Image<int>& distanceMap, const image::Image<IndexT>& localLabels, IndexT inputId)
     {
-        image::Image<IndexT> binarizedWorld(localLabels.Width(), localLabels.Height());
+        image::Image<IndexT> binarizedWorld(localLabels.width(), localLabels.height());
 
-        for (int y = 0; y < localLabels.Height(); y++)
+        for (int y = 0; y < localLabels.height(); y++)
         {
-            for (int x = 0; x < localLabels.Width(); x++)
+            for (int x = 0; x < localLabels.width(); x++)
             {
                 IndexT label = localLabels(y, x);
 
@@ -466,7 +466,7 @@ class GraphcutSeams
             }
         }
 
-        image::Image<unsigned char> seams(localLabels.Width(), localLabels.Height());
+        image::Image<unsigned char> seams(localLabels.width(), localLabels.height());
         if (!computeSeamsMap(seams, binarizedWorld))
         {
             return false;
@@ -487,7 +487,7 @@ class GraphcutSeams
         BoundingBox localBbox = input.rect.dilate(3);
         localBbox.clampLeft();
         localBbox.clampTop();
-        localBbox.clampBottom(_labels.Height() - 1);
+        localBbox.clampBottom(_labels.height() - 1);
 
         // Output must keep a margin also
         BoundingBox outputBbox = input.rect;
@@ -524,16 +524,16 @@ class GraphcutSeams
         }
 
         // Compute distance map to borders of the input seams
-        image::Image<int> distanceMap(localLabels.Width(), localLabels.Height());
+        image::Image<int> distanceMap(localLabels.width(), localLabels.height());
         if (!computeInputDistanceMap(distanceMap, localLabels, input.id))
         {
             return false;
         }
 
         // Remove pixels too far from seams
-        for (int i = 0; i < graphCutInput.Height(); i++)
+        for (int i = 0; i < graphCutInput.height(); i++)
         {
-            for (int j = 0; j < graphCutInput.Width(); j++)
+            for (int j = 0; j < graphCutInput.width(); j++)
             {
                 float d2 = float(distanceMap(i, j));
                 float d = sqrt(d2);
@@ -615,9 +615,9 @@ class GraphcutSeams
     {
         double cost = 0.0;
 
-        for (int y = 0; y < input.Height() - 1; y++)
+        for (int y = 0; y < input.height() - 1; y++)
         {
-            for (int x = 0; x < input.Width() - 1; x++)
+            for (int x = 0; x < input.width() - 1; x++)
             {
                 int xp = x + 1;
                 int yp = y + 1;
@@ -741,14 +741,14 @@ class GraphcutSeams
 
     bool alphaExpansion(image::Image<IndexT>& labels, const image::Image<int>& distanceMap, const image::Image<PixelInfo>& input, IndexT currentLabel)
     {
-        image::Image<unsigned char> mask(labels.Width(), labels.Height(), true, 0);
-        image::Image<int> ids(labels.Width(), labels.Height(), true, -1);
-        image::Image<image::RGBfColor> color_label(labels.Width(), labels.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
-        image::Image<image::RGBfColor> color_other(labels.Width(), labels.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+        image::Image<unsigned char> mask(labels.width(), labels.height(), true, 0);
+        image::Image<int> ids(labels.width(), labels.height(), true, -1);
+        image::Image<image::RGBfColor> color_label(labels.width(), labels.height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+        image::Image<image::RGBfColor> color_other(labels.width(), labels.height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
 
-        for (int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.height(); y++)
         {
-            for (int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.width(); x++)
             {
                 IndexT label = labels(y, x);
 
@@ -805,9 +805,9 @@ class GraphcutSeams
         // However we want to ignore a lot of pixel.
         // Let's create an index per valid pixels for graph cut reference
         int count = 0;
-        for (int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.height(); y++)
         {
-            for (int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.width(); x++)
             {
                 if (mask(y, x) == 0)
                 {
@@ -823,9 +823,9 @@ class GraphcutSeams
         MaxFlow_AdjList gc(count);
         size_t countValid = 0;
 
-        for (int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.height(); y++)
         {
-            for (int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.width(); x++)
             {
                 // If this pixel is not valid, ignore
                 if (mask(y, x) == 0)
@@ -838,8 +838,8 @@ class GraphcutSeams
 
                 int ym1 = std::max(y - 1, 0);
                 int xm1 = std::max(x - 1, 0);
-                int yp1 = std::min(y + 1, labels.Height() - 1);
-                int xp1 = std::min(x + 1, labels.Width() - 1);
+                int yp1 = std::min(y + 1, labels.height() - 1);
+                int xp1 = std::min(x + 1, labels.width() - 1);
 
                 if (mask(y, x) == 1)
                 {
@@ -894,9 +894,9 @@ class GraphcutSeams
         // When two neighboor pixels have different labels, there is a seam (border) cost.
         // Graph cut will try to make sure the territory will have a minimal border cost
 
-        for (int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.height(); y++)
         {
-            for (int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.width(); x++)
             {
                 if (mask(y, x) == 0)
                 {
@@ -906,7 +906,7 @@ class GraphcutSeams
                 int node_id = ids(y, x);
 
                 // Make sure it is possible to estimate this horizontal border
-                if (y < mask.Height() - 1)
+                if (y < mask.height() - 1)
                 {
                     // Make sure the other pixel is owned by someone
                     if (mask(y + 1, x))
@@ -929,7 +929,7 @@ class GraphcutSeams
                     }
                 }
 
-                if (x < mask.Width() - 1)
+                if (x < mask.width() - 1)
                 {
                     if (mask(y, x + 1))
                     {
@@ -956,9 +956,9 @@ class GraphcutSeams
         gc.compute();
 
         int changeCount = 0;
-        for (int y = 0; y < labels.Height(); y++)
+        for (int y = 0; y < labels.height(); y++)
         {
-            for (int x = 0; x < labels.Width(); x++)
+            for (int x = 0; x < labels.width(); x++)
             {
                 IndexT label = labels(y, x);
                 int id = ids(y, x);
