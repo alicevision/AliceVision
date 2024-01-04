@@ -77,7 +77,7 @@ void createScene(sfmData::SfMData & sfmData, const camera::IntrinsicBase & intri
     {
         for (int x = 0; x < countNeededPointsPerLine; x++)
         {
-            double longitude = x * M_PI_2 / countNeededPointsPerLine;
+            double longitude = x * 2.0 * M_PI / countNeededPointsPerLine;
             double latitude = y * angleBetweenLines;
 
             Vec3 pos;
