@@ -7,9 +7,12 @@
 #pragma once
 
 #include <filesystem>
-#include <vector>
-#include <string>
 #include <functional>
+#include <iostream>
+#include <random>
+#include <string>
+#include <vector>
+
 
 namespace aliceVision {
 namespace utils {
@@ -59,6 +62,30 @@ inline std::vector<std::string> getFilesPathsFromFolders(const std::vector<std::
     }
 
     return paths;
+}
+
+/**
+ * @brief Generates a random filename of a specified length that is suitable for creating temporary files.
+ * This is meant to be an alternative to boost::filesystem::unique_path() as long as std::filesystem does not contain any alternative.
+ * @param[in] length The length of the random filename to generate
+ * @return A string of random characters
+ */
+inline std::string generateUniqueFilename(const int length = 16)
+{
+    static const char characters[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    std::random_device rd;
+    std::mt19937 randomTwEngine(rd());
+    int nbChars = sizeof(characters) - 1;  // -1 to exclude the null character at the end of the string from the count
+    std::uniform_int_distribution<> randomDist(0, nbChars - 1);
+
+    std::string filename;
+    filename.resize(length);
+
+    for (int i = 0; i < length; ++i)
+        filename[i] = characters[randomDist(randomTwEngine)];
+
+    return filename;
 }
 
 }  // namespace utils
