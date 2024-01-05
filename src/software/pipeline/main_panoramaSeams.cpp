@@ -25,11 +25,11 @@
 #include <aliceVision/system/main.hpp>
 
 // IO
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
 #include <regex>
 
 // These constants define the current software version.
@@ -41,7 +41,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, const std::pair<int, int> & panoramaSize, int downscale)
 {
@@ -226,7 +226,7 @@ int aliceVision_main(int argc, char** argv)
     const std::regex pattern("([0-9]+)_([0-9]+).exr");
 
     std::map<IndexT, std::vector<std::string>> paths_per_view;
-    for (auto & iter : boost::filesystem::directory_iterator(p))
+    for (auto & iter : fs::directory_iterator(p))
     { 
         if (!fs::is_regular_file(iter))
         {

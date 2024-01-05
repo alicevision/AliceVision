@@ -17,7 +17,6 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
 // These constants define the current software version.
@@ -26,7 +25,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 using namespace aliceVision;
 

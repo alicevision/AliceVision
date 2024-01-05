@@ -26,10 +26,10 @@
 #include <iostream>
 #include <cmath>
 
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 namespace image {
+
+namespace fs = boost::filesystem;
 
 EImageColorSpace getImageColorSpace(const std::string& imagePath)
 {

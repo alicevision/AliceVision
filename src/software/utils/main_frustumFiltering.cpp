@@ -15,8 +15,8 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cstdlib>
 
 // These constants define the current software version.
@@ -28,7 +28,7 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /// Build a list of pair that share visibility content from the SfMData structure
 PairSet BuildPairsFromStructureObservations(const sfmData::SfMData& sfmData)

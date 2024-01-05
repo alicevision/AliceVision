@@ -16,7 +16,6 @@
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -26,6 +25,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/mcc.hpp>
 
+#include <filesystem>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -38,7 +38,7 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
@@ -487,7 +487,7 @@ int aliceVision_main(int argc, char** argv)
             const std::regex regex = utils::filterToRegex(inputExpression);
             // Get supported files in inputPath directory which matches our regex filter
             filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(),
-               [&regex](const boost::filesystem::path& path) {
+               [&regex](const fs::path& path) {
                  return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
                }
             );

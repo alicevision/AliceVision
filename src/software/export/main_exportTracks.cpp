@@ -26,7 +26,8 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -41,7 +42,7 @@ using namespace aliceVision::track;
 using namespace svg;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char ** argv)
 {

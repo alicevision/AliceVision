@@ -13,8 +13,8 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <vector>
 #include <ostream>
@@ -30,7 +30,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 
 /*
@@ -77,14 +77,14 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // check input file exist
-    if(!exists(bfs::path(middleburyFile)))
+    if(!exists(fs::path(middleburyFile)))
     {
         ALICEVISION_LOG_ERROR("File " << middleburyFile << " does not exist");
         return EXIT_FAILURE;
     }
 
     // get the base path
-    const auto basePath = bfs::path(middleburyFile).parent_path().string();
+    const auto basePath = fs::path(middleburyFile).parent_path().string();
 
     // parse file
     const auto sfmData =

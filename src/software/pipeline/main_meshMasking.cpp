@@ -16,8 +16,8 @@
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <memory>
 
 
@@ -29,7 +29,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /**
  * @brief Basic cache system to manage masks.

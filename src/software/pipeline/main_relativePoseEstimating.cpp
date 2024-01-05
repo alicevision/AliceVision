@@ -34,7 +34,6 @@
 #include <aliceVision/geometry/lie.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
 
@@ -50,7 +49,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 
 bool getPoseStructure(Mat3& R, Vec3& t, std::vector<Vec3>& structure, std::vector<size_t>& newVecInliers, const Mat3& E,

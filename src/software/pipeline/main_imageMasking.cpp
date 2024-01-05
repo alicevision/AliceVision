@@ -17,8 +17,9 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp> 
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -28,7 +29,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 enum class EAlgorithm {
     HSV,

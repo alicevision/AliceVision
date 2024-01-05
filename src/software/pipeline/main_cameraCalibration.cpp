@@ -18,8 +18,6 @@
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -28,6 +26,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
+#include <filesystem>
 #include <stdio.h>
 #include <ctime>
 #include <cstdio>
@@ -45,13 +44,13 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char** argv)
 {
     // Command line arguments
-    bfs::path inputPath;
+    fs::path inputPath;
     std::string outputFilename;
     std::string debugSelectedImgFolder;
     std::string debugRejectedImgFolder;
@@ -67,7 +66,7 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<bfs::path>(&inputPath)->required(),
+        ("input,i", po::value<fs::path>(&inputPath)->required(),
          "Input images in one of the following form:\n"
          " - folder containing images\n"
          " - image sequence like /path/to/seq.@.jpg\n"

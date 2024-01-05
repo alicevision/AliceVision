@@ -14,12 +14,11 @@
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
 
 #include <algorithm>
+#include <filesystem>
 #include <string>
 #include <regex>
-
 #include <iostream>
 #include <list>
 
@@ -37,7 +36,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace json = boost::property_tree;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 
 struct XMPData

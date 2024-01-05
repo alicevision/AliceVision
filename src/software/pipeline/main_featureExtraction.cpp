@@ -22,8 +22,8 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <string>
 #include <iostream>
 #include <functional>
@@ -37,7 +37,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /// - Compute view image description (feature & descriptor extraction)
 /// - Export computed data

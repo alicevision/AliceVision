@@ -15,9 +15,9 @@
 
 #include <random>
 #include <algorithm>
+#include <filesystem>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -48,7 +48,7 @@ std::istream& operator>>(std::istream& in, std::pair<double, double>& v)
 } // namespace std
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace pt = boost::property_tree;
 
 /**
@@ -642,8 +642,8 @@ public:
         if(_debugDirectory.empty())
             return;
 
-        boost::filesystem::path filepath =
-            boost::filesystem::path(_debugDirectory) /
+        fs::path filepath =
+            fs::path(_debugDirectory) /
             (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
         image::writeImage(filepath.string(), toSave, image::ImageWriteOptions());
     }
@@ -1196,7 +1196,7 @@ int main(int argc, char* argv[])
             std::vector<std::pair<std::string, int>> namesWithRank;
             for(const auto& v : sfmData.getViews())
             {
-                boost::filesystem::path path_image(v.second->getImage().getImagePath());
+                fs::path path_image(v.second->getImage().getImagePath());
                 namesWithRank.push_back(std::make_pair(path_image.stem().string(), v.first));
             }
             std::sort(namesWithRank.begin(), namesWithRank.end());
@@ -1320,7 +1320,7 @@ int main(int argc, char* argv[])
                 CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
                 if(debugFisheyeCircleEstimation)
                 {
-                    boost::filesystem::path path(sfmOutputDataFilepath);
+                    fs::path path(sfmOutputDataFilepath);
                     detector.setDebugDirectory(path.parent_path().string());
                 }
                 for(const auto& v : sfmData.getViews())

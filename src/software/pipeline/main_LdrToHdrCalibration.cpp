@@ -29,13 +29,11 @@
 // Command line parameters
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
-#include <sstream>
-
+#include <filesystem>
 #include <fstream>
 #include <map>
-
+#include <sstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -46,7 +44,7 @@ using namespace aliceVision;
 using namespace aliceVision::hdr;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 struct luminanceInfo
 {

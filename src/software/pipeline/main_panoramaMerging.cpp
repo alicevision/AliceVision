@@ -23,9 +23,9 @@
 // IO
 #include <fstream>
 #include <algorithm>
+#include <filesystem>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -36,7 +36,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {

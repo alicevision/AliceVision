@@ -15,7 +15,6 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
-                  Boost::filesystem
                   Boost::boost
                   Boost::timer
         )
@@ -32,7 +31,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -48,7 +46,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -64,7 +61,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -80,7 +76,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -96,7 +91,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -127,7 +121,6 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
-                  Boost::filesystem
                   Boost::boost
                   Boost::timer
                   ${OPENIMAGEIO_LIBRARIES}
@@ -145,7 +138,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -161,7 +153,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -177,7 +168,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # Export a SfM aliceVision scene to Matlab
@@ -191,7 +181,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -204,7 +193,6 @@ if(ALICEVISION_BUILD_SFM)
             LINKS aliceVision_system
                   aliceVision_cmdline
                   aliceVision_mesh
-                  Boost::filesystem
                   Boost::program_options
                   usd
                   usdGeom
@@ -224,6 +212,5 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               aliceVision_image
               Boost::program_options
-              Boost::filesystem
     )
 endif()

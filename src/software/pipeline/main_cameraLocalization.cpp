@@ -24,7 +24,6 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/utils/convert.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -33,6 +32,7 @@
 #include <boost/accumulators/statistics/max.hpp>
 #include <boost/accumulators/statistics/sum.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -50,7 +50,7 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace bacc = boost::accumulators;
 namespace po = boost::program_options;
 
@@ -269,20 +269,20 @@ int aliceVision_main(int argc, char** argv)
 
   // if the provided folder for visual debugging does not exist create it
   // recursively
-  if((!visualDebug.empty()) && (!bfs::exists(visualDebug)))
+  if((!visualDebug.empty()) && (!fs::exists(visualDebug)))
   {
-    bfs::create_directories(visualDebug);
+    fs::create_directories(visualDebug);
   }
  
   // this contains the full path and the root name of the file without the extension
   const bool wantsJsonOutput = exportJsonFile.empty();
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  std::string basenameAlembic = (bfs::path(exportJsonFile).parent_path() / bfs::path(exportJsonFile).stem()).string();
+  std::string basenameAlembic = (fs::path(exportJsonFile).parent_path() / fs::path(exportJsonFile).stem()).string();
 #endif
   std::string basenameJson;
   if(wantsJsonOutput)
   {
-    basenameJson = (bfs::path(exportJsonFile).parent_path() / bfs::path(exportJsonFile).stem()).string();
+    basenameJson = (fs::path(exportJsonFile).parent_path() / fs::path(exportJsonFile).stem()).string();
   }
 
   // load SfMData

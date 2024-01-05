@@ -19,7 +19,8 @@
 #include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -28,7 +29,7 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char* argv[])
@@ -73,9 +74,9 @@ int aliceVision_main(int argc, char* argv[])
     }
 
 
-    bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    fs::path outDirectory = fs::path(outputMeshPath).parent_path();
+    if(!fs::is_directory(outDirectory))
+        fs::create_directory(outDirectory);
 
     // Mesh type
     typedef OpenMesh::TriMesh_ArrayKernelT<>                      Mesh;

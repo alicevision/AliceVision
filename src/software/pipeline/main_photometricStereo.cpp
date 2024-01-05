@@ -22,7 +22,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -33,6 +32,7 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -47,7 +47,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 using namespace aliceVision;
 

@@ -11,8 +11,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
@@ -33,7 +33,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool exportToMatlab(
   const SfMData & sfm_data,

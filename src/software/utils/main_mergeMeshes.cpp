@@ -10,7 +10,6 @@
 #include <aliceVision/system/Timer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_io.h>
@@ -23,6 +22,7 @@
 #include <geogram/basic/command_line_args.h>
 
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <ostream>
 #include <string>
@@ -35,7 +35,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 enum class EOperationType : unsigned char
 {

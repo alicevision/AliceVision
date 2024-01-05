@@ -6,16 +6,16 @@
 
 #pragma once
 
-#include "boost/filesystem.hpp"
-
+#include <filesystem>
 #include <vector>
 #include <string>
 #include <functional>
 
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 namespace utils {
+
+namespace fs = std::filesystem;
+
 /**
  * @brief Allows to retrieve the files paths that validates a specific predicate by searching in a folder.
  * @param[in] the folders path
@@ -23,7 +23,7 @@ namespace utils {
  * @return the paths list to the corresponding files if they validate the predicate, otherwise it returns an empty list.
  */
 inline std::vector<std::string> getFilesPathsFromFolder(const std::string& folder,
-                                                        const std::function<bool(const boost::filesystem::path&)>& predicate)
+                                                        const std::function<bool(const fs::path&)>& predicate)
 {
     // Get all files paths in folder
     std::vector<std::string> paths;
@@ -49,7 +49,7 @@ inline std::vector<std::string> getFilesPathsFromFolder(const std::string& folde
  * @return the paths list to the corresponding files if they validate the predicate, otherwise it returns an empty list.
  */
 inline std::vector<std::string> getFilesPathsFromFolders(const std::vector<std::string>& folders,
-                                                         const std::function<bool(const boost::filesystem::path&)>& predicate)
+                                                         const std::function<bool(const fs::path&)>& predicate)
 {
     std::vector<std::string> paths;
     for (const std::string& folder : folders)

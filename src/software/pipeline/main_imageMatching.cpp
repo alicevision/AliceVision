@@ -18,9 +18,9 @@
 #include <Eigen/Core>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <ostream>
 #include <string>
@@ -37,7 +37,7 @@ using namespace aliceVision::voctree;
 using namespace aliceVision::imageMatching;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {

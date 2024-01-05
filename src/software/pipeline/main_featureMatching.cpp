@@ -34,8 +34,8 @@
 #include <aliceVision/stl/stl.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cstdlib>
 #include <fstream>
 #include <cctype>
@@ -55,7 +55,7 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::matchingImageCollection;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 void getStatsMap(const PairwiseMatches& map)
 {

@@ -6,7 +6,6 @@
 
 // Reading command line options
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
@@ -23,6 +22,8 @@
 #include <aliceVision/panorama/warper.hpp>
 #include <aliceVision/panorama/distance.hpp>
 
+#include <filesystem>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -31,7 +32,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData::SfMData& sfmData,
                                 const float ratioUpscale)

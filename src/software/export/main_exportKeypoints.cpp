@@ -20,9 +20,9 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -40,7 +40,7 @@ using namespace aliceVision::sfmData;
 using namespace svg;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char ** argv)
 {

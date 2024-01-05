@@ -29,13 +29,12 @@
 
 // Command line parameters
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 
 #include <sstream>
-
+#include <filesystem>
 #include <fstream>
 
 
@@ -48,7 +47,7 @@ using namespace aliceVision;
 using namespace aliceVision::hdr;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {

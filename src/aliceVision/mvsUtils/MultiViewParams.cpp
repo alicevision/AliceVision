@@ -18,7 +18,6 @@
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/camera/camera.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include <boost/property_tree/ini_parser.hpp>
@@ -26,13 +25,14 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <set>
 
 namespace aliceVision {
 namespace mvsUtils {
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                  const std::string& imagesFolder,

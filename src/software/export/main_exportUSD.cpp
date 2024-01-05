@@ -11,7 +11,6 @@
 #include <aliceVision/system/Timer.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include <pxr/base/tf/token.h>
@@ -28,13 +27,15 @@
 #include <pxr/usd/usdShade/materialBindingAPI.h>
 #include <pxr/usd/usdShade/shader.h>
 
+#include <filesystem>
+
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
 
 namespace bpo = boost::program_options;
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
@@ -144,7 +145,7 @@ int aliceVision_main(int argc, char **argv)
     }
 
     const std::string extension = fileType == EUSDFileType::USDC || fileType == EUSDFileType::USDZ ? "usdc" : "usda";
-    const bfs::path stagePath = bfs::canonical(outputFolderPath) / ("texturedMesh." + extension);
+    const fs::path stagePath = fs::canonical(outputFolderPath) / ("texturedMesh." + extension);
     UsdStageRefPtr stage = UsdStage::CreateNew(stagePath.string());
     if (!stage)
     {
@@ -341,16 +342,16 @@ int aliceVision_main(int argc, char **argv)
     stage->GetRootLayer()->Save();
 
     // Copy textures to output folder
-    const bfs::path sourceFolder = bfs::path(inputMeshPath).parent_path();
-    const bfs::path destinationFolder = bfs::canonical(outputFolderPath);
+    const fs::path sourceFolder = fs::path(inputMeshPath).parent_path();
+    const fs::path destinationFolder = fs::canonical(outputFolderPath);
 
     for (int i = 0; i < texturing.material.numAtlases(); ++i)
     {
         for (const auto& texture : texturing.material.getAllTextures())
         {
-            if (bfs::exists(sourceFolder / texture))
+            if (fs::exists(sourceFolder / texture))
             {
-                bfs::copy_file(sourceFolder / texture, destinationFolder / texture, bfs::copy_options::update_existing);
+                fs::copy_file(sourceFolder / texture, destinationFolder / texture, fs::copy_options::update_existing);
             }
         }
     }
@@ -358,7 +359,7 @@ int aliceVision_main(int argc, char **argv)
     // write out usdz if requested
     if (fileType == EUSDFileType::USDZ)
     {
-        const bfs::path usdzPath = bfs::canonical(outputFolderPath) / "texturedMesh.usdz";
+        const fs::path usdzPath = fs::canonical(outputFolderPath) / "texturedMesh.usdz";
         UsdZipFileWriter writer = UsdZipFileWriter::CreateNew(usdzPath.string());
 
         if (!writer)
@@ -372,7 +373,7 @@ int aliceVision_main(int argc, char **argv)
         {
             for (const auto& texture : texturing.material.getAllTextures())
             {
-                if (bfs::exists(destinationFolder / texture))
+                if (fs::exists(destinationFolder / texture))
                 {
                     writer.AddFile((destinationFolder / texture).string(), texture);
                 }

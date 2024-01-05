@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <ostream>
 #include <string>
 #include <chrono>
@@ -40,7 +41,7 @@ static const int DIMENSION = 128;
 
 using namespace boost::accumulators;
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace aliceVision;
 using namespace aliceVision::feature;
 

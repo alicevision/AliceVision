@@ -16,7 +16,6 @@
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <aliceVision/sfm/pipeline/relativePoses.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -28,6 +27,7 @@
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 
 #include <cstdlib>
+#include <filesystem>
 #include <random>
 #include <regex>
 
@@ -39,7 +39,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_code& ec)
 {
@@ -382,7 +382,7 @@ int aliceVision_main(int argc, char** argv)
     //Result of pair estimations are stored in multiple files
     std::vector<sfm::ReconstructedPair> reconstructedPairs;
     const std::regex regex("pairs\\_[0-9]+\\.json");
-    for(fs::directory_entry & file : boost::make_iterator_range(fs::directory_iterator(pairsDirectory), {}))
+    for(auto const& file : fs::directory_iterator{pairsDirectory})
     {
         if (!std::regex_search(file.path().string(), regex))
         {

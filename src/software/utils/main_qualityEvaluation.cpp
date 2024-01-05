@@ -18,8 +18,8 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cstdlib>
 #include <iostream>
 
@@ -31,7 +31,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char **argv)
 {

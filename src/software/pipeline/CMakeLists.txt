@@ -20,7 +20,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               aliceVision_lensCorrectionProfile
               Boost::program_options
-              Boost::filesystem
               Boost::boost
     )
 
@@ -55,7 +54,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               vlsift
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -74,7 +72,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               aliceVision_voctree
               Boost::program_options
-              Boost::filesystem
     )
 
     # Feature matching
@@ -91,7 +88,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # Track builder
@@ -105,7 +101,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_track
               Boost::program_options
-              Boost::filesystem
               Boost::json
     )
 
@@ -120,7 +115,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_track
               Boost::program_options
-              Boost::filesystem
               Boost::json
     )
 
@@ -135,7 +129,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_track
               Boost::program_options
-              Boost::filesystem
               Boost::json
     )
 
@@ -151,7 +144,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # Incremental SFM for pure rotation
@@ -166,7 +158,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # SfM Triangulation
@@ -181,7 +172,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # Global SfM
@@ -196,7 +186,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # Compute structure from known camera poses
@@ -210,7 +199,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # Calibrate a camera
@@ -224,7 +212,6 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_system
                   aliceVision_cmdline
                   Boost::program_options
-                  Boost::filesystem
                   Boost::boost
         )
     endif()
@@ -239,7 +226,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_cmdline
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::json
     )
@@ -271,7 +257,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_feature
               aliceVision_cmdline
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -286,7 +271,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               aliceVision_cmdline
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::json
     )
@@ -305,7 +289,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_feature
               aliceVision_cmdline
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -325,7 +308,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_feature
               aliceVision_cmdline
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -345,7 +327,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )
@@ -365,7 +346,6 @@ if(ALICEVISION_BUILD_PANORAMA)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::boost
     )
 
@@ -466,7 +446,6 @@ if(ALICEVISION_BUILD_MVS)
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
-                  Boost::filesystem
         )
 
         # Depth Map Filtering
@@ -482,7 +461,6 @@ if(ALICEVISION_BUILD_MVS)
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
-                  Boost::filesystem
         )
     endif()
 
@@ -499,7 +477,6 @@ if(ALICEVISION_BUILD_MVS)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     if(ALICEVISION_HAVE_MESHSDFILTER)
@@ -514,7 +491,6 @@ if(ALICEVISION_BUILD_MVS)
                   MeshSDLibrary
                   Eigen3::Eigen
                   Boost::program_options
-                  Boost::filesystem
         )
 
         # Mesh Decimate
@@ -526,7 +502,6 @@ if(ALICEVISION_BUILD_MVS)
                   aliceVision_mvsUtils
                   OpenMesh
                   Boost::program_options
-                  Boost::filesystem
         )
     endif()
 
@@ -539,7 +514,6 @@ if(ALICEVISION_BUILD_MVS)
               aliceVision_mvsUtils
               aliceVision_mesh
               Boost::program_options
-              Boost::filesystem
     )
 
     # Mesh Masking
@@ -554,7 +528,6 @@ if(ALICEVISION_BUILD_MVS)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # Mesh Resampling
@@ -566,7 +539,6 @@ if(ALICEVISION_BUILD_MVS)
               aliceVision_mvsUtils
               Geogram::geogram
               Boost::program_options
-              Boost::filesystem
     )
 
     # Texturing
@@ -582,7 +554,6 @@ if(ALICEVISION_BUILD_MVS)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 endif() # if(ALICEVISION_BUILD_MVS)
 
@@ -658,7 +629,6 @@ if(ALICEVISION_BUILD_HDR)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     alicevision_add_software(aliceVision_LdrToHdrCalibration
@@ -671,7 +641,6 @@ if(ALICEVISION_BUILD_HDR)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     alicevision_add_software(aliceVision_LdrToHdrMerge
@@ -684,7 +653,6 @@ if(ALICEVISION_BUILD_HDR)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
 endif()
