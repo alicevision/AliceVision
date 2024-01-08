@@ -81,7 +81,7 @@ cd <VCPKG_INSTALL_DIR>
 set VCPKG_ROOT=%cd%
 
 vcpkg install ^
-          boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-geometry boost-graph boost-json boost-log ^
+          boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-geometry boost-graph boost-json boost-log ^
           boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
           lz4 ^
           liblemon ^
