@@ -14,7 +14,6 @@
 #include <geogram/points/kd_tree.h>
 
 #include <boost/atomic/atomic_ref.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <assimp/Importer.hpp>
@@ -23,7 +22,9 @@
 #include <assimp/scene.h>
 #include <Eigen/Dense>
 
+#include <filesystem>
 #include <fstream>
+#include <list>
 #include <map>
 #include <unordered_set>
 
@@ -77,7 +78,7 @@ std::istream& operator>>(std::istream& in, EFileType& meshFileType)
 
 void Mesh::save(const std::string& filepath)
 {
-    const std::string fileTypeStr = boost::filesystem::path(filepath).extension().string().substr(1);
+    const std::string fileTypeStr = std::filesystem::path(filepath).extension().string().substr(1);
     const EFileType fileType = mesh::EFileType_stringToEnum(fileTypeStr);
 
     ALICEVISION_LOG_INFO("Save " << fileTypeStr << " mesh file");
@@ -2358,7 +2359,7 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
     normals.clear();
     pointsVisibilities.clear();
 
-    if (!boost::filesystem::exists(filepath))
+    if (!std::filesystem::exists(filepath))
     {
         ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << filepath);
     }

@@ -11,12 +11,8 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mesh/MeshEnergyOpt.hpp>
 
-#include <boost/filesystem/operations.hpp>
-
 namespace aliceVision {
 namespace mesh {
-
-namespace bfs = boost::filesystem;
 
 void meshPostProcessing(Mesh*& inout_mesh,
                         StaticVector<StaticVector<int>>& inout_ptsCams,
