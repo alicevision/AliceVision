@@ -26,10 +26,10 @@
 
 #include <geogram/points/kd_tree.h>
 
-#include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
 
 #include <cmath>
+#include <filesystem>
 #include <random>
 #include <stdexcept>
 
@@ -41,7 +41,7 @@
 namespace aliceVision {
 namespace fuseCut {
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 // #define USE_GEOGRAM_KDTREE 1
 
@@ -1189,7 +1189,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap);
                 // If we have an nModMap in input (from depthmapfilter) use it,
                 // else init with a constant value.
-                if (boost::filesystem::exists(nmodMapFilepath))
+                if (fs::exists(nmodMapFilepath))
                 {
                     image::readImage(nmodMapFilepath, numOfModalsMap, image::EImageColorSpace::NO_CONVERSION);
                     if (numOfModalsMap.Width() != width || numOfModalsMap.Height() != height)
@@ -3892,7 +3892,7 @@ void DelaunayGraphCut::exportDebugMesh(const std::string& filename, const Point3
         mesh->tris.push_back(t);
     }
 
-    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    const std::string tempDirPath = fs::temp_directory_path().generic_string();
     mesh->save(tempDirPath + "/" + filename);
     meshf->save(tempDirPath + "/" + filename);
 }
@@ -3956,7 +3956,7 @@ void DelaunayGraphCut::exportBackPropagationMesh(const std::string& filename,
 
 void DelaunayGraphCut::writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit)
 {
-    assert(boost::filesystem::path(filePath).extension().string() == std::string(".csv"));
+    assert(fs::path(filePath).extension().string() == std::string(".csv"));
 
     const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
     std::mt19937 generator(seed != 0 ? seed : std::random_device{}());

@@ -13,12 +13,12 @@
 #include <aliceVision/fuseCut/VoxelsGrid.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace aliceVision {
 namespace fuseCut {
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir)
   : VoxelsGrid(dimmensions, space, _mp, _spaceRootDir)
@@ -250,7 +250,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
 
-        if (!bfs::exists(filePtsCamsFromDCTName))
+        if (!fs::exists(filePtsCamsFromDCTName))
         {
             delete ptsCamsFromDct;
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
@@ -274,7 +274,7 @@ void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVecto
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
 
-        if (!bfs::exists(filePtsCamsFromDCTName))
+        if (!fs::exists(filePtsCamsFromDCTName))
         {
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
         }
@@ -316,7 +316,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
-        if (bfs::exists(fileName))
+        if (fs::exists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
@@ -352,7 +352,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
-        if (bfs::exists(fileName))
+        if (fs::exists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
@@ -368,7 +368,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 
             ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
-            if (bfs::exists(fileName))
+            if (fs::exists(fileName))
             {
                 StaticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(fileName);
                 StaticVector<rgb>* trisColsi = getTrisColorsRgb(mei, ptsColsi);
