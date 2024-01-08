@@ -28,7 +28,6 @@ alicevision_add_library(aliceVision_dataio
     aliceVision_sfmData
     aliceVision_sfmDataIO
     aliceVision_system
-    Boost::filesystem
     Boost::boost
 )
 

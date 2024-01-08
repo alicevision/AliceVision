@@ -12,8 +12,7 @@
     #include "VideoFeed.hpp"
 #endif
 
-#include <boost/filesystem.hpp>
-
+#include <filesystem>
 #include <exception>
 #include <iostream>
 #include <string>
@@ -28,15 +27,15 @@ FeedProvider::FeedProvider(const std::string& feedPath, const std::string& calib
     _isLiveFeed(false),
     _isSfmData(false)
 {
-    namespace bf = boost::filesystem;
+    namespace fs = std::filesystem;
     if (feedPath.empty())
     {
         throw std::invalid_argument("Empty filepath.");
     }
-    if (bf::is_regular_file(bf::path(feedPath)))
+    if (fs::is_regular_file(fs::path(feedPath)))
     {
         // Image or video file
-        const std::string extension = bf::path(feedPath).extension().string();
+        const std::string extension = fs::path(feedPath).extension().string();
         if (SfMDataFeed::isSupported(extension))
         {
             _feeder.reset(new SfMDataFeed(feedPath, calibPath));
@@ -67,7 +66,7 @@ FeedProvider::FeedProvider(const std::string& feedPath, const std::string& calib
     }
     // parent_path() returns "/foo/bar/" when input path equals to "/foo/bar/"
     // if the user just gives the relative path as "bar", throws invalid argument exception.
-    else if (bf::is_directory(bf::path(feedPath)) || bf::is_directory(bf::path(feedPath).parent_path()))
+    else if (fs::is_directory(fs::path(feedPath)) || fs::is_directory(fs::path(feedPath).parent_path()))
     {
         // Folder or sequence of images
         _feeder.reset(new ImageFeed(feedPath, calibPath));
