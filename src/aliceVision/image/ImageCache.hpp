@@ -12,10 +12,11 @@
 #include "imageAlgo.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/functional/hash.hpp>
 
+#include <filesystem>
 #include <memory>
 #include <unordered_map>
 #include <functional>
@@ -300,7 +301,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int do
 
     using TInfo = ColorTypeInfo<TPix>;
 
-    auto lastWriteTime = boost::filesystem::last_write_time(filename);
+    auto lastWriteTime = utils::getLastWriteTime(filename);
     CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, downscaleLevel, lastWriteTime);
 
     // find the requested image in the cached images
@@ -453,7 +454,7 @@ bool ImageCache::contains(const std::string& filename, int downscaleLevel) const
 
     using TInfo = ColorTypeInfo<TPix>;
 
-    auto lastWriteTime = boost::filesystem::last_write_time(filename);
+    auto lastWriteTime = utils::getLastWriteTime(filename);
     CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, downscaleLevel, lastWriteTime);
 
     auto it = std::find(_keys.begin(), _keys.end(), keyReq);

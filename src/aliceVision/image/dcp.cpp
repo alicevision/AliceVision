@@ -4,20 +4,21 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 
-#include <boost/filesystem.hpp>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 
 #include <iostream>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <functional>
 
 namespace aliceVision {
 namespace image {
 
 using aliceVision::clamp;
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 double calibrationIlluminantToTemperature(const LightSource light)
 {
@@ -2379,16 +2380,16 @@ int DCPDatabase::load(const std::string& databaseDirPath, bool force)
 
     folderName = databaseDirPath;
 
-    if (!bfs::is_directory(databaseDirPath))
+    if (!fs::is_directory(databaseDirPath))
     {
         return 0;
     }
 
-    bfs::path targetDir(databaseDirPath);
-    bfs::directory_iterator it(targetDir), eod;
-    BOOST_FOREACH (bfs::path const& p, std::make_pair(it, eod))
+    fs::path targetDir(databaseDirPath);
+    fs::directory_iterator it(targetDir), eod;
+    BOOST_FOREACH (fs::path const& p, std::make_pair(it, eod))
     {
-        if (bfs::is_regular_file(p))
+        if (fs::is_regular_file(p))
         {
             dcpFilenamesList.emplace_back(p.generic_string());
         }
