@@ -91,7 +91,7 @@ void ImageHorizontalConvolution(const ImageTypeIn& img, const Kernel& kernel, Im
     const int kernel_width = kernel.size();
     const int half_kernel_width = kernel_width / 2;
 
-    std::vector<pix_t, Eigen::aligned_allocator<pix_t>> line(cols + kernel_width);
+    std::vector<pix_t> line(cols + kernel_width);
 
     for (int row = 0; row < rows; ++row)
     {
@@ -135,7 +135,7 @@ void ImageVerticalConvolution(const ImageTypeIn& img, const Kernel& kernel, Imag
 
     out.resize(cols, rows);
 
-    std::vector<pix_t, Eigen::aligned_allocator<pix_t>> line(rows + kernel_width);
+    std::vector<pix_t> line(rows + kernel_width);
 
     for (int col = 0; col < cols; ++col)
     {

@@ -86,9 +86,6 @@ class CameraPose
     bool _locked = false;
     /// Estimator state
     EEstimatorParameterState _state = EEstimatorParameterState::REFINED;
-
-  public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }  // namespace sfmData

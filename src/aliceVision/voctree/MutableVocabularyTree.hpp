@@ -17,10 +17,10 @@ namespace voctree {
  *
  * When loading and using an existing vocabulary tree, use VocabularyTree instead.
  */
-template<class Feature, template<typename, typename> class Distance = L2, class FeatureAllocator = typename DefaultAllocator<Feature>::type>
-class MutableVocabularyTree : public VocabularyTree<Feature, Distance, FeatureAllocator>
+template<class Feature, template<typename, typename> class Distance = L2>
+class MutableVocabularyTree : public VocabularyTree<Feature, Distance>
 {
-    typedef VocabularyTree<Feature, Distance, FeatureAllocator> BaseClass;
+    typedef VocabularyTree<Feature, Distance> BaseClass;
 
   public:
     MutableVocabularyTree() {}
@@ -34,9 +34,9 @@ class MutableVocabularyTree : public VocabularyTree<Feature, Distance, FeatureAl
 
     uint32_t nodes() const { return this->word_start_ + this->num_words_; }
 
-    std::vector<Feature, FeatureAllocator>& centers() { return this->centers_; }
+    std::vector<Feature>& centers() { return this->centers_; }
 
-    const std::vector<Feature, FeatureAllocator>& centers() const { return this->centers_; }
+    const std::vector<Feature>& centers() const { return this->centers_; }
 
     std::vector<uint8_t>& validCenters() { return this->valid_centers_; }
 
