@@ -8,12 +8,12 @@
 #include "regionsIO.hpp"
 
 #include <aliceVision/system/ProgressDisplay.hpp>
-#include <boost/filesystem.hpp>
 
 #include <atomic>
 #include <cassert>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfm {

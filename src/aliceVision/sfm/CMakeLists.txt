@@ -74,7 +74,6 @@ alicevision_add_library(aliceVision_sfm
     aliceVision_linearProgramming
     aliceVision_sfmData
     aliceVision_sfmDataIO
-    Boost::filesystem
     Boost::boost
     ${CERES_LIBRARIES}
   PRIVATE_LINKS

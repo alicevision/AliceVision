@@ -9,11 +9,13 @@
 
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/stl/hash.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmData {
@@ -85,8 +87,8 @@ std::size_t computeViewUID(const View& view)
     else
     {
         // if no original date/time, fallback to the file date/time
-        std::time_t t = fs::last_write_time(imagePath);
-        stl::hash_combine(uid, t);
+        auto lastWriteTime = utils::getLastWriteTime(imagePath.string());
+        stl::hash_combine(uid, lastWriteTime);
     }
 
     // cannot use view.getWidth() and view.getHeight() directly

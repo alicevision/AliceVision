@@ -35,7 +35,6 @@ alicevision_add_library(aliceVision_sfmData
     aliceVision_camera
     aliceVision_sensorDB
     aliceVision_stl
-    Boost::filesystem
   PRIVATE_LINKS
     Boost::boost
 )

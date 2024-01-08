@@ -1,5 +1,3 @@
-
-#include <boost/filesystem.hpp>
 #include <aliceVision/sfmData/View.hpp>
 
 #define BOOST_TEST_MODULE view
@@ -7,7 +5,6 @@
 #include <boost/test/unit_test.hpp>
 
 using namespace aliceVision;
-namespace fs = boost::filesystem;
 
 BOOST_AUTO_TEST_CASE(View_Metadata)
 {
