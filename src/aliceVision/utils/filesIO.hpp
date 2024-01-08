@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include <codecvt>
 #include <filesystem>
 #include <functional>
 #include <iostream>
 #include <random>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
 
 
@@ -86,6 +88,34 @@ inline std::string generateUniqueFilename(const int length = 16)
         filename[i] = characters[randomDist(randomTwEngine)];
 
     return filename;
+}
+
+
+/**
+ * @brief Returns the last time a file was modified (based on OIIO's implementation).
+ * @param[in] path The path to get the last write time from
+ * @return The last time the file was modified as an std::time_t if it exists, 0 otherwise
+ */
+inline std::time_t getLastWriteTime(const std::string& path)
+{
+    #ifdef _WIN32
+        struct __stat64 st;
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> conv;
+        std::wstring str = conv.from_bytes(path.data(), path.data() + path.size());
+        auto r = _wstat64(std::filesystem::path(str).c_str(), &st);
+    #else
+        struct stat st;
+        auto r = stat(std::filesystem::path(path).c_str(), &st);
+    #endif
+
+    if (r == 0)  // success
+    {
+        return st.st_mtime;
+    }
+    else  // failure
+    {
+        return 0;
+    }
 }
 
 }  // namespace utils
