@@ -8,17 +8,16 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <random>
 #include <tuple>
 #include <cassert>
 #include <cstdlib>
+#include <filesystem>
 #include <iomanip>
 #include <fstream>
 #include <thread>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace keyframe {
