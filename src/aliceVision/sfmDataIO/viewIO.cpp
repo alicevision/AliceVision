@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <regex>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -53,7 +53,7 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
             }
 
             // Get view image filename without extension
-            const std::string filename = boost::filesystem::path(view.getImage().getImagePath()).stem().string();
+            const std::string filename = fs::path(view.getImage().getImagePath()).stem().string();
 
             std::smatch match;
             std::regex_search(filename, match, re);

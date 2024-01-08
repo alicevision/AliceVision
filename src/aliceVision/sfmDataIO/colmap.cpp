@@ -8,12 +8,11 @@
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 
-#include <boost/filesystem.hpp>
-
-#include <sstream>
+#include <filesystem>
 #include <fstream>
+#include <sstream>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {

@@ -12,15 +12,16 @@
 #include <aliceVision/sfmDataIO/plyIO.hpp>
 #include <aliceVision/sfmDataIO/bafIO.hpp>
 #include <aliceVision/sfmDataIO/gtIO.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
     #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
     #include <aliceVision/sfmDataIO/AlembicImporter.hpp>
 #endif
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -107,7 +108,7 @@ bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
 
 bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-    const std::string extension = fs::extension(filename);
+    const std::string extension = fs::path(filename).extension().string();
     bool status = false;
 
     if (extension == ".sfm" || extension == ".json")  // JSON File
@@ -147,7 +148,7 @@ bool Save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData
 {
     const fs::path bPath = fs::path(filename);
     const std::string extension = bPath.extension().string();
-    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
     bool status = false;
 
     if (extension == ".sfm" || extension == ".json")  // JSON File

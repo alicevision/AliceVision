@@ -7,11 +7,10 @@
 
 #include "bafIO.hpp"
 
-#include <boost/filesystem.hpp>
-
+#include <filesystem>
 #include <fstream>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {

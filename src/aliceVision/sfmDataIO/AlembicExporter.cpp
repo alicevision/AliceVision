@@ -12,11 +12,10 @@
 #include <Alembic/AbcCoreOgawa/All.h>
 #include <Alembic/Abc/OObject.h>
 
-#include <boost/filesystem.hpp>
-
 #include <numeric>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
