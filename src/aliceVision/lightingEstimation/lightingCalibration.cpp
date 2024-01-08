@@ -16,7 +16,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -25,9 +24,10 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 
+#include <filesystem>
 #include <math.h>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace bpt = boost::property_tree;
 
 namespace aliceVision {
