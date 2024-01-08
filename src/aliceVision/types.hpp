@@ -14,10 +14,6 @@
 #include <set>
 #include <vector>
 
-#ifdef ALICEVISION_STD_UNORDERED_MAP
-    #include <unordered_map>
-#endif
-
 namespace aliceVision {
 
 typedef uint32_t IndexT;
@@ -27,13 +23,8 @@ typedef std::pair<IndexT, IndexT> Pair;
 typedef std::set<Pair> PairSet;
 typedef std::vector<Pair> PairVec;
 
-#ifdef ALICEVISION_UNORDERED_MAP
 template<typename Key, typename Value>
-using HashMap = std::unordered_map<Key, Value>;
-#else
-template<typename K, typename V>
-using HashMap = std::map<K, V, std::less<K>, Eigen::aligned_allocator<std::pair<const K, V>>>;
-#endif
+using HashMap = std::map<Key, Value>;
 
 struct EstimationStatus
 {
