@@ -43,7 +43,6 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
 // namespaces
-namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 
 namespace aliceVision {

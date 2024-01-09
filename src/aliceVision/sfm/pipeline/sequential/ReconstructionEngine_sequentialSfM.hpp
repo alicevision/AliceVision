@@ -18,14 +18,16 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <aliceVision/utils/Histogram.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-namespace fs = boost::filesystem;
+#include <filesystem>
+
 namespace pt = boost::property_tree;
 
 namespace aliceVision {
 namespace sfm {
+
+namespace fs = std::filesystem;
 
 /// Image score contains <ImageId, NbPutativeCommonPoint, score, isIntrinsicsReconstructed>
 typedef std::tuple<IndexT, std::size_t, std::size_t, bool> ViewConnectionScore;

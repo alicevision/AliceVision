@@ -10,8 +10,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/config.hpp>
 
-#include <boost/filesystem.hpp>
-
+#include <filesystem>
 #include <sstream>
 
 #define BOOST_TEST_MODULE sfmDataIO
@@ -24,7 +23,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfmDataIO;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 // Create a SfM scene with desired count of views & poses & intrinsic (shared or not)
 // Add a 3D point with observation in 2 view (just in order to have non empty data)

@@ -22,7 +22,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -51,7 +50,6 @@ using namespace aliceVision;
 int aliceVision_main(int argc, char **argv)
 {
     namespace po = boost::program_options;
-    namespace fs = boost::filesystem;
 
     system::Timer timer;
 

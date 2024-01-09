@@ -12,7 +12,6 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
-#include <boost/filesystem.hpp>
 
 #include <aliceVision/sfm/bundle/manifolds/so3.hpp>
 #include <aliceVision/sfm/bundle/manifolds/so3vec.hpp>
@@ -25,9 +24,10 @@
 #include <aliceVision/sfm/bundle/costfunctions/panoramaPinhole.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/rotationPrior.hpp>
 
+#include <filesystem>
 #include <fstream>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfm {

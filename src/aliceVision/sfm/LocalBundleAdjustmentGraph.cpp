@@ -7,14 +7,14 @@
 #include "LocalBundleAdjustmentGraph.hpp"
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <boost/filesystem.hpp>
 
 #include <lemon/bfs.h>
 
 #include <fstream>
+#include <filesystem>
 #include <algorithm>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfm {

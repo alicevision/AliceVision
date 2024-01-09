@@ -11,10 +11,11 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
-namespace fs = boost::filesystem;
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace mvsUtils {
@@ -142,7 +143,7 @@ void getTilePathList(int rc,
 
     const boost::regex mapPattern(mapPath.stem().string() + "_\\d+_\\d+" + mapPath.extension().string());
 
-    for (auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(mapDirectory), {}))
+    for (auto& entry : fs::directory_iterator{mapDirectory})
     {
         if (boost::regex_match(entry.path().filename().string(), mapPattern))
             out_mapTilePathList.push_back(entry.path().string());

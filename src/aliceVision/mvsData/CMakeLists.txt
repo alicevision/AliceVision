@@ -34,7 +34,6 @@ alicevision_add_library(aliceVision_mvsData
     aliceVision_numeric
     aliceVision_image
     ZLIB::ZLIB
-    Boost::filesystem
     Boost::boost
     OpenImageIO::OpenImageIO
     OpenImageIO::OpenImageIO_Util

@@ -15,7 +15,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
               Boost::system
     )
 
@@ -28,7 +27,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               aliceVision_cmdline
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
     )

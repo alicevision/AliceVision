@@ -18,12 +18,11 @@
 
 #include <aliceVision/stl/mapUtils.hpp>
 
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
-
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -39,7 +38,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool downscaleTriangle(image::Image<image::RGBAfColor> & smaller, const image::Image<image::RGBAfColor> & source)
 {

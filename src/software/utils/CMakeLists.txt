@@ -122,7 +122,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # Transform rig
@@ -138,7 +137,6 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_system
                   aliceVision_cmdline
                   Boost::program_options
-                  Boost::filesystem
         )
     endif()
 
@@ -153,7 +151,6 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::filesystem
     )
 
     # SfM alignment
@@ -259,7 +256,6 @@ if(ALICEVISION_BUILD_SFM)
               Coin::CoinUtils
               Coin::Osi
               Boost::program_options
-              Boost::filesystem
               Boost::boost
               Boost::timer
               ${LEMON_LIBRARY}
@@ -277,7 +273,6 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_keyframe
                   ${OPENIMAGEIO_LIBRARIES}
                   Boost::program_options
-                  Boost::filesystem
         )
     endif()
 
@@ -304,7 +299,6 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
-                  Boost::filesystem
                   ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
                   opencv_mcc
         )
@@ -333,7 +327,6 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
-                  Boost::filesystem
                   ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
                   opencv_mcc
         )
@@ -356,7 +349,6 @@ if (ALICEVISION_BUILD_PANORAMA)
               aliceVision_camera
               ${OPENIMAGEIO_LIBRARIES}
               Boost::program_options
-              Boost::filesystem
     )
 endif()
 

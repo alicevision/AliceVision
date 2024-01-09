@@ -16,8 +16,8 @@
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <algorithm>
 #include <string>
 #include <regex>
@@ -31,7 +31,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 // convert from a SfMData format to another
 int aliceVision_main(int argc, char **argv)

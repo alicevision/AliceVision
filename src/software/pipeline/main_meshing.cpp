@@ -25,8 +25,8 @@
 #include <Eigen/Geometry>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cmath>
 
 // These constants define the current software version.
@@ -36,7 +36,7 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 enum EPartitioningMode

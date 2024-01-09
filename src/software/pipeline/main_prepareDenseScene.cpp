@@ -15,11 +15,11 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
+#include <filesystem>
 #include <vector>
 #include <set>
 #include <iterator>
@@ -39,7 +39,7 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 template <class ImageT, class MaskFuncT>
 void process(const std::string &dstColorImage, const IntrinsicBase* cam, const oiio::ParamValueList & metadata, const std::string & srcImage, bool evCorrection, float exposureCompensation, MaskFuncT && maskFunc)

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <boost/filesystem/path.hpp>
-
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -635,7 +634,7 @@ class LCPdatabase
 
     size_t size() const { return _lcpFilepaths.size(); }
 
-    void loadDirectory(const boost::filesystem::path& p);
+    void loadDirectory(const std::filesystem::path& p);
 
     LCPinfo* retrieveLCP() { return retrieveLCP(_lcpFilepaths.begin()->path.string()); }
 
@@ -664,11 +663,11 @@ class LCPdatabase
   private:
     struct LcpPath
     {
-        LcpPath(const boost::filesystem::path& p)
+        LcpPath(const std::filesystem::path& p)
           : path(p),
             reducedPath(reduceString(p.string()))
         {}
-        boost::filesystem::path path;
+        std::filesystem::path path;
         std::string reducedPath;
     };
 

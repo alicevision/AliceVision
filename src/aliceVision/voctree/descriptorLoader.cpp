@@ -10,6 +10,8 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <filesystem>
+
 namespace aliceVision {
 namespace voctree {
 
@@ -59,7 +61,7 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData,
                               const std::vector<std::string>& featuresFolders,
                               std::map<IndexT, std::string>& descriptorsFiles)
 {
-    namespace bfs = boost::filesystem;
+    namespace fs = std::filesystem;
 
     descriptorsFiles.clear();
 
@@ -88,11 +90,11 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData,
             for (const feature::EImageDescriberType descType : descTypes)
             {
                 // generate the equivalent .desc file path
-                const std::string filepath = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." +
+                const std::string filepath = fs::path(fs::path(featureFolder) / (std::to_string(view.first) + "." +
                                                                                    feature::EImageDescriberType_enumToString(descType) + ".desc"))
                                                .string();
 
-                if (bfs::exists(filepath))
+                if (fs::exists(filepath))
                 {
                     descriptorsFiles[view.first] = filepath;
                     found = true;

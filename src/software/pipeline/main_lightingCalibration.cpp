@@ -21,7 +21,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <iomanip>
@@ -30,6 +29,7 @@
 #include <array>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -38,7 +38,7 @@
 
 // Namespaces
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 using namespace aliceVision;
 

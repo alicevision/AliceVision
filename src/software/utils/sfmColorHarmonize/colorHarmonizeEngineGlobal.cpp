@@ -36,9 +36,10 @@
 #include <iterator>
 #include <algorithm>
 #include <functional>
+#include <filesystem>
 #include <sstream>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 

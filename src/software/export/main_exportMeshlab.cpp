@@ -12,8 +12,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <fstream>
 
 // These constants define the current software version.
@@ -28,7 +28,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char **argv)
 {

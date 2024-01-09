@@ -39,7 +39,6 @@ alicevision_add_library(aliceVision_matching
     aliceVision_system
     
   PRIVATE_LINKS
-    Boost::filesystem
     Boost::boost
     ${FLANN_LIBRARIES}
 )

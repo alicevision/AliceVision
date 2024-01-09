@@ -2,13 +2,13 @@
 
     #include <sstream>
     #include <nvToolsExtCuda.h>
-    #include <boost/filesystem/path.hpp>
+    #include <filesystem>
 
     #include "aliceVision/system/nvtx.hpp"
 
 void nvtxPushA(const char* label, const char* file, int line)
 {
-    boost::filesystem::path in(file);
+    std::filesystem::path in(file);
 
     std::ostringstream ostr;
     ostr << label << " " << in.filename() << ":" << line;

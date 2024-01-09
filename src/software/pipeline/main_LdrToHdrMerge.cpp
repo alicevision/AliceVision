@@ -23,7 +23,8 @@
 
 // Command line parameters
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 #include <sstream>
 #include <iomanip>
 
@@ -35,7 +36,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const std::string& rootname = "")
 {
@@ -161,7 +162,7 @@ int aliceVision_main(int argc, char** argv)
     omp_set_num_threads(hwc.getMaxThreads());
 
     // Analyze path
-    boost::filesystem::path path(sfmOutputDataFilepath);
+    fs::path path(sfmOutputDataFilepath);
     std::string outputPath = path.parent_path().string();
 
     // Read SfMData
@@ -369,7 +370,7 @@ int aliceVision_main(int argc, char** argv)
                 }
                 if (!byPass)
                 {
-                    boost::filesystem::path p(targetViews[g]->getImage().getImagePath());
+                    fs::path p(targetViews[g]->getImage().getImagePath());
                     const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
                     hdrView->getImage().setImagePath(hdrImagePath);
                 }
@@ -496,7 +497,7 @@ int aliceVision_main(int argc, char** argv)
                 HDRimage = images[0];
             }
 
-            boost::filesystem::path p(targetView->getImage().getImagePath());
+            fs::path p(targetView->getImage().getImagePath());
             const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
 
             // Write an image with parameters from the target view

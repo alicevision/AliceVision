@@ -9,9 +9,9 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/sceneSample.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/preprocessor/stringize.hpp>
 
+#include <filesystem>
 #include <sstream>
 
 #define BOOST_TEST_MODULE sfmDataIO
@@ -21,7 +21,7 @@
 using namespace aliceVision;
 using namespace aliceVision::sfmDataIO;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 BOOST_AUTO_TEST_CASE(Compatibility_generate_files_current_version)
 {

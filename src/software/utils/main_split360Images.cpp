@@ -18,7 +18,6 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 #include <aliceVision/panorama/sphericalMapping.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/math/constants/constants.hpp>
 
@@ -29,6 +28,7 @@
 #include <string>
 #include <iostream>
 #include <iterator>
+#include <filesystem>
 #include <fstream>
 #include <vector>
 #include <memory>
@@ -40,7 +40,7 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 namespace oiio = OIIO;
 
@@ -490,7 +490,7 @@ int aliceVision_main(int argc, char** argv)
             // - a SfMData file (in that case we split the views)
             if (fs::is_directory(path))
             {
-                for (fs::directory_entry& entry : boost::make_iterator_range(fs::directory_iterator(path), {}))
+                for (auto const& entry : fs::directory_iterator{path})
                 {
                     imagePaths.push_back(entry.path().string());
                 }

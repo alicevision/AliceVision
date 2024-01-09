@@ -15,14 +15,13 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 
-#include <boost/filesystem.hpp>
-
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace photometricStereo {
@@ -581,7 +580,7 @@ void getPicturesNames(const std::string& folderPath, std::vector<std::string>& i
     {
         fs::path currentFilePath = itr->path();
 
-        std::string fileExtension = fs::extension(currentFilePath.string());
+        std::string fileExtension = currentFilePath.extension().string();
         std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
 
         if (!boost::algorithm::icontains(currentFilePath.stem().string(), "mask") &&

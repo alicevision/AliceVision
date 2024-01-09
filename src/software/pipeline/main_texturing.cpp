@@ -23,7 +23,8 @@
 #include <geogram/basic/common.h>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -32,10 +33,10 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
-bfs::path absolutePathNoExt(const bfs::path& p)
+fs::path absolutePathNoExt(const fs::path& p)
 {
     return p.parent_path() / p.stem();
 }

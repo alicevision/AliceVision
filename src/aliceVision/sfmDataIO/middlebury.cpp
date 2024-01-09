@@ -8,14 +8,13 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
 
-#include <boost/filesystem.hpp>
-
+#include <filesystem>
 #include <fstream>
 
 namespace aliceVision {
 namespace sfmDataIO {
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 Mat3 extractMat3FromVec(const std::vector<std::string>& entries, std::size_t offset)
 {
@@ -106,7 +105,7 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename,
         Vec3 translation;
         parseMiddleburyCamera(line, imageName, matK, rotation, translation);
 
-        const auto imagePath = (bfs::path(basePath) / bfs::path(imageName)).string();
+        const auto imagePath = (fs::path(basePath) / fs::path(imageName)).string();
         int imageWidth{};
         int imageHeight{};
         image::readImageSize(imagePath, imageWidth, imageHeight);

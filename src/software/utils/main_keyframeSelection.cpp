@@ -11,8 +11,8 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp> 
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -24,7 +24,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 const std::string supportedExtensions = "none, exr, jpg, png";
 

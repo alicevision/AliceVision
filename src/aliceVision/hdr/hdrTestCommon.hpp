@@ -1,11 +1,12 @@
 #pragma once
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include "rgbCurve.hpp"
 #include "sampling.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <random>
 #include <array>
 
@@ -165,8 +166,8 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times, 
             }
         }
 
-        boost::filesystem::path temp = boost::filesystem::temp_directory_path();
-        temp /= boost::filesystem::unique_path();
+        std::filesystem::path temp = std::filesystem::temp_directory_path();
+        temp /= utils::generateUniqueFilename();
         temp += ".exr";
 
         ALICEVISION_LOG_INFO("writing to " << temp.string());

@@ -12,8 +12,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
@@ -34,7 +34,7 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::feature;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /// Naive image bilinear resampling of an image for thumbnail generation
 template <typename ImageT>
@@ -148,8 +148,8 @@ bool exportToMVE2Format(
       else // (no distortion)
       {
         // If extensions match, copy the PNG image
-        if (fs::extension(srcImage) == ".PNG" ||
-          fs::extension(srcImage) == ".png")
+        if (fs::path(srcImage).extension() == ".PNG" ||
+          fs::path(srcImage).extension() == ".png")
         {
           fs::copy_file(srcImage, dstImage);
         }

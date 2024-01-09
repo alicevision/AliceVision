@@ -274,7 +274,7 @@ endif()
 # Boost
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-set(ALICEVISION_BOOST_COMPONENTS atomic container date_time filesystem graph json log log_setup program_options regex serialization system thread timer)
+set(ALICEVISION_BOOST_COMPONENTS atomic container date_time graph json log log_setup program_options regex serialization system thread timer)
 if(ALICEVISION_BUILD_TESTS)
     set(ALICEVISION_BOOST_COMPONENT_UNITTEST unit_test_framework)
 endif()
@@ -304,12 +304,6 @@ if(BUILD_SHARED_LIBS)
   add_definitions(-DBOOST_TEST_DYN_LINK)
 else()
   set(Boost_USE_STATIC_LIBS ON)
-endif()
-
-if(BOOST_NO_CXX11)
-  # Avoid link errors on boost filesystem copy_file function
-  # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
-  add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
 endif()
 
 

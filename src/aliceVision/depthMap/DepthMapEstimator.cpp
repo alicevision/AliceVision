@@ -22,10 +22,6 @@
 #include <aliceVision/depthMap/cuda/host/DeviceStreamManager.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
 
-#include <boost/filesystem.hpp>
-
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 namespace depthMap {
 

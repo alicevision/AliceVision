@@ -11,9 +11,8 @@
 #include <OpenImageIO/color.h>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
+#include <filesystem>
 
 namespace aliceVision {
 namespace image {
@@ -21,6 +20,8 @@ namespace image {
 namespace {
 oiio::ColorConfig colorConfigOCIO(getDefaultColorConfigFilePath());
 }
+
+namespace fs = std::filesystem;
 
 oiio::ColorConfig& getGlobalColorConfigOCIO() { return colorConfigOCIO; }
 

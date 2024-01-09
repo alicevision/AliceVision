@@ -9,11 +9,10 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 
-#include <boost/filesystem.hpp>
-
-#include <vector>
 #include <chrono>
+#include <filesystem>
 #include <random>
+#include <vector>
 
 #define BOOST_TEST_MODULE LocalizationResult
 
@@ -21,7 +20,7 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace aliceVision;
 
 sfm::ImageLocalizerMatchData generateRandomMatch_Data(std::size_t numPts)

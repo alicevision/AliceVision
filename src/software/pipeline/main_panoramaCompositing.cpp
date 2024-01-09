@@ -29,11 +29,11 @@
 #include <aliceVision/numeric/numeric.hpp>
 
 // IO
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -44,7 +44,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 size_t getCompositingOptimalScale(int width, int height)
 {

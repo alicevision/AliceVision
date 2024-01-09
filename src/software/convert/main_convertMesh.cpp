@@ -12,8 +12,8 @@
 #include <aliceVision/mesh/Mesh.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <ostream>
@@ -27,7 +27,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /**
  * @brief Convert Mesh

@@ -18,12 +18,12 @@
 
 #include <boost/atomic/atomic_ref.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include <boost/foreach.hpp>
 
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <memory>
@@ -44,7 +44,7 @@ using namespace aliceVision;
 using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 
 /**
@@ -60,7 +60,7 @@ bool listFiles(const fs::path& folderOrFile,
 {
   if(fs::is_regular_file(folderOrFile))
   {
-    std::string fileExtension = fs::extension(folderOrFile);
+    std::string fileExtension = fs::path(folderOrFile).extension().string();
     std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
     for(const std::string& extension: extensions)
     {

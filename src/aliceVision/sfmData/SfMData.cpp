@@ -9,7 +9,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace aliceVision {
 namespace sfmData {
@@ -18,7 +18,7 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool SfMData::operator==(const SfMData& other) const
 {
@@ -125,7 +125,7 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
     absolutePaths.reserve(folders.size());
     for (const auto& folder : folders)
     {
-        const fs::path f = fs::absolute(folder, fs::path(absolutePath).parent_path());
+        const fs::path f = fs::absolute(folder);
         if (fs::exists(f))
         {
             // fs::canonical can only be used if the path exists

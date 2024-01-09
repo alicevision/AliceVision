@@ -29,10 +29,10 @@
 
 #include <flann/algorithms/dist.h>
 
-#include <boost/filesystem.hpp>
 
 #include <algorithm>
 #include <chrono>
+#include <filesystem>
 
 namespace aliceVision {
 namespace localization {
@@ -227,9 +227,9 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
             extractedFeatures[descType] = queryRegionsPerDesc.at(descType)->GetRegionsPositions();
         }
 
-        namespace bfs = boost::filesystem;
+        namespace fs = std::filesystem;
         matching::saveFeatures2SVG(
-          imagePath, queryImageSize, extractedFeatures, param->_visualDebug + "/" + bfs::path(imagePath).stem().string() + ".svg");
+          imagePath, queryImageSize, extractedFeatures, param->_visualDebug + "/" + fs::path(imagePath).stem().string() + ".svg");
     }
 
     return localize(
@@ -461,10 +461,10 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
 
         if (!param._visualDebug.empty() && !imagePath.empty())
         {
-            namespace bfs = boost::filesystem;
+            namespace fs = std::filesystem;
             const sfmData::View* mview = _sfm_data.getViews().at(matchedViewId).get();
-            const std::string queryimage = bfs::path(imagePath).stem().string();
-            const std::string matchedImage = bfs::path(mview->getImage().getImagePath()).stem().string();
+            const std::string queryimage = fs::path(imagePath).stem().string();
+            const std::string matchedImage = fs::path(mview->getImage().getImagePath()).stem().string();
             const std::string matchedPath = mview->getImage().getImagePath();
 
             matching::saveMatches2SVG(imagePath,
@@ -646,9 +646,9 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
         ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection failed");
         if (!param._visualDebug.empty() && !imagePath.empty())
         {
-            namespace bfs = boost::filesystem;
+            namespace fs = std::filesystem;
             matching::saveFeatures2SVG(
-              imagePath, queryImageSize, resectionData.pt2D, param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg");
+              imagePath, queryImageSize, resectionData.pt2D, param._visualDebug + "/" + fs::path(imagePath).stem().string() + ".associations.svg");
         }
         localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
         return localizationResult.isValid();
@@ -684,11 +684,11 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
 
     if (!param._visualDebug.empty() && !imagePath.empty())
     {
-        namespace bfs = boost::filesystem;
+        namespace fs = std::filesystem;
         matching::saveFeatures2SVG(imagePath,
                                    queryImageSize,
                                    resectionData.pt2D,
-                                   param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg",
+                                   param._visualDebug + "/" + fs::path(imagePath).stem().string() + ".associations.svg",
                                    &resectionData.vec_inliers);
     }
 
@@ -833,21 +833,21 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc& quer
         // param._visualDebug/queryImage/
         if (!param._visualDebug.empty() && !imagePath.empty())
         {
-            namespace bfs = boost::filesystem;
+            namespace fs = std::filesystem;
             const sfmData::View* mview = _sfm_data.getViews().at(matchedViewId).get();
             // the current query image without extension
-            const auto queryImage = bfs::path(imagePath).stem();
+            const auto queryImage = fs::path(imagePath).stem();
             // the matching image without extension
-            const auto matchedImage = bfs::path(mview->getImage().getImagePath()).stem();
+            const auto matchedImage = fs::path(mview->getImage().getImagePath()).stem();
             // the full path of the matching image
             const auto matchedPath = mview->getImage().getImagePath();
 
             // the directory where to save the feature matches
-            const auto baseDir = bfs::path(param._visualDebug) / queryImage;
-            if ((!bfs::exists(baseDir)))
+            const auto baseDir = fs::path(param._visualDebug) / queryImage;
+            if ((!fs::exists(baseDir)))
             {
                 ALICEVISION_LOG_DEBUG("created " << baseDir.string());
-                bfs::create_directories(baseDir);
+                fs::create_directories(baseDir);
             }
 
             // damn you, boost, what does it take to make the operator "+"?

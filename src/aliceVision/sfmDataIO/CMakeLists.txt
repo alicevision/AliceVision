@@ -40,10 +40,8 @@ alicevision_add_library(aliceVision_sfmDataIO
   PUBLIC_LINKS
     aliceVision_sfmData
     aliceVision_camera
-    Boost::filesystem
   PRIVATE_LINKS
     aliceVision_image
-    Boost::filesystem
     Boost::regex
     Boost::boost
 )

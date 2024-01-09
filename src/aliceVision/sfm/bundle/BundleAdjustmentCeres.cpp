@@ -14,14 +14,13 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/camera.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <ceres/rotation.h>
 
+#include <filesystem>
 #include <fstream>
 #include <memory>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfm {

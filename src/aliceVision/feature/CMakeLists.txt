@@ -79,7 +79,6 @@ alicevision_add_library(aliceVision_feature
     aliceVision_gpu
     vlsift
   PRIVATE_LINKS
-    Boost::filesystem
     Boost::boost
 )
 

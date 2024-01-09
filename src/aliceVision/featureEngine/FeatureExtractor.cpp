@@ -8,10 +8,11 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 #include <iomanip>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace featureEngine {

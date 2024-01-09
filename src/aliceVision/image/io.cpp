@@ -8,6 +8,7 @@
 #include <aliceVision/image/all.hpp>
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -19,17 +20,17 @@
 #include <aliceVision/stl/mapUtils.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstring>
+#include <filesystem>
 #include <stdexcept>
 #include <iostream>
 #include <cmath>
 
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 namespace image {
+
+namespace fs = std::filesystem;
 
 EImageColorSpace getImageColorSpace(const std::string& imagePath)
 {
@@ -1014,7 +1015,7 @@ void writeImage(const std::string& path,
 {
     const fs::path bPath = fs::path(path);
     const std::string extension = boost::to_lower_copy(bPath.extension().string());
-    const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+    const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
     const bool isEXR = (extension == ".exr");
     //const bool isTIF = (extension == ".tif");
     const bool isJPG = (extension == ".jpg");
@@ -1185,7 +1186,7 @@ void writeImageNoFloat(const std::string& path,
 {
   const fs::path bPath = fs::path(path);
   const std::string extension = boost::to_lower_copy(bPath.extension().string());
-  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
   const bool isEXR = (extension == ".exr");
   //const bool isTIF = (extension == ".tif");
   const bool isJPG = (extension == ".jpg");

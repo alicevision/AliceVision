@@ -21,9 +21,9 @@
 #include <aliceVision/sfm/utils/alignment.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -33,7 +33,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace aliceVision::track;
 using namespace aliceVision::sfm;
 
