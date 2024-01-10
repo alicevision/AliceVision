@@ -1,3 +1,5 @@
+# Apply `clang-format` on modified files
+807034b1eb101b19b3bc9b9078a1635460591959
 # Estimator states in SfMData: Apply clang-format across all files
 938c0e83497c94ef6506c00ded61cf1da00e4ca5
 # Reformat src/aliceVision with latest clang-format rules
