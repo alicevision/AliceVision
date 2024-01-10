@@ -23,6 +23,7 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 // IO
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 #include <memory>
@@ -39,6 +40,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
+namespace fs = std::filesystem;
 
 void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfColor>::Base & source)
 {
@@ -91,6 +93,7 @@ int aliceVision_main(int argc, char** argv)
     int rangeStart = -1;
     int rangeSize = 1;
     bool useGpu = true;
+    bool keepFilename = false;
     
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -107,10 +110,12 @@ int aliceVision_main(int argc, char** argv)
          "Invert mask values. If selected, the pixels corresponding to the mask will be set to 0.0 instead of 1.0.")
         ("useGpu", po::value<bool>(&useGpu)->default_value(useGpu),
          "Use GPU if available.")
+        ("keepFilename", po::value<bool>(&keepFilename)->default_value(keepFilename),
+         "Keep input filename.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), 
-        "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
+         "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), 
-        "Range size for processing views (ordered by image filepath).");
+         "Range size for processing views (ordered by image filepath).");
 
     CmdLine cmdline("AliceVision imageSegmentation");
     cmdline.add(requiredParams);
@@ -215,6 +220,9 @@ int aliceVision_main(int argc, char** argv)
         std::string path = view->getImage().getImagePath();
         ALICEVISION_LOG_INFO("processing " << path);
 
+        const fs::path fsPath = path;
+        const std::string fileName = fsPath.stem().string();
+
         image::Image<image::RGBfColor> image;
         image::readImage(path, image, image::EImageColorSpace::SRGB);
 
@@ -260,7 +268,15 @@ int aliceVision_main(int argc, char** argv)
 
         // Store image
         std::stringstream ss;
-        ss << outputPath << "/" << view->getViewId() << ".exr";
+        if (keepFilename)
+        {
+            ss << outputPath << "/" << fileName << ".exr";
+        }
+        else
+        {
+            ss << outputPath << "/" << view->getViewId() << ".exr";
+        }
+
         image::writeImage(ss.str(), mask, image::ImageWriteOptions());
     }
 
