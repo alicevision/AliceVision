@@ -563,8 +563,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
                 SfMData tinyScene;
                 tinyScene.getViews().insert(*_sfmData.getViews().find(view_I->getViewId()));
                 tinyScene.getViews().insert(*_sfmData.getViews().find(view_J->getViewId()));
-                tinyScene.getIntrinsics().insert(*_sfmData.getIntrinsics().find(view_I->getIntrinsicId()));
-                tinyScene.getIntrinsics().insert(*_sfmData.getIntrinsics().find(view_J->getIntrinsicId()));
+                tinyScene.setIntrinsic(*_sfmData.getIntrinsics().find(view_I->getIntrinsicId()));
+                tinyScene.setIntrinsic(*_sfmData.getIntrinsics().find(view_J->getIntrinsicId()));
 
                 // Init poses
                 const Pose3& poseI = Pose3(Mat3::Identity(), Vec3::Zero());

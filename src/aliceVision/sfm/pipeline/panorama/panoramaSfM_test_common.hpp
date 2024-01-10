@@ -27,7 +27,7 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase>& intrinsic_gt,
                    double ratio_inliers)
 {
     sfmData::SfMData sfmdata;
-    sfmdata.getIntrinsics().emplace(0, intrinsic_noisy);
+    sfmdata.setIntrinsic(0, intrinsic_noisy);
 
     /*Create cameras */
     std::vector<geometry::Pose3> poses_gt;

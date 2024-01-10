@@ -241,7 +241,7 @@ int aliceVision_main(int argc, char **argv)
                 {
                     camera = camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA);
                     camera->copyFrom(*intrinsic);
-                    sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
+                    sfmData.setIntrinsic(view.getIntrinsicId(), camera);
                 }
 
                 if(xmp.distortionCoefficients.size() == 6)
@@ -268,7 +268,7 @@ int aliceVision_main(int argc, char **argv)
                 {
                     camera = camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA);
                     camera->copyFrom(*intrinsic);
-                    sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
+                    sfmData.setIntrinsic(view.getIntrinsicId(), camera);
                 }
 
                 if(xmp.distortionCoefficients.size() == 3)

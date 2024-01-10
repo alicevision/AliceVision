@@ -551,8 +551,8 @@ int aliceVision_main(int argc, char **argv)
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
     {
-      camera::IntrinsicBase* intrinsicBase = sfmData.getIntrinsicPtr(view.getIntrinsicId());
-      camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase);
+      const camera::IntrinsicBase* intrinsicBase = sfmData.getIntrinsicPtr(view.getIntrinsicId());
+      const camera::Pinhole* intrinsic = dynamic_cast<const camera::Pinhole*>(intrinsicBase);
       if(intrinsic != nullptr)
       {
         if(intrinsic->getFocalLengthPixX() > 0)
@@ -727,7 +727,7 @@ int aliceVision_main(int argc, char **argv)
     #pragma omp critical (intrinsics)
     {
       view.setIntrinsicId(intrinsicId);
-      sfmData.getIntrinsics().emplace(intrinsicId, intrinsicBase);
+      sfmData.setIntrinsic(intrinsicId, intrinsicBase);
     }
   }
 

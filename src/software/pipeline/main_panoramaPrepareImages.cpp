@@ -207,13 +207,9 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Remove all other intrinsics
-    for(sfmData::Intrinsics::iterator it = sfmData.getIntrinsics().begin(); it != sfmData.getIntrinsics().end(); ++it)
-    {
-        if(it->first != refIntrinsic)
-        {
-            it = sfmData.getIntrinsics().erase(it);
-        }
-    }
+    const std::shared_ptr<camera::IntrinsicBase> & keepIntrinsic = sfmData.getIntrinsicsharedPtr(refIntrinsic);
+    sfmData.clearIntrinsics();
+    sfmData.setIntrinsic(refIntrinsic, keepIntrinsic);
 
     for(auto& v : views)
     {

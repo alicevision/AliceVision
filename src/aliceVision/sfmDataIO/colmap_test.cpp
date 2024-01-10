@@ -43,24 +43,24 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
     auto& intrTest = sfmTest.getIntrinsics();
     BOOST_CHECK(intrTest.empty());
     // add some compatible intrinsics
-    intrTest.emplace(10, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54));
-    intrTest.emplace(11, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078}));
-    intrTest.emplace(
+    sfmTest.setIntrinsic(10, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54));
+    sfmTest.setIntrinsic(11, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078}));
+    sfmTest.setIntrinsic(
       12,
       camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714}));
-    intrTest.emplace(
+    sfmTest.setIntrinsic(
       13,
       camera::createPinhole(
         camera::EINTRINSIC::PINHOLE_CAMERA_BROWN, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714, 0.00134, -0.000542}));
-    intrTest.emplace(
+    sfmTest.setIntrinsic(
       14,
       camera::createPinhole(
         camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714, 0.00134}));
-    intrTest.emplace(15,
+    sfmTest.setIntrinsic(15,
                      camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.000542}));
     // add some incompatible intrinsics
-    intrTest.emplace(20, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 0., 0., 0., 0.));
-    intrTest.emplace(21,
+    sfmTest.setIntrinsic(20, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 0., 0., 0., 0.));
+    sfmTest.setIntrinsic(21,
                      camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD,
                                            1920,
                                            1080,
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
                                            992.36,
                                            549.54,
                                            {-0.02078, 0.1705, -0.00714, 0.00134, -0.000542}));
-    intrTest.emplace(22,
+    sfmTest.setIntrinsic(22,
                      camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4,
                                            1920,
                                            1080,
@@ -78,8 +78,8 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
                                            992.36,
                                            549.54,
                                            {-0.02078, 0.1705, -0.00714, 0.00134, -0.00714, 0.00134}));
-    intrTest.emplace(23, camera::createEquidistant(camera::EINTRINSIC::EQUIDISTANT_CAMERA, 1920, 1080, 1548.76, 549.54, -0.02078));
-    intrTest.emplace(
+    sfmTest.setIntrinsic(23, camera::createEquidistant(camera::EINTRINSIC::EQUIDISTANT_CAMERA, 1920, 1080, 1548.76, 549.54, -0.02078));
+    sfmTest.setIntrinsic(
       24,
       camera::createEquidistant(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1548.76, 549.54, -0.02078, {0.1705, -0.00714, 0.00134}));
 

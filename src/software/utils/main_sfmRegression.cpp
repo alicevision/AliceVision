@@ -35,10 +35,10 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     sfmData::SfMData sfmDataEst;
 
     auto phPinholeGT = camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 980, 980, 10, 20, {0.1, 0.002, -0.01});
-    sfmDataGT.getIntrinsics().emplace(0, phPinholeGT);
+    sfmDataGT.setIntrinsic(0, phPinholeGT);
 
     auto phPinholeEst = camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 950, 950, 0, 0, {0.0, 0.0, 0.0});
-    sfmDataEst.getIntrinsics().emplace(0, phPinholeEst);
+    sfmDataEst.setIntrinsic(0, phPinholeEst);
 
     Vec3 direction = {1.0, 1.0, 1.0};
     direction = direction.normalized();

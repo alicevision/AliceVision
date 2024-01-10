@@ -237,7 +237,7 @@ int aliceVision_main(int argc, char **argv)
         }
 
         // Overwrite intrinsic with new one
-        intrinsics.at(intrinsicId) = newIntrinsic;
+        sfmData.updateIntrinsic(intrinsicId, newIntrinsic);
     }
 
     // Save sfmData to disk

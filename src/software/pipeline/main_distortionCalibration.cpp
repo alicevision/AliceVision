@@ -287,7 +287,7 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         // Override input intrinsic with output camera
-        intrinsicPtr = cameraOut;
+        sfmData.setIntrinsic(intrinsicId, cameraOut);
 
         ALICEVISION_LOG_INFO("Result quality of calibration: ");
         ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");

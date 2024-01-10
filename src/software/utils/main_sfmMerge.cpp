@@ -78,7 +78,7 @@ int aliceVision_main(int argc, char **argv)
         auto & intrinsics2 = sfmData2.getIntrinsics();
         const size_t totalSize = intrinsics1.size() + intrinsics2.size();
 
-        intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());
+        sfmData1.combineIntrinsics(intrinsics2);
         if (intrinsics1.size() < totalSize)
         {
             ALICEVISION_LOG_ERROR("Unhandled error: common intrinsics ID between both SfMData");

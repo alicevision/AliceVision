@@ -72,7 +72,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigur
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfmData.getIntrinsics().emplace(0, camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx));
+        sfmData.setIntrinsic(0, camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx));
     }
 
     // 4. Landmarks
@@ -141,7 +141,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfi
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfmData.getIntrinsics().emplace(0, camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx));
+        sfmData.setIntrinsic(0, camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx));
     }
 
     // 5. Landmarks

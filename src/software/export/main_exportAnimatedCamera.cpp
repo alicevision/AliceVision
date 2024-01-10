@@ -209,7 +209,7 @@ int aliceVision_main(int argc, char** argv)
         if(sfmData.isPoseAndIntrinsicDefined(&view))
         {
             // std::map::emplace does nothing if the key already exist
-            sfmDataExport.getIntrinsics().emplace(view.getIntrinsicId(), sfmData.getIntrinsics().at(view.getIntrinsicId()));
+            sfmDataExport.setIntrinsic(view.getIntrinsicId(), sfmData.getIntrinsics().at(view.getIntrinsicId()));
         }
     }
 
@@ -455,12 +455,18 @@ int aliceVision_main(int argc, char** argv)
 
                 ALICEVISION_LOG_DEBUG("[" + cameraViews.first +"][video] Keyframe added");
                 const IndexT intrinsicId = findViewIt->second->getIntrinsicId();
-                const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
+                const auto & ocam = sfmData.getIntrinsic<camera::Pinhole>(intrinsicId);
+                if (!ocam)
+                {
+                    continue;
+                }
+                const camera::Pinhole & refcam = ocam.value();
+
                 const sfmData::CameraPose pose = sfmData.getPose(*findViewIt->second);
                 const std::string& imagePath = findViewIt->second->getImage().getImagePath();
                 const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(intrinsicId) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
-                exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, viewId, intrinsicId);
+                exporter.addCameraKeyframe(pose.getTransform(), &refcam, (undistortedImages) ? undistortedImagePath : imagePath, viewId, intrinsicId);
             }
             else
             {
@@ -478,12 +484,18 @@ int aliceVision_main(int argc, char** argv)
         {
             ALICEVISION_LOG_DEBUG("[" + cameraViews.first +"][dslr] Keyframe added");
             const sfmData::View& view = *(sfmData.getViews().at(cameraView.second));
-            const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(view.getIntrinsicId()));
+            const auto & ocam = sfmData.getIntrinsic<camera::Pinhole>(view.getIntrinsicId());
+            if (!ocam)
+            {
+                continue;
+            }
+            const camera::Pinhole & refcam = ocam.value();
+
             const sfmData::CameraPose pose = sfmData.getPose(view);
             const std::string& imagePath = view.getImage().getImagePath();
             const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
-            exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, view.getViewId(), view.getIntrinsicId());
+            exporter.addCameraKeyframe(pose.getTransform(), &refcam, (undistortedImages) ? undistortedImagePath : imagePath, view.getViewId(), view.getIntrinsicId());
         }
     }
 

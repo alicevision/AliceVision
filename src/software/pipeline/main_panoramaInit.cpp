@@ -1269,13 +1269,13 @@ int main(int argc, char* argv[])
 
     if(useFisheye)
     {
-        sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
+        const sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
         for(auto& intrinsic_pair : intrinsics)
         {
-            std::shared_ptr<camera::IntrinsicBase>& intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicSO =
+            const std::shared_ptr<camera::IntrinsicBase>& intrinsic = intrinsic_pair.second;
+            const std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicSO =
                 std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
-            std::shared_ptr<camera::Equidistant> equidistant =
+            const std::shared_ptr<camera::Equidistant> equidistant =
                 std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
 
             if(intrinsicSO != nullptr && equidistant == nullptr)
@@ -1292,7 +1292,7 @@ int main(int argc, char* argv[])
                 // "radius" and "center" will be set later from the input parameters in another loop
 
                 // replace the intrinsic
-                intrinsic = newEquidistant;
+                sfmData.setIntrinsic(intrinsic_pair.first, newEquidistant);
             }
         }
     }
@@ -1358,11 +1358,11 @@ int main(int argc, char* argv[])
             }
         }
 
-        sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
+        const sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
         for(const auto& intrinsic_pair : intrinsics)
         {
-            std::shared_ptr<camera::IntrinsicBase> intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::Equidistant> equidistant =
+            const std::shared_ptr<camera::IntrinsicBase> intrinsic = intrinsic_pair.second;
+            const std::shared_ptr<camera::Equidistant> equidistant =
                 std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
             if(!equidistant)
             {

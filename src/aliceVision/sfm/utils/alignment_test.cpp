@@ -170,7 +170,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy));
+        sfm_data.setIntrinsic(0, createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy));
     }
 
     // 4. Landmarks
