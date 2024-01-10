@@ -61,7 +61,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // Read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("Unable to read the sfmdata file " << sfmDataFilename);
         return EXIT_FAILURE;

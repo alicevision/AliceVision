@@ -59,11 +59,11 @@ void hsv(OutImage& result,
     image::readImage(inputPath, input, image::EImageColorSpace::SRGB);
 
     cv::Mat input_hsv;
-    cv::eigen2cv(input.GetMat(), input_hsv);                     // copy the buffer, but a copy is needed to convert to HSV colorspace anyway.
+    cv::eigen2cv(input.getMat(), input_hsv);                     // copy the buffer, but a copy is needed to convert to HSV colorspace anyway.
     cv::cvtColor(input_hsv, input_hsv, cv::COLOR_RGB2HSV_FULL);  // "_FULL" to encode hue in the [0, 255] range.
     rotateHue(input_hsv, uint8_t((0.5f - hue) * 256.f));         // hue == 0 <=> hue == 1
 
-    result.resize(input.Width(), input.Height(), false);  // allocate un-initialized
+    result.resize(input.width(), input.height(), false);  // allocate un-initialized
     const cv::Mat result_cv = wrapCvMask(result);
 
     const uint8_t lowH = remap_float2uint8(0.5f - hueRange);
@@ -81,7 +81,7 @@ void autoGrayscaleThreshold(OutImage& result, const std::string& inputPath)
     image::readImage(inputPath, input, image::EImageColorSpace::SRGB);
 
     // allocate un-initialized output
-    result.resize(input.Width(), input.Height(), false);
+    result.resize(input.width(), input.height(), false);
 
     cv::Mat input_cv = wrapCvMask(input);
     assert(input_cv.data);

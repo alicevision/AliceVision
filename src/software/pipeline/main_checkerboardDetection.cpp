@@ -69,7 +69,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if(!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
@@ -132,8 +132,8 @@ int aliceVision_main(int argc, char* argv[])
         if (pixelRatio != 1.0 || doubleSize)
         {
             // if pixel are not squared, convert the image for easier lines extraction
-            const double w = source.Width();
-            const double h = source.Height();
+            const double w = source.width();
+            const double h = source.height();
             
             const double nw = w * ((doubleSize) ? 2.0 : 1.0);
             const double nh = h * ((doubleSize) ? 2.0 : 1.0) / pixelRatio;

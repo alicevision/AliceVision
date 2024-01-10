@@ -184,11 +184,11 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
         // Load image
         readImage(imagePaths[idBracket], img, imgReadOptions);
 
-        if (img.Width() != imageWidth || img.Height() != imageHeight)
+        if (img.width() != imageWidth || img.height() != imageHeight)
         {
             std::stringstream ss;
             ss << "Failed to extract samples, the images with multi-bracketing do not have the same image resolution.\n"
-               << " Current image resolution is: " << img.Width() << "x" << img.Height() << ", instead of: " << imageWidth << "x" << imageHeight
+               << " Current image resolution is: " << img.width() << "x" << img.height() << ", instead of: " << imageWidth << "x" << imageHeight
                << ".\n"
                << "Current image path is: " << imagePaths[idBracket];
             throw std::runtime_error(ss.str());
@@ -196,7 +196,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
 
         if (simplified)
         {
-            // Luminance statistics are calculated from a subsampled square, centered and rotated by 45°.
+            // Luminance statistics are calculated from a subsampled square, centered and rotated by 45ï¿½.
             // 2 vertices of this square are the centers of the longest sides of the image.
             // Such a shape is suitable for both fisheye and classic images.
 
@@ -250,8 +250,8 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
                 int cx = vec_blocks[idx].first;
                 int cy = vec_blocks[idx].second;
 
-                int blockWidth = ((img.Width() - cx) > params.blockSize) ? params.blockSize : img.Width() - cx;
-                int blockHeight = ((img.Height() - cy) > params.blockSize) ? params.blockSize : img.Height() - cy;
+                int blockWidth = ((img.width() - cx) > params.blockSize) ? params.blockSize : img.width() - cx;
+                int blockHeight = ((img.height() - cy) > params.blockSize) ? params.blockSize : img.height() - cy;
 
                 auto blockInput = img.block(cy, cx, blockHeight, blockWidth);
                 auto blockOutput = samples.block(cy, cx, blockHeight, blockWidth);
@@ -264,9 +264,9 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
                 integral(imgIntegral, blockInput);
                 integral(imgIntegralSquare, imgSquare);
 
-                for (int y = radiusp1; y < imgIntegral.Height() - params.radius; ++y)
+                for (int y = radiusp1; y < imgIntegral.height() - params.radius; ++y)
                 {
-                    for (int x = radiusp1; x < imgIntegral.Width() - params.radius; ++x)
+                    for (int x = radiusp1; x < imgIntegral.width() - params.radius; ++x)
                     {
                         image::Rgb<double> S1 = imgIntegral(y + params.radius, x + params.radius) + imgIntegral(y - radiusp1, x - radiusp1) -
                                                 imgIntegral(y + params.radius, x - radiusp1) - imgIntegral(y - radiusp1, x + params.radius);
@@ -294,7 +294,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
         }
     }
 
-    if (samples.Width() == 0)
+    if (samples.width() == 0)
     {
         // Why? just to be sure
         return false;
@@ -304,9 +304,9 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
     {
 // Create samples image
 #pragma omp parallel for
-        for (int y = params.radius; y < samples.Height() - params.radius; ++y)
+        for (int y = params.radius; y < samples.height() - params.radius; ++y)
         {
-            for (int x = params.radius; x < samples.Width() - params.radius; ++x)
+            for (int x = params.radius; x < samples.width() - params.radius; ++x)
             {
                 ImageSample& sample = samples(y, x);
                 if (sample.descriptions.size() < 2)
@@ -433,11 +433,11 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
         std::vector<Counters> counters_vec(omp_get_max_threads());
 
 #pragma omp parallel for
-        for (int y = params.radius; y < samples.Height() - params.radius; ++y)
+        for (int y = params.radius; y < samples.height() - params.radius; ++y)
         {
             Counters& counters_thread = counters_vec[omp_get_thread_num()];
 
-            for (int x = params.radius; x < samples.Width() - params.radius; ++x)
+            for (int x = params.radius; x < samples.width() - params.radius; ++x)
             {
                 const ImageSample& sample = samples(y, x);
                 UniqueDescriptor desc;

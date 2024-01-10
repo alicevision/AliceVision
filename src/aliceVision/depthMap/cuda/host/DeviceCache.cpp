@@ -249,7 +249,7 @@ void DeviceCache::addMipmapImage(int camId,
     mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>::ImgSharedPtr img = imageCache.getImg_sync(camId);
 
     // allocate the full size host-sided image buffer
-    CudaSize<2> imgSize(img->Width(), img->Height());
+    CudaSize<2> imgSize(img->width(), img->height());
     CudaHostMemoryHeap<CudaRGBA, 2> img_hmh(imgSize);
 
     // copy image from imageCache to CUDA host-side image buffer

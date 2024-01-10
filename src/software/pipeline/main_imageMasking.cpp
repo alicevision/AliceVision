@@ -179,7 +179,7 @@ int main(int argc, char **argv)
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::VIEWS))
+    if(!sfmDataIO::load(sfmData, sfmFilePath, sfmDataIO::ESfMData::VIEWS))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
         return EXIT_FAILURE;
@@ -350,21 +350,21 @@ int main(int argc, char **argv)
         if(useDepthMap)
         {
             bool viewHorizontal = view.getImage().getWidth() > view.getImage().getHeight();
-            bool depthMapHorizontal = result.Width() > result.Height();
+            bool depthMapHorizontal = result.width() > result.height();
             if(viewHorizontal != depthMapHorizontal)
             {
                 ALICEVISION_LOG_ERROR("Image " << imgPath << " : " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
-                ALICEVISION_LOG_ERROR("Depth Map " << depthMapPath << " : " << result.Width() << "x" << result.Height());
+                ALICEVISION_LOG_ERROR("Depth Map " << depthMapPath << " : " << result.width() << "x" << result.height());
                 throw std::runtime_error("Depth map orientation is not aligned with source image.");
             }
-            if(view.getImage().getWidth() != result.Width())
+            if(view.getImage().getWidth() != result.width())
             {
-                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.Width() << "x" << result.Height() << ", to: " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
+                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.width() << "x" << result.height() << ", to: " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
 
                 image::Image<unsigned char> rescaled(view.getImage().getWidth(), view.getImage().getHeight());
 
-                const oiio::ImageBuf inBuf(oiio::ImageSpec(result.Width(), result.Height(), 1, oiio::TypeDesc::UINT8), result.data());
-                oiio::ImageBuf outBuf(oiio::ImageSpec(rescaled.Width(), rescaled.Height(), 1, oiio::TypeDesc::UINT8), rescaled.data());
+                const oiio::ImageBuf inBuf(oiio::ImageSpec(result.width(), result.height(), 1, oiio::TypeDesc::UINT8), result.data());
+                oiio::ImageBuf outBuf(oiio::ImageSpec(rescaled.width(), rescaled.height(), 1, oiio::TypeDesc::UINT8), rescaled.data());
 
                 oiio::ImageBufAlgo::resize(outBuf, inBuf);
 

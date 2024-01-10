@@ -63,7 +63,7 @@ PairSet BuildPairsFromFrustumsIntersections(
 {
   const FrustumFilter frustum_filter(sfmData, z_near, z_far);
   if (!sOutDirectory.empty())
-    frustum_filter.export_Ply((fs::path(sOutDirectory) / "frustums.ply").string());
+    frustum_filter.exportPly((fs::path(sOutDirectory) / "frustums.ply").string());
   return frustum_filter.getFrustumIntersectionPairs();
 }
 
@@ -105,7 +105,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;

@@ -88,27 +88,27 @@ unsigned long long int CacheValue::memorySize() const
 {
     if (imgUChar)
     {
-        return imgUChar->MemorySize();
+        return imgUChar->memorySize();
     }
     if (imgFloat)
     {
-        return imgFloat->MemorySize();
+        return imgFloat->memorySize();
     }
     if (imgRGB)
     {
-        return imgRGB->MemorySize();
+        return imgRGB->memorySize();
     }
     if (imgRGBf)
     {
-        return imgRGBf->MemorySize();
+        return imgRGBf->memorySize();
     }
     if (imgRGBA)
     {
-        return imgRGBA->MemorySize();
+        return imgRGBA->memorySize();
     }
     if (imgRGBAf)
     {
-        return imgRGBAf->MemorySize();
+        return imgRGBAf->memorySize();
     }
     return 0;
 }

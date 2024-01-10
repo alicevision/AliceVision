@@ -14,7 +14,7 @@
 namespace aliceVision {
 namespace sfm {
 
-void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType)
+void generateSyntheticMatches(matching::PairwiseMatches& outPairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType)
 {
     for (const auto& it : sfmData.getLandmarks())
     {
@@ -36,7 +36,8 @@ void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, co
 
                 const sfmData::Observation& obsJ = obsItJ->second;
 
-                out_pairwiseMatches[Pair(obsItI->first, obsItJ->first)][descType].emplace_back(obsItI->second.getFeatureId(), obsItJ->second.getFeatureId());
+                outPairwiseMatches[Pair(obsItI->first, obsItJ->first)][descType].emplace_back(obsItI->second.getFeatureId(),
+                                                                                              obsItJ->second.getFeatureId());
             }
         }
     }

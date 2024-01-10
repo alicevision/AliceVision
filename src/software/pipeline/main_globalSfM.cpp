@@ -110,7 +110,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilepath << "' cannot be read.");
     return EXIT_FAILURE;
@@ -164,15 +164,15 @@ int aliceVision_main(int argc, char **argv)
   sfmEngine.initRandomSeed(randomSeed);
 
   // configure the featuresPerView & the matches_provider
-  sfmEngine.SetFeaturesProvider(&featuresPerView);
-  sfmEngine.SetMatchesProvider(&pairwiseMatches);
+  sfmEngine.setFeaturesProvider(&featuresPerView);
+  sfmEngine.setMatchesProvider(&pairwiseMatches);
 
   // configure reconstruction parameters
   sfmEngine.setLockAllIntrinsics(lockAllIntrinsics); // TODO: rename param
 
   // configure motion averaging method
-  sfmEngine.SetRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
-  sfmEngine.SetTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
+  sfmEngine.setRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
+  sfmEngine.setTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
 
   if(!sfmEngine.process())
     return EXIT_FAILURE;
@@ -195,11 +195,11 @@ int aliceVision_main(int argc, char **argv)
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
 
-  sfmDataIO::Save(sfmEngine.getSfMData(), outSfMDataFilepath, sfmDataIO::ESfMData::ALL);
-  sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+  sfmDataIO::save(sfmEngine.getSfMData(), outSfMDataFilepath, sfmDataIO::ESfMData::ALL);
+  sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
   if(!outputSfMViewsAndPoses.empty())
-    sfmDataIO:: Save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
+    sfmDataIO::save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
     << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl

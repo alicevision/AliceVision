@@ -364,7 +364,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
         try
         {
             mvsUtils::readMap(c, mp, mvsUtils::EFileType::simMapFiltered, simMap);
-            image::Image<float> simMapTmp(simMap.Width(), simMap.Height());
+            image::Image<float> simMapTmp(simMap.width(), simMap.height());
             imageAlgo::convolveImage(simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
             simMap.swap(simMapTmp);
         }
@@ -376,11 +376,11 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
 
 // Add visibility
 #pragma omp parallel for
-        for (int y = 0; y < depthMap.Height(); ++y)
+        for (int y = 0; y < depthMap.height(); ++y)
         {
-            for (int x = 0; x < depthMap.Width(); ++x)
+            for (int x = 0; x < depthMap.width(); ++x)
             {
-                const std::size_t index = y * depthMap.Width() + x;
+                const std::size_t index = y * depthMap.width() + x;
                 const float depth = depthMap(index);
                 if (depth <= 0.0f)
                     continue;
@@ -1025,8 +1025,8 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
                 continue;
             }
 
-            const int width = depthMap.Width();
-            const int height = depthMap.Height();
+            const int width = depthMap.width();
+            const int height = depthMap.height();
             const int syMax = divideRoundUp(height, step);
             const int sxMax = divideRoundUp(width, step);
 
@@ -1192,7 +1192,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 if (fs::exists(nmodMapFilepath))
                 {
                     image::readImage(nmodMapFilepath, numOfModalsMap, image::EImageColorSpace::NO_CONVERSION);
-                    if (numOfModalsMap.Width() != width || numOfModalsMap.Height() != height)
+                    if (numOfModalsMap.width() != width || numOfModalsMap.height() != height)
                         throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
                 }
                 else

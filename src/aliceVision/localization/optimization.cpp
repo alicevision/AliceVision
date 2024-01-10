@@ -264,7 +264,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
     if (!outputFilename.empty())
     {
         const std::string outfile = outputFilename + ".BEFORE.json";
-        if (!sfmDataIO::Save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
+        if (!sfmDataIO::save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
             ALICEVISION_CERR("Could not save " << outfile);
     }
 
@@ -290,7 +290,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         if (!outputFilename.empty())
         {
             const std::string outfile = outputFilename + ".AFTER.json";
-            if (!sfmDataIO::Save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
+            if (!sfmDataIO::save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
                 ALICEVISION_CERR("Could not save " << outfile);
         }
     }

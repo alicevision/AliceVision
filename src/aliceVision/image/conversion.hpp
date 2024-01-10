@@ -104,10 +104,10 @@ inline void Convert<RGBfColor, RGBAfColor>(const RGBfColor& valin, RGBAfColor& v
 template<typename ImageIn, typename ImageOut>
 void ConvertPixelType(const ImageIn& imaIn, ImageOut* imaOut)
 {
-    (*imaOut) = ImageOut(imaIn.Width(), imaIn.Height());
+    (*imaOut) = ImageOut(imaIn.width(), imaIn.height());
     // Convert each input pixel to destination pixel
-    for (int j = 0; j < imaIn.Height(); ++j)
-        for (int i = 0; i < imaIn.Width(); ++i)
+    for (int j = 0; j < imaIn.height(); ++j)
+        for (int i = 0; i < imaIn.width(); ++i)
             Convert(imaIn(j, i), (*imaOut)(j, i));
 }
 
@@ -125,11 +125,11 @@ inline void convertRGB2Float(const Tin& valIn, Tout& valOut, float factor = 1.0f
 template<typename ImageIn>
 void rgb2Float(const ImageIn& imaIn, Image<RGBfColor>* imaOut, float factor = 1.0f / 255.f)
 {
-    assert(imaIn.Depth() == 3);
-    (*imaOut).resize(imaIn.Width(), imaIn.Height());
+    assert(imaIn.depth() == 3);
+    (*imaOut).resize(imaIn.width(), imaIn.height());
     // Convert each int RGB to float RGB values
-    for (int j = 0; j < imaIn.Height(); ++j)
-        for (int i = 0; i < imaIn.Width(); ++i)
+    for (int j = 0; j < imaIn.height(); ++j)
+        for (int i = 0; i < imaIn.width(); ++i)
             convertRGB2Float(imaIn(j, i), (*imaOut)(j, i), factor);
 }
 
@@ -145,11 +145,11 @@ inline void convertFloatToInt(const RGBfColor& valIn, RGBColor& valOut, float fa
 
 inline void rgbFloat2rgbInt(const Image<RGBfColor>& imaIn, Image<RGBColor>* imaOut, float factor = 255.f)
 {
-    assert(imaIn.Depth() == 3);
-    (*imaOut).resize(imaIn.Width(), imaIn.Height());
+    assert(imaIn.depth() == 3);
+    (*imaOut).resize(imaIn.width(), imaIn.height());
     // Convert each int RGB to float RGB values
-    for (int j = 0; j < imaIn.Height(); ++j)
-        for (int i = 0; i < imaIn.Width(); ++i)
+    for (int j = 0; j < imaIn.height(); ++j)
+        for (int i = 0; i < imaIn.width(); ++i)
             convertFloatToInt(imaIn(j, i), (*imaOut)(j, i), factor);
 }
 

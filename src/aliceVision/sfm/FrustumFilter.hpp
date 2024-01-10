@@ -33,7 +33,7 @@ class FrustumFilter
     PairSet getFrustumIntersectionPairs() const;
 
     /// export defined frustum in PLY file for viewing
-    bool export_Ply(const std::string& filename) const;
+    bool exportPly(const std::string& filename) const;
 
   private:
     /// Init near and far plane depth from SfMData structure or defined value

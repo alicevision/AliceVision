@@ -162,7 +162,7 @@ int aliceVision_main(int argc, char** argv)
     // Camera intrinsics
     // Camera extrinsics
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename,
+    if(!sfmDataIO::load(sfmData, sfmDataFilename,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
@@ -553,7 +553,7 @@ int aliceVision_main(int argc, char** argv)
             out_mask->open(maskFilepath, spec_mask);
             out_weights->open(weightFilepath, spec_weights);
 
-            GaussianPyramidNoMask pyramid(source.Width(), source.Height());
+            GaussianPyramidNoMask pyramid(source.width(), source.height());
             if(!pyramid.process(source))
             {
                 ALICEVISION_LOG_ERROR("Problem creating pyramid.");

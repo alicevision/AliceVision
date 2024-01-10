@@ -20,36 +20,36 @@ namespace sfm {
 
 /// Filter a list of pair: Keep only the pair that are defined in index list
 template<typename IterablePairs, typename IterableIndex>
-inline PairSet Pair_filter(const IterablePairs& pairs, const IterableIndex& index)
+inline PairSet filterPairs(const IterablePairs& pairs, const IterableIndex& index)
 {
-    PairSet kept_pairs;
+    PairSet keptPairs;
     for (auto& it : pairs)
     {
         if (index.count(it.first) > 0 && index.count(it.second) > 0)
-            kept_pairs.insert(it);
+            keptPairs.insert(it);
     }
-    return kept_pairs;
+    return keptPairs;
 }
 
 /// Remove observations with too large reprojection error.
 /// Return the number of removed tracks.
-IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
-                                         EFeatureConstraint featureConstraint,
-                                         const double dThresholdPixel,
-                                         const unsigned int minTrackLength = 2);
+IndexT removeOutliersWithPixelResidualError(sfmData::SfMData& sfmData,
+                                            EFeatureConstraint featureConstraint,
+                                            const double dThresholdPixel,
+                                            const unsigned int minTrackLength = 2);
 
 // Remove tracks that have a small angle (tracks with tiny angle leads to instable 3D points)
 // Return the number of removed tracks
-IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcceptedAngle);
+IndexT removeOutliersWithAngleError(sfmData::SfMData& sfmData, const double dMinAcceptedAngle);
 
-bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_pose, std::set<IndexT>* outRemovedViewsId = NULL);
+bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose, std::set<IndexT>* outRemovedViewsId = NULL);
 
-bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT min_points_per_landmark);
+bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT minPointsPerLandmark);
 
 /// Remove unstable content from analysis of the sfm_data structure
 bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
-                                       const IndexT min_points_per_pose = 6,
-                                       const IndexT min_points_per_landmark = 2,
+                                       const IndexT minPointsPerPose = 6,
+                                       const IndexT minPointsPerLandmark = 2,
                                        std::set<IndexT>* outRemovedViewsId = NULL);
 
 }  // namespace sfm

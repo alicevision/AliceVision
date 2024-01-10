@@ -180,11 +180,11 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
         // read Tc depth map from depthMapEstimation folder
         mvsUtils::readMap(tc, _mp, mvsUtils::EFileType::depthMap, tcdepthMap);
 
-        if (tcdepthMap.Height() > 0 && tcdepthMap.Width() > 0)
+        if (tcdepthMap.height() > 0 && tcdepthMap.width() > 0)
         {
-            for (int y = 0; y < tcdepthMap.Height(); ++y)
+            for (int y = 0; y < tcdepthMap.height(); ++y)
             {
-                for (int x = 0; x < tcdepthMap.Width(); ++x)
+                for (int x = 0; x < tcdepthMap.width(); ++x)
                 {
                     float depth = tcdepthMap(y, x);
 
@@ -247,8 +247,8 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
 
     image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), numOfModalsMap, image::EImageColorSpace::NO_CONVERSION);
 
-    if (depthMap.Width() != simMap.Width() || depthMap.Width() != numOfModalsMap.Width() || depthMap.Height() != simMap.Height() ||
-        depthMap.Height() != numOfModalsMap.Height())
+    if (depthMap.width() != simMap.width() || depthMap.width() != numOfModalsMap.width() || depthMap.height() != simMap.height() ||
+        depthMap.height() != numOfModalsMap.height())
     {
         throw std::invalid_argument("depthMap, simMap and numOfModalsMap must have same size");
     }

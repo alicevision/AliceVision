@@ -620,13 +620,12 @@ bool readCamera(const Version& abcVersion,
                 distortion->setParameters(distortionParams);
             }
 
-
             std::shared_ptr<camera::Undistortion> undistortion = intrinsicCasted->getUndistortion();
             if (undistortion)
             {
                 undistortion->setParameters(undistortionParams);
                 undistortion->setOffset(undistortionOffset);
-                //If undistortion exists, distortion does not
+                // If undistortion exists, distortion does not
                 intrinsicCasted->setDistortionObject(nullptr);
             }
         }
@@ -753,8 +752,7 @@ bool readAncestor(const Version& abcVersion, const ICamera& camera, sfmData::SfM
         std::map<std::string, std::string> metadata;
         for (size_t mIndex = 0; mIndex < rawMetadata.size() / 2; mIndex++)
         {
-            metadata.insert(
-                std::pair<std::string, std::string>(rawMetadata[2 * mIndex], rawMetadata[2 * mIndex + 1]));
+            metadata.insert(std::pair<std::string, std::string>(rawMetadata[2 * mIndex], rawMetadata[2 * mIndex + 1]));
         }
 
         sfmData::ImageInfo ancestor(imagePath, width, height, metadata);

@@ -68,9 +68,9 @@ void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfCo
 void labelsToMask(image::Image<unsigned char> & mask, const image::Image<IndexT> & labels, const std::set<IndexT> & validClasses,
                   const bool & maskInvert)
 {
-    for (int i = 0; i < mask.Height(); i++)
+    for (int i = 0; i < mask.height(); i++)
     {
-        for (int j = 0; j < mask.Width(); j++)
+        for (int j = 0; j < mask.width(); j++)
         {
             IndexT label = labels(i, j);
             if (maskInvert)
@@ -122,7 +122,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
+    if(!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
         return EXIT_FAILURE;
@@ -223,8 +223,8 @@ int aliceVision_main(int argc, char** argv)
         if (pixelRatio != 1.0)
         {
             // Resample input image in order to work with square pixels
-            const int w = image.Width();
-            const int h = image.Height();
+            const int w = image.width();
+            const int h = image.height();
 
             const int nw = static_cast<int>(static_cast<double>(w) * pixelRatio);
             const int nh = h;
@@ -241,14 +241,14 @@ int aliceVision_main(int argc, char** argv)
         }
 
 
-        image::Image<unsigned char> mask(labels.Width(), labels.Height());
+        image::Image<unsigned char> mask(labels.width(), labels.height());
         labelsToMask(mask, labels, validClassesIndices, maskInvert);
 
         if (pixelRatio != 1.0)
         {
             // Resample input image in order to work with square pixels
-            const int w = mask.Width();
-            const int h = mask.Height();
+            const int w = mask.width();
+            const int h = mask.height();
 
             const int nw = static_cast<int>(static_cast<double>(w) / pixelRatio);
             const int nh = h;

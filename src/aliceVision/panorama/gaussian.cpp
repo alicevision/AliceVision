@@ -38,9 +38,9 @@ GaussianPyramidNoMask::GaussianPyramidNoMask(const size_t width_base, const size
 
 bool GaussianPyramidNoMask::process(const image::Image<image::RGBfColor>& input)
 {
-    if (input.Height() != _pyramid_color[0].Height())
+    if (input.height() != _pyramid_color[0].height())
         return false;
-    if (input.Width() != _pyramid_color[0].Width())
+    if (input.width() != _pyramid_color[0].width())
         return false;
 
     /**
@@ -61,11 +61,11 @@ bool GaussianPyramidNoMask::process(const image::Image<image::RGBfColor>& input)
 
 bool GaussianPyramidNoMask::downscale(image::Image<image::RGBfColor>& output, const image::Image<image::RGBfColor>& input)
 {
-    for (int i = 0; i < output.Height(); i++)
+    for (int i = 0; i < output.height(); i++)
     {
         int ui = i * 2;
 
-        for (int j = 0; j < output.Width(); j++)
+        for (int j = 0; j < output.width(); j++)
         {
             int uj = j * 2;
 

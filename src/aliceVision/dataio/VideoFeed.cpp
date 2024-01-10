@@ -7,7 +7,7 @@
 #include "VideoFeed.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/image/convertion.hpp>
+#include <aliceVision/image/conversion.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <opencv2/core.hpp>
@@ -153,7 +153,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<float>& imageGray, camera::Pi
     image::Image<unsigned char> imageGrayUChar;
     if (FeederImpl::readImage(imageGrayUChar, camIntrinsics, mediaPath, hasIntrinsics))
     {
-        imageGray = (imageGrayUChar.GetMat().cast<float>() / 255.f);
+        imageGray = (imageGrayUChar.getMat().cast<float>() / 255.f);
         return true;
     }
     return false;
@@ -180,7 +180,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char>& imageGray,
         imageGray.resize(grey.cols, grey.rows);
         cv::cv2eigen(grey, imageGray);
         //      ALICEVISION_LOG_DEBUG(grey.channels() << " " << grey.rows << " " << grey.cols);
-        //      ALICEVISION_LOG_DEBUG(imageGray.Depth() << " " << imageGray.Height() << " " << imageGray.Width());
+        //      ALICEVISION_LOG_DEBUG(imageGray.Depth() << " " << imageGray.height() << " " << imageGray.width());
     }
     else
     {

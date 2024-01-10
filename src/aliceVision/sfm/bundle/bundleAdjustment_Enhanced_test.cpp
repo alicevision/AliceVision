@@ -18,7 +18,7 @@
 
 using namespace aliceVision;
 
-bool getPointOnSphere(Vec3 & result, const camera::IntrinsicBase & intrinsic, const Vec2 & pt, double distanceToUnitCenter)
+bool getPointOnSphere(Vec3& result, const camera::IntrinsicBase& intrinsic, const Vec2& pt, double distanceToUnitCenter)
 {
     Vec3 campt = intrinsic.toUnitSphere(intrinsic.removeDistortion(intrinsic.ima2cam(pt)));
     Vec3 camorigin(0.0, 0.0, -distanceToUnitCenter);
@@ -27,7 +27,7 @@ bool getPointOnSphere(Vec3 & result, const camera::IntrinsicBase & intrinsic, co
     return geometry::rayIntersectUnitSphere(result, camorigin, campt);
 }
 
-void createScene(sfmData::SfMData & sfmData, const camera::IntrinsicBase & intrinsic)
+void createScene(sfmData::SfMData& sfmData, const camera::IntrinsicBase& intrinsic)
 {
     // Create a scene where the points lie on a sphere of unit 1
     const int countNeededPointsPerImageLine = 30;
@@ -41,7 +41,7 @@ void createScene(sfmData::SfMData & sfmData, const camera::IntrinsicBase & intri
     {
         borderLeft = Vec3(-1, 0, 0);
     }
-    
+
     Vec3 borderRight;
     if (!getPointOnSphere(borderRight, intrinsic, Vec2(intrinsic.w(), intrinsic.h() / 2.0), distanceToUnitCenter))
     {
@@ -53,27 +53,26 @@ void createScene(sfmData::SfMData & sfmData, const camera::IntrinsicBase & intri
     {
         borderTop = Vec3(0, -1, 0);
     }
-    
+
     Vec3 borderBottom;
     if (!getPointOnSphere(borderBottom, intrinsic, Vec2(intrinsic.w() / 2.0, intrinsic.h()), distanceToUnitCenter))
     {
         borderBottom = Vec3(0, 1, 0);
     }
 
-    //The camera observe a part of the sphere, compute the arc length.
+    // The camera observe a part of the sphere, compute the arc length.
     double horizontalAnglePerCamera = std::acos(borderLeft.normalized().dot(borderRight.normalized()));
     double verticalAnglePerCamera = std::acos(borderBottom.normalized().dot(borderTop.normalized()));
-    
+
     // Estimated the required number of cameras and the scene properties
     double overlap = 0.5;
     int countCameras = std::ceil(2.0 * M_PI / (horizontalAnglePerCamera * (1.0 - overlap)));
     const int countNeededPointsPerLine = std::ceil(countNeededPointsPerImageLine * 2.0 * M_PI / horizontalAnglePerCamera);
     const double angleBetweenLines = verticalAnglePerCamera / countNeededPointsPerImageColumn;
 
-
     // Place landmarks on the unit sphere
     size_t count = 0;
-    for (int y = - countNeededPointsPerImageColumn / 2; y <= countNeededPointsPerImageColumn / 2; y++)
+    for (int y = -countNeededPointsPerImageColumn / 2; y <= countNeededPointsPerImageColumn / 2; y++)
     {
         for (int x = 0; x < countNeededPointsPerLine; x++)
         {
@@ -89,7 +88,6 @@ void createScene(sfmData::SfMData & sfmData, const camera::IntrinsicBase & intri
             count++;
         }
     }
-    
 
     // Place cameras and observations
     for (int idview = 0; idview < countCameras; idview++)
@@ -107,21 +105,21 @@ void createScene(sfmData::SfMData & sfmData, const camera::IntrinsicBase & intri
         Vec3 origin = pose(Vec3(0, 0, 0));
 
         int count = 0;
-        for (auto & pl : sfmData.getLandmarks())
+        for (auto& pl : sfmData.getLandmarks())
         {
-            const auto & pt = pl.second.X;
+            const auto& pt = pl.second.X;
 
             Vec3 cpt = pose(pt);
             Vec3 dir = (cpt - origin).normalized();
 
-            //Point normal is backward
+            // Point normal is backward
             if (dir.z() > 0.0)
             {
                 continue;
             }
 
             Vec2 imagept = intrinsic.project(pose, pt.homogeneous(), true);
-            if (imagept.x() < 0 || imagept.y() < 0 || imagept.x() >= intrinsic.w()|| imagept.y() >= intrinsic.h())
+            if (imagept.x() < 0 || imagept.y() < 0 || imagept.x() >= intrinsic.w() || imagept.y() >= intrinsic.h())
             {
                 continue;
             }
@@ -133,7 +131,7 @@ void createScene(sfmData::SfMData & sfmData, const camera::IntrinsicBase & intri
         }
     }
 
-    //Create intrinsic storage
+    // Create intrinsic storage
     sfmData.getIntrinsics().emplace(0, intrinsic.clone());
 }
 
@@ -143,61 +141,45 @@ std::vector<cameraPair> buildIntrinsics()
 {
     std::vector<cameraPair> cameras;
 
-    cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA, 1920, 1080, 900, 900, 80, 50),
-        camera::createPinhole(camera::PINHOLE_CAMERA, 1920, 1080, 1200, 1200, 0, 0)
-    ));
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA, 1920, 1080, 900, 900, 80, 50),
+                                     camera::createPinhole(camera::PINHOLE_CAMERA, 1920, 1080, 1200, 1200, 0, 0)));
 
-    cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 900, 900, 80, 50, {0.5}),
-        camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 1200, 1200, 0, 0, {0.0})
-    ));
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 900, 900, 80, 50, {0.5}),
+                                     camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 1200, 1200, 0, 0, {0.0})));
 
-    cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 900, 900, 80, 50, {0.5, -0.4, 1.2}),
-        camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0})
-    ));
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 900, 900, 80, 50, {0.5, -0.4, 1.2}),
+                                     camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0})));
 
-    cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_BROWN, 1920, 1080, 900, 900, 80, 50, {-0.054, 0.014, 0.006, 0.001, -0.001}),
-        camera::createPinhole(camera::PINHOLE_CAMERA_BROWN, 1920, 1080, 1200, 1200, 0, 0, {0, 0, 0, 0, 0})
-    ));
+    cameras.push_back(
+      std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_BROWN, 1920, 1080, 900, 900, 80, 50, {-0.054, 0.014, 0.006, 0.001, -0.001}),
+                     camera::createPinhole(camera::PINHOLE_CAMERA_BROWN, 1920, 1080, 1200, 1200, 0, 0, {0, 0, 0, 0, 0})));
 
-    cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE, 1920, 1080, 900, 900, 80, 50, {0.5, -0.4, 0.1, 0.2}),
-        camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0})
-    ));
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE, 1920, 1080, 900, 900, 80, 50, {0.5, -0.4, 0.1, 0.2}),
+                                     camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0})));
 
-    cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE1, 1920, 1080, 900, 900, 80, 50, {0.5}),
-        camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE1, 1920, 1080, 1200, 1200, 0, 0, {1.2})
-    ));
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE1, 1920, 1080, 900, 900, 80, 50, {0.5}),
+                                     camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE1, 1920, 1080, 1200, 1200, 0, 0, {1.2})));
 
     /*cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 900, 900, 80, 50, {0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0}),
-        camera::createPinhole(camera::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0})
+        camera::createPinhole(camera::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 900, 900, 80, 50, {0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 1.0, 1.0}), camera::createPinhole(camera::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0})
     ));*/
 
-    cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_3DERADIAL4, 1920, 1080, 900, 900, 80, 50, {0.2, 0.0, 0.0, 0.0, 0.0, 0.0}),
-        camera::createPinhole(camera::PINHOLE_CAMERA_3DERADIAL4, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0})
-    ));
+    cameras.push_back(
+      std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_3DERADIAL4, 1920, 1080, 900, 900, 80, 50, {0.2, 0.0, 0.0, 0.0, 0.0, 0.0}),
+                     camera::createPinhole(camera::PINHOLE_CAMERA_3DERADIAL4, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0})));
 
-    cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_3DECLASSICLD, 1920, 1080, 900, 900, 80, 50, {0.2, 1.0, 0.0, 0.0, 0.0}),
-        camera::createPinhole(camera::PINHOLE_CAMERA_3DECLASSICLD, 1920, 1080, 1200, 1200, 0, 0, {0.0, 1.0, 0.0, 0.0, 0.0})
-    ));
-    
-    cameras.push_back(std::make_pair(
-        camera::createEquidistant(camera::EQUIDISTANT_CAMERA, 1920, 1080, 1500, 80, 50),
-        camera::createEquidistant(camera::EQUIDISTANT_CAMERA, 1920, 1080, 1300, 0, 0)
-    ));
+    cameras.push_back(
+      std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_3DECLASSICLD, 1920, 1080, 900, 900, 80, 50, {0.2, 1.0, 0.0, 0.0, 0.0}),
+                     camera::createPinhole(camera::PINHOLE_CAMERA_3DECLASSICLD, 1920, 1080, 1200, 1200, 0, 0, {0.0, 1.0, 0.0, 0.0, 0.0})));
 
-    cameras.push_back(std::make_pair(
-        camera::createEquidistant(camera::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1500, 0, 0, {0.11, -0.30, 0.1}),
-        camera::createEquidistant(camera::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 900, 10, 20, {0.0, 0.0, 0.0})
-    ));
-        
+    cameras.push_back(std::make_pair(camera::createEquidistant(camera::EQUIDISTANT_CAMERA, 1920, 1080, 1500, 80, 50),
+                                     camera::createEquidistant(camera::EQUIDISTANT_CAMERA, 1920, 1080, 1300, 0, 0)));
+
+    cameras.push_back(std::make_pair(camera::createEquidistant(camera::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1500, 0, 0, {0.11, -0.30, 0.1}),
+                                     camera::createEquidistant(camera::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 900, 10, 20, {0.0, 0.0, 0.0})));
+
     return cameras;
 }
 
@@ -209,12 +191,14 @@ BOOST_AUTO_TEST_CASE(test_intrinsics)
     {
         sfmData::SfMData sfmData;
 
-        createScene (sfmData, *pairIntrinsics.first);
+        createScene(sfmData, *pairIntrinsics.first);
 
         sfmData.getIntrinsics().at(0) = pairIntrinsics.second;
 
         sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
-        sfm::BundleAdjustment::ERefineOptions refineOptions = sfm::BundleAdjustment::REFINE_INTRINSICS_FOCAL | sfm::BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS | sfm::BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
+        sfm::BundleAdjustment::ERefineOptions refineOptions = sfm::BundleAdjustment::REFINE_INTRINSICS_FOCAL |
+                                                              sfm::BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS |
+                                                              sfm::BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
         options.summary = false;
 
         double rmseBefore = sfm::RMSE(sfmData);
@@ -230,7 +214,6 @@ BOOST_AUTO_TEST_CASE(test_intrinsics)
     }
 }
 
-
 BOOST_AUTO_TEST_CASE(test_landmarks)
 {
     auto listIntrinsics = buildIntrinsics();
@@ -239,10 +222,10 @@ BOOST_AUTO_TEST_CASE(test_landmarks)
     {
         sfmData::SfMData sfmData;
 
-        createScene (sfmData, *pairIntrinsics.first);
+        createScene(sfmData, *pairIntrinsics.first);
 
         srand(0);
-        for (auto & lpt : sfmData.getLandmarks())
+        for (auto& lpt : sfmData.getLandmarks())
         {
             lpt.second.X += Eigen::Vector3d::Random() * 0.1;
         }
@@ -258,8 +241,8 @@ BOOST_AUTO_TEST_CASE(test_landmarks)
 
         BOOST_TEST_CONTEXT(EINTRINSIC_enumToString(pairIntrinsics.first->getType()))
         {
-        BOOST_CHECK_LT(rmseAfter, rmseBefore);
-        BOOST_CHECK_LT(rmseAfter, 1e-3);
+            BOOST_CHECK_LT(rmseAfter, rmseBefore);
+            BOOST_CHECK_LT(rmseAfter, 1e-3);
         }
     }
 }
@@ -275,7 +258,7 @@ BOOST_AUTO_TEST_CASE(test_poses)
         createScene(sfmData, *pairIntrinsics.first);
 
         srand(0);
-        for (auto & lps : sfmData.getPoses())
+        for (auto& lps : sfmData.getPoses())
         {
             geometry::Pose3 pose3 = lps.second.getTransform();
             Eigen::Matrix4d T = pose3.getHomogeneous();
@@ -306,4 +289,3 @@ BOOST_AUTO_TEST_CASE(test_poses)
         }
     }
 }
-

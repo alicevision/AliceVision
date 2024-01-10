@@ -238,7 +238,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
             const BoundingBox& bbox = currentBoundingBoxes[indexIntersection];
             const BoundingBox& bboxIntersect = intersections[indexIntersection];
 
-            for(int i = 0; i < mask.Height(); i++)
+            for(int i = 0; i < mask.height(); i++)
             {
                 int y = bbox.top + i - globalUnionBoundingBox.top;
                 if(y < 0 || y >= globalUnionBoundingBox.height)
@@ -246,7 +246,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                     continue;
                 }
 
-                for(int j = 0; j < mask.Width(); j++)
+                for(int j = 0; j < mask.width(); j++)
                 {
                     if(!mask(i, j))
                     {
@@ -274,8 +274,8 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         image::Image<IndexT> panoramaLabels;
         image::readImageDirect(labelsFilePath, panoramaLabels);
 
-        const double scaleX = double(panoramaLabels.Width()) / double(panoramaMap.getWidth());
-        const double scaleY = double(panoramaLabels.Height()) / double(panoramaMap.getHeight());
+        const double scaleX = double(panoramaLabels.width()) / double(panoramaMap.getWidth());
+        const double scaleY = double(panoramaLabels.height()) / double(panoramaMap.getHeight());
 
         referenceLabels =
             image::Image<IndexT>(globalUnionBoundingBox.width, globalUnionBoundingBox.height, true, UndefinedIndexT);
@@ -292,17 +292,17 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
                 if(scaledX < 0)
                 {
-                    scaledX += panoramaLabels.Width();
+                    scaledX += panoramaLabels.width();
                 }
 
-                if(scaledX >= panoramaLabels.Width())
+                if(scaledX >= panoramaLabels.width())
                 {
-                    scaledX -= panoramaLabels.Width();
+                    scaledX -= panoramaLabels.width();
                 }
 
                 if(scaledX < 0)
                     continue;
-                if(scaledX >= panoramaLabels.Width())
+                if(scaledX >= panoramaLabels.width())
                     continue;
 
                 IndexT label = panoramaLabels(scaledY, scaledX);
@@ -330,7 +330,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                     int nscaledY = scaledY + k;
                     if(nscaledY < 0)
                         continue;
-                    if(nscaledY >= panoramaLabels.Height())
+                    if(nscaledY >= panoramaLabels.height())
                         continue;
 
                     for(int l = -1; l <= 1; l++)
@@ -341,7 +341,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                         int nscaledX = scaledX + l;
                         if(nscaledX < 0)
                             continue;
-                        if(nscaledX >= panoramaLabels.Width())
+                        if(nscaledX >= panoramaLabels.width())
                             continue;
 
                         IndexT otherlabel = panoramaLabels(nscaledY, nscaledX);
@@ -535,9 +535,9 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
     if(storageDataType == image::EStorageDataType::HalfFinite)
     {
-        for(int i = 0; i < output.Height(); i++)
+        for(int i = 0; i < output.height(); i++)
         {
-            for(int j = 0; j < output.Width(); j++)
+            for(int j = 0; j < output.width(); j++)
             {
                 image::RGBAfColor ret;
                 image::RGBAfColor c = output(i, j);
@@ -702,7 +702,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilepath,
+    if(!sfmDataIO::load(sfmData, sfmDataFilepath,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");

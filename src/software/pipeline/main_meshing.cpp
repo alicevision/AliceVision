@@ -451,7 +451,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
       return EXIT_FAILURE;
@@ -562,7 +562,7 @@ int aliceVision_main(int argc, char* argv[])
                       removeLandmarksWithoutObservations(densePointCloud);
                       if(colorizeOutput)
                         sfmData::colorizeTracks(densePointCloud);
-                      sfmDataIO::Save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
+                      sfmDataIO::save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
                     }
 
                     delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string() + "/",
@@ -618,7 +618,7 @@ int aliceVision_main(int argc, char* argv[])
 
     removeLandmarksWithoutObservations(densePointCloud);
     ALICEVISION_LOG_INFO("Save dense point cloud.");
-    sfmDataIO::Save(densePointCloud, outputDensePointCloud, sfmDataIO::ESfMData::ALL_DENSE);
+    sfmDataIO::save(densePointCloud, outputDensePointCloud, sfmDataIO::ESfMData::ALL_DENSE);
 
     ALICEVISION_LOG_INFO("Save obj mesh file.");
     ALICEVISION_LOG_INFO("OUTPUT MESH " << outputMesh);

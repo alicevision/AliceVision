@@ -35,14 +35,14 @@ struct SamplerNearest
 {
   public:
     // Nearest sampling is only between two pixels
-    static const int neighbor_width = 2;
+    static const int neighborWidth = 2;
 
     /**
      ** @brief Computes weight associated to neighboring pixels
      ** @author Romuald Perrot <perrot.romuald_AT_gmail.com>
      ** @param x Sampling position
      ** @param[out] weigth Sampling factors associated to the neighboring
-     ** @note weight must be at least neighbor_width length
+     ** @note weight must be at least neighborWidth length
      **/
     void operator()(const double x, double* const weight) const
     {
@@ -58,19 +58,19 @@ struct SamplerLinear
 {
   public:
     // Linear sampling is between two pixels
-    static const int neighbor_width = 2;
+    static const int neighborWidth = 2;
 
     /**
      ** @brief Computes weight associated to neighboring pixels
      ** @author Romuald Perrot <perrot.romuald_AT_gmail.com>
      ** @param x Sampling position
-     ** @param[out] weigth Sampling factors associated to the neighboring
-     ** @note weight must be at least neighbor_width length
+     ** @param[out] weight Sampling factors associated to the neighboring
+     ** @note weight must be at least neighborWidth length
      **/
-    void operator()(const double x, double* const weigth) const
+    void operator()(const double x, double* const weight) const
     {
-        weigth[0] = 1.0 - x;
-        weigth[1] = x;
+        weight[0] = 1.0 - x;
+        weight[1] = x;
     }
 };
 
@@ -87,26 +87,26 @@ struct SamplerCubic
 {
   public:
     // Cubic interpolation is between 4 pixels
-    static const int neighbor_width = 4;
+    static const int neighborWidth = 4;
 
     /**
      ** @brief Constructor
-     ** @param sharpness_coef Sharpness coefficient used to control sharpness of the cubic curve
-     ** @note sharpnedd_coef must be between -0.75 to -0.5
+     ** @param sharpnessCoef Sharpness coefficient used to control sharpness of the cubic curve
+     ** @note sharpnessCoef must be between -0.75 to -0.5
      ** -0.5 gives better mathematically result (ie: approximation at 3 order precision)
      **/
-    SamplerCubic(const double sharpness_coef = -0.5)
-      : _sharpness(sharpness_coef)
+    SamplerCubic(const double sharpnessCoef = -0.5)
+      : _sharpness(sharpnessCoef)
     {}
 
     /**
      ** @brief Computes weight associated to neighboring pixels
      ** @author Romuald Perrot <perrot.romuald_AT_gmail.com>
      ** @param x Sampling position
-     ** @param[out] weigth Sampling factors associated to the neighboring
-     ** @note weight must be at least neighbor_width length
+     ** @param[out] weight Sampling factors associated to the neighboring
+     ** @note weight must be at least neighborWidth length
      **/
-    void operator()(const double x, double* const weigth) const
+    void operator()(const double x, double* const weight) const
     {
         // remember :
         // A      B    x  C       D
@@ -116,10 +116,10 @@ struct SamplerCubic
         // weight[2] -> weight for C
         // weight[3] -> weigth for D
 
-        weigth[0] = CubicInter12(_sharpness, x + 1.0);
-        weigth[1] = CubicInter01(_sharpness, x);
-        weigth[2] = CubicInter01(_sharpness, 1.0 - x);
-        weigth[3] = CubicInter12(_sharpness, 2.0 - x);
+        weight[0] = CubicInter12(_sharpness, x + 1.0);
+        weight[1] = CubicInter01(_sharpness, x);
+        weight[2] = CubicInter01(_sharpness, 1.0 - x);
+        weight[3] = CubicInter12(_sharpness, 2.0 - x);
     }
 
   private:
@@ -145,7 +145,7 @@ struct SamplerCubic
 };
 
 /**
- ** Sampler spline16 -> Interpolation on 4 points used for 2d ressampling (16 = 4x4 sampling)
+ ** Sampler spline16 -> Interpolation on 4 points used for 2d resampling (16 = 4x4 sampling)
  ** Cubic interpolation with 0-derivative at edges (ie at A and D points)
  ** See Helmut Dersch for more details
  **
@@ -211,21 +211,21 @@ struct SamplerCubic
 struct SamplerSpline16
 {
   public:
-    static const int neighbor_width = 4;
+    static const int neighborWidth = 4;
 
     /**
      ** @brief Computes weight associated to neighboring pixels
      ** @author Romuald Perrot <perrot.romuald_AT_gmail.com>
      ** @param x Sampling position
-     ** @param[out] weigth Sampling factors associated to the neighboring
-     ** @note weight must be at least neighbor_width length
+     ** @param[out] weight Sampling factors associated to the neighboring
+     ** @note weight must be at least neighborWidth length
      **/
-    void operator()(const double x, double* const weigth) const
+    void operator()(const double x, double* const weight) const
     {
-        weigth[0] = ((-1.0 / 3.0 * x + 4.0 / 5.0) * x - 7.0 / 15.0) * x;
-        weigth[1] = ((x - 9.0 / 5.0) * x - 1.0 / 5.0) * x + 1.0;
-        weigth[2] = ((6.0 / 5.0 - x) * x + 4.0 / 5.0) * x;
-        weigth[3] = ((1.0 / 3.0 * x - 1.0 / 5.0) * x - 2.0 / 15.0) * x;
+        weight[0] = ((-1.0 / 3.0 * x + 4.0 / 5.0) * x - 7.0 / 15.0) * x;
+        weight[1] = ((x - 9.0 / 5.0) * x - 1.0 / 5.0) * x + 1.0;
+        weight[2] = ((6.0 / 5.0 - x) * x + 4.0 / 5.0) * x;
+        weight[3] = ((1.0 / 3.0 * x - 1.0 / 5.0) * x - 2.0 / 15.0) * x;
     }
 };
 
@@ -236,23 +236,23 @@ struct SamplerSpline16
 struct SamplerSpline36
 {
   public:
-    static const int neighbor_width = 6;
+    static const int neighborWidth = 6;
 
     /**
      ** @brief Computes weight associated to neighboring pixels
      ** @author Romuald Perrot <perrot.romuald_AT_gmail.com>
      ** @param x Sampling position
-     ** @param[out] weigth Sampling factors associated to the neighboring
-     ** @note weight must be at least neighbor_width length
+     ** @param[out] weight Sampling factors associated to the neighboring
+     ** @note weight must be at least neighborWidth length
      **/
-    void operator()(const double x, double* const weigth) const
+    void operator()(const double x, double* const weight) const
     {
-        weigth[0] = ((1.0 / 11.0 * x - 45.0 / 209.0) * x + 26.0 / 209.0) * x;
-        weigth[1] = ((-6.0 / 11.0 * x + 270.0 / 209.0) * x - 156.0 / 209.0) * x;
-        weigth[2] = ((13.0 / 11.0 * x - 453.0 / 209.0) * x - 3.0 / 209.0) * x + 1.0;
-        weigth[3] = ((-13.0 / 11.0 * x + 288.0 / 209.0) * x + 168.0 / 209.0) * x;
-        weigth[4] = ((6.0 / 11.0 * x - 72.0 / 209.0) * x - 42.0 / 209.0) * x;
-        weigth[5] = ((-1.0 / 11.0 * x + 12.0 / 209.0) * x + 7.0 / 209.0) * x;
+        weight[0] = ((1.0 / 11.0 * x - 45.0 / 209.0) * x + 26.0 / 209.0) * x;
+        weight[1] = ((-6.0 / 11.0 * x + 270.0 / 209.0) * x - 156.0 / 209.0) * x;
+        weight[2] = ((13.0 / 11.0 * x - 453.0 / 209.0) * x - 3.0 / 209.0) * x + 1.0;
+        weight[3] = ((-13.0 / 11.0 * x + 288.0 / 209.0) * x + 168.0 / 209.0) * x;
+        weight[4] = ((6.0 / 11.0 * x - 72.0 / 209.0) * x - 42.0 / 209.0) * x;
+        weight[5] = ((-1.0 / 11.0 * x + 12.0 / 209.0) * x + 7.0 / 209.0) * x;
     }
 };
 
@@ -263,25 +263,25 @@ struct SamplerSpline36
 struct SamplerSpline64
 {
   public:
-    static const int neighbor_width = 8;
+    static const int neighborWidth = 8;
 
     /**
      ** @brief Computes weight associated to neighboring pixels
      ** @author Romuald Perrot <perrot.romuald_AT_gmail.com>
      ** @param x Sampling position
-     ** @param[out] weigth Sampling factors associated to the neighboring
-     ** @note weight must be at least neighbor_width length
+     ** @param[out] weight Sampling factors associated to the neighboring
+     ** @note weight must be at least neighborWidth length
      **/
-    void operator()(const double x, double* const weigth) const
+    void operator()(const double x, double* const weight) const
     {
-        weigth[0] = ((-1.0 / 41.0 * x + 168.0 / 2911.0) * x - 97.0 / 2911.0) * x;
-        weigth[1] = ((6.0 / 41.0 * x - 1008.0 / 2911.0) * x + 582.0 / 2911.0) * x;
-        weigth[2] = ((-24.0 / 41.0 * x + 4032.0 / 2911.0) * x - 2328.0 / 2911.0) * x;
-        weigth[3] = ((49.0 / 41.0 * x - 6387.0 / 2911.0) * x - 3.0 / 2911.0) * x + 1.0;
-        weigth[4] = ((-49.0 / 41.0 * x + 4050.0 / 2911.0) * x + 2340.0 / 2911.0) * x;
-        weigth[5] = ((24.0 / 41.0 * x - 1080.0 / 2911.0) * x - 624.0 / 2911.0) * x;
-        weigth[6] = ((-6.0 / 41.0 * x + 270.0 / 2911.0) * x + 156.0 / 2911.0) * x;
-        weigth[7] = ((1.0 / 41.0 * x - 45.0 / 2911.0) * x - 26.0 / 2911.0) * x;
+        weight[0] = ((-1.0 / 41.0 * x + 168.0 / 2911.0) * x - 97.0 / 2911.0) * x;
+        weight[1] = ((6.0 / 41.0 * x - 1008.0 / 2911.0) * x + 582.0 / 2911.0) * x;
+        weight[2] = ((-24.0 / 41.0 * x + 4032.0 / 2911.0) * x - 2328.0 / 2911.0) * x;
+        weight[3] = ((49.0 / 41.0 * x - 6387.0 / 2911.0) * x - 3.0 / 2911.0) * x + 1.0;
+        weight[4] = ((-49.0 / 41.0 * x + 4050.0 / 2911.0) * x + 2340.0 / 2911.0) * x;
+        weight[5] = ((24.0 / 41.0 * x - 1080.0 / 2911.0) * x - 624.0 / 2911.0) * x;
+        weight[6] = ((-6.0 / 41.0 * x + 270.0 / 2911.0) * x + 156.0 / 2911.0) * x;
+        weight[7] = ((1.0 / 41.0 * x - 45.0 / 2911.0) * x - 26.0 / 2911.0) * x;
     }
 };
 
@@ -378,7 +378,7 @@ struct Sampler2d
 {
     Sampler2d(const SamplerFunc& sampler = SamplerFunc())
       : _sampler(sampler),
-        _half_width(SamplerFunc::neighbor_width / 2)
+        _halfWidth(SamplerFunc::neighborWidth / 2)
     {}
 
     /**
@@ -391,65 +391,65 @@ struct Sampler2d
     template<typename T>
     T operator()(const Image<T>& src, const float y, const float x) const
     {
-        const int im_width = src.Width();
-        const int im_height = src.Height();
+        const int imWidth = src.width();
+        const int imHeight = src.height();
 
         // Get sampler coefficients
-        double coefs_x[SamplerFunc::neighbor_width];
-        double coefs_y[SamplerFunc::neighbor_width];
+        double coefsX[SamplerFunc::neighborWidth];
+        double coefsY[SamplerFunc::neighborWidth];
 
         // Compute difference between exact pixel location and sample
         const double dx = static_cast<double>(x) - floor(x);
         const double dy = static_cast<double>(y) - floor(y);
 
         // Get sampler weights
-        _sampler(dx, coefs_x);
-        _sampler(dy, coefs_y);
+        _sampler(dx, coefsX);
+        _sampler(dy, coefsY);
 
         auto res = RealPixel<T>::zero();
 
         // integer position of sample (x,y)
-        const int grid_x = static_cast<int>(floor(x));
-        const int grid_y = static_cast<int>(floor(y));
+        const int gridX = static_cast<int>(floor(x));
+        const int gridY = static_cast<int>(floor(y));
 
         // Sample a grid around specified grid point
-        double total_weight = 0.0;
-        for (int i = 0; i < SamplerFunc::neighbor_width; ++i)
+        double totalWeight = 0.0;
+        for (int i = 0; i < SamplerFunc::neighborWidth; ++i)
         {
             // Get current i value
             // +1 for correct scheme (draw it to be conviced)
-            const int cur_i = grid_y + 1 + i - _half_width;
+            const int iCurrent = gridY + 1 + i - _halfWidth;
 
             // handle out of range
-            if (cur_i < 0 || cur_i >= im_height)
+            if (iCurrent < 0 || iCurrent >= imHeight)
             {
                 continue;
             }
 
-            for (int j = 0; j < SamplerFunc::neighbor_width; ++j)
+            for (int j = 0; j < SamplerFunc::neighborWidth; ++j)
             {
                 // Get current j value
                 // +1 for the same reason
-                const int cur_j = grid_x + 1 + j - _half_width;
+                const int jCurrent = gridX + 1 + j - _halfWidth;
 
                 // handle out of range
-                if (cur_j < 0 || cur_j >= im_width)
+                if (jCurrent < 0 || jCurrent >= imWidth)
                 {
                     continue;
                 }
 
                 // sample input image and weight according to sampler
-                const double w = coefs_x[j] * coefs_y[i];
-                const typename RealPixel<T>::real_type pix = RealPixel<T>::convert_to_real(src(cur_i, cur_j));
+                const double w = coefsX[j] * coefsY[i];
+                const typename RealPixel<T>::real_type pix = RealPixel<T>::convert_to_real(src(iCurrent, jCurrent));
                 const typename RealPixel<T>::real_type wp = pix * w;
                 res += wp;
 
-                total_weight += w;
+                totalWeight += w;
             }
         }
 
         // If value too small, it should be so instable, so return the sampled value
-        if (total_weight <= 0.2)
+        if (totalWeight <= 0.2)
         {
             int row = floor(y);
             int col = floor(x);
@@ -458,17 +458,17 @@ struct Sampler2d
                 row = 0;
             if (col < 0)
                 col = 0;
-            if (row >= im_height)
-                row = im_height - 1;
-            if (col >= im_width)
-                col = im_width - 1;
+            if (row >= imHeight)
+                row = imHeight - 1;
+            if (col >= imWidth)
+                col = imWidth - 1;
 
             return src(row, col);
         }
 
-        if (total_weight != 1.0)
+        if (totalWeight != 1.0)
         {
-            res /= total_weight;
+            res /= totalWeight;
         }
 
         return RealPixel<T>::convert_from_real(res);
@@ -476,7 +476,7 @@ struct Sampler2d
 
   private:
     SamplerFunc _sampler;
-    const int _half_width;
+    const int _halfWidth;
 };
 
 }  // namespace image

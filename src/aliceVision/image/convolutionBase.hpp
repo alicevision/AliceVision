@@ -19,7 +19,7 @@ namespace image {
  ** @param ksize kernel length
  **/
 template<class T1, class T2>
-inline void conv_buffer_(T1* buffer, const T2* kernel, int rsize, int ksize)
+inline void convBuffer(T1* buffer, const T2* kernel, int rsize, int ksize)
 {
     for (std::size_t i = 0; i < rsize; ++i)
     {

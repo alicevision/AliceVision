@@ -286,9 +286,9 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
      * @param previousReconstructedViews
      * @param newReconstructedViews
      */
-    void triangulate_2Views(sfmData::SfMData& scene,
-                            const std::set<IndexT>& previousReconstructedViews,
-                            const std::set<IndexT>& newReconstructedViews);
+    void triangulate2Views(sfmData::SfMData& scene,
+                           const std::set<IndexT>& previousReconstructedViews,
+                           const std::set<IndexT>& newReconstructedViews);
 
     /**
      * @brief Triangulate new possible 2D tracks
@@ -297,9 +297,9 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
      * @param[in] previousReconstructedViews The list of the old reconstructed views (views index).
      * @param[in] newReconstructedViews The list of the new reconstructed views (views index).
      */
-    void triangulate_multiViewsLORANSAC(sfmData::SfMData& scene,
-                                        const std::set<IndexT>& previousReconstructedViews,
-                                        const std::set<IndexT>& newReconstructedViews);
+    void triangulateMultiViewsLORANSAC(sfmData::SfMData& scene,
+                                       const std::set<IndexT>& previousReconstructedViews,
+                                       const std::set<IndexT>& newReconstructedViews);
 
     /**
      * @brief Check if a 3D points is well located in front of a set of views.

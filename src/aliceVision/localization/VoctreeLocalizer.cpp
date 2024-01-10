@@ -205,8 +205,8 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
         else
         {
             // image descriptor can't use float image
-            if (imageGrayUChar.Width() == 0)  // the first time, convert the float buffer to uchar
-                imageGrayUChar = (imageGrey.GetMat() * 255.f).cast<unsigned char>();
+            if (imageGrayUChar.width() == 0)  // the first time, convert the float buffer to uchar
+                imageGrayUChar = (imageGrey.getMat() * 255.f).cast<unsigned char>();
             imageDescriber->describe(imageGrayUChar, queryRegions, nullptr);
         }
 
@@ -214,7 +214,7 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
                                                      << queryRegions->RegionCount() << " features in " << timer.elapsedMs() << " [ms]");
     }
 
-    const std::pair<std::size_t, std::size_t> queryImageSize = std::make_pair(imageGrey.Width(), imageGrey.Height());
+    const std::pair<std::size_t, std::size_t> queryImageSize = std::make_pair(imageGrey.width(), imageGrey.height());
 
     // if debugging is enable save the svg image with the extracted features
     if (!param->_visualDebug.empty() && !imagePath.empty())
@@ -516,7 +516,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
         // Do the resectioning: compute the camera pose.
         resectionData.error_max = param._errorMax;
         ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-        bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
+        bool bResection = sfm::SfMLocalizer::localize(queryImageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                       randomNumberGenerator,
@@ -554,7 +554,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
 
         // D. refine the estimated pose
         ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
-        bool refineStatus = sfm::SfMLocalizer::RefinePose(
+        bool refineStatus = sfm::SfMLocalizer::refinePose(
           &queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
         if (!refineStatus)
         {
@@ -633,7 +633,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
     // Do the resectioning: compute the camera pose.
     resectionData.error_max = param._errorMax;
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-    const bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
+    const bool bResection = sfm::SfMLocalizer::localize(queryImageSize,
                                                         // pass the input intrinsic if they are valid, null otherwise
                                                         (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                         randomNumberGenerator,
@@ -678,7 +678,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
     // E. refine the estimated pose
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
     bool refineStatus =
-      sfm::SfMLocalizer::RefinePose(&queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
+      sfm::SfMLocalizer::refinePose(&queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
     if (!refineStatus)
         ALICEVISION_LOG_DEBUG("Refine pose failed.");
 
@@ -1149,7 +1149,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<float>>& vec_i
     for (size_t i = 0; i < numCams; ++i)
     {
         // add the image size for this image
-        vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
+        vec_imageSize.emplace_back(vec_imageGrey[i].width(), vec_imageGrey[i].height());
 
         image::Image<unsigned char> imageGrayUChar;  // uchar image copy for uchar image describer
 
@@ -1167,8 +1167,8 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<float>>& vec_i
             else
             {
                 // image descriptor can't use float image
-                if (imageGrayUChar.Width() == 0)  // the first time, convert the float buffer to uchar
-                    imageGrayUChar = (vec_imageGrey.at(i).GetMat() * 255.f).cast<unsigned char>();
+                if (imageGrayUChar.width() == 0)  // the first time, convert the float buffer to uchar
+                    imageGrayUChar = (vec_imageGrey.at(i).getMat() * 255.f).cast<unsigned char>();
                 imageDescriber->describe(imageGrayUChar, vec_queryRegions[i][imageDescriber->getDescriberType()]);
             }
             ALICEVISION_LOG_DEBUG("[features]\tExtract done: found " << vec_queryRegions[i][imageDescriber->getDescriberType()]->RegionCount()

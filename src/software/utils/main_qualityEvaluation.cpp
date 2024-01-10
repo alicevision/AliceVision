@@ -71,7 +71,7 @@ int aliceVision_main(int argc, char **argv)
   std::mt19937 randomNumberGenerator;
   sfmData::SfMData sfmData_gt;
 
-  if(!sfmDataIO::Load(sfmData_gt, gtFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::load(sfmData_gt, gtFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< gtFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -80,7 +80,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load the camera that we have to evaluate
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;

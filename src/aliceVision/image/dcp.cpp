@@ -2341,8 +2341,8 @@ void DCPProfile::applyLinear(Image<image::RGBAfColor>& image,
     ALICEVISION_LOG_INFO("cameraToACES2065Matrix: " << cameraToACES2065Matrix);
 
 #pragma omp parallel for
-    for (int i = 0; i < image.Height(); ++i)
-        for (int j = 0; j < image.Width(); ++j)
+    for (int i = 0; i < image.height(); ++i)
+        for (int j = 0; j < image.width(); ++j)
         {
             const RGBAfColor rgb = image(i, j);
 

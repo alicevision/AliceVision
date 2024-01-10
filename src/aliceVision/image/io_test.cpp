@@ -37,9 +37,9 @@ BOOST_AUTO_TEST_CASE(read_jpg_grayscale)
     Image<unsigned char> image;
     const std::string jpg_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_monochrome.jpg";
     BOOST_CHECK_NO_THROW(readImage(jpg_filename, image, image::EImageColorSpace::NO_CONVERSION));
-    BOOST_CHECK_EQUAL(2, image.Width());
-    BOOST_CHECK_EQUAL(1, image.Height());
-    BOOST_CHECK_EQUAL(1, image.Depth());
+    BOOST_CHECK_EQUAL(2, image.width());
+    BOOST_CHECK_EQUAL(1, image.height());
+    BOOST_CHECK_EQUAL(1, image.depth());
     BOOST_CHECK_EQUAL(image(0, 0), (unsigned char)255);
     BOOST_CHECK_EQUAL(image(0, 1), (unsigned char)0);
 }
@@ -49,9 +49,9 @@ BOOST_AUTO_TEST_CASE(read_jpg_rgb)
     Image<RGBColor> image;
     const std::string jpg_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.jpg";
     BOOST_CHECK_NO_THROW(readImage(jpg_filename, image, image::EImageColorSpace::NO_CONVERSION));
-    BOOST_CHECK_EQUAL(2, image.Width());
-    BOOST_CHECK_EQUAL(1, image.Height());
-    BOOST_CHECK_EQUAL(3, image.Depth());
+    BOOST_CHECK_EQUAL(2, image.width());
+    BOOST_CHECK_EQUAL(1, image.height());
+    BOOST_CHECK_EQUAL(3, image.depth());
     BOOST_CHECK_EQUAL(image(0, 0).r(), 255);
     BOOST_CHECK_EQUAL(image(0, 0).g(), 125);
     BOOST_CHECK_EQUAL(image(0, 0).b(), 11);
@@ -65,9 +65,9 @@ BOOST_AUTO_TEST_CASE(read_png_grayscale)
     Image<unsigned char> image;
     const std::string png_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_monochrome.png";
     BOOST_CHECK_NO_THROW(readImage(png_filename, image, image::EImageColorSpace::NO_CONVERSION));
-    BOOST_CHECK_EQUAL(2, image.Width());
-    BOOST_CHECK_EQUAL(1, image.Height());
-    BOOST_CHECK_EQUAL(1, image.Depth());
+    BOOST_CHECK_EQUAL(2, image.width());
+    BOOST_CHECK_EQUAL(1, image.height());
+    BOOST_CHECK_EQUAL(1, image.depth());
     BOOST_CHECK_EQUAL(image(0, 0), (unsigned char)255);
     BOOST_CHECK_EQUAL(image(0, 1), (unsigned char)0);
 }
@@ -77,9 +77,9 @@ BOOST_AUTO_TEST_CASE(read_png_rgb)
     Image<RGBColor> image;
     const std::string png_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.png";
     BOOST_CHECK_NO_THROW(readImage(png_filename, image, image::EImageColorSpace::NO_CONVERSION));
-    BOOST_CHECK_EQUAL(2, image.Width());
-    BOOST_CHECK_EQUAL(1, image.Height());
-    BOOST_CHECK_EQUAL(3, image.Depth());
+    BOOST_CHECK_EQUAL(2, image.width());
+    BOOST_CHECK_EQUAL(1, image.height());
+    BOOST_CHECK_EQUAL(3, image.depth());
     BOOST_CHECK_EQUAL(image(0, 0).r(), 255);
     BOOST_CHECK_EQUAL(image(0, 0).g(), 125);
     BOOST_CHECK_EQUAL(image(0, 0).b(), 10);
@@ -93,9 +93,9 @@ BOOST_AUTO_TEST_CASE(read_png_rgba)
     Image<RGBAColor> image;
     const std::string png_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.png";
     BOOST_CHECK_NO_THROW(readImage(png_filename, image, image::EImageColorSpace::NO_CONVERSION));
-    BOOST_CHECK_EQUAL(2, image.Width());
-    BOOST_CHECK_EQUAL(1, image.Height());
-    BOOST_CHECK_EQUAL(4, image.Depth());
+    BOOST_CHECK_EQUAL(2, image.width());
+    BOOST_CHECK_EQUAL(1, image.height());
+    BOOST_CHECK_EQUAL(4, image.depth());
     BOOST_CHECK_EQUAL(image(0, 0).r(), 255);
     BOOST_CHECK_EQUAL(image(0, 0).g(), 125);
     BOOST_CHECK_EQUAL(image(0, 0).b(), 10);
@@ -111,9 +111,9 @@ BOOST_AUTO_TEST_CASE(read_pgm)
     Image<unsigned char> image;
     const std::string pgm_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels.pgm";
     BOOST_CHECK_NO_THROW(readImage(pgm_filename, image, image::EImageColorSpace::NO_CONVERSION));
-    BOOST_CHECK_EQUAL(2, image.Width());
-    BOOST_CHECK_EQUAL(1, image.Height());
-    BOOST_CHECK_EQUAL(1, image.Depth());
+    BOOST_CHECK_EQUAL(2, image.width());
+    BOOST_CHECK_EQUAL(1, image.height());
+    BOOST_CHECK_EQUAL(1, image.depth());
     BOOST_CHECK_EQUAL(image(0, 0), (unsigned char)255);
     BOOST_CHECK_EQUAL(image(0, 1), (unsigned char)0);
 }
@@ -123,9 +123,9 @@ BOOST_AUTO_TEST_CASE(read_pgm_withcomments)
     Image<unsigned char> image;
     const std::string pgm_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_gray.pgm";
     BOOST_CHECK_NO_THROW(readImage(pgm_filename, image, image::EImageColorSpace::NO_CONVERSION));
-    BOOST_CHECK_EQUAL(2, image.Width());
-    BOOST_CHECK_EQUAL(1, image.Height());
-    BOOST_CHECK_EQUAL(1, image.Depth());
+    BOOST_CHECK_EQUAL(2, image.width());
+    BOOST_CHECK_EQUAL(1, image.height());
+    BOOST_CHECK_EQUAL(1, image.depth());
     BOOST_CHECK_EQUAL(image(0, 0), (unsigned char)255);
     BOOST_CHECK_EQUAL(image(0, 1), (unsigned char)0);
 }
@@ -135,9 +135,9 @@ BOOST_AUTO_TEST_CASE(read_ppm)
     Image<RGBColor> image;
     const std::string ppm_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels.ppm";
     BOOST_CHECK_NO_THROW(readImage(ppm_filename, image, image::EImageColorSpace::NO_CONVERSION));
-    BOOST_CHECK_EQUAL(2, image.Width());
-    BOOST_CHECK_EQUAL(1, image.Height());
-    BOOST_CHECK_EQUAL(3, image.Depth());
+    BOOST_CHECK_EQUAL(2, image.width());
+    BOOST_CHECK_EQUAL(1, image.height());
+    BOOST_CHECK_EQUAL(3, image.depth());
 
     BOOST_CHECK_EQUAL(image(0, 0).r(), 255);
     BOOST_CHECK_EQUAL(image(0, 0).g(), 255);

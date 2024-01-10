@@ -92,7 +92,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // Read sfm data
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
@@ -259,7 +259,7 @@ int aliceVision_main(int argc, char* argv[])
 
         image::readImage(v.second->getImage().getImagePath(), originalImage, options);
         oiio::ImageBuf bufInput(
-            oiio::ImageSpec(originalImage.Width(), originalImage.Height(), 3, oiio::TypeDesc::FLOAT),
+            oiio::ImageSpec(originalImage.width(), originalImage.height(), 3, oiio::TypeDesc::FLOAT),
             originalImage.data());
 
         // Find the correct operation to perform
@@ -269,24 +269,24 @@ int aliceVision_main(int argc, char* argv[])
             if(std::abs(angle - M_PI_2) < 1e-4)
             {
                 validTransform = true;
-                output.resize(originalImage.Height(), originalImage.Width());
-                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                output.resize(originalImage.height(), originalImage.width());
+                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
                                          output.data());
                 oiio::ImageBufAlgo::rotate90(bufOutput, bufInput);
             }
             else if(std::abs(angle + M_PI_2) < 1e-4)
             {
                 validTransform = true;
-                output.resize(originalImage.Height(), originalImage.Width());
-                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                output.resize(originalImage.height(), originalImage.width());
+                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
                                          output.data());
                 oiio::ImageBufAlgo::rotate90(bufOutput, bufInput);
             }
             else if(std::abs(std::abs(angle) - M_PI) < 1e-4)
             {
                 validTransform = true;
-                output.resize(originalImage.Width(), originalImage.Height());
-                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                output.resize(originalImage.width(), originalImage.height());
+                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
                                          output.data());
                 oiio::ImageBufAlgo::rotate180(bufOutput, bufInput);
             }
@@ -301,13 +301,13 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         image::writeImage(rotatedImagePath, output, image::ImageWriteOptions(), metadata);
-        v.second->getImage().setWidth(output.Width());
-        v.second->getImage().setHeight(output.Height());
+        v.second->getImage().setWidth(output.width());
+        v.second->getImage().setHeight(output.height());
         v.second->getImage().setImagePath(rotatedImagePath);
     }
 
     // Export output sfmData
-    if(!sfmDataIO::Save(sfmData, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::save(sfmData, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
         return EXIT_FAILURE;

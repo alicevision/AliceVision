@@ -101,8 +101,8 @@ void computeLuminanceInfoFromImage(image::Image<image::RGBfColor>& image, lumina
     double minLuminance = 1000.0;
     int sampleNb = 0;
 
-    const int imgH = image.Height();
-    const int imgW = image.Width();
+    const int imgH = image.height();
+    const int imgW = image.width();
 
     const int a1 = (imgH <= imgW) ? imgW / 2 : imgH / 2;
     const int a2 = (imgH <= imgW) ? imgW / 2 : imgW - (imgH / 2);
@@ -199,7 +199,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Read SfMData
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;

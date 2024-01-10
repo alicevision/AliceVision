@@ -157,7 +157,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Load SfMData files
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
@@ -172,7 +172,7 @@ int aliceVision_main(int argc, char** argv)
     sfmData::SfMData sfmDataFilter;
     if(!sfmDataFilterFilepath.empty())
     {
-        if(!sfmDataIO::Load(sfmDataFilter, sfmDataFilterFilepath, sfmDataIO::ESfMData::VIEWS))
+        if(!sfmDataIO::load(sfmDataFilter, sfmDataFilterFilepath, sfmDataIO::ESfMData::VIEWS))
         {
             ALICEVISION_LOG_ERROR("The input filter SfMData file '" << sfmDataFilterFilepath << "' cannot be read.");
             return EXIT_FAILURE;

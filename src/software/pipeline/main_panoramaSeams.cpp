@@ -214,7 +214,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilepath,
+    if(!sfmDataIO::load(sfmData, sfmDataFilepath,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
@@ -267,7 +267,7 @@ int aliceVision_main(int argc, char** argv)
         }
     }
     
-    sfmDataIO::Save(sfmData, sfmOutDataFilepath, sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(sfmData, sfmOutDataFilepath, sfmDataIO::ESfMData::ALL);
 
     int tileSize;
     std::pair<int, int> panoramaSize;

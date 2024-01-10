@@ -47,14 +47,14 @@ int aliceVision_main(int argc, char **argv)
 
     // Load input scene
     sfmData::SfMData sfmData1;
-    if (!sfmDataIO::Load(sfmData1, sfmDataFilename1, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData1, sfmDataFilename1, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename1 << "' cannot be read");
         return EXIT_FAILURE;
     }
 
     sfmData::SfMData sfmData2;
-    if (!sfmDataIO::Load(sfmData2, sfmDataFilename2, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData2, sfmDataFilename2, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename2 << "' cannot be read");
         return EXIT_FAILURE;
@@ -115,7 +115,7 @@ int aliceVision_main(int argc, char **argv)
     sfmData1.addFeaturesFolders(sfmData2.getRelativeFeaturesFolders());
     sfmData1.addMatchesFolders(sfmData2.getRelativeMatchesFolders());
 
-    if (!sfmDataIO::Save(sfmData1, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::save(sfmData1, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
         return EXIT_FAILURE;

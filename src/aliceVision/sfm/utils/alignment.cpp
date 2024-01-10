@@ -482,7 +482,8 @@ double orientationToRotationDegree(sfmData::EEXIFOrientation orientation)
         case sfmData::EEXIFOrientation::UPSIDEDOWN:  // 3
             return 180.0;
         case sfmData::EEXIFOrientation::NONE:
-        default: return 0.0;
+        default:
+            return 0.0;
     }
     return 0.0;
 }

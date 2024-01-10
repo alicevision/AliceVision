@@ -51,7 +51,7 @@ int aliceVision_main(int argc, char **argv)
 
     // Load input scene
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
         return EXIT_FAILURE;
@@ -63,7 +63,7 @@ int aliceVision_main(int argc, char **argv)
     if (sfmDataCalibratedFilename.empty())
     {
         // Save sfmData to disk
-        if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+        if (!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
         {
             ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfMDataFilename << "' cannot be written.");
             return EXIT_FAILURE;
@@ -74,7 +74,7 @@ int aliceVision_main(int argc, char **argv)
 
     // Load calibrated scene
     sfmData::SfMData sfmDataCalibrated;
-    if (!sfmDataIO::Load(sfmDataCalibrated, sfmDataCalibratedFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmDataCalibrated, sfmDataCalibratedFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The calibrated SfMData file '" << sfmDataCalibratedFilename << "' cannot be read");
         return EXIT_FAILURE;
@@ -241,7 +241,7 @@ int aliceVision_main(int argc, char **argv)
     }
 
     // Save sfmData to disk
-    if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfMDataFilename << "' cannot be written.");
         return EXIT_FAILURE;

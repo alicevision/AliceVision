@@ -33,14 +33,14 @@ namespace image {
  ** @param normalize true if kernel must be scaled by 1/2
  **/
 template<typename Image>
-void ImageXDerivative(const Image& img, Image& out, const bool normalize = true)
+void imageXDerivative(const Image& img, Image& out, const bool normalize = true)
 {
     Vec3 kernel(-1.0, 0.0, 1.0);
 
     if (normalize)
         kernel *= 0.5;
 
-    ImageHorizontalConvolution(img, kernel, out);
+    imageHorizontalConvolution(img, kernel, out);
 }
 
 /**
@@ -50,14 +50,14 @@ void ImageXDerivative(const Image& img, Image& out, const bool normalize = true)
  ** @param normalize true if kernel must be normalized
  **/
 template<typename Image>
-void ImageYDerivative(const Image& img, Image& out, const bool normalize = true)
+void imageYDerivative(const Image& img, Image& out, const bool normalize = true)
 {
     Vec3 kernel(-1.0, 0.0, 1.0);
 
     if (normalize)
         kernel *= 0.5;
 
-    ImageVerticalConvolution(img, kernel, out);
+    imageVerticalConvolution(img, kernel, out);
 }
 
 /**
@@ -67,7 +67,7 @@ void ImageYDerivative(const Image& img, Image& out, const bool normalize = true)
  ** @param normalize true if kernel must be scaled by 1/8
  **/
 template<typename Image>
-void ImageSobelXDerivative(const Image& img, Image& out, const bool normalize = true)
+void imageSobelXDerivative(const Image& img, Image& out, const bool normalize = true)
 {
     Vec3 kernel_horiz(-1.0, 0.0, 1.0);
 
@@ -79,7 +79,7 @@ void ImageSobelXDerivative(const Image& img, Image& out, const bool normalize = 
     if (normalize)
         kernel_vert *= 0.25;
 
-    ImageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
+    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
 }
 
 /**
@@ -89,7 +89,7 @@ void ImageSobelXDerivative(const Image& img, Image& out, const bool normalize = 
  ** @param normalize true if kernel must be scaled by 1/8
  **/
 template<typename Image>
-void ImageSobelYDerivative(const Image& img, Image& out, const bool normalize = true)
+void imageSobelYDerivative(const Image& img, Image& out, const bool normalize = true)
 {
     Vec3 kernel_horiz(1.0, 2.0, 1.0);
 
@@ -101,7 +101,7 @@ void ImageSobelYDerivative(const Image& img, Image& out, const bool normalize = 
     if (normalize)
         kernel_vert *= 0.5;
 
-    ImageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
+    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
 }
 
 /**
@@ -111,7 +111,7 @@ void ImageSobelYDerivative(const Image& img, Image& out, const bool normalize = 
  ** @param normalize true if kernel must be scaled by 1/32
  **/
 template<typename Image>
-void ImageScharrXDerivative(const Image& img, Image& out, const bool normalize = true)
+void imageScharrXDerivative(const Image& img, Image& out, const bool normalize = true)
 {
     Vec3 kernel_horiz(-1.0, 0.0, 1.0);
 
@@ -123,7 +123,7 @@ void ImageScharrXDerivative(const Image& img, Image& out, const bool normalize =
     if (normalize)
         kernel_vert *= 1.0 / 16.0;
 
-    ImageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
+    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
 }
 
 /**
@@ -133,7 +133,7 @@ void ImageScharrXDerivative(const Image& img, Image& out, const bool normalize =
  ** @param normalize true if kernel must be scaled by 1/32
  **/
 template<typename Image>
-void ImageScharrYDerivative(const Image& img, Image& out, const bool normalize = true)
+void imageScharrYDerivative(const Image& img, Image& out, const bool normalize = true)
 {
     Vec3 kernel_horiz(3.0, 10.0, 3.0);
 
@@ -145,7 +145,7 @@ void ImageScharrYDerivative(const Image& img, Image& out, const bool normalize =
     if (normalize)
         kernel_vert *= 0.5;
 
-    ImageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
+    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
 }
 
 /**
@@ -156,7 +156,7 @@ void ImageScharrYDerivative(const Image& img, Image& out, const bool normalize =
  ** @param bNormalize true if kernel must be normalized
  **/
 template<typename Image>
-void ImageScaledScharrXDerivative(const Image& img, Image& out, const int scale, const bool bNormalize = true)
+void imageScaledScharrXDerivative(const Image& img, Image& out, const int scale, const bool bNormalize = true)
 {
     const int kernel_size = 3 + 2 * (scale - 1);
 
@@ -186,7 +186,7 @@ void ImageScaledScharrXDerivative(const Image& img, Image& out, const int scale,
     if (bNormalize)
         kernel_vert *= 1.0 / (2.0 * scale * (w + 2.0));
 
-    ImageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
+    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
 }
 
 /**
@@ -197,7 +197,7 @@ void ImageScaledScharrXDerivative(const Image& img, Image& out, const int scale,
  ** @param bNormalize true if kernel must be normalized
  **/
 template<typename Image>
-void ImageScaledScharrYDerivative(const Image& img, Image& out, const int scale, const bool bNormalize = true)
+void imageScaledScharrYDerivative(const Image& img, Image& out, const int scale, const bool bNormalize = true)
 {
     /*
     General Y-derivative function
@@ -227,7 +227,7 @@ void ImageScaledScharrYDerivative(const Image& img, Image& out, const int scale,
     // kernel_vert( kernel_size / 2 ) = 0.0 ;
     kernel_vert(kernel_size - 1) = 1.0;
 
-    ImageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
+    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
 }
 
 /**
@@ -239,7 +239,7 @@ void ImageScaledScharrYDerivative(const Image& img, Image& out, const int scale,
  ** @param border_mgmt either BORDER_COPY or BORDER_CROP to tell what to do with borders
  **/
 template<typename Image>
-void ImageGaussianFilter(const Image& img, const double sigma, Image& out, const int k = 3)
+void imageGaussianFilter(const Image& img, const double sigma, Image& out, const int k = 3)
 {
     // Compute Gaussian filter
     const int k_size = (int)2 * k * sigma + 1;
@@ -268,7 +268,7 @@ void ImageGaussianFilter(const Image& img, const double sigma, Image& out, const
     // Vertical kernel is the same as the horizontal one
     const Vec& kernel_vert = kernel_horiz;
 
-    ImageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
+    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
 }
 
 /**
@@ -277,7 +277,7 @@ void ImageGaussianFilter(const Image& img, const double sigma, Image& out, const
  ** @param sigma Gaussian scale
  ** @return Kernel using specified parameters
  **/
-Vec ComputeGaussianKernel(const std::size_t size, const double sigma);
+Vec computeGaussianKernel(const std::size_t size, const double sigma);
 
 /**
  ** Compute gaussian filtering of an image using user defined filter widths
@@ -288,15 +288,15 @@ Vec ComputeGaussianKernel(const std::size_t size, const double sigma);
  ** @param kernel_size_y Size of vertical kernel (must be an add number or 0 for automatic computation)
  **/
 template<typename Image>
-void ImageGaussianFilter(const Image& img, const double sigma, Image& out, const size_t kernel_size_x, const size_t kernel_size_y)
+void imageGaussianFilter(const Image& img, const double sigma, Image& out, const size_t kernel_size_x, const size_t kernel_size_y)
 {
     assert(kernel_size_x % 2 == 1 || kernel_size_x == 0);
     assert(kernel_size_y % 2 == 1 || kernel_size_y == 0);
 
-    const Vec kernel_horiz = ComputeGaussianKernel(kernel_size_x, sigma);
-    const Vec kernel_vert = ComputeGaussianKernel(kernel_size_y, sigma);
+    const Vec kernel_horiz = computeGaussianKernel(kernel_size_x, sigma);
+    const Vec kernel_vert = computeGaussianKernel(kernel_size_y, sigma);
 
-    ImageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
+    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
 }
 
 }  // namespace image

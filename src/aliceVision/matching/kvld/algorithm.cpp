@@ -17,11 +17,11 @@
 
 IntegralImages::IntegralImages(const aliceVision::image::Image<float>& I)
 {
-    map.resize(I.Width() + 1, I.Height() + 1);
+    map.resize(I.width() + 1, I.height() + 1);
     map.fill(0);
-    for (int y = 0; y < I.Height(); y++)
+    for (int y = 0; y < I.height(); y++)
     {
-        for (int x = 0; x < I.Width(); x++)
+        for (int x = 0; x < I.width(); x++)
         {
             map(y + 1, x + 1) = double(I(y, x)) + map(y, x + 1) + map(y + 1, x) - map(y, x);
         }
@@ -30,7 +30,7 @@ IntegralImages::IntegralImages(const aliceVision::image::Image<float>& I)
 
 float getRange(const aliceVision::image::Image<float>& I, int a, const float p)
 {
-    float range = sqrt(float(3.f * I.Height() * I.Width()) / (p * a * boost::math::constants::pi<float>()));
+    float range = sqrt(float(3.f * I.height() * I.width()) / (p * a * boost::math::constants::pi<float>()));
     return range;
 }
 

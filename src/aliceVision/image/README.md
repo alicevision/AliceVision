@@ -70,20 +70,20 @@ int column = 4;
 image(row, column) = 127;
 
 // Horizontal scanline
-DrawLine( 0, 5, w-1, 5, 255, &image);
+drawLine( 0, 5, w-1, 5, 255, &image);
 
 // Circle of radius 3 and center (5,5)
 const int radius = 3;
 const int x = 5, y = 5;
-DrawCircle(x, y, radius, (unsigned char)255, &image);
+drawCircle(x, y, radius, (unsigned char)255, &image);
     
 // Ellipse of center (5,5) and (3,0
 const int radius1 = 3, radius2 = 1, angle = 0;
 const int x = 5, y = 5;
 
-DrawEllipse(x, y, radius1, radius2, (unsigned char)255, &image, (double)angle);
+drawEllipse(x, y, radius1, radius2, (unsigned char)255, &image, (double)angle);
 
 // Example with a RGB image
 Image<RGBColor> imageRGB(10,10);
-DrawCircle(x, y, radius, RGBColor(255,0,0), &imageRGB);
+drawCircle(x, y, radius, RGBColor(255,0,0), &imageRGB);
 ```

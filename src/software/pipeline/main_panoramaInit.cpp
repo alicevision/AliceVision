@@ -83,10 +83,10 @@ public:
         for(int level = 1; level < _levels.size(); level++)
         {
 
-            size_t sw = _levels[level - 1].Width();
-            size_t sh = _levels[level - 1].Height();
-            size_t dw = _levels[level].Width();
-            size_t dh = _levels[level].Height();
+            size_t sw = _levels[level - 1].width();
+            size_t sh = _levels[level - 1].height();
+            size_t dw = _levels[level].width();
+            size_t dh = _levels[level].height();
 
             oiio::ImageSpec spec_src(sw, sh, 1, oiio::TypeDesc::FLOAT);
             oiio::ImageSpec spec_dst(dw, dh, 1, oiio::TypeDesc::FLOAT);
@@ -126,12 +126,12 @@ public:
     bool appendImage(const image::Image<float>& grayscale_input)
     {
 
-        if(grayscale_input.Width() != _source_width)
+        if(grayscale_input.width() != _source_width)
         {
             return false;
         }
 
-        if(grayscale_input.Height() != _source_height)
+        if(grayscale_input.height() != _source_height)
         {
             return false;
         }
@@ -162,8 +162,8 @@ public:
         double level_centery = _center_y / pow(2.0, level);
 
         // Compute the maximal distance between the borders and the circle center
-        double max_rx = std::max(double(source.Width()) - level_centerx, level_centerx);
-        double max_ry = std::max(double(source.Height()) - level_centery, level_centery);
+        double max_rx = std::max(double(source.width()) - level_centerx, level_centerx);
+        double max_ry = std::max(double(source.height()) - level_centery, level_centery);
 
         // Just in case the smallest side is cropped inside the circle.
         double max_radius = std::min(max_rx, max_ry);
@@ -195,7 +195,7 @@ public:
 
         debugImage(gradientImage, "gradientImage", pyramid_id, level);
 
-        if(_gradientImage.Width() != gradientImage.Width() || _gradientImage.Height() != gradientImage.Height())
+        if(_gradientImage.width() != gradientImage.width() || _gradientImage.height() != gradientImage.height())
         {
             _gradientImage = gradientImage;
         }
@@ -265,25 +265,25 @@ public:
     {
         image::Image<float> gradients = _gradientImage;
 
-        image::Image<unsigned char> selection(gradients.Width(), gradients.Height(), true, 0);
+        image::Image<unsigned char> selection(gradients.width(), gradients.height(), true, 0);
 
         // Adapt current center to level
         const double level_centerx = _center_x / pow(2.0, level);
         const double level_centery = _center_y / pow(2.0, level);
         const double level_radius = _radius / pow(2.0, level);
-        const int min_radius = gradients.Width() / 2;
+        const int min_radius = gradients.width() / 2;
 
         // Extract maximas of response
         std::vector<Eigen::Vector2d> selected_points;
-        for(int y = 0; y < gradients.Height(); y++)
+        for(int y = 0; y < gradients.height(); y++)
         {
-            const double rangle = double(y) * (2.0 * M_PI / double(gradients.Height()));
+            const double rangle = double(y) * (2.0 * M_PI / double(gradients.height()));
             const double cangle = cos(rangle);
             const double sangle = sin(rangle);
 
             // Lookup possible radius
             const int start = std::max(min_radius, int(level_radius) - uncertainty);
-            const int end = std::min(gradients.Width() - 1, int(level_radius) + uncertainty);
+            const int end = std::min(gradients.width() - 1, int(level_radius) + uncertainty);
 
             // Remove non maximas
             for(int x = start; x < end; x++)
@@ -555,7 +555,7 @@ public:
     {
 
         image::Sampler2d<image::SamplerLinear> sampler;
-        const size_t count_angles = dst.Height();
+        const size_t count_angles = dst.height();
 
         for(int angle = 0; angle < count_angles; angle++)
         {
@@ -563,7 +563,7 @@ public:
             const double cangle = cos(rangle);
             const double sangle = sin(rangle);
 
-            for(int amplitude = 0; amplitude < dst.Width(); amplitude++)
+            for(int amplitude = 0; amplitude < dst.width(); amplitude++)
             {
                 const double x = center_x + cangle * double(amplitude);
                 const double y = center_y + sangle * double(amplitude);
@@ -573,7 +573,7 @@ public:
 
                 if(x < 0 || y < 0)
                     continue;
-                if(x >= src.Width() || y >= src.Height())
+                if(x >= src.width() || y >= src.height())
                     continue;
                 dst(angle, amplitude) = sampler(src, y, x);
                 dstmask(angle, amplitude) = 255;
@@ -590,10 +590,10 @@ public:
         dst.fill(0);
 
         int kernel_radius = radius_size;
-        for(int angle = 0; angle < src.Height(); angle++)
+        for(int angle = 0; angle < src.height(); angle++)
         {
             int start = radius_size;
-            int end = src.Width() - kernel_radius * 2;
+            int end = src.width() - kernel_radius * 2;
 
             for(int amplitude = start; amplitude < end; amplitude++)
             {
@@ -668,10 +668,10 @@ private:
 void resample(image::Image<image::RGBfColor>& output,
               const image::Image<image::RGBfColor>& input)
 {
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.width(), input.height(), 3, oiio::TypeDesc::FLOAT),
                                const_cast<image::RGBfColor*>(input.data()));
     
-    oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
                           (image::RGBfColor*)output.data());
 
     oiio::ImageBufAlgo::resample(outBuf, inBuf, false);
@@ -684,10 +684,10 @@ void applyOrientation(image::Image<image::RGBfColor>& output,
                       const image::Image<image::RGBfColor>& input,
                       sfmData::EEXIFOrientation orientation)
 {
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.Width(), input.Height(), 3, oiio::TypeDesc::FLOAT),
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.width(), input.height(), 3, oiio::TypeDesc::FLOAT),
                                const_cast<image::RGBfColor*>(input.data()));
     
-    oiio::ImageBuf outBuf(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
                           (image::RGBfColor*)output.data());
 
     switch (orientation)
@@ -838,7 +838,7 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
         int centeredX = (maxWidth - rowWidth) / 2;
 
         // Concatenate
-        output.block(posY, centeredX, rowOutput.Height(), rowOutput.Width()) = rowOutput;
+        output.block(posY, centeredX, rowOutput.height(), rowOutput.width()) = rowOutput;
 
         posY += rowHeight + space;
         rowCount++;
@@ -926,7 +926,7 @@ int main(int argc, char* argv[])
     std::map<int, std::map<int, Contact>> contactSheetInfo;
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if(!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
@@ -1384,7 +1384,7 @@ int main(int argc, char* argv[])
     }
 
     ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
-    if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if(!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be write.");
         return EXIT_FAILURE;

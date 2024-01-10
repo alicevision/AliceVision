@@ -40,7 +40,7 @@ void UndistortImage(const image::Image<T>& imageIn,
     }
 
     // There is distortion
-    const Vec2 center(imageIn.Width() * 0.5, imageIn.Height() * 0.5);
+    const Vec2 center(imageIn.width() * 0.5, imageIn.height() * 0.5);
 
     int widthRoi = intrinsicOutput->w();
     int heightRoi = intrinsicOutput->h();
@@ -69,7 +69,7 @@ void UndistortImage(const image::Image<T>& imageIn,
               intrinsicOutput->ima2cam((undistortionOutput) ? undistortionOutput->inverse(undisto_pix) : undisto_pix)));
 
             // pick pixel if it is in the image domain
-            if (imageIn.Contains(disto_pix(1), disto_pix(0)))
+            if (imageIn.contains(disto_pix(1), disto_pix(0)))
             {
                 image_ud(y, x) = sampler(imageIn, disto_pix(1), disto_pix(0));
             }
@@ -93,7 +93,7 @@ void UndistortImage(const image::Image<T>& imageIn,
     }
 
     // There is distortion
-    const Vec2 center(imageIn.Width() * 0.5, imageIn.Height() * 0.5);
+    const Vec2 center(imageIn.width() * 0.5, imageIn.height() * 0.5);
     Vec2 ppCorrection(0.0, 0.0);
 
     if (correctPrincipalPoint)
@@ -105,8 +105,8 @@ void UndistortImage(const image::Image<T>& imageIn,
         }
     }
 
-    int widthRoi = imageIn.Width();
-    int heightRoi = imageIn.Height();
+    int widthRoi = imageIn.width();
+    int heightRoi = imageIn.height();
     int xOffset = 0;
     int yOffset = 0;
     if (roi.defined())
@@ -130,7 +130,7 @@ void UndistortImage(const image::Image<T>& imageIn,
             const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
 
             // pick pixel if it is in the image domain
-            if (imageIn.Contains(disto_pix(1), disto_pix(0)))
+            if (imageIn.contains(disto_pix(1), disto_pix(0)))
             {
                 image_ud(y, x) = sampler(imageIn, disto_pix(1), disto_pix(0));
             }

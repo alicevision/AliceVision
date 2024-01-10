@@ -171,8 +171,8 @@ void weightTileBorder(int a, int b, int c, int d, int borderWidth, int borderHei
 {
     const Point2d rd = lu + Point2d(borderWidth, borderHeight);
 
-    const int endX = std::min(int(rd.x), in_tileMap.Width());
-    const int endY = std::min(int(rd.y), in_tileMap.Height());
+    const int endX = std::min(int(rd.x), in_tileMap.width());
+    const int endY = std::min(int(rd.y), in_tileMap.height());
 
     // Add small margin where alpha is 0 for corners (lu and rd)
     static const double margin = 2.0;
@@ -423,8 +423,8 @@ void writeMapToFileOrTile(int rc,
     const ROI downscaledROI = downscaleROI(roi, scaleStep);
 
     // check input map dimensions
-    assert(in_map.Width() == downscaledROI.width() && in_map.Width() <= imageWidth);
-    assert(in_map.Height() == downscaledROI.height() && in_map.Height() <= imageHeight);
+    assert(in_map.width() == downscaledROI.width() && in_map.width() <= imageWidth);
+    assert(in_map.height() == downscaledROI.height() && in_map.height() <= imageHeight);
 
     // set OIIO ROI for map writing
     // displayRoi is the image region of interest for display (image size)

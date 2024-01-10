@@ -78,7 +78,7 @@ int aliceVision_main(int argc, char **argv)
   
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -119,7 +119,7 @@ int aliceVision_main(int argc, char **argv)
     pairs = matching::getImagePairs(matches);
     // keep only Pairs that belong to valid view indexes.
     const std::set<IndexT> valid_viewIdx = sfmData.getValidViews();
-    pairs = sfm::Pair_filter(pairs, valid_viewIdx);
+    pairs = sfm::filterPairs(pairs, valid_viewIdx);
   }
 
   aliceVision::system::Timer timer;
@@ -140,19 +140,19 @@ int aliceVision_main(int argc, char **argv)
   // create 3D landmarks
   structureEstimator.triangulate(sfmData, regionsPerView, randomNumberGenerator);
 
-  sfm::RemoveOutliers_AngleError(sfmData, 2.0);
+  sfm::removeOutliersWithAngleError(sfmData, 2.0);
 
   ALICEVISION_LOG_INFO("Structure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "\t- # landmarks found: " << sfmData.getLandmarks().size());
 
   if(fs::path(outSfMDataFilename).extension() != ".ply")
   {
-    sfmDataIO::Save(sfmData,
+    sfmDataIO::save(sfmData,
          (fs::path(outSfMDataFilename).parent_path() / (fs::path(outSfMDataFilename).stem().string() + ".ply")).string(),
          sfmDataIO::ESfMData::ALL);
   }
 
-  if(sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+  if(sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     return EXIT_SUCCESS;
   
   ALICEVISION_LOG_ERROR("Can't save the output SfMData.");

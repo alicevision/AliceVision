@@ -25,14 +25,14 @@ bool Warper::warp(const CoordinatesMap& map, const aliceVision::image::Image<ima
      * Create buffer
      * No longer need to keep a 2**x size
      */
-    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height());
+    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.width(), coordinates.height());
 
     /**
      * Simple warp
      */
-    for (size_t i = 0; i < _color.Height(); i++)
+    for (size_t i = 0; i < _color.height(); i++)
     {
-        for (size_t j = 0; j < _color.Width(); j++)
+        for (size_t j = 0; j < _color.width(); j++)
         {
             bool valid = _mask(i, j);
             if (!valid)
@@ -71,21 +71,21 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
     /**
      * Create buffer
      */
-    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height(), true, image::RGBfColor(1.0, 0.0, 0.0));
+    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.width(), coordinates.height(), true, image::RGBfColor(1.0, 0.0, 0.0));
 
     /**
      * Multi level warp
      */
-    for (size_t i = 0; i < _color.Height(); i++)
+    for (size_t i = 0; i < _color.height(); i++)
     {
         int next_i = i + 1;
 
-        if (i == _color.Height() - 1)
+        if (i == _color.height() - 1)
         {
             next_i = i - 1;
         }
 
-        for (size_t j = 0; j < _color.Width(); j++)
+        for (size_t j = 0; j < _color.width(); j++)
         {
             bool valid = _mask(i, j);
             if (!valid)
@@ -95,7 +95,7 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
 
             int next_j = j + 1;
 
-            if (j == _color.Width() - 1)
+            if (j == _color.width() - 1)
             {
                 next_j = j - 1;
             }
@@ -129,7 +129,7 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
             y = coord_mm(1) * dscale;
 
             /*Fallback to first level if outside*/
-            if (x >= mlsource[blevel].Width() - 1 || y >= mlsource[blevel].Height() - 1)
+            if (x >= mlsource[blevel].width() - 1 || y >= mlsource[blevel].height() - 1)
             {
                 _color(i, j) = sampler(mlsource[0], coord_mm(1), coord_mm(0));
                 continue;
