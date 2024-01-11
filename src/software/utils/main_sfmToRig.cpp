@@ -32,10 +32,14 @@ int aliceVision_main(int argc, char **argv)
     std::string sfmDataFilename;
     std::string outSfMDataFilename;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file")
-        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(), "Output SfMData scene.");
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+         "Output SfMData scene.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision sfmToRig");
     cmdline.add(requiredParams);

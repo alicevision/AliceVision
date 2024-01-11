@@ -383,14 +383,22 @@ int aliceVision_main(int argc, char** argv)
 
     int randomSeed = std::mt19937::default_seed;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
-    ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(), "SfMData output file.")
-    ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(), "Tracks file.")
-    ("pairs,p", po::value<std::string>(&pairsDirectory)->required(), "Path to the pairs directory.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(), "Path to folder(s) containing the extracted features.")
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),feature::EImageDescriberType_informations().c_str());
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(),
+         "SfMData output file.")
+        ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(),
+         "Tracks file.")
+        ("pairs,p", po::value<std::string>(&pairsDirectory)->required(),
+         "Path to the pairs directory.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str());
+    // clang-format on
 
     CmdLine cmdline("AliceVision Nodal SfM");
 

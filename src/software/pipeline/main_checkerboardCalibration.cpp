@@ -454,15 +454,21 @@ int aliceVision_main(int argc, char* argv[])
 
     double squareSize = 10.;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
-        ("checkerboards,c", po::value<std::string>(&checkerBoardsPath)->required(), "Checkerboards json files directory.")
-        ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.");
+        ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(),
+         "SfMData file input.")
+        ("checkerboards,c", po::value<std::string>(&checkerBoardsPath)->required(),
+         "Checkerboards json files directory.")
+        ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
+         "SfMData file output.");
     
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("squareSize,s", po::value<double>(&squareSize)->default_value(squareSize), "Checkerboard square width in mm");
+        ("squareSize,s", po::value<double>(&squareSize)->default_value(squareSize),
+         "Checkerboard square width in mm.");
+    // clang-format on
 
     CmdLine cmdline("This program calibrates camera intrinsics and extrinsics.\n"
                     "AliceVision checkerboardCalibration");

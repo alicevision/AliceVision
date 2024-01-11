@@ -70,12 +70,14 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmOutputDataFilename;
 
     // Command line parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
         ("output,o", po::value<std::string>(&sfmOutputDataFilename)->required(),
          "SfMData file output.");
+    // clang-format on
 
     CmdLine cmdline("Prepares images for use in the panorama pipeline "
                     "by correcting inconsistent orientations caused by the camera being in zenith or nadir position.\n"

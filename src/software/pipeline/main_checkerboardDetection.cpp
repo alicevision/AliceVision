@@ -39,28 +39,30 @@ int aliceVision_main(int argc, char* argv[])
     bool useNestedGrids = false;
 
     // Command line parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), 
-    "SfMData file input.")
-    ("output,o", po::value<std::string>(&outputFilePath)->required(), 
-    "calibration boards json output directory.");
+        ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(),
+         "SfMData file input.")
+        ("output,o", po::value<std::string>(&outputFilePath)->required(),
+         "Calibration boards JSON output directory.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), 
-        "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
+         "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), 
-        "Range size for processing views (ordered by image filepath).")
+         "Range size for processing views (ordered by image filepath).")
         ("exportDebugImages", po::value<bool>(&exportDebugImages)->default_value(exportDebugImages), 
-        "Export Debug Images.")
+         "Export debug images.")
         ("doubleSize", po::value<bool>(&doubleSize)->default_value(doubleSize), 
-        "Double image size prior to processing.")
+         "Double image size prior to processing.")
         ("useNestedGrids", po::value<bool>(&useNestedGrids)->default_value(useNestedGrids), 
-        "Images contain nested calibration grids. These grids must be centered on image center.");
+         "Images contain nested calibration grids. These grids must be centered on image center.");
+    // clang-format on
 
-    CmdLine cmdline("AliceVision checkerboard detection");
+    CmdLine cmdline("AliceVision checkerboardDetection");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

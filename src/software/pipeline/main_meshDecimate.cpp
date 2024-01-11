@@ -44,25 +44,28 @@ int aliceVision_main(int argc, char* argv[])
     int maxVertices = 0;
     bool flipNormals = false;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh (OBJ file format).")
+         "Input Mesh (OBJ file format).")
         ("output,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).");
+         "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("simplificationFactor", po::value<float>(&simplificationFactor)->default_value(simplificationFactor),
-            "Simplification factor.")
+         "Simplification factor.")
         ("nbVertices", po::value<int>(&fixedNbVertices)->default_value(fixedNbVertices),
-            "Fixed number of output vertices.")
+         "Fixed number of output vertices.")
         ("minVertices", po::value<int>(&minVertices)->default_value(minVertices),
-            "Min number of output vertices.")
+         "Min number of output vertices.")
         ("maxVertices", po::value<int>(&maxVertices)->default_value(maxVertices),
-            "Max number of output vertices.")
+         "Max number of output vertices.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
-            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
+         "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the "
+         "convention changes from one software to another.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision meshDecimate");
                   

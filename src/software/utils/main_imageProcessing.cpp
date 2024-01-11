@@ -1003,15 +1003,16 @@ int aliceVision_main(int argc, char * argv[])
 
     ProcessingParams pParams;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputExpression)->default_value(inputExpression),
-         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a "
+         "single digit, '@' one or more digits, '?' one character and '*' zero or more).")
         ("inputFolders", po::value<std::vector<std::string>>(&inputFolders)->multitoken(),
-        "Use images from specific folder(s) instead of those specify in the SfMData file.")
+         "Use images from specific folder(s) instead of those specify in the SfMData file.")
         ("output,o", po::value<std::string>(&outputPath)->required(),
-         "Output folder or output image if a single image is given as input.")
-        ;
+         "Output folder or output image if a single image is given as input.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -1043,14 +1044,14 @@ int aliceVision_main(int argc, char * argv[])
          "Exposure Adjustment in fstops limited to the range from -2 to +3 fstops.")
 
         ("rawAutoBright", po::value<bool>(&pParams.rawAutoBright)->default_value(pParams.rawAutoBright),
-         "Enable automatic exposure adjustment for raw images.")
+         "Enable automatic exposure adjustment for RAW images.")
 
         ("lensCorrection", po::value<LensCorrectionParams>(&pParams.lensCorrection)->default_value(pParams.lensCorrection),
-            "Lens Correction parameters:\n"
-            " * Enabled: Use automatic lens correction.\n"
-            " * Geometry: For geometry if a model is available in sfm data.\n"
-            " * Vignetting: For vignetting if model parameters is available in metadata.\n "
-            " * Chromatic Aberration: For chromatic aberration (fringing) if model parameters is available in metadata.")
+         "Lens Correction parameters:\n"
+         " * Enabled: Use automatic lens correction.\n"
+         " * Geometry: For geometry if a model is available in SfM data.\n"
+         " * Vignetting: For vignetting if model parameters is available in metadata.\n "
+         " * Chromatic Aberration: For chromatic aberration (fringing) if model parameters is available in metadata.")
 
         ("contrast", po::value<float>(&pParams.contrast)->default_value(pParams.contrast),
          "Contrast Factor (1.0: no change).")
@@ -1059,50 +1060,56 @@ int aliceVision_main(int argc, char * argv[])
          "Median Filter (0: no filter).")
 
         ("sharpenFilter", po::value<SharpenParams>(&pParams.sharpen)->default_value(pParams.sharpen),
-            "Sharpen Filter parameters:\n"
-            " * Enabled: Use Sharpen.\n"
-            " * Width: Sharpen kernel width.\n"
-            " * Contrast: Sharpen contrast value.\n "
-            " * Threshold: Threshold for minimal variation for contrast to avoid sharpening of small noise (0.0: no noise threshold).")
+         "Sharpen Filter parameters:\n"
+         " * Enabled: Use Sharpen.\n"
+         " * Width: Sharpen kernel width.\n"
+         " * Contrast: Sharpen contrast value.\n "
+         " * Threshold: Threshold for minimal variation for contrast to avoid sharpening of small noise (0.0: no noise threshold).")
 
         ("fillHoles", po::value<bool>(&pParams.fillHoles)->default_value(pParams.fillHoles),
          "Fill Holes.")
 
         ("bilateralFilter", po::value<BilateralFilterParams>(&pParams.bilateralFilter)->default_value(pParams.bilateralFilter),
-            "Bilateral Filter parameters:\n"
-            " * Enabled: Use bilateral Filter.\n"
-            " * Distance: Diameter of each pixel neighborhood that is used during filtering (if <=0 is computed proportionaly from sigmaSpace).\n"
-            " * SigmaSpace: Filter sigma in the coordinate space.\n "
-            " * SigmaColor: Filter sigma in the color space.")
+         "Bilateral Filter parameters:\n"
+         " * Enabled: Use bilateral filter.\n"
+         " * Distance: Diameter of each pixel neighborhood that is used during filtering (if <= 0, it is computed "
+         "proportionally from sigmaSpace).\n"
+         " * SigmaSpace: Filter sigma in the coordinate space.\n "
+         " * SigmaColor: Filter sigma in the color space.")
 
         ("claheFilter", po::value<ClaheFilterParams>(&pParams.claheFilter)->default_value(pParams.claheFilter),
-            "Sharpen Filter parameters:\n"
-            " * Enabled: Use Contrast Limited Adaptive Histogram Equalization (CLAHE).\n"
-            " * ClipLimit: Sets Threshold For Contrast Limiting.\n"
-            " * TileGridSize: Sets Size Of Grid For Histogram Equalization. Input Image Will Be Divided Into Equally Sized Rectangular Tiles.")
+         "Sharpen Filter parameters:\n"
+         " * Enabled: Use Contrast Limited Adaptive Histogram Equalization (CLAHE).\n"
+         " * ClipLimit: Sets threshold for contrast limiting.\n"
+         " * TileGridSize: Sets size of grid for histogram equalization. Input image will be divided into equally "
+         "sized rectangular tiles.")
 
         ("noiseFilter", po::value<NoiseFilterParams>(&pParams.noise)->default_value(pParams.noise),
-            "Noise Filter parameters:\n"
-            " * Enabled: Add Noise.\n"
-            " * method: There are several noise types to choose from:\n"
-            "    - uniform: adds noise values uninformly distributed on range [A,B).\n"
-            "    - gaussian: adds Gaussian (normal distribution) noise values with mean value A and standard deviation B.\n"
-            "    - salt: changes to value A a portion of pixels given by B.\n"
-            " * A, B: parameters that have a different interpretation depending on the method chosen.\n"
-            " * mono: If is true, a single noise value will be applied to all channels otherwise a separate noise value will be computed for each channel.")
+         "Noise Filter parameters:\n"
+         " * Enabled: Add noise.\n"
+         " * method: There are several noise types to choose from:\n"
+         "    - uniform: adds noise values uninformly distributed on range [A,B).\n"
+         "    - gaussian: adds Gaussian (normal distribution) noise values with mean value A and standard deviation B.\n"
+         "    - salt: changes to value A a portion of pixels given by B.\n"
+         " * A, B: parameters that have a different interpretation depending on the method chosen.\n"
+         " * mono: If is true, a single noise value will be applied to all channels otherwise a separate noise value "
+         "will be computed for each channel.")
 
         ("nlmFilter", po::value<NLMeansFilterParams>(&pParams.nlmFilter)->default_value(pParams.nlmFilter),
-            "Non local means Filter parameters:\n"
-            " * Enabled: Use non local means Filter.\n"
-            " * H: Parameter regulating filter strength. Bigger H value perfectly removes noise but also removes image details, smaller H value preserves details but also preserves some noise.\n"
-            " * HColor: Parameter regulating filter strength for color images only. Normally same as Filtering Parameter H. Not necessary for grayscale images\n "
-            " * templateWindowSize: Size in pixels of the template patch that is used to compute weights. Should be odd. \n"
-            " * searchWindowSize:Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time.")
+         "Non-local means filter parameters:\n"
+         " * Enabled: Use non-local means filter.\n"
+         " * H: Parameter regulating filter strength. Bigger H value perfectly removes noise but also removes image "
+         "details, smaller H value preserves details but also preserves some noise.\n"
+         " * HColor: Parameter regulating filter strength for color images only. Normally same as Filtering "
+         "Parameter H. Not necessary for grayscale images.\n "
+         " * templateWindowSize: Size in pixels of the template patch that is used to compute weights. Should be odd.\n"
+         " * searchWindowSize: Size in pixels of the window that is used to compute weighted average for a given pixel. "
+         "Should be odd. Affects performance linearly: greater searchWindowsSize - greater denoising time.")
 
         ("parFilter", po::value<pixelAspectRatioParams>(&pParams.par)->default_value(pParams.par),
-            "Pixel Aspect Ratio parameters:\n"
-            " * Enabled: Apply Pixel Aspect Ratio.\n"
-            " * RowDecimation: Decimate rows (reduce image height) instead of upsampling columns (increase image width).")
+         "Pixel Aspect Ratio parameters:\n"
+         " * Enabled: Apply pixel aspect ratio.\n"
+         " * RowDecimation: Decimate rows (reduce image height) instead of upsampling columns (increase image width).")
 
         ("inputColorSpace", po::value<image::EImageColorSpace>(&inputColorSpace)->default_value(inputColorSpace),
          ("Input image color space: " + image::EImageColorSpace_informations()).c_str())
@@ -1111,29 +1118,33 @@ int aliceVision_main(int argc, char * argv[])
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
 
         ("outputFormat", po::value<EImageFormat>(&outputFormat)->default_value(outputFormat),
-         "Output image format (rgba, rgb, grayscale)")
+         "Output image format (rgba, rgb, grayscale).")
 
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
-            ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+         ("Output color space: " + image::EImageColorSpace_informations()).c_str())
 
         ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
-            ("RAW color interpretation: " + image::ERawColorInterpretation_informations() + "\ndefault : DcpLinearProcessing").c_str())
+         ("RAW color interpretation: " + image::ERawColorInterpretation_informations() + "\n"
+         "Default: DcpLinearProcessing").c_str())
 
         ("applyDcpMetadata", po::value<bool>(&pParams.applyDcpMetadata)->default_value(pParams.applyDcpMetadata),
-         "Apply after all processings a linear dcp profile generated from the image DCP metadata if any")
+         "Apply after all processings a linear DCP profile generated from the image DCP metadata if any.")
 
         ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
          "DNG Color Profiles (DCP) database path.")
 
         ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
-         "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
+         "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model "
+         "(maker + name) extracted from metadata (only for RAW images).")
 
         ("useDCPColorMatrixOnly", po::value<bool>(&useDCPColorMatrixOnly)->default_value(useDCPColorMatrixOnly),
-         "Use only Color matrices of DCP profile, ignoring Forward matrices if any.  Default: False.\n"
-         "In case white balancing has been done before demosaicing, the reverse operation is done before applying the color matrix.")
+         "Use only color matrices of DCP profile, ignoring forward matrices if any. Default: False.\n"
+         "In case white balancing has been done before demosaicing, the reverse operation is done before applying "
+         "the color matrix.")
 
         ("doWBAfterDemosaicing", po::value<bool>(&doWBAfterDemosaicing)->default_value(doWBAfterDemosaicing),
-         "Do not use libRaw white balancing. White balancing is applied just before DCP profile if useDCPColorMatrixOnly is set to False. Default: False.")
+         "Do not use libRaw white balancing. White balancing is applied just before DCP profile if "
+         "useDCPColorMatrixOnly is set to False. Default: False.")
 
         ("demosaicingAlgo", po::value<std::string>(&demosaicingAlgo)->default_value(demosaicingAlgo),
          "Demosaicing algorithm (see libRaw documentation).\n"
@@ -1147,7 +1158,7 @@ int aliceVision_main(int argc, char * argv[])
          "Lens Correction Profile filepath or database directory path.")
             
         ("lensCorrectionProfileSearchIgnoreCameraModel", po::value<bool>(&lensCorrectionProfileSearchIgnoreCameraModel)->default_value(lensCorrectionProfileSearchIgnoreCameraModel),
-         "Automatic LCP Search considers only the camera maker and the lens name")
+         "Automatic LCP Search considers only the camera maker and the lens name.")
 
         ("correlatedColorTemperature", po::value<double>(&correlatedColorTemperature)->default_value(correlatedColorTemperature),
          "Correlated Color Temperature in Kelvin of scene illuminant.\n"
@@ -1178,8 +1189,8 @@ int aliceVision_main(int argc, char * argv[])
          "JPEG quality after compression (between 0 and 100).")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
-         "Output image extension (like exr, or empty to keep the source file format.")
-        ;
+         "Output image extension (like exr, or empty to keep the source file format.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision imageProcessing");
     cmdline.add(requiredParams);

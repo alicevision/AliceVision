@@ -120,22 +120,25 @@ int aliceVision_main(int argc, char* argv[])
     bool exportSTMaps = true;
 
     // Command line parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), 
-        "SfMData file input.")
+         "SfMData file input.")
         ("output,o", po::value<std::string>(&outputFilePath)->required(), 
-        "Output directory.");
+         "Output directory.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("exportNukeNode", po::value<bool>(&exportNukeNode)->default_value(exportLensGridsUndistorted), "Export Nuke node as FILE.nk")
-        ("exportSTMaps", po::value<bool>(&exportSTMaps)->default_value(exportLensGridsUndistorted), "Export STMaps")
-        ("exportLensGridsUndistorted,e", po::value<bool>(&exportLensGridsUndistorted)->default_value(exportLensGridsUndistorted), "Export lens grids undistorted for validation")
-        ;
+        ("exportNukeNode", po::value<bool>(&exportNukeNode)->default_value(exportLensGridsUndistorted),
+         "Export Nuke node as FILE.nk.")
+        ("exportSTMaps", po::value<bool>(&exportSTMaps)->default_value(exportLensGridsUndistorted),
+         "Export STMaps.")
+        ("exportLensGridsUndistorted,e", po::value<bool>(&exportLensGridsUndistorted)->default_value(exportLensGridsUndistorted),
+         "Export lens grids undistorted for validation.");
+    // clang-format on
     
-    
-    CmdLine cmdline("AliceVision export distortion");
+    CmdLine cmdline("AliceVision exportDistortion");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
 

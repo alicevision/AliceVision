@@ -140,22 +140,24 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string outputPath;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputExpression)->default_value(inputExpression),
-        "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a "
-        "single digit, '@' one or more digits, '?' one character and '*' zero or more).")(
-        "inputData", po::value<std::string>(&inputData)->default_value(inputData),
-        "Position and colorimetric data extracted from detected color checkers in the images")
+         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a "
+         "single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+        ("inputData", po::value<std::string>(&inputData)->default_value(inputData),
+         "Position and colorimetric data extracted from detected color checkers in the images.")
         ("output,o", po::value<std::string>(&outputPath)->required(),
-         "Output folder.")
-        ;
+         "Output folder.");
 
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-        ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
-        "extension", po::value<std::string>(&extension)->default_value(extension),
+    optionalParams.add_options()
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the original source file format.");
+    // clang-format on
 
     CmdLine cmdline("This program is used to perform color correction based on a color checker.\n"
                     "AliceVision colorCheckerCorrection");

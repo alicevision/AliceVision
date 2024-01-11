@@ -106,39 +106,38 @@ int aliceVision_main(int argc, char **argv)
   std::vector<std::string> metadataMatchingList = {"Make", "Model", "Exif:BodySerialNumber" , "Exif:LensSerialNumber" };
   std::string outputViewsAndPosesFilepath;
 
-  po::options_description allParams("AliceVision sfmAlignment");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file to align.")
+        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+         "Output SfMData scene.")
+        ("reference,r", po::value<std::string>(&sfmDataReferenceFilename)->required(),
+         "Path to the scene used as the reference coordinate system.");
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file to align.")
-    ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-      "Output SfMData scene.")
-    ("reference,r", po::value<std::string>(&sfmDataReferenceFilename)->required(),
-      "Path to the scene used as the reference coordinate system.");
-
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("method", po::value<EAlignmentMethod>(&alignmentMethod)->default_value(alignmentMethod),
-        "Alignment Method:\n"
-        "\t- from_cameras_viewid: Align cameras with same view Id\n"
-        "\t- from_cameras_poseid: Align cameras with same pose Id\n"
-        "\t- from_cameras_filepath: Align cameras with a filepath matching, using --fileMatchingPattern\n"
-        "\t- from_cameras_metadata: Align cameras with matching metadata, using --metadataMatchingList\n"
-        "\t- from_markers: Align from markers with the same Id\n")
-    ("fileMatchingPattern", po::value<std::string>(&fileMatchingPattern)->default_value(fileMatchingPattern),
-        "Matching pattern for the from_cameras_filepath method.\n")
-    ("metadataMatchingList", po::value<std::vector<std::string>>(&metadataMatchingList)->multitoken()->default_value(metadataMatchingList),
-        "List of metadata that should match to create the correspondences.\n")
-    ("applyScale", po::value<bool>(&applyScale)->default_value(applyScale),
-      "Apply scale transformation.")
-    ("applyRotation", po::value<bool>(&applyRotation)->default_value(applyRotation),
-      "Apply rotation transformation.")
-    ("applyTranslation", po::value<bool>(&applyTranslation)->default_value(applyTranslation),
-      "Apply translation transformation.")
-    ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-      "Path of the output SfMData file.")
-    ;
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("method", po::value<EAlignmentMethod>(&alignmentMethod)->default_value(alignmentMethod),
+         "Alignment Method:\n"
+         "\t- from_cameras_viewid: Align cameras with same view ID.\n"
+         "\t- from_cameras_poseid: Align cameras with same pose ID.\n"
+         "\t- from_cameras_filepath: Align cameras with a filepath matching, using --fileMatchingPattern.\n"
+         "\t- from_cameras_metadata: Align cameras with matching metadata, using --metadataMatchingList.\n"
+         "\t- from_markers: Align from markers with the same ID.\n")
+        ("fileMatchingPattern", po::value<std::string>(&fileMatchingPattern)->default_value(fileMatchingPattern),
+         "Matching pattern for the from_cameras_filepath method.\n")
+        ("metadataMatchingList", po::value<std::vector<std::string>>(&metadataMatchingList)->multitoken()->default_value(metadataMatchingList),
+         "List of metadata that should match to create the correspondences.\n")
+        ("applyScale", po::value<bool>(&applyScale)->default_value(applyScale),
+         "Apply scale transformation.")
+        ("applyRotation", po::value<bool>(&applyRotation)->default_value(applyRotation),
+         "Apply rotation transformation.")
+        ("applyTranslation", po::value<bool>(&applyTranslation)->default_value(applyTranslation),
+         "Apply translation transformation.")
+        ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
+         "Path of the output SfMData file.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision sfmAlignment");
   cmdline.add(requiredParams);

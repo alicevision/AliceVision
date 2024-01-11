@@ -40,16 +40,16 @@ int aliceVision_main(int argc, char **argv)
   std::string outputFolder;
   std::string gtFilename;
 
-  po::options_description allParams("AliceVision qualityEvaluation");
-
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for statistics.")
-    ("groundTruthPath", po::value<std::string>(&gtFilename)->required(),
-      "Path to a ground truth reconstructed scene");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for statistics.")
+        ("groundTruthPath", po::value<std::string>(&gtFilename)->required(),
+         "Path to a ground truth reconstructed scene.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision qualityEvaluation");
   cmdline.add(requiredParams);

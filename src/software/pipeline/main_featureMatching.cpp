@@ -119,72 +119,73 @@ int aliceVision_main(int argc, char **argv)
   int randomSeed = std::mt19937::default_seed;
   double minRequired2DMotion = -1.0;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches will be stored.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&matchesFolder)->required(),
+         "Path to a folder in which computed matches will be stored.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("geometricFilterType,g", po::value<std::string>(&geometricFilterTypeName)->default_value(geometricFilterTypeName),
-      matchingImageCollection::EGeometricFilterType_informations().c_str())
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str())
-    ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
-      "Path(s) to one or more files which contain the list of image pairs to match.")
-    ("photometricMatchingMethod,p", po::value<std::string>(&nearestMatchingMethod)->default_value(nearestMatchingMethod),
-      "For Scalar based regions descriptor:\n"
-      "* BRUTE_FORCE_L2: L2 BruteForce matching\n"
-      "* ANN_L2: L2 Approximate Nearest Neighbor matching\n"
-      "* CASCADE_HASHING_L2: L2 Cascade Hashing matching\n"
-      "* FAST_CASCADE_HASHING_L2: L2 Cascade Hashing with precomputed hashed regions\n"
-      "(faster than CASCADE_HASHING_L2 but use more memory)\n"
-      "For Binary based descriptor:\n"
-      "* BRUTE_FORCE_HAMMING: BruteForce Hamming matching")
-    ("geometricEstimator", po::value<robustEstimation::ERobustEstimator>(&geometricEstimator)->default_value(geometricEstimator),
-      "Geometric estimator:\n"
-      "* acransac: A-Contrario Ransac\n"
-      "* loransac: LO-Ransac (only available for fundamental matrix). Need to set '--geometricError'")
-    ("geometricError", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax), 
-      "Maximum error (in pixels) allowed for features matching during geometric verification. "
-      "If set to 0 it lets the ACRansac select an optimal value.")
-    ("matchFromKnownCameraPoses", po::value<bool>(&matchFromKnownCameraPoses)->default_value(matchFromKnownCameraPoses),
-      "Enable the usage of geometric information from known camera poses to guide the feature matching. "
-      "If some cameras have unknown poses (so there is no geometric prior), the standard feature matching will be performed.")
-    ("knownPosesGeometricErrorMax", po::value<double>(&knownPosesGeometricErrorMax)->default_value(knownPosesGeometricErrorMax),
-      "Maximum error (in pixels) allowed for features matching guided by geometric information from known camera poses. "
-      "If set to 0 it lets the ACRansac select an optimal value.")
-    ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
-      "Save putative matches.")
-    ("guidedMatching", po::value<bool>(&guidedMatching)->default_value(guidedMatching),
-      "Use the found model to improve the pairwise correspondences.")
-    ("crossMatching", po::value<bool>(&crossMatching)->default_value(crossMatching),
-      "Make sure that the matching process is symmetric (same matches for I->J than fo J->I).")
-    ("matchFilePerImage", po::value<bool>(&matchFilePerImage)->default_value(matchFilePerImage),
-      "Save matches in a separate file per image.")
-    ("distanceRatio", po::value<float>(&distRatio)->default_value(distRatio),
-      "Distance ratio to discard non meaningful matches.")
-    ("maxIteration", po::value<int>(&maxIteration)->default_value(maxIteration),
-      "Maximum number of iterations allowed in ransac step.")
-    ("useGridSort", po::value<bool>(&useGridSort)->default_value(useGridSort),
-      "Use matching grid sort.")
-    ("minRequired2DMotion", po::value<double>(&minRequired2DMotion)->default_value(minRequired2DMotion),
-      "A match is invalid if the 2d motion between the 2 points is less than a threshold (or -1 to disable this filter).")
-    ("exportDebugFiles", po::value<bool>(&exportDebugFiles)->default_value(exportDebugFiles),
-      "Export debug files (svg, dot).")
-    ("maxMatches", po::value<std::size_t>(&numMatchesToKeep)->default_value(numMatchesToKeep),
-      "Maximum number pf matches to keep.")
-    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-      "Range image index start.")
-    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-      "Range size.")
-    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
-      "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
-    ;
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("geometricFilterType,g", po::value<std::string>(&geometricFilterTypeName)->default_value(geometricFilterTypeName),
+         matchingImageCollection::EGeometricFilterType_informations().c_str())
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
+         "Path(s) to one or more files which contain the list of image pairs to match.")
+        ("photometricMatchingMethod,p", po::value<std::string>(&nearestMatchingMethod)->default_value(nearestMatchingMethod),
+         "For Scalar based regions descriptor:\n"
+         "* BRUTE_FORCE_L2: L2 BruteForce matching\n"
+         "* ANN_L2: L2 Approximate Nearest Neighbor matching\n"
+         "* CASCADE_HASHING_L2: L2 Cascade Hashing matching\n"
+         "* FAST_CASCADE_HASHING_L2: L2 Cascade Hashing with precomputed hashed regions\n"
+         "(faster than CASCADE_HASHING_L2 but use more memory)\n"
+         "For Binary based descriptor:\n"
+         "* BRUTE_FORCE_HAMMING: BruteForce Hamming matching")
+        ("geometricEstimator", po::value<robustEstimation::ERobustEstimator>(&geometricEstimator)->default_value(geometricEstimator),
+         "Geometric estimator:\n"
+         "* acransac: A-Contrario Ransac\n"
+         "* loransac: LO-Ransac (only available for fundamental matrix). Need to set '--geometricError'")
+        ("geometricError", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax),
+         "Maximum error (in pixels) allowed for features matching during geometric verification. "
+         "If set to 0, it lets the ACRansac select an optimal value.")
+        ("matchFromKnownCameraPoses", po::value<bool>(&matchFromKnownCameraPoses)->default_value(matchFromKnownCameraPoses),
+         "Enable the usage of geometric information from known camera poses to guide the feature matching. "
+         "If some cameras have unknown poses (so there is no geometric prior), the standard feature matching will be performed.")
+        ("knownPosesGeometricErrorMax", po::value<double>(&knownPosesGeometricErrorMax)->default_value(knownPosesGeometricErrorMax),
+         "Maximum error (in pixels) allowed for features matching guided by geometric information from known camera poses. "
+         "If set to 0 it lets the ACRansac select an optimal value.")
+        ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
+         "Save putative matches.")
+        ("guidedMatching", po::value<bool>(&guidedMatching)->default_value(guidedMatching),
+         "Use the found model to improve the pairwise correspondences.")
+        ("crossMatching", po::value<bool>(&crossMatching)->default_value(crossMatching),
+         "Make sure that the matching process is symmetric (same matches for I->J than fo J->I).")
+        ("matchFilePerImage", po::value<bool>(&matchFilePerImage)->default_value(matchFilePerImage),
+         "Save matches in a separate file per image.")
+        ("distanceRatio", po::value<float>(&distRatio)->default_value(distRatio),
+         "Distance ratio to discard non meaningful matches.")
+        ("maxIteration", po::value<int>(&maxIteration)->default_value(maxIteration),
+         "Maximum number of iterations allowed in ransac step.")
+        ("useGridSort", po::value<bool>(&useGridSort)->default_value(useGridSort),
+         "Use matching grid sort.")
+        ("minRequired2DMotion", po::value<double>(&minRequired2DMotion)->default_value(minRequired2DMotion),
+         "A match is invalid if the 2D motion between the 2 points is less than a threshold (or -1 to disable this filter).")
+        ("exportDebugFiles", po::value<bool>(&exportDebugFiles)->default_value(exportDebugFiles),
+         "Export debug files (svg, dot).")
+        ("maxMatches", po::value<std::size_t>(&numMatchesToKeep)->default_value(numMatchesToKeep),
+         "Maximum number pf matches to keep.")
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+         "Range image index start.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+         "Range size.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
+    // clang-format on
 
   CmdLine cmdline("This program computes corresponding features between a series of views:\n"
                   "- Load view images description (regions: features & descriptors)\n"

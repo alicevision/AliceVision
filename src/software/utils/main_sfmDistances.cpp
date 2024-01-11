@@ -149,33 +149,31 @@ int main(int argc, char **argv)
   std::string objectB;
   std::string landmarksDescriberTypesName;
 
-  po::options_description allParams("AliceVision sfmTransform");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file to align.");
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file to align.");
-
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("objectType", po::value<EObject>(&objectType)->default_value(objectType),
-        "Object Type:\n"
-        "\t- cameras: Use cameras\n"
-        "\t- landmarks: Use landmarks\n")
-    ("A", po::value<std::string>(&objectA)->default_value(objectA),
-        "Object ID:\n"
-        "Landmark: ID\n"
-        "Camera: camera UID or image filename")
-    ("B", po::value<std::string>(&objectB)->default_value(objectB),
-        "Object ID:\n"
-        "Landmark: ID\n"
-        "Camera: camera UID or image filename")
-    ("landmarksDescriberTypes,d", po::value<std::string>(&landmarksDescriberTypesName)->default_value(landmarksDescriberTypesName),
-      ("optional for 'landmarks' method:\n"
-      "Image describer types used to compute the mean of the point cloud\n"
-      "Use all of them if empty\n"
-      + feature::EImageDescriberType_informations()).c_str())
-    ;
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("objectType", po::value<EObject>(&objectType)->default_value(objectType),
+         "Object Type:\n"
+         "\t- cameras: Use cameras.\n"
+         "\t- landmarks: Use landmarks.\n")
+        ("A", po::value<std::string>(&objectA)->default_value(objectA),
+         "Object ID:\n"
+         "Landmark: ID\n"
+         "Camera: camera UID or image filename.")
+        ("B", po::value<std::string>(&objectB)->default_value(objectB),
+         "Object ID:\n"
+         "Landmark: ID\n"
+         "Camera: camera UID or image filename.")
+        ("landmarksDescriberTypes,d", po::value<std::string>(&landmarksDescriberTypesName)->default_value(landmarksDescriberTypesName),
+         ("Optional for 'landmarks' method:\n"
+          "Image describer types used to compute the mean of the point cloud.\n"
+          "Use all of them if empty\n" + feature::EImageDescriberType_informations()).c_str());
+    // clang-format on
 
   CmdLine cmdline("AliceVision sfmDistances");
   cmdline.add(requiredParams);

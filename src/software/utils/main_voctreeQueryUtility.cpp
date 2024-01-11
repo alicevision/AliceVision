@@ -127,6 +127,7 @@ int aliceVision_main(int argc, char** argv)
     aliceVision::sfmData::SfMData sfmData;
     aliceVision::sfmData::SfMData* querySfmData;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
@@ -160,6 +161,7 @@ int aliceVision_main(int argc, char** argv)
          "Number of features extracted from the .feat files.")
         ("distance,d", po::value<std::string>(&distance)->default_value("strongCommonPoints"),
          "Distance used.");
+    // clang-format on
 
     aliceVision::CmdLine cmdline(programDescription + "AliceVision voctreeQueryUtility");
     cmdline.add(requiredParams);

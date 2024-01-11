@@ -48,21 +48,28 @@ int aliceVision_main(int argc, char** argv)
     bool useTiling = true;
 
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
-        ("compositingFolder,w", po::value<std::string>(&compositingFolder)->required(), "Folder with composited images.")
-        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "Input SfMData.")
+        ("compositingFolder,w", po::value<std::string>(&compositingFolder)->required(),
+         "Folder with composited images.")
+        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(),
+         "Path of the output panorama.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
-        ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling), "use tiling for compositing.");
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling),
+         "Use tiling for compositing.");
+    // clang-format on
 
     CmdLine cmdline(
         "Merges all the image tiles created by the PanoramaCompositing.\n"
-        "AliceVision PanoramaMerging");
+        "AliceVision panoramaMerging");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

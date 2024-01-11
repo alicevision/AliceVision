@@ -75,19 +75,21 @@ int aliceVision_main(int argc, char **argv)
   double zNear = -1.;
   double zFar = -1.;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFilename)->required(),
-      "Output pair filename.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFilename)->required(),
+         "Output pair filename.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("zNear", po::value<double>(&zNear)->default_value(zNear),
-      "Distance of the near camera plane.")
-    ("zFar", po::value<double>(&zFar)->default_value(zFar),
-      "Distance of the far camera plane.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("zNear", po::value<double>(&zNear)->default_value(zNear),
+         "Distance of the near camera plane.")
+        ("zFar", po::value<double>(&zFar)->default_value(zFar),
+         "Distance of the far camera plane.");
+    // clang-format on
 
   CmdLine cmdline("This program computes camera cones that share some putative visual content.\n"
                   "AliceVision frustumFiltering");

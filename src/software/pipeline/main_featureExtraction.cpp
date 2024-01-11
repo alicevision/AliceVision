@@ -60,6 +60,7 @@ int aliceVision_main(int argc, char **argv)
     std::string maskExtension = "png";
     bool maskInvert = false;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
@@ -73,13 +74,13 @@ int aliceVision_main(int argc, char **argv)
          feature::EImageDescriberType_informations().c_str())
         ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescConfig.descPreset)->default_value(featDescConfig.descPreset),
          "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
-         "Configuration 'ultra' can take long time !")
+         "Configuration 'ultra' can take a long time!")
         ("describerQuality", po::value<feature::EFeatureQuality>(&featDescConfig.quality)->default_value(featDescConfig.quality),
          feature::EFeatureQuality_information().c_str())
         ("gridFiltering", po::value<bool>(&featDescConfig.gridFiltering)->default_value(featDescConfig.gridFiltering),
-         "Enable grid filtering. Highly recommended to ensure usable number of features.")
+         "Enable grid filtering. Highly recommended to ensure a usable number of features.")
         ("maxNbFeatures", po::value<int>(&featDescConfig.maxNbFeatures)->default_value(featDescConfig.maxNbFeatures),
-         "Max number of features extracted (0 means default value based on describerPreset).")
+         "Maximum number of features extracted (0 means default value based on describerPreset).")
         ("contrastFiltering", po::value<feature::EFeatureConstrastFiltering>(&featDescConfig.contrastFiltering)->default_value(featDescConfig.contrastFiltering),
          feature::EFeatureConstrastFiltering_information().c_str())
         ("relativePeakThreshold", po::value<float>(&featDescConfig.relativePeakThreshold)->default_value(featDescConfig.relativePeakThreshold),
@@ -100,6 +101,7 @@ int aliceVision_main(int argc, char **argv)
          "Range size.")
         ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads),
          "Specifies the maximum number of threads to run simultaneously (0 for automatic mode).");
+    // clang-format on
 
     CmdLine cmdline("AliceVision featureExtraction");
     cmdline.add(requiredParams);

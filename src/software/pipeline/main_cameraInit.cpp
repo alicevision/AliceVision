@@ -190,59 +190,60 @@ int aliceVision_main(int argc, char **argv)
   image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
   bool lensCorrectionProfileSearchIgnoreCameraModel = true;
 
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath),
+         "A SfMData file (*.sfm) [if specified, --imageFolder cannot be used].")
+        ("imageFolder", po::value<std::string>(&imageFolder)->default_value(imageFolder),
+         "Input images folder [if specified, --input cannot be used].")
+        ("output,o", po::value<std::string>(&outputFilePath)->default_value("cameraInit.sfm"),
+         "Output file path for the new SfMData file.");
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath),
-      "A SfMData file (*.sfm) [if specified, --imageFolder cannot be used].")
-    ("imageFolder", po::value<std::string>(&imageFolder)->default_value(imageFolder),
-      "Input images folder [if specified, --input cannot be used].")
-    ("output,o", po::value<std::string>(&outputFilePath)->default_value("cameraInit.sfm"),
-      "Output file path for the new SfMData file");
-
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
-      "Camera sensor width database path.")
-    ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
-      "DNG Color Profiles (DCP) database path.")
-    ("lensCorrectionProfileInfo", po::value<std::string>(&lensCorrectionProfileInfo)->default_value(""),
-      "Lens Correction Profile filepath or database directory path.")
-    ("lensCorrectionProfileSearchIgnoreCameraModel", po::value<bool>(&lensCorrectionProfileSearchIgnoreCameraModel)->default_value(lensCorrectionProfileSearchIgnoreCameraModel),
-      "Automatic LCP Search considers only the camera maker and the lens name")
-    ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
-      "Focal length in mm. (or '-1' to unset)")
-    ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
-      "Empirical value for the field of view in degree. (or '-1' to unset)")
-    ("defaultFocalRatio", po::value<double>(&defaultFocalRatio)->default_value(defaultFocalRatio),
-      "Ratio between the pixel X size on the sensor and the Y size.")
-    ("defaultOffsetX", po::value<double>(&defaultOffsetX)->default_value(defaultOffsetX),
-      "default offset from the principal point X coordinate")
-    ("defaultOffsetY", po::value<double>(&defaultOffsetY)->default_value(defaultOffsetY),
-      "default offset from the principal point Y coordinate")
-    ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
-      "Default camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
-    ("allowedCameraModels", po::value<std::string>(&allowedCameraModelsStr)->default_value(allowedCameraModelsStr),
-      "Permitted model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
-    ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
-      std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
-      "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"
-      " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::GLOBAL) + ": all images may come from a single device (make/model/focal will still be a differentiator).\n"
-      " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::FOLDER) + ": different folders will be considered as different devices\n"
-      " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::IMAGE) + ": consider that each image has different internal camera parameters").c_str())
-    ("viewIdMethod", po::value<EViewIdMethod>(&viewIdMethod)->default_value(viewIdMethod),
-      std::string("Allows to choose the way the viewID is generated:\n"
-      " * " + EViewIdMethod_enumToString(EViewIdMethod::METADATA) + ": Generate viewId from image metadata.\n"
-      " * " + EViewIdMethod_enumToString(EViewIdMethod::FILENAME) + ": Generate viewId from file names using regex.") .c_str())
-    ("viewIdRegex", po::value<std::string>(&viewIdRegex)->default_value(viewIdRegex),
-      "Regex used to catch number used as viewId in filename.")
-    ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
-      ("RAW color interpretation: " + image::ERawColorInterpretation_informations()).c_str())
-    ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
-      "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
-    ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
-      "Allow the program to process a single view.\n"
-      "Warning: if a single view is process, the output file can't be use in many other programs.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
+         "Camera sensor width database path.")
+        ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
+         "DNG Color Profiles (DCP) database path.")
+        ("lensCorrectionProfileInfo", po::value<std::string>(&lensCorrectionProfileInfo)->default_value(""),
+         "Lens Correction Profile filepath or database directory path.")
+        ("lensCorrectionProfileSearchIgnoreCameraModel", po::value<bool>(&lensCorrectionProfileSearchIgnoreCameraModel)->default_value(lensCorrectionProfileSearchIgnoreCameraModel),
+         "Automatic LCP Search considers only the camera maker and the lens name.")
+        ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
+         "Focal length in mm (or '-1' to unset).")
+        ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
+         "Empirical value for the field of view in degrees (or '-1' to unset).")
+        ("defaultFocalRatio", po::value<double>(&defaultFocalRatio)->default_value(defaultFocalRatio),
+         "Ratio between the pixel X size on the sensor and the Y size.")
+        ("defaultOffsetX", po::value<double>(&defaultOffsetX)->default_value(defaultOffsetX),
+         "Default offset from the principal point X coordinate.")
+        ("defaultOffsetY", po::value<double>(&defaultOffsetY)->default_value(defaultOffsetY),
+         "Default offset from the principal point Y coordinate.")
+        ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
+         "Default camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
+        ("allowedCameraModels", po::value<std::string>(&allowedCameraModelsStr)->default_value(allowedCameraModelsStr),
+         "Permitted model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
+        ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
+         std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
+         "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"
+         " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::GLOBAL) + ": all images may come from a single device (make/model/focal will still be a differentiator).\n"
+         " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::FOLDER) + ": different folders will be considered as different devices.\n"
+         " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::IMAGE) + ": consider that each image has different internal camera parameters.").c_str())
+        ("viewIdMethod", po::value<EViewIdMethod>(&viewIdMethod)->default_value(viewIdMethod),
+         std::string("Allows to choose the way the viewID is generated:\n"
+         " * " + EViewIdMethod_enumToString(EViewIdMethod::METADATA) + ": Generate viewId from image metadata.\n"
+         " * " + EViewIdMethod_enumToString(EViewIdMethod::FILENAME) + ": Generate viewId from file names using regex.") .c_str())
+        ("viewIdRegex", po::value<std::string>(&viewIdRegex)->default_value(viewIdRegex),
+         "Regex used to catch number used as viewId in filename.")
+        ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
+         ("RAW color interpretation: " + image::ERawColorInterpretation_informations()).c_str())
+        ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
+         "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (only for raw images).")
+        ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
+         "Allow the program to process a single view.\n"
+         "Warning: if a single view is process, the output file can't be use in many other programs.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision cameraInit");
   cmdline.add(requiredParams);

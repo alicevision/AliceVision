@@ -52,6 +52,7 @@ int aliceVision_main(int argc, char **argv)
     std::string method;
     bool saveAsModel;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPath,i", po::value<std::string>(&inputPath)->required(),
@@ -67,6 +68,7 @@ int aliceVision_main(int argc, char **argv)
          "Calibration used for several datasets.")
         ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"),
          "Method for light estimation.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision lightingCalibration");
     cmdline.add(requiredParams);
