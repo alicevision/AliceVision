@@ -51,21 +51,25 @@ int aliceVision_main(int argc, char** argv)
     // whether to lock or not the poses
     bool lockPoses{true};
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("input,i", po::value<std::string>(&middleburyFile)->required(), "The text file containing the cameras (e.g. temple_par.txt).")
-        ("output,o", po::value<std::string>(&sfmDataFilename)->required(), "Output sfmdata filename");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&middleburyFile)->required(),
+         "The text file containing the cameras (e.g. temple_par.txt).")
+        ("output,o", po::value<std::string>(&sfmDataFilename)->required(),
+         "Output SfMData filename.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("uniqueIntrinsics", po::bool_switch(&uniqueIntrinsics),
-         "Consider all the camera having the same intrinsics (the first camera instrinsics will be used for all the others")
+          "Consider all the camera having the same intrinsics (the first camera instrinsics will be used for all the others).")
         ("importPoses", po::value<bool>(&importPoses)->default_value(importPoses),
          "Import the poses, disable this if you want, e.g. test the sfm part and assess the camera pose estimation.")
         ("lockIntrinsics", po::value<bool>(&lockIntrinsics)->default_value(lockIntrinsics),
-         "Set the intrinsics to locked, so they will not be refined in the sfm step.")
+         "Set the intrinsics to locked, so they will not be refined in the SfM step.")
         ("lockPoses", po::value<bool>(&lockPoses)->default_value(lockPoses),
-         "Set the poses to locked, so they will not be refined in the sfm step")
-        ;
+         "Set the poses to locked, so they will not be refined in the SfM step.");
+    // clang-format on
 
     CmdLine cmdline("This program generates an SfMData from the configuration files of the Middlebury dataset: https://vision.middlebury.edu/mview/data\n"
                     "AliceVision importMiddlebury");

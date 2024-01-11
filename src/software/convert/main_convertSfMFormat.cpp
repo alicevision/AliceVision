@@ -50,29 +50,32 @@ int aliceVision_main(int argc, char **argv)
   bool flagStructure = true;
   bool flagObservations = true;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
-      "Path to the output Alembic file.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
+         "Path to the output Alembic file.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str())
-    ("imageWhiteList", po::value<std::vector<std::string>>(&imageWhiteList)->multitoken()->default_value(imageWhiteList),
-      "image white list containing uid(s), image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more)")
-    ("views", po::value<bool>(&flagViews)->default_value(flagViews),
-      "Export views.")
-    ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),
-      "Export intrinsics.")
-    ("extrinsics", po::value<bool>(&flagExtrinsics)->default_value(flagExtrinsics),
-      "Export extrinsics.")
-    ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),
-      "Export structure.")
-    ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
-      "Export observations.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("imageWhiteList", po::value<std::vector<std::string>>(&imageWhiteList)->multitoken()->default_value(imageWhiteList),
+         "Image white list containing uid(s), image filenames or regex(es) on the image file path (supported regex: '#'"
+         " matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+        ("views", po::value<bool>(&flagViews)->default_value(flagViews),
+         "Export views.")
+        ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),
+         "Export intrinsics.")
+        ("extrinsics", po::value<bool>(&flagExtrinsics)->default_value(flagExtrinsics),
+         "Export extrinsics.")
+        ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),
+         "Export structure.")
+        ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
+         "Export observations.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision convertSfMFormat");
   cmdline.add(requiredParams);

@@ -59,23 +59,31 @@ int aliceVision_main(int argc, char** argv)
   std::string querySfmDataFilename = "";    // the file containing the list of features to use as query
   std::string distance;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "a SfMData file.")
-    ("tree,t", po::value<std::string>(&treeName)->required(), "Input name for the tree file");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "A SfMData file.")
+        ("tree,t", po::value<std::string>(&treeName)->required(),
+         "Input name for the tree file.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("weights,w", po::value<std::string>(&weightsName), "Input name for the weight file, if not provided the weights will be computed on the database built with the provided set")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
-      "Path to folder(s) containing the extracted features.")
-    ("querySfmDataFilename,q", po::value<std::string>(&querySfmDataFilename), "Path to the SfMData file to be used for querying the database")
-    ("distance,d",po::value<std::string>(&distance)->default_value(""), "Method used to compute distance between histograms: \n "
-                                                                          "-classic: eucledian distance \n"
-                                                                          "-commonPoints: counts common points between histograms \n"
-                                                                          "-strongCommonPoints: counts common 1 values \n"
-                                                                          "-weightedStrongCommonPoints: strongCommonPoints with weights \n"
-                                                                          "-inversedWeightedCommonPoints: strongCommonPoints with inverted weights");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("weights,w", po::value<std::string>(&weightsName),
+         "Input name for the weight file, if not provided the weights will be computed on the database built "
+         "with the provided set.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features.")
+        ("querySfmDataFilename,q", po::value<std::string>(&querySfmDataFilename),
+         "Path to the SfMData file to be used for querying the database.")
+        ("distance,d",po::value<std::string>(&distance)->default_value(""),
+         "Method used to compute distance between histograms: \n"
+         " - classic: eucledian distance\n"
+         " - commonPoints: counts common points between histograms\n"
+         " - strongCommonPoints: counts common 1 values\n"
+         " - weightedStrongCommonPoints: strongCommonPoints with weights\n"
+         " - inversedWeightedCommonPoints: strongCommonPoints with inverted weights.");
+    // clang-format on
 
   CmdLine cmdline("This program is used to create a database with a provided dataset of image descriptors using a trained vocabulary tree.\n"
                   "The database is then queried with the same images in order to retrieve for each image the set of most similar images in the dataset.\n"

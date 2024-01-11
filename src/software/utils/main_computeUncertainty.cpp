@@ -41,19 +41,21 @@ int aliceVision_main(int argc, char **argv)
   std::string algorithm = cov::EAlgorithm_enumToString(cov::eAlgorithmSvdTaylorExpansion);
   bool debug = false;
 
-  params.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file to align.")
-  ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-    "Output SfMData scene.")
-  ("outputCov,c", po::value<std::string>(&outputStats),
-    "Output covariances file.")
-  ("algorithm,a", po::value<std::string>(&algorithm)->default_value(algorithm),
-    "Algorithm.")
-  ("debug,d", po::value<bool>(&debug)->default_value(debug),
-    "Enable creation of debug files in the current folder.")
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
+    // clang-format off
+    params.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file to align.")
+        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+         "Output SfMData scene.")
+        ("outputCov,c", po::value<std::string>(&outputStats),
+         "Output covariances file.")
+        ("algorithm,a", po::value<std::string>(&algorithm)->default_value(algorithm),
+         "Algorithm.")
+        ("debug,d", po::value<bool>(&debug)->default_value(debug),
+         "Enable creation of debug files in the current folder.")
+        ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+         "Verbosity level (fatal,  error, warning, info, debug, trace).");
+    // clang-format on
 
   CmdLine cmdline("AliceVision computeUncertainty");
   cmdline.add(params);

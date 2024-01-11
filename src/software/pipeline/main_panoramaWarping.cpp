@@ -113,25 +113,32 @@ int aliceVision_main(int argc, char** argv)
 
     // Program description
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")(
-        "output,o", po::value<std::string>(&outputDirectory)->required(), "Path of the output folder.");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputDirectory)->required(),
+         "Path of the output folder.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()("panoramaWidth,w",
-                                 po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first),
-                                 "Panorama Width in pixels.")(
-        "maxPanoramaWidth", po::value<int>(&maxPanoramaWidth)->default_value(maxPanoramaWidth),
-        "Max Panorama Width in pixels.")("percentUpscale",
-                                         po::value<int>(&percentUpscale)->default_value(percentUpscale),
-                                         "Percentage of upscaled pixels.")(
-        "workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
-        ("Output color space: " + image::EImageColorSpace_informations()).c_str())(
-        "storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-        ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
-        "rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-        "Range image index start.")("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
+    optionalParams.add_options()
+        ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first),
+         "Panorama width in pixels.")
+        ("maxPanoramaWidth", po::value<int>(&maxPanoramaWidth)->default_value(maxPanoramaWidth),
+         "Maximum panorama width in pixels.")
+        ("percentUpscale", po::value<int>(&percentUpscale)->default_value(percentUpscale),
+         "Percentage of upscaled pixels.")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+         ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+         "Range image index start.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+         "Range size.");
+    // clang-format on
 
     CmdLine cmdline("Warps the input images in the panorama coordinate system.\n"
                     "AliceVision panoramaWarping");

@@ -519,34 +519,34 @@ int main(int argc, char **argv)
     bool usePointsVisibilities = false;
     std::string maskExtension = "png";
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath)->required(),
-            "A SfMData file (*.sfm).")
+         "A SfMData file (*.sfm).")
         ("inputMesh,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh")
+         "Input mesh.")
         ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
-            "Use masks from specific folder(s).\n"
-            "Filename should be the same or the image uid.")
+         "Use masks from specific folder(s).\n"
+         "Filename should be the same or the image UID.")
         ("outputMesh,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh")
+         "Output mesh.")
         ("threshold", po::value<int>(&threshold)->default_value(threshold)->notifier(optInRange(1, INT_MAX, "threshold"))->required(),
-            "The minimum number of visibility to keep a vertex.")
-        ;
+         "The minimum number of visibility to keep a vertex.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("invert", po::value<bool>(&invert)->default_value(invert),
-            "Invert the mask.")
+         "Invert the mask.")
         ("smoothBoundary", po::value<bool>(&smoothBoundary)->default_value(smoothBoundary),
-            "Modify the triangles at the boundary to fit the masks.")
+         "Modify the triangles at the boundary to fit the masks.")
         ("undistortMasks", po::value<bool>(&undistortMasks)->default_value(undistortMasks),
-            "Undistort the masks with the same parameters as the matching image. Use it if the masks are drawn on the original images.")
+         "Undistort the masks with the same parameters as the matching image. Use it if the masks are drawn on the original images.")
         ("usePointsVisibilities", po::value<bool>(&usePointsVisibilities)->default_value(usePointsVisibilities),
-            "Use the points visibilities from the meshing to filter triangles. Example: when they are occluded, back-face, etc.")
+         "Use the points visibilities from the meshing to filter triangles. Example: when they are occluded, back-face, etc.")
         ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
-            "File extension for the masks to use.")
-        ;
+         "File extension for the masks to use.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision meshMasking");
     cmdline.add(requiredParams);

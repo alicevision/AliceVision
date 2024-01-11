@@ -378,37 +378,39 @@ int aliceVision_main(int argc, char** argv)
     int nbThreads = 3;
     std::string extension;                      // extension of output images
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputPath)->required(),
-        "Input image file, image folder or SfMData.")
+         "Input image file, image folder or SfMData.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
-        "Output folder for extracted images.")
+         "Output folder for extracted images.")
         ("outSfMData", po::value<std::string>(&outSfmDataFilepath)->required(),
-        "Filepath for output SfMData.");
+         "Filepath for output SfMData.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("splitMode,m", po::value<std::string>(&splitMode)->default_value("equirectangular"),
-        "Split mode (equirectangular, dualfisheye)")
+         "Split mode (equirectangular, dualfisheye).")
         ("dualFisheyeOffsetPresetX", po::value<std::string>(&dualFisheyeOffsetPresetX)->default_value("center"),
-        "Dual-Fisheye offset preset on X axis (left, center, right)")
+         "Dual-Fisheye offset preset on X axis (left, center, right).")
         ("dualFisheyeOffsetPresetY", po::value<std::string>(&dualFisheyeOffsetPresetY)->default_value("center"),
-        "Dual-Fisheye offset preset on Y axis (top, center, left)")
+         "Dual-Fisheye offset preset on Y axis (top, center, left).")
         ("dualFisheyeCameraModel", po::value<std::string>(&dualFisheyeCameraModel)->default_value("fisheye4"),
-        "Dual-Fisheye camera model (fisheye4 or equidistant_r3)")
+         "Dual-Fisheye camera model (fisheye4 or equidistant_r3).")
         ("equirectangularNbSplits", po::value<std::size_t>(&equirectangularNbSplits)->default_value(2),
-        "Equirectangular number of splits")
+         "Equirectangular number of splits.")
         ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
-        "Equirectangular split resolution")
+         "Equirectangular split resolution.")
         ("equirectangularPreviewMode", po::value<bool>(&equirectangularPreviewMode)->default_value(equirectangularPreviewMode),
-        "Export a SVG file that simulate the split")
+         "Export a SVG file that simulate the split.")
         ("fov", po::value<double>(&fov)->default_value(fov),
-        "Field of View to extract (in degree).")
+         "Field of View to extract (in degree).")
         ("nbThreads", po::value<int>(&nbThreads)->default_value(nbThreads),
-        "Number of threads.")
+         "Number of threads.")
         ("extension", po::value<std::string>(&extension)->default_value(extension),
-        "Output image extension (empty to keep the source file format).");
+         "Output image extension (empty to keep the source file format).");
+    // clang-format on
 
     CmdLine cmdline("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder.\n"
                     "AliceVision split360Images");

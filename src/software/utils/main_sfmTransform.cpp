@@ -256,51 +256,51 @@ int aliceVision_main(int argc, char **argv)
 
   std::string manualTransform;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file to align.")
-    ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-      "Output SfMData scene.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file to align.")
+        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+         "Output SfMData scene.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("method", po::value<EAlignmentMethod>(&alignmentMethod)->default_value(alignmentMethod),
-        "Transform Method:\n"
-        "\t- transformation: Apply a given transformation\n"
-        "\t- manual: Apply the gizmo transformation\n"
-        "\t- auto: Determines scene orientation from the cameras' X axis, auto-scaling from GPS information if available, and defines ground level from the point cloud.\n"
-        "\t- auto_from_cameras: Defines coordinate system from cameras.\n"
-        "\t- auto_from_cameras_x_axis: Determines scene orientation from the cameras' X axis.\n"
-        "\t- auto_from_landmarks: Defines coordinate system from landmarks.\n"
-        "\t- from_single_camera: Refines the coordinate system from the camera specified by --tranformation\n"
-        "\t- from_markers: Refines the coordinate system from markers specified by --markers\n"
-        "\t- from_gps: Redefines coordinate system from GPS metadata\n"
-        "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n")
-    ("transformation", po::value<std::string>(&transform)->default_value(transform),
-      "required only for 'transformation' and 'single camera' methods:\n"
-      "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
-      "Single camera: camera UID or image filename")
-    ("manualTransform", po::value<std::string>(&manualTransform),
-        "Translation, rotation and scale defined with the manual mode.")
-    ("landmarksDescriberTypes,d", po::value<std::string>(&landmarksDescriberTypesName)->default_value(landmarksDescriberTypesName),
-      ("optional for 'landmarks' method:\n"
-      "Image describer types used to compute the mean of the point cloud\n"
-      "Use all of them if empty\n"
-      + feature::EImageDescriberType_informations()).c_str())
-    ("scale", po::value<double>(&userScale)->default_value(userScale),
-      "Additional scale to apply.")
-    ("applyScale", po::value<bool>(&applyScale)->default_value(applyScale),
-        "Apply scale transformation.")
-    ("applyRotation", po::value<bool>(&applyRotation)->default_value(applyRotation),
-        "Apply rotation transformation.")
-    ("applyTranslation", po::value<bool>(&applyTranslation)->default_value(applyTranslation),
-        "Apply translation transformation.")
-    ("markers", po::value<std::vector<sfm::MarkerWithCoord>>(&markers)->multitoken(),
-        "Markers ID and target coordinates 'ID:x,y,z'.")
-    ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-      "Path of the output SfMData file.")
-    ;
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("method", po::value<EAlignmentMethod>(&alignmentMethod)->default_value(alignmentMethod),
+         "Transform Method:\n"
+         "\t- transformation: Apply a given transformation.\n"
+         "\t- manual: Apply the gizmo transformation.\n"
+         "\t- auto: Determines scene orientation from the cameras' X axis, auto-scaling from GPS information if available, and defines ground level from the point cloud.\n"
+         "\t- auto_from_cameras: Defines coordinate system from cameras.\n"
+         "\t- auto_from_cameras_x_axis: Determines scene orientation from the cameras' X axis.\n"
+         "\t- auto_from_landmarks: Defines coordinate system from landmarks.\n"
+         "\t- from_single_camera: Refines the coordinate system from the camera specified by --tranformation.\n"
+         "\t- from_markers: Refines the coordinate system from markers specified by --markers.\n"
+         "\t- from_gps: Redefines coordinate system from GPS metadata.\n"
+         "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n")
+        ("transformation", po::value<std::string>(&transform)->default_value(transform),
+         "Required only for 'transformation' and 'single camera' methods:\n"
+         "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S.\n"
+         "Single camera: camera UID or image filename.")
+        ("manualTransform", po::value<std::string>(&manualTransform),
+         "Translation, rotation and scale defined with the manual mode.")
+        ("landmarksDescriberTypes,d", po::value<std::string>(&landmarksDescriberTypesName)->default_value(landmarksDescriberTypesName),
+         ("Optional for 'landmarks' method:\n"
+         "Image describer types used to compute the mean of the point cloud.\n"
+         "Use all of them if empty\n" + feature::EImageDescriberType_informations()).c_str())
+        ("scale", po::value<double>(&userScale)->default_value(userScale),
+         "Additional scale to apply.")
+        ("applyScale", po::value<bool>(&applyScale)->default_value(applyScale),
+         "Apply scale transformation.")
+        ("applyRotation", po::value<bool>(&applyRotation)->default_value(applyRotation),
+         "Apply rotation transformation.")
+        ("applyTranslation", po::value<bool>(&applyTranslation)->default_value(applyTranslation),
+         "Apply translation transformation.")
+        ("markers", po::value<std::vector<sfm::MarkerWithCoord>>(&markers)->multitoken(),
+         "Markers ID and target coordinates 'ID:x,y,z'.")
+        ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
+         "Path of the output SfMData file.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision sfmTransform");
   cmdline.add(requiredParams);

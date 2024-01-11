@@ -145,19 +145,21 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string cameraModelName = "3deanamorphic4";
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(),
-        "SfMData file input.")
+         "SfMData file input.")
         ("checkerboards", po::value<std::string>(&checkerBoardsPath)->required(),
-        "Checkerboards json files directory.")
+         "Checkerboards json files directory.")
         ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
-        "SfMData file output.");
+         "SfMData file output.");
     
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("cameraModel", po::value<std::string>(&cameraModelName)->default_value(cameraModelName),
-        "Camera model used for estimating distortion.");
+         "Camera model used for estimating distortion.");
+    // clang-format on
 
     CmdLine cmdline("This program calibrates camera distortion.\n"
                     "AliceVision distortionCalibration");

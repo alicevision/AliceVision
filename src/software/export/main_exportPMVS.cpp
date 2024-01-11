@@ -335,21 +335,23 @@ int aliceVision_main(int argc, char *argv[])
   int nbCore = 8;
   bool useVisData = true;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for keypoints.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for keypoints.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("resolution", po::value<int>(&resolution)->default_value(resolution),
-      "Divide image coefficient")
-    ("nbCore", po::value<int>(&nbCore)->default_value(nbCore),
-      "Nb core")
-    ("useVisData", po::value<bool>(&useVisData)->default_value(useVisData),
-      "Use visibility information.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("resolution", po::value<int>(&resolution)->default_value(resolution),
+         "Divide image coefficient.")
+        ("nbCore", po::value<int>(&nbCore)->default_value(nbCore),
+         "Number of cores.")
+        ("useVisData", po::value<bool>(&useVisData)->default_value(useVisData),
+         "Use visibility information.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportPMVS");
   cmdline.add(requiredParams);

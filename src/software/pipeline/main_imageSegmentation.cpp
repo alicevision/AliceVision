@@ -96,11 +96,15 @@ int aliceVision_main(int argc, char** argv)
     bool keepFilename = false;
     
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input SfMData.")
-        ("modelPath,m", po::value<std::string>(&modelWeightsPath)->required(), "Input Model weights file.")
-        ("output,o", po::value<std::string>(&outputPath)->required(), "Output folder.");
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "Input SfMData.")
+        ("modelPath,m", po::value<std::string>(&modelWeightsPath)->required(),
+         "Input model weights file.")
+        ("output,o", po::value<std::string>(&outputPath)->required(),
+         "Output folder.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -116,6 +120,7 @@ int aliceVision_main(int argc, char** argv)
          "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), 
          "Range size for processing views (ordered by image filepath).");
+    // clang-format on
 
     CmdLine cmdline("AliceVision imageSegmentation");
     cmdline.add(requiredParams);

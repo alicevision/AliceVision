@@ -32,11 +32,16 @@ int aliceVision_main(int argc, char **argv)
     std::string sfmDataFilename1, sfmDataFilename2;
     std::string outSfMDataFilename;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("firstinput,i1", po::value<std::string>(&sfmDataFilename1)->required(), "First SfMData file to merge.")
-        ("secondinput,i2", po::value<std::string>(&sfmDataFilename2)->required(), "Second SfMData file to merge.")
-        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(), "Output SfMData scene.");
+        ("firstinput,i1", po::value<std::string>(&sfmDataFilename1)->required(),
+         "First SfMData file to merge.")
+        ("secondinput,i2", po::value<std::string>(&sfmDataFilename2)->required(),
+         "Second SfMData file to merge.")
+        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+         "Output SfMData scene.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision sfmMerge");
     cmdline.add(requiredParams);

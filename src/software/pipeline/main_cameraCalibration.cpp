@@ -64,6 +64,7 @@ int aliceVision_main(int argc, char** argv)
     double squareSize = 1.0;
     double maxTotalAvgErr = 0.1;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<fs::path>(&inputPath)->required(),
@@ -97,11 +98,12 @@ int aliceVision_main(int argc, char** argv)
         ("minInputFrames", po::value<std::size_t>(&minInputFrames)->default_value(minInputFrames),
          "Minimum number of frames to limit the refinement loop.")
         ("maxTotalAvgErr,e", po::value<double>(&maxTotalAvgErr)->default_value(maxTotalAvgErr),
-         "Max Total Average Error.")
+         "Maximum total average error.")
         ("debugRejectedImgFolder", po::value<std::string>(&debugRejectedImgFolder)->default_value(""),
          "Folder to export images that were deleted during the refinement loop.")
         ("debugSelectedImgFolder,d", po::value<std::string>(&debugSelectedImgFolder)->default_value(""),
          "Folder to export debug images.");
+    // clang-format on
 
     aliceVision::CmdLine cmdline("This program is used to calibrate a camera from a dataset of images.\n"
                                  "AliceVision cameraCalibration");

@@ -323,103 +323,107 @@ int aliceVision_main(int argc, char* argv[])
     bool exportDebugTetrahedralization = false;
     int maxNbConnectedHelperPoints = 50;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-          "SfMData file.")
+         "SfMData file.")
         ("output,o", po::value<std::string>(&outputDensePointCloud)->required(),
-          "Output Dense SfMData file.")
+         "Output Dense SfMData file.")
         ("outputMesh,o", po::value<std::string>(&outputMesh)->required(),
-          "Output mesh");
+         "Output mesh.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
-            "Input filtered depth maps folder.")
+         "Input filtered depth maps folder.")
         ("boundingBox", po::value<BoundingBox>(&boundingBox),
-            "Specifies a bounding box to reconstruct: position, rotation (Euler ZXY) and scale.")
+         "Specifies a bounding box to reconstruct: position, rotation (Euler ZXY) and scale.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
-            "Max input points loaded from images.")
+         "Maximum number of input points loaded from images.")
         ("maxPoints", po::value<int>(&fuseParams.maxPoints)->default_value(fuseParams.maxPoints),
-            "Max points at the end of the depth maps fusion.")
+         "Maximum number of points at the end of the depth maps fusion.")
         ("maxPointsPerVoxel", po::value<int>(&maxPtsPerVoxel)->default_value(maxPtsPerVoxel),
-            "Max points per voxel.")
+         "Maximum number of points per voxel.")
         ("minStep", po::value<int>(&fuseParams.minStep)->default_value(fuseParams.minStep),
-            "The step used to load depth values from depth maps is computed from maxInputPts. Here we define the minimal value for this step, "
-            "so on small datasets we will not spend too much time at the beginning loading all depth values.")
+         "The step used to load depth values from depth maps is computed from maxInputPts. "
+         "Here we define the minimal value for this step, so on small datasets we will not spend too much time at the "
+         "beginning loading all depth values.")
         ("simFactor", po::value<float>(&fuseParams.simFactor)->default_value(fuseParams.simFactor),
-            "simFactor")
+         "simFactor.")
         ("angleFactor", po::value<float>(&fuseParams.angleFactor)->default_value(fuseParams.angleFactor),
-            "angleFactor")
+         "angleFactor.")
         ("minVis", po::value<int>(&fuseParams.minVis)->default_value(fuseParams.minVis),
-            "Filter points based on their number of observations")
+         "Filter points based on their number of observations.")
         ("partitioning", po::value<EPartitioningMode>(&partitioningMode)->default_value(partitioningMode),
-            "Partitioning: 'singleBlock' or 'auto'.")
+         "Partitioning: 'singleBlock' or 'auto'.")
         ("repartition", po::value<ERepartitionMode>(&repartitionMode)->default_value(repartitionMode),
-            "Repartition: 'multiResolution' or 'regularGrid'.")
+         "Repartition: 'multiResolution' or 'regularGrid'.")
         ("estimateSpaceFromSfM", po::value<bool>(&estimateSpaceFromSfM)->default_value(estimateSpaceFromSfM),
-            "Estimate the 3d space from the SfM.")
+         "Estimate the 3d space from the SfM.")
         ("addLandmarksToTheDensePointCloud", po::value<bool>(&addLandmarksToTheDensePointCloud)->default_value(addLandmarksToTheDensePointCloud),
-            "Add SfM Landmarks into the dense point cloud (created from depth maps). If only the SfM is provided in input, SfM landmarks will be used regardless of this option.")
+         "Add SfM Landmarks into the dense point cloud (created from depth maps). "
+         "If only the SfM is provided in input, SfM landmarks will be used regardless of this option.")
         ("colorizeOutput", po::value<bool>(&colorizeOutput)->default_value(colorizeOutput),
-            "Whether to colorize output dense point cloud and mesh.");
+         "Whether to colorize output dense point cloud and mesh.");
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
         ("universePercentile", po::value<double>(&universePercentile)->default_value(universePercentile),
-            "universe percentile")
+         "Universe percentile.")
         ("estimateSpaceMinObservations", po::value<std::size_t>(&estimateSpaceMinObservations)->default_value(estimateSpaceMinObservations),
-            "Minimum number of observations for SfM space estimation.")
+         "Minimum number of observations for SfM space estimation.")
         ("estimateSpaceMinObservationAngle", po::value<float>(&estimateSpaceMinObservationAngle)->default_value(estimateSpaceMinObservationAngle),
-            "Minimum angle between two observations for SfM space estimation.")
+         "Minimum angle between two observations for SfM space estimation.")
         ("pixSizeMarginInitCoef", po::value<double>(&fuseParams.pixSizeMarginInitCoef)->default_value(fuseParams.pixSizeMarginInitCoef),
-            "pixSizeMarginInitCoef")
+         "pixSizeMarginInitCoef.")
         ("pixSizeMarginFinalCoef", po::value<double>(&fuseParams.pixSizeMarginFinalCoef)->default_value(fuseParams.pixSizeMarginFinalCoef),
-            "pixSizeMarginFinalCoef")
+         "pixSizeMarginFinalCoef.")
         ("voteMarginFactor", po::value<float>(&fuseParams.voteMarginFactor)->default_value(fuseParams.voteMarginFactor),
-            "voteMarginFactor")
+         "voteMarginFactor.")
         ("contributeMarginFactor", po::value<float>(&fuseParams.contributeMarginFactor)->default_value(fuseParams.contributeMarginFactor),
-            "contributeMarginFactor")
+         "contributeMarginFactor.")
         ("simGaussianSizeInit", po::value<float>(&fuseParams.simGaussianSizeInit)->default_value(fuseParams.simGaussianSizeInit),
-            "simGaussianSizeInit")
+         "simGaussianSizeInit.")
         ("simGaussianSize", po::value<float>(&fuseParams.simGaussianSize)->default_value(fuseParams.simGaussianSize),
-            "simGaussianSize")
+         "simGaussianSize.")
         ("minAngleThreshold", po::value<double>(&fuseParams.minAngleThreshold)->default_value(fuseParams.minAngleThreshold),
-            "minAngleThreshold")
+         "minAngleThreshold.")
         ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
-            "refineFuse")
+         "refineFuse.")
         ("helperPointsGridSize", po::value<int>(&helperPointsGridSize)->default_value(helperPointsGridSize),
-            "Helper points grid size.")
+         "Helper points grid size.")
         ("densifyNbFront", po::value<int>(&densifyNbFront)->default_value(densifyNbFront),
-            "Number of points in front of the vertices to densify the scene.")
+         "Number of points in front of the vertices to densify the scene.")
         ("densifyNbBack", po::value<int>(&densifyNbBack)->default_value(densifyNbBack),
-            "Number of points behind the vertices to densify the scene.")
+         "Number of points behind the vertices to densify the scene.")
         ("densifyScale", po::value<double>(&densifyScale)->default_value(densifyScale),
-            "Scale between points used to densify the scene.")
+         "Scale between points used to densify the scene.")
         ("maskHelperPointsWeight", po::value<float>(&fuseParams.maskHelperPointsWeight)->default_value(fuseParams.maskHelperPointsWeight),
-            "Mask helper points weight. Zero to disable it.")
+         "Mask helper points weight. Set to 0 to disable it.")
         ("maskBorderSize", po::value<int>(&fuseParams.maskBorderSize)->default_value(fuseParams.maskBorderSize),
-            "How many pixels on mask borders? 1 by default.")
+         "How many pixels on mask borders? 1 by default.")
         ("nPixelSizeBehind", po::value<double>(&nPixelSizeBehind)->default_value(nPixelSizeBehind),
-            "Number of pixel size units to vote behind the vertex with FULL status.")
+         "Number of pixel size units to vote behind the vertex with FULL status.")
         ("fullWeight", po::value<double>(&fullWeight)->default_value(fullWeight),
-            "Weighting of the FULL cells.")
+         "Weighting of the FULL cells.")
         ("saveRawDensePointCloud", po::value<bool>(&saveRawDensePointCloud)->default_value(saveRawDensePointCloud),
-            "Save dense point cloud before cut and filtering.")
+         "Save dense point cloud before cut and filtering.")
         ("voteFilteringForWeaklySupportedSurfaces", po::value<bool>(&voteFilteringForWeaklySupportedSurfaces)->default_value(voteFilteringForWeaklySupportedSurfaces),
-            "Improve support of weakly supported surfaces with a tetrahedra fullness score filtering.")
+         "Improve support of weakly supported surfaces with a tetrahedra fullness score filtering.")
         ("invertTetrahedronBasedOnNeighborsNbIterations", po::value<int>(&invertTetrahedronBasedOnNeighborsNbIterations)->default_value(invertTetrahedronBasedOnNeighborsNbIterations),
-            "Invert cells status around surface to improve smoothness.")
+         "Invert cells status around surface to improve smoothness.")
         ("minSolidAngleRatio", po::value<double>(&minSolidAngleRatio)->default_value(minSolidAngleRatio),
-            "Filter cells status on surface around vertices to improve smoothness using solid angle ratio between full/empty parts.")
+         "Filter cells status on surface around vertices to improve smoothness using solid angle ratio between full/empty parts.")
         ("nbSolidAngleFilteringIterations", po::value<int>(&nbSolidAngleFilteringIterations)->default_value(nbSolidAngleFilteringIterations),
-            "Number of iterations to filter the status cells based on solid angle ratio.")
+         "Number of iterations to filter the status cells based on solid angle ratio.")
         ("maxNbConnectedHelperPoints", po::value<int>(&maxNbConnectedHelperPoints)->default_value(maxNbConnectedHelperPoints),
-            "Maximum number of connected helper points before we remove them.")
+         "Maximum number of connected helper points before we remove them.")
         ("exportDebugTetrahedralization", po::value<bool>(&exportDebugTetrahedralization)->default_value(exportDebugTetrahedralization),
-            "Export debug cells score as tetrahedral mesh. WARNING: could create huge meshes, only use on very small datasets.")        
+         "Export debug cells score as tetrahedral mesh. WARNING: could create huge meshes, only use on very small datasets.")
         ("seed", po::value<unsigned int>(&seed)->default_value(seed),
-            "Seed used in random processes. (0 to use a random seed).");
+         "Seed used in random processes. (0 to use a random seed).");
+    // clang-format on
 
     CmdLine cmdline("AliceVision meshing");
     cmdline.add(requiredParams);

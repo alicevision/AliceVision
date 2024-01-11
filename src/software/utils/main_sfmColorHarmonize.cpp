@@ -39,26 +39,28 @@ int aliceVision_main( int argc, char **argv )
   EHistogramSelectionMethod selectionMethod;
   int imgRef;
 
-  // user optional parameters
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.")
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.")
-    ("referenceImage", po::value<int>(&imgRef)->required(),
-      "Reference image id.")
-    ("selectionMethod", po::value<EHistogramSelectionMethod>(&selectionMethod)->required(), 
-      EHistogramSelectionMethod_description().c_str());
+    // user optional parameters
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.")
+        ("referenceImage", po::value<int>(&imgRef)->required(),
+         "Reference image ID.")
+        ("selectionMethod", po::value<EHistogramSelectionMethod>(&selectionMethod)->required(),
+         EHistogramSelectionMethod_description().c_str());
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str());
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str());
+    // clang-format on
 
   CmdLine cmdline("AliceVision sfmColorHarmonize");
   cmdline.add(requiredParams);

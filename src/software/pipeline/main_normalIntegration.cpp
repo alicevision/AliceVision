@@ -62,6 +62,7 @@ int aliceVision_main(int argc, char **argv)
     // Image downscale factor during process
     int downscale = 1;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPath,i", po::value<std::string>(&inputPath)->required(),
@@ -75,6 +76,7 @@ int aliceVision_main(int argc, char **argv)
          "Path to the input SfMData file.")
         ("downscale,d", po::value<int>(&downscale)->default_value(downscale),
          "Downscale factor for faster results.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision normalIntegration");
     cmdline.add(requiredParams);

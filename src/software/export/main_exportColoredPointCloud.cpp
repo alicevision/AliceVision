@@ -36,15 +36,14 @@ int aliceVision_main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outputSfMDataFilename;
 
-  po::options_description allParams("AliceVision exportColoredPointCloud");
-
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
-      "Output point cloud with visibilities as SfMData file.");
-
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
+         "Output point cloud with visibilities as SfMData file.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportColoredPointCloud");
   cmdline.add(requiredParams);

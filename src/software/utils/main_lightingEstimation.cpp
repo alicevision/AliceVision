@@ -278,30 +278,32 @@ int main(int argc, char** argv)
   int albedoEstimationFilterSize = 3;
   ELightingColor lightingColor = ELightingColor::RGB;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("depthMapsFilterFolder", po::value<std::string>(&depthMapsFilterFolder)->required(),
-      "Filtered depth maps folder.")
-    ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
-      "Images used for depth map computation.\n"
-      "Filename should be the image uid.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Folder for output lighting vector files.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("depthMapsFilterFolder", po::value<std::string>(&depthMapsFilterFolder)->required(),
+         "Filtered depth maps folder.")
+        ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
+         "Images used for depth map computation.\n"
+         "Filename should be the image UID.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Folder for output lighting vector files.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("lightingColor", po::value<ELightingColor>(&lightingColor)->default_value(lightingColor),
-      "Lighting color.")
-    ("lightingEstimationMode", po::value<ELightingEstimationMode>(&lightEstimationMode)->default_value(lightEstimationMode),
-      "Lighting Estimation Mode.")
-    ("albedoEstimationName", po::value<EAlbedoEstimation>(&albedoEstimationMethod)->default_value(albedoEstimationMethod),
-      EAlbedoEstimation_informations().c_str())
-    ("albedoEstimationFilterSize", po::value<int>(&albedoEstimationFilterSize)->default_value(albedoEstimationFilterSize),
-      "Albedo filter size for estimation method using filter.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("lightingColor", po::value<ELightingColor>(&lightingColor)->default_value(lightingColor),
+         "Lighting color.")
+        ("lightingEstimationMode", po::value<ELightingEstimationMode>(&lightEstimationMode)->default_value(lightEstimationMode),
+         "Lighting Estimation Mode.")
+        ("albedoEstimationName", po::value<EAlbedoEstimation>(&albedoEstimationMethod)->default_value(albedoEstimationMethod),
+         EAlbedoEstimation_informations().c_str())
+        ("albedoEstimationFilterSize", po::value<int>(&albedoEstimationFilterSize)->default_value(albedoEstimationFilterSize),
+         "Albedo filter size for estimation method using filter.");
+    // clang-format on
 
-  CmdLine cmdline("AliceVision lighthingEstimation");
+  CmdLine cmdline("AliceVision lightingEstimation");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

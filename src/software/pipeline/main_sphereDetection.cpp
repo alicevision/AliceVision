@@ -50,6 +50,7 @@ int aliceVision_main(int argc, char** argv)
     Eigen::Vector2f sphereCenterOffset(0, 0);
     double sphereRadius = 1.0;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputSfMDataPath)->required(),
@@ -71,6 +72,7 @@ int aliceVision_main(int argc, char** argv)
          "Sphere's center offset Y (pixels).")
         ("sphereRadius,r", po::value<double>(&sphereRadius)->default_value(1.0),
          "Sphere's radius (pixels).");
+    // clang-format on
 
     CmdLine cmdline("AliceVision sphereDetection");
     cmdline.add(requiredParams);

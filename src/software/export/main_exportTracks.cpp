@@ -57,25 +57,27 @@ int aliceVision_main(int argc, char ** argv)
   // user optional parameters
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for tracks.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.")
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for tracks.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("clearForks", po::value<bool>(&clearForks),
-      "Filter tracks forks.")
-    ("minTrackLength", po::value<int>(&minTrackLength),
-      "Minimum track length.")
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str());
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("clearForks", po::value<bool>(&clearForks),
+         "Filter tracks forks.")
+        ("minTrackLength", po::value<int>(&minTrackLength),
+         "Minimum track length.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str());
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportTracks");
   cmdline.add(requiredParams);

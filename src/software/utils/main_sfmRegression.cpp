@@ -124,8 +124,6 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
 
 int aliceVision_main(int argc, char **argv)
 {
-  po::options_description allParams("AliceVision sfmRegression");
-
   CmdLine cmdline("AliceVision sfmRegression");
   if (!cmdline.execute(argc, argv))
   {

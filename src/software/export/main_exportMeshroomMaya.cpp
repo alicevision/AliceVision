@@ -34,12 +34,14 @@ int aliceVision_main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outputFolder;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output folder.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output folder.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportMeshroomMaya");
   cmdline.add(requiredParams);

@@ -48,38 +48,38 @@ int aliceVision_main(int argc, char **argv)
   bool lockAllIntrinsics = false;
   int randomSeed = std::mt19937::default_seed;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outSfMDataFilepath)->required(),
-      "Path to the output SfMData file.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.")
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.")
-    ;
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outSfMDataFilepath)->required(),
+         "Path to the output SfMData file.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
-      "Path to the output SfMData file (with only views and poses).")
-    ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
-      "Folder for intermediate reconstruction files and additional reconstruction information files.")
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str())
-    ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
-      "* 1: L1 minimization\n"
-      "* 2: L2 minimization")
-    ("translationAveraging", po::value<sfm::ETranslationAveragingMethod>(&translationAveragingMethod)->default_value(translationAveragingMethod),
-      "* 1: L1 minimization\n"
-      "* 2: L2 minimization of sum of squared Chordal distances\n"
-      "* 3: L1 soft minimization")
-    ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
-      "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
-    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
-      "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
-    ;
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
+         "Path to the output SfMData file (with only views and poses).")
+        ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
+         "Folder for intermediate reconstruction files and additional reconstruction information files.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+        feature::EImageDescriberType_informations().c_str())
+        ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
+         "* 1: L1 minimization\n"
+         "* 2: L2 minimization")
+        ("translationAveraging", po::value<sfm::ETranslationAveragingMethod>(&translationAveragingMethod)->default_value(translationAveragingMethod),
+         "* 1: L1 minimization\n"
+         "* 2: L2 minimization of sum of squared Chordal distances\n"
+         "* 3: L1 soft minimization")
+        ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
+         "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
+    // clang-format on
 
   CmdLine cmdline("This program is an implementation of the paper\n"
                   "\"Global Fusion of Relative Motions for "

@@ -102,35 +102,36 @@ int aliceVision_main(int argc, char **argv)
     std::vector<std::string> metadataMatchingList = { "Make", "Model", "Exif:BodySerialNumber" , "Exif:LensSerialNumber" };
     std::string outputViewsAndPosesFilepath;
 
-
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-             "SfMData file to align.")
+         "SfMData file to align.")
         ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-            "Output SfMData scene.")
+         "Output SfMData scene.")
         ("reference,r", po::value<std::string>(&sfmDataReferenceFilename)->required(),
-            "Path to the scene used as the reference coordinate system.");
+         "Path to the scene used as the reference coordinate system.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("method", po::value<EMatchingMethod>(&matchingMethod)->default_value(matchingMethod),
-            "Matching Method:\n"
-            "\t- from_viewid: Align cameras with same view Id\n"
-            "\t- from_filepath: Align cameras with a filepath matching, using --fileMatchingPattern\n"
-            "\t- from_metadata: Align cameras with matching metadata, using --metadataMatchingList\n")
+         "Matching method:\n"
+         "\t- from_viewid: Align cameras with same view ID.\n"
+         "\t- from_filepath: Align cameras with a filepath matching, using --fileMatchingPattern.\n"
+         "\t- from_metadata: Align cameras with matching metadata, using --metadataMatchingList.\n")
         ("fileMatchingPattern", po::value<std::string>(&fileMatchingPattern)->default_value(fileMatchingPattern),
-            "Matching pattern for the from_filepath method.\n")
+         "Matching pattern for the from_filepath method.\n")
         ("metadataMatchingList", po::value<std::vector<std::string>>(&metadataMatchingList)->multitoken()->default_value(metadataMatchingList),
-            "List of metadata that should match to create the correspondences.\n")
+         "List of metadata that should match to create the correspondences.\n")
         ("transferPoses", po::value<bool>(&transferPoses)->default_value(transferPoses),
-            "Transfer poses.")
+         "Transfer poses.")
         ("transferIntrinsics", po::value<bool>(&transferIntrinsics)->default_value(transferIntrinsics),
-            "Transfer intrinsics.")
+         "Transfer intrinsics.")
         ("transferLandmarks", po::value<bool>(&transferLandmarks)->default_value(transferLandmarks),
-            "Transfer landmarks.")
+         "Transfer landmarks.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-            "Path of the output SfMData file.");
+         "Path of the output SfMData file.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision sfmTransfer");
     cmdline.add(requiredParams);

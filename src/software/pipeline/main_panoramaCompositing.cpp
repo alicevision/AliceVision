@@ -646,24 +646,38 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")(
-        "warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")(
-        "output,o", po::value<std::string>(&outputFolder)->required(), "Path of the output panorama.");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "Input SfMData.")
+        ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(),
+         "Folder with warped images.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Path of the output panorama.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
-        ("forceMinPyramidLevels,f", po::value<int>(&forceMinPyramidLevels)->default_value(forceMinPyramidLevels), "For multiband compositer, force a minimum number of levels in the image pyramid.")
-        ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams, all].")
+        ("compositerType,c", po::value<std::string>(&compositerType)->required(),
+         "Compositer type: [replace, alpha, multiband].")
+        ("forceMinPyramidLevels,f", po::value<int>(&forceMinPyramidLevels)->default_value(forceMinPyramidLevels),
+         "For multiband compositer, force a minimum number of levels in the image pyramid.")
+        ("overlayType,c", po::value<std::string>(&overlayType)->required(),
+         "Overlay type: [none, borders, seams, all].")
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-        ("Storage data type: " + image::EStorageDataType_informations()).c_str())
-        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Range chunk id.")
-        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
-        ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads), "max number of threads to use.")
-        ("labels,l", po::value<std::string>(&labelsFilepath)->required(), "Labels image from seams estimation.")
-        ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling), "use tiling for compositing.");
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration),
+         "Range chunk ID.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+         "Range size.")
+        ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads),
+         "Maximum number of threads to use.")
+        ("labels,l", po::value<std::string>(&labelsFilepath)->required(),
+         "Labels image from seams estimation.")
+        ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling),
+         "Use tiling for compositing.");
+    // clang-format on
 
     CmdLine cmdline(
         "Performs the panorama stiching of warped images, with an option to use constraints from precomputed seams maps.\n"

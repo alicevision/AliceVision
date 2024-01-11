@@ -294,6 +294,7 @@ int aliceVision_main(int argc, char *argv[])
     bool saveMatricesTxtFiles = false;
     bool evCorrection = false;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
@@ -305,10 +306,10 @@ int aliceVision_main(int argc, char *argv[])
     optionalParams.add_options()
         ("imagesFolders",  po::value<std::vector<std::string>>(&imagesFolders)->multitoken(),
          "Use images from specific folder(s) instead of those specify in the SfMData file.\n"
-         "Filename should be the same or the image uid.")
+         "Filename should be the same or the image UID.")
         ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
          "Use masks from specific folder(s).\n"
-         "Filename should be the same or the image uid.")
+         "Filename should be the same or the image UID.")
         ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
          "File extension of the masks to use.")
         ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
@@ -323,6 +324,7 @@ int aliceVision_main(int argc, char *argv[])
          "Range size.")
         ("evCorrection", po::value<bool>(&evCorrection)->default_value(evCorrection),
          "Correct exposure value.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision prepareDenseScene");
     cmdline.add(requiredParams);

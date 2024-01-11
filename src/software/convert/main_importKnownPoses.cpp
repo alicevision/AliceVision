@@ -137,12 +137,16 @@ int aliceVision_main(int argc, char **argv)
 
   sfmData::SfMData sfmData;
 
-  // enter the parameter
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-      ("knownPosesData", po::value<std::string>(&knownPosesFilePath)->required(), "Input path to a json file or a folder containing an XMP file per image.")
-      ("sfmData", po::value<std::string>(&sfmDataFilePath)->required(), "SfmData filepath.")
-      ("output,o", po::value<std::string>(&outputFilename)->required(), "Output sfmData filepath.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("knownPosesData", po::value<std::string>(&knownPosesFilePath)->required(),
+         "Input path to a json file or a folder containing an XMP file per image.")
+        ("sfmData", po::value<std::string>(&sfmDataFilePath)->required(),
+         "SfmData filepath.")
+        ("output,o", po::value<std::string>(&outputFilename)->required(),
+         "Output sfmData filepath.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision importKnownPoses");
   cmdline.add(requiredParams);

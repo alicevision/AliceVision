@@ -34,18 +34,20 @@ int aliceVision_main(int argc, char* argv[])
     std::string outDirectory;
     bool copyImages{false};
 
-
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
         ("output,o", po::value<std::string>(&outDirectory)->required(),
-        "The base path where the folder structure will be created with the relevant cameras.txt, images.txt "
-             "and points3D.txt files.")
+         "The base path where the folder structure will be created with the relevant cameras.txt, images.txt "
+         "and points3D.txt files.")
         ("copyImages", po::value<bool>(&copyImages)->default_value(copyImages),
-             "Copy original images to colmap folder. This is required if your images are not all in the same "
-             "folder.");
+         "Copy original images to Colmap folder. This is required if your images are not all in the same "
+         "folder.");
+    // clang-format on
 
-    CmdLine cmdline("Export an AV sfmdata to a Colmap scene, creating the folder structure and "
+    CmdLine cmdline("Export an AV SfMData to a Colmap scene, creating the folder structure and "
                     "the scene files that can be used for running a MVS step.\n"
                     "AliceVision exportColmap");
     cmdline.add(requiredParams);

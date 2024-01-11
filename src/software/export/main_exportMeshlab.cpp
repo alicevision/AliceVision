@@ -37,14 +37,16 @@ int aliceVision_main(int argc, char **argv)
   std::string plyPath;
   std::string outDirectory;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("ply", po::value<std::string>(&plyPath)->required(),
-      "Ply.")
-    ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output folder.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("ply", po::value<std::string>(&plyPath)->required(),
+         "PLY path.")
+        ("output,o", po::value<std::string>(&outDirectory)->required(),
+         "Output folder.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportMeshlab");
   cmdline.add(requiredParams);

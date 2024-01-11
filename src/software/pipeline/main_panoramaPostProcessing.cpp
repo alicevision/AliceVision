@@ -251,32 +251,40 @@ int aliceVision_main(int argc, char** argv)
     int lastLevelMaxSize = 3840;
 
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("inputPanorama,i", po::value<std::string>(&inputPanoramaPath)->required(), "Input Panorama.")
-        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");
+        ("inputPanorama,i", po::value<std::string>(&inputPanoramaPath)->required(),
+         "Input panorama.")
+        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(),
+         "Path of the output panorama.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
-
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
         ("compressionMethod", po::value<image::EImageExrCompression>(&compressionMethod)->default_value(compressionMethod),
-         ("Compression Method: " + image::EImageExrCompression_informations()).c_str())
-
+         ("Compression method: " + image::EImageExrCompression_informations()).c_str())
         ("compressionLevel", po::value<int>(&compressionLevel)->default_value(compressionLevel),
-         "Compression Level (must be strictly positive to be considered)\n"
+         "Compression Level (must be strictly positive to be considered).\n"
          "Only dwaa, dwab, zip and zips compression methods are concerned.")
-
-        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
-        ("exportLevels", po::value<bool>(&exportLevels)->default_value(exportLevels), "Export downscaled panorama levels")
-        ("lastLevelMaxSize", po::value<int>(&lastLevelMaxSize)->default_value(lastLevelMaxSize), "Maximum width of smallest downscaled panorama level.")
-        ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
-        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.")
-        ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath), "Path of the output panorama preview.");
+        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles),
+         "Execute fill holes algorithm.")
+        ("exportLevels", po::value<bool>(&exportLevels)->default_value(exportLevels),
+         "Export downscaled panorama levels.")
+        ("lastLevelMaxSize", po::value<int>(&lastLevelMaxSize)->default_value(lastLevelMaxSize),
+         "Maximum width of smallest downscaled panorama level.")
+        ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize),
+         "Preview image width.")
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
+         "Color space for the output panorama.")
+        ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath),
+         "Path of the output panorama preview.");
+    // clang-format on
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
-                    "AliceVision PanoramaPostProcessing");
+                    "AliceVision panoramaPostProcessing");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

@@ -151,7 +151,7 @@ int aliceVision_main(int argc, char** argv)
     bool byPass = false;
 
     // Command line parameters
-
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
@@ -180,8 +180,8 @@ int aliceVision_main(int argc, char** argv)
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("maxTotalPoints", po::value<std::size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
          "Maximum number of points used from the sampling. This ensures that the number of pixels values extracted by "
-         "the sampling can be managed by the calibration step (in terms of computation time and memory usage).")
-        ;
+         "the sampling can be managed by the calibration step (in terms of computation time and memory usage).");
+    // clang-format on
 
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
                     "AliceVision LdrToHdrCalibration");

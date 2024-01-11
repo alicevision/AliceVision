@@ -33,14 +33,16 @@ int aliceVision_main(int argc, char **argv)
     std::string outSfMDataFilename;
     std::string sfmDataCalibratedFilename;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-             "SfMData scene to apply calibration to.")
+         "SfMData scene to apply calibration to.")
         ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-            "Output SfMData scene.")
+         "Output SfMData scene.")
         ("calibration,c", po::value<std::string>(&sfmDataCalibratedFilename)->required(),
-            "Calibrated SfMData scene.");
+         "Calibrated SfMData scene.");
+    // clang-format on
     
     CmdLine cmdline("AliceVision applyCalibration");
     cmdline.add(requiredParams);

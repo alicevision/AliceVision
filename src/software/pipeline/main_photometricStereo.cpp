@@ -63,6 +63,7 @@ int aliceVision_main(int argc, char **argv)
     // PhotometricStereo parameters
     photometricStereo::PhotometricSteroParameters PSParameters;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPath,i", po::value<std::string>(&inputPath)->required(),
@@ -84,6 +85,7 @@ int aliceVision_main(int argc, char **argv)
          "True to use the robust algorithm, false otherwise.")
         ("downscale, d", po::value<int>(&PSParameters.downscale)->default_value(1),
          "Downscale factor for faster results.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision photometricStereo");
     cmdline.add(requiredParams);

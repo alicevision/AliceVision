@@ -33,13 +33,18 @@ int aliceVision_main(int argc, char** argv)
     std::string outRSfMDataFilename;
     std::string outNRSfMDataFilename;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file to align.")
-        ("reconstructedOutput", po::value<std::string>(&outRSfMDataFilename)->required(), "Output SfMData scene.")
-        ("notReconstructedOutput", po::value<std::string>(&outNRSfMDataFilename)->required(), "Output SfMData scene.");
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file to align.")
+        ("reconstructedOutput", po::value<std::string>(&outRSfMDataFilename)->required(),
+         "Output SfMData scene.")
+        ("notReconstructedOutput", po::value<std::string>(&outNRSfMDataFilename)->required(),
+         "Output SfMData scene.");
+    // clang-format on
 
-    CmdLine cmdline("AliceVision sfmTransform");
+    CmdLine cmdline("AliceVision sfmSplitReconstructed");
     cmdline.add(requiredParams);
     if(!cmdline.execute(argc, argv))
     {

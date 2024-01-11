@@ -253,13 +253,15 @@ int aliceVision_main(int argc, char *argv[])
 
   po::options_description allParams("AliceVision exportMVE2");
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output folder.\n"
-      "Note:  this program writes output in MVE file format");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outDirectory)->required(),
+         "Output folder.\n"
+         "Note: this program writes output in MVE file format.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportMVE2");
   cmdline.add(requiredParams);

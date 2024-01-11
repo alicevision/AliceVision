@@ -29,9 +29,12 @@ int aliceVision_main(int argc, char** argv)
     // command-line parameters
     std::string sfmOutputDataFilepath; // output folder for splited images
     
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
-                                 "Output sfm file to generate.");
+    requiredParams.add_options()
+        ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
+         "Output sfm file to generate.");
+    // clang-format on
 
     CmdLine cmdline("This program is used to generate a sample scene and save it to a given file path.\n"
                     "AliceVision generateSampleScene");

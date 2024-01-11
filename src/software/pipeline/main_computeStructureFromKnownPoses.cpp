@@ -44,27 +44,28 @@ int aliceVision_main(int argc, char **argv)
   std::vector<std::string> matchesFolders;
   int randomSeed = std::mt19937::default_seed;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-      "Output path for the features and descriptors files (*.feat, *.desc).")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+         "Output path for the features and descriptors files (*.feat, *.desc).")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str())
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.")
-    ("geometricErrorMax", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax),
-        "Maximum error (in pixels) allowed for features matching during geometric verification for known camera poses. "
-        "If set to 0 it lets the ACRansac select an optimal value.")
-    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
-        "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
-    ;
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.")
+        ("geometricErrorMax", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax),
+         "Maximum error (in pixels) allowed for features matching during geometric verification for known camera poses. "
+         "If set to 0 it lets the ACRansac select an optimal value.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision computeStructureFromKnownPoses");
   cmdline.add(requiredParams);

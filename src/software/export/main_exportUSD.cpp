@@ -34,7 +34,7 @@
 
 using namespace aliceVision;
 
-namespace bpo = boost::program_options;
+namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
 PXR_NAMESPACE_USING_DIRECTIVE
@@ -119,12 +119,16 @@ int aliceVision_main(int argc, char **argv)
     std::string outputFolderPath;
     EUSDFileType fileType = EUSDFileType::USDA;
 
-    bpo::options_description requiredParams("Required parameters");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input", bpo::value<std::string>(&inputMeshPath), "Input textured mesh to export.")
-        ("output", bpo::value<std::string>(&outputFolderPath), "Output folder for USD file and textures.")
-        ("fileType", bpo::value<EUSDFileType>(&fileType)->default_value(fileType),
+        ("input", po::value<std::string>(&inputMeshPath),
+         "Input textured mesh to export.")
+        ("output", po::value<std::string>(&outputFolderPath),
+         "Output folder for USD file and textures.")
+        ("fileType", po::value<EUSDFileType>(&fileType)->default_value(fileType),
          EUSDFileType_informations().c_str());
+    // clang-format on
 
     CmdLine cmdline("The program converts a textured mesh to USD.\nAliceVision exportUSD");
     cmdline.add(requiredParams);

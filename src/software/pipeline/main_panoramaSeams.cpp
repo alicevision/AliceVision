@@ -186,18 +186,26 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
-        ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")
-        ("output,o", po::value<std::string>(&outputLabels)->required(), "Path of the output labels.")
-        ("outputSfm,o", po::value<std::string>(&sfmOutDataFilepath)->required(), "Path of the output SfMData file.");
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "Input SfMData.")
+        ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(),
+         "Folder with warped images.")
+        ("output,o", po::value<std::string>(&outputLabels)->required(),
+         "Path of the output labels.")
+        ("outputSfm,o", po::value<std::string>(&sfmOutDataFilepath)->required(),
+         "Path of the output SfMData file.");
         
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("maxWidth", po::value<int>(&maxPanoramaWidth)->required(), "Max Panorama Width.")
-        ("useGraphCut,g", po::value<bool>(&useGraphCut)->default_value(useGraphCut), "Enable graphcut algorithm to improve seams.");
+        ("maxWidth", po::value<int>(&maxPanoramaWidth)->required(),
+         "Maximum panorama width.")
+        ("useGraphCut,g", po::value<bool>(&useGraphCut)->default_value(useGraphCut),
+         "Enable graphcut algorithm to improve seams.");
+    // clang-format on
 
     CmdLine cmdline("Estimates the ideal path for the transition between images in order to minimize seams artifacts.\n"
                     "AliceVision panoramaSeams");

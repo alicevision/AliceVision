@@ -111,6 +111,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
     std::string outMapFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
@@ -135,6 +136,7 @@ int aliceVision_main(int argc, char** argv)
          "Filter out cameras from the export if they are part of this SfMData. Export all cameras if empty.")
         ("undistortedImageType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
          image::EImageFileType_informations().c_str());
+    // clang-format on
 
     CmdLine cmdline("AliceVision exportAnimatedCamera");
     cmdline.add(requiredParams);

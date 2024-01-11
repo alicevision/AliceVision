@@ -251,24 +251,33 @@ int aliceVision_main(int argc, char** argv)
     // user optional parameters
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
-
     int randomSeed = std::mt19937::default_seed;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
-    ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(), "Tracks file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(), "Path to the output directory.");
+        requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(),
+         "Tracks file.")
+        ("output,o", po::value<std::string>(&outputDirectory)->required(),
+         "Path to the output directory.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(), "Path to folder(s) containing the extracted features.")
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),feature::EImageDescriberType_informations().c_str())
-    ("enforcePureRotation,e", po::value<bool>(&enforcePureRotation)->default_value(enforcePureRotation), "Enforce pure rotation in estimation.")
-    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
-    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("enforcePureRotation,e", po::value<bool>(&enforcePureRotation)->default_value(enforcePureRotation),
+         "Enforce pure rotation in estimation.")
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+         "Range image index start.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+         "Range size.");
+    // clang-format on
 
-    CmdLine cmdline("AliceVision Relative Pose Estimating");
+    CmdLine cmdline("AliceVision relativePoseEstimating");
 
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
