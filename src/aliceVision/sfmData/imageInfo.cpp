@@ -246,11 +246,26 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
         }
     }
 
+    // If available, effective sensor width and height are provided in µm (Sony)
+    const double effectiveSensorWidth = getDoubleMetadata({"ImageSensorEffectiveWidth"});
+    const double effectiveSensorHeight = getDoubleMetadata({"ImageSensorEffectiveHeight"});
+
     // try to find / compute with 'FocalLengthIn35mmFilm' metadata
     const bool hasFocalIn35mmMetadata =
       hasDigitMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm", "LensZoom35mmStillCameraEquivalent"});
 
-    if (hasFocalIn35mmMetadata)
+    // If no sensor width has been found or computed yet and the effective sensor width is available, then use it
+    const bool effectiveSensorSizeApplied = effectiveSensorWidth != -1.0 && sensorWidth == -1.0;
+    if (effectiveSensorSizeApplied)
+    {
+        sensorWidth = effectiveSensorWidth / 1000.0;
+        if (effectiveSensorHeight != -1.0)
+        {
+            sensorHeight = effectiveSensorHeight / 1000.0;
+        }
+        sensorWidthSource = ESensorWidthSource::FROM_METADATA_ESTIMATION;
+    }
+    else if (hasFocalIn35mmMetadata)
     {
         const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
 
@@ -315,22 +330,6 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
 
             intrinsicInitMode = camera::EInitMode::ESTIMATED;
         }
-    }
-
-    // If available, effective sensor width and height are provided in µm (Sony)
-    const double effectiveSensorWidth = getDoubleMetadata({"ImageSensorEffectiveWidth"});
-    const double effectiveSensorHeight = getDoubleMetadata({"ImageSensorEffectiveHeight "});
-
-    // If no sensor width has been found or computed yet and the effective sensor width is available, then use it
-    const bool effectiveSensorSizeApplied = effectiveSensorWidth != -1.0 && sensorWidth == -1.0;
-    if (effectiveSensorSizeApplied)
-    {
-        sensorWidth = effectiveSensorWidth / 1000.0;
-        if (effectiveSensorHeight != -1.0)
-        {
-            sensorHeight = effectiveSensorHeight / 1000.0;
-        }
-        sensorWidthSource = ESensorWidthSource::FROM_METADATA_ESTIMATION;
     }
 
     // error handling
