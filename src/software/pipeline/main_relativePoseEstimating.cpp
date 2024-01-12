@@ -34,7 +34,6 @@
 #include <aliceVision/geometry/lie.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
 
@@ -50,7 +49,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 
 bool getPoseStructure(Mat3& R, Vec3& t, std::vector<Vec3>& structure, std::vector<size_t>& newVecInliers, const Mat3& E,
@@ -253,24 +251,33 @@ int aliceVision_main(int argc, char** argv)
     // user optional parameters
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
-
     int randomSeed = std::mt19937::default_seed;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
-    ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(), "Tracks file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(), "Path to the output directory.");
+        requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(),
+         "Tracks file.")
+        ("output,o", po::value<std::string>(&outputDirectory)->required(),
+         "Path to the output directory.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(), "Path to folder(s) containing the extracted features.")
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),feature::EImageDescriberType_informations().c_str())
-    ("enforcePureRotation,e", po::value<bool>(&enforcePureRotation)->default_value(enforcePureRotation), "Enforce pure rotation in estimation.")
-    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
-    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("enforcePureRotation,e", po::value<bool>(&enforcePureRotation)->default_value(enforcePureRotation),
+         "Enforce pure rotation in estimation.")
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+         "Range image index start.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+         "Range size.");
+    // clang-format on
 
-    CmdLine cmdline("AliceVision Relative Pose Estimating");
+    CmdLine cmdline("AliceVision relativePoseEstimating");
 
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
@@ -287,7 +294,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input SfMData scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
         return EXIT_FAILURE;
@@ -407,8 +414,8 @@ int aliceVision_main(int argc, char** argv)
             const feature::PointFeatures& refFeatures = refFeaturesPerDesc.at(track.descType);
             const feature::PointFeatures& nextfeatures = nextFeaturesPerDesc.at(track.descType);
 
-            IndexT refFeatureId = track.featPerView.at(refImage);
-            IndexT nextfeatureId = track.featPerView.at(nextImage);
+            IndexT refFeatureId = track.featPerView.at(refImage).featureId;
+            IndexT nextfeatureId = track.featPerView.at(nextImage).featureId;
 
             refX.col(pos) = refFeatures[refFeatureId].coords().cast<double>();
             nextX.col(pos) = nextfeatures[nextfeatureId].coords().cast<double>();

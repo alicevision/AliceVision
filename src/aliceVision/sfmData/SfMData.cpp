@@ -9,7 +9,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace aliceVision {
 namespace sfmData {
@@ -18,11 +18,7 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
 
-namespace fs = boost::filesystem;
-
-SfMData::SfMData() {}
-
-SfMData::~SfMData() {}
+namespace fs = std::filesystem;
 
 bool SfMData::operator==(const SfMData& other) const
 {
@@ -39,6 +35,19 @@ bool SfMData::operator==(const SfMData& other) const
 
         // Image paths
         if (view1.getImage().getImagePath() != view2.getImage().getImagePath())
+            return false;
+    }
+
+    // Ancestors
+    if (_ancestors.size() != other._ancestors.size())
+        return false;
+
+    for (ImageInfos::const_iterator it = _ancestors.begin(); it != _ancestors.end(); ++it)
+    {
+        const ImageInfo& ancestor1 = *(it->second);
+        const ImageInfo& ancestor2 = *(other._ancestors.at(it->first));
+
+        if (ancestor1 != ancestor2)
             return false;
     }
 
@@ -70,12 +79,12 @@ bool SfMData::operator==(const SfMData& other) const
     }
 
     // Points IDs are not preserved
-    if (_structure.size() != other._structure.size())
+    if (_landmarks.size() != other._landmarks.size())
         return false;
 
-    Landmarks::const_iterator landMarkIt = _structure.begin();
-    Landmarks::const_iterator otherLandmarkIt = other._structure.begin();
-    for (; landMarkIt != _structure.end() && otherLandmarkIt != other._structure.end(); ++landMarkIt, ++otherLandmarkIt)
+    Landmarks::const_iterator landMarkIt = _landmarks.begin();
+    Landmarks::const_iterator otherLandmarkIt = other._landmarks.begin();
+    for (; landMarkIt != _landmarks.end() && otherLandmarkIt != other._landmarks.end(); ++landMarkIt, ++otherLandmarkIt)
     {
         // Points IDs are not preserved
         // Landmark
@@ -116,7 +125,7 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
     absolutePaths.reserve(folders.size());
     for (const auto& folder : folders)
     {
-        const fs::path f = fs::absolute(folder, fs::path(absolutePath).parent_path());
+        const fs::path f = fs::absolute(folder);
         if (fs::exists(f))
         {
             // fs::canonical can only be used if the path exists
@@ -258,7 +267,7 @@ void SfMData::combine(const SfMData& sfmData)
     _rigs.insert(sfmData._rigs.begin(), sfmData._rigs.end());
 
     // structure
-    _structure.insert(sfmData._structure.begin(), sfmData._structure.end());
+    _landmarks.insert(sfmData._landmarks.begin(), sfmData._landmarks.end());
 
     // constraints
     constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
@@ -268,7 +277,7 @@ void SfMData::clear()
 {
     _views.clear();
     _intrinsics.clear();
-    _structure.clear();
+    _landmarks.clear();
     _posesUncertainty.clear();
     _landmarksUncertainty.clear();
     constraints2d.clear();
@@ -281,12 +290,30 @@ void SfMData::clear()
     _rigs.clear();
 }
 
+void SfMData::resetParameterStates()
+{
+    for (auto& pp : _poses)
+    {
+        pp.second.initializeState();
+    }
+
+    for (auto& pl : _landmarks)
+    {
+        pl.second.state = EEstimatorParameterState::REFINED;
+    }
+
+    for (auto& pi : _intrinsics)
+    {
+        pi.second->initializeState();
+    }
+}
+
 LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
 {
     LandmarksPerView landmarksPerView;
     for (const auto& landIt : sfmData.getLandmarks())
     {
-        for (const auto& obsIt : landIt.second.observations)
+        for (const auto& obsIt : landIt.second.getObservations())
         {
             IndexT viewId = obsIt.first;
             LandmarkIdSet& landmarksSet = landmarksPerView[viewId];

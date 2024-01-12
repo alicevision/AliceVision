@@ -64,11 +64,11 @@ double computeCameraScore(const SfMData& sfmData, const track::TracksPerView& tr
     {
         const Landmark& landmark = sfmData.getLandmarks().at(static_cast<IndexT>(landmarkId));
 
-        sfmData::Observations::const_iterator itObs = landmark.observations.find(viewId);
+        sfmData::Observations::const_iterator itObs = landmark.getObservations().find(viewId);
 
-        if (itObs != landmark.observations.end())
+        if (itObs != landmark.getObservations().end())
         {
-            const Vec2 residual = intrinsic->residual(pose, landmark.X.homogeneous(), itObs->second.x);
+            const Vec2 residual = intrinsic->residual(pose, landmark.X.homogeneous(), itObs->second.getCoordinates());
             score += std::min(1.0 / residual.norm(), 4.0);
         }
     }

@@ -12,7 +12,7 @@
 
 #define ALICEVISION_SFMDATAIO_VERSION_MAJOR 1
 #define ALICEVISION_SFMDATAIO_VERSION_MINOR 2
-#define ALICEVISION_SFMDATAIO_VERSION_REVISION 5
+#define ALICEVISION_SFMDATAIO_VERSION_REVISION 6
 
 // AliceVision version as a string; for example "0.9.0".
 #define ALICEVISION_SFMDATAIO_VERSION_STRING                                                                                                         \
@@ -33,20 +33,21 @@ enum ESfMData
     LANDMARKS_UNCERTAINTY = 64,
     POSES_UNCERTAINTY = 128,
     CONSTRAINTS2D = 256,
+    ANCESTORS = 512,
 
     UNCERTAINTY = LANDMARKS_UNCERTAINTY | POSES_UNCERTAINTY,
-    ALL_DENSE = VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | CONSTRAINTS2D,
-    ALL = VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | OBSERVATIONS_WITH_FEATURES | UNCERTAINTY | CONSTRAINTS2D
+    ALL_DENSE = VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | CONSTRAINTS2D | ANCESTORS,
+    ALL = VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | OBSERVATIONS_WITH_FEATURES | UNCERTAINTY | CONSTRAINTS2D | ANCESTORS
 };
 
 /// check that each pose have a valid intrinsic and pose id in the existing View ids
-bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag);
+bool validIds(const sfmData::SfMData& sfmData, ESfMData partFlag);
 
 /// load SfMData SfM scene from a file
-bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
+bool load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
 /// save SfMData SfM scene to a file
-bool Save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
+bool save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
 }  // namespace sfmDataIO
 }  // namespace aliceVision

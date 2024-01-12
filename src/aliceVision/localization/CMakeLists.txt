@@ -36,7 +36,6 @@ alicevision_add_library(aliceVision_localization
   PRIVATE_LINKS
     aliceVision_system
     aliceVision_matchingImageCollection
-    Boost::filesystem
     Boost::boost
     ${FLANN_LIBRARIES}
 )

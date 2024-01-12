@@ -7,8 +7,7 @@
 
 #include <aliceVision/sensorDB/parseDatabase.hpp>
 
-#include <boost/filesystem.hpp>
-
+#include <filesystem>
 #include <string>
 
 #define BOOST_TEST_MODULE parseDatabase
@@ -17,7 +16,7 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision::sensorDB;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 static const std::string sDatabase = (fs::path(THIS_SOURCE_DIR) / "cameraSensors.db").string();
 

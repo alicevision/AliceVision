@@ -11,9 +11,8 @@
 #include <OpenImageIO/color.h>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
+#include <filesystem>
 
 namespace aliceVision {
 namespace image {
@@ -21,6 +20,8 @@ namespace image {
 namespace {
 oiio::ColorConfig colorConfigOCIO(getDefaultColorConfigFilePath());
 }
+
+namespace fs = std::filesystem;
 
 oiio::ColorConfig& getGlobalColorConfigOCIO() { return colorConfigOCIO; }
 
@@ -223,15 +224,17 @@ std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
 
 EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace)
 {
-    if (colorspace == "Linear")
+    const std::string cs = boost::to_lower_copy(colorspace);
+
+    if (cs == "linear")
         return EImageColorSpace::LINEAR;
-    if (colorspace == "sRGB")
+    if (cs == "srgb")
         return EImageColorSpace::SRGB;
-    if (colorspace == "aces2065-1")
+    if (cs == "aces2065-1")
         return EImageColorSpace::ACES2065_1;
-    if (colorspace == "ACEScg")
+    if (cs == "acescg")
         return EImageColorSpace::ACEScg;
-    if ((colorspace == "REC709") || (colorspace == "ACES_LUT"))
+    if ((cs == "rec709") || (colorspace == "aces_lut"))
         return EImageColorSpace::REC709;
 
     throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
@@ -258,17 +261,20 @@ bool EImageColorSpace_isSupportedOIIOEnum(const EImageColorSpace& colorspace)
 
 bool EImageColorSpace_isSupportedOIIOstring(const std::string& colorspace)
 {
-    if (colorspace == "Linear")
-        return true;
-    if (colorspace == "sRGB")
-        return true;
-    if (colorspace == "aces2065-1")
-        return true;
-    if (colorspace == "ACEScg")
-        return true;
-    if (colorspace == "REC709")
-        return true;
-    return false;
+    const OIIO::ColorConfig& ocioConf = getGlobalColorConfigOCIO();
+
+    std::vector<std::string> knownColorSpaces = {"linear"};
+
+    for (auto cs : ocioConf.getColorSpaceNames())
+    {
+        knownColorSpaces.push_back(boost::to_lower_copy(cs));
+        for (auto alias : ocioConf.getAliases(cs))
+        {
+            knownColorSpaces.push_back(boost::to_lower_copy(alias));
+        }
+    }
+
+    return (std::find(knownColorSpaces.begin(), knownColorSpaces.end(), boost::to_lower_copy(colorspace)) != knownColorSpaces.end());
 }
 
 std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType) { return os << EImageColorSpace_enumToString(dataType); }

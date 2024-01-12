@@ -50,45 +50,52 @@ bool Segmentation::initialize()
 
     Ort::SessionOptions ortSessionOptions;
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    OrtCUDAProviderOptionsV2* cuda_options = nullptr;
-    api.CreateCUDAProviderOptions(&cuda_options);
-    api.SessionOptionsAppendExecutionProvider_CUDA_V2(static_cast<OrtSessionOptions*>(ortSessionOptions), cuda_options);
-    api.ReleaseCUDAProviderOptions(cuda_options);
+    // this is false if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ONNX_GPU) is false
+    if (_parameters.useGpu)
+    {
+        //Disable for compilation purpose if needed
+        #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ONNX_GPU)
+            OrtCUDAProviderOptionsV2* cuda_options = nullptr;
+            api.CreateCUDAProviderOptions(&cuda_options);
+            api.SessionOptionsAppendExecutionProvider_CUDA_V2(static_cast<OrtSessionOptions*>(ortSessionOptions), cuda_options);
+            api.ReleaseCUDAProviderOptions(cuda_options);
 
-    #if defined(_WIN32) || defined(_WIN64)
-    std::wstring modelWeights(_parameters.modelWeights.begin(), _parameters.modelWeights.end());
-    _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, modelWeights.c_str(), ortSessionOptions);
-    #else
-    _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
-    #endif
+            #if defined(_WIN32) || defined(_WIN64)
+                std::wstring modelWeights(_parameters.modelWeights.begin(), _parameters.modelWeights.end());
+                _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, modelWeights.c_str(), ortSessionOptions);
+            #else
+                _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+            #endif
 
-    Ort::MemoryInfo memInfoCuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
-    Ort::Allocator cudaAllocator(*_ortSession, memInfoCuda);
+            Ort::MemoryInfo memInfoCuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
+            Ort::Allocator cudaAllocator(*_ortSession, memInfoCuda);
 
-    _output.resize(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
-    _cudaInput = cudaAllocator.Alloc(_output.size() * sizeof(float));
-    _cudaOutput = cudaAllocator.Alloc(_output.size() * sizeof(float));
-#else
-    #if defined(_WIN32) || defined(_WIN64)
-    std::wstring modelWeights(_parameters.modelWeights.begin(), _parameters.modelWeights.end());
-    _ortSession = std::make_unique<Ort::Session>(ortEnvironment, modelWeights.c_str(), ortSessionOptions);
-    #else
-    _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
-    #endif
-#endif
+            _output.resize(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
+            _cudaInput = cudaAllocator.Alloc(_output.size() * sizeof(float));
+            _cudaOutput = cudaAllocator.Alloc(_output.size() * sizeof(float));
+        #endif
+    }
+    else
+    {
+        #if defined(_WIN32) || defined(_WIN64)
+            std::wstring modelWeights(_parameters.modelWeights.begin(), _parameters.modelWeights.end());
+            _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, modelWeights.c_str(), ortSessionOptions);
+        #else
+            _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
+        #endif
+    }
 
     return true;
 }
 
 bool Segmentation::terminate()
 {
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
-    Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
-    cudaAllocator.Free(_cudaInput);
-    cudaAllocator.Free(_cudaOutput);
-#endif
+    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ONNX_GPU)
+        Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
+        Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
+        cudaAllocator.Free(_cudaInput);
+        cudaAllocator.Free(_cudaOutput);
+    #endif
 
     return true;
 }
@@ -102,10 +109,10 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
     // - both dimensions are larger or equal than the model dimensions
     int resizedHeight = 0;
     int resizedWidth = 0;
-    if (source.Height() < source.Width())
+    if (source.height() < source.width())
     {
         resizedWidth =
-          static_cast<int>(static_cast<double>(source.Width()) * static_cast<double>(_parameters.modelHeight) / static_cast<double>(source.Height()));
+          static_cast<int>(static_cast<double>(source.width()) * static_cast<double>(_parameters.modelHeight) / static_cast<double>(source.height()));
         if (resizedWidth < _parameters.modelWidth)
         {
             resizedWidth = _parameters.modelWidth;
@@ -120,7 +127,7 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
     else
     {
         resizedHeight =
-          static_cast<int>(static_cast<double>(source.Height()) * static_cast<double>(_parameters.modelWidth) / static_cast<double>(source.Width()));
+          static_cast<int>(static_cast<double>(source.height()) * static_cast<double>(_parameters.modelWidth) / static_cast<double>(source.width()));
         if (resizedHeight < _parameters.modelHeight)
         {
             resizedHeight = _parameters.modelHeight;
@@ -153,7 +160,7 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
         return false;
     }
 
-    imageAlgo::resampleImage(source.Width(), source.Height(), resizedLabels, labels, false);
+    imageAlgo::resampleImage(source.width(), source.height(), resizedLabels, labels, false);
 
     return true;
 }
@@ -161,10 +168,10 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
 bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image<image::RGBfColor>& source)
 {
     // Compute the theorical tiles count
-    int cwidth = divideRoundUp(source.Width(), _parameters.modelWidth);
-    int cheight = divideRoundUp(source.Height(), _parameters.modelHeight);
+    int cwidth = divideRoundUp(source.width(), _parameters.modelWidth);
+    int cheight = divideRoundUp(source.height(), _parameters.modelHeight);
 
-    image::Image<ScoredLabel> scoredLabels(source.Width(), source.Height(), true, {0, 0.0f});
+    image::Image<ScoredLabel> scoredLabels(source.width(), source.height(), true, {0, 0.0f});
 
     // Loop over tiles
     for (int i = 0; i < cheight; i++)
@@ -174,7 +181,7 @@ bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image
         int ly = y + _parameters.modelHeight;
 
         // If we are on the end border, shift on the other side
-        int shifty = source.Height() - ly;
+        int shifty = source.height() - ly;
         if (shifty < 0)
         {
             y = std::max(0, y + shifty);
@@ -187,7 +194,7 @@ bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image
             int lx = x + _parameters.modelWidth;
 
             // If we are on the end border, shift on the other side
-            int shiftx = source.Width() - lx;
+            int shiftx = source.width() - lx;
             if (shiftx < 0)
             {
                 x = std::max(0, x + shiftx);
@@ -199,11 +206,14 @@ bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image
             // Compute tile
             image::Image<ScoredLabel> tileLabels(_parameters.modelWidth, _parameters.modelHeight, true, {0, 0.0f});
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-            processTileGPU(tileLabels, block);
-#else
-            processTile(tileLabels, block);
-#endif
+            if (_parameters.useGpu)
+            {
+                processTileGPU(tileLabels, block);
+            }
+            else
+            {
+                processTile(tileLabels, block);
+            }
 
             // Update the global labeling
             mergeLabels(scoredLabels, tileLabels, x, y);
@@ -217,10 +227,10 @@ bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image
 
 bool Segmentation::mergeLabels(image::Image<ScoredLabel>& labels, image::Image<ScoredLabel>& tileLabels, int tileX, int tileY)
 {
-    for (int i = 0; i < tileLabels.Height(); i++)
+    for (int i = 0; i < tileLabels.height(); i++)
     {
         int y = i + tileY;
-        for (int j = 0; j < tileLabels.Width(); j++)
+        for (int j = 0; j < tileLabels.width(); j++)
         {
             int x = j + tileX;
 
@@ -265,6 +275,7 @@ bool Segmentation::labelsFromModelOutput(image::Image<ScoredLabel>& labels, cons
 
 bool Segmentation::processTile(image::Image<ScoredLabel>& labels, const image::Image<image::RGBfColor>::Base& source)
 {
+    ALICEVISION_LOG_TRACE("Process tile using cpu");
     Ort::MemoryInfo memInfo = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
     std::vector<const char*> inputNames{"input"};
@@ -300,9 +311,10 @@ bool Segmentation::processTile(image::Image<ScoredLabel>& labels, const image::I
     return true;
 }
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
 bool Segmentation::processTileGPU(image::Image<ScoredLabel>& labels, const image::Image<image::RGBfColor>::Base& source)
 {
+    ALICEVISION_LOG_TRACE("Process tile using gpu");
+    #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
     Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
     Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
 
@@ -339,9 +351,10 @@ bool Segmentation::processTileGPU(image::Image<ScoredLabel>& labels, const image
         return false;
     }
 
+    #endif
+
     return true;
 }
-#endif
 
 }  // namespace segmentation
 }  // namespace aliceVision

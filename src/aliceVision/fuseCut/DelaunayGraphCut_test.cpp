@@ -8,8 +8,6 @@
 #include <aliceVision/multiview/NViewDataSet.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <boost/math/constants/constants.hpp>
 
 #include <string>
@@ -18,6 +16,8 @@
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
+
+#include <filesystem>
 
 using namespace aliceVision;
 using namespace aliceVision::fuseCut;
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     for (int i = 0; i < cams.size(); ++i)
         cams[i] = i;
 
-    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    const std::string tempDirPath = std::filesystem::temp_directory_path().generic_string();
 
     DelaunayGraphCut delaunayGC(mp);
     ALICEVISION_LOG_TRACE("Creating dense point cloud witout support pts.");
@@ -200,7 +200,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
         for (int j = 0; j < camsPts.size(); ++j)
         {
             const Vec2 pt = projectedPtsPerCam[j].col(i);
-            landmark.observations[j] = Observation(pt, i, unknownScale);
+            landmark.getObservations()[j] = Observation(pt, i, unknownScale);
         }
         sfm_data.getLandmarks()[i] = landmark;
     }

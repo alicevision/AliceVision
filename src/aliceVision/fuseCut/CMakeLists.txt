@@ -32,7 +32,6 @@ alicevision_add_library(aliceVision_fuseCut
     aliceVision_sfmData
     aliceVision_system
     Geogram::geogram
-    Boost::filesystem
     Boost::graph
     Boost::container
   PRIVATE_LINKS

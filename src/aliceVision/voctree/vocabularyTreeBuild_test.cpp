@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(voctreeBuilder)
     const std::size_t STEP = 1;
 
     typedef Eigen::Matrix<float, 1, DIMENSION> FeatureFloat;
-    typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat>> FeatureFloatVector;
+    typedef std::vector<FeatureFloat> FeatureFloatVector;
     typedef std::vector<FeatureFloat*> FeaturePointerVector;
 
     // generate a random vector of features

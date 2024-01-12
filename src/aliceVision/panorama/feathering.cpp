@@ -18,8 +18,8 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
     feathering_mask.push_back(inputMask);
 
     int lvl = 0;
-    int width = color.Width();
-    int height = color.Height();
+    int width = color.width();
+    int height = color.height();
 
     while (!(width < 2 || height < 2))
     {
@@ -29,10 +29,10 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
         image::Image<image::RGBfColor> half(width / 2, height / 2);
         image::Image<unsigned char> half_mask(width / 2, height / 2);
 
-        for (int i = 0; i < half.Height(); i++)
+        for (int i = 0; i < half.height(); i++)
         {
             int di = i * 2;
-            for (int j = 0; j < half.Width(); j++)
+            for (int j = 0; j < half.width(); j++)
             {
                 int dj = j * 2;
 
@@ -78,8 +78,8 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
         feathering.push_back(half);
         feathering_mask.push_back(half_mask);
 
-        width = half.Width();
-        height = half.Height();
+        width = half.width();
+        height = half.height();
 
         lvl++;
     }
@@ -133,23 +133,23 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
         image::Image<image::RGBfColor>& ref = feathering[lvl + 1];
         image::Image<unsigned char>& ref_mask = feathering_mask[lvl + 1];
 
-        for (int i = 0; i < src_mask.Height(); i++)
+        for (int i = 0; i < src_mask.height(); i++)
         {
-            for (int j = 0; j < src_mask.Width(); j++)
+            for (int j = 0; j < src_mask.width(); j++)
             {
                 if (!src_mask(i, j))
                 {
                     int mi = i / 2;
                     int mj = j / 2;
 
-                    if (mi >= ref_mask.Height())
+                    if (mi >= ref_mask.height())
                     {
-                        mi = ref_mask.Height() - 1;
+                        mi = ref_mask.height() - 1;
                     }
 
-                    if (mj >= ref_mask.Width())
+                    if (mj >= ref_mask.width())
                     {
-                        mj = ref_mask.Width() - 1;
+                        mj = ref_mask.width() - 1;
                     }
 
                     src_mask(i, j) = ref_mask(mi, mj);
@@ -230,13 +230,13 @@ bool feathering(CachedImage<image::RGBfColor>& input_output, CachedImage<unsigne
 
             while (1)
             {
-                image::Image<image::RGBfColor> smallerTile(colorTile.Width() / 2, colorTile.Height() / 2);
-                image::Image<unsigned char> smallerMask(maskTile.Width() / 2, maskTile.Height() / 2);
+                image::Image<image::RGBfColor> smallerTile(colorTile.width() / 2, colorTile.height() / 2);
+                image::Image<unsigned char> smallerMask(maskTile.width() / 2, maskTile.height() / 2);
 
-                for (int y = 0; y < smallerTile.Height(); y++)
+                for (int y = 0; y < smallerTile.height(); y++)
                 {
                     int dy = y * 2;
-                    for (int x = 0; x < smallerTile.Width(); x++)
+                    for (int x = 0; x < smallerTile.width(); x++)
                     {
                         int dx = x * 2;
 
@@ -282,7 +282,7 @@ bool feathering(CachedImage<image::RGBfColor>& input_output, CachedImage<unsigne
 
                 colorTile = smallerTile;
                 maskTile = smallerMask;
-                if (colorTile.Width() < 2 || colorTile.Height() < 2)
+                if (colorTile.width() < 2 || colorTile.height() < 2)
                 {
                     break;
                 }
@@ -326,13 +326,13 @@ bool feathering(CachedImage<image::RGBfColor>& input_output, CachedImage<unsigne
                 image::Image<image::RGBfColor>& largerTile = pyramid_colors[pyramid_colors.size() - 1];
                 image::Image<unsigned char>& largerMask = pyramid_masks[pyramid_masks.size() - 1];
 
-                image::Image<image::RGBfColor> smallerTile(largerTile.Width() / 2, largerTile.Height() / 2);
-                image::Image<unsigned char> smallerMask(largerMask.Width() / 2, largerMask.Height() / 2);
+                image::Image<image::RGBfColor> smallerTile(largerTile.width() / 2, largerTile.height() / 2);
+                image::Image<unsigned char> smallerMask(largerMask.width() / 2, largerMask.height() / 2);
 
-                for (int y = 0; y < smallerTile.Height(); y++)
+                for (int y = 0; y < smallerTile.height(); y++)
                 {
                     int dy = y * 2;
-                    for (int x = 0; x < smallerTile.Width(); x++)
+                    for (int x = 0; x < smallerTile.width(); x++)
                     {
                         int dx = x * 2;
 
@@ -379,7 +379,7 @@ bool feathering(CachedImage<image::RGBfColor>& input_output, CachedImage<unsigne
                 pyramid_colors.push_back(smallerTile);
                 pyramid_masks.push_back(smallerMask);
 
-                if (smallerTile.Width() < 2 || smallerTile.Height() < 2)
+                if (smallerTile.width() < 2 || smallerTile.height() < 2)
                 {
                     break;
                 }
@@ -401,23 +401,23 @@ bool feathering(CachedImage<image::RGBfColor>& input_output, CachedImage<unsigne
                 image::Image<image::RGBfColor>& ref = pyramid_colors[lvl + 1];
                 image::Image<unsigned char>& ref_mask = pyramid_masks[lvl + 1];
 
-                for (int i = 0; i < src_mask.Height(); i++)
+                for (int i = 0; i < src_mask.height(); i++)
                 {
-                    for (int j = 0; j < src_mask.Width(); j++)
+                    for (int j = 0; j < src_mask.width(); j++)
                     {
                         if (!src_mask(i, j))
                         {
                             int mi = i / 2;
                             int mj = j / 2;
 
-                            if (mi >= ref_mask.Height())
+                            if (mi >= ref_mask.height())
                             {
-                                mi = ref_mask.Height() - 1;
+                                mi = ref_mask.height() - 1;
                             }
 
-                            if (mj >= ref_mask.Width())
+                            if (mj >= ref_mask.width())
                             {
-                                mj = ref_mask.Width() - 1;
+                                mj = ref_mask.width() - 1;
                             }
 
                             src_mask(i, j) = ref_mask(mi, mj);

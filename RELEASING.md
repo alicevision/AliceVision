@@ -34,7 +34,7 @@ Tags
    - Modify version in code, version status to RELEASE (src/aliceVision/version.hpp)
    - Create Release note (using https://github.com/cbentejac/github-generate-release-note)
      - ```
-	   ./github-generate-release-note.py -o alicevision -r AliceVision -m MAJOR.MINOR.PATCH --highlights major-feature --label-include scope:ci,scope:doc,scope:build sensordb -s updated-asc
+	   ./github-generate-release-note.py -o alicevision -r AliceVision -m MAJOR.MINOR.PATCH --highlights majorFeature feature --label-include bugfix scope:ci,scope:doc,scope:build sensordb -s updated-asc
 	   ```
    - PR to develop: "Release MAJOR.MINOR"
  - Build

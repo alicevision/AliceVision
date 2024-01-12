@@ -9,7 +9,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 
 #define ALICEVISION_VERSION_MAJOR 3
-#define ALICEVISION_VERSION_MINOR 2
+#define ALICEVISION_VERSION_MINOR 3
 #define ALICEVISION_VERSION_REVISION 0
 
 // Version status could be "release" or "develop".

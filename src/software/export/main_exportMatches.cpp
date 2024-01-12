@@ -21,8 +21,8 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -42,7 +42,7 @@ using namespace aliceVision::sfmData;
 using namespace svg;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 // Convert HUE color to RGB
 inline float hue2rgb(float p, float q, float t){
@@ -84,21 +84,23 @@ int aliceVision_main(int argc, char ** argv)
 
   std::string describerTypesName = EImageDescriberType_enumToString(EImageDescriberType::SIFT);
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for matches.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.")
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for matches.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      EImageDescriberType_informations().c_str());
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         EImageDescriberType_informations().c_str());
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportMatches");
   cmdline.add(requiredParams);
@@ -116,7 +118,7 @@ int aliceVision_main(int argc, char ** argv)
 
   // read SfM Scene (image view names)
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -163,7 +165,7 @@ int aliceVision_main(int argc, char ** argv)
     std::string destFilename_I;
     std::string destFilename_J;
     {
-    boost::filesystem::path origImgPath(viewImagePathI);
+    fs::path origImgPath(viewImagePathI);
     std::string origFilename = origImgPath.stem().string();
     image::Image<image::RGBfColor> originalImage;
     image::readImage(viewImagePathI, originalImage, image::EImageColorSpace::LINEAR);
@@ -173,7 +175,7 @@ int aliceVision_main(int argc, char ** argv)
     }
 
     {
-    boost::filesystem::path origImgPath(viewImagePathJ);
+    fs::path origImgPath(viewImagePathJ);
     std::string origFilename = origImgPath.stem().string();
     image::Image<image::RGBfColor> originalImage;
     image::readImage(viewImagePathJ, originalImage, image::EImageColorSpace::LINEAR);

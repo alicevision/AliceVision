@@ -16,8 +16,8 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cstdlib>
 
 // These constants define the current software version.
@@ -28,7 +28,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -48,38 +48,38 @@ int aliceVision_main(int argc, char **argv)
   bool lockAllIntrinsics = false;
   int randomSeed = std::mt19937::default_seed;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outSfMDataFilepath)->required(),
-      "Path to the output SfMData file.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.")
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.")
-    ;
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outSfMDataFilepath)->required(),
+         "Path to the output SfMData file.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
-      "Path to the output SfMData file (with only views and poses).")
-    ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
-      "Folder for intermediate reconstruction files and additional reconstruction information files.")
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str())
-    ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
-      "* 1: L1 minimization\n"
-      "* 2: L2 minimization")
-    ("translationAveraging", po::value<sfm::ETranslationAveragingMethod>(&translationAveragingMethod)->default_value(translationAveragingMethod),
-      "* 1: L1 minimization\n"
-      "* 2: L2 minimization of sum of squared Chordal distances\n"
-      "* 3: L1 soft minimization")
-    ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
-      "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
-    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
-      "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
-    ;
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
+         "Path to the output SfMData file (with only views and poses).")
+        ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
+         "Folder for intermediate reconstruction files and additional reconstruction information files.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+        feature::EImageDescriberType_informations().c_str())
+        ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
+         "* 1: L1 minimization\n"
+         "* 2: L2 minimization")
+        ("translationAveraging", po::value<sfm::ETranslationAveragingMethod>(&translationAveragingMethod)->default_value(translationAveragingMethod),
+         "* 1: L1 minimization\n"
+         "* 2: L2 minimization of sum of squared Chordal distances\n"
+         "* 3: L1 soft minimization")
+        ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
+         "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
+    // clang-format on
 
   CmdLine cmdline("This program is an implementation of the paper\n"
                   "\"Global Fusion of Relative Motions for "
@@ -110,7 +110,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilepath << "' cannot be read.");
     return EXIT_FAILURE;
@@ -164,15 +164,15 @@ int aliceVision_main(int argc, char **argv)
   sfmEngine.initRandomSeed(randomSeed);
 
   // configure the featuresPerView & the matches_provider
-  sfmEngine.SetFeaturesProvider(&featuresPerView);
-  sfmEngine.SetMatchesProvider(&pairwiseMatches);
+  sfmEngine.setFeaturesProvider(&featuresPerView);
+  sfmEngine.setMatchesProvider(&pairwiseMatches);
 
   // configure reconstruction parameters
   sfmEngine.setLockAllIntrinsics(lockAllIntrinsics); // TODO: rename param
 
   // configure motion averaging method
-  sfmEngine.SetRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
-  sfmEngine.SetTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
+  sfmEngine.setRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
+  sfmEngine.setTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
 
   if(!sfmEngine.process())
     return EXIT_FAILURE;
@@ -195,11 +195,11 @@ int aliceVision_main(int argc, char **argv)
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
 
-  sfmDataIO::Save(sfmEngine.getSfMData(), outSfMDataFilepath, sfmDataIO::ESfMData::ALL);
-  sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+  sfmDataIO::save(sfmEngine.getSfMData(), outSfMDataFilepath, sfmDataIO::ESfMData::ALL);
+  sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
   if(!outputSfMViewsAndPoses.empty())
-    sfmDataIO:: Save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
+    sfmDataIO::save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
     << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl

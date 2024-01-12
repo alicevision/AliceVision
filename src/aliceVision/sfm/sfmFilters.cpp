@@ -16,17 +16,17 @@
 namespace aliceVision {
 namespace sfm {
 
-IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
-                                         EFeatureConstraint featureConstraint,
-                                         const double dThresholdPixel,
-                                         const unsigned int minTrackLength)
+IndexT removeOutliersWithPixelResidualError(sfmData::SfMData& sfmData,
+                                            EFeatureConstraint featureConstraint,
+                                            const double dThresholdPixel,
+                                            const unsigned int minTrackLength)
 {
-    IndexT outlier_count = 0;
+    IndexT outlierCount = 0;
     sfmData::Landmarks::iterator iterTracks = sfmData.getLandmarks().begin();
 
     while (iterTracks != sfmData.getLandmarks().end())
     {
-        sfmData::Observations& observations = iterTracks->second.observations;
+        sfmData::Observations& observations = iterTracks->second.getObservations();
         sfmData::Observations::iterator itObs = observations.begin();
 
         while (itObs != observations.end())
@@ -35,17 +35,17 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
             const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
 
-            Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.x);
-            if (featureConstraint == EFeatureConstraint::SCALE && itObs->second.scale > 0.0)
+            Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates());
+            if (featureConstraint == EFeatureConstraint::SCALE && itObs->second.getScale() > 0.0)
             {
                 // Apply the scale of the feature to get a residual value
                 // relative to the feature precision.
-                residual /= itObs->second.scale;
+                residual /= itObs->second.getScale();
             }
 
             if ((pose.depth(iterTracks->second.X) < 0) || (residual.norm() > dThresholdPixel))
             {
-                ++outlier_count;
+                ++outlierCount;
                 itObs = observations.erase(itObs);
             }
             else
@@ -57,25 +57,25 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
         else
             ++iterTracks;
     }
-    return outlier_count;
+    return outlierCount;
 }
 
-IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcceptedAngle)
+IndexT removeOutliersWithAngleError(sfmData::SfMData& sfmData, const double dMinAcceptedAngle)
 {
     // note that smallest accepted angle => largest accepted cos(angle)
     const double dMaxAcceptedCosAngle = std::cos(degreeToRadian(dMinAcceptedAngle));
 
     using LandmarksKeysVec = std::vector<sfmData::Landmarks::key_type>;
-    LandmarksKeysVec v_keys;
-    v_keys.reserve(sfmData.getLandmarks().size());
-    std::transform(sfmData.getLandmarks().cbegin(), sfmData.getLandmarks().cend(), std::back_inserter(v_keys), stl::RetrieveKey());
+    LandmarksKeysVec vKeys;
+    vKeys.reserve(sfmData.getLandmarks().size());
+    std::transform(sfmData.getLandmarks().cbegin(), sfmData.getLandmarks().cend(), std::back_inserter(vKeys), stl::RetrieveKey());
 
     LandmarksKeysVec toErase;
 
 #pragma omp parallel for
-    for (int landmarkIndex = 0; landmarkIndex < v_keys.size(); ++landmarkIndex)
+    for (int landmarkIndex = 0; landmarkIndex < vKeys.size(); ++landmarkIndex)
     {
-        const sfmData::Observations& observations = sfmData.getLandmarks().at(v_keys[landmarkIndex]).observations;
+        const sfmData::Observations& observations = sfmData.getLandmarks().at(vKeys[landmarkIndex]).getObservations();
 
         // create matrix for observation directions from camera to point
         Mat3X viewDirections(3, observations.size());
@@ -96,7 +96,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
             const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
 
-            viewDirections.col(i) = applyIntrinsicExtrinsic(pose, intrinsic, itObs->second.x);
+            viewDirections.col(i) = applyIntrinsicExtrinsic(pose, intrinsic, itObs->second.getCoordinates());
 
             double dCosAngle = viewDirections.col(i).transpose() * viewDirections.col(greedyI);
             if (dCosAngle < dMaxAcceptedCosAngle)
@@ -140,7 +140,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
         if (i == 0)
         {
 #pragma omp critical
-            toErase.push_back(v_keys[landmarkIndex]);
+            toErase.push_back(vKeys[landmarkIndex]);
         }
     }
 
@@ -152,9 +152,9 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     return toErase.size();
 }
 
-bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_pose, std::set<IndexT>* outRemovedViewsId)
+bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose, std::set<IndexT>* outRemovedViewsId)
 {
-    IndexT removed_elements = 0;
+    IndexT removedElements = 0;
     const sfmData::Landmarks& landmarks = sfmData.getLandmarks();
 
     // Count the observation poses occurrence
@@ -167,7 +167,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
     // Count occurrence of the poses in the Landmark observations
     for (sfmData::Landmarks::const_iterator itLandmarks = landmarks.begin(); itLandmarks != landmarks.end(); ++itLandmarks)
     {
-        const sfmData::Observations& observations = itLandmarks->second.observations;
+        const sfmData::Observations& observations = itLandmarks->second.getObservations();
         for (sfmData::Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
         {
             const IndexT viewId = itObs->first;
@@ -185,7 +185,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
     // If usage count is smaller than the threshold, remove the Pose
     for (HashMap<IndexT, IndexT>::const_iterator it = posesCount.begin(); it != posesCount.end(); ++it)
     {
-        if (it->second < min_points_per_pose)
+        if (it->second < minPointsPerPose)
         {
             sfmData.erasePose(it->first, true);  // no throw
 
@@ -205,17 +205,17 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
                         outRemovedViewsId->insert(viewPair.first);
                 }
             }
-            ++removed_elements;
+            ++removedElements;
         }
     }
-    if (removed_elements)
-        ALICEVISION_LOG_DEBUG("eraseUnstablePoses: " << removed_elements);
-    return removed_elements > 0;
+    if (removedElements)
+        ALICEVISION_LOG_DEBUG("eraseUnstablePoses: " << removedElements);
+    return removedElements > 0;
 }
 
-bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT min_points_per_landmark)
+bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT minPointsPerLandmark)
 {
-    IndexT removed_elements = 0;
+    IndexT removedElements = 0;
 
     std::set<IndexT> reconstructedPoseIndexes;
     std::transform(sfmData.getPoses().begin(),
@@ -229,7 +229,7 @@ bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT m
 
     while (itLandmarks != sfmData.getLandmarks().end())
     {
-        sfmData::Observations& observations = itLandmarks->second.observations;
+        sfmData::Observations& observations = itLandmarks->second.getObservations();
         sfmData::Observations::iterator itObs = observations.begin();
 
         while (itObs != observations.end())
@@ -239,24 +239,24 @@ bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT m
             if (reconstructedPoseIndexes.count(v->getPoseId()) == 0)
             {
                 itObs = observations.erase(itObs);
-                ++removed_elements;
+                ++removedElements;
             }
             else
                 ++itObs;
         }
 
-        if (observations.empty() || observations.size() < min_points_per_landmark)
+        if (observations.empty() || observations.size() < minPointsPerLandmark)
             itLandmarks = sfmData.getLandmarks().erase(itLandmarks);
         else
             ++itLandmarks;
     }
-    return removed_elements > 0;
+    return removedElements > 0;
 }
 
 /// Remove unstable content from analysis of the sfm_data structure
 bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
-                                       const IndexT min_points_per_pose,
-                                       const IndexT min_points_per_landmark,
+                                       const IndexT minPointsPerPose,
+                                       const IndexT minPointsPerLandmark,
                                        std::set<IndexT>* outRemovedViewsId)
 {
     IndexT removeIteration = 0;
@@ -266,10 +266,10 @@ bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
     do
     {
         removedContent = false;
-        if (eraseUnstablePoses(sfmData, min_points_per_pose, outRemovedViewsId))
+        if (eraseUnstablePoses(sfmData, minPointsPerPose, outRemovedViewsId))
         {
             removedPoses = true;
-            removedContent = eraseObservationsWithMissingPoses(sfmData, min_points_per_landmark);
+            removedContent = eraseObservationsWithMissingPoses(sfmData, minPointsPerLandmark);
             if (removedContent)
                 removedObservations = true;
             // Erase some observations can make some Poses index disappear so perform the process in a loop

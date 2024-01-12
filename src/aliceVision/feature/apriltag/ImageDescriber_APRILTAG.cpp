@@ -46,7 +46,7 @@ bool ImageDescriber_APRILTAG::describe(const image::Image<unsigned char>& image,
     td->refine_edges = 1;
 
     // Make an image_u8_t header for the image
-    image_u8_t im = {.width = image.Width(), .height = image.Height(), .stride = image.Width(), .buf = (uint8_t*)image.data()};
+    image_u8_t im = {.width = image.width(), .height = image.height(), .stride = image.width(), .buf = (uint8_t*)image.data()};
     zarray_t* detections = apriltag_detector_detect(td, &im);
     // Draw detection outlines
     for (int i = 0; i < zarray_size(detections); i++)

@@ -14,12 +14,11 @@
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
 
 #include <algorithm>
+#include <filesystem>
 #include <string>
 #include <regex>
-
 #include <iostream>
 #include <list>
 
@@ -37,7 +36,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace json = boost::property_tree;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 
 struct XMPData
@@ -138,12 +137,16 @@ int aliceVision_main(int argc, char **argv)
 
   sfmData::SfMData sfmData;
 
-  // enter the parameter
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-      ("knownPosesData", po::value<std::string>(&knownPosesFilePath)->required(), "Input path to a json file or a folder containing an XMP file per image.")
-      ("sfmData", po::value<std::string>(&sfmDataFilePath)->required(), "SfmData filepath.")
-      ("output,o", po::value<std::string>(&outputFilename)->required(), "Output sfmData filepath.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("knownPosesData", po::value<std::string>(&knownPosesFilePath)->required(),
+         "Input path to a json file or a folder containing an XMP file per image.")
+        ("sfmData", po::value<std::string>(&sfmDataFilePath)->required(),
+         "SfmData filepath.")
+        ("output,o", po::value<std::string>(&outputFilename)->required(),
+         "Output sfmData filepath.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision importKnownPoses");
   cmdline.add(requiredParams);
@@ -154,7 +157,7 @@ int aliceVision_main(int argc, char **argv)
 
 
   // Loading the sfmData to modify it
-  if(!sfmDataIO::Load(sfmData, sfmDataFilePath, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilePath, sfmDataIO::ESfMData::ALL))
   {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilePath << "' cannot be read.");
       return EXIT_FAILURE;
@@ -493,7 +496,7 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // export the SfMData scene in the expected format
-  if(!sfmDataIO::Save(sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::save(sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
   {
       ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputFilename << "'");
       return EXIT_FAILURE;

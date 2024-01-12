@@ -10,12 +10,12 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace aliceVision {
 namespace fuseCut {
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, const std::string& _spaceFolderName)
   : mp(_mp),
@@ -23,15 +23,15 @@ LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, const std::string& _space
     spaceVoxelsFolderName(_spaceFolderName + "_data/"),
     spaceFileName(spaceFolderName + "/space.txt")
 {
-    bfs::create_directory(spaceFolderName);
-    bfs::create_directory(spaceVoxelsFolderName);
+    fs::create_directory(spaceFolderName);
+    fs::create_directory(spaceVoxelsFolderName);
 
     doVisualize = mp->userParams.get<bool>("LargeScale.doVisualizeOctreeTracks", false);
 }
 
 LargeScale::~LargeScale() {}
 
-bool LargeScale::isSpaceSaved() { return bfs::exists(spaceFileName); }
+bool LargeScale::isSpaceSaved() { return fs::exists(spaceFileName); }
 
 void LargeScale::saveSpaceToFile()
 {
@@ -159,7 +159,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         ReconstructionPlan->reserve(1000000);
 
         std::string tmpdir = spaceFolderName + "tmp/";
-        bfs::create_directory(tmpdir);
+        fs::create_directory(tmpdir);
         VoxelsGrid* vg = new VoxelsGrid(dimensions, &space[0], mp, tmpdir, doVisualize);
         int maxlevel = 0;
         vg->generateTracksForEachVoxel(ReconstructionPlan, maxOcTreeDim, maxPts, 1, maxlevel, depthMapsPtsSimsTmpDir);
@@ -181,7 +181,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         delete vgnew;
         delete vg;
 
-        bfs::remove_all(tmpdir);
+        fs::remove_all(tmpdir);
 
         deleteTempPtsSimsFiles(*mp, depthMapsPtsSimsTmpDir);
 

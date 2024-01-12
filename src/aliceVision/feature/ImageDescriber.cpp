@@ -12,6 +12,7 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_vlfeatFloat.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_DSPSIFT_vlfeat.hpp>
 #include <aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
@@ -28,12 +29,11 @@
     #include <aliceVision/feature/openCV/ImageDescriber_AKAZE_OCV.hpp>
 #endif  // ALICEVISION_HAVE_OPENCV
 
-#include <boost/filesystem.hpp>
-
 #include <algorithm>
+#include <filesystem>
 #include <stdexcept>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace feature {
@@ -191,9 +191,9 @@ void ImageDescriber::Save(const Regions* regions, const std::string& sfileNameFe
     const fs::path bFeatsPath = fs::path(sfileNameFeats);
     const fs::path bDescsPath = fs::path(sfileNameDescs);
     const std::string tmpFeatsPath =
-      (bFeatsPath.parent_path() / bFeatsPath.stem()).string() + "." + fs::unique_path().string() + bFeatsPath.extension().string();
+      (bFeatsPath.parent_path() / bFeatsPath.stem()).string() + "." + utils::generateUniqueFilename() + bFeatsPath.extension().string();
     const std::string tmpDescsPath =
-      (bDescsPath.parent_path() / bDescsPath.stem()).string() + "." + fs::unique_path().string() + bDescsPath.extension().string();
+      (bDescsPath.parent_path() / bDescsPath.stem()).string() + "." + utils::generateUniqueFilename() + bDescsPath.extension().string();
 
     regions->Save(tmpFeatsPath, tmpDescsPath);
 

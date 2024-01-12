@@ -22,7 +22,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -51,7 +50,6 @@ using namespace aliceVision;
 int aliceVision_main(int argc, char **argv)
 {
     namespace po = boost::program_options;
-    namespace fs = boost::filesystem;
 
     system::Timer timer;
 
@@ -64,6 +62,7 @@ int aliceVision_main(int argc, char **argv)
     // Image downscale factor during process
     int downscale = 1;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPath,i", po::value<std::string>(&inputPath)->required(),
@@ -77,6 +76,7 @@ int aliceVision_main(int argc, char **argv)
          "Path to the input SfMData file.")
         ("downscale,d", po::value<int>(&downscale)->default_value(downscale),
          "Downscale factor for faster results.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision normalIntegration");
     cmdline.add(requiredParams);
@@ -94,7 +94,7 @@ int aliceVision_main(int argc, char **argv)
     else
     {
         sfmData::SfMData sfmData;
-        if (!sfmDataIO::Load(sfmData, sfmDataFile, sfmDataIO::ESfMData::ALL))
+        if (!sfmDataIO::load(sfmData, sfmDataFile, sfmDataIO::ESfMData::ALL))
         {
             ALICEVISION_LOG_ERROR("The input file '" + sfmDataFile + "' cannot be read.");
             return EXIT_FAILURE;

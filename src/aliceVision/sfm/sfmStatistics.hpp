@@ -55,27 +55,27 @@ void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData,
 /**
  * @brief Compute landmarks per view
  * @param[in] sfmData: scene containing the views and the landmarks
- * @param[out] out_nbLandmarksPerView: vector containing the number of landmarks for each view
+ * @param[out] outNbLandmarksPerView: vector containing the number of landmarks for each view
  */
-void computeLandmarksPerView(const sfmData::SfMData& sfmData, std::vector<int>& out_nbLandmarksPerView);
+void computeLandmarksPerView(const sfmData::SfMData& sfmData, std::vector<int>& outNbLandmarksPerView);
 
 /**
  * @brief Compute features and matches per view
  * @param[in] sfmData: scene containing the views
- * @param[out] out_featPerView: vector containing the number of features for each view
- * @param[out] out_matchPerView: vector containing the number of matches for each view
+ * @param[out] outFeatPerView: vector containing the number of features for each view
+ * @param[out] outMatchPerView: vector containing the number of matches for each view
  */
-void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<size_t>& out_featPerView, std::vector<size_t>& out_matchPerView);
+void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<size_t>& outFeatPerView, std::vector<size_t>& outMatchPerView);
 
 /**
  * @brief Compute histogram of scale for observations
  * @param[in] sfmData: scene containing the observations
- * @param[out] out_stats: stats containing the scales
+ * @param[out] outStats: stats containing the scales
  * @param[out] scaleHistogram: histogram of the number of points for each scale value
  * @param[in] specificViews: Limit stats to specific views. If empty, no stats computed
  */
 void computeScaleHistogram(const sfmData::SfMData& sfmData,
-                           BoxStats<double>& out_stats,
+                           BoxStats<double>& outStats,
                            utils::Histogram<double>* scaleHistogram,
                            const std::set<IndexT>& specificViews = std::set<IndexT>());
 

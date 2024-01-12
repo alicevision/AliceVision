@@ -56,8 +56,8 @@ class CommonDataByPair_matchedPoints : public CommonDataByPair
                 const feature::PointFeature& L = _regionsL.at(descType)->Features().at(match._i);
                 const feature::PointFeature& R = _regionsR.at(descType)->Features().at(match._j);
 
-                image::FilledCircle(L.x(), L.y(), (int)_radius, (unsigned char)255, &maskLeft);
-                image::FilledCircle(R.x(), R.y(), (int)_radius, (unsigned char)255, &maskRight);
+                image::filledCircle(L.x(), L.y(), (int)_radius, (unsigned char)255, &maskLeft);
+                image::filledCircle(R.x(), R.y(), (int)_radius, (unsigned char)255, &maskRight);
             }
         }
         return _matchesPerDesc.getNbAllMatches() > 0;

@@ -28,12 +28,12 @@ namespace image {
  ** NOTE : assume Lx and Ly have same size and image are in float format
  **/
 template<typename Image>
-void ImagePeronaMalikG2DiffusionCoef(const Image& Lx, const Image& Ly, const typename Image::Tpixel k, Image& out)
+void imagePeronaMalikG2DiffusionCoef(const Image& Lx, const Image& Ly, const typename Image::Tpixel k, Image& out)
 {
-    const int width = Lx.Width();
-    const int height = Lx.Height();
+    const int width = Lx.width();
+    const int height = Lx.height();
 
-    if (width != out.Width() || height != out.Height())
+    if (width != out.width() || height != out.height())
     {
         out.resize(width, height);
     }
@@ -52,10 +52,10 @@ void ImagePeronaMalikG2DiffusionCoef(const Image& Lx, const Image& Ly, const typ
 ** @param row_end Row range end (range is [row_start ; row_end [ )
 **/
 template<typename Image>
-void ImageFEDCentral(const Image& src, const Image& diff, const typename Image::Tpixel half_t, Image& out, const int row_start, const int row_end)
+void imageFEDCentral(const Image& src, const Image& diff, const typename Image::Tpixel half_t, Image& out, const int row_start, const int row_end)
 {
     typedef typename Image::Tpixel Real;
-    const int width = src.Width();
+    const int width = src.width();
     Real n_diff[4];
     Real n_src[4];
     // Compute FED step on general range
@@ -94,7 +94,7 @@ void ImageFEDCentral(const Image& src, const Image& diff, const typename Image::
 ** @param out Output image
 **/
 template<typename Image>
-void ImageFEDCentralCPPThread(const Image& src, const Image& diff, const typename Image::Tpixel half_t, Image& out)
+void imageFEDCentralCPPThread(const Image& src, const Image& diff, const typename Image::Tpixel half_t, Image& out)
 {
     const int nb_thread = omp_get_max_threads();
 
@@ -105,7 +105,7 @@ void ImageFEDCentralCPPThread(const Image& src, const Image& diff, const typenam
 #pragma omp parallel for schedule(dynamic)
     for (int i = 1; i < static_cast<int>(range.size()); ++i)
     {
-        ImageFEDCentral(src, diff, half_t, out, range[i - 1], range[i]);
+        imageFEDCentral(src, diff, half_t, out, range[i - 1], range[i]);
     }
 }
 
@@ -117,13 +117,13 @@ void ImageFEDCentralCPPThread(const Image& src, const Image& diff, const typenam
 ** @param out output image
 **/
 template<typename Image>
-void ImageFED(const Image& src, const Image& diff, const typename Image::Tpixel t, Image& out)
+void imageFED(const Image& src, const Image& diff, const typename Image::Tpixel t, Image& out)
 {
     typedef typename Image::Tpixel Real;
-    const int width = src.Width();
-    const int height = src.Height();
+    const int width = src.width();
+    const int height = src.height();
     const Real half_t = t * static_cast<Real>(0.5);
-    if (out.Width() != width || out.Height() != height)
+    if (out.width() != width || out.height() != height)
     {
         out.resize(width, height);
     }
@@ -131,7 +131,7 @@ void ImageFED(const Image& src, const Image& diff, const typename Image::Tpixel 
     Real n_src[4];
 
     // Take care of the central part
-    ImageFEDCentralCPPThread(src, diff, half_t, out);
+    imageFEDCentralCPPThread(src, diff, half_t, out);
 
     // Take care of the border
     // - first/last row
@@ -225,18 +225,18 @@ void ImageFED(const Image& src, const Image& diff, const typename Image::Tpixel 
  ** @param tau cycle timing vector
  **/
 template<typename Image>
-void ImageFEDCycle(Image& self, const Image& diff, const std::vector<typename Image::Tpixel>& tau)
+void imageFEDCycle(Image& self, const Image& diff, const std::vector<typename Image::Tpixel>& tau)
 {
     Image tmp;
     for (int i = 0; i < tau.size(); ++i)
     {
-        ImageFED(self, diff, tau[i], tmp);
+        imageFED(self, diff, tau[i], tmp);
         self.array() += tmp.array();
     }
 }
 
 // Compute if a number is prime of not
-inline bool IsPrime(const int i)
+inline bool isPrime(const int i)
 {
     if (i == 1)
     {
@@ -263,9 +263,9 @@ inline bool IsPrime(const int i)
     return true;
 }
 
-inline int NextPrimeGreaterOrEqualTo(const int i)
+inline int nextPrimeGreaterOrEqualTo(const int i)
 {
-    if (IsPrime(i))
+    if (isPrime(i))
     {
         return i;
     }
@@ -273,7 +273,7 @@ inline int NextPrimeGreaterOrEqualTo(const int i)
     {
         int cur = i + 1;
 
-        while (!IsPrime(cur))
+        while (!isPrime(cur))
         {
             ++cur;
         }
@@ -289,7 +289,7 @@ inline int NextPrimeGreaterOrEqualTo(const int i)
  ** @return number of cycle timings
  **/
 template<typename Real>
-int FEDCycleTimings(const Real T, const Real Tmax, std::vector<Real>& tau)
+int fedCycleTimings(const Real T, const Real Tmax, std::vector<Real>& tau)
 {
     // Number of timings
     const int n = ceil(sqrt((3.0 * static_cast<double>(T)) / Tmax + 0.25) - 0.5) + 0.5;
@@ -312,7 +312,7 @@ int FEDCycleTimings(const Real T, const Real Tmax, std::vector<Real>& tau)
     // Compute Kappa reordering using kappa = n / 2
     const int kappa = n / 2;
 
-    const int p = NextPrimeGreaterOrEqualTo(n + 1);
+    const int p = nextPrimeGreaterOrEqualTo(n + 1);
 
     // Store new positions
     std::vector<Real> tmp(n);

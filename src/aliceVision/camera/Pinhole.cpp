@@ -239,7 +239,7 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Pinhole::getDerivativeProjectWrtParams(
     ret.block<2, 2>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
     ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
 
-    if (hasDistortion())
+    if (_pDistortion != nullptr)
     {
         const size_t distortionSize = _pDistortion->getDistortionParametersCount();
         ret.block(0, 4, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
@@ -349,6 +349,18 @@ EINTRINSIC Pinhole::getType() const
     }
 
     return EINTRINSIC::PINHOLE_CAMERA;
+}
+
+double Pinhole::getHorizontalFov() const
+{
+    const double focalLengthMM = sensorWidth() * getScale().x() / double(w());
+    return 2.0 * atan2(sensorWidth() / 2.0, focalLengthMM);
+}
+
+double Pinhole::getVerticalFov() const
+{
+    const double focalLengthMM = sensorHeight() * getScale().y() / double(h());
+    return 2.0 * atan2(sensorHeight() / 2.0, focalLengthMM);
 }
 
 }  // namespace camera

@@ -41,6 +41,10 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
         view->getImage().addMetadata("A", "A");
         view->getImage().addMetadata("B", "B");
         view->getImage().addMetadata("C", "C");
+
+        view->addAncestor(static_cast<IndexT>(11));
+        view->addAncestor(static_cast<IndexT>(22));
+
         sfm_data.getViews().emplace(id_view, view);
 
         // Add poses
@@ -63,6 +67,17 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
               i, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
         }
     }
+
+    sfmData::ImageInfo ancestorImg_1("path_1.jpg", 1024, 640);
+    ancestorImg_1.addMetadata("D", "D");
+    ancestorImg_1.addMetadata("E", "E");
+    sfm_data.addAncestor(static_cast<IndexT>(11), std::make_shared<sfmData::ImageInfo>(ancestorImg_1));
+
+    sfmData::ImageInfo ancestorImg_2("path_2.jpg", 1024, 640);
+    ancestorImg_2.addMetadata("F", "F");
+    ancestorImg_2.addMetadata("G", "G");
+    ancestorImg_2.addMetadata("H", "H");
+    sfm_data.addAncestor(static_cast<IndexT>(22), std::make_shared<sfmData::ImageInfo>(ancestorImg_2));
 
     std::size_t nbIntrinsics = (bSharedIntrinsic ? 1 : singleViewsCount);
     std::size_t nbPoses = singleViewsCount;
@@ -120,7 +135,7 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
         Observations observations;
         observations[0] = Observation(Vec2(std::rand() % 10000, std::rand() % 10000), 0, unknownScale);
         observations[1] = Observation(Vec2(std::rand() % 10000, std::rand() % 10000), 1, unknownScale);
-        sfm_data.getLandmarks()[i].observations = observations;
+        sfm_data.getLandmarks()[i].getObservations() = observations;
         sfm_data.getLandmarks()[i].X = Vec3(std::rand() % 10000, std::rand() % 10000, std::rand() % 10000);
         sfm_data.getLandmarks()[i].rgb = image::RGBColor((std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0);
         sfm_data.getLandmarks()[i].descType = feature::EImageDescriberType::SIFT;
@@ -153,13 +168,13 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport)
     // Export as JSON
     const std::string jsonFile = "importExport.sfm";
     {
-        BOOST_CHECK(Save(sfmData, jsonFile, ESfMData(flags)));
+        BOOST_CHECK(save(sfmData, jsonFile, ESfMData(flags)));
     }
 
     // Reload
     SfMData sfmJsonToJson;
     {
-        BOOST_CHECK(Load(sfmJsonToJson, jsonFile, ESfMData(flags)));
+        BOOST_CHECK(load(sfmJsonToJson, jsonFile, ESfMData(flags)));
         BOOST_CHECK(sfmData == sfmJsonToJson);
     }
 
@@ -168,22 +183,22 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport)
     // Export as ABC
     const std::string abcFile = "abcToAbc.abc";
     {
-        BOOST_CHECK(Save(sfmData, abcFile, ESfMData(flags)));
+        BOOST_CHECK(save(sfmData, abcFile, ESfMData(flags)));
     }
 
     // Reload
     SfMData sfmAbcToAbc;
     {
-        BOOST_CHECK(Load(sfmAbcToAbc, abcFile, ESfMData(flags)));
+        BOOST_CHECK(load(sfmAbcToAbc, abcFile, ESfMData(flags)));
         std::string abcFile2 = "abcToJson.sfm";
-        BOOST_CHECK(Save(sfmAbcToAbc, abcFile2, ESfMData(flags)));
+        BOOST_CHECK(save(sfmAbcToAbc, abcFile2, ESfMData(flags)));
         BOOST_CHECK(sfmData == sfmAbcToAbc);
     }
 
     // Export as ABC
     const std::string abcFile2 = "abcToAbc2.abc";
     {
-        BOOST_CHECK(Save(sfmAbcToAbc, abcFile2, ESfMData(flags)));
+        BOOST_CHECK(save(sfmAbcToAbc, abcFile2, ESfMData(flags)));
     }
 
     // JSON -> ABC -> ABC -> JSON
@@ -191,13 +206,13 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport)
     // Export as JSON
     const std::string jsonFile3 = "jsonToABC.sfm";
     {
-        BOOST_CHECK(Save(sfmData, jsonFile3, ESfMData(flags)));
+        BOOST_CHECK(save(sfmData, jsonFile3, ESfMData(flags)));
     }
 
     // Reload
     SfMData sfmJsonToABC;
     {
-        BOOST_CHECK(Load(sfmJsonToABC, jsonFile3, ESfMData(flags)));
+        BOOST_CHECK(load(sfmJsonToABC, jsonFile3, ESfMData(flags)));
         BOOST_CHECK_EQUAL(sfmData.getViews().size(), sfmJsonToABC.getViews().size());
         BOOST_CHECK_EQUAL(sfmData.getPoses().size(), sfmJsonToABC.getPoses().size());
         BOOST_CHECK_EQUAL(sfmData.getIntrinsics().size(), sfmJsonToABC.getIntrinsics().size());
@@ -207,13 +222,13 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport)
     // Export as ABC
     const std::string abcFile3 = "jsonToABC.abc";
     {
-        BOOST_CHECK(Save(sfmJsonToABC, abcFile3, ESfMData(flags)));
+        BOOST_CHECK(save(sfmJsonToABC, abcFile3, ESfMData(flags)));
     }
 
     // Reload
     SfMData sfmJsonToABC2;
     {
-        BOOST_CHECK(Load(sfmJsonToABC2, abcFile3, ESfMData(flags)));
+        BOOST_CHECK(load(sfmJsonToABC2, abcFile3, ESfMData(flags)));
         BOOST_CHECK_EQUAL(sfmData.getViews().size(), sfmJsonToABC2.getViews().size());
         BOOST_CHECK_EQUAL(sfmData.getPoses().size(), sfmJsonToABC2.getPoses().size());
         BOOST_CHECK_EQUAL(sfmData.getIntrinsics().size(), sfmJsonToABC2.getIntrinsics().size());
@@ -223,13 +238,13 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport)
     // Export as ABC
     const std::string abcFile4 = "jsonToABC2.abc";
     {
-        BOOST_CHECK(Save(sfmJsonToABC2, abcFile4, ESfMData(flags)));
+        BOOST_CHECK(save(sfmJsonToABC2, abcFile4, ESfMData(flags)));
     }
 
     // Reload
     SfMData sfmJsonToABC3;
     {
-        BOOST_CHECK(Load(sfmJsonToABC3, abcFile4, ESfMData(flags)));
+        BOOST_CHECK(load(sfmJsonToABC3, abcFile4, ESfMData(flags)));
         BOOST_CHECK_EQUAL(sfmData.getViews().size(), sfmJsonToABC3.getViews().size());
         BOOST_CHECK_EQUAL(sfmData.getPoses().size(), sfmJsonToABC3.getPoses().size());
         BOOST_CHECK_EQUAL(sfmData.getIntrinsics().size(), sfmJsonToABC3.getIntrinsics().size());
@@ -239,6 +254,6 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport)
     // Export as JSON
     const std::string jsonFile4 = "jsonToABC2.sfm";
     {
-        BOOST_CHECK(Save(sfmJsonToABC3, jsonFile4, ESfMData(flags)));
+        BOOST_CHECK(save(sfmJsonToABC3, jsonFile4, ESfMData(flags)));
     }
 }

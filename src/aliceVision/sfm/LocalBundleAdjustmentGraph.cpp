@@ -7,14 +7,14 @@
 #include "LocalBundleAdjustmentGraph.hpp"
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <boost/filesystem.hpp>
 
 #include <lemon/bfs.h>
 
 #include <fstream>
+#include <filesystem>
 #include <algorithm>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -60,15 +60,15 @@ void LocalBundleAdjustmentGraph::setAllParametersToRefine(const sfmData::SfMData
 
     // poses
     for (sfmData::Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
-        _statePerPoseId[itPose->first] = BundleAdjustment::EParameterState::REFINED;
+        _statePerPoseId[itPose->first] = EEstimatorParameterState::REFINED;
 
     // instrinsics
     for (const auto& itIntrinsic : sfmData.getIntrinsics())
-        _statePerIntrinsicId[itIntrinsic.first] = BundleAdjustment::EParameterState::REFINED;
+        _statePerIntrinsicId[itIntrinsic.first] = EEstimatorParameterState::REFINED;
 
     // landmarks
     for (const auto& itLandmark : sfmData.getLandmarks())
-        _statePerLandmarkId[itLandmark.first] = BundleAdjustment::EParameterState::REFINED;
+        _statePerLandmarkId[itLandmark.first] = EEstimatorParameterState::REFINED;
 }
 
 void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData& sfmData)
@@ -215,15 +215,15 @@ int LocalBundleAdjustmentGraph::getViewDistance(const IndexT viewId) const
     return _distancePerViewId.at(viewId);
 }
 
-BundleAdjustment::EParameterState LocalBundleAdjustmentGraph::getStateFromDistance(int distance) const
+EEstimatorParameterState LocalBundleAdjustmentGraph::getStateFromDistance(int distance) const
 {
     if (distance >= 0 && distance <= _graphDistanceLimit)  // [0; D]
-        return BundleAdjustment::EParameterState::REFINED;
+        return EEstimatorParameterState::REFINED;
     else if (distance == _graphDistanceLimit + 1)  // {D+1}
-        return BundleAdjustment::EParameterState::CONSTANT;
+        return EEstimatorParameterState::CONSTANT;
 
     // [-inf; 0[ U [D+2; +inf.[  (-1: not connected to the new views)
-    return BundleAdjustment::EParameterState::IGNORED;
+    return EEstimatorParameterState::IGNORED;
 }
 
 void LocalBundleAdjustmentGraph::updateGraphWithNewViews(const sfmData::SfMData& sfmData,
@@ -353,8 +353,10 @@ void LocalBundleAdjustmentGraph::computeGraphDistances(const sfmData::SfMData& s
     }
 }
 
-void LocalBundleAdjustmentGraph::convertDistancesToStates(const sfmData::SfMData& sfmData)
+void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmData)
 {
+    sfmData.resetParameterStates();
+
     // reset the maps
     _statePerPoseId.clear();
     _statePerIntrinsicId.clear();
@@ -379,11 +381,13 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(const sfmData::SfMData
     //    - Refined <=> its connected to a refined camera
 
     // poses
-    for (const auto& posePair : sfmData.getPoses())
+    for (auto& posePair : sfmData.getPoses())
     {
         const IndexT poseId = posePair.first;
         const int distance = getPoseDistance(poseId);
-        const BundleAdjustment::EParameterState state = getStateFromDistance(distance);
+        const EEstimatorParameterState state = getStateFromDistance(distance);
+
+        posePair.second.setState(state);
 
         _statePerPoseId[poseId] = state;
     }
@@ -391,19 +395,25 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(const sfmData::SfMData
     // instrinsics
     checkFocalLengthsConsistency(kWindowSize, kStdevPercentage);
 
-    for (const auto& itIntrinsic : sfmData.getIntrinsics())
+    for (auto& itIntrinsic : sfmData.getIntrinsics())
     {
         if (isFocalLengthConstant(itIntrinsic.first))
-            _statePerIntrinsicId[itIntrinsic.first] = BundleAdjustment::EParameterState::CONSTANT;
+        {
+            itIntrinsic.second->setState(EEstimatorParameterState::CONSTANT);
+            _statePerIntrinsicId[itIntrinsic.first] = EEstimatorParameterState::CONSTANT;
+        }
         else
-            _statePerIntrinsicId[itIntrinsic.first] = BundleAdjustment::EParameterState::REFINED;
+        {
+            itIntrinsic.second->setState(EEstimatorParameterState::REFINED);
+            _statePerIntrinsicId[itIntrinsic.first] = EEstimatorParameterState::REFINED;
+        }
     }
 
     // landmarks
-    for (const auto& itLandmark : sfmData.getLandmarks())
+    for (auto& itLandmark : sfmData.getLandmarks())
     {
         const IndexT landmarkId = itLandmark.first;
-        const sfmData::Observations& observations = itLandmark.second.observations;
+        const sfmData::Observations& observations = itLandmark.second.getObservations();
 
         assert(observations.size() >= 2);
 
@@ -411,7 +421,7 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(const sfmData::SfMData
         for (const auto& observationIt : observations)
         {
             const int distance = getViewDistance(observationIt.first);
-            const BundleAdjustment::EParameterState viewState = getStateFromDistance(distance);
+            const EEstimatorParameterState viewState = getStateFromDistance(distance);
             states.at(static_cast<std::size_t>(viewState)) = true;
         }
 
@@ -421,11 +431,17 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(const sfmData::SfMData
         // for these particular cases, we can have landmarks with refined AND ignored cameras.
         // in this particular case, we prefer to ignore the landmark to avoid wrong/unconstraint refinements.
 
-        if (!states.at(static_cast<std::size_t>(BundleAdjustment::EParameterState::REFINED)) ||
-            states.at(static_cast<std::size_t>(BundleAdjustment::EParameterState::IGNORED)))
-            _statePerLandmarkId[landmarkId] = BundleAdjustment::EParameterState::IGNORED;
+        if (!states.at(static_cast<std::size_t>(EEstimatorParameterState::REFINED)) ||
+            states.at(static_cast<std::size_t>(EEstimatorParameterState::IGNORED)))
+        {
+            itLandmark.second.state = EEstimatorParameterState::IGNORED;
+            _statePerLandmarkId[landmarkId] = EEstimatorParameterState::IGNORED;
+        }
         else
-            _statePerLandmarkId[landmarkId] = BundleAdjustment::EParameterState::REFINED;
+        {
+            itLandmark.second.state = EEstimatorParameterState::REFINED;
+            _statePerLandmarkId[landmarkId] = EEstimatorParameterState::REFINED;
+        }
     }
 }
 
@@ -459,7 +475,7 @@ std::vector<Pair> LocalBundleAdjustmentGraph::getNewEdges(const sfmData::SfMData
         // retrieve the common track Ids
         for (IndexT landmarkId : newViewLandmarks)
         {
-            for (const auto& observations : sfmData.getLandmarks().at(landmarkId).observations)
+            for (const auto& observations : sfmData.getLandmarks().at(landmarkId).getObservations())
             {
                 if (observations.first == viewId)
                     continue;  // do not compare an observation with itself

@@ -60,9 +60,9 @@ struct ResidualErrorFunctor_Pinhole
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>
@@ -209,9 +209,9 @@ struct ResidualErrorFunctor_PinholeRadialK1
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>
@@ -361,9 +361,9 @@ struct ResidualErrorFunctor_PinholeRadialK3
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>
@@ -513,9 +513,9 @@ struct ResidualErrorFunctor_PinholeBrownT2
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>
@@ -672,9 +672,9 @@ struct ResidualErrorFunctor_PinholeFisheye
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>
@@ -819,9 +819,9 @@ struct ResidualErrorFunctor_PinholeFisheye1
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>
@@ -993,9 +993,9 @@ struct ResidualErrorFunctor_Pinhole3DEClassicLD
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>
@@ -1157,9 +1157,9 @@ struct ResidualErrorFunctor_Pinhole3DERadial4
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>
@@ -1354,9 +1354,9 @@ struct ResidualErrorFunctor_Pinhole3DEAnamorphic4
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        const T scale(_obs.scale > 0.0 ? _obs.scale : 1.0);
-        out_residuals[0] = (projected_x - T(_obs.x[0])) / scale;
-        out_residuals[1] = (projected_y - T(_obs.x[1])) / scale;
+        const T scale(_obs.getScale() > 0.0 ? _obs.getScale() : 1.0);
+        out_residuals[0] = (projected_x - T(_obs.getX())) / scale;
+        out_residuals[1] = (projected_y - T(_obs.getY())) / scale;
     }
 
     template<typename T>

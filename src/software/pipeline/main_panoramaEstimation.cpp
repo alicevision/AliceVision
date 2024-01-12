@@ -18,13 +18,13 @@
 #include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <cstdlib>
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -34,7 +34,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -57,55 +57,56 @@ int aliceVision_main(int argc, char** argv)
 
     sfm::ReconstructionEngine_panorama::Params params;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")(
-        "output,o", po::value<std::string>(&outputSfMDataFilepath)->required(), "Path of the output SfMData file.")(
-        "featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-        "Path to folder(s) containing the extracted features.")(
-        "matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-        "Path to folder(s) in which computed matches are stored.");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputSfMDataFilepath)->required(),
+         "Path of the output SfMData file.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.");
 
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()("describerTypes,d",
-                                 po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-                                 feature::EImageDescriberType_informations().c_str())(
-        "rotationAveraging",
-        po::value<sfm::ERotationAveragingMethod>(&params.eRotationAveragingMethod)
-            ->default_value(params.eRotationAveragingMethod),
-        "* 1: L1 minimization\n"
-        "* 2: L2 minimization")("relativeRotation",
-                                po::value<sfm::ERelativeRotationMethod>(&params.eRelativeRotationMethod)
-                                    ->default_value(params.eRelativeRotationMethod),
-                                "* from essential matrix"
-                                "* from rotation matrix"
-                                "* from homography matrix")(
-        "rotationAveragingWeighting",
-        po::value<bool>(&params.rotationAveragingWeighting)->default_value(params.rotationAveragingWeighting),
-        "Use weighting of image links during rotation averaging.")(
-        "offsetLongitude", po::value<float>(&offsetLongitude)->default_value(offsetLongitude),
-        "offset to camera longitude")(
-        "offsetLatitude", po::value<float>(&offsetLatitude)->default_value(offsetLatitude),
-        "offset to camera latitude")("filterMatches", po::value<bool>(&filterMatches)->default_value(filterMatches),
-                                     "Filter Matches before solving the Panorama.")(
-        "refine", po::value<bool>(&refine)->default_value(refine), "Refine cameras with a Bundle Adjustment")(
-        "lockAllIntrinsics", po::value<bool>(&params.lockAllIntrinsics)->default_value(params.lockAllIntrinsics),
-        "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&params.eRotationAveragingMethod)->default_value(params.eRotationAveragingMethod),
+         "* 1: L1 minimization\n"
+         "* 2: L2 minimization")
+        ("relativeRotation", po::value<sfm::ERelativeRotationMethod>(&params.eRelativeRotationMethod)->default_value(params.eRelativeRotationMethod),
+         "* from essential matrix\n"
+         "* from rotation matrix\n"
+         "* from homography matrix")
+        ("rotationAveragingWeighting", po::value<bool>(&params.rotationAveragingWeighting)->default_value(params.rotationAveragingWeighting),
+         "Use weighting of image links during rotation averaging.")
+        ("offsetLongitude", po::value<float>(&offsetLongitude)->default_value(offsetLongitude),
+         "Offset to camera longitude.")
+        ("offsetLatitude", po::value<float>(&offsetLatitude)->default_value(offsetLatitude),
+         "Offset to camera latitude.")
+        ("filterMatches", po::value<bool>(&filterMatches)->default_value(filterMatches),
+         "Filter matches before solving the Panorama.")
+        ("refine", po::value<bool>(&refine)->default_value(refine),
+         "Refine cameras with a Bundle Adjustment")
+        ("lockAllIntrinsics", po::value<bool>(&params.lockAllIntrinsics)->default_value(params.lockAllIntrinsics),
+         "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
         ("maxAngleToPrior", po::value<double>(&params.maxAngleToPrior)->default_value(params.maxAngleToPrior),
-        "Maximal angle allowed regarding the input prior.")
+         "Maximal angle allowed regarding the input prior.")
         ("maxAngleToPriorRefined", po::value<double>(&params.maxAngleToPriorRefined)->default_value(params.maxAngleToPriorRefined),
-        "Maximal angle allowed regarding the input prior after refinement.")
+         "Maximal angle allowed regarding the input prior after refinement.")
         ("maxAngularError", po::value<double>(&params.maxAngularError)->default_value(params.maxAngularError),
-        "Maximal angular error in global rotation averaging.")(
-        "intermediateRefineWithFocal",
-        po::value<bool>(&params.intermediateRefineWithFocal)->default_value(params.intermediateRefineWithFocal),
-        "Add an intermediate refine with rotation+focal in the different BA steps.")(
-        "intermediateRefineWithFocalDist",
-        po::value<bool>(&params.intermediateRefineWithFocalDist)->default_value(params.intermediateRefineWithFocalDist),
-        "Add an intermediate refine with rotation+focal+distortion in the different BA steps.")(
-        "outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-        "Path of the output SfMData file.")(
-        "randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
-        "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
+         "Maximal angular error in global rotation averaging.")
+        ("intermediateRefineWithFocal", po::value<bool>(&params.intermediateRefineWithFocal)->default_value(params.intermediateRefineWithFocal),
+         "Add an intermediate refine with rotation+focal in the different BA steps.")
+        ("intermediateRefineWithFocalDist", po::value<bool>(&params.intermediateRefineWithFocalDist)->default_value(params.intermediateRefineWithFocalDist),
+         "Add an intermediate refine with rotation+focal+distortion in the different BA steps.")
+        ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
+         "Path of the output SfMData file.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
+    // clang-format on
 
     CmdLine cmdline("Estimates the orientation of a camera around a nodal point for the creation of a 360° panorama.\n"
                     "AliceVision panoramaEstimation");
@@ -132,7 +133,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input SfMData scene
     sfmData::SfMData inputSfmData;
-    if(!sfmDataIO::Load(inputSfmData, sfmDataFilename,
+    if(!sfmDataIO::load(inputSfmData, sfmDataFilename,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
@@ -196,8 +197,8 @@ int aliceVision_main(int argc, char** argv)
     sfmEngine.initRandomSeed(randomSeed);
 
     // configure the featuresPerView & the matches_provider
-    sfmEngine.SetFeaturesProvider(&featuresPerView);
-    sfmEngine.SetMatchesProvider(&pairwiseMatches);
+    sfmEngine.setFeaturesProvider(&featuresPerView);
+    sfmEngine.setMatchesProvider(&pairwiseMatches);
 
     if(filterMatches)
     {
@@ -218,13 +219,13 @@ int aliceVision_main(int argc, char** argv)
 
     if(refine)
     {
-        sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(),
+        sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(),
                         sfmDataIO::ESfMData::ALL);
-        if(!sfmEngine.Adjust())
+        if(!sfmEngine.adjust())
         {
             return EXIT_FAILURE;
         }
-        sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(),
+        sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(),
                         sfmDataIO::ESfMData::ALL);
     }
 
@@ -310,7 +311,7 @@ int aliceVision_main(int argc, char** argv)
         std::set<IndexT> viewsWithObservations;
         for(const auto& landmarkIt : outSfmData.getLandmarks())
         {
-            for(const auto& obsIt : landmarkIt.second.observations)
+            for(const auto& obsIt : landmarkIt.second.getObservations())
             {
                 viewsWithObservations.insert(obsIt.first);
             }
@@ -326,12 +327,12 @@ int aliceVision_main(int argc, char** argv)
 
     // Export to disk computed scene (data & visualizable results)
     ALICEVISION_LOG_INFO("Export SfMData to disk");
-    sfmDataIO::Save(outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
-    sfmDataIO::Save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
     if(!outputViewsAndPosesFilepath.empty())
     {
-        sfmDataIO::Save(outSfmData, outputViewsAndPosesFilepath,
+        sfmDataIO::save(outSfmData, outputViewsAndPosesFilepath,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
     }
 

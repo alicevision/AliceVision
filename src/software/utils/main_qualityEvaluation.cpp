@@ -18,8 +18,8 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cstdlib>
 #include <iostream>
 
@@ -31,7 +31,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -40,16 +40,16 @@ int aliceVision_main(int argc, char **argv)
   std::string outputFolder;
   std::string gtFilename;
 
-  po::options_description allParams("AliceVision qualityEvaluation");
-
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for statistics.")
-    ("groundTruthPath", po::value<std::string>(&gtFilename)->required(),
-      "Path to a ground truth reconstructed scene");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for statistics.")
+        ("groundTruthPath", po::value<std::string>(&gtFilename)->required(),
+         "Path to a ground truth reconstructed scene.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision qualityEvaluation");
   cmdline.add(requiredParams);
@@ -71,7 +71,7 @@ int aliceVision_main(int argc, char **argv)
   std::mt19937 randomNumberGenerator;
   sfmData::SfMData sfmData_gt;
 
-  if(!sfmDataIO::Load(sfmData_gt, gtFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::load(sfmData_gt, gtFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< gtFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -80,7 +80,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load the camera that we have to evaluate
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;

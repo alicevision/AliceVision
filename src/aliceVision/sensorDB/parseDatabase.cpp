@@ -8,17 +8,17 @@
 #include "parseDatabase.hpp"
 #include <aliceVision/sensorDB/Datasheet.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <vector>
 #include <string>
 #include <iostream>
+#include <filesystem>
 #include <algorithm>
 #include <fstream>
 #include <iterator>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sensorDB {

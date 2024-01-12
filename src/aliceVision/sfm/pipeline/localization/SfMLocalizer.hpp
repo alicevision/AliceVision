@@ -61,7 +61,7 @@ class SfMLocalizer
      * frameworks are ERobustEstimator::ACRANSAC and ERobustEstimator::LORANSAC.
      * @return True if a putative pose has been estimated
      */
-    static bool Localize(const Pair& imageSize,
+    static bool localize(const Pair& imageSize,
                          const camera::IntrinsicBase* optionalIntrinsics,
                          std::mt19937& randomNumberGenerator,
                          ImageLocalizerMatchData& resectionData,
@@ -78,7 +78,7 @@ class SfMLocalizer
      * @param[in] refineIntrinsic tell if intrinsics must be refined
      * @return True if the refinement decreased the RMSE pixel residual error
      */
-    static bool RefinePose(camera::IntrinsicBase* intrinsics,
+    static bool refinePose(camera::IntrinsicBase* intrinsics,
                            geometry::Pose3& pose,
                            const ImageLocalizerMatchData& matchingData,
                            bool refinePose,

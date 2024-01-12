@@ -18,7 +18,6 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 #include <aliceVision/panorama/sphericalMapping.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/math/constants/constants.hpp>
 
@@ -29,6 +28,7 @@
 #include <string>
 #include <iostream>
 #include <iterator>
+#include <filesystem>
 #include <fstream>
 #include <vector>
 #include <memory>
@@ -40,7 +40,7 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 namespace oiio = OIIO;
 
@@ -107,16 +107,16 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
     auto metadataSource = image::readImageMetadata(imagePath);
 
     // Retrieve useful dimensions for cropping
-    bool vertical = (imageSource.Height() > imageSource.Width());
+    bool vertical = (imageSource.height() > imageSource.width());
     const int outSide = vertical
-        ? std::min(imageSource.Height() / 2, imageSource.Width())
-        : std::min(imageSource.Height(), imageSource.Width() / 2);
+        ? std::min(imageSource.height() / 2, imageSource.width())
+        : std::min(imageSource.height(), imageSource.width() / 2);
     const int offset_x = vertical
-        ? (imageSource.Width() - outSide)
-        : ((imageSource.Width() / 2) - outSide);
+        ? (imageSource.width() - outSide)
+        : ((imageSource.width() / 2) - outSide);
     const int offset_y = vertical
-        ? ((imageSource.Height() / 2) - outSide)
-        : (imageSource.Height() - outSide);
+        ? ((imageSource.height() / 2) - outSide)
+        : (imageSource.height() - outSide);
 
     // Make sure rig folder exists
     std::string rigFolder = outputFolder + "/rig";
@@ -193,8 +193,8 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
     image::Image<image::RGBColor> imageSource;
     image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
-    const int inWidth = imageSource.Width();
-    const int inHeight = imageSource.Height();
+    const int inWidth = imageSource.width();
+    const int inHeight = imageSource.height();
 
     std::vector<PinholeCameraR> cameras;
 
@@ -294,8 +294,8 @@ bool splitEquirectangularPreview(const std::string& imagePath, const std::string
     image::Image<image::RGBColor> imageSource;
     image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
-    const int inWidth = imageSource.Width();
-    const int inHeight = imageSource.Height();
+    const int inWidth = imageSource.width();
+    const int inHeight = imageSource.height();
 
     std::vector<PinholeCameraR> cameras;
 
@@ -378,37 +378,39 @@ int aliceVision_main(int argc, char** argv)
     int nbThreads = 3;
     std::string extension;                      // extension of output images
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputPath)->required(),
-        "Input image file, image folder or SfMData.")
+         "Input image file, image folder or SfMData.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
-        "Output folder for extracted images.")
+         "Output folder for extracted images.")
         ("outSfMData", po::value<std::string>(&outSfmDataFilepath)->required(),
-        "Filepath for output SfMData.");
+         "Filepath for output SfMData.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("splitMode,m", po::value<std::string>(&splitMode)->default_value("equirectangular"),
-        "Split mode (equirectangular, dualfisheye)")
+         "Split mode (equirectangular, dualfisheye).")
         ("dualFisheyeOffsetPresetX", po::value<std::string>(&dualFisheyeOffsetPresetX)->default_value("center"),
-        "Dual-Fisheye offset preset on X axis (left, center, right)")
+         "Dual-Fisheye offset preset on X axis (left, center, right).")
         ("dualFisheyeOffsetPresetY", po::value<std::string>(&dualFisheyeOffsetPresetY)->default_value("center"),
-        "Dual-Fisheye offset preset on Y axis (top, center, left)")
+         "Dual-Fisheye offset preset on Y axis (top, center, left).")
         ("dualFisheyeCameraModel", po::value<std::string>(&dualFisheyeCameraModel)->default_value("fisheye4"),
-        "Dual-Fisheye camera model (fisheye4 or equidistant_r3)")
+         "Dual-Fisheye camera model (fisheye4 or equidistant_r3).")
         ("equirectangularNbSplits", po::value<std::size_t>(&equirectangularNbSplits)->default_value(2),
-        "Equirectangular number of splits")
+         "Equirectangular number of splits.")
         ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
-        "Equirectangular split resolution")
+         "Equirectangular split resolution.")
         ("equirectangularPreviewMode", po::value<bool>(&equirectangularPreviewMode)->default_value(equirectangularPreviewMode),
-        "Export a SVG file that simulate the split")
+         "Export a SVG file that simulate the split.")
         ("fov", po::value<double>(&fov)->default_value(fov),
-        "Field of View to extract (in degree).")
+         "Field of View to extract (in degree).")
         ("nbThreads", po::value<int>(&nbThreads)->default_value(nbThreads),
-        "Number of threads.")
+         "Number of threads.")
         ("extension", po::value<std::string>(&extension)->default_value(extension),
-        "Output image extension (empty to keep the source file format).");
+         "Output image extension (empty to keep the source file format).");
+    // clang-format on
 
     CmdLine cmdline("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder.\n"
                     "AliceVision split360Images");
@@ -490,7 +492,7 @@ int aliceVision_main(int argc, char** argv)
             // - a SfMData file (in that case we split the views)
             if (fs::is_directory(path))
             {
-                for (fs::directory_entry& entry : boost::make_iterator_range(fs::directory_iterator(path), {}))
+                for (auto const& entry : fs::directory_iterator{path})
                 {
                     imagePaths.push_back(entry.path().string());
                 }
@@ -503,7 +505,7 @@ int aliceVision_main(int argc, char** argv)
                 if (inputExt == ".sfm" || inputExt == ".abc")
                 {
                     sfmData::SfMData sfmData;
-                    if (!sfmDataIO::Load(sfmData, path.string(), sfmDataIO::VIEWS))
+                    if (!sfmDataIO::load(sfmData, path.string(), sfmDataIO::VIEWS))
                     {
                         ALICEVISION_LOG_ERROR("The input SfMData file '" << inputPath << "' cannot be read.");
                         return EXIT_FAILURE;
@@ -646,7 +648,7 @@ int aliceVision_main(int argc, char** argv)
 
 
     // Save sfmData with modified path to images
-    if(!sfmDataIO::Save(outSfmData, outSfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if(!sfmDataIO::save(outSfmData, outSfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfmDataFilepath << "' cannot be written.");
         return EXIT_FAILURE;

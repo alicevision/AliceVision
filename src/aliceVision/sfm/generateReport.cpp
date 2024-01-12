@@ -12,9 +12,9 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -26,14 +26,14 @@ bool generateSfMReport(const sfmData::SfMData& sfmData, const std::string& htmlF
     HashMap<IndexT, std::vector<double>> residuals_per_view;
     for (sfmData::Landmarks::const_iterator iterTracks = sfmData.getLandmarks().begin(); iterTracks != sfmData.getLandmarks().end(); ++iterTracks)
     {
-        const sfmData::Observations& observations = iterTracks->second.observations;
+        const sfmData::Observations& observations = iterTracks->second.getObservations();
         for (sfmData::Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
         {
             const sfmData::View* view = sfmData.getViews().at(itObs->first).get();
             const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
             // Use absolute values
-            const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.x).array().abs();
+            const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates()).array().abs();
             residuals_per_view[itObs->first].push_back(residual(0));
             residuals_per_view[itObs->first].push_back(residual(1));
             ++residualCount;

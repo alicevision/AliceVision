@@ -29,11 +29,11 @@
 #include <aliceVision/numeric/numeric.hpp>
 
 // IO
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -44,7 +44,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 size_t getCompositingOptimalScale(int width, int height)
 {
@@ -238,7 +238,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
             const BoundingBox& bbox = currentBoundingBoxes[indexIntersection];
             const BoundingBox& bboxIntersect = intersections[indexIntersection];
 
-            for(int i = 0; i < mask.Height(); i++)
+            for(int i = 0; i < mask.height(); i++)
             {
                 int y = bbox.top + i - globalUnionBoundingBox.top;
                 if(y < 0 || y >= globalUnionBoundingBox.height)
@@ -246,7 +246,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                     continue;
                 }
 
-                for(int j = 0; j < mask.Width(); j++)
+                for(int j = 0; j < mask.width(); j++)
                 {
                     if(!mask(i, j))
                     {
@@ -274,8 +274,8 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         image::Image<IndexT> panoramaLabels;
         image::readImageDirect(labelsFilePath, panoramaLabels);
 
-        const double scaleX = double(panoramaLabels.Width()) / double(panoramaMap.getWidth());
-        const double scaleY = double(panoramaLabels.Height()) / double(panoramaMap.getHeight());
+        const double scaleX = double(panoramaLabels.width()) / double(panoramaMap.getWidth());
+        const double scaleY = double(panoramaLabels.height()) / double(panoramaMap.getHeight());
 
         referenceLabels =
             image::Image<IndexT>(globalUnionBoundingBox.width, globalUnionBoundingBox.height, true, UndefinedIndexT);
@@ -292,17 +292,17 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
                 if(scaledX < 0)
                 {
-                    scaledX += panoramaLabels.Width();
+                    scaledX += panoramaLabels.width();
                 }
 
-                if(scaledX >= panoramaLabels.Width())
+                if(scaledX >= panoramaLabels.width())
                 {
-                    scaledX -= panoramaLabels.Width();
+                    scaledX -= panoramaLabels.width();
                 }
 
                 if(scaledX < 0)
                     continue;
-                if(scaledX >= panoramaLabels.Width())
+                if(scaledX >= panoramaLabels.width())
                     continue;
 
                 IndexT label = panoramaLabels(scaledY, scaledX);
@@ -330,7 +330,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                     int nscaledY = scaledY + k;
                     if(nscaledY < 0)
                         continue;
-                    if(nscaledY >= panoramaLabels.Height())
+                    if(nscaledY >= panoramaLabels.height())
                         continue;
 
                     for(int l = -1; l <= 1; l++)
@@ -341,7 +341,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                         int nscaledX = scaledX + l;
                         if(nscaledX < 0)
                             continue;
-                        if(nscaledX >= panoramaLabels.Width())
+                        if(nscaledX >= panoramaLabels.width())
                             continue;
 
                         IndexT otherlabel = panoramaLabels(nscaledY, nscaledX);
@@ -535,9 +535,9 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
     if(storageDataType == image::EStorageDataType::HalfFinite)
     {
-        for(int i = 0; i < output.Height(); i++)
+        for(int i = 0; i < output.height(); i++)
         {
-            for(int j = 0; j < output.Width(); j++)
+            for(int j = 0; j < output.width(); j++)
             {
                 image::RGBAfColor ret;
                 image::RGBAfColor c = output(i, j);
@@ -646,24 +646,38 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")(
-        "warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")(
-        "output,o", po::value<std::string>(&outputFolder)->required(), "Path of the output panorama.");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "Input SfMData.")
+        ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(),
+         "Folder with warped images.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Path of the output panorama.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
-        ("forceMinPyramidLevels,f", po::value<int>(&forceMinPyramidLevels)->default_value(forceMinPyramidLevels), "For multiband compositer, force a minimum number of levels in the image pyramid.")
-        ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams, all].")
+        ("compositerType,c", po::value<std::string>(&compositerType)->required(),
+         "Compositer type: [replace, alpha, multiband].")
+        ("forceMinPyramidLevels,f", po::value<int>(&forceMinPyramidLevels)->default_value(forceMinPyramidLevels),
+         "For multiband compositer, force a minimum number of levels in the image pyramid.")
+        ("overlayType,c", po::value<std::string>(&overlayType)->required(),
+         "Overlay type: [none, borders, seams, all].")
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-        ("Storage data type: " + image::EStorageDataType_informations()).c_str())
-        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Range chunk id.")
-        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
-        ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads), "max number of threads to use.")
-        ("labels,l", po::value<std::string>(&labelsFilepath)->required(), "Labels image from seams estimation.")
-        ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling), "use tiling for compositing.");
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration),
+         "Range chunk ID.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+         "Range size.")
+        ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads),
+         "Maximum number of threads to use.")
+        ("labels,l", po::value<std::string>(&labelsFilepath)->required(),
+         "Labels image from seams estimation.")
+        ("useTiling,n", po::value<bool>(&useTiling)->default_value(useTiling),
+         "Use tiling for compositing.");
+    // clang-format on
 
     CmdLine cmdline(
         "Performs the panorama stiching of warped images, with an option to use constraints from precomputed seams maps.\n"
@@ -702,7 +716,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilepath,
+    if(!sfmDataIO::load(sfmData, sfmDataFilepath,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");

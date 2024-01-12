@@ -90,132 +90,135 @@ int aliceVision_main(int argc, char* argv[])
     // number of GPUs to use (0 means use all GPUs)
     int nbGPUs = 0;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-            "SfMData file.")
+         "SfMData file.")
         ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
-            "Images folder. Filename should be the image uid.")
+         "Images folder. Filename should be the image uid.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
-            "Output folder for generated depth maps.");
+         "Output folder for generated depth maps.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-            "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
+         "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-            "Compute a sub-range of N images (N=rangeSize).")
+         "Compute a sub-range of N images (N=rangeSize).")
         ("downscale", po::value<int>(&downscale)->default_value(downscale),
-            "Downscale the input images to compute the depth map. "
-            "Full resolution (downscale=1) gives the best result, "
-            "but using a larger downscale will reduce computation time at the expense of quality. "
-            "If the images are noisy, blurry or if the surfaces are challenging (weakly-textured or with specularities) a larger downscale may improve.")
+         "Downscale the input images to compute the depth map. "
+         "Full resolution (downscale=1) gives the best result, "
+         "but using a larger downscale will reduce computation time at the expense of quality. "
+         "If the images are noisy, blurry or if the surfaces are challenging (weakly-textured or with specularities), "
+         "a larger downscale may improve.")
         ("minViewAngle", po::value<float>(&minViewAngle)->default_value(minViewAngle),
-            "Minimum angle between two views (select the neighbouring cameras, select depth planes from epipolar segment point).")
+         "Minimum angle between two views (select the neighbouring cameras, select depth planes from epipolar segment point).")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
-            "Maximum angle between two views (select the neighbouring cameras, select depth planes from epipolar segment point).")
+         "Maximum angle between two views (select the neighbouring cameras, select depth planes from epipolar segment point).")
         ("tileBufferWidth", po::value<int>(&tileParams.bufferWidth)->default_value(tileParams.bufferWidth),
-            "Maximum tile buffer width.")
+         "Maximum tile buffer width.")
         ("tileBufferHeight", po::value<int>(&tileParams.bufferHeight)->default_value(tileParams.bufferHeight),
-            "Maximum tile buffer height.")
+         "Maximum tile buffer height.")
         ("tilePadding", po::value<int>(&tileParams.padding)->default_value(tileParams.padding),
-            "Buffer padding for overlapping tiles.")
+         "Buffer padding for overlapping tiles.")
         ("chooseTCamsPerTile", po::value<bool>(&depthMapParams.chooseTCamsPerTile)->default_value(depthMapParams.chooseTCamsPerTile),
-            "Choose neighbour cameras per tile or globally to the image.")
+         "Choose neighbour cameras per tile or globally to the image.")
         ("maxTCams", po::value<int>(&depthMapParams.maxTCams)->default_value(depthMapParams.maxTCams),
-            "Maximum number of neighbour cameras per image.")
+         "Maximum number of neighbour cameras per image.")
         ("sgmScale", po::value<int>(&sgmParams.scale)->default_value(sgmParams.scale),
-            "Semi Global Matching: Downscale factor applied on source images for the SGM step (in addition to the global downscale).")
+         "Semi Global Matching: Downscale factor applied on source images for the SGM step (in addition to the global downscale).")
         ("sgmStepXY", po::value<int>(&sgmParams.stepXY)->default_value(sgmParams.stepXY),
-            "Semi Global Matching: Step is used to compute the similarity volume for one pixel over N (in the XY image plane).")
+         "Semi Global Matching: Step is used to compute the similarity volume for one pixel over N (in the XY image plane).")
         ("sgmStepZ", po::value<int>(&sgmParams.stepZ)->default_value(sgmParams.stepZ),
-            "Semi Global Matching: Initial step used to compute the similarity volume on Z axis (every N pixels on the epilolar line). "
-            "-1 means automatic estimation. "
-            "This value will be adjusted in all case to fit in the max memory (sgmMaxDepths).")
+         "Semi Global Matching: Initial step used to compute the similarity volume on Z axis (every N pixels on the epilolar line). "
+         "-1 means automatic estimation. "
+         "This value will be adjusted in all case to fit in the max memory (sgmMaxDepths).")
         ("sgmMaxTCamsPerTile", po::value<int>(&sgmParams.maxTCamsPerTile)->default_value(sgmParams.maxTCamsPerTile),
-            "Semi Global Matching: Maximum number of neighbour cameras used per tile.")
+         "Semi Global Matching: Maximum number of neighbour cameras used per tile.")
         ("sgmWSH", po::value<int>(&sgmParams.wsh)->default_value(sgmParams.wsh),
-            "Semi Global Matching: Half-size of the patch used to compute the similarity. Patch width is wsh*2+1.")
+         "Semi Global Matching: Half-size of the patch used to compute the similarity. Patch width is wsh*2+1.")
         ("sgmUseSfmSeeds", po::value<bool>(&sgmParams.useSfmSeeds)->default_value(sgmParams.useSfmSeeds),
-            "Semi Global Matching: Use landmarks from Structure-from-Motion as input seeds to define min/max depth ranges.")
+         "Semi Global Matching: Use landmarks from Structure-from-Motion as input seeds to define min/max depth ranges.")
         ("sgmSeedsRangeInflate", po::value<double>(&sgmParams.seedsRangeInflate)->default_value(sgmParams.seedsRangeInflate),
-            "Semi Global Matching: Inflate factor to add margins around SfM seeds.")
+         "Semi Global Matching: Inflate factor to add margins around SfM seeds.")
         ("sgmDepthThicknessInflate", po::value<double>(&sgmParams.depthThicknessInflate)->default_value(sgmParams.depthThicknessInflate),
-            "Semi Global Matching: Inflate factor to add margins to the depth thickness.")
+         "Semi Global Matching: Inflate factor to add margins to the depth thickness.")
         ("sgmMaxSimilarity", po::value<double>(&sgmParams.maxSimilarity)->default_value(sgmParams.maxSimilarity),
-            "Semi Global Matching: Maximum similarity threshold (between 0 and 1) used to filter out poorly supported depth values.")
+         "Semi Global Matching: Maximum similarity threshold (between 0 and 1) used to filter out poorly supported depth values.")
         ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
-            "Semi Global Matching: GammaC threshold used for similarity computation, strength of grouping by color similarity.")
+         "Semi Global Matching: GammaC threshold used for similarity computation, strength of grouping by color similarity.")
         ("sgmGammaP", po::value<double>(&sgmParams.gammaP)->default_value(sgmParams.gammaP),
-            "Semi Global Matching: GammaP threshold used for similarity computation, strength of grouping by proximity.")
+         "Semi Global Matching: GammaP threshold used for similarity computation, strength of grouping by proximity.")
         ("sgmP1", po::value<double>(&sgmParams.p1)->default_value(sgmParams.p1),
-            "Semi Global Matching: P1 parameter for SGM filtering.")
+         "Semi Global Matching: P1 parameter for SGM filtering.")
         ("sgmP2Weighting", po::value<double>(&sgmParams.p2Weighting)->default_value(sgmParams.p2Weighting),
-            "Semi Global Matching: P2 weighting parameter for SGM filtering.")
+         "Semi Global Matching: P2 weighting parameter for SGM filtering.")
         ("sgmMaxDepths", po::value<int>(&sgmParams.maxDepths)->default_value(sgmParams.maxDepths),
-            "Semi Global Matching: Maximum number of depths in the similarity volume.")
+         "Semi Global Matching: Maximum number of depths in the similarity volume.")
         ("sgmFilteringAxes", po::value<std::string>(&sgmParams.filteringAxes)->default_value(sgmParams.filteringAxes),
-            "Semi Global Matching: Define axes for the filtering of the similarity volume.")
+         "Semi Global Matching: Define axes for the filtering of the similarity volume.")
         ("sgmDepthListPerTile", po::value<bool>(&sgmParams.depthListPerTile)->default_value(sgmParams.depthListPerTile),
-            "Semi Global Matching: Select the list of depth planes per tile or globally to the image.")
+         "Semi Global Matching: Select the list of depth planes per tile or globally to the image.")
         ("sgmUseConsistentScale", po::value<bool>(&sgmParams.useConsistentScale)->default_value(sgmParams.useConsistentScale),
-            "Semi Global Matching: Compare patch with consistent scale for similarity volume computation.")
+         "Semi Global Matching: Compare patch with consistent scale for similarity volume computation.")
         ("sgmUseCustomPatchPattern", po::value<bool>(&sgmParams.useCustomPatchPattern)->default_value(sgmParams.useCustomPatchPattern),
-            "Semi Global Matching: Use user custom patch pattern for similarity volume computation.")
+         "Semi Global Matching: Use user custom patch pattern for similarity volume computation.")
         ("refineScale", po::value<int>(&refineParams.scale)->default_value(refineParams.scale),
-            "Refine: Downscale factor applied on source images for the Refine step (in addition to the global downscale).")
+         "Refine: Downscale factor applied on source images for the Refine step (in addition to the global downscale).")
         ("refineStepXY", po::value<int>(&refineParams.stepXY)->default_value(refineParams.stepXY),
-            "Refine: Step is used to compute the refine volume for one pixel over N (in the XY image plane).")
+         "Refine: Step is used to compute the refine volume for one pixel over N (in the XY image plane).")
         ("refineMaxTCamsPerTile", po::value<int>(&refineParams.maxTCamsPerTile)->default_value(refineParams.maxTCamsPerTile),
-            "Refine: Maximum number of neighbour cameras used per tile.")
+         "Refine: Maximum number of neighbour cameras used per tile.")
         ("refineHalfNbDepths", po::value<int>(&refineParams.halfNbDepths)->default_value(refineParams.halfNbDepths),
-            "Refine: The thickness of the refine area around the initial depth map. "
-            "This parameter defines the number of depths in front of and behind the initial value "
-            "for which we evaluate the similarity with a finer z sampling.")
+         "Refine: The thickness of the refine area around the initial depth map. "
+         "This parameter defines the number of depths in front of and behind the initial value "
+         "for which we evaluate the similarity with a finer z sampling.")
         ("refineSubsampling", po::value<int>(&refineParams.nbSubsamples)->default_value(refineParams.nbSubsamples),
-            "Refine: Number of subsamples used to extract the best depth from the refine volume (sliding gaussian window precision).")
+         "Refine: Number of subsamples used to extract the best depth from the refine volume (sliding gaussian window precision).")
         ("refineWSH", po::value<int>(&refineParams.wsh)->default_value(refineParams.wsh),
-            "Refine: Half-size of the patch used to compute the similarity. Patch width is wsh*2+1.")
+         "Refine: Half-size of the patch used to compute the similarity. Patch width is wsh*2+1.")
         ("refineSigma", po::value<double>(&refineParams.sigma)->default_value(refineParams.sigma),
-            "Refine: Sigma (2*sigma^2) of the gaussian filter used to extract the best depth from the refine volume.")
+         "Refine: Sigma (2*sigma^2) of the gaussian filter used to extract the best depth from the refine volume.")
         ("refineGammaC", po::value<double>(&refineParams.gammaC)->default_value(refineParams.gammaC),
-            "Refine: GammaC threshold used for similarity computation.")
+         "Refine: GammaC threshold used for similarity computation.")
         ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
-            "Refine: GammaP threshold used for similarity computation.")
+         "Refine: GammaP threshold used for similarity computation.")
         ("refineInterpolateMiddleDepth", po::value<bool>(&refineParams.interpolateMiddleDepth)->default_value(refineParams.interpolateMiddleDepth),
-            "Refine: Enable/Disable middle depth bilinear interpolation for the refinement process.")
+         "Refine: Enable/Disable middle depth bilinear interpolation for the refinement process.")
         ("refineUseConsistentScale", po::value<bool>(&refineParams.useConsistentScale)->default_value(refineParams.useConsistentScale),
-            "Refine: Compare patch with consistent scale for similarity volume computation.")
+         "Refine: Compare patch with consistent scale for similarity volume computation.")
         ("refineUseCustomPatchPattern", po::value<bool>(&refineParams.useCustomPatchPattern)->default_value(refineParams.useCustomPatchPattern),
-            "Refine: Use user custom patch pattern for similarity volume computation.")
+         "Refine: Use user custom patch pattern for similarity volume computation.")
         ("colorOptimizationNbIterations", po::value<int>(&refineParams.optimizationNbIterations)->default_value(refineParams.optimizationNbIterations),
-            "Color Optimization: Number of iterations of the optimization.")
+         "Color Optimization: Number of iterations of the optimization.")
         ("refineEnabled", po::value<bool>(&refineParams.useRefineFuse)->default_value(refineParams.useRefineFuse),
-            "Enable/Disable depth/similarity map refinement process.")
+         "Enable/Disable depth/similarity map refinement process.")
         ("colorOptimizationEnabled", po::value<bool>(&refineParams.useColorOptimization)->default_value(refineParams.useColorOptimization),
-            "Enable/Disable depth/similarity map post-process color optimization.")
+         "Enable/Disable depth/similarity map post-process color optimization.")
         ("autoAdjustSmallImage", po::value<bool>(&depthMapParams.autoAdjustSmallImage)->default_value(depthMapParams.autoAdjustSmallImage),
-            "Automatically adjust depth map parameters if images are smaller than one tile (maxTCamsPerTile=maxTCams, adjust step if needed).")
+         "Automatically adjust depth map parameters if images are smaller than one tile (maxTCamsPerTile=maxTCams, adjust step if needed).")
         ("customPatchPatternSubparts", po::value<std::vector<depthMap::CustomPatchPatternParams::SubpartParams>>(&depthMapParams.customPatchPattern.subpartsParams)->multitoken()->default_value(depthMapParams.customPatchPattern.subpartsParams),
-            "User custom patch pattern subparts for similarity volume computation.")
+         "User custom patch pattern subparts for similarity volume computation.")
         ("customPatchPatternGroupSubpartsPerLevel", po::value<bool>(&depthMapParams.customPatchPattern.groupSubpartsPerLevel)->default_value(depthMapParams.customPatchPattern.groupSubpartsPerLevel),
-            "Group all custom patch pattern subparts with the same image level.")
+         "Group all custom patch pattern subparts with the same image level.")
         ("exportIntermediateDepthSimMaps", po::value<bool>(&exportIntermediateDepthSimMaps)->default_value(exportIntermediateDepthSimMaps),
-            "Export intermediate depth/similarity maps from the SGM and Refine steps.")
+         "Export intermediate depth/similarity maps from the SGM and Refine steps.")
         ("exportIntermediateNormalMaps", po::value<bool>(&exportIntermediateNormalMaps)->default_value(exportIntermediateNormalMaps),
-            "Export intermediate normal maps from the SGM and Refine steps.")
+         "Export intermediate normal maps from the SGM and Refine steps.")
         ("exportIntermediateVolumes", po::value<bool>(&exportIntermediateVolumes)->default_value(exportIntermediateVolumes),
-            "Export intermediate full similarity volumes from the SGM and Refine steps.")
+         "Export intermediate full similarity volumes from the SGM and Refine steps.")
         ("exportIntermediateCrossVolumes", po::value<bool>(&exportIntermediateCrossVolumes)->default_value(exportIntermediateCrossVolumes),
-            "Export intermediate similarity cross volumes from the SGM and Refine steps.")
+         "Export intermediate similarity cross volumes from the SGM and Refine steps.")
         ("exportIntermediateTopographicCutVolumes", po::value<bool>(&exportIntermediateTopographicCutVolumes)->default_value(exportIntermediateTopographicCutVolumes),
-            "Export intermediate similarity topographic cut volumes from the SGM and Refine steps.")
+         "Export intermediate similarity topographic cut volumes from the SGM and Refine steps.")
         ("exportIntermediateVolume9pCsv", po::value<bool>(&exportIntermediateVolume9pCsv)->default_value(exportIntermediateVolume9pCsv),
-            "Export intermediate volumes 9 points from the SGM and Refine steps in CSV files.")
+         "Export intermediate volumes 9 points from the SGM and Refine steps in CSV files.")
         ("exportTilePattern", po::value<bool>(&depthMapParams.exportTilePattern)->default_value(depthMapParams.exportTilePattern),
-            "Export workflow tile pattern.")
+         "Export workflow tile pattern.")
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
-            "Number of GPUs to use (0 means use all GPUs).");
+         "Number of GPUs to use (0 means use all GPUs).");
+    // clang-format on
 
     CmdLine cmdline("Dense Reconstruction.\n"
                     "This program estimate a depth map for each input calibrated camera using Plane Sweeping, a multi-view stereo algorithm notable for its efficiency on modern graphics hardware (GPU).\n"
@@ -288,7 +291,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
       return EXIT_FAILURE;

@@ -12,14 +12,14 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 #include <fstream>
 
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace photometricStereo {

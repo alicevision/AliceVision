@@ -54,39 +54,41 @@ int aliceVision_main(int argc, char* argv[])
     int nNearestCams = 10;
     bool computeNormalMaps = false;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-            "SfMData file.")
+         "SfMData file.")
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder)->required(),
-            "Input depth map folder.")
+         "Input depth map folder.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
-            "Output folder for filtered depth maps.");
+         "Output folder for filtered depth maps.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-            "Compute only a sub-range of images from index rangeStart to rangeStart+rangeSize.")
+         "Compute only a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-            "Compute only a sub-range of N images (N=rangeSize).")
+         "Compute only a sub-range of N images (N=rangeSize).")
         ("minViewAngle", po::value<float>(&minViewAngle)->default_value(minViewAngle),
-            "minimum angle between two views.")
+         "Minimum angle between two views.")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
-            "maximum angle between two views.")
+         "Maximum angle between two views.")
         ("minNumOfConsistentCams", po::value<int>(&minNumOfConsistentCams)->default_value(minNumOfConsistentCams),
-            "Minimal number of consistent cameras to consider the pixel.")
+         "Minimal number of consistent cameras to consider the pixel.")
         ("minNumOfConsistentCamsWithLowSimilarity", po::value<int>(&minNumOfConsistentCamsWithLowSimilarity)->default_value(minNumOfConsistentCamsWithLowSimilarity),
-            "Minimal number of consistent cameras to consider the pixel when the similarity is weak or ambiguous.")
+         "Minimal number of consistent cameras to consider the pixel when the similarity is weak or ambiguous.")
         ("pixToleranceFactor", po::value<float>(&pixToleranceFactor)->default_value(pixToleranceFactor),
-            "Filtering tolerance size factor (in px).")
+         "Filtering tolerance size factor (in px).")
         ("pixSizeBall", po::value<int>(&pixSizeBall)->default_value(pixSizeBall),
-            "Filter ball size (in px).")
+         "Filter ball size (in px).")
         ("pixSizeBallWithLowSimilarity", po::value<int>(&pixSizeBallWithLowSimilarity)->default_value(pixSizeBallWithLowSimilarity),
-            "Filter ball size (in px) when the similarity is weak or ambiguous.")
+         "Filter ball size (in px) when the similarity is weak or ambiguous.")
         ("nNearestCams", po::value<int>(&nNearestCams)->default_value(nNearestCams),
-            "Number of nearest cameras.")
+         "Number of nearest cameras.")
         ("computeNormalMaps", po::value<bool>(&computeNormalMaps)->default_value(computeNormalMaps),
-            "Compute normal maps per depth map");
+         "Compute normal maps per depth map.");
+    // clang-format on
 
     CmdLine cmdline("This program filters depth maps to remove values that are not consistent with other depth maps.\n"
                     "AliceVision depthMapFiltering");
@@ -99,7 +101,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
       return EXIT_FAILURE;

@@ -66,13 +66,13 @@ bool LaplacianPyramid::apply(aliceVision::image::Image<image::RGBfColor>& source
     image::Image<float> currentMask(width, height, true, 0.0f);
     image::Image<float> nextMask;
 
-    for (int i = 0; i < source.Height(); i++)
+    for (int i = 0; i < source.height(); i++)
     {
         int di = contentBoudingBox.top + i;
 
-        memcpy(&currentColor(di, contentBoudingBox.left), &source(i, 0), sizeof(image::RGBfColor) * source.Width());
-        memcpy(&currentWeights(di, contentBoudingBox.left), &weights(i, 0), sizeof(float) * source.Width());
-        memcpy(&currentMask(di, contentBoudingBox.left), &mask(i, 0), sizeof(float) * source.Width());
+        memcpy(&currentColor(di, contentBoudingBox.left), &source(i, 0), sizeof(image::RGBfColor) * source.width());
+        memcpy(&currentWeights(di, contentBoudingBox.left), &weights(i, 0), sizeof(float) * source.width());
+        memcpy(&currentMask(di, contentBoudingBox.left), &mask(i, 0), sizeof(float) * source.width());
     }
 
     source = aliceVision::image::Image<image::RGBfColor>();
@@ -123,9 +123,9 @@ bool LaplacianPyramid::apply(aliceVision::image::Image<image::RGBfColor>& source
 
         // Normalize given mask
         //(Make sure the convolution sum is 1)
-        for (int i = 0; i < buf.Height(); i++)
+        for (int i = 0; i < buf.height(); i++)
         {
-            for (int j = 0; j < buf.Width(); j++)
+            for (int j = 0; j < buf.width(); j++)
             {
                 float m = bufFloat(i, j);
 
@@ -176,9 +176,9 @@ bool LaplacianPyramid::apply(aliceVision::image::Image<image::RGBfColor>& source
 
         // Values must be multiplied by 4 as our upscale was using
         // filling of 0 values
-        for (int i = 0; i < buf2.Height(); i++)
+        for (int i = 0; i < buf2.height(); i++)
         {
-            for (int j = 0; j < buf2.Width(); j++)
+            for (int j = 0; j < buf2.width(); j++)
             {
                 buf2(i, j) *= 4.0f;
             }
@@ -247,16 +247,16 @@ bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& 
     image::Image<image::RGBfColor>& img = _levels[level];
     image::Image<float>& weight = _weights[level];
 
-    for (int i = 0; i < oimg.Height(); i++)
+    for (int i = 0; i < oimg.height(); i++)
     {
         int y = i + offsetY;
-        if (y < 0 || y >= img.Height())
+        if (y < 0 || y >= img.height())
             continue;
 
-        for (int j = 0; j < oimg.Width(); j++)
+        for (int j = 0; j < oimg.width(); j++)
         {
             int x = j + offsetX;
-            if (x < 0 || x >= img.Width())
+            if (x < 0 || x >= img.width())
                 continue;
 
             img(y, x).r() += oimg(i, j).r() * oweight(i, j);
@@ -285,9 +285,9 @@ bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output, const Bo
         image::Image<image::RGBfColor>& level = _levels[l];
         image::Image<float>& weight = _weights[l];
 
-        for (int i = 0; i < level.Height(); i++)
+        for (int i = 0; i < level.height(); i++)
         {
-            for (int j = 0; j < level.Width(); j++)
+            for (int j = 0; j < level.width(); j++)
             {
                 float w = weight(i, j);
                 image::RGBfColor c = level(i, j);
@@ -316,8 +316,8 @@ bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output, const Bo
         int halfLevel = l + 1;
         int currentLevel = l;
 
-        aliceVision::image::Image<image::RGBfColor> buf(_levels[currentLevel].Width(), _levels[currentLevel].Height());
-        aliceVision::image::Image<image::RGBfColor> buf2(_levels[currentLevel].Width(), _levels[currentLevel].Height());
+        aliceVision::image::Image<image::RGBfColor> buf(_levels[currentLevel].width(), _levels[currentLevel].height());
+        aliceVision::image::Image<image::RGBfColor> buf2(_levels[currentLevel].width(), _levels[currentLevel].height());
 
         if (!upscale(buf, _levels[halfLevel]))
         {
@@ -329,9 +329,9 @@ bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output, const Bo
             return false;
         }
 
-        for (int y = 0; y < buf2.Height(); y++)
+        for (int y = 0; y < buf2.height(); y++)
         {
-            for (int x = 0; x < buf2.Width(); x++)
+            for (int x = 0; x < buf2.width(); x++)
             {
                 buf2(y, x) *= 4.0f;
             }

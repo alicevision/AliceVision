@@ -22,7 +22,7 @@ bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<Inde
 
     seams.fill(0);
 
-    for (int j = 1; j < labels.Width() - 1; j++)
+    for (int j = 1; j < labels.width() - 1; j++)
     {
         IndexT label = labels(0, j);
         IndexT same = true;
@@ -41,8 +41,8 @@ bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<Inde
         seams(0, j) = 255;
     }
 
-    int lastrow = labels.Height() - 1;
-    for (int j = 1; j < labels.Width() - 1; j++)
+    int lastrow = labels.height() - 1;
+    for (int j = 1; j < labels.width() - 1; j++)
     {
         IndexT label = labels(lastrow, j);
         IndexT same = true;
@@ -61,9 +61,9 @@ bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<Inde
         seams(lastrow, j) = 255;
     }
 
-    for (int i = 1; i < labels.Height() - 1; i++)
+    for (int i = 1; i < labels.height() - 1; i++)
     {
-        for (int j = 1; j < labels.Width() - 1; j++)
+        for (int j = 1; j < labels.width() - 1; j++)
         {
             IndexT label = labels(i, j);
             IndexT same = true;
@@ -91,13 +91,13 @@ bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<Inde
 
 void drawBorders(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVision::image::Image<unsigned char>& mask, int offset_x, int offset_y)
 {
-    for (int i = 0; i < mask.Height(); i++)
+    for (int i = 0; i < mask.height(); i++)
     {
         int j = 0;
         int di = i + offset_y;
         int dj = j + offset_x;
 
-        if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+        if (di < 0 || dj < 0 || di >= inout.height() || dj >= inout.width())
         {
             continue;
         }
@@ -108,13 +108,13 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVisio
         }
     }
 
-    for (int i = 0; i < mask.Height(); i++)
+    for (int i = 0; i < mask.height(); i++)
     {
-        int j = mask.Width() - 1;
+        int j = mask.width() - 1;
         int di = i + offset_y;
         int dj = j + offset_x;
 
-        if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+        if (di < 0 || dj < 0 || di >= inout.height() || dj >= inout.width())
         {
             continue;
         }
@@ -125,12 +125,12 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVisio
         }
     }
 
-    for (int j = 0; j < mask.Width(); j++)
+    for (int j = 0; j < mask.width(); j++)
     {
         int i = 0;
         int di = i + offset_y;
         int dj = j + offset_x;
-        if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+        if (di < 0 || dj < 0 || di >= inout.height() || dj >= inout.width())
         {
             continue;
         }
@@ -141,12 +141,12 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVisio
         }
     }
 
-    for (int j = 0; j < mask.Width(); j++)
+    for (int j = 0; j < mask.width(); j++)
     {
-        int i = mask.Height() - 1;
+        int i = mask.height() - 1;
         int di = i + offset_y;
         int dj = j + offset_x;
-        if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+        if (di < 0 || dj < 0 || di >= inout.height() || dj >= inout.width())
         {
             continue;
         }
@@ -157,14 +157,14 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVisio
         }
     }
 
-    for (int i = 1; i < mask.Height() - 1; i++)
+    for (int i = 1; i < mask.height() - 1; i++)
     {
         int di = i + offset_y;
 
-        for (int j = 1; j < mask.Width() - 1; j++)
+        for (int j = 1; j < mask.width() - 1; j++)
         {
             int dj = j + offset_x;
-            if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+            if (di < 0 || dj < 0 || di >= inout.height() || dj >= inout.width())
             {
                 continue;
             }
@@ -193,16 +193,16 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVisio
 
 void drawSeams(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVision::image::Image<IndexT>& labels, int offset_x, int offset_y)
 {
-    for (int i = 1; i < labels.Height() - 1; i++)
+    for (int i = 1; i < labels.height() - 1; i++)
     {
         int di = i + offset_y;
-        if (di < 0 || di >= inout.Height())
+        if (di < 0 || di >= inout.height())
             continue;
 
-        for (int j = 1; j < labels.Width() - 1; j++)
+        for (int j = 1; j < labels.width() - 1; j++)
         {
             int dj = j + offset_x;
-            if (dj < 0 || dj >= inout.Width())
+            if (dj < 0 || dj >= inout.width())
                 continue;
 
             IndexT label = labels(i, j);
@@ -236,13 +236,13 @@ bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
         return false;
     }
 
-    for (size_t i = 0; i < inputWeights.Height(); i++)
+    for (size_t i = 0; i < inputWeights.height(); i++)
     {
         int y = i + offset_y;
         if (y < 0 || y >= _panoramaHeight)
             continue;
 
-        for (size_t j = 0; j < inputWeights.Width(); j++)
+        for (size_t j = 0; j < inputWeights.width(); j++)
         {
             int x = j + offset_x;
             if (x < 0 || x >= _panoramaWidth)
@@ -275,13 +275,13 @@ bool WTASeams::appendWithLoop(const aliceVision::image::Image<unsigned char>& in
         return false;
     }
 
-    for (size_t i = 0; i < inputWeights.Height(); i++)
+    for (size_t i = 0; i < inputWeights.height(); i++)
     {
         int y = i + offset_y;
         if (y < 0 || y >= _panoramaHeight)
             continue;
 
-        for (size_t j = 0; j < inputWeights.Width(); j++)
+        for (size_t j = 0; j < inputWeights.width(); j++)
         {
             int x = j + offset_x;
             if (x < 0)
@@ -364,8 +364,8 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
         return false;
     }
 
-    int width = feathered.Width();
-    int height = feathered.Height();
+    int width = feathered.width();
+    int height = feathered.height();
 
     for (int level = 0; level < _countLevels; level++)
     {
@@ -395,11 +395,11 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
         downscale(nextImage, buf);
 
         // Just nearest neighboor divide for mask
-        for (int i = 0; i < nextMask.Height(); i++)
+        for (int i = 0; i < nextMask.height(); i++)
         {
             int di = i * 2;
 
-            for (int j = 0; j < nextMask.Width(); j++)
+            for (int j = 0; j < nextMask.width(); j++)
             {
                 int dj = j * 2;
 
@@ -433,8 +433,8 @@ bool HierarchicalGraphcutSeams::process()
         ALICEVISION_LOG_INFO("Hierachical graphcut processing level #" << level);
 
         image::Image<IndexT>& smallLabels = _graphcuts[level].getLabels();
-        int w = smallLabels.Width();
-        int h = smallLabels.Height();
+        int w = smallLabels.width();
+        int h = smallLabels.height();
 
         if (level == _countLevels - 1)
         {
@@ -460,11 +460,11 @@ bool HierarchicalGraphcutSeams::process()
         // Enlarge result of this level to be an initialization for next level
         image::Image<IndexT>& largeLabels = _graphcuts[level - 1].getLabels();
 
-        for (int y = 0; y < largeLabels.Height(); y++)
+        for (int y = 0; y < largeLabels.height(); y++)
         {
             int hy = y / 2;
 
-            for (int x = 0; x < largeLabels.Width(); x++)
+            for (int x = 0; x < largeLabels.width(); x++)
             {
                 int hx = x / 2;
                 largeLabels(y, x) = smallLabels(hy, hx);
@@ -477,18 +477,18 @@ bool HierarchicalGraphcutSeams::process()
 
 bool getMaskFromLabels(aliceVision::image::Image<float>& mask, image::Image<IndexT>& labels, IndexT index, int offset_x, int offset_y)
 {
-    for (int i = 0; i < mask.Height(); i++)
+    for (int i = 0; i < mask.height(); i++)
     {
         int y = i + offset_y;
 
-        for (int j = 0; j < mask.Width(); j++)
+        for (int j = 0; j < mask.width(); j++)
         {
             int x = j + offset_x;
             mask(i, j) = 0;
 
-            if (y < 0 || y >= labels.Height())
+            if (y < 0 || y >= labels.height())
                 continue;
-            if (x < 0 || x >= labels.Width())
+            if (x < 0 || x >= labels.width())
                 continue;
 
             if (labels(y, x) == index)

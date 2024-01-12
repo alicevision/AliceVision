@@ -186,7 +186,7 @@ void TracksBuilder::exportToSTL(TracksMap& allTracks) const
             const IndexedFeaturePair& currentPair = _d->map_nodeToIndex.at(iit);
             // all descType inside the track will be the same
             outTrack.descType = currentPair.second.descType;
-            outTrack.featPerView[currentPair.first] = currentPair.second.featIndex;
+            outTrack.featPerView[currentPair.first].featureId = currentPair.second.featIndex;
         }
     }
 }

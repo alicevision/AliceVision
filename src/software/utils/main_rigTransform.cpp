@@ -48,17 +48,19 @@ int aliceVision_main(int argc, char** argv)
   std::string calibFile;
   std::vector<aliceVision::geometry::Pose3> extrinsics;  // the rig subposes
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&importFile)->required(),
-      "The input file containing cameras.")
-    ("output,o", po::value<std::string>(&exportFile)->required(),
-      "Filename for the SfMData export file (where camera poses will be stored).\n"
-      "Alembic file only.")
-    ("calibrationFile,c", po::value<std::string>(&calibFile)->required(),
-        "A calibration file for the target camera.")
-    ("rigFile,e", po::value<std::string>(&rigFile)->required(),
-        "Rig calibration file that will be  applied to input.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&importFile)->required(),
+         "The input file containing cameras.")
+        ("output,o", po::value<std::string>(&exportFile)->required(),
+         "Filename for the SfMData export file (where camera poses will be stored).\n"
+         "Alembic file only.")
+        ("calibrationFile,c", po::value<std::string>(&calibFile)->required(),
+         "A calibration file for the target camera.")
+        ("rigFile,e", po::value<std::string>(&rigFile)->required(),
+         "Rig calibration file that will be applied to input.");
+    // clang-format on
 
   CmdLine cmdline("This program is used to deduce the pose of the not localized cameras of the RIG.\n"
                   "Use if you have localized a single camera from an acquisition with a RIG of cameras.\n"
@@ -80,7 +82,7 @@ int aliceVision_main(int argc, char** argv)
 
   // import sfm data
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, importFile, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, importFile, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< importFile << "' cannot be read");
     return EXIT_FAILURE;

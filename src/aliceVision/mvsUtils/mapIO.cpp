@@ -11,10 +11,11 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
-namespace fs = boost::filesystem;
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace mvsUtils {
@@ -142,7 +143,7 @@ void getTilePathList(int rc,
 
     const boost::regex mapPattern(mapPath.stem().string() + "_\\d+_\\d+" + mapPath.extension().string());
 
-    for (auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(mapDirectory), {}))
+    for (auto& entry : fs::directory_iterator{mapDirectory})
     {
         if (boost::regex_match(entry.path().filename().string(), mapPattern))
             out_mapTilePathList.push_back(entry.path().string());
@@ -170,8 +171,8 @@ void weightTileBorder(int a, int b, int c, int d, int borderWidth, int borderHei
 {
     const Point2d rd = lu + Point2d(borderWidth, borderHeight);
 
-    const int endX = std::min(int(rd.x), in_tileMap.Width());
-    const int endY = std::min(int(rd.y), in_tileMap.Height());
+    const int endX = std::min(int(rd.x), in_tileMap.width());
+    const int endY = std::min(int(rd.y), in_tileMap.height());
 
     // Add small margin where alpha is 0 for corners (lu and rd)
     static const double margin = 2.0;
@@ -422,8 +423,8 @@ void writeMapToFileOrTile(int rc,
     const ROI downscaledROI = downscaleROI(roi, scaleStep);
 
     // check input map dimensions
-    assert(in_map.Width() == downscaledROI.width() && in_map.Width() <= imageWidth);
-    assert(in_map.Height() == downscaledROI.height() && in_map.Height() <= imageHeight);
+    assert(in_map.width() == downscaledROI.width() && in_map.width() <= imageWidth);
+    assert(in_map.height() == downscaledROI.height() && in_map.height() <= imageHeight);
 
     // set OIIO ROI for map writing
     // displayRoi is the image region of interest for display (image size)

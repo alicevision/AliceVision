@@ -298,14 +298,14 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min, float& out_max, fl
         const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
 
         // find rc observation
-        const auto it = landmark.observations.find(viewId);
+        const auto it = landmark.getObservations().find(viewId);
 
         // no rc observation
-        if (it == landmark.observations.end())
+        if (it == landmark.getObservations().end())
             continue;
 
         // get rc 2d observation
-        const Vec2& obs2d = it->second.x;
+        const Vec2& obs2d = it->second.getCoordinates();
 
         // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
         if (!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
@@ -370,18 +370,18 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc, double& out_zmin, double& ou
         const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
 
         // no tc observation
-        if (landmark.observations.find(tcViewId) == landmark.observations.end())
+        if (landmark.getObservations().find(tcViewId) == landmark.getObservations().end())
             continue;
 
         // find rc observation
-        const auto it = landmark.observations.find(rcViewId);
+        const auto it = landmark.getObservations().find(rcViewId);
 
         // no rc observation
-        if (it == landmark.observations.end())
+        if (it == landmark.getObservations().end())
             continue;
 
         // get rc 2d observation
-        const Vec2& obs2d = it->second.x;
+        const Vec2& obs2d = it->second.getCoordinates();
 
         // observation located inside the inflated image full-size ROI
         if (!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))

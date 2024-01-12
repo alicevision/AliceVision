@@ -16,8 +16,8 @@
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <algorithm>
 #include <string>
 #include <regex>
@@ -31,7 +31,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 // convert from a SfMData format to another
 int aliceVision_main(int argc, char **argv)
@@ -50,29 +50,32 @@ int aliceVision_main(int argc, char **argv)
   bool flagStructure = true;
   bool flagObservations = true;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
-      "Path to the output Alembic file.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
+         "Path to the output Alembic file.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str())
-    ("imageWhiteList", po::value<std::vector<std::string>>(&imageWhiteList)->multitoken()->default_value(imageWhiteList),
-      "image white list containing uid(s), image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more)")
-    ("views", po::value<bool>(&flagViews)->default_value(flagViews),
-      "Export views.")
-    ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),
-      "Export intrinsics.")
-    ("extrinsics", po::value<bool>(&flagExtrinsics)->default_value(flagExtrinsics),
-      "Export extrinsics.")
-    ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),
-      "Export structure.")
-    ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
-      "Export observations.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("imageWhiteList", po::value<std::vector<std::string>>(&imageWhiteList)->multitoken()->default_value(imageWhiteList),
+         "Image white list containing uid(s), image filenames or regex(es) on the image file path (supported regex: '#'"
+         " matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+        ("views", po::value<bool>(&flagViews)->default_value(flagViews),
+         "Export views.")
+        ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),
+         "Export intrinsics.")
+        ("extrinsics", po::value<bool>(&flagExtrinsics)->default_value(flagExtrinsics),
+         "Export extrinsics.")
+        ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),
+         "Export structure.")
+        ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
+         "Export observations.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision convertSfMFormat");
   cmdline.add(requiredParams);
@@ -98,7 +101,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -150,10 +153,10 @@ int aliceVision_main(int argc, char **argv)
       sfmData::Landmark& landmark = landmarkPair.second;
       for(const IndexT viewId : viewsToRemove)
       {
-        if(landmark.observations.find(viewId) != landmark.observations.end())
-          landmark.observations.erase(viewId);
+        if(landmark.getObservations().find(viewId) != landmark.getObservations().end())
+          landmark.getObservations().erase(viewId);
       }
-      if(landmark.observations.empty())
+      if(landmark.getObservations().empty())
         landmarksToRemove.push_back(landmarkPair.first);
     }
 
@@ -186,7 +189,7 @@ int aliceVision_main(int argc, char **argv)
       sfmData.getLandmarks().erase(landmarkId);
   }
   // export the SfMData scene in the expected format
-  if(!sfmDataIO::Save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData(flags)))
+  if(!sfmDataIO::save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData(flags)))
   {
     ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputSfMDataFilename << "'");
     return EXIT_FAILURE;

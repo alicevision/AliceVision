@@ -23,6 +23,7 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 // IO
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 #include <memory>
@@ -34,11 +35,12 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
 namespace po = boost::program_options;
+namespace fs = std::filesystem;
 
 void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfColor>::Base & source)
 {
@@ -68,9 +70,9 @@ void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfCo
 void labelsToMask(image::Image<unsigned char> & mask, const image::Image<IndexT> & labels, const std::set<IndexT> & validClasses,
                   const bool & maskInvert)
 {
-    for (int i = 0; i < mask.Height(); i++)
+    for (int i = 0; i < mask.height(); i++)
     {
-        for (int j = 0; j < mask.Width(); j++)
+        for (int j = 0; j < mask.width(); j++)
         {
             IndexT label = labels(i, j);
             if (maskInvert)
@@ -90,13 +92,19 @@ int aliceVision_main(int argc, char** argv)
     bool maskInvert = false;
     int rangeStart = -1;
     int rangeSize = 1;
+    bool useGpu = true;
+    bool keepFilename = false;
     
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input SfMData.")
-        ("modelPath,m", po::value<std::string>(&modelWeightsPath)->required(), "Input Model weights file.")
-        ("output,o", po::value<std::string>(&outputPath)->required(), "Output folder.");
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "Input SfMData.")
+        ("modelPath,m", po::value<std::string>(&modelWeightsPath)->required(),
+         "Input model weights file.")
+        ("output,o", po::value<std::string>(&outputPath)->required(),
+         "Output folder.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -104,10 +112,15 @@ int aliceVision_main(int argc, char** argv)
          "Names of classes which are to be considered.")
         ("maskInvert", po::value<bool>(&maskInvert)->default_value(maskInvert),
          "Invert mask values. If selected, the pixels corresponding to the mask will be set to 0.0 instead of 1.0.")
+        ("useGpu", po::value<bool>(&useGpu)->default_value(useGpu),
+         "Use GPU if available.")
+        ("keepFilename", po::value<bool>(&keepFilename)->default_value(keepFilename),
+         "Keep input filename.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), 
-        "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
+         "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), 
-        "Range size for processing views (ordered by image filepath).");
+         "Range size for processing views (ordered by image filepath).");
+    // clang-format on
 
     CmdLine cmdline("AliceVision imageSegmentation");
     cmdline.add(requiredParams);
@@ -119,7 +132,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
+    if(!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
         return EXIT_FAILURE;
@@ -178,6 +191,7 @@ int aliceVision_main(int argc, char** argv)
     parameters.modelWidth = 1280;
     parameters.modelHeight = 720;
     parameters.overlapRatio = 0.3;
+    parameters.useGpu = useGpu;
 
     aliceVision::segmentation::Segmentation seg(parameters);
 
@@ -211,6 +225,9 @@ int aliceVision_main(int argc, char** argv)
         std::string path = view->getImage().getImagePath();
         ALICEVISION_LOG_INFO("processing " << path);
 
+        const fs::path fsPath = path;
+        const std::string fileName = fsPath.stem().string();
+
         image::Image<image::RGBfColor> image;
         image::readImage(path, image, image::EImageColorSpace::SRGB);
 
@@ -219,8 +236,8 @@ int aliceVision_main(int argc, char** argv)
         if (pixelRatio != 1.0)
         {
             // Resample input image in order to work with square pixels
-            const int w = image.Width();
-            const int h = image.Height();
+            const int w = image.width();
+            const int h = image.height();
 
             const int nw = static_cast<int>(static_cast<double>(w) * pixelRatio);
             const int nh = h;
@@ -237,14 +254,14 @@ int aliceVision_main(int argc, char** argv)
         }
 
 
-        image::Image<unsigned char> mask(labels.Width(), labels.Height());
+        image::Image<unsigned char> mask(labels.width(), labels.height());
         labelsToMask(mask, labels, validClassesIndices, maskInvert);
 
         if (pixelRatio != 1.0)
         {
             // Resample input image in order to work with square pixels
-            const int w = mask.Width();
-            const int h = mask.Height();
+            const int w = mask.width();
+            const int h = mask.height();
 
             const int nw = static_cast<int>(static_cast<double>(w) / pixelRatio);
             const int nh = h;
@@ -256,7 +273,15 @@ int aliceVision_main(int argc, char** argv)
 
         // Store image
         std::stringstream ss;
-        ss << outputPath << "/" << view->getViewId() << ".exr";
+        if (keepFilename)
+        {
+            ss << outputPath << "/" << fileName << ".exr";
+        }
+        else
+        {
+            ss << outputPath << "/" << view->getViewId() << ".exr";
+        }
+
         image::writeImage(ss.str(), mask, image::ImageWriteOptions());
     }
 

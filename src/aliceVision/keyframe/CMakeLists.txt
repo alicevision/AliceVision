@@ -18,7 +18,6 @@ alicevision_add_library(aliceVision_keyframe
   PRIVATE_LINKS
     aliceVision_sensorDB
     aliceVision_system
-    Boost::filesystem
 )
 
 if(ALICEVISION_HAVE_OPENCV)

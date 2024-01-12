@@ -11,8 +11,8 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp> 
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -24,7 +24,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 const std::string supportedExtensions = "none, exr, jpg, png";
 
@@ -67,103 +67,105 @@ int aliceVision_main(int argc, char** argv)
     bool flowVisualisationOnly = false;     // export optical flow visualisation for all the frames but do not compute scores
     bool skipSharpnessComputation = false;  // skip sharpness score computations
 
+    // clang-format off
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
         ("inputPaths", po::value<std::vector<std::string>>(&inputPaths)->required()->multitoken(),
-            "Input video files or image sequence directories.")
+         "Input video files or image sequence directories.")
         ("sensorDbPath", po::value<std::string>(&sensorDbPath)->required(),
-            "Camera sensor width database path.")
+         "Camera sensor width database path.")
         ("outputFolder", po::value<std::string>(&outputFolder)->required(),
-            "Output folder in which the selected keyframes are written.")
+         "Output folder in which the selected keyframes are written.")
         ("outputSfMDataKeyframes", po::value<std::string>(&outputSfMDataKeyframes)->required(),
-            "Output SfMData file containing all the selected keyframes.")
+         "Output SfMData file containing all the selected keyframes.")
         ("outputSfMDataFrames", po::value<std::string>(&outputSfMDataFrames)->required(),
-            "Output SfMData file containing all the rejected frames.");
+         "Output SfMData file containing all the rejected frames.");
 
     po::options_description metadataParams("Metadata parameters");
     metadataParams.add_options()
         ("brands", po::value<std::vector<std::string>>(&brands)->default_value(brands)->multitoken(),
-            "Camera brands.")
+         "Camera brands.")
         ("models", po::value<std::vector<std::string>>(&models)->default_value(models)->multitoken(),
-            "Camera models.")
+         "Camera models.")
         ("mmFocals", po::value<std::vector<float>>(&mmFocals)->default_value(mmFocals)->multitoken(),
-            "Focals in mm (ignored if equal to 0).");
+         "Focals in mm (ignored if equal to 0).");
 
     po::options_description algorithmParams("Algorithm parameters");  // Parameters common to both methods
     algorithmParams.add_options()
         ("maxNbOutFrames", po::value<unsigned int>(&maxNbOutFrames)->default_value(maxNbOutFrames),
-            "Maximum number of output keyframes.\n"
-            "\t- For the regular method, 0 = no limit. 'minFrameStep' and 'maxFrameStep' will always be respected, "
-            "so combining them with this parameter might cause the selection to stop before reaching the end of the "
-            "input sequence(s).\n"
-            "\t- For the smart method, the default value is set to 2000.")
+         "Maximum number of output keyframes.\n"
+         "\t- For the regular method, 0 = no limit. 'minFrameStep' and 'maxFrameStep' will always be respected, "
+         "so combining them with this parameter might cause the selection to stop before reaching the end of the "
+         "input sequence(s).\n"
+         "\t- For the smart method, the default value is set to 2000.")
         ("renameKeyframes", po::value<bool>(&renameKeyframes)->default_value(renameKeyframes),
-            "Instead of naming the keyframes according to their index in the input sequence / video, rename them as "
-            "consecutive frames, starting from 0.\n"
-            "If the selected keyframes should have originally be written as [00015.exr, 00294.exr, 00825.exr], they "
-            "will instead be written as [00000.exr, 00001.exr, 00002.exr] if this option is enabled.")
+         "Instead of naming the keyframes according to their index in the input sequence / video, rename them as "
+         "consecutive frames, starting from 0.\n"
+         "If the selected keyframes should have originally be written as [00015.exr, 00294.exr, 00825.exr], they "
+         "will instead be written as [00000.exr, 00001.exr, 00002.exr] if this option is enabled.")
         ("outputExtension", po::value<std::string>(&outputExtension)->default_value(outputExtension),
-            ("File extension of the output keyframes (e.g. 'exr').\n"
-            "If set to 'none', the keyframes will not be written on disk, and only the SfMData file will be written.\n"
-            "For input videos, 'none' should not be used since written keyframes are used to generate the SfMData "
-            "file.\n"
-            "Supported extensions are: " + supportedExtensions).c_str())
+         ("File extension of the output keyframes (e.g. 'exr').\n"
+         "If set to 'none', the keyframes will not be written on disk, and only the SfMData file will be written.\n"
+         "For input videos, 'none' should not be used since written keyframes are used to generate the SfMData "
+         "file.\n"
+         "Supported extensions are: " + supportedExtensions).c_str())
         ("storageDataType", po::value<image::EStorageDataType>(&exrDataType)->default_value(exrDataType),
-            ("Storage data type for EXR output files: " + image::EStorageDataType_informations()).c_str());
+         ("Storage data type for EXR output files: " + image::EStorageDataType_informations()).c_str());
 
     po::options_description regularAlgorithmParams("Regular algorithm parameters");
     regularAlgorithmParams.add_options()
         ("minFrameStep", po::value<unsigned int>(&minFrameStep)->default_value(minFrameStep),
-            "Minimum number of frames between two keyframes.")
+         "Minimum number of frames between two keyframes.")
         ("maxFrameStep", po::value<unsigned int>(&maxFrameStep)->default_value(maxFrameStep),
-            "Maximum number of frames after which a keyframe can be taken (ignored if equal to 0).");
+         "Maximum number of frames after which a keyframe can be taken (ignored if equal to 0).");
 
     po::options_description smartAlgorithmParams("Smart algorithm parameters");
     smartAlgorithmParams.add_options()
         ("useSmartSelection", po::value<bool>(&useSmartSelection)->default_value(useSmartSelection),
-            "True to use the smart keyframe selection method, false to use the regular keyframe selection method.")
+         "True to use the smart keyframe selection method, false to use the regular keyframe selection method.")
         ("minNbOutFrames", po::value<unsigned int>(&minNbOutFrames)->default_value(minNbOutFrames),
-            "Minimum number of output keyframes.")
+         "Minimum number of output keyframes.")
         ("pxDisplacement", po::value<float>(&pxDisplacement)->default_value(pxDisplacement),
-            "Percentage of pixels in the image that have been displaced since the last selected frame. The absolute "
-            "number of moving pixels is determined using min(imageWidth, imageHeight).")
+         "Percentage of pixels in the image that have been displaced since the last selected frame. The absolute "
+         "number of moving pixels is determined using min(imageWidth, imageHeight).")
         ("rescaledWidthSharpness", po::value<std::size_t>(&rescaledWidthSharp)->default_value(rescaledWidthSharp),
-            "Width, in pixels, of the rescaled input frames used to compute the sharpness scores. The height of the "
-            "rescaled frames will be automatically determined to preserve the aspect ratio. 0 = no rescale.")
+         "Width, in pixels, of the rescaled input frames used to compute the sharpness scores. The height of the "
+         "rescaled frames will be automatically determined to preserve the aspect ratio. 0 = no rescale.")
         ("rescaledWidthFlow", po::value<std::size_t>(&rescaledWidthFlow)->default_value(rescaledWidthFlow),
-            "Width, in pixels, of the rescaled input frames used to compute the motion scores. The height of the "
-            "rescaled frames will be automatically determined to preserve the aspect ratio. 0 = no rescale.")
+         "Width, in pixels, of the rescaled input frames used to compute the motion scores. The height of the "
+         "rescaled frames will be automatically determined to preserve the aspect ratio. 0 = no rescale.")
         ("sharpnessWindowSize", po::value<std::size_t>(&sharpnessWindowSize)->default_value(sharpnessWindowSize),
-            "Size, in pixels, of the sliding window that is used to compute the sharpness score of a frame.")
+         "Size, in pixels, of the sliding window that is used to compute the sharpness score of a frame.")
         ("flowCellSize", po::value<std::size_t>(&flowCellSize)->default_value(flowCellSize),
-            "Size, in pixels, of the cells within an input frame that are used to compute the optical flow scores.")
+         "Size, in pixels, of the cells within an input frame that are used to compute the optical flow scores.")
         ("minBlockSize", po::value<std::size_t>(&minBlockSize)->default_value(minBlockSize),
-            "Minimum number of frames processed by a single thread when multi-threading is used.")
+         "Minimum number of frames processed by a single thread when multi-threading is used.")
         ("maskPaths", po::value<std::vector<std::string>>(&maskPaths)->default_value(models)->multitoken(),
-            "Paths to directories containing masks. Masks (e.g. segmentation masks) will be used to ignore some parts "
-            "of the frames when computing the scores.");
+         "Paths to directories containing masks. Masks (e.g. segmentation masks) will be used to ignore some parts "
+         "of the frames when computing the scores.");
 
     po::options_description debugParams("Debug parameters");
     debugParams.add_options()
         ("exportScores", po::value<bool>(&exportScores)->default_value(exportScores),
-            "Export the sharpness and optical flow scores to a CSV file.")
+         "Export the sharpness and optical flow scores to a CSV file.")
         ("csvFilename", po::value<std::string>(&csvFilename)->default_value(csvFilename),
-            "Name of the CSV file containing the sharpness and optical flow scores.")
+         "Name of the CSV file containing the sharpness and optical flow scores.")
         ("exportSelectedFrames", po::value<bool>(&exportSelectedFrames)->default_value(exportSelectedFrames),
-            "Add a column in the exported CSV file containing the selected frames (1 for frames that have been "
-            "selected, 0 otherwise).")
+         "Add a column in the exported CSV file containing the selected frames (1 for frames that have been "
+         "selected, 0 otherwise).")
         ("skipSelection", po::value<bool>(&skipSelection)->default_value(skipSelection),
-            "Only compute the sharpness and optical flow scores, but do not proceed with the selection.")
+         "Only compute the sharpness and optical flow scores, but do not proceed with the selection.")
         ("exportFlowVisualisation", po::value<bool>(&exportFlowVisualisation)->default_value(exportFlowVisualisation),
-            "For all frames, export the optical flow visualisation in HSV as PNG images.")
+         "For all frames, export the optical flow visualisation in HSV as PNG images.")
         ("flowVisualisationOnly", po::value<bool>(&flowVisualisationOnly)->default_value(flowVisualisationOnly),
-            "Export the optical flow visualisation in HSV as PNG images for all frames but do not compute scores.")
+         "Export the optical flow visualisation in HSV as PNG images for all frames but do not compute scores.")
         ("skipSharpnessComputation", po::value<bool>(&skipSharpnessComputation)->default_value(skipSharpnessComputation),
-            "Skip the computations for the sharpness score of each frame. A fixed sharpness score of 1.0 will be "
-            "assigned to each frame.");
+         "Skip the computations for the sharpness score of each frame. A fixed sharpness score of 1.0 will be "
+         "assigned to each frame.");
+    // clang-format on
 
     aliceVision::CmdLine cmdline("This program is used to extract keyframes from single camera or a camera rig.\n"
-                                "AliceVision keyframeSelection");
+                                 "AliceVision keyframeSelection");
     cmdline.add(inputParams);
     cmdline.add(metadataParams);
     cmdline.add(algorithmParams);

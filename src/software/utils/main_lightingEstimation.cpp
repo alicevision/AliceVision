@@ -18,8 +18,8 @@
 #include <OpenImageIO/imagebufalgo_util.h>
 
 #include <boost/program_options.hpp> 
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -31,7 +31,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 enum class EAlbedoEstimation
 {
@@ -190,7 +190,7 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
   {
     case EAlbedoEstimation::CONSTANT:
     {
-      albedo.resize(picture.Width(), picture.Height());
+      albedo.resize(picture.width(), picture.height());
       albedo.fill(image::RGBfColor(.5f,.5f,.5f));
     }
     break;
@@ -201,9 +201,9 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
     break;
     case EAlbedoEstimation::MEDIAN_FILTER:
     {
-      albedo.resize(picture.Width(), picture.Height());
-      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), const_cast<void*>((void*)&picture(0,0)(0)));
-      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
+      albedo.resize(picture.width(), picture.height());
+      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.width(), picture.height(), 3, oiio::TypeDesc::FLOAT), const_cast<void*>((void*)&picture(0,0)(0)));
+      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.width(), picture.height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
       image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::ImageWriteOptions());
@@ -211,9 +211,9 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
     break;
     case EAlbedoEstimation::BLUR_FILTER:
     {
-      albedo.resize(picture.Width(), picture.Height());
-      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), const_cast<void*>((void*)&picture(0,0)(0)));
-      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
+      albedo.resize(picture.width(), picture.height());
+      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.width(), picture.height(), 3, oiio::TypeDesc::FLOAT), const_cast<void*>((void*)&picture(0,0)(0)));
+      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.width(), picture.height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
       image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
@@ -229,7 +229,7 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
   {
     case EAlbedoEstimation::CONSTANT:
     {
-      albedo.resize(picture.Width(), picture.Height());
+      albedo.resize(picture.width(), picture.height());
       albedo.fill(.5f);
     }
     break;
@@ -240,9 +240,9 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
     break;
     case EAlbedoEstimation::MEDIAN_FILTER:
     {
-      albedo.resize(picture.Width(), picture.Height());
-      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
-      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
+      albedo.resize(picture.width(), picture.height());
+      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.width(), picture.height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
+      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.width(), picture.height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
       image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::ImageWriteOptions());
@@ -250,9 +250,9 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
     break;
     case EAlbedoEstimation::BLUR_FILTER:
     {
-      albedo.resize(picture.Width(), picture.Height());
-      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
-      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
+      albedo.resize(picture.width(), picture.height());
+      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.width(), picture.height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
+      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.width(), picture.height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
       image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
@@ -278,30 +278,32 @@ int main(int argc, char** argv)
   int albedoEstimationFilterSize = 3;
   ELightingColor lightingColor = ELightingColor::RGB;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("depthMapsFilterFolder", po::value<std::string>(&depthMapsFilterFolder)->required(),
-      "Filtered depth maps folder.")
-    ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
-      "Images used for depth map computation.\n"
-      "Filename should be the image uid.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Folder for output lighting vector files.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("depthMapsFilterFolder", po::value<std::string>(&depthMapsFilterFolder)->required(),
+         "Filtered depth maps folder.")
+        ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
+         "Images used for depth map computation.\n"
+         "Filename should be the image UID.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Folder for output lighting vector files.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("lightingColor", po::value<ELightingColor>(&lightingColor)->default_value(lightingColor),
-      "Lighting color.")
-    ("lightingEstimationMode", po::value<ELightingEstimationMode>(&lightEstimationMode)->default_value(lightEstimationMode),
-      "Lighting Estimation Mode.")
-    ("albedoEstimationName", po::value<EAlbedoEstimation>(&albedoEstimationMethod)->default_value(albedoEstimationMethod),
-      EAlbedoEstimation_informations().c_str())
-    ("albedoEstimationFilterSize", po::value<int>(&albedoEstimationFilterSize)->default_value(albedoEstimationFilterSize),
-      "Albedo filter size for estimation method using filter.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("lightingColor", po::value<ELightingColor>(&lightingColor)->default_value(lightingColor),
+         "Lighting color.")
+        ("lightingEstimationMode", po::value<ELightingEstimationMode>(&lightEstimationMode)->default_value(lightEstimationMode),
+         "Lighting Estimation Mode.")
+        ("albedoEstimationName", po::value<EAlbedoEstimation>(&albedoEstimationMethod)->default_value(albedoEstimationMethod),
+         EAlbedoEstimation_informations().c_str())
+        ("albedoEstimationFilterSize", po::value<int>(&albedoEstimationFilterSize)->default_value(albedoEstimationFilterSize),
+         "Albedo filter size for estimation method using filter.");
+    // clang-format on
 
-  CmdLine cmdline("AliceVision lighthingEstimation");
+  CmdLine cmdline("AliceVision lightingEstimation");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))
@@ -311,7 +313,7 @@ int main(int argc, char** argv)
 
   // read the input SfM scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;

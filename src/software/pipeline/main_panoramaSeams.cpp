@@ -25,11 +25,11 @@
 #include <aliceVision/system/main.hpp>
 
 // IO
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
 #include <regex>
 
 // These constants define the current software version.
@@ -41,7 +41,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, const std::pair<int, int> & panoramaSize, int downscale)
 {
@@ -186,18 +186,26 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
-        ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")
-        ("output,o", po::value<std::string>(&outputLabels)->required(), "Path of the output labels.")
-        ("outputSfm,o", po::value<std::string>(&sfmOutDataFilepath)->required(), "Path of the output SfMData file.");
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
+         "Input SfMData.")
+        ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(),
+         "Folder with warped images.")
+        ("output,o", po::value<std::string>(&outputLabels)->required(),
+         "Path of the output labels.")
+        ("outputSfm,o", po::value<std::string>(&sfmOutDataFilepath)->required(),
+         "Path of the output SfMData file.");
         
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("maxWidth", po::value<int>(&maxPanoramaWidth)->required(), "Max Panorama Width.")
-        ("useGraphCut,g", po::value<bool>(&useGraphCut)->default_value(useGraphCut), "Enable graphcut algorithm to improve seams.");
+        ("maxWidth", po::value<int>(&maxPanoramaWidth)->required(),
+         "Maximum panorama width.")
+        ("useGraphCut,g", po::value<bool>(&useGraphCut)->default_value(useGraphCut),
+         "Enable graphcut algorithm to improve seams.");
+    // clang-format on
 
     CmdLine cmdline("Estimates the ideal path for the transition between images in order to minimize seams artifacts.\n"
                     "AliceVision panoramaSeams");
@@ -214,7 +222,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilepath,
+    if(!sfmDataIO::load(sfmData, sfmDataFilepath,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
@@ -226,7 +234,7 @@ int aliceVision_main(int argc, char** argv)
     const std::regex pattern("([0-9]+)_([0-9]+).exr");
 
     std::map<IndexT, std::vector<std::string>> paths_per_view;
-    for (auto & iter : boost::filesystem::directory_iterator(p))
+    for (auto & iter : fs::directory_iterator(p))
     { 
         if (!fs::is_regular_file(iter))
         {
@@ -267,7 +275,7 @@ int aliceVision_main(int argc, char** argv)
         }
     }
     
-    sfmDataIO::Save(sfmData, sfmOutDataFilepath, sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(sfmData, sfmOutDataFilepath, sfmDataIO::ESfMData::ALL);
 
     int tileSize;
     std::pair<int, int> panoramaSize;

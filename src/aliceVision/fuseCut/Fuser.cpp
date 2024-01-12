@@ -18,16 +18,17 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
+
+#include <filesystem>
 
 #include <iostream>
 
 namespace aliceVision {
 namespace fuseCut {
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale)
 {
@@ -137,7 +138,7 @@ void Fuser::filterGroups(const std::vector<int>& cams, float pixToleranceFactor,
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
-    if (bfs::exists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
+    if (fs::exists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
     {
         return true;
     }
@@ -179,11 +180,11 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
         // read Tc depth map from depthMapEstimation folder
         mvsUtils::readMap(tc, _mp, mvsUtils::EFileType::depthMap, tcdepthMap);
 
-        if (tcdepthMap.Height() > 0 && tcdepthMap.Width() > 0)
+        if (tcdepthMap.height() > 0 && tcdepthMap.width() > 0)
         {
-            for (int y = 0; y < tcdepthMap.Height(); ++y)
+            for (int y = 0; y < tcdepthMap.height(); ++y)
             {
-                for (int x = 0; x < tcdepthMap.Width(); ++x)
+                for (int x = 0; x < tcdepthMap.width(); ++x)
                 {
                     float depth = tcdepthMap(y, x);
 
@@ -246,8 +247,8 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
 
     image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), numOfModalsMap, image::EImageColorSpace::NO_CONVERSION);
 
-    if (depthMap.Width() != simMap.Width() || depthMap.Width() != numOfModalsMap.Width() || depthMap.Height() != simMap.Height() ||
-        depthMap.Height() != numOfModalsMap.Height())
+    if (depthMap.width() != simMap.width() || depthMap.width() != numOfModalsMap.width() || depthMap.height() != simMap.height() ||
+        depthMap.height() != numOfModalsMap.height())
     {
         throw std::invalid_argument("depthMap, simMap and numOfModalsMap must have same size");
     }
@@ -360,7 +361,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, const sfmData::
         const sfmData::Landmark& landmark = landmarkPair.second;
         const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
 
-        for (const auto& observationPair : landmark.observations)
+        for (const auto& observationPair : landmark.getObservations())
         {
             const IndexT viewId = observationPair.first;
 
@@ -506,14 +507,14 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
 
 bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfmData::Landmark& landmark, float minObservationAngle)
 {
-    for (const auto& observationPairI : landmark.observations)
+    for (const auto& observationPairI : landmark.getObservations())
     {
         const IndexT I = observationPairI.first;
         const sfmData::View& viewI = *(sfmData.getViews().at(I));
         const geometry::Pose3 poseI = sfmData.getPose(viewI).getTransform();
         const camera::IntrinsicBase* intrinsicPtrI = sfmData.getIntrinsicPtr(viewI.getIntrinsicId());
 
-        for (const auto& observationPairJ : landmark.observations)
+        for (const auto& observationPairJ : landmark.getObservations())
         {
             const IndexT J = observationPairJ.first;
 
@@ -526,7 +527,7 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
             const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
 
             const double angle =
-              camera::angleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.x, observationPairJ.second.x);
+              camera::angleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.getCoordinates(), observationPairJ.second.getCoordinates());
 
             // check angle between two observation
             if (angle < minObservationAngle)
@@ -562,7 +563,7 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
         const sfmData::Landmark& landmark = landmarkPair.second;
 
         // check number of observations
-        if (landmark.observations.size() < minObservations)
+        if (landmark.getObservations().size() < minObservations)
             continue;
 
         // check angle between observations
@@ -685,9 +686,9 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir,
     ALICEVISION_LOG_INFO("generating temp files.");
     std::string depthMapsPtsSimsTmpDir = tmpDir + "depthMapsPtsSimsTmp/";
 
-    if (!bfs::is_directory(depthMapsPtsSimsTmpDir))
+    if (!fs::is_directory(depthMapsPtsSimsTmpDir))
     {
-        bfs::create_directory(depthMapsPtsSimsTmpDir);
+        fs::create_directory(depthMapsPtsSimsTmpDir);
 
         const int scaleuse = 1;
 
@@ -846,7 +847,7 @@ void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& de
         remove(ptsfn.c_str());
         remove(simsfn.c_str());
     }
-    bfs::remove_all(depthMapsPtsSimsTmpDir);
+    fs::remove_all(depthMapsPtsSimsTmpDir);
 }
 
 }  // namespace fuseCut

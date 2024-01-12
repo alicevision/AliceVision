@@ -29,13 +29,11 @@
 // Command line parameters
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
-#include <sstream>
-
+#include <filesystem>
 #include <fstream>
 #include <map>
-
+#include <sstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -46,7 +44,7 @@ using namespace aliceVision;
 using namespace aliceVision::hdr;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 struct luminanceInfo
 {
@@ -103,8 +101,8 @@ void computeLuminanceInfoFromImage(image::Image<image::RGBfColor>& image, lumina
     double minLuminance = 1000.0;
     int sampleNb = 0;
 
-    const int imgH = image.Height();
-    const int imgW = image.Width();
+    const int imgH = image.height();
+    const int imgW = image.width();
 
     const int a1 = (imgH <= imgW) ? imgW / 2 : imgH / 2;
     const int a2 = (imgH <= imgW) ? imgW / 2 : imgW - (imgH / 2);
@@ -153,7 +151,7 @@ int aliceVision_main(int argc, char** argv)
     bool byPass = false;
 
     // Command line parameters
-
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
@@ -182,8 +180,8 @@ int aliceVision_main(int argc, char** argv)
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("maxTotalPoints", po::value<std::size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
          "Maximum number of points used from the sampling. This ensures that the number of pixels values extracted by "
-         "the sampling can be managed by the calibration step (in terms of computation time and memory usage).")
-        ;
+         "the sampling can be managed by the calibration step (in terms of computation time and memory usage).");
+    // clang-format on
 
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
                     "AliceVision LdrToHdrCalibration");
@@ -201,7 +199,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Read SfMData
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;

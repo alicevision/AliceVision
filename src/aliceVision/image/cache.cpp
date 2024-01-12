@@ -1,8 +1,9 @@
 #include "cache.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace aliceVision {
 namespace image {
@@ -38,8 +39,8 @@ std::string CacheManager::getPathForIndex(size_t indexId)
 {
     if (_indexPaths.find(indexId) == _indexPaths.end())
     {
-        boost::filesystem::path path(_basePathStorage);
-        path /= boost::filesystem::unique_path();
+        std::filesystem::path path(_basePathStorage);
+        path /= std::filesystem::path(utils::generateUniqueFilename());
         path += ".idx";
 
         _indexPaths[indexId] = path.string();
@@ -53,7 +54,7 @@ void CacheManager::deleteIndexFiles()
     std::size_t cacheSize = 0;
     for (std::pair<const size_t, std::string>& p : _indexPaths)
     {
-        const std::size_t s = boost::filesystem::file_size(p.second);
+        const std::size_t s = std::filesystem::file_size(p.second);
         ALICEVISION_LOG_TRACE("CacheManager::deleteIndexFiles: '" << p.second << "': " << s / (1024 * 1024) << "MB.");
         cacheSize += s;
     }
@@ -62,8 +63,8 @@ void CacheManager::deleteIndexFiles()
     // Remove all cache files
     for (std::pair<const size_t, std::string>& p : _indexPaths)
     {
-        boost::filesystem::path path(p.second);
-        boost::filesystem::remove(path);
+        std::filesystem::path path(p.second);
+        std::filesystem::remove(path);
     }
 
     // Remove list of cache files
@@ -78,10 +79,10 @@ bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount)
     size_t len = _blockSize * blocksCount;
 
     std::string pathname = getPathForIndex(index_id);
-    boost::filesystem::path path(pathname);
+    std::filesystem::path path(pathname);
 
     std::ofstream file_index;
-    if (boost::filesystem::exists(path))
+    if (std::filesystem::exists(path))
     {
         file_index.open(pathname, std::ios::binary | std::ios::out | std::ios::in);
     }

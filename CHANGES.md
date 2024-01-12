@@ -1,5 +1,143 @@
 # AliceVision Changelog
 
+## Release 3.2.0 (2023/12/07)
+
+### Major Features
+
+- New software for intrinsics and rig calibration using a multiview acquisition of a checkerboard [PR](https://github.com/alicevision/AliceVision/pull/1524)
+- New semantic image segmentation module [PR](https://github.com/alicevision/AliceVision/pull/1476)
+
+### Features
+
+- Support pixel aspect ratio [PR](https://github.com/alicevision/AliceVision/pull/1448)
+- Automatically align the sfm result [PR](https://github.com/alicevision/AliceVision/pull/1546)
+- New pipeline for pure rotation tracking [PR](https://github.com/alicevision/AliceVision/pull/1548)
+- KeyframeSelection: Add support for masks [PR](https://github.com/alicevision/AliceVision/pull/1518)
+
+### Other Improvements
+
+- Start Development 3.2 [PR](https://github.com/alicevision/AliceVision/pull/1479)
+- Split SFMData between reconstructed and other views [PR](https://github.com/alicevision/AliceVision/pull/1409)
+- Noise reduction in HDR merging [PR](https://github.com/alicevision/AliceVision/pull/1469)
+- Add a new optional command to export textured mesh to a USD format [PR](https://github.com/alicevision/AliceVision/pull/1455)
+- Enable multiple calibrations on hdr [PR](https://github.com/alicevision/AliceVision/pull/1484)
+- [Panorama] Enforce priors after estimation [PR](https://github.com/alicevision/AliceVision/pull/1371)
+- tolerant bracket size estimation [PR](https://github.com/alicevision/AliceVision/pull/1488)
+- Make sure openexr does not use too many threads [PR](https://github.com/alicevision/AliceVision/pull/1489)
+- HDR default number of brackets should be 0 [PR](https://github.com/alicevision/AliceVision/pull/1490)
+- Remove limits on outliers for brackets detection [PR](https://github.com/alicevision/AliceVision/pull/1491)
+- Correctly count the best brackets count [PR](https://github.com/alicevision/AliceVision/pull/1492)
+- Compositing does not fail on range error [PR](https://github.com/alicevision/AliceVision/pull/1498)
+- [software] panoramaPostProcessing: export downscaled panorama levels [PR](https://github.com/alicevision/AliceVision/pull/1496)
+- [meshing] export computed bounding box [PR](https://github.com/alicevision/AliceVision/pull/1473)
+- [software] sfmTransform: Increase precision of coefficients in the log [PR](https://github.com/alicevision/AliceVision/pull/1486)
+- Limit EXR multi-threading for texturing [PR](https://github.com/alicevision/AliceVision/pull/1509)
+- [fuseCut] Fix adding helper points [PR](https://github.com/alicevision/AliceVision/pull/1465)
+- add memory use constraint in texturing [PR](https://github.com/alicevision/AliceVision/pull/1511)
+- Manage LCP in imageProcessing [PR](https://github.com/alicevision/AliceVision/pull/1459)
+- Camera exposure update [PR](https://github.com/alicevision/AliceVision/pull/1508)
+- Masking: Handle different file extensions for masks and allow mask inversion in `ImageSegmentation` [PR](https://github.com/alicevision/AliceVision/pull/1517)
+- [keyframe] Do not fail when there are consecutive missing frames for the smart Keyframe Selection method [PR](https://github.com/alicevision/AliceVision/pull/1510)
+- Keyframe Selection: Add multi-threading and improve overall performances [PR](https://github.com/alicevision/AliceVision/pull/1512)
+- [camera] refactorize and clean up code [PR](https://github.com/alicevision/AliceVision/pull/1515)
+- Meshing: fix in graphcut weighting and minor sampling improvements [PR](https://github.com/alicevision/AliceVision/pull/1520)
+- bundle adjustment improvement [PR](https://github.com/alicevision/AliceVision/pull/1477)
+- Add automatic method for HDR calibration [PR](https://github.com/alicevision/AliceVision/pull/1521)
+- [sfmTransform] Rewrite check on ambiguity in sfmTransform [PR](https://github.com/alicevision/AliceVision/pull/1525)
+- [image] ImageCache: refine mutex usage [PR](https://github.com/alicevision/AliceVision/pull/1504)
+- Pose3 internal representation [PR](https://github.com/alicevision/AliceVision/pull/1472)
+- [SFM] New incremental logic for sfm [PR](https://github.com/alicevision/AliceVision/pull/1377)
+- ImageInfo class for sfmData [PR](https://github.com/alicevision/AliceVision/pull/1533)
+- Clean symbolic bundle code [PR](https://github.com/alicevision/AliceVision/pull/1531)
+- fix flann randomSeed [PR](https://github.com/alicevision/AliceVision/pull/1530)
+- SFM bootstraping [PR](https://github.com/alicevision/AliceVision/pull/1432)
+- PanoramaPostProcessing: Use the generated panorama's name for the downscaled pyramid levels [PR](https://github.com/alicevision/AliceVision/pull/1542)
+- Fix View copy constructor and remove unused control points [PR](https://github.com/alicevision/AliceVision/pull/1536)
+- [Cleanup] Remove pointers [PR](https://github.com/alicevision/AliceVision/pull/1549)
+- [DSPSIFT] Change orientation value [PR](https://github.com/alicevision/AliceVision/pull/1551)
+- Code cleanup [PR](https://github.com/alicevision/AliceVision/pull/1556)
+- Deal with multiple brackets with same score [PR](https://github.com/alicevision/AliceVision/pull/1493)
+- Remove unused gamma functions [PR](https://github.com/alicevision/AliceVision/pull/1516)
+- [clean] Ransac containers [PR](https://github.com/alicevision/AliceVision/pull/1566)
+- Cleaning up ACRansac [PR](https://github.com/alicevision/AliceVision/pull/1573)
+- Input color space setting [PR](https://github.com/alicevision/AliceVision/pull/1571)
+- Fallback when camera motion is not distinctive enough [PR](https://github.com/alicevision/AliceVision/pull/1563)
+- [sfmData] imageInfo: Retrieve focal length when it's available in non-standard metadata keys [PR](https://github.com/alicevision/AliceVision/pull/1583)
+- Reformat with clang [PR](https://github.com/alicevision/AliceVision/pull/1580)
+- Binary format type for ply IO [PR](https://github.com/alicevision/AliceVision/pull/1576)
+- Automatic reorientation [PR](https://github.com/alicevision/AliceVision/pull/1585)
+- Fov compute for intrinsics [PR](https://github.com/alicevision/AliceVision/pull/1588)
+- Upgrade tracks to allow more advanced storage and reduce indirections [PR](https://github.com/alicevision/AliceVision/pull/1594)
+- Color space conversion update [PR](https://github.com/alicevision/AliceVision/pull/1591)
+- fixed unnecessary descriptor load for sequential image matching [PR](https://github.com/alicevision/AliceVision/pull/1599)
+- [sfm] SequentialSfM: Initialize the resection ID in the constructor and set it for the initial pair [PR](https://github.com/alicevision/AliceVision/pull/1593)
+- Add ancestor images info in view [PR](https://github.com/alicevision/AliceVision/pull/1582)
+- Intrinsics update after auto reorientation [PR](https://github.com/alicevision/AliceVision/pull/1595)
+- [sfmData] Ensure copies of SfMData are deep instead of shallow [PR](https://github.com/alicevision/AliceVision/pull/1604)
+- New utility nodes to create camera rigs and merge two sfmData [PR](https://github.com/alicevision/AliceVision/pull/1568)
+
+### Bugfixes
+
+- [segmentation] fix windows build [PR](https://github.com/alicevision/AliceVision/pull/1480)
+- [segmentation] fix crash when resized image is too small [PR](https://github.com/alicevision/AliceVision/pull/1485)
+- Bugfix on dng reading [PR](https://github.com/alicevision/AliceVision/pull/1502)
+- [sfmDataIO] getViewIntrinsics corrections [PR](https://github.com/alicevision/AliceVision/pull/1522)
+- [Fix] transformsRt function [PR](https://github.com/alicevision/AliceVision/pull/1541)
+- [software] imageSegmentation: read images in sRGB colorspace [PR](https://github.com/alicevision/AliceVision/pull/1543)
+- [software] LdrToHdrMerge: fix bug introduced in PR 1536 [PR](https://github.com/alicevision/AliceVision/pull/1557)
+- [sfmDataIO] restore focal ratio support [PR](https://github.com/alicevision/AliceVision/pull/1559)
+- [build][windows] fix for OpenMP error causing build issue on Windows [PR](https://github.com/alicevision/AliceVision/pull/1552)
+- [sfmDataIO] remove declared/referenced poses validation [PR](https://github.com/alicevision/AliceVision/pull/1529)
+- getSensorSize update [PR](https://github.com/alicevision/AliceVision/pull/1519)
+- [sfmDataIO] Fix unhandled exception when parsing images with large numbers in the filenames [PR](https://github.com/alicevision/AliceVision/pull/1565)
+- [depthMap] DepthMapEstimator: Correctly limit the number of simultaneous RCs [PR](https://github.com/alicevision/AliceVision/pull/1569)
+- [sfm] add try-catch for feature/region loading [PR](https://github.com/alicevision/AliceVision/pull/1575)
+- [fuseCut] Fix export debug mesh [PR](https://github.com/alicevision/AliceVision/pull/1538)
+- Fixup panoramaInit manual init [PR](https://github.com/alicevision/AliceVision/pull/1577)
+- [keyframe] fix intrinsics UID [PR](https://github.com/alicevision/AliceVision/pull/1579)
+- Fix: Add missing 3DEAnamorphic4 camera type [PR](https://github.com/alicevision/AliceVision/pull/1581)
+- Bugfix when checking raw format [PR](https://github.com/alicevision/AliceVision/pull/1572)
+- camera Lock is correctly casted to int in json [PR](https://github.com/alicevision/AliceVision/pull/1584)
+- Sequential SfM: Replayable initial pair [PR](https://github.com/alicevision/AliceVision/pull/1592)
+- [sfm] Sequential ReconstructionEngine: Use SfM Params' `nbFirstUnstableCameras` instead of a constant [PR](https://github.com/alicevision/AliceVision/pull/1602)
+- [sfmData] Add const accessor for getView [PR](https://github.com/alicevision/AliceVision/pull/1606)
+- [build] Add an option to disable the use of the GPU with ONNX [PR](https://github.com/alicevision/AliceVision/pull/1608)
+- fix applyCalibration [PR](https://github.com/alicevision/AliceVision/pull/1609)
+- Fix errors on sfm with applyCalibration [PR](https://github.com/alicevision/AliceVision/pull/1613)
+- fix sfm with undistortion [PR](https://github.com/alicevision/AliceVision/pull/1615)
+- [mesh] Texturing fix: specify a name for the materials to avoid issues in Maya [PR](https://github.com/alicevision/AliceVision/pull/1617)
+
+### CI, Build and Documentation
+
+- [ci] Update GitHub actions for the Continuous Integration on Windows [PR](https://github.com/alicevision/AliceVision/pull/1483)
+- [docker] Update version of the AV dependencies image [PR](https://github.com/alicevision/AliceVision/pull/1482)
+- [doc] INSTALL.md: Fix typo in "nonfree" module for OpenCV in vcpkg install [PR](https://github.com/alicevision/AliceVision/pull/1487)
+- [build] Download, copy and export the semantic segmentation model [PR](https://github.com/alicevision/AliceVision/pull/1481)
+- Remove internal flann [PR](https://github.com/alicevision/AliceVision/pull/1495)
+- [build] Update OIIO to 2.4.13.0 [PR](https://github.com/alicevision/AliceVision/pull/1527)
+- Fixes for osx [PR](https://github.com/alicevision/AliceVision/pull/1463)
+- Make sure one can deactivate part of modules [PR](https://github.com/alicevision/AliceVision/pull/1534)
+- [ci] Windows: Stop building modules that are not tested [PR](https://github.com/alicevision/AliceVision/pull/1537)
+- [CI] Don't run CI on draft PR [PR](https://github.com/alicevision/AliceVision/pull/1553)
+- [docker] Add Python in the Docker image of the dependencies [PR](https://github.com/alicevision/AliceVision/pull/1540)
+- [docker] Dependencies: Remove duplicated `gcc` install  [PR](https://github.com/alicevision/AliceVision/pull/1564)
+- [ci] Update vcpkg archive with boost-geometry and liblemon [PR](https://github.com/alicevision/AliceVision/pull/1561)
+- [ci] Update functional tests [PR](https://github.com/alicevision/AliceVision/pull/1535)
+- Remove lemon from internal dependencies [PR](https://github.com/alicevision/AliceVision/pull/1547)
+- Clean dependencies in CMakeLists [PR](https://github.com/alicevision/AliceVision/pull/1570)
+- Remove lemon from public links [PR](https://github.com/alicevision/AliceVision/pull/1587)
+- Run CI on draft pull requests [PR](https://github.com/alicevision/AliceVision/pull/1600)
+
+### Updates to the Sensor Database
+
+- Added Zed2i StereoLabs Zed2i sensor info [PR](https://github.com/alicevision/AliceVision/pull/1359)
+- Update cameraSensors.db [PR](https://github.com/alicevision/AliceVision/pull/1528)
+
+### Contributors
+
+[almarouk](https://github.com/almarouk), [cbentejac](https://github.com/cbentejac), [demoulinv](https://github.com/demoulinv), [emanuelenencioni](https://github.com/emanuelenencioni), [fabiencastan](https://github.com/fabiencastan), [Kokika](https://github.com/Kokika), [mh0g](https://github.com/mh0g), [mugulmd](https://github.com/mugulmd), [serguei-k](https://github.com/serguei-k), [servantftechnicolor](https://github.com/servantftechnicolor), [simogasp](https://github.com/simogasp), [unageek](https://github.com/unageek)
+
+
 ## Release 3.1.0 (2023/06/21)
 
 ### Major Features

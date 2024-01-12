@@ -16,7 +16,6 @@
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
@@ -34,6 +33,7 @@
 #include <aliceVision/sfm/bundle/BundleAdjustmentSymbolicCeres.hpp>
 
 #include <cstdlib>
+#include <filesystem>
 #include <random>
 #include <regex>
 
@@ -50,7 +50,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_code& ec)
 {
@@ -159,8 +159,8 @@ void buildInitialWorld(sfmData::SfMData& sfmData, const feature::FeaturesPerView
         const feature::PointFeatures& refFeatures = refFeaturesPerDesc.at(track.descType);
         const feature::PointFeatures& nextFeatures = nextFeaturesPerDesc.at(track.descType);
         
-        IndexT refFeatureId = track.featPerView.at(pair.reference);
-        IndexT nextFeatureId = track.featPerView.at(pair.next);
+        IndexT refFeatureId = track.featPerView.at(pair.reference).featureId;
+        IndexT nextFeatureId = track.featPerView.at(pair.next).featureId;
 
         Vec2 refV = refFeatures[refFeatureId].coords().cast<double>();
         Vec2 nextV = nextFeatures[nextFeatureId].coords().cast<double>();
@@ -179,8 +179,8 @@ void buildInitialWorld(sfmData::SfMData& sfmData, const feature::FeaturesPerView
 
         sfmData::Landmark l(track.descType);
         l.X = refP;
-        l.observations[pair.reference] = sfmData::Observation(refV, refFeatureId, refFeatures[refFeatureId].scale());
-        l.observations[pair.next] = sfmData::Observation(nextV, nextFeatureId, nextFeatures[nextFeatureId].scale());
+        l.getObservations()[pair.reference] = sfmData::Observation(refV, refFeatureId, refFeatures[refFeatureId].scale());
+        l.getObservations()[pair.next] = sfmData::Observation(nextV, nextFeatureId, nextFeatures[nextFeatureId].scale());
 
         landmarks[id] = l;
     }
@@ -248,7 +248,7 @@ bool localizeNext(sfmData::SfMData& sfmData, const feature::FeaturesPerView & fe
         const track::Track & track = trackMap.at(trackId);
 
         const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
-        IndexT newViewFeatureId = track.featPerView.at(newViewId);
+        IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
         Vec2 nvV = newViewFeatures[newViewFeatureId].coords().cast<double>();
         Vec3 camP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->get_ud_pixel(nvV)));
     
@@ -279,9 +279,9 @@ bool localizeNext(sfmData::SfMData& sfmData, const feature::FeaturesPerView & fe
         IndexT trackId = observedTracks[pos];
         const track::Track & track = trackMap.at(trackId);
         const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
-        IndexT newViewFeatureId = track.featPerView.at(newViewId);
+        IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
         auto & feat = newViewFeatures[newViewFeatureId];
-        landmarks[trackId].observations[newViewId] = sfmData::Observation(feat.coords().cast<double>(), newViewFeatureId, feat.scale());
+        landmarks[trackId].getObservations()[newViewId] = sfmData::Observation(feat.coords().cast<double>(), newViewFeatureId, feat.scale());
     }
 
     return true;
@@ -333,8 +333,8 @@ bool addPoints(sfmData::SfMData& sfmData, const feature::FeaturesPerView & featu
             const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
             const feature::PointFeatures& refViewFeatures = refViewFeaturesPerDesc.at(track.descType);
 
-            IndexT newViewFeatureId = track.featPerView.at(newViewId);
-            IndexT refViewFeatureId = track.featPerView.at(pV.first);
+            IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
+            IndexT refViewFeatureId = track.featPerView.at(pV.first).featureId;
 
             auto & newFeat = newViewFeatures[newViewFeatureId];
             auto & refFeat = refViewFeatures[refViewFeatureId];
@@ -355,8 +355,8 @@ bool addPoints(sfmData::SfMData& sfmData, const feature::FeaturesPerView & featu
 
             sfmData::Landmark l(track.descType);
             l.X = world_R_new * newP;
-            l.observations[newViewId] = sfmData::Observation(newV, newViewFeatureId, refViewFeatures[refViewFeatureId].scale());
-            l.observations[pV.first] = sfmData::Observation(refV, refViewFeatureId, newViewFeatures[newViewFeatureId].scale());
+            l.getObservations()[newViewId] = sfmData::Observation(newV, newViewFeatureId, refViewFeatures[refViewFeatureId].scale());
+            l.getObservations()[pV.first] = sfmData::Observation(refV, refViewFeatureId, newViewFeatures[newViewFeatureId].scale());
             
             landmarks[trackId] = l;
         }
@@ -383,14 +383,22 @@ int aliceVision_main(int argc, char** argv)
 
     int randomSeed = std::mt19937::default_seed;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
-    ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(), "SfMData output file.")
-    ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(), "Tracks file.")
-    ("pairs,p", po::value<std::string>(&pairsDirectory)->required(), "Path to the pairs directory.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(), "Path to folder(s) containing the extracted features.")
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),feature::EImageDescriberType_informations().c_str());
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(),
+         "SfMData output file.")
+        ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(),
+         "Tracks file.")
+        ("pairs,p", po::value<std::string>(&pairsDirectory)->required(),
+         "Path to the pairs directory.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str());
+    // clang-format on
 
     CmdLine cmdline("AliceVision Nodal SfM");
 
@@ -406,7 +414,7 @@ int aliceVision_main(int argc, char** argv)
     
     // load input SfMData scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
         return EXIT_FAILURE;
@@ -458,7 +466,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<sfm::ReconstructedPair> reconstructedPairs;
     //Assuming the filename is pairs_ + a number with json extension
     const std::regex regex("pairs\\_[0-9]+\\.json");
-    for(fs::directory_entry & file : boost::make_iterator_range(fs::directory_iterator(pairsDirectory), {}))
+    for(auto const& file : fs::directory_iterator{pairsDirectory})
     {
         if (!std::regex_search(file.path().string(), regex))
         {
@@ -533,12 +541,12 @@ int aliceVision_main(int argc, char** argv)
     {
         sfm::BundleAdjustmentSymbolicCeres BA(options, 3);
         const bool success = BA.adjust(sfmData, refineOptions);
-        countRemoved = sfm::RemoveOutliers_PixelResidualError(sfmData, sfm::EFeatureConstraint::SCALE, 2.0, 2);
+        countRemoved = sfm::removeOutliersWithPixelResidualError(sfmData, sfm::EFeatureConstraint::SCALE, 2.0, 2);
         std::cout << countRemoved << std::endl;
     }
     while (countRemoved > 0);
 
-    sfmDataIO::Save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
 
     return EXIT_SUCCESS;
 }

@@ -12,8 +12,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
@@ -33,7 +33,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool exportToPMVSFormat(
   const SfMData & sfm_data,
@@ -134,8 +134,8 @@ bool exportToPMVSFormat(
       else // (no distortion)
       {
         // copy the image if extension match
-        if (fs::extension(srcImage) == ".JPG" ||
-          fs::extension(srcImage) == ".jpg")
+        if (fs::path(srcImage).extension() == ".JPG" ||
+          fs::path(srcImage).extension() == ".jpg")
         {
           fs::copy_file(srcImage, dstImage);
         }
@@ -173,7 +173,7 @@ bool exportToPMVSFormat(
         itL != sfm_data.getLandmarks().end(); ++itL)
       {
         const Landmark & landmark = itL->second;
-        const Observations & observations = landmark.observations;
+        const Observations & observations = landmark.getObservations();
         for (Observations::const_iterator itOb = observations.begin();
           itOb != observations.end(); ++itOb)
         {
@@ -304,7 +304,7 @@ bool exportToBundlerFormat(
       iter != sfm_data.getLandmarks().end(); ++iter)
     {
       const Landmark & landmark = iter->second;
-      const Observations & observations = landmark.observations;
+      const Observations & observations = landmark.getObservations();
       const Vec3 & X = landmark.X;
       // X, color, obsCount
       os << X[0] << " " << X[1] << " " << X[2] << os.widen('\n')
@@ -315,7 +315,7 @@ bool exportToBundlerFormat(
       {
         const Observation & ob = iterObs->second;
         // ViewId, FeatId, x, y
-        os << map_viewIdToContiguous[iterObs->first] << " " << ob.id_feat << " " << ob.x(0) << " " << ob.x(1) << " ";
+        os << map_viewIdToContiguous[iterObs->first] << " " << ob.getFeatureId() << " " << ob.getX() << " " << ob.getY() << " ";
       }
       os << os.widen('\n');
     }
@@ -335,21 +335,23 @@ int aliceVision_main(int argc, char *argv[])
   int nbCore = 8;
   bool useVisData = true;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for keypoints.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for keypoints.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("resolution", po::value<int>(&resolution)->default_value(resolution),
-      "Divide image coefficient")
-    ("nbCore", po::value<int>(&nbCore)->default_value(nbCore),
-      "Nb core")
-    ("useVisData", po::value<bool>(&useVisData)->default_value(useVisData),
-      "Use visibility information.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("resolution", po::value<int>(&resolution)->default_value(resolution),
+         "Divide image coefficient.")
+        ("nbCore", po::value<int>(&nbCore)->default_value(nbCore),
+         "Number of cores.")
+        ("useVisData", po::value<bool>(&useVisData)->default_value(useVisData),
+         "Use visibility information.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportPMVS");
   cmdline.add(requiredParams);
@@ -364,7 +366,7 @@ int aliceVision_main(int argc, char *argv[])
     fs::create_directory(outputFolder);
 
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     std::cerr << std::endl
       << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;

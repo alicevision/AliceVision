@@ -87,7 +87,7 @@ PairSet FrustumFilter::getFrustumIntersectionPairs() const
 }
 
 // Export defined frustum in PLY file for viewing
-bool FrustumFilter::export_Ply(const std::string& filename) const
+bool FrustumFilter::exportPly(const std::string& filename) const
 {
     std::ofstream of(filename);
     if (!of.is_open())
@@ -169,7 +169,7 @@ void FrustumFilter::init_z_near_z_far_depth(const sfmData::SfMData& sfmData, con
         {
             const sfmData::Landmark& landmark = itL->second;
             const Vec3& X = landmark.X;
-            for (sfmData::Observations::const_iterator iterO = landmark.observations.begin(); iterO != landmark.observations.end(); ++iterO)
+            for (sfmData::Observations::const_iterator iterO = landmark.getObservations().begin(); iterO != landmark.getObservations().end(); ++iterO)
             {
                 const IndexT id_view = iterO->first;
                 const sfmData::Observation& ob = iterO->second;

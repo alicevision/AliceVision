@@ -338,7 +338,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
 
                     // Add observation
                     sfmData::Observation obs(p, idxlandmark, 1.0);
-                    sfmData.getLandmarks()[idxlandmark].observations[viewId] = obs;
+                    sfmData.getLandmarks()[idxlandmark].getObservations()[viewId] = obs;
                 }
             }
         }
@@ -454,15 +454,21 @@ int aliceVision_main(int argc, char* argv[])
 
     double squareSize = 10.;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
-        ("checkerboards,c", po::value<std::string>(&checkerBoardsPath)->required(), "Checkerboards json files directory.")
-        ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.");
+        ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(),
+         "SfMData file input.")
+        ("checkerboards,c", po::value<std::string>(&checkerBoardsPath)->required(),
+         "Checkerboards json files directory.")
+        ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
+         "SfMData file output.");
     
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("squareSize,s", po::value<double>(&squareSize)->default_value(squareSize), "Checkerboard square width in mm");
+        ("squareSize,s", po::value<double>(&squareSize)->default_value(squareSize),
+         "Checkerboard square width in mm.");
+    // clang-format on
 
     CmdLine cmdline("This program calibrates camera intrinsics and extrinsics.\n"
                     "AliceVision checkerboardCalibration");
@@ -475,7 +481,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // Load sfmData from disk
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
@@ -532,7 +538,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Save sfmData to disk
-    if (!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;

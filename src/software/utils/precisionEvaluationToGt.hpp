@@ -14,12 +14,11 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
-
+#include <filesystem>
 #include <vector>
 #include <algorithm>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision
 {

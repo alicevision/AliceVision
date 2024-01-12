@@ -16,7 +16,6 @@
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -26,6 +25,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/mcc.hpp>
 
+#include <filesystem>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -38,7 +38,7 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
@@ -407,10 +407,12 @@ int aliceVision_main(int argc, char** argv)
     bool debug = false;
     unsigned int maxCountByImage = 1;
 
+    // clang-format off
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
         ("input,i", po::value<std::string>(&inputExpression)->required(),
-         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches "
+         "a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
         ("outputData", po::value<std::string>(&outputData)->required(),
          "Output path for the color checker data.");
 
@@ -420,6 +422,7 @@ int aliceVision_main(int argc, char** argv)
          "Output debug data.")
         ("maxCount", po::value<unsigned int>(&maxCountByImage),
          "Maximum color charts count to detect in a single image.");
+    // clang-format on
 
     CmdLine cmdline("This program is used to perform Macbeth color checker chart detection.\n"
                     "AliceVision colorCheckerDetection");
@@ -445,7 +448,7 @@ int aliceVision_main(int argc, char** argv)
     {
         // load input as sfm data file
         sfmData::SfMData sfmData;
-        if (!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
+        if (!sfmDataIO::load(sfmData, inputExpression, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
         {
             ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
             return EXIT_FAILURE;
@@ -487,7 +490,7 @@ int aliceVision_main(int argc, char** argv)
             const std::regex regex = utils::filterToRegex(inputExpression);
             // Get supported files in inputPath directory which matches our regex filter
             filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(),
-               [&regex](const boost::filesystem::path& path) {
+               [&regex](const fs::path& path) {
                  return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
                }
             );

@@ -143,7 +143,7 @@ bool extractSIFT(const image::Image<float>& image,
                  bool orientation,
                  const image::Image<unsigned char>* mask)
 {
-    const int w = image.Width(), h = image.Height();
+    const int w = image.width(), h = image.height();
     const int numOctaves = -1;  // auto
     // if image resolution is low, increase resolution for extraction
     const int firstOctave = params.getImageFirstOctave(w, h);

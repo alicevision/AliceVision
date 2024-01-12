@@ -20,9 +20,9 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -40,7 +40,7 @@ using namespace aliceVision::sfmData;
 using namespace svg;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char ** argv)
 {
@@ -53,19 +53,21 @@ int aliceVision_main(int argc, char ** argv)
 
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for keypoints.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for keypoints.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str());
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str());
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportKeypoints");
   cmdline.add(requiredParams);
@@ -84,7 +86,7 @@ int aliceVision_main(int argc, char ** argv)
   // read SfM Scene (image view names)
 
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;

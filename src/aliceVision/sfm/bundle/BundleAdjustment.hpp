@@ -87,16 +87,6 @@ class BundleAdjustment
     };
 
     /**
-     * @brief Defines the state of the all parameter of the reconstruction during bundle adjustment.
-     */
-    enum class EParameterState : std::uint8_t
-    {
-        REFINED = 0,   //< will be adjusted by the BA solver
-        CONSTANT = 1,  //< will be set as constant in the sover
-        IGNORED = 2    //< will not be set into the BA solver
-    };
-
-    /**
      * @brief Defines all the refine options that can be used in a bundle adjustment.
      */
     enum ERefineOptions

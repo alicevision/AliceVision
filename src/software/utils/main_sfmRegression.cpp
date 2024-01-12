@@ -106,19 +106,15 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
         
         for (auto & pp : sfmDataGT.getPoses())
         {
-            sfmData::Observation obs;
-            obs.x = phPinholeGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true);
-            obs.scale = 1.0;
-            obs.id_feat = pl.first;
-
+            sfmData::Observation obs(phPinholeGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true), pl.first, 1.0);
             
             if (pp.second.getTransform()(pl.second.X)(2) < 0.1)
             {
                 continue;
             }
 
-            pl.second.observations[pp.first] = obs;
-            lEst.observations[pp.first] = obs;
+            pl.second.getObservations()[pp.first] = obs;
+            lEst.getObservations()[pp.first] = obs;
         }
     }
 
@@ -128,8 +124,6 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
 
 int aliceVision_main(int argc, char **argv)
 {
-  po::options_description allParams("AliceVision sfmRegression");
-
   CmdLine cmdline("AliceVision sfmRegression");
   if (!cmdline.execute(argc, argv))
   {

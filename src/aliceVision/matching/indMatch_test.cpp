@@ -8,24 +8,23 @@
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching/io.hpp"
 
-#include <boost/filesystem/operations.hpp>
-
 #define BOOST_TEST_MODULE IndMatch
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 using namespace aliceVision;
 using namespace aliceVision::matching;
 using namespace aliceVision::feature;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 BOOST_AUTO_TEST_CASE(IndMatch_IO)
 {
     const std::string testFolder = "matchingTest";
-    boost::filesystem::create_directory(testFolder);
+    fs::create_directory(testFolder);
     {
         std::set<IndexT> viewsKeys;
         PairwiseMatches matches;
@@ -36,8 +35,8 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
         BOOST_CHECK_EQUAL(0, matches.size());
         fs::remove_all("./1/");
     }
-    boost::filesystem::remove_all(testFolder);
-    boost::filesystem::create_directory(testFolder);
+    fs::remove_all(testFolder);
+    fs::create_directory(testFolder);
     {
         std::set<IndexT> viewsKeys;
         PairwiseMatches matches;
@@ -48,8 +47,8 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
         BOOST_CHECK_EQUAL(0, matches.size());
         fs::remove_all("./2/");
     }
-    boost::filesystem::remove_all(testFolder);
-    boost::filesystem::create_directory(testFolder);
+    fs::remove_all(testFolder);
+    fs::create_directory(testFolder);
     {
         std::set<IndexT> viewsKeys = {0, 1, 2};
         PairwiseMatches matches;
@@ -67,8 +66,8 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
         BOOST_CHECK_EQUAL(3, matches.at(std::make_pair(1, 2)).at(EImageDescriberType::UNKNOWN).size());
         fs::remove_all("./3/");
     }
-    boost::filesystem::remove_all(testFolder);
-    boost::filesystem::create_directory(testFolder);
+    fs::remove_all(testFolder);
+    fs::create_directory(testFolder);
     {
         std::set<IndexT> viewsKeys = {0, 1, 2};
         PairwiseMatches matches;
@@ -105,7 +104,7 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
         BOOST_CHECK_EQUAL(2, matches.at(std::make_pair(0, 2)).at(EImageDescriberType::UNKNOWN).size());
         fs::remove_all("./4/");
     }
-    boost::filesystem::remove_all(testFolder);
+    fs::remove_all(testFolder);
 }
 
 BOOST_AUTO_TEST_CASE(IndMatch_DuplicateRemoval_NoRemoval)

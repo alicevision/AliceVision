@@ -107,37 +107,37 @@ class Image : public Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::Row
      * @brief Retrieve the width of the image
      * @return Width of image
      */
-    inline int Width() const { return static_cast<int>(Base::cols()); }
+    inline int width() const { return static_cast<int>(Base::cols()); }
 
     /**
      * @brief Retrieve the height of the image
      * @return Height of the image
      */
-    inline int Height() const { return static_cast<int>(Base::rows()); }
+    inline int height() const { return static_cast<int>(Base::rows()); }
 
     /**
      * @brief Return the depth in byte of the pixel
      * @return depth of the pixel (in byte)
      * @note (T=unsigned char will return 1)
      */
-    inline int Depth() const { return sizeof(Tpixel); }
+    inline int depth() const { return sizeof(Tpixel); }
 
     /**
      * @brief Retrieve the size in byte of the image
      * @return size of the image (in byte)
      * @note We use unsigned long long integers to avoid issues with large images, which can exceed several GB.
      */
-    inline unsigned long long int MemorySize() const
+    inline unsigned long long int memorySize() const
     {
-        return static_cast<unsigned long long int>(Width()) * static_cast<unsigned long long int>(Height()) *
-               static_cast<unsigned long long int>(Depth());
+        return static_cast<unsigned long long int>(width()) * static_cast<unsigned long long int>(height()) *
+               static_cast<unsigned long long int>(depth());
     }
 
     /**
      * @brief Return the number of channels
      * @return number of channels
      */
-    inline int Channels() const { return NbChannels<Tpixel>::size; }
+    inline int channels() const { return NbChannels<Tpixel>::size; }
 
     /**
      * @brief constant random pixel access
@@ -162,8 +162,8 @@ class Image : public Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::Row
      * @brief Get low level access to the internal pixel data
      * @return const reference to internal matrix data
      */
-    inline const Base& GetMat() const { return (*this); }
-    inline Base& GetMat() { return (*this); }
+    inline const Base& getMat() const { return (*this); }
+    inline Base& getMat() { return (*this); }
 
     //-- accessors/getters methods
     //------------------------------
@@ -175,7 +175,7 @@ class Image : public Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::Row
      * @retval true If pixel (y,x) is inside the image
      * @retval false If pixel (y,x) is outside the image
      */
-    inline bool Contains(int y, int x) const { return 0 <= x && x < Base::cols() && 0 <= y && y < Base::rows(); }
+    inline bool contains(int y, int x) const { return 0 <= x && x < Base::cols() && 0 <= y && y < Base::rows(); }
 
     /**
      * @brief Pixelwise addition of two images
@@ -241,8 +241,8 @@ Image<T1> operator-(const Image<T1>& imgA, const Image<T1>& imgB)
 template<typename T>
 T getInterpolateColor(const Image<T>& img, double y, double x)
 {
-    const int xp = std::min(static_cast<int>(x), img.Width() - 2);
-    const int yp = std::min(static_cast<int>(y), img.Height() - 2);
+    const int xp = std::min(static_cast<int>(x), img.width() - 2);
+    const int yp = std::min(static_cast<int>(y), img.height() - 2);
 
     // precision to 4 decimal places
     const float ui = x - static_cast<float>(xp);

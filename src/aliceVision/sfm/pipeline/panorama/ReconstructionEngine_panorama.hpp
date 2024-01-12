@@ -175,8 +175,8 @@ class ReconstructionEngine_panorama : public ReconstructionEngine
 
     ~ReconstructionEngine_panorama();
 
-    void SetFeaturesProvider(feature::FeaturesPerView* featuresPerView);
-    void SetMatchesProvider(matching::PairwiseMatches* provider);
+    void setFeaturesProvider(feature::FeaturesPerView* featuresPerView);
+    void setMatchesProvider(matching::PairwiseMatches* provider);
 
     /**
      * @brief Filter feature matches to keep only the largest biedge connected subgraph.
@@ -189,15 +189,15 @@ class ReconstructionEngine_panorama : public ReconstructionEngine
 
   protected:
     /// Compute from relative rotations the global rotations of the camera poses
-    bool Compute_Global_Rotations(const aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R, HashMap<IndexT, Mat3>& map_globalR);
+    bool computeGlobalRotations(const aliceVision::rotationAveraging::RelativeRotations& vecTelativesR, HashMap<IndexT, Mat3>& mapGlobalR);
 
   public:
     /// Adjust the scene (& remove outliers)
-    bool Adjust();
+    bool adjust();
 
   private:
     /// Compute relative rotations
-    void Compute_Relative_Rotations(aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R);
+    void computeRelativeRotations(aliceVision::rotationAveraging::RelativeRotations& vecRelativesR);
     bool addConstraints2DWithKnownRotation();
 
     // Logger

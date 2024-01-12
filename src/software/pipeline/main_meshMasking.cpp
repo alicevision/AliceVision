@@ -16,8 +16,8 @@
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <memory>
 
 
@@ -29,7 +29,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /**
  * @brief Basic cache system to manage masks.
@@ -379,7 +379,7 @@ void meshMasking(
         }
 
         const auto& mask = *maskPtr;
-        if (mp.getWidth(camId) != mask.Width() || mp.getHeight(camId) != mask.Height())
+        if (mp.getWidth(camId) != mask.width() || mp.getHeight(camId) != mask.height())
         {
             ALICEVISION_LOG_WARNING("Invalid mask size: mask is ignored.");
             if (usePointsVisibilities)
@@ -406,8 +406,8 @@ void meshMasking(
             // project vertex on mask
             Pixel projectedPixel;
             mp.getPixelFor3DPoint(&projectedPixel, vertex, camId);
-            if (projectedPixel.x < 0 || projectedPixel.x >= mask.Width()
-             || projectedPixel.y < 0 || projectedPixel.y >= mask.Height())
+            if (projectedPixel.x < 0 || projectedPixel.x >= mask.width()
+             || projectedPixel.y < 0 || projectedPixel.y >= mask.height())
             {
                 if (usePointsVisibilities)
                 {
@@ -519,34 +519,34 @@ int main(int argc, char **argv)
     bool usePointsVisibilities = false;
     std::string maskExtension = "png";
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath)->required(),
-            "A SfMData file (*.sfm).")
+         "A SfMData file (*.sfm).")
         ("inputMesh,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh")
+         "Input mesh.")
         ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
-            "Use masks from specific folder(s).\n"
-            "Filename should be the same or the image uid.")
+         "Use masks from specific folder(s).\n"
+         "Filename should be the same or the image UID.")
         ("outputMesh,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh")
+         "Output mesh.")
         ("threshold", po::value<int>(&threshold)->default_value(threshold)->notifier(optInRange(1, INT_MAX, "threshold"))->required(),
-            "The minimum number of visibility to keep a vertex.")
-        ;
+         "The minimum number of visibility to keep a vertex.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("invert", po::value<bool>(&invert)->default_value(invert),
-            "Invert the mask.")
+         "Invert the mask.")
         ("smoothBoundary", po::value<bool>(&smoothBoundary)->default_value(smoothBoundary),
-            "Modify the triangles at the boundary to fit the masks.")
+         "Modify the triangles at the boundary to fit the masks.")
         ("undistortMasks", po::value<bool>(&undistortMasks)->default_value(undistortMasks),
-            "Undistort the masks with the same parameters as the matching image. Use it if the masks are drawn on the original images.")
+         "Undistort the masks with the same parameters as the matching image. Use it if the masks are drawn on the original images.")
         ("usePointsVisibilities", po::value<bool>(&usePointsVisibilities)->default_value(usePointsVisibilities),
-            "Use the points visibilities from the meshing to filter triangles. Example: when they are occluded, back-face, etc.")
+         "Use the points visibilities from the meshing to filter triangles. Example: when they are occluded, back-face, etc.")
         ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
-            "File extension for the masks to use.")
-        ;
+         "File extension for the masks to use.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision meshMasking");
     cmdline.add(requiredParams);
@@ -576,7 +576,7 @@ int main(int argc, char **argv)
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL_DENSE))
+    if(!sfmDataIO::load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL_DENSE))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
         return EXIT_FAILURE;

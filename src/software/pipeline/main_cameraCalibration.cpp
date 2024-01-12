@@ -18,8 +18,6 @@
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -28,6 +26,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
+#include <filesystem>
 #include <stdio.h>
 #include <ctime>
 #include <cstdio>
@@ -45,13 +44,13 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char** argv)
 {
     // Command line arguments
-    bfs::path inputPath;
+    fs::path inputPath;
     std::string outputFilename;
     std::string debugSelectedImgFolder;
     std::string debugRejectedImgFolder;
@@ -65,9 +64,10 @@ int aliceVision_main(int argc, char** argv)
     double squareSize = 1.0;
     double maxTotalAvgErr = 0.1;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<bfs::path>(&inputPath)->required(),
+        ("input,i", po::value<fs::path>(&inputPath)->required(),
          "Input images in one of the following form:\n"
          " - folder containing images\n"
          " - image sequence like /path/to/seq.@.jpg\n"
@@ -98,11 +98,12 @@ int aliceVision_main(int argc, char** argv)
         ("minInputFrames", po::value<std::size_t>(&minInputFrames)->default_value(minInputFrames),
          "Minimum number of frames to limit the refinement loop.")
         ("maxTotalAvgErr,e", po::value<double>(&maxTotalAvgErr)->default_value(maxTotalAvgErr),
-         "Max Total Average Error.")
+         "Maximum total average error.")
         ("debugRejectedImgFolder", po::value<std::string>(&debugRejectedImgFolder)->default_value(""),
          "Folder to export images that were deleted during the refinement loop.")
         ("debugSelectedImgFolder,d", po::value<std::string>(&debugSelectedImgFolder)->default_value(""),
          "Folder to export debug images.");
+    // clang-format on
 
     aliceVision::CmdLine cmdline("This program is used to calibrate a camera from a dataset of images.\n"
                                  "AliceVision cameraCalibration");
@@ -193,7 +194,7 @@ int aliceVision_main(int argc, char** argv)
     while(feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
     {
         cv::Mat viewGray;
-        cv::eigen2cv(imageGrey.GetMat(), viewGray);
+        cv::eigen2cv(imageGrey.getMat(), viewGray);
 
         // Check image is correctly loaded
         if(viewGray.size() == cv::Size(0, 0))

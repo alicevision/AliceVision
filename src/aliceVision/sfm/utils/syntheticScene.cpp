@@ -14,14 +14,14 @@
 namespace aliceVision {
 namespace sfm {
 
-void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType)
+void generateSyntheticMatches(matching::PairwiseMatches& outPairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType)
 {
     for (const auto& it : sfmData.getLandmarks())
     {
         const sfmData::Landmark& landmark = it.second;
-        const std::size_t limitMatches = std::min(std::size_t(3), landmark.observations.size());
+        const std::size_t limitMatches = std::min(std::size_t(3), landmark.getObservations().size());
 
-        for (auto obsItI = landmark.observations.begin(); obsItI != landmark.observations.end(); ++obsItI)
+        for (auto obsItI = landmark.getObservations().begin(); obsItI != landmark.getObservations().end(); ++obsItI)
         {
             const sfmData::Observation& obsI = obsItI->second;
             // We don't need matches between all observations.
@@ -31,12 +31,13 @@ void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, co
             for (std::size_t j = 1; j < limitMatches; ++j)
             {
                 ++obsItJ;
-                if (obsItJ == landmark.observations.end())
-                    obsItJ = landmark.observations.begin();
+                if (obsItJ == landmark.getObservations().end())
+                    obsItJ = landmark.getObservations().begin();
 
                 const sfmData::Observation& obsJ = obsItJ->second;
 
-                out_pairwiseMatches[Pair(obsItI->first, obsItJ->first)][descType].emplace_back(obsItI->second.id_feat, obsItJ->second.id_feat);
+                outPairwiseMatches[Pair(obsItI->first, obsItJ->first)][descType].emplace_back(obsItI->second.getFeatureId(),
+                                                                                              obsItJ->second.getFeatureId());
             }
         }
     }
@@ -85,7 +86,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigur
         for (int j = 0; j < nviews; ++j)
         {
             const Vec2 pt = d._x[j].col(i);
-            landmark.observations[j] = sfmData::Observation(pt, i, unknownScale);
+            landmark.getObservations()[j] = sfmData::Observation(pt, i, unknownScale);
         }
         sfmData.getLandmarks()[i] = landmark;
     }
@@ -165,7 +166,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfi
             }
 
             const Vec2 pt = project(camPinHole->getProjectiveEquivalent(camPose), landmark.X);
-            landmark.observations[viewId] = sfmData::Observation(pt, landmarkId, unknownScale);
+            landmark.getObservations()[viewId] = sfmData::Observation(pt, landmarkId, unknownScale);
         }
         sfmData.getLandmarks()[landmarkId] = landmark;
     }

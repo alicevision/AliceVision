@@ -148,11 +148,11 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
                 assert(landmark.descType == match.descType);
                 // normally there should be no other features already associated to this
                 // 3D point in this view
-                if (landmark.observations.count(viewID) != 0)
+                if (landmark.getObservations().count(viewID) != 0)
                 {
                     // this is weird but it could happen when two features are really close to each other (?)
                     ALICEVISION_LOG_DEBUG("Point 3D " << match.landmarkId << " has multiple features "
-                                                      << "in the same view " << viewID << ", current size of obs: " << landmark.observations.size());
+                                                      << "in the same view " << viewID << ", current size of obs: " << landmark.getObservations().size());
                     ALICEVISION_LOG_DEBUG("its associated features are: ");
                     for (std::size_t i = 0; i < matches.size(); ++i)
                     {
@@ -169,7 +169,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
                 }
 
                 // the 3D point exists already, add the observation
-                landmark.observations[viewID] = sfmData::Observation(feature, match.featId, unknownScale);
+                landmark.getObservations()[viewID] = sfmData::Observation(feature, match.featId, unknownScale);
             }
             else
             {
@@ -177,7 +177,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
                 sfmData::Landmark newLandmark;
                 newLandmark.descType = match.descType;
                 newLandmark.X = currResult.getPt3D().col(idx);
-                newLandmark.observations[viewID] = sfmData::Observation(feature, match.featId, unknownScale);
+                newLandmark.getObservations()[viewID] = sfmData::Observation(feature, match.featId, unknownScale);
                 tinyScene.getLandmarks()[match.landmarkId] = std::move(newLandmark);
             }
         }
@@ -188,7 +188,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
     //    sfmData::Landmarks &landmarks = tinyScene.getLandmarks();
     //    for(sfmData::Landmarks::iterator it = landmarks.begin(), ite = landmarks.end(); it != ite;)
     //    {
-    //      if(it->second.observations.size() < 5)
+    //      if(it->second.getObservations().size() < 5)
     //      {
     //         it = landmarks.erase(it);
     //      }
@@ -205,15 +205,15 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         std::size_t maxObs = 0;
         for (const auto landmark : tinyScene.getLandmarks())
         {
-            if (landmark.second.observations.size() > maxObs)
-                maxObs = landmark.second.observations.size();
+            if (landmark.second.getObservations().size() > maxObs)
+                maxObs = landmark.second.getObservations().size();
         }
         namespace bacc = boost::accumulators;
         bacc::accumulator_set<std::size_t, bacc::stats<bacc::tag::mean, bacc::tag::min, bacc::tag::max, bacc::tag::sum>> stats;
         std::vector<std::size_t> hist(maxObs + 1, 0);
         for (const auto landmark : tinyScene.getLandmarks())
         {
-            const std::size_t nobs = landmark.second.observations.size();
+            const std::size_t nobs = landmark.second.getObservations().size();
             assert(nobs < hist.size());
             stats(nobs);
             hist[nobs]++;
@@ -250,7 +250,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
 
         for (; iter != endIter;)
         {
-            if (iter->second.observations.size() < minPointVisibility)
+            if (iter->second.getObservations().size() < minPointVisibility)
             {
                 iter = landmarks.erase(iter);
             }
@@ -264,7 +264,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
     if (!outputFilename.empty())
     {
         const std::string outfile = outputFilename + ".BEFORE.json";
-        if (!sfmDataIO::Save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
+        if (!sfmDataIO::save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
             ALICEVISION_CERR("Could not save " << outfile);
     }
 
@@ -290,7 +290,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         if (!outputFilename.empty())
         {
             const std::string outfile = outputFilename + ".AFTER.json";
-            if (!sfmDataIO::Save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
+            if (!sfmDataIO::save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
                 ALICEVISION_CERR("Could not save " << outfile);
         }
     }

@@ -154,12 +154,12 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
     //          |     |     =>     /  \ /  \ /  \
   //          v1 - v2           v0   v1   v2   v3
     // removing adequate observations:
-    sfmData.getLandmarks().at(0).observations.erase(2);
-    sfmData.getLandmarks().at(0).observations.erase(3);
-    sfmData.getLandmarks().at(1).observations.erase(0);
-    sfmData.getLandmarks().at(1).observations.erase(3);
-    sfmData.getLandmarks().at(2).observations.erase(0);
-    sfmData.getLandmarks().at(2).observations.erase(1);
+    sfmData.getLandmarks().at(0).getObservations().erase(2);
+    sfmData.getLandmarks().at(0).getObservations().erase(3);
+    sfmData.getLandmarks().at(1).getObservations().erase(0);
+    sfmData.getLandmarks().at(1).getObservations().erase(3);
+    sfmData.getLandmarks().at(2).getObservations().erase(0);
+    sfmData.getLandmarks().at(2).getObservations().erase(1);
 
     // lock common intrinsic
     // if it's not locked, all views will have a distance of 1 as all views share a common intrinsic.
@@ -209,16 +209,14 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
     BOOST_CHECK_EQUAL(localBAGraph->countNodes(), 4);  // 4 views => 4 nodes
     BOOST_CHECK_EQUAL(localBAGraph->countEdges(), 6);  // landmarks connections: 6 edges created (see scheme)
 
-    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED), 2);      // v0 & v1
-    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT), 1);     // v2
-    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::IGNORED), 1);      // v3
-    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::REFINED), 2);  // p0 & p1
-    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::CONSTANT), 0);
-    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::IGNORED), 1);  // p2
+    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EEstimatorParameterState::REFINED), 2);      // v0 & v1
+    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EEstimatorParameterState::CONSTANT), 1);     // v2
+    BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(EEstimatorParameterState::IGNORED), 1);      // v3
+    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EEstimatorParameterState::REFINED), 2);  // p0 & p1
+    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EEstimatorParameterState::CONSTANT), 0);
+    BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(EEstimatorParameterState::IGNORED), 1);  // p2
 
     std::shared_ptr<BundleAdjustmentCeres> BA = std::make_shared<BundleAdjustmentCeres>(options);
-    BA->useLocalStrategyGraph(localBAGraph);
-    BOOST_CHECK(BA->useLocalStrategy());
     BOOST_CHECK(BA->adjust(sfmData));
 
     // Check views:
@@ -250,13 +248,13 @@ double RMSE(const SfMData& sfm_data)
     std::vector<double> vec;
     for (Landmarks::const_iterator iterTracks = sfm_data.getLandmarks().begin(); iterTracks != sfm_data.getLandmarks().end(); ++iterTracks)
     {
-        const Observations& observations = iterTracks->second.observations;
+        const Observations& observations = iterTracks->second.getObservations();
         for (Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
         {
             const View* view = sfm_data.getViews().find(itObs->first)->second.get();
             const Pose3 pose = sfm_data.getPose(*view).getTransform();
             const std::shared_ptr<IntrinsicBase> intrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second;
-            const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.x);
+            const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates());
             vec.push_back(residual(0));
             vec.push_back(residual(1));
         }
@@ -317,7 +315,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
             pt(0) += rand() / RAND_MAX - .5;
             pt(1) += rand() / RAND_MAX - .5;
 
-            landmark.observations[j] = Observation(pt, i, unknownScale);
+            landmark.getObservations()[j] = Observation(pt, i, unknownScale);
         }
         sfm_data.getLandmarks()[i] = landmark;
     }

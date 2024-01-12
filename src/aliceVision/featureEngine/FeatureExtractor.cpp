@@ -8,10 +8,11 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 #include <iomanip>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace featureEngine {
@@ -173,8 +174,8 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
     if (pixelRatio != 1.0)
     {
         // Resample input image in order to work with square pixels
-        const int w = imageGrayFloat.Width();
-        const int h = imageGrayFloat.Height();
+        const int w = imageGrayFloat.width();
+        const int h = imageGrayFloat.height();
 
         const int nw = static_cast<int>(static_cast<double>(w) * pixelRatio);
         const int nh = h;
@@ -219,8 +220,8 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
         else
         {
             // image buffer can't use float image
-            if (imageGrayUChar.Width() == 0)  // the first time, convert the float buffer to uchar
-                imageGrayUChar = (imageGrayFloat.GetMat() * 255.f).cast<unsigned char>();
+            if (imageGrayUChar.width() == 0)  // the first time, convert the float buffer to uchar
+                imageGrayUChar = (imageGrayFloat.getMat() * 255.f).cast<unsigned char>();
             imageDescriber->describe(imageGrayUChar, regions);
         }
 
@@ -233,7 +234,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
             }
         }
 
-        if (mask.Height() > 0)
+        if (mask.height() > 0)
         {
             std::vector<feature::FeatureInImage> selectedIndices;
             for (size_t i = 0, n = regions->RegionCount(); i != n; ++i)
@@ -243,7 +244,7 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
                 const int y = int(position.y());
 
                 bool masked = false;
-                if (x < mask.Width() && y < mask.Height())
+                if (x < mask.width() && y < mask.height())
                 {
                     if ((mask(y, x) == 0 && !_maskInvert) || (mask(y, x) != 0 && _maskInvert))
                     {

@@ -18,12 +18,11 @@
 
 #include <aliceVision/stl/mapUtils.hpp>
 
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
-
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -39,12 +38,12 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool downscaleTriangle(image::Image<image::RGBAfColor> & smaller, const image::Image<image::RGBAfColor> & source)
 {
-    int sw = source.Width();
-    int sh = source.Height();
+    int sw = source.width();
+    int sh = source.height();
     int nw = sw / 2;
     int nh = sh / 2;
 
@@ -194,8 +193,8 @@ bool readFullTile(image::Image<image::RGBAfColor> & output, std::unique_ptr<oiio
 
 void colorSpaceTransform(image::Image<image::RGBAfColor>& inputImage, image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace, image::DCPProfile dcpProf, image::DCPProfile::Triple neutral)
 {
-    const int width = inputImage.Width();
-    const int tileSize = inputImage.Height();
+    const int width = inputImage.width();
+    const int tileSize = inputImage.height();
     oiio::ImageBuf inBuf = oiio::ImageBuf(oiio::ImageSpec(width, tileSize, 4, oiio::TypeDesc::FLOAT), const_cast<image::RGBAfColor*>(inputImage.data()));
     oiio::ImageBuf* outBuf = &inBuf;
 
@@ -212,8 +211,7 @@ void colorSpaceTransform(image::Image<image::RGBAfColor>& inputImage, image::EIm
         // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
         // even if no conversion is needed.
     }
-    else if ((toColorSpace == image::EImageColorSpace::ACES2065_1) || (toColorSpace == image::EImageColorSpace::ACEScg) ||
-        (fromColorSpace == image::EImageColorSpace::ACES2065_1) || (fromColorSpace == image::EImageColorSpace::ACEScg))
+    else if (EImageColorSpace_isSupportedOIIOEnum(toColorSpace) && EImageColorSpace_isSupportedOIIOEnum(fromColorSpace))
     {
         const auto colorConfigPath = image::getAliceVisionOCIOConfig();
         if (colorConfigPath.empty())
@@ -234,7 +232,7 @@ void colorSpaceTransform(image::Image<image::RGBAfColor>& inputImage, image::EIm
 
     oiio::ROI exportROI = outBuf->roi();
     exportROI.chbegin = 0;
-    exportROI.chend = inputImage.Channels();
+    exportROI.chend = inputImage.channels();
     outBuf->get_pixels(exportROI, outBuf->pixeltype(), inputImage.data());
 }
 
@@ -253,32 +251,40 @@ int aliceVision_main(int argc, char** argv)
     int lastLevelMaxSize = 3840;
 
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("inputPanorama,i", po::value<std::string>(&inputPanoramaPath)->required(), "Input Panorama.")
-        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");
+        ("inputPanorama,i", po::value<std::string>(&inputPanoramaPath)->required(),
+         "Input panorama.")
+        ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(),
+         "Path of the output panorama.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
-
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
         ("compressionMethod", po::value<image::EImageExrCompression>(&compressionMethod)->default_value(compressionMethod),
-         ("Compression Method: " + image::EImageExrCompression_informations()).c_str())
-
+         ("Compression method: " + image::EImageExrCompression_informations()).c_str())
         ("compressionLevel", po::value<int>(&compressionLevel)->default_value(compressionLevel),
-         "Compression Level (must be strictly positive to be considered)\n"
+         "Compression Level (must be strictly positive to be considered).\n"
          "Only dwaa, dwab, zip and zips compression methods are concerned.")
-
-        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm")
-        ("exportLevels", po::value<bool>(&exportLevels)->default_value(exportLevels), "Export downscaled panorama levels")
-        ("lastLevelMaxSize", po::value<int>(&lastLevelMaxSize)->default_value(lastLevelMaxSize), "Maximum width of smallest downscaled panorama level.")
-        ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize), "Preview image width")
-        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace), "Color space for the output panorama.")
-        ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath), "Path of the output panorama preview.");
+        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles),
+         "Execute fill holes algorithm.")
+        ("exportLevels", po::value<bool>(&exportLevels)->default_value(exportLevels),
+         "Export downscaled panorama levels.")
+        ("lastLevelMaxSize", po::value<int>(&lastLevelMaxSize)->default_value(lastLevelMaxSize),
+         "Maximum width of smallest downscaled panorama level.")
+        ("previewSize", po::value<size_t>(&previewSize)->default_value(previewSize),
+         "Preview image width.")
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
+         "Color space for the output panorama.")
+        ("outputPanoramaPreview,p", po::value<std::string>(&outputPanoramaPreviewPath)->default_value(outputPanoramaPreviewPath),
+         "Path of the output panorama preview.");
+    // clang-format on
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
-                    "AliceVision PanoramaPostProcessing");
+                    "AliceVision panoramaPostProcessing");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
@@ -488,10 +494,10 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
             
-        ALICEVISION_LOG_INFO("Process fill holes for reduced image (" << smallImage.Width() << "x" << smallImage.Height() << ")");
-        image::Image<image::RGBAfColor> smallFiled(smallImage.Width(), smallImage.Height());
-        oiio::ImageBuf inBuf(oiio::ImageSpec(smallImage.Width(), smallImage.Height(), 4, oiio::TypeDesc::FLOAT), smallImage.data());
-        oiio::ImageBuf outBuf(oiio::ImageSpec(smallImage.Width(), smallImage.Height(), 4, oiio::TypeDesc::FLOAT), smallFiled.data());
+        ALICEVISION_LOG_INFO("Process fill holes for reduced image (" << smallImage.width() << "x" << smallImage.height() << ")");
+        image::Image<image::RGBAfColor> smallFiled(smallImage.width(), smallImage.height());
+        oiio::ImageBuf inBuf(oiio::ImageSpec(smallImage.width(), smallImage.height(), 4, oiio::TypeDesc::FLOAT), smallImage.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(smallImage.width(), smallImage.height(), 4, oiio::TypeDesc::FLOAT), smallFiled.data());
         oiio::ImageBufAlgo::fillholes_pushpull(outBuf, inBuf);
 
         ALICEVISION_LOG_INFO("Upscaling and filling holes");
@@ -527,19 +533,19 @@ int aliceVision_main(int argc, char** argv)
 
                     region.block(ry * tileSize, rx * tileSize, tileSize, tileSize) = tile;
 
-                    if (cy < 0 || cy >= smallFiled.Height())
+                    if (cy < 0 || cy >= smallFiled.height())
                     {
                         continue;
                     }
 
                     if (cx < 0)
                     {
-                        cx = smallFiled.Width() + cx;
+                        cx = smallFiled.width() + cx;
                     }
 
-                    if (cx >= smallFiled.Width())
+                    if (cx >= smallFiled.width())
                     {
-                        cx = cx - smallFiled.Width();
+                        cx = cx - smallFiled.width();
                     }
 
                     subFiled(ry, rx) = smallFiled(cy, cx);
@@ -571,23 +577,23 @@ int aliceVision_main(int argc, char** argv)
                 image::Image<image::RGBAfColor> & dest = pyramid[level];
 
                 #pragma omp parallel for
-                for (int i = 0; i < source.Height(); i++)
+                for (int i = 0; i < source.height(); i++)
                 {
                     int di = i * 2;
                     int pi = i - 1;
                     int ni = i + 1;
 
                     if (pi < 0) pi = -pi;
-                    if (ni >= source.Height()) ni = i;
+                    if (ni >= source.height()) ni = i;
                     
-                    for (int j = 0; j < source.Width(); j++)
+                    for (int j = 0; j < source.width(); j++)
                     {
                         int dj = j * 2;
                         int pj = j - 1;
                         int nj = j + 1;
 
                         if (pj < 0) pj = nj;
-                        if (nj >= source.Width()) nj = j;
+                        if (nj >= source.width()) nj = j;
 
                         image::RGBAfColor c11 = source(pi, pj);
                         image::RGBAfColor c12 = source(pi, j);

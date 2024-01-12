@@ -15,8 +15,8 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cstdlib>
 
 // These constants define the current software version.
@@ -28,7 +28,7 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /// Build a list of pair that share visibility content from the SfMData structure
 PairSet BuildPairsFromStructureObservations(const sfmData::SfMData& sfmData)
@@ -39,12 +39,12 @@ PairSet BuildPairsFromStructureObservations(const sfmData::SfMData& sfmData)
     itL != sfmData.getLandmarks().end(); ++itL)
   {
     const sfmData::Landmark & landmark = itL->second;
-    for(const auto& iterI : landmark.observations)
+    for(const auto& iterI : landmark.getObservations())
     {
       const IndexT id_viewI = iterI.first;
-      sfmData::Observations::const_iterator iterJ = landmark.observations.begin();
+      sfmData::Observations::const_iterator iterJ = landmark.getObservations().begin();
       std::advance(iterJ, 1);
-      for (; iterJ != landmark.observations.end(); ++iterJ)
+      for (; iterJ != landmark.getObservations().end(); ++iterJ)
       {
         const IndexT id_viewJ = iterJ->first;
         pairs.insert( std::make_pair(id_viewI,id_viewJ));
@@ -63,7 +63,7 @@ PairSet BuildPairsFromFrustumsIntersections(
 {
   const FrustumFilter frustum_filter(sfmData, z_near, z_far);
   if (!sOutDirectory.empty())
-    frustum_filter.export_Ply((fs::path(sOutDirectory) / "frustums.ply").string());
+    frustum_filter.exportPly((fs::path(sOutDirectory) / "frustums.ply").string());
   return frustum_filter.getFrustumIntersectionPairs();
 }
 
@@ -75,19 +75,21 @@ int aliceVision_main(int argc, char **argv)
   double zNear = -1.;
   double zFar = -1.;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFilename)->required(),
-      "Output pair filename.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFilename)->required(),
+         "Output pair filename.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("zNear", po::value<double>(&zNear)->default_value(zNear),
-      "Distance of the near camera plane.")
-    ("zFar", po::value<double>(&zFar)->default_value(zFar),
-      "Distance of the far camera plane.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("zNear", po::value<double>(&zNear)->default_value(zNear),
+         "Distance of the near camera plane.")
+        ("zFar", po::value<double>(&zFar)->default_value(zFar),
+         "Distance of the far camera plane.");
+    // clang-format on
 
   CmdLine cmdline("This program computes camera cones that share some putative visual content.\n"
                   "AliceVision frustumFiltering");
@@ -105,7 +107,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;

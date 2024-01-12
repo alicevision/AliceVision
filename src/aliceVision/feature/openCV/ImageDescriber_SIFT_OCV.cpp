@@ -56,7 +56,7 @@ bool ImageDescriber_SIFT_openCV::describe(const image::Image<unsigned char>& ima
 {
     // Convert for opencv
     cv::Mat img;
-    cv::eigen2cv(image.GetMat(), img);
+    cv::eigen2cv(image.getMat(), img);
 
     // Create a SIFT detector
     std::vector<cv::KeyPoint> v_keypoints;
@@ -98,8 +98,8 @@ bool ImageDescriber_SIFT_openCV::describe(const image::Image<unsigned char>& ima
 
             cv::Mat countFeatPerCell(_params.gridSize, _params.gridSize, cv::DataType<int>::type, cv::Scalar(0));
             const std::size_t keypointsPerCell = _params.maxTotalKeypoints / countFeatPerCell.total();
-            const double regionWidth = image.Width() / double(countFeatPerCell.cols);
-            const double regionHeight = image.Height() / double(countFeatPerCell.rows);
+            const double regionWidth = image.width() / double(countFeatPerCell.cols);
+            const double regionHeight = image.height() / double(countFeatPerCell.rows);
 
             ALICEVISION_LOG_TRACE("Grid filtering -- keypointsPerCell: " << keypointsPerCell << ", regionWidth: " << regionWidth
                                                                          << ", regionHeight: " << regionHeight << std::endl);

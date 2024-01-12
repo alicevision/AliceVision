@@ -18,7 +18,6 @@
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/camera/camera.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include <boost/property_tree/ini_parser.hpp>
@@ -26,13 +25,14 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <set>
 
 namespace aliceVision {
 namespace mvsUtils {
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                  const std::string& imagesFolder,
@@ -528,7 +528,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
 
     for (const auto& landmarkPair : _sfmData.getLandmarks())
     {
-        const auto& observations = landmarkPair.second.observations;
+        const auto& observations = landmarkPair.second.getObservations();
 
         auto viewObsIt = observations.find(viewId);
         if (viewObsIt == observations.end())
@@ -546,7 +546,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
             const camera::IntrinsicBase* otherIntrinsicPtr = _sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
 
             const double angle =
-              camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+              camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.getCoordinates(), observationPair.second.getCoordinates());
 
             if (angle < _minViewAngle || angle > _maxViewAngle)
                 continue;
@@ -604,7 +604,7 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
 
     for (const auto& landmarkPair : sfmData.getLandmarks())
     {
-        const auto& observations = landmarkPair.second.observations;
+        const auto& observations = landmarkPair.second.getObservations();
 
         auto viewObsIt = observations.find(viewId);
 
@@ -613,7 +613,7 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
             continue;
 
         // landmark R camera observation is in the image full-size ROI
-        if (!fullsizeRoi.contains(viewObsIt->second.x.x(), viewObsIt->second.x.y()))
+        if (!fullsizeRoi.contains(viewObsIt->second.getX(), viewObsIt->second.getY()))
             continue;
 
         for (const auto& observationPair : observations)
@@ -635,7 +635,7 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
             const camera::IntrinsicBase* otherIntrinsicPtr = sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
 
             const double angle =
-              camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+              camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.getCoordinates(), observationPair.second.getCoordinates());
 
             tcScore[tc] += plateauFunction(1, 10, 50, 150, angle);
         }

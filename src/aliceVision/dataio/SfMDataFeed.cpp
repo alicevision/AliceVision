@@ -69,7 +69,7 @@ class SfMDataFeed::FeederImpl
 SfMDataFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::string& calibPath)
   : _isInit(false)
 {
-    _isInit = sfmDataIO::Load(_sfmData, imagePath, sfmDataIO::ESfMData(sfmDataIO::ESfMData::VIEWS | sfmDataIO::ESfMData::INTRINSICS));
+    _isInit = sfmDataIO::load(_sfmData, imagePath, sfmDataIO::ESfMData(sfmDataIO::ESfMData::VIEWS | sfmDataIO::ESfMData::INTRINSICS));
 
     // Order the views according to the frame ID and the intrinsics serial number
     std::map<std::string, std::vector<const sfmData::View*>> viewSequences;

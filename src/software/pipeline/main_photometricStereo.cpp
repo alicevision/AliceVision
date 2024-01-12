@@ -22,7 +22,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -33,6 +32,7 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -47,7 +47,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 using namespace aliceVision;
 
@@ -63,6 +63,7 @@ int aliceVision_main(int argc, char **argv)
     // PhotometricStereo parameters
     photometricStereo::PhotometricSteroParameters PSParameters;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPath,i", po::value<std::string>(&inputPath)->required(),
@@ -84,6 +85,7 @@ int aliceVision_main(int argc, char **argv)
          "True to use the robust algorithm, false otherwise.")
         ("downscale, d", po::value<int>(&PSParameters.downscale)->default_value(1),
          "Downscale factor for faster results.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision photometricStereo");
     cmdline.add(requiredParams);
@@ -111,7 +113,7 @@ int aliceVision_main(int argc, char **argv)
     else
     {
         sfmData::SfMData sfmData;
-        if (!sfmDataIO::Load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+        if (!sfmDataIO::load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
         {
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read.");
             return EXIT_FAILURE;

@@ -17,8 +17,9 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp> 
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -28,7 +29,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 enum class EAlgorithm {
     HSV,
@@ -107,52 +108,50 @@ int main(int argc, char **argv)
     std::string depthMapFolder;
     std::string depthMapExp;
 
-
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmFilePath)->required(),
-            "A SfMData file (*.sfm) [if specified, --imageFolder cannot be used].")
+         "A SfMData file (*.sfm) [if specified, --imageFolder cannot be used].")
         ("output,o", po::value<std::string>(&outputFilePath)->required(),
-            "Output file path for the new SfMData file");
+         "Output file path for the new SfMData file.");
 
     po::options_description hsvParams("HSV parameters");
     hsvParams.add_options()
         ("algorithm,a", po::value<EAlgorithm>(&algorithm)->default_value(algorithm),
-            std::string("Masking algorithm:\n"
-            " * " + EAlgorithm_enumToString(EAlgorithm::HSV) + ": selected range in the Hue Saturation Value color space.\n"
-            " * " + EAlgorithm_enumToString(EAlgorithm::GrabCut) + ": not implemented"
-            ).c_str())
+         std::string("Masking algorithm:\n"
+         " * " + EAlgorithm_enumToString(EAlgorithm::HSV) + ": selected range in the Hue Saturation Value color space.\n"
+         " * " + EAlgorithm_enumToString(EAlgorithm::GrabCut) + ": not implemented.").c_str())
         ("hsvHue", po::value<float>(&hsv.hue)->default_value(hsv.hue)->notifier(optInRange(0.f, 1.f, "hsvHue")),
-            "Hue value to isolate in [0,1] range. 0 = red, 0.33 = green, 0.66 = blue, 1 = red.")
+         "Hue value to isolate in [0,1] range. 0 = red, 0.33 = green, 0.66 = blue, 1 = red.")
         ("hsvHueRange", po::value<float>(&hsv.hueRange)->default_value(hsv.hueRange)->notifier(optInRange(0.f, 1.f, "hsvHueRange")),
-            "Tolerance around the hue value to isolate.")
+         "Tolerance around the hue value to isolate.")
         ("hsvMinSaturation", po::value<float>(&hsv.minSaturation)->default_value(hsv.minSaturation)->notifier(optInRange(0.f, 1.f, "hsvMinSaturation")),
-            "Hue is meaningless if saturation is low. Do not mask pixels below this threshold.")
+         "Hue is meaningless if saturation is low. Do not mask pixels below this threshold.")
         ("hsvMaxSaturation", po::value<float>(&hsv.maxSaturation)->default_value(hsv.maxSaturation)->notifier(optInRange(0.f, 1.f, "hsvMaxSaturation")),
-            "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
+         "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
         ("hsvMinValue", po::value<float>(&hsv.minValue)->default_value(hsv.minValue)->notifier(optInRange(0.f, 1.f, "hsvMinValue")),
-            "Hue is meaningless if value is low. Do not mask pixels below this threshold.")
+         "Hue is meaningless if value is low. Do not mask pixels below this threshold.")
         ("hsvMaxValue", po::value<float>(&hsv.maxValue)->default_value(hsv.maxValue)->notifier(optInRange(0.f, 1.f, "hsvMaxValue")),
-            "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
+         "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
         ("depthMapFolder", po::value<std::string>(&depthMapFolder)->default_value(depthMapFolder),
-            "Optional input depth map folder to use instead of the color image to generate the mask.")
+         "Optional input depth map folder to use instead of the color image to generate the mask.")
         ("depthMapExp", po::value<std::string>(&depthMapExp)->default_value(depthMapExp),
-            "Optional expression to find and use the input depth map instead of the color image to generate the mask.")
-        ;
+         "Optional expression to find and use the input depth map instead of the color image to generate the mask.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("invert", po::value<bool>(&invert)->default_value(invert),
-            "Invert the mask.")
+         "Invert the mask.")
         ("growRadius", po::value<int>(&growRadius)->default_value(growRadius)->notifier(optInRange(0, INT_MAX, "growRadius")),
-            "Grow the selected area. It might be used to fill the holes: then use shrinkRadius to restore the initial coutours.")
+         "Grow the selected area. It might be used to fill the holes: then use shrinkRadius to restore the initial coutours.")
         ("shrinkRadius", po::value<int>(&shrinkRadius)->default_value(shrinkRadius)->notifier(optInRange(0, INT_MAX, "shrinkRadius")),
-            "Shrink the selected area.")
+         "Shrink the selected area.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-            "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
+         "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-            "Compute a sub-range of N images (N=rangeSize).")
-        ;
+         "Compute a sub-range of N images (N=rangeSize).");
+    // clang-format on
 
     CmdLine cmdline("AliceVision imageMasking");
     cmdline.add(requiredParams);
@@ -178,7 +177,7 @@ int main(int argc, char **argv)
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::VIEWS))
+    if(!sfmDataIO::load(sfmData, sfmFilePath, sfmDataIO::ESfMData::VIEWS))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
         return EXIT_FAILURE;
@@ -349,21 +348,21 @@ int main(int argc, char **argv)
         if(useDepthMap)
         {
             bool viewHorizontal = view.getImage().getWidth() > view.getImage().getHeight();
-            bool depthMapHorizontal = result.Width() > result.Height();
+            bool depthMapHorizontal = result.width() > result.height();
             if(viewHorizontal != depthMapHorizontal)
             {
                 ALICEVISION_LOG_ERROR("Image " << imgPath << " : " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
-                ALICEVISION_LOG_ERROR("Depth Map " << depthMapPath << " : " << result.Width() << "x" << result.Height());
+                ALICEVISION_LOG_ERROR("Depth Map " << depthMapPath << " : " << result.width() << "x" << result.height());
                 throw std::runtime_error("Depth map orientation is not aligned with source image.");
             }
-            if(view.getImage().getWidth() != result.Width())
+            if(view.getImage().getWidth() != result.width())
             {
-                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.Width() << "x" << result.Height() << ", to: " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
+                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.width() << "x" << result.height() << ", to: " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
 
                 image::Image<unsigned char> rescaled(view.getImage().getWidth(), view.getImage().getHeight());
 
-                const oiio::ImageBuf inBuf(oiio::ImageSpec(result.Width(), result.Height(), 1, oiio::TypeDesc::UINT8), result.data());
-                oiio::ImageBuf outBuf(oiio::ImageSpec(rescaled.Width(), rescaled.Height(), 1, oiio::TypeDesc::UINT8), rescaled.data());
+                const oiio::ImageBuf inBuf(oiio::ImageSpec(result.width(), result.height(), 1, oiio::TypeDesc::UINT8), result.data());
+                oiio::ImageBuf outBuf(oiio::ImageSpec(rescaled.width(), rescaled.height(), 1, oiio::TypeDesc::UINT8), rescaled.data());
 
                 oiio::ImageBufAlgo::resize(outBuf, inBuf);
 

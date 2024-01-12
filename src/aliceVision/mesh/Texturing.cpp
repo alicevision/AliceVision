@@ -8,6 +8,7 @@
 #include "geoMesh.hpp"
 #include "UVAtlas.hpp"
 
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
@@ -36,6 +37,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <filesystem>
 #include <map>
 #include <set>
 
@@ -279,7 +281,7 @@ void Texturing::updateAtlases()
 }
 
 void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
-                                 const boost::filesystem::path& outPath,
+                                 const fs::path& outPath,
                                  size_t memoryAvailable,
                                  image::EImageFileType textureFileType)
 {
@@ -369,7 +371,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
 void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                        const std::vector<size_t>& atlasIDs,
                                        mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
-                                       const bfs::path& outPath,
+                                       const fs::path& outPath,
                                        image::EImageFileType textureFileType)
 {
     if (atlasIDs.size() > _atlases.size())
@@ -679,7 +681,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     const std::string textureName = "contrib_" + std::to_string(1001 + atlasID) + std::string("_") + std::to_string(level) +
                                                     std::string(".") +
                                                     EImageFileType_enumToString(textureFileType);  // starts at '1001' for UDIM compatibility
-                    bfs::path texturePath = outPath / textureName;
+                    fs::path texturePath = outPath / textureName;
 
                     using namespace imageIO;
                     OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
@@ -745,7 +747,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
 void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
                                             const Mesh& denseMesh,
-                                            const bfs::path& outPath,
+                                            const fs::path& outPath,
                                             const mesh::BumpMappingParams& bumpMappingParams)
 {
     GEO::Mesh geoDenseMesh;
@@ -765,7 +767,7 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
 
 void Texturing::writeTexture(AccuImage& atlasTexture,
                              const std::size_t atlasID,
-                             const boost::filesystem::path& outPath,
+                             const std::filesystem::path& outPath,
                              image::EImageFileType textureFileType,
                              const int level)
 {
@@ -897,7 +899,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture,
     const std::string textureName = material.textureName(Material::TextureType::DIFFUSE, static_cast<int>(atlasID));
     material.addTexture(Material::TextureType::DIFFUSE, textureName);
 
-    bfs::path texturePath = outPath / textureName;
+    fs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     image::writeImage(texturePath.string(),
@@ -1037,17 +1039,17 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
         // Meanwhile,
         // use a temporary obj file to save result - Geogram merges common UV coordinates per facet corner -
         // and reload it
-        const std::string tmpObjPath = (bfs::temp_directory_path() / bfs::unique_path()).string() + ".obj";
+        const std::string tmpObjPath = (fs::temp_directory_path() / fs::path(utils::generateUniqueFilename())).string() + ".obj";
         // save temp mesh with UVs
         GEO::mesh_save(geoMesh, tmpObjPath);
         // replace initial mesh
         replaceMesh(tmpObjPath);
         // remove temp mesh
-        bfs::remove(tmpObjPath);
+        fs::remove(tmpObjPath);
     }
 }
 
-void Texturing::saveAs(const bfs::path& dir, const std::string& basename, EFileType meshFileType)
+void Texturing::saveAs(const fs::path& dir, const std::string& basename, EFileType meshFileType)
 {
     const std::string meshFileTypeStr = EFileType_enumToString(meshFileType);
     const std::string filepath = (dir / (basename + "." + meshFileTypeStr)).string();
@@ -1086,7 +1088,7 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename, EFileT
     for (int atlasId = 0; atlasId < _atlases.size(); ++atlasId)
     {
         // Set material for this atlas
-        const aiString texName(Material::textureId(atlasId));
+        const aiString texName("material_" + Material::textureId(atlasId));
 
         scene.mMaterials[atlasId] = new aiMaterial;
         scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_AMBIENT);
@@ -1327,7 +1329,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                                              const GEO::Mesh& sparseMesh,
                                              size_t atlasID,
                                              mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
-                                             const bfs::path& outPath,
+                                             const fs::path& outPath,
                                              const mesh::BumpMappingParams& bumpMappingParams)
 {
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " (" << _atlases[atlasID].size()
@@ -1484,7 +1486,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         const std::string name = material.textureName(Material::TextureType::NORMAL, static_cast<int>(atlasID));
         material.addTexture(Material::TextureType::NORMAL, name);
 
-        bfs::path normalMapPath = outPath / name;
+        fs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
         image::writeImage(normalMapPath.string(),
@@ -1524,7 +1526,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             const std::string bumpName = material.textureName(Material::TextureType::BUMP, static_cast<int>(atlasID));
             material.addTexture(Material::TextureType::BUMP, bumpName);
 
-            bfs::path bumpMapPath = outPath / bumpName;
+            fs::path bumpMapPath = outPath / bumpName;
             ALICEVISION_LOG_INFO("Writing bump map: " << bumpMapPath);
 
             image::writeImage(bumpMapPath.string(), heightMap, image::ImageWriteOptions().storageDataType(image::EStorageDataType::Half));
@@ -1536,7 +1538,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             const std::string dispName = material.textureName(Material::TextureType::DISPLACEMENT, static_cast<int>(atlasID));
             material.addTexture(Material::TextureType::DISPLACEMENT, dispName);
 
-            bfs::path dispMapPath = outPath / dispName;
+            fs::path dispMapPath = outPath / dispName;
             ALICEVISION_LOG_INFO("Writing displacement map: " << dispMapPath);
 
             image::writeImage(dispMapPath.string(), heightMap, image::ImageWriteOptions().storageDataType(image::EStorageDataType::Half));

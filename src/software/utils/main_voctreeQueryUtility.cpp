@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <ostream>
 #include <string>
 #include <chrono>
@@ -40,7 +41,7 @@ static const int DIMENSION = 128;
 
 using namespace boost::accumulators;
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace aliceVision;
 using namespace aliceVision::feature;
 
@@ -126,6 +127,7 @@ int aliceVision_main(int argc, char** argv)
     aliceVision::sfmData::SfMData sfmData;
     aliceVision::sfmData::SfMData* querySfmData;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
@@ -159,6 +161,7 @@ int aliceVision_main(int argc, char** argv)
          "Number of features extracted from the .feat files.")
         ("distance,d", po::value<std::string>(&distance)->default_value("strongCommonPoints"),
          "Distance used.");
+    // clang-format on
 
     aliceVision::CmdLine cmdline(programDescription + "AliceVision voctreeQueryUtility");
     cmdline.add(requiredParams);
@@ -212,7 +215,7 @@ int aliceVision_main(int argc, char** argv)
     if(withOutDir)
     {
         // load the json for the dataset used to build the database
-        if(sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
+        if(sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
         {
             ALICEVISION_LOG_INFO("SfMData loaded from " << sfmDataFilename << " containing: ");
             ALICEVISION_LOG_INFO("\tnumber of views: " << sfmData.getViews().size());
@@ -227,7 +230,7 @@ int aliceVision_main(int argc, char** argv)
         if(withQuery)
         {
             querySfmData = new aliceVision::sfmData::SfMData();
-            if(sfmDataIO::Load(*querySfmData, querySfmDataFilename,
+            if(sfmDataIO::load(*querySfmData, querySfmDataFilename,
                                sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
             {
                 ALICEVISION_LOG_INFO("SfMData loaded from " << querySfmDataFilename << " containing: ");

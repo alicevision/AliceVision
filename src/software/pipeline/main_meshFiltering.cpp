@@ -13,7 +13,8 @@
 #include <aliceVision/mvsUtils/common.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -22,7 +23,7 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 enum class ESubsetType : unsigned char
@@ -116,33 +117,36 @@ int aliceVision_main(int argc, char* argv[])
     double filterLargeTrianglesFactor = 60.0;
     double filterTrianglesRatio = 0.0;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputMesh,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh")
+         "Input mesh.")
         ("outputMesh,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh");
+         "Output mesh.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("keepLargestMeshOnly", po::value<bool>(&keepLargestMeshOnly)->default_value(keepLargestMeshOnly),
-            "Keep only the largest connected triangles group.")
+         "Keep only the largest connected triangles group.")
         ("smoothingSubset",po::value<std::string>(&smoothingSubsetTypeName)->default_value(smoothingSubsetTypeName),
-            ESubsetType_informations().c_str())
+         ESubsetType_informations().c_str())
         ("smoothingBoundariesNeighbours", po::value<int>(&smoothingBoundariesNeighbours)->default_value(smoothingBoundariesNeighbours),
-            "Neighbours of the boudaries to consider.")
+         "Neighbours of the boudaries to consider.")
         ("smoothingIterations", po::value<int>(&smoothNIter)->default_value(smoothNIter),
-            "Number of smoothing iterations.")
+         "Number of smoothing iterations.")
         ("smoothingLambda", po::value<float>(&lambda)->default_value(lambda),
-            "Smoothing size.")
+         "Smoothing size.")
         ("filteringSubset",po::value<std::string>(&filteringSubsetTypeName)->default_value(filteringSubsetTypeName),
-            ESubsetType_informations().c_str())
+         ESubsetType_informations().c_str())
         ("filteringIterations", po::value<int>(&filteringIterations)->default_value(filteringIterations),
-            "Number of mesh filtering iterations.")
+         "Number of mesh filtering iterations.")
         ("filterLargeTrianglesFactor", po::value<double>(&filterLargeTrianglesFactor)->default_value(filterLargeTrianglesFactor),
-            "Remove all large triangles. We consider a triangle as large if one edge is bigger than N times the average edge length. Put zero to disable it.")
+         "Remove all large triangles. We consider a triangle as large if one edge is bigger than N times the average "
+         "edge length. Set to 0 to disable it.")
         ("filterTrianglesRatio", po::value<double>(&filterTrianglesRatio)->default_value(filterTrianglesRatio),
-            "Remove all triangles by ratio (largest edge /smallest edge). Put zero to disable it.");
+         "Remove all triangles by ratio (largest edge /smallest edge). Set to 0 to disable it.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision meshFiltering");
     cmdline.add(requiredParams);
@@ -158,9 +162,9 @@ int aliceVision_main(int argc, char* argv[])
     // check and set filtering subset type
     const ESubsetType filteringSubsetType = ESubsetType_stringToEnum(filteringSubsetTypeName);
 
-    bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    fs::path outDirectory = fs::path(outputMeshPath).parent_path();
+    if(!fs::is_directory(outDirectory))
+        fs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
     texturing.loadWithAtlas(inputMeshPath);

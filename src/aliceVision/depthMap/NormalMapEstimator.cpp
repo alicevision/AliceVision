@@ -15,9 +15,9 @@
 #include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace depthMap {
@@ -57,8 +57,8 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             mvsUtils::readMap(rc, _mp, mvsUtils::EFileType::depthMapFiltered, in_depthMap);
 
             // get input depth map width / height
-            const int width = in_depthMap.Width();
-            const int height = in_depthMap.Height();
+            const int width = in_depthMap.width();
+            const int height = in_depthMap.height();
 
             // default tile parameters, no tiles
             const mvsUtils::TileParams tileParams;

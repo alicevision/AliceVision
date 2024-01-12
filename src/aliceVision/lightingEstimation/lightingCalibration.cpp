@@ -16,7 +16,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -25,9 +24,10 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 
+#include <filesystem>
 #include <math.h>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace bpt = boost::property_tree;
 
 namespace aliceVision {
@@ -203,8 +203,8 @@ void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::
     Eigen::VectorXf kernel(2 * kernelSize + 1);
     createTriangleKernel(kernelSize, kernel);
 
-    image::ImageVerticalConvolution(patch, kernel, convolutedPatch1);
-    image::ImageHorizontalConvolution(convolutedPatch1, kernel, convolutedPatch2);
+    image::imageVerticalConvolution(patch, kernel, convolutedPatch1);
+    image::imageHorizontalConvolution(convolutedPatch1, kernel, convolutedPatch2);
 
     Eigen::Index maxRow, maxCol;
     static_cast<void>(convolutedPatch2.maxCoeff(&maxRow, &maxCol));

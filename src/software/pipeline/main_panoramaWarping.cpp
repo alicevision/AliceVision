@@ -6,7 +6,6 @@
 
 // Reading command line options
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
@@ -23,6 +22,8 @@
 #include <aliceVision/panorama/warper.hpp>
 #include <aliceVision/panorama/distance.hpp>
 
+#include <filesystem>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -31,7 +32,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData::SfMData& sfmData,
                                 const float ratioUpscale)
@@ -112,25 +113,32 @@ int aliceVision_main(int argc, char** argv)
 
     // Program description
     // Description of mandatory parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")(
-        "output,o", po::value<std::string>(&outputDirectory)->required(), "Path of the output folder.");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputDirectory)->required(),
+         "Path of the output folder.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()("panoramaWidth,w",
-                                 po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first),
-                                 "Panorama Width in pixels.")(
-        "maxPanoramaWidth", po::value<int>(&maxPanoramaWidth)->default_value(maxPanoramaWidth),
-        "Max Panorama Width in pixels.")("percentUpscale",
-                                         po::value<int>(&percentUpscale)->default_value(percentUpscale),
-                                         "Percentage of upscaled pixels.")(
-        "workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
-        ("Output color space: " + image::EImageColorSpace_informations()).c_str())(
-        "storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-        ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
-        "rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-        "Range image index start.")("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
+    optionalParams.add_options()
+        ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first),
+         "Panorama width in pixels.")
+        ("maxPanoramaWidth", po::value<int>(&maxPanoramaWidth)->default_value(maxPanoramaWidth),
+         "Maximum panorama width in pixels.")
+        ("percentUpscale", po::value<int>(&percentUpscale)->default_value(percentUpscale),
+         "Percentage of upscaled pixels.")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+         ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+         "Range image index start.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+         "Range size.");
+    // clang-format on
 
     CmdLine cmdline("Warps the input images in the panorama coordinate system.\n"
                     "AliceVision panoramaWarping");
@@ -161,7 +169,7 @@ int aliceVision_main(int argc, char** argv)
     // Camera intrinsics
     // Camera extrinsics
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename,
+    if(!sfmDataIO::load(sfmData, sfmDataFilename,
                         sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
@@ -552,7 +560,7 @@ int aliceVision_main(int argc, char** argv)
             out_mask->open(maskFilepath, spec_mask);
             out_weights->open(weightFilepath, spec_weights);
 
-            GaussianPyramidNoMask pyramid(source.Width(), source.Height());
+            GaussianPyramidNoMask pyramid(source.width(), source.height());
             if(!pyramid.process(source))
             {
                 ALICEVISION_LOG_ERROR("Problem creating pyramid.");

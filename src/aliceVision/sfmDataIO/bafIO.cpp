@@ -7,11 +7,10 @@
 
 #include "bafIO.hpp"
 
-#include <boost/filesystem.hpp>
-
+#include <filesystem>
 #include <fstream>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -67,13 +66,13 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
             // X Y Z #observations id_cam id_pose x y ...
             const double* X = iterLandmarks->second.X.data();
             std::copy(X, X + 3, std::ostream_iterator<double>(stream, " "));
-            const sfmData::Observations& observations = iterLandmarks->second.observations;
+            const sfmData::Observations& observations = iterLandmarks->second.getObservations();
             stream << observations.size() << " ";
             for (sfmData::Observations::const_iterator iterOb = observations.begin(); iterOb != observations.end(); ++iterOb)
             {
                 const IndexT id_view = iterOb->first;
                 const sfmData::View* v = sfmData.getViews().at(id_view).get();
-                stream << v->getIntrinsicId() << ' ' << v->getPoseId() << ' ' << iterOb->second.x(0) << ' ' << iterOb->second.x(1) << ' ';
+                stream << v->getIntrinsicId() << ' ' << v->getPoseId() << ' ' << iterOb->second.getX() << ' ' << iterOb->second.getY() << ' ';
             }
             stream << '\n';
         }

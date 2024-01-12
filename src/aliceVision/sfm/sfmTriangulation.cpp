@@ -20,15 +20,15 @@ namespace sfm {
 using namespace aliceVision::geometry;
 using namespace aliceVision::camera;
 
-StructureComputation_basis::StructureComputation_basis(bool verbose)
+StructureComputationBasis::StructureComputationBasis(bool verbose)
   : _bConsoleVerbose(verbose)
 {}
 
-StructureComputation_blind::StructureComputation_blind(bool verbose)
-  : StructureComputation_basis(verbose)
+StructureComputationBlind::StructureComputationBlind(bool verbose)
+  : StructureComputationBasis(verbose)
 {}
 
-void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt19937& randomNumberGenerator) const
+void StructureComputationBlind::triangulate(sfmData::SfMData& sfmData, std::mt19937& randomNumberGenerator) const
 {
     std::deque<IndexT> rejectedId;
     system::ProgressDisplay progressDisplay;
@@ -46,7 +46,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
             }
             // Triangulate each landmark
             multiview::Triangulation trianObj;
-            const sfmData::Observations& observations = iterTracks->second.observations;
+            const sfmData::Observations& observations = iterTracks->second.getObservations();
             for (const auto& itObs : observations)
             {
                 const sfmData::View* view = sfmData.getViews().at(itObs.first).get();
@@ -61,7 +61,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
                     }
 
                     const Pose3 pose = sfmData.getPose(*view).getTransform();
-                    trianObj.add(pinHoleCam->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs.second.x));
+                    trianObj.add(pinHoleCam->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs.second.getCoordinates()));
                 }
             }
             if (trianObj.size() < 2)
@@ -96,19 +96,19 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
     }
 }
 
-StructureComputation_robust::StructureComputation_robust(bool verbose)
-  : StructureComputation_basis(verbose)
+StructureComputationRobust::StructureComputationRobust(bool verbose)
+  : StructureComputationBasis(verbose)
 {}
 
-void StructureComputation_robust::triangulate(sfmData::SfMData& sfmData, std::mt19937& randomNumberGenerator) const
+void StructureComputationRobust::triangulate(sfmData::SfMData& sfmData, std::mt19937& randomNumberGenerator) const
 {
-    robust_triangulation(sfmData, randomNumberGenerator);
+    robustTriangulation(sfmData, randomNumberGenerator);
 }
 
 /// Robust triangulation of track data contained in the structure
 /// All observations must have View with valid Intrinsic and Pose data
 /// Invalid landmark are removed.
-void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData, std::mt19937& randomNumberGenerator) const
+void StructureComputationRobust::robustTriangulation(sfmData::SfMData& sfmData, std::mt19937& randomNumberGenerator) const
 {
     std::deque<IndexT> rejectedId;
 
@@ -126,7 +126,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
                 ++(progressDisplay);
             }
             Vec3 X;
-            if (robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X))
+            if (robustTriangulation(sfmData, iterTracks->second.getObservations(), randomNumberGenerator, X))
             {
                 iterTracks->second.X = X;
             }
@@ -150,12 +150,12 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
 /// Robustly try to estimate the best 3D point using a ransac Scheme
 /// A point must be seen in at least 3 views
 /// Return true for a successful triangulation
-bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& sfmData,
-                                                       const sfmData::Observations& observations,
-                                                       std::mt19937& randomNumberGenerator,
-                                                       Vec3& X,
-                                                       const IndexT min_required_inliers,
-                                                       const IndexT min_sample_index) const
+bool StructureComputationRobust::robustTriangulation(const sfmData::SfMData& sfmData,
+                                                     const sfmData::Observations& observations,
+                                                     std::mt19937& randomNumberGenerator,
+                                                     Vec3& X,
+                                                     const IndexT minRequiredInliers,
+                                                     const IndexT minSampleIndex) const
 {
     if (observations.size() < 3)
     {
@@ -167,19 +167,19 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
     const IndexT nbIter = observations.size();  // TODO: automatic computation of the number of iterations?
 
     // - Ransac variables
-    Vec3 best_model;
-    std::set<IndexT> best_inlier_set;
-    double best_error = std::numeric_limits<double>::max();
+    Vec3 bestModel;
+    std::set<IndexT> bestInlierSet;
+    double bestError = std::numeric_limits<double>::max();
 
     // - Ransac loop
     for (IndexT i = 0; i < nbIter; ++i)
     {
         std::set<IndexT> samples;
         robustEstimation::uniformSample(
-          randomNumberGenerator, std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
+          randomNumberGenerator, std::min(std::size_t(minSampleIndex), observations.size()), observations.size(), samples);
 
         // Hypothesis generation.
-        const Vec3 current_model = track_sample_triangulation(sfmData, observations, samples);
+        const Vec3 currentModel = trackSampleTriangulation(sfmData, observations, samples);
 
         // Test validity of the hypothesis
         // - chierality (for the samples)
@@ -195,15 +195,15 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
             const sfmData::View* view = sfmData.getViews().at(itObs->first).get();
             const IntrinsicBase* cam = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
             const Pose3 pose = sfmData.getPose(*view).getTransform();
-            const double z = pose.depth(current_model);  // TODO: cam->depth(pose(X));
+            const double z = pose.depth(currentModel);  // TODO: cam->depth(pose(X));
             bChierality &= z > 0;
         }
 
         if (!bChierality)
             continue;
 
-        std::set<IndexT> inlier_set;
-        double current_error = 0.0;
+        std::set<IndexT> inlierSet;
+        double currentError = 0.0;
 
         // Classification as inlier/outlier according pixel residual errors.
         for (const auto& itObs : observations)
@@ -211,34 +211,34 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
             const sfmData::View* view = sfmData.getViews().at(itObs.first).get();
             const IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
             const Pose3 pose = sfmData.getPose(*view).getTransform();
-            const Vec2 residual = intrinsic->residual(pose, current_model.homogeneous(), itObs.second.x);
-            const double residual_d = residual.norm();
+            const Vec2 residual = intrinsic->residual(pose, currentModel.homogeneous(), itObs.second.getCoordinates());
+            const double residualNorm = residual.norm();
 
-            if (residual_d < dThresholdPixel)
+            if (residualNorm < dThresholdPixel)
             {
-                inlier_set.insert(itObs.first);
-                current_error += residual_d;
+                inlierSet.insert(itObs.first);
+                currentError += residualNorm;
             }
             else
             {
-                current_error += dThresholdPixel;
+                currentError += dThresholdPixel;
             }
         }
         // Does the hypothesis is the best one we have seen and have sufficient inliers.
-        if (current_error < best_error && inlier_set.size() >= min_required_inliers)
+        if (currentError < bestError && inlierSet.size() >= minRequiredInliers)
         {
-            X = best_model = current_model;
-            best_inlier_set = inlier_set;
-            best_error = current_error;
+            X = bestModel = currentModel;
+            bestInlierSet = inlierSet;
+            bestError = currentError;
         }
     }
-    return !best_inlier_set.empty();
+    return !bestInlierSet.empty();
 }
 
 /// Triangulate a given track from a selection of observations
-Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMData& sfmData,
-                                                             const sfmData::Observations& observations,
-                                                             const std::set<IndexT>& samples) const
+Vec3 StructureComputationRobust::trackSampleTriangulation(const sfmData::SfMData& sfmData,
+                                                          const sfmData::Observations& observations,
+                                                          const std::set<IndexT>& samples) const
 {
     multiview::Triangulation trianObj;
     for (const IndexT idx : samples)
@@ -257,7 +257,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMD
         }
 
         const Pose3 pose = sfmData.getPose(*view).getTransform();
-        trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs->second.x));
+        trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs->second.getCoordinates()));
     }
     return trianObj.compute();
 }

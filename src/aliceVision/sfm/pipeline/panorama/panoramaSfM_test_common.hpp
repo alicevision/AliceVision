@@ -123,8 +123,8 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase>& intrinsic_gt,
     params.eRelativeRotationMethod = sfm::RELATIVE_ROTATION_FROM_R;
 
     sfm::ReconstructionEngine_panorama pano(sfmdata, params, "");
-    pano.SetFeaturesProvider(&fpv);
-    pano.SetMatchesProvider(&matches);
+    pano.setFeaturesProvider(&fpv);
+    pano.setMatchesProvider(&matches);
 
     if (!pano.process())
     {
@@ -132,7 +132,7 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase>& intrinsic_gt,
         return;
     }
 
-    if (!pano.Adjust())
+    if (!pano.adjust())
     {
         BOOST_TEST_FAIL("Panorama adjustment failed");
         return;

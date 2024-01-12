@@ -213,7 +213,7 @@ void StructureEstimationFromKnownPoses::filter(const SfMData& sfmData, const Pai
                         for (auto iter = subTrack.featPerView.begin(); iter != subTrack.featPerView.end(); ++iter)
                         {
                             const size_t imaIndex = iter->first;
-                            const size_t featIndex = iter->second;
+                            const size_t featIndex = iter->second.featureId;
                             const View* view = sfmData.getViews().at(imaIndex).get();
 
                             std::shared_ptr<camera::IntrinsicBase> cam = sfmData.getIntrinsics().at(view->getIntrinsicId());
@@ -239,9 +239,9 @@ void StructureEstimationFromKnownPoses::filter(const SfMData& sfmData, const Pai
                                 std::advance(iterJ, 1);
                                 std::advance(iterK, 2);
 
-                                _tripletMatches[std::make_pair(I, J)][subTrack.descType].emplace_back(iterI->second, iterJ->second);
-                                _tripletMatches[std::make_pair(J, K)][subTrack.descType].emplace_back(iterJ->second, iterK->second);
-                                _tripletMatches[std::make_pair(I, K)][subTrack.descType].emplace_back(iterI->second, iterK->second);
+                                _tripletMatches[std::make_pair(I, J)][subTrack.descType].emplace_back(iterI->second.featureId, iterJ->second.featureId);
+                                _tripletMatches[std::make_pair(J, K)][subTrack.descType].emplace_back(iterJ->second.featureId, iterK->second.featureId);
+                                _tripletMatches[std::make_pair(I, K)][subTrack.descType].emplace_back(iterI->second.featureId, iterK->second.featureId);
                             }
                         }
                     }
@@ -275,11 +275,11 @@ void StructureEstimationFromKnownPoses::triangulate(SfMData& sfmData,
     {
         const track::Track& track = itTracks->second;
         structure[idx] = Landmark(track.descType);
-        Observations& observations = structure.at(idx).observations;
+        Observations& observations = structure.at(idx).getObservations();
         for (auto it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
         {
             const size_t imaIndex = it->first;
-            const size_t featIndex = it->second;
+            const size_t featIndex = it->second.featureId;
             const feature::Regions& regions = regionsPerView.getRegions(imaIndex, track.descType);
             const feature::PointFeature& feat = regions.Features()[featIndex];
 
@@ -288,7 +288,7 @@ void StructureEstimationFromKnownPoses::triangulate(SfMData& sfmData,
     }
 
     // Triangulate them using a robust triangulation scheme
-    StructureComputation_robust structure_estimator(true);
+    StructureComputationRobust structure_estimator(true);
     structure_estimator.triangulate(sfmData, randomNumberGenerator);
 }
 

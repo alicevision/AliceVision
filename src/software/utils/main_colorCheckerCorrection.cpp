@@ -15,7 +15,6 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -25,6 +24,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/mcc.hpp>
 
+#include <filesystem>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -37,7 +37,7 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
@@ -140,22 +140,24 @@ int aliceVision_main(int argc, char** argv)
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string outputPath;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputExpression)->default_value(inputExpression),
-        "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a "
-        "single digit, '@' one or more digits, '?' one character and '*' zero or more).")(
-        "inputData", po::value<std::string>(&inputData)->default_value(inputData),
-        "Position and colorimetric data extracted from detected color checkers in the images")
+         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a "
+         "single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+        ("inputData", po::value<std::string>(&inputData)->default_value(inputData),
+         "Position and colorimetric data extracted from detected color checkers in the images.")
         ("output,o", po::value<std::string>(&outputPath)->required(),
-         "Output folder.")
-        ;
+         "Output folder.");
 
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-        ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
-        "extension", po::value<std::string>(&extension)->default_value(extension),
+    optionalParams.add_options()
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the original source file format.");
+    // clang-format on
 
     CmdLine cmdline("This program is used to perform color correction based on a color checker.\n"
                     "AliceVision colorCheckerCorrection");
@@ -199,7 +201,7 @@ int aliceVision_main(int argc, char** argv)
                                                  inputExt) != sfmSupportedExtensions.end())
         {
             sfmData::SfMData sfmData;
-            if(!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::VIEWS))
+            if(!sfmDataIO::load(sfmData, inputExpression, sfmDataIO::VIEWS))
             {
                 ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
                 return EXIT_FAILURE;
@@ -249,14 +251,14 @@ int aliceVision_main(int argc, char** argv)
 
                 // Update sfmdata view for this modification
                 view.getImage().setImagePath(outputfilePath);
-                view.getImage().setWidth(image.Width());
-                view.getImage().setHeight(image.Height());
+                view.getImage().setWidth(image.width());
+                view.getImage().setHeight(image.height());
             }
 
             // Save sfmData with modified path to images
             const std::string sfmfilePath =
                 (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
-            if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+            if(!sfmDataIO::save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
             {
                 ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
 
@@ -280,7 +282,7 @@ int aliceVision_main(int argc, char** argv)
                 const std::regex regex = utils::filterToRegex(inputExpression);
                 // Get supported files in inputPath directory which matches our regex filter
                 filesStrPaths = utils::getFilesPathsFromFolder(
-                    inputPath.parent_path().generic_string(), [&regex](const boost::filesystem::path& path) {
+                    inputPath.parent_path().generic_string(), [&regex](const fs::path& path) {
                         return image::isSupported(path.extension().string()) &&
                                std::regex_match(path.generic_string(), regex);
                     });

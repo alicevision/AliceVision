@@ -58,7 +58,7 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
         viewTree.add_child("metadata", metadataTree);
     }
 
-    // ancestors
+    // ancestor images
     if (!view.getAncestors().empty())
     {
         bpt::ptree ancestorsTree;
@@ -107,6 +107,40 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
     if (viewTree.count("metadata"))
         for (bpt::ptree::value_type& metaDataNode : viewTree.get_child("metadata"))
             view.getImage().addMetadata(metaDataNode.first, metaDataNode.second.data());
+}
+
+void saveAncestor(const std::string& name, IndexT ancestorId, const std::shared_ptr<sfmData::ImageInfo>& ancestor, bpt::ptree& parentTree)
+{
+    bpt::ptree ancestorImageTree;
+    ancestorImageTree.put("ancestorId", ancestorId);
+    ancestorImageTree.put("path", ancestor->getImagePath());
+    ancestorImageTree.put("width", ancestor->getWidth());
+    ancestorImageTree.put("height", ancestor->getHeight());
+
+    // metadata
+    {
+        bpt::ptree metadataTree;
+
+        for (const auto& metadataPair : ancestor->getMetadata())
+            metadataTree.put(metadataPair.first, metadataPair.second);
+
+        ancestorImageTree.add_child("metadata", metadataTree);
+    }
+
+    parentTree.push_back(std::make_pair(name, ancestorImageTree));
+}
+
+void loadAncestor(IndexT& ancestorId, std::shared_ptr<sfmData::ImageInfo>& ancestor, bpt::ptree& ancestorTree)
+{
+    ancestorId = ancestorTree.get<IndexT>("ancestorId");
+    ancestor->setImagePath(ancestorTree.get<std::string>("path"));
+    ancestor->setWidth(ancestorTree.get<size_t>("width"));
+    ancestor->setHeight(ancestorTree.get<size_t>("height"));
+
+    // metadata
+    if (ancestorTree.count("metadata"))
+        for (bpt::ptree::value_type& metaDataNode : ancestorTree.get_child("metadata"))
+            ancestor->addMetadata(metaDataNode.first, metaDataNode.second.data());
 }
 
 void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::shared_ptr<camera::IntrinsicBase>& intrinsic, bpt::ptree& parentTree)
@@ -308,22 +342,6 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
 
         intrinsicWithDistoEnabled->setDistortionInitializationMode(distortionInitializationMode);
 
-        std::shared_ptr<camera::Distortion> distortionObject = intrinsicWithDistoEnabled->getDistortion();
-        if (distortionObject)
-        {
-            std::vector<double> distortionParams;
-            for (bpt::ptree::value_type& paramNode : intrinsicTree.get_child("distortionParams"))
-            {
-                distortionParams.emplace_back(paramNode.second.get_value<double>());
-            }
-
-            // ensure that we have the right number of params
-            if (distortionParams.size() == distortionObject->getParameters().size())
-            {
-                distortionObject->setParameters(distortionParams);
-            }
-        }
-
         std::shared_ptr<camera::Undistortion> undistortionObject = intrinsicWithDistoEnabled->getUndistortion();
         if (undistortionObject)
         {
@@ -340,6 +358,25 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
                 Vec2 offset;
                 loadMatrix("undistortionOffset", offset, intrinsicTree);
                 undistortionObject->setOffset(offset);
+            }
+
+            // If undistortion exists, distortion does not
+            intrinsicWithDistoEnabled->setDistortionObject(nullptr);
+        }
+
+        std::shared_ptr<camera::Distortion> distortionObject = intrinsicWithDistoEnabled->getDistortion();
+        if (distortionObject)
+        {
+            std::vector<double> distortionParams;
+            for (bpt::ptree::value_type& paramNode : intrinsicTree.get_child("distortionParams"))
+            {
+                distortionParams.emplace_back(paramNode.second.get_value<double>());
+            }
+
+            // ensure that we have the right number of params
+            if (distortionParams.size() == distortionObject->getParameters().size())
+            {
+                distortionObject->setParameters(distortionParams);
             }
         }
     }
@@ -415,7 +452,7 @@ void saveLandmark(const std::string& name,
     if (saveObservations)
     {
         bpt::ptree observationsTree;
-        for (const auto& obsPair : landmark.observations)
+        for (const auto& obsPair : landmark.getObservations())
         {
             bpt::ptree obsTree;
 
@@ -426,9 +463,9 @@ void saveLandmark(const std::string& name,
             // features
             if (saveFeatures)
             {
-                obsTree.put("featureId", observation.id_feat);
-                saveMatrix("x", observation.x, obsTree);
-                obsTree.put("scale", observation.scale);
+                obsTree.put("featureId", observation.getFeatureId());
+                saveMatrix("x", observation.getCoordinates(), obsTree);
+                obsTree.put("scale", observation.getScale());
             }
 
             observationsTree.push_back(std::make_pair("", obsTree));
@@ -459,12 +496,12 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
 
             if (loadFeatures)
             {
-                observation.id_feat = obsTree.get<IndexT>("featureId");
-                loadMatrix("x", observation.x, obsTree);
-                observation.scale = obsTree.get<double>("scale", 0.0);
+                observation.setFeatureId(obsTree.get<IndexT>("featureId"));
+                loadMatrix("x", observation.getCoordinates(), obsTree);
+                observation.setScale(obsTree.get<double>("scale", 0.0));
             }
 
-            landmark.observations.emplace(obsTree.get<IndexT>("observationId"), observation);
+            landmark.getObservations().emplace(obsTree.get<IndexT>("observationId"), observation);
         }
     }
 }
@@ -475,6 +512,7 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
 
     // save flags
     const bool saveViews = (partFlag & VIEWS) == VIEWS;
+    const bool saveAncestors = (partFlag & ANCESTORS) == ANCESTORS;
     const bool saveIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
     const bool saveExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
     const bool saveStructure = (partFlag & STRUCTURE) == STRUCTURE;
@@ -525,6 +563,17 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
             saveView("", *(viewPair.second), viewsTree);
 
         fileTree.add_child("views", viewsTree);
+    }
+
+    // ancestors
+    if (saveAncestors && !sfmData.getAncestors().empty())
+    {
+        bpt::ptree ancestorsTree;
+
+        for (const auto& ancestorPair : sfmData.getAncestors())
+            saveAncestor(std::to_string(ancestorPair.first), ancestorPair.first, ancestorPair.second, ancestorsTree);
+
+        fileTree.add_child("ancestors", ancestorsTree);
     }
 
     // intrinsics
@@ -599,6 +648,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
 
     // load flags
     const bool loadViews = (partFlag & VIEWS) == VIEWS;
+    const bool loadAncestors = (partFlag & ANCESTORS) == ANCESTORS;
     const bool loadIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
     const bool loadExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
     const bool loadStructure = (partFlag & STRUCTURE) == STRUCTURE;
@@ -640,6 +690,23 @@ bool loadJSON(sfmData::SfMData& sfmData,
             loadIntrinsic(version, intrinsicId, intrinsic, intrinsicNode.second);
 
             intrinsics.emplace(intrinsicId, intrinsic);
+        }
+    }
+
+    // ancestors
+    if (loadAncestors && fileTree.count("ancestors"))
+    {
+        sfmData::ImageInfos& ancestors = sfmData.getAncestors();
+
+        for (bpt::ptree::value_type& ancestorNode : fileTree.get_child("ancestors"))
+        {
+            IndexT ancestorId;
+            sfmData::ImageInfo img;
+            std::shared_ptr<sfmData::ImageInfo> ancestor = std::make_shared<sfmData::ImageInfo>(img);
+
+            loadAncestor(ancestorId, ancestor, ancestorNode.second);
+
+            ancestors.emplace(ancestorId, ancestor);
         }
     }
 

@@ -29,10 +29,10 @@
 
 #include <flann/algorithms/dist.h>
 
-#include <boost/filesystem.hpp>
 
 #include <algorithm>
 #include <chrono>
+#include <filesystem>
 
 namespace aliceVision {
 namespace localization {
@@ -205,8 +205,8 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
         else
         {
             // image descriptor can't use float image
-            if (imageGrayUChar.Width() == 0)  // the first time, convert the float buffer to uchar
-                imageGrayUChar = (imageGrey.GetMat() * 255.f).cast<unsigned char>();
+            if (imageGrayUChar.width() == 0)  // the first time, convert the float buffer to uchar
+                imageGrayUChar = (imageGrey.getMat() * 255.f).cast<unsigned char>();
             imageDescriber->describe(imageGrayUChar, queryRegions, nullptr);
         }
 
@@ -214,7 +214,7 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
                                                      << queryRegions->RegionCount() << " features in " << timer.elapsedMs() << " [ms]");
     }
 
-    const std::pair<std::size_t, std::size_t> queryImageSize = std::make_pair(imageGrey.Width(), imageGrey.Height());
+    const std::pair<std::size_t, std::size_t> queryImageSize = std::make_pair(imageGrey.width(), imageGrey.height());
 
     // if debugging is enable save the svg image with the extracted features
     if (!param->_visualDebug.empty() && !imagePath.empty())
@@ -227,9 +227,9 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
             extractedFeatures[descType] = queryRegionsPerDesc.at(descType)->GetRegionsPositions();
         }
 
-        namespace bfs = boost::filesystem;
+        namespace fs = std::filesystem;
         matching::saveFeatures2SVG(
-          imagePath, queryImageSize, extractedFeatures, param->_visualDebug + "/" + bfs::path(imagePath).stem().string() + ".svg");
+          imagePath, queryImageSize, extractedFeatures, param->_visualDebug + "/" + fs::path(imagePath).stem().string() + ".svg");
     }
 
     return localize(
@@ -286,11 +286,11 @@ bool VoctreeLocalizer::initDatabase(const std::string& vocTreeFilepath, const st
         IndexT trackId = landmarkValue.first;
         const sfmData::Landmark& landmark = landmarkValue.second;
 
-        for (const auto& obs : landmark.observations)
+        for (const auto& obs : landmark.getObservations())
         {
             const IndexT viewId = obs.first;
             const sfmData::Observation& obs2d = obs.second;
-            observationsPerView[viewId][landmark.descType].emplace_back(obs2d.id_feat, trackId);
+            observationsPerView[viewId][landmark.descType].emplace_back(obs2d.getFeatureId(), trackId);
         }
     }
     for (auto& featuresPerTypeInImage : observationsPerView)
@@ -461,10 +461,10 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
 
         if (!param._visualDebug.empty() && !imagePath.empty())
         {
-            namespace bfs = boost::filesystem;
+            namespace fs = std::filesystem;
             const sfmData::View* mview = _sfm_data.getViews().at(matchedViewId).get();
-            const std::string queryimage = bfs::path(imagePath).stem().string();
-            const std::string matchedImage = bfs::path(mview->getImage().getImagePath()).stem().string();
+            const std::string queryimage = fs::path(imagePath).stem().string();
+            const std::string matchedImage = fs::path(mview->getImage().getImagePath()).stem().string();
             const std::string matchedPath = mview->getImage().getImagePath();
 
             matching::saveMatches2SVG(imagePath,
@@ -516,7 +516,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
         // Do the resectioning: compute the camera pose.
         resectionData.error_max = param._errorMax;
         ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-        bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
+        bool bResection = sfm::SfMLocalizer::localize(queryImageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                       randomNumberGenerator,
@@ -554,7 +554,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
 
         // D. refine the estimated pose
         ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
-        bool refineStatus = sfm::SfMLocalizer::RefinePose(
+        bool refineStatus = sfm::SfMLocalizer::refinePose(
           &queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
         if (!refineStatus)
         {
@@ -633,7 +633,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
     // Do the resectioning: compute the camera pose.
     resectionData.error_max = param._errorMax;
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-    const bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
+    const bool bResection = sfm::SfMLocalizer::localize(queryImageSize,
                                                         // pass the input intrinsic if they are valid, null otherwise
                                                         (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                         randomNumberGenerator,
@@ -646,9 +646,9 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
         ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection failed");
         if (!param._visualDebug.empty() && !imagePath.empty())
         {
-            namespace bfs = boost::filesystem;
+            namespace fs = std::filesystem;
             matching::saveFeatures2SVG(
-              imagePath, queryImageSize, resectionData.pt2D, param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg");
+              imagePath, queryImageSize, resectionData.pt2D, param._visualDebug + "/" + fs::path(imagePath).stem().string() + ".associations.svg");
         }
         localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
         return localizationResult.isValid();
@@ -678,17 +678,17 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
     // E. refine the estimated pose
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
     bool refineStatus =
-      sfm::SfMLocalizer::RefinePose(&queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
+      sfm::SfMLocalizer::refinePose(&queryIntrinsics, pose, resectionData, true /*b_refine_pose*/, param._refineIntrinsics /*b_refine_intrinsic*/);
     if (!refineStatus)
         ALICEVISION_LOG_DEBUG("Refine pose failed.");
 
     if (!param._visualDebug.empty() && !imagePath.empty())
     {
-        namespace bfs = boost::filesystem;
+        namespace fs = std::filesystem;
         matching::saveFeatures2SVG(imagePath,
                                    queryImageSize,
                                    resectionData.pt2D,
-                                   param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg",
+                                   param._visualDebug + "/" + fs::path(imagePath).stem().string() + ".associations.svg",
                                    &resectionData.vec_inliers);
     }
 
@@ -833,21 +833,21 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc& quer
         // param._visualDebug/queryImage/
         if (!param._visualDebug.empty() && !imagePath.empty())
         {
-            namespace bfs = boost::filesystem;
+            namespace fs = std::filesystem;
             const sfmData::View* mview = _sfm_data.getViews().at(matchedViewId).get();
             // the current query image without extension
-            const auto queryImage = bfs::path(imagePath).stem();
+            const auto queryImage = fs::path(imagePath).stem();
             // the matching image without extension
-            const auto matchedImage = bfs::path(mview->getImage().getImagePath()).stem();
+            const auto matchedImage = fs::path(mview->getImage().getImagePath()).stem();
             // the full path of the matching image
             const auto matchedPath = mview->getImage().getImagePath();
 
             // the directory where to save the feature matches
-            const auto baseDir = bfs::path(param._visualDebug) / queryImage;
-            if ((!bfs::exists(baseDir)))
+            const auto baseDir = fs::path(param._visualDebug) / queryImage;
+            if ((!fs::exists(baseDir)))
             {
                 ALICEVISION_LOG_DEBUG("created " << baseDir.string());
-                bfs::create_directories(baseDir);
+                fs::create_directories(baseDir);
             }
 
             // damn you, boost, what does it take to make the operator "+"?
@@ -1149,7 +1149,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<float>>& vec_i
     for (size_t i = 0; i < numCams; ++i)
     {
         // add the image size for this image
-        vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
+        vec_imageSize.emplace_back(vec_imageGrey[i].width(), vec_imageGrey[i].height());
 
         image::Image<unsigned char> imageGrayUChar;  // uchar image copy for uchar image describer
 
@@ -1167,8 +1167,8 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<float>>& vec_i
             else
             {
                 // image descriptor can't use float image
-                if (imageGrayUChar.Width() == 0)  // the first time, convert the float buffer to uchar
-                    imageGrayUChar = (vec_imageGrey.at(i).GetMat() * 255.f).cast<unsigned char>();
+                if (imageGrayUChar.width() == 0)  // the first time, convert the float buffer to uchar
+                    imageGrayUChar = (vec_imageGrey.at(i).getMat() * 255.f).cast<unsigned char>();
                 imageDescriber->describe(imageGrayUChar, vec_queryRegions[i][imageDescriber->getDescriberType()]);
             }
             ALICEVISION_LOG_DEBUG("[features]\tExtract done: found " << vec_queryRegions[i][imageDescriber->getDescriberType()]->RegionCount()

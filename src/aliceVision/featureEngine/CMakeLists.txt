@@ -16,6 +16,4 @@ alicevision_add_library(aliceVision_featureEngine
     aliceVision_image
     aliceVision_sfmData
     aliceVision_system
-  PRIVATE_LINKS
-    Boost::filesystem
 )

@@ -54,20 +54,30 @@ int aliceVision_main(int argc, char** argv)
   std::uint32_t LEVELS = 6;
   bool sanityCheck = true;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "a SfMData file.")
-    ("weights,w", po::value<std::string>(&weightName)->required(), "Output name for the weight file")
-    ("tree,t", po::value<std::string>(&treeName)->required(), "Output name for the tree file");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "A SfMData file.")
+        ("weights,w", po::value<std::string>(&weightName)->required(),
+         "Output name for the weight file.")
+        ("tree,t", po::value<std::string>(&treeName)->required(),
+         "Output name for the tree file.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
-      "Path to folder(s) containing the extracted features.")
-    (",k", po::value<uint32_t>(&K)->default_value(10), "The branching factor of the tree")
-    ("restart,r", po::value<uint32_t>(&restart)->default_value(5), "Number of times that the kmean is launched for each cluster, the best solution is kept")
-    (",L", po::value<uint32_t>(&LEVELS)->default_value(6), "Number of levels of the tree")
-    ("sanitycheck,s", po::value<bool>(&sanityCheck)->default_value(sanityCheck), "Perform a sanity check at the end of the creation of the vocabulary tree. The sanity check is a query to the database with the same documents/images useed to train the vocabulary tree");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features.")
+        (",k", po::value<uint32_t>(&K)->default_value(10),
+         "The branching factor of the tree.")
+        ("restart,r", po::value<uint32_t>(&restart)->default_value(5),
+         "Number of times that the kmean is launched for each cluster, the best solution is kept.")
+        (",L", po::value<uint32_t>(&LEVELS)->default_value(6),
+         "Number of levels of the tree.")
+        ("sanitycheck,s", po::value<bool>(&sanityCheck)->default_value(sanityCheck),
+         "Perform a sanity check at the end of the creation of the vocabulary tree. "
+         "The sanity check is a query to the database with the same documents/images useed to train the vocabulary tree.");
+    // clang-format on
 
   CmdLine cmdline("This program is used to load the sift descriptors from a SfMData file and create a vocabulary tree.\n"
                   "It takes as input either a list.txt file containing a simple list of images (bundler format and older AliceVision version format)\n"
@@ -82,7 +92,7 @@ int aliceVision_main(int argc, char** argv)
 
   // load SfMData
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;

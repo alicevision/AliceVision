@@ -31,7 +31,6 @@ alicevision_add_library(aliceVision_calibration
     aliceVision_image
     aliceVision_system
     aliceVision_dataio
-    Boost::filesystem
     Boost::program_options
     Boost::boost
     Boost::json

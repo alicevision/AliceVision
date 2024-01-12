@@ -49,7 +49,7 @@ void colorizeTracks(SfMData& sfmData)
         std::map<IndexT, std::size_t> viewsCardinalMap;  // <ViewId, Cardinal>
         for (const auto& landmarkPair : sfmData.getLandmarks())
         {
-            const Observations& observations = landmarkPair.second.observations;
+            const Observations& observations = landmarkPair.second.getObservations();
             for (const auto& observationPair : observations)
                 ++viewsCardinalMap[observationPair.first];  // TODO: 0
         }
@@ -72,8 +72,8 @@ void colorizeTracks(SfMData& sfmData)
         for (int i = 0; i < remainingLandmarksToColor.size(); ++i)
         {
             Landmark& landmark = remainingLandmarksToColor.at(i);
-            auto it = landmark.observations.find(viewId);
-            if (it != landmark.observations.end())
+            auto it = landmark.getObservations().find(viewId);
+            if (it != landmark.getObservations().end())
             {
                 viewCardinal.landmarks.push_back(landmark);
             }
@@ -110,10 +110,10 @@ void colorizeTracks(SfMData& sfmData)
             for (Landmark& landmark : viewCardinal.landmarks)
             {
                 // color the point
-                Vec2 pt = landmark.observations.at(view.getViewId()).x;
+                Vec2 pt = landmark.getObservations().at(view.getViewId()).getCoordinates();
                 // clamp the pixel position if the feature/marker center is outside the image.
-                pt.x() = clamp(pt.x(), 0.0, static_cast<double>(image.Width() - 1));
-                pt.y() = clamp(pt.y(), 0.0, static_cast<double>(image.Height() - 1));
+                pt.x() = clamp(pt.x(), 0.0, static_cast<double>(image.width() - 1));
+                pt.y() = clamp(pt.y(), 0.0, static_cast<double>(image.height() - 1));
                 landmark.rgb = image(pt.y(), pt.x());
             }
 

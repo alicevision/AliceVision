@@ -482,7 +482,8 @@ double orientationToRotationDegree(sfmData::EEXIFOrientation orientation)
         case sfmData::EEXIFOrientation::UPSIDEDOWN:  // 3
             return 180.0;
         case sfmData::EEXIFOrientation::NONE:
-        default: return 0.0;
+        default:
+            return 0.0;
     }
     return 0.0;
 }
@@ -1028,7 +1029,7 @@ void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3&
     for (auto& plandmark : sfmData.getLandmarks())
     {
         // Filter out landmarks with not enough observations
-        if (plandmark.second.observations.size() < 3)
+        if (plandmark.second.getObservations().size() < 3)
         {
             continue;
         }
@@ -1037,7 +1038,7 @@ void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3&
         // This filtering step assumes that cameras should not be underneath the ground level
         const Vec3 X = plandmark.second.X;
         bool foundUnder = false;
-        for (const auto& pObs : plandmark.second.observations)
+        for (const auto& pObs : plandmark.second.getObservations())
         {
             const IndexT viewId = pObs.first;
             const Vec3 camCenter = sfmData.getPose(sfmData.getView(viewId)).getTransform().center();

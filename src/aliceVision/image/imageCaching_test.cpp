@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(load_image_twice)
     auto img2 = cache.get<RGBAfColor>(filename);
     BOOST_CHECK_EQUAL(img1, img2);
     BOOST_CHECK_EQUAL(cache.info().nbImages, 1);
-    BOOST_CHECK_EQUAL(cache.info().contentSize, img1->MemorySize());
+    BOOST_CHECK_EQUAL(cache.info().contentSize, img1->memorySize());
     BOOST_CHECK_EQUAL(cache.info().nbLoadFromDisk, 1);
     BOOST_CHECK_EQUAL(cache.info().nbLoadFromCache, 1);
 }

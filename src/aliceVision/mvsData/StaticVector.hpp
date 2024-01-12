@@ -11,14 +11,12 @@
 #include <algorithm>
 #include <assert.h>
 #include <cstdlib>
+#include <filesystem>
 #include <sstream>
 #include <vector>
 #include <zlib.h>
 #include <iostream>
 #include <stdexcept>
-
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/path.hpp>
 
 namespace aliceVision {
 
@@ -345,8 +343,8 @@ void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile: " << fileName);
 
-    boost::filesystem::path filepath = fileName;
-    boost::filesystem::create_directories(filepath.parent_path());
+    std::filesystem::path filepath = fileName;
+    std::filesystem::create_directories(filepath.parent_path());
 
     if (!a)
     {

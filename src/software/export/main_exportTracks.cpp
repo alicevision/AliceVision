@@ -26,7 +26,8 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -41,7 +42,7 @@ using namespace aliceVision::track;
 using namespace svg;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char ** argv)
 {
@@ -56,25 +57,27 @@ int aliceVision_main(int argc, char ** argv)
   // user optional parameters
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output path for tracks.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.")
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+         "Output path for tracks.")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("clearForks", po::value<bool>(&clearForks),
-      "Filter tracks forks.")
-    ("minTrackLength", po::value<int>(&minTrackLength),
-      "Minimum track length.")
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str());
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("clearForks", po::value<bool>(&clearForks),
+         "Filter tracks forks.")
+        ("minTrackLength", po::value<int>(&minTrackLength),
+         "Minimum track length.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str());
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportTracks");
   cmdline.add(requiredParams);
@@ -92,7 +95,7 @@ int aliceVision_main(int argc, char ** argv)
 
   // read SfM Scene (image view names)
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -187,9 +190,9 @@ int aliceVision_main(int argc, char ** argv)
           const PointFeatures& featuresI = featuresPerView.getFeatures(viewI->getViewId(), descType);
           const PointFeatures& featuresJ = featuresPerView.getFeatures(viewJ->getViewId(), descType);
 
-          const PointFeature& imaA = featuresI[obsIt->second];
+          const PointFeature& imaA = featuresI[obsIt->second.featureId];
           ++obsIt;
-          const PointFeature& imaB = featuresJ[obsIt->second];
+          const PointFeature& imaB = featuresJ[obsIt->second.featureId];
 
           svgStream.drawLine(imaA.x(), imaA.y(), imaB.x()+dimImageI.first, imaB.y(), svgStyle().stroke("green", 2.0));
         }
@@ -205,9 +208,9 @@ int aliceVision_main(int argc, char ** argv)
           const PointFeatures& featuresI = featuresPerView.getFeatures(viewI->getViewId(), descType);
           const PointFeatures& featuresJ = featuresPerView.getFeatures(viewJ->getViewId(), descType);
 
-          const PointFeature& imaA = featuresI[obsIt->second];
+          const PointFeature& imaA = featuresI[obsIt->second.featureId];
           ++obsIt;
-          const PointFeature& imaB = featuresJ[obsIt->second];
+          const PointFeature& imaB = featuresJ[obsIt->second.featureId];
 
           const std::string featColor = describerTypeColor(descType);
 

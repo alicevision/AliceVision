@@ -17,8 +17,8 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <numeric>
 
@@ -32,7 +32,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 using namespace aliceVision;
@@ -50,6 +50,7 @@ int aliceVision_main(int argc, char** argv)
     Eigen::Vector2f sphereCenterOffset(0, 0);
     double sphereRadius = 1.0;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputSfMDataPath)->required(),
@@ -71,6 +72,7 @@ int aliceVision_main(int argc, char** argv)
          "Sphere's center offset Y (pixels).")
         ("sphereRadius,r", po::value<double>(&sphereRadius)->default_value(1.0),
          "Sphere's radius (pixels).");
+    // clang-format on
 
     CmdLine cmdline("AliceVision sphereDetection");
     cmdline.add(requiredParams);
@@ -83,7 +85,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Load SFMData file
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, inputSfMDataPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
+    if(!sfmDataIO::load(sfmData, inputSfMDataPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + inputSfMDataPath + "' cannot be read");
         return EXIT_FAILURE;

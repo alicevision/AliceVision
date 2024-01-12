@@ -25,7 +25,7 @@
 
 /*Command line parameters*/
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <sstream>
 
 // These constants define the current software version.
@@ -36,7 +36,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 Eigen::Matrix3d getRotationForCode(int code)
 {
@@ -70,12 +70,14 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmOutputDataFilename;
 
     // Command line parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
         ("output,o", po::value<std::string>(&sfmOutputDataFilename)->required(),
          "SfMData file output.");
+    // clang-format on
 
     CmdLine cmdline("Prepares images for use in the panorama pipeline "
                     "by correcting inconsistent orientations caused by the camera being in zenith or nadir position.\n"
@@ -87,12 +89,12 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Analyze path
-    boost::filesystem::path path(sfmOutputDataFilename);
+    fs::path path(sfmOutputDataFilename);
     std::string outputPath = path.parent_path().string();
 
     // Read sfm data
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
@@ -244,7 +246,7 @@ int aliceVision_main(int argc, char* argv[])
 
         // Prepare output file
         image::Image<image::RGBfColor> output;
-        const boost::filesystem::path origImgPath(v.second->getImage().getImagePath());
+        const fs::path origImgPath(v.second->getImage().getImagePath());
         const std::string origFilename = origImgPath.stem().string();
         const std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
         oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImage().getImagePath());
@@ -259,7 +261,7 @@ int aliceVision_main(int argc, char* argv[])
 
         image::readImage(v.second->getImage().getImagePath(), originalImage, options);
         oiio::ImageBuf bufInput(
-            oiio::ImageSpec(originalImage.Width(), originalImage.Height(), 3, oiio::TypeDesc::FLOAT),
+            oiio::ImageSpec(originalImage.width(), originalImage.height(), 3, oiio::TypeDesc::FLOAT),
             originalImage.data());
 
         // Find the correct operation to perform
@@ -269,24 +271,24 @@ int aliceVision_main(int argc, char* argv[])
             if(std::abs(angle - M_PI_2) < 1e-4)
             {
                 validTransform = true;
-                output.resize(originalImage.Height(), originalImage.Width());
-                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                output.resize(originalImage.height(), originalImage.width());
+                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
                                          output.data());
                 oiio::ImageBufAlgo::rotate90(bufOutput, bufInput);
             }
             else if(std::abs(angle + M_PI_2) < 1e-4)
             {
                 validTransform = true;
-                output.resize(originalImage.Height(), originalImage.Width());
-                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                output.resize(originalImage.height(), originalImage.width());
+                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
                                          output.data());
                 oiio::ImageBufAlgo::rotate90(bufOutput, bufInput);
             }
             else if(std::abs(std::abs(angle) - M_PI) < 1e-4)
             {
                 validTransform = true;
-                output.resize(originalImage.Width(), originalImage.Height());
-                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT),
+                output.resize(originalImage.width(), originalImage.height());
+                oiio::ImageBuf bufOutput(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
                                          output.data());
                 oiio::ImageBufAlgo::rotate180(bufOutput, bufInput);
             }
@@ -301,13 +303,13 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         image::writeImage(rotatedImagePath, output, image::ImageWriteOptions(), metadata);
-        v.second->getImage().setWidth(output.Width());
-        v.second->getImage().setHeight(output.Height());
+        v.second->getImage().setWidth(output.width());
+        v.second->getImage().setHeight(output.height());
         v.second->getImage().setImagePath(rotatedImagePath);
     }
 
     // Export output sfmData
-    if(!sfmDataIO::Save(sfmData, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::save(sfmData, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
         return EXIT_FAILURE;

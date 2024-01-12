@@ -74,7 +74,6 @@ alicevision_add_library(aliceVision_sfm
     aliceVision_linearProgramming
     aliceVision_sfmData
     aliceVision_sfmDataIO
-    Boost::filesystem
     Boost::boost
     ${CERES_LIBRARIES}
   PRIVATE_LINKS
@@ -85,6 +84,16 @@ alicevision_add_library(aliceVision_sfm
 
 alicevision_add_test(bundle/bundleAdjustment_test.cpp
   NAME "sfm_bundleAdjustment"
+  LINKS aliceVision_sfm
+        aliceVision_multiview
+        aliceVision_multiview_test_data
+        aliceVision_feature
+        aliceVision_system
+        ${LEMON_LIBRARY}
+)
+
+alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
+  NAME "sfm_bundleAdjustment_Enhanced"
   LINKS aliceVision_sfm
         aliceVision_multiview
         aliceVision_multiview_test_data

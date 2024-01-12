@@ -86,8 +86,8 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize,
 bool CoordinatesMap::computeScale(double& result, float ratioUpscale)
 {
     std::vector<double> scales;
-    size_t real_height = _coordinates.Height();
-    size_t real_width = _coordinates.Width();
+    size_t real_height = _coordinates.height();
+    size_t real_width = _coordinates.width();
 
     for (int i = 1; i < real_height - 2; i++)
     {

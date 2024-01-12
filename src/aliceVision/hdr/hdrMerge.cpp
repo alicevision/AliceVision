@@ -57,8 +57,8 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
     assert(images.size() == times.size());
 
     // get images width, height
-    const std::size_t width = images.front().Width();
-    const std::size_t height = images.front().Height();
+    const std::size_t width = images.front().width();
+    const std::size_t height = images.front().height();
 
     // resize and reset radiance image to 0.0
     radiance.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
@@ -66,7 +66,7 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
     ALICEVISION_LOG_TRACE("[hdrMerge] Images to fuse:");
     for (int i = 0; i < images.size(); ++i)
     {
-        ALICEVISION_LOG_TRACE(images[i].Width() << "x" << images[i].Height() << ", time: " << times[i]);
+        ALICEVISION_LOG_TRACE(images[i].width() << "x" << images[i].height() << ", time: " << times[i]);
     }
 
     rgbCurve weightShortestExposure = weight;
@@ -215,9 +215,9 @@ void hdrMerge::postProcessHighlight(const std::vector<image::Image<image::RGBfCo
     float highlightTarget = highlightTargetLux * targetCameraExposure * 2.5;
 
     // get images width, height
-    const std::size_t width = inputImage.Width();
+    const std::size_t width = inputImage.width();
 
-    const std::size_t height = inputImage.Height();
+    const std::size_t height = inputImage.height();
     image::Image<float> isPixelClamped(width, height);
 
 #pragma omp parallel for
@@ -247,7 +247,7 @@ void hdrMerge::postProcessHighlight(const std::vector<image::Image<image::RGBfCo
     }
 
     image::Image<float> isPixelClamped_g(width, height);
-    image::ImageGaussianFilter(isPixelClamped, 1.0f, isPixelClamped_g, 3, 3);
+    image::imageGaussianFilter(isPixelClamped, 1.0f, isPixelClamped_g, 3, 3);
 
 #pragma omp parallel for
     for (int y = 0; y < height; ++y)

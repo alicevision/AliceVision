@@ -21,7 +21,8 @@
 #include <OpenMesh/Core/IO/IOManager.hh>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -30,7 +31,7 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char* argv[])
@@ -48,31 +49,33 @@ int aliceVision_main(int argc, char* argv[])
     float mu = 1.5;
     float nu = 0.3;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh (OBJ file format).")
+         "Input Mesh (OBJ file format).")
         ("output,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).");
+         "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("denoisingIterations", po::value<int>(&denoisingIterations)->default_value(denoisingIterations),
-            "Number of denoising iterations.")
+         "Number of denoising iterations.")
         ("meshUpdateClosenessWeight", po::value<float>(&meshUpdateClosenessWeight)->default_value(meshUpdateClosenessWeight),
-            "Closeness weight for mesh update, must be positive.")
+         "Closeness weight for mesh update, must be positive.")
         ("lambda", po::value<float>(&lambda)->default_value(lambda),
-            "Regularization weight.")
+         "Regularization weight.")
         ("eta", po::value<float>(&eta)->default_value(eta),
-            "Gaussian standard deviation for spatial weight, scaled by the average distance between adjacent face centroids. Must be positive.")
+         "Gaussian standard deviation for spatial weight, scaled by the average distance between adjacent face centroids. Must be positive.")
         ("mu", po::value<float>(&mu)->default_value(mu),
-            "Gaussian standard deviation for guidance weight.")
+         "Gaussian standard deviation for guidance weight.")
         ("nu", po::value<float>(&nu)->default_value(nu),
-            "Gaussian standard deviation for signal weight.")
+         "Gaussian standard deviation for signal weight.")
         ("meshUpdateMethod", po::value<int>(&meshUpdateMethod)->default_value(meshUpdateMethod),
-            "Mesh Update Method: \n"
-            "* ITERATIVE_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::ITERATIVE_UPDATE) ") (default): ShapeUp styled iterative solver\n"
-            "* POISSON_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::POISSON_UPDATE) "): Poisson-based update from [Wang et al. 2015] \"Rolling guidance normal filter for geometric processing\"\n");
+         "Mesh Update Method: \n"
+         "* ITERATIVE_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::ITERATIVE_UPDATE) ") (default): ShapeUp styled iterative solver\n"
+         "* POISSON_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::POISSON_UPDATE) "): Poisson-based update from [Wang et al. 2015] \"Rolling guidance normal filter for geometric processing\"\n");
+    // clang-format on
 
     CmdLine cmdline("AliceVision meshDenoising");
     cmdline.add(requiredParams);
@@ -83,9 +86,9 @@ int aliceVision_main(int argc, char* argv[])
     }
 
 
-    bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    fs::path outDirectory = fs::path(outputMeshPath).parent_path();
+    if(!fs::is_directory(outDirectory))
+        fs::create_directory(outDirectory);
 
 
     TriMesh inMesh;

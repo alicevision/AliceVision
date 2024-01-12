@@ -12,21 +12,22 @@
 #include <aliceVision/sfmDataIO/plyIO.hpp>
 #include <aliceVision/sfmDataIO/bafIO.hpp>
 #include <aliceVision/sfmDataIO/gtIO.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
     #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
     #include <aliceVision/sfmDataIO/AlembicImporter.hpp>
 #endif
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
 
 /// Check that each view references a declared intrinsic
-bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
+bool validIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
 {
     const bool bCheck_Intrinsic = (partFlag & INTRINSICS);
     const bool bCheck_Rig = (partFlag & EXTRINSICS);
@@ -105,9 +106,9 @@ bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
     return bRet;
 }
 
-bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-    const std::string extension = fs::extension(filename);
+    const std::string extension = fs::path(filename).extension().string();
     bool status = false;
 
     if (extension == ".sfm" || extension == ".json")  // JSON File
@@ -138,16 +139,16 @@ bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partF
 
     // Assert that loaded intrinsics are linked to valid view
     if (status && (partFlag & VIEWS) && (partFlag & INTRINSICS))
-        return ValidIds(sfmData, partFlag);
+        return validIds(sfmData, partFlag);
 
     return status;
 }
 
-bool Save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
     const fs::path bPath = fs::path(filename);
     const std::string extension = bPath.extension().string();
-    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
     bool status = false;
 
     if (extension == ".sfm" || extension == ".json")  // JSON File

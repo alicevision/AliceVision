@@ -17,13 +17,13 @@ namespace sfm {
 
 /**
  * @brief Create features from a known SfMData (synthetic scene).
- * @param[out] out_featuresPerView
+ * @param[out] outFeaturesPerView
  * @param[in] sfmData synthetic SfM dataset
  * @param[in] descType
  * @param[in] noise
  */
 template<typename NoiseGenerator>
-void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
+void generateSyntheticFeatures(feature::FeaturesPerView& outFeaturesPerView,
                                feature::EImageDescriberType descType,
                                const sfmData::SfMData& sfmData,
                                NoiseGenerator& noise)
@@ -42,18 +42,18 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
         {
             const sfmData::Landmark& landmark = it.second;
 
-            for (const auto& obsIt : landmark.observations)
+            for (const auto& obsIt : landmark.getObservations())
             {
                 const IndexT viewId = obsIt.first;
                 const sfmData::Observation& obs = obsIt.second;
-                nbFeatPerView[viewId] = std::max(nbFeatPerView[viewId], std::size_t(obs.id_feat + 1));
+                nbFeatPerView[viewId] = std::max(nbFeatPerView[viewId], std::size_t(obs.getFeatureId() + 1));
             }
         }
         for (auto& it : nbFeatPerView)
         {
             // create Point Features vectors at the right size
             feature::PointFeatures pointFeatures(it.second);
-            out_featuresPerView.addFeatures(it.first, descType, pointFeatures);
+            outFeaturesPerView.addFeatures(it.first, descType, pointFeatures);
         }
     }
     // Use arbitrary values for feature scale and orientation
@@ -65,24 +65,24 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
     {
         const sfmData::Landmark& landmark = it.second;
 
-        for (const auto& obsIt : landmark.observations)
+        for (const auto& obsIt : landmark.getObservations())
         {
             const IndexT viewId = obsIt.first;
             const sfmData::Observation& obs = obsIt.second;
 
-            out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.id_feat] =
-              feature::PointFeature(obs.x(0) + noise(generator), obs.x(1) + noise(generator), scale, orientation);
+            outFeaturesPerView.getFeaturesPerDesc(viewId)[descType][obs.getFeatureId()] =
+              feature::PointFeature(obs.getX() + noise(generator), obs.getY() + noise(generator), scale, orientation);
         }
     }
 }
 
 /**
  * @brief Generate features matches between views from a known SfMData (synthetic scene).
- * @param[out] out_pairwiseMatches The output pairwiseMatches
+ * @param[out] outPairwiseMatches The output pairwiseMatches
  * @param[in] sfmData The synthetic SfM dataset
  * @param[in] descType The desciptor type
  */
-void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType);
+void generateSyntheticMatches(matching::PairwiseMatches& outPairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType);
 
 // Translate a synthetic scene into a valid SfMData scene
 // As only one intrinsic is defined we used shared intrinsic

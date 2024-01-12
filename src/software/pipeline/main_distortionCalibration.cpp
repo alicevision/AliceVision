@@ -145,19 +145,21 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string cameraModelName = "3deanamorphic4";
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(),
-        "SfMData file input.")
+         "SfMData file input.")
         ("checkerboards", po::value<std::string>(&checkerBoardsPath)->required(),
-        "Checkerboards json files directory.")
+         "Checkerboards json files directory.")
         ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
-        "SfMData file output.");
+         "SfMData file output.");
     
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("cameraModel", po::value<std::string>(&cameraModelName)->default_value(cameraModelName),
-        "Camera model used for estimating distortion.");
+         "Camera model used for estimating distortion.");
+    // clang-format on
 
     CmdLine cmdline("This program calibrates camera distortion.\n"
                     "AliceVision distortionCalibration");
@@ -170,7 +172,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // Load sfmData from disk
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
@@ -295,7 +297,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Save sfmData to disk
-    if (!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be written.");
         return EXIT_FAILURE;

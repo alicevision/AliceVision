@@ -1,13 +1,13 @@
-
-#include <boost/filesystem.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 
 #define BOOST_TEST_MODULE sfmData
 
 #include <boost/test/unit_test.hpp>
 
+#include <filesystem>
+
 using namespace aliceVision;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 BOOST_AUTO_TEST_CASE(SfMData_InternalFolders)
 {

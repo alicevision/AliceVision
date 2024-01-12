@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/types.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
 namespace aliceVision {
@@ -62,14 +63,29 @@ class CameraPose
      */
     inline void unlock() { _locked = false; }
 
+    void initializeState()
+    {
+        if (_locked)
+        {
+            _state = EEstimatorParameterState::CONSTANT;
+        }
+        else
+        {
+            _state = EEstimatorParameterState::REFINED;
+        }
+    }
+
+    EEstimatorParameterState getState() const { return _state; }
+
+    void setState(EEstimatorParameterState state) { _state = state; }
+
   private:
     /// camera 3d transformation
     geometry::Pose3 _transform;
     /// camera lock
     bool _locked = false;
-
-  public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    /// Estimator state
+    EEstimatorParameterState _state = EEstimatorParameterState::REFINED;
 };
 
 }  // namespace sfmData

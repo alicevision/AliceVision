@@ -7,7 +7,7 @@ set(image_files_headers
   imageAlgo.hpp
   colorspace.hpp
   concat.hpp
-  convertion.hpp
+  conversion.hpp
   convolutionBase.hpp
   convolution.hpp
   dcp.hpp
@@ -47,7 +47,6 @@ alicevision_add_library(aliceVision_image
   PRIVATE_LINKS
     aliceVision_system
     ${OPENEXR_LIBRARIES}
-    Boost::filesystem
   PRIVATE_INCLUDE_DIRS
     ${OPENEXR_INCLUDE_DIR}
 )

@@ -14,6 +14,7 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
+#include <list>
 #include <future>
 #include <mutex>
 

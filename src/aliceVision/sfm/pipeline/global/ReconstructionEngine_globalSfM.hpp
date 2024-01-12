@@ -25,11 +25,11 @@ class ReconstructionEngine_globalSfM : public ReconstructionEngine
 
     ~ReconstructionEngine_globalSfM();
 
-    void SetFeaturesProvider(feature::FeaturesPerView* featuresPerView);
-    void SetMatchesProvider(matching::PairwiseMatches* provider);
+    void setFeaturesProvider(feature::FeaturesPerView* featuresPerView);
+    void setMatchesProvider(matching::PairwiseMatches* provider);
 
-    void SetRotationAveragingMethod(ERotationAveragingMethod eRotationAveragingMethod);
-    void SetTranslationAveragingMethod(ETranslationAveragingMethod eTranslationAveragingMethod);
+    void setRotationAveragingMethod(ERotationAveragingMethod eRotationAveragingMethod);
+    void setTranslationAveragingMethod(ETranslationAveragingMethod eTranslationAveragingMethod);
 
     void setLockAllIntrinsics(bool v) { _lockAllIntrinsics = v; }
 
@@ -37,20 +37,20 @@ class ReconstructionEngine_globalSfM : public ReconstructionEngine
 
   protected:
     /// Compute from relative rotations the global rotations of the camera poses
-    bool Compute_Global_Rotations(const aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R, HashMap<IndexT, Mat3>& map_globalR);
+    bool computeGlobalRotations(const aliceVision::rotationAveraging::RelativeRotations& vecRelativesR, HashMap<IndexT, Mat3>& mapGlobalR);
 
     /// Compute/refine relative translations and compute global translations
-    bool Compute_Global_Translations(const HashMap<IndexT, Mat3>& global_rotations, matching::PairwiseMatches& tripletWise_matches);
+    bool computeGlobalTranslations(const HashMap<IndexT, Mat3>& globalRotations, matching::PairwiseMatches& tripletWiseMatches);
 
     /// Compute the initial structure of the scene
-    bool Compute_Initial_Structure(matching::PairwiseMatches& tripletWise_matches);
+    bool computeInitialStructure(matching::PairwiseMatches& tripletWiseMatches);
 
     /// Adjust the scene (& remove outliers)
-    bool Adjust();
+    bool adjust();
 
   private:
     /// Compute relative rotations
-    void Compute_Relative_Rotations(aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R);
+    void computeRelativeRotations(aliceVision::rotationAveraging::RelativeRotations& vecRelativesR);
 
     // Logger
     std::shared_ptr<htmlDocument::htmlDocumentStream> _htmlDocStream;

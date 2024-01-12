@@ -2,11 +2,11 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <expat.h>
 
+#include <filesystem>
 #include <iostream>
 #include <math.h>
 
@@ -1126,21 +1126,21 @@ void LCPinfo::setVignetteModel(const std::string& name)
         currLensParam.vignParams.VignetteModelParam3 = std::stof(_currText.c_str());
 }
 
-void LCPdatabase::loadDirectory(const boost::filesystem::path& p)
+void LCPdatabase::loadDirectory(const std::filesystem::path& p)
 {
-    if (boost::filesystem::is_directory(p))
+    if (std::filesystem::is_directory(p))
     {
         // In some border cases, multiple LCP files could match with the image metadata
         // and we stop the search as soon as we have found a valid match.
         // So to ensure a repeatable behavior, we sort the files by name.
-        std::vector<boost::filesystem::path> sortedPaths;
-        for (auto&& x : boost::filesystem::directory_iterator(p))
+        std::vector<std::filesystem::path> sortedPaths;
+        for (auto&& x : std::filesystem::directory_iterator(p))
             sortedPaths.push_back(x.path());
         std::sort(sortedPaths.begin(), sortedPaths.end());
         for (auto&& x : sortedPaths)
             loadDirectory(x);
     }
-    else if (boost::filesystem::is_regular_file(p) && (boost::filesystem::extension(p) == ".lcp"))
+    else if (std::filesystem::is_regular_file(p) && (p.extension() == ".lcp"))
     {
         _lcpFilepaths.push_back(p);
     }

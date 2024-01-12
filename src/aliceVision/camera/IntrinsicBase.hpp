@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <aliceVision/types.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
@@ -406,9 +407,10 @@ class IntrinsicBase
 
     /**
      * @brief Rescale intrinsics to reflect a rescale of the camera image
-     * @param factor a scale factor
+     * @param factorW a scale factor for Width
+     * @param factorH a scale factor for Height
      */
-    virtual void rescale(float factor);
+    virtual void rescale(float factorW, float factorH);
 
     /**
      * @brief transform a given point (in pixels) to unit sphere in meters
@@ -417,11 +419,40 @@ class IntrinsicBase
      */
     virtual Vec3 toUnitSphere(const Vec2& pt) const = 0;
 
+    /**
+     * @Brief get horizontal fov in radians
+     * @return  horizontal fov in radians
+     */
+    virtual double getHorizontalFov() const = 0;
+
+    /**
+     * @Brief get vertical fov in radians
+     * @return  vertical fov in radians
+     */
+    virtual double getVerticalFov() const = 0;
+
+    virtual void initializeState()
+    {
+        if (_locked)
+        {
+            _state = EEstimatorParameterState::CONSTANT;
+        }
+        else
+        {
+            _state = EEstimatorParameterState::REFINED;
+        }
+    }
+
+    EEstimatorParameterState getState() const { return _state; }
+
+    void setState(EEstimatorParameterState state) { _state = state; }
+
   protected:
     /// initialization mode
     EInitMode _initializationMode = EInitMode::NONE;
     /// intrinsic lock
     bool _locked = false;
+    EEstimatorParameterState _state = EEstimatorParameterState::REFINED;
     unsigned int _w = 0;
     unsigned int _h = 0;
     double _sensorWidth = 36.0;

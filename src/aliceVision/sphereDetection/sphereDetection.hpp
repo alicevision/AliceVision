@@ -16,14 +16,13 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-// Boost
-#include <boost/filesystem.hpp>
-
-// namespaces
-namespace fs = boost::filesystem;
+#include <filesystem>
 
 namespace aliceVision {
 namespace sphereDetection {
+
+// namespaces
+namespace fs = std::filesystem;
 
 struct Prediction
 {

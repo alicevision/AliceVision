@@ -10,12 +10,12 @@
 #include <aliceVision/sfmData/uid.hpp>
 
 #include <boost/regex.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <fstream>
 #include <vector>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -23,7 +23,7 @@ namespace sfmDataIO {
 bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, geometry::Pose3& pose)
 {
     std::vector<double> val;
-    if (fs::extension(camName) == ".bin")
+    if (fs::path(camName).extension() == ".bin")
     {
         std::ifstream in(camName, std::ios::in | std::ios::binary);
         if (!in.is_open())
@@ -59,7 +59,7 @@ bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, g
 
     // Update the camera from file value
     Mat34 P;
-    if (fs::extension(camName) == ".bin")
+    if (fs::path(camName).extension() == ".bin")
     {
         P << val[0], val[3], val[6], val[9], val[1], val[4], val[7], val[10], val[2], val[5], val[8], val[11];
     }
@@ -141,10 +141,10 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
     std::vector<std::string> binFiles;
     std::vector<std::string> camFiles;
 
-    boost::filesystem::directory_iterator endItr;
-    for (boost::filesystem::directory_iterator i(sGTPath); i != endItr; ++i)
+    fs::directory_iterator endItr;
+    for (fs::directory_iterator i(sGTPath); i != endItr; ++i)
     {
-        if (!boost::filesystem::is_regular_file(i->status()))
+        if (!fs::is_regular_file(i->status()))
             continue;
 
         boost::smatch what;

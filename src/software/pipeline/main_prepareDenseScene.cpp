@@ -15,11 +15,11 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
+#include <filesystem>
 #include <vector>
 #include <set>
 #include <iterator>
@@ -39,7 +39,7 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 template <class ImageT, class MaskFuncT>
 void process(const std::string &dstColorImage, const IntrinsicBase* cam, const oiio::ParamValueList & metadata, const std::string & srcImage, bool evCorrection, float exposureCompensation, MaskFuncT && maskFunc)
@@ -50,7 +50,7 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
     // exposure correction
     if(evCorrection)
     {
-        for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+        for(int pix = 0; pix < image.width() * image.height(); ++pix)
         {
             image(pix)[0] *= exposureCompensation;
             image(pix)[1] *= exposureCompensation;
@@ -251,13 +251,13 @@ bool prepareDenseScene(const SfMData& sfmData,
             {
                 process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
                 {
-                    if(image.Width() * image.Height() != mask.Width() * mask.Height())
+                    if(image.width() * image.height() != mask.width() * mask.height())
                     {
                         ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
                         return;
                     }
 
-                    for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+                    for(int pix = 0; pix < image.width() * image.height(); ++pix)
                     {
                         const bool masked = (mask(pix) == 0);
                         image(pix).a() = masked ? 0.f : 1.f;
@@ -294,6 +294,7 @@ int aliceVision_main(int argc, char *argv[])
     bool saveMatricesTxtFiles = false;
     bool evCorrection = false;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
@@ -305,10 +306,10 @@ int aliceVision_main(int argc, char *argv[])
     optionalParams.add_options()
         ("imagesFolders",  po::value<std::vector<std::string>>(&imagesFolders)->multitoken(),
          "Use images from specific folder(s) instead of those specify in the SfMData file.\n"
-         "Filename should be the same or the image uid.")
+         "Filename should be the same or the image UID.")
         ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
          "Use masks from specific folder(s).\n"
-         "Filename should be the same or the image uid.")
+         "Filename should be the same or the image UID.")
         ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
          "File extension of the masks to use.")
         ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
@@ -323,6 +324,7 @@ int aliceVision_main(int argc, char *argv[])
          "Range size.")
         ("evCorrection", po::value<bool>(&evCorrection)->default_value(evCorrection),
          "Correct exposure value.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision prepareDenseScene");
     cmdline.add(requiredParams);
@@ -341,7 +343,7 @@ int aliceVision_main(int argc, char *argv[])
 
     // Read the input SfM scene
     SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
         return EXIT_FAILURE;

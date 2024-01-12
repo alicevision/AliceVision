@@ -26,10 +26,10 @@
 
 #include <geogram/points/kd_tree.h>
 
-#include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
 
 #include <cmath>
+#include <filesystem>
 #include <random>
 #include <stdexcept>
 
@@ -41,7 +41,7 @@
 namespace aliceVision {
 namespace fuseCut {
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
 // #define USE_GEOGRAM_KDTREE 1
 
@@ -364,7 +364,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
         try
         {
             mvsUtils::readMap(c, mp, mvsUtils::EFileType::simMapFiltered, simMap);
-            image::Image<float> simMapTmp(simMap.Width(), simMap.Height());
+            image::Image<float> simMapTmp(simMap.width(), simMap.height());
             imageAlgo::convolveImage(simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
             simMap.swap(simMapTmp);
         }
@@ -376,11 +376,11 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
 
 // Add visibility
 #pragma omp parallel for
-        for (int y = 0; y < depthMap.Height(); ++y)
+        for (int y = 0; y < depthMap.height(); ++y)
         {
-            for (int x = 0; x < depthMap.Width(); ++x)
+            for (int x = 0; x < depthMap.width(); ++x)
             {
-                const std::size_t index = y * depthMap.Width() + x;
+                const std::size_t index = y * depthMap.width() + x;
                 const float depth = depthMap(index);
                 if (depth <= 0.0f)
                     continue;
@@ -775,10 +775,10 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
         {
             *vCoordsIt = p;
 
-            vAttrIt->nrc = landmark.observations.size();
+            vAttrIt->nrc = landmark.getObservations().size();
             vAttrIt->cams.reserve(vAttrIt->nrc);
 
-            for (const auto& observationPair : landmark.observations)
+            for (const auto& observationPair : landmark.getObservations())
                 vAttrIt->cams.push_back(_mp.getIndexFromViewId(observationPair.first));
 
             vAttrIt->pixSize = _mp.getCamsMinPixelSize(p, vAttrIt->cams);
@@ -1025,8 +1025,8 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
                 continue;
             }
 
-            const int width = depthMap.Width();
-            const int height = depthMap.Height();
+            const int width = depthMap.width();
+            const int height = depthMap.height();
             const int syMax = divideRoundUp(height, step);
             const int sxMax = divideRoundUp(width, step);
 
@@ -1189,10 +1189,10 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap);
                 // If we have an nModMap in input (from depthmapfilter) use it,
                 // else init with a constant value.
-                if (boost::filesystem::exists(nmodMapFilepath))
+                if (fs::exists(nmodMapFilepath))
                 {
                     image::readImage(nmodMapFilepath, numOfModalsMap, image::EImageColorSpace::NO_CONVERSION);
-                    if (numOfModalsMap.Width() != width || numOfModalsMap.Height() != height)
+                    if (numOfModalsMap.width() != width || numOfModalsMap.height() != height)
                         throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
                 }
                 else
@@ -3892,7 +3892,7 @@ void DelaunayGraphCut::exportDebugMesh(const std::string& filename, const Point3
         mesh->tris.push_back(t);
     }
 
-    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    const std::string tempDirPath = fs::temp_directory_path().generic_string();
     mesh->save(tempDirPath + "/" + filename);
     meshf->save(tempDirPath + "/" + filename);
 }
@@ -3956,7 +3956,7 @@ void DelaunayGraphCut::exportBackPropagationMesh(const std::string& filename,
 
 void DelaunayGraphCut::writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit)
 {
-    assert(boost::filesystem::path(filePath).extension().string() == std::string(".csv"));
+    assert(fs::path(filePath).extension().string() == std::string(".csv"));
 
     const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
     std::mt19937 generator(seed != 0 ? seed : std::random_device{}());

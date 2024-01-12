@@ -29,13 +29,12 @@
 
 // Command line parameters
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 
 #include <sstream>
-
+#include <filesystem>
 #include <fstream>
 
 
@@ -48,7 +47,7 @@ using namespace aliceVision;
 using namespace aliceVision::hdr;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -66,7 +65,7 @@ int aliceVision_main(int argc, char** argv)
     int rangeSize = 1;
 
     // Command line parameters
-
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
@@ -100,6 +99,7 @@ int aliceVision_main(int argc, char** argv)
           "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
           "Range size.");
+    // clang-format on
 
     CmdLine cmdline("This program extracts stable samples from multiple LDR images with different bracketing.\n"
                     "AliceVision LdrToHdrSampling");
@@ -119,7 +119,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Read SfMData
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;

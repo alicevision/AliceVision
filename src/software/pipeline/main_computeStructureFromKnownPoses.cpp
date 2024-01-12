@@ -17,7 +17,8 @@
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -27,7 +28,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /// Compute the structure of a scene according existing camera poses.
 int aliceVision_main(int argc, char **argv)
@@ -43,27 +44,28 @@ int aliceVision_main(int argc, char **argv)
   std::vector<std::string> matchesFolders;
   int randomSeed = std::mt19937::default_seed;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-      "Output path for the features and descriptors files (*.feat, *.desc).")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+         "Output path for the features and descriptors files (*.feat, *.desc).")
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+         "Path to folder(s) containing the extracted features.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      feature::EImageDescriberType_informations().c_str())
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.")
-    ("geometricErrorMax", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax),
-        "Maximum error (in pixels) allowed for features matching during geometric verification for known camera poses. "
-        "If set to 0 it lets the ACRansac select an optimal value.")
-    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
-        "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
-    ;
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+         "Path to folder(s) in which computed matches are stored.")
+        ("geometricErrorMax", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax),
+         "Maximum error (in pixels) allowed for features matching during geometric verification for known camera poses. "
+         "If set to 0 it lets the ACRansac select an optimal value.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision computeStructureFromKnownPoses");
   cmdline.add(requiredParams);
@@ -77,7 +79,7 @@ int aliceVision_main(int argc, char **argv)
   
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -118,7 +120,7 @@ int aliceVision_main(int argc, char **argv)
     pairs = matching::getImagePairs(matches);
     // keep only Pairs that belong to valid view indexes.
     const std::set<IndexT> valid_viewIdx = sfmData.getValidViews();
-    pairs = sfm::Pair_filter(pairs, valid_viewIdx);
+    pairs = sfm::filterPairs(pairs, valid_viewIdx);
   }
 
   aliceVision::system::Timer timer;
@@ -139,19 +141,19 @@ int aliceVision_main(int argc, char **argv)
   // create 3D landmarks
   structureEstimator.triangulate(sfmData, regionsPerView, randomNumberGenerator);
 
-  sfm::RemoveOutliers_AngleError(sfmData, 2.0);
+  sfm::removeOutliersWithAngleError(sfmData, 2.0);
 
   ALICEVISION_LOG_INFO("Structure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "\t- # landmarks found: " << sfmData.getLandmarks().size());
 
-  if(fs::extension(outSfMDataFilename) != ".ply")
+  if(fs::path(outSfMDataFilename).extension() != ".ply")
   {
-    sfmDataIO::Save(sfmData,
+    sfmDataIO::save(sfmData,
          (fs::path(outSfMDataFilename).parent_path() / (fs::path(outSfMDataFilename).stem().string() + ".ply")).string(),
          sfmDataIO::ESfMData::ALL);
   }
 
-  if(sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+  if(sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     return EXIT_SUCCESS;
   
   ALICEVISION_LOG_ERROR("Can't save the output SfMData.");

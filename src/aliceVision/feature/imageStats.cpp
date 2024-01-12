@@ -15,17 +15,17 @@ namespace feature {
 float computeAutomaticContrastFactor(const image::Image<float>& image, const float percentile)
 {
     const size_t nbBins = 300;
-    const int height = image.Height();
-    const int width = image.Width();
+    const int height = image.height();
+    const int width = image.width();
 
     // smooth the image
     image::Image<float> smoothed;
-    image::ImageGaussianFilter(image, 1.f, smoothed, 0, 0);
+    image::imageGaussianFilter(image, 1.f, smoothed, 0, 0);
 
     // compute gradient
     image::Image<float> Lx, Ly;
-    image::ImageScharrXDerivative(smoothed, Lx, false);
-    image::ImageScharrYDerivative(smoothed, Ly, false);
+    image::imageScharrXDerivative(smoothed, Lx, false);
+    image::imageScharrYDerivative(smoothed, Ly, false);
 
     // reuse smoothed to avoid new allocation
     image::Image<float>& grad = smoothed;

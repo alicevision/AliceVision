@@ -21,7 +21,6 @@
 #include <aliceVision/track/trackIO.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
@@ -33,7 +32,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 
 int aliceVision_main(int argc, char** argv)
@@ -52,21 +50,37 @@ int aliceVision_main(int argc, char** argv)
     // user optional parameters
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")(
-        "output,o", po::value<std::string>(&tracksFilename)->required(), "Path to the tracks file.");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&tracksFilename)->required(),
+         "Path to the tracks file.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(), "Path to folder(s) containing the extracted features.")
-        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(), "Path to folder(s) in which computed matches are stored.")
-        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName), feature::EImageDescriberType_informations().c_str())
-        ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches), "Maximum number of matches per image pair (and per feature type). This can be useful to have a quick reconstruction overview. 0 means no limit.")
-        ("minNumberOfMatches", po::value<int>(&minNbMatches)->default_value(minNbMatches), "Minimum number of matches per image pair (and per feature type). This can be useful to have a meaningful reconstruction with accurate keypoints. 0 means no limit.")
-        ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength), "Minimum track length in input of SfM.")
-        ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder), "Use only matches from the input matchesFolder parameter.\n"
-        "Matches folders previously added to the SfMData file will be ignored.")
-        ("filterTrackForks", po::value<bool>(&filterTrackForks)->default_value(filterTrackForks), "Enable/Disable the track forks removal. A track contains a fork when incoherent matches leads to multiple features in the same image for a single track.\n");
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features.")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
+         "Path to folder(s) in which computed matches are stored.")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
+        ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
+         "Maximum number of matches per image pair (and per feature type). "
+         "This can be useful to have a quick reconstruction overview. 0 means no limit.")
+        ("minNumberOfMatches", po::value<int>(&minNbMatches)->default_value(minNbMatches),
+         "Minimum number of matches per image pair (and per feature type). "
+         "This can be useful to have a meaningful reconstruction with accurate keypoints. 0 means no limit.")
+        ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
+         "Minimum track length in input of SfM.")
+        ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
+         "Use only matches from the input matchesFolder parameter.\n"
+         "Matches folders previously added to the SfMData file will be ignored.")
+        ("filterTrackForks", po::value<bool>(&filterTrackForks)->default_value(filterTrackForks),
+         "Enable/Disable the track forks removal. "
+         "A track contains a fork when incoherent matches leads to multiple features in the same image for a single track.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision tracksBuilding");
 
@@ -83,7 +97,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input SfMData scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
         return EXIT_FAILURE;

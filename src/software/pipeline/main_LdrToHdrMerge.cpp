@@ -23,7 +23,8 @@
 
 // Command line parameters
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 #include <sstream>
 #include <iomanip>
 
@@ -35,7 +36,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 std::string getHdrImagePath(const std::string& outputPath, std::size_t g, const std::string& rootname = "")
 {
@@ -98,6 +99,7 @@ int aliceVision_main(int argc, char** argv)
     int rangeSize = 1;
 
     // Command line parameters
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
@@ -145,6 +147,7 @@ int aliceVision_main(int argc, char** argv)
          "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
          "Range size.");
+    // clang-format on
 
     CmdLine cmdline("This program merges LDR images into HDR images.\n"
                     "AliceVision LdrToHdrMerge");
@@ -161,12 +164,12 @@ int aliceVision_main(int argc, char** argv)
     omp_set_num_threads(hwc.getMaxThreads());
 
     // Analyze path
-    boost::filesystem::path path(sfmOutputDataFilepath);
+    fs::path path(sfmOutputDataFilepath);
     std::string outputPath = path.parent_path().string();
 
     // Read SfMData
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
@@ -339,7 +342,8 @@ int aliceVision_main(int argc, char** argv)
         outputSfm.getIntrinsics() = sfmData.getIntrinsics();
 
         // If we are on the first chunk, or we are computing all the dataset
-        // Export a new sfmData with HDR images as new Views.
+        // Export a new sfmData with HDR images as new Views and LDR images as ancestors
+        // ancestorIds are similar to viewIds because viewIds are computed only from image infos
         for (const auto & groupedViews : groupedViewsPerIntrinsics)
         {
             IndexT intrinsicId = groupedViews.first;
@@ -368,17 +372,22 @@ int aliceVision_main(int argc, char** argv)
                 }
                 if (!byPass)
                 {
-                    boost::filesystem::path p(targetViews[g]->getImage().getImagePath());
+                    fs::path p(targetViews[g]->getImage().getImagePath());
                     const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
                     hdrView->getImage().setImagePath(hdrImagePath);
                 }
                 hdrView->getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(mergedColorSpace));
                 outputSfm.getViews().emplace(hdrView->getViewId(), hdrView);
+
+                for (const auto& v : group)
+                {
+                    outputSfm.addAncestor(v->getViewId(), v->getImageInfo());
+                }
             }
         }
 
         // Export output SfMData
-        if (!sfmDataIO::Save(outputSfm, sfmOutputDataFilepath, sfmDataIO::ESfMData::ALL))
+        if (!sfmDataIO::save(outputSfm, sfmOutputDataFilepath, sfmDataIO::ESfMData::ALL))
         {
             ALICEVISION_LOG_ERROR("Cannot save output SfMData file at '" << sfmOutputDataFilepath << "'.");
             return EXIT_FAILURE;
@@ -490,7 +499,7 @@ int aliceVision_main(int argc, char** argv)
                 HDRimage = images[0];
             }
 
-            boost::filesystem::path p(targetView->getImage().getImagePath());
+            fs::path p(targetView->getImage().getImagePath());
             const std::string hdrImagePath = getHdrImagePath(outputPath, pos, keepSourceImageName ? p.stem().string() : "");
 
             // Write an image with parameters from the target view

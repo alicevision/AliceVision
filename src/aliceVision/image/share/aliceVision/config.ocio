@@ -41,13 +41,13 @@ roles:
 #
 file_rules:
     #
-    # The next rule assigns the colorspace "ACEScg" to any files that contain "acescg" or "ACEScg" in the path.
+    # The next rule assigns the colorspace "ACEScg" to any exr files that contain "acescg" or "ACEScg" in the path.
     #
-  - !<Rule> {name: ACEScg, colorspace: ACEScg, regex: "acescg|ACEScg"}
+  - !<Rule> {name: exr_ACEScg, colorspace: ACEScg, regex: ".*(acescg|ACEScg).*\\.(exr|EXR)"}
     #
-    # The next rule assigns the colorspace "ACES" to any file that contain "aces or "ACES" in the path.
+    # The next rule assigns the colorspace "ACES2065-1" to any exr file that contain "aces or "ACES" in the path.
     #
-  - !<Rule> {name: ACES, colorspace: ACES, regex: "aces|ACES"}
+  - !<Rule> {name: exr_ACES, colorspace: ACES2065-1, regex: ".*(aces|ACES).*\\.(exr|EXR)"}
     #
     # The rules are ordered, highest priority first.  OCIO takes the path to a file and applies
     # the rules one-by-one until there is a match.  The last rule, "Default", always matches.
@@ -91,7 +91,7 @@ colorspaces:
     #
   - !<ColorSpace>
     name: ACES2065-1
-    aliases: [ aces ]
+    aliases: [ aces, ACES 2065-1 (AP0) ]
     family: ACES
     description: |
       The Academy Color Encoding System reference color space
@@ -101,6 +101,7 @@ colorspaces:
 
   - !<ColorSpace>
     name: ACEScg
+    aliases: [ ACEScg (AP1) ]
     family: ACES
     description: |
       ACEScg working space

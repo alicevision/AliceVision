@@ -6,11 +6,13 @@ set(geometry_files_headers
     Pose3.hpp
     rigidTransformation3D.hpp
     Similarity3.hpp
+    Intersection.hpp
 )
 
 # Sources
 set(geometry_files_sources
     rigidTransformation3D.cpp
+    Intersection.cpp
 )
 
 alicevision_add_library(aliceVision_geometry

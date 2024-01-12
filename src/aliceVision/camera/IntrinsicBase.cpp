@@ -92,10 +92,10 @@ std::size_t IntrinsicBase::hashValue() const
     return seed;
 }
 
-void IntrinsicBase::rescale(float factor)
+void IntrinsicBase::rescale(float factorW, float factorH)
 {
-    _w = static_cast<unsigned int>(floor(static_cast<float>(_w) * factor));
-    _h = static_cast<unsigned int>(floor(static_cast<float>(_h) * factor));
+    _w = static_cast<unsigned int>(floor(static_cast<float>(_w) * factorW));
+    _h = static_cast<unsigned int>(floor(static_cast<float>(_h) * factorH));
 }
 
 }  // namespace camera

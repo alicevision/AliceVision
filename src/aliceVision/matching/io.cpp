@@ -9,24 +9,25 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 
 #include <map>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <string>
 #include <vector>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace matching {
 
 bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath)
 {
-    const std::string ext = fs::extension(filepath);
+    const std::string ext = fs::path(filepath).extension().string();
 
     if (!fs::exists(filepath))
         return false;
@@ -279,7 +280,7 @@ class MatchExporter
     void saveTxt(const std::string& filepath, const PairwiseMatches::const_iterator& matchBegin, const PairwiseMatches::const_iterator& matchEnd)
     {
         const fs::path bPath = fs::path(filepath);
-        const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + bPath.extension().string();
+        const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + bPath.extension().string();
 
         // write temporary file
         {
@@ -307,7 +308,7 @@ class MatchExporter
       : m_matches(matches),
         m_directory(folder),
         m_filename(filename),
-        m_ext(fs::extension(filename))
+        m_ext(fs::path(filename).extension().string())
     {}
 
     ~MatchExporter() = default;

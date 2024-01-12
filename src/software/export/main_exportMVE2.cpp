@@ -12,8 +12,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
@@ -34,7 +34,7 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::feature;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /// Naive image bilinear resampling of an image for thumbnail generation
 template <typename ImageT>
@@ -148,8 +148,8 @@ bool exportToMVE2Format(
       else // (no distortion)
       {
         // If extensions match, copy the PNG image
-        if (fs::extension(srcImage) == ".PNG" ||
-          fs::extension(srcImage) == ".png")
+        if (fs::path(srcImage).extension() == ".PNG" ||
+          fs::path(srcImage).extension() == ".png")
         {
           fs::copy_file(srcImage, dstImage);
         }
@@ -227,7 +227,7 @@ bool exportToMVE2Format(
       out << 250 << " " << 100 << " " << 150 << "\n";  // Write arbitrary RGB color, see above note
 
       // Tally set of feature observations
-      const Observations & observations = iterLandmarks->second.observations;
+      const Observations & observations = iterLandmarks->second.getObservations();
       const size_t featureCount = std::distance(observations.begin(), observations.end());
       out << featureCount;
 
@@ -235,7 +235,7 @@ bool exportToMVE2Format(
       {
           const IndexT viewId = itObs->first;
           const IndexT viewIndex = viewIdToviewIndex[viewId];
-          const IndexT featId = itObs->second.id_feat;
+          const IndexT featId = itObs->second.getFeatureId();
           out << " " << viewIndex << " " << featId << " 0";
       }
       out << "\n";
@@ -253,13 +253,15 @@ int aliceVision_main(int argc, char *argv[])
 
   po::options_description allParams("AliceVision exportMVE2");
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output folder.\n"
-      "Note:  this program writes output in MVE file format");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outDirectory)->required(),
+         "Output folder.\n"
+         "Note: this program writes output in MVE file format.");
+    // clang-format on
 
   CmdLine cmdline("AliceVision exportMVE2");
   cmdline.add(requiredParams);
@@ -274,7 +276,7 @@ int aliceVision_main(int argc, char *argv[])
 
   // Read the input SfM scene
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     std::cerr << std::endl
       << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
@@ -298,8 +300,8 @@ create_thumbnail
   int thumb_height
 )
 {
-  const int width = image.Width();
-  const int height = image.Height();
+  const int width = image.width();
+  const int height = image.height();
   const float image_aspect = static_cast<float>(width) / height;
   const float thumb_aspect = static_cast<float>(thumb_width) / thumb_height;
 
@@ -330,6 +332,6 @@ create_thumbnail
 
   const Sampler2d<SamplerLinear> sampler;
   ImageT imageOut;
-  GenericRessample(image, sampling_grid, rescale_width, rescale_height, sampler, imageOut);
+  genericResample(image, sampling_grid, rescale_width, rescale_height, sampler, imageOut);
   return imageOut;
 }

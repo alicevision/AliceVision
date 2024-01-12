@@ -18,14 +18,16 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <aliceVision/utils/Histogram.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-namespace fs = boost::filesystem;
+#include <filesystem>
+
 namespace pt = boost::property_tree;
 
 namespace aliceVision {
 namespace sfm {
+
+namespace fs = std::filesystem;
 
 /// Image score contains <ImageId, NbPutativeCommonPoint, score, isIntrinsicsReconstructed>
 typedef std::tuple<IndexT, std::size_t, std::size_t, bool> ViewConnectionScore;
@@ -284,9 +286,9 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
      * @param previousReconstructedViews
      * @param newReconstructedViews
      */
-    void triangulate_2Views(sfmData::SfMData& scene,
-                            const std::set<IndexT>& previousReconstructedViews,
-                            const std::set<IndexT>& newReconstructedViews);
+    void triangulate2Views(sfmData::SfMData& scene,
+                           const std::set<IndexT>& previousReconstructedViews,
+                           const std::set<IndexT>& newReconstructedViews);
 
     /**
      * @brief Triangulate new possible 2D tracks
@@ -295,9 +297,9 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
      * @param[in] previousReconstructedViews The list of the old reconstructed views (views index).
      * @param[in] newReconstructedViews The list of the new reconstructed views (views index).
      */
-    void triangulate_multiViewsLORANSAC(sfmData::SfMData& scene,
-                                        const std::set<IndexT>& previousReconstructedViews,
-                                        const std::set<IndexT>& newReconstructedViews);
+    void triangulateMultiViewsLORANSAC(sfmData::SfMData& scene,
+                                       const std::set<IndexT>& previousReconstructedViews,
+                                       const std::set<IndexT>& newReconstructedViews);
 
     /**
      * @brief Check if a 3D points is well located in front of a set of views.
@@ -352,6 +354,9 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
   private:
     // Parameters
     Params _params;
+
+    /// Current resection ID
+    IndexT _resectionId;
 
     // Data providers
 

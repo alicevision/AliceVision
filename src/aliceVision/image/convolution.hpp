@@ -34,17 +34,17 @@ namespace image {
  ** @param out resulting image
  **/
 template<typename Image>
-void ImageConvolution(const Image& img, const Mat& kernel, Image& out)
+void imageConvolution(const Image& img, const Mat& kernel, Image& out)
 {
-    const int kernel_width = kernel.cols();
-    const int kernel_height = kernel.rows();
+    const int kernelWidth = kernel.cols();
+    const int kernelHeight = kernel.rows();
 
-    assert(kernel_width % 2 != 0 && kernel_height % 2 != 0);
+    assert(kernelWidth % 2 != 0 && kernelHeight % 2 != 0);
 
     typedef typename Image::Tpixel pix_t;
     typedef typename Accumulator<pix_t>::Type acc_pix_t;
 
-    out.resize(img.Width(), img.Height());
+    out.resize(img.width(), img.height());
 
     for (int row = 0; row < img.rows(); ++row)
     {
@@ -52,12 +52,12 @@ void ImageConvolution(const Image& img, const Mat& kernel, Image& out)
         {
             acc_pix_t sum = acc_pix_t();
 
-            for (int i = 0; i < kernel_height; ++i)
+            for (int i = 0; i < kernelHeight; ++i)
             {
-                for (int j = 0; j < kernel_width; ++j)
+                for (int j = 0; j < kernelWidth; ++j)
                 {
-                    int idy = row + i - kernel_height / 2;
-                    int idx = col + j - kernel_width / 2;
+                    int idy = row + i - kernelHeight / 2;
+                    int idx = col + j - kernelWidth / 2;
 
                     // Get correct value
                     idx = idx < 0 ? 0 : (idx >= img.cols() ? img.cols() - 1 : idx);
@@ -79,7 +79,7 @@ void ImageConvolution(const Image& img, const Mat& kernel, Image& out)
  ** @param out Output image
  **/
 template<typename ImageTypeIn, typename ImageTypeOut, typename Kernel>
-void ImageHorizontalConvolution(const ImageTypeIn& img, const Kernel& kernel, ImageTypeOut& out)
+void imageHorizontalConvolution(const ImageTypeIn& img, const Kernel& kernel, ImageTypeOut& out)
 {
     typedef typename ImageTypeIn::Tpixel pix_t;
 
@@ -88,28 +88,28 @@ void ImageHorizontalConvolution(const ImageTypeIn& img, const Kernel& kernel, Im
 
     out.resize(cols, rows);
 
-    const int kernel_width = kernel.size();
-    const int half_kernel_width = kernel_width / 2;
+    const int kernelWidth = kernel.size();
+    const int halfKernelWidth = kernelWidth / 2;
 
-    std::vector<pix_t, Eigen::aligned_allocator<pix_t>> line(cols + kernel_width);
+    std::vector<pix_t> line(cols + kernelWidth);
 
     for (int row = 0; row < rows; ++row)
     {
         // Copy line
-        const pix_t start_pix = img.coeffRef(row, 0);
-        for (int k = 0; k < half_kernel_width; ++k)  // pad before
+        const pix_t startPix = img.coeffRef(row, 0);
+        for (int k = 0; k < halfKernelWidth; ++k)  // pad before
         {
-            line[k] = start_pix;
+            line[k] = startPix;
         }
-        memcpy(&line[0] + half_kernel_width, img.data() + row * cols, sizeof(pix_t) * cols);
-        const pix_t end_pix = img.coeffRef(row, cols - 1);
-        for (int k = 0; k < half_kernel_width; ++k)  // pad after
+        memcpy(&line[0] + halfKernelWidth, img.data() + row * cols, sizeof(pix_t) * cols);
+        const pix_t endPix = img.coeffRef(row, cols - 1);
+        for (int k = 0; k < halfKernelWidth; ++k)  // pad after
         {
-            line[k + half_kernel_width + cols] = end_pix;
+            line[k + halfKernelWidth + cols] = endPix;
         }
 
         // Apply convolution
-        conv_buffer_(&line[0], kernel.data(), cols, kernel_width);
+        convBuffer(&line[0], kernel.data(), cols, kernelWidth);
 
         memcpy(out.data() + row * cols, &line[0], sizeof(pix_t) * cols);
     }
@@ -123,38 +123,38 @@ void ImageHorizontalConvolution(const ImageTypeIn& img, const Kernel& kernel, Im
  ** @param out Output image
  **/
 template<typename ImageTypeIn, typename ImageTypeOut, typename Kernel>
-void ImageVerticalConvolution(const ImageTypeIn& img, const Kernel& kernel, ImageTypeOut& out)
+void imageVerticalConvolution(const ImageTypeIn& img, const Kernel& kernel, ImageTypeOut& out)
 {
     typedef typename ImageTypeIn::Tpixel pix_t;
 
-    const int kernel_width = kernel.size();
-    const int half_kernel_width = kernel_width / 2;
+    const int kernelWidth = kernel.size();
+    const int halfKernelWidth = kernelWidth / 2;
 
     const int rows = img.rows();
     const int cols = img.cols();
 
     out.resize(cols, rows);
 
-    std::vector<pix_t, Eigen::aligned_allocator<pix_t>> line(rows + kernel_width);
+    std::vector<pix_t> line(rows + kernelWidth);
 
     for (int col = 0; col < cols; ++col)
     {
         // Copy column
-        for (int k = 0; k < half_kernel_width; ++k)
+        for (int k = 0; k < halfKernelWidth; ++k)
         {
             line[k] = img.coeffRef(0, col);
         }
         for (int k = 0; k < rows; ++k)
         {
-            line[k + half_kernel_width] = img.coeffRef(k, col);
+            line[k + halfKernelWidth] = img.coeffRef(k, col);
         }
-        for (int k = 0; k < half_kernel_width; ++k)
+        for (int k = 0; k < halfKernelWidth; ++k)
         {
-            line[k + half_kernel_width + rows] = img.coeffRef(rows - 1, col);
+            line[k + halfKernelWidth + rows] = img.coeffRef(rows - 1, col);
         }
 
         // Apply convolution
-        conv_buffer_(&line[0], kernel.data(), rows, kernel_width);
+        convBuffer(&line[0], kernel.data(), rows, kernelWidth);
 
         for (int row = 0; row < rows; ++row)
         {
@@ -167,44 +167,44 @@ void ImageVerticalConvolution(const ImageTypeIn& img, const Kernel& kernel, Imag
  ** Separable 2D convolution
  ** (nxm kernel is replaced by two 1D convolution of (size n then size m) )
  ** @param img source image
- ** @param horiz_k horizontal kernel
- ** @param vert_k vertical kernel
+ ** @param horizK horizontal kernel
+ ** @param vertK vertical kernel
  ** @param out output image
  **/
 template<typename ImageType, typename Kernel>
-void ImageSeparableConvolution(const ImageType& img, const Kernel& horiz_k, const Kernel& vert_k, ImageType& out)
+void imageSeparableConvolution(const ImageType& img, const Kernel& horizK, const Kernel& vertK, ImageType& out)
 {
     // Cast the Kernel to the appropriate type
     typedef typename ImageType::Tpixel pix_t;
     typedef Eigen::Matrix<typename Accumulator<pix_t>::Type, Eigen::Dynamic, 1> VecKernel;
-    const VecKernel horiz_k_cast = horiz_k.template cast<typename Accumulator<pix_t>::Type>();
-    const VecKernel vert_k_cast = vert_k.template cast<typename Accumulator<pix_t>::Type>();
+    const VecKernel horizKCast = horizK.template cast<typename Accumulator<pix_t>::Type>();
+    const VecKernel vertKCast = vertK.template cast<typename Accumulator<pix_t>::Type>();
 
     ImageType tmp;
-    ImageHorizontalConvolution(img, horiz_k_cast, tmp);
-    ImageVerticalConvolution(tmp, vert_k_cast, out);
+    imageHorizontalConvolution(img, horizKCast, tmp);
+    imageVerticalConvolution(tmp, vertKCast, out);
 }
 
 typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrixXf;
 
 /// Specialization for Float based image (for arbitrary sized kernel)
-void SeparableConvolution2d(const RowMatrixXf& image,
-                            const Eigen::Matrix<float, 1, Eigen::Dynamic>& kernel_x,
-                            const Eigen::Matrix<float, 1, Eigen::Dynamic>& kernel_y,
+void separableConvolution2d(const RowMatrixXf& image,
+                            const Eigen::Matrix<float, 1, Eigen::Dynamic>& kernelX,
+                            const Eigen::Matrix<float, 1, Eigen::Dynamic>& kernelY,
                             RowMatrixXf* out);
 
-// Specialization for Image<float> in order to use SeparableConvolution2d
+// Specialization for Image<float> in order to use separableConvolution2d
 template<typename Kernel>
-void ImageSeparableConvolution(const Image<float>& img, const Kernel& horiz_k, const Kernel& vert_k, Image<float>& out)
+void imageSeparableConvolution(const Image<float>& img, const Kernel& horizK, const Kernel& vertK, Image<float>& out)
 {
     // Cast the Kernel to the appropriate type
     typedef Image<float>::Tpixel pix_t;
     typedef Eigen::Matrix<typename aliceVision::Accumulator<pix_t>::Type, Eigen::Dynamic, 1> VecKernel;
-    const VecKernel horiz_k_cast = horiz_k.template cast<typename aliceVision::Accumulator<pix_t>::Type>();
-    const VecKernel vert_k_cast = vert_k.template cast<typename aliceVision::Accumulator<pix_t>::Type>();
+    const VecKernel horizKCast = horizK.template cast<typename aliceVision::Accumulator<pix_t>::Type>();
+    const VecKernel vertKCast = vertK.template cast<typename aliceVision::Accumulator<pix_t>::Type>();
 
-    out.resize(img.Width(), img.Height());
-    SeparableConvolution2d(img.GetMat(), horiz_k_cast, vert_k_cast, &((Image<float>::Base&)out));
+    out.resize(img.width(), img.height());
+    separableConvolution2d(img.getMat(), horizKCast, vertKCast, &((Image<float>::Base&)out));
 }
 
 }  // namespace image

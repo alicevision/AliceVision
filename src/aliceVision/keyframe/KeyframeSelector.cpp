@@ -8,17 +8,16 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <random>
 #include <tuple>
 #include <cassert>
 #include <cstdlib>
+#include <filesystem>
 #include <iomanip>
 #include <fstream>
 #include <thread>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace aliceVision {
 namespace keyframe {
@@ -1226,7 +1225,7 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath,
         return false;
     }
 
-    if (!sfmDataIO::Save(_outputSfmKeyframes, _outputSfmKeyframesPath, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::save(_outputSfmKeyframes, _outputSfmKeyframesPath, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmKeyframesPath << "' could not be written.");
         return false;
@@ -1234,7 +1233,7 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath,
 
     if (!feed.isVideo())
     {
-        if (!sfmDataIO::Save(_outputSfmFrames, _outputSfmFramesPath, sfmDataIO::ESfMData::ALL))
+        if (!sfmDataIO::save(_outputSfmFrames, _outputSfmFramesPath, sfmDataIO::ESfMData::ALL))
         {
             ALICEVISION_LOG_ERROR("The output SfMData file '" << _outputSfmFramesPath << "' could not be written.");
             return false;
@@ -1262,7 +1261,7 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
 
     sfmData::SfMData inputSfm;
     std::vector<std::shared_ptr<sfmData::View>> views;
-    if (!sfmDataIO::Load(inputSfm, mediaPath, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(inputSfm, mediaPath, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("Could not open input SfMData file " << mediaPath << ".");
         return false;
@@ -1368,7 +1367,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         }
 
         // Create the view
-        auto view = createView(currentImgName, intrinsicId, previousFrameId, image.Width(), image.Height());
+        auto view = createView(currentImgName, intrinsicId, previousFrameId, image.width(), image.height());
         previousFrameId = view->getFrameId();
 
         // If there is a rig, the view's rig and sub-pose IDs need to be set once it has been completed
@@ -1388,7 +1387,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         if (model.empty() && !models[mediaIndex].empty())
             model = models[mediaIndex];
 
-        const double imageRatio = static_cast<double>(image.Width()) / static_cast<double>(image.Height());
+        const double imageRatio = static_cast<double>(image.width()) / static_cast<double>(image.height());
         double sensorWidth = -1.0;
         sensorDB::Datasheet datasheet;
 

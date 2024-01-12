@@ -12,8 +12,8 @@
 #include <aliceVision/mesh/Mesh.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <ostream>
@@ -27,7 +27,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /**
  * @brief Convert Mesh
@@ -42,12 +42,14 @@ int aliceVision_main(int argc, char** argv)
     std::string inputMeshPath;
     std::string outputFilePath;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-      ("inputMesh", po::value<std::string>(&inputMeshPath)->default_value(inputMeshPath),
-        "Mesh file path (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).")
-      ("output,o", po::value<std::string>(&outputFilePath)->default_value(outputFilePath),
-        "Output file path for the new mesh file (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl)");
+        ("inputMesh", po::value<std::string>(&inputMeshPath)->default_value(inputMeshPath),
+         "Mesh file path (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).")
+        ("output,o", po::value<std::string>(&outputFilePath)->default_value(outputFilePath),
+         "Output file path for the new mesh file (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).");
+    // clang-format on
 
     CmdLine cmdline("The program allows to convert a mesh to another mesh format.\n"
                     "AliceVision convertMesh");

@@ -19,9 +19,9 @@
 #include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -31,7 +31,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace aliceVision::track;
 using namespace aliceVision::sfm;
 
@@ -57,51 +57,52 @@ int aliceVision_main(int argc, char** argv)
 
     int randomSeed = std::mt19937::default_seed;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-            "SfMData file, must contain the camera calibration.")
+         "SfMData file, must contain the camera calibration.")
         ("output,o", po::value<std::string>(&outputSfM)->required(),
-            "Path to the output SfMData file.")
+         "Path to the output SfMData file.")
         ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
-            "Path to folder(s) containing the extracted features.")
+         "Path to folder(s) containing the extracted features.")
         ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
-            "Path to folder(s) in which computed matches are stored.");
+         "Path to folder(s) in which computed matches are stored.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-
         ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
-            "Folder for intermediate reconstruction files and additional reconstruction information files.")
+         "Folder for intermediate reconstruction files and additional reconstruction information files.")
         ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-            feature::EImageDescriberType_informations().c_str())
+         feature::EImageDescriberType_informations().c_str())
         ("interFileExtension", po::value<std::string>(&sfmParams.sfmStepFileExtension)->default_value(sfmParams.sfmStepFileExtension),
-            "Extension of the intermediate file export.")
+         "Extension of the intermediate file export.")
         ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
-            "Maximum number of matches per image pair (and per feature type). "
-            "This can be useful to have a quick reconstruction overview. 0 means no limit.")
+         "Maximum number of matches per image pair (and per feature type). "
+         "This can be useful to have a quick reconstruction overview. 0 means no limit.")
         ("minNumberOfMatches", po::value<int>(&minNbMatches)->default_value(minNbMatches),
-            "Minimum number of matches per image pair (and per feature type). "
-            "This can be useful to have a meaningful reconstruction with accurate keypoints. 0 means no limit.")
+         "Minimum number of matches per image pair (and per feature type). "
+         "This can be useful to have a meaningful reconstruction with accurate keypoints. 0 means no limit.")
         ("minAngleForTriangulation", po::value<double>(&sfmParams.minAngleForTriangulation)->default_value(sfmParams.minAngleForTriangulation),
-            "Minimum angle for triangulation.")
+         "Minimum angle for triangulation.")
         ("minAngleForLandmark", po::value<double>(&sfmParams.minAngleForLandmark)->default_value(sfmParams.minAngleForLandmark),
-            "Minimum angle for landmark.")
+         "Minimum angle for landmark.")
         ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&sfmParams.minNbObservationsForTriangulation)->default_value(sfmParams.minNbObservationsForTriangulation),
-            "Minimum number of observations to triangulate a point.\n"
-            "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
-            "Note: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
+         "Minimum number of observations to triangulate a point.\n"
+         "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a "
+         "little bit reduced (from 1.5% to 11% on the tested datasets).\n"
+         "Note: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
         ("useRigConstraint", po::value<bool>(&sfmParams.rig.useRigConstraint)->default_value(sfmParams.rig.useRigConstraint),
-            "Enable/Disable rig constraint.\n")
+         "Enable/Disable rig constraint.")
         ("rigMinNbCamerasForCalibration", po::value<int>(&sfmParams.rig.minNbCamerasForCalibration)->default_value(sfmParams.rig.minNbCamerasForCalibration),
-            "Minimal number of cameras to start the calibration of the rig.\n")
+         "Minimal number of cameras to start the calibration of the rig.")
         ("observationConstraint", po::value<EFeatureConstraint>(&sfmParams.featureConstraint)->default_value(sfmParams.featureConstraint),
-            "Use of an observation constraint : basic, scale the observation or use of the covariance.\n")
+         "Use of an observation constraint: basic, scale the observation or use of the covariance.")
         ("computeStructureColor", po::value<bool>(&computeStructureColor)->default_value(computeStructureColor),
-            "Compute each 3D point color.\n")
+         "Compute each 3D point color.")
         ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
-            "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
-        ;
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
+    // clang-format on
     
     CmdLine cmdline("AliceVision SfM Triangulation");
     cmdline.add(requiredParams);
@@ -123,7 +124,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input SfMData scene
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
         return EXIT_FAILURE;
@@ -197,8 +198,8 @@ int aliceVision_main(int argc, char** argv)
     // export to disk computed scene (data & visualizable results)
     ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
-    sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS | sfmDataIO::STRUCTURE));
-    sfmDataIO::Save(sfmEngine.getSfMData(), outputSfM, sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS | sfmDataIO::STRUCTURE));
+    sfmDataIO::save(sfmEngine.getSfMData(), outputSfM, sfmDataIO::ESfMData::ALL);
 
     ALICEVISION_LOG_INFO("Triangulation Done" << std::endl
         << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());

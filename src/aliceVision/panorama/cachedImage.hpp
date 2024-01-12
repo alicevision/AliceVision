@@ -215,8 +215,8 @@ class CachedImage
         BoundingBox inputMemoryBb;
         inputMemoryBb.left = 0;
         inputMemoryBb.top = 0;
-        inputMemoryBb.width = input.Width();
-        inputMemoryBb.height = input.Height();
+        inputMemoryBb.width = input.width();
+        inputMemoryBb.height = input.height();
 
         if (!inputBb.isInside(inputMemoryBb))
         {
@@ -313,8 +313,8 @@ class CachedImage
         BoundingBox outputMemoryBb;
         outputMemoryBb.left = 0;
         outputMemoryBb.top = 0;
-        outputMemoryBb.width = output.Width();
-        outputMemoryBb.height = output.Height();
+        outputMemoryBb.width = output.width();
+        outputMemoryBb.height = output.height();
 
         if (!outputBb.isInside(outputMemoryBb))
         {
@@ -420,12 +420,12 @@ class CachedImage
 
     static bool setTileWithImage(image::CachedTile::smart_pointer tile, const image::Image<T>& ret)
     {
-        if (ret.Width() != tile->getTileWidth())
+        if (ret.width() != tile->getTileWidth())
         {
             return false;
         }
 
-        if (ret.Height() != tile->getTileHeight())
+        if (ret.height() != tile->getTileHeight())
         {
             return false;
         }

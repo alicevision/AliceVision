@@ -102,35 +102,36 @@ int aliceVision_main(int argc, char **argv)
     std::vector<std::string> metadataMatchingList = { "Make", "Model", "Exif:BodySerialNumber" , "Exif:LensSerialNumber" };
     std::string outputViewsAndPosesFilepath;
 
-
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-             "SfMData file to align.")
+         "SfMData file to align.")
         ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-            "Output SfMData scene.")
+         "Output SfMData scene.")
         ("reference,r", po::value<std::string>(&sfmDataReferenceFilename)->required(),
-            "Path to the scene used as the reference coordinate system.");
+         "Path to the scene used as the reference coordinate system.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("method", po::value<EMatchingMethod>(&matchingMethod)->default_value(matchingMethod),
-            "Matching Method:\n"
-            "\t- from_viewid: Align cameras with same view Id\n"
-            "\t- from_filepath: Align cameras with a filepath matching, using --fileMatchingPattern\n"
-            "\t- from_metadata: Align cameras with matching metadata, using --metadataMatchingList\n")
+         "Matching method:\n"
+         "\t- from_viewid: Align cameras with same view ID.\n"
+         "\t- from_filepath: Align cameras with a filepath matching, using --fileMatchingPattern.\n"
+         "\t- from_metadata: Align cameras with matching metadata, using --metadataMatchingList.\n")
         ("fileMatchingPattern", po::value<std::string>(&fileMatchingPattern)->default_value(fileMatchingPattern),
-            "Matching pattern for the from_filepath method.\n")
+         "Matching pattern for the from_filepath method.\n")
         ("metadataMatchingList", po::value<std::vector<std::string>>(&metadataMatchingList)->multitoken()->default_value(metadataMatchingList),
-            "List of metadata that should match to create the correspondences.\n")
+         "List of metadata that should match to create the correspondences.\n")
         ("transferPoses", po::value<bool>(&transferPoses)->default_value(transferPoses),
-            "Transfer poses.")
+         "Transfer poses.")
         ("transferIntrinsics", po::value<bool>(&transferIntrinsics)->default_value(transferIntrinsics),
-            "Transfer intrinsics.")
+         "Transfer intrinsics.")
         ("transferLandmarks", po::value<bool>(&transferLandmarks)->default_value(transferLandmarks),
-            "Transfer landmarks.")
+         "Transfer landmarks.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-            "Path of the output SfMData file.");
+         "Path of the output SfMData file.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision sfmTransfer");
     cmdline.add(requiredParams);
@@ -142,7 +143,7 @@ int aliceVision_main(int argc, char **argv)
 
     // Load input scene
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
         return EXIT_FAILURE;
@@ -150,7 +151,7 @@ int aliceVision_main(int argc, char **argv)
 
     // Load reference scene
     sfmData::SfMData sfmDataRef;
-    if (!sfmDataIO::Load(sfmDataRef, sfmDataReferenceFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmDataRef, sfmDataReferenceFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The reference SfMData file '" << sfmDataReferenceFilename << "' cannot be read");
         return EXIT_FAILURE;
@@ -301,21 +302,21 @@ int aliceVision_main(int argc, char **argv)
                             aliceVision::sfmData::Landmark newLandmark = landIt.second;
 
                             // Clear all observations :
-                            newLandmark.observations.clear();
+                            newLandmark.getObservations().clear();
 
                             // For all observations of the ref landmark :
-                            for (const auto& obsIt : landIt.second.observations)
+                            for (const auto& obsIt : landIt.second.getObservations())
                             {
                                   const IndexT viewId = obsIt.first;
                                   // If the observation view has a correspondance in the other sfmData, we copy it :
                                   if (commonViewsMap.find(viewId) != commonViewsMap.end() )
                                   {
-                                      newLandmark.observations.emplace(commonViewsMap.at(viewId), landIt.second.observations.at(viewId));
+                                      newLandmark.getObservations().emplace(commonViewsMap.at(viewId), landIt.second.getObservations().at(viewId));
                                   }
                             }
 
                             // If the landmark has at least one observation in the new scene, we copy it :
-                            if(newLandmark.observations.size() > 0)
+                            if(newLandmark.getObservations().size() > 0)
                             {
                                 newLandmarks.emplace(landIt.first,newLandmark);
                             }
@@ -348,7 +349,7 @@ int aliceVision_main(int argc, char **argv)
 
     ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
     // Export the SfMData scene in the expected format
-    if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
         return EXIT_FAILURE;
@@ -356,7 +357,7 @@ int aliceVision_main(int argc, char **argv)
 
     if(!outputViewsAndPosesFilepath.empty())
     {
-        sfmDataIO::Save(sfmData, outputViewsAndPosesFilepath,
+        sfmDataIO::save(sfmData, outputViewsAndPosesFilepath,
                         sfmDataIO::ESfMData(sfmDataIO::ALL));
     }
 
