@@ -4,7 +4,6 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
@@ -28,8 +27,7 @@ using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
 
-
-void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::SfMData & returnSfmDataToEstimate)
+void generateSampleSceneOnePlane(sfmData::SfMData& returnSfmDataGT, sfmData::SfMData& returnSfmDataToEstimate)
 {
     sfmData::SfMData sfmDataGT;
     sfmData::SfMData sfmDataEst;
@@ -48,7 +46,7 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     for (int i = 0; i < 120; i++)
     {
         Vec3 pos = direction * double(i) / 120.0;
-        Eigen::Matrix3d R = SO3::expm(axis * double(i) * M_PI / (8*120.0));
+        Eigen::Matrix3d R = SO3::expm(axis * double(i) * M_PI / (8 * 120.0));
         geometry::Pose3 poseGT(R, pos);
         sfmData::CameraPose cposeGT(poseGT);
         sfmDataGT.getPoses()[i] = cposeGT;
@@ -58,16 +56,15 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
         Eigen::Vector3d tup = Vec3::Random() * (0.5);
 
         geometry::Pose3 poseEst(Rup * R, pos + tup);
-        sfmData::CameraPose cposeEst(poseEst, (i==0));
+        sfmData::CameraPose cposeEst(poseEst, (i == 0));
         sfmDataEst.getPoses()[i] = cposeEst;
         sfmDataEst.getViews().emplace(i, std::make_shared<sfmData::View>("", i, 0, i, 1920, 1080));
-
     }
 
     int tid = 0;
-    for (double y = -2.0; y < 2.0; y+=0.1)
+    for (double y = -2.0; y < 2.0; y += 0.1)
     {
-        for (double x = -2.0; x < 2.0; x+=0.1)
+        for (double x = -2.0; x < 2.0; x += 0.1)
         {
             sfmData::Landmark lGT;
             lGT.X = Vec3(x, y, 4.0);
@@ -82,12 +79,12 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
         }
     }
 
-    for (double y = -2.0; y < 2.0; y+=0.1)
+    for (double y = -2.0; y < 2.0; y += 0.1)
     {
-        for (double x = -2.0; x < 2.0; x+=0.1)
+        for (double x = -2.0; x < 2.0; x += 0.1)
         {
             sfmData::Landmark lGT;
-            lGT.X = Vec3(x, y, 3.0 + sqrt(x*x + y*y));
+            lGT.X = Vec3(x, y, 3.0 + sqrt(x * x + y * y));
             lGT.descType = feature::EImageDescriberType::SIFT;
             sfmDataGT.getLandmarks()[tid] = lGT;
 
@@ -98,16 +95,16 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
             tid++;
         }
     }
-    
-    //Compute observations
-    for (auto & pl : sfmDataGT.getLandmarks())
+
+    // Compute observations
+    for (auto& pl : sfmDataGT.getLandmarks())
     {
-        sfmData::Landmark & lEst = sfmDataEst.getLandmarks()[pl.first];
-        
-        for (auto & pp : sfmDataGT.getPoses())
+        sfmData::Landmark& lEst = sfmDataEst.getLandmarks()[pl.first];
+
+        for (auto& pp : sfmDataGT.getPoses())
         {
             sfmData::Observation obs(phPinholeGT->project(pp.second.getTransform(), pl.second.X.homogeneous(), true), pl.first, 1.0);
-            
+
             if (pp.second.getTransform()(pl.second.X)(2) < 0.1)
             {
                 continue;
@@ -122,43 +119,49 @@ void generateSampleSceneOnePlane(sfmData::SfMData & returnSfmDataGT, sfmData::Sf
     returnSfmDataToEstimate = sfmDataEst;
 }
 
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  CmdLine cmdline("AliceVision sfmRegression");
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline("AliceVision sfmRegression");
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
-  {
-    srand(0);
-    sfmData::SfMData sfmDataGT;
-    sfmData::SfMData sfmDataEst;
-    generateSampleSceneOnePlane(sfmDataGT, sfmDataEst);
+    {
+        srand(0);
+        sfmData::SfMData sfmDataGT;
+        sfmData::SfMData sfmDataEst;
+        generateSampleSceneOnePlane(sfmDataGT, sfmDataEst);
 
-    BundleAdjustmentSymbolicCeres::CeresOptions options;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS | BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
-    options.summary = true;
-    //options.nbThreads = 1;
+        BundleAdjustmentSymbolicCeres::CeresOptions options;
+        BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |
+                                                         BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL |
+                                                         BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS |
+                                                         BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
+        options.summary = true;
+        // options.nbThreads = 1;
 
-    BundleAdjustmentSymbolicCeres BA(options, 3);
-    const bool success = BA.adjust(sfmDataEst, refineOptions);
-  }
+        BundleAdjustmentSymbolicCeres BA(options, 3);
+        const bool success = BA.adjust(sfmDataEst, refineOptions);
+    }
 
-  {
-    srand(0);
-    sfmData::SfMData sfmDataGT;
-    sfmData::SfMData sfmDataEst;
-    generateSampleSceneOnePlane(sfmDataGT, sfmDataEst);
+    {
+        srand(0);
+        sfmData::SfMData sfmDataGT;
+        sfmData::SfMData sfmDataEst;
+        generateSampleSceneOnePlane(sfmDataGT, sfmDataEst);
 
-    BundleAdjustmentCeres::CeresOptions options;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS | BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
-    options.summary = true;
-    //options.nbThreads = 1;
+        BundleAdjustmentCeres::CeresOptions options;
+        BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION |
+                                                         BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL |
+                                                         BundleAdjustment::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS |
+                                                         BundleAdjustment::REFINE_INTRINSICS_DISTORTION;
+        options.summary = true;
+        // options.nbThreads = 1;
 
-    BundleAdjustmentCeres BA(options, 3);
-    const bool success = BA.adjust(sfmDataEst, refineOptions);
-  }
+        BundleAdjustmentCeres BA(options, 3);
+        const bool success = BA.adjust(sfmDataEst, refineOptions);
+    }
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

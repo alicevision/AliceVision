@@ -41,16 +41,22 @@ using namespace aliceVision::sfmDataIO;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-template <class ImageT, class MaskFuncT>
-void process(const std::string &dstColorImage, const IntrinsicBase* cam, const oiio::ParamValueList & metadata, const std::string & srcImage, bool evCorrection, float exposureCompensation, MaskFuncT && maskFunc)
+template<class ImageT, class MaskFuncT>
+void process(const std::string& dstColorImage,
+             const IntrinsicBase* cam,
+             const oiio::ParamValueList& metadata,
+             const std::string& srcImage,
+             bool evCorrection,
+             float exposureCompensation,
+             MaskFuncT&& maskFunc)
 {
     ImageT image, image_ud;
     readImage(srcImage, image, image::EImageColorSpace::LINEAR);
 
     // exposure correction
-    if(evCorrection)
+    if (evCorrection)
     {
-        for(int pix = 0; pix < image.width() * image.height(); ++pix)
+        for (int pix = 0; pix < image.width() * image.height(); ++pix)
         {
             image(pix)[0] *= exposureCompensation;
             image(pix)[1] *= exposureCompensation;
@@ -62,7 +68,7 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
     maskFunc(image);
 
     // undistort
-    if(cam->isValid() && cam->hasDistortion())
+    if (cam->isValid() && cam->hasDistortion())
     {
         // undistort the image and save it
         using Pix = typename ImageT::Tpixel;
@@ -94,7 +100,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     sfmData::Views::const_iterator itViewBegin = sfmData.getViews().begin();
     sfmData::Views::const_iterator itViewEnd = sfmData.getViews().end();
 
-    if(endIndex > 0)
+    if (endIndex > 0)
     {
         itViewEnd = itViewBegin;
         std::advance(itViewEnd, endIndex);
@@ -103,7 +109,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     std::advance(itViewBegin, (beginIndex < 0) ? 0 : beginIndex);
 
     // export valid views as projective cameras
-    for(auto it = itViewBegin; it != itViewEnd; ++it)
+    for (auto it = itViewBegin; it != itViewEnd; ++it)
     {
         const View* view = it->second.get();
         if (!sfmData.isPoseAndIntrinsicDefined(view))
@@ -111,20 +117,19 @@ bool prepareDenseScene(const SfMData& sfmData,
         viewIds.insert(view->getViewId());
     }
 
-    if((outputFileType != image::EImageFileType::EXR) && saveMetadata)
+    if ((outputFileType != image::EImageFileType::EXR) && saveMetadata)
         ALICEVISION_LOG_WARNING("Cannot save informations in images metadata.\n"
                                 "Choose '.exr' file type if you want AliceVision custom metadata");
 
     // export data
-    auto progressDisplay = system::createConsoleProgressDisplay(viewIds.size(), std::cout,
-                                                                "Exporting Scene Undistorted Images\n");
+    auto progressDisplay = system::createConsoleProgressDisplay(viewIds.size(), std::cout, "Exporting Scene Undistorted Images\n");
 
     // for exposure correction
     const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
-    ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0/medianCameraExposure));
+    ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0 / medianCameraExposure));
 
-    #pragma omp parallel for num_threads(3)
-    for(int i = 0; i < viewIds.size(); ++i)
+#pragma omp parallel for num_threads(3)
+    for (int i = 0; i < viewIds.size(); ++i)
     {
         auto itView = viewIds.begin();
         std::advance(itView, i);
@@ -137,19 +142,21 @@ bool prepareDenseScene(const SfMData& sfmData,
         // we have a valid view with a corresponding camera & pose
         const std::string baseFilename = std::to_string(viewId);
 
-        // get metadata from source image to be sure we get all metadata. We don't use the metadatas from the Views inside the SfMData to avoid type conversion problems with string maps.
+        // get metadata from source image to be sure we get all metadata. We don't use the metadatas from the Views inside the SfMData to avoid type
+        // conversion problems with string maps.
         std::string srcImage = view->getImage().getImagePath();
         oiio::ParamValueList metadata = image::readImageMetadata(srcImage);
 
         // export camera
-        if(saveMetadata || saveMatricesFiles)
+        if (saveMetadata || saveMatricesFiles)
         {
             // get camera pose / projection
             const Pose3 pose = sfmData.getPose(*view).getTransform();
 
             std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
             std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
-            if (!camPinHole) {
+            if (!camPinHole)
+            {
                 ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
                 continue;
             }
@@ -161,18 +168,16 @@ bool prepareDenseScene(const SfMData& sfmData,
             const Mat3& R = pose.rotation();
             const Vec3& t = pose.translation();
 
-            if(saveMatricesFiles)
+            if (saveMatricesFiles)
             {
                 std::ofstream fileP((fs::path(outFolder) / (baseFilename + "_P.txt")).string());
-                fileP << std::setprecision(10)
-                        << P(0, 0) << " " << P(0, 1) << " " << P(0, 2) << " " << P(0, 3) << "\n"
-                        << P(1, 0) << " " << P(1, 1) << " " << P(1, 2) << " " << P(1, 3) << "\n"
-                        << P(2, 0) << " " << P(2, 1) << " " << P(2, 2) << " " << P(2, 3) << "\n";
+                fileP << std::setprecision(10) << P(0, 0) << " " << P(0, 1) << " " << P(0, 2) << " " << P(0, 3) << "\n"
+                      << P(1, 0) << " " << P(1, 1) << " " << P(1, 2) << " " << P(1, 3) << "\n"
+                      << P(2, 0) << " " << P(2, 1) << " " << P(2, 2) << " " << P(2, 3) << "\n";
                 fileP.close();
 
                 std::ofstream fileKRt((fs::path(outFolder) / (baseFilename + "_KRt.txt")).string());
-                fileKRt << std::setprecision(10)
-                        << K(0, 0) << " " << K(0, 1) << " " << K(0, 2) << "\n"
+                fileKRt << std::setprecision(10) << K(0, 0) << " " << K(0, 1) << " " << K(0, 2) << "\n"
                         << K(1, 0) << " " << K(1, 1) << " " << K(1, 2) << "\n"
                         << K(2, 0) << " " << K(2, 1) << " " << K(2, 2) << "\n"
                         << "\n"
@@ -184,14 +189,12 @@ bool prepareDenseScene(const SfMData& sfmData,
                 fileKRt.close();
             }
 
-            if(saveMetadata)
+            if (saveMetadata)
             {
                 // convert to 44 matix
                 Mat4 projectionMatrix;
-                projectionMatrix << P(0, 0), P(0, 1), P(0, 2), P(0, 3),
-                                    P(1, 0), P(1, 1), P(1, 2), P(1, 3),
-                                    P(2, 0), P(2, 1), P(2, 2), P(2, 3),
-                                         0,       0,       0,       1;
+                projectionMatrix << P(0, 0), P(0, 1), P(0, 2), P(0, 3), P(1, 0), P(1, 1), P(1, 2), P(1, 3), P(2, 0), P(2, 1), P(2, 2), P(2, 3), 0, 0,
+                  0, 1;
 
                 // convert matrices to rowMajor
                 std::vector<double> vP(projectionMatrix.size());
@@ -213,25 +216,26 @@ bool prepareDenseScene(const SfMData& sfmData,
         }
 
         // export undistort image
-        {      
-            if(!imagesFolders.empty())
+        {
+            if (!imagesFolders.empty())
             {
                 std::vector<std::string> paths = sfmDataIO::viewPathsFromFolders(*view, imagesFolders);
 
                 // if path was not found
-                if(paths.empty())
+                if (paths.empty())
                 {
                     throw std::runtime_error("Cannot find view '" + std::to_string(view->getViewId()) + "' image file in given folder(s)");
                 }
-                else if(paths.size() > 1)
+                else if (paths.size() > 1)
                 {
-                    throw std::runtime_error( "Ambiguous case: Multiple source image files found in given folder(s) for the view '" + 
-                        std::to_string(view->getViewId()) + "'.");
+                    throw std::runtime_error("Ambiguous case: Multiple source image files found in given folder(s) for the view '" +
+                                             std::to_string(view->getViewId()) + "'.");
                 }
 
                 srcImage = paths[0];
             }
-            const std::string dstColorImage = (fs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
+            const std::string dstColorImage =
+              (fs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
             const IntrinsicBase* cam = iterIntrinsic->second.get();
 
             // add exposure values to images metadata
@@ -241,32 +245,33 @@ bool prepareDenseScene(const SfMData& sfmData,
             metadata.push_back(oiio::ParamValue("AliceVision:EV", float(ev)));
             metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
 
-            if(evCorrection)
+            if (evCorrection)
             {
-                ALICEVISION_LOG_INFO("image " << viewId << ", exposure: " << cameraExposure << ", Ev " << ev << " Ev compensation: " + std::to_string(exposureCompensation));
+                ALICEVISION_LOG_INFO("image " << viewId << ", exposure: " << cameraExposure << ", Ev " << ev
+                                              << " Ev compensation: " + std::to_string(exposureCompensation));
             }
 
             image::Image<unsigned char> mask;
-            if(tryLoadMask(&mask, masksFolders, viewId, srcImage, maskExtension))
+            if (tryLoadMask(&mask, masksFolders, viewId, srcImage, maskExtension))
             {
-                process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
-                {
-                    if(image.width() * image.height() != mask.width() * mask.height())
-                    {
-                        ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
-                        return;
-                    }
+                process<Image<RGBAfColor>>(
+                  dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask](Image<RGBAfColor>& image) {
+                      if (image.width() * image.height() != mask.width() * mask.height())
+                      {
+                          ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
+                          return;
+                      }
 
-                    for(int pix = 0; pix < image.width() * image.height(); ++pix)
-                    {
-                        const bool masked = (mask(pix) == 0);
-                        image(pix).a() = masked ? 0.f : 1.f;
-                    }
-                });
+                      for (int pix = 0; pix < image.width() * image.height(); ++pix)
+                      {
+                          const bool masked = (mask(pix) == 0);
+                          image(pix).a() = masked ? 0.f : 1.f;
+                      }
+                  });
             }
             else
             {
-                const auto noMaskingFunc = [] (Image<RGBAfColor> & image) {};
+                const auto noMaskingFunc = [](Image<RGBAfColor>& image) {};
                 process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
             }
         }
@@ -277,7 +282,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     return true;
 }
 
-int aliceVision_main(int argc, char *argv[])
+int aliceVision_main(int argc, char* argv[])
 {
     // command-line parameters
 
@@ -332,18 +337,18 @@ int aliceVision_main(int argc, char *argv[])
     if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
-    }	
+    }
 
     // set output file type
     image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
 
     // Create output dir
-    if(!fs::exists(outFolder))
+    if (!fs::exists(outFolder))
         fs::create_directory(outFolder);
 
     // Read the input SfM scene
     SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
@@ -352,20 +357,20 @@ int aliceVision_main(int argc, char *argv[])
     int rangeEnd = sfmData.getViews().size();
 
     // set range
-    if(rangeStart != -1)
+    if (rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0)
+        if (rangeStart < 0 || rangeSize < 0)
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
 
-        if(rangeStart + rangeSize > sfmData.getViews().size())
+        if (rangeStart + rangeSize > sfmData.getViews().size())
             rangeSize = sfmData.getViews().size() - rangeStart;
 
         rangeEnd = rangeStart + rangeSize;
 
-        if(rangeSize <= 0)
+        if (rangeSize <= 0)
         {
             ALICEVISION_LOG_WARNING("Nothing to compute.");
             return EXIT_SUCCESS;
@@ -377,8 +382,17 @@ int aliceVision_main(int argc, char *argv[])
     }
 
     // export
-    if(prepareDenseScene(sfmData, imagesFolders, masksFolders, maskExtension, rangeStart, rangeEnd,
-                         outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
+    if (prepareDenseScene(sfmData,
+                          imagesFolders,
+                          masksFolders,
+                          maskExtension,
+                          rangeStart,
+                          rangeEnd,
+                          outFolder,
+                          outputFileType,
+                          saveMetadata,
+                          saveMatricesTxtFiles,
+                          evCorrection))
         return EXIT_SUCCESS;
 
     return EXIT_FAILURE;

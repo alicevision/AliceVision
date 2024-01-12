@@ -38,7 +38,7 @@ int computeDownscale(const mvsUtils::MultiViewParams& mp, int scale, int maxWidt
     int downscaleWidth = mp.getMaxImageWidth() / scale;
     int downscaleHeight = mp.getMaxImageHeight() / scale;
 
-    while((downscaleWidth > maxWidth) || (downscaleHeight > maxHeight))
+    while ((downscaleWidth > maxWidth) || (downscaleHeight > maxHeight))
     {
         downscale++;
         downscaleWidth = maxImageWidth / downscale;
@@ -221,7 +221,8 @@ int aliceVision_main(int argc, char* argv[])
     // clang-format on
 
     CmdLine cmdline("Dense Reconstruction.\n"
-                    "This program estimate a depth map for each input calibrated camera using Plane Sweeping, a multi-view stereo algorithm notable for its efficiency on modern graphics hardware (GPU).\n"
+                    "This program estimate a depth map for each input calibrated camera using Plane Sweeping, a multi-view stereo algorithm notable "
+                    "for its efficiency on modern graphics hardware (GPU).\n"
                     "AliceVision depthMapEstimation");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
@@ -248,53 +249,51 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
 
     // check if the gpu suppport CUDA compute capability 2.0
-    if(!gpu::gpuSupportCUDA(2,0))
+    if (!gpu::gpuSupportCUDA(2, 0))
     {
-      ALICEVISION_LOG_ERROR("This program needs a CUDA-Enabled GPU (with at least compute capability 2.0).");
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("This program needs a CUDA-Enabled GPU (with at least compute capability 2.0).");
+        return EXIT_FAILURE;
     }
 
     // check if the scale is correct
-    if(downscale < 1)
+    if (downscale < 1)
     {
-      ALICEVISION_LOG_ERROR("Invalid value for downscale parameter. Should be at least 1.");
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("Invalid value for downscale parameter. Should be at least 1.");
+        return EXIT_FAILURE;
     }
 
     // check that Sgm scaleStep is greater or equal to the Refine scaleStep
-    if(depthMapParams.useRefine)
+    if (depthMapParams.useRefine)
     {
-      const int sgmScaleStep = sgmParams.scale * sgmParams.stepXY;
-      const int refineScaleStep = refineParams.scale * refineParams.stepXY;
+        const int sgmScaleStep = sgmParams.scale * sgmParams.stepXY;
+        const int refineScaleStep = refineParams.scale * refineParams.stepXY;
 
-      if(sgmScaleStep < refineScaleStep)
-      {
-        ALICEVISION_LOG_ERROR("SGM downscale (scale x step) should be greater or equal to the Refine downscale (scale x step).");
-        return EXIT_FAILURE;
-      }
+        if (sgmScaleStep < refineScaleStep)
+        {
+            ALICEVISION_LOG_ERROR("SGM downscale (scale x step) should be greater or equal to the Refine downscale (scale x step).");
+            return EXIT_FAILURE;
+        }
 
-      if(sgmScaleStep % refineScaleStep != 0)
-      {
-        ALICEVISION_LOG_ERROR("SGM downscale (scale x step) should be a multiple of the Refine downscale (scale x step).");
-        return EXIT_FAILURE;
-      }
+        if (sgmScaleStep % refineScaleStep != 0)
+        {
+            ALICEVISION_LOG_ERROR("SGM downscale (scale x step) should be a multiple of the Refine downscale (scale x step).");
+            return EXIT_FAILURE;
+        }
     }
 
     // check min/max view angle
-    if(minViewAngle < 0.f || minViewAngle > 360.f ||
-       maxViewAngle < 0.f || maxViewAngle > 360.f ||
-       minViewAngle > maxViewAngle)
+    if (minViewAngle < 0.f || minViewAngle > 360.f || maxViewAngle < 0.f || maxViewAngle > 360.f || minViewAngle > maxViewAngle)
     {
-      ALICEVISION_LOG_ERROR("Invalid value for minViewAngle/maxViewAngle parameter(s). Should be between 0 and 360.");
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("Invalid value for minViewAngle/maxViewAngle parameter(s). Should be between 0 and 360.");
+        return EXIT_FAILURE;
     }
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
-      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+        return EXIT_FAILURE;
     }
 
     // MultiViewParams initialization
@@ -305,46 +304,45 @@ int aliceVision_main(int argc, char* argv[])
     mp.setMaxViewAngle(maxViewAngle);
 
     // set undefined tile dimensions
-    if(tileParams.bufferWidth <= 0 || tileParams.bufferHeight <= 0)
+    if (tileParams.bufferWidth <= 0 || tileParams.bufferHeight <= 0)
     {
-      tileParams.bufferWidth  = mp.getMaxImageWidth();
-      tileParams.bufferHeight = mp.getMaxImageHeight();
+        tileParams.bufferWidth = mp.getMaxImageWidth();
+        tileParams.bufferHeight = mp.getMaxImageHeight();
     }
 
     // check if the tile padding is correct
-    if(tileParams.padding < 0 &&
-       tileParams.padding * 2 < tileParams.bufferWidth &&
-       tileParams.padding * 2 < tileParams.bufferHeight)
+    if (tileParams.padding < 0 && tileParams.padding * 2 < tileParams.bufferWidth && tileParams.padding * 2 < tileParams.bufferHeight)
     {
         ALICEVISION_LOG_ERROR("Invalid value for tilePadding parameter. Should be at least 0 and not exceed half buffer width and height.");
         return EXIT_FAILURE;
     }
 
     // check if tile size > max image size
-    if(tileParams.bufferWidth > mp.getMaxImageWidth() || tileParams.bufferHeight > mp.getMaxImageHeight())
+    if (tileParams.bufferWidth > mp.getMaxImageWidth() || tileParams.bufferHeight > mp.getMaxImageHeight())
     {
-        ALICEVISION_LOG_WARNING("Tile buffer size (width: "  << tileParams.bufferWidth << ", height: " << tileParams.bufferHeight
-                                << ") is larger than the maximum image size (width: " << mp.getMaxImageWidth() << ", height: " << mp.getMaxImageHeight() <<  ").");
+        ALICEVISION_LOG_WARNING("Tile buffer size (width: " << tileParams.bufferWidth << ", height: " << tileParams.bufferHeight
+                                                            << ") is larger than the maximum image size (width: " << mp.getMaxImageWidth()
+                                                            << ", height: " << mp.getMaxImageHeight() << ").");
     }
 
     // check if SGM scale and step are set to -1
     bool autoSgmScaleStep = false;
 
     // compute SGM scale and step
-    if(sgmParams.scale == -1 || sgmParams.stepXY == -1)
+    if (sgmParams.scale == -1 || sgmParams.stepXY == -1)
     {
-        const int fileScale = 1; // input images scale (should be one)
-        const int maxSideXY = 700 / mp.getProcessDownscale(); // max side in order to fit in device memory
+        const int fileScale = 1;                               // input images scale (should be one)
+        const int maxSideXY = 700 / mp.getProcessDownscale();  // max side in order to fit in device memory
         const int maxImageW = mp.getMaxImageWidth();
         const int maxImageH = mp.getMaxImageHeight();
 
         int maxW = maxSideXY;
         int maxH = maxSideXY * 0.8;
 
-        if(maxImageW < maxImageH)
+        if (maxImageW < maxImageH)
             std::swap(maxW, maxH);
 
-        if(sgmParams.scale == -1)
+        if (sgmParams.scale == -1)
         {
             // compute the number of scales that will be used in the plane sweeping.
             // the highest scale should have a resolution close to 700x550 (or less).
@@ -352,7 +350,7 @@ int aliceVision_main(int argc, char* argv[])
             sgmParams.scale = std::min(2, scaleTmp);
         }
 
-        if(sgmParams.stepXY == -1)
+        if (sgmParams.stepXY == -1)
         {
             sgmParams.stepXY = computeDownscale(mp, fileScale * sgmParams.scale, maxW, maxH);
         }
@@ -361,33 +359,34 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // single tile case, update parameters
-    if(depthMapParams.autoAdjustSmallImage && mvsUtils::hasOnlyOneTile(tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight()))
+    if (depthMapParams.autoAdjustSmallImage && mvsUtils::hasOnlyOneTile(tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight()))
     {
         // update SGM maxTCamsPerTile
-        if(sgmParams.maxTCamsPerTile < depthMapParams.maxTCams)
+        if (sgmParams.maxTCamsPerTile < depthMapParams.maxTCams)
         {
-          ALICEVISION_LOG_WARNING("Single tile computation, override SGM maximum number of T cameras per tile (before: " << sgmParams.maxTCamsPerTile << ", now: " << depthMapParams.maxTCams << ").");
-          sgmParams.maxTCamsPerTile = depthMapParams.maxTCams;
+            ALICEVISION_LOG_WARNING("Single tile computation, override SGM maximum number of T cameras per tile (before: "
+                                    << sgmParams.maxTCamsPerTile << ", now: " << depthMapParams.maxTCams << ").");
+            sgmParams.maxTCamsPerTile = depthMapParams.maxTCams;
         }
 
         // update Refine maxTCamsPerTile
-        if(refineParams.maxTCamsPerTile < depthMapParams.maxTCams)
+        if (refineParams.maxTCamsPerTile < depthMapParams.maxTCams)
         {
-          ALICEVISION_LOG_WARNING("Single tile computation, override Refine maximum number of T cameras per tile (before: " << refineParams.maxTCamsPerTile << ", now: " << depthMapParams.maxTCams << ").");
-          refineParams.maxTCamsPerTile = depthMapParams.maxTCams;
+            ALICEVISION_LOG_WARNING("Single tile computation, override Refine maximum number of T cameras per tile (before: "
+                                    << refineParams.maxTCamsPerTile << ", now: " << depthMapParams.maxTCams << ").");
+            refineParams.maxTCamsPerTile = depthMapParams.maxTCams;
         }
 
-        const int maxSgmBufferWidth  = divideRoundUp(mp.getMaxImageWidth() , sgmParams.scale * sgmParams.stepXY);
+        const int maxSgmBufferWidth = divideRoundUp(mp.getMaxImageWidth(), sgmParams.scale * sgmParams.stepXY);
         const int maxSgmBufferHeight = divideRoundUp(mp.getMaxImageHeight(), sgmParams.scale * sgmParams.stepXY);
 
         // update SGM step XY
-        if(!autoSgmScaleStep && // user define SGM scale & stepXY
-           (sgmParams.stepXY == 2) && // default stepXY
-           (maxSgmBufferWidth  < tileParams.bufferWidth  * 0.5) &&
-           (maxSgmBufferHeight < tileParams.bufferHeight * 0.5))
+        if (!autoSgmScaleStep &&        // user define SGM scale & stepXY
+            (sgmParams.stepXY == 2) &&  // default stepXY
+            (maxSgmBufferWidth < tileParams.bufferWidth * 0.5) && (maxSgmBufferHeight < tileParams.bufferHeight * 0.5))
         {
-          ALICEVISION_LOG_WARNING("Single tile computation, override SGM step XY (before: " << sgmParams.stepXY  << ", now: 1).");
-          sgmParams.stepXY = 1;
+            ALICEVISION_LOG_WARNING("Single tile computation, override SGM step XY (before: " << sgmParams.stepXY << ", now: 1).");
+            sgmParams.stepXY = 1;
         }
     }
 
@@ -395,36 +394,36 @@ int aliceVision_main(int argc, char* argv[])
     const int maxDownscale = std::max(sgmParams.scale * sgmParams.stepXY, refineParams.scale * refineParams.stepXY);
 
     // check padding
-    if(tileParams.padding % maxDownscale != 0)
+    if (tileParams.padding % maxDownscale != 0)
     {
-      const int padding = divideRoundUp(tileParams.padding, maxDownscale) * maxDownscale;
-      ALICEVISION_LOG_WARNING("Override tiling padding parameter (before: " << tileParams.padding << ", now: " << padding << ").");
-      tileParams.padding = padding;
+        const int padding = divideRoundUp(tileParams.padding, maxDownscale) * maxDownscale;
+        ALICEVISION_LOG_WARNING("Override tiling padding parameter (before: " << tileParams.padding << ", now: " << padding << ").");
+        tileParams.padding = padding;
     }
 
     // camera list
     std::vector<int> cams;
     cams.reserve(mp.ncams);
 
-    if(rangeSize == -1)
+    if (rangeSize == -1)
     {
-      for(int rc = 0; rc < mp.ncams; ++rc) // process all cameras
-        cams.push_back(rc);
+        for (int rc = 0; rc < mp.ncams; ++rc)  // process all cameras
+            cams.push_back(rc);
     }
     else
     {
-      if(rangeStart < 0)
-      {
-        ALICEVISION_LOG_ERROR("invalid subrange of cameras to process.");
-        return EXIT_FAILURE;
-      }
-      for(int rc = rangeStart; rc < std::min(rangeStart + rangeSize, mp.ncams); ++rc)
-        cams.push_back(rc);
-      if(cams.empty())
-      {
-        ALICEVISION_LOG_INFO("No camera to process.");
-        return EXIT_SUCCESS;
-      }
+        if (rangeStart < 0)
+        {
+            ALICEVISION_LOG_ERROR("invalid subrange of cameras to process.");
+            return EXIT_FAILURE;
+        }
+        for (int rc = rangeStart; rc < std::min(rangeStart + rangeSize, mp.ncams); ++rc)
+            cams.push_back(rc);
+        if (cams.empty())
+        {
+            ALICEVISION_LOG_INFO("No camera to process.");
+            return EXIT_SUCCESS;
+        }
     }
 
     // initialize depth map estimator

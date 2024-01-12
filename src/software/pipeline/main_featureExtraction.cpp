@@ -11,10 +11,9 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/feature.hpp>
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT) \
- || ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-#define ALICEVISION_HAVE_GPU_FEATURES
-#include <aliceVision/gpu/gpu.hpp>
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT) || ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
+    #define ALICEVISION_HAVE_GPU_FEATURES
+    #include <aliceVision/gpu/gpu.hpp>
 #endif
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -41,7 +40,7 @@ namespace fs = std::filesystem;
 
 /// - Compute view image description (feature & descriptor extraction)
 /// - Export computed data
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
     std::string sfmDataFilename;
@@ -111,16 +110,16 @@ int aliceVision_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    if(describerTypesName.empty())
+    if (describerTypesName.empty())
     {
         ALICEVISION_LOG_ERROR("--describerTypes option is empty.");
         return EXIT_FAILURE;
     }
 
     // create output folder
-    if(!fs::exists(outputFolder))
+    if (!fs::exists(outputFolder))
     {
-        if(!fs::create_directory(outputFolder))
+        if (!fs::create_directory(outputFolder))
         {
             ALICEVISION_LOG_ERROR("Cannot create output folder");
             return EXIT_FAILURE;
@@ -134,8 +133,8 @@ int aliceVision_main(int argc, char **argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    std::cout << sfmData.getViews().size()  << std::endl;
-    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+    std::cout << sfmData.getViews().size() << std::endl;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");
         return EXIT_FAILURE;
@@ -151,18 +150,18 @@ int aliceVision_main(int argc, char **argv)
     hwc.setUserCoresLimit(maxThreads);
 
     // set extraction range
-    if(rangeStart != -1)
+    if (rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0)
+        if (rangeStart < 0 || rangeSize < 0)
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
 
-        if(rangeStart + rangeSize > sfmData.getViews().size())
+        if (rangeStart + rangeSize > sfmData.getViews().size())
             rangeSize = sfmData.getViews().size() - rangeStart;
 
-        if(rangeSize <= 0)
+        if (rangeSize <= 0)
         {
             ALICEVISION_LOG_WARNING("Nothing to compute.");
             return EXIT_SUCCESS;
@@ -175,11 +174,11 @@ int aliceVision_main(int argc, char **argv)
     {
         std::vector<feature::EImageDescriberType> imageDescriberTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-        for(const auto& imageDescriberType: imageDescriberTypes)
+        for (const auto& imageDescriberType : imageDescriberTypes)
         {
             std::shared_ptr<feature::ImageDescriber> imageDescriber = feature::createImageDescriber(imageDescriberType);
             imageDescriber->setConfigurationPreset(featDescConfig);
-            if(forceCpuExtraction)
+            if (forceCpuExtraction)
                 imageDescriber->setUseCuda(false);
 
             extractor.addImageDescriber(imageDescriber);

@@ -81,7 +81,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     fs::path outDirectory = fs::path(outputMeshPath).parent_path();
-    if(!fs::is_directory(outDirectory))
+    if (!fs::is_directory(outDirectory))
         fs::create_directory(outDirectory);
 
     GEO::initialize();
@@ -90,7 +90,7 @@ int aliceVision_main(int argc, char* argv[])
 
     GEO::Mesh M_in, M_out;
     {
-        if(!GEO::mesh_load(inputMeshPath, M_in))
+        if (!GEO::mesh_load(inputMeshPath, M_in))
         {
             ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputMeshPath << "\".");
             return 1;
@@ -101,25 +101,25 @@ int aliceVision_main(int argc, char* argv[])
 
     int nbInputPoints = M_in.vertices.nb();
     int nbOutputPoints = 0;
-    if(fixedNbVertices != 0)
+    if (fixedNbVertices != 0)
     {
         nbOutputPoints = fixedNbVertices;
     }
     else
     {
-        if(simplificationFactor != 0.0)
+        if (simplificationFactor != 0.0)
         {
             nbOutputPoints = simplificationFactor * nbInputPoints;
         }
-        if(minVertices != 0)
+        if (minVertices != 0)
         {
-            if(nbInputPoints > minVertices && nbOutputPoints < minVertices)
-              nbOutputPoints = minVertices;
+            if (nbInputPoints > minVertices && nbOutputPoints < minVertices)
+                nbOutputPoints = minVertices;
         }
-        if(maxVertices != 0)
+        if (maxVertices != 0)
         {
-          if(nbInputPoints > maxVertices && nbOutputPoints > maxVertices)
-            nbOutputPoints = maxVertices;
+            if (nbInputPoints > maxVertices && nbOutputPoints > maxVertices)
+                nbOutputPoints = maxVertices;
         }
     }
 
@@ -128,7 +128,7 @@ int aliceVision_main(int argc, char* argv[])
 
     {
         GEO::CmdLine::import_arg_group("standard");
-        GEO::CmdLine::import_arg_group("remesh"); // needed for remesh_smooth
+        GEO::CmdLine::import_arg_group("remesh");  // needed for remesh_smooth
         GEO::CmdLine::import_arg_group("algo");
         GEO::CmdLine::import_arg_group("post");
         GEO::CmdLine::import_arg_group("opt");
@@ -138,33 +138,33 @@ int aliceVision_main(int argc, char* argv[])
         const unsigned int newtonM = 0;
 
         ALICEVISION_LOG_INFO("Start mesh resampling.");
-        GEO::remesh_smooth(
-            M_in, M_out,
-            nbOutputPoints,
-            3, // 3 dimensions
-            nbLloydIter, // Number of iterations for Lloyd pre-smoothing
-            nbNewtonIter, // Number of iterations for Newton-CVT
-            newtonM // Number of evaluations for Hessian approximation
-            );
+        GEO::remesh_smooth(M_in,
+                           M_out,
+                           nbOutputPoints,
+                           3,             // 3 dimensions
+                           nbLloydIter,   // Number of iterations for Lloyd pre-smoothing
+                           nbNewtonIter,  // Number of iterations for Newton-CVT
+                           newtonM        // Number of evaluations for Hessian approximation
+        );
         ALICEVISION_LOG_INFO("Mesh resampling done.");
     }
     ALICEVISION_LOG_INFO("Output mesh: " << M_out.vertices.nb() << " vertices and " << M_out.facets.nb() << " facets.");
 
-    if(M_out.facets.nb() == 0)
+    if (M_out.facets.nb() == 0)
     {
         ALICEVISION_LOG_ERROR("The output mesh is empty.");
         return 1;
     }
-    if(flipNormals)
+    if (flipNormals)
     {
-        for(GEO::index_t i = 0; i < M_out.facets.nb(); ++i)
+        for (GEO::index_t i = 0; i < M_out.facets.nb(); ++i)
         {
             M_out.facets.flip(i);
         }
     }
 
     ALICEVISION_LOG_INFO("Save mesh.");
-    if(!GEO::mesh_save(M_out, outputMeshPath))
+    if (!GEO::mesh_save(M_out, outputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Failed to save mesh file: \"" << outputMeshPath << "\".");
         return EXIT_FAILURE;

@@ -20,7 +20,6 @@
 #include <filesystem>
 #include <memory>
 
-
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -33,24 +32,26 @@ namespace fs = std::filesystem;
 
 /**
  * @brief Basic cache system to manage masks.
- * 
+ *
  * It keeps the latest "maxSize" (defaut = 16) masks in memory.
  */
 struct MaskCache
 {
-    MaskCache(const mvsUtils::MultiViewParams& mp, const std::vector<std::string>& masksFolders, bool undistortMasks,
-              const std::string maskExtension, int maxSize = 16)
-        : _mp(mp)
-        , _masksFolders(masksFolders)
-        , _undistortMasks(undistortMasks)
-        , _maskExtension(maskExtension)
-        , _maxSize(maxSize)
-    {
-    }
+    MaskCache(const mvsUtils::MultiViewParams& mp,
+              const std::vector<std::string>& masksFolders,
+              bool undistortMasks,
+              const std::string maskExtension,
+              int maxSize = 16)
+      : _mp(mp),
+        _masksFolders(masksFolders),
+        _undistortMasks(undistortMasks),
+        _maskExtension(maskExtension),
+        _maxSize(maxSize)
+    {}
 
     image::Image<unsigned char>* lock(int camId)
     {
-        Item * item = findItem(camId);
+        Item* item = findItem(camId);
         if (item)
         {
             assert(item->locks >= 0);
@@ -66,10 +67,10 @@ struct MaskCache
                 tryFreeUnlockedItem();
             }
 
-            _cache.push_back({ camId, std::make_unique<image::Image<unsigned char>>(), 0 });
+            _cache.push_back({camId, std::make_unique<image::Image<unsigned char>>(), 0});
             item = &_cache.back();
             const IndexT viewId = _mp.getViewId(camId);
-            auto * const mask = item->mask.get();
+            auto* const mask = item->mask.get();
             const bool loaded = tryLoadMask(mask, _masksFolders, viewId, _mp.getImagePath(camId), _maskExtension);
             if (loaded)
             {
@@ -109,7 +110,7 @@ struct MaskCache
         --item->locks;
     }
 
-private:
+  private:
     struct Item
     {
         int camId;
@@ -141,11 +142,11 @@ private:
     {
         const auto it = findItemIt(camId);
         assert(it != _cache.end());
-        std::rotate(it, it+1, _cache.end());
+        std::rotate(it, it + 1, _cache.end());
         return &_cache.back();
     }
 
-private:
+  private:
     mvsUtils::MultiViewParams _mp;
     std::vector<std::string> _masksFolders;
     bool _undistortMasks;
@@ -163,15 +164,13 @@ StaticVector<int> computeDiffVisibilities(const StaticVector<int>& A, const Stat
     return diff;
 }
 
-Point3d findBoundaryVertex(
-    const mesh::Mesh& mesh,
-    int visibleVertexId,
-    int hiddenVertexId,
-    const mvsUtils::MultiViewParams& mp,
-    MaskCache & maskCache,
-    int threshold,
-    bool invert
-    )
+Point3d findBoundaryVertex(const mesh::Mesh& mesh,
+                           int visibleVertexId,
+                           int hiddenVertexId,
+                           const mvsUtils::MultiViewParams& mp,
+                           MaskCache& maskCache,
+                           int threshold,
+                           bool invert)
 {
     // find the cameras that make a difference, we only need to sample those
     const auto& visibleVertexVisibilities = mesh.pointsVisibilities[visibleVertexId];
@@ -185,8 +184,9 @@ Point3d findBoundaryVertex(
 
     // compute the visibility that is already acquired and that does not change along the edge.
     // <=> is in hiddenVertexVisibilities but not in diffVisibilities
-    const int baseVisibility = std::count_if(hiddenVertexVisibilities.begin(), hiddenVertexVisibilities.end(),
-        [&diffVisibilities] (int camId) { return diffVisibilities.indexOfSorted(camId) == -1; });
+    const int baseVisibility = std::count_if(hiddenVertexVisibilities.begin(), hiddenVertexVisibilities.end(), [&diffVisibilities](int camId) {
+        return diffVisibilities.indexOfSorted(camId) == -1;
+    });
 
     // preload masks
     std::map<int, image::Image<unsigned char>*> masks;
@@ -199,8 +199,7 @@ Point3d findBoundaryVertex(
     // compute the minimal distance according to the mask resolution (it is our search stop condition)
     const Point3d leftPoint = mesh.pts[visibleVertexId];
     const Point3d rightPoint = mesh.pts[hiddenVertexId];
-    const float minDistance = [&]
-    {
+    const float minDistance = [&] {
         const int camId = diffVisibilities[0];  // use a single mask, supposing they are all equivalent
         Pixel leftPixel, rightPixel;
         mp.getPixelFor3DPoint(&leftPixel, leftPoint, camId);
@@ -211,7 +210,7 @@ Point3d findBoundaryVertex(
 
     // binary search in continuous space along the edge
     Point3d result;
-    float left = 0.f;  // is the visible area
+    float left = 0.f;   // is the visible area
     float right = 1.f;  // is the hidden area
     while (true)
     {
@@ -255,17 +254,14 @@ Point3d findBoundaryVertex(
     return result;
 }
 
-void smoothenBoundary(
-    mesh::Mesh & filteredMesh,
-    const StaticVector<int> & filteredVertexVisibilityCounters,
-    const mvsUtils::MultiViewParams& mp,
-    MaskCache& maskCache,
-    int threshold,
-    bool invert
-    )
+void smoothenBoundary(mesh::Mesh& filteredMesh,
+                      const StaticVector<int>& filteredVertexVisibilityCounters,
+                      const mvsUtils::MultiViewParams& mp,
+                      MaskCache& maskCache,
+                      int threshold,
+                      bool invert)
 {
-    const auto isVertexVisible = [&filteredVertexVisibilityCounters, threshold](const int vertexId)
-    {
+    const auto isVertexVisible = [&filteredVertexVisibilityCounters, threshold](const int vertexId) {
         return filteredVertexVisibilityCounters[vertexId] >= threshold;
     };
 
@@ -291,8 +287,7 @@ void smoothenBoundary(
             }
 
             // move along the longest edge to avoid degenerate triangles
-            const auto visibleVertexId = [&]
-            {
+            const auto visibleVertexId = [&] {
                 const auto visibleVertexId1 = triangle.v[(hiddenIdx + 1) % 3];
                 const double length1 = (filteredMesh.pts[visibleVertexId1] - filteredMesh.pts[hiddenVertexId]).size();
 
@@ -334,7 +329,7 @@ void smoothenBoundary(
 
 void removeCameraVisibility(mesh::Mesh& inputMesh, int camId)
 {
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int vertexId = 0; vertexId < inputMesh.pts.size(); ++vertexId)
     {
         auto& pointVisibilities = inputMesh.pointsVisibilities[vertexId];
@@ -346,18 +341,16 @@ void removeCameraVisibility(mesh::Mesh& inputMesh, int camId)
     }
 }
 
-void meshMasking(
-    const mvsUtils::MultiViewParams & mp,
-    mesh::Mesh & inputMesh,
-    const std::vector<std::string> & masksFolders,
-    const std::string & maskExtension,
-    const std::string & outputMeshPath,
-    const int threshold,
-    const bool invert,
-    const bool smoothBoundary,
-    const bool undistortMasks,
-    const bool usePointsVisibilities
-    )
+void meshMasking(const mvsUtils::MultiViewParams& mp,
+                 mesh::Mesh& inputMesh,
+                 const std::vector<std::string>& masksFolders,
+                 const std::string& maskExtension,
+                 const std::string& outputMeshPath,
+                 const int threshold,
+                 const bool invert,
+                 const bool smoothBoundary,
+                 const bool undistortMasks,
+                 const bool usePointsVisibilities)
 {
     MaskCache maskCache(mp, masksFolders, undistortMasks, maskExtension);
 
@@ -390,7 +383,7 @@ void meshMasking(
             continue;
         }
 
-        #pragma omp parallel for
+#pragma omp parallel for
         for (int vertexId = 0; vertexId < inputMesh.pts.size(); ++vertexId)
         {
             const auto& vertex = inputMesh.pts[vertexId];
@@ -406,8 +399,7 @@ void meshMasking(
             // project vertex on mask
             Pixel projectedPixel;
             mp.getPixelFor3DPoint(&projectedPixel, vertex, camId);
-            if (projectedPixel.x < 0 || projectedPixel.x >= mask.width()
-             || projectedPixel.y < 0 || projectedPixel.y >= mask.height())
+            if (projectedPixel.x < 0 || projectedPixel.x >= mask.width() || projectedPixel.y < 0 || projectedPixel.y >= mask.height())
             {
                 if (usePointsVisibilities)
                 {
@@ -445,8 +437,7 @@ void meshMasking(
     StaticVector<int> inputPtIdToFilteredPtId;
 
     {
-        const auto isVertexVisible = [&vertexVisibilityCounters, threshold] (const int vertexId)
-        {
+        const auto isVertexVisible = [&vertexVisibilityCounters, threshold](const int vertexId) {
             return vertexVisibilityCounters[vertexId] >= threshold;
         };
 
@@ -455,9 +446,8 @@ void meshMasking(
         for (int triangleId = 0; triangleId < inputMesh.tris.size(); ++triangleId)
         {
             const auto& triangle = inputMesh.tris[triangleId];
-            const bool visible = smoothBoundary ?
-                std::any_of(std::begin(triangle.v), std::end(triangle.v), isVertexVisible) :
-                std::all_of(std::begin(triangle.v), std::end(triangle.v), isVertexVisible);
+            const bool visible = smoothBoundary ? std::any_of(std::begin(triangle.v), std::end(triangle.v), isVertexVisible)
+                                                : std::all_of(std::begin(triangle.v), std::end(triangle.v), isVertexVisible);
             if (visible)
             {
                 visibleTriangles.push_back(triangleId);
@@ -500,11 +490,10 @@ void meshMasking(
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 }
 
-
 /**
  * @brief Write mask images from input images based on chosen algorithm.
  */
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     // command-line parameters
     std::string sfmFilePath;
@@ -557,7 +546,7 @@ int main(int argc, char **argv)
     }
 
     // check user choose at least one input option
-    if(sfmFilePath.empty())
+    if (sfmFilePath.empty())
     {
         ALICEVISION_LOG_ERROR("Program need -i option" << std::endl << "No input images.");
         return EXIT_FAILURE;
@@ -569,21 +558,21 @@ int main(int argc, char **argv)
     inputMesh.load(inputMeshPath);
 
     // check sfm file
-    if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
+    if (!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
     {
         ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
         return EXIT_FAILURE;
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL_DENSE))
+    if (!sfmDataIO::load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL_DENSE))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
         return EXIT_FAILURE;
     }
 
     // check output string
-    if(outputMeshPath.empty())
+    if (outputMeshPath.empty())
     {
         ALICEVISION_LOG_ERROR("Invalid output");
         return EXIT_FAILURE;
@@ -591,9 +580,9 @@ int main(int argc, char **argv)
 
     // ensure output folder exists
     fs::path outputDirectory = fs::path(outputMeshPath).parent_path();
-    if(!outputDirectory.empty() && !fs::exists(outputDirectory))
+    if (!outputDirectory.empty() && !fs::exists(outputDirectory))
     {
-        if(!fs::create_directory(outputDirectory))
+        if (!fs::create_directory(outputDirectory))
         {
             ALICEVISION_LOG_ERROR("Cannot create output folder");
             return EXIT_FAILURE;

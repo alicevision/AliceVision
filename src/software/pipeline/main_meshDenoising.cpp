@@ -40,7 +40,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string inputMeshPath;
     std::string outputMeshPath;
 
-    int denoisingIterations = 5; // OuterIterations
+    int denoisingIterations = 5;  // OuterIterations
     float meshUpdateClosenessWeight = 0.001;
     int meshUpdateIterations = 20;
     int meshUpdateMethod = SDFilter::MeshFilterParameters::ITERATIVE_UPDATE;
@@ -85,28 +85,26 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-
     fs::path outDirectory = fs::path(outputMeshPath).parent_path();
-    if(!fs::is_directory(outDirectory))
+    if (!fs::is_directory(outDirectory))
         fs::create_directory(outDirectory);
 
-
     TriMesh inMesh;
-    if(!OpenMesh::IO::read_mesh(inMesh, inputMeshPath))
+    if (!OpenMesh::IO::read_mesh(inMesh, inputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;
     }
-    if(inMesh.n_vertices() == 0 || inMesh.n_faces() == 0)
+    if (inMesh.n_vertices() == 0 || inMesh.n_faces() == 0)
     {
         ALICEVISION_LOG_ERROR("Empty mesh from the file: " << inputMeshPath);
         ALICEVISION_LOG_ERROR("Input mesh: " << inMesh.n_vertices() << " vertices and " << inMesh.n_faces() << " facets.");
         return EXIT_FAILURE;
     }
 
-//    #ifdef USE_OPENMP
+    //    #ifdef USE_OPENMP
     Eigen::initParallel();
-//    #endif
+    //    #endif
 
     // Load option file
     SDFilter::MeshDenoisingParameters param;
@@ -119,17 +117,17 @@ int aliceVision_main(int argc, char* argv[])
     param.mu = mu;
     param.nu = nu;
 
-//    enum LinearSolverType
-//    {
-//            CG,
-//            LDLT
-//    };
-//    // Parameters related to termination criteria
-//    int max_iter;                   // Max number of iterations
-//    double avg_disp_eps;    // Max average per-signal displacement threshold between two iterations for determining convergence
-//    bool normalize_iterates;        // Normalization of the filtered normals in each iteration
+    //    enum LinearSolverType
+    //    {
+    //            CG,
+    //            LDLT
+    //    };
+    //    // Parameters related to termination criteria
+    //    int max_iter;                   // Max number of iterations
+    //    double avg_disp_eps;    // Max average per-signal displacement threshold between two iterations for determining convergence
+    //    bool normalize_iterates;        // Normalization of the filtered normals in each iteration
 
-    if(!param.valid_parameters())
+    if (!param.valid_parameters())
     {
         ALICEVISION_LOG_ERROR("Invalid filter options. Aborting...");
         return EXIT_FAILURE;
@@ -145,7 +143,7 @@ int aliceVision_main(int argc, char* argv[])
     Eigen::Vector3d original_center;
     double original_scale;
     SDFilter::normalize_mesh(inMesh, original_center, original_scale);
-    if(true)
+    if (true)
     {
         ALICEVISION_LOG_INFO("Start mesh denoising.");
         // Filter the normals and construct the output mesh
@@ -165,7 +163,7 @@ int aliceVision_main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Output mesh: " << outMesh.n_vertices() << " vertices and " << outMesh.n_faces() << " facets.");
 
-    if(outMesh.n_faces() == 0)
+    if (outMesh.n_faces() == 0)
     {
         ALICEVISION_LOG_ERROR("Failed: the output mesh is empty.");
         return EXIT_FAILURE;
@@ -173,7 +171,7 @@ int aliceVision_main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Save mesh.");
     // Save output mesh
-    if(!OpenMesh::IO::write_mesh(outMesh, outputMeshPath))
+    if (!OpenMesh::IO::write_mesh(outMesh, outputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Failed to save mesh file: \"" << outputMeshPath << "\".");
         return EXIT_FAILURE;

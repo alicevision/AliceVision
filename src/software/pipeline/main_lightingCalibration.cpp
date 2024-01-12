@@ -42,7 +42,7 @@ namespace fs = std::filesystem;
 
 using namespace aliceVision;
 
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
     system::Timer timer;
 

@@ -58,7 +58,7 @@ struct CChecker
         _colorData = cv::Mat::zeros(24, 1, CV_64FC3);
 
         int i = 0;
-        for(const bpt::ptree::value_type& row : ccheckerPTree.second.get_child("colors"))
+        for (const bpt::ptree::value_type& row : ccheckerPTree.second.get_child("colors"))
         {
             cv::Vec3d* rowPtr = _colorData.ptr<cv::Vec3d>(i);
             cv::Vec3d& matPixel = rowPtr[0];
@@ -78,19 +78,20 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
 
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
     model.run();
-    
+
     model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
-    //model.setCCM_TYPE(cv::ccm::CCM_3x3);
-    //model.setDistance(cv::ccm::DISTANCE_CIE2000);
-    //model.setLinear(cv::ccm::LINEARIZATION_GAMMA);
-    //model.setLinearGamma(2.2);
-    //model.setLinearDegree(3); // to prevent overfitting
-    
+    // model.setCCM_TYPE(cv::ccm::CCM_3x3);
+    // model.setDistance(cv::ccm::DISTANCE_CIE2000);
+    // model.setLinear(cv::ccm::LINEARIZATION_GAMMA);
+    // model.setLinearGamma(2.2);
+    // model.setLinearDegree(3); // to prevent overfitting
+
     cv::Mat img;
     cvtColor(imageBGR, img, cv::COLOR_BGR2RGB);
     img.convertTo(img, CV_64F);
 
-    cv::Mat calibratedImage = model.infer(img, true); // make correction using cc matrix and assuming images are in linear color space (as RAW for example)
+    cv::Mat calibratedImage =
+      model.infer(img, true);  // make correction using cc matrix and assuming images are in linear color space (as RAW for example)
 
     calibratedImage.convertTo(calibratedImage, CV_32FC3);
 
@@ -100,8 +101,9 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
     image::cvMatBGRToImageRGBA(outImg, image);
 }
 
-
-void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
+void saveImage(image::Image<image::RGBAfColor>& image,
+               const std::string& inputPath,
+               const std::string& outputPath,
                const image::EStorageDataType storageDataType)
 {
     // Read metadata path
@@ -109,7 +111,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
 
     const std::string outExtension = boost::to_lower_copy(fs::path(outputPath).extension().string());
     const bool isEXR = (outExtension == ".exr");
-    
+
     // Metadata are extracted from the original images
     metadataFilePath = inputPath;
 
@@ -118,7 +120,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
 
     image::ImageWriteOptions options;
 
-    if(isEXR)
+    if (isEXR)
     {
         // Select storage data type
         options.storageDataType(storageDataType);
@@ -129,7 +131,6 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
 
     image::writeImage(outputPath, image, options, metadata);
 }
-
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -169,14 +170,14 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // check user choose an input
-    if(inputExpression.empty())
+    if (inputExpression.empty())
     {
         ALICEVISION_LOG_ERROR("Program need --input option." << std::endl << "No input images here.");
 
         return EXIT_FAILURE;
     }
 
-    if(fs::exists(inputData))
+    if (fs::exists(inputData))
     {
         // checkers collection
         std::vector<CChecker> ccheckers;
@@ -185,7 +186,7 @@ int aliceVision_main(int argc, char** argv)
         bpt::ptree data;
         bpt::read_json(inputData, data);
 
-        for(const bpt::ptree::value_type& ccheckerPTree : data.get_child("checkers"))
+        for (const bpt::ptree::value_type& ccheckerPTree : data.get_child("checkers"))
             ccheckers.push_back(CChecker(ccheckerPTree));
 
         // for now the program behaves as if all the images to process are sharing the same properties
@@ -197,11 +198,11 @@ int aliceVision_main(int argc, char** argv)
         // Check if sfmInputDataFilename exist and is recognized as sfm data file
         const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
         static const std::array<std::string, 3> sfmSupportedExtensions = {".sfm", ".json", ".abc"};
-        if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(),
-                                                 inputExt) != sfmSupportedExtensions.end())
+        if (!inputExpression.empty() &&
+            std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) != sfmSupportedExtensions.end())
         {
             sfmData::SfMData sfmData;
-            if(!sfmDataIO::load(sfmData, inputExpression, sfmDataIO::VIEWS))
+            if (!sfmDataIO::load(sfmData, inputExpression, sfmDataIO::VIEWS))
             {
                 ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
                 return EXIT_FAILURE;
@@ -211,7 +212,7 @@ int aliceVision_main(int argc, char** argv)
             std::unordered_map<IndexT, std::string> ViewPaths;
 
             // Iterate over all views
-            for(const auto& viewIt : sfmData.getViews())
+            for (const auto& viewIt : sfmData.getViews())
             {
                 const sfmData::View& view = *(viewIt.second);
 
@@ -221,7 +222,7 @@ int aliceVision_main(int argc, char** argv)
             const int size = ViewPaths.size();
             int i = 0;
 
-            for(auto& viewIt : ViewPaths)
+            for (auto& viewIt : ViewPaths)
             {
                 const IndexT viewId = viewIt.first;
                 const std::string viewPath = viewIt.second;
@@ -230,8 +231,7 @@ int aliceVision_main(int argc, char** argv)
                 const fs::path fsPath = viewPath;
                 const std::string fileExt = fsPath.extension().string();
                 const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-                const std::string outputfilePath =
-                    (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
+                const std::string outputfilePath = (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
 
                 ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
 
@@ -256,9 +256,8 @@ int aliceVision_main(int argc, char** argv)
             }
 
             // Save sfmData with modified path to images
-            const std::string sfmfilePath =
-                (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
-            if(!sfmDataIO::save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+            const std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
+            if (!sfmDataIO::save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
             {
                 ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
 
@@ -271,7 +270,7 @@ int aliceVision_main(int argc, char** argv)
             const fs::path inputPath(inputExpression);
             std::vector<std::string> filesStrPaths;
 
-            if(fs::is_regular_file(inputPath))
+            if (fs::is_regular_file(inputPath))
             {
                 filesStrPaths.push_back(inputPath.string());
             }
@@ -281,20 +280,17 @@ int aliceVision_main(int argc, char** argv)
 
                 const std::regex regex = utils::filterToRegex(inputExpression);
                 // Get supported files in inputPath directory which matches our regex filter
-                filesStrPaths = utils::getFilesPathsFromFolder(
-                    inputPath.parent_path().generic_string(), [&regex](const fs::path& path) {
-                        return image::isSupported(path.extension().string()) &&
-                               std::regex_match(path.generic_string(), regex);
-                    });
+                filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(), [&regex](const fs::path& path) {
+                    return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
+                });
             }
 
             const int size = filesStrPaths.size();
 
-            if(!size)
+            if (!size)
             {
                 ALICEVISION_LOG_ERROR("Any images was found.");
-                ALICEVISION_LOG_ERROR("Input folders or input expression '" << inputExpression
-                                                                            << "' may be incorrect ?");
+                ALICEVISION_LOG_ERROR("Input folders or input expression '" << inputExpression << "' may be incorrect ?");
                 return EXIT_FAILURE;
             }
             else
@@ -303,7 +299,7 @@ int aliceVision_main(int argc, char** argv)
             }
 
             int i = 0;
-            for(const std::string& inputFilePath : filesStrPaths)
+            for (const std::string& inputFilePath : filesStrPaths)
             {
                 const fs::path path = fs::path(inputFilePath);
                 const std::string filename = path.stem().string();
@@ -311,8 +307,7 @@ int aliceVision_main(int argc, char** argv)
                 const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
                 const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
 
-                ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt
-                                         << "' for color correction.");
+                ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "' for color correction.");
 
                 // Read original image
                 image::Image<image::RGBAfColor> image;

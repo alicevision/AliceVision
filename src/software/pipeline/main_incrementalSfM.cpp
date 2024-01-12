@@ -37,7 +37,6 @@ namespace fs = std::filesystem;
 using namespace aliceVision::track;
 using namespace aliceVision::sfm;
 
-
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
  * @param[in] sfmData the SfM scene
@@ -45,57 +44,53 @@ using namespace aliceVision::sfm;
  * @param[out] out_viewId the id found
  * @return if a view is found
  */
-bool retrieveViewIdFromImageName(const sfmData::SfMData& sfmData,
-                                 const std::string& name,
-                                 IndexT& out_viewId)
+bool retrieveViewIdFromImageName(const sfmData::SfMData& sfmData, const std::string& name, IndexT& out_viewId)
 {
-  out_viewId = UndefinedIndexT;
+    out_viewId = UndefinedIndexT;
 
-  // list views uid / filenames and find the one that correspond to the user ones
-  for(const auto& viewPair : sfmData.getViews())
-  {
-    const sfmData::View& v = *(viewPair.second.get());
-    
-    if(name == std::to_string(v.getViewId()) ||
-       name == fs::path(v.getImage().getImagePath()).filename().string() ||
-       name == v.getImage().getImagePath())
+    // list views uid / filenames and find the one that correspond to the user ones
+    for (const auto& viewPair : sfmData.getViews())
     {
-      out_viewId = v.getViewId();
-      break;
+        const sfmData::View& v = *(viewPair.second.get());
+
+        if (name == std::to_string(v.getViewId()) || name == fs::path(v.getImage().getImagePath()).filename().string() ||
+            name == v.getImage().getImagePath())
+        {
+            out_viewId = v.getViewId();
+            break;
+        }
     }
-  }
 
-  if(out_viewId == UndefinedIndexT)
-    ALICEVISION_LOG_ERROR("Can't find the given initial pair view: " << name);
+    if (out_viewId == UndefinedIndexT)
+        ALICEVISION_LOG_ERROR("Can't find the given initial pair view: " << name);
 
-  return out_viewId != UndefinedIndexT;
+    return out_viewId != UndefinedIndexT;
 }
 
-
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::vector<std::string> featuresFolders;
-  std::vector<std::string> matchesFolders;
-  std::string outputSfM;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::vector<std::string> featuresFolders;
+    std::vector<std::string> matchesFolders;
+    std::string outputSfM;
 
-  // user optional parameters
-  std::string outputSfMViewsAndPoses;
-  std::string extraInfoFolder;
-  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::pair<std::string,std::string> initialPairString("","");
-  bool useAutoTransform = true;
+    // user optional parameters
+    std::string outputSfMViewsAndPoses;
+    std::string extraInfoFolder;
+    std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+    std::pair<std::string, std::string> initialPairString("", "");
+    bool useAutoTransform = true;
 
-  sfm::ReconstructionEngine_sequentialSfM::Params sfmParams;
-  bool lockScenePreviouslyReconstructed = true;
-  int maxNbMatches = 0;
-  int minNbMatches = 0;
-  bool useOnlyMatchesFromInputFolder = false;
-  bool computeStructureColor = true;
+    sfm::ReconstructionEngine_sequentialSfM::Params sfmParams;
+    bool lockScenePreviouslyReconstructed = true;
+    int maxNbMatches = 0;
+    int minNbMatches = 0;
+    bool useOnlyMatchesFromInputFolder = false;
+    bool computeStructureColor = true;
 
-  int randomSeed = std::mt19937::default_seed;
-  bool logIntermediateSteps = false;
+    int randomSeed = std::mt19937::default_seed;
+    bool logIntermediateSteps = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -198,172 +193,175 @@ int aliceVision_main(int argc, char **argv)
          "If set to true, the current state of the scene will be dumped as an SfMData file every 3 resections.");
     // clang-format on
 
-  CmdLine cmdline("Sequential/Incremental reconstruction.\n"
-                  "This program performs incremental SfM (Initial Pair Essential + Resection).\n"
-                  "AliceVision incrementalSfM");
-                  
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline("Sequential/Incremental reconstruction.\n"
+                    "This program performs incremental SfM (Initial Pair Essential + Resection).\n"
+                    "AliceVision incrementalSfM");
 
-  // set maxThreads
-  HardwareContext hwc = cmdline.getHardwareContext();
-  omp_set_num_threads(hwc.getMaxThreads());
-
-  const double defaultLoRansacLocalizationError = 4.0;
-  if(!robustEstimation::adjustRobustEstimatorThreshold(sfmParams.localizerEstimator, sfmParams.localizerEstimatorError, defaultLoRansacLocalizationError))
-  {
-    return EXIT_FAILURE;
-  }
-
-  // load input SfMData scene
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
-    return EXIT_FAILURE;
-  }
-
-  // lock scene previously reconstructed
-  if(lockScenePreviouslyReconstructed)
-  {
-    // lock all reconstructed camera poses
-    for(auto& cameraPosePair : sfmData.getPoses())
-      cameraPosePair.second.lock();
-
-    for(const auto& viewPair : sfmData.getViews())
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-      // lock all reconstructed views intrinsics
-      const sfmData::View& view = *(viewPair.second);
-      if(sfmData.isPoseAndIntrinsicDefined(&view))
-        sfmData.getIntrinsics().at(view.getIntrinsicId())->lock();
-    }
-  }
-
-  // get imageDescriber type
-  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
-
-  // features reading
-  feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
-  {
-    ALICEVISION_LOG_ERROR("Invalid features.");
-    return EXIT_FAILURE;
-  }
-  
-  // matches reading
-  matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
-  {
-    ALICEVISION_LOG_ERROR("Unable to load matches.");
-    return EXIT_FAILURE;
-  }
-
-  if(extraInfoFolder.empty())
-    extraInfoFolder = fs::path(outputSfM).parent_path().string();
-
-  if (!fs::exists(extraInfoFolder))
-    fs::create_directory(extraInfoFolder);
-
-  // sequential reconstruction process
-  aliceVision::system::Timer timer;
-
-  if(sfmParams.minNbObservationsForTriangulation < 2)
-  {
-    // allows to use to the old triangulatation algorithm (using 2 views only) during resection.
-    sfmParams.minNbObservationsForTriangulation = 0;
-    // ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
-    // return EXIT_FAILURE;
-  }
-
-  // handle initial pair parameter
-  if(!initialPairString.first.empty() || !initialPairString.second.empty())
-  {
-    if(initialPairString.first == initialPairString.second)
-    {
-      ALICEVISION_LOG_ERROR("Invalid image names. You cannot use the same image to initialize a pair.");
-      return EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
 
-    if(!initialPairString.first.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.first, sfmParams.userInitialImagePair.first))
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
+
+    const double defaultLoRansacLocalizationError = 4.0;
+    if (!robustEstimation::adjustRobustEstimatorThreshold(
+          sfmParams.localizerEstimator, sfmParams.localizerEstimatorError, defaultLoRansacLocalizationError))
     {
-      ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.first);
-      return EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
 
-    if(!initialPairString.second.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.second, sfmParams.userInitialImagePair.second))
+    // load input SfMData scene
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
-      ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.second);
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
+        return EXIT_FAILURE;
     }
-  }
 
-  sfm::ReconstructionEngine_sequentialSfM sfmEngine(
-    sfmData,
-    sfmParams,
-    extraInfoFolder,
-    (fs::path(extraInfoFolder) / "sfm_log.html").string());
+    // lock scene previously reconstructed
+    if (lockScenePreviouslyReconstructed)
+    {
+        // lock all reconstructed camera poses
+        for (auto& cameraPosePair : sfmData.getPoses())
+            cameraPosePair.second.lock();
 
-  sfmEngine.initRandomSeed(randomSeed);
+        for (const auto& viewPair : sfmData.getViews())
+        {
+            // lock all reconstructed views intrinsics
+            const sfmData::View& view = *(viewPair.second);
+            if (sfmData.isPoseAndIntrinsicDefined(&view))
+                sfmData.getIntrinsics().at(view.getIntrinsicId())->lock();
+        }
+    }
 
-  // configure the featuresPerView & the matches_provider
-  sfmEngine.setFeatures(&featuresPerView);
-  sfmEngine.setMatches(&pairwiseMatches);
+    // get imageDescriber type
+    const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  if(!sfmEngine.process())
-    return EXIT_FAILURE;
+    // features reading
+    feature::FeaturesPerView featuresPerView;
+    if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
+    {
+        ALICEVISION_LOG_ERROR("Invalid features.");
+        return EXIT_FAILURE;
+    }
 
-  //Mimic sfmTransform "EAlignmentMethod::AUTO"
-  if (useAutoTransform)
-  {
-    double S = 1.0;
-    Mat3 R = Mat3::Identity();
-    Vec3 t = Vec3::Zero();
+    // matches reading
+    matching::PairwiseMatches pairwiseMatches;
+    if (!sfm::loadPairwiseMatches(
+          pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
+    {
+        ALICEVISION_LOG_ERROR("Unable to load matches.");
+        return EXIT_FAILURE;
+    }
 
-    ALICEVISION_LOG_DEBUG("Align automatically");
-    sfm::computeNewCoordinateSystemAuto(sfmEngine.getSfMData(), S, R, t);
-    sfm::applyTransform(sfmEngine.getSfMData(), S, R, t);
-    
-    ALICEVISION_LOG_DEBUG("Align with ground");
-    sfm::computeNewCoordinateSystemGroundAuto(sfmEngine.getSfMData(), t);
-    sfm::applyTransform(sfmEngine.getSfMData(), 1.0, Eigen::Matrix3d::Identity(), t);
-  }
+    if (extraInfoFolder.empty())
+        extraInfoFolder = fs::path(outputSfM).parent_path().string();
 
-  // set featuresFolders and matchesFolders relative paths
-  {
-      sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
-      sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
-      sfmEngine.getSfMData().setAbsolutePath(outputSfM);
-  }
+    if (!fs::exists(extraInfoFolder))
+        fs::create_directory(extraInfoFolder);
 
-  // get the color for the 3D points
-  if(computeStructureColor)
-    sfmEngine.colorize();
+    // sequential reconstruction process
+    aliceVision::system::Timer timer;
 
-  sfmEngine.retrieveMarkersId();
+    if (sfmParams.minNbObservationsForTriangulation < 2)
+    {
+        // allows to use to the old triangulatation algorithm (using 2 views only) during resection.
+        sfmParams.minNbObservationsForTriangulation = 0;
+        // ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
+        // return EXIT_FAILURE;
+    }
 
-  ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
-  ALICEVISION_LOG_INFO("Generating HTML report...");
+    // handle initial pair parameter
+    if (!initialPairString.first.empty() || !initialPairString.second.empty())
+    {
+        if (initialPairString.first == initialPairString.second)
+        {
+            ALICEVISION_LOG_ERROR("Invalid image names. You cannot use the same image to initialize a pair.");
+            return EXIT_FAILURE;
+        }
 
-  sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
+        if (!initialPairString.first.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.first, sfmParams.userInitialImagePair.first))
+        {
+            ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.first);
+            return EXIT_FAILURE;
+        }
 
-  // export to disk computed scene (data & visualizable results)
-  ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
+        if (!initialPairString.second.empty() &&
+            !retrieveViewIdFromImageName(sfmData, initialPairString.second, sfmParams.userInitialImagePair.second))
+        {
+            ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.second);
+            return EXIT_FAILURE;
+        }
+    }
 
-  sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS|sfmDataIO::STRUCTURE));
-  sfmDataIO::save(sfmEngine.getSfMData(), outputSfM, sfmDataIO::ESfMData::ALL);
+    sfm::ReconstructionEngine_sequentialSfM sfmEngine(sfmData, sfmParams, extraInfoFolder, (fs::path(extraInfoFolder) / "sfm_log.html").string());
 
-  if(!outputSfMViewsAndPoses.empty())
-   sfmDataIO::save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
+    sfmEngine.initRandomSeed(randomSeed);
 
-  ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
-    << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl
-    << "\t- # cameras calibrated: " << sfmEngine.getSfMData().getValidViews().size() << std::endl
-    << "\t- # poses: " << sfmEngine.getSfMData().getPoses().size() << std::endl
-    << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
+    // configure the featuresPerView & the matches_provider
+    sfmEngine.setFeatures(&featuresPerView);
+    sfmEngine.setMatches(&pairwiseMatches);
 
-  return EXIT_SUCCESS;
+    if (!sfmEngine.process())
+        return EXIT_FAILURE;
+
+    // Mimic sfmTransform "EAlignmentMethod::AUTO"
+    if (useAutoTransform)
+    {
+        double S = 1.0;
+        Mat3 R = Mat3::Identity();
+        Vec3 t = Vec3::Zero();
+
+        ALICEVISION_LOG_DEBUG("Align automatically");
+        sfm::computeNewCoordinateSystemAuto(sfmEngine.getSfMData(), S, R, t);
+        sfm::applyTransform(sfmEngine.getSfMData(), S, R, t);
+
+        ALICEVISION_LOG_DEBUG("Align with ground");
+        sfm::computeNewCoordinateSystemGroundAuto(sfmEngine.getSfMData(), t);
+        sfm::applyTransform(sfmEngine.getSfMData(), 1.0, Eigen::Matrix3d::Identity(), t);
+    }
+
+    // set featuresFolders and matchesFolders relative paths
+    {
+        sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
+        sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
+        sfmEngine.getSfMData().setAbsolutePath(outputSfM);
+    }
+
+    // get the color for the 3D points
+    if (computeStructureColor)
+        sfmEngine.colorize();
+
+    sfmEngine.retrieveMarkersId();
+
+    ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
+    ALICEVISION_LOG_INFO("Generating HTML report...");
+
+    sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
+
+    // export to disk computed scene (data & visualizable results)
+    ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
+
+    sfmDataIO::save(sfmEngine.getSfMData(),
+                    (fs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(),
+                    sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS | sfmDataIO::STRUCTURE));
+    sfmDataIO::save(sfmEngine.getSfMData(), outputSfM, sfmDataIO::ESfMData::ALL);
+
+    if (!outputSfMViewsAndPoses.empty())
+        sfmDataIO::save(
+          sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
+
+    ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
+                                                          << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl
+                                                          << "\t- # cameras calibrated: " << sfmEngine.getSfMData().getValidViews().size()
+                                                          << std::endl
+                                                          << "\t- # poses: " << sfmEngine.getSfMData().getPoses().size() << std::endl
+                                                          << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
+
+    return EXIT_SUCCESS;
 }

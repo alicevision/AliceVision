@@ -64,21 +64,23 @@ size_t getCompositingOptimalScale(int width, int height)
      */
     const int gaussianFilterSize = 5;
 
-    //Avoid negative values on scale
+    // Avoid negative values on scale
     if (minsize < gaussianFilterSize)
     {
         return 0;
     }
-    
+
     const size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
 
     return optimal_scale;
 }
 
-std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std::string& inputPath,
-                                      const size_t borderSize, size_t forceMinPyramidLevels)
+std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData,
+                                      const std::string& inputPath,
+                                      const size_t borderSize,
+                                      size_t forceMinPyramidLevels)
 {
-    if(sfmData.getViews().empty())
+    if (sfmData.getViews().empty())
     {
         return nullptr;
     }
@@ -87,9 +89,9 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
     std::vector<std::pair<IndexT, BoundingBox>> listBoundingBox;
     std::pair<std::size_t, std::size_t> panoramaSize;
 
-    for(const auto& viewIt : sfmData.getViews())
+    for (const auto& viewIt : sfmData.getViews())
     {
-        if(!sfmData.isPoseAndIntrinsicDefined(viewIt.first))
+        if (!sfmData.isPoseAndIntrinsicDefined(viewIt.first))
             continue;
 
         const std::string warpedPath = viewIt.second->getImage().getMetadata().at("AliceVision:warpedPath");
@@ -112,12 +114,12 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
         bb.width = width;
         bb.height = height;
 
-        if(viewIt.first == 0)
+        if (viewIt.first == 0)
             continue;
 
         listBoundingBox.push_back(std::make_pair(viewIt.first, bb));
         size_t scale = getCompositingOptimalScale(width, height);
-        if(scale > max_scale)
+        if (scale > max_scale)
         {
             max_scale = scale;
         }
@@ -132,7 +134,7 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
     }
 
     std::unique_ptr<PanoramaMap> ret(new PanoramaMap(panoramaSize.first, panoramaSize.second, max_scale, borderSize));
-    for(const auto& bbitem : listBoundingBox)
+    for (const auto& bbitem : listBoundingBox)
     {
         ret->append(bbitem.first, bbitem.second);
     }
@@ -140,10 +142,17 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData& sfmData, const std
     return ret;
 }
 
-bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmData, const std::string& compositerType,
-                  const std::string& warpingFolder, const std::string& labelsFilePath, const std::string& outputFolder,
-                  const image::EStorageDataType& storageDataType, IndexT viewReference,
-                  const BoundingBox& referenceBoundingBox, bool showBorders, bool showSeams)
+bool processImage(const PanoramaMap& panoramaMap,
+                  const sfmData::SfMData& sfmData,
+                  const std::string& compositerType,
+                  const std::string& warpingFolder,
+                  const std::string& labelsFilePath,
+                  const std::string& outputFolder,
+                  const image::EStorageDataType& storageDataType,
+                  IndexT viewReference,
+                  const BoundingBox& referenceBoundingBox,
+                  bool showBorders,
+                  bool showSeams)
 {
     // The laplacian pyramid must also contains some pixels outside of the bounding box to make sure
     // there is a continuity between all the "views" of the panorama.
@@ -153,40 +162,37 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     bool needWeights;
     bool needSeams;
     std::unique_ptr<Compositer> compositer;
-    if(compositerType == "multiband")
+    if (compositerType == "multiband")
     {
         needWeights = false;
         needSeams = true;
 
         // Enlarge the panorama boundingbox to allow consider neighboor pixels even at small scale
-        panoramaBoundingBox = referenceBoundingBox.divide(panoramaMap.getScale())
-                                  .dilate(panoramaMap.getBorderSize())
-                                  .multiply(panoramaMap.getScale());
+        panoramaBoundingBox =
+          referenceBoundingBox.divide(panoramaMap.getScale()).dilate(panoramaMap.getBorderSize()).multiply(panoramaMap.getScale());
 
         panoramaBoundingBox.clampTop();
         panoramaBoundingBox.clampBottom(panoramaMap.getHeight());
 
-        compositer = std::unique_ptr<Compositer>(
-            new LaplacianCompositer(panoramaBoundingBox.width, panoramaBoundingBox.height, panoramaMap.getScale()));
+        compositer =
+          std::unique_ptr<Compositer>(new LaplacianCompositer(panoramaBoundingBox.width, panoramaBoundingBox.height, panoramaMap.getScale()));
     }
-    else if(compositerType == "alpha")
+    else if (compositerType == "alpha")
     {
         needWeights = true;
         needSeams = false;
-        compositer =
-            std::unique_ptr<Compositer>(new AlphaCompositer(referenceBoundingBox.width, referenceBoundingBox.height));
+        compositer = std::unique_ptr<Compositer>(new AlphaCompositer(referenceBoundingBox.width, referenceBoundingBox.height));
     }
     else
     {
         needWeights = false;
         needSeams = false;
-        compositer =
-            std::unique_ptr<Compositer>(new Compositer(referenceBoundingBox.width, referenceBoundingBox.height));
+        compositer = std::unique_ptr<Compositer>(new Compositer(referenceBoundingBox.width, referenceBoundingBox.height));
     }
 
     // Get the list of input which should be processed for this reference view bounding box
     std::vector<IndexT> overlappingViews;
-    if(!panoramaMap.getOverlaps(overlappingViews, referenceBoundingBox))
+    if (!panoramaMap.getOverlaps(overlappingViews, referenceBoundingBox))
     {
         ALICEVISION_LOG_ERROR("Problem analyzing neighboorhood");
         return false;
@@ -195,17 +201,17 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     // Compute the bounding box of the intersections with the reference bounding box
     // (which may be larger than the reference Bounding box because of dilatation)
     BoundingBox globalUnionBoundingBox;
-    for(IndexT viewCurrent : overlappingViews)
+    for (IndexT viewCurrent : overlappingViews)
     {
         // Compute list of intersection between this view and the reference view
         std::vector<BoundingBox> intersections;
         std::vector<BoundingBox> currentBoundingBoxes;
-        if(!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
+        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
         {
             continue;
         }
 
-        for(BoundingBox& bb : intersections)
+        for (BoundingBox& bb : intersections)
         {
             globalUnionBoundingBox = globalUnionBoundingBox.unionWith(bb);
         }
@@ -215,7 +221,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
     // Building a map of visible pixels
     image::Image<std::vector<IndexT>> visiblePixels(globalUnionBoundingBox.width, globalUnionBoundingBox.height, true);
-    for(IndexT viewCurrent : overlappingViews)
+    for (IndexT viewCurrent : overlappingViews)
     {
         const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getImage().getMetadata().at("AliceVision:warpedPath");
 
@@ -228,33 +234,33 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         // Compute list of intersection between this view and the reference view
         std::vector<BoundingBox> intersections;
         std::vector<BoundingBox> currentBoundingBoxes;
-        if(!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
+        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
         {
             continue;
         }
 
-        for(int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
+        for (int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
         {
             const BoundingBox& bbox = currentBoundingBoxes[indexIntersection];
             const BoundingBox& bboxIntersect = intersections[indexIntersection];
 
-            for(int i = 0; i < mask.height(); i++)
+            for (int i = 0; i < mask.height(); i++)
             {
                 int y = bbox.top + i - globalUnionBoundingBox.top;
-                if(y < 0 || y >= globalUnionBoundingBox.height)
+                if (y < 0 || y >= globalUnionBoundingBox.height)
                 {
                     continue;
                 }
 
-                for(int j = 0; j < mask.width(); j++)
+                for (int j = 0; j < mask.width(); j++)
                 {
-                    if(!mask(i, j))
+                    if (!mask(i, j))
                     {
                         continue;
                     }
 
                     int x = bbox.left + j - globalUnionBoundingBox.left;
-                    if(x < 0 || x >= globalUnionBoundingBox.width)
+                    if (x < 0 || x >= globalUnionBoundingBox.width)
                     {
                         continue;
                     }
@@ -269,7 +275,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
     // Compute initial seams
     image::Image<IndexT> referenceLabels;
-    if(needSeams)
+    if (needSeams)
     {
         image::Image<IndexT> panoramaLabels;
         image::readImageDirect(labelsFilePath, panoramaLabels);
@@ -277,77 +283,76 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         const double scaleX = double(panoramaLabels.width()) / double(panoramaMap.getWidth());
         const double scaleY = double(panoramaLabels.height()) / double(panoramaMap.getHeight());
 
-        referenceLabels =
-            image::Image<IndexT>(globalUnionBoundingBox.width, globalUnionBoundingBox.height, true, UndefinedIndexT);
+        referenceLabels = image::Image<IndexT>(globalUnionBoundingBox.width, globalUnionBoundingBox.height, true, UndefinedIndexT);
 
-        for(int i = 0; i < globalUnionBoundingBox.height; i++)
+        for (int i = 0; i < globalUnionBoundingBox.height; i++)
         {
             const int y = i + globalUnionBoundingBox.top;
             const int scaledY = int(floor(scaleY * double(y)));
 
-            for(int j = 0; j < globalUnionBoundingBox.width; j++)
+            for (int j = 0; j < globalUnionBoundingBox.width; j++)
             {
                 const int x = j + globalUnionBoundingBox.left;
                 int scaledX = int(floor(scaleX * double(x)));
 
-                if(scaledX < 0)
+                if (scaledX < 0)
                 {
                     scaledX += panoramaLabels.width();
                 }
 
-                if(scaledX >= panoramaLabels.width())
+                if (scaledX >= panoramaLabels.width())
                 {
                     scaledX -= panoramaLabels.width();
                 }
 
-                if(scaledX < 0)
+                if (scaledX < 0)
                     continue;
-                if(scaledX >= panoramaLabels.width())
+                if (scaledX >= panoramaLabels.width())
                     continue;
 
                 IndexT label = panoramaLabels(scaledY, scaledX);
 
                 bool found = false;
                 auto& listValid = visiblePixels(i, j);
-                for(auto item : listValid)
+                for (auto item : listValid)
                 {
-                    if(item == label)
+                    if (item == label)
                     {
                         found = true;
                         break;
                     }
                 }
 
-                if(found)
+                if (found)
                 {
                     referenceLabels(i, j) = label;
                     continue;
                 }
 
                 found = false;
-                for(int k = -1; k <= 1; k++)
+                for (int k = -1; k <= 1; k++)
                 {
                     int nscaledY = scaledY + k;
-                    if(nscaledY < 0)
+                    if (nscaledY < 0)
                         continue;
-                    if(nscaledY >= panoramaLabels.height())
+                    if (nscaledY >= panoramaLabels.height())
                         continue;
 
-                    for(int l = -1; l <= 1; l++)
+                    for (int l = -1; l <= 1; l++)
                     {
-                        if(k == 0 && l == 0)
+                        if (k == 0 && l == 0)
                             continue;
 
                         int nscaledX = scaledX + l;
-                        if(nscaledX < 0)
+                        if (nscaledX < 0)
                             continue;
-                        if(nscaledX >= panoramaLabels.width())
+                        if (nscaledX >= panoramaLabels.width())
                             continue;
 
                         IndexT otherlabel = panoramaLabels(nscaledY, nscaledX);
-                        for(auto item : listValid)
+                        for (auto item : listValid)
                         {
-                            if(item == otherlabel)
+                            if (item == otherlabel)
                             {
                                 label = otherlabel;
                                 found = true;
@@ -355,15 +360,15 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                             }
                         }
 
-                        if(found)
+                        if (found)
                             break;
                     }
 
-                    if(found)
+                    if (found)
                         break;
                 }
 
-                if(!found)
+                if (!found)
                 {
                     referenceLabels(i, j) = UndefinedIndexT;
                     continue;
@@ -383,7 +388,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     bbRoi.height = referenceBoundingBox.height;
 
     // Compositer initialization
-    if(!compositer->initialize(bbRoi))
+    if (!compositer->initialize(bbRoi))
     {
         ALICEVISION_LOG_ERROR("Error initializing panorama");
         return false;
@@ -394,20 +399,19 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     // Load metadata to get image color space
     std::string colorSpace = "Linear";
     oiio::ParamValueList srcMetadata;
-    if(!overlappingViews.empty())
+    if (!overlappingViews.empty())
     {
-        const std::string warpedPath =
-            sfmData.getViews().at(overlappingViews[0])->getImage().getMetadata().at("AliceVision:warpedPath");
+        const std::string warpedPath = sfmData.getViews().at(overlappingViews[0])->getImage().getMetadata().at("AliceVision:warpedPath");
         const std::string firstImagePath = (fs::path(warpingFolder) / (warpedPath + ".exr")).string();
         srcMetadata = image::readImageMetadata(firstImagePath);
         colorSpace = srcMetadata.get_string("AliceVision:ColorSpace", "Linear");
     }
 
 #pragma omp parallel for
-    for(int posCurrent = 0; posCurrent < overlappingViews.size(); posCurrent++)
+    for (int posCurrent = 0; posCurrent < overlappingViews.size(); posCurrent++)
     {
         IndexT viewCurrent = overlappingViews[posCurrent];
-        if(hasFailed)
+        if (hasFailed)
         {
             continue;
         }
@@ -419,20 +423,20 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         // Compute list of intersection between this view and the reference view
         std::vector<BoundingBox> intersections;
         std::vector<BoundingBox> currentBoundingBoxes;
-        if(!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
+        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
         {
             continue;
         }
 
-        if(intersections.empty())
+        if (intersections.empty())
         {
             continue;
         }
 
         ALICEVISION_LOG_TRACE("Effective processing");
-        for(int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
+        for (int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
         {
-            if(hasFailed)
+            if (hasFailed)
             {
                 continue;
             }
@@ -454,20 +458,20 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
 
             // Load weights image if needed
             image::Image<float> weights;
-            if(needWeights)
+            if (needWeights)
             {
                 const std::string weightsPath = (fs::path(warpingFolder) / (warpedPath + "_weight.exr")).string();
                 ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
                 image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
             }
 
-            if(needSeams)
+            if (needSeams)
             {
                 int left = bboxIntersect.left - globalUnionBoundingBox.left;
                 int top = bboxIntersect.top - globalUnionBoundingBox.top;
 
                 weights = image::Image<float>(bboxIntersect.width, bboxIntersect.height);
-                if(!getMaskFromLabels(weights, referenceLabels, viewCurrent, left, top))
+                if (!getMaskFromLabels(weights, referenceLabels, viewCurrent, left, top))
                 {
                     ALICEVISION_LOG_ERROR("Error estimating seams image");
                     hasFailed = true;
@@ -479,7 +483,7 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
             cutBoundingBox.top = bboxIntersect.top - bbox.top;
             cutBoundingBox.width = bboxIntersect.width;
             cutBoundingBox.height = bboxIntersect.height;
-            if(cutBoundingBox.isEmpty())
+            if (cutBoundingBox.isEmpty())
             {
                 continue;
             }
@@ -487,18 +491,17 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
             image::Image<image::RGBfColor> subsource(cutBoundingBox.width, cutBoundingBox.height);
             image::Image<unsigned char> submask(cutBoundingBox.width, cutBoundingBox.height);
 
-            subsource =
-                source.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
+            subsource = source.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
             submask = mask.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
 
             source = image::Image<image::RGBfColor>();
             mask = image::Image<unsigned char>();
 
-            if(!compositer->append(subsource, submask, weights,
-                                   referenceBoundingBox.left - panoramaBoundingBox.left + bboxIntersect.left -
-                                       referenceBoundingBox.left,
-                                   referenceBoundingBox.top - panoramaBoundingBox.top + bboxIntersect.top -
-                                       referenceBoundingBox.top))
+            if (!compositer->append(subsource,
+                                    submask,
+                                    weights,
+                                    referenceBoundingBox.left - panoramaBoundingBox.left + bboxIntersect.left - referenceBoundingBox.left,
+                                    referenceBoundingBox.top - panoramaBoundingBox.top + bboxIntersect.top - referenceBoundingBox.top))
             {
                 ALICEVISION_LOG_INFO("Error in compositer append");
                 hasFailed = true;
@@ -507,25 +510,25 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         }
     }
 
-    if(hasFailed)
+    if (hasFailed)
     {
         return false;
     }
 
     ALICEVISION_LOG_INFO("Terminate compositing for this view");
-    if(!compositer->terminate())
+    if (!compositer->terminate())
     {
         ALICEVISION_LOG_ERROR("Error terminating panorama");
         return false;
     }
 
     std::string warpedPath;
-    
-    if (viewReference==UndefinedIndexT) 
+
+    if (viewReference == UndefinedIndexT)
     {
         warpedPath = "panorama";
     }
-    else 
+    else
     {
         warpedPath = sfmData.getViews().at(viewReference)->getImage().getMetadata().at("AliceVision:warpedPath");
     }
@@ -533,11 +536,11 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     const std::string outputFilePath = (fs::path(outputFolder) / (warpedPath + ".exr")).string();
     image::Image<image::RGBAfColor>& output = compositer->getOutput();
 
-    if(storageDataType == image::EStorageDataType::HalfFinite)
+    if (storageDataType == image::EStorageDataType::HalfFinite)
     {
-        for(int i = 0; i < output.height(); i++)
+        for (int i = 0; i < output.height(); i++)
         {
-            for(int j = 0; j < output.width(); j++)
+            for (int j = 0; j < output.width(); j++)
             {
                 image::RGBAfColor ret;
                 image::RGBAfColor c = output(i, j);
@@ -554,29 +557,27 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
         }
     }
 
-    if(showBorders)
+    if (showBorders)
     {
         ALICEVISION_LOG_INFO("Draw borders");
-        for(IndexT viewCurrent : overlappingViews)
+        for (IndexT viewCurrent : overlappingViews)
         {
             // Compute list of intersection between this view and the reference view
             std::vector<BoundingBox> intersections;
             std::vector<BoundingBox> currentBoundingBoxes;
-            if(!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox,
-                                                 viewCurrent))
+            if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
             {
                 continue;
             }
 
             // Load mask
-            const std::string warpedPath =
-                sfmData.getViews().at(viewCurrent)->getImage().getMetadata().at("AliceVision:warpedPath");
+            const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getImage().getMetadata().at("AliceVision:warpedPath");
             const std::string maskPath = (fs::path(warpingFolder) / (warpedPath + "_mask.exr")).string();
             ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
             image::Image<unsigned char> mask;
             image::readImageDirect(maskPath, mask);
 
-            for(int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
+            for (int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
             {
                 const BoundingBox& bbox = currentBoundingBoxes[indexIntersection];
                 const BoundingBox& bboxIntersect = intersections[indexIntersection];
@@ -586,25 +587,23 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
                 cutBoundingBox.top = bboxIntersect.top - bbox.top;
                 cutBoundingBox.width = bboxIntersect.width;
                 cutBoundingBox.height = bboxIntersect.height;
-                if(cutBoundingBox.isEmpty())
+                if (cutBoundingBox.isEmpty())
                 {
                     continue;
                 }
 
                 image::Image<unsigned char> submask(cutBoundingBox.width, cutBoundingBox.height);
-                submask =
-                    mask.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
+                submask = mask.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
 
-                drawBorders(output, submask, bboxIntersect.left - referenceBoundingBox.left,
-                            bboxIntersect.top - referenceBoundingBox.top);
+                drawBorders(output, submask, bboxIntersect.left - referenceBoundingBox.left, bboxIntersect.top - referenceBoundingBox.top);
             }
         }
     }
 
-    if(showSeams && needSeams)
+    if (showSeams && needSeams)
     {
-        drawSeams(output, referenceLabels, globalUnionBoundingBox.left - referenceBoundingBox.left,
-                  globalUnionBoundingBox.top - referenceBoundingBox.top);
+        drawSeams(
+          output, referenceLabels, globalUnionBoundingBox.left - referenceBoundingBox.left, globalUnionBoundingBox.top - referenceBoundingBox.top);
     }
 
     oiio::ParamValueList metadata = srcMetadata;
@@ -617,11 +616,12 @@ bool processImage(const PanoramaMap& panoramaMap, const sfmData::SfMData& sfmDat
     metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", int(panoramaMap.getWidth())));
     metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", int(panoramaMap.getHeight())));
 
-    image::writeImage(outputFilePath, output,
+    image::writeImage(outputFilePath,
+                      output,
                       image::ImageWriteOptions()
-                          .fromColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
-                          .toColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
-                          .storageDataType(storageDataType),
+                        .fromColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
+                        .toColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
+                        .storageDataType(storageDataType),
                       metadata);
 
     return true;
@@ -679,12 +679,11 @@ int aliceVision_main(int argc, char** argv)
          "Use tiling for compositing.");
     // clang-format on
 
-    CmdLine cmdline(
-        "Performs the panorama stiching of warped images, with an option to use constraints from precomputed seams maps.\n"
-        "AliceVision panoramaCompositing");
+    CmdLine cmdline("Performs the panorama stiching of warped images, with an option to use constraints from precomputed seams maps.\n"
+                    "AliceVision panoramaCompositing");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
-    if(!cmdline.execute(argc, argv))
+    if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
     }
@@ -692,18 +691,17 @@ int aliceVision_main(int argc, char** argv)
     // set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
     hwc.setUserCoresLimit(maxThreads);
-    
+
     omp_set_num_threads(hwc.getMaxThreads());
     oiio::attribute("threads", static_cast<int>(hwc.getMaxThreads()));
     oiio::attribute("exr_threads", static_cast<int>(hwc.getMaxThreads()));
 
-
-    if(overlayType == "borders" || overlayType == "all")
+    if (overlayType == "borders" || overlayType == "all")
     {
         showBorders = true;
     }
 
-    if(overlayType == "seams" || overlayType == "all")
+    if (overlayType == "seams" || overlayType == "all")
     {
         showSeams = true;
     }
@@ -716,8 +714,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmDataFilepath,
-                        sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
+    if (!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
         return EXIT_FAILURE;
@@ -726,9 +723,9 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_TRACE("Sfm data loaded");
 
     std::set<std::string> uniquePreviousId;
-    for(const auto pv : sfmData.getViews())
+    for (const auto pv : sfmData.getViews())
     {
-        if(pv.second->getImage().getMetadata().find("AliceVision:previousViewId") == pv.second->getImage().getMetadata().end())
+        if (pv.second->getImage().getMetadata().find("AliceVision:previousViewId") == pv.second->getImage().getMetadata().end())
         {
             ALICEVISION_LOG_ERROR("You mixed different versions of alicevision.");
             ALICEVISION_LOG_ERROR("Warped images do not contain the required metadatas.");
@@ -748,9 +745,9 @@ int aliceVision_main(int argc, char** argv)
         rangeIteration = 0;
         rangeSize = 1;
     }
-    if(rangeIteration != -1)
+    if (rangeIteration != -1)
     {
-        if(rangeIteration < 0 || rangeSize < 0)
+        if (rangeIteration < 0 || rangeSize < 0)
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
@@ -758,7 +755,7 @@ int aliceVision_main(int argc, char** argv)
 
         const int countIterations = divideRoundUp(oldViewsCount, rangeSize);
 
-        if(rangeIteration >= countIterations)
+        if (rangeIteration >= countIterations)
         {
             // nothing to compute for this chunk
             return EXIT_SUCCESS;
@@ -773,11 +770,11 @@ int aliceVision_main(int argc, char** argv)
     }
 
     size_t borderSize;
-    if(compositerType == "multiband")
+    if (compositerType == "multiband")
     {
         borderSize = 2;
     }
-    else if(compositerType == "alpha")
+    else if (compositerType == "alpha")
     {
         borderSize = 0;
     }
@@ -789,7 +786,7 @@ int aliceVision_main(int argc, char** argv)
     // Build the map of inputs in the final panorama
     // This is mostly meant to compute overlaps between inputs
     std::unique_ptr<PanoramaMap> panoramaMap = buildMap(sfmData, warpingFolder, borderSize, forceMinPyramidLevels);
-    if(viewsCount == 0)
+    if (viewsCount == 0)
     {
         ALICEVISION_LOG_ERROR("No valid views");
         return EXIT_FAILURE;
@@ -797,13 +794,13 @@ int aliceVision_main(int argc, char** argv)
 
     // Distribute more smartly inputs among chunks
     std::vector<std::vector<IndexT>> chunks;
-    if(!panoramaMap->optimizeChunks(chunks, rangeSize))
+    if (!panoramaMap->optimizeChunks(chunks, rangeSize))
     {
         ALICEVISION_LOG_ERROR("Can't build chunks");
         return EXIT_FAILURE;
     }
 
-    if(rangeIteration >= chunks.size())
+    if (rangeIteration >= chunks.size())
     {
         // nothing to compute for this chunk
         return EXIT_SUCCESS;
@@ -815,45 +812,63 @@ int aliceVision_main(int argc, char** argv)
 
     if (useTiling)
     {
-        for(std::size_t posReference = 0; posReference < chunk.size(); posReference++)
+        for (std::size_t posReference = 0; posReference < chunk.size(); posReference++)
         {
             ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());
 
             const IndexT viewReference = chunk[posReference];
-            if(!sfmData.isPoseAndIntrinsicDefined(viewReference))
+            if (!sfmData.isPoseAndIntrinsicDefined(viewReference))
                 continue;
 
             BoundingBox referenceBoundingBox;
-            if(!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference))
+            if (!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference))
             {
                 ALICEVISION_LOG_ERROR("Invalid view ID as reference");
                 return EXIT_FAILURE;
             }
 
-            if(!processImage(*panoramaMap, sfmData, compositerType, warpingFolder, labelsFilepath, outputFolder,
-                            storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams))
+            if (!processImage(*panoramaMap,
+                              sfmData,
+                              compositerType,
+                              warpingFolder,
+                              labelsFilepath,
+                              outputFolder,
+                              storageDataType,
+                              viewReference,
+                              referenceBoundingBox,
+                              showBorders,
+                              showSeams))
             {
                 succeeded = false;
                 continue;
             }
         }
     }
-    else 
+    else
     {
         BoundingBox referenceBoundingBox;
         referenceBoundingBox.left = 0;
         referenceBoundingBox.top = 0;
         referenceBoundingBox.width = panoramaMap->getWidth();
         referenceBoundingBox.height = panoramaMap->getHeight();
-        
-        if(!processImage(*panoramaMap, sfmData, compositerType, warpingFolder, labelsFilepath, outputFolder,
-                            storageDataType, UndefinedIndexT, referenceBoundingBox, showBorders, showSeams))
+
+        if (!processImage(*panoramaMap,
+                          sfmData,
+                          compositerType,
+                          warpingFolder,
+                          labelsFilepath,
+                          outputFolder,
+                          storageDataType,
+                          UndefinedIndexT,
+                          referenceBoundingBox,
+                          showBorders,
+                          showSeams))
         {
             succeeded = false;
         }
     }
 
-    if(!succeeded)
+    if (!succeeded)
     {
         return EXIT_FAILURE;
     }

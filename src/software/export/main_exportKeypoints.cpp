@@ -42,16 +42,16 @@ using namespace svg;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-int aliceVision_main(int argc, char ** argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string outputFolder;
-  std::vector<std::string> featuresFolders;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string outputFolder;
+    std::vector<std::string> featuresFolders;
 
-  // user optional parameters
+    // user optional parameters
 
-  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+    std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -69,66 +69,63 @@ int aliceVision_main(int argc, char ** argv)
          feature::EImageDescriberType_informations().c_str());
     // clang-format on
 
-  CmdLine cmdline("AliceVision exportKeypoints");
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline("AliceVision exportKeypoints");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
-  if(outputFolder.empty())
-  {
-    ALICEVISION_LOG_ERROR("Invalid output folder");
-    return EXIT_FAILURE;
-  }
+    if (outputFolder.empty())
+    {
+        ALICEVISION_LOG_ERROR("Invalid output folder");
+        return EXIT_FAILURE;
+    }
 
-  // read SfM Scene (image view names)
+    // read SfM Scene (image view names)
 
-  SfMData sfmData;
-  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read.");
-    return EXIT_FAILURE;
-  }
+    SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+        return EXIT_FAILURE;
+    }
 
-  // load SfM Scene regions
-  // get imageDescriberMethodType
-  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
+    // load SfM Scene regions
+    // get imageDescriberMethodType
+    std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
 
-  // read the features
-  feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerMethodTypes))
-  {
-    ALICEVISION_LOG_ERROR("Invalid features");
-    return EXIT_FAILURE;
-  }
+    // read the features
+    feature::FeaturesPerView featuresPerView;
+    if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerMethodTypes))
+    {
+        ALICEVISION_LOG_ERROR("Invalid features");
+        return EXIT_FAILURE;
+    }
 
-  // for each image, export visually the keypoints
+    // for each image, export visually the keypoints
 
-  fs::create_directory(outputFolder);
-  ALICEVISION_LOG_INFO("Export extracted keypoints for all images");
-  auto myProgressBar = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout);
-  for(const auto &iterViews : sfmData.getViews())
-  {
-    const View * view = iterViews.second.get();
-    const std::string viewImagePath = view->getImage().getImagePath();
+    fs::create_directory(outputFolder);
+    ALICEVISION_LOG_INFO("Export extracted keypoints for all images");
+    auto myProgressBar = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout);
+    for (const auto& iterViews : sfmData.getViews())
+    {
+        const View* view = iterViews.second.get();
+        const std::string viewImagePath = view->getImage().getImagePath();
 
-    const std::pair<size_t, size_t>
-      dimImage = std::make_pair(view->getImage().getWidth(), view->getImage().getHeight());
+        const std::pair<size_t, size_t> dimImage = std::make_pair(view->getImage().getWidth(), view->getImage().getHeight());
 
-    const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->getViewId());
+        const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->getViewId());
 
-    // output filename
-    fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(view->getViewId()) + "_" + std::to_string(features.size()) + ".svg");
+        // output filename
+        fs::path outputFilename =
+          fs::path(outputFolder) / std::string(std::to_string(view->getViewId()) + "_" + std::to_string(features.size()) + ".svg");
 
-    matching::saveFeatures2SVG(viewImagePath,
-                               dimImage,
-                               featuresPerView.getData().at(view->getViewId()),
-                               outputFilename.string());
+        matching::saveFeatures2SVG(viewImagePath, dimImage, featuresPerView.getData().at(view->getViewId()), outputFilename.string());
 
-    ++myProgressBar;
-  }
-  
-  return EXIT_SUCCESS;
+        ++myProgressBar;
+    }
+
+    return EXIT_SUCCESS;
 }

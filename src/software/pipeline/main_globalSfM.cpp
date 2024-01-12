@@ -30,23 +30,23 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilepath;
-  std::vector<std::string> featuresFolders;
-  std::vector<std::string> matchesFolders;
-  std::string extraInfoFolder;
-  std::string outputSfMViewsAndPoses;
+    // command-line parameters
+    std::string sfmDataFilepath;
+    std::vector<std::string> featuresFolders;
+    std::vector<std::string> matchesFolders;
+    std::string extraInfoFolder;
+    std::string outputSfMViewsAndPoses;
 
-  // user optional parameters
+    // user optional parameters
 
-  std::string outSfMDataFilepath = "SfmData.json";
-  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
-  sfm::ETranslationAveragingMethod translationAveragingMethod = sfm::TRANSLATION_AVERAGING_SOFTL1;
-  bool lockAllIntrinsics = false;
-  int randomSeed = std::mt19937::default_seed;
+    std::string outSfMDataFilepath = "SfmData.json";
+    std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+    sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
+    sfm::ETranslationAveragingMethod translationAveragingMethod = sfm::TRANSLATION_AVERAGING_SOFTL1;
+    bool lockAllIntrinsics = false;
+    int randomSeed = std::mt19937::default_seed;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -81,130 +81,127 @@ int aliceVision_main(int argc, char **argv)
          "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
-  CmdLine cmdline("This program is an implementation of the paper\n"
-                  "\"Global Fusion of Relative Motions for "
-                  "Robust, Accurate and Scalable Structure from Motion.\"\n"
-                  "Pierre Moulon, Pascal Monasse and Renaud Marlet ICCV 2013.\n"
-                  "AliceVision globalSfM");
-                  
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline("This program is an implementation of the paper\n"
+                    "\"Global Fusion of Relative Motions for "
+                    "Robust, Accurate and Scalable Structure from Motion.\"\n"
+                    "Pierre Moulon, Pascal Monasse and Renaud Marlet ICCV 2013.\n"
+                    "AliceVision globalSfM");
 
-  if (rotationAveragingMethod < sfm::ROTATION_AVERAGING_L1 ||
-      rotationAveragingMethod > sfm::ROTATION_AVERAGING_L2 )
-  {
-    ALICEVISION_LOG_ERROR("Rotation averaging method is invalid");
-    return EXIT_FAILURE;
-  }
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
-  if (translationAveragingMethod < sfm::TRANSLATION_AVERAGING_L1 ||
-      translationAveragingMethod > sfm::TRANSLATION_AVERAGING_SOFTL1 )
-  {
-    ALICEVISION_LOG_ERROR("Translation averaging method is invalid");
-    return EXIT_FAILURE;
-  }
+    if (rotationAveragingMethod < sfm::ROTATION_AVERAGING_L1 || rotationAveragingMethod > sfm::ROTATION_AVERAGING_L2)
+    {
+        ALICEVISION_LOG_ERROR("Rotation averaging method is invalid");
+        return EXIT_FAILURE;
+    }
 
-  // load input SfMData scene
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilepath << "' cannot be read.");
-    return EXIT_FAILURE;
-  }
+    if (translationAveragingMethod < sfm::TRANSLATION_AVERAGING_L1 || translationAveragingMethod > sfm::TRANSLATION_AVERAGING_SOFTL1)
+    {
+        ALICEVISION_LOG_ERROR("Translation averaging method is invalid");
+        return EXIT_FAILURE;
+    }
 
-  if(!sfmData.getLandmarks().empty())
-  {
-    ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
-    return EXIT_FAILURE;
-  }
+    // load input SfMData scene
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilepath << "' cannot be read.");
+        return EXIT_FAILURE;
+    }
 
-  if(!sfmData.getRigs().empty())
-  {
-    ALICEVISION_LOG_ERROR("Rigs are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
-    return EXIT_FAILURE;
-  }
+    if (!sfmData.getLandmarks().empty())
+    {
+        ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl
+                                                                                                 << "Please use Incremental SfM. Aborted");
+        return EXIT_FAILURE;
+    }
 
-  // get describerTypes
-  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
+    if (!sfmData.getRigs().empty())
+    {
+        ALICEVISION_LOG_ERROR("Rigs are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
+        return EXIT_FAILURE;
+    }
 
-  // features reading
-  feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
-  {
-    ALICEVISION_LOG_ERROR("Invalid features");
-    return EXIT_FAILURE;
-  }
+    // get describerTypes
+    const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  // matches reading
-  // Load the match file (try to read the two matches file formats).
-  matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes))
-  {
-    ALICEVISION_LOG_ERROR("Unable to load matches files from: " << matchesFolders);
-    return EXIT_FAILURE;
-  }
+    // features reading
+    feature::FeaturesPerView featuresPerView;
+    if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
+    {
+        ALICEVISION_LOG_ERROR("Invalid features");
+        return EXIT_FAILURE;
+    }
 
-  if(extraInfoFolder.empty())
-    extraInfoFolder = fs::path(outSfMDataFilepath).parent_path().string();
+    // matches reading
+    // Load the match file (try to read the two matches file formats).
+    matching::PairwiseMatches pairwiseMatches;
+    if (!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes))
+    {
+        ALICEVISION_LOG_ERROR("Unable to load matches files from: " << matchesFolders);
+        return EXIT_FAILURE;
+    }
 
-  if (!fs::exists(extraInfoFolder))
-    fs::create_directory(extraInfoFolder);
+    if (extraInfoFolder.empty())
+        extraInfoFolder = fs::path(outSfMDataFilepath).parent_path().string();
 
-  // global SfM reconstruction process
-  aliceVision::system::Timer timer;
-  sfm::ReconstructionEngine_globalSfM sfmEngine(
-    sfmData,
-    extraInfoFolder,
-    (fs::path(extraInfoFolder) / "sfm_log.html").string());
+    if (!fs::exists(extraInfoFolder))
+        fs::create_directory(extraInfoFolder);
 
-  sfmEngine.initRandomSeed(randomSeed);
+    // global SfM reconstruction process
+    aliceVision::system::Timer timer;
+    sfm::ReconstructionEngine_globalSfM sfmEngine(sfmData, extraInfoFolder, (fs::path(extraInfoFolder) / "sfm_log.html").string());
 
-  // configure the featuresPerView & the matches_provider
-  sfmEngine.setFeaturesProvider(&featuresPerView);
-  sfmEngine.setMatchesProvider(&pairwiseMatches);
+    sfmEngine.initRandomSeed(randomSeed);
 
-  // configure reconstruction parameters
-  sfmEngine.setLockAllIntrinsics(lockAllIntrinsics); // TODO: rename param
+    // configure the featuresPerView & the matches_provider
+    sfmEngine.setFeaturesProvider(&featuresPerView);
+    sfmEngine.setMatchesProvider(&pairwiseMatches);
 
-  // configure motion averaging method
-  sfmEngine.setRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
-  sfmEngine.setTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
+    // configure reconstruction parameters
+    sfmEngine.setLockAllIntrinsics(lockAllIntrinsics);  // TODO: rename param
 
-  if(!sfmEngine.process())
-    return EXIT_FAILURE;
+    // configure motion averaging method
+    sfmEngine.setRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
+    sfmEngine.setTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
 
-  // get the color for the 3D points
-  sfmEngine.colorize();
+    if (!sfmEngine.process())
+        return EXIT_FAILURE;
 
-  // set featuresFolders and matchesFolders relative paths
-  {
-    sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
-    sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
-    sfmEngine.getSfMData().setAbsolutePath(fs::path(outSfMDataFilepath).parent_path().string());
-  }
+    // get the color for the 3D points
+    sfmEngine.colorize();
 
-  ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());
-  ALICEVISION_LOG_INFO("Generating HTML report...");
+    // set featuresFolders and matchesFolders relative paths
+    {
+        sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
+        sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
+        sfmEngine.getSfMData().setAbsolutePath(fs::path(outSfMDataFilepath).parent_path().string());
+    }
 
-  sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
+    ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());
+    ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  // export to disk computed scene (data & visualizable results)
-  ALICEVISION_LOG_INFO("Export SfMData to disk");
+    sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
 
-  sfmDataIO::save(sfmEngine.getSfMData(), outSfMDataFilepath, sfmDataIO::ESfMData::ALL);
-  sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+    // export to disk computed scene (data & visualizable results)
+    ALICEVISION_LOG_INFO("Export SfMData to disk");
 
-  if(!outputSfMViewsAndPoses.empty())
-    sfmDataIO::save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
+    sfmDataIO::save(sfmEngine.getSfMData(), outSfMDataFilepath, sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
-  ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
-    << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl
-    << "\t- # cameras calibrated: " << sfmEngine.getSfMData().getPoses().size() << std::endl
-    << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
+    if (!outputSfMViewsAndPoses.empty())
+        sfmDataIO::save(
+          sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
 
-  return EXIT_SUCCESS;
+    ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
+                                                          << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl
+                                                          << "\t- # cameras calibrated: " << sfmEngine.getSfMData().getPoses().size() << std::endl
+                                                          << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
+
+    return EXIT_SUCCESS;
 }

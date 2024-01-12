@@ -8,15 +8,14 @@
 // It is assumed that for each image we have a result of the checkerboard detector.
 
 // The constraint for this calibration is that we may not know :
-// - the checkerboard size 
-// - the squares sizes 
+// - the checkerboard size
+// - the squares sizes
 // - the checkerboard relative poses
 
 // We may only have only one image per distortion to estimate.
 
 // The idea is is to calibrate distortion parameters without estimating the pose or the intrinsics.
 // This algorithms groups the corners by lines and minimize a distance between corners and lines using distortion.
-
 
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -45,7 +44,7 @@
 namespace po = boost::program_options;
 using namespace aliceVision;
 
-bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, const calibration::CheckerDetector & detect)
+bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, const calibration::CheckerDetector& detect)
 {
     const std::size_t minPointsPerLine = 10;
 
@@ -55,15 +54,16 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
     // Utility lambda to create lines by iterating over a board's cells in a given order
     auto createLines = [&](const calibration::CheckerDetector::CheckerBoard& board,
                            bool exploreByRow,
-                           bool replaceRowWithSum, bool replaceColWithSum,
-                           bool flipRow, bool flipCol) -> void
-    {
+                           bool replaceRowWithSum,
+                           bool replaceColWithSum,
+                           bool flipRow,
+                           bool flipCol) -> void {
         int dim1 = exploreByRow ? board.rows() : board.cols();
         int dim2 = exploreByRow ? board.cols() : board.rows();
 
         for (int i = 0; i < dim1; ++i)
         {
-            //Random init
+            // Random init
             calibration::LineWithPoints line;
             line.angle = boost::math::constants::pi<double>() * .25;
             line.dist = 1;
@@ -76,17 +76,20 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
                 int j_cell = replaceColWithSum ? i + j : (exploreByRow ? j : i);
                 j_cell = flipCol ? board.cols() - 1 - j_cell : j_cell;
 
-                if (i_cell < 0 || i_cell >= board.rows() || j_cell < 0 || j_cell >= board.cols()) continue;
+                if (i_cell < 0 || i_cell >= board.rows() || j_cell < 0 || j_cell >= board.cols())
+                    continue;
 
                 const IndexT idx = board(i_cell, j_cell);
-                if (idx == UndefinedIndexT) continue;
+                if (idx == UndefinedIndexT)
+                    continue;
 
                 const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
                 line.points.push_back(p.center);
             }
 
-            //Check that we don't have a too small line which won't be easy to estimate
-            if (line.points.size() < minPointsPerLine) continue;
+            // Check that we don't have a too small line which won't be easy to estimate
+            if (line.points.size() < minPointsPerLine)
+                continue;
 
             lineWithPoints.push_back(line);
         }
@@ -137,7 +140,7 @@ bool estimateDistortionMultiStep(std::shared_ptr<camera::Undistortion> undistort
     return true;
 }
 
-int aliceVision_main(int argc, char* argv[]) 
+int aliceVision_main(int argc, char* argv[])
 {
     std::string sfmInputDataFilepath;
     std::string checkerBoardsPath;
@@ -179,16 +182,18 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Load the checkerboards
-    std::map < IndexT, calibration::CheckerDetector> boardsAllImages;
+    std::map<IndexT, calibration::CheckerDetector> boardsAllImages;
     for (auto& pv : sfmData.getViews())
     {
         IndexT viewId = pv.first;
 
         // Read the json file
         std::stringstream ss;
-        ss << checkerBoardsPath << "/" << "checkers_" << viewId << ".json";
+        ss << checkerBoardsPath << "/"
+           << "checkers_" << viewId << ".json";
         std::ifstream inputfile(ss.str());
-        if (!inputfile.is_open()) continue;
+        if (!inputfile.is_open())
+            continue;
 
         std::stringstream buffer;
         buffer << inputfile.rdbuf();
@@ -206,13 +211,11 @@ int aliceVision_main(int argc, char* argv[])
     for (auto& [intrinsicId, intrinsicPtr] : sfmData.getIntrinsics())
     {
         // Convert to pinhole
-        std::shared_ptr<camera::Pinhole> cameraIn
-            = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);
+        std::shared_ptr<camera::Pinhole> cameraIn = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);
 
         // Create new camera corresponding to given model
-        std::shared_ptr<camera::Pinhole> cameraOut
-            = std::dynamic_pointer_cast<camera::Pinhole>(
-                camera::createIntrinsic(cameraModel, cameraIn->w(), cameraIn->h()));
+        std::shared_ptr<camera::Pinhole> cameraOut =
+          std::dynamic_pointer_cast<camera::Pinhole>(camera::createIntrinsic(cameraModel, cameraIn->w(), cameraIn->h()));
 
         if (!cameraIn || !cameraOut)
         {
@@ -267,14 +270,10 @@ int aliceVision_main(int argc, char* argv[])
 
         if (cameraModel == camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4)
         {
-            initialParams = {
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0
-            };
-            lockSteps = {
-                {true, true, true, true, true, true, true, true, true, true, true, true, true, true},
-                {false, false, false, false, true, true, true, true, true, true, true, true, true, true},
-                {false, false, false, false, false, false, false, false, false, false, true, true, true, true}
-            };
+            initialParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0};
+            lockSteps = {{true, true, true, true, true, true, true, true, true, true, true, true, true, true},
+                         {false, false, false, false, true, true, true, true, true, true, true, true, true, true},
+                         {false, false, false, false, false, false, false, false, false, false, true, true, true, true}};
         }
         else
         {
@@ -303,5 +302,5 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
