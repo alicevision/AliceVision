@@ -1014,7 +1014,7 @@ void writeImage(const std::string& path,
 {
     const fs::path bPath = fs::path(path);
     const std::string extension = boost::to_lower_copy(bPath.extension().string());
-    const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
     const bool isEXR = (extension == ".exr");
     // const bool isTIF = (extension == ".tif");
     const bool isJPG = (extension == ".jpg");
@@ -1185,9 +1185,9 @@ void writeImageNoFloat(const std::string& path,
 {
     const fs::path bPath = fs::path(path);
     const std::string extension = boost::to_lower_copy(bPath.extension().string());
-    const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + extension;
     const bool isEXR = (extension == ".exr");
-    //const bool isTIF = (extension == ".tif");
+    // const bool isTIF = (extension == ".tif");
     const bool isJPG = (extension == ".jpg");
     const bool isPNG = (extension == ".png");
 

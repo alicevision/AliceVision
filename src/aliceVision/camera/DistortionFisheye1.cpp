@@ -18,7 +18,7 @@ Vec2 DistortionFisheye1::addDistortion(const Vec2& p) const
     {
         return p;
     }
-        
+
     const double coef = (std::atan(2.0 * r * std::tan(0.5 * k1)) / k1) / r;
 
     return p * coef;
@@ -48,7 +48,7 @@ Eigen::Matrix2d DistortionFisheye1::getDerivativeAddDistoWrtPt(const Vec2& p) co
     double d_part1_d_r = 2.0 * std::tan(0.5 * k1);
 
     double d_coef_d_part2 = 1.0 / part3;
-    double d_coef_d_part3 = - part2 / (part3 * part3);
+    double d_coef_d_part3 = -part2 / (part3 * part3);
     double d_coef_d_r = d_coef_d_part2 * d_part2_d_part1 * d_part1_d_r + d_coef_d_part3 * d_part3_d_r;
     Eigen::Matrix<double, 1, 2> d_coef_d_p = d_coef_d_r * d_r_d_p;
 
@@ -72,7 +72,7 @@ Eigen::MatrixXd DistortionFisheye1::getDerivativeAddDistoWrtDisto(const Vec2& p)
     {
         return p;
     }
-        
+
     const double coef = (std::atan(2.0 * r * std::tan(0.5 * k1)) / k1) / r;
 
     return p * coef;
@@ -88,7 +88,7 @@ Eigen::MatrixXd DistortionFisheye1::getDerivativeAddDistoWrtDisto(const Vec2& p)
     double d_part3_d_params = r;
     double d_part2_d_part1 = 1.0 / (part1 * part1 + 1.0);
     double d_coef_d_part2 = 1.0 / part3;
-    double d_coef_d_part3 = - part2 / (part3 * part3);
+    double d_coef_d_part3 = -part2 / (part3 * part3);
 
     double d_coef_d_params = d_coef_d_part3 * d_part3_d_params + d_coef_d_part2 * d_part2_d_part1 * d_part1_d_params;
 
@@ -126,7 +126,6 @@ Eigen::Matrix2d DistortionFisheye1::getDerivativeRemoveDistoWrtPt(const Vec2& p)
     return Jinv.inverse();
 }
 
-
 Eigen::MatrixXd DistortionFisheye1::getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
 {
     const double& k1 = _distortionParams.at(0);
@@ -140,7 +139,6 @@ Eigen::MatrixXd DistortionFisheye1::getDerivativeRemoveDistoWrtDisto(const Vec2&
     const Vec2 p_undist = removeDistortion(p);
     const double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
 
-
     const double part1 = 2.0 * r * std::tan(0.5 * k1);
     const double part2 = std::atan(part1);
     const double part3 = k1 * r;
@@ -151,13 +149,13 @@ Eigen::MatrixXd DistortionFisheye1::getDerivativeRemoveDistoWrtDisto(const Vec2&
     double d_part3_d_params = r;
     double d_part2_d_part1 = 1.0 / (part1 * part1 + 1.0);
     double d_coef_d_part2 = (part2 * part2) / part3;
-    double d_coef_d_part3 = - part2 / (part3 * part3);
+    double d_coef_d_part3 = -part2 / (part3 * part3);
     double d_coef_d_params = d_coef_d_part3 * d_part3_d_params + d_coef_d_part2 * d_part2_d_part1 * d_part1_d_params;
 
-    //p'/coef
+    // p'/coef
     Eigen::Matrix<double, 2, 1> ret;
-    ret(0, 0) = - p(0) * d_coef_d_params / (coef * coef);
-    ret(1, 0) = - p(1) * d_coef_d_params / (coef * coef);
+    ret(0, 0) = -p(0) * d_coef_d_params / (coef * coef);
+    ret(1, 0) = -p(1) * d_coef_d_params / (coef * coef);
 
     return ret;
 }

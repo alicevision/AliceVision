@@ -30,19 +30,13 @@ struct l1SixPointResectionSolver : public robustEstimation::ISolver<robustEstima
      * @brief Return the minimum number of required samples
      * @return minimum number of required samples
      */
-    inline std::size_t getMinimumNbRequiredSamples() const override
-    {
-        return 6;
-    }
+    inline std::size_t getMinimumNbRequiredSamples() const override { return 6; }
 
     /**
      * @brief Return the maximum number of models
      * @return maximum number of models
      */
-    inline std::size_t getMaximumNbModels() const override
-    {
-        return 1;
-    }
+    inline std::size_t getMaximumNbModels() const override { return 1; }
 
     /**
      * @brief Solve the problem of camera pose.

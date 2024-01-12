@@ -289,7 +289,6 @@ Eigen::Matrix<double, 2, 3> Equidistant::getDerivativeProjectWrtDisto(const Eige
     Eigen::Matrix4d T = pose;
     const Vec4 X = T * pt;  // apply pose
 
-
     /* Compute angle with optical center */
     const double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
     const double angle_Z = std::atan2(len2d, X(2));
@@ -481,7 +480,6 @@ EINTRINSIC Equidistant::getType() const
     return EINTRINSIC::EQUIDISTANT_CAMERA;
 }
 
-
 double Equidistant::getHorizontalFov() const
 {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
@@ -492,10 +490,7 @@ double Equidistant::getHorizontalFov() const
     return fov;
 }
 
-double Equidistant::getVerticalFov() const
-{
-    return getHorizontalFov();
-}
+double Equidistant::getVerticalFov() const { return getHorizontalFov(); }
 
 }  // namespace camera
 }  // namespace aliceVision

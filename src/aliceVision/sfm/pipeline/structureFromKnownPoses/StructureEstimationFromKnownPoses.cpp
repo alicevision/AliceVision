@@ -239,9 +239,12 @@ void StructureEstimationFromKnownPoses::filter(const SfMData& sfmData, const Pai
                                 std::advance(iterJ, 1);
                                 std::advance(iterK, 2);
 
-                                _tripletMatches[std::make_pair(I, J)][subTrack.descType].emplace_back(iterI->second.featureId, iterJ->second.featureId);
-                                _tripletMatches[std::make_pair(J, K)][subTrack.descType].emplace_back(iterJ->second.featureId, iterK->second.featureId);
-                                _tripletMatches[std::make_pair(I, K)][subTrack.descType].emplace_back(iterI->second.featureId, iterK->second.featureId);
+                                _tripletMatches[std::make_pair(I, J)][subTrack.descType].emplace_back(iterI->second.featureId,
+                                                                                                      iterJ->second.featureId);
+                                _tripletMatches[std::make_pair(J, K)][subTrack.descType].emplace_back(iterJ->second.featureId,
+                                                                                                      iterK->second.featureId);
+                                _tripletMatches[std::make_pair(I, K)][subTrack.descType].emplace_back(iterI->second.featureId,
+                                                                                                      iterK->second.featureId);
                             }
                         }
                     }

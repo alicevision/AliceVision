@@ -207,8 +207,8 @@ class SfMData
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
      * @param[in] v
      */
-    std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(const View & v)
-    {   
+    std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(const View& v)
+    {
         IndexT intrinsicId = v.getIntrinsicId();
 
         if (_intrinsics.count(intrinsicId))
@@ -231,8 +231,8 @@ class SfMData
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
      * @param[in] v
      */
-    const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(const View & v) const
-    {   
+    const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(const View& v) const
+    {
         IndexT intrinsicId = v.getIntrinsicId();
 
         if (_intrinsics.count(intrinsicId))
@@ -516,7 +516,7 @@ class SfMData
     /**
      * @Brief For all required items, update the
      * state with respect to the associated lock
-    */
+     */
     void resetParameterStates();
 
   private:

@@ -9,9 +9,9 @@
 namespace aliceVision {
 namespace sfmData {
 
-bool Observation::operator==(const Observation& other) const 
-{ 
-    return AreVecNearEqual(_coordinates, other._coordinates, 1e-6) && _idFeature == other._idFeature; 
+bool Observation::operator==(const Observation& other) const
+{
+    return AreVecNearEqual(_coordinates, other._coordinates, 1e-6) && _idFeature == other._idFeature;
 }
 
 }  // namespace sfmData

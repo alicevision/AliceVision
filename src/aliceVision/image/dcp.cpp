@@ -4,7 +4,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 
-
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 

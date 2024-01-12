@@ -91,7 +91,7 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData,
             {
                 // generate the equivalent .desc file path
                 const std::string filepath = fs::path(fs::path(featureFolder) / (std::to_string(view.first) + "." +
-                                                                                   feature::EImageDescriberType_enumToString(descType) + ".desc"))
+                                                                                 feature::EImageDescriberType_enumToString(descType) + ".desc"))
                                                .string();
 
                 if (fs::exists(filepath))

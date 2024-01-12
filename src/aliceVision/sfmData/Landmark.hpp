@@ -22,17 +22,12 @@ namespace sfmData {
  */
 class Landmark
 {
-public:
-    Landmark()
-    {
-
-    }
+  public:
+    Landmark() {}
 
     explicit Landmark(feature::EImageDescriberType descType)
       : descType(descType)
-    {
-
-    }
+    {}
 
     Landmark(const Vec3& pos3d,
              feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED,
@@ -40,8 +35,7 @@ public:
       : X(pos3d),
         descType(descType),
         rgb(color)
-    {
-    }
+    {}
 
     Vec3 X;
     feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
@@ -50,28 +44,17 @@ public:
 
     bool operator==(const Landmark& other) const
     {
-        return AreVecNearEqual(X, other.X, 1e-3) && 
-                AreVecNearEqual(rgb, other.rgb, 1e-3) && 
-                _observations == other._observations &&
-                descType == other.descType;
+        return AreVecNearEqual(X, other.X, 1e-3) && AreVecNearEqual(rgb, other.rgb, 1e-3) && _observations == other._observations &&
+               descType == other.descType;
     }
 
-    inline bool operator!=(const Landmark& other) const 
-    { 
-        return !(*this == other); 
-    }
-    
-    const Observations & getObservations() const
-    {
-        return _observations;
-    }
+    inline bool operator!=(const Landmark& other) const { return !(*this == other); }
 
-    Observations & getObservations()
-    {
-        return _observations;
-    }
+    const Observations& getObservations() const { return _observations; }
 
-private:
+    Observations& getObservations() { return _observations; }
+
+  private:
     Observations _observations;
 };
 

@@ -46,10 +46,10 @@ class Segmentation
     Segmentation(const Parameters& parameters)
       : _parameters(parameters)
     {
-        //Disable gpu if disabled on compilation side
-        #if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ONNX_GPU)
-            _parameters.useGpu = false;
-        #endif
+// Disable gpu if disabled on compilation side
+#if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ONNX_GPU)
+        _parameters.useGpu = false;
+#endif
 
         if (!initialize())
         {

@@ -280,7 +280,8 @@ class MatchExporter
     void saveTxt(const std::string& filepath, const PairwiseMatches::const_iterator& matchBegin, const PairwiseMatches::const_iterator& matchEnd)
     {
         const fs::path bPath = fs::path(filepath);
-        const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + bPath.extension().string();
+        const std::string tmpPath =
+          (bPath.parent_path() / bPath.stem()).string() + "." + utils::generateUniqueFilename() + bPath.extension().string();
 
         // write temporary file
         {

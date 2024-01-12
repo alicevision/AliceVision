@@ -20,44 +20,26 @@ namespace sfmData {
  */
 class Observation
 {
-public:
-    Observation() 
-    {
-    }
+  public:
+    Observation() {}
 
     Observation(const Vec2& p, IndexT idFeat, double scale_)
       : _coordinates(p),
         _idFeature(idFeat),
         _scale(scale_)
-    {
-    }
+    {}
 
     bool operator==(const Observation& other) const;
 
-    const Vec2 & getCoordinates() const
-    {
-        return _coordinates;
-    }
+    const Vec2& getCoordinates() const { return _coordinates; }
 
-    Vec2 & getCoordinates()
-    {
-        return _coordinates;
-    }
+    Vec2& getCoordinates() { return _coordinates; }
 
-    double getX() const
-    {
-        return _coordinates.x();
-    }
+    double getX() const { return _coordinates.x(); }
 
-    double getY() const
-    {
-        return _coordinates.y();
-    }
+    double getY() const { return _coordinates.y(); }
 
-    void setCoordinates(const Vec2 & coordinates)
-    {
-        _coordinates = coordinates;
-    }
+    void setCoordinates(const Vec2& coordinates) { _coordinates = coordinates; }
 
     void setCoordinates(double x, double y)
     {
@@ -65,27 +47,15 @@ public:
         _coordinates(1) = y;
     }
 
-    IndexT getFeatureId() const
-    {
-        return _idFeature;
-    }
+    IndexT getFeatureId() const { return _idFeature; }
 
-    void setFeatureId(IndexT featureId)
-    {
-        _idFeature = featureId;
-    }
+    void setFeatureId(IndexT featureId) { _idFeature = featureId; }
 
-    double getScale() const
-    {
-        return _scale;
-    }
+    double getScale() const { return _scale; }
 
-    void setScale(double scale)
-    {
-        _scale = scale;
-    }
+    void setScale(double scale) { _scale = scale; }
 
-private:
+  private:
     Vec2 _coordinates;
     IndexT _idFeature = UndefinedIndexT;
     double _scale = 0.0;
