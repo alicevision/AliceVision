@@ -28,16 +28,16 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-int aliceVision_main( int argc, char **argv )
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string outputFolder ;
-  std::vector<std::string> featuresFolders;
-  std::vector<std::string> matchesFolders;
-  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  EHistogramSelectionMethod selectionMethod;
-  int imgRef;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string outputFolder;
+    std::vector<std::string> featuresFolders;
+    std::vector<std::string> matchesFolders;
+    std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+    EHistogramSelectionMethod selectionMethod;
+    int imgRef;
 
     // user optional parameters
     // clang-format off
@@ -62,46 +62,41 @@ int aliceVision_main( int argc, char **argv )
          feature::EImageDescriberType_informations().c_str());
     // clang-format on
 
-  CmdLine cmdline("AliceVision sfmColorHarmonize");
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline("AliceVision sfmColorHarmonize");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
-  if(sfmDataFilename.empty())
-  {
-    ALICEVISION_LOG_ERROR("It is an invalid file input");
+    if (sfmDataFilename.empty())
+    {
+        ALICEVISION_LOG_ERROR("It is an invalid file input");
+        return EXIT_FAILURE;
+    }
+
+    const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
+
+    if (!fs::exists(outputFolder))
+        fs::create_directory(outputFolder);
+
+    // harmonization process
+
+    aliceVision::system::Timer timer;
+
+    ColorHarmonizationEngineGlobal colorHarmonizeEngine(
+      sfmDataFilename, featuresFolders, matchesFolders, outputFolder, describerTypes, selectionMethod, imgRef);
+
+    if (colorHarmonizeEngine.Process())
+    {
+        ALICEVISION_LOG_INFO("Color harmonization took: " << timer.elapsed() << " s");
+        return EXIT_SUCCESS;
+    }
+    else
+    {
+        ALICEVISION_LOG_ERROR("Something goes wrong during the color harmonization process.");
+    }
+
     return EXIT_FAILURE;
-  }
-
-  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
-
-  if(!fs::exists(outputFolder))
-    fs::create_directory(outputFolder);
-
-  // harmonization process
-
-  aliceVision::system::Timer timer;
-
-  ColorHarmonizationEngineGlobal colorHarmonizeEngine(sfmDataFilename,
-    featuresFolders,
-    matchesFolders,
-    outputFolder,
-    describerTypes,
-    selectionMethod,
-    imgRef);
-
-  if(colorHarmonizeEngine.Process())
-  {
-    ALICEVISION_LOG_INFO("Color harmonization took: " << timer.elapsed() << " s");
-    return EXIT_SUCCESS;
-  }
-  else
-  {
-    ALICEVISION_LOG_ERROR("Something goes wrong during the color harmonization process.");
-  }
-
-  return EXIT_FAILURE;
 }

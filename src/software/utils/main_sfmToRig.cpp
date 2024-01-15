@@ -10,7 +10,6 @@
 #include <aliceVision/stl/hash.hpp>
 #include <aliceVision/system/main.hpp>
 
-
 #include <boost/program_options.hpp>
 
 #include <string>
@@ -25,8 +24,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
     std::string sfmDataFilename;
@@ -73,9 +71,9 @@ int aliceVision_main(int argc, char **argv)
     size_t indexRig = 0;
     int index = 0;
     std::map<IndexT, int> mapPoseToSubPose;
-    for (const auto & pp : sfmData.getPoses())
+    for (const auto& pp : sfmData.getPoses())
     {
-        const auto & pose = pp.second;
+        const auto& pose = pp.second;
 
         sfmData::RigSubPose subPose(pose.getTransform(), sfmData::ERigSubPoseStatus::CONSTANT);
         rig.setSubPose(index, subPose);
@@ -91,7 +89,7 @@ int aliceVision_main(int argc, char **argv)
     sfmData.getRigs().emplace(indexRig, rig);
 
     // Update
-    for (const auto & pv : sfmData.getViews())
+    for (const auto& pv : sfmData.getViews())
     {
         std::shared_ptr<sfmData::View> view = pv.second;
         if (!sfmData.isPoseAndIntrinsicDefined(view.get()))
@@ -101,12 +99,12 @@ int aliceVision_main(int argc, char **argv)
 
         const IndexT poseId = view->getPoseId();
         const int subPoseId = mapPoseToSubPose[poseId];
-       
+
         // New commmon pose id is the same than the rig id for convenience
         view->setPoseId(indexRig);
         view->setRigAndSubPoseId(indexRig, subPoseId);
         view->setIndependantPose(false);
-        
+
         // Update intrinsicId
         size_t intrinsicId = view->getIntrinsicId();
         stl::hash_combine(intrinsicId, indexRig);
@@ -116,7 +114,7 @@ int aliceVision_main(int argc, char **argv)
     // Update intrinsics
     sfmData::Intrinsics intrinsics = sfmData.getIntrinsics();
     sfmData.getIntrinsics().clear();
-    for (const auto & pi : intrinsics)
+    for (const auto& pi : intrinsics)
     {
         size_t intrinsicId = pi.first;
         stl::hash_combine(intrinsicId, indexRig);

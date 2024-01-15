@@ -18,7 +18,6 @@
 
 #include <aliceVision/utils/Histogram.hpp>
 
-
 // HDR Related
 #include <aliceVision/hdr/sampling.hpp>
 #include <aliceVision/hdr/brackets.hpp>
@@ -36,7 +35,6 @@
 #include <sstream>
 #include <filesystem>
 #include <fstream>
-
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -103,7 +101,7 @@ int aliceVision_main(int argc, char** argv)
 
     CmdLine cmdline("This program extracts stable samples from multiple LDR images with different bracketing.\n"
                     "AliceVision LdrToHdrSampling");
-                  
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
@@ -148,8 +146,7 @@ int aliceVision_main(int argc, char** argv)
                 ALICEVISION_LOG_INFO("No multi-bracketing.");
                 return EXIT_SUCCESS;
             }
-            ALICEVISION_LOG_INFO("Number of brackets: " << usedNbBrackets << ". It will generate "
-                                 << groupedViews.size() << " HDR images.");
+            ALICEVISION_LOG_INFO("Number of brackets: " << usedNbBrackets << ". It will generate " << groupedViews.size() << " HDR images.");
         }
         else
         {
@@ -182,16 +179,15 @@ int aliceVision_main(int argc, char** argv)
         rangeSize = groupedViews.size();
     }
     ALICEVISION_LOG_DEBUG("Range to compute: rangeStart = " << rangeStart << ", rangeSize = " << rangeSize);
-    
 
     std::map<IndexT, std::vector<std::vector<std::shared_ptr<sfmData::View>>>> groupedViewsPerIntrinsics;
     for (std::size_t groupIdx = rangeStart; groupIdx < rangeStart + rangeSize; ++groupIdx)
     {
-        auto & group = groupedViews[groupIdx];
+        auto& group = groupedViews[groupIdx];
 
         IndexT intrinsicId = UndefinedIndexT;
 
-        for (const auto & v : group)
+        for (const auto& v : group)
         {
             IndexT lid = v->getIntrinsicId();
             if (intrinsicId == UndefinedIndexT)
@@ -215,15 +211,15 @@ int aliceVision_main(int argc, char** argv)
         groupedViewsPerIntrinsics[intrinsicId].push_back(group);
     }
 
-    for (const auto  & pGroups : groupedViewsPerIntrinsics)
+    for (const auto& pGroups : groupedViewsPerIntrinsics)
     {
         IndexT intrinsicId = pGroups.first;
 
-        const auto & intrinsic = sfmData.getIntrinsics().at(intrinsicId);
+        const auto& intrinsic = sfmData.getIntrinsics().at(intrinsicId);
         const std::size_t width = intrinsic->w();
         const std::size_t height = intrinsic->h();
 
-        for (const auto & group : pGroups.second)
+        for (const auto& group : pGroups.second)
         {
             std::vector<std::string> paths;
             std::vector<sfmData::ExposureSetting> exposuresSetting;
@@ -235,7 +231,7 @@ int aliceVision_main(int argc, char** argv)
             bool first = true;
             IndexT firstViewId = UndefinedIndexT;
 
-            for (auto & v : group)
+            for (auto& v : group)
             {
                 // Retrieve first ViewId to get a unique name for files as one view is only in one group
                 if (first)
@@ -266,8 +262,7 @@ int aliceVision_main(int argc, char** argv)
                 colorProfileFileName = v->getImage().getColorProfileFileName();
 
                 ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back()
-                                     << ", raw color interpretation: "
-                                     << ERawColorInterpretation_enumToString(rawColorInterpretation));
+                                               << ", raw color interpretation: " << ERawColorInterpretation_enumToString(rawColorInterpretation));
             }
             if (!sfmData::hasComparableExposures(exposuresSetting))
             {
@@ -283,9 +278,8 @@ int aliceVision_main(int argc, char** argv)
             const bool simplifiedSampling = byPass || (calibrationMethod == ECalibrationMethod::LINEAR);
 
             std::vector<hdr::ImageSample> out_samples;
-            const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, viewIds, exposures,
-                                                                     width, height, channelQuantization, imgReadOptions,
-                                                                     params, simplifiedSampling);
+            const bool res = hdr::Sampling::extractSamplesFromImages(
+              out_samples, paths, viewIds, exposures, width, height, channelQuantization, imgReadOptions, params, simplifiedSampling);
             if (!res)
             {
                 ALICEVISION_LOG_ERROR("Error while extracting samples from group.");
@@ -295,25 +289,23 @@ int aliceVision_main(int argc, char** argv)
             using Accumulator = accumulator_set<float, stats<tag::min, tag::max, tag::median, tag::mean>>;
             Accumulator acc_nbUsedBrackets;
             {
-                utils::Histogram<int> histogram(1, usedNbBrackets, usedNbBrackets-1);
+                utils::Histogram<int> histogram(1, usedNbBrackets, usedNbBrackets - 1);
                 for (const hdr::ImageSample& sample : out_samples)
                 {
                     acc_nbUsedBrackets(sample.descriptions.size());
                     histogram.Add(sample.descriptions.size());
                 }
                 ALICEVISION_LOG_INFO("Number of used brackets in selected samples: "
-                                    << " min: " << extract::min(acc_nbUsedBrackets) << " max: "
-                                    << extract::max(acc_nbUsedBrackets) << " mean: " << extract::mean(acc_nbUsedBrackets)
-                                    << " median: " << extract::median(acc_nbUsedBrackets) << ".");
+                                     << " min: " << extract::min(acc_nbUsedBrackets) << " max: " << extract::max(acc_nbUsedBrackets)
+                                     << " mean: " << extract::mean(acc_nbUsedBrackets) << " median: " << extract::median(acc_nbUsedBrackets) << ".");
 
-                ALICEVISION_LOG_INFO("Histogram of the number of brackets per sample: " << histogram.ToString("", 2)
-                                     << ".");
+                ALICEVISION_LOG_INFO("Histogram of the number of brackets per sample: " << histogram.ToString("", 2) << ".");
             }
             if (debug)
             {
                 image::Image<image::RGBfColor> selectedPixels(width, height, true);
 
-                for (const hdr::ImageSample& sample: out_samples)
+                for (const hdr::ImageSample& sample : out_samples)
                 {
                     const float score = float(sample.descriptions.size()) / float(usedNbBrackets);
                     const image::RGBfColor color = getColorFromJetColorMap(score);
@@ -327,8 +319,9 @@ int aliceVision_main(int argc, char** argv)
                 metadata.push_back(oiio::ParamValue("AliceVision:medianNbUsedBrackets", extract::median(acc_nbUsedBrackets)));
 
                 image::writeImage((fs::path(outputFolder) / (std::to_string(firstViewId) + "_selectedPixels.png")).string(),
-                                selectedPixels, image::ImageWriteOptions(), metadata);
-
+                                  selectedPixels,
+                                  image::ImageWriteOptions(),
+                                  metadata);
             }
 
             // Store to file
@@ -341,9 +334,9 @@ int aliceVision_main(int argc, char** argv)
             }
 
             const std::size_t size = out_samples.size();
-            fileSamples.write((const char *)&size, sizeof(size));
+            fileSamples.write((const char*)&size, sizeof(size));
 
-            for(std::size_t i = 0; i < out_samples.size(); ++i)
+            for (std::size_t i = 0; i < out_samples.size(); ++i)
             {
                 fileSamples << out_samples[i];
             }

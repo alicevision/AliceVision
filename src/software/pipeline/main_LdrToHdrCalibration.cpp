@@ -68,7 +68,8 @@ void computeLuminanceStatFromSamples(const std::vector<hdr::ImageSample>& sample
         {
             const IndexT key = samples[i].descriptions[j].srcId;
 
-            const double lum = image::Rgb2GrayLinear(samples[i].descriptions[j].mean[0], samples[i].descriptions[j].mean[1], samples[i].descriptions[j].mean[2]);
+            const double lum =
+              image::Rgb2GrayLinear(samples[i].descriptions[j].mean[0], samples[i].descriptions[j].mean[1], samples[i].descriptions[j].mean[2]);
 
             if (luminanceInfos.find(key) == luminanceInfos.end())
             {
@@ -185,7 +186,7 @@ int aliceVision_main(int argc, char** argv)
 
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
                     "AliceVision LdrToHdrCalibration");
-                  
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
@@ -226,7 +227,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     std::set<std::size_t> sizeOfGroups;
-    for(auto& group : globalGroupedViews)
+    for (auto& group : globalGroupedViews)
     {
         sizeOfGroups.insert(group.size());
     }
@@ -239,9 +240,8 @@ int aliceVision_main(int argc, char** argv)
             // Nothing to calibrate, export a linear CRF.
             calibrationMethod = ECalibrationMethod::LINEAR;
         }
-        ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
-                             << usedNbBrackets << ". It will generate " << globalGroupedViews.size()
-                             << " HDR images.");
+        ALICEVISION_LOG_INFO("Number of brackets automatically detected: " << usedNbBrackets << ". It will generate " << globalGroupedViews.size()
+                                                                           << " HDR images.");
     }
     else
     {
@@ -250,11 +250,11 @@ int aliceVision_main(int argc, char** argv)
     }
 
     std::map<IndexT, std::vector<std::vector<std::shared_ptr<sfmData::View>>>> groupedViewsPerIntrinsics;
-    for (const auto & group : globalGroupedViews)
+    for (const auto& group : globalGroupedViews)
     {
         IndexT intrinsicId = UndefinedIndexT;
 
-        for (const auto & v : group)
+        for (const auto& v : group)
         {
             IndexT lid = v->getIntrinsicId();
             if (intrinsicId == UndefinedIndexT)
@@ -278,10 +278,10 @@ int aliceVision_main(int argc, char** argv)
         groupedViewsPerIntrinsics[intrinsicId].push_back(group);
     }
 
-    for (const auto & intrinsicGroups: groupedViewsPerIntrinsics)
-    {        
+    for (const auto& intrinsicGroups : groupedViewsPerIntrinsics)
+    {
         IndexT intrinsicId = intrinsicGroups.first;
-        const auto & groupedViews = intrinsicGroups.second;
+        const auto& groupedViews = intrinsicGroups.second;
 
         std::vector<std::map<int, luminanceInfo>> v_luminanceInfos;
         std::vector<std::vector<hdr::ImageSample>> calibrationSamples;
@@ -357,7 +357,7 @@ int aliceVision_main(int argc, char** argv)
                     if (luminanceInfos.find(v->getViewId()) == luminanceInfos.end())
                     {
                         luminanceInfo lumaInfo;
-                        lumaInfo.exposure = -1.0; // Dummy exposure used later indicating a dummy info
+                        lumaInfo.exposure = -1.0;  // Dummy exposure used later indicating a dummy info
                         luminanceInfos[v->getViewId()] = lumaInfo;
                     }
                 }
@@ -426,15 +426,15 @@ int aliceVision_main(int argc, char** argv)
                 {
                     switch (calibrationMethod)
                     {
-                    case ECalibrationMethod::DEBEVEC:
-                        calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::TRIANGLE);
-                        break;
-                    case ECalibrationMethod::LINEAR:
-                    case ECalibrationMethod::GROSSBERG:
-                    case ECalibrationMethod::LAGUERRE:
-                    default:
-                        calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
-                        break;
+                        case ECalibrationMethod::DEBEVEC:
+                            calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::TRIANGLE);
+                            break;
+                        case ECalibrationMethod::LINEAR:
+                        case ECalibrationMethod::GROSSBERG:
+                        case ECalibrationMethod::LAGUERRE:
+                        default:
+                            calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
+                            break;
                     }
                 }
                 calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
@@ -448,47 +448,48 @@ int aliceVision_main(int argc, char** argv)
 
             switch (calibrationMethod)
             {
-            case ECalibrationMethod::LINEAR:
-            {
-                // Set the response function to linear
-                response.setLinear();
-                break;
-            }
-            case ECalibrationMethod::DEBEVEC:
-            {
-                hdr::DebevecCalibrate debevec;
-                const float lambda = channelQuantization;
-                bool res = debevec.process(calibrationSamples, groupedExposures, channelQuantization, calibrationWeight, lambda, response);
-                if (!res) {
-                    ALICEVISION_LOG_ERROR("Calibration failed.");
+                case ECalibrationMethod::LINEAR:
+                {
+                    // Set the response function to linear
+                    response.setLinear();
+                    break;
+                }
+                case ECalibrationMethod::DEBEVEC:
+                {
+                    hdr::DebevecCalibrate debevec;
+                    const float lambda = channelQuantization;
+                    bool res = debevec.process(calibrationSamples, groupedExposures, channelQuantization, calibrationWeight, lambda, response);
+                    if (!res)
+                    {
+                        ALICEVISION_LOG_ERROR("Calibration failed.");
+                        return EXIT_FAILURE;
+                    }
+
+                    response.exponential();
+                    response.scale();
+                    break;
+                }
+                case ECalibrationMethod::GROSSBERG:
+                {
+                    hdr::GrossbergCalibrate calibration(5);
+                    calibration.process(calibrationSamples, groupedExposures, channelQuantization, response);
+                    break;
+                }
+                case ECalibrationMethod::LAGUERRE:
+                {
+                    hdr::LaguerreBACalibration calibration;
+                    calibration.process(calibrationSamples, groupedExposures, channelQuantization, false, response);
+                    break;
+                }
+                case ECalibrationMethod::AUTO:
+                {
+                    ALICEVISION_LOG_ERROR("The calibration method cannot be automatically selected.");
                     return EXIT_FAILURE;
                 }
-
-                response.exponential();
-                response.scale();
-                break;
-            }
-            case ECalibrationMethod::GROSSBERG:
-            {
-                hdr::GrossbergCalibrate calibration(5);
-                calibration.process(calibrationSamples, groupedExposures, channelQuantization, response);
-                break;
-            }
-            case ECalibrationMethod::LAGUERRE:
-            {
-                hdr::LaguerreBACalibration calibration;
-                calibration.process(calibrationSamples, groupedExposures, channelQuantization, false, response);
-                break;
-            }
-            case ECalibrationMethod::AUTO:
-            {
-                ALICEVISION_LOG_ERROR("The calibration method cannot be automatically selected.");
-                return EXIT_FAILURE;
-            }
             }
 
             const std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
-            
+
             const std::string baseName = (fs::path(outputResponsePath).parent_path() / std::string("response_")).string();
             const std::string intrinsicName = baseName + std::to_string(intrinsicId);
             const std::string htmlName = intrinsicName + "_" + methodName + std::string(".html");
@@ -498,7 +499,8 @@ int aliceVision_main(int argc, char** argv)
         }
 
         const std::string lumastatBasename = "luminanceStatistics";
-        const std::string lumastatFilename = (fs::path(outputResponsePath).parent_path() / (lumastatBasename + "_" + std::to_string(intrinsicId) + ".txt")).string();
+        const std::string lumastatFilename =
+          (fs::path(outputResponsePath).parent_path() / (lumastatBasename + "_" + std::to_string(intrinsicId) + ".txt")).string();
         std::ofstream file(lumastatFilename);
         if (!file)
         {
@@ -529,7 +531,8 @@ int aliceVision_main(int argc, char** argv)
                     }
                     // write in file
                     file << srcIdWithMinimalExposure << " ";
-                    file << v_luminanceInfos[i][srcIdWithMinimalExposure].exposure << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
+                    file << v_luminanceInfos[i][srcIdWithMinimalExposure].exposure << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb
+                         << " ";
                     if (v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb > 0)
                     {
                         file << v_luminanceInfos[i][srcIdWithMinimalExposure].meanLum / v_luminanceInfos[i][srcIdWithMinimalExposure].itemNb << " ";
@@ -538,7 +541,8 @@ int aliceVision_main(int argc, char** argv)
                     {
                         file << "0.0 ";
                     }
-                    file << v_luminanceInfos[i][srcIdWithMinimalExposure].minLum << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].maxLum << std::endl;
+                    file << v_luminanceInfos[i][srcIdWithMinimalExposure].minLum << " " << v_luminanceInfos[i][srcIdWithMinimalExposure].maxLum
+                         << std::endl;
                     // erase from map
                     v_luminanceInfos[i].erase(srcIdWithMinimalExposure);
                 }

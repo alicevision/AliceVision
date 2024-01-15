@@ -109,41 +109,36 @@ int aliceVision_main(int argc, char** argv)
                                  "AliceVision cameraCalibration");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
-    if(!cmdline.execute(argc, argv))
+    if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
     }
 
     int cvCalibFlags = 0 | cv::CALIB_ZERO_TANGENT_DIST;
-    if(nbDistortionCoef < 1 || nbDistortionCoef > 6)
+    if (nbDistortionCoef < 1 || nbDistortionCoef > 6)
     {
         ALICEVISION_LOG_ERROR("Only 2 or 3 radial coefficients are supported. "
-                              "Provided number of distortion coefficients: " << std::to_string(nbDistortionCoef));
+                              "Provided number of distortion coefficients: "
+                              << std::to_string(nbDistortionCoef));
         return EXIT_FAILURE;
     }
 
     const std::array<int, 6> fixDistortionCoefs = {
-        cv::CALIB_FIX_K1,
-        cv::CALIB_FIX_K2,
-        cv::CALIB_FIX_K3,
-        cv::CALIB_FIX_K4,
-        cv::CALIB_FIX_K5,
-        cv::CALIB_FIX_K6
-    };
-    for(int i = nbDistortionCoef; i < 6; i++)
+      cv::CALIB_FIX_K1, cv::CALIB_FIX_K2, cv::CALIB_FIX_K3, cv::CALIB_FIX_K4, cv::CALIB_FIX_K5, cv::CALIB_FIX_K6};
+    for (int i = nbDistortionCoef; i < 6; i++)
     {
         cvCalibFlags |= fixDistortionCoefs[i];
     }
 
-
-    if(checkerboardSize.size() != 2)
+    if (checkerboardSize.size() != 2)
     {
         ALICEVISION_THROW(std::logic_error, "The size of the checkerboard is not defined.");
     }
 
-    if((maxNbFrames != 0 && maxCalibFrames > maxNbFrames) || minInputFrames > maxCalibFrames)
+    if ((maxNbFrames != 0 && maxCalibFrames > maxNbFrames) || minInputFrames > maxCalibFrames)
     {
-        ALICEVISION_THROW(std::logic_error, "Check the value for maxFrames, maxCalibFrames and minInputFrames. "
+        ALICEVISION_THROW(std::logic_error,
+                          "Check the value for maxFrames, maxCalibFrames and minInputFrames. "
                           "They must be decreasing.");
     }
 
@@ -162,7 +157,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Create the feedProvider
     aliceVision::dataio::FeedProvider feed(inputPath.string());
-    if(!feed.isInit())
+    if (!feed.isInit())
     {
         ALICEVISION_LOG_ERROR("Error while initializing the FeedProvider!");
         return EXIT_FAILURE;
@@ -180,7 +175,7 @@ int aliceVision_main(int argc, char** argv)
     int nbFramesToProcess = nbFrames;
 
     // Compute the discretization's step
-    if(maxNbFrames && feed.nbFrames() > maxNbFrames)
+    if (maxNbFrames && feed.nbFrames() > maxNbFrames)
     {
         step = feed.nbFrames() / (double)maxNbFrames;
         nbFramesToProcess = maxNbFrames;
@@ -191,41 +186,37 @@ int aliceVision_main(int argc, char** argv)
     aliceVision::system::Timer duration;
 
     std::size_t currentFrame = 0;
-    while(feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
+    while (feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
     {
         cv::Mat viewGray;
         cv::eigen2cv(imageGrey.getMat(), viewGray);
 
         // Check image is correctly loaded
-        if(viewGray.size() == cv::Size(0, 0))
+        if (viewGray.size() == cv::Size(0, 0))
         {
             throw std::runtime_error(std::string("Invalid image: ") + currentImgName);
         }
         // Check image size is always the same
-        if(imageSize == cv::Size(0, 0))
+        if (imageSize == cv::Size(0, 0))
         {
             // First image: initialize the image size.
             imageSize = viewGray.size();
         }
         // Check image resolutions are always the same
-        else if(imageSize != viewGray.size())
+        else if (imageSize != viewGray.size())
         {
-            throw std::runtime_error(
-                std::string(
-                    "You cannot mix multiple image resolutions during the camera calibration. See image file: ") +
-                currentImgName);
+            throw std::runtime_error(std::string("You cannot mix multiple image resolutions during the camera calibration. See image file: ") +
+                                     currentImgName);
         }
 
         std::vector<cv::Point2f> pointbuf;
         std::vector<int> detectedId;
-        ALICEVISION_CERR("[" << currentFrame << "/" << nbFrames << "] (" << iInputFrame << "/" << nbFramesToProcess
-                             << ")");
+        ALICEVISION_CERR("[" << currentFrame << "/" << nbFrames << "] (" << iInputFrame << "/" << nbFramesToProcess << ")");
 
         // Find the chosen pattern in images
-        const bool found =
-            aliceVision::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
+        const bool found = aliceVision::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
 
-        if(found)
+        if (found)
         {
             validFrames.push_back(currentFrame);
             detectedIdPerFrame.push_back(detectedId);
@@ -240,7 +231,7 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_CERR("find points duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
     ALICEVISION_CERR("Grid detected in " << imagePoints.size() << " images on " << iInputFrame << " input images.");
 
-    if(imagePoints.empty())
+    if (imagePoints.empty())
         throw std::logic_error("No checkerboard detected.");
 
     std::vector<std::size_t> remainingImagesIndexes;
@@ -249,8 +240,8 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::vector<cv::Point2f>> calibImagePoints;
 
     // Select best images based on repartition in images of the calibration landmarks
-    aliceVision::calibration::selectBestImages(imagePoints, imageSize, maxCalibFrames, calibGridSize, calibImageScore,
-                                               calibInputFrames, calibImagePoints, remainingImagesIndexes);
+    aliceVision::calibration::selectBestImages(
+      imagePoints, imageSize, maxCalibFrames, calibGridSize, calibImageScore, calibInputFrames, calibImagePoints, remainingImagesIndexes);
 
     start = std::clock();
     // Create an object which stores all the checker points of the images
@@ -260,14 +251,14 @@ int aliceVision_main(int argc, char** argv)
         // Generate the object points coordinates
         aliceVision::calibration::calcChessboardCorners(templateObjectPoints, boardSize, squareSize, patternType);
         // Assign the corners to all items
-        for(std::size_t frame : calibInputFrames)
+        for (std::size_t frame : calibInputFrames)
         {
             // For some chessboard (ie. CCTag), we have an identification per point,
             // and only a sub-part of the corners may be detected.
             // So we only keep the visible corners from the templateObjectPoints
             std::vector<int>& pointsId = detectedIdPerFrame[frame];
             std::vector<cv::Point3f> objectPoints(pointsId.size());
-            for(size_t i = 0; i < pointsId.size(); ++i)
+            for (size_t i = 0; i < pointsId.size(); ++i)
             {
                 objectPoints[i] = templateObjectPoints[pointsId[i]];
             }
@@ -284,21 +275,47 @@ int aliceVision_main(int argc, char** argv)
 
     duration.reset();
     // Refinement loop of the calibration
-    aliceVision::calibration::calibrationIterativeOptimization(
-        imageSize, aspectRatio, cvCalibFlags, cameraMatrix, distCoeffs, rvecs, tvecs, reprojErrs, totalAvgErr,
-        maxTotalAvgErr, minInputFrames, calibInputFrames, calibImagePoints, calibObjectPoints, calibImageScore,
-        rejectInputFrames);
+    aliceVision::calibration::calibrationIterativeOptimization(imageSize,
+                                                               aspectRatio,
+                                                               cvCalibFlags,
+                                                               cameraMatrix,
+                                                               distCoeffs,
+                                                               rvecs,
+                                                               tvecs,
+                                                               reprojErrs,
+                                                               totalAvgErr,
+                                                               maxTotalAvgErr,
+                                                               minInputFrames,
+                                                               calibInputFrames,
+                                                               calibImagePoints,
+                                                               calibObjectPoints,
+                                                               calibImageScore,
+                                                               rejectInputFrames);
 
     ALICEVISION_LOG_INFO("Calibration duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
 
-    aliceVision::calibration::saveCameraParams(
-        outputFilename, imageSize, boardSize, squareSize, aspectRatio, cvCalibFlags, cameraMatrix, distCoeffs,
-        writeExtrinsics ? rvecs : std::vector<cv::Mat>(), writeExtrinsics ? tvecs : std::vector<cv::Mat>(),
-        writeExtrinsics ? reprojErrs : std::vector<float>(),
-        writePoints ? calibImagePoints : std::vector<std::vector<cv::Point2f>>(), totalAvgErr);
+    aliceVision::calibration::saveCameraParams(outputFilename,
+                                               imageSize,
+                                               boardSize,
+                                               squareSize,
+                                               aspectRatio,
+                                               cvCalibFlags,
+                                               cameraMatrix,
+                                               distCoeffs,
+                                               writeExtrinsics ? rvecs : std::vector<cv::Mat>(),
+                                               writeExtrinsics ? tvecs : std::vector<cv::Mat>(),
+                                               writeExtrinsics ? reprojErrs : std::vector<float>(),
+                                               writePoints ? calibImagePoints : std::vector<std::vector<cv::Point2f>>(),
+                                               totalAvgErr);
 
-    aliceVision::calibration::exportDebug(debugSelectedImgFolder, debugRejectedImgFolder, feed, calibInputFrames,
-                                          rejectInputFrames, remainingImagesIndexes, cameraMatrix, distCoeffs,
+    aliceVision::calibration::exportDebug(debugSelectedImgFolder,
+                                          debugRejectedImgFolder,
+                                          feed,
+                                          calibInputFrames,
+                                          rejectInputFrames,
+                                          remainingImagesIndexes,
+                                          cameraMatrix,
+                                          distCoeffs,
                                           imageSize);
 
     ALICEVISION_LOG_INFO("Total duration: " << aliceVision::system::prettyTime(durationAlgo.elapsedMs()));

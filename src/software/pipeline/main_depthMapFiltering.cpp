@@ -101,10 +101,10 @@ int aliceVision_main(int argc, char* argv[])
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
-      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+        return EXIT_FAILURE;
     }
 
     // initialization
@@ -116,21 +116,21 @@ int aliceVision_main(int argc, char* argv[])
     std::vector<int> cams;
     cams.reserve(mp.ncams);
 
-    if(rangeSize == -1)
+    if (rangeSize == -1)
     {
-        for(int rc = 0; rc < mp.ncams; rc++) // process all cameras
+        for (int rc = 0; rc < mp.ncams; rc++)  // process all cameras
             cams.push_back(rc);
     }
     else
     {
-        if(rangeStart < 0)
+        if (rangeStart < 0)
         {
             ALICEVISION_LOG_ERROR("invalid subrange of cameras to process.");
             return EXIT_FAILURE;
         }
-        for(int rc = rangeStart; rc < std::min(rangeStart + rangeSize, mp.ncams); ++rc)
+        for (int rc = rangeStart; rc < std::min(rangeStart + rangeSize, mp.ncams); ++rc)
             cams.push_back(rc);
-        if(cams.empty())
+        if (cams.empty())
         {
             ALICEVISION_LOG_INFO("No camera to process.");
             return EXIT_SUCCESS;
@@ -145,7 +145,7 @@ int aliceVision_main(int argc, char* argv[])
         fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
 
-    if(computeNormalMaps)
+    if (computeNormalMaps)
     {
         int nbGPUs = 0;
 

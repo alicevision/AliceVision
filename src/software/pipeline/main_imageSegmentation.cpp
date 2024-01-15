@@ -29,7 +29,6 @@
 #include <memory>
 #include <string>
 
-
 #include <aliceVision/segmentation/segmentation.hpp>
 
 // These constants define the current software version.
@@ -42,22 +41,22 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfColor>::Base & source)
+void imageToPlanes(std::vector<float>& output, const image::Image<image::RGBfColor>::Base& source)
 {
     size_t planeSize = source.rows() * source.cols();
-    
+
     output.resize(planeSize * 3);
 
-    float * planeR = output.data();
-    float * planeG = planeR + planeSize;
-    float * planeB = planeG + planeSize;
+    float* planeR = output.data();
+    float* planeG = planeR + planeSize;
+    float* planeB = planeG + planeSize;
 
     size_t pos = 0;
     for (int i = 0; i < source.rows(); i++)
     {
         for (int j = 0; j < source.cols(); j++)
         {
-            const image::RGBfColor & rgb = source(i, j);
+            const image::RGBfColor& rgb = source(i, j);
             planeR[pos] = rgb.r();
             planeG[pos] = rgb.g();
             planeB[pos] = rgb.b();
@@ -67,8 +66,7 @@ void imageToPlanes(std::vector<float> & output, const image::Image<image::RGBfCo
     }
 }
 
-void labelsToMask(image::Image<unsigned char> & mask, const image::Image<IndexT> & labels, const std::set<IndexT> & validClasses,
-                  const bool & maskInvert)
+void labelsToMask(image::Image<unsigned char>& mask, const image::Image<IndexT>& labels, const std::set<IndexT>& validClasses, const bool& maskInvert)
 {
     for (int i = 0; i < mask.height(); i++)
     {
@@ -94,7 +92,7 @@ int aliceVision_main(int argc, char** argv)
     int rangeSize = 1;
     bool useGpu = true;
     bool keepFilename = false;
-    
+
     // Description of mandatory parameters
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -132,7 +130,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
+    if (!sfmDataIO::load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
         return EXIT_FAILURE;
@@ -140,28 +138,28 @@ int aliceVision_main(int argc, char** argv)
 
     // Order views by their image names
     std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-    for(auto& viewIt : sfmData.getViews())
+    for (auto& viewIt : sfmData.getViews())
     {
         viewsOrderedByName.push_back(viewIt.second);
     }
-    std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(),
-              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool
-              {
-                  if(a == nullptr || b == nullptr)
+    std::sort(viewsOrderedByName.begin(),
+              viewsOrderedByName.end(),
+              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
+                  if (a == nullptr || b == nullptr)
                       return true;
                   return (a->getImage().getImagePath() < b->getImage().getImagePath());
               });
 
     // Define range to compute
-    if(rangeStart != -1)
+    if (rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0 || static_cast<std::size_t>(rangeStart) > viewsOrderedByName.size())
+        if (rangeStart < 0 || rangeSize < 0 || static_cast<std::size_t>(rangeStart) > viewsOrderedByName.size())
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
 
-        if(static_cast<std::size_t>(rangeStart + rangeSize) > viewsOrderedByName.size())
+        if (static_cast<std::size_t>(rangeStart + rangeSize) > viewsOrderedByName.size())
         {
             rangeSize = static_cast<int>(viewsOrderedByName.size()) - rangeStart;
         }
@@ -175,19 +173,10 @@ int aliceVision_main(int argc, char** argv)
     aliceVision::segmentation::Segmentation::Parameters parameters;
 
     parameters.modelWeights = modelWeightsPath;
-    parameters.classes = {
-        "__background__",
-        "aeroplane",
-        "bicycle", "bird", "boat", "bottle", "bus",
-        "car", "cat", "chair", "cow",
-        "diningtable", "dog",
-        "horse",
-        "motorbike",
-        "person", "pottedplant",
-        "sheep", "sofa",
-        "train", "tvmonitor"};
-    parameters.center= {0.485, 0.456, 0.406};
-    parameters.scale= {1.0 / 0.229, 1.0 / 0.224, 1.0 / 0.225};
+    parameters.classes = {"__background__", "aeroplane", "bicycle", "bird",      "boat",   "bottle",      "bus",   "car",  "cat",   "chair",    "cow",
+                          "diningtable",    "dog",       "horse",   "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
+    parameters.center = {0.485, 0.456, 0.406};
+    parameters.scale = {1.0 / 0.229, 1.0 / 0.224, 1.0 / 0.225};
     parameters.modelWidth = 1280;
     parameters.modelHeight = 720;
     parameters.overlapRatio = 0.3;
@@ -195,12 +184,11 @@ int aliceVision_main(int argc, char** argv)
 
     aliceVision::segmentation::Segmentation seg(parameters);
 
-    const auto & classes = seg.getClasses();
+    const auto& classes = seg.getClasses();
 
-    
-    //Compute the set of valid classes given parameters
+    // Compute the set of valid classes given parameters
     std::set<IndexT> validClassesIndices;
-    for (const auto & s : validClasses)
+    for (const auto& s : validClasses)
     {
         std::string classInput = boost::to_lower_copy(s);
         boost::trim(classInput);
@@ -253,7 +241,6 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("Failed to segment image " << path);
         }
 
-
         image::Image<unsigned char> mask(labels.width(), labels.height());
         labelsToMask(mask, labels, validClassesIndices, maskInvert);
 
@@ -285,6 +272,5 @@ int aliceVision_main(int argc, char** argv)
         image::writeImage(ss.str(), mask, image::ImageWriteOptions());
     }
 
-   
     return EXIT_SUCCESS;
 }

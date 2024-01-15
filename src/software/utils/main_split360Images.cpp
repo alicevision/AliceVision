@@ -50,33 +50,22 @@ namespace oiio = OIIO;
  */
 class PinholeCameraR
 {
-public:
-
+  public:
     PinholeCameraR(int focal, int width, int height, const Mat3& R)
-        : _R(R)
+      : _R(R)
     {
-    _K << focal,   0,  width/2.0,
-            0, focal, height/2.0,
-            0,     0,          1;
+        _K << focal, 0, width / 2.0, 0, focal, height / 2.0, 0, 0, 1;
     }
 
-    Vec3 getLocalRay(double x, double y) const
-    {
-        return (_K.inverse() * Vec3(x, y, 1.0)).normalized();
-    }
+    Vec3 getLocalRay(double x, double y) const { return (_K.inverse() * Vec3(x, y, 1.0)).normalized(); }
 
-    Vec3 getRay(double x, double y) const
-    {
-        return _R * getLocalRay(x, y);
-    }
+    Vec3 getRay(double x, double y) const { return _R * getLocalRay(x, y); }
 
-private:
-
+  private:
     /// Rotation matrix
     Mat3 _R;
     /// Intrinsic matrix
     Mat3 _K;
-
 };
 
 /**
@@ -88,7 +77,7 @@ private:
 double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0))
 {
     float f = 1.f;
-    while (thetaMax < atan2(height / (2 * f) , 1))
+    while (thetaMax < atan2(height / (2 * f), 1))
     {
         ++f;
     }
@@ -96,8 +85,11 @@ double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0)
 }
 
 bool splitDualFisheye(sfmData::SfMData& outSfmData,
-                      const std::string& imagePath, const std::string& outputFolder, const std::string& extension,
-                      const std::string& offsetPresetX, const std::string& offsetPresetY)
+                      const std::string& imagePath,
+                      const std::string& outputFolder,
+                      const std::string& extension,
+                      const std::string& offsetPresetX,
+                      const std::string& offsetPresetY)
 {
     // Load source image from disk
     image::Image<image::RGBfColor> imageSource;
@@ -108,15 +100,9 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
 
     // Retrieve useful dimensions for cropping
     bool vertical = (imageSource.height() > imageSource.width());
-    const int outSide = vertical
-        ? std::min(imageSource.height() / 2, imageSource.width())
-        : std::min(imageSource.height(), imageSource.width() / 2);
-    const int offset_x = vertical
-        ? (imageSource.width() - outSide)
-        : ((imageSource.width() / 2) - outSide);
-    const int offset_y = vertical
-        ? ((imageSource.height() / 2) - outSide)
-        : (imageSource.height() - outSide);
+    const int outSide = vertical ? std::min(imageSource.height() / 2, imageSource.width()) : std::min(imageSource.height(), imageSource.width() / 2);
+    const int offset_x = vertical ? (imageSource.width() - outSide) : ((imageSource.width() / 2) - outSide);
+    const int offset_y = vertical ? ((imageSource.height() / 2) - outSide) : (imageSource.height() - outSide);
 
     // Make sure rig folder exists
     std::string rigFolder = outputFolder + "/rig";
@@ -155,27 +141,24 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
 
         // Save new image on disk
         fs::path path(imagePath);
-        std::string filename = extension.empty() ?
-            path.filename().string() : path.stem().string() + "." + extension;
-        image::writeImage(subFolder + std::string("/") + filename,
-                          imageOut, image::ImageWriteOptions(), metadataSource);
-        
-        // Initialize view and add it to SfMData
-        #pragma omp critical (split360Images_addView)
+        std::string filename = extension.empty() ? path.filename().string() : path.stem().string() + "." + extension;
+        image::writeImage(subFolder + std::string("/") + filename, imageOut, image::ImageWriteOptions(), metadataSource);
+
+// Initialize view and add it to SfMData
+#pragma omp critical(split360Images_addView)
         {
             auto& views = outSfmData.getViews();
             IndexT viewId = views.size();
             auto view = std::make_shared<sfmData::View>(
-                /* image path */  subFolder + std::string("/") + filename,
-                /* viewId */      viewId,
-                /* intrinsicId */ 0,
-                /* poseId */      UndefinedIndexT,
-                /* width */       outSide,
-                /* height */      outSide,
-                /* rigId */       0,
-                /* subPoseId */   i,
-                /* metadata */    image::getMapFromMetadata(metadataSource)
-                );
+              /* image path */ subFolder + std::string("/") + filename,
+              /* viewId */ viewId,
+              /* intrinsicId */ 0,
+              /* poseId */ UndefinedIndexT,
+              /* width */ outSide,
+              /* height */ outSide,
+              /* rigId */ 0,
+              /* subPoseId */ i,
+              /* metadata */ image::getMapFromMetadata(metadataSource));
             views.emplace(viewId, view);
         }
     }
@@ -186,8 +169,12 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
 }
 
 bool splitEquirectangular(sfmData::SfMData& outSfmData,
-                          const std::string& imagePath, const std::string& outputFolder, const std::string& extension,
-                          std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
+                          const std::string& imagePath,
+                          const std::string& outputFolder,
+                          const std::string& extension,
+                          std::size_t nbSplits,
+                          std::size_t splitResolution,
+                          double fovDegree)
 {
     // Load source image from disk
     image::Image<image::RGBColor> imageSource;
@@ -205,7 +192,7 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
     const double focal_px = (splitResolution / 2.0) / tan(fov / 2.0);
 
     double angle = 0.0;
-    for(std::size_t i = 0; i < nbSplits; ++i)
+    for (std::size_t i = 0; i < nbSplits; ++i)
     {
         cameras.emplace_back(focal_px, splitResolution, splitResolution, RotationAroundY(angle));
         angle += alpha;
@@ -219,19 +206,19 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
     fs::create_directory(rigFolder);
 
     size_t index = 0;
-    for(const PinholeCameraR& camera : cameras)
+    for (const PinholeCameraR& camera : cameras)
     {
         imaOut.fill(image::BLACK);
 
         // Backward mapping:
         // - Find for each pixels of the pinhole image where it comes from the panoramic image
-        for(int j = 0; j < splitResolution; ++j)
+        for (int j = 0; j < splitResolution; ++j)
         {
-            for(int i = 0; i < splitResolution; ++i)
+            for (int i = 0; i < splitResolution; ++i)
             {
                 const Vec3 ray = camera.getRay(i, j);
                 const Vec2 x = SphericalMapping::toEquirectangular(ray, inWidth, inHeight);
-                imaOut(j,i) = sampler(imageSource, x(1), x(0));
+                imaOut(j, i) = sampler(imageSource, x(1), x(0));
             }
         }
 
@@ -244,9 +231,9 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
         outMetadataSpec.extra_attribs = image::readImageMetadata(imagePath);
 
         // Override make and model in order to force camera model in SfM
-        outMetadataSpec.attribute("Make",  "Custom");
+        outMetadataSpec.attribute("Make", "Custom");
         outMetadataSpec.attribute("Model", "Pinhole");
-        const float focal_mm = focal_px * (36.0 / splitResolution); // muliplied by sensorWidth (36mm by default)
+        const float focal_mm = focal_px * (36.0 / splitResolution);  // muliplied by sensorWidth (36mm by default)
         outMetadataSpec.attribute("Exif:FocalLength", focal_mm);
 
         // Make sure sub-folder exists for complete rig structure
@@ -255,30 +242,27 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
 
         // Save new image on disk
         fs::path path(imagePath);
-        std::string filename = extension.empty() ?
-            path.filename().string() : path.stem().string() + "." + extension;
-        image::writeImage(subFolder + std::string("/") + filename,
-                          imaOut, image::ImageWriteOptions(), outMetadataSpec.extra_attribs);
-        
-        // Initialize view and add it to SfMData
-        #pragma omp critical (split360Images_addView)
+        std::string filename = extension.empty() ? path.filename().string() : path.stem().string() + "." + extension;
+        image::writeImage(subFolder + std::string("/") + filename, imaOut, image::ImageWriteOptions(), outMetadataSpec.extra_attribs);
+
+// Initialize view and add it to SfMData
+#pragma omp critical(split360Images_addView)
         {
             auto& views = outSfmData.getViews();
             IndexT viewId = views.size();
             auto view = std::make_shared<sfmData::View>(
-                /* image path */  subFolder + std::string("/") + filename,
-                /* viewId */      viewId,
-                /* intrinsicId */ 0,
-                /* poseId */      UndefinedIndexT,
-                /* width */       splitResolution,
-                /* height */      splitResolution,
-                /* rigId */       0,
-                /* subPoseId */   index,
-                /* metadata */    image::getMapFromMetadata(outMetadataSpec.extra_attribs)
-                );
+              /* image path */ subFolder + std::string("/") + filename,
+              /* viewId */ viewId,
+              /* intrinsicId */ 0,
+              /* poseId */ UndefinedIndexT,
+              /* width */ splitResolution,
+              /* height */ splitResolution,
+              /* rigId */ 0,
+              /* subPoseId */ index,
+              /* metadata */ image::getMapFromMetadata(outMetadataSpec.extra_attribs));
             views.emplace(viewId, view);
         }
-        
+
         // Increment index
         ++index;
     }
@@ -286,9 +270,11 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
     return true;
 }
 
-
-bool splitEquirectangularPreview(const std::string& imagePath, const std::string& outputFolder,
-                                 std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
+bool splitEquirectangularPreview(const std::string& imagePath,
+                                 const std::string& outputFolder,
+                                 std::size_t nbSplits,
+                                 std::size_t splitResolution,
+                                 double fovDegree)
 {
     // Load source image from disk
     image::Image<image::RGBColor> imageSource;
@@ -306,7 +292,7 @@ bool splitEquirectangularPreview(const std::string& imagePath, const std::string
     const double focal_px = (splitResolution / 2.0) / tan(fov / 2.0);
 
     double angle = 0.0;
-    for(std::size_t i = 0; i < nbSplits; ++i)
+    for (std::size_t i = 0; i < nbSplits; ++i)
     {
         cameras.emplace_back(focal_px, splitResolution, splitResolution, RotationAroundY(angle));
         angle += alpha;
@@ -315,8 +301,8 @@ bool splitEquirectangularPreview(const std::string& imagePath, const std::string
     svg::svgDrawer svgStream(inWidth, inHeight);
     svgStream.drawRectangle(0, 0, inWidth, inHeight, svg::svgStyle().fill("black"));
     svgStream.drawImage(imagePath, inWidth, inHeight, 0, 0, 0.7f);
-    svgStream.drawLine(0,0,inWidth, inHeight, svg::svgStyle().stroke("white"));
-    svgStream.drawLine(inWidth,0, 0, inHeight, svg::svgStyle().stroke("white"));
+    svgStream.drawLine(0, 0, inWidth, inHeight, svg::svgStyle().stroke("white"));
+    svgStream.drawLine(inWidth, 0, 0, inHeight, svg::svgStyle().stroke("white"));
 
     // For each cam, reproject the image borders onto the panoramic image
 
@@ -327,30 +313,30 @@ bool splitEquirectangularPreview(const std::string& imagePath, const std::string
         Vec3 ray;
 
         // Vertical rectilinear image border
-        for (double j = 0; j <= splitResolution; j += splitResolution/static_cast<double>(step))
+        for (double j = 0; j <= splitResolution; j += splitResolution / static_cast<double>(step))
         {
-            Vec2 pt(0.,j);
+            Vec2 pt(0., j);
             ray = camera.getRay(pt(0), pt(1));
-            Vec2 x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
+            Vec2 x = SphericalMapping::toEquirectangular(ray, inWidth, inHeight);
             svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("magenta").stroke("white", 4));
 
             pt[0] = splitResolution;
             ray = camera.getRay(pt(0), pt(1));
-            x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
+            x = SphericalMapping::toEquirectangular(ray, inWidth, inHeight);
             svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("magenta").stroke("white", 4));
         }
 
         // Horizontal rectilinear image border
-        for (double j = 0; j <= splitResolution; j += splitResolution/static_cast<double>(step))
+        for (double j = 0; j <= splitResolution; j += splitResolution / static_cast<double>(step))
         {
-            Vec2 pt(j,0.);
+            Vec2 pt(j, 0.);
             ray = camera.getRay(pt(0), pt(1));
-            Vec2 x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
+            Vec2 x = SphericalMapping::toEquirectangular(ray, inWidth, inHeight);
             svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("lime").stroke("white", 4));
 
             pt[1] = splitResolution;
             ray = camera.getRay(pt(0), pt(1));
-            x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
+            x = SphericalMapping::toEquirectangular(ray, inWidth, inHeight);
             svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("lime").stroke("white", 4));
         }
     }
@@ -364,19 +350,19 @@ bool splitEquirectangularPreview(const std::string& imagePath, const std::string
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
-    std::string inputPath;                      // media file path list or SfMData file
-    std::string outputFolder;                   // output folder for splited images
-    std::string outSfmDataFilepath;             // output SfMData file
-    std::string splitMode;                      // split mode (dualfisheye, equirectangular)
-    std::string dualFisheyeOffsetPresetX;       // dual-fisheye offset preset on X axis
-    std::string dualFisheyeOffsetPresetY;       // dual-fisheye offset preset on Y axis
-    std::string dualFisheyeCameraModel;         // camera model (fisheye4 or equidistant_r3)
-    std::size_t equirectangularNbSplits;        // nb splits for equirectangular image
-    std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
+    std::string inputPath;                       // media file path list or SfMData file
+    std::string outputFolder;                    // output folder for splited images
+    std::string outSfmDataFilepath;              // output SfMData file
+    std::string splitMode;                       // split mode (dualfisheye, equirectangular)
+    std::string dualFisheyeOffsetPresetX;        // dual-fisheye offset preset on X axis
+    std::string dualFisheyeOffsetPresetY;        // dual-fisheye offset preset on Y axis
+    std::string dualFisheyeCameraModel;          // camera model (fisheye4 or equidistant_r3)
+    std::size_t equirectangularNbSplits;         // nb splits for equirectangular image
+    std::size_t equirectangularSplitResolution;  // split resolution for equirectangular image
     bool equirectangularPreviewMode = false;
-    double fov = 110.0;                         // Field of View in degree
+    double fov = 110.0;  // Field of View in degree
     int nbThreads = 3;
-    std::string extension;                      // extension of output images
+    std::string extension;  // extension of output images
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -437,8 +423,7 @@ int aliceVision_main(int argc, char** argv)
         // splitMode to lower
         std::transform(splitMode.begin(), splitMode.end(), splitMode.begin(), ::tolower);
 
-        if (splitMode != "equirectangular" &&
-            splitMode != "dualfisheye")
+        if (splitMode != "equirectangular" && splitMode != "dualfisheye")
         {
             ALICEVISION_LOG_ERROR("Invalid split mode : " << splitMode);
             return EXIT_FAILURE;
@@ -450,9 +435,7 @@ int aliceVision_main(int argc, char** argv)
         // dualFisheyeOffsetPresetX to lower
         std::transform(dualFisheyeOffsetPresetX.begin(), dualFisheyeOffsetPresetX.end(), dualFisheyeOffsetPresetX.begin(), ::tolower);
 
-        if (dualFisheyeOffsetPresetX != "left" &&
-            dualFisheyeOffsetPresetX != "right" &&
-            dualFisheyeOffsetPresetX != "center")
+        if (dualFisheyeOffsetPresetX != "left" && dualFisheyeOffsetPresetX != "right" && dualFisheyeOffsetPresetX != "center")
         {
             ALICEVISION_LOG_ERROR("Invalid dual-fisheye X offset preset : " << dualFisheyeOffsetPresetX);
             return EXIT_FAILURE;
@@ -461,9 +444,7 @@ int aliceVision_main(int argc, char** argv)
         // dualFisheyeOffsetPresetY to lower
         std::transform(dualFisheyeOffsetPresetY.begin(), dualFisheyeOffsetPresetY.end(), dualFisheyeOffsetPresetY.begin(), ::tolower);
 
-        if (dualFisheyeOffsetPresetY != "top" &&
-            dualFisheyeOffsetPresetY != "bottom" &&
-            dualFisheyeOffsetPresetY != "center")
+        if (dualFisheyeOffsetPresetY != "top" && dualFisheyeOffsetPresetY != "bottom" && dualFisheyeOffsetPresetY != "center")
         {
             ALICEVISION_LOG_ERROR("Invalid dual-fisheye Y offset preset : " << dualFisheyeOffsetPresetY);
             return EXIT_FAILURE;
@@ -472,8 +453,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Check dual-fisheye camera model
     {
-        if (dualFisheyeCameraModel != "fisheye4" &&
-            dualFisheyeCameraModel != "equidistant_r3")
+        if (dualFisheyeCameraModel != "fisheye4" && dualFisheyeCameraModel != "equidistant_r3")
         {
             ALICEVISION_LOG_ERROR("Invalid dual-fisheye camera model : " << dualFisheyeCameraModel);
             return EXIT_FAILURE;
@@ -529,7 +509,6 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-
     // Output SfMData is constituted of:
     // - a rig
     // - an intrinsic
@@ -539,9 +518,8 @@ int aliceVision_main(int argc, char** argv)
     // - all views have the same intrinsic
     sfmData::SfMData outSfmData;
 
-
-    // Split images to create views
-    #pragma omp parallel for num_threads(nbThreads)
+// Split images to create views
+#pragma omp parallel for num_threads(nbThreads)
     for (int i = 0; i < imagePaths.size(); ++i)
     {
         const std::string& imagePath = imagePaths[i];
@@ -549,26 +527,19 @@ int aliceVision_main(int argc, char** argv)
 
         if (splitMode == "equirectangular")
         {
-            if(equirectangularPreviewMode)
+            if (equirectangularPreviewMode)
             {
-                hasCorrectPath =
-                    splitEquirectangularPreview(imagePath, outputFolder,
-                                                equirectangularNbSplits, equirectangularSplitResolution, fov);
+                hasCorrectPath = splitEquirectangularPreview(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
             }
             else
             {
                 hasCorrectPath =
-                    splitEquirectangular(outSfmData,
-                                         imagePath, outputFolder, extension,
-                                         equirectangularNbSplits, equirectangularSplitResolution, fov);
+                  splitEquirectangular(outSfmData, imagePath, outputFolder, extension, equirectangularNbSplits, equirectangularSplitResolution, fov);
             }
         }
-        else if(splitMode == "dualfisheye")
+        else if (splitMode == "dualfisheye")
         {
-            hasCorrectPath =
-                splitDualFisheye(outSfmData,
-                                 imagePath, outputFolder, extension,
-                                 dualFisheyeOffsetPresetX, dualFisheyeOffsetPresetY);
+            hasCorrectPath = splitDualFisheye(outSfmData, imagePath, outputFolder, extension, dualFisheyeOffsetPresetX, dualFisheyeOffsetPresetY);
         }
 
         if (!hasCorrectPath)
@@ -576,7 +547,6 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("Error: Failed to process image " << imagePath);
         }
     }
-
 
     // Rig
     {
@@ -598,7 +568,6 @@ int aliceVision_main(int argc, char** argv)
         auto& rigs = outSfmData.getRigs();
         rigs[0] = rig;
     }
-
 
     // Intrinsic
     {
@@ -646,9 +615,8 @@ int aliceVision_main(int argc, char** argv)
         intrinsics.emplace(0, intrinsic);
     }
 
-
     // Save sfmData with modified path to images
-    if(!sfmDataIO::save(outSfmData, outSfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::save(outSfmData, outSfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfmDataFilepath << "' cannot be written.");
         return EXIT_FAILURE;

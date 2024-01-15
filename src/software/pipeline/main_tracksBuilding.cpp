@@ -33,7 +33,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
@@ -86,7 +85,7 @@ int aliceVision_main(int argc, char** argv)
 
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
-    if(!cmdline.execute(argc, argv))
+    if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
     }
@@ -97,12 +96,11 @@ int aliceVision_main(int argc, char** argv)
 
     // load input SfMData scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
         return EXIT_FAILURE;
     }
-
 
     // get imageDescriber type
     const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
@@ -110,7 +108,7 @@ int aliceVision_main(int argc, char** argv)
     // features reading
     feature::FeaturesPerView featuresPerView;
     ALICEVISION_LOG_INFO("Load features");
-    if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
+    if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
     {
         ALICEVISION_LOG_ERROR("Invalid features.");
         return EXIT_FAILURE;
@@ -119,13 +117,14 @@ int aliceVision_main(int argc, char** argv)
     // matches reading
     matching::PairwiseMatches pairwiseMatches;
     ALICEVISION_LOG_INFO("Load features matches");
-    if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
+    if (!sfm::loadPairwiseMatches(
+          pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
     {
         ALICEVISION_LOG_ERROR("Unable to load matches.");
         return EXIT_FAILURE;
     }
 
-    //Create tracks
+    // Create tracks
     track::TracksBuilder tracksBuilder;
     ALICEVISION_LOG_INFO("Track building");
     tracksBuilder.build(pairwiseMatches);

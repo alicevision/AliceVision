@@ -20,18 +20,15 @@
 #include <ostream>
 #include <string>
 
-
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-
 using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
-
 
 /*
  * This program generate an SfMData from the configuration files of the Middlebury dataset
@@ -71,8 +68,9 @@ int aliceVision_main(int argc, char** argv)
          "Set the poses to locked, so they will not be refined in the SfM step.");
     // clang-format on
 
-    CmdLine cmdline("This program generates an SfMData from the configuration files of the Middlebury dataset: https://vision.middlebury.edu/mview/data\n"
-                    "AliceVision importMiddlebury");
+    CmdLine cmdline(
+      "This program generates an SfMData from the configuration files of the Middlebury dataset: https://vision.middlebury.edu/mview/data\n"
+      "AliceVision importMiddlebury");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
@@ -81,7 +79,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // check input file exist
-    if(!exists(fs::path(middleburyFile)))
+    if (!exists(fs::path(middleburyFile)))
     {
         ALICEVISION_LOG_ERROR("File " << middleburyFile << " does not exist");
         return EXIT_FAILURE;
@@ -91,10 +89,9 @@ int aliceVision_main(int argc, char** argv)
     const auto basePath = fs::path(middleburyFile).parent_path().string();
 
     // parse file
-    const auto sfmData =
-        sfmDataIO::middleburySceneToSfmData(middleburyFile, basePath, uniqueIntrinsics, importPoses, lockIntrinsics, lockPoses);
+    const auto sfmData = sfmDataIO::middleburySceneToSfmData(middleburyFile, basePath, uniqueIntrinsics, importPoses, lockIntrinsics, lockPoses);
 
-    if(!sfmDataIO::save(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::save(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("Unable to save " << sfmDataFilename);
         return EXIT_FAILURE;

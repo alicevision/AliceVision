@@ -15,7 +15,6 @@
 #include <sys/stat.h>
 #include <vector>
 
-
 namespace aliceVision {
 namespace utils {
 
@@ -27,8 +26,7 @@ namespace fs = std::filesystem;
  * @param[in] the predicate
  * @return the paths list to the corresponding files if they validate the predicate, otherwise it returns an empty list.
  */
-inline std::vector<std::string> getFilesPathsFromFolder(const std::string& folder,
-                                                        const std::function<bool(const fs::path&)>& predicate)
+inline std::vector<std::string> getFilesPathsFromFolder(const std::string& folder, const std::function<bool(const fs::path&)>& predicate)
 {
     // Get all files paths in folder
     std::vector<std::string> paths;
@@ -90,7 +88,6 @@ inline std::string generateUniqueFilename(const int length = 16)
     return filename;
 }
 
-
 /**
  * @brief Returns the last time a file was modified (based on OIIO's implementation).
  * @param[in] path The path to get the last write time from
@@ -98,15 +95,15 @@ inline std::string generateUniqueFilename(const int length = 16)
  */
 inline std::time_t getLastWriteTime(const std::string& path)
 {
-    #ifdef _WIN32
-        struct __stat64 st;
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> conv;
-        std::wstring str = conv.from_bytes(path.data(), path.data() + path.size());
-        auto r = _wstat64(std::filesystem::path(str).c_str(), &st);
-    #else
-        struct stat st;
-        auto r = stat(std::filesystem::path(path).c_str(), &st);
-    #endif
+#ifdef _WIN32
+    struct __stat64 st;
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> conv;
+    std::wstring str = conv.from_bytes(path.data(), path.data() + path.size());
+    auto r = _wstat64(std::filesystem::path(str).c_str(), &st);
+#else
+    struct stat st;
+    auto r = stat(std::filesystem::path(path).c_str(), &st);
+#endif
 
     if (r == 0)  // success
     {

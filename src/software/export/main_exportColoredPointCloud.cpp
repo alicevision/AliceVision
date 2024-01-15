@@ -28,13 +28,13 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 
 // Convert from a SfMData format to another
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
+    // command-line parameters
 
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-  std::string sfmDataFilename;
-  std::string outputSfMDataFilename;
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+    std::string sfmDataFilename;
+    std::string outputSfMDataFilename;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -45,38 +45,37 @@ int aliceVision_main(int argc, char **argv)
          "Output point cloud with visibilities as SfMData file.");
     // clang-format on
 
-  CmdLine cmdline("AliceVision exportColoredPointCloud");
-  cmdline.add(requiredParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline("AliceVision exportColoredPointCloud");
+    cmdline.add(requiredParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
+    if (outputSfMDataFilename.empty())
+    {
+        ALICEVISION_LOG_ERROR("No output filename specified.");
+        return EXIT_FAILURE;
+    }
 
-  if(outputSfMDataFilename.empty())
-  {
-    ALICEVISION_LOG_ERROR("No output filename specified.");
-    return EXIT_FAILURE;
-  }
+    // load input SfMData scene
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
+        return EXIT_FAILURE;
+    }
 
-  // load input SfMData scene
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
-    return EXIT_FAILURE;
-  }
+    // compute the scene structure color
+    sfmData::colorizeTracks(sfmData);
 
-  // compute the scene structure color
-  sfmData::colorizeTracks(sfmData);
+    // export the SfMData scene in the expected format
+    ALICEVISION_LOG_INFO("Saving output result to " << outputSfMDataFilename << "...");
+    if (!sfmDataIO::save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("The output SfMData file '" + sfmDataFilename + "' cannot be save.");
+        return EXIT_FAILURE;
+    }
 
-  // export the SfMData scene in the expected format
-  ALICEVISION_LOG_INFO("Saving output result to " << outputSfMDataFilename << "...");
-  if(!sfmDataIO::save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The output SfMData file '" + sfmDataFilename + "' cannot be save.");
-    return EXIT_FAILURE;
-  }
-
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

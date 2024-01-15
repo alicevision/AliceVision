@@ -33,11 +33,7 @@ namespace voctree {
 struct InitRandom
 {
     template<class Feature, class Distance>
-    void operator()(const std::vector<Feature*>& features,
-                    size_t k,
-                    std::vector<Feature>& centers,
-                    Distance distance,
-                    const int verbose = 0)
+    void operator()(const std::vector<Feature*>& features, size_t k, std::vector<Feature>& centers, Distance distance, const int verbose = 0)
     {
         ALICEVISION_LOG_DEBUG("#\t\tRandom initialization");
         // Construct a random permutation of the features using a Fisher-Yates shuffle
@@ -64,11 +60,7 @@ struct InitRandom
 struct InitKmeanspp
 {
     template<class Feature, class Distance>
-    void operator()(const std::vector<Feature*>& features,
-                    size_t k,
-                    std::vector<Feature>& centers,
-                    Distance distance,
-                    const int verbose = 0)
+    void operator()(const std::vector<Feature*>& features, size_t k, std::vector<Feature>& centers, Distance distance, const int verbose = 0)
     {
         typedef typename Distance::result_type squared_distance_type;
 
@@ -219,11 +211,7 @@ struct InitKmeanspp
 struct InitGiven
 {
     template<class Feature, class Distance>
-    void operator()(const std::vector<Feature*>& features,
-                    std::size_t k,
-                    std::vector<Feature>& centers,
-                    Distance distance,
-                    const int verbose = 0)
+    void operator()(const std::vector<Feature*>& features, std::size_t k, std::vector<Feature>& centers, Distance distance, const int verbose = 0)
     {
         // Do nothing!
     }
@@ -301,8 +289,7 @@ class SimpleKmeans
 {
   public:
     typedef typename Distance::result_type squared_distance_type;
-    typedef boost::function<void(const std::vector<Feature*>&, std::size_t, std::vector<Feature>&, Distance, const int verbose)>
-      Initializer;
+    typedef boost::function<void(const std::vector<Feature*>&, std::size_t, std::vector<Feature>&, Distance, const int verbose)> Initializer;
 
     /**
      * @brief Constructor
@@ -383,11 +370,10 @@ SimpleKmeans<Feature, Distance>::SimpleKmeans(const Feature& zero, Distance d, c
 {}
 
 template<class Feature, class Distance>
-typename SimpleKmeans<Feature, Distance>::squared_distance_type SimpleKmeans<Feature, Distance>::cluster(
-  const std::vector<Feature>& features,
-  size_t k,
-  std::vector<Feature>& centers,
-  std::vector<unsigned int>& membership) const
+typename SimpleKmeans<Feature, Distance>::squared_distance_type SimpleKmeans<Feature, Distance>::cluster(const std::vector<Feature>& features,
+                                                                                                         size_t k,
+                                                                                                         std::vector<Feature>& centers,
+                                                                                                         std::vector<unsigned int>& membership) const
 {
     std::vector<Feature*> feature_ptrs;
     feature_ptrs.reserve(features.size());

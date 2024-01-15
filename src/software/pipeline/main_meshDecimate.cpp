@@ -68,7 +68,7 @@ int aliceVision_main(int argc, char* argv[])
     // clang-format on
 
     CmdLine cmdline("AliceVision meshDecimate");
-                  
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
@@ -76,20 +76,19 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-
     fs::path outDirectory = fs::path(outputMeshPath).parent_path();
-    if(!fs::is_directory(outDirectory))
+    if (!fs::is_directory(outDirectory))
         fs::create_directory(outDirectory);
 
     // Mesh type
-    typedef OpenMesh::TriMesh_ArrayKernelT<>                      Mesh;
+    typedef OpenMesh::TriMesh_ArrayKernelT<> Mesh;
     // Decimater type
-    typedef OpenMesh::Decimater::DecimaterT< Mesh >               Decimater;
+    typedef OpenMesh::Decimater::DecimaterT<Mesh> Decimater;
     // Decimation Module Handle type
-    typedef OpenMesh::Decimater::ModQuadricT< Mesh >::Handle HModQuadric;
+    typedef OpenMesh::Decimater::ModQuadricT<Mesh>::Handle HModQuadric;
 
     Mesh mesh;
-    if(!OpenMesh::IO::read_mesh(mesh, inputMeshPath))
+    if (!OpenMesh::IO::read_mesh(mesh, inputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;
@@ -99,25 +98,25 @@ int aliceVision_main(int argc, char* argv[])
 
     int nbInputPoints = mesh.n_vertices();
     int nbOutputPoints = 0;
-    if(fixedNbVertices != 0)
+    if (fixedNbVertices != 0)
     {
         nbOutputPoints = fixedNbVertices;
     }
     else
     {
-        if(simplificationFactor != 0.0)
+        if (simplificationFactor != 0.0)
         {
             nbOutputPoints = simplificationFactor * nbInputPoints;
         }
-        if(minVertices != 0)
+        if (minVertices != 0)
         {
-            if(nbInputPoints > minVertices && nbOutputPoints < minVertices)
-              nbOutputPoints = minVertices;
+            if (nbInputPoints > minVertices && nbOutputPoints < minVertices)
+                nbOutputPoints = minVertices;
         }
-        if(maxVertices != 0)
+        if (maxVertices != 0)
         {
-          if(nbInputPoints > maxVertices && nbOutputPoints > maxVertices)
-            nbOutputPoints = maxVertices;
+            if (nbInputPoints > maxVertices && nbOutputPoints > maxVertices)
+                nbOutputPoints = maxVertices;
         }
     }
 
@@ -126,7 +125,7 @@ int aliceVision_main(int argc, char* argv[])
 
     {
         // a decimater object, connected to a mesh
-        Decimater   decimater(mesh);
+        Decimater decimater(mesh);
         // use a quadric module
         HModQuadric hModQuadric;
         // register module at the decimater
@@ -149,7 +148,7 @@ int aliceVision_main(int argc, char* argv[])
     }
     ALICEVISION_LOG_INFO("Output mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
 
-    if(mesh.n_faces() == 0)
+    if (mesh.n_faces() == 0)
     {
         ALICEVISION_LOG_ERROR("Failed: the output mesh is empty.");
         return EXIT_FAILURE;
@@ -157,7 +156,7 @@ int aliceVision_main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Save mesh.");
     // Save output mesh
-    if(!OpenMesh::IO::write_mesh(mesh, outputMeshPath))
+    if (!OpenMesh::IO::write_mesh(mesh, outputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Failed to save mesh \"" << outputMeshPath << "\".");
         return EXIT_FAILURE;

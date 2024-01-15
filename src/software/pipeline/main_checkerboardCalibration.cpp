@@ -4,7 +4,6 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
 // This application tries to estimate the intrinsics and extrinsics of a set of images.
 // It is assumed that for each image we have a result of the checkerboard detector.
 // It is assumed that the distortion is at least approximately known or calibrated.
@@ -14,7 +13,6 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
-
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -33,10 +31,8 @@
 #include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
 #include <aliceVision/multiview/relativePose/HomographyError.hpp>
 
-
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
-
 
 #include <boost/program_options.hpp>
 
@@ -66,9 +62,7 @@ Eigen::Matrix<double, 1, 6> computeV(const Eigen::Matrix3d& H, int i, int j)
     return v;
 }
 
-bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
-                             std::map<IndexT, calibration::CheckerDetector>& boardsAllImages,
-                             const double squareSize)
+bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData, std::map<IndexT, calibration::CheckerDetector>& boardsAllImages, const double squareSize)
 {
     if (boardsAllImages.size() < 2)
     {
@@ -100,7 +94,8 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
         std::map<size_t, Eigen::Matrix3d> homographies;
         for (auto& pv : sfmData.getViews())
         {
-            if (pv.second->getIntrinsicId() != intrinsicId) continue;
+            if (pv.second->getIntrinsicId() != intrinsicId)
+                continue;
 
             const calibration::CheckerDetector& detector = boardsAllImages[pv.first];
             if (detector.getBoards().size() != 1)
@@ -135,7 +130,6 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
                         continue;
                     }
 
-
                     Eigen::Vector2d refpt;
                     refpt(0) = double(j) * squareSize;
                     refpt(1) = double(i) * squareSize;
@@ -165,10 +159,11 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
             }
 
             using KernelType = multiview::RelativePoseKernel<multiview::relativePose::Homography4PSolver,
-                multiview::relativePose::HomographyAsymmetricError,
-                multiview::UnnormalizerI, robustEstimation::Mat3Model>;
+                                                             multiview::relativePose::HomographyAsymmetricError,
+                                                             multiview::UnnormalizerI,
+                                                             robustEstimation::Mat3Model>;
 
-            KernelType kernel(Mref, 1.0, 1.0, Mcur, cameraPinhole->w(), cameraPinhole->h(), false); // configure as point to point error model.
+            KernelType kernel(Mref, 1.0, 1.0, Mcur, cameraPinhole->w(), cameraPinhole->h(), false);  // configure as point to point error model.
 
             robustEstimation::Mat3Model model;
             std::mt19937 generator;
@@ -177,7 +172,8 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
             robustEstimation::ACRANSAC(kernel, generator, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
             Eigen::Matrix3d H = model.getMatrix();
 
-            if (vec_inliers.size() < 10) continue;
+            if (vec_inliers.size() < 10)
+                continue;
 
             homographies[pv.first] = H;
         }
@@ -347,10 +343,9 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
         sfm::BundleAdjustmentCeres::CeresOptions options;
         options.summary = true;
         sfm::BundleAdjustmentCeres ba(options);
-        sfm::BundleAdjustment::ERefineOptions boptions =
-            sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
-            sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
-            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_ALL;
+        sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
+                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_ALL;
         if (!ba.adjust(sfmData, boptions))
         {
             ALICEVISION_LOG_ERROR("Failed to calibrate");
@@ -360,7 +355,6 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
 
     return true;
 }
-
 
 bool estimateRigs(sfmData::SfMData& sfmData)
 {
@@ -431,10 +425,9 @@ bool estimateRigs(sfmData::SfMData& sfmData)
         sfm::BundleAdjustmentCeres::CeresOptions options;
         options.summary = true;
         sfm::BundleAdjustmentCeres ba(options);
-        sfm::BundleAdjustment::ERefineOptions boptions =
-            sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
-            sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
-            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_ALL;
+        sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
+                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_ALL;
         if (!ba.adjust(sfmData, boptions))
         {
             ALICEVISION_LOG_ERROR("Failed to calibrate");
@@ -445,8 +438,7 @@ bool estimateRigs(sfmData::SfMData& sfmData)
     return true;
 }
 
-
-int aliceVision_main(int argc, char* argv[]) 
+int aliceVision_main(int argc, char* argv[])
 {
     std::string sfmInputDataFilepath;
     std::string checkerBoardsPath;
@@ -488,16 +480,18 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Load the checkerboards
-    std::map < IndexT, calibration::CheckerDetector> boardsAllImages;
+    std::map<IndexT, calibration::CheckerDetector> boardsAllImages;
     for (auto& pv : sfmData.getViews())
     {
         IndexT viewId = pv.first;
 
         // Read the json file
         std::stringstream ss;
-        ss << checkerBoardsPath << "/" << "checkers_" << viewId << ".json";
+        ss << checkerBoardsPath << "/"
+           << "checkers_" << viewId << ".json";
         std::ifstream inputfile(ss.str());
-        if (inputfile.is_open() == false) continue;
+        if (inputfile.is_open() == false)
+            continue;
 
         std::stringstream buffer;
         buffer << inputfile.rdbuf();
@@ -544,5 +538,5 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

@@ -35,114 +35,100 @@ using namespace aliceVision::sfmData;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-bool exportToMatlab(
-  const SfMData & sfm_data,
-  const std::string & outDirectory
-  )
+bool exportToMatlab(const SfMData& sfm_data, const std::string& outDirectory)
 {
-  const double unknownScale = 0.0;
-  // WARNING: Observation::id_feat is used to put the ID of the 3D landmark.
-  std::map<IndexT, std::vector<Observation> > observationsPerView;
-  
-  {
-    const std::string landmarksFilename = (fs::path(outDirectory) / "scene.landmarks").string();
-    std::ofstream landmarksFile(landmarksFilename);
-    landmarksFile << "# landmarkId X Y Z\n";
-    for(const auto& s: sfm_data.getLandmarks())
-    {
-      const IndexT landmarkId = s.first;
-      const Landmark& landmark = s.second;
-      landmarksFile << landmarkId << " " << landmark.X[0] << " " << landmark.X[1] << " " << landmark.X[2] << "\n";
-      for(const auto& obs: landmark.getObservations())
-      {
-        const IndexT obsView = obs.first; // The ID of the view that provides this 2D observation.
-        observationsPerView[obsView].push_back(Observation(obs.second.getCoordinates(), landmarkId, unknownScale));
-      }
-    }
-    landmarksFile.close();
-  }
-  
-  // Export observations per view
-  for(const auto & obsPerView : observationsPerView)
-  {
-    const std::vector<Observation>& viewObservations = obsPerView.second;
-    const IndexT viewId = obsPerView.first;
-    
-    const std::string viewFeatFilename = (fs::path(outDirectory) / (std::to_string(viewId) + ".reconstructedFeatures")).string();
-    std::ofstream viewFeatFile(viewFeatFilename);
-    viewFeatFile << "# landmarkId x y\n";
-    for(const Observation& obs: viewObservations)
-    {
-      viewFeatFile << obs.getFeatureId() << " " << obs.getX() << " " << obs.getY() << "\n";
-    }
-    viewFeatFile.close();
-  }
-  
-  // Expose camera poses
-  {
-    const std::string cameraPosesFilename = (fs::path(outDirectory) / "cameras.poses").string();
-    std::ofstream cameraPosesFile(cameraPosesFilename);
-    cameraPosesFile << "# viewId R11 R12 R13 R21 R22 R23 R31 R32 R33 C1 C2 C3\n";
-    for(const auto& v: sfm_data.getViews())
-    {
-      const View& view = *v.second.get();
-      if(!sfm_data.isPoseAndIntrinsicDefined(&view))
-        continue;
+    const double unknownScale = 0.0;
+    // WARNING: Observation::id_feat is used to put the ID of the 3D landmark.
+    std::map<IndexT, std::vector<Observation>> observationsPerView;
 
-      const Pose3 pose = sfm_data.getPose(view).getTransform();
-      cameraPosesFile << view.getViewId()
-        << " " << pose.rotation()(0, 0)
-        << " " << pose.rotation()(0, 1)
-        << " " << pose.rotation()(0, 2)
-        << " " << pose.rotation()(1, 0)
-        << " " << pose.rotation()(1, 1)
-        << " " << pose.rotation()(1, 2)
-        << " " << pose.rotation()(2, 0)
-        << " " << pose.rotation()(2, 1)
-        << " " << pose.rotation()(2, 2)
-        << " " << pose.center()(0)
-        << " " << pose.center()(1)
-        << " " << pose.center()(2)
-        << "\n";
-    }
-    cameraPosesFile.close();
-  }
-  
-  // Expose camera intrinsics
-  // Note: we export it per view, It is really redundant but easy to parse.
-  {
-    const std::string cameraIntrinsicsFilename = (fs::path(outDirectory) / "cameras.intrinsics").string();
-    std::ofstream cameraIntrinsicsFile(cameraIntrinsicsFilename);
-    cameraIntrinsicsFile <<
-      "# viewId pinhole f u0 v0\n"
-      "# viewId radial1 f u0 v0 k1\n"
-      "# viewId radial3 f u0 v0 k1 k2 k3\n"
-      "# viewId brown f u0 v0 k1 k2 k3 t1 t2\n"
-      "# viewId fisheye4 f u0 v0 k1 k2 k3 k4\n"
-      "# viewId fisheye1 f u0 v0 k1\n";
-
-    for(const auto& v: sfm_data.getViews())
     {
-      const View& view = *v.second.get();
-      if(!sfm_data.isPoseAndIntrinsicDefined(&view))
-        continue;
-      const IntrinsicBase& intrinsics = *sfm_data.getIntrinsics().at(view.getIntrinsicId()).get();
-      cameraIntrinsicsFile << view.getViewId() << " " << camera::EINTRINSIC_enumToString(intrinsics.getType());
-      for(double p: intrinsics.getParams())
-        cameraIntrinsicsFile << " " << p;
-      cameraIntrinsicsFile << "\n";
+        const std::string landmarksFilename = (fs::path(outDirectory) / "scene.landmarks").string();
+        std::ofstream landmarksFile(landmarksFilename);
+        landmarksFile << "# landmarkId X Y Z\n";
+        for (const auto& s : sfm_data.getLandmarks())
+        {
+            const IndexT landmarkId = s.first;
+            const Landmark& landmark = s.second;
+            landmarksFile << landmarkId << " " << landmark.X[0] << " " << landmark.X[1] << " " << landmark.X[2] << "\n";
+            for (const auto& obs : landmark.getObservations())
+            {
+                const IndexT obsView = obs.first;  // The ID of the view that provides this 2D observation.
+                observationsPerView[obsView].push_back(Observation(obs.second.getCoordinates(), landmarkId, unknownScale));
+            }
+        }
+        landmarksFile.close();
     }
-    cameraIntrinsicsFile.close();
-  }
-  
-  return true;
+
+    // Export observations per view
+    for (const auto& obsPerView : observationsPerView)
+    {
+        const std::vector<Observation>& viewObservations = obsPerView.second;
+        const IndexT viewId = obsPerView.first;
+
+        const std::string viewFeatFilename = (fs::path(outDirectory) / (std::to_string(viewId) + ".reconstructedFeatures")).string();
+        std::ofstream viewFeatFile(viewFeatFilename);
+        viewFeatFile << "# landmarkId x y\n";
+        for (const Observation& obs : viewObservations)
+        {
+            viewFeatFile << obs.getFeatureId() << " " << obs.getX() << " " << obs.getY() << "\n";
+        }
+        viewFeatFile.close();
+    }
+
+    // Expose camera poses
+    {
+        const std::string cameraPosesFilename = (fs::path(outDirectory) / "cameras.poses").string();
+        std::ofstream cameraPosesFile(cameraPosesFilename);
+        cameraPosesFile << "# viewId R11 R12 R13 R21 R22 R23 R31 R32 R33 C1 C2 C3\n";
+        for (const auto& v : sfm_data.getViews())
+        {
+            const View& view = *v.second.get();
+            if (!sfm_data.isPoseAndIntrinsicDefined(&view))
+                continue;
+
+            const Pose3 pose = sfm_data.getPose(view).getTransform();
+            cameraPosesFile << view.getViewId() << " " << pose.rotation()(0, 0) << " " << pose.rotation()(0, 1) << " " << pose.rotation()(0, 2) << " "
+                            << pose.rotation()(1, 0) << " " << pose.rotation()(1, 1) << " " << pose.rotation()(1, 2) << " " << pose.rotation()(2, 0)
+                            << " " << pose.rotation()(2, 1) << " " << pose.rotation()(2, 2) << " " << pose.center()(0) << " " << pose.center()(1)
+                            << " " << pose.center()(2) << "\n";
+        }
+        cameraPosesFile.close();
+    }
+
+    // Expose camera intrinsics
+    // Note: we export it per view, It is really redundant but easy to parse.
+    {
+        const std::string cameraIntrinsicsFilename = (fs::path(outDirectory) / "cameras.intrinsics").string();
+        std::ofstream cameraIntrinsicsFile(cameraIntrinsicsFilename);
+        cameraIntrinsicsFile << "# viewId pinhole f u0 v0\n"
+                                "# viewId radial1 f u0 v0 k1\n"
+                                "# viewId radial3 f u0 v0 k1 k2 k3\n"
+                                "# viewId brown f u0 v0 k1 k2 k3 t1 t2\n"
+                                "# viewId fisheye4 f u0 v0 k1 k2 k3 k4\n"
+                                "# viewId fisheye1 f u0 v0 k1\n";
+
+        for (const auto& v : sfm_data.getViews())
+        {
+            const View& view = *v.second.get();
+            if (!sfm_data.isPoseAndIntrinsicDefined(&view))
+                continue;
+            const IntrinsicBase& intrinsics = *sfm_data.getIntrinsics().at(view.getIntrinsicId()).get();
+            cameraIntrinsicsFile << view.getViewId() << " " << camera::EINTRINSIC_enumToString(intrinsics.getType());
+            for (double p : intrinsics.getParams())
+                cameraIntrinsicsFile << " " << p;
+            cameraIntrinsicsFile << "\n";
+        }
+        cameraIntrinsicsFile.close();
+    }
+
+    return true;
 }
 
-int aliceVision_main(int argc, char *argv[])
+int aliceVision_main(int argc, char* argv[])
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string outputFolder;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string outputFolder;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -153,31 +139,30 @@ int aliceVision_main(int argc, char *argv[])
          "Output folder.");
     // clang-format on
 
-  CmdLine cmdline("AliceVision exportMatlab");
-  cmdline.add(requiredParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
-
-  // export
-  {
-    // Create output dir
-    if(!fs::exists(outputFolder))
-      fs::create_directory(outputFolder);
-
-    // Read the input SfM scene
-    SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    CmdLine cmdline("AliceVision exportMatlab");
+    cmdline.add(requiredParams);
+    if (!cmdline.execute(argc, argv))
     {
-      std::cerr << std::endl
-        << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
-      return EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
 
-    if (!exportToMatlab(sfmData, outputFolder))
-      return EXIT_FAILURE;
-  }
+    // export
+    {
+        // Create output dir
+        if (!fs::exists(outputFolder))
+            fs::create_directory(outputFolder);
 
-  return EXIT_SUCCESS;
+        // Read the input SfM scene
+        SfMData sfmData;
+        if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+        {
+            std::cerr << std::endl << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        if (!exportToMatlab(sfmData, outputFolder))
+            return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }

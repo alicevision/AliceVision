@@ -66,19 +66,13 @@ struct translations_Triplet_Solver
      * @brief Return the minimum number of required samples
      * @return minimum number of required samples
      */
-    std::size_t getMinimumNbRequiredSamples() const
-    {
-        return 4;
-    }
+    std::size_t getMinimumNbRequiredSamples() const { return 4; }
 
     /**
      * @brief Return the maximum number of models
      * @return maximum number of models
      */
-    std::size_t getMaximumNbModels() const
-    {
-        return 1;
-    }
+    std::size_t getMaximumNbModels() const { return 1; }
 
     /// Solve the computation of the "tensor".
     void solve(const Mat& pt0,

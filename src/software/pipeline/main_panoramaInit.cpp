@@ -28,8 +28,7 @@
 
 using namespace aliceVision;
 
-namespace std
-{
+namespace std {
 std::ostream& operator<<(std::ostream& os, const std::pair<double, double>& v)
 {
     os << v.first << " " << v.second;
@@ -45,7 +44,7 @@ std::istream& operator>>(std::istream& in, std::pair<double, double>& v)
     v.second = boost::lexical_cast<double>(token);
     return in;
 }
-} // namespace std
+}  // namespace std
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
@@ -56,7 +55,7 @@ namespace pt = boost::property_tree;
  */
 class PyramidFloat
 {
-public:
+  public:
     PyramidFloat(size_t width, size_t height, size_t minimal_size)
     {
         // minimal_size * 2^n = minside
@@ -66,9 +65,8 @@ public:
 
         size_t cwidth = width;
         size_t cheight = height;
-        for(int i = 0; i <= levels; i++)
+        for (int i = 0; i <= levels; i++)
         {
-
             _levels.push_back(image::Image<float>(cwidth, cheight));
 
             cheight /= 2;
@@ -80,9 +78,8 @@ public:
     {
         // First of all, build pyramid for filtering high frequencies
         _levels[0] = grayscale_input;
-        for(int level = 1; level < _levels.size(); level++)
+        for (int level = 1; level < _levels.size(); level++)
         {
-
             size_t sw = _levels[level - 1].width();
             size_t sh = _levels[level - 1].height();
             size_t dw = _levels[level].width();
@@ -104,34 +101,32 @@ public:
 
     const image::Image<float>& getLevel(size_t level) const { return _levels[level]; }
 
-private:
+  private:
     std::vector<image::Image<float>> _levels;
 };
 
 class CircleDetector
 {
-public:
+  public:
     CircleDetector() = delete;
 
     CircleDetector(size_t width, size_t height, size_t minimal_size)
-        : _source_width(width)
-        , _source_height(height)
-        , _minimal_size(minimal_size)
-        , _radius(0)
-    {
-    }
+      : _source_width(width),
+        _source_height(height),
+        _minimal_size(minimal_size),
+        _radius(0)
+    {}
 
     void setDebugDirectory(const std::string& dir) { _debugDirectory = dir; }
 
     bool appendImage(const image::Image<float>& grayscale_input)
     {
-
-        if(grayscale_input.width() != _source_width)
+        if (grayscale_input.width() != _source_width)
         {
             return false;
         }
 
-        if(grayscale_input.height() != _source_height)
+        if (grayscale_input.height() != _source_height)
         {
             return false;
         }
@@ -139,7 +134,7 @@ public:
         // Store pyramid for this image, will be processed later
         // This way we ensure we do not loose intermediate information
         PyramidFloat pyramid(_source_width, _source_height, _minimal_size);
-        if(!pyramid.apply(grayscale_input))
+        if (!pyramid.apply(grayscale_input))
         {
             return false;
         }
@@ -150,7 +145,7 @@ public:
 
     bool preprocessLevel(const PyramidFloat& pyramid, size_t pyramid_id, size_t level)
     {
-        if(level >= pyramid.countLevels())
+        if (level >= pyramid.countLevels())
         {
             return false;
         }
@@ -175,7 +170,7 @@ public:
         // Build a polar image using the estimated circle center
         image::Image<float> polarImage(max_radius_i, angles_bins, true, 0.0f);
         image::Image<unsigned char> polarImageMask(max_radius_i, angles_bins, true, 0);
-        if(!buildPolarImage(polarImage, polarImageMask, source, level_centerx, level_centery))
+        if (!buildPolarImage(polarImage, polarImageMask, source, level_centerx, level_centery))
         {
             return false;
         }
@@ -186,16 +181,16 @@ public:
         // int max = pyramid.countLevels() - 1;
         // int diff = max - level;
         int min_radius = 8;
-        int radius = min_radius; // * pow(2, diff);
+        int radius = min_radius;  // * pow(2, diff);
         image::Image<float> gradientImage(max_radius_i, angles_bins);
-        if(!buildGradientImage(gradientImage, polarImage, polarImageMask, radius))
+        if (!buildGradientImage(gradientImage, polarImage, polarImageMask, radius))
         {
             return false;
         }
 
         debugImage(gradientImage, "gradientImage", pyramid_id, level);
 
-        if(_gradientImage.width() != gradientImage.width() || _gradientImage.height() != gradientImage.height())
+        if (_gradientImage.width() != gradientImage.width() || _gradientImage.height() != gradientImage.height())
         {
             _gradientImage = gradientImage;
         }
@@ -209,7 +204,7 @@ public:
 
     bool process()
     {
-        if(_pyramids.empty())
+        if (_pyramids.empty())
         {
             return false;
         }
@@ -221,13 +216,13 @@ public:
         size_t last_level_inliers = 0;
         int last_valid_level = -1;
 
-        for(int current_level = _pyramids[0].countLevels() - 1; current_level > 1; current_level--)
+        for (int current_level = _pyramids[0].countLevels() - 1; current_level > 1; current_level--)
         {
             // Compute gradients
             size_t current_pyramid_id = 0;
-            for(PyramidFloat& pyr : _pyramids)
+            for (PyramidFloat& pyr : _pyramids)
             {
-                if(!preprocessLevel(pyr, current_pyramid_id, current_level))
+                if (!preprocessLevel(pyr, current_pyramid_id, current_level))
                 {
                     return false;
                 }
@@ -236,7 +231,7 @@ public:
 
             // Estimate the search area
             int uncertainty = 50;
-            if(current_level == _pyramids[0].countLevels() - 1)
+            if (current_level == _pyramids[0].countLevels() - 1)
             {
                 uncertainty = std::max(_source_width, _source_height);
             }
@@ -244,7 +239,7 @@ public:
             debugImage(_gradientImage, "globalGradientImage", 0, current_level);
 
             // Perform estimation
-            if(!processLevel(current_level, uncertainty, last_level_inliers))
+            if (!processLevel(current_level, uncertainty, last_level_inliers))
             {
                 break;
             }
@@ -253,7 +248,7 @@ public:
         }
 
         // Check that the circle was detected at some level
-        if(last_valid_level < 0)
+        if (last_valid_level < 0)
         {
             return false;
         }
@@ -275,7 +270,7 @@ public:
 
         // Extract maximas of response
         std::vector<Eigen::Vector2d> selected_points;
-        for(int y = 0; y < gradients.height(); y++)
+        for (int y = 0; y < gradients.height(); y++)
         {
             const double rangle = double(y) * (2.0 * M_PI / double(gradients.height()));
             const double cangle = cos(rangle);
@@ -286,27 +281,27 @@ public:
             const int end = std::min(gradients.width() - 1, int(level_radius) + uncertainty);
 
             // Remove non maximas
-            for(int x = start; x < end; x++)
+            for (int x = start; x < end; x++)
             {
-                if(gradients(y, x) < gradients(y, x + 1))
+                if (gradients(y, x) < gradients(y, x + 1))
                 {
                     gradients(y, x) = 0.0f;
                 }
             }
 
             // Remove non maximas
-            for(int x = end; x > start; x--)
+            for (int x = end; x > start; x--)
             {
-                if(gradients(y, x) < gradients(y, x - 1))
+                if (gradients(y, x) < gradients(y, x - 1))
                 {
                     gradients(y, x) = 0.0f;
                 }
             }
 
             // Store maximas
-            for(int x = start; x <= end; x++)
+            for (int x = start; x <= end; x++)
             {
-                if(gradients(y, x) > 0.0f)
+                if (gradients(y, x) > 0.0f)
                 {
                     const double nx = level_centerx + cangle * double(x);
                     const double ny = level_centery + sangle * double(x);
@@ -316,7 +311,7 @@ public:
             }
         }
 
-        if(selected_points.size() < 3)
+        if (selected_points.size() < 3)
         {
             return false;
         }
@@ -331,13 +326,13 @@ public:
 
         size_t maxcount = 0;
         Eigen::Vector3d best_params;
-        for(int i = 0; i < 10000; i++)
+        for (int i = 0; i < 10000; i++)
         {
             const int id1 = distribution(generator);
             const int id2 = distribution(generator);
             const int id3 = distribution(generator);
 
-            if(id1 == id2 || id1 == id3 || id2 == id3)
+            if (id1 == id2 || id1 == id3 || id2 == id3)
                 continue;
 
             const Eigen::Vector2d p1 = selected_points[id1];
@@ -345,33 +340,33 @@ public:
             const Eigen::Vector2d p3 = selected_points[id3];
 
             Eigen::Vector3d res;
-            if(!fitCircle(res, p1, p2, p3))
+            if (!fitCircle(res, p1, p2, p3))
             {
                 continue;
             }
 
             size_t count = 0;
-            for(const auto& point : selected_points)
+            for (const auto& point : selected_points)
             {
                 const double cx = point(0) - res(0);
                 const double cy = point(1) - res(1);
                 const double r = res(2);
 
                 const double dist = std::abs(sqrt(cx * cx + cy * cy) - r);
-                if(dist < 3)
+                if (dist < 3)
                 {
                     count++;
                 }
             }
 
-            if(count > maxcount)
+            if (count > maxcount)
             {
                 maxcount = count;
                 best_params = res;
             }
         }
 
-        if(maxcount < last_level_inliers)
+        if (maxcount < last_level_inliers)
         {
             return false;
         }
@@ -385,10 +380,10 @@ public:
         Eigen::Vector3d previous_good = best_params;
         double last_good_error = std::numeric_limits<double>::max();
 
-        for(int iter = 0; iter < 1000; iter++)
+        for (int iter = 0; iter < 1000; iter++)
         {
             double sum_error = 0.0;
-            for(int i = 0; i < selected_points.size(); i++)
+            for (int i = 0; i < selected_points.size(); i++)
             {
                 const double cx = selected_points[i](0) - best_params(0);
                 const double cy = selected_points[i](1) - best_params(1);
@@ -396,7 +391,7 @@ public:
                 const double dist = pow(sqrt(cx * cx + cy * cy) - r, 2.0);
 
                 double w = 0.0;
-                if(dist < c)
+                if (dist < c)
                 {
                     const double xoc = dist / c;
                     const double hw = 1.0 - xoc * xoc;
@@ -406,7 +401,7 @@ public:
                 sum_error += w * dist;
             }
 
-            if(sum_error > last_good_error)
+            if (sum_error > last_good_error)
             {
                 best_params = previous_good;
                 break;
@@ -416,7 +411,7 @@ public:
 
             Eigen::Matrix3d JtJ = Eigen::Matrix3d::Zero();
             Eigen::Vector3d Jte = Eigen::Vector3d::Zero();
-            for(auto& pt : selected_points)
+            for (auto& pt : selected_points)
             {
                 const double cx = pt(0) - best_params(0);
                 const double cy = pt(1) - best_params(1);
@@ -426,7 +421,7 @@ public:
                 const double dist = norm - r;
 
                 double w = 0.0;
-                if(dist < c)
+                if (dist < c)
                 {
                     double xoc = dist / c;
                     double hw = 1.0 - xoc * xoc;
@@ -434,7 +429,7 @@ public:
                 }
 
                 Eigen::Vector3d J;
-                if(std::abs(normsq) < 1e-12)
+                if (std::abs(normsq) < 1e-12)
                 {
                     J.fill(0);
                     J(2) = -w;
@@ -446,9 +441,9 @@ public:
                     J(2) = -w;
                 }
 
-                for(int i = 0; i < 3; i++)
+                for (int i = 0; i < 3; i++)
                 {
-                    for(int j = 0; j < 3; j++)
+                    for (int j = 0; j < 3; j++)
                     {
                         JtJ(i, j) += J(i) * J(j);
                     }
@@ -468,8 +463,7 @@ public:
         return true;
     }
 
-    bool fitCircle(Eigen::Vector3d& output, const Eigen::Vector2d& pt1, const Eigen::Vector2d& pt2,
-                   const Eigen::Vector2d& pt3)
+    bool fitCircle(Eigen::Vector3d& output, const Eigen::Vector2d& pt1, const Eigen::Vector2d& pt2, const Eigen::Vector2d& pt3)
     {
         /*
         Solve :
@@ -531,13 +525,13 @@ public:
         const double D = 2.0 * (pt1(0) - pt3(0));
         const double E = 2.0 * (pt1(1) - pt2(1));
         const double F = 2.0 * (pt1(1) - pt3(1));
-        if(std::abs(C) < 1e-12)
+        if (std::abs(C) < 1e-12)
             return false;
 
         const double G = -A / C;
         const double H = -E / C;
 
-        if(std::abs(D * H + F) < 1e-12)
+        if (std::abs(D * H + F) < 1e-12)
             return false;
 
         const double centery = -(B + D * G) / (D * H + F);
@@ -550,20 +544,22 @@ public:
         return true;
     }
 
-    bool buildPolarImage(image::Image<float>& dst, image::Image<unsigned char>& dstmask, const image::Image<float>& src,
-                         float center_x, float center_y)
+    bool buildPolarImage(image::Image<float>& dst,
+                         image::Image<unsigned char>& dstmask,
+                         const image::Image<float>& src,
+                         float center_x,
+                         float center_y)
     {
-
         image::Sampler2d<image::SamplerLinear> sampler;
         const size_t count_angles = dst.height();
 
-        for(int angle = 0; angle < count_angles; angle++)
+        for (int angle = 0; angle < count_angles; angle++)
         {
             const double rangle = angle * (2.0 * M_PI / double(count_angles));
             const double cangle = cos(rangle);
             const double sangle = sin(rangle);
 
-            for(int amplitude = 0; amplitude < dst.width(); amplitude++)
+            for (int amplitude = 0; amplitude < dst.width(); amplitude++)
             {
                 const double x = center_x + cangle * double(amplitude);
                 const double y = center_y + sangle * double(amplitude);
@@ -571,9 +567,9 @@ public:
                 dst(angle, amplitude) = 0;
                 dstmask(angle, amplitude) = 0;
 
-                if(x < 0 || y < 0)
+                if (x < 0 || y < 0)
                     continue;
-                if(x >= src.width() || y >= src.height())
+                if (x >= src.width() || y >= src.height())
                     continue;
                 dst(angle, amplitude) = sampler(src, y, x);
                 dstmask(angle, amplitude) = 255;
@@ -583,19 +579,18 @@ public:
         return true;
     }
 
-    bool buildGradientImage(image::Image<float>& dst, const image::Image<float>& src,
-                            const image::Image<unsigned char>& srcMask, size_t radius_size)
+    bool buildGradientImage(image::Image<float>& dst, const image::Image<float>& src, const image::Image<unsigned char>& srcMask, size_t radius_size)
     {
         // Build gradient for x coordinates image
         dst.fill(0);
 
         int kernel_radius = radius_size;
-        for(int angle = 0; angle < src.height(); angle++)
+        for (int angle = 0; angle < src.height(); angle++)
         {
             int start = radius_size;
             int end = src.width() - kernel_radius * 2;
 
-            for(int amplitude = start; amplitude < end; amplitude++)
+            for (int amplitude = start; amplitude < end; amplitude++)
             {
                 dst(angle, amplitude) = 0.0;
 
@@ -604,18 +599,18 @@ public:
 
                 unsigned char valid = 255;
 
-                for(int dx = -kernel_radius; dx < 0; dx++)
+                for (int dx = -kernel_radius; dx < 0; dx++)
                 {
                     sum_inside += src(angle, amplitude + dx);
                     valid &= srcMask(angle, amplitude + dx);
                 }
-                for(int dx = 1; dx <= kernel_radius * 2; dx++)
+                for (int dx = 1; dx <= kernel_radius * 2; dx++)
                 {
                     sum_outside += src(angle, amplitude + dx);
                     valid &= srcMask(angle, amplitude + dx);
                 }
 
-                if(valid)
+                if (valid)
                 {
                     dst(angle, amplitude) = std::max(0.0f, (sum_inside - sum_outside));
                 }
@@ -635,20 +630,18 @@ public:
 
     double getCircleRadius() const { return _radius; }
 
-    template <class T>
+    template<class T>
     void debugImage(const image::Image<T>& toSave, const std::string& name, int pyramid_id, int level)
     {
         // Only export debug image if there is a debug output folder defined.
-        if(_debugDirectory.empty())
+        if (_debugDirectory.empty())
             return;
 
-        fs::path filepath =
-            fs::path(_debugDirectory) /
-            (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
+        fs::path filepath = fs::path(_debugDirectory) / (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
         image::writeImage(filepath.string(), toSave, image::ImageWriteOptions());
     }
 
-private:
+  private:
     std::vector<PyramidFloat> _pyramids;
     image::Image<float> _gradientImage;
     std::string _debugDirectory;
@@ -665,14 +658,11 @@ private:
 /**
  * @brief Utility function for resizing an image.
  */
-void resample(image::Image<image::RGBfColor>& output,
-              const image::Image<image::RGBfColor>& input)
+void resample(image::Image<image::RGBfColor>& output, const image::Image<image::RGBfColor>& input)
 {
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.width(), input.height(), 3, oiio::TypeDesc::FLOAT),
-                               const_cast<image::RGBfColor*>(input.data()));
-    
-    oiio::ImageBuf outBuf(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
-                          (image::RGBfColor*)output.data());
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.width(), input.height(), 3, oiio::TypeDesc::FLOAT), const_cast<image::RGBfColor*>(input.data()));
+
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT), (image::RGBfColor*)output.data());
 
     oiio::ImageBufAlgo::resample(outBuf, inBuf, false);
 }
@@ -680,15 +670,11 @@ void resample(image::Image<image::RGBfColor>& output,
 /**
  * @brief Utility function for rotating an image given its orientation metadata.
  */
-void applyOrientation(image::Image<image::RGBfColor>& output,
-                      const image::Image<image::RGBfColor>& input,
-                      sfmData::EEXIFOrientation orientation)
+void applyOrientation(image::Image<image::RGBfColor>& output, const image::Image<image::RGBfColor>& input, sfmData::EEXIFOrientation orientation)
 {
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.width(), input.height(), 3, oiio::TypeDesc::FLOAT),
-                               const_cast<image::RGBfColor*>(input.data()));
-    
-    oiio::ImageBuf outBuf(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT),
-                          (image::RGBfColor*)output.data());
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(input.width(), input.height(), 3, oiio::TypeDesc::FLOAT), const_cast<image::RGBfColor*>(input.data()));
+
+    oiio::ImageBuf outBuf(oiio::ImageSpec(output.width(), output.height(), 3, oiio::TypeDesc::FLOAT), (image::RGBfColor*)output.data());
 
     switch (orientation)
     {
@@ -750,15 +736,16 @@ int orientedHeight(const Contact& contact)
 }
 
 bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
-                            const std::map<int, std::map<int, Contact>>& contactSheetInfo, int contactSheetItemMaxSize)
+                            const std::map<int, std::map<int, Contact>>& contactSheetInfo,
+                            int contactSheetItemMaxSize)
 {
     const int space = 10;
 
     // Compute ratio for resizing inputs
     int maxdim = 0;
-    for(const auto& rowpair : contactSheetInfo)
+    for (const auto& rowpair : contactSheetInfo)
     {
-        for(const auto& item : rowpair.second)
+        for (const auto& item : rowpair.second)
         {
             maxdim = std::max(maxdim, orientedWidth(item.second));
             maxdim = std::max(maxdim, orientedHeight(item.second));
@@ -769,12 +756,12 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
     // Compute output size
     int totalHeight = space;
     int maxWidth = 0;
-    for(const auto& rowpair : contactSheetInfo)
+    for (const auto& rowpair : contactSheetInfo)
     {
         int rowHeight = 0;
         int rowWidth = space;
 
-        for(const auto& item : rowpair.second)
+        for (const auto& item : rowpair.second)
         {
             int resizedHeight = int(ratioResize * double(orientedHeight(item.second)));
             int resizedWidth = int(ratioResize * double(orientedWidth(item.second)));
@@ -787,7 +774,7 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
         maxWidth = std::max(maxWidth, rowWidth);
     }
 
-    if(totalHeight == 0 || maxWidth == 0)
+    if (totalHeight == 0 || maxWidth == 0)
     {
         return false;
     }
@@ -795,13 +782,13 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
     int rowCount = 0;
     int posY = space;
     output = image::Image<image::RGBfColor>(maxWidth, totalHeight, true);
-    for(const auto& rowpair : contactSheetInfo)
+    for (const auto& rowpair : contactSheetInfo)
     {
         ALICEVISION_LOG_INFO("Build contact sheet row " << rowCount + 1 << "/" << contactSheetInfo.size());
         int rowHeight = 0;
         int rowWidth = space;
 
-        for(const auto& item : rowpair.second)
+        for (const auto& item : rowpair.second)
         {
             int resizedHeight = int(ratioResize * double(orientedHeight(item.second)));
             int resizedWidth = int(ratioResize * double(orientedWidth(item.second)));
@@ -814,7 +801,7 @@ bool buildContactSheetImage(image::Image<image::RGBfColor>& output,
         image::Image<image::RGBfColor> rowOutput(rowWidth, rowHeight, true);
 
         int posX = space;
-        for(const auto& item : rowpair.second)
+        for (const auto& item : rowpair.second)
         {
             int rawResizedHeight = int(ratioResize * double(item.second.height));
             int rawResizedWidth = int(ratioResize * double(item.second.width));
@@ -914,20 +901,20 @@ int main(int argc, char* argv[])
     cmdline.add(requiredParams);
     cmdline.add(motorizedHeadParams);
     cmdline.add(fisheyeParams);
-    if(!cmdline.execute(argc, argv))
+    if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
     }
 
-    if(inputAngleString == "rotate90")
+    if (inputAngleString == "rotate90")
     {
         additionalAngle = -M_PI_2;
     }
-    else if(inputAngleString == "rotate180")
+    else if (inputAngleString == "rotate180")
     {
         additionalAngle = -M_PI;
     }
-    else if(inputAngleString == "rotate270")
+    else if (inputAngleString == "rotate270")
     {
         additionalAngle = M_PI_2;
     }
@@ -935,7 +922,7 @@ int main(int argc, char* argv[])
     std::map<int, std::map<int, Contact>> contactSheetInfo;
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
@@ -946,12 +933,10 @@ int main(int argc, char* argv[])
         std::map<int, Eigen::Matrix3d> rotations;
 
         boost::to_lower(initializeCameras);
-        if(initializeCameras == "no")
+        if (initializeCameras == "no") {}
+        else if (initializeCameras == "file" || (initializeCameras.empty() && !externalInfoFilepath.empty()))
         {
-        }
-        else if(initializeCameras == "file" || (initializeCameras.empty() && !externalInfoFilepath.empty()))
-        {
-            if(externalInfoFilepath.empty())
+            if (externalInfoFilepath.empty())
             {
                 ALICEVISION_LOG_ERROR("Init cameras from file, but path is not set.");
                 return EXIT_FAILURE;
@@ -963,7 +948,7 @@ int main(int argc, char* argv[])
             {
                 pt::read_xml(externalInfoFilepath, tree);
             }
-            catch(...)
+            catch (...)
             {
                 ALICEVISION_CERR("Error parsing input file");
                 return EXIT_FAILURE;
@@ -973,10 +958,10 @@ int main(int argc, char* argv[])
 
             // Get a set of unique ids
             std::set<int> uniqueIds;
-            for(const auto it : shoot)
+            for (const auto it : shoot)
             {
                 int id = it.second.get<double>("<xmlattr>.id");
-                if(uniqueIds.find(id) != uniqueIds.end())
+                if (uniqueIds.find(id) != uniqueIds.end())
                 {
                     ALICEVISION_CERR("Multiple xml attributes with a same id: " << id);
                     return EXIT_FAILURE;
@@ -989,16 +974,16 @@ int main(int argc, char* argv[])
             // note that set is ordered automatically.
             int pos = 0;
             std::map<int, int> idToRank;
-            for(const auto id : uniqueIds)
+            for (const auto id : uniqueIds)
             {
                 idToRank[id] = pos;
                 pos++;
             }
 
             // Group shoots by "rows" (common pitch) assuming they are acquired row by row with a common pitch
-            if(buildContactSheet)
+            if (buildContactSheet)
             {
-                for(const auto it : shoot)
+                for (const auto it : shoot)
                 {
                     int id = it.second.get<double>("<xmlattr>.id");
                     int bracket = it.second.get<double>("<xmlattr>.bracket");
@@ -1007,7 +992,7 @@ int main(int argc, char* argv[])
                     const double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
                     const double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
 
-                    int ipitch_degree = -int(pitch_degree); // minus to be sure rows are going top to bottom
+                    int ipitch_degree = -int(pitch_degree);  // minus to be sure rows are going top to bottom
                     int iyaw_degree = int(yaw_degree);
 
                     // Store also the yaw to be able to sort left to right
@@ -1015,7 +1000,7 @@ int main(int argc, char* argv[])
                 }
             }
 
-            for(const auto it : shoot)
+            for (const auto it : shoot)
             {
                 int id = it.second.get<double>("<xmlattr>.id");
                 int bracket = it.second.get<double>("<xmlattr>.bracket");
@@ -1034,21 +1019,20 @@ int main(int argc, char* argv[])
                 const Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
                 const Eigen::AngleAxis<double> Mimage(additionalAngle - M_PI_2, Eigen::Vector3d::UnitZ());
 
-                const Eigen::Matrix3d oRc = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *
-                                            Mroll.toRotationMatrix() * Mimage.toRotationMatrix();
+                const Eigen::Matrix3d oRc =
+                  Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() * Mroll.toRotationMatrix() * Mimage.toRotationMatrix();
 
                 rotations[rank] = oRc.transpose();
             }
 
-            if(sfmData.getViews().size() != rotations.size())
+            if (sfmData.getViews().size() != rotations.size())
             {
-                ALICEVISION_LOG_ERROR(
-                    "The input SfMData has not the same number of views than the config file (sfmData views:"
-                    << sfmData.getViews().size() << ", config file rotations: " << rotations.size() << ").");
+                ALICEVISION_LOG_ERROR("The input SfMData has not the same number of views than the config file (sfmData views:"
+                                      << sfmData.getViews().size() << ", config file rotations: " << rotations.size() << ").");
                 return EXIT_FAILURE;
             }
         }
-        else if(boost::algorithm::contains(initializeCameras, "horizontal"))
+        else if (boost::algorithm::contains(initializeCameras, "horizontal"))
         {
             constexpr double zenithPitch = 0.5 * boost::math::constants::pi<double>();
             const Eigen::AngleAxis<double> zenithMpitch(zenithPitch, Eigen::Vector3d::UnitX());
@@ -1056,21 +1040,20 @@ int main(int argc, char* argv[])
             const Eigen::Matrix3d oRzenith = zenithMpitch.toRotationMatrix() * zenithMroll.toRotationMatrix();
 
             const bool withZenith = boost::algorithm::contains(initializeCameras, "zenith");
-            if(initializeCameras == "zenith+horizontal")
+            if (initializeCameras == "zenith+horizontal")
             {
                 ALICEVISION_LOG_TRACE("Add zenith first");
                 rotations[rotations.size()] = oRzenith.transpose();
             }
 
             const std::size_t nbHorizontalViews = sfmData.getViews().size() - int(withZenith);
-            for(int x = 0; x < nbHorizontalViews; ++x)
+            for (int x = 0; x < nbHorizontalViews; ++x)
             {
                 double yaw = 0;
-                if(nbHorizontalViews > 1)
+                if (nbHorizontalViews > 1)
                 {
                     // Vary horizontally between -180 and +180 deg
-                    yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() /
-                          double(nbHorizontalViews);
+                    yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() / double(nbHorizontalViews);
                 }
 
                 const Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
@@ -1081,15 +1064,15 @@ int main(int argc, char* argv[])
                 ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw);
                 rotations[rotations.size()] = oRc.transpose();
             }
-            if(initializeCameras == "horizontal+zenith")
+            if (initializeCameras == "horizontal+zenith")
             {
                 ALICEVISION_LOG_TRACE("Add zenith");
                 rotations[rotations.size()] = oRzenith.transpose();
             }
         }
-        else if(initializeCameras == "spherical" || (initializeCameras.empty() && !nbViewsPerLineString.empty()))
+        else if (initializeCameras == "spherical" || (initializeCameras.empty() && !nbViewsPerLineString.empty()))
         {
-            if(nbViewsPerLineString.empty())
+            if (nbViewsPerLineString.empty())
             {
                 ALICEVISION_LOG_ERROR("Init cameras from Sperical, but 'nbViewsPerLine' is not set.");
                 return EXIT_FAILURE;
@@ -1101,9 +1084,9 @@ int main(int argc, char* argv[])
             std::vector<int> nbViewsPerLine;
             int nbAutoSize = 0;
             int sum = 0;
-            for(const std::string& nbViewsStr : nbViewsStrPerLine)
+            for (const std::string& nbViewsStr : nbViewsStrPerLine)
             {
-                if(nbViewsStr == "*")
+                if (nbViewsStr == "*")
                 {
                     nbViewsPerLine.push_back(-1);
                     ++nbAutoSize;
@@ -1112,7 +1095,7 @@ int main(int argc, char* argv[])
                 {
                     int v = boost::lexical_cast<int>(nbViewsStr);
                     nbViewsPerLine.push_back(v);
-                    if(v == -1)
+                    if (v == -1)
                     {
                         ++nbAutoSize;
                     }
@@ -1122,49 +1105,47 @@ int main(int argc, char* argv[])
                     }
                 }
             }
-            if(sum > totalNbViews)
+            if (sum > totalNbViews)
             {
                 ALICEVISION_LOG_ERROR("The input SfMData has less cameras declared than the number of cameras declared "
                                       "in the expression (sfmData views:"
                                       << sfmData.getViews().size() << ", expression sum: " << sum << ").");
                 return EXIT_FAILURE;
             }
-            if(nbAutoSize > 0)
+            if (nbAutoSize > 0)
             {
                 std::replace(nbViewsPerLine.begin(), nbViewsPerLine.end(), -1, (totalNbViews - sum) / nbAutoSize);
             }
-            if(nbViewsPerLine.empty())
+            if (nbViewsPerLine.empty())
             {
                 // If no expression assume that it is a pure rotation around one axis
                 nbViewsPerLine.push_back(totalNbViews);
             }
             const std::size_t newSum = std::accumulate(nbViewsPerLine.begin(), nbViewsPerLine.end(), 0);
 
-            if(newSum != totalNbViews)
+            if (newSum != totalNbViews)
             {
-                ALICEVISION_LOG_ERROR(
-                    "The number of cameras in the input SfMData does not match with the number of cameras declared "
-                    "in the expression (sfmData views:"
-                    << sfmData.getViews().size() << ", expression sum: " << newSum << ").");
+                ALICEVISION_LOG_ERROR("The number of cameras in the input SfMData does not match with the number of cameras declared "
+                                      "in the expression (sfmData views:"
+                                      << sfmData.getViews().size() << ", expression sum: " << newSum << ").");
                 return EXIT_FAILURE;
             }
 
             int i = 0;
-            for(int y = 0; y < nbViewsPerLine.size(); ++y)
+            for (int y = 0; y < nbViewsPerLine.size(); ++y)
             {
                 double pitch = 0;
-                if(nbViewsPerLine.size() > 1)
+                if (nbViewsPerLine.size() > 1)
                 {
                     // Vary vertically between -90 and +90 deg
-                    pitch = (-0.5 * boost::math::constants::pi<double>()) +
-                            y * boost::math::constants::pi<double>() / double(nbViewsPerLine.size());
+                    pitch = (-0.5 * boost::math::constants::pi<double>()) + y * boost::math::constants::pi<double>() / double(nbViewsPerLine.size());
                 }
 
                 const int nbViews = nbViewsPerLine[y];
-                for(int x = 0; x < nbViews; ++x)
+                for (int x = 0; x < nbViews; ++x)
                 {
                     double yaw = 0;
-                    if(nbViews > 1)
+                    if (nbViews > 1)
                     {
                         // Vary horizontally between -180 and +180 deg
                         yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() / double(nbViews);
@@ -1175,11 +1156,9 @@ int main(int argc, char* argv[])
                     const Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
                     const Eigen::AngleAxis<double> Mroll(roll + additionalAngle, Eigen::Vector3d::UnitZ());
 
-                    const Eigen::Matrix3d oRc =
-                        Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() * Mroll.toRotationMatrix();
+                    const Eigen::Matrix3d oRc = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() * Mroll.toRotationMatrix();
 
-                    ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw << ", pitch=" << pitch << ", roll=" << roll
-                                                               << ".");
+                    ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw << ", pitch=" << pitch << ", roll=" << roll << ".");
                     rotations[i++] = oRc.transpose();
                 }
             }
@@ -1187,11 +1166,11 @@ int main(int argc, char* argv[])
 
         std::map<int, Contact> contacts;
 
-        if(!rotations.empty())
+        if (!rotations.empty())
         {
             ALICEVISION_LOG_TRACE("Apply rotations from nbViewsPerLine expressions: " << nbViewsPerLineString << ".");
 
-            if(rotations.size() != sfmData.getViews().size())
+            if (rotations.size() != sfmData.getViews().size())
             {
                 ALICEVISION_LOG_ERROR("The number of cameras in the input SfMData does not match with the number of "
                                       "rotations to apply (sfmData nb views:"
@@ -1203,7 +1182,7 @@ int main(int argc, char* argv[])
             // The xml file describe rotations for views which are not correlated with AliceVision views.
             // We assume that the order of the xml view ids correspond to the lexicographic order of the image names.
             std::vector<std::pair<std::string, int>> namesWithRank;
-            for(const auto& v : sfmData.getViews())
+            for (const auto& v : sfmData.getViews())
             {
                 fs::path path_image(v.second->getImage().getImagePath());
                 namesWithRank.push_back(std::make_pair(path_image.stem().string(), v.first));
@@ -1211,12 +1190,12 @@ int main(int argc, char* argv[])
             std::sort(namesWithRank.begin(), namesWithRank.end());
 
             // If we are trying to build a contact sheet
-            if(contactSheetInfo.size() > 0)
+            if (contactSheetInfo.size() > 0)
             {
                 // Fill information in contact sheet
-                for(auto& rowpair : contactSheetInfo)
+                for (auto& rowpair : contactSheetInfo)
                 {
-                    for(auto& item : rowpair.second)
+                    for (auto& item : rowpair.second)
                     {
                         int rank = item.second.rank;
                         IndexT viewId = namesWithRank[rank].second;
@@ -1231,16 +1210,16 @@ int main(int argc, char* argv[])
                 }
 
                 image::Image<image::RGBfColor> contactSheetImage;
-                if(buildContactSheetImage(contactSheetImage, contactSheetInfo, contactSheetItemMaxSize))
+                if (buildContactSheetImage(contactSheetImage, contactSheetInfo, contactSheetItemMaxSize))
                 {
-                    image::writeImage(
-                        (fs::path(sfmOutputDataFilepath).parent_path() / "contactSheetImage.jpg").string(),
-                        contactSheetImage, image::ImageWriteOptions());
+                    image::writeImage((fs::path(sfmOutputDataFilepath).parent_path() / "contactSheetImage.jpg").string(),
+                                      contactSheetImage,
+                                      image::ImageWriteOptions());
                 }
             }
 
             size_t index = 0;
-            for(const auto& item_rotation : rotations)
+            for (const auto& item_rotation : rotations)
             {
                 IndexT viewIdx = namesWithRank[index].second;
                 const sfmData::View& v = sfmData.getView(viewIdx);
@@ -1266,7 +1245,7 @@ int main(int argc, char* argv[])
 
                 const Eigen::Matrix3d viewRotation = Morientation.toRotationMatrix().transpose() * item_rotation.second;
 
-                if(viewRotation.trace() != 0)
+                if (viewRotation.trace() != 0)
                 {
                     sfmData::CameraPose pose(geometry::Pose3(viewRotation, Eigen::Vector3d::Zero()));
                     sfmData.setAbsolutePose(viewIdx, pose);
@@ -1276,26 +1255,22 @@ int main(int argc, char* argv[])
         }
     }
 
-    if(useFisheye)
+    if (useFisheye)
     {
         sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
-        for(auto& intrinsic_pair : intrinsics)
+        for (auto& intrinsic_pair : intrinsics)
         {
             std::shared_ptr<camera::IntrinsicBase>& intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicSO =
-                std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
-            std::shared_ptr<camera::Equidistant> equidistant =
-                std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
+            std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicSO = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
+            std::shared_ptr<camera::Equidistant> equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
 
-            if(intrinsicSO != nullptr && equidistant == nullptr)
+            if (intrinsicSO != nullptr && equidistant == nullptr)
             {
-                ALICEVISION_LOG_INFO("Replace intrinsic " << intrinsic_pair.first << " of type "
-                                                          << intrinsic->getTypeStr()
+                ALICEVISION_LOG_INFO("Replace intrinsic " << intrinsic_pair.first << " of type " << intrinsic->getTypeStr()
                                                           << " to an Equidistant camera model.");
                 // convert non-Equidistant intrinsics to Equidistant
                 std::shared_ptr<camera::Equidistant> newEquidistant =
-                    std::dynamic_pointer_cast<camera::Equidistant>(
-                        camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3));
+                  std::dynamic_pointer_cast<camera::Equidistant>(camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3));
 
                 newEquidistant->copyFrom(*intrinsicSO);
                 // "radius" and "center" will be set later from the input parameters in another loop
@@ -1309,44 +1284,44 @@ int main(int argc, char* argv[])
     {
         int equidistantCount = 0;
 
-        if(useFisheye && estimateFisheyeCircle)
+        if (useFisheye && estimateFisheyeCircle)
         {
-            if(sfmData.getIntrinsics().size() != 1)
+            if (sfmData.getIntrinsics().size() != 1)
             {
                 ALICEVISION_LOG_ERROR("Only one intrinsic allowed (" << sfmData.getIntrinsics().size() << " found)");
                 return EXIT_FAILURE;
             }
 
             std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().begin()->second;
-            if(!intrinsic)
+            if (!intrinsic)
             {
                 ALICEVISION_LOG_ERROR("No valid intrinsic");
                 return EXIT_FAILURE;
             }
 
-            if(camera::isEquidistant(intrinsic->getType()))
+            if (camera::isEquidistant(intrinsic->getType()))
             {
                 CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
-                if(debugFisheyeCircleEstimation)
+                if (debugFisheyeCircleEstimation)
                 {
                     fs::path path(sfmOutputDataFilepath);
                     detector.setDebugDirectory(path.parent_path().string());
                 }
-                for(const auto& v : sfmData.getViews())
+                for (const auto& v : sfmData.getViews())
                 {
                     // Read original image
                     image::Image<float> grayscale;
                     image::readImage(v.second->getImage().getImagePath(), grayscale, image::EImageColorSpace::SRGB);
 
                     const bool res = detector.appendImage(grayscale);
-                    if(!res)
+                    if (!res)
                     {
                         ALICEVISION_LOG_ERROR("Image is incompatible with fisheye detection");
                         return EXIT_FAILURE;
                     }
                 }
 
-                if(!detector.process())
+                if (!detector.process())
                 {
                     ALICEVISION_LOG_ERROR("Failed to find circle");
                     return EXIT_FAILURE;
@@ -1368,24 +1343,21 @@ int main(int argc, char* argv[])
         }
 
         sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
-        for(const auto& intrinsic_pair : intrinsics)
+        for (const auto& intrinsic_pair : intrinsics)
         {
             std::shared_ptr<camera::IntrinsicBase> intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::Equidistant> equidistant =
-                std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
-            if(!equidistant)
+            std::shared_ptr<camera::Equidistant> equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
+            if (!equidistant)
             {
                 // skip non equidistant cameras
                 continue;
             }
-            ALICEVISION_LOG_INFO("Update Equidistant camera intrinsic " << intrinsic_pair.first
-                                                                        << " with center and offset.");
+            ALICEVISION_LOG_INFO("Update Equidistant camera intrinsic " << intrinsic_pair.first << " with center and offset.");
 
             equidistant->setCircleCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset(0));
             equidistant->setCircleCenterY(double(equidistant->h()) / 2.0 + fisheyeCenterOffset(1));
 
-            equidistant->setCircleRadius(fisheyeRadius / 100.0 * 0.5 *
-                                         std::min(double(equidistant->w()), double(equidistant->h())));
+            equidistant->setCircleRadius(fisheyeRadius / 100.0 * 0.5 * std::min(double(equidistant->w()), double(equidistant->h())));
             ++equidistantCount;
         }
 
@@ -1393,7 +1365,7 @@ int main(int argc, char* argv[])
     }
 
     ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
-    if(!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be write.");
         return EXIT_FAILURE;

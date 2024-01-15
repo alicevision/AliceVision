@@ -20,7 +20,6 @@
 #include <sstream>
 #include <vector>
 
-
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -34,10 +33,10 @@ namespace fs = std::filesystem;
 /**
  * @brief Alignment method enum
  */
-enum class EObject: unsigned char
+enum class EObject : unsigned char
 {
-  CAMERAS,
-  LANDMARKS
+    CAMERAS,
+    LANDMARKS
 };
 
 /**
@@ -47,12 +46,14 @@ enum class EObject: unsigned char
  */
 std::string EObject_enumToString(EObject obj)
 {
-  switch(obj)
-  {
-    case EObject::CAMERAS:     return "cameras";
-    case EObject::LANDMARKS:   return "landmarks";
-  }
-  throw std::out_of_range("Invalid EAlignmentMethod enum");
+    switch (obj)
+    {
+        case EObject::CAMERAS:
+            return "cameras";
+        case EObject::LANDMARKS:
+            return "landmarks";
+    }
+    throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
 
 /**
@@ -62,14 +63,15 @@ std::string EObject_enumToString(EObject obj)
  */
 EObject EObject_stringToEnum(const std::string& alignmentMethod)
 {
-  std::string method = alignmentMethod;
-  std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+    std::string method = alignmentMethod;
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
-  if(method == "landmarks")      return EObject::LANDMARKS;
-  if(method == "cameras")   return EObject::CAMERAS;
-  throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
+    if (method == "landmarks")
+        return EObject::LANDMARKS;
+    if (method == "cameras")
+        return EObject::CAMERAS;
+    throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
-
 
 inline std::istream& operator>>(std::istream& in, EObject& alignment)
 {
@@ -79,20 +81,19 @@ inline std::istream& operator>>(std::istream& in, EObject& alignment)
     return in;
 }
 
-inline std::ostream& operator<<(std::ostream& os, EObject e)
-{
-    return os << EObject_enumToString(e);
-}
+inline std::ostream& operator<<(std::ostream& os, EObject e) { return os << EObject_enumToString(e); }
 
-
-void extractLandmarksPositions(std::vector<std::pair<std::string, Vec3>>& outputPositions, const sfmData::SfMData& sfmData, const std::vector<std::string>& search, const std::vector<feature::EImageDescriberType>& landmarksDescriberTypes)
+void extractLandmarksPositions(std::vector<std::pair<std::string, Vec3>>& outputPositions,
+                               const sfmData::SfMData& sfmData,
+                               const std::vector<std::string>& search,
+                               const std::vector<feature::EImageDescriberType>& landmarksDescriberTypes)
 {
     const std::set<feature::EImageDescriberType> isCCTag = {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-      feature::EImageDescriberType::CCTAG3,
-      feature::EImageDescriberType::CCTAG4
+        feature::EImageDescriberType::CCTAG3,
+        feature::EImageDescriberType::CCTAG4
 #endif
-      };
+    };
     const std::set<feature::EImageDescriberType> descTypes(landmarksDescriberTypes.begin(), landmarksDescriberTypes.end());
     std::set<IndexT> searchIdx;
     for (const std::string& s : search)
@@ -105,26 +106,27 @@ void extractLandmarksPositions(std::vector<std::pair<std::string, Vec3>>& output
         if (descTypes.count(landmarkIt.second.descType))
         {
             bool isMarker = isCCTag.count(landmarkIt.second.descType);
-            if (searchIdx.empty() ||
-                (isMarker ? searchIdx.count(landmarkIt.second.rgb.r()) : searchIdx.count(landmarkIt.first))
-                )
+            if (searchIdx.empty() || (isMarker ? searchIdx.count(landmarkIt.second.rgb.r()) : searchIdx.count(landmarkIt.first)))
             {
-                outputPositions.push_back(std::make_pair(std::to_string(isMarker ? landmarkIt.second.rgb.r() : landmarkIt.first), landmarkIt.second.X));
+                outputPositions.push_back(
+                  std::make_pair(std::to_string(isMarker ? landmarkIt.second.rgb.r() : landmarkIt.first), landmarkIt.second.X));
             }
         }
     }
 }
 
-void extractCamerasPositions(std::vector<std::pair<std::string, Vec3>>& outputPositions, const sfmData::SfMData& sfmData, const std::vector<std::string>& search)
+void extractCamerasPositions(std::vector<std::pair<std::string, Vec3>>& outputPositions,
+                             const sfmData::SfMData& sfmData,
+                             const std::vector<std::string>& search)
 {
     std::set<std::string> searchSet(search.begin(), search.end());
 
-    for (const auto& viewIt: sfmData.getViews())
+    for (const auto& viewIt : sfmData.getViews())
     {
         if (!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
             continue;
         const std::string viewIdStr = std::to_string(viewIt.second->getViewId());
-        if(searchSet.count(viewIdStr))
+        if (searchSet.count(viewIdStr))
         {
             outputPositions.push_back(std::make_pair(viewIdStr, sfmData.getPose(*viewIt.second).getTransform().center()));
             continue;
@@ -132,22 +134,22 @@ void extractCamerasPositions(std::vector<std::pair<std::string, Vec3>>& outputPo
         std::string stem = fs::path(viewIt.second->getImage().getImagePath()).stem().string();
         if (searchSet.empty() || searchSet.count(stem))
         {
-            outputPositions.push_back(std::make_pair(viewIt.second->getImage().getImagePath(), sfmData.getPose(*viewIt.second).getTransform().center()));
+            outputPositions.push_back(
+              std::make_pair(viewIt.second->getImage().getImagePath(), sfmData.getPose(*viewIt.second).getTransform().center()));
         }
     }
 }
 
-
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  EObject objectType = EObject::LANDMARKS;
+    // command-line parameters
+    std::string sfmDataFilename;
+    EObject objectType = EObject::LANDMARKS;
 
-  // user optional parameters
-  std::string objectA;
-  std::string objectB;
-  std::string landmarksDescriberTypesName;
+    // user optional parameters
+    std::string objectA;
+    std::string objectB;
+    std::string landmarksDescriberTypesName;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -175,61 +177,61 @@ int main(int argc, char **argv)
           "Use all of them if empty\n" + feature::EImageDescriberType_informations()).c_str());
     // clang-format on
 
-  CmdLine cmdline("AliceVision sfmDistances");
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline("AliceVision sfmDistances");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
-  std::vector<feature::EImageDescriberType> landmarksDescriberTypes = feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName);
+    std::vector<feature::EImageDescriberType> landmarksDescriberTypes = feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName);
 
-  // Load input scene
-  sfmData::SfMData sfmDataIn;
-  if(!sfmDataIO::load(sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
-    return EXIT_FAILURE;
-  }
+    // Load input scene
+    sfmData::SfMData sfmDataIn;
+    if (!sfmDataIO::load(sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
+        return EXIT_FAILURE;
+    }
 
-  std::vector<std::pair<std::string, Vec3>> positionsA;
-  std::vector<std::pair<std::string, Vec3>> positionsB;
+    std::vector<std::pair<std::string, Vec3>> positionsA;
+    std::vector<std::pair<std::string, Vec3>> positionsB;
 
-  std::vector<std::string> inputA;
-  std::vector<std::string> inputB;
+    std::vector<std::string> inputA;
+    std::vector<std::string> inputB;
 
-  if(!objectA.empty())
-      boost::split(inputA, objectA, boost::algorithm::is_any_of(","));
-  if (!objectB.empty())
-      boost::split(inputB, objectB, boost::algorithm::is_any_of(","));
+    if (!objectA.empty())
+        boost::split(inputA, objectA, boost::algorithm::is_any_of(","));
+    if (!objectB.empty())
+        boost::split(inputB, objectB, boost::algorithm::is_any_of(","));
 
-  switch (objectType)
-  {
-      case EObject::CAMERAS:
-      {
-          std::cout << "== Cameras ==" << std::endl;
-          extractCamerasPositions(positionsA, sfmDataIn, inputA);
-          extractCamerasPositions(positionsB, sfmDataIn, inputB);
-          break;
-      }
-      case EObject::LANDMARKS:
-      {
-          std::cout << "== Landmarks ==" << std::endl;
-          extractLandmarksPositions(positionsA, sfmDataIn, inputA, landmarksDescriberTypes);
-          extractLandmarksPositions(positionsB, sfmDataIn, inputB, landmarksDescriberTypes);
-          break;
-      }
-  }
+    switch (objectType)
+    {
+        case EObject::CAMERAS:
+        {
+            std::cout << "== Cameras ==" << std::endl;
+            extractCamerasPositions(positionsA, sfmDataIn, inputA);
+            extractCamerasPositions(positionsB, sfmDataIn, inputB);
+            break;
+        }
+        case EObject::LANDMARKS:
+        {
+            std::cout << "== Landmarks ==" << std::endl;
+            extractLandmarksPositions(positionsA, sfmDataIn, inputA, landmarksDescriberTypes);
+            extractLandmarksPositions(positionsB, sfmDataIn, inputB, landmarksDescriberTypes);
+            break;
+        }
+    }
 
-  for (const auto& a : positionsA)
-  {
-      for (const auto& b : positionsB)
-      {
-          if(a.first != b.first)
-              std::cout << a.first << " <=> " << b.first << ": " << (b.second - a.second).norm() << std::endl;
-      }
-  }
+    for (const auto& a : positionsA)
+    {
+        for (const auto& b : positionsB)
+        {
+            if (a.first != b.first)
+                std::cout << a.first << " <=> " << b.first << ": " << (b.second - a.second).norm() << std::endl;
+        }
+    }
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

@@ -29,7 +29,6 @@
 
 #include <flann/algorithms/dist.h>
 
-
 #include <algorithm>
 #include <chrono>
 #include <filesystem>

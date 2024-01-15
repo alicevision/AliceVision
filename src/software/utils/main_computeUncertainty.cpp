@@ -31,15 +31,14 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::sfmDataIO;
 namespace po = boost::program_options;
 
-
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string outSfMDataFilename;
-  std::string outputStats;
-  std::string algorithm = cov::EAlgorithm_enumToString(cov::eAlgorithmSvdTaylorExpansion);
-  bool debug = false;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string outSfMDataFilename;
+    std::string outputStats;
+    std::string algorithm = cov::EAlgorithm_enumToString(cov::eAlgorithmSvdTaylorExpansion);
+    bool debug = false;
 
     // clang-format off
     params.add_options()
@@ -57,104 +56,103 @@ int aliceVision_main(int argc, char **argv)
          "Verbosity level (fatal,  error, warning, info, debug, trace).");
     // clang-format on
 
-  CmdLine cmdline("AliceVision computeUncertainty");
-  cmdline.add(params);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
-  
-  if (sfmDataFilename.empty() ||
-      outSfMDataFilename.empty())
-  {
-    std::cerr << "Invalid input or output filename." << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  // Load input scene
-  SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(ALL)))
-  {
-    std::cerr << std::endl
-      << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  ceres::CRSMatrix jacobian;
-  {
-    BundleAdjustmentCeres bundleAdjustmentObj;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
-    bundleAdjustmentObj.createJacobian(sfmData, refineOptions, jacobian);
-  }
-
-  {
-    cov::Options options;
-    // Configure covariance engine (find the indexes of the most distatnt points etc.)
-    // setPts2Fix(opt, mutable_points.size() / 3, mutable_points.data());
-    options._numCams = sfmData.getValidViews().size();
-    options._camParams = 6;
-    options._numPoints = sfmData.getLandmarks().size();
-    options._numObs = jacobian.num_rows / 2;
-    options._algorithm = cov::EAlgorithm_stringToEnum(algorithm);
-    options._epsilon = 1e-10;
-    options._lambda = -1;
-    options._svdRemoveN = -1;
-    options._maxIterTE = -1;
-    options._debug = debug;
-
-    cov::Statistic statistic;
-    std::vector<double> points3D;
-    points3D.reserve(sfmData.getLandmarks().size() * 3);
-    for(auto& landmarkIt: sfmData.getLandmarks())
+    CmdLine cmdline("AliceVision computeUncertainty");
+    cmdline.add(params);
+    if (!cmdline.execute(argc, argv))
     {
-      double* p = landmarkIt.second.X.data();
-      points3D.push_back(p[0]);
-      points3D.push_back(p[1]);
-      points3D.push_back(p[2]);
+        return EXIT_FAILURE;
     }
 
-    cov::Uncertainty uncertainty;
+    if (sfmDataFilename.empty() || outSfMDataFilename.empty())
+    {
+        std::cerr << "Invalid input or output filename." << std::endl;
+        return EXIT_FAILURE;
+    }
 
-    getCovariances(options, statistic, jacobian, &points3D[0], uncertainty);
+    // Load input scene
+    SfMData sfmData;
+    if (!Load(sfmData, sfmDataFilename, ESfMData(ALL)))
+    {
+        std::cerr << std::endl << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
+        return EXIT_FAILURE;
+    }
 
-    if(!outputStats.empty())
-      saveResults(outputStats, options, statistic, uncertainty);
+    ceres::CRSMatrix jacobian;
+    {
+        BundleAdjustmentCeres bundleAdjustmentObj;
+        BundleAdjustment::ERefineOptions refineOptions =
+          BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
+        bundleAdjustmentObj.createJacobian(sfmData, refineOptions, jacobian);
+    }
 
     {
-      const std::vector<double> posesUncertainty = uncertainty.getCamerasUncEigenValues();
+        cov::Options options;
+        // Configure covariance engine (find the indexes of the most distatnt points etc.)
+        // setPts2Fix(opt, mutable_points.size() / 3, mutable_points.data());
+        options._numCams = sfmData.getValidViews().size();
+        options._camParams = 6;
+        options._numPoints = sfmData.getLandmarks().size();
+        options._numObs = jacobian.num_rows / 2;
+        options._algorithm = cov::EAlgorithm_stringToEnum(algorithm);
+        options._epsilon = 1e-10;
+        options._lambda = -1;
+        options._svdRemoveN = -1;
+        options._maxIterTE = -1;
+        options._debug = debug;
 
-      std::size_t indexPose = 0;
-      for (Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose, ++indexPose)
-      {
-        const IndexT idPose = itPose->first;
-        Vec6& u = sfmData._posesUncertainty[idPose]; // create uncertainty entry
-        const double* uIn = &posesUncertainty[indexPose*6];
-        u << uIn[0],  uIn[1],  uIn[2],  uIn[3],  uIn[4],  uIn[5];
-      }
+        cov::Statistic statistic;
+        std::vector<double> points3D;
+        points3D.reserve(sfmData.getLandmarks().size() * 3);
+        for (auto& landmarkIt : sfmData.getLandmarks())
+        {
+            double* p = landmarkIt.second.X.data();
+            points3D.push_back(p[0]);
+            points3D.push_back(p[1]);
+            points3D.push_back(p[2]);
+        }
+
+        cov::Uncertainty uncertainty;
+
+        getCovariances(options, statistic, jacobian, &points3D[0], uncertainty);
+
+        if (!outputStats.empty())
+            saveResults(outputStats, options, statistic, uncertainty);
+
+        {
+            const std::vector<double> posesUncertainty = uncertainty.getCamerasUncEigenValues();
+
+            std::size_t indexPose = 0;
+            for (Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose, ++indexPose)
+            {
+                const IndexT idPose = itPose->first;
+                Vec6& u = sfmData._posesUncertainty[idPose];  // create uncertainty entry
+                const double* uIn = &posesUncertainty[indexPose * 6];
+                u << uIn[0], uIn[1], uIn[2], uIn[3], uIn[4], uIn[5];
+            }
+        }
+        {
+            const std::vector<double> landmarksUncertainty = uncertainty.getPointsUncEigenValues();
+
+            std::size_t indexLandmark = 0;
+            for (Landmarks::const_iterator itLandmark = sfmData.getLandmarks().begin(); itLandmark != sfmData.getLandmarks().end();
+                 ++itLandmark, ++indexLandmark)
+            {
+                const IndexT idLandmark = itLandmark->first;
+                Vec3& u = sfmData._landmarksUncertainty[idLandmark];  // create uncertainty entry
+                const double* uIn = &landmarksUncertainty[indexLandmark * 3];
+                u << uIn[0], uIn[1], uIn[2];
+            }
+        }
     }
+
+    std::cout << "Save into \"" << outSfMDataFilename << "\"" << std::endl;
+
+    // Export the SfMData scene in the expected format
+    if (!Save(sfmData, outSfMDataFilename, ESfMData(ALL)))
     {
-      const std::vector<double> landmarksUncertainty = uncertainty.getPointsUncEigenValues();
-
-      std::size_t indexLandmark = 0;
-      for (Landmarks::const_iterator itLandmark = sfmData.getLandmarks().begin(); itLandmark != sfmData.getLandmarks().end(); ++itLandmark, ++indexLandmark)
-      {
-        const IndexT idLandmark = itLandmark->first;
-        Vec3& u = sfmData._landmarksUncertainty[idLandmark]; // create uncertainty entry
-        const double* uIn = &landmarksUncertainty[indexLandmark*3];
-        u << uIn[0],  uIn[1],  uIn[2];
-      }
+        std::cerr << std::endl << "An error occurred while trying to save \"" << outSfMDataFilename << "\"." << std::endl;
+        return EXIT_FAILURE;
     }
-  }
 
-  std::cout << "Save into \"" << outSfMDataFilename << "\"" << std::endl;
-  
-  // Export the SfMData scene in the expected format
-  if (!Save(sfmData, outSfMDataFilename, ESfMData(ALL)))
-  {
-    std::cerr << std::endl
-      << "An error occurred while trying to save \"" << outSfMDataFilename << "\"." << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

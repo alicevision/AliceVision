@@ -152,7 +152,8 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
                 {
                     // this is weird but it could happen when two features are really close to each other (?)
                     ALICEVISION_LOG_DEBUG("Point 3D " << match.landmarkId << " has multiple features "
-                                                      << "in the same view " << viewID << ", current size of obs: " << landmark.getObservations().size());
+                                                      << "in the same view " << viewID
+                                                      << ", current size of obs: " << landmark.getObservations().size());
                     ALICEVISION_LOG_DEBUG("its associated features are: ");
                     for (std::size_t i = 0; i < matches.size(); ++i)
                     {

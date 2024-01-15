@@ -11,7 +11,7 @@ namespace aliceVision {
 namespace sfmData {
 
 template<class T>
-auto cloneT(T * ptr, int val) -> decltype(ptr->clone())
+auto cloneT(T* ptr, int val) -> decltype(ptr->clone())
 {
     if (ptr)
     {
@@ -22,7 +22,7 @@ auto cloneT(T * ptr, int val) -> decltype(ptr->clone())
 }
 
 template<class T>
-T * cloneT(T * ptr, long val)
+T* cloneT(T* ptr, long val)
 {
     if (ptr)
     {
@@ -36,14 +36,13 @@ template<class T>
 class HashMapPtr : public HashMap<IndexT, std::shared_ptr<T>>
 {
   public:
-    HashMapPtr<T>() : HashMap<IndexT, std::shared_ptr<T>>()
-    {
+    HashMapPtr<T>()
+      : HashMap<IndexT, std::shared_ptr<T>>()
+    {}
 
-    }
-
-    HashMapPtr(const HashMapPtr<T> & other)
+    HashMapPtr(const HashMapPtr<T>& other)
     {
-        for (const auto & pair : other)
+        for (const auto& pair : other)
         {
             this->insert({pair.first, std::shared_ptr<T>(cloneT(pair.second.get(), 0))});
         }

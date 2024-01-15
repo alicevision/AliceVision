@@ -10,7 +10,6 @@
 #include <aliceVision/stl/hash.hpp>
 #include <aliceVision/system/main.hpp>
 
-
 #include <boost/program_options.hpp>
 
 #include <string>
@@ -25,8 +24,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
     std::string sfmDataFilename1, sfmDataFilename2;
@@ -64,10 +62,10 @@ int aliceVision_main(int argc, char **argv)
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename2 << "' cannot be read");
         return EXIT_FAILURE;
     }
-    
+
     {
-        auto & views1 = sfmData1.getViews();
-        auto & views2 = sfmData2.getViews();
+        auto& views1 = sfmData1.getViews();
+        auto& views2 = sfmData2.getViews();
         const size_t totalSize = views1.size() + views2.size();
 
         views1.insert(views2.begin(), views2.end());
@@ -79,8 +77,8 @@ int aliceVision_main(int argc, char **argv)
     }
 
     {
-        auto & intrinsics1 = sfmData1.getIntrinsics();
-        auto & intrinsics2 = sfmData2.getIntrinsics();
+        auto& intrinsics1 = sfmData1.getIntrinsics();
+        auto& intrinsics2 = sfmData2.getIntrinsics();
         const size_t totalSize = intrinsics1.size() + intrinsics2.size();
 
         intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());
@@ -92,8 +90,8 @@ int aliceVision_main(int argc, char **argv)
     }
 
     {
-        auto & rigs1 = sfmData1.getRigs();
-        auto & rigs2 = sfmData2.getRigs();
+        auto& rigs1 = sfmData1.getRigs();
+        auto& rigs2 = sfmData2.getRigs();
         const size_t totalSize = rigs1.size() + rigs2.size();
 
         rigs1.insert(rigs2.begin(), rigs2.end());
@@ -105,8 +103,8 @@ int aliceVision_main(int argc, char **argv)
     }
 
     {
-        auto & landmarks1 = sfmData1.getLandmarks();
-        auto & landmarks2 = sfmData2.getLandmarks();
+        auto& landmarks1 = sfmData1.getLandmarks();
+        auto& landmarks2 = sfmData2.getLandmarks();
         const size_t totalSize = landmarks1.size() + landmarks2.size();
 
         landmarks1.insert(landmarks2.begin(), landmarks2.end());
