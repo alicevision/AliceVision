@@ -14,7 +14,6 @@
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
-#include <aliceVision/sfmData/HashMapPtr.hpp>
 #include <aliceVision/types.hpp>
 
 #include <stdexcept>
@@ -25,16 +24,16 @@ namespace aliceVision {
 namespace sfmData {
 
 /// Define a collection of View
-using Views = HashMapPtr<View>;
+using Views = std::map<IndexT, std::shared_ptr<View>>;
 
 /// Define a collection of Image Info
-using ImageInfos = HashMapPtr<ImageInfo>;
+using ImageInfos = std::map<IndexT, std::shared_ptr<ImageInfo>>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
 using Poses = std::map<IndexT, CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
-using Intrinsics = HashMapPtr<camera::IntrinsicBase>;
+using Intrinsics = std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>>;
 
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = std::map<IndexT, Landmark>;
