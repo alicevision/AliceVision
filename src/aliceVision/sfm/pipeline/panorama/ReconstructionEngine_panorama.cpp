@@ -284,7 +284,7 @@ bool ReconstructionEngine_panorama::process()
     aliceVision::rotationAveraging::RelativeRotations relativesR;
     computeRelativeRotations(relativesR);
 
-    HashMap<IndexT, Mat3> globalRotations;
+    std::map<IndexT, Mat3> globalRotations;
     if (!computeGlobalRotations(relativesR, globalRotations))
     {
         ALICEVISION_LOG_WARNING("Panorama: Rotation Averaging failure!");
@@ -326,7 +326,7 @@ bool ReconstructionEngine_panorama::process()
 
 /// Compute from relative rotations the global rotations of the camera poses
 bool ReconstructionEngine_panorama::computeGlobalRotations(const rotationAveraging::RelativeRotations& relativesR,
-                                                           HashMap<IndexT, Mat3>& globalRotations)
+                                                           std::map<IndexT, Mat3>& globalRotations)
 {
     if (relativesR.empty())
     {

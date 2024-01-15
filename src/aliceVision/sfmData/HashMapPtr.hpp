@@ -33,11 +33,12 @@ T* cloneT(T* ptr, long val)
 }
 
 template<class T>
-class HashMapPtr : public HashMap<IndexT, std::shared_ptr<T>>
+class HashMapPtr : public std::map<IndexT, std::shared_ptr<T>>
 {
   public:
+
     HashMapPtr<T>()
-      : HashMap<IndexT, std::shared_ptr<T>>()
+      : std::map<IndexT, std::shared_ptr<T>>()
     {}
 
     HashMapPtr(const HashMapPtr<T>& other)

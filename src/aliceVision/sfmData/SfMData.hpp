@@ -31,22 +31,22 @@ using Views = HashMapPtr<View>;
 using ImageInfos = HashMapPtr<ImageInfo>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
-using Poses = HashMap<IndexT, CameraPose>;
+using Poses = std::map<IndexT, CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
 using Intrinsics = HashMapPtr<camera::IntrinsicBase>;
 
 /// Define a collection of landmarks are indexed by their TrackId
-using Landmarks = HashMap<IndexT, Landmark>;
+using Landmarks = std::map<IndexT, Landmark>;
 
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;
 
 /// Define uncertainty per pose
-using PosesUncertainty = HashMap<IndexT, Vec6>;
+using PosesUncertainty = std::map<IndexT, Vec6>;
 
 /// Define uncertainty per landmark
-using LandmarksUncertainty = HashMap<IndexT, Vec3>;
+using LandmarksUncertainty = std::map<IndexT, Vec3>;
 
 /// Define a collection of constraints
 using Constraints2D = std::vector<Constraint2D>;

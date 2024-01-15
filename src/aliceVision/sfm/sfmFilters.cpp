@@ -158,7 +158,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
     const sfmData::Landmarks& landmarks = sfmData.getLandmarks();
 
     // Count the observation poses occurrence
-    HashMap<IndexT, IndexT> posesCount;
+    std::map<IndexT, IndexT> posesCount;
 
     // Init with 0 count, undefined rig id (in order to be able to remove non referenced elements)
     for (sfmData::Poses::const_iterator itPoses = sfmData.getPoses().begin(); itPoses != sfmData.getPoses().end(); ++itPoses)
@@ -183,7 +183,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
     }
 
     // If usage count is smaller than the threshold, remove the Pose
-    for (HashMap<IndexT, IndexT>::const_iterator it = posesCount.begin(); it != posesCount.end(); ++it)
+    for (std::map<IndexT, IndexT>::const_iterator it = posesCount.begin(); it != posesCount.end(); ++it)
     {
         if (it->second < minPointsPerPose)
         {

@@ -378,7 +378,7 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
     /// Precomputed pyramid index for each trackId of each viewId.
     track::TracksPyramidPerView _map_featsPyramidPerView;
     /// Per camera confidence (A contrario estimated threshold error)
-    HashMap<IndexT, double> _map_ACThreshold;
+    std::map<IndexT, double> _map_ACThreshold;
 
     // Local Bundle Adjustment data
 

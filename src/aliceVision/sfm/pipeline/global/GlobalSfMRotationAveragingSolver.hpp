@@ -79,7 +79,7 @@ class GlobalSfMRotationAveragingSolver
              ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
              const rotationAveraging::RelativeRotations& relativeRotIn,
              const double maxAngularError,
-             HashMap<IndexT, Mat3>& mapGlobalR) const;
+             std::map<IndexT, Mat3>& mapGlobalR) const;
 
     /**
      * @brief Reject edges of the view graph that do not produce triplets with tiny

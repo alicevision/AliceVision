@@ -125,7 +125,7 @@ bool ReconstructionEngine_globalSfM::process()
     aliceVision::rotationAveraging::RelativeRotations relativesR;
     computeRelativeRotations(relativesR);
 
-    HashMap<IndexT, Mat3> globalRotations;
+    std::map<IndexT, Mat3> globalRotations;
     if (!computeGlobalRotations(relativesR, globalRotations))
     {
         ALICEVISION_LOG_WARNING("GlobalSfM:: Rotation Averaging failure!");
@@ -174,7 +174,7 @@ bool ReconstructionEngine_globalSfM::process()
 
 /// Compute from relative rotations the global rotations of the camera poses
 bool ReconstructionEngine_globalSfM::computeGlobalRotations(const rotationAveraging::RelativeRotations& relativesR,
-                                                            HashMap<IndexT, Mat3>& globalRotations)
+                                                            std::map<IndexT, Mat3>& globalRotations)
 {
     if (relativesR.empty())
         return false;
@@ -242,7 +242,7 @@ bool ReconstructionEngine_globalSfM::computeGlobalRotations(const rotationAverag
 }
 
 /// Compute/refine relative translations and compute global translations
-bool ReconstructionEngine_globalSfM::computeGlobalTranslations(const HashMap<IndexT, Mat3>& globalRotations,
+bool ReconstructionEngine_globalSfM::computeGlobalTranslations(const std::map<IndexT, Mat3>& globalRotations,
                                                                matching::PairwiseMatches& tripletWiseMatches)
 {
     // Translation averaging (compute translations & update them to a global common coordinates system)

@@ -23,9 +23,6 @@ typedef std::pair<IndexT, IndexT> Pair;
 typedef std::set<Pair> PairSet;
 typedef std::vector<Pair> PairVec;
 
-template<typename Key, typename Value>
-using HashMap = std::map<Key, Value>;
-
 struct EstimationStatus
 {
     EstimationStatus(bool valid, bool strongSupport)
