@@ -128,6 +128,8 @@ class Equidistant : public IntrinsicScaleOffsetDisto
 
     inline void setCircleCenterY(double y) { _circleCenter(1) = y; }
 
+    inline Vec2 getCircleCenter() const { return _circleCenter; }
+
     /**
      * @Brief get horizontal fov in radians
      * @return  horizontal fov in radians

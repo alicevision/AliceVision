@@ -166,6 +166,8 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
     image::Image<unsigned char> imageGrayUChar;
     image::Image<unsigned char> mask;
 
+    
+
     image::readImage(job.view().getImage().getImagePath(), imageGrayFloat, workingColorSpace);
 
     double pixelRatio = 1.0;
@@ -234,7 +236,31 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
             }
         }
 
-        if (mask.height() > 0)
+        //Get Fisheye mask
+        bool isFisheye = false;
+        Vec2 circleCenter = Vec2::Zero();
+        double circleRadius = std::numeric_limits<double>::max();
+        auto & intrinsics = _sfmData.getIntrinsics();
+        if (job.view().getIntrinsicId() != UndefinedIndexT)
+        {
+            const auto & intrinsic = intrinsics.at(job.view().getIntrinsicId());
+            const auto & equidistant = std::dynamic_pointer_cast<const camera::Equidistant>(intrinsic);
+
+            //If the current view comes from a fisheye optic
+            if (equidistant)
+            {
+                //Make sure the circle radius has been initialized before
+                if (equidistant->getCircleRadius() > 1.0)
+                {
+                    circleCenter = equidistant->getCircleCenter();
+                    circleRadius = equidistant->getCircleRadius();
+                    isFisheye = true;
+                }
+            }
+        }
+
+        //On mask or fisheye circle availability
+        if (mask.height() > 0 || isFisheye); 
         {
             std::vector<feature::FeatureInImage> selectedIndices;
             for (size_t i = 0, n = regions->RegionCount(); i != n; ++i)
@@ -243,8 +269,16 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
                 const int x = int(position.x());
                 const int y = int(position.y());
 
+
                 bool masked = false;
-                if (x < mask.width() && y < mask.height())
+
+                //Check if point lies inside potential fisheye circle
+                if ((position - circleCenter).norm() > circleRadius)
+                {
+                    masked = true;
+                }
+                //Check if the optional image mask tells us to ignore this coordinate
+                else if (x < mask.width() && y < mask.height())
                 {
                     if ((mask(y, x) == 0 && !_maskInvert) || (mask(y, x) != 0 && _maskInvert))
                     {
