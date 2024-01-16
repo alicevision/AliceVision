@@ -55,6 +55,7 @@ option(ALICEVISION_BUILD_STEREOPHOTOMETRY "Build AliceVision StereoPhotometry pa
 option(ALICEVISION_BUILD_PANORAMA "Build AliceVision panorama part" ON)
 option(ALICEVISION_BUILD_SOFTWARE "Build AliceVision command line tools." ON)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
+option(ALICEVISION_BUILD_SWIG_BINDING "Build the Python binding with SWIG." OFF)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
 
 trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
@@ -739,6 +740,22 @@ if(ALICEVISION_HAVE_CUDA)
   endif()
 endif()
 
+# ==============================================================================
+# SWIG
+# ==============================================================================
+if(ALICEVISION_BUILD_SWIG_BINDING)
+  find_package(SWIG REQUIRED)  # SWIG dependency
+  if(SWIG_FOUND)
+    include(UseSWIG)
+    message(STATUS "SWIG found.")
+  else()
+    message(SEND_ERROR "Failed to find SWIG.")
+  endif()
+
+
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)  # Python dependencies
+endif()
+
 
 # ==============================================================================
 # CCTag
@@ -927,6 +944,7 @@ message("** Build AliceVision+OpenCV samples programs: " ${ALICEVISION_HAVE_OPEN
 message("** Build UncertaintyTE: " ${ALICEVISION_HAVE_UNCERTAINTYTE})
 message("** Build MeshSDFilter: " ${ALICEVISION_HAVE_MESHSDFILTER})
 message("** Build Alembic exporter: " ${ALICEVISION_HAVE_ALEMBIC})
+message("** Build SWIG Python binding: " ${ALICEVISION_BUILD_SWIG_BINDING})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})
 message("** Use CUDA: " ${ALICEVISION_HAVE_CUDA})
@@ -948,6 +966,11 @@ if(ALICEVISION_BUILD_SFM)
   message(STATUS "COINUTILS: " ${CoinUtils_VERSION} "")
   message(STATUS "OSI: " ${Osi_VERSION} "")
   message(STATUS "LEMON: " ${LEMON_VERSION} "")
+endif()
+
+if(ALICEVISION_BUILD_SWIG_BINDING)
+  message("\n")
+  message(STATUS "SWIG: " ${SWIG_VERSION} "")
 endif()
 
 message("\n")
