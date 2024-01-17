@@ -4,16 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-%module aliceVision
+%module hdr
+%import <aliceVision/aliceVision.i>
 
-%import <aliceVision/camera/Camera.i>
-%import <aliceVision/hdr/Hdr.i>
-%import <aliceVision/sfmDataIO/SfMDataIO.i>
-%import <aliceVision/sfmData/SfMData.i>
-
-%include <aliceVision/version.hpp>
-
-%{
-#include <aliceVision/version.hpp>
-using namespace aliceVision;
-%}
+%include <aliceVision/hdr/Brackets.i>

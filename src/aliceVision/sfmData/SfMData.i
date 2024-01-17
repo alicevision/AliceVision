@@ -34,6 +34,9 @@ using namespace aliceVision::sfmData;
 %template(RotationPriors) std::vector<aliceVision::sfmData::RotationPrior>;
 %template(Views) std::map<IndexT, std::shared_ptr<aliceVision::sfmData::View>>;
 
+%template(ViewsVector) std::vector<std::shared_ptr<aliceVision::sfmData::View>>;
+%template(ViewsVectorVector) std::vector<std::vector<std::shared_ptr<aliceVision::sfmData::View>>>;
+
 
 // TODO:
 // %template(PosesUncertainty) std::map<IndexT, Vec6>;
