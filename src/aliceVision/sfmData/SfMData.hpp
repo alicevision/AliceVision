@@ -171,7 +171,7 @@ class SfMData
 
     /**
      * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
+     * @param[in] intrinsicId the ID of the intrinsic to get
      */
     const camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId) const
     {
@@ -182,7 +182,7 @@ class SfMData
 
     /**
      * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
+     * @param[in] intrinsicId the ID of the intrinsic to get
      */
     camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId)
     {
@@ -193,7 +193,7 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
+     * @param[in] intrinsicId the ID of the intrinsic to get
      */
     std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(IndexT intrinsicId)
     {
@@ -204,7 +204,7 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] v
+     * @param[in] v the view to get the intrinsic from
      */
     std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(const View& v)
     {
@@ -217,7 +217,7 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
+     * @param[in] intrinsicId the ID of the intrinsic to get
      */
     const std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(IndexT intrinsicId) const
     {
@@ -228,7 +228,7 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] v
+     * @param[in] v the view to get the intrinsic from
      */
     const std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(const View& v) const
     {
@@ -267,7 +267,7 @@ class SfMData
 
     /**
      * @brief Check if the given view have defined intrinsic and pose
-     * @param[in] viewID The given viewID
+     * @param[in] viewID The given view ID
      * @return true if intrinsic and pose defined
      */
     bool isPoseAndIntrinsicDefined(IndexT viewId) const { return isPoseAndIntrinsicDefined(_views.at(viewId).get()); }
@@ -281,7 +281,7 @@ class SfMData
 
     /**
      * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
+     * @param[in] viewId The given view ID
      * @return the corresponding view reference
      */
     const View& getView(IndexT viewId) const { return *(_views.at(viewId)); }
@@ -289,7 +289,7 @@ class SfMData
 
     /**
      * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
+     * @param[in] viewId The given view ID
      * @return the corresponding view ptr
      */
     const View::ptr getViewPtr(IndexT viewId) const { return _views.at(viewId).get(); }
@@ -297,7 +297,7 @@ class SfMData
 
     /**
      * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
+     * @param[in] viewId The given view ID
      * @return the corresponding view ptr
      */
     View::sptr getViewSharedPtr(IndexT viewId) { return _views.at(viewId); }
@@ -500,6 +500,8 @@ class SfMData
 
     /**
      * @brief Add an ancestor image
+     * @param[in] ancestorId The ID of the ancestor that will be added
+     * @param[in] image The image that will be added as the ancestor
      */
     void addAncestor(IndexT ancestorId, std::shared_ptr<ImageInfo> image) { _ancestors.emplace(ancestorId, image); }
 
