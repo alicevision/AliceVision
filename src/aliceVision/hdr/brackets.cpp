@@ -178,9 +178,9 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     return true;
 }
 
-int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
+int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& targetViews,
                       std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
-                      int offsetRefBracketIndex,
+                      const int offsetRefBracketIndex,
                       const std::string& lumaStatFilepath,
                       const double meanTargetedLuma)
 {
@@ -191,7 +191,7 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
     const int middleIndex = viewNumberPerGroup / 2;
     int targetIndex = middleIndex + offsetRefBracketIndex;
 
-    out_targetViews.clear();
+    targetViews.clear();
 
     if ((targetIndex >= 0) && (targetIndex < viewNumberPerGroup))
     {
@@ -279,7 +279,7 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetVie
             group[targetIndex]->addAncestor(v->getViewId());
         }
 
-        out_targetViews.push_back(group[targetIndex]);
+        targetViews.push_back(group[targetIndex]);
     }
     return targetIndex;
 }
