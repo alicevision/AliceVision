@@ -188,7 +188,7 @@ int aliceVision_main(int argc, char** argv)
                 sfmData::View& view = sfmData.getView(viewId);
                 sfmData::CameraPose& pose = sfmData.getPoses()[view.getPoseId()];
 
-                std::shared_ptr<camera::IntrinsicBase> intrinsicBase = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+                std::shared_ptr<camera::IntrinsicBase> intrinsicBase = sfmData.getIntrinsicSharedPtr(view.getIntrinsicId());
 
                 Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> rot(xmp.rotation.data());
 

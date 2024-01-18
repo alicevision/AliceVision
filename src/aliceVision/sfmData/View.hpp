@@ -14,9 +14,9 @@
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
 #include <aliceVision/lensCorrectionProfile/lcp.hpp>
 
-#include <aliceVision/sfmData/imageInfo.hpp>
+#include <aliceVision/sfmData/ImageInfo.hpp>
 #include <aliceVision/sfmData/exif.hpp>
-#include <aliceVision/sfmData/exposureSetting.hpp>
+#include <aliceVision/sfmData/ExposureSetting.hpp>
 
 #include <regex>
 #include <string>

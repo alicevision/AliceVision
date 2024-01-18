@@ -8,8 +8,8 @@ set(sfmData_files_headers
   uid.hpp
   colorize.hpp
   exif.hpp
-  imageInfo.hpp
-  exposureSetting.hpp
+  ImageInfo.hpp
+  ExposureSetting.hpp
   Observation.hpp
 )
 
@@ -20,7 +20,7 @@ set(sfmData_files_sources
   View.cpp
   colorize.cpp
   exif.cpp
-  imageInfo.cpp
+  ImageInfo.cpp
   Observation.cpp
 )
 

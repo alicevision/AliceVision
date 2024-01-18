@@ -77,7 +77,7 @@ int aliceVision_main(int argc, char** argv)
     for (auto& viewPair : sfmData.getViews())
     {
         const sfmData::View& view = *viewPair.second;
-        const std::shared_ptr<camera::IntrinsicBase> intrinsicPtr = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+        const std::shared_ptr<camera::IntrinsicBase> intrinsicPtr = sfmData.getIntrinsicSharedPtr(view.getIntrinsicId());
 
         if (intrinsicPtr == nullptr)
         {
