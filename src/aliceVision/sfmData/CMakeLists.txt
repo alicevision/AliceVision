@@ -9,7 +9,7 @@ set(sfmData_files_headers
   colorize.hpp
   exif.hpp
   ImageInfo.hpp
-  exposureSetting.hpp
+  ExposureSetting.hpp
   Observation.hpp
 )
 

@@ -10,7 +10,7 @@
 
 #include <aliceVision/image/dcp.hpp>
 #include <aliceVision/lensCorrectionProfile/lcp.hpp>
-#include <aliceVision/sfmData/exposureSetting.hpp>
+#include <aliceVision/sfmData/ExposureSetting.hpp>
 #include <aliceVision/sfmData/exif.hpp>
 #include <aliceVision/sensorDB/Datasheet.hpp>
 #include <aliceVision/camera/IntrinsicInitMode.hpp>

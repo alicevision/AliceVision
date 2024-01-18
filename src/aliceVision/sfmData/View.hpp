@@ -16,7 +16,7 @@
 
 #include <aliceVision/sfmData/ImageInfo.hpp>
 #include <aliceVision/sfmData/exif.hpp>
-#include <aliceVision/sfmData/exposureSetting.hpp>
+#include <aliceVision/sfmData/ExposureSetting.hpp>
 
 #include <regex>
 #include <string>
