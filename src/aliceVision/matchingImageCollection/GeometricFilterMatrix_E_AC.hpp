@@ -63,8 +63,8 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
         const sfmData::View& viewJ = sfmData->getView(J);
 
         // Check that valid cameras can be retrieved for the pair of views
-        std::shared_ptr<camera::IntrinsicBase> cam_I = sfmData->getIntrinsicsharedPtr(viewI.getIntrinsicId());
-        std::shared_ptr<camera::IntrinsicBase> cam_J = sfmData->getIntrinsicsharedPtr(viewJ.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> cam_I = sfmData->getIntrinsicSharedPtr(viewI.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> cam_J = sfmData->getIntrinsicSharedPtr(viewJ.getIntrinsicId());
 
         if (!cam_I || !cam_J)
             return EstimationStatus(false, false);

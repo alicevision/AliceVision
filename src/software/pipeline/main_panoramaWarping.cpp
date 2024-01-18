@@ -259,7 +259,7 @@ int aliceVision_main(int argc, char** argv)
 
         // Get intrinsics and extrinsics
         geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-        std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicSharedPtr(view.getIntrinsicId());
 
         // Compute coarse bounding box to make computations faster
         BoundingBox coarseBboxInitial;

@@ -139,8 +139,8 @@ void buildInitialWorld(sfmData::SfMData& sfmData,
     sfmData.setPose(refView, sfmData::CameraPose());
     sfmData.setPose(nextView, sfmData::CameraPose(geometry::Pose3(pair.R, Vec3::Zero())));
 
-    std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicsharedPtr(refView.getIntrinsicId());
-    std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicsharedPtr(nextView.getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
 
     const feature::MapFeaturesPerDesc& refFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(pair.reference);
     const feature::MapFeaturesPerDesc& nextFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(pair.next);
@@ -246,7 +246,7 @@ bool localizeNext(sfmData::SfMData& sfmData,
     sfmData::Landmarks& landmarks = sfmData.getLandmarks();
 
     const sfmData::View& newView = sfmData.getView(newViewId);
-    std::shared_ptr<camera::IntrinsicBase> newViewIntrinsics = sfmData.getIntrinsicsharedPtr(newView.getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> newViewIntrinsics = sfmData.getIntrinsicSharedPtr(newView.getIntrinsicId());
     const feature::MapFeaturesPerDesc& newViewFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(newViewId);
 
     Mat refX(3, observedTracks.size());
@@ -315,7 +315,7 @@ bool addPoints(sfmData::SfMData& sfmData,
       nextTracks.begin(), nextTracks.end(), tracksWithPoint.begin(), tracksWithPoint.end(), std::back_inserter(nextTracksNotReconstructed));
 
     const sfmData::View& newView = sfmData.getView(newViewId);
-    std::shared_ptr<camera::IntrinsicBase> newViewIntrinsics = sfmData.getIntrinsicsharedPtr(newView.getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> newViewIntrinsics = sfmData.getIntrinsicSharedPtr(newView.getIntrinsicId());
     const feature::MapFeaturesPerDesc& newViewFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(newViewId);
     const Eigen::Matrix3d new_R_world = sfmData.getPose(newView).getTransform().rotation();
 
@@ -339,7 +339,7 @@ bool addPoints(sfmData::SfMData& sfmData,
         const sfmData::View& refView = sfmData.getView(pV.first);
 
         const Eigen::Matrix3d ref_R_world = sfmData.getPose(refView).getTransform().rotation();
-        std::shared_ptr<camera::IntrinsicBase> refViewIntrinsics = sfmData.getIntrinsicsharedPtr(refView.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> refViewIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
         const feature::MapFeaturesPerDesc& refViewFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(pV.first);
 
         Eigen::Matrix3d world_R_new = new_R_world.transpose();

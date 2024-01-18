@@ -196,7 +196,7 @@ class SfMData
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
      * @param[in] intrinsicId
      */
-    std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId)
+    std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(IndexT intrinsicId)
     {
         if (_intrinsics.count(intrinsicId))
             return _intrinsics.at(intrinsicId);
@@ -207,7 +207,7 @@ class SfMData
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
      * @param[in] v
      */
-    std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(const View& v)
+    std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(const View& v)
     {
         IndexT intrinsicId = v.getIntrinsicId();
 
@@ -220,7 +220,7 @@ class SfMData
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
      * @param[in] intrinsicId
      */
-    const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId) const
+    const std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(IndexT intrinsicId) const
     {
         if (_intrinsics.count(intrinsicId))
             return _intrinsics.at(intrinsicId);
@@ -231,7 +231,7 @@ class SfMData
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
      * @param[in] v
      */
-    const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(const View& v) const
+    const std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(const View& v) const
     {
         IndexT intrinsicId = v.getIntrinsicId();
 
