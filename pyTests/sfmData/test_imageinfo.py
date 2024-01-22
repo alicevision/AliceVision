@@ -1,5 +1,5 @@
-from utils import *
-from constants import *
+from ..utils import *
+from ..constants import *
 
 from aliceVision import sfmData as av
 
@@ -18,38 +18,37 @@ from aliceVision import sfmData as av
 # - bool hasGpsMetadata()
 # - bool hasDigitMetadata(vector<string> names, bool isPositive) => DONE
 # - double readRealNumber()
-# - double getDoubleMetadata(vector<string> names)
-# - double getDoubleMetadata(vector<string> names, double& val)
-# - double getIntMetadata(vector<string> names)
-# - string getMetadataMake()
-# - string getMetadataModel()
-# - string getMetadataBodySerialNumber()
-# - string getMetadataLensModel()
-# - int getMetadataLensModel()
-# - string getMetadataLensSerialNumber()
-# - double getMetadataFocalLength()
-# - double getMetadataShutter()
-# - double getMetadataFNumber()
-# - double getMetadataISO()
+# - double getDoubleMetadata(vector<string> names) => DONE
+# - double getDoubleMetadata(vector<string> names, double& val) => TODO: disable
+# - double getIntMetadata(vector<string> names) => DONE
+# - string getMetadataMake() => DONE
+# - string getMetadataModel() => DONE
+# - string getMetadataBodySerialNumber() => DONE
+# - string getMetadataLensModel() => DONE
+# - int getMetadataLensID() => DONE
+# - string getMetadataLensSerialNumber() => DONE
+# - double getMetadataFocalLength() => DONE
+# - double getMetadataShutter() => DONE
+# - double getMetadataFNumber() => DONE
+# - double getMetadataISO() => DONE
 # - EEXIFOrientation getMetadataOrientation() => DONE
-# - Vec3 getGpsPositionFromMetadata()
+# - Vec3 getGpsPositionFromMetadata() !!! not correctly binded (Vec3) !!!
 # - void getGpsPositionWGS84FromMetadata(double& lat, double& lon, double& alt)
-# - Vec3 getGpsPositionWGS84FromMetadata()
-# - string getColorProfileName()
-# - string getMetadataLensSerialNumber()
+# - Vec3 getGpsPositionWGS84FromMetadata() !!! not correctly binded (Vec3) !!!
+# - string getColorProfileFileName() => DONE
 # - vector<int> getCameraMultiplicator()
 # - bool getVignettingParams(vector<float> vignParam)
 # - bool getChromaticAberrationParams(vector<float>& caGParam, vector<float>& caBParam, vector<float>& caRParam)
-# - bool hasMetadataTimeOriginal()
-# - string getMetadataDateTimeOriginal()
-# - int64_t getMetadataTimestamp()
+# - bool hasMetadataDateTimeOriginal() => DONE
+# - string getMetadataDateTimeOriginal() => DONE
+# - int64_t getMetadataDateTimestamp() => DONE
 # - double getSensorWidth()
 # - double getSensorHeight()
 # - map<string, string> getMetadata()
 # - void setImagePath(string) => DONE
 # - void setWidth(size_t) => DONE
 # - void setHeight(size_t) => DONE
-# - void setMetadata(map<string, string>)
+# - void setMetadata(map<string, string>) => DONE
 # - void addMetadata(string key, string value) => DONE
 # - void addDCPMetadata(imaage::DCPProfile& dcpProf)
 # - void addVignettingMetadata(LensParam& lensParam)
@@ -91,7 +90,7 @@ def test_imageinfo_compare():
     assert ii1 == ii2, "The two ImageInfo objects should be equal"
 
     # The '==' operator should only take the width and height into account when comparing
-    ii1.setImagePath("/tmp/data/img.jpg")
+    ii1.setImagePath("/tmp_path/data/img.jpg")
     assert ii1.getImagePath() != ii2.getImagePath(), "The two ImageInfo objects have different image paths"
     assert ii1 == ii2, "The two ImageInfo objects should be equal: only their image path differs"
 
@@ -131,11 +130,68 @@ def test_imageinfo_has_metadata():
     # Testing that a metadata key that has a string value is not recognized as a digit value
     assert not ii1.hasDigitMetadata(["Exif:LensMake"], False), "The initialized ImageInfo object has a string value for the 'Exif:LensMake' metadata key"
 
+    assert ii1.hasMetadataDateTimeOriginal()
+
     ii2 = av.ImageInfo()
 
     assert not ii2.hasMetadata(["Software"]), "The uninitialized ImageInfo object has no metadata"
     assert not ii2.hasMetadata(["Software", "random"]), "The uninitialized ImageInfo object has no metadata"
 
+
+def test_imageinfo_get_metadata():
+    """ Test creating an initialized ImageInfo object with known metadata and retrieving its metadata. """
+    ii = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+
+    metadata = ii.getMetadata()
+    assert len(metadata) > 0
+
+    assert ii.getMetadataMake() == "Apple"
+    assert ii.getMetadataModel() == "iPhone 7"
+    assert ii.getMetadataLensModel() == "iPhone 7 back camera 3.99mm f/1.8"
+    assert ii.getMetadataLensID() == -1         # does not exist in the test metadata
+
+    assert ii.getMetadataFocalLength() == 3.99  # focal length
+    assert ii.getMetadataShutter() == 0.030303  # exposure time
+    assert ii.getMetadataFNumber() == 1.8       # fnumber
+    assert ii.getMetadataISO() == 40            # photographic sensitivity
+
+    assert ii.getMetadataBodySerialNumber() == ""  # does not exist in the test metadata
+    assert ii.getMetadataLensSerialNumber() == ""  # does not exist in the test metadata
+
+    assert ii.getMetadataDateTimeOriginal() == "2018:01:26 15:23:28"
+    assert ii.getMetadataDateTimestamp() == 64865114608
+
+    assert ii.getDoubleMetadata(["Exif:ApertureValue", "Exif:BrightnessValue"]) == 1.69599  # should retrieve first key value
+    assert ii.getIntMetadata(["Exif:PixelXDimension", "Exif:PixelYDimension"]) == 4032
+
+
+def test_imageinfo_set_metadata():
+    """ Test creating ImageInfo objects and overwriting their metadata. """
+    ii1 = av.ImageInfo()
+    metadata = ii1.getMetadata()
+    assert len(metadata) == 0
+    assert not ii1.hasMetadata(["key_1", "key_2"])
+
+    metadata = {"key_1": "value_1", "key_2": "value_2"}
+    ii1.setMetadata(metadata)
+    assert ii1.hasMetadata(["key_1", "key_2"])
+    assert ii1.getMetadata().keys() == list(metadata.keys())
+    assert ii1.getMetadata().values() == list(metadata.values())
+
+    ii2 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    assert ii2.getMetadata().keys() == list(METADATA.keys())
+    assert ii2.getMetadata().values() == list(METADATA.values())
+
+    ii2.setMetadata(metadata)
+    assert len(ii2.getMetadata()) == len(metadata)
+
+
+def test_imageinfo_get_color_profile():
+    ii = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    assert ii.getColorProfileFileName() == ""
+
+    ii.addMetadata("AliceVision:DCP:colorProfileFileName", "dcpFilename")
+    assert ii.getColorProfileFileName() == "dcpFilename"
 
 
 if __name__ == "__main__":

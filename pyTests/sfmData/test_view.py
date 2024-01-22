@@ -1,18 +1,17 @@
-from wsgiref.handlers import IISCGIHandler
-from utils import *
-from constants import *
+from ..utils import *
+from ..constants import *
 
 from aliceVision import sfmData as av
 
 ##################
 ### List of functions:
-# - View(imagePath = "", viewId = UndefinedIndexT, intrinsicId = UndefinedIndexT, poseId = UndefinedIndexT, width = 0, height = 0, rigId = UndefinedIndexT, subPoseId = UndefinedIndexT, metadata = map<string, string>())
+# - View(imagePath = "", viewId = UndefinedIndexT, intrinsicId = UndefinedIndexT, poseId = UndefinedIndexT, width = 0, height = 0, rigId = UndefinedIndexT, subPoseId = UndefinedIndexT, metadata = map<string, string>()) => DONE
 # - View* shallowClone() => DONE
 # - View* clone() => DONE
 # - operator==(other) => DONE
-# - [inline] operator!=(other)
-# - ImageInfo getImage()
-# - shared_ptr<ImageInfo> getImageInfo()
+# - [inline] operator!=(other) => DONE
+# - ImageInfo getImage() => DONE
+# - shared_ptr<ImageInfo> getImageInfo() => DONE
 # - IndexT getViewId() => DONE
 # - IndexT getIntrinsicId() => DONE
 # - IndexT getPoseId() => DONE
@@ -21,15 +20,15 @@ from aliceVision import sfmData as av
 # - IndexT getFrameId() => DONE
 # - IndexT getResectionId() => DONE
 # - bool isPartOfRig() => DONE
-# - bool isPoseIndependent()
+# - bool isPoseIndependent() => DONE
 # - void setViewId(IndexT) => DONE
 # - void setIntrinsicId(IndexT) => DONE
 # - void setPoseId(IndexT) => DONE
-# - void setIndependantPose(bool)
+# - void setIndependantPose(bool) => DONE
 # - void setRigAndSubPoseId(IndexT rigId, IndexT subPoseId) => DONE
 # - void setFrameId(IndexT) => DONE
-# - vector<IndexT> getAncestors()
-# - void addAncestor(IndexT)
+# - vector<IndexT> getAncestors() => DONE
+# - void addAncestor(IndexT) => DONE
 # - void setResectionId(IndexT) => DONE
 ##################
 
@@ -67,7 +66,7 @@ def test_view_constructor():
 
 
 def test_view_compare():
-    """ Test creating two Views objects and comparing them using the '==' operator. """
+    """ Test creating two Views objects and comparing them using the '==' and '!=' operators. """
     v1 = av.View()
     v2 = av.View()
 
@@ -139,6 +138,38 @@ def test_view_get_set_values():
     view.setFrameId(98765)
     assert view.getFrameId() == 98765, "Frame ID has not been correctly set"
 
+    assert view.isPoseIndependant()
+    view.setIndependantPose(False)
+    assert not view.isPoseIndependant()
+
 
 def test_view_get_image():
+    """ Test creating a View object with some parameters and ensuring that the ImageInfo object is accurate and correctly updated. """
+    view = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+
+    ii1 = view.getImageInfo()
+    ii2 = view.getImage()
+
+    assert ii1 == ii2, "The ImageInfo object should be the same no matter the way used to retrieve it"
+    
+    assert ii1.getWidth() == IMAGE_WIDTH and ii1.getHeight() == IMAGE_HEIGHT, "The ImageInfo object size should be the one set when creating the View object"
+    assert ii2.getImgSize() == (IMAGE_WIDTH, IMAGE_HEIGHT), "The ImageInfo object size should be the one set when creating the View object"
+
+    ii1.setWidth(IMAGE_WIDTH + 100)
+    assert ii2.getWidth() == IMAGE_WIDTH + 100, "The width of the ImageInfo object has been modified, the structure should have been updated"
+
+    ii2.setHeight(IMAGE_HEIGHT + 100)
+    assert ii1.getHeight() == IMAGE_HEIGHT + 100, "The height of the ImageInfo object has been modified, the structure should have been updated"
+
+
+def test_view_get_set_ancestors():
+    """ Test creating View objects and adding/retrieving their ancestors. """
     v1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+    v2 = av.View()
+
+    assert len(v1.getAncestors()) == 0 and len(v2.getAncestors()) == 0, "No ancestor has been added to any of the View objects"
+
+    v2.addAncestor(VIEW_ID)
+    assert len(v2.getAncestors()) == 1, "An ancestor has been added to the default View object"
+    assert VIEW_ID in v2.getAncestors(), "The default View object should have {} as its ancestor".format(VIEW_ID)
+    assert len(v1.getAncestors()) == 0, "The non-default View object should still have no ancestor"

@@ -1,5 +1,7 @@
 import os
 
+SFMDATA_PATH = os.path.abspath(os.path.dirname(__file__)) + "/data/small.sfm"
+
 IMAGE_PATH = os.path.abspath(os.path.dirname(__file__)) + "/data/img.jpg"
 IMAGE_WIDTH = 500
 IMAGE_HEIGHT = 375
