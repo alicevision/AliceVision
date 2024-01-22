@@ -1266,7 +1266,7 @@ if(AV_BUILD_SWIG)
     )
 
     set(SWIG_CMAKE_FLAGS
-        -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig
+        -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig/4.2.0
         -DSWIG_EXECUTABLE=${CMAKE_INSTALL_PREFIX}/bin-deps
     )
 endif()
