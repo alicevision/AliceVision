@@ -26,8 +26,6 @@
 
 #include <geogram/points/kd_tree.h>
 
-#include <boost/filesystem/operations.hpp>
-
 #include <cmath>
 #include <filesystem>
 #include <random>
