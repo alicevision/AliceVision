@@ -8,6 +8,7 @@
 
 %import <aliceVision/camera/Camera.i>
 %import <aliceVision/hdr/Hdr.i>
+%import <aliceVision/sensorDB/SensorDB.i>
 %import <aliceVision/sfmDataIO/SfMDataIO.i>
 %import <aliceVision/sfmData/SfMData.i>
 
