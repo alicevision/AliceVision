@@ -127,6 +127,13 @@ jobs:
           python --version
           python EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
+      - name: Python Binding - Unit Tests
+        run: |
+          export PYTHONPATH=${ALICEVISION_ROOT}:${PYTHONPATH}
+          export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
+          pip3 install pytest
+          pytest ./pyTests
+
   build-windows:
     runs-on: windows-latest
     env:
