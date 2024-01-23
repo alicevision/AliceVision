@@ -31,9 +31,6 @@
 #include <opencv2/core/utility.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-// Boost
-#include <boost/filesystem.hpp>
-
 // Boost JSON
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
