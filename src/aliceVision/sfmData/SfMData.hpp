@@ -33,7 +33,7 @@ using ImageInfos = std::map<IndexT, std::shared_ptr<ImageInfo>>;
 using Poses = std::map<IndexT, CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
-using Intrinsics = std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>>;
+using Intrinsics = std::map<IndexT, std::shared_ptr<aliceVision::camera::IntrinsicBase>>;
 
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = std::map<IndexT, Landmark>;

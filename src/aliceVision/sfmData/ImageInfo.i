@@ -4,6 +4,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+%include <aliceVision/global.i>
+
 // Handles all the std::shared_ptr<ImageInfo> objects 
 // Side effect: will instantiate all the objects in the hierarchy as "std::shared_ptr"
 %shared_ptr(aliceVision::sfmData::ImageInfo);

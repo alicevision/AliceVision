@@ -19,6 +19,7 @@
 
 %{
 #include <aliceVision/types.hpp>
+#include <memory>
 %}
 
 %inline %{

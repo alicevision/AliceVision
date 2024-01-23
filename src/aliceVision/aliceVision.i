@@ -6,6 +6,8 @@
 
 %module aliceVision
 
+%include <aliceVision/global.i>
+
 %import <aliceVision/camera/Camera.i>
 %import <aliceVision/hdr/Hdr.i>
 %import <aliceVision/sensorDB/SensorDB.i>

@@ -88,8 +88,8 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
  * @param[in] countBrackets the number of brackets
  * @return false if an error occurs (e.g. an invalid SfMData file has been provided), true otherwise
  */
-bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
-                                 const sfmData::SfMData& sfmData,
+bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<aliceVision::sfmData::View>>>& groups,
+                                 const aliceVision::sfmData::SfMData& sfmData,
                                  size_t countBrackets);
 
 /**
@@ -105,8 +105,8 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
  * @param[in] meanTargetedLuma mean targeted luma
  * @return the index of the target view
  */
-int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& targetViews,
-                      std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
+int selectTargetViews(std::vector<std::shared_ptr<aliceVision::sfmData::View>>& targetViews,
+                      std::vector<std::vector<std::shared_ptr<aliceVision::sfmData::View>>>& groups,
                       const int offsetRefBracketIndex,
                       const std::string& targetIndexesFilename,
                       const double meanTargetedLuma = 0.4);

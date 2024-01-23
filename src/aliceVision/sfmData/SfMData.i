@@ -4,10 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-%module sfmData
-%import <aliceVision/aliceVision.i>
-
-%include <aliceVision/global.i>
+%module (module="aliceVision") sfmData
 
 %include <aliceVision/sfmData/CameraPose.i>
 %include <aliceVision/sfmData/Constraint2D.i>
@@ -19,10 +16,14 @@
 
 %include <aliceVision/sfmData/SfMData.hpp>
 
+%include <aliceVision/global.i>
+%include <aliceVision/camera/IntrinsicBase.i>
+
 %{
 #include <aliceVision/sfmData/SfMData.hpp>
 using namespace aliceVision;
 using namespace aliceVision::sfmData;
+using namespace aliceVision::camera;
 %}
 
 %template(Constraints2D) std::vector<aliceVision::sfmData::Constraint2D>;
