@@ -1,8 +1,12 @@
-from ..utils import *
-from ..constants import *
+"""
+Collection of unit tests for the SfMDataIO class.
+"""
+
 import os
 
 import aliceVision as av
+from ..constants import SFMDATA_PATH, IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, \
+    IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA
 
 ##################
 ### List of functions:
@@ -29,7 +33,8 @@ def test_sfmdataio_save():
 
     views = data.getViews()
     nb_views = len(views)
-    new_view = av.sfmData.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+    new_view = av.sfmData.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID,
+        IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
     views[VIEW_ID] = new_view
     assert len(data.getViews()) == nb_views + 1
 

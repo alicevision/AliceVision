@@ -1,11 +1,16 @@
-from ..utils import *
-from ..constants import *
+"""
+Collection of unit tests for the View class.
+"""
 
 from aliceVision import sfmData as av
+from ..constants import IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, \
+    IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA
 
 ##################
 ### List of functions:
-# - View(imagePath = "", viewId = UndefinedIndexT, intrinsicId = UndefinedIndexT, poseId = UndefinedIndexT, width = 0, height = 0, rigId = UndefinedIndexT, subPoseId = UndefinedIndexT, metadata = map<string, string>()) => DONE
+# - View(imagePath = "", viewId = UndefinedIndexT, intrinsicId = UndefinedIndexT,
+#        poseId = UndefinedIndexT, width = 0, height = 0, rigId = UndefinedIndexT,
+#        subPoseId = UndefinedIndexT, metadata = map<string, string>()) => DONE
 # - View* shallowClone() => DONE
 # - View* clone() => DONE
 # - operator==(other) => DONE
@@ -39,22 +44,26 @@ def test_view_default_constructor():
 
     assert view.getAncestors() == (), "Default View object should have an empty list of ancestors"
     assert view.getFrameId() == 4294967295, "Default frame ID should be 4294967295"
-    assert view.getFrameId() == view.getIntrinsicId() == view.getPoseId() == view.getResectionId() == view.getRigId() \
+    assert view.getFrameId() == view.getIntrinsicId() == view.getPoseId() \
+        == view.getResectionId() == view.getRigId() \
         == view.getSubPoseId() == view.getViewId(), "All IDs should be unitialized"
 
-    ii = view.getImage()
-    assert ii, "An ImageInfo object should be available for a default View object"
-    assert ii.getImgSize() == (0, 0), "Default View size should be (0, 0)"
+    image_info = view.getImage()
+    assert image_info, "An ImageInfo object should be available for a default View object"
+    assert image_info.getImgSize() == (0, 0), "Default View size should be (0, 0)"
 
 
 def test_view_constructor():
     """ Test creating a View object with values and accessing its members. """
-    view = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+    view = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT,
+        RIG_ID, SUBPOSE_ID, METADATA)
 
-    ii = view.getImage()
-    assert ii, "An ImageInfo object should be available"
-    assert ii.getImgSize() == (IMAGE_WIDTH, IMAGE_HEIGHT), "Image size does not correspond to the one set in constructor"
-    assert ii.getImagePath() == IMAGE_PATH, "Image path does not correspond to the one set in constructor"
+    image_info = view.getImage()
+    assert image_info, "An ImageInfo object should be available"
+    assert image_info.getImgSize() == (IMAGE_WIDTH, IMAGE_HEIGHT), \
+        "Image size does not correspond to the one set in constructor"
+    assert image_info.getImagePath() == IMAGE_PATH, \
+        "Image path does not correspond to the one set in constructor"
 
     assert view.getViewId() == VIEW_ID, "Unexpected view ID"
     assert view.getIntrinsicId() == INTRINSIC_ID, "Unexpected intrinsic ID"
@@ -67,49 +76,58 @@ def test_view_constructor():
 
 def test_view_compare():
     """ Test creating two Views objects and comparing them using the '==' and '!=' operators. """
-    v1 = av.View()
-    v2 = av.View()
+    view1 = av.View()
+    view2 = av.View()
 
-    assert v1 == v2, "Two default View objects should be equal"
+    assert view1 == view2, "Two default View objects should be equal"
 
-    # Frame ID is not taken into account when comparing views: the views should be equal even with different frame IDs
-    v1.setFrameId(98765)
-    assert v1 == v2, "View objects should be equal, even with different frame IDs"
+    # Frame ID is not taken into account when comparing views:
+    # the views should be equal even with different frame IDs
+    view1.setFrameId(98765)
+    assert view1 == view2, "View objects should be equal, even with different frame IDs"
 
-    v1.setViewId(VIEW_ID)
-    assert v1 != v2, "View objects should be different since the view IDs differ"
+    view1.setViewId(VIEW_ID)
+    assert view1 != view2, "View objects should be different since the view IDs differ"
 
 
 def test_view_deep_copy():
-    """ Test creating a View object and its deep copy, and checking whether the copy is indeed deep. """
-    v1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
-    v2 = v1.clone()
+    """ Test creating a View object and its deep copy, and checking whether
+        the copy is indeed deep. """
+    view1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID,IMAGE_WIDTH,
+        IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+    view2 = view1.clone()
 
-    assert v1 == v2, "The two View objects should be equal since they're copies"
-    assert v1.getImage() == v2.getImage()
+    assert view1 == view2, "The two View objects should be equal since they're copies"
+    assert view1.getImage() == view2.getImage()
 
-    v1.setViewId(VIEW_ID + 1)
-    ii = v1.getImage()
-    ii.setWidth(ii.getWidth() + 1)
+    view1.setViewId(VIEW_ID + 1)
+    image_info = view1.getImage()
+    image_info.setWidth(image_info.getWidth() + 1)
 
-    assert v1 != v2, "The two View objects should have different view IDs since the copy is deep"
-    assert v1.getImage() != v2.getImage(), "The two View objects should have different ImageInfos since the copy is deep"
+    assert view1 != view2, \
+        "The two View objects should have different view IDs since the copy is deep"
+    assert view1.getImage() != view2.getImage(), \
+        "The two View objects should have different ImageInfos since the copy is deep"
 
 
 def test_view_shallow_copy():
-    """ Test creating a View object and its shallow copy, and checking whether the copy is indeed shallow. """
-    v1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
-    v2 = v1.shallowClone()
+    """ Test creating a View object and its shallow copy, and checking whether
+    the copy is indeed shallow. """
+    view1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH,
+        IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+    view2 = view1.shallowClone()
 
-    assert v1 == v2, "The two View objects should be equal since they're copies"
-    assert v1.getImage() == v2.getImage()
+    assert view1 == view2, "The two View objects should be equal since they're copies"
+    assert view1.getImage() == view2.getImage()
 
-    v1.setViewId(VIEW_ID + 1)
-    ii = v1.getImage()
-    ii.setWidth(ii.getWidth() + 1)
+    view1.setViewId(VIEW_ID + 1)
+    image_info = view1.getImage()
+    image_info.setWidth(image_info.getWidth() + 1)
 
-    assert v1 != v2, "The two View objects should have different view IDs since the copy is shallow"
-    assert v1.getImage() == v2.getImage(), "The two View objects should have identical ImageInfos since the copy is shallow"
+    assert view1 != view2, \
+        "The two View objects should have different view IDs since the copy is shallow"
+    assert view1.getImage() == view2.getImage(), \
+        "The two View objects should have identical ImageInfos since the copy is shallow"
 
 
 def test_view_get_set_values():
@@ -144,32 +162,46 @@ def test_view_get_set_values():
 
 
 def test_view_get_image():
-    """ Test creating a View object with some parameters and ensuring that the ImageInfo object is accurate and correctly updated. """
-    view = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+    """ Test creating a View object with some parameters and ensuring that the ImageInfo
+    object is accurate and correctly updated. """
+    view = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH,
+        IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
 
-    ii1 = view.getImageInfo()
-    ii2 = view.getImage()
+    image_info1 = view.getImageInfo()
+    image_info2 = view.getImage()
 
-    assert ii1 == ii2, "The ImageInfo object should be the same no matter the way used to retrieve it"
-    
-    assert ii1.getWidth() == IMAGE_WIDTH and ii1.getHeight() == IMAGE_HEIGHT, "The ImageInfo object size should be the one set when creating the View object"
-    assert ii2.getImgSize() == (IMAGE_WIDTH, IMAGE_HEIGHT), "The ImageInfo object size should be the one set when creating the View object"
+    assert image_info1 == image_info2, "The ImageInfo object should be the same no matter \
+        the way used to retrieve it"
 
-    ii1.setWidth(IMAGE_WIDTH + 100)
-    assert ii2.getWidth() == IMAGE_WIDTH + 100, "The width of the ImageInfo object has been modified, the structure should have been updated"
+    assert image_info1.getWidth() == IMAGE_WIDTH and image_info1.getHeight() == IMAGE_HEIGHT, \
+        "The ImageInfo object size should be the one set when creating the View object"
+    assert image_info2.getImgSize() == (IMAGE_WIDTH, IMAGE_HEIGHT), \
+        "The ImageInfo object size should be the one set when creating the View object"
 
-    ii2.setHeight(IMAGE_HEIGHT + 100)
-    assert ii1.getHeight() == IMAGE_HEIGHT + 100, "The height of the ImageInfo object has been modified, the structure should have been updated"
+    image_info1.setWidth(IMAGE_WIDTH + 100)
+    assert image_info2.getWidth() == IMAGE_WIDTH + 100, \
+        "The width of the ImageInfo object has been modified, the structure \
+        should have been updated"
+
+    image_info2.setHeight(IMAGE_HEIGHT + 100)
+    assert image_info1.getHeight() == IMAGE_HEIGHT + 100, \
+        "The height of the ImageInfo object has been modified, the structure \
+            should have been updated"
 
 
 def test_view_get_set_ancestors():
     """ Test creating View objects and adding/retrieving their ancestors. """
-    v1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
-    v2 = av.View()
+    view1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH,
+        IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+    view2 = av.View()
 
-    assert len(v1.getAncestors()) == 0 and len(v2.getAncestors()) == 0, "No ancestor has been added to any of the View objects"
+    assert len(view1.getAncestors()) == 0 and len(view2.getAncestors()) == 0, \
+        "No ancestor has been added to any of the View objects"
 
-    v2.addAncestor(VIEW_ID)
-    assert len(v2.getAncestors()) == 1, "An ancestor has been added to the default View object"
-    assert VIEW_ID in v2.getAncestors(), "The default View object should have {} as its ancestor".format(VIEW_ID)
-    assert len(v1.getAncestors()) == 0, "The non-default View object should still have no ancestor"
+    view2.addAncestor(VIEW_ID)
+    assert len(view2.getAncestors()) == 1, \
+        "An ancestor has been added to the default View object"
+    assert VIEW_ID in view2.getAncestors(), \
+        f"The default View object should have {VIEW_ID} as its ancestor"
+    assert len(view1.getAncestors()) == 0, \
+        "The non-default View object should still have no ancestor"

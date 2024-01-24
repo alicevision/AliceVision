@@ -1,7 +1,9 @@
-from ..utils import *
-from ..constants import *
+"""
+Collection of unit tests for the ImageInfo class.
+"""
 
 from aliceVision import sfmData as av
+from ..constants import IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA
 
 ##################
 ### List of functions:
@@ -38,7 +40,8 @@ from aliceVision import sfmData as av
 # - string getColorProfileFileName() => DONE
 # - vector<int> getCameraMultiplicator()
 # - bool getVignettingParams(vector<float> vignParam)
-# - bool getChromaticAberrationParams(vector<float>& caGParam, vector<float>& caBParam, vector<float>& caRParam)
+# - bool getChromaticAberrationParams(vector<float>& caGParam, vector<float>& caBParam,
+#                                     vector<float>& caRParam)
 # - bool hasMetadataDateTimeOriginal() => DONE
 # - string getMetadataDateTimeOriginal() => DONE
 # - int64_t getMetadataDateTimestamp() => DONE
@@ -53,149 +56,151 @@ from aliceVision import sfmData as av
 # - void addDCPMetadata(imaage::DCPProfile& dcpProf)
 # - void addVignettingMetadata(LensParam& lensParam)
 # - void addChromaticMetadata(LensParam& lensParam)
-# - void getSensorSize(vector<sensorDB::Datasheet> sensorDB, double& sensorWidth, double& sensorHeight, double& focalLengthmm, camera::EInitMode& intrinsicInitMode, bool verbose = false)
+# - void getSensorSize(vector<sensorDB::Datasheet> sensorDB, double& sensorWidth,
+#                      double& sensorHeight, double& focalLengthmm,
+#                      camera::EInitMode& intrinsicInitMode, bool verbose = false)
 ##################
 
 
 def test_imageinfo_default_constructor():
     """ Test creating an ImageInfo object with default parameters and accessing its values. """
-    ii = av.ImageInfo()
-    make = ii.getMetadataMake()
+    image_info = av.ImageInfo()
+    make = image_info.getMetadataMake()
     assert not make, "No metadata should be available: the camera make should not be retrieved"
 
 
 def test_imageinfo_constructor():
     """ Test creating an ImageInfo with set values and accessing them. """
-    ii = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
-    make = ii.getMetadataMake()
+    image_info = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    make = image_info.getMetadataMake()
     assert make == "Apple", "Metadata should be available: the camera make should be retrieved"
 
 
 def test_imageinfo_add_metadata():
     """ Test creating a default ImageInfo object and adding a custom metadata value to it. """
-    ii = av.ImageInfo()
-    orientation = ii.getMetadataOrientation()
+    image_info = av.ImageInfo()
+    orientation = image_info.getMetadataOrientation()
     assert orientation == -1, "The 'Orientation' metadata has never been set and should return -1"
 
-    ii.addMetadata("Orientation", "6")
-    orientation = ii.getMetadataOrientation()
+    image_info.addMetadata("Orientation", "6")
+    orientation = image_info.getMetadataOrientation()
     assert orientation == 6, "The 'Orientation' metadata has not been correctly set"
 
 
 def test_imageinfo_compare():
     """ Test creating two ImageInfo objects and comparing them using the '==' operator. """
-    ii1 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
-    ii2 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    image_info1 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    image_info2 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
 
-    assert ii1 == ii2, "The two ImageInfo objects should be equal"
+    assert image_info1 == image_info2, "The two ImageInfo objects should be equal"
 
     # The '==' operator should only take the width and height into account when comparing
-    ii1.setImagePath("/tmp_path/data/img.jpg")
-    assert ii1.getImagePath() != ii2.getImagePath(), "The two ImageInfo objects have different image paths"
-    assert ii1 == ii2, "The two ImageInfo objects should be equal: only their image path differs"
+    image_info1.setImagePath("/data/img.jpg")
+    assert image_info1.getImagePath() != image_info2.getImagePath(), \
+        "The two ImageInfo objects have different image paths"
+    assert image_info1 == image_info2, "The two ImageInfo objects should be equal: \
+        only their image path differs"
 
-    ii1.setWidth(IMAGE_WIDTH + 1)
-    assert ii1 != ii2, "The two ImageInfo objects should be different as their width differs"
+    image_info1.setWidth(IMAGE_WIDTH + 1)
+    assert image_info1 != image_info2, "The two ImageInfo objects should be different \
+        as their width differs"
 
 
 def test_imageinfo_set_size():
     """ Test creating an ImageInfo object and modifying its size. """
-    ii = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    image_info = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
 
-    assert ii.getWidth() == IMAGE_WIDTH and ii.getHeight() == IMAGE_HEIGHT
-    assert ii.getImgSize() == (ii.getWidth(), ii.getHeight())
+    assert image_info.getWidth() == IMAGE_WIDTH and image_info.getHeight() == IMAGE_HEIGHT
+    assert image_info.getImgSize() == (image_info.getWidth(), image_info.getHeight())
 
-    ii.setWidth(IMAGE_WIDTH * 2)
-    ii.setHeight(IMAGE_HEIGHT * 2)
-    assert ii.getWidth() == IMAGE_WIDTH * 2
-    assert ii.getHeight() == IMAGE_HEIGHT * 2
-    assert ii.getImgSize() == (ii.getWidth(), ii.getHeight())
+    image_info.setWidth(IMAGE_WIDTH * 2)
+    image_info.setHeight(IMAGE_HEIGHT * 2)
+    assert image_info.getWidth() == IMAGE_WIDTH * 2
+    assert image_info.getHeight() == IMAGE_HEIGHT * 2
+    assert image_info.getImgSize() == (image_info.getWidth(), image_info.getHeight())
 
 
 def test_imageinfo_has_metadata():
-    """ Test creating initialized and uninitialized ImageInfo objects and checking whether they have some metadata. """
-    ii1 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    """ Test creating initialized and uninitialized ImageInfo objects and checking whether
+    they have some metadata. """
+    image_info1 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
 
     # Testing that a single metadata key exists
-    assert ii1.hasMetadata(["Software"]), "The initialized ImageInfo object has a 'Software' metadata key"
+    assert image_info1.hasMetadata(["Software"]), "The initialized ImageInfo object \
+        has a 'Software' metadata key"
     # Testing that at least one metadata key in a provided list exist
-    assert ii1.hasMetadata(["Software", "random"]), "The initialized ImageInfo object has at least a 'Software' metadata key"
+    assert image_info1.hasMetadata(["Software", "random"]), "The initialized ImageInfo \
+        object has at least a 'Software' metadata key"
     # Testing that no provided metadata key exists
-    assert not ii1.hasMetadata(["random", "test"]), "The initialized ImageInfo object has none of these metadata keys"
+    assert not image_info1.hasMetadata(["random", "test"]), "The initialized ImageInfo \
+        object has none of these metadata keys"
 
     # Testing that a metadata key has a digit value (that may be negative)
-    assert ii1.hasDigitMetadata(["Exif:ApertureValue"], False), "The initialized ImageInfo object has a digit value for the 'Exif:ApertureValue' metadata key"
+    aperture_value_key = "Exif:ApertureValue"
+    assert image_info1.hasDigitMetadata([aperture_value_key], False), "The initialized \
+        ImageInfo object has a digit value for the 'Exif:ApertureValue' metadata key"
     # Testing that a metadata key has a digit value (that is positive)
-    assert ii1.hasDigitMetadata(["Exif:ApertureValue"], True), "The initialized ImageInfo object has a positive digit value for the 'Exif:ApertureValue' metadata key"
+    assert image_info1.hasDigitMetadata([aperture_value_key], True), f"The initialized \
+        ImageInfo object has a positive digit value for the {aperture_value_key} metadata key"
     # Testing that a metadata key that has a string value is not recognized as a digit value
-    assert not ii1.hasDigitMetadata(["Exif:LensMake"], False), "The initialized ImageInfo object has a string value for the 'Exif:LensMake' metadata key"
+    assert not image_info1.hasDigitMetadata(["Exif:LensMake"], False), "The initialized \
+        ImageInfo object has a string value for the 'Exif:LensMake' metadata key"
 
-    assert ii1.hasMetadataDateTimeOriginal()
+    assert image_info1.hasMetadataDateTimeOriginal()
 
-    ii2 = av.ImageInfo()
+    image_info2 = av.ImageInfo()
 
-    assert not ii2.hasMetadata(["Software"]), "The uninitialized ImageInfo object has no metadata"
-    assert not ii2.hasMetadata(["Software", "random"]), "The uninitialized ImageInfo object has no metadata"
+    assert not image_info2.hasMetadata(["Software"]), \
+        "The uninitialized ImageInfo object has no metadata"
+    assert not image_info2.hasMetadata(["Software", "random"]), \
+        "The uninitialized ImageInfo object has no metadata"
 
 
 def test_imageinfo_get_metadata():
-    """ Test creating an initialized ImageInfo object with known metadata and retrieving its metadata. """
-    ii = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    """ Test creating an initialized ImageInfo object with known metadata and
+    retrieving its metadata. """
+    image_info = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
 
-    metadata = ii.getMetadata()
+    metadata = image_info.getMetadata()
     assert len(metadata) > 0
 
-    assert ii.getMetadataMake() == "Apple"
-    assert ii.getMetadataModel() == "iPhone 7"
-    assert ii.getMetadataLensModel() == "iPhone 7 back camera 3.99mm f/1.8"
-    assert ii.getMetadataLensID() == -1         # does not exist in the test metadata
+    assert image_info.getMetadataMake() == "Apple"
+    assert image_info.getMetadataModel() == "iPhone 7"
+    assert image_info.getMetadataLensModel() == "iPhone 7 back camera 3.99mm f/1.8"
+    assert image_info.getMetadataLensID() == -1         # does not exist in the test metadata
 
-    assert ii.getMetadataFocalLength() == 3.99  # focal length
-    assert ii.getMetadataShutter() == 0.030303  # exposure time
-    assert ii.getMetadataFNumber() == 1.8       # fnumber
-    assert ii.getMetadataISO() == 40            # photographic sensitivity
+    assert image_info.getMetadataFocalLength() == 3.99  # focal length
+    assert image_info.getMetadataShutter() == 0.030303  # exposure time
+    assert image_info.getMetadataFNumber() == 1.8       # fnumber
+    assert image_info.getMetadataISO() == 40            # photographic sensitivity
 
-    assert ii.getMetadataBodySerialNumber() == ""  # does not exist in the test metadata
-    assert ii.getMetadataLensSerialNumber() == ""  # does not exist in the test metadata
+    assert image_info.getMetadataBodySerialNumber() == ""  # does not exist in the test metadata
+    assert image_info.getMetadataLensSerialNumber() == ""  # does not exist in the test metadata
 
-    assert ii.getMetadataDateTimeOriginal() == "2018:01:26 15:23:28"
-    assert ii.getMetadataDateTimestamp() == 64865114608
+    assert image_info.getMetadataDateTimeOriginal() == "2018:01:26 15:23:28"
+    assert image_info.getMetadataDateTimestamp() == 64865114608
 
-    assert ii.getDoubleMetadata(["Exif:ApertureValue", "Exif:BrightnessValue"]) == 1.69599  # should retrieve first key value
-    assert ii.getIntMetadata(["Exif:PixelXDimension", "Exif:PixelYDimension"]) == 4032
+    assert image_info.getDoubleMetadata(["Exif:ApertureValue",
+        "Exif:BrightnessValue"]) == 1.69599  # should retrieve first key value
+    assert image_info.getIntMetadata(["Exif:PixelXDimension", "Exif:PixelYDimension"]) == 4032
 
 
 def test_imageinfo_set_metadata():
     """ Test creating ImageInfo objects and overwriting their metadata. """
-    ii1 = av.ImageInfo()
-    metadata = ii1.getMetadata()
+    image_info1 = av.ImageInfo()
+    metadata = image_info1.getMetadata()
     assert len(metadata) == 0
-    assert not ii1.hasMetadata(["key_1", "key_2"])
+    assert not image_info1.hasMetadata(["key_1", "key_2"])
 
     metadata = {"key_1": "value_1", "key_2": "value_2"}
-    ii1.setMetadata(metadata)
-    assert ii1.hasMetadata(["key_1", "key_2"])
-    assert ii1.getMetadata().keys() == list(metadata.keys())
-    assert ii1.getMetadata().values() == list(metadata.values())
+    image_info1.setMetadata(metadata)
+    assert image_info1.hasMetadata(["key_1", "key_2"])
+    assert image_info1.getMetadata().keys() == list(metadata.keys())
+    assert image_info1.getMetadata().values() == list(metadata.values())
 
-    ii2 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
-    assert ii2.getMetadata().keys() == list(METADATA.keys())
-    assert ii2.getMetadata().values() == list(METADATA.values())
+    image_info2 = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
+    assert image_info2.getMetadata().keys() == list(METADATA.keys())
+    assert image_info2.getMetadata().values() == list(METADATA.values())
 
-    ii2.setMetadata(metadata)
-    assert len(ii2.getMetadata()) == len(metadata)
-
-
-def test_imageinfo_get_color_profile():
-    ii = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
-    assert ii.getColorProfileFileName() == ""
-
-    ii.addMetadata("AliceVision:DCP:colorProfileFileName", "dcpFilename")
-    assert ii.getColorProfileFileName() == "dcpFilename"
-
-
-if __name__ == "__main__":
-    print_yellow("~~~ Hello world! ~~~")
-    ii = av.ImageInfo(IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA)
-    vec = ii.getGpsPositionFromMetadata()
-    print(vec)
+    image_info2.setMetadata(metadata)
+    assert len(image_info2.getMetadata()) == len(metadata)

@@ -1,4 +1,7 @@
-from ..utils import *
+"""
+Collection of unit tests for the Sensor DB module.
+"""
+
 import os
 
 from aliceVision import sensorDB as db
@@ -6,10 +9,12 @@ from aliceVision import sensorDB as db
 ##################
 ### List of functions:
 # - bool parseDatabase(string& databaseFilePath, vector<Datasheet>& databaseStructure) => DONE
-# - bool getInfo(string& brand, string& model, vector<Datasheet>& databaseStructure, Datasheet& datasheetContent) => DONE
+# - bool getInfo(string& brand, string& model, vector<Datasheet>& databaseStructure,
+#                Datasheet& datasheetContent) => DONE
 ##################
 
-DB_PATH = os.path.abspath(os.path.dirname(__file__)) + "/../../src/aliceVision/sensorDB/cameraSensors.db"
+DB_PATH = os.path.abspath(os.path.dirname(__file__)) + \
+    "/../../src/aliceVision/sensorDB/cameraSensors.db"
 
 def test_sensordb_valid_database():
     """ Test loading a valid database and retrieving datasheets from it. """

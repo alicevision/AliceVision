@@ -1,3 +1,7 @@
+"""
+Collection of constants that are used across different unit tests.
+"""
+
 import os
 
 SFMDATA_PATH = os.path.abspath(os.path.dirname(__file__)) + "/data/small.sfm"
@@ -55,7 +59,10 @@ METADATA = {
     "GPS:Speed": "0",
     "GPS:SpeedRef": "K",
     "GPS:TimeStamp": "14, 23, 24",
-    "ICCProfile": "0, 0, 2, 36, 97, 112, 112, 108, 4, 0, 0, 0, 109, 110, 116, 114, 82, 71, 66, 32, 88, 89, 90, 32, 7, 225, 0, 7, 0, 7, 0, 13, 0, 22, 0, 32, 97, 99, 115, 112, 65, 80, 80, 76, 0, 0, 0, 0, 65, 80, 80, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ... [548 x uint8]",
+    "ICCProfile": "0, 0, 2, 36, 97, 112, 112, 108, 4, 0, 0, 0, 109, 110, 116, \
+        114, 82, 71, 66, 32, 88, 89, 90, 32, 7, 225, 0, 7, 0, 7, 0, 13, 0, 22, \
+            0, 32, 97, 99, 115, 112, 65, 80, 80, 76, 0, 0, 0, 0, 65, 80, 80, 76, \
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ... [548 x uint8]",
     "ICCProfile:attributes": "Reflective, Glossy, Positive, Color",
     "ICCProfile:cmm_type": "1634758764",
     "ICCProfile:color_space": "RGB",
