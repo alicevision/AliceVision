@@ -453,6 +453,10 @@ if(ALICEVISION_BUILD_SFM)
   endif()
 endif()
 
+if(ALICEVISION_BUILD_SFM)
+    find_package(E57Format)
+endif()
+
 # ==============================================================================
 # CoinUtils, Clp, Osi
 # ==============================================================================
