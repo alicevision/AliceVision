@@ -301,13 +301,13 @@ void MultiViewParams::loadMatricesFromSfM(int index)
 
     std::shared_ptr<camera::IntrinsicBase> ptrIntrinsic = intrinsicIt->second;
     std::shared_ptr<camera::Pinhole> ptrPinHole = std::dynamic_pointer_cast<camera::Pinhole>(ptrIntrinsic);
-    if (!ptrPinHole)
+
+    Mat34 P = _sfmData.getPose(view).getTransform().getHomogeneous().block<3, 4>(0, 0);
+    if (ptrPinHole)
     {
-        ALICEVISION_LOG_ERROR("Camera is not pinhole in loadMatricesFromRawProjectionMatrix");
-        return;
+        P = ptrPinHole->getProjectiveEquivalent(_sfmData.getPose(view).getTransform());        
     }
 
-    const Mat34 P = ptrPinHole->getProjectiveEquivalent(_sfmData.getPose(view).getTransform());
     std::vector<double> vP(P.size());
     Eigen::Map<RowMatrixXd>(vP.data(), P.rows(), P.cols()) = P;
 

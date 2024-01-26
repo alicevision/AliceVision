@@ -8,9 +8,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/fuseCut/LargeScale.hpp>
-#include <aliceVision/fuseCut/ReconstructionPlan.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
+#include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
@@ -456,6 +455,16 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    //Lidar is only equidistant (quick hack)
+    bool isLidar = true;
+    for (auto intrinsic : sfmData.getIntrinsics())
+    {
+        if (std::dynamic_pointer_cast<camera::Equidistant>(intrinsic.second) == nullptr)
+        {
+            isLidar = false;
+        }
+    }
+
     // initialization
     mvsUtils::MultiViewParams mp(sfmData, "", "", depthMapsFolder, meshingFromDepthMaps);
 
@@ -472,6 +481,12 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("hallucinationsFiltering.invertTetrahedronBasedOnNeighborsNbIterations", invertTetrahedronBasedOnNeighborsNbIterations);
     mp.userParams.put("hallucinationsFiltering.minSolidAngleRatio", minSolidAngleRatio);
     mp.userParams.put("hallucinationsFiltering.nbSolidAngleFilteringIterations", nbSolidAngleFilteringIterations);
+
+    if (isLidar)
+    {
+        mp.userParams.put("LargeScale.forcePixelSize", 0.01);
+        mp.userParams.put("LargeScale.forceWeight", 32.0);
+    }
 
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
@@ -514,9 +529,9 @@ int aliceVision_main(int argc, char* argv[])
                         fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
 
                     {
-                        const double length = hexah[0].x - hexah[1].x;
-                        const double width = hexah[0].y - hexah[3].y;
-                        const double height = hexah[0].z - hexah[4].z;
+                        const double length = std::abs(hexah[0].x - hexah[1].x);
+                        const double width = std::abs(hexah[0].y - hexah[3].y);
+                        const double height = std::abs(hexah[0].z - hexah[4].z);
 
                         ALICEVISION_LOG_INFO("bounding Box : length: " << length << ", width: " << width << ", height: " << height);
 

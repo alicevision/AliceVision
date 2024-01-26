@@ -507,6 +507,11 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
 
 bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfmData::Landmark& landmark, float minObservationAngle)
 {
+    if (minObservationAngle <= 0.0f)
+    {
+        return true;
+    }
+    
     for (const auto& observationPairI : landmark.getObservations())
     {
         const IndexT I = observationPairI.first;
@@ -544,8 +549,8 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
 {
     ALICEVISION_LOG_INFO("Estimate space from SfM.");
 
-    const std::size_t cacheSize = 10000;
-    const double percentile = _mp.userParams.get<double>("LargeScale.universePercentile", 0.999);
+    const std::size_t cacheSize = 1000000000;
+    const double percentile = 0.999; 
 
     using namespace boost::accumulators;
     using AccumulatorMin = accumulator_set<double, stats<tag::tail_quantile<left>>>;
@@ -568,7 +573,7 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
 
         // check angle between observations
         if (!checkLandmarkMinObservationAngle(sfmData, landmark, minObservationAngle))
-            continue;
+            continue; 
 
         const double x = landmark.X(0);
         const double y = landmark.X(1);

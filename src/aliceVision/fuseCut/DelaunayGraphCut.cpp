@@ -8,8 +8,8 @@
 // #define ALICEVISION_DEBUG_VOTE
 
 #include "DelaunayGraphCut.hpp"
-// #include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
+#include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/image/jetColorMap.hpp>
@@ -753,6 +753,8 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
     const std::size_t nbPoints = sfmData.getLandmarks().size();
     const std::size_t verticesOffset = _verticesCoords.size();
 
+    const float forcePixelSize = (float)_mp.userParams.get<double>("LargeScale.forcePixelSize", -1);
+
     _verticesCoords.resize(verticesOffset + nbPoints);
     _verticesAttr.resize(verticesOffset + nbPoints);
 
@@ -780,6 +782,10 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
                 vAttrIt->cams.push_back(_mp.getIndexFromViewId(observationPair.first));
 
             vAttrIt->pixSize = _mp.getCamsMinPixelSize(p, vAttrIt->cams);
+            if (forcePixelSize > 0)
+            {
+                vAttrIt->pixSize = forcePixelSize;
+            }
 
             ++vCoordsIt;
             ++vAttrIt;
@@ -1993,7 +1999,10 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind,
         {
             ++totalIsRealNrc;
             // "weight" is called alpha(p) in the paper
-            const float weight = weightFcn((float)v.nrc, labatutWeights, v.getNbCameras());  // number of cameras
+            float weight = weightFcn((float)v.nrc, labatutWeights, v.getNbCameras());  // number of cameras
+
+            //Overwrite with forced weight if available
+            weight = (float)_mp.userParams.get<double>("LargeScale.forceWeight", weight);
 
             for (int c = 0; c < v.cams.size(); c++)
             {

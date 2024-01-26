@@ -7,6 +7,7 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
+#include <aliceVision/fuseCut/Fuser.hpp>
 
 #include <boost/math/constants/constants.hpp>
 

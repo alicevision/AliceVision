@@ -146,6 +146,7 @@ int aliceVision_main(int argc, char **argv)
     std::vector<std::string> e57filenames;
     std::string outputSfMDataFilename;
     double maxDensity = 0.0;
+    double minIntensity = 0.03;
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -156,7 +157,8 @@ int aliceVision_main(int argc, char **argv)
     
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("maxDensity", po::value<double>(&maxDensity)->default_value(maxDensity), "Each point has no neighboor closer than maxDensity meters");
+        ("maxDensity", po::value<double>(&maxDensity)->default_value(maxDensity), "Each point has no neighboor closer than maxDensity meters")
+        ("minIntensity", po::value<double>(&minIntensity)->default_value(minIntensity), "Minimal intensity required to use lidar measure");
 
     CmdLine cmdline("AliceVision importe57");
     cmdline.add(requiredParams);
@@ -165,6 +167,10 @@ int aliceVision_main(int argc, char **argv)
     {
         return EXIT_FAILURE;
     }
+
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
 
 
     sfmData::SfMData sfmData;
@@ -175,6 +181,7 @@ int aliceVision_main(int argc, char **argv)
     
     //Create a reader using all files
     dataio::E57Reader reader(e57filenames);
+    reader.setRequiredIntensity(minIntensity);
 
     //Retrieve all sensor positions
     ALICEVISION_LOG_INFO("Extracting sensors");
