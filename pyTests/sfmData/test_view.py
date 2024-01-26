@@ -37,7 +37,6 @@ from ..constants import IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH,
 # - void setResectionId(IndexT) => DONE
 ##################
 
-
 def test_view_default_constructor():
     """ Test creating a View object with default parameters and accessing its members. """
     view = av.View()
@@ -93,7 +92,7 @@ def test_view_compare():
 def test_view_deep_copy():
     """ Test creating a View object and its deep copy, and checking whether
         the copy is indeed deep. """
-    view1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID,IMAGE_WIDTH,
+    view1 = av.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH,
         IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
     view2 = view1.clone()
 

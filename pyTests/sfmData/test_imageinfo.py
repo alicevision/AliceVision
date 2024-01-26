@@ -61,7 +61,6 @@ from ..constants import IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA
 #                      camera::EInitMode& intrinsicInitMode, bool verbose = false)
 ##################
 
-
 def test_imageinfo_default_constructor():
     """ Test creating an ImageInfo object with default parameters and accessing its values. """
     image_info = av.ImageInfo()
