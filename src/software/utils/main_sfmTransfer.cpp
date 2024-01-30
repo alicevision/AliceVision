@@ -83,8 +83,7 @@ EMatchingMethod EMatchingMethod_stringToEnum(const std::string& alignmentMethod)
 
 inline std::istream& operator>>(std::istream& in, EMatchingMethod& alignment)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     alignment = EMatchingMethod_stringToEnum(token);
     return in;
 }

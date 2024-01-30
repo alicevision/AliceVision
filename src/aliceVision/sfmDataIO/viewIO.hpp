@@ -50,8 +50,7 @@ inline std::ostream& operator<<(std::ostream& os, EViewIdMethod s) { return os <
 
 inline std::istream& operator>>(std::istream& in, EViewIdMethod& s)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     s = EViewIdMethod_stringToEnum(token);
     return in;
 }

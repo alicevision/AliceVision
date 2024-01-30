@@ -102,8 +102,7 @@ std::ostream& operator<<(std::ostream& os, const EOperationType operationType)
 
 std::istream& operator>>(std::istream& in, EOperationType& operationType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     operationType = EOperationType_stringToEnum(token);
     return in;
 }

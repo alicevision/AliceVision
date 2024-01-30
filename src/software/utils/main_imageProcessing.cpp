@@ -283,8 +283,7 @@ inline std::ostream& operator<<(std::ostream& os, EImageFormat e) { return os <<
 
 inline std::istream& operator>>(std::istream& in, EImageFormat& e)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     e = EImageFormat_stringToEnum(token);
     return in;
 }

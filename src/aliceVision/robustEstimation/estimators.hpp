@@ -66,8 +66,7 @@ inline std::ostream& operator<<(std::ostream& os, ERobustEstimator e) { return o
 
 inline std::istream& operator>>(std::istream& in, ERobustEstimator& estimatorType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     estimatorType = robustEstimation::ERobustEstimator_stringToEnum(token);
     return in;
 }

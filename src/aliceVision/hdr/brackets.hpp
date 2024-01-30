@@ -75,8 +75,7 @@ inline std::ostream& operator<<(std::ostream& os, ECalibrationMethod calibration
 
 inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibrationMethod)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     calibrationMethod = ECalibrationMethod_stringToEnum(token);
     return in;
 }

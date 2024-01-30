@@ -98,8 +98,7 @@ inline std::ostream& operator<<(std::ostream& os, const EGeometricFilterType geo
 
 inline std::istream& operator>>(std::istream& in, EGeometricFilterType& geometricFilterType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     geometricFilterType = EGeometricFilterType_stringToEnum(token);
     return in;
 }

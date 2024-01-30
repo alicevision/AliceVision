@@ -69,8 +69,7 @@ std::ostream& operator<<(std::ostream& os, EImageMatchingMethod m) { return os <
 
 std::istream& operator>>(std::istream& in, EImageMatchingMethod& m)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     m = EImageMatchingMethod_stringToEnum(token);
     return in;
 }

@@ -60,8 +60,7 @@ inline std::ostream& operator<<(std::ostream& os, ERelativeRotationMethod rotati
 
 inline std::istream& operator>>(std::istream& in, ERelativeRotationMethod& rotationMethod)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     rotationMethod = ERelativeRotationMethod_stringToEnum(token);
     return in;
 }

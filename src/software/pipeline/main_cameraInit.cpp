@@ -125,8 +125,7 @@ inline std::ostream& operator<<(std::ostream& os, EGroupCameraFallback s) { retu
 
 inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     s = EGroupCameraFallback_stringToEnum(token);
     return in;
 }

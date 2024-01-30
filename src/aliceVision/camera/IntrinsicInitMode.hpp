@@ -77,8 +77,7 @@ inline std::ostream& operator<<(std::ostream& os, const EInitMode initMode)
 
 inline std::istream& operator>>(std::istream& in, EInitMode& initMode)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     initMode = EInitMode_stringToEnum(token);
     return in;
 }

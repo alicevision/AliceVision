@@ -52,8 +52,7 @@ inline std::ostream& operator<<(std::ostream& os, ERotationAveragingMethod e) { 
 
 inline std::istream& operator>>(std::istream& in, ERotationAveragingMethod& rotationType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     rotationType = ERotationAveragingMethod_stringToEnum(token);
     return in;
 }

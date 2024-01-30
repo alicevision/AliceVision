@@ -54,8 +54,7 @@ inline std::ostream& operator<<(std::ostream& os, ETranslationAveragingMethod e)
 
 inline std::istream& operator>>(std::istream& in, ETranslationAveragingMethod& translationType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     translationType = ETranslationAveragingMethod_stringToEnum(token);
     return in;
 }
