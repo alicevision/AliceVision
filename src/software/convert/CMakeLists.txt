@@ -32,8 +32,8 @@ if(ALICEVISION_BUILD_SFM)
     )
 
     if (TARGET E57Format)
-        alicevision_add_software(aliceVision_importe57
-            SOURCE main_importe57.cpp
+        alicevision_add_software(aliceVision_importE57
+            SOURCE main_importE57.cpp
             FOLDER ${FOLDER_SOFTWARE_CONVERT}
             LINKS aliceVision_system
                 aliceVision_cmdline

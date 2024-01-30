@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2023 AliceVision contributors.
+// Copyright (c) 2024 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -29,34 +29,20 @@ struct PointInfoVectorAdaptator
 {
     using Derived = PointInfoVectorAdaptator;  //!< In this case the dataset class is myself.
 
-    const std::vector<dataio::E57Reader::PointInfo> & _data;
-    
+    const std::vector<dataio::E57Reader::PointInfo>& _data;
+
     PointInfoVectorAdaptator(const std::vector<dataio::E57Reader::PointInfo>& data)
       : _data(data)
-    {
-    }
+    {}
 
-    inline const Derived& derived() const 
-    { 
-        return *static_cast<const Derived*>(this); 
-    }
+    inline const Derived& derived() const { return *static_cast<const Derived*>(this); }
 
-    inline Derived& derived() 
-    { 
-        return *static_cast<Derived*>(this); 
-    }
+    inline Derived& derived() { return *static_cast<Derived*>(this); }
 
     // Must return the number of data points
-    inline size_t kdtree_get_point_count() const 
-    { 
-        return _data.size(); 
-    }
+    inline size_t kdtree_get_point_count() const { return _data.size(); }
 
-    
-    inline double kdtree_get_pt(const size_t idx, int dim) const 
-    { 
-        return _data.at(idx).coords(dim); 
-    }
+    inline double kdtree_get_pt(const size_t idx, int dim) const { return _data.at(idx).coords(dim); }
 
     // Let flann compute bbox
     template<class BBOX>
@@ -66,24 +52,25 @@ struct PointInfoVectorAdaptator
     }
 };
 
-using PointInfoKdTree = nanoflann::KDTreeSingleIndexAdaptor<
-                            nanoflann::L2_Simple_Adaptor<double, PointInfoVectorAdaptator>, 
-                            PointInfoVectorAdaptator, 
-                            3>;
+using PointInfoKdTree =
+  nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, PointInfoVectorAdaptator>, PointInfoVectorAdaptator, 3>;
 
 template<typename DistanceType, typename IndexType = size_t>
 class BestPointInRadius
 {
   public:
     const DistanceType m_radius;
-    const std::vector<dataio::E57Reader::PointInfo> & m_points;
-    const std::map<int, Eigen::Vector3d> & m_cameras;
+    const std::vector<dataio::E57Reader::PointInfo>& m_points;
+    const std::map<int, Eigen::Vector3d>& m_cameras;
 
     size_t m_result = 0;
     const int m_i;
     bool found = false;
 
-    BestPointInRadius(DistanceType radius_, const std::vector<dataio::E57Reader::PointInfo>& points, const std::map<int, Eigen::Vector3d> & cameras, int i)
+    BestPointInRadius(DistanceType radius_,
+                      const std::vector<dataio::E57Reader::PointInfo>& points,
+                      const std::map<int, Eigen::Vector3d>& cameras,
+                      int i)
       : m_radius(radius_),
         m_points(points),
         m_cameras(cameras),
@@ -92,11 +79,8 @@ class BestPointInRadius
         init();
     }
 
-    inline void init() 
-    { 
-        clear(); 
-    }
-    
+    inline void init() { clear(); }
+
     inline void clear() { m_result = 0; }
 
     inline size_t size() const { return m_result; }
@@ -109,7 +93,7 @@ class BestPointInRadius
      */
     inline bool addPoint(DistanceType dist, IndexType index)
     {
-        if (index== m_i)
+        if (index == m_i)
         {
             return true;
         }
@@ -132,33 +116,32 @@ class BestPointInRadius
         return true;
     }
 
-    //Upper bound on distance
-    inline DistanceType worstDist() const 
-    { 
-        return m_radius; 
-    }
+    // Upper bound on distance
+    inline DistanceType worstDist() const { return m_radius; }
 };
 
-// convert from a SfMData format to another
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-    // command-line parameters
+    // Command-line parameters
     std::vector<std::string> e57filenames;
     std::string outputSfMDataFilename;
     double maxDensity = 0.0;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("input,i", po::value<std::vector<std::string>>(&e57filenames)->multitoken()->required(),
-      "Path to e57 fomes.")
-    ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
-        "Path to the output sfm file.");
-    
+        ("input,i", po::value<std::vector<std::string>>(&e57filenames)->multitoken()->required(),
+         "Path to the input E57 files.")
+        ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
+         "Path to the output SfMData file.");
+
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("maxDensity", po::value<double>(&maxDensity)->default_value(maxDensity), "Each point has no neighboor closer than maxDensity meters");
+        ("maxDensity", po::value<double>(&maxDensity)->default_value(maxDensity),
+         "Ensure each point has no neighbour closer than maxDensity meters.");
+    // clang-format on
 
-    CmdLine cmdline("AliceVision importe57");
+    CmdLine cmdline("AliceVision importE57");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
@@ -166,17 +149,16 @@ int aliceVision_main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-
     sfmData::SfMData sfmData;
 
-    //Create intrinsics    
+    // Create intrinsics
     auto cam = camera::createEquidistant(aliceVision::camera::EINTRINSIC::EQUIDISTANT_CAMERA, 1, 1, 1, 0, 0);
     sfmData.getIntrinsics().emplace(0, cam);
-    
-    //Create a reader using all files
+
+    // Create a reader using all files
     dataio::E57Reader reader(e57filenames);
 
-    //Retrieve all sensor positions
+    // Retrieve all sensor positions
     ALICEVISION_LOG_INFO("Extracting sensors");
     Eigen::Vector3d sensorPosition;
     std::map<int, Eigen::Vector3d> cameras;
@@ -184,24 +166,23 @@ int aliceVision_main(int argc, char **argv)
     {
         cameras[reader.getIdMesh()] = sensorPosition;
 
-        //Create pose for sfmData
+        // Create pose for sfmData
         const int idMesh = reader.getIdMesh();
         geometry::Pose3 pose(Eigen::Matrix3d::Identity(), sensorPosition);
         sfmData.getPoses().emplace(idMesh, pose);
 
-        //Create view for sfmData
+        // Create view for sfmData
         sfmData::View::sptr view = std::make_shared<sfmData::View>("nopath", idMesh, 0, idMesh, 1, 1);
         sfmData.getViews().emplace(idMesh, view);
     }
     reader.reset();
-    
-    //Create buffers for reading
+
+    // Create buffers for reading
     std::vector<dataio::E57Reader::PointInfo> vertices;
     Eigen::Matrix<size_t, -1, -1> grid;
-    
 
     ALICEVISION_LOG_INFO("Extracting Meshes");
-    //Loop through all meshes
+    // Loop through all meshes
     std::vector<dataio::E57Reader::PointInfo> allVertices;
     while (reader.getNext(sensorPosition, vertices, grid))
     {
@@ -212,73 +193,70 @@ int aliceVision_main(int argc, char **argv)
         PointInfoKdTree tree(3, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(100));
         tree.buildIndex();
 
-        //Angular definition of a ray
+        // Angular definition of a ray
         double angularRes = 2.0 * M_PI / std::max(grid.rows(), grid.cols());
-        
-        double cord =  2.0 * sin(angularRes * 0.5);
+
+        double cord = 2.0 * sin(angularRes * 0.5);
         double maxLength = 1.5 * maxDensity / cord;
 
         size_t originalSize = allVertices.size();
 
-        //Loop trough all vertices
-        #pragma omp parallel for
+// Loop trough all vertices
+#pragma omp parallel for
         for (int vIndex = 0; vIndex < vertices.size(); ++vIndex)
         {
             bool found = true;
 
-            //Check if the point is close to the sensor enough to be theorically close to a neighboor
+            // Check if the point is close to the sensor enough to be theorically close to a neighboor
             double length = (vertices[vIndex].coords - sensorPosition).norm();
             if (length < maxLength)
             {
                 found = false;
 
-                //Search in the vicinity if a better point exists
+                // Search in the vicinity if a better point exists
                 const double radius = maxDensity;
                 static const nanoflann::SearchParameters searchParams(0.f, false);
-                BestPointInRadius<double, std::size_t> resultSet(radius*radius, vertices, cameras, vIndex);
+                BestPointInRadius<double, std::size_t> resultSet(radius * radius, vertices, cameras, vIndex);
                 tree.findNeighbors(resultSet, vertices[vIndex].coords.data(), searchParams);
 
-                
                 if (!resultSet.found)
                 {
                     found = true;
                 }
             }
 
-            #pragma omp critical
+#pragma omp critical
             {
                 if (found)
                 {
                     allVertices.push_back(vertices[vIndex]);
                 }
             }
-
-            
         }
 
         ALICEVISION_LOG_INFO("Mesh has " << allVertices.size() - originalSize << " points");
     }
-    
+
     ALICEVISION_LOG_INFO("Building final point cloud");
     PointInfoVectorAdaptator pointCloudRef(allVertices);
     PointInfoKdTree tree(3, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     tree.buildIndex();
 
-    auto & landmarks = sfmData.getLandmarks();
-    #pragma omp parallel for
+    auto& landmarks = sfmData.getLandmarks();
+#pragma omp parallel for
     for (int vIndex = 0; vIndex < allVertices.size(); ++vIndex)
     {
-        //Search in the vicinity if a better point exists
+        // Search in the vicinity if a better point exists
         const double radius = maxDensity;
         static const nanoflann::SearchParameters searchParams(0.f, false);
-        BestPointInRadius<double, std::size_t> resultSet(radius*radius, allVertices, cameras, vIndex);
+        BestPointInRadius<double, std::size_t> resultSet(radius * radius, allVertices, cameras, vIndex);
         tree.findNeighbors(resultSet, allVertices[vIndex].coords.data(), searchParams);
 
-        #pragma omp critical
+#pragma omp critical
         {
             if (!resultSet.found)
             {
-                const auto & v = allVertices[vIndex];
+                const auto& v = allVertices[vIndex];
 
                 sfmData::Observation obs(Vec2(0.0, 0.0), landmarks.size(), 1.0);
                 sfmData::Landmark landmark(v.coords, feature::EImageDescriberType::SIFT);
@@ -294,5 +272,3 @@ int aliceVision_main(int argc, char **argv)
 
     return EXIT_SUCCESS;
 }
-
-
