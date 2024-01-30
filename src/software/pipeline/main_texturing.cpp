@@ -140,10 +140,7 @@ int aliceVision_main(int argc, char* argv[])
     // clang-format on
 
     CmdLine cmdline("AliceVision texturing");
-    // Boost program option does not support space characters in non string parameters like enum (eg. inputColorSpace)
-    // Need to filter argv accordingly
-    const std::vector<std::string> enumParams = {"--outputColorSpace", "--workingColorSpace"};
-    cmdline.spaceFilter(argc, argv, enumParams);
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

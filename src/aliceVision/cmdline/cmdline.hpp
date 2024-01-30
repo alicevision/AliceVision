@@ -177,8 +177,6 @@ class CmdLine
 
     bool execute(int argc, char** argv);
 
-    void spaceFilter(int argc, char** argv, const std::vector<std::string>& optionNames);
-
     HardwareContext getHardwareContext() { return _hContext; }
 
   private:

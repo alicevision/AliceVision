@@ -397,8 +397,7 @@ std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType) { return o
 
 std::istream& operator>>(std::istream& in, EImageColorSpace& dataType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     dataType = EImageColorSpace_stringToEnum(token);
     return in;
 }

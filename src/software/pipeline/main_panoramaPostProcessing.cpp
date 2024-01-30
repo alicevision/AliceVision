@@ -301,10 +301,7 @@ int aliceVision_main(int argc, char** argv)
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
                     "AliceVision panoramaPostProcessing");
-    // Boost program option does not support space characters in non string parameters like enum (eg. inputColorSpace)
-    // Need to filter argv accordingly
-    const std::vector<std::string> enumParams = {"--outputColorSpace"};
-    cmdline.spaceFilter(argc, argv, enumParams);
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
