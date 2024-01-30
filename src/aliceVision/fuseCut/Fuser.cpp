@@ -549,8 +549,8 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
 {
     ALICEVISION_LOG_INFO("Estimate space from SfM.");
 
-    const std::size_t cacheSize = 1000000000;
     const double percentile = 0.999; 
+    const std::size_t cacheSize = 2.0 * (1.0 - percentile) * sfmData.getLandmarks().size();
 
     using namespace boost::accumulators;
     using AccumulatorMin = accumulator_set<double, stats<tag::tail_quantile<left>>>;
