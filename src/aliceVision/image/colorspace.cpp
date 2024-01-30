@@ -290,6 +290,7 @@ std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
                                                                   {EImageColorSpace::Linear_REDWideGamutRGB, "Linear REDWideGamutRGB"},
                                                                   {EImageColorSpace::Log3G10_REDWideGamutRGB, "Log3G10 REDWideGamutRGB"},
                                                                   {EImageColorSpace::Linear_Venice_S_Gamut3_Cine, "Linear Venice S-Gamut3.Cine"},
+                                                                  {EImageColorSpace::S_Log3_Venice_S_Gamut3_Cine, "S-Log3 Venice S-Gamut3.Cine"},
                                                                   {EImageColorSpace::NO_CONVERSION, "no_conversion"}};
 
     if (enumToString.find(colorSpace) != enumToString.end())
