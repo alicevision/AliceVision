@@ -46,10 +46,10 @@ public:
 
     bool getNext(Eigen::Vector3d & sensorPosition, std::vector<PointInfo> & vertices, Eigen::Matrix<size_t, -1, -1> & grid)
     {
-        //Go to next mesh of current file
+        // Go to next mesh of current file
         _idMesh++;
 
-        //Load next file if needed
+        // Load next file if needed
         if (_idMesh >= _countMeshesForFile)
         {
             _idPath++;
@@ -59,7 +59,7 @@ public:
                 return false;
             }
 
-            //Create reader
+            // Create reader
             _reader = std::make_unique<e57::Reader>(_paths[_idPath], e57::ReaderOptions());
             if (!_reader->IsOpen())
             {
@@ -72,7 +72,7 @@ public:
                 return false;
             }
 
-            //Compute number of meshes in file
+            // Compute number of meshes in file
             _countMeshesForFile = _reader->GetData3DCount();
         }
 
@@ -86,7 +86,7 @@ public:
             return false;
         }
 
-        //Get header
+        // Get header
         e57::Data3D scanHeader;
         if (!_reader->ReadData3D(_idMesh, scanHeader))
         {
@@ -94,7 +94,7 @@ public:
             return false;
         }
 
-        //Get sensor pose (worldTsensor)
+        // Get sensor pose (worldTsensor)
         Eigen::Quaternion<double> q(scanHeader.pose.rotation.w, 
                                     scanHeader.pose.rotation.x, 
                                     scanHeader.pose.rotation.y, 
@@ -122,8 +122,8 @@ public:
 
         e57::Data3DPointsFloat data3DPoints(scanHeader);
         e57::CompressedVectorReader datareader = _reader->SetUpData3DPointsData(_idMesh, countPoints, data3DPoints);
-    
-        //Prepare list of vertices
+
+        // Prepare list of vertices
         vertices.clear();
         vertices.reserve(countPoints);
 
@@ -133,8 +133,8 @@ public:
 
         unsigned readCount = 0;
         while ((readCount = datareader.read()) > 0)
-        {   
-            //Check input compatibility
+        {
+            // Check input compatibility
             if (data3DPoints.sphericalRange != nullptr)
             {
                 ALICEVISION_LOG_ERROR("Data contains spherical coordinates, this is not currently supported");
@@ -165,7 +165,6 @@ public:
                 continue;
             }
 
-    
             for (int pos = 0; pos < readCount; pos++)
             {
                 if (data3DPoints.cartesianInvalidState[pos])
@@ -178,7 +177,7 @@ public:
                 pt(1) = data3DPoints.cartesianY[pos];
                 pt(2) = data3DPoints.cartesianZ[pos];
 
-                //Transform point in the world frame
+                // Transform point in the world frame
                 PointInfo pi;
                 pi.coords = (R * pt + t);
                 pi.idMesh = _idMesh;
@@ -190,16 +189,16 @@ public:
         }
 
         sensorPosition = t;
-        
+
         return true;
     }
 
     bool getNext(Eigen::Vector3d & sensorPosition)
     {
-        //Go to next mesh of current file
+        // Go to next mesh of current file
         _idMesh++;
 
-        //Load next file if needed
+        // Load next file if needed
         if (_idMesh >= _countMeshesForFile)
         {
             _idPath++;
@@ -209,7 +208,7 @@ public:
                 return false;
             }
 
-            //Create reader
+            // Create reader
             _reader = std::make_unique<e57::Reader>(_paths[_idPath], e57::ReaderOptions());
             if (!_reader->IsOpen())
             {
@@ -222,7 +221,7 @@ public:
                 return false;
             }
 
-            //Compute number of meshes in file
+            // Compute number of meshes in file
             _countMeshesForFile = _reader->GetData3DCount();
         }
 
@@ -236,7 +235,7 @@ public:
             return false;
         }
 
-        //Get header
+        // Get header
         e57::Data3D scanHeader;
         if (!_reader->ReadData3D(_idMesh, scanHeader))
         {
@@ -244,7 +243,7 @@ public:
             return false;
         }
 
-        //Get sensor pose (worldTsensor)
+        // Get sensor pose (worldTsensor)
         Eigen::Quaternion<double> q(scanHeader.pose.rotation.w, 
                                     scanHeader.pose.rotation.x, 
                                     scanHeader.pose.rotation.y, 
@@ -258,7 +257,7 @@ public:
         t(2) = scanHeader.pose.translation.z;
 
         sensorPosition = t;
-        
+
         return true;
     }
 
