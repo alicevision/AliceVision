@@ -200,6 +200,7 @@ int aliceVision_main(int argc, char **argv)
         sfmData::View::sptr view = std::make_shared<sfmData::View>("nopath", idMesh, 0, idMesh, 1, 1);
         sfmData.getViews().emplace(idMesh, view);
     }
+    reader.reset();
     
     
     //Create buffers for reading
