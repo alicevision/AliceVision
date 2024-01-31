@@ -227,16 +227,16 @@ class BundleAdjustmentCeres : public BundleAdjustment
     std::vector<double*> _allParametersBlocks;
     /// poses blocks wrapper
     /// block: ceres angleAxis(3) + translation(3)
-    HashMap<IndexT, std::array<double, 6>> _posesBlocks;  // TODO : maybe we can use boost::flat_map instead of HashMap ?
+    std::map<IndexT, std::array<double, 6>> _posesBlocks;  // TODO : maybe we can use boost::flat_map instead of std::map ?
     /// intrinsics blocks wrapper
     /// block: intrinsics params
-    HashMap<IndexT, std::vector<double>> _intrinsicsBlocks;
+    std::map<IndexT, std::vector<double>> _intrinsicsBlocks;
     /// landmarks blocks wrapper
     /// block: 3d position(3)
-    HashMap<IndexT, std::array<double, 3>> _landmarksBlocks;
+    std::map<IndexT, std::array<double, 3>> _landmarksBlocks;
     /// rig sub-poses blocks wrapper
     /// block: ceres angleAxis(3) + translation(3)
-    HashMap<IndexT, HashMap<IndexT, std::array<double, 6>>> _rigBlocks;
+    std::map<IndexT, std::map<IndexT, std::array<double, 6>>> _rigBlocks;
 
     /// hinted order for ceres to eliminate blocks when solving.
     /// note: this ceres parameter is built internally and must be reset on each call to the solver.

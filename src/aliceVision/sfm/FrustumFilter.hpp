@@ -21,8 +21,8 @@ namespace sfm {
 class FrustumFilter
 {
   public:
-    typedef HashMap<IndexT, geometry::Frustum> FrustumsT;
-    typedef HashMap<IndexT, std::pair<double, double>> NearFarPlanesT;
+    typedef std::map<IndexT, geometry::Frustum> FrustumsT;
+    typedef std::map<IndexT, std::pair<double, double>> NearFarPlanesT;
 
     FrustumFilter(const sfmData::SfMData& sfmData, const double zNear = -1., const double zFar = -1.);
 

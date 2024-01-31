@@ -15,9 +15,9 @@ namespace aliceVision {
 namespace sfmData {
 
 /**
- * @brief compute a view UID
+ * @brief Compute a view UID
  * @param[in] view
- * @return UID
+ * @return The input view's UID
  */
 std::size_t computeViewUID(const View& view);
 

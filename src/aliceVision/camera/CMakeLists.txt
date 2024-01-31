@@ -52,3 +52,56 @@ alicevision_add_test(pinholeFisheye1_test.cpp   NAME "camera_pinholeFisheye1"   
 alicevision_add_test(pinholeRadial_test.cpp     NAME "camera_pinholeRadial"       LINKS aliceVision_camera)
 alicevision_add_test(pinhole3DE_test.cpp     	NAME "camera_pinhole3DE"       LINKS aliceVision_camera)
 alicevision_add_test(equidistant_test.cpp       NAME "camera_equidistant"         LINKS aliceVision_camera)
+
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
+    set_property(SOURCE Camera.i PROPERTY CPLUSPLUS ON)
+    set_property(SOURCE Camera.i PROPERTY SWIG_MODULE_NAME camera)
+
+    swig_add_library(camera
+        TYPE MODULE
+        LANGUAGE python
+        SOURCES Camera.i
+    )
+
+    set_property(
+        TARGET camera
+        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
+    )
+
+    target_include_directories(camera
+    PRIVATE
+        ../include
+        ${ALICEVISION_ROOT}/include
+        ${Python3_INCLUDE_DIRS}
+        ${Python3_NumPy_INCLUDE_DIRS}
+    )
+    set_property(
+        TARGET camera
+        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
+    )
+    set_property(
+        TARGET camera
+        PROPERTY COMPILE_OPTIONS -std=c++17
+    )
+
+    target_link_libraries(camera
+    PUBLIC
+        aliceVision_camera
+    )
+
+    install(
+    TARGETS
+    camera
+    DESTINATION
+        ${CMAKE_INSTALL_PREFIX}
+    )
+    install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/camera.py
+    DESTINATION
+        ${CMAKE_INSTALL_PREFIX}
+    )
+endif()

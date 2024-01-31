@@ -304,7 +304,7 @@ int aliceVision_main(int argc, char** argv)
                             commonViewsMap.emplace(viewPair.second, viewPair.first);
                         }
 
-                        HashMap<IndexT, aliceVision::sfmData::Landmark> newLandmarks;
+                        std::map<IndexT, aliceVision::sfmData::Landmark> newLandmarks;
                         for (const auto& landIt : refLandmarks)
                         {
                             // Copy of the current landmark :

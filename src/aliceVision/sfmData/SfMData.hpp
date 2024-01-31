@@ -14,7 +14,6 @@
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
-#include <aliceVision/sfmData/HashMapPtr.hpp>
 #include <aliceVision/types.hpp>
 
 #include <stdexcept>
@@ -25,28 +24,28 @@ namespace aliceVision {
 namespace sfmData {
 
 /// Define a collection of View
-using Views = HashMapPtr<View>;
+using Views = std::map<IndexT, std::shared_ptr<View>>;
 
 /// Define a collection of Image Info
-using ImageInfos = HashMapPtr<ImageInfo>;
+using ImageInfos = std::map<IndexT, std::shared_ptr<ImageInfo>>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
-using Poses = HashMap<IndexT, CameraPose>;
+using Poses = std::map<IndexT, CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
-using Intrinsics = HashMapPtr<camera::IntrinsicBase>;
+using Intrinsics = std::map<IndexT, std::shared_ptr<aliceVision::camera::IntrinsicBase>>;
 
 /// Define a collection of landmarks are indexed by their TrackId
-using Landmarks = HashMap<IndexT, Landmark>;
+using Landmarks = std::map<IndexT, Landmark>;
 
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;
 
 /// Define uncertainty per pose
-using PosesUncertainty = HashMap<IndexT, Vec6>;
+using PosesUncertainty = std::map<IndexT, Vec6>;
 
 /// Define uncertainty per landmark
-using LandmarksUncertainty = HashMap<IndexT, Vec3>;
+using LandmarksUncertainty = std::map<IndexT, Vec3>;
 
 /// Define a collection of constraints
 using Constraints2D = std::vector<Constraint2D>;
@@ -172,7 +171,7 @@ class SfMData
 
     /**
      * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
+     * @param[in] intrinsicId the ID of the intrinsic to get
      */
     const camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId) const
     {
@@ -183,7 +182,7 @@ class SfMData
 
     /**
      * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
+     * @param[in] intrinsicId the ID of the intrinsic to get
      */
     camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId)
     {
@@ -194,7 +193,7 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
+     * @param[in] intrinsicId the ID of the intrinsic to get
      */
     std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(IndexT intrinsicId)
     {
@@ -205,7 +204,7 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] v
+     * @param[in] v the view to get the intrinsic from
      */
     std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(const View& v)
     {
@@ -218,7 +217,7 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] intrinsicId
+     * @param[in] intrinsicId the ID of the intrinsic to get
      */
     const std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(IndexT intrinsicId) const
     {
@@ -229,7 +228,7 @@ class SfMData
 
     /**
      * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
-     * @param[in] v
+     * @param[in] v the view to get the intrinsic from
      */
     const std::shared_ptr<camera::IntrinsicBase> getIntrinsicSharedPtr(const View& v) const
     {
@@ -268,7 +267,7 @@ class SfMData
 
     /**
      * @brief Check if the given view have defined intrinsic and pose
-     * @param[in] viewID The given viewID
+     * @param[in] viewID The given view ID
      * @return true if intrinsic and pose defined
      */
     bool isPoseAndIntrinsicDefined(IndexT viewId) const { return isPoseAndIntrinsicDefined(_views.at(viewId).get()); }
@@ -282,7 +281,7 @@ class SfMData
 
     /**
      * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
+     * @param[in] viewId The given view ID
      * @return the corresponding view reference
      */
     const View& getView(IndexT viewId) const { return *(_views.at(viewId)); }
@@ -290,7 +289,7 @@ class SfMData
 
     /**
      * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
+     * @param[in] viewId The given view ID
      * @return the corresponding view ptr
      */
     const View::ptr getViewPtr(IndexT viewId) const { return _views.at(viewId).get(); }
@@ -298,7 +297,7 @@ class SfMData
 
     /**
      * @brief Gives the view of the input view id.
-     * @param[in] viewId The given view id
+     * @param[in] viewId The given view ID
      * @return the corresponding view ptr
      */
     View::sptr getViewSharedPtr(IndexT viewId) { return _views.at(viewId); }
@@ -501,6 +500,8 @@ class SfMData
 
     /**
      * @brief Add an ancestor image
+     * @param[in] ancestorId The ID of the ancestor that will be added
+     * @param[in] image The image that will be added as the ancestor
      */
     void addAncestor(IndexT ancestorId, std::shared_ptr<ImageInfo> image) { _ancestors.emplace(ancestorId, image); }
 

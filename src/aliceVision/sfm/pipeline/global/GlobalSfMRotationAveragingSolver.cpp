@@ -24,7 +24,7 @@ bool GlobalSfMRotationAveragingSolver::run(ERotationAveragingMethod eRotationAve
                                            ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
                                            const RelativeRotations& relativeRotIn,
                                            const double maxAngularError,
-                                           HashMap<IndexT, Mat3>& mapGlobalR) const
+                                           std::map<IndexT, Mat3>& mapGlobalR) const
 {
     RelativeRotations relativeRotations = relativeRotIn;
     // We work on a copy, since inference can remove some relative motions
@@ -63,7 +63,7 @@ bool GlobalSfMRotationAveragingSolver::run(ERotationAveragingMethod eRotationAve
     //  from ranging in [min(Id), max(Id)] to  [0, nbCam]
 
     const PairSet pairs = getPairs(relativeRotations);
-    HashMap<IndexT, IndexT> _reindexForward, _reindexBackward;
+    std::map<IndexT, IndexT> _reindexForward, _reindexBackward;
     reindex(pairs, _reindexForward, _reindexBackward);
 
     for (RelativeRotations::iterator iter = relativeRotations.begin(); iter != relativeRotations.end(); ++iter)

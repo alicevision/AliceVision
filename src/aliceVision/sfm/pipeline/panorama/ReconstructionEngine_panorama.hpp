@@ -189,7 +189,7 @@ class ReconstructionEngine_panorama : public ReconstructionEngine
 
   protected:
     /// Compute from relative rotations the global rotations of the camera poses
-    bool computeGlobalRotations(const aliceVision::rotationAveraging::RelativeRotations& vecTelativesR, HashMap<IndexT, Mat3>& mapGlobalR);
+    bool computeGlobalRotations(const aliceVision::rotationAveraging::RelativeRotations& vecTelativesR, std::map<IndexT, Mat3>& mapGlobalR);
 
   public:
     /// Adjust the scene (& remove outliers)
