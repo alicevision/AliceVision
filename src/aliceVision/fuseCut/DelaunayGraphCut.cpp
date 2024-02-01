@@ -24,7 +24,6 @@
 
 #include "nanoflann.hpp"
 
-#include <geogram/points/kd_tree.h>
 
 #include <cmath>
 #include <filesystem>
@@ -35,155 +34,12 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include <boost/atomic/atomic_ref.hpp>
+#include "Kdtree.hpp"
 
 namespace aliceVision {
 namespace fuseCut {
 
 namespace fs = std::filesystem;
-
-// #define USE_GEOGRAM_KDTREE 1
-
-#ifdef USE_GEOGRAM_KDTREE
-
-typedef GEO::AdaptiveKdTree KdTree;
-#else
-
-// static const std::size_t MAX_LEAF_ELEMENTS = 64;
-static const std::size_t MAX_LEAF_ELEMENTS = 10;
-
-struct PointVectorAdaptator
-{
-    using Derived = PointVectorAdaptator;  //!< In this case the dataset class is myself.
-    using T = double;
-
-    const std::vector<Point3d>& _data;
-    PointVectorAdaptator(const std::vector<Point3d>& data)
-      : _data(data)
-    {}
-
-    /// CRTP helper method
-    inline const Derived& derived() const { return *static_cast<const Derived*>(this); }
-    /// CRTP helper method
-    inline Derived& derived() { return *static_cast<Derived*>(this); }
-
-    // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return _data.size(); }
-
-    // Returns the dim'th component of the idx'th point in the class:
-    // Since this is inlined and the "dim" argument is typically an immediate value, the
-    //  "if/else's" are actually solved at compile time.
-    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data.at(idx).m[dim]; }
-
-    // Optional bounding-box computation: return false to default to a standard bbox computation loop.
-    //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it again.
-    //   Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
-    template<class BBOX>
-    bool kdtree_get_bbox(BBOX& bb) const
-    {
-        return false;
-    }
-};
-
-typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, PointVectorAdaptator>, PointVectorAdaptator, 3 /* dim */
-                                            >
-  KdTree;
-
-/**
- * A result-set class used when performing a radius based search.
- */
-template<typename DistanceType, typename IndexType = size_t>
-class SmallerPixSizeInRadius
-{
-  public:
-    const DistanceType radius;
-
-    const std::vector<double>& m_pixSizePrepare;
-    const std::vector<float>& m_simScorePrepare;
-    size_t m_result = 0;
-    const int m_i;
-    bool found = false;
-
-    inline SmallerPixSizeInRadius(DistanceType radius_, const std::vector<double>& pixSizePrepare, const std::vector<float>& simScorePrepare, int i)
-      : radius(radius_),
-        m_pixSizePrepare(pixSizePrepare),
-        m_simScorePrepare(simScorePrepare),
-        m_i(i)
-    {
-        init();
-    }
-
-    inline void init() { clear(); }
-    inline void clear() { m_result = 0; }
-
-    inline size_t size() const { return m_result; }
-
-    inline bool full() const { return found; }
-
-    /**
-     * Called during search to add an element matching the criteria.
-     * @return true if the search should be continued, false if the results are sufficient
-     */
-    inline bool addPoint(DistanceType dist, IndexType index)
-    {
-        if (dist < radius)
-        {
-            ++m_result;
-            if (m_simScorePrepare[index] * m_pixSizePrepare[index] * m_pixSizePrepare[index] <
-                m_simScorePrepare[m_i] * m_pixSizePrepare[m_i] * m_pixSizePrepare[m_i])
-            {
-                found = true;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    inline DistanceType worstDist() const { return radius; }
-};
-#endif
-
-class Tree
-{
-    std::unique_ptr<KdTree> _tree;
-    std::unique_ptr<PointVectorAdaptator> _pointCloudRef;
-
-  public:
-    Tree(const std::vector<Point3d>& verticesCoords) { initKdTree(verticesCoords); }
-
-    void initKdTree(const std::vector<Point3d>& verticesCoords)
-    {
-#ifdef USE_GEOGRAM_KDTREE
-        ALICEVISION_LOG_INFO("Build geogram KdTree index.");
-        _tree = std::make_unique<KdTree>(3);
-        _tree->set_exact(false);
-        _tree->set_points(verticesCoords.size(), verticesCoords.front().m);
-#else
-        ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
-        _pointCloudRef = std::make_unique<PointVectorAdaptator>(verticesCoords);
-        _tree = std::make_unique<KdTree>(3 /*dim*/, *_pointCloudRef.get(), nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-        _tree->buildIndex();
-#endif
-        ALICEVISION_LOG_INFO("KdTree created for " << verticesCoords.size() << " points.");
-    }
-
-    bool locateNearestVertex(const Point3d& p, std::size_t& index, double& sq_dist) const
-    {
-        index = std::numeric_limits<std::size_t>::max();
-        sq_dist = std::numeric_limits<double>::max();
-#ifdef USE_GEOGRAM_KDTREE
-        _tree->get_nearest_neighbors(1, p.m, &index, &sq_dist);
-        return true;
-#else
-        nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
-        resultSet.init(&index, &sq_dist);
-        if (!_tree->findNeighbors(resultSet, p.m, nanoflann::SearchParameters()))
-        {
-            return false;
-        }
-        return true;
-#endif
-    }
-};
 
 /// Filter by pixSize
 void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare,
@@ -191,17 +47,11 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare,
                      double pixSizeMarginCoef,
                      std::vector<float>& simScorePrepare)
 {
-#ifdef USE_GEOGRAM_KDTREE
-    ALICEVISION_LOG_INFO("Build geogram KdTree index.");
-    GEO::AdaptiveKdTree kdTree(3);
-    kdTree.set_exact(false);
-    kdTree.set_points(verticesCoordsPrepare.size(), verticesCoordsPrepare[0].m);
-#else
     ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
     PointVectorAdaptator pointCloudRef(verticesCoordsPrepare);
     KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     kdTree.buildIndex();
-#endif
+
     ALICEVISION_LOG_INFO("KdTree created for " << verticesCoordsPrepare.size() << " points.");
 
 #pragma omp parallel for
@@ -217,41 +67,13 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare,
             pixSizePrepare[vIndex] = -1.0;
             continue;
         }
-#ifdef USE_GEOGRAM_KDTREE
-        static const std::size_t nbNeighbors = 20;
-        static const double nbNeighborsInv = 1.0 / (double)nbNeighbors;
-        std::array<GEO::index_t, nbNeighbors> nnIndex;
-        std::array<double, nbNeighbors> sqDist;
-        // kdTree.get_nearest_neighbors(nbNeighbors, verticesCoordsPrepare[i].m, &nnIndex.front(), &sqDist.front());
-        kdTree.get_nearest_neighbors(nbNeighbors, vIndex, &nnIndex.front(), &sqDist.front());
 
-        for (std::size_t n = 0; n < nbNeighbors; ++n)
-        {
-            // NOTE: we don't need to test the distance regarding pixSizePrepare[nnIndex[vIndex]]
-            //       as we kill ourself only if our pixSize is bigger
-            if (sqDist[n] < pixSizeScore)
-            {
-                if (pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex] ||
-                    (pixSizePrepare[nnIndex[n]] == pixSizePrepare[vIndex] && nnIndex[n] < vIndex))
-                {
-                    // Kill itself if inside our volume (defined by marginCoef*pixSize) there is another point with a smaller pixSize
-                    pixSizePrepare[vIndex] = -1.0;
-                    break;
-                }
-            }
-            // else
-            // {
-            //     break;
-            // }
-        }
-#else
 
         static const nanoflann::SearchParameters searchParams(0.f, false);  // false: dont need to sort
         SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, simScorePrepare, vIndex);
         kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams);
         if (resultSet.found)
             pixSizePrepare[vIndex] = -1.0;
-#endif
     }
     ALICEVISION_LOG_INFO("Filtering done.");
 }
@@ -321,16 +143,12 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
                                     float contributeMarginFactor,
                                     float simGaussianSize)
 {
-#ifdef USE_GEOGRAM_KDTREE
-    GEO::AdaptiveKdTree kdTree(3);
-    kdTree.set_points(verticesCoordsPrepare.size(), verticesCoordsPrepare[0].m);
-    ALICEVISION_LOG_INFO("GEOGRAM: KdTree created");
-#else
+
     PointVectorAdaptator pointCloudRef(verticesCoordsPrepare);
     KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     kdTree.buildIndex();
     ALICEVISION_LOG_INFO("NANOFLANN: KdTree created.");
-#endif
+
     // TODO FACA: update into new data structures
     // std::vector<Point3d> newVerticesCoordsPrepare(verticesCoordsPrepare.size());
     // std::vector<float> newSimScorePrepare(simScorePrepare.size());
@@ -385,12 +203,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
 
                 const Point3d p = mp.backproject(c, Point2d(x, y), depth);
                 const double pixSize = mp.getCamPixelSize(p, c);
-#ifdef USE_GEOGRAM_KDTREE
-                const std::size_t nearestVertexIndex = kdTree.get_nearest_neighbor(p.m);
-                // NOTE: Could compute the distance between the line (camera to pixel) and the nearestVertex OR
-                //       the distance between the back-projected point and the nearestVertex
-                const double dist = (p - verticesCoordsPrepare[nearestVertexIndex]).size2();
-#else
+
                 nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
                 std::size_t nearestVertexIndex = std::numeric_limits<std::size_t>::max();
                 double dist = std::numeric_limits<double>::max();
@@ -400,7 +213,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
                     ALICEVISION_LOG_TRACE("Failed to find Neighbors.");
                     continue;
                 }
-#endif
+
                 const float pixSizeScoreI = simScorePrepare[nearestVertexIndex] * pixSize * pixSize;
                 const float pixSizeScoreV =
                   simScorePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex];
@@ -2531,12 +2344,10 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
                         if ((lastIntersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist)  // (p-originPt).size() > 2 * sigma
                         {
-                            // minJump = std::min(minJump, c.emptinessScore);
                             maxJump = std::max(maxJump, c.emptinessScore);
                         }
                         else
                         {
-                            // minSilent = std::min(minSilent, c.emptinessScore);
                             maxSilent = std::max(maxSilent, c.emptinessScore);
                         }
 
@@ -3178,7 +2989,7 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8],
     // add points for cam centers
     addPointsFromCameraCenters(cams, minDist);
 
-    densifyWithHelperPoints(densifyNbFront, densifyNbBack, densifyScale);
+    /*densifyWithHelperPoints(densifyNbFront, densifyNbBack, densifyScale);
 
     // add volume points to prevent singularities
     {
@@ -3192,7 +3003,7 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8],
         // add point for shape from silhouette
         if (depthMapsFuseParams != nullptr)
             addMaskHelperPoints(hexahExt, cams, *depthMapsFuseParams);
-    }
+    }*/
 
     _verticesCoords.shrink_to_fit();
     _verticesAttr.shrink_to_fit();
@@ -3211,20 +3022,12 @@ void DelaunayGraphCut::createGraphCut(const Point3d hexah[8],
     computeDelaunay();
     displayStatistics();
 
-    if (removeSmallSegments)  // false
-    {
-        std::vector<GC_Seg> segments;
-        std::vector<bool> useVertex;  // keep empty to process all pixels
-        computeVerticesSegSize(segments, useVertex, 0.0f);
-        removeSmallSegs(segments, 2500);  // TODO FACA: to decide
-    }
-
     voteFullEmptyScore(cams, folderName);
 
     if (exportDebugTetrahedralization)
+    {
         exportFullScoreMeshs(folderName);
-
-    maxflow();
+    }
 }
 
 void DelaunayGraphCut::addToInfiniteSw(float sW)

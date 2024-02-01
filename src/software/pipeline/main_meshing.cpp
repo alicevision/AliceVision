@@ -20,6 +20,11 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/fuseCut/PointCloudBuilder.hpp>
+#include <aliceVision/fuseCut/GCOutput.hpp>
+#include <aliceVision/fuseCut/GraphFiller.hpp>
+#include <aliceVision/fuseCut/Tetrahedralization.hpp>
+
 
 #include <Eigen/Geometry>
 
@@ -564,33 +569,46 @@ int aliceVision_main(int argc, char* argv[])
                     if (cams.empty())
                         throw std::logic_error("No camera to make the reconstruction");
 
+                    fuseCut::PointCloudBuilder builder(mp);
+                    builder.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
+
+                    fuseCut::Tetrahedralization tetra;
+                    tetra.buildFromVertices(builder._verticesCoords);
+
                     fuseCut::DelaunayGraphCut delaunayGC(mp);
-                    delaunayGC.createDensePointCloud(
-                      &hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
-                    if (saveRawDensePointCloud)
-                    {
-                        ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
-                        StaticVector<StaticVector<int>> ptsCams;
-                        delaunayGC.createPtsCams(ptsCams);
-                        sfmData::SfMData densePointCloud;
-                        createDenseSfMData(sfmData, mp, delaunayGC._verticesCoords, ptsCams, densePointCloud);
-                        removeLandmarksWithoutObservations(densePointCloud);
-                        if (colorizeOutput)
-                            sfmData::colorizeTracks(densePointCloud);
-                        sfmDataIO::save(densePointCloud, (outDirectory / "densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
-                    }
+                    
+                    delaunayGC._verticesCoords = builder._verticesCoords;
+                    delaunayGC._verticesAttr = builder._verticesAttr;
+                    delaunayGC._camsVertexes = builder._camsVertexes;
 
-                    delaunayGC.createGraphCut(&hexah[0],
-                                              cams,
-                                              outDirectory.string() + "/",
-                                              outDirectory.string() + "/SpaceCamsTracks/",
-                                              false,
-                                              exportDebugTetrahedralization);
 
-                    delaunayGC.graphCutPostProcessing(&hexah[0], outDirectory.string() + "/");
+                    delaunayGC.computeDelaunay();
 
-                    mesh = delaunayGC.createMesh(maxNbConnectedHelperPoints);
-                    delaunayGC.createPtsCams(ptsCams);
+                    fuseCut::GraphFiller filler(mp);
+
+                    filler._cellsAttr = delaunayGC._cellsAttr;
+                    filler._tetrahedralization = delaunayGC._tetrahedralization;
+                    filler._verticesCoords = delaunayGC._verticesCoords;
+                    filler._verticesAttr = delaunayGC._verticesAttr;
+                    filler._neighboringCellsPerVertex = delaunayGC._neighboringCellsPerVertex;
+                    filler.createGraphCut(&hexah[0], cams);
+                    delaunayGC._cellsAttr = filler._cellsAttr;
+
+                    
+
+                    delaunayGC.maxflow();
+                    fuseCut::GCOutput output(mp);
+
+                    output._verticesAttr = delaunayGC._verticesAttr;
+                    output._tetrahedralization = delaunayGC._tetrahedralization;
+                    output._cellIsFull = delaunayGC._cellIsFull;
+                    output._verticesCoords = delaunayGC._verticesCoords;
+                    output._camsVertexes = delaunayGC._camsVertexes;
+                    output._neighboringCellsPerVertex = delaunayGC._neighboringCellsPerVertex;
+
+                    output.graphCutPostProcessing(&hexah[0], outDirectory.string() + "/");
+                    mesh = output.createMesh(maxNbConnectedHelperPoints);
+                    output.createPtsCams(ptsCams);
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string() + "/", nullptr, &hexah[0]);
 
                     break;

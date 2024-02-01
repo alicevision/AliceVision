@@ -565,11 +565,6 @@ class DelaunayGraphCut
     void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);
 };
 
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type);
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Facet& facet);
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Edge& edge);
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometryIntersection& intersection);
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometriesCount& count);
 
 }  // namespace fuseCut
 }  // namespace aliceVision

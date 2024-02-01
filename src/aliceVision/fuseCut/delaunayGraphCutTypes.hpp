@@ -8,6 +8,7 @@
 
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/types.hpp>
 
 #include <array>
 
@@ -105,28 +106,23 @@ struct GC_vertexInfo
     }
 };
 
-struct GC_camVertexInfo
+struct GC_vertexInfo_Next
 {
-    float sim;  // TODO FACA: default value?
+    float pixSize = 0.0f;
+    /// Number of cameras which have contributed to the refinement of the vertex position, so nrc >= cams.size().
     int nrc = 0;
-    int ncams = 0;
-    Point3d point;
+    /// All cameras having a visibility of this vertex. Some of them may not have contributed to the vertex position
+    StaticVector<IndexT> cams;
 
-    void fwriteinfo(FILE* f)
-    {
-        fwrite(&sim, sizeof(float), 1, f);
-        fwrite(&nrc, sizeof(int), 1, f);
-        fwrite(&ncams, sizeof(int), 1, f);
-        fwrite(&point, sizeof(Point3d), 1, f);
-    }
+    /**
+     * @brief Is the vertex a virtual point without associated camera? Like helper points or camera points.
+     */
+    inline bool isVirtual() const { return cams.empty(); }
+    inline bool isReal() const { return !cams.empty(); }
 
-    void freadinfo(FILE* f)
-    {
-        fread(&sim, sizeof(float), 1, f);
-        fread(&nrc, sizeof(int), 1, f);
-        fread(&ncams, sizeof(int), 1, f);
-        fread(&point, sizeof(Point3d), 1, f);
-    }
+    inline std::size_t getNbCameras() const { return cams.size(); }
+
+    inline IndexT getCamera(std::size_t index) const { return cams[index]; }
 };
 
 inline std::ostream& operator<<(std::ostream& stream, const GC_cellInfo& cellInfo)
