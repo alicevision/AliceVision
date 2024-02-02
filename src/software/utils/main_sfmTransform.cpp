@@ -120,8 +120,7 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
 
 inline std::istream& operator>>(std::istream& in, EAlignmentMethod& alignment)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     alignment = EAlignmentMethod_stringToEnum(token);
     return in;
 }

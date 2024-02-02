@@ -80,8 +80,7 @@ std::ostream& operator<<(std::ostream& os, EVerboseLevel verboseLevel)
 
 std::istream& operator>>(std::istream& in, EVerboseLevel& verboseLevel)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     verboseLevel = EVerboseLevel_stringToEnum(token);
     return in;
 }

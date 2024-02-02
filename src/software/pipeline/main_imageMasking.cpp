@@ -68,8 +68,7 @@ inline std::ostream& operator<<(std::ostream& os, EAlgorithm s) { return os << E
 
 inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     s = EAlgorithm_stringToEnum(token);
     return in;
 }

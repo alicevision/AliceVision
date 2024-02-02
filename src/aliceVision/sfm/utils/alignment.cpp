@@ -31,8 +31,7 @@ namespace sfm {
 
 std::istream& operator>>(std::istream& in, MarkerWithCoord& marker)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     std::vector<std::string> markerCoord;
     boost::split(markerCoord, token, boost::algorithm::is_any_of(":="));
     if (markerCoord.size() != 2)

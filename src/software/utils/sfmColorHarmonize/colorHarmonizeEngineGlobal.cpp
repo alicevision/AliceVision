@@ -81,8 +81,7 @@ std::ostream& operator<<(std::ostream& os, EHistogramSelectionMethod p) { return
 
 std::istream& operator>>(std::istream& in, EHistogramSelectionMethod& p)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     p = EHistogramSelectionMethod_stringToEnum(token);
     return in;
 }

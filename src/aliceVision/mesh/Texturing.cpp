@@ -127,8 +127,7 @@ std::string EBumpMappingType_enumToString(EBumpMappingType type)
 std::ostream& operator<<(std::ostream& os, EBumpMappingType bumpMappingType) { return os << EBumpMappingType_enumToString(bumpMappingType); }
 std::istream& operator>>(std::istream& in, EBumpMappingType& bumpMappingType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     bumpMappingType = EBumpMappingType_stringToEnum(token);
     return in;
 }
