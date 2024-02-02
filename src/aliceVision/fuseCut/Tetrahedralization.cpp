@@ -8,6 +8,7 @@
 
 #include <geogram/delaunay/delaunay.h>
 #include <geogram/delaunay/delaunay_3d.h>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -39,7 +40,42 @@ void Tetrahedralization::buildFromVertices(const std::vector<Point3d> & vertices
         c.adjacent[3] = tetrahedralization->cell_adjacent(ci, 3);
     }
 
+    ALICEVISION_LOG_ERROR(_mesh.size());
     tetrahedralization.reset();
+
+    updateVertexToCellsCache(vertices);
+}
+
+void Tetrahedralization::updateVertexToCellsCache(const std::vector<Point3d> & vertices)
+{
+    _neighboringCellsPerVertex.clear();
+
+    std::map<VertexIndex, std::set<CellIndex>> neighboringCellsPerVertexTmp;
+    int coutInvalidVertices = 0;
+
+    for (CellIndex ci = 0; ci < nb_cells(); ++ci)
+    {
+        for (VertexIndex k = 0; k < 4; ++k)
+        {
+            const VertexIndex vi = cell_vertex(ci, k);
+
+            if (vi == GEO::NO_VERTEX || vi >= vertices.size())
+            {
+                ++coutInvalidVertices;
+                continue;
+            }
+
+            neighboringCellsPerVertexTmp[vi].insert(ci);
+        }
+    }
+    
+    _neighboringCellsPerVertex.resize(vertices.size());
+    for (const auto& it : neighboringCellsPerVertexTmp)
+    {
+        const std::set<CellIndex>& input = it.second;
+        std::vector<CellIndex>& output = _neighboringCellsPerVertex[it.first];
+        output.assign(input.begin(), input.end());
+    }
 }
 
 }

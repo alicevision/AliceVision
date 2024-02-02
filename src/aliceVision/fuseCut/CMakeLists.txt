@@ -10,6 +10,7 @@ set(fuseCut_files_headers
   Kdtree.hpp
   GraphFiller.hpp
   Intersections.hpp
+  GraphCut.hpp
 )
 
 # Sources
@@ -22,6 +23,7 @@ set(fuseCut_files_sources
   GraphFiller.cpp
   Intersections.cpp
   Tetrahedralization.cpp
+  GraphCut.cpp
 )
 
 alicevision_add_library(aliceVision_fuseCut

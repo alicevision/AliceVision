@@ -24,6 +24,7 @@
 #include <aliceVision/fuseCut/GCOutput.hpp>
 #include <aliceVision/fuseCut/GraphFiller.hpp>
 #include <aliceVision/fuseCut/Tetrahedralization.hpp>
+#include <aliceVision/fuseCut/GraphCut.hpp>
 
 
 #include <Eigen/Geometry>
@@ -573,38 +574,32 @@ int aliceVision_main(int argc, char* argv[])
                     builder.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
 
                     fuseCut::Tetrahedralization tetra;
-                    tetra.buildFromVertices(builder._verticesCoords);
-
-                    fuseCut::DelaunayGraphCut delaunayGC(mp);
-                    
-                    delaunayGC._verticesCoords = builder._verticesCoords;
-                    delaunayGC._verticesAttr = builder._verticesAttr;
-                    delaunayGC._camsVertexes = builder._camsVertexes;
-
-
-                    delaunayGC.computeDelaunay();
+                    tetra.buildFromVertices(builder._verticesCoords);                    
 
                     fuseCut::GraphFiller filler(mp);
-
-                    filler._cellsAttr = delaunayGC._cellsAttr;
-                    filler._tetrahedralization = delaunayGC._tetrahedralization;
-                    filler._verticesCoords = delaunayGC._verticesCoords;
-                    filler._verticesAttr = delaunayGC._verticesAttr;
-                    filler._neighboringCellsPerVertex = delaunayGC._neighboringCellsPerVertex;
+                    filler._tetrahedralization = tetra;
+                    filler._verticesCoords = builder._verticesCoords;
+                    filler._verticesAttr = builder._verticesAttr;
                     filler.createGraphCut(&hexah[0], cams);
-                    delaunayGC._cellsAttr = filler._cellsAttr;
+                    
+                    fuseCut::GraphCut gc;
 
+                    gc._tetrahedralization = tetra;
+                    gc._verticesCoords = builder._verticesCoords;
+                    gc._verticesAttr = builder._verticesAttr;
+                    gc._cellsAttr = filler._cellsAttr;
+                    
+    
+                    gc.maxflow();
                     
 
-                    delaunayGC.maxflow();
-                    fuseCut::GCOutput output(mp);
 
-                    output._verticesAttr = delaunayGC._verticesAttr;
-                    output._tetrahedralization = delaunayGC._tetrahedralization;
-                    output._cellIsFull = delaunayGC._cellIsFull;
-                    output._verticesCoords = delaunayGC._verticesCoords;
-                    output._camsVertexes = delaunayGC._camsVertexes;
-                    output._neighboringCellsPerVertex = delaunayGC._neighboringCellsPerVertex;
+                    fuseCut::GCOutput output(mp);
+                    output._verticesAttr = filler._verticesAttr;
+                    output._tetrahedralization = filler._tetrahedralization;
+                    output._cellIsFull = gc._cellIsFull;
+                    output._verticesCoords = filler._verticesCoords;
+                    output._camsVertexes = builder._camsVertexes;
 
                     output.graphCutPostProcessing(&hexah[0], outDirectory.string() + "/");
                     mesh = output.createMesh(maxNbConnectedHelperPoints);

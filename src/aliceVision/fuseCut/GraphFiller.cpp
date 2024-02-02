@@ -13,7 +13,8 @@ namespace fuseCut {
 
 void GraphFiller::createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams)
 {
-
+    initCells();
+    
     voteFullEmptyScore(cams);
 }
 
@@ -44,7 +45,7 @@ void GraphFiller::addToInfiniteSw(float sW)
     std::size_t nbInfinitCells = 0;
     for (CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
     {
-        if (isInfiniteCell(ci))
+        if (_tetrahedralization.isInfiniteCell(ci))
         {
             GC_cellInfo& c = _cellsAttr[ci];
             c.cellSWeight += sW;
@@ -160,7 +161,7 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 
                         // Take the mirror facet to iterate over the next cell
                         const Facet mFacet = mirrorFacet(geometry.facet);
-                        if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                        if (_tetrahedralization.isInvalidOrInfiniteCell(mFacet.cellIndex))
                         {
                             // ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: invalidOrInfinite miror facet.");
                             break;
@@ -241,7 +242,7 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         const Facet mFacet = mirrorFacet(geometry.facet);
                         lastIntersectedFacet = mFacet;
                         geometry.facet = mFacet;
-                        if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                        if (_tetrahedralization.isInvalidOrInfiniteCell(mFacet.cellIndex))
                         {
                             break;
                         }
@@ -484,11 +485,11 @@ GeometryIntersection GraphFiller::intersectNextGeom(const GeometryIntersection& 
         {
             for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(inGeometry.vertexIndex))
             {
-                if (isInvalidOrInfiniteCell(adjCellIndex))
+                if (_tetrahedralization.isInvalidOrInfiniteCell(adjCellIndex))
                     continue;
 
                 // Get local vertex index
-                const VertexIndex localVertexIndex = _tetrahedralization->index(adjCellIndex, inGeometry.vertexIndex);
+                const VertexIndex localVertexIndex = _tetrahedralization.index(adjCellIndex, inGeometry.vertexIndex);
 
                 // Define the facet to intersect
                 const Facet facet(adjCellIndex, localVertexIndex);
@@ -518,11 +519,11 @@ GeometryIntersection GraphFiller::intersectNextGeom(const GeometryIntersection& 
 
             for (CellIndex adjCellIndex : getNeighboringCellsByEdge(inGeometry.edge))
             {
-                if (isInvalidOrInfiniteCell(adjCellIndex))
+                if (_tetrahedralization.isInvalidOrInfiniteCell(adjCellIndex))
                     continue;
                 // Local vertices indices
-                const VertexIndex lvi0 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v0);
-                const VertexIndex lvi1 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v1);
+                const VertexIndex lvi0 = _tetrahedralization.index(adjCellIndex, inGeometry.edge.v0);
+                const VertexIndex lvi1 = _tetrahedralization.index(adjCellIndex, inGeometry.edge.v1);
 
                 // The two facets that do not touch this edge need to be tested
                 const std::array<Facet, 2> opositeFacets{{{adjCellIndex, lvi0}, {adjCellIndex, lvi1}}};
@@ -588,7 +589,7 @@ std::vector<CellIndex> GraphFiller::getNeighboringCellsByFacet(const Facet& f) c
     neighboringCells.push_back(f.cellIndex);
 
     const Facet mFacet = mirrorFacet(f);
-    if (!isInvalidOrInfiniteCell(mFacet.cellIndex))
+    if (!_tetrahedralization.isInvalidOrInfiniteCell(mFacet.cellIndex))
         neighboringCells.push_back(mFacet.cellIndex);
 
     return neighboringCells;
@@ -791,7 +792,7 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                 // Take the mirror facet to iterate over the next cell
                 const Facet mFacet = mirrorFacet(geometry.facet);
                 geometry.facet = mFacet;
-                if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                if (_tetrahedralization.isInvalidOrInfiniteCell(mFacet.cellIndex))
                 {
 #ifdef ALICEVISION_DEBUG_VOTE
                     // exportBackPropagationMesh("fillGraph_ToCam_invalidMirorFacet", history.geometries, originPt, _mp.CArr[cam]);
@@ -912,7 +913,7 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                 const Facet mFacet = mirrorFacet(geometry.facet);
                 lastIntersectedFacet = mFacet;
                 geometry.facet = mFacet;
-                if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                if (_tetrahedralization.isInvalidOrInfiniteCell(mFacet.cellIndex))
                 {
                     // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
                     break;
@@ -1005,6 +1006,28 @@ float GraphFiller::distFcn(float maxDist, float dist, float distFcnHeight) const
     // dist large means distFcn close to 1
     // dist small means distFcn close to 0
 }
+
+void GraphFiller::initCells()
+{
+    _cellsAttr.resize(_tetrahedralization.nb_cells());  // or nb_finite_cells() if keeps_infinite()
+
+    for (int i = 0; i < _cellsAttr.size(); ++i)
+    {
+        GC_cellInfo& c = _cellsAttr[i];
+
+        c.cellSWeight = 0.0f;
+        c.cellTWeight = 0.0f;
+        c.on = 0.0f;
+        c.fullnessScore = 0.0f;
+        c.emptinessScore = 0.0f;
+        for (int s = 0; s < 4; ++s)
+        {
+            c.gEdgeVisWeight[s] = 0.0f;
+        }
+    }
+}
+
+
 
 }  // namespace fuseCut
 }  // namespace aliceVision

@@ -80,6 +80,8 @@ private:
     void voteFullEmptyScore(const StaticVector<int>& cams);
     void addToInfiniteSw(float sW);
     void forceTedgesByGradientIJCV(float nPixelSizeBehind);
+    void initCells();
+    
     
 private:
      GeometryIntersection intersectNextGeom(const GeometryIntersection& inGeometry,
@@ -98,19 +100,7 @@ private:
                                               const Point3d* lastIntersectPt = nullptr) const;
 
 
-    inline bool isInfiniteCell(CellIndex ci) const
-    {
-        return _tetrahedralization->cell_is_infinite(ci);
-        // return ci < 0 || ci > getNbVertices();
-    }
-
-    inline bool isInvalidOrInfiniteCell(CellIndex ci) const
-    {
-        return ci == GEO::NO_CELL || isInfiniteCell(ci);
-        // return ci < 0 || ci > getNbVertices();
-    }
-
-    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const { return _neighboringCellsPerVertex.at(vi); }
+    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const { return _tetrahedralization.getNeighboringCellsPerVertex().at(vi); }
 
     std::vector<CellIndex> getNeighboringCellsByEdge(const Edge& e) const
     {
@@ -127,7 +117,7 @@ private:
 
     inline VertexIndex getVertexIndex(const Facet& f, int i) const
     {
-        return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
+        return _tetrahedralization.cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
     }
 
     inline Facet mirrorFacet(const Facet& f) const
@@ -135,13 +125,13 @@ private:
         const std::array<VertexIndex, 3> facetVertices = {getVertexIndex(f, 0), getVertexIndex(f, 1), getVertexIndex(f, 2)};
 
         Facet out;
-        out.cellIndex = _tetrahedralization->cell_adjacent(f.cellIndex, f.localVertexIndex);
+        out.cellIndex = _tetrahedralization.cell_adjacent(f.cellIndex, f.localVertexIndex);
         if (out.cellIndex != GEO::NO_CELL)
         {
             // Search for the vertex in adjacent cell which doesn't exist in input facet.
             for (int k = 0; k < 4; ++k)
             {
-                CellIndex out_vi = _tetrahedralization->cell_vertex(out.cellIndex, k);
+                CellIndex out_vi = _tetrahedralization.cell_vertex(out.cellIndex, k);
                 if (std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
                 {
                     out.localVertexIndex = k;
@@ -168,13 +158,13 @@ private:
                            bool fillOut,
                            float distFcnHeight);
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
+
 public:
     mvsUtils::MultiViewParams& _mp;
     std::vector<GC_cellInfo> _cellsAttr;
-    GEO::Delaunay_var _tetrahedralization;
+    Tetrahedralization _tetrahedralization;
     std::vector<Point3d> _verticesCoords;
     std::vector<GC_vertexInfo> _verticesAttr;
-    std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
 };
 
 }  // namespace fuseCut

@@ -22,6 +22,8 @@ void GCOutput::filterLargeHelperPoints(std::vector<bool>& out_reliableVertices, 
     ALICEVISION_LOG_DEBUG("DelaunayGraphCut::filterLargeHelperPoints");
     out_reliableVertices.clear();
 
+    return;
+
     // Do not filter helper points if maxSegSize is negative/infinit
     if (maxSegSize < 0)
         return;
@@ -40,7 +42,7 @@ void GCOutput::filterLargeHelperPoints(std::vector<bool>& out_reliableVertices, 
         {
             // go through all the neighbouring points
             GEO::vector<VertexIndex> adjVertices;
-            _tetrahedralization->get_neighbors(vi, adjVertices);
+            //_tetrahedralization.get_neighbors(vi, adjVertices);
 
             for (VertexIndex nvi : adjVertices)
             {
@@ -180,7 +182,7 @@ mesh::Mesh* GCOutput::createMesh(int maxNbConnectedHelperPoints)
             }
 
             Facet f2 = mirrorFacet(f1);
-            if (isInvalidOrInfiniteCell(f2.cellIndex))
+            if (_tetrahedralization.isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
             bool vo = _cellIsFull[f2.cellIndex];  // get if it is occupied
 
@@ -275,7 +277,7 @@ int GCOutput::computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const
                 continue;
 
             const Facet f2 = mirrorFacet(f1);
-            if (isInvalidOrInfiniteCell(f2.cellIndex))
+            if (_tetrahedralization.isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
             const bool vo = _cellIsFull[f2.cellIndex];  // get if it is occupied
 
@@ -290,7 +292,7 @@ int GCOutput::computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const
             vertexIsOnSurface[v2] = true;
             vertexIsOnSurface[v3] = true;
 
-            assert(!(isInfiniteCell(f1.cellIndex) && isInfiniteCell(f2.cellIndex)));  // infinite both cells of finite vertex!
+            assert(!(_tetrahedralization.isInfiniteCell(f1.cellIndex) && _tetrahedralization.isInfiniteCell(f2.cellIndex)));  // infinite both cells of finite vertex!
         }
     }
     ALICEVISION_LOG_INFO("computeIsOnSurface nbSurfaceFacets: " << nbSurfaceFacets);
@@ -349,13 +351,13 @@ int GCOutput::removeBubbles()
     // all free space segments which contains camera has to remain free
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if (isInfiniteCell(ci) || emptySegColors[ci] < 0)
+        if (_tetrahedralization.isInfiniteCell(ci) || emptySegColors[ci] < 0)
             continue;
 
-        const GC_vertexInfo& a = _verticesAttr[_tetrahedralization->cell_vertex(ci, 0)];
-        const GC_vertexInfo& b = _verticesAttr[_tetrahedralization->cell_vertex(ci, 1)];
-        const GC_vertexInfo& c = _verticesAttr[_tetrahedralization->cell_vertex(ci, 2)];
-        const GC_vertexInfo& d = _verticesAttr[_tetrahedralization->cell_vertex(ci, 3)];
+        const GC_vertexInfo& a = _verticesAttr[_tetrahedralization.cell_vertex(ci, 0)];
+        const GC_vertexInfo& b = _verticesAttr[_tetrahedralization.cell_vertex(ci, 1)];
+        const GC_vertexInfo& c = _verticesAttr[_tetrahedralization.cell_vertex(ci, 2)];
+        const GC_vertexInfo& d = _verticesAttr[_tetrahedralization.cell_vertex(ci, 3)];
         if (a.isVirtual() || b.isVirtual() || c.isVirtual() || d.isVirtual())
         {
             // TODO FACA: check helper points are not connected to cameras?
@@ -375,7 +377,7 @@ int GCOutput::removeBubbles()
     int nbModifiedCells = 0;
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if ((!isInfiniteCell(ci)) && (emptySegColors[ci] >= 0) && (colorsToFill[emptySegColors[ci]]))
+        if ((!_tetrahedralization.isInfiniteCell(ci)) && (emptySegColors[ci] >= 0) && (colorsToFill[emptySegColors[ci]]))
         {
             _cellIsFull[ci] = true;
             ++nbModifiedCells;
@@ -425,7 +427,7 @@ void GCOutput::graphCutPostProcessing(const Point3d hexah[8], const std::string&
                 continue;
             for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(cam_vi))  // GEOGRAM: set_stores_cicl(true) required
             {
-                if (isInvalidOrInfiniteCell(adjCellIndex))
+                if (_tetrahedralization.isInvalidOrInfiniteCell(adjCellIndex))
                     continue;
 
                 if (_cellIsFull[adjCellIndex])
@@ -465,7 +467,7 @@ void GCOutput::graphCutPostProcessing(const Point3d hexah[8], const std::string&
                 int count = 0;
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(ci, k);
+                    const CellIndex nci = _tetrahedralization.cell_adjacent(ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
                     count += (_cellIsFull[nci] != _cellIsFull[ci]);
@@ -516,12 +518,12 @@ void GCOutput::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIt
         const int nbSurfaceFacets = computeIsOnSurface(vertexIsOnSurface);
 
 #pragma omp parallel for reduction(+ : toInvertCount)
-        for (int vi = 0; vi < _neighboringCellsPerVertex.size(); ++vi)
+        for (int vi = 0; vi < _tetrahedralization.getNeighboringCellsPerVertex().size(); ++vi)
         {
             if (!vertexIsOnSurface[vi])
                 continue;
             // ALICEVISION_LOG_INFO("vertex is on surface: " << vi);
-            const std::vector<CellIndex>& neighboringCells = _neighboringCellsPerVertex[vi];
+            const std::vector<CellIndex>& neighboringCells = _tetrahedralization.getNeighboringCellsPerVertex()[vi];
             std::vector<Facet> neighboringFacets;
             neighboringFacets.reserve(neighboringCells.size());
             bool borderCase = false;
@@ -534,7 +536,7 @@ void GCOutput::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIt
                 GEO::signed_index_t localVertexIndex = 0;
                 for (int k = 0; k < 4; ++k)
                 {
-                    const GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(ci, k);
+                    const GEO::signed_index_t currentVertex = _tetrahedralization.cell_vertex(ci, k);
                     if (currentVertex == GEO::NO_VERTEX)
                         break;
                     if (currentVertex != vi)
@@ -590,7 +592,7 @@ void GCOutput::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIt
                 if (_cellIsFull[f.cellIndex] == invertFull)
                 {
                     const Facet fv = mirrorFacet(f);
-                    if (isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[f.cellIndex] != _cellIsFull[fv.cellIndex])
+                    if (_tetrahedralization.isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[f.cellIndex] != _cellIsFull[fv.cellIndex])
                     {
                         borderCase = true;
                         break;
@@ -661,7 +663,7 @@ void GCOutput::invertFullStatusForSmallLabels()
 
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
+                    const CellIndex nci = _tetrahedralization.cell_adjacent(tmp_ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
                     if ((colorPerCell[nci] == -1) && (_cellIsFull[nci] == _cellIsFull[ci]))
@@ -717,7 +719,7 @@ void GCOutput::segmentFullOrFree(bool full, StaticVector<int>& out_fullSegsColor
     // segment connected free space
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if ((!isInfiniteCell(ci)) && (out_fullSegsColor[ci] == -1) && (_cellIsFull[ci] == full))
+        if ((!_tetrahedralization.isInfiniteCell(ci)) && (out_fullSegsColor[ci] == -1) && (_cellIsFull[ci] == full))
         {
             // backtrack all connected interior cells
             buff.resize(0);
@@ -731,10 +733,10 @@ void GCOutput::segmentFullOrFree(bool full, StaticVector<int>& out_fullSegsColor
 
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
+                    const CellIndex nci = _tetrahedralization.cell_adjacent(tmp_ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
-                    if ((!isInfiniteCell(nci)) && (out_fullSegsColor[nci] == -1) && (_cellIsFull[nci] == full))
+                    if ((!_tetrahedralization.isInfiniteCell(nci)) && (out_fullSegsColor[nci] == -1) && (_cellIsFull[nci] == full))
                     {
                         buff.push_back(nci);
                     }

@@ -31,7 +31,7 @@ public:
     void buildFromVertices(const std::vector<Point3d> & vertices);
 
     //Find local index  for given global index 
-    VertexIndex index(CellIndex ci, VertexIndex vi)
+    VertexIndex index(CellIndex ci, VertexIndex vi) const
     {
         const Cell & c = _mesh[ci];
         for (VertexIndex cvi = 0; cvi < 4; cvi++)
@@ -45,12 +45,12 @@ public:
         return GEO::NO_VERTEX;
     }
 
-    VertexIndex cell_vertex(CellIndex ci, VertexIndex vi)
+    VertexIndex cell_vertex(CellIndex ci, VertexIndex vi) const
     {
         return _mesh[ci].indices[vi];
     }
 
-    CellIndex cell_adjacent(CellIndex ci, VertexIndex vi)
+    CellIndex cell_adjacent(CellIndex ci, VertexIndex vi) const
     {
         return _mesh[ci].adjacent[vi];
     }
@@ -73,13 +73,22 @@ public:
         return ci == GEO::NO_CELL || isInfiniteCell(ci);
     }
 
-    size_t nb_cells()
+    size_t nb_cells() const
     {
         return _mesh.size();
     }
 
+    const std::vector<std::vector<CellIndex>> & getNeighboringCellsPerVertex() const
+    {
+        return _neighboringCellsPerVertex;
+    }
+
+private:
+    void updateVertexToCellsCache(const std::vector<Point3d> & vertices);
+
 private:
     std::vector<Cell> _mesh;
+    std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
 };
 
 }
