@@ -100,6 +100,7 @@ vcpkg install ^
           assimp ^
           pcl ^
           clp ^
+          libe57format ^
           --triplet x64-windows
 ```
 
