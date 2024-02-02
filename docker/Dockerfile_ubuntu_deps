@@ -43,6 +43,7 @@ RUN . ./etc/os-release && \
         cmake \
         gfortran \
         clang-format \
+        libxerces-c-dev \
         gcc-10 \
         g++-10 \
         cpp-10 \
@@ -113,6 +114,8 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} opencv
 # RUN make -j ${CPU_CORES} expat
 # RUN make -j ${CPU_CORES} SWIG
+# RUN make -j ${CPU_CORES} E57Format
+
 # RUN make -j ${CPU_CORES} popsift
 # RUN make -j ${CPU_CORES} cctag
 

@@ -28,6 +28,7 @@ option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
 option(AV_BUILD_FLANN "Enable building an embedded Flann" ON)
 option(AV_BUILD_LEMON "Enable building an embedded LEMON library" ON)
+option(AV_BUILD_E57FORMAT "Enable building an embedded E57Format" ON)
 option(AV_BUILD_PCL "Enable building an embedded PointCloud library" OFF)
 option(AV_BUILD_USD "Enable building an embedded USD library" OFF)
 option(AV_BUILD_GEOGRAM "Enable building an embedded Geogram library" ON)
@@ -76,6 +77,7 @@ message(STATUS "AV_BUILD_FLANN: ${AV_BUILD_FLANN}")
 message(STATUS "AV_BUILD_PCL: ${AV_BUILD_PCL}")
 message(STATUS "AV_BUILD_USD: ${AV_BUILD_USD}")
 message(STATUS "AV_BUILD_LEMON: ${AV_BUILD_LEMON}")
+message(STATUS "AV_BUILD_E57FORMAT: ${AV_BUILD_E57FORMAT}")
 message(STATUS "AV_BUILD_GEOGRAM: ${AV_BUILD_GEOGRAM}")
 message(STATUS "AV_BUILD_TBB ${AV_BUILD_TBB}")
 message(STATUS "AV_BUILD_EIGEN ${AV_BUILD_EIGEN}")
@@ -1277,6 +1279,29 @@ if(AV_BUILD_SWIG)
     )
 endif()
 
+if(AV_BUILD_E57FORMAT)
+    # Add libE57Format
+    set(E57FORMAT_TARGET E57Format)
+
+    ExternalProject_add(${E57FORMAT_TARGET}
+        GIT_REPOSITORY https://github.com/asmaloney/libE57Format.git
+        GIT_TAG v3.1.1
+        DOWNLOAD_DIR ${BUILD_DIR}/download/${E57FORMAT_TARGET}
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${E57FORMAT_TARGET}
+        BINARY_DIR ${BUILD_DIR}/${E57FORMAT_TARGET}_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+    )
+
+    set(E57FORMAT_CMAKE_FLAGS -DE57FORMAT_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/E57Format)
+endif()
+
 set(AV_DEPS
     ${ZLIB_TARGET}
     ${ASSIMP_TARGET}
@@ -1310,6 +1335,7 @@ set(AV_DEPS
     ${LZ4_TARGET}
     ${LEMON_TARGET}
     ${SWIG_TARGET}
+    ${E57FORMAT_TARGET}
 )
 
 if(AV_BUILD_ALICEVISION)
@@ -1359,6 +1385,7 @@ if(AV_BUILD_ALICEVISION)
         ${PCL_CMAKE_FLAGS}
         ${USD_CMAKE_FLAGS}
         ${SWIG_CMAKE_FLAGS}
+        ${E57FORMAT_CMAKE_FLAGS}
 
         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
         DEPENDS ${AV_DEPS}
