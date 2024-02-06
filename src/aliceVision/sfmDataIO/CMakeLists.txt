@@ -131,6 +131,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     target_link_libraries(sfmDataIO
     PUBLIC
         aliceVision_sfmDataIO
+        ${Python3_LIBRARIES}
     )
 
     install(

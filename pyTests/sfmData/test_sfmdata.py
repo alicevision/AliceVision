@@ -4,7 +4,7 @@ Collection of unit tests for the SfMData class.
 
 import os
 
-from aliceVision import sfmData as av
+from pyalicevision import sfmData as av
 from ..constants import IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, \
     IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA
 

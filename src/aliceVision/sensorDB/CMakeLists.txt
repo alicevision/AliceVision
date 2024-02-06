@@ -63,6 +63,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     target_link_libraries(sensorDB
     PUBLIC
         aliceVision_sensorDB
+        ${Python3_LIBRARIES}
     )
 
     install(

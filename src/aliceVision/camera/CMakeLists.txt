@@ -90,6 +90,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     target_link_libraries(camera
     PUBLIC
         aliceVision_camera
+        ${Python3_LIBRARIES}
     )
 
     install(

@@ -4,7 +4,7 @@ Collection of unit tests for the brackets detection.
 
 import pytest
 
-import aliceVision as av
+import pyalicevision as av
 
 ##################
 ### List of functions:

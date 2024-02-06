@@ -89,6 +89,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         aliceVision_numeric
         aliceVision_image
         aliceVision_sfmData
+        ${Python3_LIBRARIES}
     )
 
     install(

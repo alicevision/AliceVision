@@ -88,6 +88,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     PUBLIC
         aliceVision_sfmData
         aliceVision_camera
+        ${Python3_LIBRARIES}
     )
 
     install(

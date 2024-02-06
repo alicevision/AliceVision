@@ -4,7 +4,7 @@ Collection of unit tests for the Constraint2D structure.
 
 import pytest
 
-from aliceVision import sfmData as av
+from pyalicevision import sfmData as av
 
 ##################
 ### List of functions:

@@ -37,7 +37,10 @@
 
 %template(IndexTSet) std::set<IndexT>;
 
-%template(SizeTPair) std::pair<size_t, size_t>;
+namespace std {
+    %template(SizeTPair) pair<size_t, size_t>;
+}
+%template(LongUintPair) std::pair<long unsigned int, long unsigned int>;
 
 // As defined in aliceVision/types.hpp
 %template(Pair) std::pair<IndexT, IndexT>;
