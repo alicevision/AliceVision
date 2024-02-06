@@ -13,6 +13,7 @@
 #include <geogram/mesh/mesh.h>
 #include <geogram/basic/geometry_nd.h>
 #include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/fuseCut/Octree.hpp>
 
 #include <aliceVision/fuseCut/Intersections.hpp>
 
@@ -22,28 +23,6 @@ namespace fuseCut {
 class GraphFiller
 {
 public:
-    
-    struct IntersectionHistory
-    {
-        size_t steps = 0;
-        Point3d cam;
-        Point3d originPt;
-        Point3d dirVect;
-
-        std::vector<GeometryIntersection> geometries;
-        std::vector<Point3d> intersectPts;
-        std::vector<Point3d> vecToCam;
-        std::vector<float> distToCam;
-        std::vector<float> angleToCam;
-        IntersectionHistory(const Point3d& c, const Point3d& oPt, const Point3d& diV)
-          : cam{c},
-            originPt{oPt},
-            dirVect{diV}
-        {}
-
-        void append(const GeometryIntersection& geom, const Point3d& intersectPt);
-    };
-
     /**
      * @brief  Used for debug purposes to store count about geometries intersected during fillGraph and forceTedges.
      */
@@ -74,13 +53,26 @@ public:
     {
     }
 
-    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams);
+    void initCells();
+
+    void createGraphCut(const std::vector<RayInfo> & rayInfos, const Node & node);
+    void forceTedgesByGradientIJCV(const std::vector<RayInfo> & rayInfos, const Node & node);
+
+    void final()
+    {
+        for (GC_cellInfo& c : _cellsAttr)
+        {
+            const float w = std::max(1.0f, c.cellTWeight) * c.on;
+
+            // cellTWeight = clamp(w, cellTWeight, 1000000.0f);
+            c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, w));
+        }
+    }
 
 private:
-    void voteFullEmptyScore(const StaticVector<int>& cams);
+    void voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, const Node & node);
     void addToInfiniteSw(float sW);
-    void forceTedgesByGradientIJCV(float nPixelSizeBehind);
-    void initCells();
+    
     
     
 private:
@@ -144,19 +136,17 @@ private:
 
     std::vector<CellIndex> getNeighboringCellsByFacet(const Facet& f) const;
 
-    void fillGraph(double nPixelSizeBehind, bool labatutWeights, bool fillOut, float distFcnHeight, float fullWeight);
+    void fillGraph(const std::vector<RayInfo> & rayInfos, bool fillOut, float distFcnHeight, float fullWeight, const Node & node);
 
     void fillGraphPartPtRc(int& out_nstepsFront,
                            int& out_nstepsBehind,
-                           GeometriesCount& outFrontCount,
-                           GeometriesCount& outBehindCount,
                            int vertexIndex,
                            int cam,
                            float weight,
                            float fullWeight,
                            double nPixelSizeBehind,
                            bool fillOut,
-                           float distFcnHeight);
+                           float distFcnHeight, const Node & node);
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
 public:

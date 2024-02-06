@@ -8,7 +8,6 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
@@ -571,16 +570,33 @@ int aliceVision_main(int argc, char* argv[])
                         throw std::logic_error("No camera to make the reconstruction");
 
                     fuseCut::PointCloudBuilder builder(mp);
-                    builder.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
+                    builder.createDensePointCloud(&hexah[0], cams, sfmData);
+
+                    std::vector<fuseCut::Node::ptr> nodes;
+                    builder.getNonEmptyNodes(nodes);
 
                     fuseCut::Tetrahedralization tetra;
-                    tetra.buildFromVertices(builder._verticesCoords);                    
+                    tetra.buildFromVertices(builder._verticesCoords);      
+
 
                     fuseCut::GraphFiller filler(mp);
                     filler._tetrahedralization = tetra;
                     filler._verticesCoords = builder._verticesCoords;
                     filler._verticesAttr = builder._verticesAttr;
-                    filler.createGraphCut(&hexah[0], cams);
+                    filler.initCells();
+
+
+                    for (auto & node : nodes)
+                    {
+                        filler.createGraphCut(node->getRayInfos(), *node);
+                    }
+
+                    /*for (auto & node : nodes)
+                    {
+                        filler.forceTedgesByGradientIJCV(node->getRayInfos(), *node);
+                    }
+
+                    filler.final();*/
                     
                     fuseCut::GraphCut gc;
 
@@ -623,7 +639,7 @@ int aliceVision_main(int argc, char* argv[])
     // - dense point-cloud with observations as sfmData
     // - mesh as .obj
 
-    if (mesh == nullptr || mesh->pts.empty() || mesh->tris.empty())
+   if (mesh == nullptr || mesh->pts.empty() || mesh->tris.empty())
         throw std::runtime_error("No valid mesh was generated.");
 
     if (ptsCams.empty())

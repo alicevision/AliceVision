@@ -10,6 +10,7 @@
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
+#include <aliceVision/fuseCut/Octree.hpp>
 
 namespace aliceVision {
 
@@ -25,7 +26,17 @@ class PointCloudBuilder
 public:
     PointCloudBuilder(mvsUtils::MultiViewParams& mp);
 
-    void createDensePointCloud(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
+    void createDensePointCloud(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData & sfmData);
+
+    void getNonEmptyNodes(std::vector<Node::ptr> & nodes)
+    {
+        nodes.clear();        
+        
+        if (_octree)
+        {
+            _octree->visit(nodes);
+        }
+    }
 
 private:
     void addPointsFromSfM(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData& sfmData);
@@ -40,6 +51,7 @@ public:
     std::vector<Point3d> _verticesCoords;
     std::vector<GC_vertexInfo> _verticesAttr;
     std::vector<int> _camsVertexes;
+    std::unique_ptr<Node> _octree;
 };
 
 }

@@ -9,6 +9,11 @@
 #include <geogram/basic/numeric.h>
 #include <geogram/mesh/mesh.h>
 #include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/fuseCut/Octree.hpp>
+
+#include <Eigen/Dense>
+#include <array>
+#include <random>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -27,8 +32,10 @@ public:
 
 public:
     Tetrahedralization();
-
+    
     void buildFromVertices(const std::vector<Point3d> & vertices);
+
+    void buildFromTetrahedralization(const Tetrahedralization & other, const std::vector<Point3d> & vertices, const Node & node);
 
     //Find local index  for given global index 
     VertexIndex index(CellIndex ci, VertexIndex vi) const
@@ -83,12 +90,43 @@ public:
         return _neighboringCellsPerVertex;
     }
 
+    size_t getGlobalCellIndex(size_t localIndex) const
+    {
+        if (_localToGlobal.size() == 0)
+        {
+            return localIndex;
+        }
+
+        return _localToGlobal.at(localIndex);
+    }
+
+    double orient3d(const std::array<Eigen::Vector3d, 4> & points)
+    {
+        Eigen::Matrix3d M;
+        for (int i = 0; i < 3; i++)
+        {
+            M(i, 0) = points[i + 1].x() - points[0].x();
+            M(i, 1) = points[i + 1].y() - points[0].y();
+            M(i, 2) = points[i + 1].z() - points[0].z();
+        }
+
+        double delta = M.determinant();
+        if (delta < 0.0) return -1.0;
+        if (delta > 0.0) return 1.0;
+        return 0.0;
+    }
+
+    bool isInside(const CellIndex & ci, const std::vector<Point3d> & vertices, const Eigen::Vector3d & point);
+    
+    bool locate(const std::vector<Point3d> & vertices, const Eigen::Vector3d & p, CellIndex & foundCell);
+
 private:
-    void updateVertexToCellsCache(const std::vector<Point3d> & vertices);
+    void updateVertexToCellsCache(size_t verticesCount);
 
 private:
     std::vector<Cell> _mesh;
     std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
+    std::map<CellIndex, CellIndex> _localToGlobal;
 };
 
 }

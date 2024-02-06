@@ -11,7 +11,6 @@
 namespace aliceVision {
 namespace fuseCut {
 
-
 enum class EGeometryType
 {
     Vertex,
@@ -44,6 +43,11 @@ struct Facet
     { 
         return cellIndex == f.cellIndex && localVertexIndex == f.localVertexIndex; 
     }
+
+    VertexIndex getIndex(int i) const
+    {
+        return ((localVertexIndex + i + 1) % 4);
+    }
 };
 
 struct Edge
@@ -58,8 +62,15 @@ struct Edge
         v1{v1_}
     {}
 
-    bool operator==(const Edge& e) const { return v0 == e.v0 && v1 == e.v1; }
-    bool isSameUndirectionalEdge(const Edge& e) const { return (v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0); }
+    bool operator==(const Edge& e) const 
+    { 
+        return v0 == e.v0 && v1 == e.v1; 
+    }
+
+    bool isSameUndirectionalEdge(const Edge& e) const 
+    { 
+        return (v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0); 
+    }
 };
 
 struct GeometryIntersection
@@ -73,27 +84,38 @@ struct GeometryIntersection
         Edge edge;
     };
 
-    GeometryIntersection() {}
+    GeometryIntersection() 
+    {
+
+    }
 
     explicit GeometryIntersection(const Facet& f)
         : facet{f},
         type{EGeometryType::Facet}
-    {}
+    {
+
+    }
     
     explicit GeometryIntersection(const VertexIndex& v)
         : vertexIndex{v},
         type{EGeometryType::Vertex}
-    {}
+    {
+
+    }
 
     explicit GeometryIntersection(const Edge& e)
         : edge{e},
         type{EGeometryType::Edge}
-    {}
+    {
+
+    }
 
     bool operator==(const GeometryIntersection& g) const
     {
         if (type != g.type)
+        {
             return false;
+        }
 
         switch (type)
         {
@@ -106,12 +128,77 @@ struct GeometryIntersection
             case EGeometryType::None:
                 break;
         }
+        
         return true;
     }
 
     bool operator!=(const GeometryIntersection& g) const { return !(*this == g); }
 };
 
+class TetrahedronsRayMarching
+{
+public:
+    TetrahedronsRayMarching(const Tetrahedralization & tetra, 
+                            const std::vector<Point3d> & pointcloud, 
+                            const Eigen::Vector3d & rayOrigin, 
+                            const Eigen::Vector3d & rayDirection)
+    :
+    _tetrahedralization(tetra),
+    _pointcloud(pointcloud),
+    _origin(rayOrigin),
+    _direction(rayDirection),
+    _epsilonFactor(1e-4)
+    {
+        
+    }
+
+    GeometryIntersection intersectNextGeom(const GeometryIntersection& inGeometry,
+                                            Eigen::Vector3d& intersectPt,
+                                            const Eigen::Vector3d& lastIntersectPt) const;
+
+private:
+    GeometryIntersection intersectNextGeomFacet(const GeometryIntersection& inGeometry,
+                                                Eigen::Vector3d& intersectPt,
+                                                const Eigen::Vector3d& lastIntersectPt) const;
+
+    GeometryIntersection intersectNextGeomEdge(const GeometryIntersection& inGeometry,
+                                                Eigen::Vector3d& intersectPt,
+                                                const Eigen::Vector3d& lastIntersectPt) const;
+
+    GeometryIntersection intersectNextGeomVertex(const GeometryIntersection& inGeometry,
+                                                Eigen::Vector3d& intersectPt,
+                                                const Eigen::Vector3d& lastIntersectPt) const;
+
+    Eigen::Vector2d getLineTriangleIntersectBarycCoords(Eigen::Vector3d & P, 
+                                                        const Eigen::Vector3d & A,  
+                                                        const Eigen::Vector3d & B, 
+                                                        const Eigen::Vector3d & C) const;
+
+    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const { return _tetrahedralization.getNeighboringCellsPerVertex().at(vi); }
+
+    GeometryIntersection rayIntersectTriangle(const Facet& facet,
+                                            const Eigen::Vector3d & lastIntersectPt,
+                                            Eigen::Vector3d & intersectPt,
+                                            bool& ambiguous) const;
+
+    std::vector<CellIndex> getNeighboringCellsByEdge(const Edge& e) const
+    {
+        const std::vector<CellIndex> & v0ci = _tetrahedralization.getNeighboringCellsPerVertex().at(e.v0);
+        const std::vector<CellIndex> & v1ci = _tetrahedralization.getNeighboringCellsPerVertex().at(e.v1);
+
+        std::vector<CellIndex> neighboringCells;
+        std::set_intersection(v0ci.begin(), v0ci.end(), v1ci.begin(), v1ci.end(), std::back_inserter(neighboringCells));
+
+        return neighboringCells;
+    }
+
+private:
+    const Tetrahedralization & _tetrahedralization;
+    const std::vector<Point3d> & _pointcloud;
+    const Eigen::Vector3d _origin;
+    const Eigen::Vector3d _direction;
+    const double _epsilonFactor = 1e-4;
+};
 
 }
 }

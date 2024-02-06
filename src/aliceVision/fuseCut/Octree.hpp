@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/types.hpp>
 #include <Eigen/Dense>
 
 namespace aliceVision {
@@ -70,7 +71,7 @@ public:
         }
     }
 
-    bool isInside(const Eigen::Vector3d & pt)
+    bool isInside(const Eigen::Vector3d & pt) const
     {
         return (pt.x() >= _intersectionBbMin.x() && 
                 pt.y() >= _intersectionBbMin.y() && 
@@ -96,7 +97,7 @@ public:
         }
     }
 
-    bool intersect(const Eigen::Vector3d & start, const Eigen::Vector3d & end)
+    void getIntersect(const Eigen::Vector3d & start, const Eigen::Vector3d & end, double & boundsMin, double & boundsMax) const
     {
         // x+lambda*dx>bbmin.x
         // y+lambda*dy>bbmin.y
@@ -115,8 +116,8 @@ public:
 
         Eigen::Vector3d direction = end - start;
 
-        double boundsMin = std::numeric_limits<double>::lowest();
-        double boundsMax = std::numeric_limits<double>::max();
+        boundsMin = std::numeric_limits<double>::lowest();
+        boundsMax = std::numeric_limits<double>::max();
 
         if (std::abs(direction.x()) > 1e-12)
         {
@@ -171,6 +172,24 @@ public:
 
         boundsMin = std::min(boundsMin, 1.0);
         boundsMax = std::min(boundsMax, 1.0);
+    }
+
+    bool intersect(const Eigen::Vector3d & start, const Eigen::Vector3d & end) const
+    {
+        double boundsMin, boundsMax;
+
+        getIntersect(start, end, boundsMin, boundsMax);
+
+        return (boundsMin < boundsMax);
+    }
+
+    bool getPointLeaving(const Eigen::Vector3d & start, const Eigen::Vector3d & end, Eigen::Vector3d & output) const
+    {
+        double boundsMin, boundsMax;
+
+        getIntersect(start, end, boundsMin, boundsMax);
+
+        output = start + boundsMax * (end - start); 
 
         return (boundsMin < boundsMax);
     }
@@ -213,6 +232,11 @@ public:
         }
     }
 
+    const std::vector<RayInfo> & getRayInfos()
+    {
+        return _rayInfos;
+    }
+
 private:
     std::array<Node::uptr, 8> _nodes;
 
@@ -223,7 +247,8 @@ private:
 
     std::vector<RayInfo> _rayInfos;
 private:
-    double _minSize = 10.0;
+
+    double _minSize = 20000.0;
 };
 
 }

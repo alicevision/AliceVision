@@ -7,37 +7,33 @@
 #include "GraphFiller.hpp"
 
 #include <boost/atomic/atomic_ref.hpp>
+#include <Eigen/Dense>
+
 
 namespace aliceVision {
 namespace fuseCut {
 
-void GraphFiller::createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams)
-{
-    initCells();
-    
-    voteFullEmptyScore(cams);
+
+
+void GraphFiller::createGraphCut(const std::vector<RayInfo> & rayInfos, const Node & node)
+{    
+    voteFullEmptyScore(rayInfos, node);
 }
 
-void GraphFiller::voteFullEmptyScore(const StaticVector<int>& cams)
+void GraphFiller::voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, const Node & node)
 {
     ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
     const int maxint = std::numeric_limits<int>::max();
 
 
     const bool forceTEdge = _mp.userParams.get<bool>("delaunaycut.voteFilteringForWeaklySupportedSurfaces", true);
-    const double nPixelSizeBehind = _mp.userParams.get<double>("delaunaycut.nPixelSizeBehind", 4.0);  // sigma value
     const float fullWeight = float(_mp.userParams.get<double>("delaunaycut.fullWeight", 1.0));
 
     // 0 for distFcn equals 1 all the time
     const float distFcnHeight = (float)_mp.userParams.get<double>("delaunaycut.distFcnHeight", 0.0);
 
-    fillGraph(nPixelSizeBehind, false, true, distFcnHeight, fullWeight);
+    fillGraph(rayInfos, true, distFcnHeight, fullWeight, node);
     addToInfiniteSw((float)maxint);    
-
-    if (forceTEdge)
-    {
-        forceTedgesByGradientIJCV(nPixelSizeBehind);
-    }
 }
 
 void GraphFiller::addToInfiniteSw(float sW)
@@ -54,9 +50,9 @@ void GraphFiller::addToInfiniteSw(float sW)
     }
 }
 
-void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
+void GraphFiller::forceTedgesByGradientIJCV(const std::vector<RayInfo> & rayInfos, const Node & node)
 {
-
+    const double nPixelSizeBehind = _mp.userParams.get<double>("delaunaycut.nPixelSizeBehind", 4.0);  // sigma value
     const float forceTEdgeDelta = (float)_mp.userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
     const float minJumpPartRange = (float)_mp.userParams.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
     const float maxSilentPartRange = (float)_mp.userParams.get<double>("delaunaycut.maxSilentPartRange", 100.0f);
@@ -64,42 +60,24 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
     const float nsigmaFrontSilentPart = (float)_mp.userParams.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
     const float nsigmaBackSilentPart = (float)_mp.userParams.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
 
-    for (GC_cellInfo& c : _cellsAttr)
-    {
-        c.on = 0.0f;
-    }
 
     const double marginEpsilonFactor = 1.0e-4;
 
-    // choose random order to prevent waiting
-    const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
-    const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
 
-    size_t totalStepsFront = 0;
-    size_t totalRayFront = 0;
-    size_t totalStepsBehind = 0;
-    size_t totalRayBehind = 0;
-
-    size_t totalCamHaveVisibilityOnVertex = 0;
-    size_t totalOfVertex = 0;
-
-    size_t totalVertexIsVirtual = 0;
-
-    GeometriesCount totalGeometriesIntersectedFrontCount;
-    GeometriesCount totalGeometriesIntersectedBehindCount;
-
-#pragma omp parallel for reduction(+ : totalStepsFront, totalRayFront, totalStepsBehind, totalRayBehind)
-    for (int i = 0; i < verticesRandIds.size(); ++i)
+#pragma omp parallel for 
+    for (int i = 0; i < rayInfos.size(); ++i)
     {
-        const int vertexIndex = verticesRandIds[i];
+        
+
+        const int vertexIndex = rayInfos[i].end;
         const GC_vertexInfo& v = _verticesAttr[vertexIndex];
         if (v.isVirtual())
             continue;
 
-        ++totalVertexIsVirtual;
         const Point3d& originPt = _verticesCoords[vertexIndex];
         // For each camera that has visibility over the vertex v (vertexIndex)
-        for (const int cam : v.cams)
+        
+        int cam = rayInfos[i].start;
         {
             GeometriesCount geometriesIntersectedFrontCount;
             GeometriesCount geometriesIntersectedBehindCount;
@@ -130,7 +108,6 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                     const GeometryIntersection previousGeometry = geometry;
                     lastIntersectPt = intersectPt;
 
-                    ++totalStepsFront;
 
                     geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
@@ -163,7 +140,6 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         const Facet mFacet = mirrorFacet(geometry.facet);
                         if (_tetrahedralization.isInvalidOrInfiniteCell(mFacet.cellIndex))
                         {
-                            // ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: invalidOrInfinite miror facet.");
                             break;
                         }
 
@@ -190,7 +166,6 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         }
                     }
                 }
-                ++totalRayFront;
             }
             {
                 // Initialisation
@@ -211,7 +186,6 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                     const GeometryIntersection previousGeometry = geometry;
                     lastIntersectPt = intersectPt;
 
-                    ++totalStepsBehind;
 
                     geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
@@ -322,19 +296,8 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].on} += (maxJump - midSilent);
                     }
                 }
-                ++totalRayBehind;
             }
         }
-        totalCamHaveVisibilityOnVertex += v.cams.size();
-        totalOfVertex += 1;
-    }
-
-    for (GC_cellInfo& c : _cellsAttr)
-    {
-        const float w = std::max(1.0f, c.cellTWeight) * c.on;
-
-        // cellTWeight = clamp(w, cellTWeight, 1000000.0f);
-        c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, w));
     }
 }
 
@@ -458,7 +421,9 @@ GeometryIntersection GraphFiller::intersectNextGeom(const GeometryIntersection& 
             {
                 // Because we can't intersect with incoming facet (same localVertexIndex)
                 if (i == inGeometry.facet.localVertexIndex)
+                {
                     continue;
+                }
 
                 const Facet intersectionFacet(tetrahedronIndex, i);
                 bool ambiguous = false;
@@ -468,7 +433,9 @@ GeometryIntersection GraphFiller::intersectNextGeom(const GeometryIntersection& 
                 if (result.type != EGeometryType::None)
                 {
                     if (!ambiguous)
+                    {
                         return result;
+                    }
 
                     // Retrieve the best intersected point (farthest from origin point)
                     if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
@@ -595,100 +562,48 @@ std::vector<CellIndex> GraphFiller::getNeighboringCellsByFacet(const Facet& f) c
     return neighboringCells;
 }
 
-void GraphFiller::fillGraph(double nPixelSizeBehind,
-                                 bool labatutWeights,
+void GraphFiller::fillGraph(const std::vector<RayInfo> & rayInfos,
+
                                  bool fillOut,
                                  float distFcnHeight,
-                                 float fullWeight)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0
+                                 float fullWeight, const Node & node)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0
                                                     // labatutWeights=0 fillOut=1 distFcnHeight=0
 {
     ALICEVISION_LOG_INFO("Computing s-t graph weights.");
     long t1 = clock();
 
-    // loop over all cells ... initialize
-    for (GC_cellInfo& c : _cellsAttr)
+    const double nPixelSizeBehind = _mp.userParams.get<double>("delaunaycut.nPixelSizeBehind", 4.0);  // sigma value
+
+
+//#pragma omp parallel for
+    for (int i = 0; i < rayInfos.size(); i++)
     {
-        c.cellSWeight = 0.0f;
-        c.cellTWeight = 0.0f;
-        c.fullnessScore = 0.0f;
-        c.emptinessScore = 0.0f;
-        c.on = 0.0f;
-        for (int s = 0; s < 4; s++)
-        {
-            c.gEdgeVisWeight[s] = 0.0f;
-        }
-    }
-
-    // choose random order to prevent waiting
-    const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
-    const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
-
-    int64_t totalStepsFront = 0;
-    int64_t totalRayFront = 0;
-    int64_t totalStepsBehind = 0;
-    int64_t totalRayBehind = 0;
-
-    size_t totalCamHaveVisibilityOnVertex = 0;
-    size_t totalOfVertex = 0;
-
-    size_t totalIsRealNrc = 0;
-
-    GeometriesCount totalGeometriesIntersectedFrontCount;
-    GeometriesCount totalGeometriesIntersectedBehindCount;
-
-
-    size_t progressStep = verticesRandIds.size() / 100;
-    progressStep = std::max(size_t(1), progressStep);
-#pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind,totalCamHaveVisibilityOnVertex,totalOfVertex,totalIsRealNrc)
-    for (int i = 0; i < verticesRandIds.size(); i++)
-    {
-        const int vertexIndex = verticesRandIds[i];
+        const int vertexIndex = rayInfos[i].end;
         const GC_vertexInfo& v = _verticesAttr[vertexIndex];
-
-        GeometriesCount subTotalGeometriesIntersectedFrontCount;
-        GeometriesCount subTotalGeometriesIntersectedBehindCount;
 
         if (v.isReal())
         {
-            ++totalIsRealNrc;
             // "weight" is called alpha(p) in the paper
             float weight = (float)v.nrc;  // number of cameras
 
             //Overwrite with forced weight if available
             weight = (float)_mp.userParams.get<double>("LargeScale.forceWeight", weight);
 
-            for (int c = 0; c < v.cams.size(); c++)
             {
-                assert(v.cams[c] >= 0);
-                assert(v.cams[c] < _mp.ncams);
+                
 
                 int stepsFront = 0;
                 int stepsBehind = 0;
-                GeometriesCount geometriesIntersectedFrontCount;
-                GeometriesCount geometriesIntersectedBehindCount;
                 fillGraphPartPtRc(stepsFront,
                                   stepsBehind,
-                                  geometriesIntersectedFrontCount,
-                                  geometriesIntersectedBehindCount,
                                   vertexIndex,
-                                  v.cams[c],
+                                  rayInfos[i].start,
                                   weight,
                                   fullWeight,
                                   nPixelSizeBehind,
                                   fillOut,
-                                  distFcnHeight);
-
-                totalStepsFront += stepsFront;
-                totalRayFront += 1;
-                totalStepsBehind += stepsBehind;
-                totalRayBehind += 1;
-
-                subTotalGeometriesIntersectedFrontCount += geometriesIntersectedFrontCount;
-                subTotalGeometriesIntersectedBehindCount += geometriesIntersectedBehindCount;
+                                  distFcnHeight, node);
             }  // for c
-
-            totalCamHaveVisibilityOnVertex += v.cams.size();
-            totalOfVertex += 1;
         }
     }
 
@@ -696,38 +611,99 @@ void GraphFiller::fillGraph(double nPixelSizeBehind,
 
 void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                                          int& outTotalStepsBehind,
-                                         GeometriesCount& outFrontCount,
-                                         GeometriesCount& outBehindCount,
                                          int vertexIndex,
                                          int cam,
                                          float weight,
                                          float fullWeight,
                                          double nPixelSizeBehind,
                                          bool fillOut,
-                                         float distFcnHeight)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
+                                         float distFcnHeight, const Node & node)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
+    GeometriesCount frontCount;
+    GeometriesCount behindCount;
+
     const int maxint = std::numeric_limits<int>::max();
     const double marginEpsilonFactor = 1.0e-4;
 
     const Point3d& originPt = _verticesCoords[vertexIndex];
-    const double pixSize = _verticesAttr[vertexIndex].pixSize;
+    double pixSize = _verticesAttr[vertexIndex].pixSize;
     const double maxDist = nPixelSizeBehind * pixSize;
 
+   
+    
     assert(cam >= 0);
     assert(cam < _mp.ncams);
 
+    Eigen::Vector3d pt;
+    pt.x() = originPt.x;
+    pt.y() = originPt.y;
+    pt.z() = originPt.z;
+    
+    Eigen::Vector3d campt;
+    campt.x() = _mp.CArr[cam].x;
+    campt.y() = _mp.CArr[cam].y;
+    campt.z() = _mp.CArr[cam].z;
+    
+    Point3d sourcePt = originPt;
+    GeometryIntersection geometry(vertexIndex);
+
+    bool small = false;
+    /*if (!node.isInside(pt))
+    {
+        //Ignore fillinside
+        pixSize = -10.0; 
+
+        
+
+        
+
+        Eigen::Vector3d outpt;
+        bool res = node.getPointLeaving(campt, pt, outpt);
+        if (!res)
+        {
+            ALICEVISION_LOG_ERROR("Invalid");
+        }
+
+        CellIndex ci = GEO::NO_CELL;
+        if (!_tetrahedralization.locate(_verticesCoords, outpt, ci))
+        {
+            ALICEVISION_LOG_ERROR("Cannot find node starting cell");
+            return;
+        }
+
+        if (!_tetrahedralization.isInside(ci, _verticesCoords, outpt))
+        {
+            ALICEVISION_LOG_ERROR("Invalid node starting cell");
+            return;
+        }
+
+        sourcePt.x = outpt.x();
+        sourcePt.y = outpt.y();
+        sourcePt.z = outpt.z();
+        small = true;
+
+        geometry = GeometryIntersection(Facet(ci, 0));
+    }*/
+
+    Eigen::Vector3d source;
+    source.x() = sourcePt.x;
+    source.y() = sourcePt.y;
+    source.z() = sourcePt.z;
+
+    Eigen::Vector3d dir = (campt - source).normalized();
+
+    TetrahedronsRayMarching marching(_tetrahedralization, _verticesCoords, source, dir);
+    
     if (fillOut)  // EMPTY part
     {
         // Initialisation
-        GeometryIntersection geometry(vertexIndex);  // Starting on global vertex index
-        Point3d intersectPt = originPt;
+          // Starting on global vertex index
+        Point3d intersectPt = sourcePt;
         // toTheCam
-        const double pointCamDistance = (_mp.CArr[cam] - originPt).size();
-        const Point3d dirVect = (_mp.CArr[cam] - originPt).normalize();
+        const double pointCamDistance = (_mp.CArr[cam] - sourcePt).size();
+        const Point3d dirVect = (_mp.CArr[cam] - sourcePt).normalize();
 
-#ifdef ALICEVISION_DEBUG_VOTE
-        IntersectionHistory history(_mp.CArr[cam], originPt, dirVect);
-#endif
+
         outTotalStepsFront = 0;
         Facet lastIntersectedFacet;
         bool lastGeoIsVertex = false;
@@ -739,53 +715,55 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
             const GeometryIntersection previousGeometry = geometry;
             const Point3d lastIntersectPt = intersectPt;
 
-#ifdef ALICEVISION_DEBUG_VOTE
-            history.append(geometry, intersectPt);
-#endif
+
             ++outTotalStepsFront;
 
-            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+            //geometry = intersectNextGeom(previousGeometry, sourcePt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+
+            Eigen::Vector3d ipt, lipt;
+            lipt.x() = lastIntersectPt.x;
+            lipt.y() = lastIntersectPt.y;
+            lipt.z() = lastIntersectPt.z;
+
+            ipt.x() = intersectPt.x;
+            ipt.y() = intersectPt.y;
+            ipt.z() = intersectPt.z;
+            
+            geometry = marching.intersectNextGeom(previousGeometry, ipt, lipt);
+
+            intersectPt.x = ipt.x();
+            intersectPt.y = ipt.y();
+            intersectPt.z = ipt.z();
 
             if (geometry.type == EGeometryType::None)
             {
-#ifdef ALICEVISION_DEBUG_VOTE
-                // exportBackPropagationMesh("fillGraph_v" + std::to_string(vertexIndex) + "_ToCam_typeNone", history.geometries, originPt,
-                // _mp.CArr[cam]);
-#endif
-                // ALICEVISION_LOG_DEBUG(
-                //     "[Error]: fillGraph(toTheCam) cause: geometry cannot be found."
-                //     << "Current vertex index: " << vertexIndex
-                //     << ", Previous geometry type: " << previousGeometry.type
-                //     << ", outFrontCount:" << outFrontCount);
                 break;
             }
 
-            if ((intersectPt - originPt).size() <= (lastIntersectPt - originPt).size())
+            
+            ipt.x() = intersectPt.x;
+            ipt.y() = intersectPt.y;
+            ipt.z() = intersectPt.z;
+            if (!node.isInside(ipt))
+            {
+                break;
+            }
+
+            if ((intersectPt - sourcePt).size() <= (lastIntersectPt - sourcePt).size())
             {
                 // Inverse direction, stop
                 break;
             }
 
-#ifdef ALICEVISION_DEBUG_VOTE
-            {
-                const auto end = history.geometries.end();
-                auto it = std::find(history.geometries.begin(), end, geometry);
-                if (it != end)
-                {
-                    // exportBackPropagationMesh("fillGraph_ToCam_alreadyIntersected", history.geometries, originPt, _mp.CArr[cam]);
-                    ALICEVISION_LOG_DEBUG("[Error]: fillGraph(toTheCam) cause: intersected geometry has already been intersected.");
-                    break;
-                }
-            }
-#endif
+
 
             if (geometry.type == EGeometryType::Facet)
             {
-                ++outFrontCount.facets;
+                ++frontCount.facets;
                 boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].emptinessScore} += weight;
 
                 {
-                    const float dist = distFcn(maxDist, (originPt - lastIntersectPt).size(), distFcnHeight);
+                    const float dist = distFcn(maxDist, (sourcePt - lastIntersectPt).size(), distFcnHeight);
                     boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex]} += weight * dist;
                 }
 
@@ -794,14 +772,10 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                 geometry.facet = mFacet;
                 if (_tetrahedralization.isInvalidOrInfiniteCell(mFacet.cellIndex))
                 {
-#ifdef ALICEVISION_DEBUG_VOTE
-                    // exportBackPropagationMesh("fillGraph_ToCam_invalidMirorFacet", history.geometries, originPt, _mp.CArr[cam]);
-#endif
-                    // ALICEVISION_LOG_DEBUG("[Error]: fillGraph(toTheCam) cause: invalidOrInfinite miror facet.");
                     break;
                 }
                 lastIntersectedFacet = mFacet;
-                if (previousGeometry.type == EGeometryType::Facet && outFrontCount.facets > 10000)
+                if (previousGeometry.type == EGeometryType::Facet && frontCount.facets > 10000)
                 {
                     break;
                 }
@@ -818,17 +792,17 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
 
                 if (geometry.type == EGeometryType::Vertex)
                 {
-                    ++outFrontCount.vertices;
+                    ++frontCount.vertices;
                     lastGeoIsVertex = true;
-                    if (previousGeometry.type == EGeometryType::Vertex && outFrontCount.vertices > 1000)
+                    if (previousGeometry.type == EGeometryType::Vertex && frontCount.vertices > 1000)
                     {
                         break;
                     }
                 }
                 else if (geometry.type == EGeometryType::Edge)
                 {
-                    ++outFrontCount.edges;
-                    if (previousGeometry.type == EGeometryType::Edge && outFrontCount.edges > 1000)
+                    ++frontCount.edges;
+                    if (previousGeometry.type == EGeometryType::Edge && frontCount.edges > 1000)
                     {
                         break;
                     }
@@ -898,7 +872,7 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
             }
             if (geometry.type == EGeometryType::Facet)
             {
-                ++outBehindCount.facets;
+                ++behindCount.facets;
 
                 // Vote for the first cell found (only once)
                 if (firstIteration)
@@ -923,7 +897,7 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                     const float dist = distFcn(maxDist, (originPt - lastIntersectPt).size(), distFcnHeight);
                     boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex]} += fWeight * dist;
                 }
-                if (previousGeometry.type == EGeometryType::Facet && outBehindCount.facets > 1000)
+                if (previousGeometry.type == EGeometryType::Facet && behindCount.facets > 1000)
                 {
                     break;
                 }
@@ -969,16 +943,16 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
 
                 if (geometry.type == EGeometryType::Vertex)
                 {
-                    ++outBehindCount.vertices;
-                    if (previousGeometry.type == EGeometryType::Vertex && outBehindCount.vertices > 1000)
+                    ++behindCount.vertices;
+                    if (previousGeometry.type == EGeometryType::Vertex && behindCount.vertices > 1000)
                     {
                         break;
                     }
                 }
                 else if (geometry.type == EGeometryType::Edge)
                 {
-                    ++outBehindCount.edges;
-                    if (previousGeometry.type == EGeometryType::Edge && outBehindCount.edges > 1000)
+                    ++behindCount.edges;
+                    if (previousGeometry.type == EGeometryType::Edge && behindCount.edges > 1000)
                     {
                         break;
                     }

@@ -12,6 +12,7 @@
 
 #include <aliceVision/fuseCut/Kdtree.hpp>
 
+
 namespace aliceVision {
 namespace fuseCut {
 
@@ -23,13 +24,8 @@ PointCloudBuilder::PointCloudBuilder(mvsUtils::MultiViewParams& mp)
 
 void PointCloudBuilder::createDensePointCloud(const Point3d hexah[8],
                                              const StaticVector<int>& cams,
-                                             const sfmData::SfMData* sfmData,
-                                             const FuseParams* depthMapsFuseParams)
+                                             const sfmData::SfMData & sfmData)
 {
-    assert(sfmData != nullptr || depthMapsFuseParams != nullptr);
-
-    ALICEVISION_LOG_INFO("Creating dense point cloud.");
-
     const int helperPointsGridSize = _mp.userParams.get<int>("LargeScale.helperPointsGridSize", 10);
     const int densifyNbFront = _mp.userParams.get<int>("LargeScale.densifyNbFront", 0);
     const int densifyNbBack = _mp.userParams.get<int>("LargeScale.densifyNbBack", 0);
@@ -39,35 +35,56 @@ void PointCloudBuilder::createDensePointCloud(const Point3d hexah[8],
       hexah && (helperPointsGridSize > 0)
         ? ((hexah[0] - hexah[1]).size() + (hexah[0] - hexah[3]).size() + (hexah[0] - hexah[4]).size()) / (3. * helperPointsGridSize)
         : 0.00001f;
-
-    // add points from depth maps
-    /*if (depthMapsFuseParams != nullptr)
-        fuseFromDepthMaps(cams, hexah, *depthMapsFuseParams);*/
     
     // add points from sfm
-    if (sfmData != nullptr)
-        addPointsFromSfM(hexah, cams, *sfmData);
+    addPointsFromSfM(hexah, cams, sfmData);
 
     // add points for cam centers
     addPointsFromCameraCenters(cams, minDist);
 
     densifyWithHelperPoints(densifyNbFront, densifyNbBack, densifyScale);
 
-    {
-        Point3d hexahExt[8];
-        mvsUtils::inflateHexahedron(hexah, hexahExt, 1.3);
-        addGridHelperPoints(helperPointsGridSize, hexahExt, minDist);
+    Point3d hexahExt[8];
+    mvsUtils::inflateHexahedron(hexah, hexahExt, 1.3);
+    addGridHelperPoints(helperPointsGridSize, hexahExt, minDist);
 
-        // add 6 points to prevent singularities (one point beyond each bbox facet)
-        addPointsToPreventSingularities(hexahExt, minDist);
-
-        // add point for shape from silhouette
-        /*if (depthMapsFuseParams != nullptr)
-            addMaskHelperPoints(hexahExt, cams, *depthMapsFuseParams);*/
-    }
+    // add 6 points to prevent singularities (one point beyond each bbox facet)
+    addPointsToPreventSingularities(hexahExt, minDist);
 
     _verticesCoords.shrink_to_fit();
     _verticesAttr.shrink_to_fit();
+
+
+    for (int idVertex = 0; idVertex < _verticesCoords.size(); idVertex++)
+    {
+        const GC_vertexInfo & vi = _verticesAttr[idVertex];
+
+        const auto & point = _verticesCoords[idVertex];
+
+        Eigen::Vector3d ptEnd;
+        ptEnd.x() = point.x;
+        ptEnd.y() = point.y;
+        ptEnd.z() = point.z;
+
+        for (const auto & idCamera : vi.cams)
+        {
+            int idVertexCamera = _camsVertexes[idCamera];
+            const auto & cameraCenter = _verticesCoords[idVertexCamera];
+
+            Eigen::Vector3d ptStart;
+            ptStart.x() = cameraCenter.x;
+            ptStart.y() = cameraCenter.y;
+            ptStart.z() = cameraCenter.z;
+
+            RayInfo ri;
+            ri.start = idCamera;
+            ri.end = idVertex;
+
+            _octree->storeRay(ptStart, ptEnd, ri);
+        }
+    }
+
+    
 
     ALICEVISION_LOG_WARNING("Final dense point cloud: " << _verticesCoords.size() << " points.");
 }
@@ -89,6 +106,11 @@ void PointCloudBuilder::addPointsFromSfM(const Point3d hexah[8], const StaticVec
     std::advance(vCoordsIt, verticesOffset);
     std::advance(vAttrIt, verticesOffset);
 
+    Eigen::Vector3d bbmin;
+    bbmin.fill(std::numeric_limits<double>::max());
+    Eigen::Vector3d bbmax;
+    bbmax.fill(std::numeric_limits<double>::lowest());
+
     std::size_t addedPoints = 0;
     for (std::size_t i = 0; i < nbPoints; ++i)
     {
@@ -98,6 +120,13 @@ void PointCloudBuilder::addPointsFromSfM(const Point3d hexah[8], const StaticVec
         if (mvsUtils::isPointInHexahedron(p, hexah))
         {
             *vCoordsIt = p;
+
+            bbmin.x() = std::min(bbmin.x(), landmark.X.x());
+            bbmin.y() = std::min(bbmin.y(), landmark.X.y());
+            bbmin.z() = std::min(bbmin.z(), landmark.X.z());
+            bbmax.x() = std::max(bbmax.x(), landmark.X.x());
+            bbmax.y() = std::max(bbmax.y(), landmark.X.y());
+            bbmax.z() = std::max(bbmax.z(), landmark.X.z());
 
             vAttrIt->nrc = landmark.getObservations().size();
             vAttrIt->cams.reserve(vAttrIt->nrc);
@@ -122,6 +151,9 @@ void PointCloudBuilder::addPointsFromSfM(const Point3d hexah[8], const StaticVec
         _verticesCoords.resize(verticesOffset + addedPoints);
         _verticesAttr.resize(verticesOffset + addedPoints);
     }
+
+    _octree = std::make_unique<Node>(bbmin, bbmax);
+
     ALICEVISION_LOG_WARNING("Add " << addedPoints << " new points for the SfM.");
 }
 
