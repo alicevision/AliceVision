@@ -50,6 +50,8 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * PopSift (feature extraction on GPU)
 * UncertaintyTE (Uncertainty computation)
 * Lemon >= 1.3
+* libe57format (support reading .e57 files)
+
 
 AliceVision also depends on some embedded libraries:
 
@@ -93,7 +95,7 @@ vcpkg install ^
           flann ^
           onnxruntime-gpu ^
           opencv[eigen,ffmpeg,webp,contrib,nonfree,cuda] ^
-          openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
+          openimageio[opencolorio,pybind11,libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
           ceres[suitesparse,cxsparse] ^
           cuda ^
           tbb ^
