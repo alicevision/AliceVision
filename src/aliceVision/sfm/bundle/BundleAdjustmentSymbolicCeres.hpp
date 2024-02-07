@@ -252,17 +252,17 @@ class BundleAdjustmentSymbolicCeres : public BundleAdjustment, ceres::Evaluation
     std::vector<double*> _allParametersBlocks;
     /// poses blocks wrapper
     /// block: ceres angleAxis(3) + translation(3)
-    HashMap<IndexT, SE3::Matrix> _posesBlocks;  // TODO : maybe we can use boost::flat_map instead of HashMap ?
+    std::map<IndexT, SE3::Matrix> _posesBlocks;  // TODO : maybe we can use boost::flat_map instead of std::map ?
     /// intrinsics blocks wrapper
     /// block: intrinsics params
-    HashMap<IndexT, std::vector<double>> _intrinsicsBlocks;
-    HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
+    std::map<IndexT, std::vector<double>> _intrinsicsBlocks;
+    std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
     /// landmarks blocks wrapper
     /// block: 3d position(3)
-    HashMap<IndexT, std::array<double, 3>> _landmarksBlocks;
+    std::map<IndexT, std::array<double, 3>> _landmarksBlocks;
     /// rig sub-poses blocks wrapper
     /// block: ceres angleAxis(3) + translation(3)
-    HashMap<IndexT, HashMap<IndexT, SE3::Matrix>> _rigBlocks;
+    std::map<IndexT, std::map<IndexT, SE3::Matrix>> _rigBlocks;
     /// Rig pose to use when there is no rig
     SE3::Matrix _rigNull = SE3::Matrix::Identity();
 

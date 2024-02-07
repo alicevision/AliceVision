@@ -28,6 +28,7 @@ option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
 option(AV_BUILD_FLANN "Enable building an embedded Flann" ON)
 option(AV_BUILD_LEMON "Enable building an embedded LEMON library" ON)
+option(AV_BUILD_E57FORMAT "Enable building an embedded E57Format" ON)
 option(AV_BUILD_PCL "Enable building an embedded PointCloud library" OFF)
 option(AV_BUILD_USD "Enable building an embedded USD library" OFF)
 option(AV_BUILD_GEOGRAM "Enable building an embedded Geogram library" ON)
@@ -39,6 +40,7 @@ option(AV_BUILD_ALEMBIC "Enable building an embedded Alembic library" ON)
 option(AV_BUILD_OPENIMAGEIO "Enable building an embedded OpenImageIO library" ON)
 option(AV_BUILD_BOOST "Enable building an embedded Boost library" ON)
 option(AV_BUILD_CERES "Enable building an embedded Ceres library" ON)
+option(AV_BUILD_SWIG "Enable building an embedded SWIG library" ON)
 
 if(AV_BUILD_DEPENDENCIES_PARALLEL EQUAL 0)
     cmake_host_system_information(RESULT AV_BUILD_DEPENDENCIES_PARALLEL QUERY NUMBER_OF_LOGICAL_CORES)
@@ -75,6 +77,7 @@ message(STATUS "AV_BUILD_FLANN: ${AV_BUILD_FLANN}")
 message(STATUS "AV_BUILD_PCL: ${AV_BUILD_PCL}")
 message(STATUS "AV_BUILD_USD: ${AV_BUILD_USD}")
 message(STATUS "AV_BUILD_LEMON: ${AV_BUILD_LEMON}")
+message(STATUS "AV_BUILD_E57FORMAT: ${AV_BUILD_E57FORMAT}")
 message(STATUS "AV_BUILD_GEOGRAM: ${AV_BUILD_GEOGRAM}")
 message(STATUS "AV_BUILD_TBB ${AV_BUILD_TBB}")
 message(STATUS "AV_BUILD_EIGEN ${AV_BUILD_EIGEN}")
@@ -84,6 +87,7 @@ message(STATUS "AV_BUILD_BOOST ${AV_BUILD_BOOST}")
 message(STATUS "AV_BUILD_ALEMBIC ${AV_BUILD_ALEMBIC}")
 message(STATUS "AV_BUILD_OPENIMAGEIO ${AV_BUILD_OPENIMAGEIO}")
 message(STATUS "AV_BUILD_CERES ${AV_BUILD_CERES}")
+message(STATUS "AV_BUILD_SWIG ${AV_BUILD_SWIG}")
 message(STATUS "AV_BUILD_DEPENDENCIES_PARALLEL: ${AV_BUILD_DEPENDENCIES_PARALLEL}")
 ##########END LOGGING#########"
 
@@ -325,7 +329,7 @@ if (AV_BUILD_ONNXRUNTIME)
     ##!/usr/bin/env bash
     # AV_ONNX_VERSION="1.12.0"
     # BASE_URL="https://github.com/microsoft/onnxruntime/releases/download/v${AV_ONNX_VERSION}"
-    # platforms=("onnxruntime-linux-x64"  "onnxruntime-osx-arm64"  "onnxruntime-osx-x86_64")
+    # platforms=("onnxruntime-linux-x64"  "onnxruntime-osx-arm64"  "onnxruntime-osx-x86_64" "onnxruntime-linux-aarch64")
     # # Iterate over the main options
     # for platform in "${platforms[@]}"; do
     #     AV_ONNX_FILENAME="${platform}-${AV_ONNX_VERSION}.tgz"
@@ -344,8 +348,14 @@ if (AV_BUILD_ONNXRUNTIME)
             message(FATAL_ERROR "Unsupported arch version ${AV_ONNX_APPLE_ARCH} for Apple")
         endif()
     else()
-        set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-x64")
-        set(AV_ONNX_HASH "5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+        string(FIND "${CMAKE_HOST_SYSTEM_PROCESSOR}" "aarch64" POSITION)
+        if(NOT POSITION EQUAL -1)
+            set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-aarch64")
+            set(AV_ONNX_HASH "5820d9f343df73c63b6b2b174a1ff62575032e171c9564bcf92060f46827d0ac")
+        else()        
+            set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-x64")
+            set(AV_ONNX_HASH "5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+        endif()
     endif()
 
     set(AV_ONNX_FILENAME "${AV_ONNX_FILENAME_PREFIX}-${AV_ONNX_VERSION}.tgz")
@@ -1244,6 +1254,54 @@ if(AV_BUILD_LEMON)
     set(LEMON_CMAKE_FLAGS -DLEMON_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/lemon/cmake)
 endif()
 
+if(AV_BUILD_SWIG)
+    set(SWIG_TARGET SWIG)
+
+    ExternalProject_Add(${SWIG_TARGET}
+        GIT_REPOSITORY https://github.com/swig/swig
+        GIT_TAG v4.2.0
+        DOWNLOAD_DIR ${BUILD_DIR}/download/${SWIG_TARGET}
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_TARGET}
+        BINARY_DIR ${BUILD_DIR}/${SWIG_TARGET}_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+    )
+
+    set(SWIG_CMAKE_FLAGS
+        -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig/4.2.0
+        -DSWIG_EXECUTABLE=${CMAKE_INSTALL_PREFIX}/bin-deps
+    )
+endif()
+
+if(AV_BUILD_E57FORMAT)
+    # Add libE57Format
+    set(E57FORMAT_TARGET E57Format)
+
+    ExternalProject_add(${E57FORMAT_TARGET}
+        GIT_REPOSITORY https://github.com/asmaloney/libE57Format.git
+        GIT_TAG v3.1.1
+        DOWNLOAD_DIR ${BUILD_DIR}/download/${E57FORMAT_TARGET}
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${E57FORMAT_TARGET}
+        BINARY_DIR ${BUILD_DIR}/${E57FORMAT_TARGET}_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+    )
+
+    set(E57FORMAT_CMAKE_FLAGS -DE57FORMAT_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/E57Format)
+endif()
+
 set(AV_DEPS
     ${ZLIB_TARGET}
     ${ASSIMP_TARGET}
@@ -1276,6 +1334,8 @@ set(AV_DEPS
     ${FLANN_TARGET}
     ${LZ4_TARGET}
     ${LEMON_TARGET}
+    ${SWIG_TARGET}
+    ${E57FORMAT_TARGET}
 )
 
 if(AV_BUILD_ALICEVISION)
@@ -1298,6 +1358,7 @@ if(AV_BUILD_ALICEVISION)
         -DALICEVISION_USE_OPENGV=${AV_BUILD_OPENGV}
         -DALICEVISION_USE_POPSIFT=${AV_BUILD_POPSIFT}
         -DALICEVISION_USE_CUDA=${AV_USE_CUDA}
+        -DALICEVISION_BUILD_SWIG_BINDING=${AV_USE_SWIG}
         -DALICEVISION_BUILD_DOC=OFF
         -DALICEVISION_BUILD_EXAMPLES=OFF
 
@@ -1323,6 +1384,8 @@ if(AV_BUILD_ALICEVISION)
         ${FLANN_CMAKE_FLAGS}
         ${PCL_CMAKE_FLAGS}
         ${USD_CMAKE_FLAGS}
+        ${SWIG_CMAKE_FLAGS}
+        ${E57FORMAT_CMAKE_FLAGS}
 
         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
         DEPENDS ${AV_DEPS}

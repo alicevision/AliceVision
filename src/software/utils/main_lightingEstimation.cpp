@@ -101,8 +101,7 @@ inline std::ostream& operator<<(std::ostream& os, EAlbedoEstimation v) { return 
 
 inline std::istream& operator>>(std::istream& in, EAlbedoEstimation& v)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     v = EAlbedoEstimation_stringToEnum(token);
     return in;
 }
@@ -142,8 +141,7 @@ inline std::ostream& operator<<(std::ostream& os, ELightingEstimationMode v) { r
 
 inline std::istream& operator>>(std::istream& in, ELightingEstimationMode& v)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     v = ELightingEstimationMode_stringToEnum(token);
     return in;
 }
@@ -182,8 +180,7 @@ inline std::ostream& operator<<(std::ostream& os, ELightingColor v) { return os 
 
 inline std::istream& operator>>(std::istream& in, ELightingColor& v)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     v = ELightingColor_stringToEnum(token);
     return in;
 }

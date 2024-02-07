@@ -27,7 +27,7 @@ namespace aliceVision {
 namespace sfmDataIO {
 
 /// Check that each view references a declared intrinsic
-bool validIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
+bool validIds(const aliceVision::sfmData::SfMData& sfmData, ESfMData partFlag)
 {
     const bool bCheck_Intrinsic = (partFlag & INTRINSICS);
     const bool bCheck_Rig = (partFlag & EXTRINSICS);
@@ -106,7 +106,7 @@ bool validIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
     return bRet;
 }
 
-bool load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool load(aliceVision::sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
     const std::string extension = fs::path(filename).extension().string();
     bool status = false;
@@ -144,7 +144,7 @@ bool load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partF
     return status;
 }
 
-bool save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool save(const aliceVision::sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
     const fs::path bPath = fs::path(filename);
     const std::string extension = bPath.extension().string();

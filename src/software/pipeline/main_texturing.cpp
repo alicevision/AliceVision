@@ -140,6 +140,7 @@ int aliceVision_main(int argc, char* argv[])
     // clang-format on
 
     CmdLine cmdline("AliceVision texturing");
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

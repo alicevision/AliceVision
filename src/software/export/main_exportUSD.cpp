@@ -89,8 +89,7 @@ std::ostream& operator<<(std::ostream& os, EUSDFileType usdFileType) { return os
 
 std::istream& operator>>(std::istream& in, EUSDFileType& usdFileType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     usdFileType = EUSDFileType_stringToEnum(token);
     return in;
 }

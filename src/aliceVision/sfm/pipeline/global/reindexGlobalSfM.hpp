@@ -13,8 +13,8 @@ namespace sfm {
 /// association of Ids to a contiguous set of Ids
 template<typename IterablePairs, typename PairValueType>
 void reindex(const IterablePairs& pairs,
-             HashMap<PairValueType, PairValueType>& _reindexForward,
-             HashMap<PairValueType, PairValueType>& _reindexBackward)
+             std::map<PairValueType, PairValueType>& _reindexForward,
+             std::map<PairValueType, PairValueType>& _reindexBackward)
 {
     typedef std::pair<PairValueType, PairValueType> PairT;
 

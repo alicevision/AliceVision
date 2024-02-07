@@ -17,8 +17,8 @@
 namespace aliceVision {
 namespace feature {
 
-using MapFeaturesPerDesc = HashMap<feature::EImageDescriberType, feature::PointFeatures>;
-using MapFeaturesPerView = HashMap<IndexT, MapFeaturesPerDesc>;
+using MapFeaturesPerDesc = std::map<feature::EImageDescriberType, feature::PointFeatures>;
+using MapFeaturesPerView = std::map<IndexT, MapFeaturesPerDesc>;
 
 /**
  * @brief Container for all Features for each View.

@@ -38,19 +38,31 @@ RUN $YUM_INSTALL centos-release-scl-rh && \
     $YUM_INSTALL python3 && \
     $YUM_INSTALL python3-devel && \
     yum clean all && \
-    $YUM_INSTALL devtoolset-10-toolchain devtoolset-10-libatomic-devel --nogpgcheck && \
+    $YUM_INSTALL devtoolset-10-toolchain devtoolset-10-libatomic-devel \
+		devtoolset-10-libasan-devel devtoolset-10-libubsan-devel --nogpgcheck && \
     $YUM_INSTALL --enablerepo=extras epel-release && \
     $YUM_INSTALL file \
-		git \
-		wget \
-		unzip \
-		yasm \
-		pkgconfig \
-		libtool \
-		nasm \
-		automake \
-		which \
-		openssl-devel
+        git \
+        wget \
+        unzip \
+        yasm \
+        pkgconfig \
+        libtool \
+        nasm \
+        automake \
+        which \
+        openssl-devel \
+        pcre2-devel \
+        xerces-c-devel
+
+# Install numpy for Python3
+RUN pip3 install numpy
+
+# Manually install Bison, as Centos7 does not natively support versions beyond 3.0.4
+RUN wget http://ftp.gnu.org/gnu/bison/bison-3.6.tar.gz
+RUN tar -zxvf bison-3.6.tar.gz
+RUN cd bison-3.6 && ./configure && make && make install
+
 
 # Okay, change our shell to specifically use our software collections.
 # (default was SHELL [ "/bin/sh", "-c" ])
@@ -126,7 +138,9 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 # RUN make -j ${CPU_CORES} ffmpeg
 # RUN make -j ${CPU_CORES} opencv
 # RUN make -j ${CPU_CORES} expat
-# 
+# RUN make -j ${CPU_CORES} SWIG
+# RUN make -j ${CPU_CORES} E57Format
+
 # RUN make -j ${CPU_CORES} cctag
 # RUN make -j ${CPU_CORES} popsift
 

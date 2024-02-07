@@ -83,8 +83,7 @@ EMatchingMethod EMatchingMethod_stringToEnum(const std::string& alignmentMethod)
 
 inline std::istream& operator>>(std::istream& in, EMatchingMethod& alignment)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     alignment = EMatchingMethod_stringToEnum(token);
     return in;
 }
@@ -304,7 +303,7 @@ int aliceVision_main(int argc, char** argv)
                             commonViewsMap.emplace(viewPair.second, viewPair.first);
                         }
 
-                        HashMap<IndexT, aliceVision::sfmData::Landmark> newLandmarks;
+                        std::map<IndexT, aliceVision::sfmData::Landmark> newLandmarks;
                         for (const auto& landIt : refLandmarks)
                         {
                             // Copy of the current landmark :

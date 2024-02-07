@@ -188,8 +188,7 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType) { retur
 
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     imageFileType = EImageFileType_stringToEnum(token);
     return in;
 }
@@ -278,8 +277,7 @@ std::ostream& operator<<(std::ostream& os, EStorageDataType dataType) { return o
 
 std::istream& operator>>(std::istream& in, EStorageDataType& dataType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     dataType = EStorageDataType_stringToEnum(token);
     return in;
 }
@@ -360,8 +358,7 @@ std::ostream& operator<<(std::ostream& os, EImageExrCompression exrCompression) 
 
 std::istream& operator>>(std::istream& in, EImageExrCompression& exrCompression)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     exrCompression = EImageExrCompression_stringToEnum(token);
     return in;
 }
@@ -402,8 +399,7 @@ std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality) { return 
 
 std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     imageQuality = EImageQuality_stringToEnum(token);
     return in;
 }
@@ -474,8 +470,7 @@ std::ostream& operator<<(std::ostream& os, ERawColorInterpretation rawColorInter
 
 std::istream& operator>>(std::istream& in, ERawColorInterpretation& rawColorInterpretation)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     rawColorInterpretation = ERawColorInterpretation_stringToEnum(token);
     return in;
 }
@@ -1034,7 +1029,8 @@ void writeImage(const std::string& path,
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << "\n"
                                                << "\t- width: " << image.width() << "\n"
                                                << "\t- height: " << image.height() << "\n"
-                                               << "\t- channels: " << nchannels);
+                                               << "\t- channels: " << nchannels << "\n"
+                                               << "\t- color space: " << EImageColorSpace_enumToOIIOString(toColorSpace));
 
     oiio::ImageSpec imageSpec(image.width(), image.height(), nchannels, typeDesc);
     imageSpec.extra_attribs = metadata;  // add custom metadata

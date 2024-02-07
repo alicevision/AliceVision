@@ -19,17 +19,17 @@ struct RotationPrior
 {
     RotationPrior() = default;
 
-    RotationPrior(IndexT view_first = UndefinedIndexT,
-                  IndexT view_second = UndefinedIndexT,
-                  Eigen::Matrix3d second_R_first = Eigen::Matrix3d::Identity())
+    RotationPrior(IndexT view_first,
+                  IndexT view_second,
+                  Eigen::Matrix3d second_R_first)
       : ViewFirst(view_first),
         ViewSecond(view_second),
         _second_R_first(second_R_first)
     {}
 
-    IndexT ViewFirst;
-    IndexT ViewSecond;
-    Eigen::Matrix3d _second_R_first;
+    IndexT ViewFirst = UndefinedIndexT;
+    IndexT ViewSecond = UndefinedIndexT;
+    Eigen::Matrix3d _second_R_first = Eigen::Matrix3d::Identity();
 
     bool operator==(const RotationPrior& other) const
     {

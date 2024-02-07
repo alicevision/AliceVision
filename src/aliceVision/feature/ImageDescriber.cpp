@@ -77,8 +77,7 @@ std::ostream& operator<<(std::ostream& os, EImageDescriberPreset p) { return os 
 
 std::istream& operator>>(std::istream& in, EImageDescriberPreset& p)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     p = EImageDescriberPreset_stringToEnum(token);
     return in;
 }
@@ -122,8 +121,7 @@ std::ostream& operator<<(std::ostream& os, EFeatureQuality p) { return os << EFe
 
 std::istream& operator>>(std::istream& in, EFeatureQuality& p)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     p = EFeatureQuality_stringToEnum(token);
     return in;
 }
@@ -180,8 +178,7 @@ std::ostream& operator<<(std::ostream& os, EFeatureConstrastFiltering p) { retur
 
 std::istream& operator>>(std::istream& in, EFeatureConstrastFiltering& p)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     p = EFeatureConstrastFiltering_stringToEnum(token);
     return in;
 }

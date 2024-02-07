@@ -88,8 +88,7 @@ inline std::ostream& operator<<(std::ostream& os, const EFunctionType functionTy
 
 inline std::istream& operator>>(std::istream& in, EFunctionType& functionType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     functionType = EFunctionType_stringToEnum(token);
     return in;
 }

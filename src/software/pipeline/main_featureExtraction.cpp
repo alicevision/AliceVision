@@ -103,6 +103,7 @@ int aliceVision_main(int argc, char** argv)
     // clang-format on
 
     CmdLine cmdline("AliceVision featureExtraction");
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

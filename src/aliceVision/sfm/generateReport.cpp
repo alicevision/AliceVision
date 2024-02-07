@@ -23,7 +23,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData, const std::string& htmlF
 {
     // Compute mean,max,median residual values per View
     IndexT residualCount = 0;
-    HashMap<IndexT, std::vector<double>> residuals_per_view;
+    std::map<IndexT, std::vector<double>> residuals_per_view;
     for (sfmData::Landmarks::const_iterator iterTracks = sfmData.getLandmarks().begin(); iterTracks != sfmData.getLandmarks().end(); ++iterTracks)
     {
         const sfmData::Observations& observations = iterTracks->second.getObservations();
@@ -98,14 +98,14 @@ bool generateSfMReport(const sfmData::SfMData& sfmData, const std::string& htmlF
     // export the SVG histogram
     {
         IndexT residualCount = 0;
-        for (HashMap<IndexT, std::vector<double>>::const_iterator it = residuals_per_view.begin(); it != residuals_per_view.end(); ++it)
+        for (std::map<IndexT, std::vector<double>>::const_iterator it = residuals_per_view.begin(); it != residuals_per_view.end(); ++it)
         {
             residualCount += it->second.size();
         }
         // Concat per view residual values into one vector
         std::vector<double> residuals(residualCount);
         residualCount = 0;
-        for (HashMap<IndexT, std::vector<double>>::const_iterator it = residuals_per_view.begin(); it != residuals_per_view.end(); ++it)
+        for (std::map<IndexT, std::vector<double>>::const_iterator it = residuals_per_view.begin(); it != residuals_per_view.end(); ++it)
         {
             std::copy(it->second.begin(), it->second.begin() + it->second.size(), residuals.begin() + residualCount);
             residualCount += it->second.size();

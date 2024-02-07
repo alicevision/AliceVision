@@ -21,32 +21,40 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 # Install all compilation tools
 # The Kitware repo provides a recent cmake
 RUN . ./etc/os-release && \
-	apt-get update && \
-	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-		ca-certificates \
-		wget \
-		software-properties-common && \
-	wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor - > /etc/apt/trusted.gpg.d/kitware.gpg && \
-	apt-add-repository "deb https://apt.kitware.com/ubuntu/ $UBUNTU_CODENAME main" && \
-	apt-get clean && \
-	apt-get update && \
-	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-		build-essential \
-		git \
-		unzip \
-		yasm \
-		pkg-config \
-		libtool \
-		libssl-dev \
-		nasm \
-		automake \
-		cmake \
-		gfortran \
-		clang-format \
-		gcc-10 \
-		g++-10 \
-		cpp-10 && \
-	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates \
+        wget \
+        software-properties-common && \
+    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor - > /etc/apt/trusted.gpg.d/kitware.gpg && \
+    apt-add-repository "deb https://apt.kitware.com/ubuntu/ $UBUNTU_CODENAME main" && \
+    apt-get clean && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        unzip \
+        yasm \
+        pkg-config \
+        libtool \
+        libssl-dev \
+        nasm \
+        automake \
+        cmake \
+        gfortran \
+        clang-format \
+        libxerces-c-dev \
+        gcc-10 \
+        g++-10 \
+        cpp-10 \
+        python3-dev \
+        python3-pip \
+        libpcre2-dev \
+        bison && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+
+# Install numpy
+RUN python3 -m pip install numpy
 
 ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
@@ -105,6 +113,8 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} ffmpeg
 # RUN make -j ${CPU_CORES} opencv
 # RUN make -j ${CPU_CORES} expat
+# RUN make -j ${CPU_CORES} SWIG
+# RUN make -j ${CPU_CORES} E57Format
 
 # RUN make -j ${CPU_CORES} popsift
 # RUN make -j ${CPU_CORES} cctag

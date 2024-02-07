@@ -91,8 +91,7 @@ std::ostream& operator<<(std::ostream& os, const ESubsetType subsetType)
 
 std::istream& operator>>(std::istream& in, ESubsetType& subsetType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     subsetType = ESubsetType_stringToEnum(token);
     return in;
 }

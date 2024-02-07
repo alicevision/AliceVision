@@ -301,6 +301,7 @@ int aliceVision_main(int argc, char** argv)
 
     CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
                     "AliceVision panoramaPostProcessing");
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

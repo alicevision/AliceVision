@@ -125,8 +125,7 @@ inline std::ostream& operator<<(std::ostream& os, EINTRINSIC e) { return os << E
 
 inline std::istream& operator>>(std::istream& in, EINTRINSIC& e)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     e = EINTRINSIC_stringToEnum(token);
     return in;
 }

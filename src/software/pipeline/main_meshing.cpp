@@ -57,9 +57,8 @@ EPartitioningMode EPartitioning_stringToEnum(const std::string& s)
 
 inline std::istream& operator>>(std::istream& in, EPartitioningMode& out_mode)
 {
-    std::string s;
-    in >> s;
-    out_mode = EPartitioning_stringToEnum(s);
+    std::string token(std::istreambuf_iterator<char>(in), {});
+    out_mode = EPartitioning_stringToEnum(token);
     return in;
 }
 
@@ -78,9 +77,8 @@ ERepartitionMode ERepartitionMode_stringToEnum(const std::string& s)
 
 inline std::istream& operator>>(std::istream& in, ERepartitionMode& out_mode)
 {
-    std::string s;
-    in >> s;
-    out_mode = ERepartitionMode_stringToEnum(s);
+    std::string token(std::istreambuf_iterator<char>(in), {});
+    out_mode = ERepartitionMode_stringToEnum(token);
     return in;
 }
 
@@ -259,11 +257,10 @@ struct BoundingBox
 
 inline std::istream& operator>>(std::istream& in, BoundingBox& out_bbox)
 {
-    std::string s;
-    in >> s;
+    std::string token(std::istreambuf_iterator<char>(in), {});
 
     std::vector<std::string> dataStr;
-    boost::split(dataStr, s, boost::is_any_of(","));
+    boost::split(dataStr, token, boost::is_any_of(","));
     if (dataStr.size() != 9)
     {
         throw std::runtime_error("Invalid number of values for bounding box.");
