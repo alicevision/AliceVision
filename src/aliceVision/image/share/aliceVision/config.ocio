@@ -1,6 +1,6 @@
 ocio_profile_version: 2
 
-description: A config to convert color space in AliceVision.
+description: A config to convert color space in AliceVision. Update Oct. 2023
 name:        OCIOv2-AliceVision
 
 search_path: luts
@@ -11,7 +11,7 @@ search_path: luts
 environment: {}
 
 #
-# The family separator is the character used to seprate colorspace family attributes into 
+# The family separator is the character used to seprate colorspace family attributes into
 # tokens or levels for hierarchical menus.  (The "/" character is also the default.)
 #
 family_separator: /
@@ -32,7 +32,7 @@ roles:
   #
   #color_timing: ACEScct
   #compositing_log: ACEScct
-  #data: Raw
+  data: Raw
   default: scene-linear Rec.709-sRGB
   scene_linear: scene-linear Rec.709-sRGB
 
@@ -59,10 +59,13 @@ displays:
   linear:
     - !<View> {name: Lin, colorspace: ACEScg}
   log:
-    - !<View> {name: Log, colorspace: sRGB}
+    - !<View> {name: Log, colorspace: sRGB} # why log is equal to sRGB?
   ACES:
     - !<View> {name: Rec.709, colorspace: Rec709}
-# 
+    - !<View> {name: Log ACEScct, colorspace: ACEScct}
+  Raw:
+    - !<View> {name: Raw, colorspace: Raw}
+#
 # The next config section is the traditional section for colorspaces that are defined relative to a
 # scene-referred connection space.  This section may be placed either before or after the display
 # colorspaces, based on which you prefer appear first in colorspace menus.
@@ -73,14 +76,14 @@ colorspaces:
     # The categories are intended to indicate which colorspace menus in an application should include
     # a given colorspace.  The categories may come both from the application and from the end-user.
     # Application-defined categories such as "file-io" or "working-space" indicate which menus in the
-    # application the colorspaces will appear in.  The application categories are intended to be 
+    # application the colorspaces will appear in.  The application categories are intended to be
     # combined with the encodings.  So for example, an application might filter by "working-space" as
     # a category and "scene-linear" as an encoding to get all the scene-linear working space options
-    # to display in a certain menu.  User-defined categories such as "basic-3d" or "advanced-2d" 
-    # indicate what type or artist should see those colorspaces.  OCIO uses the intersection of the 
+    # to display in a certain menu.  User-defined categories such as "basic-3d" or "advanced-2d"
+    # indicate what type or artist should see those colorspaces.  OCIO uses the intersection of the
     # application categories (combined with the encoding) along with the user categories to filter
     # the list of colorspaces.  Note that the user categories are intended to be set via an environment
-    # variable based on the type of artist using the application.  OCIO does not yet provide an official 
+    # variable based on the type of artist using the application.  OCIO does not yet provide an official
     # list of categories, so it will be up to application developers and config authors to determine
     # what strings to use.  OCIO does however provide a specific list of allowed encoding strings.
     #
@@ -109,6 +112,368 @@ colorspaces:
     categories: [ file-io, working-space, basic-3d, advanced-3d, basic-2d, advanced-2d ]
     encoding: scene-linear
     to_scene_reference: !<BuiltinTransform> {style: ACEScg_to_ACES2065-1}
+
+  - !<ColorSpace>
+    name: ACEScct
+    aliases: [ACES - ACEScct, acescct_ap1]
+    family: ACES
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert ACEScct to ACES2065-1
+
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACEScct_to_ACES.a1.0.3
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_ACEScct.a1.0.3
+    isdata: false
+    categories: [file-io, working-space]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<BuiltinTransform> {style: ACEScct_to_ACES2065-1}
+
+  - !<ColorSpace>
+    name: Raw
+    aliases: [Utility - Raw]
+    family: Utility
+    equalitygroup: ""
+    bitdepth: 32f
+    description: The utility "Raw" colorspace.
+    isdata: true
+    categories: [file-io, texture]
+    allocation: uniform
+
+  - !<ColorSpace>
+    name: Linear ARRI Wide Gamut 3
+    aliases: [lin_arri_wide_gamut_3, Input - ARRI - Linear - ALEXA Wide Gamut, lin_alexawide]
+    family: Input/ARRI
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Linear ARRI Wide Gamut 3 to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:ARRI:Input:Linear_ARRI_Wide_Gamut_3_to_ACES2065-1:1.0
+    isdata: false
+    categories: [file-io]
+    encoding: scene-linear
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Linear ARRI Wide Gamut 3 to ACES2065-1
+      children:
+        - !<MatrixTransform> {matrix: [0.680205505106279, 0.236136601606481, 0.0836578932872398, 0, 0.0854149797421404, 1.01747087860704, -0.102885858349182, 0, 0.00205652166929683, -0.0625625003847921, 1.06050597871549, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: ARRI LogC3 (EI800)
+    aliases: [arri_logc3_ei800, Input - ARRI - V3 LogC (EI800) - Wide Gamut, logc3ei800_alexawide]
+    family: Input/ARRI
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert ARRI LogC3 (EI800) to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:ARRI:Input:ARRI_LogC3_EI800_to_ACES2065-1:1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:IDT.ARRI.Alexa-v3-logC-EI800.a1.v2
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_LogC_EI800_AWG.a1.1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.LogC_EI800_AWG_to_ACES.a1.1.0
+    isdata: false
+    categories: [file-io]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: ARRI LogC3 (EI800) to ACES2065-1
+      children:
+        - !<LogCameraTransform> {base: 10, log_side_slope: 0.247189638318671, log_side_offset: 0.385536998692443, lin_side_slope: 5.55555555555556, lin_side_offset: 0.0522722750251688, lin_side_break: 0.0105909904954696, direction: inverse}
+        - !<MatrixTransform> {matrix: [0.680205505106279, 0.236136601606481, 0.0836578932872398, 0, 0.0854149797421404, 1.01747087860704, -0.102885858349182, 0, 0.00205652166929683, -0.0625625003847921, 1.06050597871549, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: Linear ARRI Wide Gamut 4
+    aliases: [lin_arri_wide_gamut_4, lin_awg4]
+    family: Input/ARRI
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Linear ARRI Wide Gamut 4 to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:ARRI:Input:Linear_ARRI_Wide_Gamut_4_to_ACES2065-1:1.0
+    isdata: false
+    categories: [file-io]
+    encoding: scene-linear
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Linear ARRI Wide Gamut 4 to ACES2065-1
+      children:
+        - !<MatrixTransform> {matrix: [0.750957362824734, 0.144422786709757, 0.104619850465509, 0, 0.000821837079380207, 1.007397584885, -0.00821942196438358, 0, -0.000499952143533471, -0.000854177231436971, 1.00135412937497, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: ARRI LogC4
+    aliases: [arri_logc4]
+    family: Input/ARRI
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert ARRI LogC4 to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:ARRI:Input:ARRI_LogC4_to_ACES2065-1:1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:IDT.ARRI.ARRI-LogC4.a1.v1
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.LogC4_to_ACES.a1.1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_LogC4.a1.1.0
+    isdata: false
+    categories: [file-io]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: ARRI LogC4 to ACES2065-1
+      children:
+        - !<LogCameraTransform> {log_side_slope: 0.0647954196341293, log_side_offset: -0.295908392682586, lin_side_slope: 2231.82630906769, lin_side_offset: 64, lin_side_break: -0.0180569961199113, direction: inverse}
+        - !<MatrixTransform> {matrix: [0.750957362824734, 0.144422786709757, 0.104619850465509, 0, 0.000821837079380207, 1.007397584885, -0.00821942196438358, 0, -0.000499952143533471, -0.000854177231436971, 1.00135412937497, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: Linear BMD WideGamut Gen5
+    aliases: [lin_bmd_widegamut_gen5]
+    family: Input/BlackmagicDesign
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Linear Blackmagic Wide Gamut (Gen 5) to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:BlackmagicDesign:Input:Linear_BMD_WideGamut_Gen5_to_ACES2065-1:1.0
+    isdata: false
+    categories: [file-io]
+    encoding: scene-linear
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Linear Blackmagic Wide Gamut (Gen 5) to ACES2065-1
+      children:
+        - !<MatrixTransform> {matrix: [0.647091325580708, 0.242595385134207, 0.110313289285085, 0, 0.0651915997328519, 1.02504756760476, -0.0902391673376125, 0, -0.0275570729194699, -0.0805887097177784, 1.10814578263725, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: BMDFilm WideGamut Gen5
+    aliases: [bmdfilm_widegamut_gen5]
+    family: Input/BlackmagicDesign
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Blackmagic Film Wide Gamut (Gen 5) to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:BlackmagicDesign:Input:BMDFilm_WideGamut_Gen5_to_ACES2065-1:1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:IDT.BlackmagicDesign.BMDFilm_WideGamut_Gen5.a1.v1
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_BMDFilm_WideGamut_Gen5.a1.v1
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.BMDFilm_WideGamut_Gen5_to_ACES.a1.v1
+    isdata: false
+    categories: [file-io]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Blackmagic Film Wide Gamut (Gen 5) to ACES2065-1
+      children:
+        - !<LogCameraTransform> {base: 2.71828182845905, log_side_slope: 0.0869287606549122, log_side_offset: 0.530013339229194, lin_side_offset: 0.00549407243225781, lin_side_break: 0.005, direction: inverse}
+        - !<MatrixTransform> {matrix: [0.647091325580708, 0.242595385134207, 0.110313289285085, 0, 0.0651915997328519, 1.02504756760476, -0.0902391673376125, 0, -0.0275570729194699, -0.0805887097177784, 1.10814578263725, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: CanonLog2 CinemaGamut D55
+    aliases: [canonlog2_cinemagamut_d55, Input - Canon - Canon-Log2 - Cinema Gamut Daylight, canonlog2_cgamutday]
+    family: Input/Canon
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Canon Log 2 Cinema Gamut (Daylight) to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:Canon:Input:CanonLog2_CinemaGamut-D55_to_ACES2065-1:1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.CLog2_CGamut_to_ACES.a1.1.0
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_CLog2_CGamut.a1.1.0
+    isdata: false
+    categories: [file-io]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<BuiltinTransform> {style: CANON_CLOG2-CGAMUT_to_ACES2065-1}
+
+  - !<ColorSpace>
+    name: CanonLog3 CinemaGamut D55
+    aliases: [canonlog3_cinemagamut_d55, Input - Canon - Canon-Log3 - Cinema Gamut Daylight, canonlog3_cgamutday]
+    family: Input/Canon
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Canon Log 3 Cinema Gamut (Daylight) to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:Canon:Input:CanonLog3_CinemaGamut-D55_to_ACES2065-1:1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.CLog3_CGamut_to_ACES.a1.1.0
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_CLog3_CGamut.a1.1.0
+    isdata: false
+    categories: [file-io]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<BuiltinTransform> {style: CANON_CLOG3-CGAMUT_to_ACES2065-1}
+
+  - !<ColorSpace>
+    name: Linear CinemaGamut D55
+    aliases: [lin_cinemagamut_d55, Input - Canon - Linear - Canon Cinema Gamut Daylight, lin_canoncgamutday]
+    family: Input/Canon
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Linear Canon Cinema Gamut (Daylight) to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:Canon:Input:Linear-CinemaGamut-D55_to_ACES2065-1:1.0
+    isdata: false
+    categories: [file-io]
+    encoding: scene-linear
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Linear Canon Cinema Gamut (Daylight) to ACES2065-1
+      children:
+        - !<MatrixTransform> {matrix: [0.763064454775734, 0.14902116113706, 0.0879143840872056, 0, 0.00365745670512393, 1.10696038037622, -0.110617837081339, 0, -0.0094077940457189, -0.218383304989987, 1.22779109903571, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: Linear V-Gamut
+    aliases: [lin_vgamut, Input - Panasonic - Linear - V-Gamut]
+    family: Input/Panasonic
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Linear Panasonic V-Gamut to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:Panasonic:Input:Linear_VGamut_to_ACES2065-1:1.0
+    isdata: false
+    categories: [file-io]
+    encoding: scene-linear
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Linear Panasonic V-Gamut to ACES2065-1
+      children:
+        - !<MatrixTransform> {matrix: [0.72461670413153, 0.166915288193706, 0.108468007674764, 0, 0.021390245413146, 0.984908155703054, -0.00629840111620089, 0, -0.00923556287076561, -0.00105690563900513, 1.01029246850977, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: V-Log V-Gamut
+    aliases: [vlog_vgamut, Input - Panasonic - V-Log - V-Gamut]
+    family: Input/Panasonic
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Panasonic V-Log - V-Gamut to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:Panasonic:Input:VLog_VGamut_to_ACES2065-1:1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.VLog_VGamut_to_ACES.a1.1.0
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_VLog_VGamut.a1.1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:IDT.Panasonic.VLog_VGamut.a1.v1
+    isdata: false
+    categories: [file-io]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Panasonic V-Log - V-Gamut to ACES2065-1
+      children:
+        - !<LogCameraTransform> {base: 10, log_side_slope: 0.241514, log_side_offset: 0.598206, lin_side_offset: 0.00873, lin_side_break: 0.01, direction: inverse}
+        - !<MatrixTransform> {matrix: [0.72461670413153, 0.166915288193706, 0.108468007674764, 0, 0.021390245413146, 0.984908155703054, -0.00629840111620089, 0, -0.00923556287076561, -0.00105690563900513, 1.01029246850977, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: Linear REDWideGamutRGB
+    aliases: [lin_redwidegamutrgb, Input - RED - Linear - REDWideGamutRGB, lin_rwg]
+    family: Input/RED
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Linear REDWideGamutRGB to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:RED:Input:Linear_REDWideGamutRGB_to_ACES2065-1:1.0
+    isdata: false
+    categories: [file-io]
+    encoding: scene-linear
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Linear REDWideGamutRGB to ACES2065-1
+      children:
+        - !<MatrixTransform> {matrix: [0.785058804068092, 0.0838587565440846, 0.131082439387823, 0, 0.0231738348454756, 1.08789754919233, -0.111071384037806, 0, -0.0737604353682082, -0.314590072290208, 1.38835050765842, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: Log3G10 REDWideGamutRGB
+    aliases: [log3g10_redwidegamutrgb, Input - RED - REDLog3G10 - REDWideGamutRGB, rl3g10_rwg]
+    family: Input/RED
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert RED Log3G10 REDWideGamutRGB to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:RED:Input:Log3G10_REDWideGamutRGB_to_ACES2065-1:1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:IDT.RED.Log3G10_REDWideGamutRGB.a1.v1
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_Log3G10_RWG.a1.1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.Log3G10_RWG_to_ACES.a1.1.0
+    isdata: false
+    categories: [file-io]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: RED Log3G10 REDWideGamutRGB to ACES2065-1
+      children:
+        - !<LogCameraTransform> {base: 10, log_side_slope: 0.224282, lin_side_slope: 155.975327, lin_side_offset: 2.55975327, lin_side_break: -0.01, direction: inverse}
+        - !<MatrixTransform> {matrix: [0.785058804068092, 0.0838587565440846, 0.131082439387823, 0, 0.0231738348454756, 1.08789754919233, -0.111071384037806, 0, -0.0737604353682082, -0.314590072290208, 1.38835050765842, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: Linear Venice S-Gamut3.Cine
+    aliases: [lin_venice_sgamut3cine, Input - Sony - Linear - Venice S-Gamut3.Cine]
+    family: Input/Sony
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Linear Venice S-Gamut3.Cine to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:Sony:Input:Linear_Venice_SGamut3Cine_to_ACES2065-1:1.0
+    isdata: false
+    categories: [file-io]
+    encoding: scene-linear
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Linear Venice S-Gamut3.Cine to ACES2065-1
+      children:
+        - !<MatrixTransform> {matrix: [0.674257092126512, 0.220571735923397, 0.10517117195009, 0, -0.00931360607857167, 1.10595886142466, -0.0966452553460855, 0, -0.0382090673002312, -0.017938376600236, 1.05614744390047, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: S-Log3 Venice S-Gamut3.Cine
+    aliases: [slog3_venice_sgamut3cine, Input - Sony - S-Log3 - Venice S-Gamut3.Cine, slog3_venice_sgamutcine]
+    family: Input/Sony
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      Convert Sony S-Log3 Venice S-Gamut3.Cine to ACES2065-1
+
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:Sony:Input:SLog3_Venice_SGamut3Cine_to_ACES2065-1:1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:IDT.Sony.Venice_SLog3_SGamut3Cine.a1.v1
+
+      AMF Components
+      --------------
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.ACES_to_SLog3_Venice_SGamut3Cine.a1.1.0
+      ACEStransformID: urn:ampas:aces:transformId:v1.5:ACEScsc.Academy.SLog3_Venice_SGamut3Cine_to_ACES.a1.1.0
+    isdata: false
+    categories: [file-io]
+    encoding: log
+    allocation: uniform
+    to_scene_reference: !<GroupTransform>
+      name: Sony S-Log3 Venice S-Gamut3.Cine to ACES2065-1
+      children:
+        - !<LogCameraTransform> {base: 10, log_side_slope: 0.255620723362659, log_side_offset: 0.410557184750733, lin_side_slope: 5.26315789473684, lin_side_offset: 0.0526315789473684, lin_side_break: 0.01125, linear_slope: 6.62194371177582, direction: inverse}
+        - !<MatrixTransform> {matrix: [0.674257092126512, 0.220571735923397, 0.10517117195009, 0, -0.00931360607857167, 1.10595886142466, -0.0966452553460855, 0, -0.0382090673002312, -0.017938376600236, 1.05614744390047, 0, 0, 0, 0, 1]}
 
   - !<ColorSpace>
     name: scene-linear Rec.709-sRGB
@@ -144,7 +509,7 @@ colorspaces:
     bitdepth: 32f
     description: |
       ACES 1.0 Output - Rec.709 Output Transform
-      
+
       ACES Transform ID : urn:ampas:aces:transformId:v1.5:ODT.Academy.Rec709_100nits_dim.a1.0.3
     isdata: false
     allocation: uniform
@@ -157,4 +522,3 @@ colorspaces:
       children:
         - !<FileTransform> {src: Log2_48_nits_Shaper_to_linear.spi1d, interpolation: linear, direction: inverse}
         - !<FileTransform> {src: Log2_48_nits_Shaper.RRT.Rec.709.spi3d, interpolation: tetrahedral}
-

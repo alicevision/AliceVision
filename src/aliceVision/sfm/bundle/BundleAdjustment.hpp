@@ -67,8 +67,7 @@ inline std::ostream& operator<<(std::ostream& os, EFeatureConstraint m) { return
 
 inline std::istream& operator>>(std::istream& in, EFeatureConstraint& m)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     m = ESfMobservationConstraint_stringToEnum(token);
     return in;
 }

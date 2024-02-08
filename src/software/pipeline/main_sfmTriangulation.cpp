@@ -103,7 +103,7 @@ int aliceVision_main(int argc, char** argv)
         ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
          "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
-    
+
     CmdLine cmdline("AliceVision SfM Triangulation");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
@@ -117,7 +117,8 @@ int aliceVision_main(int argc, char** argv)
     omp_set_num_threads(hwc.getMaxThreads());
 
     const double defaultLoRansacLocalizationError = 4.0;
-    if (!robustEstimation::adjustRobustEstimatorThreshold(sfmParams.localizerEstimator, sfmParams.localizerEstimatorError, defaultLoRansacLocalizationError))
+    if (!robustEstimation::adjustRobustEstimatorThreshold(
+          sfmParams.localizerEstimator, sfmParams.localizerEstimatorError, defaultLoRansacLocalizationError))
     {
         return EXIT_FAILURE;
     }
@@ -143,7 +144,8 @@ int aliceVision_main(int argc, char** argv)
 
     // matches reading
     matching::PairwiseMatches pairwiseMatches;
-    if (!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
+    if (!sfm::loadPairwiseMatches(
+          pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
     {
         ALICEVISION_LOG_ERROR("Unable to load matches.");
         return EXIT_FAILURE;
@@ -164,12 +166,8 @@ int aliceVision_main(int argc, char** argv)
         sfmParams.minNbObservationsForTriangulation = 0;
     }
 
-    //instantiate an sfmEngine for triangulation only
-    sfm::ReconstructionEngine_sequentialSfM sfmEngine(
-        sfmData,
-        sfmParams,
-        extraInfoFolder,
-        (fs::path(extraInfoFolder) / "sfm_log.html").string());
+    // instantiate an sfmEngine for triangulation only
+    sfm::ReconstructionEngine_sequentialSfM sfmEngine(sfmData, sfmParams, extraInfoFolder, (fs::path(extraInfoFolder) / "sfm_log.html").string());
 
     sfmEngine.initRandomSeed(randomSeed);
 
@@ -177,7 +175,7 @@ int aliceVision_main(int argc, char** argv)
     sfmEngine.setFeatures(&featuresPerView);
     sfmEngine.setMatches(&pairwiseMatches);
 
-    //run the triangulation
+    // run the triangulation
     sfmEngine.fuseMatchesIntoTracks();
     std::set<IndexT> reconstructedViews = sfmData.getValidViews();
     sfmEngine.triangulate({}, reconstructedViews);
@@ -198,11 +196,12 @@ int aliceVision_main(int argc, char** argv)
     // export to disk computed scene (data & visualizable results)
     ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
-    sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS | sfmDataIO::STRUCTURE));
+    sfmDataIO::save(sfmEngine.getSfMData(),
+                    (fs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(),
+                    sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS | sfmDataIO::STRUCTURE));
     sfmDataIO::save(sfmEngine.getSfMData(), outputSfM, sfmDataIO::ESfMData::ALL);
 
-    ALICEVISION_LOG_INFO("Triangulation Done" << std::endl
-        << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
+    ALICEVISION_LOG_INFO("Triangulation Done" << std::endl << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
 
     return EXIT_SUCCESS;
 }

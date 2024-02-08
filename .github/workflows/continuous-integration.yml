@@ -22,7 +22,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: alicevision/alicevision-deps:2023.10.12-centos7-cuda11.3.1
+      image: alicevision/alicevision-deps:2024.01.31-centos7-cuda11.3.1
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
@@ -52,6 +52,7 @@ jobs:
            -DTARGET_ARCHITECTURE=core \
            -DALICEVISION_BUILD_TESTS:BOOL=ON \
            -DALICEVISION_BUILD_EXAMPLES:BOOL=ON \
+           -DALICEVISION_BUILD_SWIG_BINDING:BOOL=ON \
            -DALICEVISION_USE_OPENCV:BOOL=ON \
            -DALICEVISION_USE_CUDA:BOOL=ON \
            -DALICEVISION_USE_CCTAG:BOOL=ON \
@@ -63,7 +64,9 @@ jobs:
            -DBOOST_NO_CXX11:BOOL=ON \
            -DCeres_DIR:PATH="${DEPS_INSTALL_DIR}/share/Ceres" \
            -DEIGEN_INCLUDE_DIR_HINTS:PATH="${DEPS_INSTALL_DIR}" \
-           -DAlembic_DIR:PATH="${DEPS_INSTALL_DIR}/lib/cmake/Alembic"
+           -DAlembic_DIR:PATH="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \
+           -DSWIG_DIR:PATH="${DEPS_INSTALL_DIR}/share/swig/4.2.0" \
+           -DSWIG_EXECUTABLE:PATH="${DEPS_INSTALL_DIR}/bin-deps/swig"
 
       - name: Build
         working-directory: ./build
@@ -124,6 +127,13 @@ jobs:
           python --version
           python EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
+      - name: Python Binding - Unit Tests
+        run: |
+          export PYTHONPATH=${ALICEVISION_ROOT}:${PYTHONPATH}
+          export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
+          pip3 install pytest
+          pytest ./pyTests
+
   build-windows:
     runs-on: windows-latest
     env:
@@ -157,7 +167,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2023.10.02.zip?ref_type=heads&inline=false"
+          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2024.02.06.zip?ref_type=heads&inline=false"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 

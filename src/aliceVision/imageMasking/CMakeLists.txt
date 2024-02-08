@@ -15,6 +15,5 @@ alicevision_add_library(aliceVision_imageMasking
     ${OpenCV_LIBS}
   PRIVATE_LINKS
     aliceVision_image
-    ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
 )

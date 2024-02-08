@@ -27,5 +27,54 @@ install(FILES cameraSensors.db
 # Unit tests
 alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase" LINKS aliceVision_sensorDB)
 
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
+    set_property(SOURCE SensorDB.i PROPERTY CPLUSPLUS ON)
+    set_property(SOURCE SensorDB.i PROPERTY SWIG_MODULE_NAME sensorDB)
 
+    swig_add_library(sensorDB
+        TYPE MODULE
+        LANGUAGE python
+        SOURCES SensorDB.i
+    )
 
+    set_property(
+        TARGET sensorDB
+        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
+    )
+
+    target_include_directories(sensorDB
+    PRIVATE
+        ../include
+        ${ALICEVISION_ROOT}/include
+        ${Python3_INCLUDE_DIRS}
+        ${Python3_NumPy_INCLUDE_DIRS}
+    )
+    set_property(
+        TARGET sensorDB
+        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
+    )
+    set_property(
+        TARGET sensorDB
+        PROPERTY COMPILE_OPTIONS -std=c++17
+    )
+
+    target_link_libraries(sensorDB
+    PUBLIC
+        aliceVision_sensorDB
+    )
+
+    install(
+    TARGETS
+        sensorDB
+    DESTINATION
+        ${CMAKE_INSTALL_PREFIX}
+    )
+    install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/sensorDB.py
+    DESTINATION
+        ${CMAKE_INSTALL_PREFIX}
+    )
+endif()

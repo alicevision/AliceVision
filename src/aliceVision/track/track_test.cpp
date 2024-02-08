@@ -157,13 +157,7 @@ BOOST_AUTO_TEST_CASE(Track_Conflict)
     // 0, {(0,0) (1,0) (2,0)}
     // 1, {(0,1) (1,1) (2,6)}
     const std::pair<std::size_t, std::size_t> GT_Tracks[] = {
-      std::make_pair(0, 0), 
-      std::make_pair(1, 0), 
-      std::make_pair(2, 0), 
-      std::make_pair(0, 1), 
-      std::make_pair(1, 1), 
-      std::make_pair(2, 6)
-    };
+      std::make_pair(0, 0), std::make_pair(1, 0), std::make_pair(2, 0), std::make_pair(0, 1), std::make_pair(1, 1), std::make_pair(2, 6)};
 
     BOOST_CHECK_EQUAL(2, map_tracks.size());
     std::size_t cpt = 0, i = 0;

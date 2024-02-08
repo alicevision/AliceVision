@@ -526,8 +526,8 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
             const geometry::Pose3 poseJ = sfmData.getPose(viewJ).getTransform();
             const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
 
-            const double angle =
-              camera::angleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.getCoordinates(), observationPairJ.second.getCoordinates());
+            const double angle = camera::angleBetweenRays(
+              poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.getCoordinates(), observationPairJ.second.getCoordinates());
 
             // check angle between two observation
             if (angle < minObservationAngle)

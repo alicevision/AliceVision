@@ -1576,7 +1576,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
 
     // B. Look if intrinsic data is known or not
     std::shared_ptr<View> view_I = _sfmData.getViews().at(viewId);
-    std::shared_ptr<camera::IntrinsicBase> intrinsics = _sfmData.getIntrinsicsharedPtr(view_I->getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> intrinsics = _sfmData.getIntrinsicSharedPtr(view_I->getIntrinsicId());
     if (intrinsics == nullptr)
     {
         throw std::runtime_error("Intrinsic " + std::to_string(view_I->getIntrinsicId()) +
@@ -1655,7 +1655,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
     const View& view = *_sfmData.getViews().at(viewIndex);
     _sfmData.setPose(view, CameraPose(resectionData.pose));
 
-    std::shared_ptr<camera::IntrinsicBase> intrinsics = _sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> intrinsics = _sfmData.getIntrinsicSharedPtr(view.getIntrinsicId());
 
     // B. Update the observations into the global scene structure
     // - Add the new 2D observations to the reconstructed tracks

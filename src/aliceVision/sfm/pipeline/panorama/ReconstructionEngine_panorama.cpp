@@ -284,7 +284,7 @@ bool ReconstructionEngine_panorama::process()
     aliceVision::rotationAveraging::RelativeRotations relativesR;
     computeRelativeRotations(relativesR);
 
-    HashMap<IndexT, Mat3> globalRotations;
+    std::map<IndexT, Mat3> globalRotations;
     if (!computeGlobalRotations(relativesR, globalRotations))
     {
         ALICEVISION_LOG_WARNING("Panorama: Rotation Averaging failure!");
@@ -326,7 +326,7 @@ bool ReconstructionEngine_panorama::process()
 
 /// Compute from relative rotations the global rotations of the camera poses
 bool ReconstructionEngine_panorama::computeGlobalRotations(const rotationAveraging::RelativeRotations& relativesR,
-                                                           HashMap<IndexT, Mat3>& globalRotations)
+                                                           std::map<IndexT, Mat3>& globalRotations)
 {
     if (relativesR.empty())
     {
@@ -502,8 +502,8 @@ bool ReconstructionEngine_panorama::addConstraints2DWithKnownRotation()
         sfmData::CameraPose iTo = _sfmData.getAbsolutePose(vI.getPoseId());
         sfmData::CameraPose jTo = _sfmData.getAbsolutePose(vJ.getPoseId());
 
-        std::shared_ptr<camera::IntrinsicBase> intrinsicI = _sfmData.getIntrinsicsharedPtr(vI.getIntrinsicId());
-        std::shared_ptr<camera::IntrinsicBase> intrinsicJ = _sfmData.getIntrinsicsharedPtr(vJ.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> intrinsicI = _sfmData.getIntrinsicSharedPtr(vI.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> intrinsicJ = _sfmData.getIntrinsicSharedPtr(vJ.getIntrinsicId());
 
         Mat3 iRo = iTo.getTransform().rotation();
         Mat3 jRo = jTo.getTransform().rotation();
@@ -915,12 +915,12 @@ bool ReconstructionEngine_panorama::buildLandmarks()
     {
         // Retrieve camera parameters
         const sfmData::View& v1 = _sfmData.getView(c.ViewFirst);
-        const std::shared_ptr<camera::IntrinsicBase> cam1 = _sfmData.getIntrinsicsharedPtr(v1.getIntrinsicId());
+        const std::shared_ptr<camera::IntrinsicBase> cam1 = _sfmData.getIntrinsicSharedPtr(v1.getIntrinsicId());
         const sfmData::CameraPose pose1 = _sfmData.getPose(v1);
         const Vec3 wpt1 = cam1->backproject(c.ObservationFirst.getCoordinates(), true, pose1.getTransform(), 1.0);
 
         const sfmData::View& v2 = _sfmData.getView(c.ViewSecond);
-        const std::shared_ptr<camera::IntrinsicBase> cam2 = _sfmData.getIntrinsicsharedPtr(v2.getIntrinsicId());
+        const std::shared_ptr<camera::IntrinsicBase> cam2 = _sfmData.getIntrinsicSharedPtr(v2.getIntrinsicId());
         const sfmData::CameraPose pose2 = _sfmData.getPose(v2);
         const Vec3 wpt2 = cam2->backproject(c.ObservationSecond.getCoordinates(), true, pose2.getTransform(), 1.0);
 

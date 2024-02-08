@@ -38,34 +38,43 @@ std::string toNuke(std::shared_ptr<Undistortion> undistortion, EINTRINSIC intrin
 
     switch (intrinsicType)
     {
-    case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
-        ss << "LensDistortion2 {" << "\n"
-           << " distortionModelPreset \"3DEqualizer/3DE4 Anamorphic - Standard, Degree 4\"" << "\n"
-           << " lens Anamorphic" << "\n"
-           << " distortionNumeratorX00 " << params[0] << "\n"
-           << " distortionNumeratorX01 " << params[4] << "\n"
-           << " distortionNumeratorX10 " << params[2] << "\n"
-           << " distortionNumeratorX11 " << params[6] << "\n"
-           << " distortionNumeratorX20 " << params[8] << "\n"
-           << " distortionNumeratorY00 " << params[1] << "\n"
-           << " distortionNumeratorY01 " << params[5] << "\n"
-           << " distortionNumeratorY10 " << params[3] << "\n"
-           << " distortionNumeratorY11 " << params[7] << "\n"
-           << " distortionNumeratorY20 " << params[9] << "\n"
-           << " output Undistort" << "\n"
-           << " distortionScalingType Format" << "\n"
-           << " distortionScalingFormat \""
-           << size(0) << " " << size(1) << " 0 0 "
-           << size(0) << " " << size(1) << " 1 AV_undist_fmt \"" << "\n"
-           << " distortionModelType \"Radial Asymmetric\"" << "\n"
-           << " distortionOrder {2 0}" << "\n"
-           << " normalisationType Diagonal" << "\n"
-           << " distortInFisheyeSpace false" << "\n"
-           << "}" << "\n";
-        break;
-    default:
-        ALICEVISION_THROW_ERROR("Unsupported intrinsic type for conversion to Nuke LensDistortion node: "
-                                << EINTRINSIC_enumToString(intrinsicType));
+        case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
+            ss << "LensDistortion2 {"
+               << "\n"
+               << " distortionModelPreset \"3DEqualizer/3DE4 Anamorphic - Standard, Degree 4\""
+               << "\n"
+               << " lens Anamorphic"
+               << "\n"
+               << " distortionNumeratorX00 " << params[0] << "\n"
+               << " distortionNumeratorX01 " << params[4] << "\n"
+               << " distortionNumeratorX10 " << params[2] << "\n"
+               << " distortionNumeratorX11 " << params[6] << "\n"
+               << " distortionNumeratorX20 " << params[8] << "\n"
+               << " distortionNumeratorY00 " << params[1] << "\n"
+               << " distortionNumeratorY01 " << params[5] << "\n"
+               << " distortionNumeratorY10 " << params[3] << "\n"
+               << " distortionNumeratorY11 " << params[7] << "\n"
+               << " distortionNumeratorY20 " << params[9] << "\n"
+               << " output Undistort"
+               << "\n"
+               << " distortionScalingType Format"
+               << "\n"
+               << " distortionScalingFormat \"" << size(0) << " " << size(1) << " 0 0 " << size(0) << " " << size(1) << " 1 AV_undist_fmt \""
+               << "\n"
+               << " distortionModelType \"Radial Asymmetric\""
+               << "\n"
+               << " distortionOrder {2 0}"
+               << "\n"
+               << " normalisationType Diagonal"
+               << "\n"
+               << " distortInFisheyeSpace false"
+               << "\n"
+               << "}"
+               << "\n";
+            break;
+        default:
+            ALICEVISION_THROW_ERROR(
+              "Unsupported intrinsic type for conversion to Nuke LensDistortion node: " << EINTRINSIC_enumToString(intrinsicType));
     }
 
     return ss.str();
@@ -89,22 +98,18 @@ void toSTMap(image::Image<image::RGBAfColor>& stmap,
     }
 
     stmap.resize(widthRoi, heightRoi, true, image::RGBAfColor(0.0f));
-    
-    #pragma omp parallel for
+
+#pragma omp parallel for
     for (int i = 0; i < heightRoi; ++i)
     {
         for (int j = 0; j < widthRoi; ++j)
         {
             const Vec2 pix((j + xOffset), (i + yOffset));
 
-            const Vec2 disto_pix
-                = distort ? intrinsic->get_ud_pixel(pix) : intrinsic->get_d_pixel(pix);
-            
-            stmap(i, j).b()
-                = disto_pix[0] / (static_cast<float>(intrinsic->w()) - 1.0f);
-            stmap(i, j).a()
-                = (static_cast<float>(intrinsic->h()) - 1.0f - disto_pix[1])
-                / (static_cast<float>(intrinsic->h()) - 1.0f);
+            const Vec2 disto_pix = distort ? intrinsic->get_ud_pixel(pix) : intrinsic->get_d_pixel(pix);
+
+            stmap(i, j).b() = disto_pix[0] / (static_cast<float>(intrinsic->w()) - 1.0f);
+            stmap(i, j).a() = (static_cast<float>(intrinsic->h()) - 1.0f - disto_pix[1]) / (static_cast<float>(intrinsic->h()) - 1.0f);
             stmap(i, j).r() = stmap(i, j).b();
             stmap(i, j).g() = stmap(i, j).a();
         }
@@ -137,7 +142,7 @@ int aliceVision_main(int argc, char* argv[])
         ("exportLensGridsUndistorted,e", po::value<bool>(&exportLensGridsUndistorted)->default_value(exportLensGridsUndistorted),
          "Export lens grids undistorted for validation.");
     // clang-format on
-    
+
     CmdLine cmdline("AliceVision exportDistortion");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
@@ -148,7 +153,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
@@ -159,12 +164,14 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Exporting distortion for intrinsic " << intrinsicId);
 
         const auto intrinsicDisto = std::dynamic_pointer_cast<IntrinsicScaleOffsetDisto>(intrinsicPtr);
-        if (!intrinsicDisto) continue;
+        if (!intrinsicDisto)
+            continue;
 
         const auto undistortion = intrinsicDisto->getUndistortion();
-        if (!undistortion) continue;
+        if (!undistortion)
+            continue;
 
-        if(exportNukeNode)
+        if (exportNukeNode)
         {
             ALICEVISION_LOG_INFO("Computing Nuke LensDistortion node");
 
@@ -178,7 +185,7 @@ int aliceVision_main(int argc, char* argv[])
             of.close();
         }
 
-        if(exportSTMaps)
+        if (exportSTMaps)
         {
             ALICEVISION_LOG_INFO("Computing STMaps");
 
@@ -205,21 +212,21 @@ int aliceVision_main(int argc, char* argv[])
 
         if (exportLensGridsUndistorted)
         {
-            for (const auto & pv : sfmData.getViews())
+            for (const auto& pv : sfmData.getViews())
             {
                 if (pv.second->getIntrinsicId() == intrinsicId)
                 {
-                    //Read image
+                    // Read image
                     image::Image<image::RGBfColor> image;
                     std::string path = pv.second->getImageInfo()->getImagePath();
                     image::readImage(path, image, image::EImageColorSpace::LINEAR);
                     oiio::ParamValueList metadata = image::readImageMetadata(path);
-                    
-                    //Undistort
+
+                    // Undistort
                     image::Image<image::RGBfColor> image_ud;
                     camera::UndistortImage(image, intrinsicPtr.get(), image_ud, image::FBLACK, false);
 
-                    //Save undistorted
+                    // Save undistorted
                     std::stringstream ss;
                     ss << outputFilePath << "/lensgrid_" << pv.first << "_undistort.exr";
                     ALICEVISION_LOG_INFO("Export lens grid undistorted (Source image: " << path << ", Undistorted image: " << ss.str() << ").");

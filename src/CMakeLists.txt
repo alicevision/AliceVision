@@ -55,6 +55,8 @@ option(ALICEVISION_BUILD_STEREOPHOTOMETRY "Build AliceVision StereoPhotometry pa
 option(ALICEVISION_BUILD_PANORAMA "Build AliceVision panorama part" ON)
 option(ALICEVISION_BUILD_SOFTWARE "Build AliceVision command line tools." ON)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
+option(ALICEVISION_BUILD_SWIG_BINDING "Build the Python binding with SWIG." OFF)
+trilean_option(ALICEVISION_BUILD_LIDAR "Build AliceVision LIDAR part" AUTO)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
 
 trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
@@ -93,6 +95,7 @@ if(NOT ALICEVISION_BUILD_SFM)
     SET(ALICEVISION_BUILD_SEGMENTATION OFF)
     SET(ALICEVISION_BUILD_STEREOPHOTOMETRY OFF)
     SET(ALICEVISION_BUILD_PANORAMA OFF)
+    SET(ALICEVISION_BUILD_LIDAR OFF)
 endif()
 
 # ==============================================================================
@@ -278,7 +281,7 @@ set(ALICEVISION_BOOST_COMPONENTS atomic container date_time graph json log log_s
 if(ALICEVISION_BUILD_TESTS)
     set(ALICEVISION_BOOST_COMPONENT_UNITTEST unit_test_framework)
 endif()
-find_package(Boost 1.60.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} ${ALICEVISION_BOOST_COMPONENT_UNITTEST})
+find_package(Boost 1.76.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} ${ALICEVISION_BOOST_COMPONENT_UNITTEST})
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
@@ -462,9 +465,24 @@ if(ALICEVISION_BUILD_SFM)
   find_package(Osi REQUIRED)
 endif()
 
-
+# ==============================================================================
+# Lemon
+# ==============================================================================
 if(ALICEVISION_BUILD_SFM)
   find_package(LEMON REQUIRED)
+endif()
+
+# ==============================================================================
+# libE57Format
+# ==============================================================================
+if(NOT ALICEVISION_BUILD_LIDAR STREQUAL "OFF")
+  find_package(E57Format)
+
+  if(E57Format_FOUND)
+    message(STATUS "E57Format found")
+  elseif(ALICEVISION_BUILD_LIDAR STREQUAL "ON")
+    message(SEND_ERROR "Failed to find E57Format")
+  endif()
 endif()
 
 
@@ -739,6 +757,22 @@ if(ALICEVISION_HAVE_CUDA)
   endif()
 endif()
 
+# ==============================================================================
+# SWIG
+# ==============================================================================
+if(ALICEVISION_BUILD_SWIG_BINDING)
+  find_package(SWIG REQUIRED)  # SWIG dependency
+  if(SWIG_FOUND)
+    include(UseSWIG)
+    message(STATUS "SWIG found.")
+  else()
+    message(SEND_ERROR "Failed to find SWIG.")
+  endif()
+
+
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)  # Python dependencies
+endif()
+
 
 # ==============================================================================
 # CCTag
@@ -921,12 +955,14 @@ message("** Target architecture: " ${TARGET_ARCHITECTURE})
 message("** Build Shared libs: " ${BUILD_SHARED_LIBS})
 message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
+message("** Build LIDAR part: " ${ALICEVISION_BUILD_LIDAR})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
 message("** Build AliceVision+OpenCV samples programs: " ${ALICEVISION_HAVE_OPENCV})
 message("** Build UncertaintyTE: " ${ALICEVISION_HAVE_UNCERTAINTYTE})
 message("** Build MeshSDFilter: " ${ALICEVISION_HAVE_MESHSDFILTER})
 message("** Build Alembic exporter: " ${ALICEVISION_HAVE_ALEMBIC})
+message("** Build SWIG Python binding: " ${ALICEVISION_BUILD_SWIG_BINDING})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})
 message("** Use CUDA: " ${ALICEVISION_HAVE_CUDA})
@@ -948,6 +984,15 @@ if(ALICEVISION_BUILD_SFM)
   message(STATUS "COINUTILS: " ${CoinUtils_VERSION} "")
   message(STATUS "OSI: " ${Osi_VERSION} "")
   message(STATUS "LEMON: " ${LEMON_VERSION} "")
+endif()
+
+if(NOT ALICEVISION_BUILD_LIDAR STREQUAL "OFF")
+  message(STATUS "E57FORMAT: " ${E57Format} "")
+endif()
+
+if(ALICEVISION_BUILD_SWIG_BINDING)
+  message("\n")
+  message(STATUS "SWIG: " ${SWIG_VERSION} "")
 endif()
 
 message("\n")

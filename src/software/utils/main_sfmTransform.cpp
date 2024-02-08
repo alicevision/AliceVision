@@ -19,7 +19,6 @@
 #include <sstream>
 #include <vector>
 
-
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -56,21 +55,32 @@ enum class EAlignmentMethod : unsigned char
  */
 std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
 {
-  switch(alignmentMethod)
-  {
-    case EAlignmentMethod::TRANSFORMATION:           return "transformation";
-    case EAlignmentMethod::MANUAL:                   return "manual";
-    case EAlignmentMethod::AUTO:                     return "auto";
-    case EAlignmentMethod::AUTO_FROM_CAMERAS:        return "auto_from_cameras";
-    case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS: return "auto_from_cameras_x_axis";
-    case EAlignmentMethod::AUTO_FROM_LANDMARKS:      return "auto_from_landmarks";
-    case EAlignmentMethod::FROM_SINGLE_CAMERA:       return "from_single_camera";
-    case EAlignmentMethod::FROM_CENTER_CAMERA:       return "from_center_camera";
-    case EAlignmentMethod::FROM_MARKERS:             return "from_markers";
-    case EAlignmentMethod::FROM_GPS:                 return "from_gps";
-    case EAlignmentMethod::ALIGN_GROUND:             return "align_ground";
-  }
-  throw std::out_of_range("Invalid EAlignmentMethod enum");
+    switch (alignmentMethod)
+    {
+        case EAlignmentMethod::TRANSFORMATION:
+            return "transformation";
+        case EAlignmentMethod::MANUAL:
+            return "manual";
+        case EAlignmentMethod::AUTO:
+            return "auto";
+        case EAlignmentMethod::AUTO_FROM_CAMERAS:
+            return "auto_from_cameras";
+        case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:
+            return "auto_from_cameras_x_axis";
+        case EAlignmentMethod::AUTO_FROM_LANDMARKS:
+            return "auto_from_landmarks";
+        case EAlignmentMethod::FROM_SINGLE_CAMERA:
+            return "from_single_camera";
+        case EAlignmentMethod::FROM_CENTER_CAMERA:
+            return "from_center_camera";
+        case EAlignmentMethod::FROM_MARKERS:
+            return "from_markers";
+        case EAlignmentMethod::FROM_GPS:
+            return "from_gps";
+        case EAlignmentMethod::ALIGN_GROUND:
+            return "align_ground";
+    }
+    throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
 
 /**
@@ -80,59 +90,63 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
  */
 EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMethod)
 {
-  std::string method = alignmentMethod;
-  std::transform(method.begin(), method.end(), method.begin(), ::tolower); //tolower
+    std::string method = alignmentMethod;
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);  // tolower
 
-  if (method == "transformation")           return EAlignmentMethod::TRANSFORMATION;
-  if (method == "manual")                   return EAlignmentMethod::MANUAL;
-  if (method == "auto")                     return EAlignmentMethod::AUTO;
-  if (method == "auto_from_cameras")        return EAlignmentMethod::AUTO_FROM_CAMERAS;
-  if (method == "auto_from_cameras_x_axis") return EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS;
-  if (method == "auto_from_landmarks")      return EAlignmentMethod::AUTO_FROM_LANDMARKS;
-  if (method == "from_single_camera")       return EAlignmentMethod::FROM_SINGLE_CAMERA;
-  if (method == "from_center_camera")       return EAlignmentMethod::FROM_CENTER_CAMERA;
-  if (method == "from_markers")             return EAlignmentMethod::FROM_MARKERS;
-  if (method == "from_gps")                 return EAlignmentMethod::FROM_GPS;
-  if (method == "align_ground")             return EAlignmentMethod::ALIGN_GROUND;
-  throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
+    if (method == "transformation")
+        return EAlignmentMethod::TRANSFORMATION;
+    if (method == "manual")
+        return EAlignmentMethod::MANUAL;
+    if (method == "auto")
+        return EAlignmentMethod::AUTO;
+    if (method == "auto_from_cameras")
+        return EAlignmentMethod::AUTO_FROM_CAMERAS;
+    if (method == "auto_from_cameras_x_axis")
+        return EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS;
+    if (method == "auto_from_landmarks")
+        return EAlignmentMethod::AUTO_FROM_LANDMARKS;
+    if (method == "from_single_camera")
+        return EAlignmentMethod::FROM_SINGLE_CAMERA;
+    if (method == "from_center_camera")
+        return EAlignmentMethod::FROM_CENTER_CAMERA;
+    if (method == "from_markers")
+        return EAlignmentMethod::FROM_MARKERS;
+    if (method == "from_gps")
+        return EAlignmentMethod::FROM_GPS;
+    if (method == "align_ground")
+        return EAlignmentMethod::ALIGN_GROUND;
+    throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
-
 
 inline std::istream& operator>>(std::istream& in, EAlignmentMethod& alignment)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     alignment = EAlignmentMethod_stringToEnum(token);
     return in;
 }
 
-inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e)
-{
-    return os << EAlignmentMethod_enumToString(e);
-}
-
-
+inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e) { return os << EAlignmentMethod_enumToString(e); }
 
 static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t)
 {
-  double rx, ry, rz, rr;
+    double rx, ry, rz, rr;
 
-  {
-    char delim[4];
-    std::istringstream iss(alignScale);
-    if (!(iss >> rx >> delim[0] >> ry >> delim[1] >> rz >> delim[2] >> rr >> delim[3] >> S))
-      return false;
-    if (delim[0] != ',' || delim[1] != ',' || delim[2] != ';' || delim[3] != ';')
-      return false;
-  }
+    {
+        char delim[4];
+        std::istringstream iss(alignScale);
+        if (!(iss >> rx >> delim[0] >> ry >> delim[1] >> rz >> delim[2] >> rr >> delim[3] >> S))
+            return false;
+        if (delim[0] != ',' || delim[1] != ',' || delim[2] != ';' || delim[3] != ';')
+            return false;
+    }
 
-  auto q = Eigen::Quaterniond::FromTwoVectors(Vec3(rx, ry, rz), Vec3::UnitY());
-  auto r = Eigen::AngleAxisd(rr*M_PI/180, Vec3::UnitY());
+    auto q = Eigen::Quaterniond::FromTwoVectors(Vec3(rx, ry, rz), Vec3::UnitY());
+    auto r = Eigen::AngleAxisd(rr * M_PI / 180, Vec3::UnitY());
 
-  R = r * q.toRotationMatrix();
-  t = Vec3::Zero();
+    R = r * q.toRotationMatrix();
+    t = Vec3::Zero();
 
-  return true;
+    return true;
 }
 
 static void parseManualTransform(const std::string& manualTransform, double& S, Mat3& R, Vec3& t)
@@ -153,10 +167,10 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
     }
 
     // Assignments
-    t << data[0], data[1], data[2]; // Assign Translation
-    S = data[6]; // Assign Scale
-    
-    Vec3 eulerAngles(data[3], data[4], data[5]); // Temporary eulerAngles vector
+    t << data[0], data[1], data[2];  // Assign Translation
+    S = data[6];                     // Assign Scale
+
+    Vec3 eulerAngles(data[3], data[4], data[5]);  // Temporary eulerAngles vector
 
     // Compute the rotation matrix from quaternion made with Euler angles in that order: ZXY (same as Qt algorithm)
     Mat3 rotateMat = Mat3::Identity();
@@ -186,19 +200,19 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
         Eigen::Quaterniond quaternion(w, x, y, z);
         rotateMat = quaternion.matrix();
     }
-    R = rotateMat; // Assign Rotation
+    R = rotateMat;  // Assign Rotation
 }
 
-} // namespace
+}  // namespace
 
-IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & transform)
+IndexT getReferenceViewId(const sfmData::SfMData& sfmData, const std::string& transform)
 {
-    IndexT refViewId; 
+    IndexT refViewId;
     try
     {
         refViewId = sfm::getViewIdFromExpression(sfmData, transform);
         if (!sfmData.isPoseAndIntrinsicDefined(refViewId))
-        {   
+        {
             return UndefinedIndexT;
         }
     }
@@ -207,17 +221,18 @@ IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & 
         refViewId = UndefinedIndexT;
     }
 
-    //Default to select the view given timestamp
+    // Default to select the view given timestamp
     if (refViewId == UndefinedIndexT)
     {
         // Sort views with poses per timestamps
         std::vector<std::pair<int64_t, IndexT>> sorted_views;
-        for (auto v : sfmData.getViews()) {
+        for (auto v : sfmData.getViews())
+        {
             if (!sfmData.isPoseAndIntrinsicDefined(v.first))
-            {   
+            {
                 continue;
             }
-            
+
             int64_t t = v.second->getImage().getMetadataDateTimestamp();
             sorted_views.push_back(std::make_pair(t, v.first));
         }
@@ -228,8 +243,7 @@ IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & 
             return UndefinedIndexT;
         }
 
-
-        // Get the view which was taken at the middle of the sequence 
+        // Get the view which was taken at the middle of the sequence
         int median = sorted_views.size() / 2;
         refViewId = sorted_views[sorted_views.size() - 1].second;
     }
@@ -237,24 +251,24 @@ IndexT getReferenceViewId(const sfmData::SfMData & sfmData, const std::string & 
     return refViewId;
 }
 
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string outSfMDataFilename;
-  EAlignmentMethod alignmentMethod = EAlignmentMethod::AUTO_FROM_CAMERAS;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string outSfMDataFilename;
+    EAlignmentMethod alignmentMethod = EAlignmentMethod::AUTO_FROM_CAMERAS;
 
-  // user optional parameters
-  std::string transform;
-  std::string landmarksDescriberTypesName;
-  double userScale = 1;
-  bool applyScale = true;
-  bool applyRotation = true;
-  bool applyTranslation = true;
-  std::vector<sfm::MarkerWithCoord> markers;
-  std::string outputViewsAndPosesFilepath;
+    // user optional parameters
+    std::string transform;
+    std::string landmarksDescriberTypesName;
+    double userScale = 1;
+    bool applyScale = true;
+    bool applyRotation = true;
+    bool applyTranslation = true;
+    std::vector<sfm::MarkerWithCoord> markers;
+    std::string outputViewsAndPosesFilepath;
 
-  std::string manualTransform;
+    std::string manualTransform;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -302,247 +316,241 @@ int aliceVision_main(int argc, char **argv)
          "Path of the output SfMData file.");
     // clang-format on
 
-  CmdLine cmdline("AliceVision sfmTransform");
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
-
-  if (alignmentMethod == EAlignmentMethod::FROM_MARKERS && markers.empty())
-  {
-      ALICEVISION_LOG_ERROR("Missing --markers option");
-      return EXIT_FAILURE;
-  }
-
-  // Load input scene
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
-    return EXIT_FAILURE;
-  }
-
-  //Check that at least one view has a defined pose
-  int count = 0;
-  for (const auto p : sfmData.getViews())
-  {
-    if(sfmData.isPoseAndIntrinsicDefined(p.first))
+    CmdLine cmdline("AliceVision sfmTransform");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-        count++;
+        return EXIT_FAILURE;
     }
-  }
 
-  if (count == 0)
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' has no valid views with estimated poses");
-    return EXIT_FAILURE;
-  }
-
-  double S = 1.0;
-  Mat3 R = Mat3::Identity();
-  Vec3 t = Vec3::Zero();
-
-  switch(alignmentMethod)
-  {
-    case EAlignmentMethod::TRANSFORMATION:
-      {
-          if(transform.empty())
-          {
-              ALICEVISION_LOG_WARNING("No transformation option set, so the transform will be identity.");
-          }
-          else
-          {
-              if(!parseAlignScale(transform, S, R, t))
-              {
-                 ALICEVISION_LOG_ERROR("Failed to parse align/scale argument");
-                 return EXIT_FAILURE;
-              }
-          }
-    }
-    break;
-
-    case EAlignmentMethod::MANUAL:
+    if (alignmentMethod == EAlignmentMethod::FROM_MARKERS && markers.empty())
     {
-        if (manualTransform.empty())
-            ALICEVISION_LOG_WARNING("No manualTransform option set, so the transform will be identity.");
-        else
-            parseManualTransform(manualTransform, S, R, t);
+        ALICEVISION_LOG_ERROR("Missing --markers option");
+        return EXIT_FAILURE;
     }
-    break;
 
-    case EAlignmentMethod::AUTO_FROM_CAMERAS:
-        sfm::computeNewCoordinateSystemFromCameras(sfmData, S, R, t);
-    break;
-
-    case EAlignmentMethod::AUTO:
+    // Load input scene
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
-        sfm::computeNewCoordinateSystemAuto(sfmData, S, R, t);
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
+        return EXIT_FAILURE;
     }
-    break;
 
-    case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:
+    // Check that at least one view has a defined pose
+    int count = 0;
+    for (const auto p : sfmData.getViews())
     {
-        // Align with x axis
-        sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, S, R, t);
-
-        const IndexT refViewId = getReferenceViewId(sfmData, transform);
-
-        const Eigen::Matrix3d ref_R_world = sfmData.getPose(sfmData.getView(refViewId)).getTransform().rotation();
-
-        // Apply x axis alignment before doing the y alignment
-        const Eigen::Matrix3d refcam_R_updatedWorld = ref_R_world * R.transpose();
-
-        Eigen::Matrix3d zeroX_R_world;
-        sfm::getRotationNullifyX(zeroX_R_world, refcam_R_updatedWorld);
-        R = zeroX_R_world * R;
-    }
-    break;
-
-    case EAlignmentMethod::AUTO_FROM_LANDMARKS:
-      sfm::computeNewCoordinateSystemFromLandmarks(sfmData, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);
-    break;
-
-    case EAlignmentMethod::FROM_SINGLE_CAMERA:
-        if(transform.empty())
+        if (sfmData.isPoseAndIntrinsicDefined(p.first))
         {
-            ALICEVISION_LOG_WARNING("No transformation option set, so the transform will be identity.");
+            count++;
         }
-        else
-        {
-            const IndexT viewId = sfm::getViewIdFromExpression(sfmData, transform);
-            sfm::computeNewCoordinateSystemFromSingleCamera(sfmData, viewId, S, R, t);
-        }
-    break;
+    }
 
-    case EAlignmentMethod::FROM_CENTER_CAMERA:
+    if (count == 0)
     {
-        const IndexT centerViewId = sfm::getCenterCameraView(sfmData);
-        sfm::computeNewCoordinateSystemFromSingleCamera(sfmData, centerViewId, S, R, t);
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' has no valid views with estimated poses");
+        return EXIT_FAILURE;
+    }
+
+    double S = 1.0;
+    Mat3 R = Mat3::Identity();
+    Vec3 t = Vec3::Zero();
+
+    switch (alignmentMethod)
+    {
+        case EAlignmentMethod::TRANSFORMATION:
+        {
+            if (transform.empty())
+            {
+                ALICEVISION_LOG_WARNING("No transformation option set, so the transform will be identity.");
+            }
+            else
+            {
+                if (!parseAlignScale(transform, S, R, t))
+                {
+                    ALICEVISION_LOG_ERROR("Failed to parse align/scale argument");
+                    return EXIT_FAILURE;
+                }
+            }
+        }
         break;
-    }
 
-    case EAlignmentMethod::FROM_MARKERS:
-    {
-        std::vector<feature::EImageDescriberType> markersDescTypes = {
+        case EAlignmentMethod::MANUAL:
+        {
+            if (manualTransform.empty())
+                ALICEVISION_LOG_WARNING("No manualTransform option set, so the transform will be identity.");
+            else
+                parseManualTransform(manualTransform, S, R, t);
+        }
+        break;
+
+        case EAlignmentMethod::AUTO_FROM_CAMERAS:
+            sfm::computeNewCoordinateSystemFromCameras(sfmData, S, R, t);
+            break;
+
+        case EAlignmentMethod::AUTO:
+        {
+            sfm::computeNewCoordinateSystemAuto(sfmData, S, R, t);
+        }
+        break;
+
+        case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:
+        {
+            // Align with x axis
+            sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, S, R, t);
+
+            const IndexT refViewId = getReferenceViewId(sfmData, transform);
+
+            const Eigen::Matrix3d ref_R_world = sfmData.getPose(sfmData.getView(refViewId)).getTransform().rotation();
+
+            // Apply x axis alignment before doing the y alignment
+            const Eigen::Matrix3d refcam_R_updatedWorld = ref_R_world * R.transpose();
+
+            Eigen::Matrix3d zeroX_R_world;
+            sfm::getRotationNullifyX(zeroX_R_world, refcam_R_updatedWorld);
+            R = zeroX_R_world * R;
+        }
+        break;
+
+        case EAlignmentMethod::AUTO_FROM_LANDMARKS:
+            sfm::computeNewCoordinateSystemFromLandmarks(sfmData, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);
+            break;
+
+        case EAlignmentMethod::FROM_SINGLE_CAMERA:
+            if (transform.empty())
+            {
+                ALICEVISION_LOG_WARNING("No transformation option set, so the transform will be identity.");
+            }
+            else
+            {
+                const IndexT viewId = sfm::getViewIdFromExpression(sfmData, transform);
+                sfm::computeNewCoordinateSystemFromSingleCamera(sfmData, viewId, S, R, t);
+            }
+            break;
+
+        case EAlignmentMethod::FROM_CENTER_CAMERA:
+        {
+            const IndexT centerViewId = sfm::getCenterCameraView(sfmData);
+            sfm::computeNewCoordinateSystemFromSingleCamera(sfmData, centerViewId, S, R, t);
+            break;
+        }
+
+        case EAlignmentMethod::FROM_MARKERS:
+        {
+            std::vector<feature::EImageDescriberType> markersDescTypes = {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-            feature::EImageDescriberType::CCTAG3, feature::EImageDescriberType::CCTAG4,
+                feature::EImageDescriberType::CCTAG3,
+                feature::EImageDescriberType::CCTAG4,
 #endif
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
-            feature::EImageDescriberType::APRILTAG16H5,
+                feature::EImageDescriberType::APRILTAG16H5,
 #endif
-        };
-        std::set<feature::EImageDescriberType> usedDescTypes = sfmData.getLandmarkDescTypes();
+            };
+            std::set<feature::EImageDescriberType> usedDescTypes = sfmData.getLandmarkDescTypes();
 
-        std::vector<feature::EImageDescriberType> usedMarkersDescTypes;
-        std::set_intersection(
-            usedDescTypes.begin(), usedDescTypes.end(),
-            markersDescTypes.begin(), markersDescTypes.end(),
-            std::back_inserter(usedMarkersDescTypes)
-        );
-        std::vector<feature::EImageDescriberType> inDescTypes = feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName);
+            std::vector<feature::EImageDescriberType> usedMarkersDescTypes;
+            std::set_intersection(
+              usedDescTypes.begin(), usedDescTypes.end(), markersDescTypes.begin(), markersDescTypes.end(), std::back_inserter(usedMarkersDescTypes));
+            std::vector<feature::EImageDescriberType> inDescTypes = feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName);
 
-        std::vector<feature::EImageDescriberType> vDescTypes;
-        std::set_intersection(
-            usedMarkersDescTypes.begin(), usedMarkersDescTypes.end(),
-            inDescTypes.begin(), inDescTypes.end(),
-            std::back_inserter(vDescTypes)
-            );
-        if (vDescTypes.size() != 1)
-        {
-            ALICEVISION_LOG_ERROR("Alignment from markers: Invalid number of image describer types: " << vDescTypes.size());
-            for (auto d : vDescTypes)
+            std::vector<feature::EImageDescriberType> vDescTypes;
+            std::set_intersection(
+              usedMarkersDescTypes.begin(), usedMarkersDescTypes.end(), inDescTypes.begin(), inDescTypes.end(), std::back_inserter(vDescTypes));
+            if (vDescTypes.size() != 1)
             {
-                ALICEVISION_LOG_ERROR(" - " << feature::EImageDescriberType_enumToString(d));
+                ALICEVISION_LOG_ERROR("Alignment from markers: Invalid number of image describer types: " << vDescTypes.size());
+                for (auto d : vDescTypes)
+                {
+                    ALICEVISION_LOG_ERROR(" - " << feature::EImageDescriberType_enumToString(d));
+                }
+                return EXIT_FAILURE;
             }
-            return EXIT_FAILURE;
+            const bool success = sfm::computeNewCoordinateSystemFromSpecificMarkers(sfmData, vDescTypes.front(), markers, applyScale, S, R, t);
+            if (!success)
+            {
+                ALICEVISION_LOG_ERROR("Failed to find a valid transformation for these " << markers.size() << " markers.");
+                return EXIT_FAILURE;
+            }
+            break;
         }
-        const bool success = sfm::computeNewCoordinateSystemFromSpecificMarkers(sfmData, vDescTypes.front(), markers, applyScale, S, R, t);
-        if (!success)
+        case EAlignmentMethod::FROM_GPS:
         {
-            ALICEVISION_LOG_ERROR("Failed to find a valid transformation for these " << markers.size() << " markers.");
-            return EXIT_FAILURE;
+            std::mt19937 randomNumberGenerator;
+            if (!sfm::computeNewCoordinateSystemFromGpsData(sfmData, randomNumberGenerator, S, R, t))
+            {
+                ALICEVISION_LOG_ERROR("Failed to find a valid transformation from the GPS metadata.");
+                return EXIT_FAILURE;
+            }
+            break;
         }
-        break;
+        case EAlignmentMethod::ALIGN_GROUND:
+        {
+            sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
+            break;
+        }
     }
-      case EAlignmentMethod::FROM_GPS:
-      {
-          std::mt19937 randomNumberGenerator;
-          if(!sfm::computeNewCoordinateSystemFromGpsData(sfmData, randomNumberGenerator, S, R, t))
-          {
-              ALICEVISION_LOG_ERROR("Failed to find a valid transformation from the GPS metadata.");
-              return EXIT_FAILURE;
-          }
-          break;
-      }
-      case EAlignmentMethod::ALIGN_GROUND:
-      {
-          sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
-          break;
-      }
-  }
 
-  if(!applyRotation)
-  {
-      // remove rotation from translation
-      t = R.transpose() * t;
-      // remove rotation
-      R = Mat3::Identity();
-  }
-  if(applyScale)
-  {
-      // apply user scale
-      S *= userScale;
-      t *= userScale;
-  }
-  else
-  {
-      // remove scale from translation
-      if(std::abs(S) > 0.00001)
-      {
-          t /= S;
-      }
-      // reset scale to 1
-      S = 1.0;
-  }
-  if (!applyTranslation)
-  {
-      // remove translation
-      t = Vec3::Zero();
-  }
+    if (!applyRotation)
+    {
+        // remove rotation from translation
+        t = R.transpose() * t;
+        // remove rotation
+        R = Mat3::Identity();
+    }
+    if (applyScale)
+    {
+        // apply user scale
+        S *= userScale;
+        t *= userScale;
+    }
+    else
+    {
+        // remove scale from translation
+        if (std::abs(S) > 0.00001)
+        {
+            t /= S;
+        }
+        // reset scale to 1
+        S = 1.0;
+    }
+    if (!applyTranslation)
+    {
+        // remove translation
+        t = Vec3::Zero();
+    }
 
-  {
-      ALICEVISION_LOG_INFO(std::setprecision(17)
-          << "Transformation:" << std::endl
-          << "\t- Scale: " << S << std::endl
-          << "\t- Rotation:\n" << R << std::endl
-          << "\t- Translate: " << t.transpose());
-  }
+    {
+        ALICEVISION_LOG_INFO(std::setprecision(17) << "Transformation:" << std::endl
+                                                   << "\t- Scale: " << S << std::endl
+                                                   << "\t- Rotation:\n"
+                                                   << R << std::endl
+                                                   << "\t- Translate: " << t.transpose());
+    }
 
-  sfm::applyTransform(sfmData, S, R, t);
- 
-  // In AUTO mode, ground detection and alignment is performed as a post-process
-  if (alignmentMethod == EAlignmentMethod::AUTO && applyTranslation)
-  {
-    sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
-    sfm::applyTransform(sfmData, 1.0, Eigen::Matrix3d::Identity(), t);
-  }
+    sfm::applyTransform(sfmData, S, R, t);
 
-  ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
-  
-  // Export the SfMData scene in the expected format
-  if(!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
-    return EXIT_FAILURE;
-  }
+    // In AUTO mode, ground detection and alignment is performed as a post-process
+    if (alignmentMethod == EAlignmentMethod::AUTO && applyTranslation)
+    {
+        sfm::computeNewCoordinateSystemGroundAuto(sfmData, t);
+        sfm::applyTransform(sfmData, 1.0, Eigen::Matrix3d::Identity(), t);
+    }
 
-  if(!outputViewsAndPosesFilepath.empty())
-  {
-      sfmDataIO::save(sfmData, outputViewsAndPosesFilepath,
-                      sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
-  }
+    ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
 
-  return EXIT_SUCCESS;
+    // Export the SfMData scene in the expected format
+    if (!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
+        return EXIT_FAILURE;
+    }
+
+    if (!outputViewsAndPosesFilepath.empty())
+    {
+        sfmDataIO::save(sfmData, outputViewsAndPosesFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
+    }
+
+    return EXIT_SUCCESS;
 }

@@ -30,6 +30,23 @@ if(ALICEVISION_BUILD_SFM)
               Boost::boost
               Boost::timer
     )
+
+    if (TARGET E57Format)
+        alicevision_add_software(aliceVision_importE57
+            SOURCE main_importE57.cpp
+            FOLDER ${FOLDER_SOFTWARE_CONVERT}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_feature
+                aliceVision_sfmData
+                aliceVision_sfmDataIO
+                aliceVision_mesh
+                Boost::program_options
+                Boost::system
+                E57Format
+                nanoflann
+        )
+    endif()
 endif() # ALICEVISION_BUILD_SFM
 
 

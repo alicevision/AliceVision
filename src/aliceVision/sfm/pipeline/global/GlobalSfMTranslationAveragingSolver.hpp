@@ -54,8 +54,7 @@ inline std::ostream& operator<<(std::ostream& os, ETranslationAveragingMethod e)
 
 inline std::istream& operator>>(std::istream& in, ETranslationAveragingMethod& translationType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     translationType = ETranslationAveragingMethod_stringToEnum(token);
     return in;
 }
@@ -72,19 +71,19 @@ class GlobalSfMTranslationAveragingSolver
              sfmData::SfMData& sfmData,
              const feature::FeaturesPerView& normalizedFeaturesPerView,
              const matching::PairwiseMatches& pairwiseMatches,
-             const HashMap<IndexT, Mat3>& mapGlobalR,
+             const std::map<IndexT, Mat3>& mapGlobalR,
              std::mt19937& randomNumberGenerator,
              matching::PairwiseMatches& tripletWiseMatches);
 
   private:
     bool translationAveraging(ETranslationAveragingMethod eTranslationAveragingMethod,
                               sfmData::SfMData& sfmData,
-                              const HashMap<IndexT, Mat3>& mapGlobalR);
+                              const std::map<IndexT, Mat3>& mapGlobalR);
 
     void computeTranslations(const sfmData::SfMData& sfmData,
                              const feature::FeaturesPerView& normalizedFeaturesPerView,
                              const matching::PairwiseMatches& pairwiseMatches,
-                             const HashMap<IndexT, Mat3>& mapGlobalR,
+                             const std::map<IndexT, Mat3>& mapGlobalR,
                              std::mt19937& randomNumberGenerator,
                              matching::PairwiseMatches& tripletWiseMatches);
 
@@ -95,7 +94,7 @@ class GlobalSfMTranslationAveragingSolver
      * Complexity: sub-linear in term of edges count.
      */
     void computePutativeTranslationEdgesCoverage(const sfmData::SfMData& sfmData,
-                                                 const HashMap<IndexT, Mat3>& mapGlobalR,
+                                                 const std::map<IndexT, Mat3>& mapGlobalR,
                                                  const feature::FeaturesPerView& normalizedFeaturesPerView,
                                                  const matching::PairwiseMatches& pairwiseMatches,
                                                  std::mt19937& randomNumberGenerator,
@@ -106,7 +105,7 @@ class GlobalSfMTranslationAveragingSolver
      * @brief Robust estimation and refinement of a translation and 3D points of an image triplets.
      */
     bool estimateTTriplet(const sfmData::SfMData& sfmData,
-                          const HashMap<IndexT, Mat3>& mapGlobalR,
+                          const std::map<IndexT, Mat3>& mapGlobalR,
                           const feature::FeaturesPerView& normalizedFeaturesPerView,
                           const matching::PairwiseMatches& pairwiseMatches,
                           const graph::Triplet& posesId,

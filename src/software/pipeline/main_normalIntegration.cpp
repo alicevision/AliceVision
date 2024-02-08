@@ -27,7 +27,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 
-//OpenCV
+// OpenCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -47,7 +47,7 @@
 
 using namespace aliceVision;
 
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
     namespace po = boost::program_options;
 
@@ -105,4 +105,3 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 };
-

@@ -70,8 +70,7 @@ EFileType EFileType_stringToEnum(const std::string& meshFileType)
 std::ostream& operator<<(std::ostream& os, EFileType meshFileType) { return os << EFileType_enumToString(meshFileType); }
 std::istream& operator>>(std::istream& in, EFileType& meshFileType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     meshFileType = EFileType_stringToEnum(token);
     return in;
 }

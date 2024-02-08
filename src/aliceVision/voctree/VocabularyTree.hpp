@@ -98,8 +98,7 @@ inline IVocabularyTree::~IVocabularyTree() {}
  * typedef specifying the type of the returned distance. For the purposes of VocabularyTree, this need not even be
  * a metric; distances simply need to be comparable.
  */
-template<class Feature,
-         template<typename, typename> class Distance = L2>  // TODO: rename Feature into Descriptor
+template<class Feature, template<typename, typename> class Distance = L2>  // TODO: rename Feature into Descriptor
 class VocabularyTree : public IVocabularyTree
 {
   public:

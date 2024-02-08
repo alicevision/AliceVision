@@ -52,8 +52,7 @@ inline std::ostream& operator<<(std::ostream& os, ERotationAveragingMethod e) { 
 
 inline std::istream& operator>>(std::istream& in, ERotationAveragingMethod& rotationType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     rotationType = ERotationAveragingMethod_stringToEnum(token);
     return in;
 }
@@ -79,7 +78,7 @@ class GlobalSfMRotationAveragingSolver
              ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
              const rotationAveraging::RelativeRotations& relativeRotIn,
              const double maxAngularError,
-             HashMap<IndexT, Mat3>& mapGlobalR) const;
+             std::map<IndexT, Mat3>& mapGlobalR) const;
 
     /**
      * @brief Reject edges of the view graph that do not produce triplets with tiny

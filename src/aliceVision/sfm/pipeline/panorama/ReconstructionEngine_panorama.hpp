@@ -60,8 +60,7 @@ inline std::ostream& operator<<(std::ostream& os, ERelativeRotationMethod rotati
 
 inline std::istream& operator>>(std::istream& in, ERelativeRotationMethod& rotationMethod)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     rotationMethod = ERelativeRotationMethod_stringToEnum(token);
     return in;
 }
@@ -189,7 +188,7 @@ class ReconstructionEngine_panorama : public ReconstructionEngine
 
   protected:
     /// Compute from relative rotations the global rotations of the camera poses
-    bool computeGlobalRotations(const aliceVision::rotationAveraging::RelativeRotations& vecTelativesR, HashMap<IndexT, Mat3>& mapGlobalR);
+    bool computeGlobalRotations(const aliceVision::rotationAveraging::RelativeRotations& vecTelativesR, std::map<IndexT, Mat3>& mapGlobalR);
 
   public:
     /// Adjust the scene (& remove outliers)

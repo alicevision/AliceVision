@@ -32,8 +32,7 @@ namespace calibration {
 
 std::istream& operator>>(std::istream& stream, Pattern& pattern)
 {
-    std::string token;
-    stream >> token;
+    std::string token(std::istreambuf_iterator<char>(stream), {});
     boost::to_upper(token);
 
     if (token == "CHESSBOARD")

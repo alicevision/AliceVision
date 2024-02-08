@@ -37,10 +37,10 @@ class ReconstructionEngine_globalSfM : public ReconstructionEngine
 
   protected:
     /// Compute from relative rotations the global rotations of the camera poses
-    bool computeGlobalRotations(const aliceVision::rotationAveraging::RelativeRotations& vecRelativesR, HashMap<IndexT, Mat3>& mapGlobalR);
+    bool computeGlobalRotations(const aliceVision::rotationAveraging::RelativeRotations& vecRelativesR, std::map<IndexT, Mat3>& mapGlobalR);
 
     /// Compute/refine relative translations and compute global translations
-    bool computeGlobalTranslations(const HashMap<IndexT, Mat3>& globalRotations, matching::PairwiseMatches& tripletWiseMatches);
+    bool computeGlobalTranslations(const std::map<IndexT, Mat3>& globalRotations, matching::PairwiseMatches& tripletWiseMatches);
 
     /// Compute the initial structure of the scene
     bool computeInitialStructure(matching::PairwiseMatches& tripletWiseMatches);

@@ -27,8 +27,8 @@ namespace po = boost::program_options;
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
-    std::string sfmOutputDataFilepath; // output folder for splited images
-    
+    std::string sfmOutputDataFilepath;  // output folder for splited images
+
     // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -48,7 +48,7 @@ int aliceVision_main(int argc, char** argv)
     sfmDataIO::generateSampleScene(sfmData);
 
     ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
-    if(!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be write.");
         return EXIT_FAILURE;

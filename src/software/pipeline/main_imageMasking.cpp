@@ -17,7 +17,7 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <boost/program_options.hpp>
-#include <boost/algorithm/string/case_conv.hpp> 
+#include <boost/algorithm/string/case_conv.hpp>
 
 #include <filesystem>
 
@@ -31,7 +31,8 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-enum class EAlgorithm {
+enum class EAlgorithm
+{
     HSV,
     GrabCut,
     AutoGrayscaleThreshold,
@@ -39,7 +40,7 @@ enum class EAlgorithm {
 
 inline std::string EAlgorithm_enumToString(EAlgorithm value)
 {
-    switch(value)
+    switch (value)
     {
         case EAlgorithm::HSV:
             return "hsv";
@@ -54,24 +55,20 @@ inline std::string EAlgorithm_enumToString(EAlgorithm value)
 inline EAlgorithm EAlgorithm_stringToEnum(std::string value)
 {
     boost::to_lower(value);
-    if(value == "hsv")
+    if (value == "hsv")
         return EAlgorithm::HSV;
-    if(value == "grabcut")
+    if (value == "grabcut")
         return EAlgorithm::GrabCut;
-    if(value == "autograyscalethreshold")
+    if (value == "autograyscalethreshold")
         return EAlgorithm::AutoGrayscaleThreshold;
     throw std::out_of_range("Invalid Algorithm type string " + value);
 }
 
-inline std::ostream& operator<<(std::ostream& os, EAlgorithm s)
-{
-    return os << EAlgorithm_enumToString(s);
-}
+inline std::ostream& operator<<(std::ostream& os, EAlgorithm s) { return os << EAlgorithm_enumToString(s); }
 
 inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     s = EAlgorithm_stringToEnum(token);
     return in;
 }
@@ -79,7 +76,7 @@ inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
 /**
  * @brief Write mask images from input images based on chosen algorithm.
  */
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     // command-line parameters
     std::string sfmFilePath;
@@ -163,37 +160,37 @@ int main(int argc, char **argv)
     }
 
     // check user choose at least one input option
-    if(sfmFilePath.empty())
+    if (sfmFilePath.empty())
     {
         ALICEVISION_LOG_ERROR("Program need -i option" << std::endl << "No input images.");
         return EXIT_FAILURE;
     }
 
     // check sfm file
-    if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
+    if (!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
     {
         ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
         return EXIT_FAILURE;
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmFilePath, sfmDataIO::ESfMData::VIEWS))
+    if (!sfmDataIO::load(sfmData, sfmFilePath, sfmDataIO::ESfMData::VIEWS))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
         return EXIT_FAILURE;
     }
 
     // check output string
-    if(outputFilePath.empty())
+    if (outputFilePath.empty())
     {
         ALICEVISION_LOG_ERROR("Invalid output");
         return EXIT_FAILURE;
     }
 
     // ensure output folder exists
-    if(!outputFilePath.empty() && !fs::exists(outputFilePath))
+    if (!outputFilePath.empty() && !fs::exists(outputFilePath))
     {
-        if(!fs::create_directory(outputFilePath))
+        if (!fs::create_directory(outputFilePath))
         {
             ALICEVISION_LOG_ERROR("Cannot create output folder");
             return EXIT_FAILURE;
@@ -201,7 +198,7 @@ int main(int argc, char **argv)
     }
 
     // check program range
-    if(rangeStart < 0 || rangeStart >= sfmData.getViews().size())
+    if (rangeStart < 0 || rangeStart >= sfmData.getViews().size())
     {
         ALICEVISION_LOG_ERROR("invalid subrange of views to process.");
         return EXIT_FAILURE;
@@ -210,24 +207,23 @@ int main(int argc, char **argv)
     // algorithms
     using imageMasking::OutImage;
     std::function<void(OutImage&, const std::string&)> process;
-    switch(algorithm)
+    switch (algorithm)
     {
         case EAlgorithm::HSV:
         {
             // check options
-            if(hsv.minSaturation > hsv.maxSaturation)
+            if (hsv.minSaturation > hsv.maxSaturation)
             {
                 ALICEVISION_LOG_ERROR("hsv-minSaturation must be lower than hsv-maxSaturation");
                 return EXIT_FAILURE;
             }
-            if(hsv.minValue > hsv.maxValue)
+            if (hsv.minValue > hsv.maxValue)
             {
                 ALICEVISION_LOG_ERROR("hsv-minValue must be lower than hsv-maxValue");
                 return EXIT_FAILURE;
             }
 
-            process = [&](OutImage& result, const std::string& inputPath)
-            {
+            process = [&](OutImage& result, const std::string& inputPath) {
                 imageMasking::hsv(result, inputPath, hsv.hue, hsv.hueRange, hsv.minSaturation, hsv.maxSaturation, hsv.minValue, hsv.maxValue);
             };
             break;
@@ -241,7 +237,7 @@ int main(int argc, char **argv)
             throw std::runtime_error("GrabCut not yet implemented.");
     }
 
-    if(!process)
+    if (!process)
     {
         ALICEVISION_LOG_ERROR("Invalid algorithm");
         return EXIT_FAILURE;
@@ -261,7 +257,7 @@ int main(int argc, char **argv)
     bool useDepthMap = !depthMapExp.empty() || !depthMapFolder.empty();
 
     // #pragma omp parallel for
-    for(int i = 0; i < size; ++i)
+    for (int i = 0; i < size; ++i)
     {
         const auto& item = std::next(viewPairItBegin, rangeStart + i);
         const IndexT& index = item->first;
@@ -269,35 +265,35 @@ int main(int argc, char **argv)
 
         std::string imgPath = view.getImage().getImagePath();
         std::string depthMapPath;
-        if(!depthMapExp.empty())
+        if (!depthMapExp.empty())
         {
             depthMapPath = depthMapExp;
             {
                 const auto pos = depthMapPath.find(k_depthMapFolder);
-                if(pos != std::string::npos)
+                if (pos != std::string::npos)
                     depthMapPath.replace(pos, k_depthMapFolder.size(), depthMapFolder);
             }
             {
                 const auto pos = depthMapPath.find(k_inputFolder);
-                if(pos != std::string::npos)
+                if (pos != std::string::npos)
                     depthMapPath.replace(pos, k_inputFolder.size(), fs::path(imgPath).parent_path().string());
             }
             {
                 const auto pos = depthMapPath.find(k_filename);
-                if(pos != std::string::npos)
+                if (pos != std::string::npos)
                     depthMapPath.replace(pos, k_filename.size(), fs::path(imgPath).filename().string());
             }
             {
                 const auto pos = depthMapPath.find(k_stem);
-                if(pos != std::string::npos)
+                if (pos != std::string::npos)
                     depthMapPath.replace(pos, k_stem.size(), fs::path(imgPath).stem().string());
             }
             {
                 const auto pos = depthMapPath.find(k_ext);
-                if(pos != std::string::npos)
+                if (pos != std::string::npos)
                     depthMapPath.replace(pos, k_stem.size(), fs::path(imgPath).extension().string().substr(1));
             }
-            if(!fs::exists(depthMapPath))
+            if (!fs::exists(depthMapPath))
             {
                 ALICEVISION_LOG_DEBUG("depthMapPath from expression: \"" << depthMapPath << "\" not found.");
                 depthMapPath.clear();
@@ -307,11 +303,11 @@ int main(int argc, char **argv)
                 ALICEVISION_LOG_DEBUG("depthMapPath from expression: \"" << depthMapPath << "\" found.");
             }
         }
-        else if(!depthMapFolder.empty())
+        else if (!depthMapFolder.empty())
         {
             // Look for View UID
             fs::path p = fs::path(depthMapFolder) / (std::to_string(view.getViewId()) + fs::path(imgPath).extension().string());
-            if(fs::exists(p))
+            if (fs::exists(p))
             {
                 depthMapPath = p.string();
                 ALICEVISION_LOG_DEBUG("depthMapPath found from folder and View UID: \"" << depthMapPath << "\".");
@@ -320,7 +316,7 @@ int main(int argc, char **argv)
             {
                 // Look for an image with the same filename
                 p = fs::path(depthMapFolder) / fs::path(imgPath).filename();
-                if(fs::exists(p))
+                if (fs::exists(p))
                 {
                     depthMapPath = p.string();
                     ALICEVISION_LOG_DEBUG("depthMapPath found from folder and input filename: \"" << depthMapPath << "\".");
@@ -332,32 +328,33 @@ int main(int argc, char **argv)
         image::Image<unsigned char> result;
         process(result, p);
 
-        if(invert)
+        if (invert)
         {
             imageMasking::postprocess_invert(result);
         }
-        if(growRadius > 0)
+        if (growRadius > 0)
         {
             imageMasking::postprocess_dilate(result, growRadius);
         }
-        if(shrinkRadius > 0)
+        if (shrinkRadius > 0)
         {
             imageMasking::postprocess_erode(result, shrinkRadius);
         }
 
-        if(useDepthMap)
+        if (useDepthMap)
         {
             bool viewHorizontal = view.getImage().getWidth() > view.getImage().getHeight();
             bool depthMapHorizontal = result.width() > result.height();
-            if(viewHorizontal != depthMapHorizontal)
+            if (viewHorizontal != depthMapHorizontal)
             {
                 ALICEVISION_LOG_ERROR("Image " << imgPath << " : " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
                 ALICEVISION_LOG_ERROR("Depth Map " << depthMapPath << " : " << result.width() << "x" << result.height());
                 throw std::runtime_error("Depth map orientation is not aligned with source image.");
             }
-            if(view.getImage().getWidth() != result.width())
+            if (view.getImage().getWidth() != result.width())
             {
-                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.width() << "x" << result.height() << ", to: " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
+                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.width() << "x" << result.height()
+                                                             << ", to: " << view.getImage().getWidth() << "x" << view.getImage().getHeight());
 
                 image::Image<unsigned char> rescaled(view.getImage().getWidth(), view.getImage().getHeight());
 
@@ -371,8 +368,7 @@ int main(int argc, char **argv)
         }
         const auto resultFilename = fs::path(std::to_string(index)).replace_extension("png");
         const std::string resultPath = (fs::path(outputFilePath) / resultFilename).string();
-        image::writeImage(resultPath, result,
-                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR));
+        image::writeImage(resultPath, result, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR));
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

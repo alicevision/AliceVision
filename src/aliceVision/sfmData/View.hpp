@@ -14,9 +14,9 @@
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
 #include <aliceVision/lensCorrectionProfile/lcp.hpp>
 
-#include <aliceVision/sfmData/imageInfo.hpp>
+#include <aliceVision/sfmData/ImageInfo.hpp>
 #include <aliceVision/sfmData/exif.hpp>
-#include <aliceVision/sfmData/exposureSetting.hpp>
+#include <aliceVision/sfmData/ExposureSetting.hpp>
 
 #include <regex>
 #include <string>
@@ -218,7 +218,7 @@ class View
      * of the original images. For instance, the generated view can come from the fusion of multiple LDR images into
      * one HDR image, the fusion from multi-focus stacking to get a fully focused image, fusion of images with multiple
      * lighting to get a more diffuse lighting, etc.
-     * @param[in] new ancestor image Id
+     * @param[in] image new ancestor image Id
      */
     void addAncestor(IndexT image)
     {

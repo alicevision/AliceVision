@@ -568,8 +568,8 @@ void BundleAdjustmentSymbolicCeres::addConstraints2DToProblem(const sfmData::SfM
 
         const auto& pose_1 = sfmData.getPose(view_1);
         const auto& pose_2 = sfmData.getPose(view_2);
-        const auto& intrinsic_1 = sfmData.getIntrinsicsharedPtr(view_1);
-        const auto& intrinsic_2 = sfmData.getIntrinsicsharedPtr(view_2);
+        const auto& intrinsic_1 = sfmData.getIntrinsicSharedPtr(view_1);
+        const auto& intrinsic_2 = sfmData.getIntrinsicSharedPtr(view_2);
 
         assert(pose_1.getState() != EEstimatorParameterState::IGNORED);
         assert(intrinsic_1->getState() != EEstimatorParameterState::IGNORED);
@@ -587,7 +587,7 @@ void BundleAdjustmentSymbolicCeres::addConstraints2DToProblem(const sfmData::SfM
         /* For the moment assume a unique camera */
         assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
 
-        std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view_1.getIntrinsicId());
+        std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicSharedPtr(view_1.getIntrinsicId());
         std::shared_ptr<camera::Equidistant> equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
         std::shared_ptr<camera::Pinhole> pinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
@@ -722,7 +722,7 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
         {
             const IndexT intrinsicId = intrinsicBlockPair.first;
 
-            const auto& intrinsic = sfmData.getIntrinsicsharedPtr(intrinsicId);
+            const auto& intrinsic = sfmData.getIntrinsicSharedPtr(intrinsicId);
 
             // do not update a camera pose set as Ignored or Constant in the Local strategy
             if (intrinsic->getState() != EEstimatorParameterState::REFINED)

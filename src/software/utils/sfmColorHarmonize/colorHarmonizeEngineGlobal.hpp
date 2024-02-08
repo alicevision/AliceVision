@@ -25,10 +25,10 @@ enum class EHistogramSelectionMethod
 
 inline std::string EHistogramSelectionMethod_description()
 {
-  return "Histogram selection method: \n"
-         "* full_frame \n"
-         "* matched_points \n"
-         "* VLD_segments\n";
+    return "Histogram selection method: \n"
+           "* full_frame \n"
+           "* matched_points \n"
+           "* VLD_segments\n";
 }
 
 EHistogramSelectionMethod EEHistogramSelectionMethod_stringToEnum(const std::string& histogramSelectionMethod);
@@ -46,50 +46,48 @@ std::istream& operator>>(std::istream& in, EHistogramSelectionMethod& p);
  */
 class ColorHarmonizationEngineGlobal
 {
-public:
-  ColorHarmonizationEngineGlobal(
-    const std::string& sfmDataFilename,
-    const std::vector<std::string>& featuresFolders,
-    const std::vector<std::string>& matchesFolders,
-    const std::string& outputDirectory,
-    const std::vector<feature::EImageDescriberType>& descTypes,
-    EHistogramSelectionMethod selectionMethod,
-    int imgRef = 0);
+  public:
+    ColorHarmonizationEngineGlobal(const std::string& sfmDataFilename,
+                                   const std::vector<std::string>& featuresFolders,
+                                   const std::vector<std::string>& matchesFolders,
+                                   const std::string& outputDirectory,
+                                   const std::vector<feature::EImageDescriberType>& descTypes,
+                                   EHistogramSelectionMethod selectionMethod,
+                                   int imgRef = 0);
 
-  ~ColorHarmonizationEngineGlobal();
+    ~ColorHarmonizationEngineGlobal();
 
-  virtual bool Process();
+    virtual bool Process();
 
-private:
+  private:
+    EHistogramSelectionMethod _selectionMethod;
+    int _imgRef;
 
-  EHistogramSelectionMethod _selectionMethod;
-  int _imgRef;
+    // Input data
 
-  // Input data
+    feature::RegionsPerView _regionsPerView;
+    /// considered images
+    std::vector<std::string> _fileNames;
+    /// size of each image
+    std::vector<std::pair<size_t, size_t>> _imageSize;
+    /// pairwise geometric matches
+    aliceVision::matching::PairwiseMatches _pairwiseMatches;
+    /// describer type use for color harmonizations
+    std::vector<feature::EImageDescriberType> _descTypes;
+    /// path to the Sfm Scene
+    std::string _sfmDataFilename;
+    /// path to matches
+    std::vector<std::string> _matchesFolders;
+    /// path to features
+    std::vector<std::string> _featuresFolders;
+    /// output path where outputs will be stored
+    std::string _outputDirectory;
 
-  feature::RegionsPerView _regionsPerView;
-  /// considered images
-  std::vector<std::string> _fileNames;
-  /// size of each image
-  std::vector<std::pair<size_t, size_t>> _imageSize;
-  /// pairwise geometric matches
-  aliceVision::matching::PairwiseMatches _pairwiseMatches;
-  /// describer type use for color harmonizations
-  std::vector<feature::EImageDescriberType> _descTypes;
-  /// path to the Sfm Scene
-  std::string _sfmDataFilename;
-  /// path to matches
-  std::vector<std::string> _matchesFolders;
-  /// path to features
-  std::vector<std::string> _featuresFolders;
-  /// output path where outputs will be stored
-  std::string _outputDirectory;
+    /// Clean graph
+    bool CleanGraph();
 
-  /// Clean graph
-  bool CleanGraph();
-
-  /// Read input data (point correspondences)
-  bool ReadInputData();
+    /// Read input data (point correspondences)
+    bool ReadInputData();
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

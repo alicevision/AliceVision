@@ -34,8 +34,7 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData::SfMData& sfmData,
-                                const float ratioUpscale)
+bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData::SfMData& sfmData, const float ratioUpscale)
 {
     // We use a small panorama for probing
     optimalSize.first = 512;
@@ -43,12 +42,11 @@ bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData:
 
     // Loop over views to estimate best scale
     std::vector<double> scales;
-    for(auto& viewIt : sfmData.getViews())
+    for (auto& viewIt : sfmData.getViews())
     {
-
         // Ignore non positionned views
         const sfmData::View& view = *viewIt.second.get();
-        if(!sfmData.isPoseAndIntrinsicDefined(&view))
+        if (!sfmData.isPoseAndIntrinsicDefined(&view))
         {
             continue;
         }
@@ -59,19 +57,19 @@ bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData:
 
         // Compute coarse bounding box
         BoundingBox coarseBbox;
-        if(!computeCoarseBB(coarseBbox, optimalSize, camPose, intrinsic))
+        if (!computeCoarseBB(coarseBbox, optimalSize, camPose, intrinsic))
         {
             continue;
         }
 
         CoordinatesMap map;
-        if(!map.build(optimalSize, camPose, intrinsic, coarseBbox))
+        if (!map.build(optimalSize, camPose, intrinsic, coarseBbox))
         {
             continue;
         }
 
         double scale;
-        if(!map.computeScale(scale, ratioUpscale))
+        if (!map.computeScale(scale, ratioUpscale))
         {
             continue;
         }
@@ -79,7 +77,7 @@ bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData:
         scales.push_back(scale);
     }
 
-    if(scales.empty())
+    if (scales.empty())
     {
         return false;
     }
@@ -142,9 +140,10 @@ int aliceVision_main(int argc, char** argv)
 
     CmdLine cmdline("Warps the input images in the panorama coordinate system.\n"
                     "AliceVision panoramaWarping");
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
-    if(!cmdline.execute(argc, argv))
+    if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
     }
@@ -155,10 +154,10 @@ int aliceVision_main(int argc, char** argv)
 
     bool clampHalf = false;
     oiio::TypeDesc typeColor = oiio::TypeDesc::FLOAT;
-    if(storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite)
+    if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite)
     {
         typeColor = oiio::TypeDesc::HALF;
-        if(storageDataType == image::EStorageDataType::HalfFinite)
+        if (storageDataType == image::EStorageDataType::HalfFinite)
         {
             clampHalf = true;
         }
@@ -169,8 +168,7 @@ int aliceVision_main(int argc, char** argv)
     // Camera intrinsics
     // Camera extrinsics
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmDataFilename,
-                        sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
@@ -178,28 +176,28 @@ int aliceVision_main(int argc, char** argv)
 
     // Order views by their image names for easier debugging
     std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-    for(auto& viewIt : sfmData.getViews())
+    for (auto& viewIt : sfmData.getViews())
     {
         viewsOrderedByName.push_back(viewIt.second);
     }
-    std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(),
-              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool
-              {
-                  if(a == nullptr || b == nullptr)
+    std::sort(viewsOrderedByName.begin(),
+              viewsOrderedByName.end(),
+              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
+                  if (a == nullptr || b == nullptr)
                       return true;
                   return (a->getImage().getImagePath() < b->getImage().getImagePath());
               });
 
     // Define range to compute
-    if(rangeStart != -1)
+    if (rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0 || std::size_t(rangeStart) > viewsOrderedByName.size())
+        if (rangeStart < 0 || rangeSize < 0 || std::size_t(rangeStart) > viewsOrderedByName.size())
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
 
-        if(std::size_t(rangeStart + rangeSize) > viewsOrderedByName.size())
+        if (std::size_t(rangeStart + rangeSize) > viewsOrderedByName.size())
         {
             rangeSize = int(viewsOrderedByName.size()) - rangeStart;
         }
@@ -213,12 +211,12 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
 
     // If panorama width is undefined, estimate it
-    if(panoramaSize.first <= 0)
+    if (panoramaSize.first <= 0)
     {
         const float ratioUpscale = clamp(float(percentUpscale) / 100.0f, 0.0f, 1.0f);
 
         std::pair<int, int> optimalPanoramaSize;
-        if(computeOptimalPanoramaSize(optimalPanoramaSize, sfmData, ratioUpscale))
+        if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData, ratioUpscale))
         {
             panoramaSize = optimalPanoramaSize;
         }
@@ -228,7 +226,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        if(maxPanoramaWidth != 0 && panoramaSize.first > maxPanoramaWidth)
+        if (maxPanoramaWidth != 0 && panoramaSize.first > maxPanoramaWidth)
         {
             ALICEVISION_LOG_INFO("The optimal size of the panorama exceeds the maximum size (estimated width: "
                                  << panoramaSize.first << ", max width: " << maxPanoramaWidth << ").");
@@ -246,39 +244,39 @@ int aliceVision_main(int argc, char** argv)
     std::memset(empty_char.get(), 0, tileSize * tileSize * sizeof(char));
 
     // Preprocessing per view
-    for(std::size_t i = std::size_t(rangeStart); i < std::size_t(rangeStart + rangeSize); ++i)
+    for (std::size_t i = std::size_t(rangeStart); i < std::size_t(rangeStart + rangeSize); ++i)
     {
         const std::shared_ptr<sfmData::View>& viewIt = viewsOrderedByName[i];
 
         // Retrieve view
         const sfmData::View& view = *viewIt;
-        if(!sfmData.isPoseAndIntrinsicDefined(&view))
+        if (!sfmData.isPoseAndIntrinsicDefined(&view))
         {
             continue;
         }
 
-        ALICEVISION_LOG_INFO("[" << int(i) + 1 - rangeStart << "/" << rangeSize << "] Processing view "
-                                 << view.getViewId() << " (" << i + 1 << "/" << viewsOrderedByName.size() << ")");
+        ALICEVISION_LOG_INFO("[" << int(i) + 1 - rangeStart << "/" << rangeSize << "] Processing view " << view.getViewId() << " (" << i + 1 << "/"
+                                 << viewsOrderedByName.size() << ")");
 
         // Get intrinsics and extrinsics
         geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-        std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicSharedPtr(view.getIntrinsicId());
 
         // Compute coarse bounding box to make computations faster
         BoundingBox coarseBboxInitial;
-        if(!computeCoarseBB(coarseBboxInitial, panoramaSize, camPose, *(intrinsic.get())))
+        if (!computeCoarseBB(coarseBboxInitial, panoramaSize, camPose, *(intrinsic.get())))
         {
             continue;
         }
 
         std::vector<BoundingBox> coarsesBbox;
-        if(coarseBboxInitial.width > coarseBboxInitial.height * 2.0)
+        if (coarseBboxInitial.width > coarseBboxInitial.height * 2.0)
         {
             const int count = int(double(coarseBboxInitial.width) / double(coarseBboxInitial.height));
             const int width = coarseBboxInitial.width / count;
 
             int pos = 0;
-            for(int id = 0; id < count; id++)
+            for (int id = 0; id < count; id++)
             {
                 BoundingBox subCoarseBbox;
                 subCoarseBbox.left = coarseBboxInitial.left + pos;
@@ -301,7 +299,7 @@ int aliceVision_main(int argc, char** argv)
         image::Image<image::RGBfColor> source;
         image::readImage(imagePath, source, workingColorSpace);
 
-        for(int idsub = 0; idsub < coarsesBbox.size(); idsub++)
+        for (int idsub = 0; idsub < coarsesBbox.size(); idsub++)
         {
             const auto coarseBbox = coarsesBbox[idsub];
 
@@ -317,12 +315,12 @@ int aliceVision_main(int argc, char** argv)
                 // Search for first non empty box starting from the top
                 bool found = false;
 
-                for(int y = 0; y < snappedCoarseBbox.height; y += tileSize)
+                for (int y = 0; y < snappedCoarseBbox.height; y += tileSize)
                 {
 #pragma omp parallel for
-                    for(int x = 0; x < snappedCoarseBbox.width; x += tileSize)
+                    for (int x = 0; x < snappedCoarseBbox.width; x += tileSize)
                     {
-                        if(found)
+                        if (found)
                         {
                             continue;
                         }
@@ -338,14 +336,14 @@ int aliceVision_main(int argc, char** argv)
 
                         // Prepare coordinates map
                         CoordinatesMap map;
-                        if(!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
+                        if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
                         {
                             continue;
                         }
 
 #pragma omp critical
                         {
-                            if(!map.getBoundingBox().isEmpty())
+                            if (!map.getBoundingBox().isEmpty())
                             {
                                 globalBbox = globalBbox.unionWith(map.getBoundingBox());
                                 found = true;
@@ -353,7 +351,7 @@ int aliceVision_main(int argc, char** argv)
                         }
                     }
 
-                    if(found)
+                    if (found)
                     {
                         break;
                     }
@@ -363,12 +361,12 @@ int aliceVision_main(int argc, char** argv)
             {
                 // Search for first non empty box starting from the bottom
                 bool found = false;
-                for(int y = snappedCoarseBbox.height - 1; y >= 0; y -= tileSize)
+                for (int y = snappedCoarseBbox.height - 1; y >= 0; y -= tileSize)
                 {
 #pragma omp parallel for
-                    for(int x = 0; x < snappedCoarseBbox.width; x += tileSize)
+                    for (int x = 0; x < snappedCoarseBbox.width; x += tileSize)
                     {
-                        if(found)
+                        if (found)
                         {
                             continue;
                         }
@@ -384,14 +382,14 @@ int aliceVision_main(int argc, char** argv)
 
                         // Prepare coordinates map
                         CoordinatesMap map;
-                        if(!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
+                        if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
                         {
                             continue;
                         }
 
 #pragma omp critical
                         {
-                            if(!map.getBoundingBox().isEmpty())
+                            if (!map.getBoundingBox().isEmpty())
                             {
                                 globalBbox = globalBbox.unionWith(map.getBoundingBox());
                                 found = true;
@@ -399,7 +397,7 @@ int aliceVision_main(int argc, char** argv)
                         }
                     }
 
-                    if(found)
+                    if (found)
                     {
                         break;
                     }
@@ -409,12 +407,12 @@ int aliceVision_main(int argc, char** argv)
             {
                 // Search for first non empty box starting from the left
                 bool found = false;
-                for(int x = 0; x < snappedCoarseBbox.width; x += tileSize)
+                for (int x = 0; x < snappedCoarseBbox.width; x += tileSize)
                 {
 #pragma omp parallel for
-                    for(int y = 0; y < snappedCoarseBbox.height; y += tileSize)
+                    for (int y = 0; y < snappedCoarseBbox.height; y += tileSize)
                     {
-                        if(found)
+                        if (found)
                         {
                             continue;
                         }
@@ -430,14 +428,14 @@ int aliceVision_main(int argc, char** argv)
 
                         // Prepare coordinates map
                         CoordinatesMap map;
-                        if(!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
+                        if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
                         {
                             continue;
                         }
 
 #pragma omp critical
                         {
-                            if(!map.getBoundingBox().isEmpty())
+                            if (!map.getBoundingBox().isEmpty())
                             {
                                 globalBbox = globalBbox.unionWith(map.getBoundingBox());
                                 found = true;
@@ -445,7 +443,7 @@ int aliceVision_main(int argc, char** argv)
                         }
                     }
 
-                    if(found)
+                    if (found)
                     {
                         break;
                     }
@@ -455,12 +453,12 @@ int aliceVision_main(int argc, char** argv)
             {
                 // Search for first non empty box starting from the left
                 bool found = false;
-                for(int x = snappedCoarseBbox.width - 1; x >= 0; x -= tileSize)
+                for (int x = snappedCoarseBbox.width - 1; x >= 0; x -= tileSize)
                 {
 #pragma omp parallel for
-                    for(int y = 0; y < snappedCoarseBbox.height; y += tileSize)
+                    for (int y = 0; y < snappedCoarseBbox.height; y += tileSize)
                     {
-                        if(found)
+                        if (found)
                         {
                             continue;
                         }
@@ -476,14 +474,14 @@ int aliceVision_main(int argc, char** argv)
 
                         // Prepare coordinates map
                         CoordinatesMap map;
-                        if(!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
+                        if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
                         {
                             continue;
                         }
 
 #pragma omp critical
                         {
-                            if(!map.getBoundingBox().isEmpty())
+                            if (!map.getBoundingBox().isEmpty())
                             {
                                 globalBbox = globalBbox.unionWith(map.getBoundingBox());
                                 found = true;
@@ -491,7 +489,7 @@ int aliceVision_main(int argc, char** argv)
                         }
                     }
 
-                    if(found)
+                    if (found)
                     {
                         break;
                     }
@@ -499,7 +497,7 @@ int aliceVision_main(int argc, char** argv)
             }
 
             // Rare case ... When all boxes valid are after the loop
-            if(globalBbox.left >= panoramaSize.first)
+            if (globalBbox.left >= panoramaSize.first)
             {
                 globalBbox.left -= panoramaSize.first;
             }
@@ -526,12 +524,9 @@ int aliceVision_main(int argc, char** argv)
             // Define output paths
             const std::string viewIdStr = std::to_string(view.getViewId());
             const std::string subIdStr = std::to_string(idsub);
-            const std::string viewFilepath =
-                (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + ".exr")).string();
-            const std::string maskFilepath =
-                (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + "_mask.exr")).string();
-            const std::string weightFilepath =
-                (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + "_weight.exr")).string();
+            const std::string viewFilepath = (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + ".exr")).string();
+            const std::string maskFilepath = (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + "_mask.exr")).string();
+            const std::string weightFilepath = (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + "_weight.exr")).string();
 
             // Create output images
             std::unique_ptr<oiio::ImageOutput> out_view = oiio::ImageOutput::create(viewFilepath);
@@ -561,16 +556,16 @@ int aliceVision_main(int argc, char** argv)
             out_weights->open(weightFilepath, spec_weights);
 
             GaussianPyramidNoMask pyramid(source.width(), source.height());
-            if(!pyramid.process(source))
+            if (!pyramid.process(source))
             {
                 ALICEVISION_LOG_ERROR("Problem creating pyramid.");
                 continue;
             }
 
             std::vector<BoundingBox> boxes;
-            for(int y = 0; y < globalBbox.height; y += tileSize)
+            for (int y = 0; y < globalBbox.height; y += tileSize)
             {
-                for(int x = 0; x < globalBbox.width; x += tileSize)
+                for (int x = 0; x < globalBbox.width; x += tileSize)
                 {
                     BoundingBox localBbox;
                     localBbox.left = x + globalBbox.left;
@@ -582,7 +577,7 @@ int aliceVision_main(int argc, char** argv)
             }
 
 #pragma omp parallel for
-            for(int boxId = 0; boxId < boxes.size(); boxId++)
+            for (int boxId = 0; boxId < boxes.size(); boxId++)
             {
                 BoundingBox localBbox = boxes[boxId];
 
@@ -591,21 +586,21 @@ int aliceVision_main(int argc, char** argv)
 
                 // Prepare coordinates map
                 CoordinatesMap map;
-                if(!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
+                if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
                 {
                     continue;
                 }
 
                 // Warp image
                 GaussianWarper warper;
-                if(!warper.warp(map, pyramid, clampHalf))
+                if (!warper.warp(map, pyramid, clampHalf))
                 {
                     continue;
                 }
 
                 // Alpha mask
                 aliceVision::image::Image<float> weights;
-                if(!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h()))
+                if (!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h()))
                 {
                     continue;
                 }

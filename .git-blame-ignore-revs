@@ -1,3 +1,7 @@
+# [aliceVision] Reformat src/aliceVision with latest clang-format rules
+0fb0a02b75142bcf3b23009428028e2198917275
+# [software] Reformat src/software with latest clang-format rules
+ea46ddca23332c115790c02105372bda37d943e3
 # Apply `clang-format` on modified files
 807034b1eb101b19b3bc9b9078a1635460591959
 # Estimator states in SfMData: Apply clang-format across all files

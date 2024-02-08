@@ -52,13 +52,16 @@ std::string ESubsetType_informations()
  */
 std::string ESubsetType_enumToString(ESubsetType subsetType)
 {
-  switch(subsetType)
-  {
-      case ESubsetType::ALL:                 return "all";
-      case ESubsetType::SURFACE_BOUNDARIES:  return "surface_boundaries";
-      case ESubsetType::SURFACE_INNER_PART:  return "surface_inner_part";
-  }
-  throw std::out_of_range("Invalid SubsetType enum: " + std::to_string(int(subsetType)));
+    switch (subsetType)
+    {
+        case ESubsetType::ALL:
+            return "all";
+        case ESubsetType::SURFACE_BOUNDARIES:
+            return "surface_boundaries";
+        case ESubsetType::SURFACE_INNER_PART:
+            return "surface_inner_part";
+    }
+    throw std::out_of_range("Invalid SubsetType enum: " + std::to_string(int(subsetType)));
 }
 
 /**
@@ -68,13 +71,16 @@ std::string ESubsetType_enumToString(ESubsetType subsetType)
  */
 ESubsetType ESubsetType_stringToEnum(const std::string& subsetType)
 {
-  std::string type = subsetType;
-  std::transform(type.begin(), type.end(), type.begin(), ::tolower); // tolower
+    std::string type = subsetType;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
 
-  if(type == "all")                 return ESubsetType::ALL;
-  if(type == "surface_boundaries")  return ESubsetType::SURFACE_BOUNDARIES;
-  if(type == "surface_inner_part")  return ESubsetType::SURFACE_INNER_PART;
-  throw std::out_of_range("Invalid filterType: " + subsetType);
+    if (type == "all")
+        return ESubsetType::ALL;
+    if (type == "surface_boundaries")
+        return ESubsetType::SURFACE_BOUNDARIES;
+    if (type == "surface_inner_part")
+        return ESubsetType::SURFACE_INNER_PART;
+    throw std::out_of_range("Invalid filterType: " + subsetType);
 }
 
 std::ostream& operator<<(std::ostream& os, const ESubsetType subsetType)
@@ -85,8 +91,7 @@ std::ostream& operator<<(std::ostream& os, const ESubsetType subsetType)
 
 std::istream& operator>>(std::istream& in, ESubsetType& subsetType)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     subsetType = ESubsetType_stringToEnum(token);
     return in;
 }
@@ -163,20 +168,20 @@ int aliceVision_main(int argc, char* argv[])
     const ESubsetType filteringSubsetType = ESubsetType_stringToEnum(filteringSubsetTypeName);
 
     fs::path outDirectory = fs::path(outputMeshPath).parent_path();
-    if(!fs::is_directory(outDirectory))
+    if (!fs::is_directory(outDirectory))
         fs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
     texturing.loadWithAtlas(inputMeshPath);
     mesh::Mesh* mesh = texturing.mesh;
 
-    if(!mesh)
+    if (!mesh)
     {
         ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;
     }
 
-    if(mesh->pts.empty() || mesh->tris.empty())
+    if (mesh->pts.empty() || mesh->tris.empty())
     {
         ALICEVISION_LOG_ERROR("Error: empty mesh from the file " << inputMeshPath);
         ALICEVISION_LOG_ERROR("Input mesh: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
@@ -186,55 +191,56 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Mesh file: \"" << inputMeshPath << "\" loaded.");
     ALICEVISION_LOG_INFO("Input mesh: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
 
-    StaticVectorBool ptsCanMove; // empty if smoothingSubsetType is ALL
+    StaticVectorBool ptsCanMove;  // empty if smoothingSubsetType is ALL
 
     // lock filter subset vertices
-    switch(smoothingSubsetType)
+    switch (smoothingSubsetType)
     {
-        case ESubsetType::ALL: break; // nothing to lock
+        case ESubsetType::ALL:
+            break;  // nothing to lock
 
         case ESubsetType::SURFACE_BOUNDARIES:
-        mesh->lockSurfaceBoundaries(smoothingBoundariesNeighbours, ptsCanMove, true); // invert = true (lock surface inner part)
-        break;
+            mesh->lockSurfaceBoundaries(smoothingBoundariesNeighbours, ptsCanMove, true);  // invert = true (lock surface inner part)
+            break;
 
         case ESubsetType::SURFACE_INNER_PART:
-        mesh->lockSurfaceBoundaries(smoothingBoundariesNeighbours, ptsCanMove, false); // invert = false (lock surface boundaries)
-        break;
+            mesh->lockSurfaceBoundaries(smoothingBoundariesNeighbours, ptsCanMove, false);  // invert = false (lock surface boundaries)
+            break;
     }
-    
 
     // filtering
-    if((filterLargeTrianglesFactor != 0.0) || (filterTrianglesRatio != 0.0))
+    if ((filterLargeTrianglesFactor != 0.0) || (filterTrianglesRatio != 0.0))
     {
         ALICEVISION_LOG_INFO("Start mesh filtering.");
 
-        for(int i = 0; i < filteringIterations; ++i)
+        for (int i = 0; i < filteringIterations; ++i)
         {
-          ALICEVISION_LOG_INFO("Mesh filtering: iteration " << i);
+            ALICEVISION_LOG_INFO("Mesh filtering: iteration " << i);
 
-          StaticVectorBool trisToStay(mesh->tris.size(), true);
-          StaticVectorBool trisInFilterSubset; // empty if filteringSubsetType is ALL
+            StaticVectorBool trisToStay(mesh->tris.size(), true);
+            StaticVectorBool trisInFilterSubset;  // empty if filteringSubsetType is ALL
 
-          switch(filteringSubsetType)
-          {
-              case ESubsetType::ALL: break; // nothing to do 
+            switch (filteringSubsetType)
+            {
+                case ESubsetType::ALL:
+                    break;  // nothing to do
 
-              case ESubsetType::SURFACE_BOUNDARIES:
-              mesh->getSurfaceBoundaries(trisInFilterSubset); // invert = false (get surface boundaries)
-              break;
+                case ESubsetType::SURFACE_BOUNDARIES:
+                    mesh->getSurfaceBoundaries(trisInFilterSubset);  // invert = false (get surface boundaries)
+                    break;
 
-              case ESubsetType::SURFACE_INNER_PART:
-              mesh->getSurfaceBoundaries(trisInFilterSubset, true); // invert = true (get surface inner part)
-              break;
-          }
+                case ESubsetType::SURFACE_INNER_PART:
+                    mesh->getSurfaceBoundaries(trisInFilterSubset, true);  // invert = true (get surface inner part)
+                    break;
+            }
 
-          if(filterLargeTrianglesFactor != 0.0)
-              mesh->filterLargeEdgeTriangles(filterLargeTrianglesFactor, trisInFilterSubset, trisToStay);
+            if (filterLargeTrianglesFactor != 0.0)
+                mesh->filterLargeEdgeTriangles(filterLargeTrianglesFactor, trisInFilterSubset, trisToStay);
 
-          if(filterTrianglesRatio != 0.0)
-              mesh->filterTrianglesByRatio(filterTrianglesRatio, trisInFilterSubset, trisToStay);
+            if (filterTrianglesRatio != 0.0)
+                mesh->filterTrianglesByRatio(filterTrianglesRatio, trisInFilterSubset, trisToStay);
 
-          mesh->letJustTringlesIdsInMesh(trisToStay);
+            mesh->letJustTringlesIdsInMesh(trisToStay);
         }
         ALICEVISION_LOG_INFO("Mesh filtering done: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
     }
@@ -250,15 +256,15 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Mesh smoothing done: " << meOpt.pts.size() << " vertices and " << meOpt.tris.size() << " facets.");
     }
 
-    if(keepLargestMeshOnly)
+    if (keepLargestMeshOnly)
     {
         StaticVector<int> trisIdsToStay;
         meOpt.getLargestConnectedComponentTrisIds(trisIdsToStay);
         meOpt.letJustTringlesIdsInMesh(trisIdsToStay);
         ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << meOpt.pts.size() << " vertices and " << meOpt.tris.size() << " facets.");
     }
-    
-    // clear potential free points created by triangles removal in previous cleaning operations 
+
+    // clear potential free points created by triangles removal in previous cleaning operations
     StaticVector<int> ptIdToNewPtId;
     meOpt.removeFreePointsFromMesh(ptIdToNewPtId);
     ptIdToNewPtId.clear();
@@ -268,7 +274,7 @@ int aliceVision_main(int argc, char* argv[])
 
     ALICEVISION_COUT("Output mesh: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
 
-    if(outMesh.pts.empty() || outMesh.tris.empty())
+    if (outMesh.pts.empty() || outMesh.tris.empty())
     {
         ALICEVISION_CERR("Failed: the output mesh is empty.");
         ALICEVISION_LOG_INFO("Output mesh: " << outMesh.pts.size() << " vertices and " << outMesh.tris.size() << " facets.");

@@ -17,9 +17,8 @@ namespace geometry {
  * @param start the starting point of the ray
  * @param direction the direction of the ray
  * @return true if an intersection is found
-*/
-bool rayIntersectUnitSphere(Vec3 & coordinates, const Vec3 & start, const Vec3 & direction);
+ */
+bool rayIntersectUnitSphere(Vec3& coordinates, const Vec3& start, const Vec3& direction);
 
 }  // namespace geometry
 }  // namespace aliceVision
-

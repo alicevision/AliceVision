@@ -71,7 +71,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
@@ -79,28 +79,28 @@ int aliceVision_main(int argc, char* argv[])
 
     // Order views by their image names
     std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-    for(auto& viewIt : sfmData.getViews())
+    for (auto& viewIt : sfmData.getViews())
     {
         viewsOrderedByName.push_back(viewIt.second);
     }
-    std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(),
-              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool
-              {
-                  if(a == nullptr || b == nullptr)
+    std::sort(viewsOrderedByName.begin(),
+              viewsOrderedByName.end(),
+              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
+                  if (a == nullptr || b == nullptr)
                       return true;
                   return (a->getImage().getImagePath() < b->getImage().getImagePath());
               });
 
     // Define range to compute
-    if(rangeStart != -1)
+    if (rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0 || static_cast<std::size_t>(rangeStart) > viewsOrderedByName.size())
+        if (rangeStart < 0 || rangeSize < 0 || static_cast<std::size_t>(rangeStart) > viewsOrderedByName.size())
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
 
-        if(static_cast<std::size_t>(rangeStart + rangeSize) > viewsOrderedByName.size())
+        if (static_cast<std::size_t>(rangeStart + rangeSize) > viewsOrderedByName.size())
         {
             rangeSize = static_cast<int>(viewsOrderedByName.size()) - rangeStart;
         }
@@ -119,7 +119,7 @@ int aliceVision_main(int argc, char* argv[])
 
         IndexT viewId = view->getViewId();
 
-        //Load image and convert it to sRGB colorspace
+        // Load image and convert it to sRGB colorspace
         std::string imagePath = view->getImage().getImagePath();
         ALICEVISION_LOG_INFO("Load image with path " << imagePath);
         image::Image<image::RGBColor> source;
@@ -136,7 +136,7 @@ int aliceVision_main(int argc, char* argv[])
             // if pixel are not squared, convert the image for easier lines extraction
             const double w = source.width();
             const double h = source.height();
-            
+
             const double nw = w * ((doubleSize) ? 2.0 : 1.0);
             const double nh = h * ((doubleSize) ? 2.0 : 1.0) / pixelRatio;
 
@@ -147,10 +147,10 @@ int aliceVision_main(int argc, char* argv[])
             source.swap(resizedInput);
         }
 
-        //Lookup checkerboard
+        // Lookup checkerboard
         calibration::CheckerDetector detect;
         ALICEVISION_LOG_INFO("Launching checkerboard detection");
-        if(!detect.process(source, useNestedGrids, exportDebugImages))
+        if (!detect.process(source, useNestedGrids, exportDebugImages))
         {
             ALICEVISION_LOG_ERROR("Detection failed");
             continue;
@@ -158,11 +158,11 @@ int aliceVision_main(int argc, char* argv[])
 
         ALICEVISION_LOG_INFO("Detected " << detect.getBoards().size() << " boards and " << detect.getCorners().size() << " corners");
 
-        //Restore aspect ratio for corners coordinates
+        // Restore aspect ratio for corners coordinates
         if (pixelRatio != 1.0 || doubleSize)
         {
-            std::vector<calibration::CheckerDetector::CheckerBoardCorner> & cs = detect.getCorners();
-            for (auto &c : cs)
+            std::vector<calibration::CheckerDetector::CheckerBoardCorner>& cs = detect.getCorners();
+            for (auto& c : cs)
             {
                 c.center(1) *= pixelRatio;
 
@@ -173,17 +173,19 @@ int aliceVision_main(int argc, char* argv[])
                 }
             }
         }
-        
+
         // write the json file with the tree
-        ALICEVISION_LOG_INFO("Writing detection output in " << "checkers_" << viewId << ".json");
+        ALICEVISION_LOG_INFO("Writing detection output in "
+                             << "checkers_" << viewId << ".json");
         std::stringstream ss;
-        ss << outputFilePath << "/" << "checkers_" << viewId << ".json";
+        ss << outputFilePath << "/"
+           << "checkers_" << viewId << ".json";
         boost::json::value jv = boost::json::value_from(detect);
         std::ofstream of(ss.str());
         of << boost::json::serialize(jv);
         of.close();
 
-        if(exportDebugImages)
+        if (exportDebugImages)
         {
             ALICEVISION_LOG_INFO("Writing debug image");
             std::stringstream ss;

@@ -182,8 +182,8 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                 if (simValue > maxValue)
                     continue;
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
-                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(
-                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
+                pointCloud.getLandmarks()[landmarkId] =
+                  sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
                 ++landmarkId;
             }
@@ -234,8 +234,8 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim
                     continue;
 
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
-                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(
-                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
+                pointCloud.getLandmarks()[landmarkId] =
+                  sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
                 ++landmarkId;
             }
@@ -292,8 +292,8 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
                 const Point3d p = mp.CArr[camIndex] + (mp.iCamArr[camIndex] * pix).normalize() * depth;
 
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
-                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(
-                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
+                pointCloud.getLandmarks()[landmarkId] =
+                  sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
                 ++landmarkId;
             }
@@ -490,8 +490,8 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& in_volumeSim_hmh,
 
                 float4 colorValue = *get3DBufferAt_h<float4>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
                 const rgb c = float4_to_rgb(colorValue);  // TODO: convert Lab color into sRGB color
-                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(
-                  Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
+                pointCloud.getLandmarks()[landmarkId] =
+                  sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));
 
                 ++landmarkId;
             }

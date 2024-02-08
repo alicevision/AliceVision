@@ -14,7 +14,7 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
-#include <boost/program_options.hpp> 
+#include <boost/program_options.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/tail.hpp>
 
@@ -42,8 +42,7 @@ namespace po = boost::program_options;
 typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
 typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
-static const std::string programDescription =
-        "This program is used to generate some statistics.\n ";
+static const std::string programDescription = "This program is used to generate some statistics.\n ";
 
 /*
  * This program is used to create a database with a provided dataset of image descriptors using a trained vocabulary tree
@@ -51,13 +50,13 @@ static const std::string programDescription =
  */
 int aliceVision_main(int argc, char** argv)
 {
-  std::string weightsName;                  // the filename for the voctree weights
-  bool withWeights = false;            // flag for the optional weights file
-  std::string treeName;                     // the filename of the voctree
-  std::string sfmDataFilename;              // the file containing the list of features to use to build the database
-  std::vector<std::string> featuresFolders;
-  std::string querySfmDataFilename = "";    // the file containing the list of features to use as query
-  std::string distance;
+    std::string weightsName;      // the filename for the voctree weights
+    bool withWeights = false;     // flag for the optional weights file
+    std::string treeName;         // the filename of the voctree
+    std::string sfmDataFilename;  // the file containing the list of features to use to build the database
+    std::vector<std::string> featuresFolders;
+    std::string querySfmDataFilename = "";  // the file containing the list of features to use as query
+    std::string distance;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -85,95 +84,95 @@ int aliceVision_main(int argc, char** argv)
          " - inversedWeightedCommonPoints: strongCommonPoints with inverted weights.");
     // clang-format on
 
-  CmdLine cmdline("This program is used to create a database with a provided dataset of image descriptors using a trained vocabulary tree.\n"
-                  "The database is then queried with the same images in order to retrieve for each image the set of most similar images in the dataset.\n"
-                  "AliceVision voctreeStatistics");
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline(
+      "This program is used to create a database with a provided dataset of image descriptors using a trained vocabulary tree.\n"
+      "The database is then queried with the same images in order to retrieve for each image the set of most similar images in the dataset.\n"
+      "AliceVision voctreeStatistics");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
-  if (weightsName.size() > 0)
-  {
-    withWeights = true;
-  }
+    if (weightsName.size() > 0)
+    {
+        withWeights = true;
+    }
 
-  // load vocabulary tree
-  ALICEVISION_LOG_INFO("Loading vocabulary tree\n");
-  aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
-  ALICEVISION_LOG_INFO("tree loaded with\n\t"
-          << tree.levels() << " levels\n\t" 
-          << tree.splits() << " branching factor");
+    // load vocabulary tree
+    ALICEVISION_LOG_INFO("Loading vocabulary tree\n");
+    aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
+    ALICEVISION_LOG_INFO("tree loaded with\n\t" << tree.levels() << " levels\n\t" << tree.splits() << " branching factor");
 
-  // load SfMData
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
-    return EXIT_FAILURE;
-  }
+    // load SfMData
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
+        return EXIT_FAILURE;
+    }
 
-  // create the database
-  ALICEVISION_LOG_INFO("Creating the database...");
+    // create the database
+    ALICEVISION_LOG_INFO("Creating the database...");
 
-  // add each object (document) to the database
-  aliceVision::voctree::Database db(tree.words());
+    // add each object (document) to the database
+    aliceVision::voctree::Database db(tree.words());
 
-  if(withWeights)
-  {
-    ALICEVISION_LOG_INFO("Loading weights...");
-    db.loadWeights(weightsName);
-  }
-  else
-  {
-    ALICEVISION_LOG_INFO("No weights specified, skipping...");
-  }
+    if (withWeights)
+    {
+        ALICEVISION_LOG_INFO("Loading weights...");
+        db.loadWeights(weightsName);
+    }
+    else
+    {
+        ALICEVISION_LOG_INFO("No weights specified, skipping...");
+    }
 
-  // read the descriptors and populate the database
-  ALICEVISION_LOG_INFO("Reading descriptors from " << sfmDataFilename);
-  auto detect_start = std::chrono::steady_clock::now();
-  size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmData, featuresFolders, tree, db);
-  auto detect_end = std::chrono::steady_clock::now();
-  auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
+    // read the descriptors and populate the database
+    ALICEVISION_LOG_INFO("Reading descriptors from " << sfmDataFilename);
+    auto detect_start = std::chrono::steady_clock::now();
+    size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmData, featuresFolders, tree, db);
+    auto detect_end = std::chrono::steady_clock::now();
+    auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
-  if(numTotFeatures == 0)
-  {
-    ALICEVISION_LOG_INFO("No descriptors loaded!!");
-    return EXIT_FAILURE;
-  }
+    if (numTotFeatures == 0)
+    {
+        ALICEVISION_LOG_INFO("No descriptors loaded!!");
+        return EXIT_FAILURE;
+    }
 
-  ALICEVISION_LOG_INFO("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
-  ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec");
+    ALICEVISION_LOG_INFO("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures
+                                  << " features");
+    ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec");
 
-  if(!withWeights)
-  {
-    // compute and save the word weights
-    ALICEVISION_LOG_INFO("Computing weights...");
-    db.computeTfIdfWeights();
-  }
+    if (!withWeights)
+    {
+        // compute and save the word weights
+        ALICEVISION_LOG_INFO("Computing weights...");
+        db.computeTfIdfWeights();
+    }
 
-  // query documents for Statistics
-  std::map<int,int> globalHisto;
+    // query documents for Statistics
+    std::map<int, int> globalHisto;
 
-  ALICEVISION_LOG_INFO("Getting some stats for " << querySfmDataFilename);
+    ALICEVISION_LOG_INFO("Getting some stats for " << querySfmDataFilename);
 
-  sfmData::SfMData querySfmData;
-  if(!sfmDataIO::load(querySfmData, querySfmDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" + querySfmDataFilename + "' cannot be read.");
-    return EXIT_FAILURE;
-  }
-  
-  aliceVision::voctree::voctreeStatistics<DescriptorUChar>(querySfmData, featuresFolders, tree, db, distance, globalHisto);
-  
-  std::cout << "-----------------" << std::endl;
-  
-  for(const auto &itHisto : globalHisto)
-    std::cout << itHisto.first << ": " << itHisto.second  << ", ";
+    sfmData::SfMData querySfmData;
+    if (!sfmDataIO::load(querySfmData, querySfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" + querySfmDataFilename + "' cannot be read.");
+        return EXIT_FAILURE;
+    }
 
-  std::cout << std::endl;
-  
-  return EXIT_SUCCESS;
+    aliceVision::voctree::voctreeStatistics<DescriptorUChar>(querySfmData, featuresFolders, tree, db, distance, globalHisto);
+
+    std::cout << "-----------------" << std::endl;
+
+    for (const auto& itHisto : globalHisto)
+        std::cout << itHisto.first << ": " << itHisto.second << ", ";
+
+    std::cout << std::endl;
+
+    return EXIT_SUCCESS;
 }

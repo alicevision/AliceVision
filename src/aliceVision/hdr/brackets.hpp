@@ -75,8 +75,7 @@ inline std::ostream& operator<<(std::ostream& os, ECalibrationMethod calibration
 
 inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibrationMethod)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     calibrationMethod = ECalibrationMethod_stringToEnum(token);
     return in;
 }
@@ -88,26 +87,27 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
  * @param[in] countBrackets the number of brackets
  * @return false if an error occurs (e.g. an invalid SfMData file has been provided), true otherwise
  */
-bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
-                                 const sfmData::SfMData& sfmData,
+bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<aliceVision::sfmData::View>>>& groups,
+                                 const aliceVision::sfmData::SfMData& sfmData,
                                  size_t countBrackets);
 
 /**
  * @brief Select the target views (used for instance to define the expoure)
  * @param[out] targetViews the estimated target views
- * @param[in] groups the groups of Views corresponding to multi-bracketing. Warning: Needs be sorted by exposure time.
+ * @param[in] groups the groups of Views corresponding to multi-bracketing. Warning: Needs to be sorted by exposure time.
  * @param[in] offsetRefBracketIndex 0 means center bracket and you can choose +N/-N to select the reference bracket
  * @param[in] targetIndexesFilename in case offsetRefBracketIndex is out of range, the number of views in a group target
  *                                  indexes can be read from a text file. If the file cannot be read or does not contain
  *                                  the expected number of values (same as view group number) and if
  *                                  offsetRefBracketIndex is out of range, the number of views then a clamped value of
  *                                  offsetRefBracketIndex is considered
+ * @param[in] meanTargetedLuma mean targeted luma
  * @return the index of the target view
  */
-int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& out_targetViews,
-                      std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups,
-                      int offsetRefBracketIndex,
-                      const std::string& targetIndexesFilename = "",
+int selectTargetViews(std::vector<std::shared_ptr<aliceVision::sfmData::View>>& targetViews,
+                      std::vector<std::vector<std::shared_ptr<aliceVision::sfmData::View>>>& groups,
+                      const int offsetRefBracketIndex,
+                      const std::string& targetIndexesFilename,
                       const double meanTargetedLuma = 0.4);
 
 }  // namespace hdr

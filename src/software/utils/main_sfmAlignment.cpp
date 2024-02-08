@@ -30,81 +30,87 @@ namespace po = boost::program_options;
 namespace {
 
 /**
-* @brief Alignment method enum
-*/
+ * @brief Alignment method enum
+ */
 enum class EAlignmentMethod : unsigned char
 {
-    FROM_CAMERAS_VIEWID = 0
-    , FROM_CAMERAS_POSEID
-    , FROM_CAMERAS_FILEPATH
-    , FROM_CAMERAS_METADATA
-    , FROM_MARKERS
+    FROM_CAMERAS_VIEWID = 0,
+    FROM_CAMERAS_POSEID,
+    FROM_CAMERAS_FILEPATH,
+    FROM_CAMERAS_METADATA,
+    FROM_MARKERS
 };
 
 /**
-* @brief Convert an EAlignmentMethod enum to its corresponding string
-* @param[in] alignmentMethod The given EAlignmentMethod enum
-* @return string
-*/
+ * @brief Convert an EAlignmentMethod enum to its corresponding string
+ * @param[in] alignmentMethod The given EAlignmentMethod enum
+ * @return string
+ */
 std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
 {
     switch (alignmentMethod)
     {
-    case EAlignmentMethod::FROM_CAMERAS_VIEWID:   return "from_cameras_viewid";
-    case EAlignmentMethod::FROM_CAMERAS_POSEID:   return "from_cameras_poseid";
-    case EAlignmentMethod::FROM_CAMERAS_FILEPATH: return "from_cameras_filepath";
-    case EAlignmentMethod::FROM_CAMERAS_METADATA: return "from_cameras_metadata";
-    case EAlignmentMethod::FROM_MARKERS:          return "from_markers";
+        case EAlignmentMethod::FROM_CAMERAS_VIEWID:
+            return "from_cameras_viewid";
+        case EAlignmentMethod::FROM_CAMERAS_POSEID:
+            return "from_cameras_poseid";
+        case EAlignmentMethod::FROM_CAMERAS_FILEPATH:
+            return "from_cameras_filepath";
+        case EAlignmentMethod::FROM_CAMERAS_METADATA:
+            return "from_cameras_metadata";
+        case EAlignmentMethod::FROM_MARKERS:
+            return "from_markers";
     }
     throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
 
 /**
-* @brief Convert a string to its corresponding EAlignmentMethod enum
-* @param[in] alignmentMethod The given string
-* @return EAlignmentMethod enum
-*/
+ * @brief Convert a string to its corresponding EAlignmentMethod enum
+ * @param[in] alignmentMethod The given string
+ * @return EAlignmentMethod enum
+ */
 EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMethod)
 {
     std::string method = alignmentMethod;
-    std::transform(method.begin(), method.end(), method.begin(), ::tolower); //tolower
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);  // tolower
 
-    if (method == "from_cameras_viewid")   return EAlignmentMethod::FROM_CAMERAS_VIEWID;
-    if (method == "from_cameras_poseid")   return EAlignmentMethod::FROM_CAMERAS_POSEID;
-    if (method == "from_cameras_filepath") return EAlignmentMethod::FROM_CAMERAS_FILEPATH;
-    if (method == "from_cameras_metadata") return EAlignmentMethod::FROM_CAMERAS_METADATA;
-    if (method == "from_markers")          return EAlignmentMethod::FROM_MARKERS;
+    if (method == "from_cameras_viewid")
+        return EAlignmentMethod::FROM_CAMERAS_VIEWID;
+    if (method == "from_cameras_poseid")
+        return EAlignmentMethod::FROM_CAMERAS_POSEID;
+    if (method == "from_cameras_filepath")
+        return EAlignmentMethod::FROM_CAMERAS_FILEPATH;
+    if (method == "from_cameras_metadata")
+        return EAlignmentMethod::FROM_CAMERAS_METADATA;
+    if (method == "from_markers")
+        return EAlignmentMethod::FROM_MARKERS;
     throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
 inline std::istream& operator>>(std::istream& in, EAlignmentMethod& alignment)
 {
-    std::string token;
-    in >> token;
+    std::string token(std::istreambuf_iterator<char>(in), {});
     alignment = EAlignmentMethod_stringToEnum(token);
     return in;
 }
 
-inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e)
-{
-    return os << EAlignmentMethod_enumToString(e);
-}
+inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e) { return os << EAlignmentMethod_enumToString(e); }
 
-} // namespace
+}  // namespace
 
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string outSfMDataFilename;
-  std::string sfmDataReferenceFilename;
-  bool applyScale = true;
-  bool applyRotation = true;
-  bool applyTranslation = true;
-  EAlignmentMethod alignmentMethod = EAlignmentMethod::FROM_CAMERAS_VIEWID;
-  std::string fileMatchingPattern;
-  std::vector<std::string> metadataMatchingList = {"Make", "Model", "Exif:BodySerialNumber" , "Exif:LensSerialNumber" };
-  std::string outputViewsAndPosesFilepath;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string outSfMDataFilename;
+    std::string sfmDataReferenceFilename;
+    bool applyScale = true;
+    bool applyRotation = true;
+    bool applyTranslation = true;
+    EAlignmentMethod alignmentMethod = EAlignmentMethod::FROM_CAMERAS_VIEWID;
+    std::string fileMatchingPattern;
+    std::vector<std::string> metadataMatchingList = {"Make", "Model", "Exif:BodySerialNumber", "Exif:LensSerialNumber"};
+    std::string outputViewsAndPosesFilepath;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -139,111 +145,111 @@ int aliceVision_main(int argc, char **argv)
          "Path of the output SfMData file.");
     // clang-format on
 
-  CmdLine cmdline("AliceVision sfmAlignment");
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
-
-
-  std::mt19937 randomNumberGenerator;
-
-  // Load input scene
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
-    return EXIT_FAILURE;
-  }
-
-  // Load reference scene
-  sfmData::SfMData sfmDataInRef;
-  if(!sfmDataIO::load(sfmDataInRef, sfmDataReferenceFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The reference SfMData file '" << sfmDataReferenceFilename << "' cannot be read");
-    return EXIT_FAILURE;
-  }
-
-  ALICEVISION_LOG_INFO("Search similarity transformation.");
-
-  double S;
-  Mat3 R;
-  Vec3 t;
-  bool hasValidSimilarity = false;
-  
-  switch(alignmentMethod)
-  {
-    case EAlignmentMethod::FROM_CAMERAS_VIEWID:
+    CmdLine cmdline("AliceVision sfmAlignment");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
-      break;
+        return EXIT_FAILURE;
     }
-    case EAlignmentMethod::FROM_CAMERAS_POSEID:
+
+    std::mt19937 randomNumberGenerator;
+
+    // Load input scene
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
-      break;
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
+        return EXIT_FAILURE;
     }
-    case EAlignmentMethod::FROM_CAMERAS_FILEPATH:
+
+    // Load reference scene
+    sfmData::SfMData sfmDataInRef;
+    if (!sfmDataIO::load(sfmDataInRef, sfmDataReferenceFilename, sfmDataIO::ESfMData::ALL))
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(sfmData, sfmDataInRef, fileMatchingPattern, randomNumberGenerator, &S, &R, &t);
-      break;
+        ALICEVISION_LOG_ERROR("The reference SfMData file '" << sfmDataReferenceFilename << "' cannot be read");
+        return EXIT_FAILURE;
     }
-    case EAlignmentMethod::FROM_CAMERAS_METADATA:
+
+    ALICEVISION_LOG_INFO("Search similarity transformation.");
+
+    double S;
+    Mat3 R;
+    Vec3 t;
+    bool hasValidSimilarity = false;
+
+    switch (alignmentMethod)
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(sfmData, sfmDataInRef, metadataMatchingList, randomNumberGenerator, &S, &R, &t);
-      break;
+        case EAlignmentMethod::FROM_CAMERAS_VIEWID:
+        {
+            hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
+            break;
+        }
+        case EAlignmentMethod::FROM_CAMERAS_POSEID:
+        {
+            hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
+            break;
+        }
+        case EAlignmentMethod::FROM_CAMERAS_FILEPATH:
+        {
+            hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(
+              sfmData, sfmDataInRef, fileMatchingPattern, randomNumberGenerator, &S, &R, &t);
+            break;
+        }
+        case EAlignmentMethod::FROM_CAMERAS_METADATA:
+        {
+            hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(
+              sfmData, sfmDataInRef, metadataMatchingList, randomNumberGenerator, &S, &R, &t);
+            break;
+        }
+        case EAlignmentMethod::FROM_MARKERS:
+        {
+            hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
+            break;
+        }
     }
-    case EAlignmentMethod::FROM_MARKERS:
+
+    if (!hasValidSimilarity)
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
-      break;
+        std::stringstream ss;
+        ss << "Failed to find similarity between the 2 SfM scenes:";
+        ss << "\t- " << sfmDataFilename << std::endl;
+        ss << "\t- " << sfmDataReferenceFilename << std::endl;
+        ALICEVISION_LOG_ERROR(ss.str());
+        return EXIT_FAILURE;
     }
-  }
 
-  if(!hasValidSimilarity)
-  {
-    std::stringstream ss;
-    ss << "Failed to find similarity between the 2 SfM scenes:";
-    ss << "\t- " << sfmDataFilename << std::endl;
-    ss << "\t- " << sfmDataReferenceFilename << std::endl;
-    ALICEVISION_LOG_ERROR(ss.str());
-    return EXIT_FAILURE;
-  }
+    {
+        std::stringstream ss;
+        ss << "Transformation:" << std::endl;
+        ss << "\t- Scale: " << S << std::endl;
+        ss << "\t- Rotation:\n" << R << std::endl;
+        ss << "\t- Translate: " << t.transpose() << std::endl;
+        ALICEVISION_LOG_INFO(ss.str());
+    }
 
-  {
-    std::stringstream ss;
-    ss << "Transformation:" << std::endl;
-    ss << "\t- Scale: " << S << std::endl;
-    ss << "\t- Rotation:\n" << R << std::endl;
-    ss << "\t- Translate: " << t.transpose() << std::endl;
-    ALICEVISION_LOG_INFO(ss.str());
-  }
+    if (!applyScale)
+        S = 1;
+    if (!applyRotation)
+        R = Mat3::Identity();
+    if (!applyTranslation)
+        t = Vec3::Zero();
 
-  if (!applyScale)
-      S = 1;
-  if (!applyRotation)
-      R = Mat3::Identity();
-  if (!applyTranslation)
-      t = Vec3::Zero();
+    sfm::applyTransform(sfmData, S, R, t);
 
-  sfm::applyTransform(sfmData, S, R, t);
+    ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
 
-  ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
-  
-  // Export the SfMData scene in the expected format
-  if(!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
-    return EXIT_FAILURE;
-  }
+    // Export the SfMData scene in the expected format
+    if (!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
+        return EXIT_FAILURE;
+    }
 
-  if(!outputViewsAndPosesFilepath.empty())
-  {
-      sfmDataIO::save(sfmData, outputViewsAndPosesFilepath,
-                      sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
-  }
+    if (!outputViewsAndPosesFilepath.empty())
+    {
+        sfmDataIO::save(sfmData, outputViewsAndPosesFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
+    }
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

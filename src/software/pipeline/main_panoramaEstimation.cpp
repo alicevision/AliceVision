@@ -112,20 +112,18 @@ int aliceVision_main(int argc, char** argv)
                     "AliceVision panoramaEstimation");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
-    if(!cmdline.execute(argc, argv))
+    if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
     }
 
-    if(params.eRotationAveragingMethod < sfm::ROTATION_AVERAGING_L1 ||
-       params.eRotationAveragingMethod > sfm::ROTATION_AVERAGING_L2)
+    if (params.eRotationAveragingMethod < sfm::ROTATION_AVERAGING_L1 || params.eRotationAveragingMethod > sfm::ROTATION_AVERAGING_L2)
     {
         ALICEVISION_LOG_ERROR("Rotation averaging method is invalid");
         return EXIT_FAILURE;
     }
 
-    if(params.eRelativeRotationMethod < sfm::RELATIVE_ROTATION_FROM_E ||
-       params.eRelativeRotationMethod > sfm::RELATIVE_ROTATION_FROM_H)
+    if (params.eRelativeRotationMethod < sfm::RELATIVE_ROTATION_FROM_E || params.eRelativeRotationMethod > sfm::RELATIVE_ROTATION_FROM_H)
     {
         ALICEVISION_LOG_ERROR("Relative rotation method is invalid");
         return EXIT_FAILURE;
@@ -133,20 +131,19 @@ int aliceVision_main(int argc, char** argv)
 
     // load input SfMData scene
     sfmData::SfMData inputSfmData;
-    if(!sfmDataIO::load(inputSfmData, sfmDataFilename,
-                        sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
+    if (!sfmDataIO::load(inputSfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
     }
 
-    if(!inputSfmData.getLandmarks().empty())
+    if (!inputSfmData.getLandmarks().empty())
     {
         ALICEVISION_LOG_ERROR("Partially computed SfMData is not currently supported in PanoramaEstimation.");
         return EXIT_FAILURE;
     }
 
-    if(!inputSfmData.getRigs().empty())
+    if (!inputSfmData.getRigs().empty())
     {
         ALICEVISION_LOG_ERROR("Rigs are not currently supported in PanoramaEstimation.");
         return EXIT_FAILURE;
@@ -155,18 +152,17 @@ int aliceVision_main(int argc, char** argv)
     /* Store the pose c1_R_o of the prior */
     sfmData::Poses& initial_poses = inputSfmData.getPoses();
     Eigen::Matrix3d c1_R_oprior = Eigen::Matrix3d::Identity();
-    if(!initial_poses.empty())
+    if (!initial_poses.empty())
     {
         c1_R_oprior = initial_poses.begin()->second.getTransform().rotation();
     }
 
     // get describerTypes
-    const std::vector<feature::EImageDescriberType> describerTypes =
-        feature::EImageDescriberType_stringToEnums(describerTypesName);
+    const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
     // features reading
     feature::FeaturesPerView featuresPerView;
-    if(!sfm::loadFeaturesPerView(featuresPerView, inputSfmData, featuresFolders, describerTypes))
+    if (!sfm::loadFeaturesPerView(featuresPerView, inputSfmData, featuresFolders, describerTypes))
     {
         ALICEVISION_LOG_ERROR("Invalid features");
         return EXIT_FAILURE;
@@ -175,7 +171,7 @@ int aliceVision_main(int argc, char** argv)
     // matches reading
     // Load the match file (try to read the two matches file formats).
     matching::PairwiseMatches pairwiseMatches;
-    if(!sfm::loadPairwiseMatches(pairwiseMatches, inputSfmData, matchesFolders, describerTypes))
+    if (!sfm::loadPairwiseMatches(pairwiseMatches, inputSfmData, matchesFolders, describerTypes))
     {
         ALICEVISION_LOG_ERROR("Unable to load matches files from: " << matchesFolders);
         return EXIT_FAILURE;
@@ -183,7 +179,7 @@ int aliceVision_main(int argc, char** argv)
 
     const std::string outDirectory = fs::path(outputSfMDataFilepath).parent_path().string();
 
-    if(!fs::exists(outDirectory))
+    if (!fs::exists(outDirectory))
     {
         ALICEVISION_LOG_ERROR("Output folder does not exist: " << outDirectory);
         return EXIT_FAILURE;
@@ -191,8 +187,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Panorama reconstruction process
     aliceVision::system::Timer timer;
-    sfm::ReconstructionEngine_panorama sfmEngine(inputSfmData, params, outDirectory,
-                                                 (fs::path(outDirectory) / "sfm_log.html").string());
+    sfm::ReconstructionEngine_panorama sfmEngine(inputSfmData, params, outDirectory, (fs::path(outDirectory) / "sfm_log.html").string());
 
     sfmEngine.initRandomSeed(randomSeed);
 
@@ -200,12 +195,12 @@ int aliceVision_main(int argc, char** argv)
     sfmEngine.setFeaturesProvider(&featuresPerView);
     sfmEngine.setMatchesProvider(&pairwiseMatches);
 
-    if(filterMatches)
+    if (filterMatches)
     {
         sfmEngine.filterMatches();
     }
 
-    if(!sfmEngine.process())
+    if (!sfmEngine.process())
     {
         return EXIT_FAILURE;
     }
@@ -217,16 +212,14 @@ int aliceVision_main(int argc, char** argv)
         sfmEngine.getSfMData().setAbsolutePath(outputSfMDataFilepath);
     }
 
-    if(refine)
+    if (refine)
     {
-        sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(),
-                        sfmDataIO::ESfMData::ALL);
-        if(!sfmEngine.adjust())
+        sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
+        if (!sfmEngine.adjust())
         {
             return EXIT_FAILURE;
         }
-        sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(),
-                        sfmDataIO::ESfMData::ALL);
+        sfmDataIO::save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
     }
 
     sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
@@ -235,13 +228,13 @@ int aliceVision_main(int argc, char** argv)
     // Otherwise take the middle view (sorted over time)
     sfmData::Poses& final_poses = outSfmData.getPoses();
 
-    if(!final_poses.empty())
+    if (!final_poses.empty())
     {
         Eigen::Matrix3d ocur_R_oprior = Eigen::Matrix3d::Identity();
 
-        if(initial_poses.empty())
+        if (initial_poses.empty())
         {
-            if(useAutomaticReferenceFrame)
+            if (useAutomaticReferenceFrame)
             {
                 double S = 1.0;
                 Eigen::Matrix3d R;
@@ -254,7 +247,7 @@ int aliceVision_main(int argc, char** argv)
                 std::vector<std::pair<int64_t, IndexT>> sorted_views;
 
                 // Sort views per timestamps
-                for(auto v : outSfmData.getViews())
+                for (auto v : outSfmData.getViews())
                 {
                     int64_t t = v.second->getImage().getMetadataDateTimestamp();
                     sorted_views.push_back(std::make_pair(t, v.second->getPoseId()));
@@ -275,7 +268,7 @@ int aliceVision_main(int argc, char** argv)
             ocur_R_oprior = c1_R_ocur.transpose() * c1_R_oprior;
         }
 
-        for(auto& pose : final_poses)
+        for (auto& pose : final_poses)
         {
             geometry::Pose3 p = pose.second.getTransform();
 
@@ -292,13 +285,11 @@ int aliceVision_main(int argc, char** argv)
     sfm::generateSfMReport(outSfmData, (fs::path(outDirectory) / "sfm_report.html").string());
 
     // Add offsets to rotations
-    for(auto& pose : outSfmData.getPoses())
+    for (auto& pose : outSfmData.getPoses())
     {
         geometry::Pose3 p = pose.second.getTransform();
-        Eigen::Matrix3d matLongitude =
-            Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0, 1, 0)).toRotationMatrix();
-        Eigen::Matrix3d matLatitude =
-            Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1, 0, 0)).toRotationMatrix();
+        Eigen::Matrix3d matLongitude = Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0, 1, 0)).toRotationMatrix();
+        Eigen::Matrix3d matLatitude = Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1, 0, 0)).toRotationMatrix();
         Eigen::Matrix3d newR = p.rotation() * matLongitude * matLatitude;
         p.setRotation(newR);
         pose.second.setTransform(p);
@@ -309,20 +300,19 @@ int aliceVision_main(int argc, char** argv)
 
     {
         std::set<IndexT> viewsWithObservations;
-        for(const auto& landmarkIt : outSfmData.getLandmarks())
+        for (const auto& landmarkIt : outSfmData.getLandmarks())
         {
-            for(const auto& obsIt : landmarkIt.second.getObservations())
+            for (const auto& obsIt : landmarkIt.second.getObservations())
             {
                 viewsWithObservations.insert(obsIt.first);
             }
         }
 
-        ALICEVISION_LOG_INFO("Panorama results:"
-                             << std::endl
-                             << "\t- # input images: " << outSfmData.getViews().size() << std::endl
-                             << "\t- # cameras calibrated: " << outSfmData.getValidViews().size() << std::endl
-                             << "\t- # cameras with observations: " << viewsWithObservations.size() << std::endl
-                             << "\t- # landmarks: " << outSfmData.getLandmarks().size());
+        ALICEVISION_LOG_INFO("Panorama results:" << std::endl
+                                                 << "\t- # input images: " << outSfmData.getViews().size() << std::endl
+                                                 << "\t- # cameras calibrated: " << outSfmData.getValidViews().size() << std::endl
+                                                 << "\t- # cameras with observations: " << viewsWithObservations.size() << std::endl
+                                                 << "\t- # landmarks: " << outSfmData.getLandmarks().size());
     }
 
     // Export to disk computed scene (data & visualizable results)
@@ -330,10 +320,10 @@ int aliceVision_main(int argc, char** argv)
     sfmDataIO::save(outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
     sfmDataIO::save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
-    if(!outputViewsAndPosesFilepath.empty())
+    if (!outputViewsAndPosesFilepath.empty())
     {
-        sfmDataIO::save(outSfmData, outputViewsAndPosesFilepath,
-                        sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
+        sfmDataIO::save(
+          outSfmData, outputViewsAndPosesFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
     }
 
     return EXIT_SUCCESS;
