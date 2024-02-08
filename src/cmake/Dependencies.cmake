@@ -172,8 +172,8 @@ if(AV_BUILD_GEOGRAM)
     set(GEOGRAM_TARGET geogram)
 
     ExternalProject_Add(${GEOGRAM_TARGET}
-        URL https://github.com/BrunoLevy/geogram/releases/download/v1.8.3/geogram_1.8.3.tar.gz
-        URL_HASH MD5=06fa5a70c05830d103ff71c55da5bb53
+        URL https://github.com/BrunoLevy/geogram/releases/download/v1.8.8/geogram_1.8.8.tar.gz
+        URL_HASH MD5=e66563683fad771ef19fdf8b42c8b2a4
         DOWNLOAD_DIR ${BUILD_DIR}/download/geogram
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
