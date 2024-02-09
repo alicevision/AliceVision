@@ -4,7 +4,7 @@ Collection of unit tests for the SfMDataIO class.
 
 import os
 
-import aliceVision as av
+import pyalicevision as av
 from ..constants import SFMDATA_PATH, IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, \
     IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA
 

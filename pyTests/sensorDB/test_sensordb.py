@@ -4,7 +4,7 @@ Collection of unit tests for the Sensor DB module.
 
 import os
 
-from aliceVision import sensorDB as db
+from pyalicevision import sensorDB as db
 
 ##################
 ### List of functions:
