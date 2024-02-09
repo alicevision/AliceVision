@@ -100,6 +100,7 @@ public:
         return _localToGlobal.at(localIndex);
     }
 
+
     double orient3d(const std::array<Eigen::Vector3d, 4> & points)
     {
         Eigen::Matrix3d M;
@@ -111,8 +112,8 @@ public:
         }
 
         double delta = M.determinant();
-        if (delta < 0.0) return -1.0;
-        if (delta > 0.0) return 1.0;
+        if (delta < -1e-6) return -1.0;
+        if (delta > 1e-6) return 1.0;
         return 0.0;
     }
 
@@ -123,7 +124,7 @@ public:
 private:
     void updateVertexToCellsCache(size_t verticesCount);
 
-private:
+public:
     std::vector<Cell> _mesh;
     std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
     std::map<CellIndex, CellIndex> _localToGlobal;

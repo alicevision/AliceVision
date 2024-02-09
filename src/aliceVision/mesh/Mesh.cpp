@@ -205,14 +205,15 @@ void Mesh::saveToBin(const std::string& binFilepath)
 
 void Mesh::addMesh(const Mesh& mesh)
 {
+    ALICEVISION_LOG_ERROR("ok0");
     const std::size_t npts = pts.size();
-
+    ALICEVISION_LOG_ERROR("ok11" << mesh.pts.size());
     pts.reserveAdd(mesh.pts.size());
     std::copy(mesh.pts.begin(), mesh.pts.end(), std::back_inserter(pts.getDataWritable()));
-
+    ALICEVISION_LOG_ERROR("ok22");
     _colors.reserve(_colors.size() + mesh._colors.size());
     std::copy(mesh._colors.begin(), mesh._colors.end(), std::back_inserter(_colors));
-
+    ALICEVISION_LOG_ERROR("ok33");
     tris.reserveAdd(mesh.tris.size());
     for (int i = 0; i < mesh.tris.size(); ++i)
     {
@@ -230,7 +231,7 @@ void Mesh::addMesh(const Mesh& mesh)
             ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.v[0] << " " << t.v[1] << " " << t.v[2] << ", npts: " << mesh.pts.size());
         }
     }
-
+    ALICEVISION_LOG_ERROR("ok4");
     if (!mesh.uvCoords.empty())
     {
         uvCoords.reserve(mesh.uvCoords.size());

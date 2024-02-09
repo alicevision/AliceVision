@@ -55,7 +55,7 @@ public:
 
     void initCells();
 
-    void createGraphCut(const std::vector<RayInfo> & rayInfos, const Node & node);
+    void createGraphCut(const std::vector<RayInfo> & rayInfos, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited);
     void forceTedgesByGradientIJCV(const std::vector<RayInfo> & rayInfos, const Node & node);
 
     void final()
@@ -70,7 +70,7 @@ public:
     }
 
 private:
-    void voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, const Node & node);
+    void voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited);
     void addToInfiniteSw(float sW);
     
     
@@ -136,7 +136,7 @@ private:
 
     std::vector<CellIndex> getNeighboringCellsByFacet(const Facet& f) const;
 
-    void fillGraph(const std::vector<RayInfo> & rayInfos, bool fillOut, float distFcnHeight, float fullWeight, const Node & node);
+    void fillGraph(const std::vector<RayInfo> & rayInfos, bool fillOut, float distFcnHeight, float fullWeight, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited);
 
     void fillGraphPartPtRc(int& out_nstepsFront,
                            int& out_nstepsBehind,
@@ -146,7 +146,7 @@ private:
                            float fullWeight,
                            double nPixelSizeBehind,
                            bool fillOut,
-                           float distFcnHeight, const Node & node);
+                           float distFcnHeight, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited);
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
 public:

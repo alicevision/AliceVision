@@ -108,25 +108,46 @@ void Tetrahedralization::buildFromTetrahedralization(const Tetrahedralization & 
     {
         const auto & c = other._mesh[idCell];
 
-        bool valid = false;
+        //Build bounding box for cell
+        Eigen::Vector3d bbMin, bbMax;
+        bbMin.fill(std::numeric_limits<double>::max());
+        bbMax.fill(std::numeric_limits<double>::lowest());
+
         for (int i = 0; i < 4; i++)
         {   
             VertexIndex v = c.indices[i];
 
             if (v != GEO::NO_VERTEX)
             {
-                if (!verticesToKeep[v])
-                {
-                    valid = true;
-                    break;
-                }
+                const Point3d & pt = vertices[v];
+                bbMin.x() = std::min(bbMin.x(), pt.x);
+                bbMin.y() = std::min(bbMin.y(), pt.y);
+                bbMin.z() = std::min(bbMin.z(), pt.z);
+                bbMax.x() = std::max(bbMax.x(), pt.x);
+                bbMax.y() = std::max(bbMax.y(), pt.y);
+                bbMax.z() = std::max(bbMax.z(), pt.z);
             }
         }
 
-        globalToLocal[idCell] = (valid)?_mesh.size():GEO::NO_CELL;
-        _mesh.push_back(c); 
-    }
+        Eigen::Vector3d nodebbMin = node.getBBMin();
+        Eigen::Vector3d nodebbMax = node.getBBMax();
 
+        bool valid = true;
+        if (bbMax.x() < nodebbMin.x()) valid = false;
+        if (bbMin.x() > nodebbMax.x()) valid = false;
+        if (bbMax.y() < nodebbMin.y()) valid = false;
+        if (bbMin.y() > nodebbMax.y()) valid = false;
+        if (bbMax.z() < nodebbMin.z()) valid = false;
+        if (bbMin.z() > nodebbMax.z()) valid = false;
+
+        
+        globalToLocal[idCell] = (valid)?_mesh.size():GEO::NO_CELL;
+
+        if (valid)
+        {
+            _mesh.push_back(c); 
+        }
+    }
 
     //Update adjacency
     for (auto & c : _mesh)
@@ -166,7 +187,6 @@ bool Tetrahedralization::locate(const std::vector<Point3d> & vertices, const Eig
     std::array<Eigen::Vector3d, 4> points;
     int orientations[] = {-1, -1, -1, -1};
 
-    int iter = 0;
     bool found = false;
     int count = 0;
 
@@ -176,10 +196,10 @@ bool Tetrahedralization::locate(const std::vector<Point3d> & vertices, const Eig
         
         const Cell & c = _mesh[currentCell];
 
+        //Build cell list of points
         for (int i = 0; i < 4; i++)
         {
-            const Point3d & pt = vertices[c.indices[i]];
-            
+            const Point3d & pt = vertices[c.indices[i]];   
             points[i].x() = pt.x;
             points[i].y() = pt.y;
             points[i].z() = pt.z;
@@ -192,10 +212,12 @@ bool Tetrahedralization::locate(const std::vector<Point3d> & vertices, const Eig
         for (int idx = 0; idx < 4; idx++)
         {
             const size_t index = (vstart + idx) % 4;
+
             const CellIndex & adjacent = c.adjacent[index];
+            //Do not move to next cell if it's an invalid cell (obviously)
             if (adjacent == GEO::NO_CELL)
             {
-                return false;
+                continue;
             }
             
             if (adjacent == previousCell)
@@ -222,14 +244,17 @@ bool Tetrahedralization::locate(const std::vector<Point3d> & vertices, const Eig
             }
         }
         
-        //We are not able to move ...
+        foundCell = currentCell;
+        
+        //If there is no change in the previous loop, 
+        //It means we have found something
         if (!hasChange)
         {
             break;
         }
 
-        foundCell = currentCell;
-        if (count > 10000)
+        //Too much errand is weird
+        if (count > 100000)
         {
             ALICEVISION_LOG_ERROR("something went wrong");
             return false;
@@ -243,9 +268,16 @@ bool Tetrahedralization::isInside(const CellIndex & ci, const std::vector<Point3
 {
     std::array<Eigen::Vector3d, 4> pts;
 
+    if (ci < 0 || ci > nb_cells())
+    {
+        return false;
+    }
+
+    const auto & cell = _mesh[ci];
+
     for (int i = 0; i < 4; i++)
     {
-        Point3d pt = vertices[_mesh[ci].indices[0]];
+        Point3d pt = vertices[cell.indices[i]];
         pts[i].x() = pt.x;
         pts[i].y() = pt.y;
         pts[i].z() = pt.z;
@@ -253,21 +285,15 @@ bool Tetrahedralization::isInside(const CellIndex & ci, const std::vector<Point3
 
     std::array<Eigen::Vector3d, 4> test;
 
-    test = pts;
-    test[0] = point;
-    if (orient3d(test) < 0) return false;
-
-    test = pts;
-    test[1] = point;
-    if (orient3d(test) < 0) return false;
-
-    test = pts;
-    test[2] = point;
-    if (orient3d(test) < 0) return false;
-
-    test = pts;
-    test[3] = point;
-    if (orient3d(test) < 0) return false;
+    for (int i = 0; i < 4; i++)
+    {
+        test = pts;
+        test[i] = point;
+        if (orient3d(test) < 0) 
+        {
+            return false;
+        }
+    }
 
     return true;
 }

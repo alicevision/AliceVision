@@ -199,6 +199,21 @@ mesh::Mesh* GCOutput::createMesh(int maxNbConnectedHelperPoints)
             vertices[1] = getVertexIndex(f1, 1);
             vertices[2] = getVertexIndex(f1, 2);
 
+            if (_verticesAttr[vertices[0]].cams.size() == 0)
+            {
+                continue;
+            }
+
+            if (_verticesAttr[vertices[1]].cams.size() == 0)
+            {
+                continue;
+            }
+
+            if (_verticesAttr[vertices[2]].cams.size() == 0)
+            {
+                continue;
+            }
+
             if (!reliableVertices.empty())
             {
                 // We skip triangles if it contains one unreliable vertex.

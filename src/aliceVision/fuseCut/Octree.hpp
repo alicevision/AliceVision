@@ -29,11 +29,6 @@ public:
     {
         _bbMin = bbmin;
         _bbMax = bbmax;
-
-        //Enlarge intersection bbox
-        Eigen::Vector3d center = (_bbMin + _bbMax) * 0.5;
-        _intersectionBbMin = center + 1.0 * (_bbMin - center);
-        _intersectionBbMax = center + 1.0 * (_bbMax - center);
     }
 
     double getSize()
@@ -67,18 +62,19 @@ public:
         }
         else 
         {
-            _rayInfos.push_back(info);
+            if (isInside(end)) _rayInfos.push_back(info);
         }
     }
 
     bool isInside(const Eigen::Vector3d & pt) const
     {
-        return (pt.x() >= _intersectionBbMin.x() && 
-                pt.y() >= _intersectionBbMin.y() && 
-                pt.z() >= _intersectionBbMin.z() && 
-                pt.x() <= _intersectionBbMax.x() && 
-                pt.y() <= _intersectionBbMax.y() && 
-                pt.z() <= _intersectionBbMax.z());
+
+        return (pt.x() >= _bbMin.x() && 
+                pt.y() >= _bbMin.y() && 
+                pt.z() >= _bbMin.z() && 
+                pt.x() <= _bbMax.x() && 
+                pt.y() <= _bbMax.y() && 
+                pt.z() <= _bbMax.z());
     }
 
     void visit(std::vector<Node::ptr> & list)
@@ -121,8 +117,8 @@ public:
 
         if (std::abs(direction.x()) > 1e-12)
         {
-            double lmin = (_intersectionBbMin.x() - start.x()) / direction.x();
-            double lmax = (_intersectionBbMax.x() - start.x()) / direction.x();
+            double lmin = (_bbMin.x() - start.x()) / direction.x();
+            double lmax = (_bbMax.x() - start.x()) / direction.x();
 
             if (direction.x() > 0.0)
             {
@@ -138,8 +134,8 @@ public:
 
         if (std::abs(direction.y()) > 1e-12)
         {
-            double lmin = (_intersectionBbMin.y() - start.y()) / direction.y();
-            double lmax = (_intersectionBbMax.y() - start.y()) / direction.y();
+            double lmin = (_bbMin.y() - start.y()) / direction.y();
+            double lmax = (_bbMax.y() - start.y()) / direction.y();
 
             if (direction.y() > 0.0)
             {
@@ -155,8 +151,8 @@ public:
 
         if (std::abs(direction.z()) > 1e-12)
         {
-            double lmin = (_intersectionBbMin.z() - start.z()) / direction.z();
-            double lmax = (_intersectionBbMax.z() - start.z()) / direction.z();
+            double lmin = (_bbMin.z() - start.z()) / direction.z();
+            double lmax = (_bbMax.z() - start.z()) / direction.z();
 
             if (direction.z() > 0.0)
             {
@@ -192,6 +188,11 @@ public:
         output = start + boundsMax * (end - start); 
 
         return (boundsMin < boundsMax);
+    }
+
+    bool intersectTriangle(const Eigen::Vector3d & A,const Eigen::Vector3d & B, const Eigen::Vector3d & C)
+    {
+        return true;
     }
 
     void subdivide()
@@ -237,18 +238,26 @@ public:
         return _rayInfos;
     }
 
+    const Eigen::Vector3d & getBBMin() const
+    {
+        return _bbMin;
+    }
+
+    const Eigen::Vector3d & getBBMax() const
+    {
+        return _bbMax;
+    }
+
 private:
     std::array<Node::uptr, 8> _nodes;
 
     Eigen::Vector3d _bbMin;
     Eigen::Vector3d _bbMax;
-    Eigen::Vector3d _intersectionBbMin;
-    Eigen::Vector3d _intersectionBbMax;
 
     std::vector<RayInfo> _rayInfos;
-private:
+public:
 
-    double _minSize = 20000.0;
+    double _minSize = 40.0;
 };
 
 }

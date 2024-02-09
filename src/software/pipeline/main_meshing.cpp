@@ -569,14 +569,162 @@ int aliceVision_main(int argc, char* argv[])
                     if (cams.empty())
                         throw std::logic_error("No camera to make the reconstruction");
 
-                    fuseCut::PointCloudBuilder builder(mp);
-                    builder.createDensePointCloud(&hexah[0], cams, sfmData);
+                    Eigen::Vector3d bbMin, bbMax;
+                    sfmData.getBoundingBox(bbMin, bbMax);
 
+                    
+
+                    std::unordered_map<IndexT, Eigen::Vector3d> centers;
+                    for (const auto & pv: sfmData.getViews())
+                    {
+                        IndexT poseId = pv.second->getPoseId();
+                        const auto & pose = sfmData.getAbsolutePose(poseId);
+                        Eigen::Vector3d center = pose.getTransform().center();
+                        centers[pv.first] = center;
+                    }
+
+                    fuseCut::Node octree(bbMin, bbMax);
+                    for (const auto & pl: sfmData.getLandmarks())
+                    {
+                        const auto & landmark = pl.second;
+
+                        for (const auto& observationPair : landmark.getObservations())
+                        {
+                            IndexT viewId =observationPair.first;
+                            
+                            const Eigen::Vector3d & cam = centers[viewId];
+                            
+                            octree.storeRay(cam, landmark.X, fuseCut::RayInfo());
+                        }
+                    }
+                    
+                    std::vector<fuseCut::Node::ptr> nodes;
+                    octree.visit(nodes);
+
+                    for (const auto & node : nodes)
+                    {
+                        Eigen::Vector3d bbMin = node->getBBMin();
+                        Eigen::Vector3d bbMax = node->getBBMax();
+
+                        Eigen::Vector3d center = (bbMin + bbMax) * 0.5;
+                        bbMin = center + (bbMin - center) * 1.1;
+                        bbMax = center + (bbMax - center) * 1.1;
+
+                        std::array<Point3d, 8> lhexah;
+                        lhexah[0].x = bbMin.x(); lhexah[0].y = bbMin.y(); lhexah[0].z = bbMin.z();
+                        lhexah[1].x = bbMax.x(); lhexah[1].y = bbMin.y(); lhexah[1].z = bbMin.z();
+                        lhexah[2].x = bbMax.x(); lhexah[2].y = bbMax.y(); lhexah[2].z = bbMin.z();
+                        lhexah[3].x = bbMin.x(); lhexah[3].y = bbMax.y(); lhexah[3].z = bbMin.z();
+                        lhexah[4].x = bbMin.x(); lhexah[4].y = bbMin.y(); lhexah[4].z = bbMax.z();
+                        lhexah[5].x = bbMax.x(); lhexah[5].y = bbMin.y(); lhexah[5].z = bbMax.z();
+                        lhexah[6].x = bbMax.x(); lhexah[6].y = bbMax.y(); lhexah[6].z = bbMax.z();
+                        lhexah[7].x = bbMin.x(); lhexah[7].y = bbMax.y(); lhexah[7].z = bbMax.z();
+
+                        sfmData::SfMData lsfm(sfmData, bbMin, bbMax);
+
+                        fuseCut::PointCloudBuilder builder(mp);
+                        builder.createDensePointCloud(&lhexah[0], cams, lsfm);
+
+                        fuseCut::Tetrahedralization tetra;
+                        tetra.buildFromVertices(builder._verticesCoords);
+
+                        fuseCut::GraphFiller filler(mp);
+                        filler._tetrahedralization = tetra;
+                        filler._verticesCoords = builder._verticesCoords;
+                        filler._verticesAttr = builder._verticesAttr;
+                        filler.initCells();
+
+                        std::vector<fuseCut::Node::ptr> lnodes;
+                        builder._octree->visit(lnodes);
+                        std::cout << lnodes.size() << std::endl;
+                        if (lnodes.size() == 0) continue;
+
+                        std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> visited;
+                        filler.createGraphCut(lnodes[0]->getRayInfos(), *(lnodes[0]), visited);
+                        filler.forceTedgesByGradientIJCV(lnodes[0]->getRayInfos(), *(lnodes[0]));
+                        filler.final();
+
+                        fuseCut::GraphCut gc;
+
+                        gc._tetrahedralization = tetra;
+                        gc._verticesCoords = builder._verticesCoords;
+                        gc._verticesAttr = builder._verticesAttr;
+                        gc._cellsAttr = filler._cellsAttr;
+                        
+                        gc.maxflow();
+
+
+                        fuseCut::GCOutput output(mp);
+                        output._verticesAttr = filler._verticesAttr;
+                        output._tetrahedralization = filler._tetrahedralization;
+                        output._cellIsFull = gc._cellIsFull;
+                        output._verticesCoords = filler._verticesCoords;
+                        output._camsVertexes = builder._camsVertexes;
+
+                        for (int id = 0; id < gc._cellIsFull.size(); id++)
+                        {
+                            if (gc._cellIsFull[id])
+                            {
+                                const auto & c = output._tetrahedralization._mesh[id];
+                                for (int i = 0; i < 4; i++)
+                                {
+                                    const auto & pt = filler._verticesCoords[c.indices[i]];
+                                    Eigen::Vector3d ept;
+                                    ept.x() = pt.x;
+                                    ept.y() = pt.y;
+                                    ept.z() = pt.z;
+
+                                    for (int j = 0; j < 4; j++)
+                                    {
+                                        const auto & pt2 = filler._verticesCoords[c.indices[j]];
+                                        Eigen::Vector3d ept2;
+                                        ept2.x() = pt2.x;
+                                        ept2.y() = pt2.y;
+                                        ept2.z() = pt2.z;
+
+                                        if ((ept2 - ept).norm() > 0.1)
+                                        {
+                                            //output._cellIsFull[id] = false;
+                                        }
+                                    }
+
+                                    if (!node->isInside(ept))
+                                    {
+                                        //output._cellIsFull[id] = false;
+                                    }
+                                }
+                            }
+                        }
+
+                        output.graphCutPostProcessing(&lhexah[0], outDirectory.string() + "/");
+                        mesh::Mesh* lmesh  = output.createMesh(maxNbConnectedHelperPoints);
+                        output.createPtsCams(ptsCams);
+                        mesh::meshPostProcessing(lmesh, ptsCams, mp, outDirectory.string() + "/", nullptr, &lhexah[0]);
+
+                        if (mesh == nullptr)
+                        {
+                            mesh = lmesh;
+                            
+                        }
+                        else
+                        {
+                            mesh->addMesh(*lmesh);
+                            delete lmesh;
+                        }
+
+                        //break;
+                    }
+
+                   ALICEVISION_LOG_ERROR("ok");
+                    /*
+
+                    ALICEVISION_LOG_INFO("tetra");
                     std::vector<fuseCut::Node::ptr> nodes;
                     builder.getNonEmptyNodes(nodes);
 
                     fuseCut::Tetrahedralization tetra;
-                    tetra.buildFromVertices(builder._verticesCoords);      
+                    tetra.buildFromVertices(builder._verticesCoords);     
+
 
 
                     fuseCut::GraphFiller filler(mp);
@@ -585,18 +733,19 @@ int aliceVision_main(int argc, char* argv[])
                     filler._verticesAttr = builder._verticesAttr;
                     filler.initCells();
 
-
+                    std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> visited;
+                    
                     for (auto & node : nodes)
                     {
-                        filler.createGraphCut(node->getRayInfos(), *node);
+                        filler.createGraphCut(node->getRayInfos(), *node, visited);
                     }
 
-                    /*for (auto & node : nodes)
+                    for (auto & node : nodes)
                     {
                         filler.forceTedgesByGradientIJCV(node->getRayInfos(), *node);
                     }
 
-                    filler.final();*/
+                    filler.final();
                     
                     fuseCut::GraphCut gc;
 
@@ -605,9 +754,7 @@ int aliceVision_main(int argc, char* argv[])
                     gc._verticesAttr = builder._verticesAttr;
                     gc._cellsAttr = filler._cellsAttr;
                     
-    
                     gc.maxflow();
-                    
 
 
                     fuseCut::GCOutput output(mp);
@@ -620,7 +767,7 @@ int aliceVision_main(int argc, char* argv[])
                     output.graphCutPostProcessing(&hexah[0], outDirectory.string() + "/");
                     mesh = output.createMesh(maxNbConnectedHelperPoints);
                     output.createPtsCams(ptsCams);
-                    mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string() + "/", nullptr, &hexah[0]);
+                    mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string() + "/", nullptr, &hexah[0]);*/
 
                     break;
                 }
@@ -646,9 +793,9 @@ int aliceVision_main(int argc, char* argv[])
         throw std::runtime_error("Points visibilities data has not been initialized.");
 
     sfmData::SfMData densePointCloud;
-    createDenseSfMData(sfmData, mp, mesh->pts.getData(), ptsCams, densePointCloud);
+    //createDenseSfMData(sfmData, mp, mesh->pts.getData(), ptsCams, densePointCloud);
 
-    if (colorizeOutput)
+    /*if (colorizeOutput)
     {
         sfmData::colorizeTracks(densePointCloud);
         // colorize output mesh before landmarks filtering
@@ -663,9 +810,9 @@ int aliceVision_main(int argc, char* argv[])
         }
     }
 
-    removeLandmarksWithoutObservations(densePointCloud);
+    removeLandmarksWithoutObservations(densePointCloud);*/
     ALICEVISION_LOG_INFO("Save dense point cloud.");
-    sfmDataIO::save(densePointCloud, outputDensePointCloud, sfmDataIO::ESfMData::ALL_DENSE);
+    //sfmDataIO::save(densePointCloud, outputDensePointCloud, sfmDataIO::ESfMData::ALL_DENSE);
 
     ALICEVISION_LOG_INFO("Save obj mesh file.");
     ALICEVISION_LOG_INFO("OUTPUT MESH " << outputMesh);

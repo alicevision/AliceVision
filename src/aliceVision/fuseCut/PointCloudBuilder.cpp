@@ -42,7 +42,7 @@ void PointCloudBuilder::createDensePointCloud(const Point3d hexah[8],
     // add points for cam centers
     addPointsFromCameraCenters(cams, minDist);
 
-    densifyWithHelperPoints(densifyNbFront, densifyNbBack, densifyScale);
+    //densifyWithHelperPoints(densifyNbFront, densifyNbBack, densifyScale);
 
     Point3d hexahExt[8];
     mvsUtils::inflateHexahedron(hexah, hexahExt, 1.3);
@@ -54,7 +54,7 @@ void PointCloudBuilder::createDensePointCloud(const Point3d hexah[8],
     _verticesCoords.shrink_to_fit();
     _verticesAttr.shrink_to_fit();
 
-
+    _octree->_minSize = 1000000;
     for (int idVertex = 0; idVertex < _verticesCoords.size(); idVertex++)
     {
         const GC_vertexInfo & vi = _verticesAttr[idVertex];
@@ -153,6 +153,40 @@ void PointCloudBuilder::addPointsFromSfM(const Point3d hexah[8], const StaticVec
     }
 
     _octree = std::make_unique<Node>(bbmin, bbmax);
+    /*std::vector<fuseCut::Node::ptr> nodes;
+    getNonEmptyNodes(nodes);
+
+    for (auto node : nodes)
+    {
+        auto bbmin = node->getBBMin();
+        auto bbmax = node->getBBMax();
+        Eigen::Vector3d center = (bbmin + bbmax) * 0.5;
+        
+        Eigen::Vector3d borders[2];
+        
+        borders[0] = center + 1.1 * (bbmin - center);
+        borders[1] = center + 1.1 * (bbmax - center);
+
+        GC_vertexInfo newv;
+        newv.nrc = 0;
+
+        for (int ix = 0; ix < 2; ix++)
+        {
+            for (int iy = 0; iy < 2; iy++)
+            {
+                for (int iz = 0; iz < 2; iz++)
+                {
+                    Point3d p;
+                    p.x = borders[ix].x();
+                    p.y = borders[iy].y();
+                    p.z = borders[iz].z();
+
+                    _verticesCoords.push_back(p);
+                    _verticesAttr.push_back(newv);
+                }
+            }
+        }
+    }*/
 
     ALICEVISION_LOG_WARNING("Add " << addedPoints << " new points for the SfM.");
 }

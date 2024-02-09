@@ -15,12 +15,12 @@ namespace fuseCut {
 
 
 
-void GraphFiller::createGraphCut(const std::vector<RayInfo> & rayInfos, const Node & node)
+void GraphFiller::createGraphCut(const std::vector<RayInfo> & rayInfos, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited)
 {    
-    voteFullEmptyScore(rayInfos, node);
+    voteFullEmptyScore(rayInfos, node, visited);
 }
 
-void GraphFiller::voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, const Node & node)
+void GraphFiller::voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited)
 {
     ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
     const int maxint = std::numeric_limits<int>::max();
@@ -32,7 +32,7 @@ void GraphFiller::voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, cons
     // 0 for distFcn equals 1 all the time
     const float distFcnHeight = (float)_mp.userParams.get<double>("delaunaycut.distFcnHeight", 0.0);
 
-    fillGraph(rayInfos, true, distFcnHeight, fullWeight, node);
+    fillGraph(rayInfos, true, distFcnHeight, fullWeight, node, visited);
     addToInfiniteSw((float)maxint);    
 }
 
@@ -566,7 +566,7 @@ void GraphFiller::fillGraph(const std::vector<RayInfo> & rayInfos,
 
                                  bool fillOut,
                                  float distFcnHeight,
-                                 float fullWeight, const Node & node)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0
+                                 float fullWeight, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0
                                                     // labatutWeights=0 fillOut=1 distFcnHeight=0
 {
     ALICEVISION_LOG_INFO("Computing s-t graph weights.");
@@ -602,7 +602,7 @@ void GraphFiller::fillGraph(const std::vector<RayInfo> & rayInfos,
                                   fullWeight,
                                   nPixelSizeBehind,
                                   fillOut,
-                                  distFcnHeight, node);
+                                  distFcnHeight, node, visited);
             }  // for c
         }
     }
@@ -617,7 +617,8 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                                          float fullWeight,
                                          double nPixelSizeBehind,
                                          bool fillOut,
-                                         float distFcnHeight, const Node & node)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
+                                         float distFcnHeight, const Node & node, 
+                                         std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
     GeometriesCount frontCount;
     GeometriesCount behindCount;
@@ -647,15 +648,13 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
     Point3d sourcePt = originPt;
     GeometryIntersection geometry(vertexIndex);
 
-    bool small = false;
-    /*if (!node.isInside(pt))
+    bool cameraVisible = node.isInside(campt);
+
+    bool vertexVisible = false;
+    if (!node.isInside(pt))
     {
         //Ignore fillinside
         pixSize = -10.0; 
-
-        
-
-        
 
         Eigen::Vector3d outpt;
         bool res = node.getPointLeaving(campt, pt, outpt);
@@ -670,20 +669,30 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
             ALICEVISION_LOG_ERROR("Cannot find node starting cell");
             return;
         }
+        
 
         if (!_tetrahedralization.isInside(ci, _verticesCoords, outpt))
         {
             ALICEVISION_LOG_ERROR("Invalid node starting cell");
+
+            for (CellIndex cid = 0; cid < _tetrahedralization.nb_cells(); cid++)
+            {
+                if (_tetrahedralization.isInside(cid, _verticesCoords, outpt))
+                {
+                    ALICEVISION_LOG_ERROR("found instead " << cid << " " << ci << " " << GEO::NO_CELL);
+                }
+            }
+            
             return;
         }
 
         sourcePt.x = outpt.x();
         sourcePt.y = outpt.y();
         sourcePt.z = outpt.z();
-        small = true;
+        vertexVisible = true;
 
-        geometry = GeometryIntersection(Facet(ci, 0));
-    }*/
+        geometry = GeometryIntersection(Facet(ci, -1));
+    }
 
     Eigen::Vector3d source;
     source.x() = sourcePt.x;
@@ -707,6 +716,10 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
         outTotalStepsFront = 0;
         Facet lastIntersectedFacet;
         bool lastGeoIsVertex = false;
+        
+        bool wasFullyInside = false;
+        bool entrance = true;
+
         // Break only when we reach our camera vertex (as long as we find a next geometry)
         while (geometry.type != EGeometryType::Vertex || (_mp.CArr[cam] - intersectPt).size() >= 1.0e-3)
         {
@@ -718,7 +731,6 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
 
             ++outTotalStepsFront;
 
-            //geometry = intersectNextGeom(previousGeometry, sourcePt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
             Eigen::Vector3d ipt, lipt;
             lipt.x() = lastIntersectPt.x;
@@ -730,6 +742,7 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
             ipt.z() = intersectPt.z;
             
             geometry = marching.intersectNextGeom(previousGeometry, ipt, lipt);
+            
 
             intersectPt.x = ipt.x();
             intersectPt.y = ipt.y();
@@ -740,6 +753,7 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                 break;
             }
 
+           
             
             ipt.x() = intersectPt.x;
             ipt.y() = intersectPt.y;
@@ -761,11 +775,9 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
             {
                 ++frontCount.facets;
                 boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].emptinessScore} += weight;
-
-                {
-                    const float dist = distFcn(maxDist, (sourcePt - lastIntersectPt).size(), distFcnHeight);
-                    boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex]} += weight * dist;
-                }
+                
+                const float dist = distFcn(maxDist, (sourcePt - lastIntersectPt).size(), distFcnHeight);
+                boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex]} += weight * dist;
 
                 // Take the mirror facet to iterate over the next cell
                 const Facet mFacet = mirrorFacet(geometry.facet);
@@ -774,6 +786,7 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                 {
                     break;
                 }
+                
                 lastIntersectedFacet = mFacet;
                 if (previousGeometry.type == EGeometryType::Facet && frontCount.facets > 10000)
                 {
@@ -839,6 +852,7 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
         const Point3d dirVect = (originPt - _mp.CArr[cam]).normalize();
         outTotalStepsBehind = 0;
 
+        bool found = false;
         bool firstIteration = true;
         Facet lastIntersectedFacet;
         // While we are within the surface margin (as long as we find a next geometry)
@@ -852,24 +866,20 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
             ++outTotalStepsBehind;
 
             geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
-
             if (geometry.type == EGeometryType::None)
             {
-                // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified after taking
-                // mirror facet)
-                if (previousGeometry.type == EGeometryType::Facet)
-                {
-
-                }
+                ALICEVISION_LOG_ERROR("end");
                 // Break if we reach the end of the tetrahedralization volume
                 break;
             }
 
             if ((intersectPt - originPt).size() <= (lastIntersectPt - originPt).size())
             {
+                ALICEVISION_LOG_ERROR("reverse");
                 // Inverse direction, stop
                 break;
             }
+
             if (geometry.type == EGeometryType::Facet)
             {
                 ++behindCount.facets;
@@ -964,8 +974,11 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
         // found facet Vote for the last intersected facet (farthest from the camera)
         if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
         {
+            found = true;
             boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellTWeight} += fWeight;
         }
+
+        
     }
 }
 
@@ -992,7 +1005,6 @@ void GraphFiller::initCells()
         c.cellSWeight = 0.0f;
         c.cellTWeight = 0.0f;
         c.on = 0.0f;
-        c.fullnessScore = 0.0f;
         c.emptinessScore = 0.0f;
         for (int s = 0; s < 4; ++s)
         {
