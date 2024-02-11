@@ -9,8 +9,8 @@
 #define TSIM_REFINE_USE_HALF
 
 #ifdef TSIM_REFINE_USE_HALF
-#define CUDA_NO_HALF
-#include <cuda_fp16.h>
+    #define CUDA_NO_HALF
+    #include <cuda_fp16.h>
 #endif
 
 namespace aliceVision {
@@ -23,19 +23,18 @@ namespace depthMap {
  */
 
 #ifdef TSIM_USE_FLOAT
-    using TSim = float;
-    using TSimAcc = float;
+using TSim = float;
+using TSimAcc = float;
 #else
-    using TSim = unsigned char;
-    using TSimAcc = unsigned int; // TSimAcc is the similarity accumulation type
+using TSim = unsigned char;
+using TSimAcc = unsigned int;  // TSimAcc is the similarity accumulation type
 #endif
 
 #ifdef TSIM_REFINE_USE_HALF
-    using TSimRefine = __half;
+using TSimRefine = __half;
 #else
-    using TSimRefine = float;
+using TSimRefine = float;
 #endif
 
-} // namespace depthMap
-} // namespace aliceVision
-
+}  // namespace depthMap
+}  // namespace aliceVision

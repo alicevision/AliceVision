@@ -34,6 +34,5 @@ const double* getEmorInvCurve(int i);
  */
 const double* getEmorCurve(int i);
 
-
-} // namespace hdr
-} // namespace aliceVision
+}  // namespace hdr
+}  // namespace aliceVision

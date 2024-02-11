@@ -18,7 +18,7 @@ namespace fuseCut {
 
 class OctreeTracks : public Fuser
 {
-public:
+  public:
     enum NodeType
     {
         BranchNode,
@@ -27,7 +27,7 @@ public:
 
     class Node
     {
-    public:
+      public:
         NodeType type_ : 2;
 
         explicit Node(NodeType type);
@@ -36,7 +36,7 @@ public:
 
     class Branch : public Node
     {
-    public:
+      public:
         Node* children[2][2][2];
 
         Branch();
@@ -45,7 +45,7 @@ public:
 
     class trackStruct : public Node
     {
-    public:
+      public:
         int npts;
         Point3d point;
         StaticVector<Pixel> cams;
@@ -103,5 +103,5 @@ public:
     void getNPointsByLevelsRecursive(Node* node, int level, StaticVector<int>* nptsAtLevel);
 };
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

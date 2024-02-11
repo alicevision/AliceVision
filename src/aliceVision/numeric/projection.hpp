@@ -20,7 +20,7 @@ namespace aliceVision {
 /**
  * @brief Compute P = K[R|t]
  */
-void P_from_KRt(const Mat3& K, const Mat3& R, const Vec3& t, Mat34* P);
+void P_from_KRt(const Mat3& K, const Mat3& R, const Vec3& t, Mat34& P);
 
 /**
  * @brief Compute P = K[R|t]
@@ -31,7 +31,7 @@ Mat34 P_from_KRt(const Mat3& K, const Mat3& R, const Vec3& t);
 /**
  * @brief Decompose using the RQ decomposition HZ A4.1.1 pag.579.
  */
-void KRt_from_P(const Mat34& P, Mat3* Kp, Mat3* Rp, Vec3* tp);
+void KRt_from_P(const Mat34& P, Mat3& Kp, Mat3& Rp, Vec3& tp);
 
 /**
  * @brief Compute a fundamental matrix from projection matrices
@@ -51,7 +51,7 @@ double Depth(const Mat3& R, const Vec3& t, const Vec3& X);
  * @return A vector of boolean of the same size as the number ot points. The corresponding value is true if the point
  * is in front of the camera, false otherwise.
  */
-Vecb cheiralityTest(const Mat3 &R, const Vec3 &t, const Mat3X &X);
+Vecb cheiralityTest(const Mat3& R, const Vec3& t, const Mat3X& X);
 
 /**
  * @brief Test whether all the given points are in front of the camera.
@@ -60,7 +60,7 @@ Vecb cheiralityTest(const Mat3 &R, const Vec3 &t, const Mat3X &X);
  * @param[in] X the 3D points to test.
  * @return true if all the points is in front of the camera, false otherwise.
  */
-bool cheiralityTestAll(const Mat3 &R, const Vec3 &t, const Mat3X &X);
+bool cheiralityTestAll(const Mat3& R, const Vec3& t, const Mat3X& X);
 
 /**
  * @brief Compute P*[X|1.0]. Transformed from homogeneous to euclidean coordinates.
@@ -70,12 +70,12 @@ Vec2 project(const Mat34& P, const Vec3& X);
 /**
  * @brief Compute P*[X|1.0] for the X list of point (3D point).
  */
-void project(const Mat34& P, const Mat3X& X, Mat2X* x);
+void project(const Mat34& P, const Mat3X& X, Mat2X& x);
 
 /**
  * @brief Compute P*[X|1.0] for the X list of point (4D point).
  */
-void project(const Mat34& P, const Mat4X& X, Mat2X* x);
+void project(const Mat34& P, const Mat4X& X, Mat2X& x);
 
 /**
  * @brief Return P*[X|1.0] for the X list of point (3D point).
@@ -90,12 +90,12 @@ Mat2X project(const Mat34& P, const Mat4X& X);
 /**
  * @brief Change homogeneous coordinates to euclidean.
  */
-void homogeneousToEuclidean(const Vec4& H, Vec3* X);
+void homogeneousToEuclidean(const Vec4& H, Vec3& X);
 
 /**
  * @brief Change euclidean coordinates to homogeneous.
  */
-void euclideanToHomogeneous(const Mat& X, Mat* H);
+void euclideanToHomogeneous(const Mat& X, Mat& H);
 
 /**
  * @brief Change euclidean coordinates to homogeneous.
@@ -105,7 +105,7 @@ Vec3 euclideanToHomogeneous(const Vec2& x);
 /**
  * @brief Change homogeneous coordinates to euclidean.
  */
-void homogeneousToEuclidean(const Mat& H, Mat* X);
+void homogeneousToEuclidean(const Mat& H, Mat& X);
 
 /**
  * @brief Change euclidean coordinates to homogeneous.
@@ -115,22 +115,22 @@ Mat3X euclideanToHomogeneous(const Mat2X& x);
 /**
  * @brief Change euclidean coordinates to homogeneous.
  */
-void euclideanToHomogeneous(const Mat2X& x, Mat3X* h);
+void euclideanToHomogeneous(const Mat2X& x, Mat3X& h);
 
 /**
  * @brief Change homogeneous coordinates to euclidean.
  */
-void homogeneousToEuclidean(const Mat3X& h, Mat2X* e);
+void homogeneousToEuclidean(const Mat3X& h, Mat2X& e);
 
 /**
  * @brief Project x point in camera coordinates
  */
-void euclideanToNormalizedCamera(const Mat2X& x, const Mat3& K, Mat2X* n);
+void euclideanToNormalizedCamera(const Mat2X& x, const Mat3& K, Mat2X& n);
 
 /**
  * @brief Project x point in camera coordinates
  */
-void homogeneousToNormalizedCamera(const Mat3X& x, const Mat3& K, Mat2X* n);
+void homogeneousToNormalizedCamera(const Mat3X& x, const Mat3& K, Mat2X& n);
 
 /**
  * @brief Estimates the root mean square error (2D)
@@ -142,4 +142,4 @@ double reprojectionErrorRMSE(const Mat2X& x_image, const Mat4X& X_world, const M
  */
 double reprojectionErrorRMSE(const Mat2X& x_image, const Mat3X& X_world, const Mat3& K, const Mat3& R, const Vec3& t);
 
-} // namespace aliceVision
+}  // namespace aliceVision

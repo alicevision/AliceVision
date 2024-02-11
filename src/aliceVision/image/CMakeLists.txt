@@ -7,7 +7,7 @@ set(image_files_headers
   imageAlgo.hpp
   colorspace.hpp
   concat.hpp
-  convertion.hpp
+  conversion.hpp
   convolutionBase.hpp
   convolution.hpp
   dcp.hpp
@@ -15,12 +15,14 @@ set(image_files_headers
   drawing.hpp
   filtering.hpp
   io.hpp
+  jetColorMap.cpp
   resampling.hpp
   warping.hpp
   pixelTypes.hpp
   Rgb.hpp
   Sampler.hpp
   cache.hpp
+  ImageCache.hpp
 )
 
 # Sources
@@ -31,7 +33,9 @@ set(image_files_sources
   filtering.cpp
   io.cpp
   imageAlgo.cpp
+  jetColorMap.cpp
   cache.cpp
+  ImageCache.cpp
 )
 
 alicevision_add_library(aliceVision_image
@@ -43,17 +47,18 @@ alicevision_add_library(aliceVision_image
   PRIVATE_LINKS
     aliceVision_system
     ${OPENEXR_LIBRARIES}
-    Boost::filesystem
   PRIVATE_INCLUDE_DIRS
     ${OPENEXR_INCLUDE_DIR}
 )
 
 # Install config.ocio
 install(FILES ./share/aliceVision/config.ocio DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision)
+install(DIRECTORY ./share/aliceVision/luts DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision)
 
 # Unit tests
-alicevision_add_test(image_test.cpp      NAME "image"            LINKS aliceVision_image)
-alicevision_add_test(io_test.cpp         NAME "image_io"         LINKS aliceVision_image)
-alicevision_add_test(drawing_test.cpp    NAME "image_drawing"    LINKS aliceVision_image)
-alicevision_add_test(filtering_test.cpp  NAME "image_filtering"  LINKS aliceVision_image)
-alicevision_add_test(resampling_test.cpp NAME "image_resampling" LINKS aliceVision_image)
+alicevision_add_test(image_test.cpp        NAME "image"            LINKS aliceVision_image)
+alicevision_add_test(io_test.cpp           NAME "image_io"         LINKS aliceVision_image)
+alicevision_add_test(drawing_test.cpp      NAME "image_drawing"    LINKS aliceVision_image)
+alicevision_add_test(filtering_test.cpp    NAME "image_filtering"  LINKS aliceVision_image)
+alicevision_add_test(resampling_test.cpp   NAME "image_resampling" LINKS aliceVision_image)
+alicevision_add_test(imageCaching_test.cpp NAME "image_caching"    LINKS aliceVision_image)

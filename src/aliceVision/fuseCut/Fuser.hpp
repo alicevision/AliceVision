@@ -12,18 +12,15 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
 namespace aliceVision {
-
-namespace sfmData {
-class SfMData;
-}
 
 namespace fuseCut {
 
 class Fuser
 {
-public:
+  public:
     const mvsUtils::MultiViewParams& _mp;
 
     Fuser(const mvsUtils::MultiViewParams& mp);
@@ -45,17 +42,27 @@ public:
 
     Voxel estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim, const sfmData::SfMData* sfmData = nullptr);
 
-private:
-    bool updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc, StaticVector<int>* numOfPtsMap,
-                      const image::Image<float>& depthMap, const image::Image<float>& simMap, int scale);
+  private:
+    bool updateInSurr(float pixToleranceFactor,
+                      int pixSizeBall,
+                      int pixSizeBallWSP,
+                      Point3d& p,
+                      int rc,
+                      int tc,
+                      StaticVector<int>* numOfPtsMap,
+                      const image::Image<float>& depthMap,
+                      const image::Image<float>& simMap,
+                      int scale);
 };
 
 unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale);
 
-std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiViewParams& mp,
-                                     bool addRandomNoise = false, float percNoisePts = 0.0,
+std::string generateTempPtsSimsFiles(const std::string& tmpDir,
+                                     mvsUtils::MultiViewParams& mp,
+                                     bool addRandomNoise = false,
+                                     float percNoisePts = 0.0,
                                      int noisPixSizeDistHalfThr = 0);
 void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& depthMapsPtsSimsTmpDir);
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

@@ -8,14 +8,12 @@
 #pragma once
 
 #if __has_include(<Imath/half.h>)
-  // Try to use the modern header first: OpenEXR >= 3.0
-  #include <Imath/half.h>
+    // Try to use the modern header first: OpenEXR >= 3.0
+    #include <Imath/half.h>
 #elif __has_include(<OpenEXR/half.h>)
-  // Try fallback for compatibility with OpenEXR < 3.0
-  #include <OpenEXR/half.h>
+    // Try fallback for compatibility with OpenEXR < 3.0
+    #include <OpenEXR/half.h>
 #else
-  // Generate an error using the modern header
-  #include <Imath/half.h>
+    // Generate an error using the modern header
+    #include <Imath/half.h>
 #endif
-
-

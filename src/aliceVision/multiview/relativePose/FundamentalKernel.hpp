@@ -32,13 +32,15 @@ using Fundamental8PKernel = robustEstimation::PointFittingKernel<Fundamental8PSo
  * @brief Normalized 7pt kernel
  * @see conditioning from HZ (Algo 11.1) pag 282
  */
-using NormalizedFundamental7PKernel = robustEstimation::NormalizedPointFittingKernel<Fundamental7PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
+using NormalizedFundamental7PKernel =
+  robustEstimation::NormalizedPointFittingKernel<Fundamental7PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
 
 /**
  * @brief Normalized 8pt kernel
  * @see conditioning from HZ (Algo 11.1) pag 282
  */
-using NormalizedFundamental8PKernel = robustEstimation::NormalizedPointFittingKernel<Fundamental8PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
+using NormalizedFundamental8PKernel =
+  robustEstimation::NormalizedPointFittingKernel<Fundamental8PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
 
 }  // namespace relativePose
 }  // namespace multiview

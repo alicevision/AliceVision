@@ -13,39 +13,41 @@
 #include <vector>
 #include <cassert>
 
-namespace stl
-{
+namespace stl {
 
-  /**
-   * Class derived from the Boost dynamic_bitset<> implementation.
-   * Distributed under the Boost Software License, Version 1.0.
-   * (http://www.boost.org/LICENSE_1_0.txt)
-   */
-  struct dynamic_bitset
-  {
+/**
+ * Class derived from the Boost dynamic_bitset<> implementation.
+ * Distributed under the Boost Software License, Version 1.0.
+ * (http://www.boost.org/LICENSE_1_0.txt)
+ */
+struct dynamic_bitset
+{
     typedef unsigned char BlockType;
     static const int bits_per_block = (std::numeric_limits<BlockType>::digits);
 
     // Reference over a single bit of a sub-block
     class reference
     {
-      BlockType & m_block;
-      const BlockType m_mask;
+        BlockType& m_block;
+        const BlockType m_mask;
 
-    public:
-      reference(BlockType & b, BlockType pos)
-        :m_block(b),
-        m_mask((assert(pos < bits_per_block), BlockType(1) << pos)
-        )
-      { }
+      public:
+        reference(BlockType& b, BlockType pos)
+          : m_block(b),
+            m_mask((assert(pos < bits_per_block), BlockType(1) << pos))
+        {}
 
-      operator bool() const { return (m_block & m_mask) != 0; }
-      reference& operator=(bool x) { do_assign(x); return *this; } // for b[i] = x
+        operator bool() const { return (m_block & m_mask) != 0; }
+        reference& operator=(bool x)
+        {
+            do_assign(x);
+            return *this;
+        }  // for b[i] = x
 
-      void do_set() { m_block |= m_mask; }
-      void do_reset() { m_block &= ~m_mask; }
-      void do_flip() { m_block ^= m_mask; }
-      void do_assign(bool x) { x ? do_set() : do_reset(); }
+        void do_set() { m_block |= m_mask; }
+        void do_reset() { m_block &= ~m_mask; }
+        void do_flip() { m_block ^= m_mask; }
+        void do_assign(bool x) { x ? do_set() : do_reset(); }
     };
 
     size_t block_index(size_t pos) const { return pos / bits_per_block; }
@@ -64,27 +66,23 @@ namespace stl
     // Constructor
     dynamic_bitset(size_t num_bits = 0)
     {
-      vec_bits.resize(calc_num_blocks(num_bits));
-      m_num_bits = num_bits;
+        vec_bits.resize(calc_num_blocks(num_bits));
+        m_num_bits = num_bits;
     }
 
     dynamic_bitset& reset()
     {
-      std::fill(vec_bits.begin(), vec_bits.end(), BlockType(0));
-      return *this;
+        std::fill(vec_bits.begin(), vec_bits.end(), BlockType(0));
+        return *this;
     }
 
-    const BlockType * data() const { return &vec_bits[0]; }
+    const BlockType* data() const { return &vec_bits[0]; }
 
   private:
-    inline size_t calc_num_blocks(size_t num_bits)
-    {
-      return num_bits / bits_per_block
-        + static_cast<size_t>(num_bits % bits_per_block != 0);
-    }
+    inline size_t calc_num_blocks(size_t num_bits) { return num_bits / bits_per_block + static_cast<size_t>(num_bits % bits_per_block != 0); }
 
     // DATA
     std::vector<BlockType> vec_bits;
     size_t m_num_bits;
-  };
-} // namespace stl
+};
+}  // namespace stl

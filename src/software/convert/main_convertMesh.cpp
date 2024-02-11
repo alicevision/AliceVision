@@ -5,15 +5,15 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <ostream>
@@ -27,7 +27,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /**
  * @brief Convert Mesh
@@ -42,12 +42,14 @@ int aliceVision_main(int argc, char** argv)
     std::string inputMeshPath;
     std::string outputFilePath;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-      ("inputMesh", po::value<std::string>(&inputMeshPath)->default_value(inputMeshPath),
-        "Mesh file path (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).")
-      ("output,o", po::value<std::string>(&outputFilePath)->default_value(outputFilePath),
-        "Output file path for the new mesh file (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl)");
+        ("inputMesh", po::value<std::string>(&inputMeshPath)->default_value(inputMeshPath),
+         "Mesh file path (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).")
+        ("output,o", po::value<std::string>(&outputFilePath)->default_value(outputFilePath),
+         "Output file path for the new mesh file (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).");
+    // clang-format on
 
     CmdLine cmdline("The program allows to convert a mesh to another mesh format.\n"
                     "AliceVision convertMesh");
@@ -58,14 +60,14 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // check first mesh file path
-    if(!inputMeshPath.empty() && !fs::exists(inputMeshPath) && !fs::is_regular_file(inputMeshPath))
+    if (!inputMeshPath.empty() && !fs::exists(inputMeshPath) && !fs::is_regular_file(inputMeshPath))
     {
         ALICEVISION_LOG_ERROR("The input mesh file doesn't exist");
         return EXIT_FAILURE;
     }
 
     // check output file path
-    if(outputFilePath.empty())
+    if (outputFilePath.empty())
     {
         ALICEVISION_LOG_ERROR("Invalid output");
         return EXIT_FAILURE;
@@ -75,9 +77,9 @@ int aliceVision_main(int argc, char** argv)
     {
         const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
 
-        if(!outputFolderPart.empty() && !fs::exists(outputFolderPart))
+        if (!outputFolderPart.empty() && !fs::exists(outputFolderPart))
         {
-            if(!fs::create_directory(outputFolderPart))
+            if (!fs::create_directory(outputFolderPart))
             {
                 ALICEVISION_LOG_ERROR("Cannot create output folder");
                 return EXIT_FAILURE;
@@ -90,17 +92,16 @@ int aliceVision_main(int argc, char** argv)
     texturing.loadWithAtlas(inputMeshPath);
     mesh::Mesh* inputMesh = texturing.mesh;
 
-    if(!inputMesh)
+    if (!inputMesh)
     {
         ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;
     }
 
-    if(inputMesh->pts.empty() || inputMesh->tris.empty())
+    if (inputMesh->pts.empty() || inputMesh->tris.empty())
     {
         ALICEVISION_LOG_ERROR("Error: empty mesh from the file " << inputMeshPath);
-        ALICEVISION_LOG_ERROR("Input mesh: " << inputMesh->pts.size() << " vertices and " << inputMesh->tris.size()
-                                             << " facets.");
+        ALICEVISION_LOG_ERROR("Input mesh: " << inputMesh->pts.size() << " vertices and " << inputMesh->tris.size() << " facets.");
         return EXIT_FAILURE;
     }
 

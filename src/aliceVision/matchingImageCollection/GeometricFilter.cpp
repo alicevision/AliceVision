@@ -20,8 +20,9 @@ void removePoorlyOverlappingImagePairs(PairwiseMatches& geometricMatches,
         const size_t photometricCount = putativeMatches.find(match.first)->second.getNbAllMatches();
         const size_t geometricCount = match.second.getNbAllMatches();
         const float ratio = geometricCount / (float)photometricCount;
-        if (geometricCount < minimumGeometricCount || ratio < minimumRatio) {
-            toRemoveVec.push_back(match.first); // the image pair will be removed
+        if (geometricCount < minimumGeometricCount || ratio < minimumRatio)
+        {
+            toRemoveVec.push_back(match.first);  // the image pair will be removed
         }
     }
 
@@ -32,5 +33,5 @@ void removePoorlyOverlappingImagePairs(PairwiseMatches& geometricMatches,
     }
 }
 
-} // namespace matchingImageCollection
-} // namespace aliceVision
+}  // namespace matchingImageCollection
+}  // namespace aliceVision

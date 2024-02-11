@@ -33,5 +33,5 @@ bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& 
  */
 bool getInfo(const std::string& brand, const std::string& model, const std::vector<Datasheet>& databaseStructure, Datasheet& datasheetContent);
 
-} // namespace sensorDB
-} // namespace aliceVision
+}  // namespace sensorDB
+}  // namespace aliceVision

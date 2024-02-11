@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -19,7 +19,8 @@
 #include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -28,7 +29,7 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char* argv[])
@@ -43,28 +44,31 @@ int aliceVision_main(int argc, char* argv[])
     int maxVertices = 0;
     bool flipNormals = false;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh (OBJ file format).")
+         "Input Mesh (OBJ file format).")
         ("output,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).");
+         "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("simplificationFactor", po::value<float>(&simplificationFactor)->default_value(simplificationFactor),
-            "Simplification factor.")
+         "Simplification factor.")
         ("nbVertices", po::value<int>(&fixedNbVertices)->default_value(fixedNbVertices),
-            "Fixed number of output vertices.")
+         "Fixed number of output vertices.")
         ("minVertices", po::value<int>(&minVertices)->default_value(minVertices),
-            "Min number of output vertices.")
+         "Min number of output vertices.")
         ("maxVertices", po::value<int>(&maxVertices)->default_value(maxVertices),
-            "Max number of output vertices.")
+         "Max number of output vertices.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
-            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
+         "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the "
+         "convention changes from one software to another.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision meshDecimate");
-                  
+
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
@@ -72,20 +76,19 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-
-    bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    fs::path outDirectory = fs::path(outputMeshPath).parent_path();
+    if (!fs::is_directory(outDirectory))
+        fs::create_directory(outDirectory);
 
     // Mesh type
-    typedef OpenMesh::TriMesh_ArrayKernelT<>                      Mesh;
+    typedef OpenMesh::TriMesh_ArrayKernelT<> Mesh;
     // Decimater type
-    typedef OpenMesh::Decimater::DecimaterT< Mesh >               Decimater;
+    typedef OpenMesh::Decimater::DecimaterT<Mesh> Decimater;
     // Decimation Module Handle type
-    typedef OpenMesh::Decimater::ModQuadricT< Mesh >::Handle HModQuadric;
+    typedef OpenMesh::Decimater::ModQuadricT<Mesh>::Handle HModQuadric;
 
     Mesh mesh;
-    if(!OpenMesh::IO::read_mesh(mesh, inputMeshPath))
+    if (!OpenMesh::IO::read_mesh(mesh, inputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;
@@ -95,25 +98,25 @@ int aliceVision_main(int argc, char* argv[])
 
     int nbInputPoints = mesh.n_vertices();
     int nbOutputPoints = 0;
-    if(fixedNbVertices != 0)
+    if (fixedNbVertices != 0)
     {
         nbOutputPoints = fixedNbVertices;
     }
     else
     {
-        if(simplificationFactor != 0.0)
+        if (simplificationFactor != 0.0)
         {
             nbOutputPoints = simplificationFactor * nbInputPoints;
         }
-        if(minVertices != 0)
+        if (minVertices != 0)
         {
-            if(nbInputPoints > minVertices && nbOutputPoints < minVertices)
-              nbOutputPoints = minVertices;
+            if (nbInputPoints > minVertices && nbOutputPoints < minVertices)
+                nbOutputPoints = minVertices;
         }
-        if(maxVertices != 0)
+        if (maxVertices != 0)
         {
-          if(nbInputPoints > maxVertices && nbOutputPoints > maxVertices)
-            nbOutputPoints = maxVertices;
+            if (nbInputPoints > maxVertices && nbOutputPoints > maxVertices)
+                nbOutputPoints = maxVertices;
         }
     }
 
@@ -122,7 +125,7 @@ int aliceVision_main(int argc, char* argv[])
 
     {
         // a decimater object, connected to a mesh
-        Decimater   decimater(mesh);
+        Decimater decimater(mesh);
         // use a quadric module
         HModQuadric hModQuadric;
         // register module at the decimater
@@ -145,7 +148,7 @@ int aliceVision_main(int argc, char* argv[])
     }
     ALICEVISION_LOG_INFO("Output mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
 
-    if(mesh.n_faces() == 0)
+    if (mesh.n_faces() == 0)
     {
         ALICEVISION_LOG_ERROR("Failed: the output mesh is empty.");
         return EXIT_FAILURE;
@@ -153,7 +156,7 @@ int aliceVision_main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Save mesh.");
     // Save output mesh
-    if(!OpenMesh::IO::write_mesh(mesh, outputMeshPath))
+    if (!OpenMesh::IO::write_mesh(mesh, outputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Failed to save mesh \"" << outputMeshPath << "\".");
         return EXIT_FAILURE;

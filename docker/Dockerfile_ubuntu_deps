@@ -21,27 +21,40 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 # Install all compilation tools
 # The Kitware repo provides a recent cmake
 RUN . ./etc/os-release && \
-	apt-get update && \
-	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-		ca-certificates \
-		wget \
-		software-properties-common && \
-	wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor - > /etc/apt/trusted.gpg.d/kitware.gpg && \
-	apt-add-repository "deb https://apt.kitware.com/ubuntu/ $UBUNTU_CODENAME main" && \
-	apt-get clean && \
-	apt-get update && \
-	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-		build-essential \
-		git \
-		unzip \
-		yasm \
-		pkg-config \
-		libtool \
-		libssl-dev \
-		nasm \
-		automake \
-		cmake \
-		gfortran
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates \
+        wget \
+        software-properties-common && \
+    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor - > /etc/apt/trusted.gpg.d/kitware.gpg && \
+    apt-add-repository "deb https://apt.kitware.com/ubuntu/ $UBUNTU_CODENAME main" && \
+    apt-get clean && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        unzip \
+        yasm \
+        pkg-config \
+        libtool \
+        libssl-dev \
+        nasm \
+        automake \
+        cmake \
+        gfortran \
+        clang-format \
+        libxerces-c-dev \
+        gcc-10 \
+        g++-10 \
+        cpp-10 \
+        python3-dev \
+        python3-pip \
+        libpcre2-dev \
+        bison && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+
+# Install numpy
+RUN python3 -m pip install numpy
 
 ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
@@ -51,8 +64,17 @@ ENV AV_DEV=/opt/AliceVision_git \
 COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
 
+COPY dl/sphereDetection_Mask-RCNN.onnx ${AV_INSTALL}/share/aliceVision/
+RUN echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx" > /etc/profile.d/alicevision.sh
+
+COPY dl/fcn_resnet50.onnx ${AV_INSTALL}/share/aliceVision/
+RUN echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx" > /etc/profile.d/alicevision.sh
+
+COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
+RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh` && echo "Build multithreading number of cores: ${CPU_CORES}"
+
 COPY CMakeLists.txt ${AV_DEV}/
-COPY docker ${AV_DEV}/docker
+COPY src/cmake/Dependencies.cmake ${AV_DEV}/src/cmake/
 
 COPY dl/deps ${AV_BUILD}/external/download/
 
@@ -60,38 +82,43 @@ WORKDIR "${AV_BUILD}"
 RUN cmake "${AV_DEV}" \
      -DCMAKE_BUILD_TYPE=Release \
      -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
+     -DAV_BUILD_ZLIB:BOOL=ON \
      -DAV_BUILD_ALICEVISION:BOOL=OFF \
      -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"
 
 # Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
 RUN mkdir -p "${AV_INSTALL}/lib" && \
-        ln -s lib "${AV_INSTALL}/lib64"
-
-WORKDIR "${AV_BUILD}"
-#RUN make -j"$(nproc)" zlib
-#RUN make -j"$(nproc)" geogram
-#RUN make -j"$(nproc)" tbb
-#RUN make -j"$(nproc)" eigen
-#RUN make -j"$(nproc)" opengv
-#RUN make -j"$(nproc)" lapack
+    ln -s lib "${AV_INSTALL}/lib64"
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so /usr/local/cuda/lib64/libcublas.so
-#RUN make -j"$(nproc)" suitesparse
-#RUN make -j"$(nproc)" ceres
-#RUN make -j"$(nproc)" openexr
-#RUN make -j"$(nproc)" tiff
-#RUN make -j"$(nproc)" png
-#RUN make -j"$(nproc)" turbojpeg
-#RUN make -j"$(nproc)" libraw
-#RUN make -j"$(nproc)" boost
-#RUN make -j"$(nproc)" openimageio
-#RUN make -j"$(nproc)" alembic
-#RUN make -j"$(nproc)" popsift
-#RUN make -j"$(nproc)" opencv
-#RUN make -j"$(nproc)" cctag
 
-RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
-	cmake --build . -j${CPU_CORES} && \
+# RUN make -j ${CPU_CORES} onnxruntime
+# RUN make -j ${CPU_CORES} pcl
+# RUN make -j ${CPU_CORES} turbojpeg
+# RUN make -j ${CPU_CORES} boost
+# RUN make -j ${CPU_CORES} openexr
+# RUN make -j ${CPU_CORES} tbb
+# RUN make -j ${CPU_CORES} assimp
+# RUN make -j ${CPU_CORES} geogram
+# RUN make -j ${CPU_CORES} eigen
+# RUN make -j ${CPU_CORES} opengv
+# RUN make -j ${CPU_CORES} lapack
+# RUN make -j ${CPU_CORES} suitesparse
+# RUN make -j ${CPU_CORES} ceres
+# RUN make -j ${CPU_CORES} tiff
+# RUN make -j ${CPU_CORES} png
+# RUN make -j ${CPU_CORES} libraw
+# RUN make -j ${CPU_CORES} openimageio
+# RUN make -j ${CPU_CORES} alembic
+# RUN make -j ${CPU_CORES} ffmpeg
+# RUN make -j ${CPU_CORES} opencv
+# RUN make -j ${CPU_CORES} expat
+# RUN make -j ${CPU_CORES} SWIG
+# RUN make -j ${CPU_CORES} E57Format
+
+# RUN make -j ${CPU_CORES} popsift
+# RUN make -j ${CPU_CORES} cctag
+
+RUN cmake --build . -j ${CPU_CORES} && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
     rm -rf "${AV_BUILD}"
-

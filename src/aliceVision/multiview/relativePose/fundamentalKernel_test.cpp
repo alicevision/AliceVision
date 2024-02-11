@@ -21,46 +21,43 @@ using namespace aliceVision::multiview;
 template<typename A, typename B>
 bool colinear(const A& a, const B& b, double tolerance)
 {
-  const bool dims_match = (a.rows() == b.rows()) && (a.cols() == b.cols());
+    const bool dims_match = (a.rows() == b.rows()) && (a.cols() == b.cols());
 
-  if(!dims_match)
+    if (!dims_match)
+        return false;
+
+    const double c = CosinusBetweenMatrices(a, b);
+
+    if (c * c < 1)
+    {
+        double s = sqrt(1 - c * c);
+        return fabs(s) < tolerance;
+    }
+
     return false;
-
-  const double c = CosinusBetweenMatrices(a, b);
-
-  if(c * c < 1)
-  {
-    double s = sqrt(1 - c * c);
-    return fabs(s) < tolerance;
-  }
-
-  return false;
 }
 
 // check the properties of a fundamental matrix:
 //   1. The determinant is 0 (rank deficient)
 //   2. The condition x'T*F*x = 0 is satisfied to precision.
 template<typename TMat>
-bool expectFundamentalProperties(const TMat& F,
-                                 const Mat& ptsA,
-                                 const Mat& ptsB,
-                                 double precision)
+bool expectFundamentalProperties(const TMat& F, const Mat& ptsA, const Mat& ptsB, double precision)
 {
-  bool bOk = true;
-  bOk &= F.determinant() < precision;
-  assert(ptsA.cols() == ptsB.cols());
-  Mat hptsA, hptsB;
+    bool bOk = true;
+    bOk &= F.determinant() < precision;
+    assert(ptsA.cols() == ptsB.cols());
+    Mat hptsA, hptsB;
 
-  euclideanToHomogeneous(ptsA, &hptsA);
-  euclideanToHomogeneous(ptsB, &hptsB);
+    euclideanToHomogeneous(ptsA, hptsA);
+    euclideanToHomogeneous(ptsB, hptsB);
 
-  for(int i = 0; i < ptsA.cols(); ++i)
-  {
-    const double residual = hptsB.col(i).dot(F * hptsA.col(i));
-    bOk &= residual < precision;
-  }
+    for (int i = 0; i < ptsA.cols(); ++i)
+    {
+        const double residual = hptsB.col(i).dot(F * hptsA.col(i));
+        bOk &= residual < precision;
+    }
 
-  return bOk;
+    return bOk;
 }
 
 // check the fundamental fitting:
@@ -69,67 +66,59 @@ bool expectFundamentalProperties(const TMat& F,
 template<class Kernel>
 bool expectKernelProperties(const Mat& x1, const Mat& x2, Mat3* F_expected = nullptr)
 {
-  bool bOk = true;
-  const Kernel kernel(x1, x2);
-  std::vector<std::size_t> samples;
+    bool bOk = true;
+    const Kernel kernel(x1, x2);
+    std::vector<std::size_t> samples;
 
-  for(std::size_t i = 0; i < x1.cols(); ++i)
-    samples.push_back(i);
+    for (std::size_t i = 0; i < x1.cols(); ++i)
+        samples.push_back(i);
 
-  std::vector<robustEstimation::Mat3Model> Fs;
-  kernel.fit(samples, Fs);
+    std::vector<robustEstimation::Mat3Model> Fs;
+    kernel.fit(samples, Fs);
 
-  bOk &= (!Fs.empty());
+    bOk &= (!Fs.empty());
 
-  for(int i = 0; i < Fs.size(); ++i)
-  {
-    bOk &= expectFundamentalProperties(Fs.at(i).getMatrix(), x1, x2, 1e-8);
-    if(F_expected)
-      bOk &= colinear(Fs.at(i).getMatrix(), *F_expected, 1e-6);
-  }
-  return bOk;
+    for (int i = 0; i < Fs.size(); ++i)
+    {
+        bOk &= expectFundamentalProperties(Fs.at(i).getMatrix(), x1, x2, 1e-8);
+        if (F_expected)
+            bOk &= colinear(Fs.at(i).getMatrix(), *F_expected, 1e-6);
+    }
+    return bOk;
 }
 
 BOOST_AUTO_TEST_CASE(Fundamental7PKernel_EasyCase)
 {
-  Mat x1(2, 7), x2(2, 7);
-  x1 << 0, 0, 0, 1, 1, 1, 2,
-        0, 1, 2, 0, 1, 2, 0;
-  x2 << 0, 0, 0, 1, 1, 1, 2,
-        1, 2, 3, 1, 2, 3, 1;
+    Mat x1(2, 7), x2(2, 7);
+    x1 << 0, 0, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0;
+    x2 << 0, 0, 0, 1, 1, 1, 2, 1, 2, 3, 1, 2, 3, 1;
 
-  BOOST_CHECK(expectKernelProperties<relativePose::Fundamental7PKernel>(x1, x2));
+    BOOST_CHECK(expectKernelProperties<relativePose::Fundamental7PKernel>(x1, x2));
 }
 
 BOOST_AUTO_TEST_CASE(NormalizedFundamental7PKernel_EasyCase)
 {
-  Mat x1(2, 7), x2(2, 7);
-  x1 << 0, 0, 0, 1, 1, 1, 2,
-        0, 1, 2, 0, 1, 2, 0;
-  x2 << 0, 0, 0, 1, 1, 1, 2,
-        1, 2, 3, 1, 2, 3, 1;
+    Mat x1(2, 7), x2(2, 7);
+    x1 << 0, 0, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0;
+    x2 << 0, 0, 0, 1, 1, 1, 2, 1, 2, 3, 1, 2, 3, 1;
 
-  BOOST_CHECK(expectKernelProperties<relativePose::NormalizedFundamental7PKernel>(x1, x2));
+    BOOST_CHECK(expectKernelProperties<relativePose::NormalizedFundamental7PKernel>(x1, x2));
 }
 
 BOOST_AUTO_TEST_CASE(Fundamental8PKernel_EasyCase)
 {
-  Mat x1(2, 8), x2(2, 8);
-  x1 << 0, 0, 0, 1, 1, 1, 2, 2,
-        0, 1, 2, 0, 1, 2, 0, 1;
-  x2 << 0, 0, 0, 1, 1, 1, 2, 2,
-        1, 2, 3, 1, 2, 3, 1, 2;
+    Mat x1(2, 8), x2(2, 8);
+    x1 << 0, 0, 0, 1, 1, 1, 2, 2, 0, 1, 2, 0, 1, 2, 0, 1;
+    x2 << 0, 0, 0, 1, 1, 1, 2, 2, 1, 2, 3, 1, 2, 3, 1, 2;
 
-  BOOST_CHECK(expectKernelProperties<relativePose::Fundamental8PKernel>(x1, x2));
+    BOOST_CHECK(expectKernelProperties<relativePose::Fundamental8PKernel>(x1, x2));
 }
 
 BOOST_AUTO_TEST_CASE(NormalizedFundamental8PKernel_EasyCase)
 {
-  Mat x1(2, 8), x2(2, 8);
-  x1 << 0, 0, 0, 1, 1, 1, 2, 2,
-        0, 1, 2, 0, 1, 2, 0, 1;
-  x2 << 0, 0, 0, 1, 1, 1, 2, 2,
-        1, 2, 3, 1, 2, 3, 1, 2;
+    Mat x1(2, 8), x2(2, 8);
+    x1 << 0, 0, 0, 1, 1, 1, 2, 2, 0, 1, 2, 0, 1, 2, 0, 1;
+    x2 << 0, 0, 0, 1, 1, 1, 2, 2, 1, 2, 3, 1, 2, 3, 1, 2;
 
-  BOOST_CHECK(expectKernelProperties<relativePose::NormalizedFundamental8PKernel>(x1, x2));
+    BOOST_CHECK(expectKernelProperties<relativePose::NormalizedFundamental8PKernel>(x1, x2));
 }

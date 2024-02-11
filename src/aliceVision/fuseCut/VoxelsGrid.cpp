@@ -12,32 +12,30 @@
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace aliceVision {
 namespace fuseCut {
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 
-VoxelsGrid::VoxelsGrid()
-{
-}
+VoxelsGrid::VoxelsGrid() {}
 
 VoxelsGrid::VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir, bool _doVisualize)
 {
     doVisualize = _doVisualize;
     mp = _mp;
     voxelDim = dimensions;
-    for(int k = 0; k < 8; k++)
+    for (int k = 0; k < 8; k++)
     {
-        space[k] = _space[k]; // TODO faca
+        space[k] = _space[k];  // TODO faca
     }
     voxels = mvsUtils::computeVoxels(space, dimensions);
     spaceRootDir = _spaceRootDir;
-    bfs::create_directory(spaceRootDir);
+    fs::create_directory(spaceRootDir);
 
     spaceCamsTracksDir = _spaceRootDir + "camsTracks/";
-    bfs::create_directory(spaceCamsTracksDir);
+    fs::create_directory(spaceCamsTracksDir);
 }
 
 VoxelsGrid* VoxelsGrid::clone(const std::string& _spaceRootDir)
@@ -49,27 +47,24 @@ VoxelsGrid* VoxelsGrid::clone(const std::string& _spaceRootDir)
     out->voxelDim = voxelDim;
     out->voxels = new StaticVector<Point3d>();
     out->voxels->resize(voxels->size());
-    for(int i = 0; i < voxels->size(); i++)
+    for (int i = 0; i < voxels->size(); i++)
     {
         out->voxels->push_back((*voxels)[i]);
     }
-    for(int k = 0; k < 8; k++)
+    for (int k = 0; k < 8; k++)
     {
         out->space[k] = space[k];
     }
     out->spaceRootDir = _spaceRootDir;
-    bfs::create_directory(out->spaceRootDir);
+    fs::create_directory(out->spaceRootDir);
 
     out->spaceCamsTracksDir = _spaceRootDir + "camsTracks/";
-    bfs::create_directory(out->spaceCamsTracksDir);
+    fs::create_directory(out->spaceCamsTracksDir);
 
     return out;
 }
 
-VoxelsGrid::~VoxelsGrid()
-{
-    delete voxels;
-}
+VoxelsGrid::~VoxelsGrid() { delete voxels; }
 
 StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
 {
@@ -77,8 +72,8 @@ StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
 
     StaticVector<int>* nVoxelsTracks = new StaticVector<int>();
     nVoxelsTracks->reserve(voxels->size() / 8);
-    //long t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < voxels->size() / 8; i++)
+    // long t1 = mvsUtils::initEstimate();
+    for (int i = 0; i < voxels->size() / 8; i++)
     {
         std::string folderName = getVoxelFolderName(i);
         std::string fileNameTracksPts;
@@ -86,9 +81,9 @@ StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
         int n = getArrayLengthFromFile(fileNameTracksPts);
         // printf("%i %i\n",i,n);
         nVoxelsTracks->push_back(n);
-        //mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
+        // mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
     }
-    //mvsUtils::finishEstimate();
+    // mvsUtils::finishEstimate();
 
     return nVoxelsTracks;
 }
@@ -98,8 +93,8 @@ unsigned long VoxelsGrid::getNTracks() const
     ALICEVISION_LOG_DEBUG("computing number of all tracks.");
 
     unsigned long ntracks = 0;
-    //long t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < voxels->size() / 8; i++)
+    // long t1 = mvsUtils::initEstimate();
+    for (int i = 0; i < voxels->size() / 8; i++)
     {
         const std::string folderName = getVoxelFolderName(i);
         std::string fileNameTracksPts;
@@ -107,23 +102,19 @@ unsigned long VoxelsGrid::getNTracks() const
         int n = getArrayLengthFromFile(fileNameTracksPts);
         // printf("%i %i\n",i,n);
         ntracks += (unsigned long)n;
-        //mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
+        // mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
     }
-    //mvsUtils::finishEstimate();
+    // mvsUtils::finishEstimate();
 
     return ntracks;
 }
 
-int VoxelsGrid::getIdForVoxel(const Voxel& v) const
-{
-    return v.x * voxelDim.y * voxelDim.z + v.y * voxelDim.z + v.z;
-}
+int VoxelsGrid::getIdForVoxel(const Voxel& v) const { return v.x * voxelDim.y * voxelDim.z + v.y * voxelDim.z + v.z; }
 
 Voxel VoxelsGrid::getVoxelForId(int id) const
 {
     int xp = id / (voxelDim.y * voxelDim.z);
-    return Voxel(xp, (id - xp * voxelDim.y * voxelDim.z) / voxelDim.z,
-                 (id - xp * voxelDim.y * voxelDim.z) % voxelDim.z);
+    return Voxel(xp, (id - xp * voxelDim.y * voxelDim.z) / voxelDim.z, (id - xp * voxelDim.y * voxelDim.z) % voxelDim.z);
 }
 
 bool VoxelsGrid::isValidVoxel(const Voxel& v)
@@ -134,21 +125,7 @@ bool VoxelsGrid::isValidVoxel(const Voxel& v)
 std::string VoxelsGrid::getVoxelFolderName(int id) const
 {
     const Voxel v = getVoxelForId(id);
-    // std::string fnx = spaceRootDir + "X"+num2str(v.x)+"/";
-    // std::string fnxyz = fnx + "Y"+num2str(v.y)+"Z"+num2str(v.z)+"/";
-    // bfs::create_directory(fnx);
-    // bfs::create_directory(fnxyz);
-
     std::string fnxyz = spaceRootDir + "X" + mvsUtils::num2str(v.x) + "Y" + mvsUtils::num2str(v.y) + "Z" + mvsUtils::num2str(v.z) + "/";
-    // bfs::create_directory(fnxyz);
-
-    // if (bfs::is_directory(fnx)==false) {
-    //	printf("Warning folder %s does not exist!\n",fnx.c_str());
-    //}
-
-    // if (bfs::is_directory(fnxyz)==false) {
-    //	printf("Warning folder %s does not exist!\n",fnxyz.c_str());
-    //}
 
     return fnxyz;
 }
@@ -162,10 +139,10 @@ StaticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(S
     const std::string fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
     const std::string fileNameTracksStat = folderName + "tracksGridStat.bin";
 
-    if (!bfs::exists(fileNameTracksPts))
+    if (!fs::exists(fileNameTracksPts))
         return nullptr;
 
-    StaticVector<Point3d>* tracksStat = loadArrayFromFile<Point3d>(fileNameTracksStat); // minPixSize, minSim, npts
+    StaticVector<Point3d>* tracksStat = loadArrayFromFile<Point3d>(fileNameTracksStat);  // minPixSize, minSim, npts
     StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
     StaticVector<StaticVector<Pixel>*>* tracksPointsCams = loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
     *cams = loadArrayFromFile<int>(fileNameTracksCams);
@@ -173,7 +150,7 @@ StaticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(S
     StaticVector<OctreeTracks::trackStruct*>* tracks = new StaticVector<OctreeTracks::trackStruct*>();
     tracks->reserve(tracksPoints->size());
 
-    for(int i = 0; i < tracksPoints->size(); i++)
+    for (int i = 0; i < tracksPoints->size(); i++)
     {
         StaticVector<Pixel>* tcams = (*tracksPointsCams)[i];
         OctreeTracks::trackStruct* t = new OctreeTracks::trackStruct(0.0f, 0.0f, Point3d(), 0);
@@ -192,18 +169,17 @@ StaticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(S
     return tracks;
 }
 
-bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<OctreeTracks::trackStruct*>* tracks,
-                                        int id)
+bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<OctreeTracks::trackStruct*>* tracks, int id)
 {
-    if(sizeOfStaticVector<OctreeTracks::trackStruct*>(tracks) <= 10)
+    if (sizeOfStaticVector<OctreeTracks::trackStruct*>(tracks) <= 10)
     {
         return false;
     }
 
     std::string folderName = getVoxelFolderName(id);
 
-    bfs::create_directory(folderName);
-    if (!bfs::is_directory(folderName))
+    fs::create_directory(folderName);
+    if (!fs::is_directory(folderName))
     {
         ALICEVISION_LOG_WARNING("Folder '" << folderName << "' does not exist.");
     }
@@ -215,7 +191,7 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
     StaticVector<Point3d>* tracksStat = new StaticVector<Point3d>();
     tracksStat->reserve(tracks->size());
 
-    for(int j = 0; j < tracks->size(); j++)
+    for (int j = 0; j < tracks->size(); j++)
     {
         OctreeTracks::trackStruct* info = (*tracks)[j];
         tracksPoints->push_back(info->point);
@@ -223,7 +199,7 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
 
         StaticVector<Pixel>* tcams = new StaticVector<Pixel>();
         tcams->reserve(info->cams.size());
-        for(int k = 0; k < info->cams.size(); k++)
+        for (int k = 0; k < info->cams.size(); k++)
         {
             tcams->push_back(info->cams[k]);
         }
@@ -231,8 +207,7 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
     }
 
     // printf("SAVING %i-th VOXEL TRACKS\n",i);
-    std::string fileNameTracksCams, fileNameTracksPts,
-        fileNameTracksPtsCams, fileNameTracksStat;
+    std::string fileNameTracksCams, fileNameTracksPts, fileNameTracksPtsCams, fileNameTracksStat;
 
     fileNameTracksCams = folderName + "tracksGridCams.bin";
     fileNameTracksPts = folderName + "tracksGridPts.bin";
@@ -251,8 +226,12 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
     return true;
 }
 
-void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* ReconstructionPlan, int numSubVoxs, int maxPts,
-                                            int level, int& maxlevel, const std::string& depthMapsPtsSimsTmpDir)
+void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* ReconstructionPlan,
+                                            int numSubVoxs,
+                                            int maxPts,
+                                            int level,
+                                            int& maxlevel,
+                                            const std::string& depthMapsPtsSimsTmpDir)
 {
     ALICEVISION_LOG_DEBUG("generateTracksForEachVoxel recursive "
                           << "\t- numSubVoxs: " << numSubVoxs << std::endl
@@ -270,7 +249,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
     toRecurse->reserve(nvoxs);
 
 #pragma omp parallel for
-    for(int i = 0; i < nvoxs; i++)
+    for (int i = 0; i < nvoxs; i++)
     {
         // printf("GENERATING TRIANGLUATION FOR %i-th VOXEL OF %i\n",i,nvoxs);
 
@@ -279,14 +258,14 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
         long t1 = clock();
         OctreeTracks* ott = new OctreeTracks(&(*voxels)[i * 8], mp, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
         StaticVector<OctreeTracks::trackStruct*>* tracks = ott->fillOctree(maxPts, depthMapsPtsSimsTmpDir);
-        if(mp->verbose)
+        if (mp->verbose)
             mvsUtils::printfElapsedTime(t1, "fillOctree");
-        if(tracks == nullptr)
+        if (tracks == nullptr)
         {
-            if(mp->verbose)
+            if (mp->verbose)
                 ALICEVISION_LOG_DEBUG("deleting OTT: " << i);
             delete ott;
-            if(mp->verbose)
+            if (mp->verbose)
                 ALICEVISION_LOG_DEBUG("deleted " << i);
 #pragma omp critical
             {
@@ -296,15 +275,15 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
         else
         {
             // printf("SAVING %i-th VOXEL TRACKS FILES\n",i);
-            if(tracks->size() > 10)
+            if (tracks->size() > 10)
             {
-                if(ReconstructionPlan != nullptr)
+                if (ReconstructionPlan != nullptr)
                 {
 #pragma omp critical
                     {
-                        for(int k = 0; k < 8; k++)
+                        for (int k = 0; k < 8; k++)
                         {
-                            if(ReconstructionPlan->size() < ReconstructionPlan->capacity())
+                            if (ReconstructionPlan->size() < ReconstructionPlan->capacity())
                             {
                                 ReconstructionPlan->push_back((*voxels)[i * 8 + k]);
                             }
@@ -320,25 +299,25 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
                 delete cams;
             }
             delete tracks;
-            if(mp->verbose)
+            if (mp->verbose)
                 ALICEVISION_LOG_DEBUG("deleting OTT: " << i);
             delete ott;
-            if(mp->verbose)
+            if (mp->verbose)
                 ALICEVISION_LOG_DEBUG("deleted " << i);
         }
     }
 
-    if(mp->verbose)
+    if (mp->verbose)
         ALICEVISION_LOG_DEBUG("toRecurse " << toRecurse->size());
 
-    for(int j = 0; j < toRecurse->size(); j++)
+    for (int j = 0; j < toRecurse->size(); j++)
     {
         int i = (*toRecurse)[j];
         // recursion
         std::string folderName = getVoxelFolderName(i);
         // std::string subfn = folderName + "sub/";
         std::string subfn = folderName;
-        bfs::create_directory(subfn);
+        fs::create_directory(subfn);
 
         // create file that indicates that the voxel has subvoxels
         std::string subfnFileMark = folderName + "sub.txt";
@@ -346,8 +325,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
         fclose(f);
 
         VoxelsGrid* vgnew = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[i * 8], mp, subfn, doVisualize);
-        vgnew->generateTracksForEachVoxel(ReconstructionPlan, numSubVoxs / 2, maxPts, level + 1, maxlevel,
-                                          depthMapsPtsSimsTmpDir);
+        vgnew->generateTracksForEachVoxel(ReconstructionPlan, numSubVoxs / 2, maxPts, level + 1, maxlevel, depthMapsPtsSimsTmpDir);
         delete vgnew;
     }
 
@@ -355,20 +333,19 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
 
     mvsUtils::printfElapsedTime(tall);
 
-    if(doVisualize)
+    if (doVisualize)
         vizualize();
 }
 
-void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& RD,
-                               const std::string& depthMapsPtsSimsTmpDir)
+void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& RD, const std::string& depthMapsPtsSimsTmpDir)
 {
-    if(mp->verbose)
+    if (mp->verbose)
         ALICEVISION_LOG_DEBUG("generateSpace recursive: " << std::endl
-                              << "\t- LU: " << LU.x << " " << LU.y << " " << LU.z << std::endl
-                              << "\t- RD: " << RD.x << " " << RD.y << " " << RD.z);
+                                                          << "\t- LU: " << LU.x << " " << LU.y << " " << LU.z << std::endl
+                                                          << "\t- RD: " << RD.x << " " << RD.y << " " << RD.z);
 
     int nvoxs = voxels->size() / 8;
-    for(int voxid = 0; voxid < nvoxs; voxid++)
+    for (int voxid = 0; voxid < nvoxs; voxid++)
     {
         std::string folderName = getVoxelFolderName(voxid);
         // std::string subfn = folderName + "sub/";
@@ -383,8 +360,8 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
         Voxel subLU = LU + v * ns;
         Voxel subRD = LU + (v + 1) * ns;
 
-        // if (bfs::is_directory(subfn)==true)
-        if (bfs::exists(subfnFileMark))
+        // if (fs::is_directory(subfn)==true)
+        if (fs::exists(subfnFileMark))
         {
             VoxelsGrid* vgrec = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[voxid * 8], mp, subfn, doVisualize);
             vgrec->generateSpace(vgnew, subLU, subRD, depthMapsPtsSimsTmpDir);
@@ -399,15 +376,15 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
             StaticVector<OctreeTracks::trackStruct*>* tracks = loadTracksFromVoxelFiles(&cams, voxid);
             Voxel vrel;
 
-            if((tracks != nullptr) && (tracks->size() > 0))
+            if ((tracks != nullptr) && (tracks->size() > 0))
             {
                 // estimate nubers // TODO FACA: remove costly estimation of numbers
                 StaticVector<int>* nnewVoxsTracks = new StaticVector<int>();
                 nnewVoxsTracks->reserve(part.x * part.y * part.z);
                 nnewVoxsTracks->resize_with(part.x * part.y * part.z, 0);
-                for(int i = 0; i < tracks->size(); i++)
+                for (int i = 0; i < tracks->size(); i++)
                 {
-                    if(ott->getVoxelOfOctreeFor3DPoint(vrel, (*tracks)[i]->point))
+                    if (ott->getVoxelOfOctreeFor3DPoint(vrel, (*tracks)[i]->point))
                     {
                         (*nnewVoxsTracks)[vgg->getIdForVoxel(vrel)] += 1;
                     }
@@ -415,9 +392,9 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
 
                 // allocate
                 StaticVector<StaticVector<OctreeTracks::trackStruct*>*>* newVoxsTracks =
-                    new StaticVector<StaticVector<OctreeTracks::trackStruct*>*>();
+                  new StaticVector<StaticVector<OctreeTracks::trackStruct*>*>();
                 newVoxsTracks->reserve(part.x * part.y * part.z);
-                for(int i = 0; i < part.x * part.y * part.z; i++)
+                for (int i = 0; i < part.x * part.y * part.z; i++)
                 {
                     auto* newVoxTracks = new StaticVector<OctreeTracks::trackStruct*>();
                     newVoxTracks->reserve((*nnewVoxsTracks)[i]);
@@ -425,15 +402,15 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
                 }
 
                 // fill
-                for(int i = 0; i < tracks->size(); i++)
+                for (int i = 0; i < tracks->size(); i++)
                 {
-                    if(ott->getVoxelOfOctreeFor3DPoint(vrel, (*tracks)[i]->point))
+                    if (ott->getVoxelOfOctreeFor3DPoint(vrel, (*tracks)[i]->point))
                     {
                         (*newVoxsTracks)[vgg->getIdForVoxel(vrel)]->push_back((*tracks)[i]);
                     }
                 }
 
-                for(int i = 0; i < part.x * part.y * part.z; i++)
+                for (int i = 0; i < part.x * part.y * part.z; i++)
                 {
                     Voxel vact = vgg->getVoxelForId(i);
                     Voxel vglob = subLU + vact;
@@ -454,16 +431,16 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
                 delete nnewVoxsTracks;
             }
 
-            if(cams != nullptr)
+            if (cams != nullptr)
             {
                 delete cams;
             }
 
-            if(tracks != nullptr)
+            if (tracks != nullptr)
             {
-                for(int i = 0; i < tracks->size(); i++)
+                for (int i = 0; i < tracks->size(); i++)
                 {
-                    delete(*tracks)[i];
+                    delete (*tracks)[i];
                 }
                 delete tracks;
             }
@@ -479,42 +456,41 @@ void VoxelsGrid::cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpa
     std::string folderName = getVoxelFolderName(voxelId);
     std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
 
-    if (bfs::exists(fileNameTracksPts))
+    if (fs::exists(fileNameTracksPts))
     {
-        OctreeTracks* ott =
-            new OctreeTracks(&(*voxels)[voxelId * 8], mp, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
+        OctreeTracks* ott = new OctreeTracks(&(*voxels)[voxelId * 8], mp, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
         StaticVector<int>* tcams;
         StaticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
         StaticVector<OctreeTracks::trackStruct*>* tracksNew = ott->fillOctreeFromTracks(tracksOld);
-        for(int i = 0; i < tracksOld->size(); i++)
+        for (int i = 0; i < tracksOld->size(); i++)
         {
-            delete(*tracksOld)[i];
+            delete (*tracksOld)[i];
         }
         delete tracksOld;
         newSpace->saveTracksToVoxelFiles(tcams, tracksNew, voxelId);
 
         delete tcams;
-        delete tracksNew; // DO NOT NEEDED TO DELETE PARTICULAR POINTERS BECAUSE THEY POINT TO ott STRUCTURES
+        delete tracksNew;  // DO NOT NEEDED TO DELETE PARTICULAR POINTERS BECAUSE THEY POINT TO ott STRUCTURES
         delete ott;
     }
 }
 
 VoxelsGrid* VoxelsGrid::cloneSpace(int numSubVoxs, const std::string& newSpaceRootDir)
 {
-    if(mp->verbose)
+    if (mp->verbose)
         ALICEVISION_LOG_DEBUG("cloning space.");
 
     VoxelsGrid* out = clone(newSpaceRootDir);
 
     long t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < voxels->size() / 8; i++)
+    for (int i = 0; i < voxels->size() / 8; i++)
     {
         cloneSpaceVoxel(i, numSubVoxs, out);
         mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
     }
     mvsUtils::finishEstimate();
 
-    if(doVisualize)
+    if (doVisualize)
         out->vizualize();
 
     return out;
@@ -525,15 +501,15 @@ void VoxelsGrid::copySpaceVoxel(int voxelId, VoxelsGrid* newSpace)
     std::string folderName = getVoxelFolderName(voxelId);
     std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
 
-    if (bfs::exists(fileNameTracksPts))
+    if (fs::exists(fileNameTracksPts))
     {
         StaticVector<int>* tcams;
         StaticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
         newSpace->saveTracksToVoxelFiles(tcams, tracksOld, voxelId);
 
-        for(int i = 0; i < tracksOld->size(); i++)
+        for (int i = 0; i < tracksOld->size(); i++)
         {
-            delete(*tracksOld)[i];
+            delete (*tracksOld)[i];
         }
         delete tracksOld;
         delete tcams;
@@ -542,20 +518,20 @@ void VoxelsGrid::copySpaceVoxel(int voxelId, VoxelsGrid* newSpace)
 
 VoxelsGrid* VoxelsGrid::copySpace(const std::string& newSpaceRootDir)
 {
-    if(mp->verbose)
+    if (mp->verbose)
         ALICEVISION_LOG_DEBUG("Copy space.");
 
     VoxelsGrid* out = clone(newSpaceRootDir);
 
     long t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < voxels->size() / 8; i++)
+    for (int i = 0; i < voxels->size() / 8; i++)
     {
         copySpaceVoxel(i, out);
         mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
     }
     mvsUtils::finishEstimate();
 
-    if(doVisualize)
+    if (doVisualize)
         out->vizualize();
 
     return out;
@@ -563,35 +539,32 @@ VoxelsGrid* VoxelsGrid::copySpace(const std::string& newSpaceRootDir)
 
 void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 {
-    if(mp->verbose)
+    if (mp->verbose)
         ALICEVISION_LOG_DEBUG("Distributing pts from voxels tracks to camera files.");
 
     long t1 = mvsUtils::initEstimate();
     int nvoxs = voxels->size() / 8;
-    for(int i = 0; i < nvoxs; i++)
+    for (int i = 0; i < nvoxs; i++)
     {
         std::string folderName = getVoxelFolderName(i);
-        std::string fileNameTracksCams, fileNameTracksPts,
-            fileNameTracksPtsCams;
+        std::string fileNameTracksCams, fileNameTracksPts, fileNameTracksPtsCams;
         fileNameTracksCams = folderName + "tracksGridCams.bin";
         fileNameTracksPts = folderName + "tracksGridPts.bin";
         fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
 
         // printf("SAVING %i-th VOXEL POINTS TO CAMS FILES\n",i);
 
-        if (bfs::exists(fileNameTracksPts))
+        if (fs::exists(fileNameTracksPts))
         {
             StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
-            StaticVector<StaticVector<Pixel>*>* tracksPointsCams =
-                loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
+            StaticVector<StaticVector<Pixel>*>* tracksPointsCams = loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
             StaticVector<int>* cams = loadArrayFromFile<int>(fileNameTracksCams);
 
             // printf("distributing %i tracks to %i camspts files  \n", tracksPoints->size(), cams->size());
-            StaticVector<StaticVector<Pixel>*>* camsTracksPoints =
-                convertObjectsCamsToCamsObjects(*mp, tracksPointsCams);
+            StaticVector<StaticVector<Pixel>*>* camsTracksPoints = convertObjectsCamsToCamsObjects(*mp, tracksPointsCams);
 
 #pragma omp parallel for
-            for(int c = 0; c < cams->size(); c++)
+            for (int c = 0; c < cams->size(); c++)
             {
                 int rc = (*cams)[c];
 
@@ -599,19 +572,19 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                 std::string camPtsFileName = spaceCamsTracksDir + "camPtsGrid_" + std::to_string(mp->getViewId(rc)) + ".bin";
                 FILE* fin = fopen(camPtsFileName.c_str(), "ab");
                 StaticVector<Pixel>* camPtsIds = (*camsTracksPoints)[rc];
-                for(int j = 0; j < sizeOfStaticVector<Pixel>(camPtsIds); j++)
+                for (int j = 0; j < sizeOfStaticVector<Pixel>(camPtsIds); j++)
                 {
                     int ptid = (*camPtsIds)[j].x;
                     int nrc = (*camPtsIds)[j].y;
                     GC_camVertexInfo p;
                     p.point = (*tracksPoints)[ptid];
-                    p.sim = -0.91; // TODO FACA: why??
+                    p.sim = -0.91;  // TODO FACA: why??
                     p.nrc = nrc;
                     p.ncams = sizeOfStaticVector<Pixel>((*tracksPointsCams)[ptid]);
                     p.fwriteinfo(fin);
                 }
                 fclose(fin);
-            } // for cams
+            }  // for cams
 
             delete cams;
             delete tracksPoints;
@@ -620,7 +593,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
         }
 
         mvsUtils::printfEstimate(i, nvoxs, t1);
-    } // for i
+    }  // for i
     mvsUtils::finishEstimate();
 }
 
@@ -631,11 +604,11 @@ void VoxelsGrid::vizualize()
     fprintf(f, "#VRML V2.0 utf8\n");
     fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
     int nvoxs = voxels->size() / 8;
-    for(int i = 0; i < nvoxs; i++)
+    for (int i = 0; i < nvoxs; i++)
     {
         std::string subFoldeName = getVoxelFolderName(i);
         std::string fname = subFoldeName + "tracks.wrl";
-        if (bfs::is_directory(subFoldeName))
+        if (fs::is_directory(subFoldeName))
         {
             fprintf(f, "Inline{ url [\"%s\"] \n }\n", fname.c_str());
         }
@@ -691,5 +664,5 @@ void VoxelsGrid::getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi)
     hexahOut[7] = O + vvz + vvy;
 }
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

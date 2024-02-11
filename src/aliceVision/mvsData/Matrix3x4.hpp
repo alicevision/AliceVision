@@ -14,8 +14,9 @@ namespace aliceVision {
 
 class Matrix3x4
 {
-public:
-    union {
+  public:
+    union
+    {
         struct
         {
             double m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34;
@@ -43,9 +44,8 @@ public:
 
     inline Point3d operator*(const Point3d& _p) const
     {
-        return Point3d(m11 * _p.x + m12 * _p.y + m13 * _p.z + m14,
-                       m21 * _p.x + m22 * _p.y + m23 * _p.z + m24,
-                       m31 * _p.x + m32 * _p.y + m33 * _p.z + m34);
+        return Point3d(
+          m11 * _p.x + m12 * _p.y + m13 * _p.z + m14, m21 * _p.x + m22 * _p.y + m23 * _p.z + m24, m31 * _p.x + m32 * _p.y + m33 * _p.z + m34);
     }
 
     inline double deteminant() const
@@ -77,7 +77,6 @@ public:
         return m;
     }
 
-
     void decomposeProjectionMatrix(Matrix3x3& K, Matrix3x3& R, Point3d& C) const
     {
         Matrix3x3 H = sub3x3();
@@ -85,7 +84,7 @@ public:
 
         const bool cam_affine = (K.m33 == 0);
 
-        if(!cam_affine)
+        if (!cam_affine)
         {
             K = K / fabs(K.m33);
         }
@@ -97,14 +96,14 @@ public:
             throw std::runtime_error("Matrix3x4::decomposeProjectionMatrix: affine camera.");
         }
 
-        if(K.m11 < 0.0f)
+        if (K.m11 < 0.0f)
         {
             Matrix3x3 D = diag3x3(-1.0f, -1.0f, 1.0f);
             K = K * D;
             R = D * R;
         }
 
-        if(K.m22 < 0.0f)
+        if (K.m22 < 0.0f)
         {
             Matrix3x3 D = diag3x3(1.0f, -1.0f, -1.0f);
             K = K * D;
@@ -155,4 +154,4 @@ inline Matrix3x4 operator|(const Matrix3x3& M, const Point3d& p)
     return m;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

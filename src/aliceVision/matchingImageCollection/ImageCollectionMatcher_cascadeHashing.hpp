@@ -24,24 +24,20 @@ namespace matchingImageCollection {
 class ImageCollectionMatcher_cascadeHashing : public IImageCollectionMatcher
 {
   public:
-  ImageCollectionMatcher_cascadeHashing
-  (
-    float dist_ratio
-  );
+    ImageCollectionMatcher_cascadeHashing(float dist_ratio);
 
-  /// Find corresponding points between some pair of view Ids
-  void Match(
-    std::mt19937 & randomNumberGenerator,
-    const feature::RegionsPerView& regionsPerView,
-    const PairSet & pairs,
-    feature::EImageDescriberType descType,
-    matching::PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
-  ) const;
+    /// Find corresponding points between some pair of view Ids
+    void Match(std::mt19937& randomNumberGenerator,
+               const feature::RegionsPerView& regionsPerView,
+               const PairSet& pairs,
+               feature::EImageDescriberType descType,
+               matching::PairwiseMatches& map_PutativesMatches  // the pairwise photometric corresponding points
+    ) const;
 
   private:
-  // Distance ratio used to discard spurious correspondence
-  float f_dist_ratio_;
+    // Distance ratio used to discard spurious correspondence
+    float f_dist_ratio_;
 };
 
-} // namespace aliceVision
-} // namespace matchingImageCollection
+}  // namespace matchingImageCollection
+}  // namespace aliceVision

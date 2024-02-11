@@ -19,32 +19,29 @@ Universe::Universe(int elements)
 void Universe::initialize()
 {
     num = allelems;
-    for(int i = 0; i < allelems; i++)
+    for (int i = 0; i < allelems; i++)
     {
         elts[i].rank = 0;
         elts[i].size = 1;
-        elts[i].p = i; // initialized to the index
+        elts[i].p = i;  // initialized to the index
     }
 }
 
-Universe::~Universe()
-{
-    delete[] elts;
-}
+Universe::~Universe() { delete[] elts; }
 
 int Universe::find(int x)
 {
     int y = x;
-    while(y != elts[y].p) // follow the index stored in p if not the same that the index
+    while (y != elts[y].p)  // follow the index stored in p if not the same that the index
         y = elts[y].p;
-    elts[x].p = y; // update x element to the final value (instead of keeping multiple indirections), so next time we will access it directly.
+    elts[x].p = y;  // update x element to the final value (instead of keeping multiple indirections), so next time we will access it directly.
     return y;
 }
 
 void Universe::join(int x, int y)
 {
     // join elements in the one with the highest rank
-    if(elts[x].rank > elts[y].rank)
+    if (elts[x].rank > elts[y].rank)
     {
         elts[y].p = x;
         elts[x].size += elts[y].size;
@@ -53,20 +50,20 @@ void Universe::join(int x, int y)
     {
         elts[x].p = y;
         elts[y].size += elts[x].size;
-        if(elts[x].rank == elts[y].rank)
+        if (elts[x].rank == elts[y].rank)
             elts[y].rank++;
     }
-    num--; // the number of elements has been reduced by one
+    num--;  // the number of elements has been reduced by one
 }
 
 void Universe::addEdge(int x, int y)
 {
     int a = find(x);
     int b = find(y);
-    if(a != b)
+    if (a != b)
     {
         join(a, b);
     }
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

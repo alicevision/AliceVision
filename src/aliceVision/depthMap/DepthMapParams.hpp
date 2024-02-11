@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/depthMap/CustomPatchPatternParams.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 
@@ -18,20 +19,20 @@ namespace depthMap {
  */
 struct DepthMapParams
 {
-  // user parameters
+    // user parameters
 
-  mvsUtils::TileParams tileParams;    //< tiling parameters
-  SgmParams sgmParams;                //< parameters of Sgm process
-  RefineParams refineParams;          //< parameters of Refine process
-  int maxTCams = 10;                  //< global T cameras maximum
-  bool chooseTCamsPerTile = true;     //< choose T cameras per R tile or for the entire R image
-  bool exportTilePattern = false;     //< export tile pattern obj
-  bool autoAdjustSmallImage = true;   //< allow program to override parameters for the single tile case
+    int maxTCams = 10;                 //< global T cameras maximum
+    bool chooseTCamsPerTile = true;    //< choose T cameras per R tile or for the entire R image
+    bool exportTilePattern = false;    //< export tile pattern obj
+    bool autoAdjustSmallImage = true;  //< allow program to override parameters for the single tile case
 
-  // constant parameters
+    /// user custom patch pattern for similarity volume computation (both SGM & Refine)
+    CustomPatchPatternParams customPatchPattern;
 
-  const bool useRefine = true;        //< for debug purposes: enable or disable Refine process
+    // constant parameters
+
+    const bool useRefine = true;  //< for debug purposes: enable or disable Refine process
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

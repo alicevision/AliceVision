@@ -14,7 +14,7 @@ int qSortCompareFloatAsc(const void* ia, const void* ib)
 {
     float a = *(float*)ia;
     float b = *(float*)ib;
-    if(a > b)
+    if (a > b)
     {
         return 1;
     }
@@ -26,7 +26,7 @@ int qSortCompareIntAsc(const void* ia, const void* ib)
 {
     int a = *(int*)ia;
     int b = *(int*)ib;
-    if(a > b)
+    if (a > b)
     {
         return 1;
     }
@@ -38,7 +38,7 @@ int qsortCompareSortedIdDesc(const void* ia, const void* ib)
 {
     SortedId a = *(SortedId*)ia;
     SortedId b = *(SortedId*)ib;
-    if(a.value > b.value)
+    if (a.value > b.value)
     {
         return -1;
     }
@@ -50,7 +50,7 @@ int qsortCompareSortedIdAsc(const void* ia, const void* ib)
 {
     SortedId a = *(SortedId*)ia;
     SortedId b = *(SortedId*)ib;
-    if(a.value < b.value)
+    if (a.value < b.value)
     {
         return -1;
     }
@@ -62,7 +62,7 @@ int qSortCompareVoxelByXAsc(const void* ia, const void* ib)
 {
     Voxel a = *(Voxel*)ia;
     Voxel b = *(Voxel*)ib;
-    if(a.x < b.x)
+    if (a.x < b.x)
     {
         return -1;
     }
@@ -74,7 +74,7 @@ int qSortCompareVoxelByYAsc(const void* ia, const void* ib)
 {
     Voxel a = *(Voxel*)ia;
     Voxel b = *(Voxel*)ib;
-    if(a.y < b.y)
+    if (a.y < b.y)
     {
         return -1;
     }
@@ -86,7 +86,7 @@ int qSortCompareVoxelByZAsc(const void* ia, const void* ib)
 {
     Voxel a = *(Voxel*)ia;
     Voxel b = *(Voxel*)ib;
-    if(a.z < b.z)
+    if (a.z < b.z)
     {
         return -1;
     }
@@ -98,7 +98,7 @@ int qSortComparePixelByXDesc(const void* ia, const void* ib)
 {
     Pixel a = *(Pixel*)ia;
     Pixel b = *(Pixel*)ib;
-    if(a.x > b.x)
+    if (a.x > b.x)
     {
         return -1;
     }
@@ -110,7 +110,7 @@ int qSortComparePixelByXAsc(const void* ia, const void* ib)
 {
     Pixel a = *(Pixel*)ia;
     Pixel b = *(Pixel*)ib;
-    if(a.x < b.x)
+    if (a.x < b.x)
     {
         return -1;
     }
@@ -123,21 +123,21 @@ int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>& values, int startId, 
     int lef = startId;
     int rig = stopId;
     int mid = lef + (rig - lef) / 2;
-    while((rig - lef) > 1)
+    while ((rig - lef) > 1)
     {
-        if((val >= values[lef].x) && (val < values[mid].x))
+        if ((val >= values[lef].x) && (val < values[mid].x))
         {
-            //lef = lef;
+            // lef = lef;
             rig = mid;
             mid = lef + (rig - lef) / 2;
         }
-        if((val >= values[mid].x) && (val <= values[rig].x))
+        if ((val >= values[mid].x) && (val <= values[rig].x))
         {
             lef = mid;
-            //rig = rig;
+            // rig = rig;
             mid = lef + (rig - lef) / 2;
         }
-        if((val < values[lef].x) || (val > values[rig].x))
+        if ((val < values[lef].x) || (val > values[rig].x))
         {
             lef = 0;
             rig = 0;
@@ -146,11 +146,11 @@ int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>& values, int startId, 
     }
 
     int id = -1;
-    if(val == values[lef].x)
+    if (val == values[lef].x)
     {
         id = lef;
     }
-    if(val == values[rig].x)
+    if (val == values[rig].x)
     {
         id = rig;
     }
@@ -158,4 +158,4 @@ int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>& values, int startId, 
     return id;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

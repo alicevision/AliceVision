@@ -5,7 +5,6 @@ These multi-view correspondences are called tracks.
 Track identification in a set of images (ordered, or not) is an important task in computer vision.
 It allows solving geometry-related problems like video stabilization, tracking, match-moving, image-stitching, structure from motion and odometry.
 
-
 ## Un/ordered feature tracking
 
 Considering n pairwise feature correspondences as input we want sets of corresponding matching features across multiple images, as illustrated in the following figures with video frames.
@@ -19,7 +18,7 @@ It is the implementation of the CVMP12 paper "Unordered feature tracking made fa
 
 Some comments about the data structure:
 
-```
+```cpp
 using namespace openMVG::matching;
 
 // pairwise matches container:
@@ -39,17 +38,17 @@ tracksBuilder.ExportToSTL(map_tracks); // Build tracks with STL compliant type
 
 // In order to visit all the tracks, follow this code:
 for (tracks::STLMAPTracks::const_iterator iterT = map_tracks.begin();
-	iterT != map_tracks.end(); ++ iterT)
+    iterT != map_tracks.end(); ++ iterT)
 {
-	const IndexT trackId = iterT->first;
-	const tracks::submapTrack & track = iterT->second;
-	for ( tracks::submapTrack::const_iterator iterTrack = track.begin();
-	  iterTrack != track.end(); ++iterTrack)
-	{
-		const IndexT imageId = iterTrack->first;
-		const IndexT featId = iterTrack->second;
-		
-		// Get the feature point
-	}
+    const IndexT trackId = iterT->first;
+    const tracks::submapTrack & track = iterT->second;
+    for ( tracks::submapTrack::const_iterator iterTrack = track.begin();
+      iterTrack != track.end(); ++iterTrack)
+    {
+        const IndexT imageId = iterTrack->first;
+        const IndexT featId = iterTrack->second;
+        
+        // Get the feature point
+    }
 }
 ```

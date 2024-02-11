@@ -12,21 +12,12 @@ namespace aliceVision {
 namespace multiview {
 
 // Denormalize the results. See HZ page 109.
-void UnnormalizerT::unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H)
-{
-  *H = T2.transpose() * (*H) * T1;
-}
+void UnnormalizerT::unnormalize(const Mat3& T1, const Mat3& T2, Mat3* H) { *H = T2.transpose() * (*H) * T1; }
 
 // Denormalize the results. See HZ page 109.
-void UnnormalizerI::unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H)
-{
-  *H = T2.inverse() * (*H) * T1;
-}
+void UnnormalizerI::unnormalize(const Mat3& T1, const Mat3& T2, Mat3* H) { *H = T2.inverse() * (*H) * T1; }
 
-void UnnormalizerResection::unnormalize(const Mat &T, const Mat &U, Mat34 *P)
-{
-  *P = T.inverse() * (*P);
-}
+void UnnormalizerResection::unnormalize(const Mat& T, const Mat& U, Mat34* P) { *P = T.inverse() * (*P); }
 
-} // namespace multiview
-} // namespace aliceVision
+}  // namespace multiview
+}  // namespace aliceVision

@@ -13,15 +13,49 @@
 namespace aliceVision {
 namespace multiview {
 
-/// Linear DLT triangulation: HZ 12.2 pag.312
-void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
-                    const Mat34 &P2, const Vec2 &x2,
-                    Vec4 *X_homogeneous);
+/**
+ * Triangulate a point given a set of observations
+ * and associated projection matrices (in pixels)
+ * @param P1 a projection matrix K (R | t)
+ * @param x1 a 2d observation vector
+ * @param P2 a projection matrix K (R | t)
+ * @param x2 a 2d observation vector
+ * @param X_homogeneous a homogeneous 3d point
+ */
+void TriangulateDLT(const Mat34& P1, const Vec2& x1, const Mat34& P2, const Vec2& x2, Vec4& X_homogeneous);
 
-/// Linear DLT triangulation: HZ 12.2 pag.312
-void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
-                    const Mat34 &P2, const Vec2 &x2,
-                    Vec3 *X_euclidean);
+/**
+ * Triangulate a point given a set of observations
+ * and associated projection matrices (in pixels)
+ * @param P1 a projection matrix K (R | t)
+ * @param x1 a 2d observation vector
+ * @param P2 a projection matrix K (R | t)
+ * @param x2 a 2d observation vector
+ * @param X_homogeneous a 3d point
+ */
+void TriangulateDLT(const Mat34& P1, const Vec2& x1, const Mat34& P2, const Vec2& x2, Vec3& X_euclidean);
 
-} // namespace multiview
-} // namespace aliceVision
+/**
+ * Triangulate a point given a set of bearing vectors
+ * and associated projection matrices (in meters)
+ * @param P1 a projection matrix (R | t)
+ * @param x1 a unit bearing vector
+ * @param P2 a projection matrix K (R | t)
+ * @param x2 a unit bearing vector
+ * @param X_homogeneous a homogeneous 3d point
+ */
+void TriangulateSphericalDLT(const Mat34& P1, const Vec3& x1, const Mat34& P2, const Vec3& x2, Vec4& X_homogeneous);
+
+/**
+ * Triangulate a point given a set of bearing vectors
+ * and associated projection matrices (in meters)
+ * @param P1 a projection matrix (R | t)
+ * @param x1 a unit bearing vector
+ * @param P2 a projection matrix K (R | t)
+ * @param x2 a unit bearing vector
+ * @param X_homogeneous a 3d point
+ */
+void TriangulateSphericalDLT(const Mat34& P1, const Vec3& x1, const Mat34& P2, const Vec3& x2, Vec3& X_euclidean);
+
+}  // namespace multiview
+}  // namespace aliceVision

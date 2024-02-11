@@ -21,12 +21,12 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Depth Map Estimation Refine
+ * @class Depth map estimation Refine
+ * @brief Manages the calculation of the Refine step.
  */
 class Refine
 {
-public:
-
+  public:
     /**
      * @brief Refine constructor.
      * @param[in] mp the multi-view parameters
@@ -34,10 +34,7 @@ public:
      * @param[in] refineParams the Refine parameters
      * @param[in] stream the stream for gpu execution
      */
-    Refine(const mvsUtils::MultiViewParams& mp,
-           const mvsUtils::TileParams& tileParams,   
-           const RefineParams& refineParams, 
-           cudaStream_t stream);
+    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, cudaStream_t stream);
 
     // no default constructor
     Refine() = delete;
@@ -63,13 +60,14 @@ public:
     /**
      * @brief Refine for a single R camera the Semi-Global Matching depth/sim map.
      * @param[in] tile The given tile for Refine computation
-     * @param[in] in_sgmDepthSimMap_dmp the SGM result depth/sim map in device memory
+     * @param[in] in_sgmDepthThicknessMap_dmp the SGM result depth/thickness map in device memory
      * @param[in] in_sgmNormalMap_dmp the SGM result normal map in device memory (or empty)
      */
-    void refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
+    void refineRc(const Tile& tile,
+                  const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp,
+                  const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
 
-private:
-
+  private:
     // private methods
 
     /**
@@ -85,6 +83,14 @@ private:
     void optimizeDepthSimMap(const Tile& tile);
 
     /**
+     * @brief Compute and write the normal map from the input depth/sim map.
+     * @param[in] tile The given tile for Refine computation
+     * @param[in] in_depthSimMap_dmp the input depth/sim map in device memory
+     * @param[in] name the export filename
+     */
+    void computeAndWriteNormalMap(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const std::string& name = "");
+
+    /**
      * @brief Export volume cross alembic file and 9 points csv file.
      * @param[in] tile The given tile for Refine computation
      * @param[in] name the export filename
@@ -93,21 +99,22 @@ private:
 
     // private members
 
-    const mvsUtils::MultiViewParams& _mp;                          //< Multi-view parameters
-    const mvsUtils::TileParams& _tileParams;                       //< tile workflow parameters
-    const RefineParams& _refineParams;                             //< Refine parameters
+    const mvsUtils::MultiViewParams& _mp;     //< Multi-view parameters
+    const mvsUtils::TileParams& _tileParams;  //< tile workflow parameters
+    const RefineParams& _refineParams;        //< Refine parameters
 
     // private members in device memory
 
     CudaDeviceMemoryPitched<float2, 2> _sgmDepthPixSizeMap_dmp;    //< rc upscaled SGM depth/pixSize map
     CudaDeviceMemoryPitched<float2, 2> _refinedDepthSimMap_dmp;    //< rc refined and fused depth/sim map
     CudaDeviceMemoryPitched<float2, 2> _optimizedDepthSimMap_dmp;  //< rc optimized depth/sim map
-    CudaDeviceMemoryPitched<float3, 2> _normalMap_dmp;             //< rc normal map
+    CudaDeviceMemoryPitched<float3, 2> _sgmNormalMap_dmp;          //< rc upscaled SGM normal map (for experimentation purposes)
+    CudaDeviceMemoryPitched<float3, 2> _normalMap_dmp;             //< rc normal map (for debug / intermediate results purposes)
     CudaDeviceMemoryPitched<TSimRefine, 3> _volumeRefineSim_dmp;   //< rc refine similarity volume
     CudaDeviceMemoryPitched<float, 2> _optTmpDepthMap_dmp;         //< for color optimization: temporary depth map buffer
     CudaDeviceMemoryPitched<float, 2> _optImgVariance_dmp;         //< for color optimization: image variance buffer
     cudaStream_t _stream;                                          //< stream for gpu execution
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

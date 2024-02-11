@@ -100,13 +100,17 @@ struct simStat
      * @return similarity value in range (-1, 0) or 1 if infinity
      */
     __device__ float computeWSim()
-    {
-        // NCC
-        const float rawSim = getVarianceXYW() / sqrtf(getVarianceXW() * getVarianceYW());
-        const float sim = isfinite(rawSim) ? -rawSim : 1.0f;
-        // sim = fmaxf(fminf(sim, 1.0f), -1.0f); // clamp
-        return sim;
-    }
+     {
+         // NCC
+
+         // without optimization
+         // const float rawSim = getVarianceXYW() / sqrtf(getVarianceXW() * getVarianceYW());
+         const float rawSim = __fdividef(getVarianceXYW(), sqrtf(getVarianceXW() * getVarianceYW()));
+
+         const float sim = isfinite(rawSim) ? -rawSim : 1.0f;
+         // sim = fmaxf(fminf(sim, 1.0f), -1.0f); // clamp
+         return sim;
+     }
 
     __device__ void update(const float2& g)
     {

@@ -9,37 +9,34 @@
 #include "Logger.hpp"
 #include "Timer.hpp"
 
-#include <boost/program_options/options_description.hpp>
-
 namespace aliceVision {
 
 class HardwareContext
 {
-public:
+  public:
     void displayHardware();
 
-    size_t getUserMaxMemoryAvailable() const
-    {
-        return _maxUserMemoryAvailable;
-    }
+    size_t getUserMaxMemoryAvailable() const { return _maxUserMemoryAvailable; }
 
-    unsigned int getUserMaxCoresAvailable() const
-    {
-        return _maxUserCoresAvailable;
-    }
+    void setUserMaxMemoryAvailable(size_t val) { _maxUserMemoryAvailable = val; }
 
-    void setUserCoresLimit(unsigned int coresLimit)
-    {
-        _limitUserCores = coresLimit;
-    }
+    unsigned int getUserMaxCoresAvailable() const { return _maxUserCoresAvailable; }
 
-    void setupFromCommandLine(boost::program_options::options_description & options);
+    void setUserMaxCoresAvailable(unsigned int val) { _maxUserCoresAvailable = val; }
+
+    void setUserCoresLimit(unsigned int coresLimit) { _limitUserCores = coresLimit; }
 
     unsigned int getMaxThreads() const;
 
-private:
     /**
-     * @brief This is the maximum memory available 
+     * @brief compute the maximum memory available
+     * @return the size in bytes
+     */
+    size_t getMaxMemory() const;
+
+  private:
+    /**
+     * @brief This is the maximum memory available
      * This information is passed to the application through command line parameters
      * if we want to override the system defined information (E.g. cgroups)
      */
@@ -59,4 +56,4 @@ private:
     unsigned int _limitUserCores = std::numeric_limits<unsigned int>::max();
 };
 
-}
+}  // namespace aliceVision

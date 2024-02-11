@@ -28,27 +28,26 @@ using namespace aliceVision::matching;
 
 using FeatureId = std::pair<feature::EImageDescriberType, std::size_t>;
 
-
 /**
  * @brief KeypointId is a unique ID for a feature in a view.
  */
 struct KeypointId
 {
-  KeypointId(){}
-  KeypointId(feature::EImageDescriberType type, std::size_t index)
-    : descType(type)
-    , featIndex(index)
-  {}
+    KeypointId() {}
+    KeypointId(feature::EImageDescriberType type, std::size_t index)
+      : descType(type),
+        featIndex(index)
+    {}
 
-  bool operator<(const KeypointId& other) const
-  {
-    if(descType == other.descType)
-      return featIndex < other.featIndex;
-    return descType < other.descType;
-  }
+    bool operator<(const KeypointId& other) const
+    {
+        if (descType == other.descType)
+            return featIndex < other.featIndex;
+        return descType < other.descType;
+    }
 
-  feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
-  std::size_t featIndex = 0;
+    feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
+    std::size_t featIndex = 0;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const KeypointId& k)
@@ -57,6 +56,10 @@ inline std::ostream& operator<<(std::ostream& os, const KeypointId& k)
     return os;
 }
 
+struct TrackItem
+{
+    std::size_t featureId;
+};
 
 /**
  * @brief A Track is a feature visible accross multiple views.
@@ -64,15 +67,15 @@ inline std::ostream& operator<<(std::ostream& os, const KeypointId& k)
  */
 struct Track
 {
-  /// Data structure to store a track: collection of {ViewId, FeatureId}
-  using FeatureIdPerView = stl::flat_map<std::size_t, std::size_t>;
+    /// Data structure to store a track: collection of {ViewId, FeatureId}
+    using FeatureIdPerView = stl::flat_map<std::size_t, TrackItem>;
 
-  Track() {}
+    Track() {}
 
-  /// Descriptor type
-  feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
-  /// Collection of matched features between views: {ViewId, FeatureId}
-  FeatureIdPerView featPerView;
+    /// Descriptor type
+    feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
+    /// Collection of matched features between views: {ViewId, FeatureId}
+    FeatureIdPerView featPerView;
 };
 
 /// A track is a collection of {trackId, Track}
@@ -93,14 +96,13 @@ using TrackIdSet = std::vector<std::size_t>;
  * and we go on for increasing values of l so that e.g. the first cell of the pyramid at l=2 has position K^2, the second K^2 + 1 etc...
  * So in general the i-th cell of the pyramid at level l has position P= \sum_{j=1...l-1} K_j^2 + i
  */
-using TracksPyramidPerView = stl::flat_map<std::size_t, stl::flat_map<std::size_t, std::size_t> >;
+using TracksPyramidPerView = stl::flat_map<std::size_t, stl::flat_map<std::size_t, std::size_t>>;
 
 /**
  * @brief TracksPerView is a list of visible track ids for each view.
  * TracksPerView contains <viewId, vector<trackId>>
  */
-using TracksPerView = stl::flat_map<std::size_t, TrackIdSet >;
+using TracksPerView = stl::flat_map<std::size_t, TrackIdSet>;
 
-
-} // namespace track
-} // namespace aliceVision
+}  // namespace track
+}  // namespace aliceVision

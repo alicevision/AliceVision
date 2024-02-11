@@ -6,12 +6,12 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/sceneSample.hpp>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <boost/program_options.hpp>
 
 // These constants define the current software version.
@@ -21,17 +21,20 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
-    std::string sfmOutputDataFilepath; // output folder for splited images
-    
+    std::string sfmOutputDataFilepath;  // output folder for splited images
+
+    // clang-format off
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
-                                 "Output sfm file to generate.");
+    requiredParams.add_options()
+        ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
+         "Output sfm file to generate.");
+    // clang-format on
 
     CmdLine cmdline("This program is used to generate a sample scene and save it to a given file path.\n"
                     "AliceVision generateSampleScene");
@@ -45,7 +48,7 @@ int aliceVision_main(int argc, char** argv)
     sfmDataIO::generateSampleScene(sfmData);
 
     ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
-    if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be write.");
         return EXIT_FAILURE;

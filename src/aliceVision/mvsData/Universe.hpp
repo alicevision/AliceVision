@@ -20,7 +20,7 @@ typedef struct
  */
 class Universe
 {
-public:
+  public:
     explicit Universe(int elements);
     ~Universe();
     /// Initialize all elements to the default values
@@ -31,14 +31,11 @@ public:
     void join(int x, int y);
     void addEdge(int x, int y);
 
-    inline int size(int x) const
-    {
-        return elts[x].size;
-    }
+    inline int size(int x) const { return elts[x].size; }
 
-public:
+  public:
     uni_elt* elts;
     int num, allelems;
 };
 
-} // namespace aliceVision
+}  // namespace aliceVision

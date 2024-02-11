@@ -11,12 +11,12 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/matchingImageCollection/ImagePairListIO.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <cstdlib>
 
 // These constants define the current software version.
@@ -28,100 +28,100 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /// Build a list of pair that share visibility content from the SfMData structure
 PairSet BuildPairsFromStructureObservations(const sfmData::SfMData& sfmData)
 {
-  PairSet pairs;
+    PairSet pairs;
 
-  for (sfmData::Landmarks::const_iterator itL = sfmData.getLandmarks().begin();
-    itL != sfmData.getLandmarks().end(); ++itL)
-  {
-    const sfmData::Landmark & landmark = itL->second;
-    for(const auto& iterI : landmark.observations)
+    for (sfmData::Landmarks::const_iterator itL = sfmData.getLandmarks().begin(); itL != sfmData.getLandmarks().end(); ++itL)
     {
-      const IndexT id_viewI = iterI.first;
-      sfmData::Observations::const_iterator iterJ = landmark.observations.begin();
-      std::advance(iterJ, 1);
-      for (; iterJ != landmark.observations.end(); ++iterJ)
-      {
-        const IndexT id_viewJ = iterJ->first;
-        pairs.insert( std::make_pair(id_viewI,id_viewJ));
-      }
+        const sfmData::Landmark& landmark = itL->second;
+        for (const auto& iterI : landmark.getObservations())
+        {
+            const IndexT id_viewI = iterI.first;
+            sfmData::Observations::const_iterator iterJ = landmark.getObservations().begin();
+            std::advance(iterJ, 1);
+            for (; iterJ != landmark.getObservations().end(); ++iterJ)
+            {
+                const IndexT id_viewJ = iterJ->first;
+                pairs.insert(std::make_pair(id_viewI, id_viewJ));
+            }
+        }
     }
-  }
-  return pairs;
+    return pairs;
 }
 
 /// Build a list of pair from the camera frusta intersections
-PairSet BuildPairsFromFrustumsIntersections(
-  const sfmData::SfMData & sfmData,
-  const double z_near = -1., // default near plane
-  const double z_far = -1.,  // default far plane
-  const std::string& sOutDirectory = "") // output folder to save frustums as PLY
+PairSet BuildPairsFromFrustumsIntersections(const sfmData::SfMData& sfmData,
+                                            const double z_near = -1.,              // default near plane
+                                            const double z_far = -1.,               // default far plane
+                                            const std::string& sOutDirectory = "")  // output folder to save frustums as PLY
 {
-  const FrustumFilter frustum_filter(sfmData, z_near, z_far);
-  if (!sOutDirectory.empty())
-    frustum_filter.export_Ply((fs::path(sOutDirectory) / "frustums.ply").string());
-  return frustum_filter.getFrustumIntersectionPairs();
+    const FrustumFilter frustum_filter(sfmData, z_near, z_far);
+    if (!sOutDirectory.empty())
+        frustum_filter.exportPly((fs::path(sOutDirectory) / "frustums.ply").string());
+    return frustum_filter.getFrustumIntersectionPairs();
 }
 
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string outputFilename;
-  double zNear = -1.;
-  double zFar = -1.;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string outputFilename;
+    double zNear = -1.;
+    double zFar = -1.;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("output,o", po::value<std::string>(&outputFilename)->required(),
-      "Output pair filename.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("output,o", po::value<std::string>(&outputFilename)->required(),
+         "Output pair filename.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("zNear", po::value<double>(&zNear)->default_value(zNear),
-      "Distance of the near camera plane.")
-    ("zFar", po::value<double>(&zFar)->default_value(zFar),
-      "Distance of the far camera plane.");
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("zNear", po::value<double>(&zNear)->default_value(zNear),
+         "Distance of the near camera plane.")
+        ("zFar", po::value<double>(&zFar)->default_value(zFar),
+         "Distance of the far camera plane.");
+    // clang-format on
 
-  CmdLine cmdline("This program computes camera cones that share some putative visual content.\n"
-                  "AliceVision frustumFiltering");
-  cmdline.add(requiredParams);
-  cmdline.add(optionalParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
+    CmdLine cmdline("This program computes camera cones that share some putative visual content.\n"
+                    "AliceVision frustumFiltering");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
 
-  // check that we can create the output folder
-  if(!fs::exists(fs::path(outputFilename).parent_path()))
-    if(!fs::exists(fs::path(outputFilename).parent_path()))
-      return EXIT_FAILURE;
+    // check that we can create the output folder
+    if (!fs::exists(fs::path(outputFilename).parent_path()))
+        if (!fs::exists(fs::path(outputFilename).parent_path()))
+            return EXIT_FAILURE;
 
-  // load input SfMData scene
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
-    return EXIT_FAILURE;
-  }
+    // load input SfMData scene
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
+        return EXIT_FAILURE;
+    }
 
-  aliceVision::system::Timer timer;
+    aliceVision::system::Timer timer;
 
-  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfmData, zNear, zFar, fs::path(outputFilename).parent_path().string());
-  /*const PairSet pairs = BuildPairsFromStructureObservations(sfm_data); */
+    const PairSet pairs = BuildPairsFromFrustumsIntersections(sfmData, zNear, zFar, fs::path(outputFilename).parent_path().string());
+    /*const PairSet pairs = BuildPairsFromStructureObservations(sfm_data); */
 
-  ALICEVISION_LOG_INFO("# pairs: " << pairs.size());
-  ALICEVISION_LOG_INFO("Pair filtering took: " << timer.elapsed() << " s");
+    ALICEVISION_LOG_INFO("# pairs: " << pairs.size());
+    ALICEVISION_LOG_INFO("Pair filtering took: " << timer.elapsed() << " s");
 
-  // export pairs on disk
-  if (matchingImageCollection::savePairsToFile(outputFilename, pairs))
-    return EXIT_SUCCESS;
-  else
-    return EXIT_FAILURE;
+    // export pairs on disk
+    if (matchingImageCollection::savePairsToFile(outputFilename, pairs))
+        return EXIT_SUCCESS;
+    else
+        return EXIT_FAILURE;
 }

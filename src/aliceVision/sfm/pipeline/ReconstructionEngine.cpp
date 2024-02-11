@@ -10,10 +10,8 @@
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 
-
 namespace aliceVision {
 namespace sfm {
-
 
 void retrieveMarkersId(sfmData::SfMData& sfmData)
 {
@@ -31,13 +29,12 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
     std::set<feature::EImageDescriberType> usedDescTypes = sfmData.getLandmarkDescTypes();
 
     std::vector<feature::EImageDescriberType> markerDescTypes;
-    std::set_intersection(allMarkerDescTypes.begin(), allMarkerDescTypes.end(),
-        usedDescTypes.begin(), usedDescTypes.end(),
-        std::back_inserter(markerDescTypes));
+    std::set_intersection(
+      allMarkerDescTypes.begin(), allMarkerDescTypes.end(), usedDescTypes.begin(), usedDescTypes.end(), std::back_inserter(markerDescTypes));
 
     std::set<feature::EImageDescriberType> markerDescTypes_set(markerDescTypes.begin(), markerDescTypes.end());
 
-    if(markerDescTypes.empty())
+    if (markerDescTypes.empty())
         return;
 
     // load the corresponding view regions
@@ -52,18 +49,19 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
     for (auto& landmarkIt : sfmData.getLandmarks())
     {
         auto& landmark = landmarkIt.second;
-        if (landmark.observations.empty())
+        if (landmark.getObservations().empty())
             continue;
         if (markerDescTypes_set.find(landmark.descType) == markerDescTypes_set.end())
             continue;
         landmark.rgb = image::BLACK;
 
-        const auto obs = landmark.observations.begin();
+        const auto obs = landmark.getObservations().begin();
         const feature::Regions& regions = regionPerView.getRegions(obs->first, landmark.descType);
         const feature::CCTAG_Regions* cctagRegions = dynamic_cast<const feature::CCTAG_Regions*>(&regions);
         const feature::APRILTAG_Regions* apriltagRegions = dynamic_cast<const feature::APRILTAG_Regions*>(&regions);
-        if (cctagRegions) {
-            const auto& d = cctagRegions->Descriptors()[obs->second.id_feat];
+        if (cctagRegions)
+        {
+            const auto& d = cctagRegions->Descriptors()[obs->second.getFeatureId()];
             for (int i = 0; i < d.size(); ++i)
             {
                 if (d[i] == 255)
@@ -73,8 +71,10 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
                     break;
                 }
             }
-        } else if (apriltagRegions) {
-            const auto& d = apriltagRegions->Descriptors()[obs->second.id_feat];
+        }
+        else if (apriltagRegions)
+        {
+            const auto& d = apriltagRegions->Descriptors()[obs->second.getFeatureId()];
             for (int i = 0; i < d.size(); ++i)
             {
                 if (d[i] == 255)
@@ -88,6 +88,5 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
     }
 }
 
-
-} // namespace sfm
-} // namespace aliceVision
+}  // namespace sfm
+}  // namespace aliceVision

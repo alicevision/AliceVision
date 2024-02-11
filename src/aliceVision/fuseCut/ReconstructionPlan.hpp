@@ -18,14 +18,13 @@ namespace fuseCut {
 
 class ReconstructionPlan : public VoxelsGrid
 {
-public:
+  public:
     StaticVector<int>* nVoxelsTracks;
     ReconstructionPlan(Voxel& dimmensions, Point3d* space, mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir);
     ~ReconstructionPlan();
 
     unsigned long getNTracks(const Voxel& LU, const Voxel& RD);
-    bool divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel& RD2o, const Voxel& LUi, const Voxel& RDi,
-                   unsigned long maxTracks);
+    bool divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel& RD2o, const Voxel& LUi, const Voxel& RDi, unsigned long maxTracks);
     StaticVector<Point3d>* computeReconstructionPlanBinSearch(unsigned long maxTracks);
 
     StaticVector<int>* voxelsIdsIntersectingHexah(Point3d* hexah);
@@ -40,5 +39,5 @@ mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
 StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs);
 void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVector<StaticVector<int>>& out_ptsCams);
 
-} // namespace fuseCut
-} // namespace aliceVision
+}  // namespace fuseCut
+}  // namespace aliceVision

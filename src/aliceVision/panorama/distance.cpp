@@ -1,33 +1,36 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include "distance.hpp"
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 bool distanceToCenter(aliceVision::image::Image<float>& _weights, const CoordinatesMap& map, int width, int height)
 {
-
-    const aliceVision::image::Image<Eigen::Vector2d>& coordinates = map.getCoordinates();
+    const aliceVision::image::Image<Eigen::Vector2f>& coordinates = map.getCoordinates();
     const aliceVision::image::Image<unsigned char>& mask = map.getMask();
 
     float cx = width / 2.0f;
     float cy = height / 2.0f;
 
-    _weights = aliceVision::image::Image<float>(coordinates.Width(), coordinates.Height());
+    _weights = aliceVision::image::Image<float>(coordinates.width(), coordinates.height());
 
-    for(int i = 0; i < _weights.Height(); i++)
+    for (int i = 0; i < _weights.height(); i++)
     {
-        for(int j = 0; j < _weights.Width(); j++)
+        for (int j = 0; j < _weights.width(); j++)
         {
-
             _weights(i, j) = 0.0f;
 
             bool valid = mask(i, j);
-            if(!valid)
+            if (!valid)
             {
                 continue;
             }
 
-            const Vec2& coords = coordinates(i, j);
+            const Vec2f& coords = coordinates(i, j);
 
             float x = coords(0);
             float y = coords(1);
@@ -42,43 +45,34 @@ bool distanceToCenter(aliceVision::image::Image<float>& _weights, const Coordina
     return true;
 }
 
-static inline int f(int x_i, int gi) noexcept
-{
-    return (x_i * x_i) + gi * gi;
-}
+static inline int f(int x_i, int gi) noexcept { return (x_i * x_i) + gi * gi; }
 
-static inline int sep(int i, int u, int gi, int gu, int) noexcept
-{
-    return (u * u - i * i + gu * gu - gi * gi) / (2 * (u - i));
-}
+static inline int sep(int i, int u, int gi, int gu, int) noexcept { return (u * u - i * i + gu * gu - gi * gi) / (2 * (u - i)); }
 
 /// Code adapted from VFLib: https://github.com/vinniefalco/VFLib (Licence MIT)
 bool computeDistanceMap(image::Image<int>& distance, const image::Image<unsigned char>& mask)
 {
-
-    int width = mask.Width();
-    int height = mask.Height();
+    int width = mask.width();
+    int height = mask.height();
 
     int maxval = width + height;
     image::Image<int> buf(width, height);
 
     /* Per column distance 1D calculation */
-    for(int j = 0; j < width; j++)
+    for (int j = 0; j < width; j++)
     {
         buf(0, j) = mask(0, j) ? 0 : maxval;
 
         /*Top to bottom accumulation */
-        for(int i = 1; i < height; i++)
+        for (int i = 1; i < height; i++)
         {
-
             buf(i, j) = mask(i, j) ? 0 : 1 + buf(i - 1, j);
         }
 
         /*Bottom to top correction */
-        for(int i = height - 2; i >= 0; i--)
+        for (int i = height - 2; i >= 0; i--)
         {
-
-            if(buf(i + 1, j) < buf(i, j))
+            if (buf(i + 1, j) < buf(i, j))
             {
                 buf(i, j) = 1 + buf(i + 1, j);
             }
@@ -89,19 +83,19 @@ bool computeDistanceMap(image::Image<int>& distance, const image::Image<unsigned
     std::vector<int> t(std::max(width, height));
 
     /*Per row scan*/
-    for(int i = 0; i < height; i++)
+    for (int i = 0; i < height; i++)
     {
         int q = 0;
         s[0] = 0;
         t[0] = 0;
 
         // scan 3
-        for(int j = 1; j < width; j++)
+        for (int j = 1; j < width; j++)
         {
-            while(q >= 0 && f(t[q] - s[q], buf(i, s[q])) > f(t[q] - j, buf(i, j)))
+            while (q >= 0 && f(t[q] - s[q], buf(i, s[q])) > f(t[q] - j, buf(i, j)))
                 q--;
 
-            if(q < 0)
+            if (q < 0)
             {
                 q = 0;
                 s[0] = j;
@@ -110,7 +104,7 @@ bool computeDistanceMap(image::Image<int>& distance, const image::Image<unsigned
             {
                 int const w = 1 + sep(s[q], j, buf(i, s[q]), buf(i, j), maxval);
 
-                if(w < width)
+                if (w < width)
                 {
                     ++q;
                     s[q] = j;
@@ -120,12 +114,12 @@ bool computeDistanceMap(image::Image<int>& distance, const image::Image<unsigned
         }
 
         // scan 4
-        for(int j = width - 1; j >= 0; --j)
+        for (int j = width - 1; j >= 0; --j)
         {
             int const d = f(j - s[q], buf(i, s[q]));
 
             distance(i, j) = d;
-            if(j == t[q])
+            if (j == t[q])
                 --q;
         }
     }
@@ -133,4 +127,4 @@ bool computeDistanceMap(image::Image<int>& distance, const image::Image<unsigned
     return true;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

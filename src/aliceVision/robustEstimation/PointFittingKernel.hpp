@@ -47,132 +47,120 @@ namespace robustEstimation {
 template<typename SolverT_, typename ErrorT_, typename ModelT_ = Mat3Model>
 class PointFittingKernel
 {
-public:
+  public:
+    using SolverT = SolverT_;
+    using ErrorT = ErrorT_;
+    using ModelT = ModelT_;
 
-  using SolverT = SolverT_;
-  using ErrorT = ErrorT_;
-  using ModelT = ModelT_;
+    PointFittingKernel(const Mat& x1, const Mat& x2)
+      : _x1(x1),
+        _x2(x2)
+    {}
 
-  PointFittingKernel(const Mat& x1, const Mat& x2)
-    : _x1(x1)
-    , _x2(x2)
-  {}
+    /**
+     * @brief Return the minimum number of required samples
+     * @return minimum number of required samples
+     */
+    inline std::size_t getMinimumNbRequiredSamples() const { return _kernelSolver.getMinimumNbRequiredSamples(); }
 
-  /**
-   * @brief Return the minimum number of required samples
-   * @return minimum number of required samples
-   */
-  inline std::size_t getMinimumNbRequiredSamples() const
-  {
-    return _kernelSolver.getMinimumNbRequiredSamples();
-  }
+    /**
+     * @brief Return the maximum number of models
+     * @return maximum number of models
+     */
+    inline std::size_t getMaximumNbModels() const { return _kernelSolver.getMaximumNbModels(); }
 
-  /**
-   * @brief Return the maximum number of models
-   * @return maximum number of models
-   */
-  inline std::size_t getMaximumNbModels() const
-  {
-    return _kernelSolver.getMaximumNbModels();
-  }
+    /**
+     * @brief Extract required sample and fit model(s) to the sample
+     * @param[in] samples
+     * @param[out] models
+     */
+    inline virtual void fit(const std::vector<std::size_t>& samples, std::vector<ModelT>& models) const
+    {
+        const Mat x1 = buildSubsetMatrix(_x1, samples);
+        const Mat x2 = buildSubsetMatrix(_x2, samples);
+        _kernelSolver.solve(x1, x2, models);
+    }
 
-  /**
-   * @brief Extract required sample and fit model(s) to the sample
-   * @param[in] samples
-   * @param[out] models
-   */
-  inline virtual void fit(const std::vector<std::size_t>& samples, std::vector<ModelT>& models) const
-  {
-    const Mat x1 = ExtractColumns(_x1, samples);
-    const Mat x2 = ExtractColumns(_x2, samples);
-    _kernelSolver.solve(x1, x2, models);
-  }
+    /**
+     * @brief Return the error associated to the model and a sample point
+     * @param[in] sample
+     * @param[in] model
+     * @return error value
+     */
+    inline virtual double error(std::size_t sample, const ModelT& model) const
+    {
+        return _errorEstimator.error(model, _x1.col(sample), _x2.col(sample));
+    }
 
-  /**
-   * @brief Return the error associated to the model and a sample point
-   * @param[in] sample
-   * @param[in] model
-   * @return error value
-   */
-  inline virtual double error(std::size_t sample, const ModelT& model) const
-  {
-    return _errorEstimator.error(model, _x1.col(sample), _x2.col(sample));
-  }
+    /**
+     * @brief Return the errors associated to the model and each sample point
+     * @param[in] model
+     * @param[out] errors
+     */
+    inline virtual void errors(const ModelT& model, std::vector<double>& errors) const
+    {
+        errors.resize(_x1.cols());
+        for (std::size_t sample = 0; sample < _x1.cols(); ++sample)
+            errors.at(sample) = error(sample, model);
+    }
 
-  /**
-   * @brief Return the errors associated to the model and each sample point
-   * @param[in] model
-   * @param[out] errors
-   */
-  inline virtual void errors(const ModelT& model, std::vector<double>& errors) const
-  {
-    errors.resize(_x1.cols());
-    for(std::size_t sample = 0; sample < _x1.cols(); ++sample)
-      errors.at(sample) = error(sample, model);
-  }
+    /**
+     * @brief get the number of putative points
+     * @return number of putative points
+     */
+    inline std::size_t nbSamples() const { return _x1.cols(); }
 
-  /**
-   * @brief get the number of putative points
-   * @return number of putative points
-   */
-  inline std::size_t nbSamples() const
-  {
-    return _x1.cols();
-  }
-
-protected:
-
-  /// left corresponding data
-  const Mat& _x1;
-  /// right corresponding data
-  const Mat& _x2;
-  /// two view solver
-  const SolverT _kernelSolver{};
-  /// solver error estimation
-  const ErrorT _errorEstimator{};
+  protected:
+    /// left corresponding data
+    const Mat& _x1;
+    /// right corresponding data
+    const Mat& _x2;
+    /// two view solver
+    const SolverT _kernelSolver{};
+    /// solver error estimation
+    const ErrorT _errorEstimator{};
 };
 
 template<typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = Mat3Model>
 class NormalizedPointFittingKernel : public PointFittingKernel<SolverT_, ErrorT_, ModelT_>
 {
-public:
+  public:
+    using KernelBase = PointFittingKernel<SolverT_, ErrorT_, ModelT_>;
 
-  using KernelBase = PointFittingKernel<SolverT_, ErrorT_, ModelT_>;
+    NormalizedPointFittingKernel(const Mat& x1, const Mat& x2)
+      : KernelBase(x1, x2)
+    {}
 
-  NormalizedPointFittingKernel(const Mat& x1, const Mat& x2)
-    : KernelBase(x1, x2)
-  {}
+    /**
+     * @brief Extract required sample and fit model(s) to the sample
+     * @param[in] samples
+     * @param[out] models
+     */
+    inline void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
+    {
+        const Mat x1 = buildSubsetMatrix(KernelBase::_x1, samples);
+        const Mat x2 = buildSubsetMatrix(KernelBase::_x2, samples);
 
-  /**
-   * @brief Extract required sample and fit model(s) to the sample
-   * @param[in] samples
-   * @param[out] models
-   */
-  inline void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
-  {
-    const Mat x1 = ExtractColumns(KernelBase::_x1, samples);
-    const Mat x2 = ExtractColumns(KernelBase::_x2, samples);
+        assert(2 == x1.rows());
+        assert(KernelBase::getMinimumNbRequiredSamples() <= x1.cols());
+        assert(x1.rows() == x2.rows());
+        assert(x1.cols() == x2.cols());
 
-    assert(2 == x1.rows());
-    assert(KernelBase::getMinimumNbRequiredSamples() <= x1.cols());
-    assert(x1.rows() == x2.rows());
-    assert(x1.cols() == x2.cols());
+        // normalize the data.
+        Mat3 T1;
+        Mat3 T2;
+        Mat x1_normalized;
+        Mat x2_normalized;
 
-    // normalize the data.
-    Mat3 T1;
-    Mat3 T2;
-    Mat x1_normalized;
-    Mat x2_normalized;
+        normalizePoints(x1, &x1_normalized, &T1);
+        normalizePoints(x2, &x2_normalized, &T2);
 
-    normalizePoints(x1, &x1_normalized, &T1);
-    normalizePoints(x2, &x2_normalized, &T2);
+        KernelBase::_kernelSolver.solve(x1_normalized, x2_normalized, models);
 
-    KernelBase::_kernelSolver.solve(x1_normalized, x2_normalized, models);
-
-    // unnormalize model from the computed conditioning.
-    for(int i = 0; i < models.size(); ++i)
-      UnnormalizerT_::unnormalize(T1, T2, &(models.at(i).getMatrix()));
-  }
+        // unnormalize model from the computed conditioning.
+        for (int i = 0; i < models.size(); ++i)
+            UnnormalizerT_::unnormalize(T1, T2, &(models.at(i).getMatrix()));
+    }
 };
 
 }  // namespace robustEstimation

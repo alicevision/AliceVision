@@ -14,6 +14,7 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
+#include <list>
 #include <future>
 #include <mutex>
 
@@ -28,15 +29,14 @@ enum class ECorrectEV
 
 std::string ECorrectEV_enumToString(const ECorrectEV correctEV);
 
-
 template<typename Image>
 class ImagesCache
 {
-public:
+  public:
     using Color = typename Image::Tpixel;
     using ImgSharedPtr = std::shared_ptr<Image>;
 
-private:
+  private:
     ImagesCache(const ImagesCache&) = delete;
 
     const MultiViewParams& _mp;
@@ -56,20 +56,20 @@ private:
     image::EImageColorSpace _colorspace{image::EImageColorSpace::AUTO};
     ECorrectEV _correctEV{ECorrectEV::NO_CORRECTION};
 
-public:
-    ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace,
-                ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+  public:
+    ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace, ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
 
-    ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace,
+    ImagesCache(const MultiViewParams& mp,
+                image::EImageColorSpace colorspace,
                 std::vector<std::string>& imagesNames,
                 ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
 
-    void initIC( std::vector<std::string>& imagesNames );
+    void initIC(std::vector<std::string>& imagesNames);
     void setCacheSize(int nbPreload);
     void setCorrectEV(const ECorrectEV correctEV) { _correctEV = correctEV; }
     ~ImagesCache() = default;
 
-    inline ImgSharedPtr getImg_sync( int camId )
+    inline ImgSharedPtr getImg_sync(int camId)
     {
         refreshImage_sync(camId);
         const int imageId = _camIdMapId[camId];
@@ -86,5 +86,5 @@ public:
     void refreshImages_async(const std::vector<int>& camIds);
 };
 
-} // namespace mvsUtils
-} // namespace aliceVision
+}  // namespace mvsUtils
+}  // namespace aliceVision

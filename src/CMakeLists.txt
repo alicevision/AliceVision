@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.12)
+message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 
 # ==============================================================================
 # AliceVision version
@@ -20,9 +21,6 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed.")
 endif()
 
-message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
-cmake_minimum_required(VERSION 3.4)
-
 if(NOT ALICEVISION_ROOT)
   message(FATAL_ERROR "Should build from the CMakeLists.txt in the root folder.")
 endif()
@@ -40,9 +38,11 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
-# C++14
-set(CMAKE_CXX_STANDARD 14)
+# C++17
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard used by the project")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "The C++ standard used to compile cuda code in the project")
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # ==============================================================================
 # AliceVision build options
@@ -50,9 +50,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
 option(ALICEVISION_BUILD_HDR "Build AliceVision HDR part" ON)
+option(ALICEVISION_BUILD_SEGMENTATION "Build AliceVision Segmentation part" ON)
+option(ALICEVISION_BUILD_STEREOPHOTOMETRY "Build AliceVision StereoPhotometry part" ON)
+option(ALICEVISION_BUILD_PANORAMA "Build AliceVision panorama part" ON)
 option(ALICEVISION_BUILD_SOFTWARE "Build AliceVision command line tools." ON)
-option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." OFF)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
+option(ALICEVISION_BUILD_SWIG_BINDING "Build the Python binding with SWIG." OFF)
+trilean_option(ALICEVISION_BUILD_LIDAR "Build AliceVision LIDAR part" AUTO)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
 
 trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
@@ -62,6 +66,8 @@ trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
 trilean_option(ALICEVISION_USE_OPENGV "Enable use of OpenGV algorithms" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
+trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
+option(ALICEVISION_USE_ONNX_GPU "Use CUDA with ONNX Runtime" ON)
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
@@ -81,6 +87,15 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 # Default build is in Release mode
 if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
   set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+if(NOT ALICEVISION_BUILD_SFM)
+    SET(ALICEVISION_BUILD_MVS OFF)
+    SET(ALICEVISION_BUILD_HDR OFF)
+    SET(ALICEVISION_BUILD_SEGMENTATION OFF)
+    SET(ALICEVISION_BUILD_STEREOPHOTOMETRY OFF)
+    SET(ALICEVISION_BUILD_PANORAMA OFF)
+    SET(ALICEVISION_BUILD_LIDAR OFF)
 endif()
 
 # ==============================================================================
@@ -105,9 +120,9 @@ endif()
 if(ALICEVISION_USE_RPATH)
   if(APPLE)
     set(CMAKE_MACOSX_RPATH 1)
-    set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}:@loader_path")
+    set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path")
   elseif(UNIX)
-    set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\\$ORIGIN")
+    set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR};\\$ORIGIN")
   endif()
 endif()
 
@@ -136,16 +151,6 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_CMakePredefinedTargets"
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# There was a bug in FindCUDA fixed in cmake 3.10 that creates empty strings on the nvcc command line.
-# The solution merged in cmake 3.10 use the command COMMAND_EXPAND_LISTS only available from cmake >= 3.8
-# https://gitlab.kitware.com/cmake/cmake/merge_requests/1008
-# So we use another solution compatible with cmake >= 3.4 proposed here:
-# https://gitlab.kitware.com/cmake/cmake/issues/16411
-# if cmake version < 3.10 use our hacked version of FindCUDA:
-if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.10)
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compatibilityCUDA)
-endif()
-
 if(BUILD_SHARED_LIBS)
   if(WIN32)
     # Export all symbols from the dynamic libraries by default (avoid dllexport markup)
@@ -172,7 +177,7 @@ endmacro(add_target_properties)
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/MeshSDFilter/external)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
@@ -272,11 +277,11 @@ endif()
 # Boost
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-set(ALICEVISION_BOOST_COMPONENTS atomic container date_time filesystem graph log log_setup program_options regex serialization system thread timer)
+set(ALICEVISION_BOOST_COMPONENTS atomic container date_time graph json log log_setup program_options regex serialization system thread timer)
 if(ALICEVISION_BUILD_TESTS)
     set(ALICEVISION_BOOST_COMPONENT_UNITTEST unit_test_framework)
 endif()
-find_package(Boost 1.60.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} ${ALICEVISION_BOOST_COMPONENT_UNITTEST})
+find_package(Boost 1.76.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} ${ALICEVISION_BOOST_COMPONENT_UNITTEST})
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
@@ -304,12 +309,6 @@ else()
   set(Boost_USE_STATIC_LIBS ON)
 endif()
 
-if(BOOST_NO_CXX11)
-  # Avoid link errors on boost filesystem copy_file function
-  # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
-  add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
-endif()
-
 
 # ==============================================================================
 # OpenEXR >= 2.5
@@ -333,6 +332,16 @@ if(OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
   message(STATUS "OpenImageIO found.")
 else()
   message(SEND_ERROR "Failed to find OpenImageIO.")
+endif()
+
+# ==============================================================================
+# Expat
+# ==============================================================================
+find_package(expat CONFIG REQUIRED)
+if(EXPAT_FOUND OR expat_FOUND OR TARGET expat::expat)
+  message(STATUS "Expat found.")
+else()
+  message(SEND_ERROR "Failed to find Expat.")
 endif()
 
 # ==============================================================================
@@ -368,6 +377,27 @@ if(Eigen3_FOUND OR EIGEN3_FOUND)
   endif()
 else()
   message(FATAL_ERROR " EIGEN NOT FOUND. EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
+endif()
+
+# ==============================================================================
+# onnxruntime
+# ==============================================================================
+set(ALICEVISION_HAVE_ONNX 0)
+set(ALICEVISION_HAVE_ONNX_GPU 1)
+
+if(NOT ALICEVISION_USE_ONNX STREQUAL "OFF")
+  find_package(ONNXRuntime)
+
+  if(TARGET ONNXRuntime::ONNXRuntime)
+    set(ALICEVISION_HAVE_ONNX 1)
+    message(STATUS "ONNXRuntime FOUND: ${ONNXRuntime_LIBRARY}")
+  elseif(ALICEVISION_USE_ONNX STREQUAL "ON")
+    message(SEND_ERROR "Failed to find ONNX Runtime.")
+  endif()
+endif()
+
+if(ALICEVISION_USE_ONNX_GPU STREQUAL "OFF" OR ALICEVISION_USE_CUDA STREQUAL "OFF")
+  set(ALICEVISION_HAVE_ONNX_GPU 0)
 endif()
 
 # ==============================================================================
@@ -411,18 +441,18 @@ endif()
 # ==============================================================================
 # Flann
 # ==============================================================================
-# - internal by default (flann),
-# - external if FLANN_INCLUDE_DIR_HINTS and a valid Flann setup is found
-# ==============================================================================
 if(ALICEVISION_BUILD_SFM)
-  if(NOT DEFINED FLANN_INCLUDE_DIR_HINTS)
-    set(FLANN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src/cpp)
-    set(ALICEVISION_USE_INTERNAL_FLANN ON)
-  endif()
-  find_package(Flann QUIET)
-  if(NOT FLANN_FOUND OR ALICEVISION_USE_INTERNAL_FLANN)
-    set(FLANN_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src/cpp)
-    set(FLANN_LIBRARY flann_cpp_s)
+  find_package(lz4 REQUIRED)
+  find_package(flann REQUIRED)
+
+  if (TARGET lz4::lz4)
+    set(FLANN_LIBRARIES flann::flann_cpp lz4::lz4)
+  elseif (TARGET LZ4::lz4_static)
+    set(FLANN_LIBRARIES flann::flann_cpp LZ4::lz4_static)
+  elseif (TARGET LZ4::lz4_shared)
+    set(FLANN_LIBRARIES flann::flann_cpp LZ4::lz4_shared)
+  else()
+    message(FATAL_ERROR "FLANN can not be found")
   endif()
 endif()
 
@@ -438,20 +468,20 @@ endif()
 # ==============================================================================
 # Lemon
 # ==============================================================================
-# - internal by default (Lemon),
-# - external if LEMON_INCLUDE_DIR_HINTS and a valid Lemon setup is found
-# ==============================================================================
 if(ALICEVISION_BUILD_SFM)
-  if(NOT DEFINED LEMON_INCLUDE_DIR_HINTS)
-    set(LEMON_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lemon)
-    set(ALICEVISION_USE_INTERNAL_LEMON ON)
-  endif()
-  find_package(Lemon QUIET)
-  if(NOT LEMON_FOUND OR ALICEVISION_USE_INTERNAL_LEMON)
-    set(LEMON_INCLUDE_DIRS
-      ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lemon
-      ${CMAKE_CURRENT_BINARY_DIR}/dependencies/lemon)
-    set(LEMON_LIBRARY lemon)
+  find_package(LEMON REQUIRED)
+endif()
+
+# ==============================================================================
+# libE57Format
+# ==============================================================================
+if(NOT ALICEVISION_BUILD_LIDAR STREQUAL "OFF")
+  find_package(E57Format)
+
+  if(E57Format_FOUND)
+    message(STATUS "E57Format found")
+  elseif(ALICEVISION_BUILD_LIDAR STREQUAL "ON")
+    message(SEND_ERROR "Failed to find E57Format")
   endif()
 endif()
 
@@ -475,7 +505,7 @@ set(ALICEVISION_HAVE_OPENCV_CONTRIB 0)
 
 if(ALICEVISION_BUILD_SFM)
   if(NOT ALICEVISION_USE_OPENCV STREQUAL "OFF")
-    find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d photo)
+    find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d optflow photo)
 
     if(OpenCV_FOUND)
       # We do not set the minimal version directly in find_package
@@ -535,6 +565,24 @@ if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
     elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
       message(SEND_ERROR "Failed to find Alembic.")
     endif()
+  endif()
+endif()
+
+# ==============================================================================
+# USD
+# ==============================================================================
+# - optional, it allows to export the geometry and textures as USD
+# ==============================================================================
+set(ALICEVISION_HAVE_USD 0)
+
+if(NOT ALICEVISION_USE_USD STREQUAL "OFF")
+  find_package(pxr CONFIG)
+
+  if(pxr_FOUND)
+    set(ALICEVISION_HAVE_USD 1)
+    message(STATUS "USD version ${PXR_VERSION} found.")
+  elseif(ALICEVISION_USE_USD STREQUAL "ON")
+    message(SEND_ERROR "Failed to find USD.")
   endif()
 endif()
 
@@ -627,34 +675,23 @@ if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
     # Need to declare CUDA_USE_STATIC_CUDA_RUNTIME as an option to ensure that it is not overwritten in FindCUDA.
     option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
     set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
-    # Workaround to force deactivation of cuda static runtime for cmake < 3.10
-    set(CUDA_cudart_static_LIBRARY 0)
   else()
     message(STATUS "BUILD_SHARED_LIBS OFF")
     option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" ON)
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
   endif()
 
-  find_package(CUDA 7.0)
+  find_package(CUDA 11.0)
 
   if(CUDA_FOUND)
     set(ALICEVISION_HAVE_CUDA 1)
     message(STATUS "CUDA found.")
   elseif(ALICEVISION_USE_CUDA STREQUAL "ON")
-    message(SEND_ERROR "Failed to find CUDA (>= 7.0).")
+    message(SEND_ERROR "Failed to find CUDA (>= 11.0).")
   endif()
 endif()
 
 if(ALICEVISION_HAVE_CUDA)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0")
-      if(CUDA_VERSION VERSION_LESS "8.0")
-        MESSAGE(STATUS "Found gcc >=5 and CUDA <= 7.5, adding workaround C++ flags")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORCE_INLINES -D_MWAITXINTRIN_H_INCLUDED -D__STRICT_ANSI__")
-      endif()
-    endif()
-  endif()
-
   set(CUDA_SEPARABLE_COMPILATION ON)
   message("Build Mode: ${CMAKE_BUILD_TYPE}")
 
@@ -670,14 +707,8 @@ if(ALICEVISION_HAVE_CUDA)
     set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80 86)
   elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 11)
     set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 10)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62 70 72 75)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 9)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62 70)
-  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 8)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 60 61 62)
   else()
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 )
+    message(SEND_ERROR "Requires CUDA >= 11.0.")
   endif()
   set(ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CUDA_CC_LIST_BASIC}
       CACHE STRING "CUDA CC versions to compile")
@@ -694,28 +725,23 @@ if(ALICEVISION_HAVE_CUDA)
   list(GET ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CC_LIST_LEN} ALICEVISION_CUDA_CC_LIST_LAST)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CUDA_CC_LIST_LAST},code=compute_${ALICEVISION_CUDA_CC_LIST_LAST}")
 
-
-  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
-  endif()
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++17")
 
   # default stream legacy implies that the 0 stream synchronizes all streams
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;legacy")
   # default stream per-thread implies that each host thread has one non-synchronizing 0-stream
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
   # print local memory usage per kernel: -Xptxas;-v
-  # CUDA >= 7.5: -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
+  #   -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
   message(STATUS "CUDA Version is ${CUDA_VERSION}")
-  if(NOT CUDA_VERSION VERSION_LESS 7.5) # cuda >= 7.5
-    if(UNIX)
-      set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
-    endif()
-    if(ALICEVISION_NVCC_WARNINGS)
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
-      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
-    endif()
+  if(UNIX)
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
+  endif()
+  if(ALICEVISION_NVCC_WARNINGS)
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
   endif()
 
   # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
@@ -729,6 +755,22 @@ if(ALICEVISION_HAVE_CUDA)
     include_directories(${CUDA_INCLUDE_DIRS})
     set(ALICEVISION_NVTX_LIBRARY ${CUDA_NVTX_LIBRARY})
   endif()
+endif()
+
+# ==============================================================================
+# SWIG
+# ==============================================================================
+if(ALICEVISION_BUILD_SWIG_BINDING)
+  find_package(SWIG REQUIRED)  # SWIG dependency
+  if(SWIG_FOUND)
+    include(UseSWIG)
+    message(STATUS "SWIG found.")
+  else()
+    message(SEND_ERROR "Failed to find SWIG.")
+  endif()
+
+
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)  # Python dependencies
 endif()
 
 
@@ -913,13 +955,14 @@ message("** Target architecture: " ${TARGET_ARCHITECTURE})
 message("** Build Shared libs: " ${BUILD_SHARED_LIBS})
 message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
+message("** Build LIDAR part: " ${ALICEVISION_BUILD_LIDAR})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
-message("** Build AliceVision samples programs: " ${ALICEVISION_BUILD_EXAMPLES})
 message("** Build AliceVision+OpenCV samples programs: " ${ALICEVISION_HAVE_OPENCV})
 message("** Build UncertaintyTE: " ${ALICEVISION_HAVE_UNCERTAINTYTE})
 message("** Build MeshSDFilter: " ${ALICEVISION_HAVE_MESHSDFILTER})
 message("** Build Alembic exporter: " ${ALICEVISION_HAVE_ALEMBIC})
+message("** Build SWIG Python binding: " ${ALICEVISION_BUILD_SWIG_BINDING})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})
 message("** Use CUDA: " ${ALICEVISION_HAVE_CUDA})
@@ -928,28 +971,28 @@ message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
 message("** Use AprilTag markers: " ${ALICEVISION_HAVE_APRILTAG})
 message("** Use OpenGV for rig localization: " ${ALICEVISION_HAVE_OPENGV})
+message("** Use ONNX: " ${ALICEVISION_HAVE_ONNX})
+message("** Use ONNX with CUDA: " ${ALICEVISION_HAVE_ONNX_GPU})
 message("\n")
 
 message(STATUS "EIGEN: " ${EIGEN_VERSION} "")
 
 if(ALICEVISION_BUILD_SFM)
   message(STATUS "CERES: " ${CERES_VERSION} "")
-
-  if(ALICEVISION_USE_INTERNAL_FLANN)
-    message(STATUS "FLANN: " ${FLANN_VERSION} " (internal)")
-  else()
-    message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
-  endif()
-
+  message(STATUS "FLANN: " ${FLANN_VERSION} "")
   message(STATUS "CLP: " ${Clp_VERSION} "")
   message(STATUS "COINUTILS: " ${CoinUtils_VERSION} "")
   message(STATUS "OSI: " ${Osi_VERSION} "")
+  message(STATUS "LEMON: " ${LEMON_VERSION} "")
+endif()
 
-  if(ALICEVISION_USE_INTERNAL_LEMON)
-    message(STATUS "LEMON: " ${LEMON_VERSION} " (internal)")
-  else()
-    message(STATUS "LEMON: " ${LEMON_VERSION} " (external)")
-  endif()
+if(NOT ALICEVISION_BUILD_LIDAR STREQUAL "OFF")
+  message(STATUS "E57FORMAT: " ${E57Format} "")
+endif()
+
+if(ALICEVISION_BUILD_SWIG_BINDING)
+  message("\n")
+  message(STATUS "SWIG: " ${SWIG_VERSION} "")
 endif()
 
 message("\n")
@@ -976,11 +1019,6 @@ endif()
 
 # The aliceVision library itself
 add_subdirectory(aliceVision)
-
-# aliceVision tutorial examples
-if(ALICEVISION_BUILD_EXAMPLES AND ALICEVISION_BUILD_SFM)
-  add_subdirectory(samples)
-endif()
 
 # Complete software(s) build on aliceVision libraries
 if(ALICEVISION_BUILD_SOFTWARE)

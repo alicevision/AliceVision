@@ -38,10 +38,10 @@ alicevision_add_library(aliceVision_matchingImageCollection
     aliceVision_sfmData
     Boost::boost
     Boost::timer
-    Boost::filesystem
   PRIVATE_LINKS
     aliceVision_system
     ${CERES_LIBRARIES}
+    ${FLANN_LIBRARIES}
 )
 
 # Unit tests

@@ -9,38 +9,48 @@
 #include <aliceVision/image/all.hpp>
 #include <cmath>
 
-
 namespace aliceVision {
 namespace hdr {
- 
-class hdrMerge {
-public:
 
-  /**
-   * @brief
-   * @param images
-   * @param radiance
-   * @param times
-   * @param targetCameraExposure
-   * @param response
-   */
-  void process(const std::vector< image::Image<image::RGBfColor> > &images,
-                const std::vector<double> &times,
-                const rgbCurve &weight,
-                const rgbCurve &response,
-                image::Image<image::RGBfColor> &radiance,
-                float targetCameraExposure);
-
-  void postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
-      const std::vector<double> &times,
-      const rgbCurve &weight,
-      const rgbCurve &response,
-      image::Image<image::RGBfColor> &radiance,
-      float clampedValueCorrection,
-      float targetCameraExposure,
-      float highlightMaxLumimance);
-
+struct MergingParams
+{
+    double minSignificantValue = 0.05;
+    double maxSignificantValue = 0.995;
+    float targetCameraExposure;
+    int refImageIndex;
+    bool computeLightMasks = false;
 };
 
-} // namespace hdr
-} // namespace aliceVision
+class hdrMerge
+{
+  public:
+    /**
+     * @brief
+     * @param images
+     * @param radiance
+     * @param times
+     * @param targetCameraExposure
+     * @param response
+     */
+    void process(const std::vector<image::Image<image::RGBfColor>>& images,
+                 const std::vector<double>& times,
+                 const rgbCurve& weight,
+                 const rgbCurve& response,
+                 image::Image<image::RGBfColor>& radiance,
+                 image::Image<image::RGBfColor>& lowLight,
+                 image::Image<image::RGBfColor>& highLight,
+                 image::Image<image::RGBfColor>& noMidLight,
+                 MergingParams& mergingParams);
+
+    void postProcessHighlight(const std::vector<image::Image<image::RGBfColor>>& images,
+                              const std::vector<double>& times,
+                              const rgbCurve& weight,
+                              const rgbCurve& response,
+                              image::Image<image::RGBfColor>& radiance,
+                              float clampedValueCorrection,
+                              float targetCameraExposure,
+                              float highlightMaxLumimance);
+};
+
+}  // namespace hdr
+}  // namespace aliceVision

@@ -14,59 +14,59 @@
 
 BOOST_AUTO_TEST_CASE(DYNAMIC_BITSET_InitAndReset_64)
 {
-  using namespace stl;
+    using namespace stl;
 
-  const int nbBits = 64;
-  dynamic_bitset mybitset(nbBits);
+    const int nbBits = 64;
+    dynamic_bitset mybitset(nbBits);
 
-  // Check that there is nbBits bit stored
-  BOOST_CHECK_EQUAL(64, mybitset.size());
-  // Check that there is just the necessary count of BlockType allocated for storage
-  BOOST_CHECK_EQUAL(64/dynamic_bitset::bits_per_block, mybitset.num_blocks());
-  
-  // Set some bits to 1
-  for (int i = 0; i < mybitset.size(); i+=2)
-    mybitset[i] = true;
+    // Check that there is nbBits bit stored
+    BOOST_CHECK_EQUAL(64, mybitset.size());
+    // Check that there is just the necessary count of BlockType allocated for storage
+    BOOST_CHECK_EQUAL(64 / dynamic_bitset::bits_per_block, mybitset.num_blocks());
 
-  // Check that some bits have been correctly set to 1
-  for (int i = 0; i < mybitset.size(); ++i)
-  {
-    BOOST_CHECK_EQUAL(!(i%2), mybitset[i]);
-  }
-  
-  // Reset the value to 0
-  mybitset.reset();
-  for (int i = 0; i < mybitset.size(); ++i)
-  {
-    BOOST_CHECK_EQUAL(false, mybitset[i]);
-  }
+    // Set some bits to 1
+    for (int i = 0; i < mybitset.size(); i += 2)
+        mybitset[i] = true;
+
+    // Check that some bits have been correctly set to 1
+    for (int i = 0; i < mybitset.size(); ++i)
+    {
+        BOOST_CHECK_EQUAL(!(i % 2), mybitset[i]);
+    }
+
+    // Reset the value to 0
+    mybitset.reset();
+    for (int i = 0; i < mybitset.size(); ++i)
+    {
+        BOOST_CHECK_EQUAL(false, mybitset[i]);
+    }
 }
 
 // Create a dynamic_bitset that is shorter than the internal used bit container
 BOOST_AUTO_TEST_CASE(DYNAMIC_BITSET_InitAndReset_4)
 {
-  using namespace stl;
+    using namespace stl;
 
-  const int nbBits = 4;
-  dynamic_bitset mybitset(nbBits);
-  
-  BOOST_CHECK_EQUAL(4, mybitset.size());
-  BOOST_CHECK_EQUAL(1, mybitset.num_blocks());
+    const int nbBits = 4;
+    dynamic_bitset mybitset(nbBits);
 
-  // Set some bits to 1
-  for (int i = 0; i < mybitset.size(); i+=2)
-    mybitset[i] = true;
+    BOOST_CHECK_EQUAL(4, mybitset.size());
+    BOOST_CHECK_EQUAL(1, mybitset.num_blocks());
 
-  // Check that some bits have been correctly set to 1
-  for (int i = 0; i < mybitset.size(); ++i)
-  {
-    BOOST_CHECK_EQUAL(!(i%2), mybitset[i]);
-  }
-  
-  // Reset the value to 0
-  mybitset.reset();
-  for (int i = 0; i < mybitset.size(); ++i)
-  {
-    BOOST_CHECK_EQUAL(false, mybitset[i]);
-  }
+    // Set some bits to 1
+    for (int i = 0; i < mybitset.size(); i += 2)
+        mybitset[i] = true;
+
+    // Check that some bits have been correctly set to 1
+    for (int i = 0; i < mybitset.size(); ++i)
+    {
+        BOOST_CHECK_EQUAL(!(i % 2), mybitset[i]);
+    }
+
+    // Reset the value to 0
+    mybitset.reset();
+    for (int i = 0; i < mybitset.size(); ++i)
+    {
+        BOOST_CHECK_EQUAL(false, mybitset[i]);
+    }
 }

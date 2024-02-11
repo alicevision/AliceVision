@@ -41,145 +41,151 @@ namespace aliceVision {
 #define EPSILON 0.000001
 
 /* some macros */
-#define CROSS(dest, v1, v2)                                                                                            \
-    dest[0] = v1[1] * v2[2] - v1[2] * v2[1];                                                                           \
-    dest[1] = v1[2] * v2[0] - v1[0] * v2[2];                                                                           \
+#define CROSS(dest, v1, v2)                                                                                                                          \
+    dest[0] = v1[1] * v2[2] - v1[2] * v2[1];                                                                                                         \
+    dest[1] = v1[2] * v2[0] - v1[0] * v2[2];                                                                                                         \
     dest[2] = v1[0] * v2[1] - v1[1] * v2[0];
 
 #define DOT(v1, v2) (v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2])
 
-#define SUB(dest, v1, v2)                                                                                              \
-    dest[0] = v1[0] - v2[0];                                                                                           \
-    dest[1] = v1[1] - v2[1];                                                                                           \
+#define SUB(dest, v1, v2)                                                                                                                            \
+    dest[0] = v1[0] - v2[0];                                                                                                                         \
+    dest[1] = v1[1] - v2[1];                                                                                                                         \
     dest[2] = v1[2] - v2[2];
 
-#define ADD(dest, v1, v2)                                                                                              \
-    dest[0] = v1[0] + v2[0];                                                                                           \
-    dest[1] = v1[1] + v2[1];                                                                                           \
+#define ADD(dest, v1, v2)                                                                                                                            \
+    dest[0] = v1[0] + v2[0];                                                                                                                         \
+    dest[1] = v1[1] + v2[1];                                                                                                                         \
     dest[2] = v1[2] + v2[2];
 
-#define MULT(dest, v, factor)                                                                                          \
-    dest[0] = factor * v[0];                                                                                           \
-    dest[1] = factor * v[1];                                                                                           \
+#define MULT(dest, v, factor)                                                                                                                        \
+    dest[0] = factor * v[0];                                                                                                                         \
+    dest[1] = factor * v[1];                                                                                                                         \
     dest[2] = factor * v[2];
 
-#define SET(dest, src)                                                                                                 \
-    dest[0] = src[0];                                                                                                  \
-    dest[1] = src[1];                                                                                                  \
+#define SET(dest, src)                                                                                                                               \
+    dest[0] = src[0];                                                                                                                                \
+    dest[1] = src[1];                                                                                                                                \
     dest[2] = src[2];
 
 /* sort so that a<=b */
-#define SORT(a, b)                                                                                                     \
-    if(a > b)                                                                                                          \
-    {                                                                                                                  \
-        double c;                                                                                                       \
-        c = a;                                                                                                         \
-        a = b;                                                                                                         \
-        b = c;                                                                                                         \
+#define SORT(a, b)                                                                                                                                   \
+    if (a > b)                                                                                                                                       \
+    {                                                                                                                                                \
+        double c;                                                                                                                                    \
+        c = a;                                                                                                                                       \
+        a = b;                                                                                                                                       \
+        b = c;                                                                                                                                       \
     }
 
-#define ISECT(VV0, VV1, VV2, D0, D1, D2, isect0, isect1)                                                               \
-    isect0 = VV0 + (VV1 - VV0) * D0 / (D0 - D1);                                                                       \
+#define ISECT(VV0, VV1, VV2, D0, D1, D2, isect0, isect1)                                                                                             \
+    isect0 = VV0 + (VV1 - VV0) * D0 / (D0 - D1);                                                                                                     \
     isect1 = VV0 + (VV2 - VV0) * D0 / (D0 - D2);
 
-#define COMPUTE_INTERVALS(VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, isect0, isect1)                                       \
-    if(D0D1 > 0.0f)                                                                                                    \
-    {                                                                                                                  \
-        /* here we know that D0D2<=0.0 */                                                                              \
-        /* that is D0, D1 are on the same side, D2 on the other or on the plane */                                     \
-        ISECT(VV2, VV0, VV1, D2, D0, D1, isect0, isect1);                                                              \
-    }                                                                                                                  \
-    else if(D0D2 > 0.0f)                                                                                               \
-    {                                                                                                                  \
-        /* here we know that d0d1<=0.0 */                                                                              \
-        ISECT(VV1, VV0, VV2, D1, D0, D2, isect0, isect1);                                                              \
-    }                                                                                                                  \
-    else if(D1 * D2 > 0.0f || D0 != 0.0f)                                                                              \
-    {                                                                                                                  \
-        /* here we know that d0d1<=0.0 or that D0!=0.0 */                                                              \
-        ISECT(VV0, VV1, VV2, D0, D1, D2, isect0, isect1);                                                              \
-    }                                                                                                                  \
-    else if(D1 != 0.0f)                                                                                                \
-    {                                                                                                                  \
-        ISECT(VV1, VV0, VV2, D1, D0, D2, isect0, isect1);                                                              \
-    }                                                                                                                  \
-    else if(D2 != 0.0f)                                                                                                \
-    {                                                                                                                  \
-        ISECT(VV2, VV0, VV1, D2, D0, D1, isect0, isect1);                                                              \
-    }                                                                                                                  \
-    else                                                                                                               \
-    {                                                                                                                  \
-        /* triangles are coplanar */                                                                                   \
-        return coplanar_tri_tri(N1, V0, V1, V2, U0, U1, U2);                                                           \
+#define COMPUTE_INTERVALS(VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, isect0, isect1)                                                                     \
+    if (D0D1 > 0.0f)                                                                                                                                 \
+    {                                                                                                                                                \
+        /* here we know that D0D2<=0.0 */                                                                                                            \
+        /* that is D0, D1 are on the same side, D2 on the other or on the plane */                                                                   \
+        ISECT(VV2, VV0, VV1, D2, D0, D1, isect0, isect1);                                                                                            \
+    }                                                                                                                                                \
+    else if (D0D2 > 0.0f)                                                                                                                            \
+    {                                                                                                                                                \
+        /* here we know that d0d1<=0.0 */                                                                                                            \
+        ISECT(VV1, VV0, VV2, D1, D0, D2, isect0, isect1);                                                                                            \
+    }                                                                                                                                                \
+    else if (D1 * D2 > 0.0f || D0 != 0.0f)                                                                                                           \
+    {                                                                                                                                                \
+        /* here we know that d0d1<=0.0 or that D0!=0.0 */                                                                                            \
+        ISECT(VV0, VV1, VV2, D0, D1, D2, isect0, isect1);                                                                                            \
+    }                                                                                                                                                \
+    else if (D1 != 0.0f)                                                                                                                             \
+    {                                                                                                                                                \
+        ISECT(VV1, VV0, VV2, D1, D0, D2, isect0, isect1);                                                                                            \
+    }                                                                                                                                                \
+    else if (D2 != 0.0f)                                                                                                                             \
+    {                                                                                                                                                \
+        ISECT(VV2, VV0, VV1, D2, D0, D1, isect0, isect1);                                                                                            \
+    }                                                                                                                                                \
+    else                                                                                                                                             \
+    {                                                                                                                                                \
+        /* triangles are coplanar */                                                                                                                 \
+        return coplanar_tri_tri(N1, V0, V1, V2, U0, U1, U2);                                                                                         \
     }
 
 /* this edge to edge test is based on Franlin Antonio's gem:
    "Faster Line Segment Intersection", in Graphics Gems III,
    pp. 199-202 */
-#define EDGE_EDGE_TEST(V0, U0, U1)                                                                                     \
-    Bx = U0[i0] - U1[i0];                                                                                              \
-    By = U0[i1] - U1[i1];                                                                                              \
-    Cx = V0[i0] - U0[i0];                                                                                              \
-    Cy = V0[i1] - U0[i1];                                                                                              \
-    f = Ay * Bx - Ax * By;                                                                                             \
-    d = By * Cx - Bx * Cy;                                                                                             \
-    if((f > 0 && d >= 0 && d <= f) || (f < 0 && d <= 0 && d >= f))                                                     \
-    {                                                                                                                  \
-        e = Ax * Cy - Ay * Cx;                                                                                         \
-        if(f > 0)                                                                                                      \
-        {                                                                                                              \
-            if(e >= 0 && e <= f)                                                                                       \
-                return 1;                                                                                              \
-        }                                                                                                              \
-        else                                                                                                           \
-        {                                                                                                              \
-            if(e <= 0 && e >= f)                                                                                       \
-                return 1;                                                                                              \
-        }                                                                                                              \
+#define EDGE_EDGE_TEST(V0, U0, U1)                                                                                                                   \
+    Bx = U0[i0] - U1[i0];                                                                                                                            \
+    By = U0[i1] - U1[i1];                                                                                                                            \
+    Cx = V0[i0] - U0[i0];                                                                                                                            \
+    Cy = V0[i1] - U0[i1];                                                                                                                            \
+    f = Ay * Bx - Ax * By;                                                                                                                           \
+    d = By * Cx - Bx * Cy;                                                                                                                           \
+    if ((f > 0 && d >= 0 && d <= f) || (f < 0 && d <= 0 && d >= f))                                                                                  \
+    {                                                                                                                                                \
+        e = Ax * Cy - Ay * Cx;                                                                                                                       \
+        if (f > 0)                                                                                                                                   \
+        {                                                                                                                                            \
+            if (e >= 0 && e <= f)                                                                                                                    \
+                return 1;                                                                                                                            \
+        }                                                                                                                                            \
+        else                                                                                                                                         \
+        {                                                                                                                                            \
+            if (e <= 0 && e >= f)                                                                                                                    \
+                return 1;                                                                                                                            \
+        }                                                                                                                                            \
     }
 
-#define EDGE_AGAINST_TRI_EDGES(V0, V1, U0, U1, U2)                                                                     \
-                                                                                                                       \
-    {                                                                                                                  \
-        double Ax, Ay, Bx, By, Cx, Cy, e, d, f;                                                                         \
-        Ax = V1[i0] - V0[i0];                                                                                          \
-        Ay = V1[i1] - V0[i1];                                                                                          \
-        /* test edge U0,U1 against V0,V1 */                                                                            \
-        EDGE_EDGE_TEST(V0, U0, U1);                                                                                    \
-        /* test edge U1,U2 against V0,V1 */                                                                            \
-        EDGE_EDGE_TEST(V0, U1, U2);                                                                                    \
-        /* test edge U2,U1 against V0,V1 */                                                                            \
-        EDGE_EDGE_TEST(V0, U2, U0);                                                                                    \
+#define EDGE_AGAINST_TRI_EDGES(V0, V1, U0, U1, U2)                                                                                                   \
+                                                                                                                                                     \
+    {                                                                                                                                                \
+        double Ax, Ay, Bx, By, Cx, Cy, e, d, f;                                                                                                      \
+        Ax = V1[i0] - V0[i0];                                                                                                                        \
+        Ay = V1[i1] - V0[i1];                                                                                                                        \
+        /* test edge U0,U1 against V0,V1 */                                                                                                          \
+        EDGE_EDGE_TEST(V0, U0, U1);                                                                                                                  \
+        /* test edge U1,U2 against V0,V1 */                                                                                                          \
+        EDGE_EDGE_TEST(V0, U1, U2);                                                                                                                  \
+        /* test edge U2,U1 against V0,V1 */                                                                                                          \
+        EDGE_EDGE_TEST(V0, U2, U0);                                                                                                                  \
     }
 
-#define POINT_IN_TRI(V0, U0, U1, U2)                                                                                   \
-                                                                                                                       \
-    {                                                                                                                  \
-        double a, b, c, d0, d1, d2;                                                                                     \
-        /* is T1 completly inside T2? */                                                                               \
-        /* check if V0 is inside tri(U0,U1,U2) */                                                                      \
-        a = U1[i1] - U0[i1];                                                                                           \
-        b = -(U1[i0] - U0[i0]);                                                                                        \
-        c = -a * U0[i0] - b * U0[i1];                                                                                  \
-        d0 = a * V0[i0] + b * V0[i1] + c;                                                                              \
-                                                                                                                       \
-        a = U2[i1] - U1[i1];                                                                                           \
-        b = -(U2[i0] - U1[i0]);                                                                                        \
-        c = -a * U1[i0] - b * U1[i1];                                                                                  \
-        d1 = a * V0[i0] + b * V0[i1] + c;                                                                              \
-                                                                                                                       \
-        a = U0[i1] - U2[i1];                                                                                           \
-        b = -(U0[i0] - U2[i0]);                                                                                        \
-        c = -a * U2[i0] - b * U2[i1];                                                                                  \
-        d2 = a * V0[i0] + b * V0[i1] + c;                                                                              \
-        if(d0 * d1 > 0.0)                                                                                              \
-        {                                                                                                              \
-            if(d0 * d2 > 0.0)                                                                                          \
-                return 1;                                                                                              \
-        }                                                                                                              \
+#define POINT_IN_TRI(V0, U0, U1, U2)                                                                                                                 \
+                                                                                                                                                     \
+    {                                                                                                                                                \
+        double a, b, c, d0, d1, d2;                                                                                                                  \
+        /* is T1 completly inside T2? */                                                                                                             \
+        /* check if V0 is inside tri(U0,U1,U2) */                                                                                                    \
+        a = U1[i1] - U0[i1];                                                                                                                         \
+        b = -(U1[i0] - U0[i0]);                                                                                                                      \
+        c = -a * U0[i0] - b * U0[i1];                                                                                                                \
+        d0 = a * V0[i0] + b * V0[i1] + c;                                                                                                            \
+                                                                                                                                                     \
+        a = U2[i1] - U1[i1];                                                                                                                         \
+        b = -(U2[i0] - U1[i0]);                                                                                                                      \
+        c = -a * U1[i0] - b * U1[i1];                                                                                                                \
+        d1 = a * V0[i0] + b * V0[i1] + c;                                                                                                            \
+                                                                                                                                                     \
+        a = U0[i1] - U2[i1];                                                                                                                         \
+        b = -(U0[i0] - U2[i0]);                                                                                                                      \
+        c = -a * U2[i0] - b * U2[i1];                                                                                                                \
+        d2 = a * V0[i0] + b * V0[i1] + c;                                                                                                            \
+        if (d0 * d1 > 0.0)                                                                                                                           \
+        {                                                                                                                                            \
+            if (d0 * d2 > 0.0)                                                                                                                       \
+                return 1;                                                                                                                            \
+        }                                                                                                                                            \
     }
 
-int coplanar_tri_tri(const double N[3], const double V0[3], const double V1[3], const double V2[3], const double U0[3], const double U1[3], const double U2[3])
+int coplanar_tri_tri(const double N[3],
+                     const double V0[3],
+                     const double V1[3],
+                     const double V2[3],
+                     const double U0[3],
+                     const double U1[3],
+                     const double U2[3])
 {
     double A[3];
     short i0, i1;
@@ -188,9 +194,9 @@ int coplanar_tri_tri(const double N[3], const double V0[3], const double V1[3], 
     A[0] = fabs(N[0]);
     A[1] = fabs(N[1]);
     A[2] = fabs(N[2]);
-    if(A[0] > A[1])
+    if (A[0] > A[1])
     {
-        if(A[0] > A[2])
+        if (A[0] > A[2])
         {
             i0 = 1; /* A[0] is greatest */
             i1 = 2;
@@ -203,7 +209,7 @@ int coplanar_tri_tri(const double N[3], const double V0[3], const double V1[3], 
     }
     else /* A[0]<=A[1] */
     {
-        if(A[2] > A[1])
+        if (A[2] > A[1])
         {
             i0 = 0; /* A[2] is greatest */
             i1 = 1;
@@ -254,18 +260,18 @@ int tri_tri_intersect(const double V0[3], const double V1[3], const double V2[3]
 
 /* coplanarity robustness check */
 #if USE_EPSILON_TEST == true
-    if(fabs(du0) < EPSILON)
+    if (fabs(du0) < EPSILON)
         du0 = 0.0;
-    if(fabs(du1) < EPSILON)
+    if (fabs(du1) < EPSILON)
         du1 = 0.0;
-    if(fabs(du2) < EPSILON)
+    if (fabs(du2) < EPSILON)
         du2 = 0.0;
 #endif
     du0du1 = du0 * du1;
     du0du2 = du0 * du2;
 
-    if(du0du1 > 0.0f && du0du2 > 0.0f) /* same sign on all of them + not equal 0 ? */
-        return 0;                      /* no intersection occurs */
+    if (du0du1 > 0.0f && du0du2 > 0.0f) /* same sign on all of them + not equal 0 ? */
+        return 0;                       /* no intersection occurs */
 
     /* compute plane of triangle (U0,U1,U2) */
     SUB(E1, U1, U0);
@@ -280,19 +286,19 @@ int tri_tri_intersect(const double V0[3], const double V1[3], const double V2[3]
     dv2 = DOT(N2, V2) + d2;
 
 #if USE_EPSILON_TEST == true
-    if(fabs(dv0) < EPSILON)
+    if (fabs(dv0) < EPSILON)
         dv0 = 0.0;
-    if(fabs(dv1) < EPSILON)
+    if (fabs(dv1) < EPSILON)
         dv1 = 0.0;
-    if(fabs(dv2) < EPSILON)
+    if (fabs(dv2) < EPSILON)
         dv2 = 0.0;
 #endif
 
     dv0dv1 = dv0 * dv1;
     dv0dv2 = dv0 * dv2;
 
-    if(dv0dv1 > 0.0f && dv0dv2 > 0.0f) /* same sign on all of them + not equal 0 ? */
-        return 0;                      /* no intersection occurs */
+    if (dv0dv1 > 0.0f && dv0dv2 > 0.0f) /* same sign on all of them + not equal 0 ? */
+        return 0;                       /* no intersection occurs */
 
     /* compute direction of intersection line */
     CROSS(D, N1, N2);
@@ -302,9 +308,9 @@ int tri_tri_intersect(const double V0[3], const double V1[3], const double V2[3]
     index = 0;
     b = fabs(D[1]);
     c = fabs(D[2]);
-    if(b > max)
+    if (b > max)
         max = b, index = 1;
-    if(c > max)
+    if (c > max)
         max = c, index = 2;
 
     /* this is the simplified projection onto L*/
@@ -325,80 +331,91 @@ int tri_tri_intersect(const double V0[3], const double V1[3], const double V2[3]
     SORT(isect1[0], isect1[1]);
     SORT(isect2[0], isect2[1]);
 
-    if(isect1[1] < isect2[0] || isect2[1] < isect1[0])
+    if (isect1[1] < isect2[0] || isect2[1] < isect1[0])
         return 0;
     return 1;
 }
 
-#define NEWCOMPUTE_INTERVALS(VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, A, B, C, X0, X1)                                   \
-                                                                                                                       \
-    {                                                                                                                  \
-        if(D0D1 > 0.0f)                                                                                                \
-        {                                                                                                              \
-            /* here we know that D0D2<=0.0 */                                                                          \
-            /* that is D0, D1 are on the same side, D2 on the other or on the plane */                                 \
-            A = VV2;                                                                                                   \
-            B = (VV0 - VV2) * D2;                                                                                      \
-            C = (VV1 - VV2) * D2;                                                                                      \
-            X0 = D2 - D0;                                                                                              \
-            X1 = D2 - D1;                                                                                              \
-        }                                                                                                              \
-        else if(D0D2 > 0.0f)                                                                                           \
-        {                                                                                                              \
-            /* here we know that d0d1<=0.0 */                                                                          \
-            A = VV1;                                                                                                   \
-            B = (VV0 - VV1) * D1;                                                                                      \
-            C = (VV2 - VV1) * D1;                                                                                      \
-            X0 = D1 - D0;                                                                                              \
-            X1 = D1 - D2;                                                                                              \
-        }                                                                                                              \
-        else if(D1 * D2 > 0.0f || D0 != 0.0f)                                                                          \
-        {                                                                                                              \
-            /* here we know that d0d1<=0.0 or that D0!=0.0 */                                                          \
-            A = VV0;                                                                                                   \
-            B = (VV1 - VV0) * D0;                                                                                      \
-            C = (VV2 - VV0) * D0;                                                                                      \
-            X0 = D0 - D1;                                                                                              \
-            X1 = D0 - D2;                                                                                              \
-        }                                                                                                              \
-        else if(D1 != 0.0f)                                                                                            \
-        {                                                                                                              \
-            A = VV1;                                                                                                   \
-            B = (VV0 - VV1) * D1;                                                                                      \
-            C = (VV2 - VV1) * D1;                                                                                      \
-            X0 = D1 - D0;                                                                                              \
-            X1 = D1 - D2;                                                                                              \
-        }                                                                                                              \
-        else if(D2 != 0.0f)                                                                                            \
-        {                                                                                                              \
-            A = VV2;                                                                                                   \
-            B = (VV0 - VV2) * D2;                                                                                      \
-            C = (VV1 - VV2) * D2;                                                                                      \
-            X0 = D2 - D0;                                                                                              \
-            X1 = D2 - D1;                                                                                              \
-        }                                                                                                              \
-        else                                                                                                           \
-        {                                                                                                              \
-            /* triangles are coplanar */                                                                               \
-            return coplanar_tri_tri(N1, V0, V1, V2, U0, U1, U2);                                                       \
-        }                                                                                                              \
+#define NEWCOMPUTE_INTERVALS(VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, A, B, C, X0, X1)                                                                 \
+                                                                                                                                                     \
+    {                                                                                                                                                \
+        if (D0D1 > 0.0f)                                                                                                                             \
+        {                                                                                                                                            \
+            /* here we know that D0D2<=0.0 */                                                                                                        \
+            /* that is D0, D1 are on the same side, D2 on the other or on the plane */                                                               \
+            A = VV2;                                                                                                                                 \
+            B = (VV0 - VV2) * D2;                                                                                                                    \
+            C = (VV1 - VV2) * D2;                                                                                                                    \
+            X0 = D2 - D0;                                                                                                                            \
+            X1 = D2 - D1;                                                                                                                            \
+        }                                                                                                                                            \
+        else if (D0D2 > 0.0f)                                                                                                                        \
+        {                                                                                                                                            \
+            /* here we know that d0d1<=0.0 */                                                                                                        \
+            A = VV1;                                                                                                                                 \
+            B = (VV0 - VV1) * D1;                                                                                                                    \
+            C = (VV2 - VV1) * D1;                                                                                                                    \
+            X0 = D1 - D0;                                                                                                                            \
+            X1 = D1 - D2;                                                                                                                            \
+        }                                                                                                                                            \
+        else if (D1 * D2 > 0.0f || D0 != 0.0f)                                                                                                       \
+        {                                                                                                                                            \
+            /* here we know that d0d1<=0.0 or that D0!=0.0 */                                                                                        \
+            A = VV0;                                                                                                                                 \
+            B = (VV1 - VV0) * D0;                                                                                                                    \
+            C = (VV2 - VV0) * D0;                                                                                                                    \
+            X0 = D0 - D1;                                                                                                                            \
+            X1 = D0 - D2;                                                                                                                            \
+        }                                                                                                                                            \
+        else if (D1 != 0.0f)                                                                                                                         \
+        {                                                                                                                                            \
+            A = VV1;                                                                                                                                 \
+            B = (VV0 - VV1) * D1;                                                                                                                    \
+            C = (VV2 - VV1) * D1;                                                                                                                    \
+            X0 = D1 - D0;                                                                                                                            \
+            X1 = D1 - D2;                                                                                                                            \
+        }                                                                                                                                            \
+        else if (D2 != 0.0f)                                                                                                                         \
+        {                                                                                                                                            \
+            A = VV2;                                                                                                                                 \
+            B = (VV0 - VV2) * D2;                                                                                                                    \
+            C = (VV1 - VV2) * D2;                                                                                                                    \
+            X0 = D2 - D0;                                                                                                                            \
+            X1 = D2 - D1;                                                                                                                            \
+        }                                                                                                                                            \
+        else                                                                                                                                         \
+        {                                                                                                                                            \
+            /* triangles are coplanar */                                                                                                             \
+            return coplanar_tri_tri(N1, V0, V1, V2, U0, U1, U2);                                                                                     \
+        }                                                                                                                                            \
     }
 
 /* sort so that a<=b */
-#define SORT2(a, b, smallest)                                                                                          \
-    if(a > b)                                                                                                          \
-    {                                                                                                                  \
-        double c;                                                                                                       \
-        c = a;                                                                                                         \
-        a = b;                                                                                                         \
-        b = c;                                                                                                         \
-        smallest = 1;                                                                                                  \
-    }                                                                                                                  \
-    else                                                                                                               \
+#define SORT2(a, b, smallest)                                                                                                                        \
+    if (a > b)                                                                                                                                       \
+    {                                                                                                                                                \
+        double c;                                                                                                                                    \
+        c = a;                                                                                                                                       \
+        a = b;                                                                                                                                       \
+        b = c;                                                                                                                                       \
+        smallest = 1;                                                                                                                                \
+    }                                                                                                                                                \
+    else                                                                                                                                             \
         smallest = 0;
 
-inline void isect2(const double VTX0[3], const double VTX1[3], const double VTX2[3], double VV0, double VV1, double VV2, double D0, double D1,
-                   double D2, double* isect0, double* isect1, double isectpoint0[3], double isectpoint1[3])
+inline void isect2(const double VTX0[3],
+                   const double VTX1[3],
+                   const double VTX2[3],
+                   double VV0,
+                   double VV1,
+                   double VV2,
+                   double D0,
+                   double D1,
+                   double D2,
+                   double* isect0,
+                   double* isect1,
+                   double isectpoint0[3],
+                   double isectpoint1[3])
 {
     double tmp = D0 / (D0 - D1);
     double diff[3];
@@ -414,44 +431,56 @@ inline void isect2(const double VTX0[3], const double VTX1[3], const double VTX2
 }
 
 #if 0
-#define ISECT2(VTX0, VTX1, VTX2, VV0, VV1, VV2, D0, D1, D2, isect0, isect1, isectpoint0, isectpoint1)                  \
-    tmp = D0 / (D0 - D1);                                                                                              \
-    isect0 = VV0 + (VV1 - VV0) * tmp;                                                                                  \
-    SUB(diff, VTX1, VTX0);                                                                                             \
-    MULT(diff, diff, tmp);                                                                                             \
-    ADD(isectpoint0, diff, VTX0);                                                                                      \
-    tmp = D0 / (D0 - D2);
+    #define ISECT2(VTX0, VTX1, VTX2, VV0, VV1, VV2, D0, D1, D2, isect0, isect1, isectpoint0, isectpoint1)                                            \
+        tmp = D0 / (D0 - D1);                                                                                                                        \
+        isect0 = VV0 + (VV1 - VV0) * tmp;                                                                                                            \
+        SUB(diff, VTX1, VTX0);                                                                                                                       \
+        MULT(diff, diff, tmp);                                                                                                                       \
+        ADD(isectpoint0, diff, VTX0);                                                                                                                \
+        tmp = D0 / (D0 - D2);
 /*              isect1=VV0+(VV2-VV0)*tmp;          \ */
 /*              SUB(diff,VTX2,VTX0);               \     */
 /*              MULT(diff,diff,tmp);               \   */
 /*              ADD(isectpoint1,VTX0,diff);           */
 #endif
 
-inline int compute_intervals_isectline(const double VERT0[3], const double VERT1[3], const double VERT2[3], double VV0, double VV1, double VV2,
-                                       double D0, double D1, double D2, double D0D1, double D0D2, double* isect0,
-                                       double* isect1, double isectpoint0[3], double isectpoint1[3])
+inline int compute_intervals_isectline(const double VERT0[3],
+                                       const double VERT1[3],
+                                       const double VERT2[3],
+                                       double VV0,
+                                       double VV1,
+                                       double VV2,
+                                       double D0,
+                                       double D1,
+                                       double D2,
+                                       double D0D1,
+                                       double D0D2,
+                                       double* isect0,
+                                       double* isect1,
+                                       double isectpoint0[3],
+                                       double isectpoint1[3])
 {
-    if(D0D1 > 0.0f)
+    if (D0D1 > 0.0f)
     {
         /* here we know that D0D2<=0.0 */
         /* that is D0, D1 are on the same side, D2 on the other or on the plane */
         isect2(VERT2, VERT0, VERT1, VV2, VV0, VV1, D2, D0, D1, isect0, isect1, isectpoint0, isectpoint1);
     }
-    else if(D0D2 > 0.0f)
+    else if (D0D2 > 0.0f)
     {
         /* here we know that d0d1<=0.0 */
         isect2(VERT1, VERT0, VERT2, VV1, VV0, VV2, D1, D0, D2, isect0, isect1, isectpoint0, isectpoint1);
     }
-    else if(D1 * D2 > 0.0f || D0 != 0.0f)
+    else if (D1 * D2 > 0.0f || D0 != 0.0f)
     {
         /* here we know that d0d1<=0.0 or that D0!=0.0 */
         isect2(VERT0, VERT1, VERT2, VV0, VV1, VV2, D0, D1, D2, isect0, isect1, isectpoint0, isectpoint1);
     }
-    else if(D1 != 0.0f)
+    else if (D1 != 0.0f)
     {
         isect2(VERT1, VERT0, VERT2, VV1, VV0, VV2, D1, D0, D2, isect0, isect1, isectpoint0, isectpoint1);
     }
-    else if(D2 != 0.0f)
+    else if (D2 != 0.0f)
     {
         isect2(VERT2, VERT0, VERT1, VV2, VV0, VV1, D2, D0, D1, isect0, isect1, isectpoint0, isectpoint1);
     }
@@ -463,13 +492,12 @@ inline int compute_intervals_isectline(const double VERT0[3], const double VERT1
     return 0;
 }
 
-#define COMPUTE_INTERVALS_ISECTLINE(VERT0, VERT1, VERT2, VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, isect0, isect1,        \
-                                    isectpoint0, isectpoint1)                                                          \
-    if(D0D1 > 0.0f)                                                                                                    \
-    {                                                                                                                  \
-        /* here we know that D0D2<=0.0 */                                                                              \
-        /* that is D0, D1 are on the same side, D2 on the other or on the plane */                                     \
-        isect2(VERT2, VERT0, VERT1, VV2, VV0, VV1, D2, D0, D1, &isect0, &isect1, isectpoint0, isectpoint1);            \
+#define COMPUTE_INTERVALS_ISECTLINE(VERT0, VERT1, VERT2, VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, isect0, isect1, isectpoint0, isectpoint1)            \
+    if (D0D1 > 0.0f)                                                                                                                                 \
+    {                                                                                                                                                \
+        /* here we know that D0D2<=0.0 */                                                                                                            \
+        /* that is D0, D1 are on the same side, D2 on the other or on the plane */                                                                   \
+        isect2(VERT2, VERT0, VERT1, VV2, VV0, VV1, D2, D0, D1, &isect0, &isect1, isectpoint0, isectpoint1);                                          \
     }
 #if 0
 else if(D0D2>0.0f)                                    \
@@ -498,8 +526,15 @@ else if(D0D2>0.0f)                                    \
     }
 #endif
 
-int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], const double V2[3], const double U0[3], const double U1[3], const double U2[3],
-                                     int* coplanar, double isectpt1[3], double isectpt2[3])
+int tri_tri_intersect_with_isectline(const double V0[3],
+                                     const double V1[3],
+                                     const double V2[3],
+                                     const double U0[3],
+                                     const double U1[3],
+                                     const double U2[3],
+                                     int* coplanar,
+                                     double isectpt1[3],
+                                     double isectpt2[3])
 {
     double E1[3], E2[3];
     double N1[3], N2[3], d1, d2;
@@ -529,18 +564,18 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
 
 /* coplanarity robustness check */
 #if USE_EPSILON_TEST == true
-    if(fabs(du0) < EPSILON)
+    if (fabs(du0) < EPSILON)
         du0 = 0.0;
-    if(fabs(du1) < EPSILON)
+    if (fabs(du1) < EPSILON)
         du1 = 0.0;
-    if(fabs(du2) < EPSILON)
+    if (fabs(du2) < EPSILON)
         du2 = 0.0;
 #endif
     du0du1 = du0 * du1;
     du0du2 = du0 * du2;
 
-    if(du0du1 > 0.0f && du0du2 > 0.0f) /* same sign on all of them + not equal 0 ? */
-        return 0;                      /* no intersection occurs */
+    if (du0du1 > 0.0f && du0du2 > 0.0f) /* same sign on all of them + not equal 0 ? */
+        return 0;                       /* no intersection occurs */
 
     /* compute plane of triangle (U0,U1,U2) */
     SUB(E1, U1, U0);
@@ -555,19 +590,19 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
     dv2 = DOT(N2, V2) + d2;
 
 #if USE_EPSILON_TEST == true
-    if(fabs(dv0) < EPSILON)
+    if (fabs(dv0) < EPSILON)
         dv0 = 0.0;
-    if(fabs(dv1) < EPSILON)
+    if (fabs(dv1) < EPSILON)
         dv1 = 0.0;
-    if(fabs(dv2) < EPSILON)
+    if (fabs(dv2) < EPSILON)
         dv2 = 0.0;
 #endif
 
     dv0dv1 = dv0 * dv1;
     dv0dv2 = dv0 * dv2;
 
-    if(dv0dv1 > 0.0f && dv0dv2 > 0.0f) /* same sign on all of them + not equal 0 ? */
-        return 0;                      /* no intersection occurs */
+    if (dv0dv1 > 0.0f && dv0dv2 > 0.0f) /* same sign on all of them + not equal 0 ? */
+        return 0;                       /* no intersection occurs */
 
     /* compute direction of intersection line */
     CROSS(D, N1, N2);
@@ -577,9 +612,9 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
     index = 0;
     b = fabs(D[1]);
     c = fabs(D[2]);
-    if(b > max)
+    if (b > max)
         max = b, index = 1;
-    if(c > max)
+    if (c > max)
         max = c, index = 2;
 
     /* this is the simplified projection onto L*/
@@ -592,26 +627,25 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
     up2 = U2[index];
 
     /* compute interval for triangle 1 */
-    *coplanar = compute_intervals_isectline(V0, V1, V2, vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2, &isect1[0],
-                                            &isect1[1], isectpointA1, isectpointA2);
-    if(*coplanar != 0)
+    *coplanar =
+      compute_intervals_isectline(V0, V1, V2, vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2, &isect1[0], &isect1[1], isectpointA1, isectpointA2);
+    if (*coplanar != 0)
         return coplanar_tri_tri(N1, V0, V1, V2, U0, U1, U2);
 
     /* compute interval for triangle 2 */
-    compute_intervals_isectline(U0, U1, U2, up0, up1, up2, du0, du1, du2, du0du1, du0du2, &isect2[0], &isect2[1],
-                                isectpointB1, isectpointB2);
+    compute_intervals_isectline(U0, U1, U2, up0, up1, up2, du0, du1, du2, du0du1, du0du2, &isect2[0], &isect2[1], isectpointB1, isectpointB2);
 
     SORT2(isect1[0], isect1[1], smallest1);
     SORT2(isect2[0], isect2[1], smallest2);
 
-    if(isect1[1] < isect2[0] || isect2[1] < isect1[0])
+    if (isect1[1] < isect2[0] || isect2[1] < isect1[0])
         return 0;
 
     /* at this point, we know that the triangles intersect */
 
-    if(isect2[0] < isect1[0])
+    if (isect2[0] < isect1[0])
     {
-        if(smallest1 == 0)
+        if (smallest1 == 0)
         {
             SET(isectpt1, isectpointA1);
         }
@@ -620,9 +654,9 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
             SET(isectpt1, isectpointA2);
         }
 
-        if(isect2[1] < isect1[1])
+        if (isect2[1] < isect1[1])
         {
-            if(smallest2 == 0)
+            if (smallest2 == 0)
             {
                 SET(isectpt2, isectpointB2);
             }
@@ -633,7 +667,7 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
         }
         else
         {
-            if(smallest1 == 0)
+            if (smallest1 == 0)
             {
                 SET(isectpt2, isectpointA2);
             }
@@ -645,7 +679,7 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
     }
     else
     {
-        if(smallest2 == 0)
+        if (smallest2 == 0)
         {
             SET(isectpt1, isectpointB1);
         }
@@ -654,9 +688,9 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
             SET(isectpt1, isectpointB2);
         }
 
-        if(isect2[1] > isect1[1])
+        if (isect2[1] > isect1[1])
         {
-            if(smallest1 == 0)
+            if (smallest1 == 0)
             {
                 SET(isectpt2, isectpointA2);
             }
@@ -667,7 +701,7 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
         }
         else
         {
-            if(smallest2 == 0)
+            if (smallest2 == 0)
             {
                 SET(isectpt2, isectpointB2);
             }
@@ -680,4 +714,4 @@ int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], con
     return 1;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

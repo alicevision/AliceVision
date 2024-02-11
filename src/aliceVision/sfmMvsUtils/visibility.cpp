@@ -14,11 +14,10 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-
 namespace aliceVision {
 namespace mvsUtils {
 
-void createRefMeshFromDenseSfMData(mesh::Mesh & refMesh, const sfmData::SfMData & sfmData, const mvsUtils::MultiViewParams & mp)
+void createRefMeshFromDenseSfMData(mesh::Mesh& refMesh, const sfmData::SfMData& sfmData, const mvsUtils::MultiViewParams& mp)
 {
     mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
     const std::size_t nbPoints = sfmData.getLandmarks().size();
@@ -29,8 +28,8 @@ void createRefMeshFromDenseSfMData(mesh::Mesh & refMesh, const sfmData::SfMData 
         const sfmData::Landmark& landmark = landmarkPair.second;
         mesh::PointVisibility pointVisibility;
 
-        pointVisibility.reserve(landmark.observations.size());
-        for (const auto& observationPair : landmark.observations)
+        pointVisibility.reserve(landmark.getObservations().size());
+        for (const auto& observationPair : landmark.getObservations())
             pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
 
         refVisibilities.push_back(pointVisibility);
@@ -38,5 +37,5 @@ void createRefMeshFromDenseSfMData(mesh::Mesh & refMesh, const sfmData::SfMData 
     }
 }
 
-} // namespace mvsUtils
-} // namespace aliceVision
+}  // namespace mvsUtils
+}  // namespace aliceVision

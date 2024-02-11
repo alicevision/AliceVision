@@ -15,7 +15,8 @@
 
 #include <aliceVision/feature/imageStats.hpp>
 
-extern "C" {
+extern "C"
+{
 #include "nonFree/sift/vl/sift.h"
 }
 
@@ -33,90 +34,79 @@ namespace feature {
  */
 struct SiftParams
 {
-  /// Use original image, or perform an upscale if == -1
-  int _firstOctave = 0;
-  /// Scales per octave
-  int _numScales = 3;
-  /// Max ratio of Hessian eigenvalues
-  float _edgeThreshold = 10.0f;
-  /// Min contrast
-  float _peakThreshold = 0.005f;
-  /// Min contrast (relative to variance median)
-  float _relativePeakThreshold = 0.01f;
-  EFeatureConstrastFiltering _contrastFiltering = EFeatureConstrastFiltering::GridSort;
+    /// Use original image, or perform an upscale if == -1
+    int _firstOctave = 0;
+    /// Scales per octave
+    int _numScales = 3;
+    /// Max ratio of Hessian eigenvalues
+    float _edgeThreshold = 10.0f;
+    /// Min contrast
+    float _peakThreshold = 0.005f;
+    /// Min contrast (relative to variance median)
+    float _relativePeakThreshold = 0.01f;
+    EFeatureConstrastFiltering _contrastFiltering = EFeatureConstrastFiltering::GridSort;
 
-  std::size_t _gridSize = 4;
-  std::size_t _maxTotalKeypoints = 10000;
-  /// see [1]
-  bool _rootSift = true;
-  
-  virtual void setPreset(ConfigurationPreset preset);
+    std::size_t _gridSize = 4;
+    std::size_t _maxTotalKeypoints = 10000;
+    /// see [1]
+    bool _rootSift = true;
 
-  int getImageFirstOctave(int w, int h) const
-  {
-    return _firstOctave - (w * h <= 3000 * 2000 ? 1 : 0); // -1 to upscale for small resolutions
-  }
+    virtual void setPreset(ConfigurationPreset preset);
+
+    int getImageFirstOctave(int w, int h) const
+    {
+        return _firstOctave - (w * h <= 3000 * 2000 ? 1 : 0);  // -1 to upscale for small resolutions
+    }
 };
 
 // VLFeat Instance management
 class VLFeatInstance
 {
-public:
+  public:
+    static void initialize();
 
-  static void initialize();
+    static void destroy();
 
-  static void destroy();
-
-private:
-  static int nbInstances;
+  private:
+    static int nbInstances;
 };
 
-//convertSIFT
+// convertSIFT
 //////////////////////////////
-template < typename TOut > 
-inline void convertSIFT(
-  const vl_sift_pix* descr,
-  Descriptor<TOut,128> & descriptor,
-  bool rootSift
-  );
+template<typename TOut>
+inline void convertSIFT(const vl_sift_pix* descr, Descriptor<TOut, 128>& descriptor, bool rootSift);
 
-template <> 
-inline void convertSIFT<float>(
-  const vl_sift_pix* descr,
-  Descriptor<float,128> &descriptor,
-  bool rootSift)
+template<>
+inline void convertSIFT<float>(const vl_sift_pix* descr, Descriptor<float, 128>& descriptor, bool rootSift)
 {
-  if(rootSift)
-  {
-    const float sum = std::accumulate(descr, descr + 128, 0.0f);
-    for(int k = 0; k < 128; ++k)
-      descriptor[k] = std::floor(512.f*sqrt(descr[k] / sum));
-  }
-  else
-  {
-    for(int k = 0; k < 128; ++k)
-      descriptor[k] = std::floor(512.f*descr[k]);
-  }
+    if (rootSift)
+    {
+        const float sum = std::accumulate(descr, descr + 128, 0.0f);
+        for (int k = 0; k < 128; ++k)
+            descriptor[k] = std::floor(512.f * sqrt(descr[k] / sum));
+    }
+    else
+    {
+        for (int k = 0; k < 128; ++k)
+            descriptor[k] = std::floor(512.f * descr[k]);
+    }
 }
 
-template <> 
-inline void convertSIFT<unsigned char>(
-  const vl_sift_pix* descr,
-  Descriptor<unsigned char,128> & descriptor,
-  bool rootSift)
+template<>
+inline void convertSIFT<unsigned char>(const vl_sift_pix* descr, Descriptor<unsigned char, 128>& descriptor, bool rootSift)
 {
-  if (rootSift)
-  {
-    // rootsift = sqrt( sift / sum(sift) );
-    const float sum = std::accumulate(descr, descr+128, 0.0f);
-    for (int k=0;k<128;++k)
-      descriptor[k] = static_cast<unsigned char>(512.f*sqrt(descr[k]/sum));
-  }
-  else
-  {
-    for (int k=0;k<128;++k)
-      descriptor[k] = static_cast<unsigned char>(512.f*descr[k]);
-  }
+    if (rootSift)
+    {
+        // rootsift = sqrt( sift / sum(sift) );
+        const float sum = std::accumulate(descr, descr + 128, 0.0f);
+        for (int k = 0; k < 128; ++k)
+            descriptor[k] = static_cast<unsigned char>(512.f * sqrt(descr[k] / sum));
+    }
+    else
+    {
+        for (int k = 0; k < 128; ++k)
+            descriptor[k] = static_cast<unsigned char>(512.f * descr[k]);
+    }
 }
 
 /**
@@ -138,12 +128,12 @@ std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, co
  * @param mask
  * @return
  */
-template <typename T>
+template<typename T>
 bool extractSIFT(const image::Image<float>& image,
-    std::unique_ptr<Regions>& regions,
-    const SiftParams& params,
-    bool orientation,
-    const image::Image<unsigned char>* mask);
+                 std::unique_ptr<Regions>& regions,
+                 const SiftParams& params,
+                 bool orientation,
+                 const image::Image<unsigned char>* mask);
 
-} //namespace feature
-} //namespace aliceVision
+}  // namespace feature
+}  // namespace aliceVision

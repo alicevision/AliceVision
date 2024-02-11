@@ -1,6 +1,7 @@
 # Headers
 set(mesh_files_headers
   geoMesh.hpp
+  Material.hpp
   Mesh.hpp
   MeshAnalyze.hpp
   MeshClean.hpp
@@ -13,6 +14,7 @@ set(mesh_files_headers
 
 # Sources
 set(mesh_files_sources
+  Material.cpp
   Mesh.cpp
   MeshAnalyze.cpp
   MeshClean.cpp
@@ -29,7 +31,6 @@ alicevision_add_library(aliceVision_mesh
     aliceVision_mvsData
     aliceVision_mvsUtils
     Geogram::geogram
-    Boost::filesystem
     assimp::assimp
   PRIVATE_LINKS
     aliceVision_system

@@ -13,38 +13,38 @@ namespace aliceVision {
 namespace image {
 
 /// Horizontal concatenation of images
-template < class Image >
-void ConcatH(const Image & imageA, const Image & imageB, Image & Out)
+template<class Image>
+void concatH(const Image& imageA, const Image& imageB, Image& out)
 {
-  // Compute new dimensions // |imgA|+|imgB|
-  int ww = imageA.Width() + imageB.Width();
-  Out.resize(ww, std::max(imageA.Height(), imageB.Height()));
+    // Compute new dimensions // |imgA|+|imgB|
+    int ww = imageA.width() + imageB.width();
+    out.resize(ww, std::max(imageA.height(), imageB.height()));
 
-  // Copy the first image |imgA|...|
-  Out.block(0,0, imageA.Height(), imageA.Width()) = imageA.GetMat();
-  // Copy the second image |imgA|imgB|
-  Out.block(0, imageA.Width(), imageB.Height(), imageB.Width()) = imageB.GetMat();
+    // Copy the first image |imgA|...|
+    out.block(0, 0, imageA.height(), imageA.width()) = imageA.getMat();
+    // Copy the second image |imgA|imgB|
+    out.block(0, imageA.width(), imageB.height(), imageB.width()) = imageB.getMat();
 }
 
 /// Vertical concatenation of images
-template < class Image >
-void ConcatV(const Image & imageA, const Image & imageB, Image & Out)
+template<class Image>
+void concatV(const Image& imageA, const Image& imageB, Image& out)
 {
-  // Compute new dimensions
-  // |imgA|
-  // |imgB|
-  int hh = imageA.Height() + imageB.Height();
-  Out.resize(max(imageA.Width(), imageB.Width()), hh);
+    // Compute new dimensions
+    // |imgA|
+    // |imgB|
+    int hh = imageA.height() + imageB.height();
+    out.resize(max(imageA.width(), imageB.width()), hh);
 
-  // Copy the first image
-  // |imgA|
-  // |....|
-  Out.block(0,0, imageA.Height(), imageA.Width()) = imageA.GetMat();
-  // Copy the second image
-  // |imgA|
-  // |imgB|
-  Out.block(imageA.Height(), 0, imageB.Height(), imageB.Width()) = imageB.GetMat();
+    // Copy the first image
+    // |imgA|
+    // |....|
+    out.block(0, 0, imageA.height(), imageA.width()) = imageA.getMat();
+    // Copy the second image
+    // |imgA|
+    // |imgB|
+    out.block(imageA.height(), 0, imageB.height(), imageB.width()) = imageB.getMat();
 }
 
-} // namespace image
-} // namespace aliceVision
+}  // namespace image
+}  // namespace aliceVision

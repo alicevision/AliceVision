@@ -13,14 +13,13 @@
 namespace aliceVision {
 namespace depthMap {
 
-/*
- * @class DeviceStreamManager
+/**
+ * @class Device stream manager
  * @brief Small class allowing a simple management of gpu streams
  */
 class DeviceStreamManager
 {
-public:
-
+  public:
     /**
      * @brief DeviceStreamManager constructor.
      * @param[in] nbStreams the number of gpu streams managed
@@ -46,21 +45,20 @@ public:
      * @brief Get the stream object associated with the given index.
      * @param[in] streamIndex the stream index in the DeviceStreamManager
      * @note if streamIndex > nbStream, this function returns the stream object associated with streamIndex % nbStream
-     * @return the associated stream object 
+     * @return the associated stream object
      */
     cudaStream_t getStream(int streamIndex);
 
     /**
-     * @brief Waits for stream tasks to complete. 
+     * @brief Waits for stream tasks to complete.
      * @param[in] streamIndex the stream index in the DeviceStreamManager
      */
     void waitStream(int streamIndex);
 
-private:
-
+  private:
     const int _nbStreams;
     std::vector<cudaStream_t> _streams;
 };
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

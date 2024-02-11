@@ -10,10 +10,10 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
+#include <filesystem>
 #include <fstream>
 
 // These constants define the current software version.
@@ -28,120 +28,106 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
-int aliceVision_main(int argc, char **argv)
+int aliceVision_main(int argc, char** argv)
 {
-  // command-line parameters
-  std::string sfmDataFilename;
-  std::string plyPath;
-  std::string outDirectory;
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string plyPath;
+    std::string outDirectory;
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
-    ("ply", po::value<std::string>(&plyPath)->required(),
-      "Ply.")
-    ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output folder.");
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData file.")
+        ("ply", po::value<std::string>(&plyPath)->required(),
+         "PLY path.")
+        ("output,o", po::value<std::string>(&outDirectory)->required(),
+         "Output folder.");
+    // clang-format on
 
-  CmdLine cmdline("AliceVision exportMeshlab");
-  cmdline.add(requiredParams);
-  if (!cmdline.execute(argc, argv))
-  {
-      return EXIT_FAILURE;
-  }
-
-
-  // Create output dir
-  if(!fs::exists(outDirectory))
-    fs::create_directory(outDirectory);
-
-  // Read the SfM scene
-  SfMData sfm_data;
-  if(!sfmDataIO::Load(sfm_data, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
-  {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  std::ofstream outfile((fs::path(outDirectory) / "sceneMeshlab.mlp").string());
-
-  // Init mlp file
-  outfile << "<!DOCTYPE MeshLabDocument>" << outfile.widen('\n')
-    << "<MeshLabProject>" << outfile.widen('\n')
-    << " <MeshGroup>" << outfile.widen('\n')
-    << "  <MLMesh label=\"" << plyPath << "\" filename=\"" << plyPath << "\">" << outfile.widen('\n')
-    << "   <MLMatrix44>" << outfile.widen('\n')
-    << "1 0 0 0 " << outfile.widen('\n')
-    << "0 1 0 0 " << outfile.widen('\n')
-    << "0 0 1 0 " << outfile.widen('\n')
-    << "0 0 0 1 " << outfile.widen('\n')
-    << "</MLMatrix44>" << outfile.widen('\n')
-    << "  </MLMesh>" << outfile.widen('\n')
-    << " </MeshGroup>" << outfile.widen('\n');
-
-  outfile <<  " <RasterGroup>" << outfile.widen('\n');
-
-  for(Views::const_iterator iter = sfm_data.getViews().begin();
-      iter != sfm_data.getViews().end(); ++iter)
-  {
-    const View * view = iter->second.get();
-    if (!sfm_data.isPoseAndIntrinsicDefined(view))
-      continue;
-
-    const Pose3 pose = sfm_data.getPose(*view).getTransform();
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
-
-    // We have a valid view with a corresponding camera & pose
-    const std::string srcImage = view->getImagePath();
-    std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
-    std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
-    if (!camPinHole) {
-      ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
-      continue;
+    CmdLine cmdline("AliceVision exportMeshlab");
+    cmdline.add(requiredParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
     }
-    
-    Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
-    for ( int i = 1; i < 3 ; ++i)
-      for ( int j = 0; j < 4; ++j)
-        P(i, j) *= -1.;
+    // Create output dir
+    if (!fs::exists(outDirectory))
+        fs::create_directory(outDirectory);
 
-    Mat3 R, K;
-    Vec3 t;
-    KRt_from_P( P, &K, &R, &t);
+    // Read the SfM scene
+    SfMData sfm_data;
+    if (!sfmDataIO::load(sfm_data, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
+    {
+        std::cerr << std::endl << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
+        return EXIT_FAILURE;
+    }
 
-    const Vec3 optical_center = R.transpose() * t;
+    std::ofstream outfile((fs::path(outDirectory) / "sceneMeshlab.mlp").string());
 
-    outfile
-      << "  <MLRaster label=\"" << fs::path(view->getImagePath()).filename().string() << "\">" << std::endl
-      << "   <VCGCamera TranslationVector=\""
-      << optical_center[0] << " "
-      << optical_center[1] << " "
-      << optical_center[2] << " "
-      << " 1 \""
-      << " LensDistortion=\"0 0\""
-      << " ViewportPx=\"" << cam->w() << " " << cam->h() << "\""
-      << " PixelSizeMm=\"" << 1  << " " << 1 << "\""
-      << " CenterPx=\"" << cam->w() / 2.0 << " " << cam->h() / 2.0 << "\""
-      << " FocalMm=\"" << (double)K(0, 0 )  << "\""
-      << " RotationMatrix=\""
-      << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << " 0 "
-      << R(1, 0) << " " << R(1, 1) << " " << R(1, 2) << " 0 "
-      << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << " 0 "
-      << "0 0 0 1 \"/>"  << std::endl;
+    // Init mlp file
+    outfile << "<!DOCTYPE MeshLabDocument>" << outfile.widen('\n') << "<MeshLabProject>" << outfile.widen('\n') << " <MeshGroup>"
+            << outfile.widen('\n') << "  <MLMesh label=\"" << plyPath << "\" filename=\"" << plyPath << "\">" << outfile.widen('\n')
+            << "   <MLMatrix44>" << outfile.widen('\n') << "1 0 0 0 " << outfile.widen('\n') << "0 1 0 0 " << outfile.widen('\n') << "0 0 1 0 "
+            << outfile.widen('\n') << "0 0 0 1 " << outfile.widen('\n') << "</MLMatrix44>" << outfile.widen('\n') << "  </MLMesh>"
+            << outfile.widen('\n') << " </MeshGroup>" << outfile.widen('\n');
 
-    // Link the image plane
-    outfile << "   <Plane semantic=\"\" fileName=\"" << srcImage << "\"/> "<< std::endl;
-    outfile << "  </MLRaster>" << std::endl;
-  }
-  outfile << "   </RasterGroup>" << std::endl
-    << "</MeshLabProject>" << std::endl;
+    outfile << " <RasterGroup>" << outfile.widen('\n');
 
-  outfile.close();
+    for (Views::const_iterator iter = sfm_data.getViews().begin(); iter != sfm_data.getViews().end(); ++iter)
+    {
+        const View* view = iter->second.get();
+        if (!sfm_data.isPoseAndIntrinsicDefined(view))
+            continue;
 
-  return EXIT_SUCCESS;
+        const Pose3 pose = sfm_data.getPose(*view).getTransform();
+        Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
+
+        // We have a valid view with a corresponding camera & pose
+        const std::string srcImage = view->getImage().getImagePath();
+        std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+        std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+        if (!camPinHole)
+        {
+            ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
+            continue;
+        }
+
+        Mat34 P = camPinHole->getProjectiveEquivalent(pose);
+
+        for (int i = 1; i < 3; ++i)
+            for (int j = 0; j < 4; ++j)
+                P(i, j) *= -1.;
+
+        Mat3 R, K;
+        Vec3 t;
+        KRt_from_P(P, K, R, t);
+
+        const Vec3 optical_center = R.transpose() * t;
+
+        outfile << "  <MLRaster label=\"" << fs::path(view->getImage().getImagePath()).filename().string() << "\">" << std::endl
+                << "   <VCGCamera TranslationVector=\"" << optical_center[0] << " " << optical_center[1] << " " << optical_center[2] << " "
+                << " 1 \""
+                << " LensDistortion=\"0 0\""
+                << " ViewportPx=\"" << cam->w() << " " << cam->h() << "\""
+                << " PixelSizeMm=\"" << 1 << " " << 1 << "\""
+                << " CenterPx=\"" << cam->w() / 2.0 << " " << cam->h() / 2.0 << "\""
+                << " FocalMm=\"" << (double)K(0, 0) << "\""
+                << " RotationMatrix=\"" << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << " 0 " << R(1, 0) << " " << R(1, 1) << " " << R(1, 2)
+                << " 0 " << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << " 0 "
+                << "0 0 0 1 \"/>" << std::endl;
+
+        // Link the image plane
+        outfile << "   <Plane semantic=\"\" fileName=\"" << srcImage << "\"/> " << std::endl;
+        outfile << "  </MLRaster>" << std::endl;
+    }
+    outfile << "   </RasterGroup>" << std::endl << "</MeshLabProject>" << std::endl;
+
+    outfile.close();
+
+    return EXIT_SUCCESS;
 }

@@ -22,14 +22,30 @@ namespace image {
  */
 enum class EImageColorSpace
 {
-  AUTO,
-  LINEAR,
-  SRGB,
-  ACES2065_1,
-  ACEScg,
-  LAB,
-  XYZ,
-  NO_CONVERSION
+    AUTO,
+    LINEAR,
+    SRGB,
+    ACES2065_1,
+    ACEScg,
+    REC709,
+    Linear_ARRI_Wide_Gamut_3,
+    ARRI_LogC3_EI800,
+    Linear_ARRI_Wide_Gamut_4,
+    ARRI_LogC4,
+    Linear_BMD_WideGamut_Gen5,
+    BMDFilm_WideGamut_Gen5,
+    CanonLog2_CinemaGamut_D55,
+    CanonLog3_CinemaGamut_D55,
+    Linear_CinemaGamut_D55,
+    Linear_V_Gamut,
+    V_Log_V_Gamut,
+    Linear_REDWideGamutRGB,
+    Log3G10_REDWideGamutRGB,
+    Linear_Venice_S_Gamut3_Cine,
+    S_Log3_Venice_S_Gamut3_Cine,
+    LAB,
+    XYZ,
+    NO_CONVERSION
 };
 
 std::string EImageColorSpace_informations();
@@ -46,5 +62,5 @@ std::string getDefaultColorConfigFilePath();
 void initColorConfigOCIO(const std::string& colorConfigFilePath);
 oiio::ColorConfig& getGlobalColorConfigOCIO();
 
-}
-}
+}  // namespace image
+}  // namespace aliceVision

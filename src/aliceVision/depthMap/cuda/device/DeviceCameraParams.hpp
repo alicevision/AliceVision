@@ -9,9 +9,9 @@
 namespace aliceVision {
 namespace depthMap {
 
-/*
+/**
  * @struct DeviceCameraParams
- * @brief Support class to maintain usefull camera parameters in gpu memory.
+ * @brief Support class to maintain useful camera parameters in gpu memory.
  */
 struct DeviceCameraParams
 {
@@ -29,9 +29,9 @@ struct DeviceCameraParams
 
 // global / constant data structures
 
-#define ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS 100 // CUDA constant memory is limited to 65K
+#define ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS 100  // CUDA constant memory is limited to 65K
 
 extern __constant__ DeviceCameraParams constantCameraParametersArray_d[ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS];
 
-} // namespace depthMap
-} // namespace aliceVision
+}  // namespace depthMap
+}  // namespace aliceVision

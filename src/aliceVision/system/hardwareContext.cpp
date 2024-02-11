@@ -6,17 +6,10 @@
 
 namespace aliceVision {
 
-void HardwareContext::setupFromCommandLine(boost::program_options::options_description & options)
-{
-    options.add_options()
-        ("maxMemoryAvailable", boost::program_options::value<size_t>(&_maxUserMemoryAvailable)->default_value(_maxUserMemoryAvailable), "User specified available RAM")
-        ("maxCoresAvailable", boost::program_options::value<unsigned int>(&_maxUserCoresAvailable)->default_value(_maxUserCoresAvailable), "User specified available number of cores");
-}
-
 void HardwareContext::displayHardware()
 {
     std::cout << "Hardware : " << std::endl;
-    
+
     std::cout << "\tDetected core count : " << system::get_total_cpus() << std::endl;
 
     if (_maxUserCoresAvailable < std::numeric_limits<unsigned int>::max())
@@ -27,8 +20,8 @@ void HardwareContext::displayHardware()
     std::cout << "\tOpenMP will use " << omp_get_max_threads() << " cores" << std::endl;
 
     auto meminfo = system::getMemoryInfo();
-    
-    std::cout << "\tDetected available memory : " << meminfo.availableRam / (1024 * 1024)  << " Mo" << std::endl;
+
+    std::cout << "\tDetected available memory : " << meminfo.availableRam / (1024 * 1024) << " Mo" << std::endl;
 
     if (_maxUserMemoryAvailable < std::numeric_limits<size_t>::max())
     {
@@ -39,17 +32,17 @@ void HardwareContext::displayHardware()
 }
 
 unsigned int HardwareContext::getMaxThreads() const
-{   
-    //Get hardware limit on threads
+{
+    // Get hardware limit on threads
     unsigned int count = system::get_total_cpus();
 
-    //Get User max threads
+    // Get User max threads
     if (count > _maxUserCoresAvailable)
     {
         count = _maxUserCoresAvailable;
     }
 
-    //Get User limit max threads
+    // Get User limit max threads
     if (_limitUserCores > 0 && count > _limitUserCores)
     {
         count = _limitUserCores;
@@ -58,4 +51,14 @@ unsigned int HardwareContext::getMaxThreads() const
     return count;
 }
 
+size_t HardwareContext::getMaxMemory() const
+{
+    auto meminfo = system::getMemoryInfo();
+
+    size_t ret = meminfo.availableRam;
+    ret = std::min(ret, _maxUserMemoryAvailable);
+
+    return ret;
 }
+
+}  // namespace aliceVision

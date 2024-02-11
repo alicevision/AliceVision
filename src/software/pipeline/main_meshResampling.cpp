@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -21,7 +21,8 @@
 #include <geogram/basic/command_line_args.h>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -30,7 +31,7 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char* argv[])
@@ -46,27 +47,30 @@ int aliceVision_main(int argc, char* argv[])
     unsigned int nbLloydIter = 40;
     bool flipNormals = false;
 
+    // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh (OBJ file format).")
+         "Input Mesh (OBJ file format).")
         ("output,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).");
+         "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("simplificationFactor", po::value<float>(&simplificationFactor)->default_value(simplificationFactor),
-            "Simplification factor.")
+         "Simplification factor.")
         ("nbVertices", po::value<int>(&fixedNbVertices)->default_value(fixedNbVertices),
-            "Fixed number of output vertices.")
+         "Fixed number of output vertices.")
         ("minVertices", po::value<int>(&minVertices)->default_value(minVertices),
-            "Min number of output vertices.")
+         "Minimum number of output vertices.")
         ("maxVertices", po::value<int>(&maxVertices)->default_value(maxVertices),
-            "Max number of output vertices.")
+         "Maximum number of output vertices.")
         ("nbLloydIter", po::value<unsigned int>(&nbLloydIter)->default_value(nbLloydIter),
-            "Number of iterations for Lloyd pre-smoothing.")
+         "Number of iterations for Lloyd pre-smoothing.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
-            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
+         "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the "
+         "convention changes from one software to another.");
+    // clang-format on
 
     CmdLine cmdline("AliceVision meshResampling");
     cmdline.add(requiredParams);
@@ -76,9 +80,9 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    fs::path outDirectory = fs::path(outputMeshPath).parent_path();
+    if (!fs::is_directory(outDirectory))
+        fs::create_directory(outDirectory);
 
     GEO::initialize();
 
@@ -86,7 +90,7 @@ int aliceVision_main(int argc, char* argv[])
 
     GEO::Mesh M_in, M_out;
     {
-        if(!GEO::mesh_load(inputMeshPath, M_in))
+        if (!GEO::mesh_load(inputMeshPath, M_in))
         {
             ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputMeshPath << "\".");
             return 1;
@@ -97,25 +101,25 @@ int aliceVision_main(int argc, char* argv[])
 
     int nbInputPoints = M_in.vertices.nb();
     int nbOutputPoints = 0;
-    if(fixedNbVertices != 0)
+    if (fixedNbVertices != 0)
     {
         nbOutputPoints = fixedNbVertices;
     }
     else
     {
-        if(simplificationFactor != 0.0)
+        if (simplificationFactor != 0.0)
         {
             nbOutputPoints = simplificationFactor * nbInputPoints;
         }
-        if(minVertices != 0)
+        if (minVertices != 0)
         {
-            if(nbInputPoints > minVertices && nbOutputPoints < minVertices)
-              nbOutputPoints = minVertices;
+            if (nbInputPoints > minVertices && nbOutputPoints < minVertices)
+                nbOutputPoints = minVertices;
         }
-        if(maxVertices != 0)
+        if (maxVertices != 0)
         {
-          if(nbInputPoints > maxVertices && nbOutputPoints > maxVertices)
-            nbOutputPoints = maxVertices;
+            if (nbInputPoints > maxVertices && nbOutputPoints > maxVertices)
+                nbOutputPoints = maxVertices;
         }
     }
 
@@ -124,7 +128,7 @@ int aliceVision_main(int argc, char* argv[])
 
     {
         GEO::CmdLine::import_arg_group("standard");
-        GEO::CmdLine::import_arg_group("remesh"); // needed for remesh_smooth
+        GEO::CmdLine::import_arg_group("remesh");  // needed for remesh_smooth
         GEO::CmdLine::import_arg_group("algo");
         GEO::CmdLine::import_arg_group("post");
         GEO::CmdLine::import_arg_group("opt");
@@ -134,33 +138,33 @@ int aliceVision_main(int argc, char* argv[])
         const unsigned int newtonM = 0;
 
         ALICEVISION_LOG_INFO("Start mesh resampling.");
-        GEO::remesh_smooth(
-            M_in, M_out,
-            nbOutputPoints,
-            3, // 3 dimensions
-            nbLloydIter, // Number of iterations for Lloyd pre-smoothing
-            nbNewtonIter, // Number of iterations for Newton-CVT
-            newtonM // Number of evaluations for Hessian approximation
-            );
+        GEO::remesh_smooth(M_in,
+                           M_out,
+                           nbOutputPoints,
+                           3,             // 3 dimensions
+                           nbLloydIter,   // Number of iterations for Lloyd pre-smoothing
+                           nbNewtonIter,  // Number of iterations for Newton-CVT
+                           newtonM        // Number of evaluations for Hessian approximation
+        );
         ALICEVISION_LOG_INFO("Mesh resampling done.");
     }
     ALICEVISION_LOG_INFO("Output mesh: " << M_out.vertices.nb() << " vertices and " << M_out.facets.nb() << " facets.");
 
-    if(M_out.facets.nb() == 0)
+    if (M_out.facets.nb() == 0)
     {
         ALICEVISION_LOG_ERROR("The output mesh is empty.");
         return 1;
     }
-    if(flipNormals)
+    if (flipNormals)
     {
-        for(GEO::index_t i = 0; i < M_out.facets.nb(); ++i)
+        for (GEO::index_t i = 0; i < M_out.facets.nb(); ++i)
         {
             M_out.facets.flip(i);
         }
     }
 
     ALICEVISION_LOG_INFO("Save mesh.");
-    if(!GEO::mesh_save(M_out, outputMeshPath))
+    if (!GEO::mesh_save(M_out, outputMeshPath))
     {
         ALICEVISION_LOG_ERROR("Failed to save mesh file: \"" << outputMeshPath << "\".");
         return EXIT_FAILURE;

@@ -13,7 +13,8 @@ namespace aliceVision {
 
 struct Voxel
 {
-    union {
+    union
+    {
         struct
         {
             int x, y, z;
@@ -35,10 +36,7 @@ struct Voxel
         z = _z;
     }
 
-    int& operator[](const int index)
-    {
-        return m[index];
-    }
+    int& operator[](const int index) { return m[index]; }
 
     Voxel& operator=(const Voxel& param)
     {
@@ -95,7 +93,7 @@ struct Voxel
 
     Voxel operator/(int d) const
     {
-        if(d == 0)
+        if (d == 0)
             return Voxel(0, 0, 0);
 
         Voxel p;
@@ -108,20 +106,14 @@ struct Voxel
     float size() const
     {
         float d = static_cast<float>(x * x + y * y + z * z);
-        if(d == 0.0f)
+        if (d == 0.0f)
             return 0.0f;
         return std::sqrt(d);
     }
 
-    bool operator==(const Voxel& param) const
-    {
-        return (x == param.x) && (y == param.y) && (z == param.z);
-    }
+    bool operator==(const Voxel& param) const { return (x == param.x) && (y == param.y) && (z == param.z); }
 
-    bool operator!=(const Voxel& param) const
-    {
-        return (x != param.x) || (y != param.y) || (z != param.z);
-    }
+    bool operator!=(const Voxel& param) const { return (x != param.x) || (y != param.y) || (z != param.z); }
 };
 
 inline std::ostream& operator<<(std::ostream& out, const Voxel& v)
@@ -130,4 +122,4 @@ inline std::ostream& operator<<(std::ostream& out, const Voxel& v)
     return out;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

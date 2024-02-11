@@ -1,0 +1,52 @@
+# [aliceVision] Reformat src/aliceVision with latest clang-format rules
+0fb0a02b75142bcf3b23009428028e2198917275
+# [software] Reformat src/software with latest clang-format rules
+ea46ddca23332c115790c02105372bda37d943e3
+# Apply `clang-format` on modified files
+807034b1eb101b19b3bc9b9078a1635460591959
+# Estimator states in SfMData: Apply clang-format across all files
+938c0e83497c94ef6506c00ded61cf1da00e4ca5
+# Reformat src/aliceVision with latest clang-format rules
+580ebb7f344787126008af972f765aea9eacb2ac
+# [sfmData] imageInfo: Clean-up: Harmonize and use 4-space indentation everywhere
+68e253d510ba2c7cf3fadaf7b49e69d37fb95d2e
+# Clean-up CMakeLists.txt and Dependencies.cmake
+d9e5c931bda22e951cfbce32da8fede71f8d244c
+# [software] SfMMerge/SfMToRig: Code clean-up and constness
+17d93b2460f1b928ad5d3c7e27bda822754be5b7
+# [depthMap] DepthMapEstimator: Clean-up code
+4dda8dffcca4e5dbcb30a2157f5433c1fe27f83a
+# [sfmDataIO] Clean-up: Use 4-space indentation across all "viewIO" files
+ede373fe7d3e42577069f67ec61828e7d0d9ec7d
+# [geometry] Clean-up: Use 4-space indentations and fix documentation
+1dfcb1fd793de38539d3da3157bbf9b14d133d77
+# [hdr] Brackets: Clean-up: Improve docstrings and overall readability
+51bfbb0caf1ba40f8fa3e638d1a4a3be74d77b0a
+# [pipeline] HDR Fusion: Code clean-up and logs harmonization
+2f674d25e84bcefe8103330d5d118e9fc761c02d
+# [software] StereoPhotometry: Clean-up executables
+6cee093489f073f1f7bf847959651ff83f1bec43
+# [photometricStereo] Clean-up: Update documentation and harmonize syntax
+2a13d91815da900134fce56478ec1e3ebdde3128
+# [lightingCalibration] Clean-up: Update documentation and harmonize syntax
+369510dd630758535d1fb8fad61f810ffa888fe7
+# [sphereDetection] Clean-up: Update documentation and harmonize syntax
+deb1e6ee7c294c228a07a1ac522e1fe689def588
+# [sfmData] Clean-up: Harmonize syntax and use 4-space indentation
+814006054860208998ee7f1cd8fa6abdbc71921a
+# [dataio] Clean-up trailing whitespaces
+23cef09db83435f6eeb7eb1ec7e0b51895c559d2
+# [software] FeatureExtraction: Formatting: Use 4-space based indentation
+6e3d3cabcb615bf9f6abdeb82360ab9ff352dcff
+# [software] PrepareDenseScene: Formatting: Use 4-space based indentation
+5e2b5b42335da0fbc1ca8de31507a962e751cd52
+# [software] CameraCalibration: Use 4-space indentation instead of 2
+2ac0c2545701e07585f4490875eb69ce3ace5db7
+# [software] PanoramaInit: Format file with clang-format
+b2684b81a5a8711ef19d525c7f47de3fd3cc2467
+# [dataio] Use 4-spaces indentation for all the module's files
+d796b45cd8a8db71423c009380faa096120f8fb5
+# [calibration] checker detector: code formatting and improving readability
+f16dd598945794662719d56f3165de31654ee1d4
+# [software] panorama: formatting and constness
+3c487027657ed89483b43975ad9334d7a8a9a8e4

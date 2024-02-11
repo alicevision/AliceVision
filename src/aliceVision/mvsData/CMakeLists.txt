@@ -2,7 +2,6 @@
 set(mvsData_files_headers
   geometry.hpp
   geometryTriTri.hpp
-  jetColorMap.hpp
   Matrix3x3.hpp
   Matrix3x4.hpp
   OrientedPoint.hpp
@@ -20,7 +19,6 @@ set(mvsData_files_headers
 
 # Sources
 set(mvsData_files_sources
-  jetColorMap.cpp
   geometry.cpp
   geometryTriTri.cpp
   Stat3d.cpp
@@ -36,7 +34,6 @@ alicevision_add_library(aliceVision_mvsData
     aliceVision_numeric
     aliceVision_image
     ZLIB::ZLIB
-    Boost::filesystem
     Boost::boost
     OpenImageIO::OpenImageIO
     OpenImageIO::OpenImageIO_Util

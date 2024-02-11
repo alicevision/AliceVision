@@ -16,37 +16,9 @@ namespace multiview {
 namespace resection {
 
 /**
- * @brief Generic solver for resection algorithm using linear least squares.
- */
-template<typename SolverT, typename ErrorT, typename ModelT = robustEstimation::Mat34Model>
-class ResectionKernel : public robustEstimation::PointFittingKernel<SolverT,ErrorT, ModelT>
-{
-public:
-
-  using KernelBase = robustEstimation::PointFittingKernel<SolverT,ErrorT, ModelT>;
-
-  ResectionKernel(const Mat& x2d, const Mat& x3d)
-    : robustEstimation::PointFittingKernel<SolverT, ErrorT, ModelT>(x2d, x3d)
-  {}
-
-  void fit(const std::vector<std::size_t>& samples, std::vector<ModelT>& models) const override
-  {
-    const Mat x2d = ExtractColumns(KernelBase::_x1, samples);
-    const Mat x3d = ExtractColumns(KernelBase::_x2, samples);
-
-    assert(2 == x2d.rows());
-    assert(3 == x3d.rows());
-    assert(KernelBase::_kernelSolver.getMinimumNbRequiredSamples() <= x2d.cols());
-    assert(x2d.cols() == x3d.cols());
-
-    KernelBase::_kernelSolver.solve(x2d, x3d, models);
-  }
-};
-
-/**
  * @brief Usable solver for the 6pt Resection estimation
  */
-typedef robustEstimation::PointFittingKernel<Resection6PSolver, ProjectionDistanceError, robustEstimation::Mat34Model>  Resection6PKernel;
+typedef robustEstimation::PointFittingKernel<Resection6PSolver, ProjectionDistanceError, robustEstimation::Mat34Model> Resection6PKernel;
 
 }  // namespace resection
 }  // namespace multiview

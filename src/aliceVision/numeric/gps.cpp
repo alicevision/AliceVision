@@ -9,12 +9,10 @@
 #include <boost/algorithm/string.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 Vec3 WGS84ToCartesian(const Vec3& gps)
 {
-
     // equatorial radius WGS84 major axis
     const static double equRadius = 6378137.0;
     const static double flattening = 1.0 / 298.257222101;
@@ -33,15 +31,13 @@ Vec3 WGS84ToCartesian(const Vec3& gps)
     // Normalized radius
     const double normRadius = equRadius / std::sqrt(1.0 - sqrEccentricity * sinLat * sinLat);
 
-    return {(normRadius + alt) * cosLat * cosLon,
-            (normRadius + alt) * cosLat * sinLon,
-            (normRadius * (1.0 - sqrEccentricity) + alt) * sinLat};
+    return {(normRadius + alt) * cosLat * cosLon, (normRadius + alt) * cosLat * sinLon, (normRadius * (1.0 - sqrEccentricity) + alt) * sinLat};
 }
 
 double parseAltitudeFromString(const std::string& alt, const std::string& altRef)
 {
     static const std::array<std::string, 2> allowedRef = {"0", "1"};
-    if(!std::any_of(allowedRef.cbegin(), allowedRef.cend(), [altRef](const std::string& s){return altRef == s;}))
+    if (!std::any_of(allowedRef.cbegin(), allowedRef.cend(), [altRef](const std::string& s) { return altRef == s; }))
     {
         const auto message = "Unexpected value for gps reference: " + altRef;
         ALICEVISION_LOG_ERROR(message);
@@ -53,11 +49,11 @@ double parseAltitudeFromString(const std::string& alt, const std::string& altRef
     return ref > 0.0 ? -altitude : altitude;
 }
 
-//WGS84
+// WGS84
 double parseGPSFromString(const std::string& gpsDegrees, const std::string& gpsRef)
 {
     static const std::array<std::string, 4> allowedRef = {"W", "E", "N", "S"};
-    if(!std::any_of(allowedRef.cbegin(), allowedRef.cend(), [gpsRef](const std::string& s){return gpsRef == s;}))
+    if (!std::any_of(allowedRef.cbegin(), allowedRef.cend(), [gpsRef](const std::string& s) { return gpsRef == s; }))
     {
         const auto message = "Unexpected value for gps reference: " + gpsRef;
         ALICEVISION_LOG_ERROR(message);
@@ -69,7 +65,7 @@ double parseGPSFromString(const std::string& gpsDegrees, const std::string& gpsR
 
     double gpsCoord{0};
 
-    for(std::size_t i = 0; i < result.size(); ++i)
+    for (std::size_t i = 0; i < result.size(); ++i)
     {
         const auto d = std::stod(result[i]);
         gpsCoord += d * std::pow(60., -static_cast<int>(i));
@@ -78,4 +74,4 @@ double parseGPSFromString(const std::string& gpsDegrees, const std::string& gpsR
     return (gpsRef == "S" || gpsRef == "W") ? -gpsCoord : gpsCoord;
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

@@ -14,7 +14,7 @@
 namespace aliceVision {
 namespace matching {
 
-#define ALICEVISION_MINIMUM_SAMPLES_COEF 7 // TODO: TO REMOVE
+#define ALICEVISION_MINIMUM_SAMPLES_COEF 7  // TODO: TO REMOVE
 
 bool hasStrongSupport(const std::vector<std::size_t>& inliers,
                       const std::vector<feature::EImageDescriberType>& descTypes,
@@ -26,5 +26,5 @@ bool hasStrongSupport(const std::vector<std::vector<std::size_t>>& inliersPerCam
 
 bool hasStrongSupport(const matching::MatchesPerDescType& matchesPerDesc, std::size_t minimumSamples);
 
-}
-}
+}  // namespace matching
+}  // namespace aliceVision

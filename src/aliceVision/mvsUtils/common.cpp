@@ -20,14 +20,13 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
-                                const MultiViewParams& mp, int camId)
+bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2, const MultiViewParams& mp, int camId)
 {
     Point2d v = linePoint2 - linePoint1;
 
-    if(v.size() < FLT_EPSILON)
+    if (v.size() < FLT_EPSILON)
     {
-        return false; // bad configuration ... forward motion with cental ref pixel
+        return false;  // bad configuration ... forward motion with cental ref pixel
     }
 
     v = v.normalize();
@@ -46,7 +45,7 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
     // a*0 + b*y + c = 0; y = -c / b;
     double x = 0;
     double y = -c / b;
-    if((y >= 0) && (y < rh))
+    if ((y >= 0) && (y < rh))
     {
         *pFrom = Point2d(x, y);
         intersections++;
@@ -56,9 +55,9 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
     // a*rw + b*y + c = 0; y = (-c-a*rw) / b;
     x = rw;
     y = (-c - a * rw) / b;
-    if((y >= 0) && (y < rh))
+    if ((y >= 0) && (y < rh))
     {
-        if(intersections == 0)
+        if (intersections == 0)
         {
             *pFrom = Point2d(x, y);
         }
@@ -73,9 +72,9 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
     // a*x + b*0 + c = 0; x = -c / a;
     x = -c / a;
     y = 0;
-    if((x >= 0) && (x < rw))
+    if ((x >= 0) && (x < rw))
     {
-        if(intersections == 0)
+        if (intersections == 0)
         {
             *pFrom = Point2d(x, y);
         }
@@ -90,9 +89,9 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
     // a*x + b*rh + c = 0; x = (-c-b*rh) / a;
     x = (-c - b * rh) / a;
     y = rh;
-    if((x >= 0) && (x < rw))
+    if ((x >= 0) && (x < rw))
     {
-        if(intersections == 0)
+        if (intersections == 0)
         {
             *pFrom = Point2d(x, y);
         }
@@ -103,9 +102,9 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
         intersections++;
     }
 
-    if(intersections == 2)
+    if (intersections == 2)
     {
-        if((linePoint1 - *pFrom).size() > (linePoint1 - *pTo).size())
+        if ((linePoint1 - *pFrom).size() > (linePoint1 - *pTo).size())
         {
             Point2d p = *pFrom;
             *pFrom = *pTo;
@@ -117,8 +116,7 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
     return false;
 }
 
-bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refpix, int refCam, int tarCam,
-                                const MultiViewParams& mp)
+bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refpix, int refCam, int tarCam, const MultiViewParams& mp)
 {
     const Matrix3x4& rP = mp.camArr[refCam];
     const Matrix3x4& tP = mp.camArr[tarCam];
@@ -154,8 +152,7 @@ bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refp
     return get2dLineImageIntersection(pFromTar, pToTar, tarpix1, tarpix2, mp, tarCam);
 }
 
-bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix, int refCam, int tarCam,
-                      const MultiViewParams& mp)
+bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix, int refCam, int tarCam, const MultiViewParams& mp)
 {
     Point3d refvect = mp.iCamArr[refCam] * refpix;
     refvect = refvect.normalize();
@@ -171,14 +168,11 @@ bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix
     return lineLineIntersect(&k, &l, &out, &lli1, &lli2, mp.CArr[refCam], refpoint, mp.CArr[tarCam], tarpoint);
 }
 
-long initEstimate()
-{
-    return clock();
-}
+long initEstimate() { return clock(); }
 
 void printfEstimate(int i, int n, long startTime)
 {
-    if((int)((float)i / ((float)n / 100.0)) != (int)((float)(i + 1) / ((float)n / 100.0)))
+    if ((int)((float)i / ((float)n / 100.0)) != (int)((float)(i + 1) / ((float)n / 100.0)))
     {
         int perc = (int)((float)i / ((float)n / 100.0));
 
@@ -197,15 +191,12 @@ void printfEstimate(int i, int n, long startTime)
         float d1 = (float)(t2 - startTime) / (float)CLOCKS_PER_SEC;
         int elapsedsec = (int)d1 - (int)floor(d1 / 60.0) * 60;
 
-        if(elapsedsec > 15)
-          ALICEVISION_LOG_INFO(perc << "% - remaining time: " << days << " days "<< ihour <<":" << iminu << ":" << iseco);
-
+        if (elapsedsec > 15)
+            ALICEVISION_LOG_INFO(perc << "% - remaining time: " << days << " days " << ihour << ":" << iminu << ":" << iseco);
     }
 }
 
-void finishEstimate()
-{
-}
+void finishEstimate() {}
 
 std::string formatElapsedTime(long t1)
 {
@@ -216,9 +207,8 @@ std::string formatElapsedTime(long t1)
     int sec = (int)d1 - (int)floor(d1 / 60.0) * 60;
     int mil = (int)((d1 - (int)floor(d1)) * 1000);
 
-    std::string out = "Elapsed time: " + num2strTwoDecimal(min) + " minutes " +
-                                         num2strTwoDecimal(sec) + " seconds " +
-                                         num2strThreeDigits(mil) + " miliseconds\n";
+    std::string out =
+      "Elapsed time: " + num2strTwoDecimal(min) + " minutes " + num2strTwoDecimal(sec) + " seconds " + num2strThreeDigits(mil) + " miliseconds\n";
 
     return out;
 }
@@ -234,7 +224,7 @@ bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams& mp, doub
 
 bool checkCamPairAngle(int rc, int tc, const MultiViewParams& mp, double minAng, double maxAng)
 {
-    if(rc == tc)
+    if (rc == tc)
     {
         return false;
     }
@@ -302,13 +292,7 @@ void getHexahedronTriangles(Point3d tris[12][3], const Point3d hexah[8])
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-void getCamHexahedron(const Point3d& position,
-                      const Matrix3x3& iCam,
-                      int width,
-                      int height,
-                      float minDepth,
-                      float maxDepth,
-                      Point3d hexah[8])
+void getCamHexahedron(const Point3d& position, const Matrix3x3& iCam, int width, int height, float minDepth, float maxDepth, Point3d hexah[8])
 {
     const float w = static_cast<float>(width);
     const float h = static_cast<float>(height);
@@ -331,24 +315,24 @@ bool intersectsHexahedronHexahedron(const Point3d rchex[8], const Point3d tchex[
     getHexahedronTriangles(rctris, rchex);
     getHexahedronTriangles(tctris, tchex);
 
-    for(int t1 = 0; t1 < 12; t1++)
+    for (int t1 = 0; t1 < 12; t1++)
     {
-        for(int t2 = 0; t2 < 12; t2++)
+        for (int t2 = 0; t2 < 12; t2++)
         {
-            if(interectsTriangleTriangle(rctris[t1], tctris[t2]))
+            if (interectsTriangleTriangle(rctris[t1], tctris[t2]))
             {
                 return true;
             }
         }
     }
 
-    for(int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
-        if(isPointInHexahedron(rchex[i], tchex))
+        if (isPointInHexahedron(rchex[i], tchex))
         {
             return true;
         }
-        if(isPointInHexahedron(tchex[i], rchex))
+        if (isPointInHexahedron(tchex[i], rchex))
         {
             return true;
         }
@@ -364,7 +348,7 @@ StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Po
 
     StaticVector<Point3d>* out = new StaticVector<Point3d>();
     out->reserve(40);
-    for(int i = 0; i < 12; i++)
+    for (int i = 0; i < 12; i++)
     {
         Point3d a = tris[i][0];
         Point3d b = tris[i][1];
@@ -374,7 +358,7 @@ StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Po
         Point3d i1, i2;
 
         bool ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
-        if(ok)
+        if (ok)
         {
             out->push_back(i1);
             out->push_back(i2);
@@ -391,14 +375,14 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(const Point3d& linePoin
 
     StaticVector<Point3d>* out = new StaticVector<Point3d>();
     out->reserve(40);
-    for(int i = 0; i < 12; i++)
+    for (int i = 0; i < 12; i++)
     {
         Point3d a = tris[i][0];
         Point3d b = tris[i][1];
         Point3d c = tris[i][2];
         Point3d lpi;
 
-        if(isLineSegmentInTriangle(lpi, a, b, c, linePoint1, linePoint2))
+        if (isLineSegmentInTriangle(lpi, a, b, c, linePoint1, linePoint2))
         {
             out->push_back(lpi);
         }
@@ -407,12 +391,9 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(const Point3d& linePoin
     return out;
 }
 
-void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams& mp, int rc,
-                                                     Point2d P[4], StaticVector<Point3d>& out)
+void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams& mp, int rc, Point2d P[4], StaticVector<Point3d>& out)
 {
-    const double maxd = std::max({(mp.CArr[rc] - A).size(),
-                                  (mp.CArr[rc] - B).size(),
-                                  (mp.CArr[rc] - C).size()}) * 1000.0f;
+    const double maxd = std::max({(mp.CArr[rc] - A).size(), (mp.CArr[rc] - B).size(), (mp.CArr[rc] - C).size()}) * 1000.0f;
 
     out.reserve(40);
 
@@ -424,7 +405,7 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
     b = mp.CArr[rc] + (mp.iCamArr[rc] * P[0]).normalize() * maxd;
     c = mp.CArr[rc] + (mp.iCamArr[rc] * P[1]).normalize() * maxd;
     bool ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
-    if(ok)
+    if (ok)
     {
         out.push_back(i1);
         out.push_back(i2);
@@ -434,7 +415,7 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
     b = mp.CArr[rc] + (mp.iCamArr[rc] * P[1]).normalize() * maxd;
     c = mp.CArr[rc] + (mp.iCamArr[rc] * P[2]).normalize() * maxd;
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
-    if(ok)
+    if (ok)
     {
         out.push_back(i1);
         out.push_back(i2);
@@ -444,7 +425,7 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
     b = mp.CArr[rc] + (mp.iCamArr[rc] * P[2]).normalize() * maxd;
     c = mp.CArr[rc] + (mp.iCamArr[rc] * P[3]).normalize() * maxd;
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
-    if(ok)
+    if (ok)
     {
         out.push_back(i1);
         out.push_back(i2);
@@ -454,7 +435,7 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
     b = mp.CArr[rc] + (mp.iCamArr[rc] * P[3]).normalize() * maxd;
     c = mp.CArr[rc] + (mp.iCamArr[rc] * P[0]).normalize() * maxd;
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
-    if(ok)
+    if (ok)
     {
         out.push_back(i1);
         out.push_back(i2);
@@ -473,7 +454,7 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     Point3d n = cross(a - b, b - c).normalize();
     double d1 = orientedPointPlaneDistance(p, a, n);
     double d2 = orientedPointPlaneDistance(d, a, n);
-    if(d1 * d2 < 0.0)
+    if (d1 * d2 < 0.0)
         return false;
 
     a = hexah[0];
@@ -483,7 +464,7 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     n = cross(a - b, b - c).normalize();
     d1 = orientedPointPlaneDistance(p, a, n);
     d2 = orientedPointPlaneDistance(d, a, n);
-    if(d1 * d2 < 0.0)
+    if (d1 * d2 < 0.0)
         return false;
 
     a = hexah[1];
@@ -493,7 +474,7 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     n = cross(a - b, b - c).normalize();
     d1 = orientedPointPlaneDistance(p, a, n);
     d2 = orientedPointPlaneDistance(d, a, n);
-    if(d1 * d2 < 0.0)
+    if (d1 * d2 < 0.0)
         return false;
 
     a = hexah[2];
@@ -503,7 +484,7 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     n = cross(a - b, b - c).normalize();
     d1 = orientedPointPlaneDistance(p, a, n);
     d2 = orientedPointPlaneDistance(d, a, n);
-    if(d1 * d2 < 0.0)
+    if (d1 * d2 < 0.0)
         return false;
 
     a = hexah[0];
@@ -513,7 +494,7 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     n = cross(a - b, b - c).normalize();
     d1 = orientedPointPlaneDistance(p, a, n);
     d2 = orientedPointPlaneDistance(d, a, n);
-    if(d1 * d2 < 0.0)
+    if (d1 * d2 < 0.0)
         return false;
 
     a = hexah[4];
@@ -528,23 +509,23 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
 
 double computeHexahedronVolume(const Point3d* hexah)
 {
-  const double w = std::abs(hexah[1].x - hexah[0].x);
-  const double h = std::abs(hexah[3].y - hexah[0].y);
-  const double l = std::abs(hexah[4].z - hexah[0].z);
+    const double w = std::abs(hexah[1].x - hexah[0].x);
+    const double h = std::abs(hexah[3].y - hexah[0].y);
+    const double l = std::abs(hexah[4].z - hexah[0].z);
 
-  return (l * w * h);
+    return (l * w * h);
 }
 
 void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], float scale)
 {
     Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
-    for(int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
         cg = cg + hexahIn[i];
     }
     cg = cg / 8.0f;
 
-    for(int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
         hexahOut[i] = cg + (hexahIn[i] - cg) * scale;
     }
@@ -582,18 +563,17 @@ plot(x,y)
 
 */
 
-StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiViewParams& mp,
-                                                                  StaticVector<StaticVector<int>*>* ptsCams)
+StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
 {
     StaticVector<int>* nCamsPts = new StaticVector<int>();
     nCamsPts->reserve(mp.ncams);
     nCamsPts->resize_with(mp.ncams, 0);
-    for(int i = 0; i < ptsCams->size(); ++i)
+    for (int i = 0; i < ptsCams->size(); ++i)
     {
-        for(int j = 0; j < sizeOfStaticVector<int>((*ptsCams)[i]); j++)
+        for (int j = 0; j < sizeOfStaticVector<int>((*ptsCams)[i]); j++)
         {
             int rc = (*(*ptsCams)[i])[j];
-            if((rc >= 0) && (rc < mp.ncams))
+            if ((rc >= 0) && (rc < mp.ncams))
             {
                 (*nCamsPts)[rc]++;
             }
@@ -606,19 +586,19 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiVie
 
     StaticVector<StaticVector<int>*>* camsPts = new StaticVector<StaticVector<int>*>();
     camsPts->reserve(mp.ncams);
-    for(int rc = 0; rc < mp.ncams; ++rc)
+    for (int rc = 0; rc < mp.ncams; ++rc)
     {
         auto* camPts = new StaticVector<int>();
         camPts->reserve((*nCamsPts)[rc]);
         camsPts->push_back(camPts);
     }
 
-    for(int i = 0; i < ptsCams->size(); i++)
+    for (int i = 0; i < ptsCams->size(); i++)
     {
-        for(int j = 0; j < sizeOfStaticVector<int>((*ptsCams)[i]); j++)
+        for (int j = 0; j < sizeOfStaticVector<int>((*ptsCams)[i]); j++)
         {
             int rc = (*(*ptsCams)[i])[j];
-            if((rc >= 0) && (rc < mp.ncams))
+            if ((rc >= 0) && (rc < mp.ncams))
             {
                 (*camsPts)[rc]->push_back(i);
             }
@@ -629,15 +609,14 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiVie
     return camsPts;
 }
 
-StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiViewParams& mp,
-                                                                    StaticVector<StaticVector<Pixel>*>* ptsCams)
+StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiViewParams& mp, StaticVector<StaticVector<Pixel>*>* ptsCams)
 {
     StaticVector<int>* nCamsPts = new StaticVector<int>();
     nCamsPts->reserve(mp.ncams);
     nCamsPts->resize_with(mp.ncams, 0);
-    for(int i = 0; i < ptsCams->size(); i++)
+    for (int i = 0; i < ptsCams->size(); i++)
     {
-        for(int j = 0; j < sizeOfStaticVector<Pixel>((*ptsCams)[i]); j++)
+        for (int j = 0; j < sizeOfStaticVector<Pixel>((*ptsCams)[i]); j++)
         {
             int rc = (*(*ptsCams)[i])[j].x;
             (*nCamsPts)[rc]++;
@@ -646,16 +625,16 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
 
     StaticVector<StaticVector<Pixel>*>* camsPts = new StaticVector<StaticVector<Pixel>*>();
     camsPts->reserve(mp.ncams);
-    for(int rc = 0; rc < mp.ncams; rc++)
+    for (int rc = 0; rc < mp.ncams; rc++)
     {
         auto* camPts = new StaticVector<Pixel>();
         camPts->reserve((*nCamsPts)[rc]);
         camsPts->push_back(camPts);
     }
 
-    for(int i = 0; i < ptsCams->size(); i++)
+    for (int i = 0; i < ptsCams->size(); i++)
     {
-        for(int j = 0; j < sizeOfStaticVector<Pixel>((*ptsCams)[i]); j++)
+        for (int j = 0; j < sizeOfStaticVector<Pixel>((*ptsCams)[i]); j++)
         {
             int rc = (*(*ptsCams)[i])[j].x;
             int value = (*(*ptsCams)[i])[j].y;
@@ -690,23 +669,23 @@ StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensio
     // printf("%i %i %i %i\n",dimensions.x,dimensions.y,dimensions.z,nvoxels,voxels->size());
 
     int id = 0;
-    for(int xp = 0; xp < dimensions.x; xp++)
+    for (int xp = 0; xp < dimensions.x; xp++)
     {
-        for(int yp = 0; yp < dimensions.y; yp++)
+        for (int yp = 0; yp < dimensions.y; yp++)
         {
-            for(int zp = 0; zp < dimensions.z; zp++)
+            for (int zp = 0; zp < dimensions.z; zp++)
             {
                 float x = (float)xp * stepx;
                 float y = (float)yp * stepy;
                 float z = (float)zp * stepz;
-                (*voxels)[id * 8 + 0] = ox + vx * x + vy * y + vz * z;                      // x,   y,   z
-                (*voxels)[id * 8 + 1] = ox + vx * (x + stepx) + vy * y + vz * z;            // x+1, y,   z
-                (*voxels)[id * 8 + 2] = ox + vx * (x + stepx) + vy * (y + stepy) + vz * z;  // x+1, y+1, z
-                (*voxels)[id * 8 + 3] = ox + vx * x + vy * (y + stepy) + vz * z;            // x,   y+1, z
-                (*voxels)[id * 8 + 4] = ox + vx * x + vy * y + vz * (z + stepz);            // x,   y,   z+1
-                (*voxels)[id * 8 + 5] = ox + vx * (x + stepx) + vy * y + vz * (z + stepz);  // x+1, y,   z+1
-                (*voxels)[id * 8 + 6] = ox + vx * (x + stepx) + vy * (y + stepy) + vz * (z + stepz); // x+1, y+1, z+1
-                (*voxels)[id * 8 + 7] = ox + vx * x + vy * (y + stepy) + vz * (z + stepz);  // x,   y+1, z+1
+                (*voxels)[id * 8 + 0] = ox + vx * x + vy * y + vz * z;                                // x,   y,   z
+                (*voxels)[id * 8 + 1] = ox + vx * (x + stepx) + vy * y + vz * z;                      // x+1, y,   z
+                (*voxels)[id * 8 + 2] = ox + vx * (x + stepx) + vy * (y + stepy) + vz * z;            // x+1, y+1, z
+                (*voxels)[id * 8 + 3] = ox + vx * x + vy * (y + stepy) + vz * z;                      // x,   y+1, z
+                (*voxels)[id * 8 + 4] = ox + vx * x + vy * y + vz * (z + stepz);                      // x,   y,   z+1
+                (*voxels)[id * 8 + 5] = ox + vx * (x + stepx) + vy * y + vz * (z + stepz);            // x+1, y,   z+1
+                (*voxels)[id * 8 + 6] = ox + vx * (x + stepx) + vy * (y + stepy) + vz * (z + stepz);  // x+1, y+1, z+1
+                (*voxels)[id * 8 + 7] = ox + vx * x + vy * (y + stepy) + vz * (z + stepz);            // x,   y+1, z+1
                 id++;
             }
         }
@@ -732,7 +711,7 @@ int findNSubstrsInString(const std::string& str, const std::string& val)
     int last = 0;
     int n = 0;
     int pos = str.find(val, last);
-    while(pos > -1)
+    while (pos > -1)
     {
         n++;
         last = pos + val.length();
@@ -766,13 +745,13 @@ std::string num2strThreeDigits(int index)
 {
     std::string ms;
 
-    if(index < 10)
+    if (index < 10)
     {
         ms = "00" + num2str(index);
     }
     else
     {
-        if(index < 100)
+        if (index < 100)
         {
             ms = "0" + num2str(index);
         }
@@ -796,13 +775,13 @@ std::string num2strFourDecimal(int index)
 std::string num2strTwoDecimal(int index)
 {
     std::string ms;
-    if(index < 10)
+    if (index < 10)
     {
         ms = "0" + num2str(index);
     }
     else
     {
-        if(index < 100)
+        if (index < 100)
         {
             ms = num2str(index);
         }
@@ -811,5 +790,5 @@ std::string num2strTwoDecimal(int index)
     return ms;
 }
 
-} // namespace mvsUtils
-} // namespace aliceVision
+}  // namespace mvsUtils
+}  // namespace aliceVision

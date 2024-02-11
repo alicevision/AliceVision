@@ -3,9 +3,10 @@
 add_subdirectory(image)
 add_subdirectory(numeric)
 add_subdirectory(system)
+add_subdirectory(cmdline)
 add_subdirectory(stl)
 add_subdirectory(utils)
-add_subdirectory(panorama)
+add_subdirectory(gpu)
 
 # SfM modules
 
@@ -14,12 +15,12 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(colorHarmonization)
   add_subdirectory(dataio)
   add_subdirectory(feature)
+  add_subdirectory(featureEngine)
   add_subdirectory(geometry)
   add_subdirectory(graph)
-  add_subdirectory(gpu)
   add_subdirectory(imageMatching)
-  add_subdirectory(keyframe)
   add_subdirectory(linearProgramming)
+  add_subdirectory(lensCorrectionProfile)
   add_subdirectory(localization)
   add_subdirectory(matching)
   add_subdirectory(matchingImageCollection)
@@ -35,7 +36,12 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(calibration)
   if(ALICEVISION_HAVE_OPENCV)
     add_subdirectory(imageMasking)
+    add_subdirectory(keyframe)
   endif()
+endif()
+
+if (ALICEVISION_BUILD_PANORAMA)
+  add_subdirectory(panorama)
 endif()
 
 if(ALICEVISION_BUILD_HDR)
@@ -54,13 +60,77 @@ if(ALICEVISION_BUILD_MVS)
   if(ALICEVISION_HAVE_CUDA)
     add_subdirectory(depthMap)
   endif()
+
+  if(ALICEVISION_HAVE_ONNX)
+    add_subdirectory(segmentation)
+  endif()
 endif()
+
 
 
 if(ALICEVISION_BUILD_SFM AND ALICEVISION_BUILD_MVS)
   add_subdirectory(sfmMvsUtils)
 endif()
 
+if (ALICEVISION_BUILD_STEREOPHOTOMETRY)
+    if(ALICEVISION_HAVE_OPENCV)
+        add_subdirectory(photometricStereo)
+        if(ALICEVISION_HAVE_ONNX)
+            add_subdirectory(sphereDetection)
+        endif()
+    endif()
+endif()
+
+
+if(ALICEVISION_BUILD_SWIG_BINDING)
+    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
+    set_property(SOURCE aliceVision.i PROPERTY CPLUSPLUS ON)
+    set_property(SOURCE aliceVision.i PROPERTY SWIG_MODULE_NAME aliceVision)
+
+    swig_add_library(aliceVision
+        TYPE MODULE
+        LANGUAGE python
+        SOURCES aliceVision.i
+    )
+
+    set_property(
+        TARGET aliceVision
+        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
+    )
+
+    target_include_directories(aliceVision
+    PRIVATE
+        ../include
+        ${ALICEVISION_ROOT}/include
+        ${Python3_INCLUDE_DIRS}
+        ${Python3_NumPy_INCLUDE_DIRS}
+    )
+    set_property(
+        TARGET aliceVision
+        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
+    )
+    set_property(
+        TARGET aliceVision
+        PROPERTY COMPILE_OPTIONS -std=c++17
+    )
+
+    target_link_libraries(aliceVision
+    PUBLIC
+        aliceVision_numeric
+    )
+    install(
+    TARGETS
+        aliceVision
+    DESTINATION
+        ${CMAKE_INSTALL_PREFIX}
+    )
+    install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/aliceVision.py
+    DESTINATION
+        ${CMAKE_INSTALL_PREFIX}
+    )
+endif()
 
 # Install rules
 

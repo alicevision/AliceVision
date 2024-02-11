@@ -13,41 +13,34 @@
 namespace aliceVision {
 namespace sfm {
 
-inline void getCommonViews(const sfmData::SfMData& sfmDataA,
-                           const sfmData::SfMData& sfmDataB,
-                           std::vector<IndexT>& outIndexes)
+inline void getCommonViews(const sfmData::SfMData& sfmDataA, const sfmData::SfMData& sfmDataB, std::vector<IndexT>& outIndexes)
 {
-  for(const auto& viewA: sfmDataA.getViews())
-  {
-    if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end())
+    for (const auto& viewA : sfmDataA.getViews())
     {
-      outIndexes.push_back(viewA.first);
+        if (sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end())
+        {
+            outIndexes.push_back(viewA.first);
+        }
     }
-  }
 }
 
-inline void getCommonViewsWithPoses(const sfmData::SfMData& sfmDataA,
-                                    const sfmData::SfMData& sfmDataB,
-                                    std::vector<IndexT>& outIndexes)
+inline void getCommonViewsWithPoses(const sfmData::SfMData& sfmDataA, const sfmData::SfMData& sfmDataB, std::vector<IndexT>& outIndexes)
 {
-  for(const auto& viewA: sfmDataA.getViews())
-  {
-    // check there is a view with the same ID and both of them have pose and 
-    // intrinsics defined
-    if(!sfmDataA.isPoseAndIntrinsicDefined(viewA.second.get()))
-      continue;
-
-    if(sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end() &&
-       sfmDataB.isPoseAndIntrinsicDefined(viewA.first))
+    for (const auto& viewA : sfmDataA.getViews())
     {
-      outIndexes.push_back(viewA.first);
+        // check there is a view with the same ID and both of them have pose and
+        // intrinsics defined
+        if (!sfmDataA.isPoseAndIntrinsicDefined(viewA.second.get()))
+            continue;
+
+        if (sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end() && sfmDataB.isPoseAndIntrinsicDefined(viewA.first))
+        {
+            outIndexes.push_back(viewA.first);
+        }
     }
-  }
 }
 
-inline void getCommonPoseId(const sfmData::SfMData& sfmDataA,
-                            const sfmData::SfMData& sfmDataB,
-                            std::vector<IndexT>& outIndexes)
+inline void getCommonPoseId(const sfmData::SfMData& sfmDataA, const sfmData::SfMData& sfmDataB, std::vector<IndexT>& outIndexes)
 {
     for (const auto& poseA : sfmDataA.getPoses())
     {
@@ -58,20 +51,15 @@ inline void getCommonPoseId(const sfmData::SfMData& sfmDataA,
     }
 }
 
+void matchViewsByFilePattern(const sfmData::SfMData& sfmDataA,
+                             const sfmData::SfMData& sfmDataB,
+                             const std::string& filePatternMatching,
+                             std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds);
 
-void matchViewsByFilePattern(
-    const sfmData::SfMData& sfmDataA,
-    const sfmData::SfMData& sfmDataB,
-    const std::string& filePatternMatching,
-    std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds);
-
-
-void matchViewsByMetadataMatching(
-    const sfmData::SfMData& sfmDataA,
-    const sfmData::SfMData& sfmDataB,
-    const std::vector<std::string>& metadataList,
-    std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds);
-
+void matchViewsByMetadataMatching(const sfmData::SfMData& sfmDataA,
+                                  const sfmData::SfMData& sfmDataB,
+                                  const std::vector<std::string>& metadataList,
+                                  std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds);
 
 /**
  * @brief Compute a 5DOF rigid transform between the two set of cameras based on common viewIds.
@@ -85,58 +73,52 @@ void matchViewsByMetadataMatching(
  * @return true if it finds a similarity transformation
  */
 bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
-                       const sfmData::SfMData& sfmDataB,
-                      std::mt19937 & randomNumberGenerator,
-                       double* out_S,
-                       Mat3* out_R,
-                       Vec3* out_t);
+                                               const sfmData::SfMData& sfmDataB,
+                                               std::mt19937& randomNumberGenerator,
+                                               double* out_S,
+                                               Mat3* out_R,
+                                               Vec3* out_t);
 
 /**
-* @brief Compute a 5DOF rigid transform between the two set of cameras based on common poseIds.
-*
-* @param[in] sfmDataA
-* @param[in] sfmDataB
-* @param[in] randomNumberGenerator random number generator
-* @param[out] out_S output scale factor
-* @param[out] out_R output rotation 3x3 matrix
-* @param[out] out_t output translation vector
-* @return true if it finds a similarity transformation
-*/
-bool computeSimilarityFromCommonCameras_poseId(
-    const sfmData::SfMData& sfmDataA,
-    const sfmData::SfMData& sfmDataB,
-    std::mt19937 & randomNumberGenerator,
-    double* out_S,
-    Mat3* out_R,
-    Vec3* out_t);
+ * @brief Compute a 5DOF rigid transform between the two set of cameras based on common poseIds.
+ *
+ * @param[in] sfmDataA
+ * @param[in] sfmDataB
+ * @param[in] randomNumberGenerator random number generator
+ * @param[out] out_S output scale factor
+ * @param[out] out_R output rotation 3x3 matrix
+ * @param[out] out_t output translation vector
+ * @return true if it finds a similarity transformation
+ */
+bool computeSimilarityFromCommonCameras_poseId(const sfmData::SfMData& sfmDataA,
+                                               const sfmData::SfMData& sfmDataB,
+                                               std::mt19937& randomNumberGenerator,
+                                               double* out_S,
+                                               Mat3* out_R,
+                                               Vec3* out_t);
 
-bool computeSimilarityFromCommonCameras_imageFileMatching(
-    const sfmData::SfMData& sfmDataA,
-    const sfmData::SfMData& sfmDataB,
-    const std::string& filePatternMatching,
-    std::mt19937 &randomNumberGenerator,
-    double* out_S,
-    Mat3* out_R,
-    Vec3* out_t);
+bool computeSimilarityFromCommonCameras_imageFileMatching(const sfmData::SfMData& sfmDataA,
+                                                          const sfmData::SfMData& sfmDataB,
+                                                          const std::string& filePatternMatching,
+                                                          std::mt19937& randomNumberGenerator,
+                                                          double* out_S,
+                                                          Mat3* out_R,
+                                                          Vec3* out_t);
 
-bool computeSimilarityFromCommonCameras_metadataMatching(
-    const sfmData::SfMData& sfmDataA,
-    const sfmData::SfMData& sfmDataB,
-    const std::vector<std::string>& metadataList,
-    std::mt19937 &randomNumberGenerator,
-    double* out_S,
-    Mat3* out_R,
-    Vec3* out_t);
+bool computeSimilarityFromCommonCameras_metadataMatching(const sfmData::SfMData& sfmDataA,
+                                                         const sfmData::SfMData& sfmDataB,
+                                                         const std::vector<std::string>& metadataList,
+                                                         std::mt19937& randomNumberGenerator,
+                                                         double* out_S,
+                                                         Mat3* out_R,
+                                                         Vec3* out_t);
 
-
-bool computeSimilarityFromCommonMarkers(
-    const sfmData::SfMData& sfmDataA,
-    const sfmData::SfMData& sfmDataB,
-    std::mt19937 &randomNumberGenerator,
-    double* out_S,
-    Mat3* out_R,
-    Vec3* out_t);
-
+bool computeSimilarityFromCommonMarkers(const sfmData::SfMData& sfmDataA,
+                                        const sfmData::SfMData& sfmDataB,
+                                        std::mt19937& randomNumberGenerator,
+                                        double* out_S,
+                                        Mat3* out_R,
+                                        Vec3* out_t);
 
 /**
  * @brief Apply a transformation the given SfMData
@@ -145,40 +127,28 @@ bool computeSimilarityFromCommonMarkers(
  * @param S scale
  * @param R rotation
  * @param t translation
- * @param transformControlPoints
  */
-inline void applyTransform(sfmData::SfMData& sfmData,
-                           const double S,
-                           const Mat3& R,
-                           const Vec3& t,
-                           bool transformControlPoints = false)
+inline void applyTransform(sfmData::SfMData& sfmData, const double S, const Mat3& R, const Vec3& t)
 {
-  for(auto& poseIt: sfmData.getPoses())
-  {
-    geometry::Pose3 pose = poseIt.second.getTransform();
-    pose = pose.transformSRt(S, R, t);
-    poseIt.second.setTransform(pose);
-  }
-  for (auto& rigIt : sfmData.getRigs())
-  {
-      for (auto& subPose : rigIt.second.getSubPoses())
-      {
-          subPose.pose.center() *= S;
-      }
-  }
+    for (auto& poseIt : sfmData.getPoses())
+    {
+        geometry::Pose3 pose = poseIt.second.getTransform();
+        pose = pose.transformSRt(S, R, t);
+        poseIt.second.setTransform(pose);
+    }
 
-  for(auto& landmark: sfmData.structure)
-  {
-    landmark.second.X = S * R * landmark.second.X + t;
-  }
-  
-  if(!transformControlPoints)
-    return;
-  
-  for(auto& controlPts: sfmData.control_points)
-  {
-    controlPts.second.X = S * R * controlPts.second.X + t;
-  }
+    for (auto& rigIt : sfmData.getRigs())
+    {
+        for (auto& subPose : rigIt.second.getSubPoses())
+        {
+            subPose.pose.setCenter(subPose.pose.center() * S);
+        }
+    }
+
+    for (auto& landmark : sfmData.getLandmarks())
+    {
+        landmark.second.X = S * R * landmark.second.X + t;
+    }
 }
 
 /**
@@ -193,26 +163,43 @@ inline void applyTransform(sfmData::SfMData& sfmData,
  * @param[out] out_R rotation
  * @param[out] out_t translation
  */
-void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R,
-                                                Vec3& out_t);
+void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t);
 
 /**
- * @brief Compute the new coordinate system in the given reconstruction so that the mean
- * of the camera centers is the origin of the world coordinate system, a
- * dominant plane P is fitted to the set of the optical centers and the scene
- * aligned so that P roughly define the (x,y) plane, and the scale is set so
- * that the optical centers RMS is "1.0".
- * (Hartley-like normalization, p.180)
+ * @brief Compute the new coordinate system in the given SfM so that the mean
+ * of the camera centers is the origin of the world coordinate system,
+ * a dominant Y axis is defined based on the X axis of all cameras,
+ * and the scale is set so that the variance is 1 or the true scale if gps data is given and valid
  *
  * @param[in] sfmData
  * @param[out] out_S scale
  * @param[out] out_R rotation
  * @param[out] out_t translation
  */
-void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
-                                           double& out_S,
-                                           Mat3& out_R,
-                                           Vec3& out_t);
+void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t);
+
+/**
+ * @brief Compute the new coordinate system in the given SfM so that the ground is at Y=0
+ *
+ * @param[in] sfmData
+ * @param[out] out_t translation
+ */
+void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3& out_t);
+
+/**
+ * @brief Compute the new coordinate system in the given reconstruction
+ * so that the mean of the camera centers is the origin of the world coordinate system,
+ * a dominant plane P is fitted to the set of the optical centers
+ * and the scene aligned so that P roughly define the (x,y) plane,
+ * and the scale is set so that the optical centers standard deviation is "1.0".
+ * @see https://www.ltu.se/cms_fs/1.51590!/svd-fitting.pdf
+ *
+ * @param[in] sfmData
+ * @param[out] out_S scale
+ * @param[out] out_R rotation
+ * @param[out] out_t translation
+ */
+void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData, double& out_S, Mat3& out_R, Vec3& out_t);
 
 /**
  * @brief Compute the new coordinate system in the given reconstruction so that a landmark (e.g. artificial)
@@ -243,10 +230,11 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
  * @param[out] out_t the translation.
  * @return false if no reliable transformation can be computed or the sfmdata does not contain gps metadata, true otherwise.
  */
-bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData, std::mt19937 &randomNumberGenerator,
-                                             double& out_S,
-                                             Mat3& out_R,
-                                             Vec3& out_t);
+bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData,
+                                           std::mt19937& randomNumberGenerator,
+                                           double& out_S,
+                                           Mat3& out_R,
+                                           Vec3& out_t);
 
 /**
  * @brief Retrieve the View Id from a string expression (integer with the view id or filename of the input image).
@@ -271,11 +259,25 @@ IndexT getCenterCameraView(const sfmData::SfMData& sfmData);
  * @param[out] out_R rotation
  * @param[out] out_t translation
  */
-void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
-                                                const IndexT viewId,
-                                                double& out_S,
-                                                Mat3& out_R,
-                                                Vec3& out_t);
+void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData, const IndexT viewId, double& out_S, Mat3& out_R, Vec3& out_t);
+
+/**
+ * @brief Compute the cameras centers mean
+ *
+ * @param[in] sfmData
+ * @param[out] mean output mean of centers
+ */
+void computeCentersMean(const sfmData::SfMData& sfmData, Vec3& center);
+
+/**
+ * @brief Compute the cameras centers standard deviation
+ *
+ * @param[in] sfmData
+ * @param[in] mean input mean of the poses centers
+ * @param[out] varCov variance covariance of the poses centers
+ * @param[out] count poses centers count
+ */
+void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3& mean, Eigen::Matrix3d& varCov, size_t& count);
 
 struct MarkerWithCoord
 {
@@ -288,23 +290,41 @@ std::istream& operator>>(std::istream& in, MarkerWithCoord& marker);
 std::ostream& operator<<(std::ostream& os, const MarkerWithCoord& marker);
 
 /**
-* @brief Compute a new coordinate system so that markers are aligned with the target coordinates.
-*
-* @param[in] sfmData
-* @param[in] imageDescriberType
-* @param[in] markers: markers id associated to a target 3D coordinate
-* @param[in] withScaling
-* @param[out] out_S scale
-* @param[out] out_R rotation
-* @param[out] out_t translation
-*/
+ * @brief Compute a new coordinate system so that markers are aligned with the target coordinates.
+ *
+ * @param[in] sfmData
+ * @param[in] imageDescriberType
+ * @param[in] markers: markers id associated to a target 3D coordinate
+ * @param[in] withScaling
+ * @param[out] out_S scale
+ * @param[out] out_R rotation
+ * @param[out] out_t translation
+ */
 bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmData,
-    const feature::EImageDescriberType& imageDescriberType,
-    const std::vector<MarkerWithCoord>& markers,
-    bool withScaling,
-    double& out_S,
-    Mat3& out_R,
-    Vec3& out_t);
+                                                   const feature::EImageDescriberType& imageDescriberType,
+                                                   const std::vector<MarkerWithCoord>& markers,
+                                                   bool withScaling,
+                                                   double& out_S,
+                                                   Mat3& out_R,
+                                                   Vec3& out_t);
 
-} // namespace sfm
-} // namespace aliceVision
+/**
+ * @brief Compute the 3D rotation matrix such that "R.t() * unit_z"
+ * once rotated will have its x component equal to 0.
+ * This rotation will only affect rotate around the Y axis
+ * @param[out] out_R the result rotation matrix
+ * @param[in] R the input rotation matrix
+ */
+void getRotationNullifyX(Eigen::Matrix3d& out_R, const Eigen::Matrix3d& R);
+
+/**
+ * @brief Compute the 3D rotation matrix such that "pt"
+ * once rotated will have its x component equal to 0.
+ * This rotation will only affect rotate around the Y axis
+ * @param[out] out_R the result rotation matrix
+ * @param[in] pt the input point to nullify on X
+ */
+void getRotationNullifyX(Eigen::Matrix3d& out_R, const Eigen::Vector3d& pt);
+
+}  // namespace sfm
+}  // namespace aliceVision

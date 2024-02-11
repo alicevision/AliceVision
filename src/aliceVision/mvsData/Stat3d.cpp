@@ -10,10 +10,7 @@
 
 namespace aliceVision {
 
-double hypot2(double x, double y)
-{
-    return sqrt(x * x + y * y);
-}
+double hypot2(double x, double y) { return sqrt(x * x + y * y); }
 
 // Symmetric Householder reductio3 to tridiago3al form.
 void tred2(double V0[], double V1[], double V2[], double d[], double e[])
@@ -32,26 +29,25 @@ void tred2(double V0[], double V1[], double V2[], double d[], double e[])
     V[2][1] = V2[1];
     V[2][2] = V2[2];
 
-    for(j = 0; j < 3; j++)
+    for (j = 0; j < 3; j++)
     {
         d[j] = V[3 - 1][j];
     }
 
     // Householder reduction to tridiagonal form.
-    for(i = 3 - 1; i > 0; i--)
+    for (i = 3 - 1; i > 0; i--)
     {
-
         // Scale to avoid under/overflow.
         scale = 0.0;
         h = 0.0;
-        for(k = 0; k < i; k++)
+        for (k = 0; k < i; k++)
         {
             scale = scale + fabs(d[k]);
         }
-        if(scale == 0.0)
+        if (scale == 0.0)
         {
             e[i] = d[i - 1];
-            for(j = 0; j < i; j++)
+            for (j = 0; j < i; j++)
             {
                 d[j] = V[i - 1][j];
                 V[i][j] = 0.0;
@@ -60,34 +56,33 @@ void tred2(double V0[], double V1[], double V2[], double d[], double e[])
         }
         else
         {
-
             // Generate Householder vector.
-            for(k = 0; k < i; k++)
+            for (k = 0; k < i; k++)
             {
                 d[k] /= scale;
                 h += d[k] * d[k];
             }
             f = d[i - 1];
             g = sqrt(h);
-            if(f > 0)
+            if (f > 0)
             {
                 g = -g;
             }
             e[i] = scale * g;
             h = h - f * g;
             d[i - 1] = f - g;
-            for(j = 0; j < i; j++)
+            for (j = 0; j < i; j++)
             {
                 e[j] = 0.0;
             }
 
             // Apply similarity transformation to remaining columns.
-            for(j = 0; j < i; j++)
+            for (j = 0; j < i; j++)
             {
                 f = d[j];
                 V[j][i] = f;
                 g = e[j] + V[j][j] * f;
-                for(k = j + 1; k <= i - 1; k++)
+                for (k = j + 1; k <= i - 1; k++)
                 {
                     g += V[k][j] * d[k];
                     e[k] += V[k][j] * f;
@@ -95,21 +90,21 @@ void tred2(double V0[], double V1[], double V2[], double d[], double e[])
                 e[j] = g;
             }
             f = 0.0;
-            for(j = 0; j < i; j++)
+            for (j = 0; j < i; j++)
             {
                 e[j] /= h;
                 f += e[j] * d[j];
             }
             hh = f / (h + h);
-            for(j = 0; j < i; j++)
+            for (j = 0; j < i; j++)
             {
                 e[j] -= hh * d[j];
             }
-            for(j = 0; j < i; j++)
+            for (j = 0; j < i; j++)
             {
                 f = d[j];
                 g = e[j];
-                for(k = j; k <= i - 1; k++)
+                for (k = j; k <= i - 1; k++)
                 {
                     V[k][j] -= (f * e[k] + g * d[k]);
                 }
@@ -121,36 +116,36 @@ void tred2(double V0[], double V1[], double V2[], double d[], double e[])
     }
 
     // Accumulate transformations.
-    for(i = 0; i < 3 - 1; i++)
+    for (i = 0; i < 3 - 1; i++)
     {
         V[3 - 1][i] = V[i][i];
         V[i][i] = 1.0;
         h = d[i + 1];
-        if(h != 0.0)
+        if (h != 0.0)
         {
-            for(k = 0; k <= i; k++)
+            for (k = 0; k <= i; k++)
             {
                 d[k] = V[k][i + 1] / h;
             }
-            for(j = 0; j <= i; j++)
+            for (j = 0; j <= i; j++)
             {
                 g = 0.0;
-                for(k = 0; k <= i; k++)
+                for (k = 0; k <= i; k++)
                 {
                     g += V[k][i + 1] * V[k][j];
                 }
-                for(k = 0; k <= i; k++)
+                for (k = 0; k <= i; k++)
                 {
                     V[k][j] -= g * d[k];
                 }
             }
         }
-        for(k = 0; k <= i; k++)
+        for (k = 0; k <= i; k++)
         {
             V[k][i + 1] = 0.0;
         }
     }
-    for(j = 0; j < 3; j++)
+    for (j = 0; j < 3; j++)
     {
         d[j] = V[3 - 1][j];
         V[3 - 1][j] = 0.0;
@@ -188,7 +183,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
     V[2][1] = V2[1];
     V[2][2] = V2[2];
 
-    for(i = 1; i < 3; i++)
+    for (i = 1; i < 3; i++)
     {
         e[i - 1] = e[i];
     }
@@ -197,16 +192,15 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
     f = 0.0;
     tst1 = 0.0;
     eps = pow(2.0, -52.0);
-    for(l = 0; l < 3; l++)
+    for (l = 0; l < 3; l++)
     {
-
         // Fi3d small subdiago3al eleme3t
 
         tst1 = std::max(tst1, fabs(d[l]) + fabs(e[l]));
         m = l;
-        while(m < 3)
+        while (m < 3)
         {
-            if(fabs(e[m]) <= eps * tst1)
+            if (fabs(e[m]) <= eps * tst1)
             {
                 break;
             }
@@ -216,19 +210,19 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
         // If m == l, d[l] is a3 eige3value,
         // otherwise, iterate.
 
-        if(m > l)
+        if (m > l)
         {
             iter = 0;
             do
             {
-                iter = iter + 1; // (Could check iteratio3 cou3t here.)
+                iter = iter + 1;  // (Could check iteratio3 cou3t here.)
 
                 // Compute implicit shift
 
                 g = d[l];
                 p = (d[l + 1] - g) / (2.0 * e[l]);
                 r = hypot2(p, 1.0);
-                if(p < 0)
+                if (p < 0)
                 {
                     r = -r;
                 }
@@ -236,7 +230,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
                 d[l + 1] = e[l] * (p + r);
                 dl1 = d[l + 1];
                 h = g - d[l];
-                for(i = l + 2; i < 3; i++)
+                for (i = l + 2; i < 3; i++)
                 {
                     d[i] -= h;
                 }
@@ -251,7 +245,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
                 el1 = e[l + 1];
                 s = 0.0;
                 s2 = 0.0;
-                for(i = m - 1; i >= l; i--)
+                for (i = m - 1; i >= l; i--)
                 {
                     c3 = c2;
                     c2 = c;
@@ -267,7 +261,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
 
                     // Accumulate tra3sformatio3.
 
-                    for(k = 0; k < 3; k++)
+                    for (k = 0; k < 3; k++)
                     {
                         h = V[k][i + 1];
                         V[k][i + 1] = s * V[k][i] + c * h;
@@ -280,7 +274,7 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
 
                 // Check for co3verge3ce.
 
-            } while(fabs(e[l]) > eps * tst1);
+            } while (fabs(e[l]) > eps * tst1);
         }
         d[l] = d[l] + f;
         e[l] = 0.0;
@@ -288,23 +282,23 @@ void tql2(double V0[], double V1[], double V2[], double d[], double e[])
 
     // Sort eige3values a3d correspo3di3g vectors.
 
-    for(i = 0; i < 3 - 1; i++)
+    for (i = 0; i < 3 - 1; i++)
     {
         k = i;
         p = d[i];
-        for(j = i + 1; j < 3; j++)
+        for (j = i + 1; j < 3; j++)
         {
-            if(d[j] < p)
+            if (d[j] < p)
             {
                 k = j;
                 p = d[j];
             }
         }
-        if(k != i)
+        if (k != i)
         {
             d[k] = d[i];
             d[i] = p;
-            for(j = 0; j < 3; j++)
+            for (j = 0; j < 3; j++)
             {
                 p = V[j][i];
                 V[j][i] = V[j][k];
@@ -342,4 +336,4 @@ void Stat3d::eigen_decomposition(double A[3][3], double V0[], double V1[], doubl
     tql2(V0, V1, V2, d, e);
 }
 
-} // namespace aliceVision
+}  // namespace aliceVision

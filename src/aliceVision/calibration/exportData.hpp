@@ -13,8 +13,8 @@
 #include <vector>
 #include <string>
 
-namespace aliceVision{
-namespace calibration{
+namespace aliceVision {
+namespace calibration {
 
 /**
  * @brief This function exports undistorted images.
@@ -64,12 +64,9 @@ void exportDebug(const std::string& debugSelectedImgFolder,
  * @param[in] imageSize The size of the image.
  * @param[in] cameraMatrix The calibration matrix K of the camera.
  * @param[in] distCoeffs The distortion coefficients.
- * @param[out] filename The name of the camera parameters file. 
+ * @param[out] filename The name of the camera parameters file.
  */
-void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
-                                const cv::Mat& cameraMatrix,
-                                const cv::Mat& distCoeffs,
-                                const std::string& filename);
+void saveCameraParamsToPlainTxt(const cv::Size& imageSize, const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs, const std::string& filename);
 
 /**
  * @brief This function saves some parameters' camera into a txt file.
@@ -89,14 +86,18 @@ void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
  * @param[in] totalAvgErr The average of the reprojection errors.
  */
 void saveCameraParams(const std::string& filename,
-                      const cv::Size& imageSize, const cv::Size& boardSize,
-                      float squareSize, float aspectRatio, int cvCalibFlags,
-                      const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs,
-                      const std::vector<cv::Mat>& rvecs, const std::vector<cv::Mat>& tvecs,
+                      const cv::Size& imageSize,
+                      const cv::Size& boardSize,
+                      float squareSize,
+                      float aspectRatio,
+                      int cvCalibFlags,
+                      const cv::Mat& cameraMatrix,
+                      const cv::Mat& distCoeffs,
+                      const std::vector<cv::Mat>& rvecs,
+                      const std::vector<cv::Mat>& tvecs,
                       const std::vector<float>& reprojErrs,
-                      const std::vector<std::vector<cv::Point2f> >& imagePoints,
+                      const std::vector<std::vector<cv::Point2f>>& imagePoints,
                       double totalAvgErr);
 
-}//namespace calibration
-}//namespace aliceVision
-
+}  // namespace calibration
+}  // namespace aliceVision

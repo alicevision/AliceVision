@@ -12,43 +12,42 @@
 
 #define ALICEVISION_SFMDATAIO_VERSION_MAJOR 1
 #define ALICEVISION_SFMDATAIO_VERSION_MINOR 2
-#define ALICEVISION_SFMDATAIO_VERSION_REVISION 3
-
+#define ALICEVISION_SFMDATAIO_VERSION_REVISION 6
 
 // AliceVision version as a string; for example "0.9.0".
-#define ALICEVISION_SFMDATAIO_VERSION_STRING ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_MAJOR) "." \
-                             ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_MINOR) "." \
-                             ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_REVISION)
+#define ALICEVISION_SFMDATAIO_VERSION_STRING                                                                                                         \
+    ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_MAJOR)                                                                                       \
+    "." ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_MINOR) "." ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_REVISION)
 
 namespace aliceVision {
 namespace sfmDataIO {
 
 enum ESfMData
 {
-  VIEWS                      = 1,
-  EXTRINSICS                 = 2,
-  INTRINSICS                 = 4,
-  STRUCTURE                  = 8,
-  OBSERVATIONS               = 16,
-  OBSERVATIONS_WITH_FEATURES = 32,
-  CONTROL_POINTS             = 64,
-  LANDMARKS_UNCERTAINTY      = 128,
-  POSES_UNCERTAINTY          = 256,
-  CONSTRAINTS2D              = 512,
+    VIEWS = 1,
+    EXTRINSICS = 2,
+    INTRINSICS = 4,
+    STRUCTURE = 8,
+    OBSERVATIONS = 16,
+    OBSERVATIONS_WITH_FEATURES = 32,
+    LANDMARKS_UNCERTAINTY = 64,
+    POSES_UNCERTAINTY = 128,
+    CONSTRAINTS2D = 256,
+    ANCESTORS = 512,
 
-  UNCERTAINTY = LANDMARKS_UNCERTAINTY | POSES_UNCERTAINTY,
-  ALL_DENSE = VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | CONTROL_POINTS | CONSTRAINTS2D,
-  ALL = VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | OBSERVATIONS_WITH_FEATURES | CONTROL_POINTS | UNCERTAINTY | CONSTRAINTS2D
+    UNCERTAINTY = LANDMARKS_UNCERTAINTY | POSES_UNCERTAINTY,
+    ALL_DENSE = VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | CONSTRAINTS2D | ANCESTORS,
+    ALL = VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | OBSERVATIONS_WITH_FEATURES | UNCERTAINTY | CONSTRAINTS2D | ANCESTORS
 };
 
 /// check that each pose have a valid intrinsic and pose id in the existing View ids
-bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag);
+bool validIds(const aliceVision::sfmData::SfMData& sfmData, ESfMData partFlag);
 
 /// load SfMData SfM scene from a file
-bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
+bool load(aliceVision::sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
 /// save SfMData SfM scene to a file
-bool Save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
+bool save(const aliceVision::sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
-} // namespace sfmDataIO
-} // namespace aliceVision
+}  // namespace sfmDataIO
+}  // namespace aliceVision

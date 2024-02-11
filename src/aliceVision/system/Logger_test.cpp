@@ -17,21 +17,12 @@
 BOOST_AUTO_TEST_CASE(Logger_Enums)
 {
     using namespace aliceVision::system;
-    const std::array<EVerboseLevel, 6> allLevels{EVerboseLevel::Trace,
-                                                 EVerboseLevel::Debug,
-                                                 EVerboseLevel::Info,
-                                                 EVerboseLevel::Warning,
-                                                 EVerboseLevel::Error ,
-                                                 EVerboseLevel::Fatal};
+    const std::array<EVerboseLevel, 6> allLevels{
+      EVerboseLevel::Trace, EVerboseLevel::Debug, EVerboseLevel::Info, EVerboseLevel::Warning, EVerboseLevel::Error, EVerboseLevel::Fatal};
 
-    const std::array<std::string, 6> allStringLevels{"trace",
-                                                 "debug",
-                                                 "info",
-                                                 "warning",
-                                                 "error" ,
-                                                 "fatal"};
+    const std::array<std::string, 6> allStringLevels{"trace", "debug", "info", "warning", "error", "fatal"};
 
-    for(std::size_t i = 0; i < allLevels.size(); ++i)
+    for (std::size_t i = 0; i < allLevels.size(); ++i)
     {
         BOOST_CHECK(allLevels[i] == EVerboseLevel_stringToEnum(allStringLevels[i]));
         BOOST_CHECK(allLevels[i] == EVerboseLevel_stringToEnum(boost::to_upper_copy(allStringLevels[i])));
