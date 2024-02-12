@@ -4,11 +4,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
-%include <aliceVision/camera/IntrinsicBase.hpp>
+%include <aliceVision/camera/Distortion.i>
+%include <aliceVision/camera/DistortionFisheye.hpp>
 
 %{
-#include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/camera/DistortionFisheye.hpp>
 using namespace aliceVision;
 using namespace aliceVision::camera;
 %}
