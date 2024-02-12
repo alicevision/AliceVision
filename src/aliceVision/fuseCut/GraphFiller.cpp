@@ -575,7 +575,7 @@ void GraphFiller::fillGraph(const std::vector<RayInfo> & rayInfos,
     const double nPixelSizeBehind = _mp.userParams.get<double>("delaunaycut.nPixelSizeBehind", 4.0);  // sigma value
 
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < rayInfos.size(); i++)
     {
         const int vertexIndex = rayInfos[i].end;

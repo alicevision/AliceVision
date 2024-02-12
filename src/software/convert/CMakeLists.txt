@@ -41,8 +41,9 @@ if(ALICEVISION_BUILD_SFM)
                 aliceVision_sfmData
                 aliceVision_sfmDataIO
                 aliceVision_mesh
+                aliceVision_fuseCut
                 Boost::program_options
-                Boost::system
+                Boost::json
                 E57Format
                 nanoflann
         )

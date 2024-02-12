@@ -11,6 +11,7 @@ set(fuseCut_files_headers
   GraphFiller.hpp
   Intersections.hpp
   GraphCut.hpp
+  InputSet.hpp
 )
 
 # Sources
@@ -24,6 +25,7 @@ set(fuseCut_files_sources
   Intersections.cpp
   Tetrahedralization.cpp
   GraphCut.cpp
+  InputSet.cpp
 )
 
 alicevision_add_library(aliceVision_fuseCut
@@ -40,6 +42,7 @@ alicevision_add_library(aliceVision_fuseCut
   PRIVATE_LINKS
     nanoflann
     Boost::boost
+    Boost::json
 )
 
 # Unit tests

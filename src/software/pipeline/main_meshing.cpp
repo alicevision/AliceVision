@@ -312,6 +312,7 @@ int aliceVision_main(int argc, char* argv[])
     int nbSolidAngleFilteringIterations = 2;
     unsigned int seed = 0;
     BoundingBox boundingBox;
+    
 
     fuseCut::FuseParams fuseParams;
 
