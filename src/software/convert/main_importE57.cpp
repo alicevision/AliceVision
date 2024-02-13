@@ -366,11 +366,11 @@ int aliceVision_main(int argc, char **argv)
         transformed += std::to_string(id);
         transformed += ".abc";
 
-        ALICEVISION_LOG_INFO("Saving to " << transformed);
-        sfmDataIO::save(subSfmData, transformed, sfmDataIO::ESfMData::ALL);
-
         fuseCut::Input input;
-        input.sfmPath = transformed;
+        input.sfmPath = transformed.string();
+
+        ALICEVISION_LOG_INFO("Saving to " << input.sfmPath);
+        sfmDataIO::save(subSfmData, input.sfmPath, sfmDataIO::ESfMData::ALL);
 
         inputs.push_back(input);
     }
