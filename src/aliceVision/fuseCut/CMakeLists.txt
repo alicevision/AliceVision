@@ -9,6 +9,8 @@ set(fuseCut_files_headers
   OctreeTracks.hpp
   ReconstructionPlan.hpp
   VoxelsGrid.hpp
+  Octree.hpp
+  InputSet.hpp
 )
 
 # Sources
@@ -21,6 +23,7 @@ set(fuseCut_files_sources
   OctreeTracks.cpp
   ReconstructionPlan.cpp
   VoxelsGrid.cpp
+  InputSet.cpp
 )
 
 alicevision_add_library(aliceVision_fuseCut
@@ -37,6 +40,7 @@ alicevision_add_library(aliceVision_fuseCut
   PRIVATE_LINKS
     nanoflann
     Boost::boost
+    Boost::json
 )
 
 # Unit tests
