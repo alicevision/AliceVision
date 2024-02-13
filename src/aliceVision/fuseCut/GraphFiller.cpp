@@ -13,28 +13,25 @@
 namespace aliceVision {
 namespace fuseCut {
 
+struct GeometriesCount
+{
+    size_t facets = 0;
+    size_t vertices = 0;
+    size_t edges = 0;
+};
 
 
 void GraphFiller::createGraphCut(const std::vector<RayInfo> & rayInfos, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited)
 {    
-    voteFullEmptyScore(rayInfos, node, visited);
-}
-
-void GraphFiller::voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited)
-{
-    ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
     const int maxint = std::numeric_limits<int>::max();
-
-
     const bool forceTEdge = _mp.userParams.get<bool>("delaunaycut.voteFilteringForWeaklySupportedSurfaces", true);
     const float fullWeight = float(_mp.userParams.get<double>("delaunaycut.fullWeight", 1.0));
-
-    // 0 for distFcn equals 1 all the time
     const float distFcnHeight = (float)_mp.userParams.get<double>("delaunaycut.distFcnHeight", 0.0);
 
     fillGraph(rayInfos, true, distFcnHeight, fullWeight, node, visited);
-    addToInfiniteSw((float)maxint);    
+    addToInfiniteSw((float)maxint);  
 }
+
 
 void GraphFiller::addToInfiniteSw(float sW)
 {
@@ -891,7 +888,6 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                     firstIteration = false;
                 }
 
-                boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].fullnessScore} += fWeight;
 
                 // Take the mirror facet to iterate over the next cell
                 const Facet mFacet = mirrorFacet(geometry.facet);
@@ -943,13 +939,6 @@ void GraphFiller::fillGraphPartPtRc(int& outTotalStepsFront,
                     firstIteration = false;
                 }
 
-                // We have just intersected a vertex or edge.
-                // These geometries do not have a cellIndex, so we use the previousGeometry to retrieve the cell between the previous geometry and the
-                // current one.
-                if (previousGeometry.type == EGeometryType::Facet)
-                {
-                    boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].fullnessScore} += fWeight;
-                }
 
                 if (geometry.type == EGeometryType::Vertex)
                 {

@@ -9,7 +9,6 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/Octree.hpp>
 
 namespace aliceVision {
@@ -47,11 +46,11 @@ private:
 
 public:
     mvsUtils::MultiViewParams& _mp;
+    std::unique_ptr<Node> _octree;
 
     std::vector<Point3d> _verticesCoords;
     std::vector<GC_vertexInfo> _verticesAttr;
     std::vector<int> _camsVertexes;
-    std::unique_ptr<Node> _octree;
 };
 
 }

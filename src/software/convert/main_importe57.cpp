@@ -350,7 +350,7 @@ int aliceVision_main(int argc, char **argv)
         
         ALICEVISION_LOG_INFO("Local Bounding box: " << sx << " x " << sy << " x " << sz);
 
-        sfmData::SfMData subSfmData(sfmData, item->getBBMin(), item->getBBMax());
+        sfmData::SfMData subSfmData(sfmData, bbmin, bbmax);
 
         std::cout << subSfmData.getLandmarks().size() << std::endl;
 
@@ -364,7 +364,7 @@ int aliceVision_main(int argc, char **argv)
         sfmDataIO::save(subSfmData, transformed, sfmDataIO::ESfMData::ALL);
 
         fuseCut::Input input;
-        input.path = transformed;
+        input.sfmPath = transformed;
 
         inputs.push_back(input);
     }

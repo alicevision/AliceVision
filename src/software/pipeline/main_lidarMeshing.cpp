@@ -138,6 +138,7 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string jsonFilename = "";
     std::string outputDirectory = "";
+    std::string outputJsonFilename = "";
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -145,7 +146,9 @@ int aliceVision_main(int argc, char* argv[])
         ("input,i", po::value<std::string>(&jsonFilename)->required(),
          "json file.")
         ("output,o", po::value<std::string>(&outputDirectory)->required(),
-         "Output directory.");
+         "Output directory.")
+        ("outputJson", po::value<std::string>(&outputJsonFilename)->required(),
+         "Output scene description.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -169,6 +172,8 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_ERROR("Cannot open json input file");
         return EXIT_FAILURE;
     }
+    
+    
     std::stringstream buffer;
     buffer << inputfile.rdbuf();
     boost::json::value jv = boost::json::parse(buffer.str());
@@ -204,14 +209,22 @@ int aliceVision_main(int argc, char* argv[])
         std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
 
         ALICEVISION_LOG_INFO("Computing sub mesh " << idSub + 1 << " / " << setSize);
-        if (!computeSubMesh(input.path, ss))
+        if (!computeSubMesh(input.sfmPath, ss))
         {
             ALICEVISION_LOG_ERROR("Error computing sub mesh");
             return EXIT_FAILURE;
         }
 
+        inputsets[idSub].subMeshPath = ss;
+
         ALICEVISION_LOG_INFO(ss);
     }
+
+    std::ofstream of(outputJsonFilename);
+    jv = boost::json::value_from(inputsets);
+    of << boost::json::serialize(jv);
+    of.close();
+
     
     return EXIT_SUCCESS;
 }

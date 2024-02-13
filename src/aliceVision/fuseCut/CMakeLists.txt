@@ -1,7 +1,8 @@
 # Headers
 set(fuseCut_files_headers
-  DelaunayGraphCut.hpp
-  delaunayGraphCutTypes.hpp
+  #DelaunayGraphCut.hpp
+  #delaunayGraphCutTypes.hpp
+  FuseCutTypes.hpp
   Fuser.hpp
   MaxFlow_AdjList.hpp
   Octree.hpp
@@ -16,7 +17,7 @@ set(fuseCut_files_headers
 
 # Sources
 set(fuseCut_files_sources
-  DelaunayGraphCut.cpp
+  #DelaunayGraphCut.cpp
   Fuser.cpp
   MaxFlow_AdjList.cpp
   PointCloudBuilder.cpp

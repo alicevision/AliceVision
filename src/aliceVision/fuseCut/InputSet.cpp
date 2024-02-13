@@ -17,14 +17,17 @@ Input tag_invoke(boost::json::value_to_tag<Input>, boost::json::value const& jv)
     const boost::json::object& obj = jv.as_object();
 
     Input ret;
-    ret.path = boost::json::value_to<std::string>(obj.at("path"));
+    ret.sfmPath = boost::json::value_to<std::string>(obj.at("sfmPath"));
+    ret.subMeshPath = boost::json::value_to<std::string>(obj.at("subMeshPath"));
 
     return ret;
 }
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, Input const& t)
 {
-    jv = {{"path", t.path},
+    jv = {
+            {"sfmPath", t.sfmPath},
+            {"subMeshPath", t.subMeshPath},
           };
 }
 

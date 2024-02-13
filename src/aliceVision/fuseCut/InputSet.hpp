@@ -13,7 +13,8 @@ namespace fuseCut {
 
 struct Input
 {
-    std::string path;
+    std::string sfmPath;
+    std::string subMeshPath;
 };
 
 using InputSet = std::vector<Input>;

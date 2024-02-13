@@ -22,31 +22,7 @@ namespace fuseCut {
 
 class GraphFiller
 {
-public:
-    /**
-     * @brief  Used for debug purposes to store count about geometries intersected during fillGraph and forceTedges.
-     */
-    struct GeometriesCount
-    {
-        size_t facets = 0;
-        size_t vertices = 0;
-        size_t edges = 0;
 
-        GeometriesCount& operator+=(const GeometriesCount& gc)
-        {
-            edges += gc.edges;
-            vertices += gc.vertices;
-            facets += gc.facets;
-            return *this;
-        }
-        GeometriesCount& operator/=(const size_t v)
-        {
-            edges /= v;
-            vertices /= v;
-            facets /= v;
-            return *this;
-        }
-    };
 
 public:
     GraphFiller(mvsUtils::MultiViewParams& mp) : _mp(mp)
@@ -63,14 +39,11 @@ public:
         for (GC_cellInfo& c : _cellsAttr)
         {
             const float w = std::max(1.0f, c.cellTWeight) * c.on;
-
-            // cellTWeight = clamp(w, cellTWeight, 1000000.0f);
             c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, w));
         }
     }
 
 private:
-    void voteFullEmptyScore(const std::vector<RayInfo> & rayInfos, const Node & node, std::set<std::pair<fuseCut::CellIndex, fuseCut::VertexIndex>> & visited);
     void addToInfiniteSw(float sW);
     
     

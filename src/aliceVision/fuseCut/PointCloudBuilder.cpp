@@ -9,6 +9,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
 
 #include <aliceVision/fuseCut/Kdtree.hpp>
 
@@ -54,35 +55,7 @@ void PointCloudBuilder::createDensePointCloud(const Point3d hexah[8],
     _verticesCoords.shrink_to_fit();
     _verticesAttr.shrink_to_fit();
 
-    _octree->_minSize = 1000000;
-    for (int idVertex = 0; idVertex < _verticesCoords.size(); idVertex++)
-    {
-        const GC_vertexInfo & vi = _verticesAttr[idVertex];
-
-        const auto & point = _verticesCoords[idVertex];
-
-        Eigen::Vector3d ptEnd;
-        ptEnd.x() = point.x;
-        ptEnd.y() = point.y;
-        ptEnd.z() = point.z;
-
-        for (const auto & idCamera : vi.cams)
-        {
-            int idVertexCamera = _camsVertexes[idCamera];
-            const auto & cameraCenter = _verticesCoords[idVertexCamera];
-
-            Eigen::Vector3d ptStart;
-            ptStart.x() = cameraCenter.x;
-            ptStart.y() = cameraCenter.y;
-            ptStart.z() = cameraCenter.z;
-
-            RayInfo ri;
-            ri.start = idCamera;
-            ri.end = idVertex;
-
-            _octree->storeRay(ptStart, ptEnd, ri);
-        }
-    }
+    
 
     
 
@@ -208,7 +181,7 @@ void PointCloudBuilder::addPointsFromCameraCenters(const StaticVector<int>& cams
             // if there is no nearest vertex or the nearest vertex is not too close
             // if(!kdTree.locateNearestVertex(p, vi, sq_dist) || (sq_dist > minDist2))
             {
-                const GEO::index_t nvi = _verticesCoords.size();
+                const size_t = _verticesCoords.size();
                 _verticesCoords.push_back(p);
 
                 GC_vertexInfo newv;
