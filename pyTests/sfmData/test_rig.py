@@ -2,7 +2,7 @@
 Collection of unit tests for the Rig class.
 """
 
-from aliceVision import sfmData as av
+from pyalicevision import sfmData as av
 
 ##################
 ### List of functions:

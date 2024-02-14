@@ -2,7 +2,7 @@
 Collection of unit tests for the ImageInfo class.
 """
 
-from aliceVision import sfmData as av
+from pyalicevision import sfmData as av
 from ..constants import IMAGE_PATH, IMAGE_WIDTH, IMAGE_HEIGHT, METADATA
 
 ##################
