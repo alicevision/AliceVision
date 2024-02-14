@@ -29,6 +29,5 @@ Input tag_invoke(boost::json::value_to_tag<Input>, boost::json::value const& jv)
  */
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, Input const& t);
 
-}
-}
-
+}  // namespace fuseCut
+}  // namespace aliceVision

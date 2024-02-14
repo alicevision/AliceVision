@@ -18,14 +18,14 @@ struct RayInfo
     IndexT end;
 };
 
-class SimpleNode 
+class SimpleNode
 {
-public:
+  public:
     using uptr = std::unique_ptr<SimpleNode>;
-    using ptr = SimpleNode *;
+    using ptr = SimpleNode*;
 
-public:
-    SimpleNode(const Eigen::Vector3d & bbmin, const Eigen::Vector3d & bbmax)
+  public:
+    SimpleNode(const Eigen::Vector3d& bbmin, const Eigen::Vector3d& bbmax)
     {
         _bbMin = bbmin;
         _bbMax = bbmax;
@@ -37,7 +37,7 @@ public:
         return rel.maxCoeff();
     }
 
-    void store(const Eigen::Vector3d & pt)
+    void store(const Eigen::Vector3d& pt)
     {
         if (!isInside(pt))
         {
@@ -59,20 +59,15 @@ public:
                 item->store(pt);
             }
         }
-        else 
+        else
         {
             _count++;
         }
     }
 
-    bool isInside(const Eigen::Vector3d & pt) const
+    bool isInside(const Eigen::Vector3d& pt) const
     {
-
-        return (pt.x() >= _bbMin.x() && 
-                pt.y() >= _bbMin.y() && 
-                pt.z() >= _bbMin.z() && 
-                pt.x() <= _bbMax.x() && 
-                pt.y() <= _bbMax.y() && 
+        return (pt.x() >= _bbMin.x() && pt.y() >= _bbMin.y() && pt.z() >= _bbMin.z() && pt.x() <= _bbMax.x() && pt.y() <= _bbMax.y() &&
                 pt.z() <= _bbMax.z());
     }
 
@@ -84,8 +79,7 @@ public:
         }
 
         Eigen::Vector3d center = (_bbMin + _bbMax) * 0.5;
-        
-        
+
         double xs[] = {_bbMin.x(), center.x(), _bbMax.x()};
         double ys[] = {_bbMin.y(), center.y(), _bbMax.y()};
         double zs[] = {_bbMin.z(), center.z(), _bbMax.z()};
@@ -106,7 +100,7 @@ public:
                     lmax.x() = xs[ix + 1];
                     lmax.y() = ys[iy + 1];
                     lmax.z() = zs[iz + 1];
-                    
+
                     _nodes[pos] = std::make_unique<SimpleNode>(lmin, lmax);
                     pos++;
                 }
@@ -114,14 +108,14 @@ public:
         }
     }
 
-    void visit(std::vector<SimpleNode::ptr> & list)
+    void visit(std::vector<SimpleNode::ptr>& list)
     {
         if (_count > 0)
         {
             list.push_back(this);
         }
 
-        for (auto &item : _nodes)
+        for (auto& item : _nodes)
         {
             if (item)
             {
@@ -143,16 +137,16 @@ public:
         {
             _count = count;
 
-            for (auto & item : _nodes)
+            for (auto& item : _nodes)
             {
                 item.reset();
                 item = nullptr;
             }
 
             return;
-        }        
-        
-        for (auto & item : _nodes)
+        }
+
+        for (auto& item : _nodes)
         {
             if (item)
             {
@@ -165,9 +159,9 @@ public:
     {
         size_t count = _count;
 
-        for (const auto & item : _nodes)
+        for (const auto& item : _nodes)
         {
-            if (item) 
+            if (item)
             {
                 count += item->getCount();
             }
@@ -176,17 +170,11 @@ public:
         return count;
     }
 
-    const Eigen::Vector3d & getBBMin() const
-    {
-        return _bbMin;
-    }
+    const Eigen::Vector3d& getBBMin() const { return _bbMin; }
 
-    const Eigen::Vector3d & getBBMax() const
-    {
-        return _bbMax;
-    }
+    const Eigen::Vector3d& getBBMax() const { return _bbMax; }
 
-private:
+  private:
     std::array<SimpleNode::uptr, 8> _nodes;
     Eigen::Vector3d _bbMin;
     Eigen::Vector3d _bbMax;
@@ -194,14 +182,14 @@ private:
     double _minSize = 2.0;
 };
 
-class Node 
+class Node
 {
-public:
+  public:
     using uptr = std::unique_ptr<Node>;
-    using ptr = Node *;
+    using ptr = Node*;
 
-public:
-    Node(const Eigen::Vector3d & bbmin, const Eigen::Vector3d & bbmax)
+  public:
+    Node(const Eigen::Vector3d& bbmin, const Eigen::Vector3d& bbmax)
     {
         _bbMin = bbmin;
         _bbMax = bbmax;
@@ -213,13 +201,13 @@ public:
         return rel.maxCoeff();
     }
 
-    void storeRay(const Eigen::Vector3d & start, const Eigen::Vector3d & end, const RayInfo & info)
+    void storeRay(const Eigen::Vector3d& start, const Eigen::Vector3d& end, const RayInfo& info)
     {
-        //Check that the ray intersect this cell
+        // Check that the ray intersect this cell
         if (!intersect(start, end))
         {
             return;
-        }        
+        }
 
         double size = getSize();
         if (size > _minSize)
@@ -236,31 +224,27 @@ public:
                 item->storeRay(start, end, info);
             }
         }
-        else 
+        else
         {
-            if (isInside(end)) _rayInfos.push_back(info);
+            if (isInside(end))
+                _rayInfos.push_back(info);
         }
     }
 
-    bool isInside(const Eigen::Vector3d & pt) const
+    bool isInside(const Eigen::Vector3d& pt) const
     {
-
-        return (pt.x() >= _bbMin.x() && 
-                pt.y() >= _bbMin.y() && 
-                pt.z() >= _bbMin.z() && 
-                pt.x() <= _bbMax.x() && 
-                pt.y() <= _bbMax.y() && 
+        return (pt.x() >= _bbMin.x() && pt.y() >= _bbMin.y() && pt.z() >= _bbMin.z() && pt.x() <= _bbMax.x() && pt.y() <= _bbMax.y() &&
                 pt.z() <= _bbMax.z());
     }
 
-    void visit(std::vector<Node::ptr> & list)
+    void visit(std::vector<Node::ptr>& list)
     {
         if (_rayInfos.size() > 0)
         {
             list.push_back(this);
         }
 
-        for (auto &item : _nodes)
+        for (auto& item : _nodes)
         {
             if (item)
             {
@@ -269,7 +253,7 @@ public:
         }
     }
 
-    void getIntersect(const Eigen::Vector3d & start, const Eigen::Vector3d & end, double & boundsMin, double & boundsMax) const
+    void getIntersect(const Eigen::Vector3d& start, const Eigen::Vector3d& end, double& boundsMin, double& boundsMax) const
     {
         // x+lambda*dx>bbmin.x
         // y+lambda*dy>bbmin.y
@@ -284,7 +268,6 @@ public:
         // lambda < (bbmax.x-x)/dx
         // lambda < (bbmax.y-y)/dy
         // lambda < (bbmax.z-z)/dz
-        
 
         Eigen::Vector3d direction = end - start;
 
@@ -323,7 +306,7 @@ public:
                 boundsMin = std::max(boundsMin, lmax);
                 boundsMax = std::min(boundsMax, lmin);
             }
-        }   
+        }
 
         if (std::abs(direction.z()) > 1e-12)
         {
@@ -340,13 +323,13 @@ public:
                 boundsMin = std::max(boundsMin, lmax);
                 boundsMax = std::min(boundsMax, lmin);
             }
-        }  
+        }
 
         boundsMin = std::min(boundsMin, 1.0);
         boundsMax = std::min(boundsMax, 1.0);
     }
 
-    bool intersect(const Eigen::Vector3d & start, const Eigen::Vector3d & end) const
+    bool intersect(const Eigen::Vector3d& start, const Eigen::Vector3d& end) const
     {
         double boundsMin, boundsMax;
 
@@ -355,21 +338,18 @@ public:
         return (boundsMin < boundsMax);
     }
 
-    bool getPointLeaving(const Eigen::Vector3d & start, const Eigen::Vector3d & end, Eigen::Vector3d & output) const
+    bool getPointLeaving(const Eigen::Vector3d& start, const Eigen::Vector3d& end, Eigen::Vector3d& output) const
     {
         double boundsMin, boundsMax;
 
         getIntersect(start, end, boundsMin, boundsMax);
 
-        output = start + boundsMax * (end - start); 
+        output = start + boundsMax * (end - start);
 
         return (boundsMin < boundsMax);
     }
 
-    bool intersectTriangle(const Eigen::Vector3d & A,const Eigen::Vector3d & B, const Eigen::Vector3d & C)
-    {
-        return true;
-    }
+    bool intersectTriangle(const Eigen::Vector3d& A, const Eigen::Vector3d& B, const Eigen::Vector3d& C) { return true; }
 
     void subdivide()
     {
@@ -379,8 +359,7 @@ public:
         }
 
         Eigen::Vector3d center = (_bbMin + _bbMax) * 0.5;
-        
-        
+
         double xs[] = {_bbMin.x(), center.x(), _bbMax.x()};
         double ys[] = {_bbMin.y(), center.y(), _bbMax.y()};
         double zs[] = {_bbMin.z(), center.z(), _bbMax.z()};
@@ -401,7 +380,7 @@ public:
                     lmax.x() = xs[ix + 1];
                     lmax.y() = ys[iy + 1];
                     lmax.z() = zs[iz + 1];
-                    
+
                     _nodes[pos] = std::make_unique<Node>(lmin, lmax);
                     pos++;
                 }
@@ -409,32 +388,23 @@ public:
         }
     }
 
-    const std::vector<RayInfo> & getRayInfos()
-    {
-        return _rayInfos;
-    }
+    const std::vector<RayInfo>& getRayInfos() { return _rayInfos; }
 
-    const Eigen::Vector3d & getBBMin() const
-    {
-        return _bbMin;
-    }
+    const Eigen::Vector3d& getBBMin() const { return _bbMin; }
 
-    const Eigen::Vector3d & getBBMax() const
-    {
-        return _bbMax;
-    }
+    const Eigen::Vector3d& getBBMax() const { return _bbMax; }
 
-private:
+  private:
     std::array<Node::uptr, 8> _nodes;
 
     Eigen::Vector3d _bbMin;
     Eigen::Vector3d _bbMax;
 
     std::vector<RayInfo> _rayInfos;
-public:
 
+  public:
     double _minSize = 40.0;
 };
 
-}
-}
+}  // namespace fuseCut
+}  // namespace aliceVision
