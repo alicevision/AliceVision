@@ -8,9 +8,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/fuseCut/LargeScale.hpp>
-#include <aliceVision/fuseCut/ReconstructionPlan.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
+#include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>

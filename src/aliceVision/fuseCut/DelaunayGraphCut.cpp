@@ -8,8 +8,8 @@
 // #define ALICEVISION_DEBUG_VOTE
 
 #include "DelaunayGraphCut.hpp"
-// #include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
+#include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/image/jetColorMap.hpp>

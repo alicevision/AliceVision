@@ -14,7 +14,6 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
-#include <aliceVision/fuseCut/VoxelsGrid.hpp>
 
 #include <geogram/delaunay/delaunay.h>
 #include <geogram/delaunay/delaunay_3d.h>
