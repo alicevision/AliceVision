@@ -32,7 +32,8 @@ public:
     _paths(paths),
     _idPath(-1),
     _idMesh(-1),
-    _countMeshesForFile(0)
+    _countMeshesForFile(0),
+    _requiredIntensity(0.0)
     {
 
     }
@@ -171,6 +172,11 @@ public:
                 {
                     continue;
                 }
+                
+                if (data3DPoints.intensity[pos] < _requiredIntensity)
+                {
+                    continue;
+                }
 
                 Eigen::Vector3d pt;
                 pt(0) = data3DPoints.cartesianX[pos];
@@ -266,6 +272,11 @@ public:
         return _idMesh;
     }
 
+    void setRequiredIntensity(double requirement)
+    {
+        _requiredIntensity = requirement;
+    }
+
 private:
     std::vector<std::string> _paths;
     std::unique_ptr<e57::Reader> _reader;
@@ -273,6 +284,7 @@ private:
     int _idPath;
     int _idMesh;
     size_t _countMeshesForFile;
+    double _requiredIntensity;
 };
 
 }  // namespace dataio

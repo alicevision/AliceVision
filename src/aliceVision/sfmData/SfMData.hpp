@@ -69,6 +69,14 @@ class SfMData
     /// Rotation priors
     RotationPriors rotationpriors;
 
+    SfMData() = default;
+
+    /**
+     * Copy constructor 
+     * Use a bounding box to restrict the copied landmarks to the selected region
+    */
+    SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax);
+
     // Operators
 
     bool operator==(const SfMData& other) const;
@@ -519,6 +527,13 @@ class SfMData
      * state with respect to the associated lock
      */
     void resetParameterStates();
+
+    /**
+     * Compute the landmarks axis aligned bounding box
+     * @param bbMin the output minimal values of the bounding box
+     * @param bbMax the output maximal values of the bounding box
+    */
+    void getBoundingBox(Eigen::Vector3d & bbMin, Eigen::Vector3d & bbMax);
 
   private:
     /// Structure (3D points with their 2D observations)

@@ -9,9 +9,11 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
-
+#include <aliceVision/fuseCut/Octree.hpp>
+#include <aliceVision/fuseCut/InputSet.hpp>
 #include <aliceVision/dataio/E57Reader.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <filesystem>
 
 #include <boost/program_options.hpp>
 #include "nanoflann.hpp"
@@ -120,25 +122,32 @@ class BestPointInRadius
     inline DistanceType worstDist() const { return m_radius; }
 };
 
+// convert from a SfMData format to another
 int aliceVision_main(int argc, char** argv)
 {
-    // Command-line parameters
+    // command-line parameters
     std::vector<std::string> e57filenames;
-    std::string outputSfMDataFilename;
+    std::string outputJsonFilename;
     double maxDensity = 0.0;
+    double minIntensity = 0.03;
+    size_t maxPointsPerBlock = 1000000;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::vector<std::string>>(&e57filenames)->multitoken()->required(),
-         "Path to the input E57 files.")
-        ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
-         "Path to the output SfMData file.");
-
+         "Path to E57 files.")
+        ("output,o", po::value<std::string>(&outputJsonFilename)->required(),
+         "Path to the output JSON file.");
+    
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("maxDensity", po::value<double>(&maxDensity)->default_value(maxDensity),
-         "Ensure each point has no neighbour closer than maxDensity meters.");
+         "Ensure each point has no neighbour closer than maxDensity meters.")
+        ("minIntensity", po::value<double>(&minIntensity)->default_value(minIntensity),
+         "Minimal intensity required to use LiDAR measure.")
+        ("maxPointsPerBlock", po::value<size_t>(&maxPointsPerBlock)->default_value(maxPointsPerBlock),
+         "Maximal number of points per computation block.");
     // clang-format on
 
     CmdLine cmdline("AliceVision importE57");
@@ -149,6 +158,15 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
+
+    if (maxPointsPerBlock == 0)
+    {
+        maxPointsPerBlock = std::numeric_limits<size_t>::max();
+    }
+
     sfmData::SfMData sfmData;
 
     // Create intrinsics
@@ -157,6 +175,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Create a reader using all files
     dataio::E57Reader reader(e57filenames);
+    reader.setRequiredIntensity(minIntensity);
 
     // Retrieve all sensor positions
     ALICEVISION_LOG_INFO("Extracting sensors");
@@ -237,38 +256,105 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Mesh has " << allVertices.size() - originalSize << " points");
     }
 
-    ALICEVISION_LOG_INFO("Building final point cloud");
-    PointInfoVectorAdaptator pointCloudRef(allVertices);
-    PointInfoKdTree tree(3, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(10));
-    tree.buildIndex();
-
-    auto& landmarks = sfmData.getLandmarks();
-#pragma omp parallel for
-    for (int vIndex = 0; vIndex < allVertices.size(); ++vIndex)
     {
-        // Search in the vicinity if a better point exists
-        const double radius = maxDensity;
-        static const nanoflann::SearchParameters searchParams(0.f, false);
-        BestPointInRadius<double, std::size_t> resultSet(radius * radius, allVertices, cameras, vIndex);
-        tree.findNeighbors(resultSet, allVertices[vIndex].coords.data(), searchParams);
+        ALICEVISION_LOG_INFO("Building final point cloud");
+        PointInfoVectorAdaptator pointCloudRef(allVertices);
+        PointInfoKdTree tree(3, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+        tree.buildIndex();
+
+        auto& landmarks = sfmData.getLandmarks();
+#pragma omp parallel for
+        for (int vIndex = 0; vIndex < allVertices.size(); ++vIndex)
+        {
+            // Search in the vicinity if a better point exists
+            const double radius = maxDensity;
+            static const nanoflann::SearchParameters searchParams(0.f, false);
+            BestPointInRadius<double, std::size_t> resultSet(radius * radius, allVertices, cameras, vIndex);
+            tree.findNeighbors(resultSet, allVertices[vIndex].coords.data(), searchParams);
 
 #pragma omp critical
-        {
-            if (!resultSet.found)
             {
-                const auto& v = allVertices[vIndex];
+                if (!resultSet.found)
+                {
+                    const auto& v = allVertices[vIndex];
 
-                sfmData::Observation obs(Vec2(0.0, 0.0), landmarks.size(), 1.0);
-                sfmData::Landmark landmark(v.coords, feature::EImageDescriberType::SIFT);
-                landmark.getObservations().emplace(v.idMesh, obs);
-                landmarks.emplace(vIndex, landmark);
+                    sfmData::Observation obs(Vec2(0.0, 0.0), landmarks.size(), 1.0);
+                    sfmData::Landmark landmark(v.coords, feature::EImageDescriberType::SIFT);
+                    landmark.getObservations().emplace(v.idMesh, obs);
+                    landmarks.emplace(vIndex, landmark);
+                }
             }
         }
+
+        ALICEVISION_LOG_INFO("Final point cloud has " << landmarks.size() << " points");
     }
 
-    ALICEVISION_LOG_INFO("Final point cloud has " << landmarks.size() << " points");
+    ALICEVISION_LOG_INFO("Get Final Global bounding box");
+    Eigen::Vector3d bbmin, bbmax;
+    sfmData.getBoundingBox(bbmin, bbmax);
 
-    sfmDataIO::save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData::ALL);
+    double sx = std::abs(bbmax.x() - bbmin.x());
+    double sy = std::abs(bbmax.y() - bbmin.y());
+    double sz = std::abs(bbmax.z() - bbmin.z());
+    ALICEVISION_LOG_INFO("Global Bounding box: " << sx << " x " << sy << " x " << sz);
+
+    fuseCut::SimpleNode octree(bbmin, bbmax);
+    for (const auto& pt : sfmData.getLandmarks())
+    {
+        octree.store(pt.second.X);
+    }
+
+    // Now regroup cells as much as we can
+    octree.regroup(maxPointsPerBlock);
+
+    std::vector<fuseCut::SimpleNode::ptr> list;
+    octree.visit(list);
+
+    ALICEVISION_LOG_INFO("Generating " << list.size() << "sub regions");
+
+    fuseCut::InputSet inputs;
+
+    for (int id = 0; id < list.size(); id++)
+    {
+        const auto& item = list[id];
+
+        Eigen::Vector3d bbmin = item->getBBMin();
+        Eigen::Vector3d bbmax = item->getBBMax();
+
+        // Add borders of 20 cm
+        Eigen::Vector3d center = (bbmin + bbmax) * 0.5;
+        bbmin = center + 1.02 * (bbmin - center);
+        bbmax = center + 1.02 * (bbmax - center);
+
+        double sx = std::abs(bbmax.x() - bbmin.x());
+        double sy = std::abs(bbmax.y() - bbmin.y());
+        double sz = std::abs(bbmax.z() - bbmin.z());
+
+        ALICEVISION_LOG_INFO("Local Bounding box: " << sx << " x " << sy << " x " << sz);
+
+        sfmData::SfMData subSfmData(sfmData, bbmin, bbmax);
+
+        ALICEVISION_LOG_INFO("local count : " << subSfmData.getLandmarks().size() << " points");
+
+        std::filesystem::path p = outputJsonFilename;
+        std::filesystem::path transformed = p.parent_path() / "sfm";
+        transformed += "_";
+        transformed += std::to_string(id);
+        transformed += ".abc";
+
+        fuseCut::Input input;
+        input.sfmPath = transformed.string();
+
+        ALICEVISION_LOG_INFO("Saving to " << input.sfmPath);
+        sfmDataIO::save(subSfmData, input.sfmPath, sfmDataIO::ESfMData::ALL);
+
+        inputs.push_back(input);
+    }
+
+    std::ofstream of(outputJsonFilename);
+    boost::json::value jv = boost::json::value_from(inputs);
+    of << boost::json::serialize(jv);
+    of.close();
 
     return EXIT_SUCCESS;
 }
