@@ -187,7 +187,14 @@ int aliceVision_main(int argc, char** argv)
 
         // Create pose for sfmData
         const int idMesh = reader.getIdMesh();
-        geometry::Pose3 pose(Eigen::Matrix3d::Identity(), sensorPosition);
+        
+
+        Eigen::Vector3d correctedSensorPosition;
+        correctedSensorPosition.x() = sensorPosition.x();
+        correctedSensorPosition.y() = - sensorPosition.z();
+        correctedSensorPosition.z() = sensorPosition.y();
+
+        geometry::Pose3 pose(Eigen::Matrix3d::Identity(), correctedSensorPosition);
         sfmData.getPoses().emplace(idMesh, pose);
 
         // Create view for sfmData
@@ -278,8 +285,13 @@ int aliceVision_main(int argc, char** argv)
                 {
                     const auto& v = allVertices[vIndex];
 
+                    Eigen::Vector3d pt;
+                    pt.x() = v.coords.x();
+                    pt.y() = - v.coords.z();
+                    pt.z() = v.coords.y();
+
                     sfmData::Observation obs(Vec2(0.0, 0.0), landmarks.size(), 1.0);
-                    sfmData::Landmark landmark(v.coords, feature::EImageDescriberType::SIFT);
+                    sfmData::Landmark landmark(pt, feature::EImageDescriberType::SIFT);
                     landmark.getObservations().emplace(v.idMesh, obs);
                     landmarks.emplace(vIndex, landmark);
                 }

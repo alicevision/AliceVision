@@ -3,12 +3,7 @@ set(fuseCut_files_headers
   DelaunayGraphCut.hpp
   delaunayGraphCutTypes.hpp
   Fuser.hpp
-  LargeScale.hpp
-  MaxFlow_CSR.hpp
   MaxFlow_AdjList.hpp
-  OctreeTracks.hpp
-  ReconstructionPlan.hpp
-  VoxelsGrid.hpp
   Octree.hpp
   InputSet.hpp
 )
@@ -17,12 +12,7 @@ set(fuseCut_files_headers
 set(fuseCut_files_sources
   DelaunayGraphCut.cpp
   Fuser.cpp
-  LargeScale.cpp
-  MaxFlow_CSR.cpp
   MaxFlow_AdjList.cpp
-  OctreeTracks.cpp
-  ReconstructionPlan.cpp
-  VoxelsGrid.cpp
   InputSet.cpp
 )
 
@@ -52,9 +42,3 @@ alicevision_add_test(DelaunayGraphCut_test.cpp
     aliceVision_multiview_test_data
 )
 
-alicevision_add_test(LargeScale_test.cpp
-  NAME "fuseCut_LargeScale"
-  LINKS
-    aliceVision_fuseCut
-    aliceVision_sfm
-)
