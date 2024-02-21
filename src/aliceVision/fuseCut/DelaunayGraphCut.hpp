@@ -116,7 +116,7 @@ class DelaunayGraphCut
 
     mvsUtils::MultiViewParams& _mp;
 
-    std::unique_ptr<Tetrahedralization> _tetrahedralization2;
+    std::unique_ptr<Tetrahedralization> _tetrahedralization;
     /// 3D points coordinates
     std::vector<Point3d> _verticesCoords;
     /// Information attached to each vertex
@@ -141,7 +141,7 @@ class DelaunayGraphCut
      * @param f the facet
      * @return the global vertex index
      */
-    inline VertexIndex getOppositeVertexIndex(const Facet& f) const { return _tetrahedralization2->cell_vertex(f.cellIndex, f.localVertexIndex); }
+    inline VertexIndex getOppositeVertexIndex(const Facet& f) const { return _tetrahedralization->cell_vertex(f.cellIndex, f.localVertexIndex); }
 
     /**
      * @brief Retrieve the global vertex index of a vertex from a facet and an relative index
@@ -153,7 +153,7 @@ class DelaunayGraphCut
      */
     inline VertexIndex getVertexIndex(const Facet& f, int i) const
     {
-        return _tetrahedralization2->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
+        return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
     }
 
     inline const std::array<const Point3d*, 3> getFacetsPoints(const Facet& f) const
@@ -169,7 +169,7 @@ class DelaunayGraphCut
         double d = std::numeric_limits<double>::max();
         for (GEO::index_t i = 0; i < 4; ++i)
         {
-            GEO::signed_index_t currentVertex = _tetrahedralization2->cell_vertex(cellIndex, i);
+            GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(cellIndex, i);
             if (currentVertex < 0)
                 continue;
             double currentDist = GEO::Geom::distance2(_verticesCoords[currentVertex].m, p.m, 3);
@@ -187,13 +187,13 @@ class DelaunayGraphCut
         const std::array<VertexIndex, 3> facetVertices = {getVertexIndex(f, 0), getVertexIndex(f, 1), getVertexIndex(f, 2)};
 
         Facet out;
-        out.cellIndex = _tetrahedralization2->cell_adjacent(f.cellIndex, f.localVertexIndex);
+        out.cellIndex = _tetrahedralization->cell_adjacent(f.cellIndex, f.localVertexIndex);
         if (out.cellIndex != GEO::NO_CELL)
         {
             // Search for the vertex in adjacent cell which doesn't exist in input facet.
             for (int k = 0; k < 4; ++k)
             {
-                CellIndex out_vi = _tetrahedralization2->cell_vertex(out.cellIndex, k);
+                CellIndex out_vi = _tetrahedralization->cell_vertex(out.cellIndex, k);
                 if (std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
                 {
                     out.localVertexIndex = k;
@@ -227,7 +227,7 @@ class DelaunayGraphCut
      * @return a vector of neighboring cell indices
      */
     inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const { 
-        const auto & neighboringCellsPerVertex = _tetrahedralization2->getNeighboringCellsPerVertex();
+        const auto & neighboringCellsPerVertex = _tetrahedralization->getNeighboringCellsPerVertex();
         return neighboringCellsPerVertex.at(vi); 
     }
 

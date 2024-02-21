@@ -46,31 +46,6 @@ Tetrahedralization::Tetrahedralization(const std::vector<Point3d> & vertices)
     updateVertexToCellsCache(_vertices.size());
 }
 
-Tetrahedralization::Tetrahedralization(const GEO::Delaunay_var & tetrahedralization, const std::vector<Point3d> & vertices)
-: _vertices(vertices)
-{
-    //Copy information
-    _mesh.clear();
-    _neighboringCellsPerVertex.clear();
-    _mesh.resize(tetrahedralization->nb_cells());
-
-    for (CellIndex ci = 0; ci < tetrahedralization->nb_cells(); ci++)
-    {
-        Cell & c = _mesh[ci];
-        c.indices[0] = tetrahedralization->cell_vertex(ci, 0);
-        c.indices[1] = tetrahedralization->cell_vertex(ci, 1);
-        c.indices[2] = tetrahedralization->cell_vertex(ci, 2);
-        c.indices[3] = tetrahedralization->cell_vertex(ci, 3);
-
-        c.adjacent[0] = tetrahedralization->cell_adjacent(ci, 0);
-        c.adjacent[1] = tetrahedralization->cell_adjacent(ci, 1);
-        c.adjacent[2] = tetrahedralization->cell_adjacent(ci, 2);
-        c.adjacent[3] = tetrahedralization->cell_adjacent(ci, 3);
-    }
-
-    updateVertexToCellsCache(_vertices.size());
-}
-
 void Tetrahedralization::updateVertexToCellsCache(const size_t verticesCount)
 {
     _neighboringCellsPerVertex.clear();

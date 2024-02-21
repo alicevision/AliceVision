@@ -34,12 +34,6 @@ public:
 
 public:
     Tetrahedralization(const std::vector<Point3d> & vertices);
-    Tetrahedralization(const GEO::Delaunay_var & tetrahedralization, const std::vector<Point3d> & vertices);
-
-    const std::vector<Point3d> & getVertices() const
-    {
-        return _vertices;
-    }
 
     //Find local index for given global index 
     VertexIndex index(CellIndex ci, VertexIndex vi) const
@@ -133,6 +127,15 @@ public:
      * @param adjVertices the adjacent vertices in the graph
     */
     void get_neighbors(const VertexIndex & vi, GEO::vector<VertexIndex> & adjVertices) const;
+
+    /**
+     * Return the vertices (reference) used 
+     * @return a reference to an external point cloud
+    */
+    const std::vector<Point3d> & getVertices() const
+    {
+        return _vertices;
+    }
 
 private:
     void updateVertexToCellsCache(size_t verticesCount);
