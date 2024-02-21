@@ -6,6 +6,8 @@ set(fuseCut_files_headers
   MaxFlow_AdjList.hpp
   Octree.hpp
   InputSet.hpp
+  BoundingBox.hpp
+  Intersections.hpp
 )
 
 # Sources
@@ -14,6 +16,8 @@ set(fuseCut_files_sources
   Fuser.cpp
   MaxFlow_AdjList.cpp
   InputSet.cpp
+  Tetrahedralization.cpp
+  Intersections.cpp
 )
 
 alicevision_add_library(aliceVision_fuseCut
