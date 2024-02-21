@@ -11,6 +11,7 @@
 
 #include <geogram/basic/numeric.h>
 #include <geogram/mesh/mesh.h>
+#include <geogram/delaunay/delaunay.h>
 
 #include <Eigen/Dense>
 #include <array>
@@ -33,6 +34,7 @@ public:
 
 public:
     Tetrahedralization(const std::vector<Point3d> & vertices);
+    Tetrahedralization(const GEO::Delaunay_var & tetrahedralization, const std::vector<Point3d> & vertices);
 
     const std::vector<Point3d> & getVertices() const
     {
@@ -130,7 +132,7 @@ public:
      * @param vi the input vertex id
      * @param adjVertices the adjacent vertices in the graph
     */
-    void get_neighbors(const VertexIndex & vi, GEO::vector<VertexIndex> adjVertices) const;
+    void get_neighbors(const VertexIndex & vi, GEO::vector<VertexIndex> & adjVertices) const;
 
 private:
     void updateVertexToCellsCache(size_t verticesCount);
@@ -138,7 +140,6 @@ private:
 private:
     std::vector<Cell> _mesh;
     std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
-    std::vector<GEO::vector<VertexIndex>> _neighbors;
     const std::vector<Point3d> & _vertices;
 };
 

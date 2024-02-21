@@ -36,154 +36,13 @@
 #include <boost/accumulators/statistics.hpp>
 #include <boost/atomic/atomic_ref.hpp>
 
+#include "Kdtree.hpp"
+
 namespace aliceVision {
 namespace fuseCut {
 
 namespace fs = std::filesystem;
 
-// #define USE_GEOGRAM_KDTREE 1
-
-#ifdef USE_GEOGRAM_KDTREE
-
-typedef GEO::AdaptiveKdTree KdTree;
-#else
-
-// static const std::size_t MAX_LEAF_ELEMENTS = 64;
-static const std::size_t MAX_LEAF_ELEMENTS = 10;
-
-struct PointVectorAdaptator
-{
-    using Derived = PointVectorAdaptator;  //!< In this case the dataset class is myself.
-    using T = double;
-
-    const std::vector<Point3d>& _data;
-    PointVectorAdaptator(const std::vector<Point3d>& data)
-      : _data(data)
-    {}
-
-    /// CRTP helper method
-    inline const Derived& derived() const { return *static_cast<const Derived*>(this); }
-    /// CRTP helper method
-    inline Derived& derived() { return *static_cast<Derived*>(this); }
-
-    // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return _data.size(); }
-
-    // Returns the dim'th component of the idx'th point in the class:
-    // Since this is inlined and the "dim" argument is typically an immediate value, the
-    //  "if/else's" are actually solved at compile time.
-    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data.at(idx).m[dim]; }
-
-    // Optional bounding-box computation: return false to default to a standard bbox computation loop.
-    //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it again.
-    //   Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
-    template<class BBOX>
-    bool kdtree_get_bbox(BBOX& bb) const
-    {
-        return false;
-    }
-};
-
-typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, PointVectorAdaptator>, PointVectorAdaptator, 3 /* dim */
-                                            >
-  KdTree;
-
-/**
- * A result-set class used when performing a radius based search.
- */
-template<typename DistanceType, typename IndexType = size_t>
-class SmallerPixSizeInRadius
-{
-  public:
-    const DistanceType radius;
-
-    const std::vector<double>& m_pixSizePrepare;
-    const std::vector<float>& m_simScorePrepare;
-    size_t m_result = 0;
-    const int m_i;
-    bool found = false;
-
-    inline SmallerPixSizeInRadius(DistanceType radius_, const std::vector<double>& pixSizePrepare, const std::vector<float>& simScorePrepare, int i)
-      : radius(radius_),
-        m_pixSizePrepare(pixSizePrepare),
-        m_simScorePrepare(simScorePrepare),
-        m_i(i)
-    {
-        init();
-    }
-
-    inline void init() { clear(); }
-    inline void clear() { m_result = 0; }
-
-    inline size_t size() const { return m_result; }
-
-    inline bool full() const { return found; }
-
-    /**
-     * Called during search to add an element matching the criteria.
-     * @return true if the search should be continued, false if the results are sufficient
-     */
-    inline bool addPoint(DistanceType dist, IndexType index)
-    {
-        if (dist < radius)
-        {
-            ++m_result;
-            if (m_simScorePrepare[index] * m_pixSizePrepare[index] * m_pixSizePrepare[index] <
-                m_simScorePrepare[m_i] * m_pixSizePrepare[m_i] * m_pixSizePrepare[m_i])
-            {
-                found = true;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    inline DistanceType worstDist() const { return radius; }
-};
-#endif
-
-class Tree
-{
-    std::unique_ptr<KdTree> _tree;
-    std::unique_ptr<PointVectorAdaptator> _pointCloudRef;
-
-  public:
-    Tree(const std::vector<Point3d>& verticesCoords) { initKdTree(verticesCoords); }
-
-    void initKdTree(const std::vector<Point3d>& verticesCoords)
-    {
-#ifdef USE_GEOGRAM_KDTREE
-        ALICEVISION_LOG_INFO("Build geogram KdTree index.");
-        _tree = std::make_unique<KdTree>(3);
-        _tree->set_exact(false);
-        _tree->set_points(verticesCoords.size(), verticesCoords.front().m);
-#else
-        ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
-        _pointCloudRef = std::make_unique<PointVectorAdaptator>(verticesCoords);
-        _tree = std::make_unique<KdTree>(3 /*dim*/, *_pointCloudRef.get(), nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-        _tree->buildIndex();
-#endif
-        ALICEVISION_LOG_INFO("KdTree created for " << verticesCoords.size() << " points.");
-    }
-
-    bool locateNearestVertex(const Point3d& p, std::size_t& index, double& sq_dist) const
-    {
-        index = std::numeric_limits<std::size_t>::max();
-        sq_dist = std::numeric_limits<double>::max();
-#ifdef USE_GEOGRAM_KDTREE
-        _tree->get_nearest_neighbors(1, p.m, &index, &sq_dist);
-        return true;
-#else
-        nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
-        resultSet.init(&index, &sq_dist);
-        if (!_tree->findNeighbors(resultSet, p.m, nanoflann::SearchParameters()))
-        {
-            return false;
-        }
-        return true;
-#endif
-    }
-};
 
 /// Filter by pixSize
 void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare,
@@ -191,17 +50,12 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare,
                      double pixSizeMarginCoef,
                      std::vector<float>& simScorePrepare)
 {
-#ifdef USE_GEOGRAM_KDTREE
-    ALICEVISION_LOG_INFO("Build geogram KdTree index.");
-    GEO::AdaptiveKdTree kdTree(3);
-    kdTree.set_exact(false);
-    kdTree.set_points(verticesCoordsPrepare.size(), verticesCoordsPrepare[0].m);
-#else
+
     ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
     PointVectorAdaptator pointCloudRef(verticesCoordsPrepare);
     KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     kdTree.buildIndex();
-#endif
+
     ALICEVISION_LOG_INFO("KdTree created for " << verticesCoordsPrepare.size() << " points.");
 
 #pragma omp parallel for
@@ -217,41 +71,14 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare,
             pixSizePrepare[vIndex] = -1.0;
             continue;
         }
-#ifdef USE_GEOGRAM_KDTREE
-        static const std::size_t nbNeighbors = 20;
-        static const double nbNeighborsInv = 1.0 / (double)nbNeighbors;
-        std::array<GEO::index_t, nbNeighbors> nnIndex;
-        std::array<double, nbNeighbors> sqDist;
-        // kdTree.get_nearest_neighbors(nbNeighbors, verticesCoordsPrepare[i].m, &nnIndex.front(), &sqDist.front());
-        kdTree.get_nearest_neighbors(nbNeighbors, vIndex, &nnIndex.front(), &sqDist.front());
 
-        for (std::size_t n = 0; n < nbNeighbors; ++n)
-        {
-            // NOTE: we don't need to test the distance regarding pixSizePrepare[nnIndex[vIndex]]
-            //       as we kill ourself only if our pixSize is bigger
-            if (sqDist[n] < pixSizeScore)
-            {
-                if (pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex] ||
-                    (pixSizePrepare[nnIndex[n]] == pixSizePrepare[vIndex] && nnIndex[n] < vIndex))
-                {
-                    // Kill itself if inside our volume (defined by marginCoef*pixSize) there is another point with a smaller pixSize
-                    pixSizePrepare[vIndex] = -1.0;
-                    break;
-                }
-            }
-            // else
-            // {
-            //     break;
-            // }
-        }
-#else
 
         static const nanoflann::SearchParameters searchParams(0.f, false);  // false: dont need to sort
         SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, simScorePrepare, vIndex);
         kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams);
         if (resultSet.found)
             pixSizePrepare[vIndex] = -1.0;
-#endif
+
     }
     ALICEVISION_LOG_INFO("Filtering done.");
 }
@@ -321,16 +148,12 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
                                     float contributeMarginFactor,
                                     float simGaussianSize)
 {
-#ifdef USE_GEOGRAM_KDTREE
-    GEO::AdaptiveKdTree kdTree(3);
-    kdTree.set_points(verticesCoordsPrepare.size(), verticesCoordsPrepare[0].m);
-    ALICEVISION_LOG_INFO("GEOGRAM: KdTree created");
-#else
+
     PointVectorAdaptator pointCloudRef(verticesCoordsPrepare);
     KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
     kdTree.buildIndex();
     ALICEVISION_LOG_INFO("NANOFLANN: KdTree created.");
-#endif
+
     // TODO FACA: update into new data structures
     // std::vector<Point3d> newVerticesCoordsPrepare(verticesCoordsPrepare.size());
     // std::vector<float> newSimScorePrepare(simScorePrepare.size());
@@ -385,12 +208,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
 
                 const Point3d p = mp.backproject(c, Point2d(x, y), depth);
                 const double pixSize = mp.getCamPixelSize(p, c);
-#ifdef USE_GEOGRAM_KDTREE
-                const std::size_t nearestVertexIndex = kdTree.get_nearest_neighbor(p.m);
-                // NOTE: Could compute the distance between the line (camera to pixel) and the nearestVertex OR
-                //       the distance between the back-projected point and the nearestVertex
-                const double dist = (p - verticesCoordsPrepare[nearestVertexIndex]).size2();
-#else
+
                 nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
                 std::size_t nearestVertexIndex = std::numeric_limits<std::size_t>::max();
                 double dist = std::numeric_limits<double>::max();
@@ -400,7 +218,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams,
                     ALICEVISION_LOG_TRACE("Failed to find Neighbors.");
                     continue;
                 }
-#endif
+
                 const float pixSizeScoreI = simScorePrepare[nearestVertexIndex] * pixSize * pixSize;
                 const float pixSizeScoreV =
                   simScorePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex];
@@ -472,12 +290,6 @@ DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams& mp)
     _camsVertexes.resize(_mp.ncams, -1);
 
     saveTemporaryBinFiles = _mp.userParams.get<bool>("LargeScale.saveTemporaryBinFiles", false);
-
-    GEO::initialize();
-    _tetrahedralization = GEO::Delaunay::create(3, "BDEL");
-    // _tetrahedralization->set_keeps_infinite(true);
-    _tetrahedralization->set_stores_neighbors(true);
-    // _tetrahedralization->set_stores_cicl(true);
 }
 
 DelaunayGraphCut::~DelaunayGraphCut() {}
@@ -538,7 +350,7 @@ std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsBy
     neighboringCells.push_back(f.cellIndex);
 
     const Facet mFacet = mirrorFacet(f);
-    if (!isInvalidOrInfiniteCell(mFacet.cellIndex))
+    if (!_tetrahedralization2->isInvalidOrInfiniteCell(mFacet.cellIndex))
         neighboringCells.push_back(mFacet.cellIndex);
 
     return neighboringCells;
@@ -562,19 +374,18 @@ void DelaunayGraphCut::computeDelaunay()
     assert(_verticesCoords.size() == _verticesAttr.size());
 
     long tall = clock();
-    _tetrahedralization->set_vertices(_verticesCoords.size(), _verticesCoords.front().m);
+
+    _tetrahedralization2 = std::make_unique<Tetrahedralization>(_verticesCoords);
     mvsUtils::printfElapsedTime(tall, "GEOGRAM Delaunay tetrahedralization ");
 
     initCells();
-
-    updateVertexToCellsCache();
 
     ALICEVISION_LOG_DEBUG("computeDelaunay done\n");
 }
 
 void DelaunayGraphCut::initCells()
 {
-    _cellsAttr.resize(_tetrahedralization->nb_cells());  // or nb_finite_cells() if keeps_infinite()
+    _cellsAttr.resize(_tetrahedralization2->nb_cells());  // or nb_finite_cells() if keeps_infinite()
 
     ALICEVISION_LOG_INFO(_cellsAttr.size() << " cells created by tetrahedralization.");
     for (int i = 0; i < _cellsAttr.size(); ++i)
@@ -592,7 +403,7 @@ void DelaunayGraphCut::initCells()
         }
     }
 
-    ALICEVISION_LOG_DEBUG("initCells [" << _tetrahedralization->nb_cells() << "] done");
+    ALICEVISION_LOG_DEBUG("initCells [" << _tetrahedralization2->nb_cells() << "] done");
 }
 
 void DelaunayGraphCut::displayStatistics()
@@ -1480,7 +1291,7 @@ void DelaunayGraphCut::computeVerticesSegSize(std::vector<GC_Seg>& out_segments,
 
             // go through all the neighbouring points
             GEO::vector<VertexIndex> adjVertices;
-            _tetrahedralization->get_neighbors(vi, adjVertices);
+            _tetrahedralization2->get_neighbors(vi, adjVertices);
 
             for (VertexIndex nvi : adjVertices)
             {
@@ -1564,241 +1375,6 @@ void DelaunayGraphCut::removeSmallSegs(const std::vector<GC_Seg>& segments, int 
     }
 }
 
-DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection& inGeometry,
-                                                                           const Point3d& originPt,
-                                                                           const Point3d& dirVect,
-                                                                           Point3d& intersectPt,
-                                                                           const double epsilonFactor,
-                                                                           const Point3d& lastIntersectPt) const
-{
-    GeometryIntersection bestMatch;
-    Point3d bestMatchIntersectPt;
-
-    switch (inGeometry.type)
-    {
-        case EGeometryType::Facet:
-        {
-            const CellIndex tetrahedronIndex = inGeometry.facet.cellIndex;
-
-            // Test all facets of the tetrahedron using i as localVertexIndex to define next intersectionFacet
-            for (int i = 0; i < 4; ++i)
-            {
-                // Because we can't intersect with incoming facet (same localVertexIndex)
-                if (i == inGeometry.facet.localVertexIndex)
-                    continue;
-
-                const Facet intersectionFacet(tetrahedronIndex, i);
-                bool ambiguous = false;
-
-                const GeometryIntersection result =
-                  rayIntersectTriangle(originPt, dirVect, intersectionFacet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
-                if (result.type != EGeometryType::None)
-                {
-                    if (!ambiguous)
-                        return result;
-
-                    // Retrieve the best intersected point (farthest from origin point)
-                    if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
-                    {
-                        bestMatchIntersectPt = intersectPt;
-                        bestMatch = result;
-                    }
-                }
-            }
-        }
-        break;
-
-        case EGeometryType::Vertex:
-        {
-            for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(inGeometry.vertexIndex))
-            {
-                if (isInvalidOrInfiniteCell(adjCellIndex))
-                    continue;
-
-                // Get local vertex index
-                const VertexIndex localVertexIndex = _tetrahedralization->index(adjCellIndex, inGeometry.vertexIndex);
-
-                // Define the facet to intersect
-                const Facet facet(adjCellIndex, localVertexIndex);
-                bool ambiguous = false;
-
-                const GeometryIntersection result =
-                  rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
-                if (result.type != EGeometryType::None)
-                {
-                    if (!ambiguous)
-                        return result;
-
-                    // Retrieve the best intersected point (farthest from origin point)
-                    if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
-                    {
-                        bestMatchIntersectPt = intersectPt;
-                        bestMatch = result;
-                    }
-                }
-            }
-        }
-        break;
-
-        case EGeometryType::Edge:
-        {
-            GeometryIntersection result;
-
-            for (CellIndex adjCellIndex : getNeighboringCellsByEdge(inGeometry.edge))
-            {
-                if (isInvalidOrInfiniteCell(adjCellIndex))
-                    continue;
-                // Local vertices indices
-                const VertexIndex lvi0 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v0);
-                const VertexIndex lvi1 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v1);
-
-                // The two facets that do not touch this edge need to be tested
-                const std::array<Facet, 2> opositeFacets{{{adjCellIndex, lvi0}, {adjCellIndex, lvi1}}};
-
-                for (const Facet& facet : opositeFacets)
-                {
-                    bool ambiguous = false;
-                    const GeometryIntersection result =
-                      rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
-
-                    if (result.type == EGeometryType::Edge)
-                    {
-                        if (result.edge.isSameUndirectionalEdge(inGeometry.edge))
-                        {
-                            ALICEVISION_LOG_ERROR("[intersectNextGeom] intersect the input edge itself, ignore intersection: inGeometry: "
-                                                  << inGeometry << ", intersected geo: " << result);
-                            // do not intersect the input edge itself
-                            continue;
-                        }
-                        // ALICEVISION_LOG_WARNING("[intersectNextGeom] intersect a new edge from an edge: inGeometry: " << inGeometry << ",
-                        // intersected geo: " << result << ", intersectPt: " << intersectPt << ", lastIntersectPt: " << lastIntersectPt);
-                    }
-                    if (result.type != EGeometryType::None)
-                    {
-                        if (!ambiguous)
-                            return result;
-
-                        // Retrieve the best intersected point (farthest from origin point)
-                        if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
-                        {
-                            bestMatchIntersectPt = intersectPt;
-                            bestMatch = result;
-                        }
-                    }
-                }
-            }
-        }
-        break;
-
-        case EGeometryType::None:
-            // throw std::runtime_error("[intersectNextGeom] intersection with input none geometry should not happen.");
-            ALICEVISION_LOG_WARNING("[intersectNextGeom] intersection with input none geometry should not happen: " << inGeometry);
-            break;
-    }
-
-    intersectPt = bestMatchIntersectPt;
-    return bestMatch;
-}
-
-DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(const Point3d& originPt,
-                                                                              const Point3d& DirVec,
-                                                                              const DelaunayGraphCut::Facet& facet,
-                                                                              Point3d& intersectPt,
-                                                                              const double epsilonFactor,
-                                                                              bool& ambiguous,
-                                                                              const Point3d* lastIntersectPt) const
-{
-    ambiguous = false;
-
-    const VertexIndex AvertexIndex = getVertexIndex(facet, 0);
-    const VertexIndex BvertexIndex = getVertexIndex(facet, 1);
-    const VertexIndex CvertexIndex = getVertexIndex(facet, 2);
-
-    const Point3d* A = &_verticesCoords[AvertexIndex];
-    const Point3d* B = &_verticesCoords[BvertexIndex];
-    const Point3d* C = &_verticesCoords[CvertexIndex];
-
-    const double ABSize = (*A - *B).size();
-    const double BCSize = (*B - *C).size();
-    const double ACSize = (*A - *C).size();
-
-    const double marginEpsilon = std::min({ABSize, BCSize, ACSize}) * epsilonFactor;
-    const double ambiguityEpsilon = (ABSize + BCSize + ACSize) / 3.0 * 1.0e-2;
-
-    Point3d tempIntersectPt;
-    const Point2d triangleUv = getLineTriangleIntersectBarycCoords(&tempIntersectPt, A, B, C, &originPt, &DirVec);
-
-    if (!std::isnormal(tempIntersectPt.x) || !std::isnormal(tempIntersectPt.y) || !std::isnormal(tempIntersectPt.z))
-    {
-        // This is not suppose to happen in real life, we log a warning instead of raising an exeption if we face a border case
-        // ALICEVISION_LOG_WARNING("Invalid/notNormal intersection point found during rayIntersectTriangle.");
-        return GeometryIntersection();
-    }
-
-    const double u = triangleUv.x;  // A to C
-    const double v = triangleUv.y;  // A to B
-
-    // If we find invalid uv coordinate
-    if (!std::isfinite(u) || !std::isfinite(v))
-        return GeometryIntersection();
-
-    // Ouside the triangle with marginEpsilon margin
-    if (u < -marginEpsilon || v < -marginEpsilon || (u + v) > (1.0 + marginEpsilon))
-        return GeometryIntersection();
-
-    // In case intersectPt is provided, check if intersectPt is in front of lastIntersectionPt
-    // in the DirVec direction to ensure that we are moving forward in the right direction
-    if (lastIntersectPt != nullptr)
-    {
-        const Point3d diff = tempIntersectPt - *lastIntersectPt;
-        const double dotValue = dot(DirVec, diff.normalize());
-        if (dotValue < marginEpsilon || diff.size() < 100 * std::numeric_limits<double>::min())
-        {
-            return GeometryIntersection();
-        }
-
-        if (diff.size() < ambiguityEpsilon)
-        {
-            ambiguous = true;
-        }
-    }
-
-    // Change intersection point only if tempIntersectionPt is in the right direction (mean we intersect something)
-    intersectPt = tempIntersectPt;
-
-    if (v < marginEpsilon)  // along A C edge
-    {
-        if (u < marginEpsilon)
-        {
-            intersectPt = *A;
-            return GeometryIntersection(AvertexIndex);  // vertex A
-        }
-        if (u > 1.0 - marginEpsilon)
-        {
-            intersectPt = *C;
-            return GeometryIntersection(CvertexIndex);  // vertex C
-        }
-
-        return GeometryIntersection(Edge(AvertexIndex, CvertexIndex));  // edge AC
-    }
-
-    if (u < marginEpsilon)  // along A B edge
-    {
-        if (v > 1.0 - marginEpsilon)
-        {
-            intersectPt = *B;
-            return GeometryIntersection(BvertexIndex);  // vertex B
-        }
-
-        return GeometryIntersection(Edge(AvertexIndex, BvertexIndex));  // edge AB
-    }
-
-    if (u + v > 1.0 - marginEpsilon)
-        return GeometryIntersection(Edge(BvertexIndex, CvertexIndex));  // edge BC
-
-    return GeometryIntersection(facet);
-}
-
 float DelaunayGraphCut::distFcn(float maxDist, float dist, float distFcnHeight) const
 {
     // distFcnHeight ... 0 for distFcn == 1 for all dist, 0.1 distFcn std::min
@@ -1847,10 +1423,10 @@ Point3d DelaunayGraphCut::cellCircumScribedSphereCentre(CellIndex ci) const
 {
     // http://www.mps.mpg.de/homes/daly/CSDS/t4h/tetra.htm
 
-    const Point3d r0 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
-    const Point3d r1 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
-    const Point3d r2 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
-    const Point3d r3 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
+    const Point3d r0 = _verticesCoords[_tetrahedralization2->cell_vertex(ci, 0)];
+    const Point3d r1 = _verticesCoords[_tetrahedralization2->cell_vertex(ci, 1)];
+    const Point3d r2 = _verticesCoords[_tetrahedralization2->cell_vertex(ci, 2)];
+    const Point3d r3 = _verticesCoords[_tetrahedralization2->cell_vertex(ci, 3)];
 
     const Point3d d1 = r1 - r0;
     const Point3d d2 = r2 - r0;
@@ -2095,6 +1671,18 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront,
         const double pointCamDistance = (_mp.CArr[cam] - originPt).size();
         const Point3d dirVect = (_mp.CArr[cam] - originPt).normalize();
 
+        Eigen::Vector3d eo;
+        eo.x() = originPt.x;
+        eo.y() = originPt.y;
+        eo.z() = originPt.z;
+
+        Eigen::Vector3d edir;
+        edir.x() = dirVect.x;
+        edir.y() = dirVect.y;
+        edir.z() = dirVect.z;
+
+        TetrahedronsRayMarching marching(*_tetrahedralization2, eo, edir);
+
 #ifdef ALICEVISION_DEBUG_VOTE
         IntersectionHistory history(_mp.CArr[cam], originPt, dirVect);
 #endif
@@ -2114,7 +1702,15 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront,
 #endif
             ++outTotalStepsFront;
 
-            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+            Eigen::Vector3d eintersectPt;
+            Eigen::Vector3d elastIntersectPt;
+            elastIntersectPt.x() = lastIntersectPt.x;
+            elastIntersectPt.y() = lastIntersectPt.y;
+            elastIntersectPt.z() = lastIntersectPt.z;
+            geometry = marching.intersectNextGeom(previousGeometry, eintersectPt, elastIntersectPt);
+            intersectPt.x = eintersectPt.x();
+            intersectPt.y = eintersectPt.y();
+            intersectPt.z = eintersectPt.z();
 
             if (geometry.type == EGeometryType::None)
             {
@@ -2162,7 +1758,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront,
                 // Take the mirror facet to iterate over the next cell
                 const Facet mFacet = mirrorFacet(geometry.facet);
                 geometry.facet = mFacet;
-                if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                if (_tetrahedralization2->isInvalidOrInfiniteCell(mFacet.cellIndex))
                 {
 #ifdef ALICEVISION_DEBUG_VOTE
                     // exportBackPropagationMesh("fillGraph_ToCam_invalidMirorFacet", history.geometries, originPt, _mp.CArr[cam]);
@@ -2257,6 +1853,18 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront,
 #endif
         outTotalStepsBehind = 0;
 
+        Eigen::Vector3d eo;
+        eo.x() = originPt.x;
+        eo.y() = originPt.y;
+        eo.z() = originPt.z;
+
+        Eigen::Vector3d edir;
+        edir.x() = dirVect.x;
+        edir.y() = dirVect.y;
+        edir.z() = dirVect.z;
+
+        TetrahedronsRayMarching marching(*_tetrahedralization2, eo, edir);
+
         bool firstIteration = true;
         Facet lastIntersectedFacet;
         // While we are within the surface margin (as long as we find a next geometry)
@@ -2271,7 +1879,15 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront,
 #endif
             ++outTotalStepsBehind;
 
-            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+            Eigen::Vector3d eintersectPt;
+            Eigen::Vector3d elastIntersectPt;
+            elastIntersectPt.x() = lastIntersectPt.x;
+            elastIntersectPt.y() = lastIntersectPt.y;
+            elastIntersectPt.z() = lastIntersectPt.z;
+            geometry = marching.intersectNextGeom(previousGeometry, eintersectPt, elastIntersectPt);
+            intersectPt.x = eintersectPt.x();
+            intersectPt.y = eintersectPt.y();
+            intersectPt.z = eintersectPt.z();
 
             if (geometry.type == EGeometryType::None)
             {
@@ -2310,7 +1926,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront,
                 const Facet mFacet = mirrorFacet(geometry.facet);
                 lastIntersectedFacet = mFacet;
                 geometry.facet = mFacet;
-                if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                if (_tetrahedralization2->isInvalidOrInfiniteCell(mFacet.cellIndex))
                 {
                     // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
                     break;
@@ -2482,6 +2098,18 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 #ifdef ALICEVISION_DEBUG_VOTE
                 IntersectionHistory history(_mp.CArr[cam], originPt, dirVect);
 #endif
+                Eigen::Vector3d eo;
+                eo.x() = originPt.x;
+                eo.y() = originPt.y;
+                eo.z() = originPt.z;
+
+                Eigen::Vector3d edir;
+                edir.x() = dirVect.x;
+                edir.y() = dirVect.y;
+                edir.z() = dirVect.z;
+
+                TetrahedronsRayMarching marching(*_tetrahedralization2, eo, edir);
+
                 // As long as we find a next geometry
                 Point3d lastIntersectPt = originPt;
                 // Iterate on geometries in the direction of camera's vertex within margin defined by maxDist (as long as we find a next geometry)
@@ -2498,7 +2126,15 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 #endif
                     ++totalStepsFront;
 
-                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+                    Eigen::Vector3d eintersectPt;
+                    Eigen::Vector3d elastIntersectPt;
+                    elastIntersectPt.x() = lastIntersectPt.x;
+                    elastIntersectPt.y() = lastIntersectPt.y;
+                    elastIntersectPt.z() = lastIntersectPt.z;
+                    geometry = marching.intersectNextGeom(previousGeometry, eintersectPt, elastIntersectPt);
+                    intersectPt.x = eintersectPt.x();
+                    intersectPt.y = eintersectPt.y();
+                    intersectPt.z = eintersectPt.z();
 
                     if (geometry.type == EGeometryType::None)
                     {
@@ -2544,7 +2180,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 
                         // Take the mirror facet to iterate over the next cell
                         const Facet mFacet = mirrorFacet(geometry.facet);
-                        if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                        if (_tetrahedralization2->isInvalidOrInfiniteCell(mFacet.cellIndex))
                         {
 #ifdef ALICEVISION_DEBUG_VOTE
                             // exportBackPropagationMesh("forceTedges_ToCam_invalidMirorFacet", history.geometries, originPt, _mp.CArr[cam]);
@@ -2599,6 +2235,17 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 #ifdef ALICEVISION_DEBUG_VOTE
                 IntersectionHistory history(_mp.CArr[cam], originPt, dirVect);
 #endif
+                Eigen::Vector3d eo;
+                eo.x() = originPt.x;
+                eo.y() = originPt.y;
+                eo.z() = originPt.z;
+
+                Eigen::Vector3d edir;
+                edir.x() = dirVect.x;
+                edir.y() = dirVect.y;
+                edir.z() = dirVect.z;
+
+                TetrahedronsRayMarching marching(*_tetrahedralization2, eo, edir);
 
                 Facet lastIntersectedFacet;
                 bool firstIteration = true;
@@ -2616,21 +2263,18 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 #endif
                     ++totalStepsBehind;
 
-                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+                    Eigen::Vector3d eintersectPt;
+                    Eigen::Vector3d elastIntersectPt;
+                    elastIntersectPt.x() = lastIntersectPt.x;
+                    elastIntersectPt.y() = lastIntersectPt.y;
+                    elastIntersectPt.z() = lastIntersectPt.z;
+                    geometry = marching.intersectNextGeom(previousGeometry, eintersectPt, elastIntersectPt);
+                    intersectPt.x = eintersectPt.x();
+                    intersectPt.y = eintersectPt.y();
+                    intersectPt.z = eintersectPt.z();
 
                     if (geometry.type == EGeometryType::None)
                     {
-                        //                         // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid,
-                        //                         which is verified later) if (previousGeometry.type == EGeometryType::Facet)
-                        //                         {
-                        // #ifdef ALICEVISION_DEBUG_VOTE
-                        //                             // exportBackPropagationMesh("forceTedges_behindThePoint_NoneButPreviousIsFacet",
-                        //                             history.geometries, originPt, _mp.CArr[cam]);
-                        // #endif
-                        //                             ALICEVISION_LOG_DEBUG("[Error]: forceTedges(behindThePoint) cause: None geometry but previous
-                        //                             is Facet.");
-                        //                         }
-                        // Break if we reach the end of the tetrahedralization volume
                         break;
                     }
 
@@ -2658,7 +2302,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         const Facet mFacet = mirrorFacet(geometry.facet);
                         lastIntersectedFacet = mFacet;
                         geometry.facet = mFacet;
-                        if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                        if (_tetrahedralization2->isInvalidOrInfiniteCell(mFacet.cellIndex))
                         {
                             // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
                             break;
@@ -2803,7 +2447,7 @@ int DelaunayGraphCut::computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) c
                 continue;
 
             const Facet f2 = mirrorFacet(f1);
-            if (isInvalidOrInfiniteCell(f2.cellIndex))
+            if (_tetrahedralization2->isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
             const bool vo = _cellIsFull[f2.cellIndex];  // get if it is occupied
 
@@ -2818,7 +2462,7 @@ int DelaunayGraphCut::computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) c
             vertexIsOnSurface[v2] = true;
             vertexIsOnSurface[v3] = true;
 
-            assert(!(isInfiniteCell(f1.cellIndex) && isInfiniteCell(f2.cellIndex)));  // infinite both cells of finite vertex!
+            assert(!(_tetrahedralization2->isInfiniteCell(f1.cellIndex) && _tetrahedralization2->isInfiniteCell(f2.cellIndex)));  // infinite both cells of finite vertex!
         }
     }
     ALICEVISION_LOG_INFO("computeIsOnSurface nbSurfaceFacets: " << nbSurfaceFacets);
@@ -2861,7 +2505,7 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8], const std:
                 continue;
             for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(cam_vi))  // GEOGRAM: set_stores_cicl(true) required
             {
-                if (isInvalidOrInfiniteCell(adjCellIndex))
+                if (_tetrahedralization2->isInvalidOrInfiniteCell(adjCellIndex))
                     continue;
 
                 if (_cellIsFull[adjCellIndex])
@@ -2913,7 +2557,7 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8], const std:
                 int count = 0;
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(ci, k);
+                    const CellIndex nci = _tetrahedralization2->cell_adjacent(ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
                     count += (_cellIsFull[nci] != _cellIsFull[ci]);
@@ -2978,7 +2622,7 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
 
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
+                    const CellIndex nci = _tetrahedralization2->cell_adjacent(tmp_ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
                     if ((colorPerCell[nci] == -1) && (_cellIsFull[nci] == _cellIsFull[ci]))
@@ -3036,13 +2680,15 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
         std::vector<bool> vertexIsOnSurface;
         const int nbSurfaceFacets = computeIsOnSurface(vertexIsOnSurface);
 
+        const auto & neighboringCellsPerVertex = _tetrahedralization2->getNeighboringCellsPerVertex();
+
 #pragma omp parallel for reduction(+ : toInvertCount)
-        for (int vi = 0; vi < _neighboringCellsPerVertex.size(); ++vi)
+        for (int vi = 0; vi < neighboringCellsPerVertex.size(); ++vi)
         {
             if (!vertexIsOnSurface[vi])
                 continue;
             // ALICEVISION_LOG_INFO("vertex is on surface: " << vi);
-            const std::vector<CellIndex>& neighboringCells = _neighboringCellsPerVertex[vi];
+            const std::vector<CellIndex>& neighboringCells = neighboringCellsPerVertex[vi];
             std::vector<Facet> neighboringFacets;
             neighboringFacets.reserve(neighboringCells.size());
             bool borderCase = false;
@@ -3055,7 +2701,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                 GEO::signed_index_t localVertexIndex = 0;
                 for (int k = 0; k < 4; ++k)
                 {
-                    const GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(ci, k);
+                    const GEO::signed_index_t currentVertex = _tetrahedralization2->cell_vertex(ci, k);
                     if (currentVertex == GEO::NO_VERTEX)
                         break;
                     if (currentVertex != vi)
@@ -3111,7 +2757,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                 if (_cellIsFull[f.cellIndex] == invertFull)
                 {
                     const Facet fv = mirrorFacet(f);
-                    if (isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[f.cellIndex] != _cellIsFull[fv.cellIndex])
+                    if (_tetrahedralization2->isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[f.cellIndex] != _cellIsFull[fv.cellIndex])
                     {
                         borderCase = true;
                         break;
@@ -3234,7 +2880,7 @@ void DelaunayGraphCut::addToInfiniteSw(float sW)
     std::size_t nbInfinitCells = 0;
     for (CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
     {
-        if (isInfiniteCell(ci))
+        if (_tetrahedralization2->isInfiniteCell(ci))
         {
             GC_cellInfo& c = _cellsAttr[ci];
             c.cellSWeight += sW;
@@ -3289,12 +2935,12 @@ void DelaunayGraphCut::maxflow()
         {
             Facet fu(ci, k);
             Facet fv = mirrorFacet(fu);
-            if (isInvalidOrInfiniteCell(fv.cellIndex))
+            if (_tetrahedralization2->isInvalidOrInfiniteCell(fv.cellIndex))
                 continue;
 
             float a1 = 0.0f;
             float a2 = 0.0f;
-            if ((!isInfiniteCell(fu.cellIndex)) && (!isInfiniteCell(fv.cellIndex)))
+            if ((!_tetrahedralization2->isInfiniteCell(fu.cellIndex)) && (!_tetrahedralization2->isInfiniteCell(fv.cellIndex)))
             {
                 // Score for each facet based on the quality of the topology
                 a1 = getFaceWeight(fu);
@@ -3430,7 +3076,7 @@ void DelaunayGraphCut::filterLargeHelperPoints(std::vector<bool>& out_reliableVe
         {
             // go through all the neighbouring points
             GEO::vector<VertexIndex> adjVertices;
-            _tetrahedralization->get_neighbors(vi, adjVertices);
+            _tetrahedralization2->get_neighbors(vi, adjVertices);
 
             for (VertexIndex nvi : adjVertices)
             {
@@ -3546,7 +3192,7 @@ mesh::Mesh* DelaunayGraphCut::createMesh(int maxNbConnectedHelperPoints)
             }
 
             Facet f2 = mirrorFacet(f1);
-            if (isInvalidOrInfiniteCell(f2.cellIndex))
+            if (_tetrahedralization2->isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
             bool vo = _cellIsFull[f2.cellIndex];  // get if it is occupied
 
@@ -3740,7 +3386,7 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh(bool filter,
             int weakVertex = 0;
             for (VertexIndex k = 0; k < 4; ++k)
             {
-                const VertexIndex vi = _tetrahedralization->cell_vertex(ci, k);
+                const VertexIndex vi = _tetrahedralization2->cell_vertex(ci, k);
                 const GC_vertexInfo& vertexAttr = _verticesAttr[vi];
                 if (filter && vertexAttr.cams.size() <= 3)
                 {
@@ -3748,7 +3394,7 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh(bool filter,
                 }
                 const Facet f1(ci, k);
                 const Facet f2 = mirrorFacet(f1);
-                if (filter && isInvalidOrInfiniteCell(f2.cellIndex))
+                if (filter && _tetrahedralization2->isInvalidOrInfiniteCell(f2.cellIndex))
                 {
                     invalid = true;
                     continue;
@@ -3798,7 +3444,7 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh(bool filter,
             bool clockwise = false;
 
             //// do not need to test again: already filtered before
-            if (!isInvalidOrInfiniteCell(f2.cellIndex))
+            if (!_tetrahedralization2->isInvalidOrInfiniteCell(f2.cellIndex))
             {
                 const Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
                 const Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
@@ -4007,7 +3653,7 @@ void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>& out_fullS
     // segment connected free space
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if ((!isInfiniteCell(ci)) && (out_fullSegsColor[ci] == -1) && (_cellIsFull[ci] == full))
+        if ((!_tetrahedralization2->isInfiniteCell(ci)) && (out_fullSegsColor[ci] == -1) && (_cellIsFull[ci] == full))
         {
             // backtrack all connected interior cells
             buff.resize(0);
@@ -4021,10 +3667,10 @@ void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>& out_fullS
 
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
+                    const CellIndex nci = _tetrahedralization2->cell_adjacent(tmp_ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
-                    if ((!isInfiniteCell(nci)) && (out_fullSegsColor[nci] == -1) && (_cellIsFull[nci] == full))
+                    if ((!_tetrahedralization2->isInfiniteCell(nci)) && (out_fullSegsColor[nci] == -1) && (_cellIsFull[nci] == full))
                     {
                         buff.push_back(nci);
                     }
@@ -4053,13 +3699,13 @@ int DelaunayGraphCut::removeBubbles()
     // all free space segments which contains camera has to remain free
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if (isInfiniteCell(ci) || emptySegColors[ci] < 0)
+        if (_tetrahedralization2->isInfiniteCell(ci) || emptySegColors[ci] < 0)
             continue;
 
-        const GC_vertexInfo& a = _verticesAttr[_tetrahedralization->cell_vertex(ci, 0)];
-        const GC_vertexInfo& b = _verticesAttr[_tetrahedralization->cell_vertex(ci, 1)];
-        const GC_vertexInfo& c = _verticesAttr[_tetrahedralization->cell_vertex(ci, 2)];
-        const GC_vertexInfo& d = _verticesAttr[_tetrahedralization->cell_vertex(ci, 3)];
+        const GC_vertexInfo& a = _verticesAttr[_tetrahedralization2->cell_vertex(ci, 0)];
+        const GC_vertexInfo& b = _verticesAttr[_tetrahedralization2->cell_vertex(ci, 1)];
+        const GC_vertexInfo& c = _verticesAttr[_tetrahedralization2->cell_vertex(ci, 2)];
+        const GC_vertexInfo& d = _verticesAttr[_tetrahedralization2->cell_vertex(ci, 3)];
         if (a.isVirtual() || b.isVirtual() || c.isVirtual() || d.isVirtual())
         {
             // TODO FACA: check helper points are not connected to cameras?
@@ -4079,7 +3725,7 @@ int DelaunayGraphCut::removeBubbles()
     int nbModifiedCells = 0;
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if ((!isInfiniteCell(ci)) && (emptySegColors[ci] >= 0) && (colorsToFill[emptySegColors[ci]]))
+        if ((!_tetrahedralization2->isInfiniteCell(ci)) && (emptySegColors[ci] >= 0) && (colorsToFill[emptySegColors[ci]]))
         {
             _cellIsFull[ci] = true;
             ++nbModifiedCells;
@@ -4168,53 +3814,53 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
     ALICEVISION_LOG_DEBUG("Largest full segment only done.");
 }
 
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type)
+std::ostream& operator<<(std::ostream& stream, const EGeometryType type)
 {
     switch (type)
     {
-        case DelaunayGraphCut::EGeometryType::Facet:
+        case EGeometryType::Facet:
             stream << "Facet";
             break;
-        case DelaunayGraphCut::EGeometryType::Vertex:
+        case EGeometryType::Vertex:
             stream << "Vertex";
             break;
-        case DelaunayGraphCut::EGeometryType::Edge:
+        case EGeometryType::Edge:
             stream << "Edge";
             break;
-        case DelaunayGraphCut::EGeometryType::None:
+        case EGeometryType::None:
             stream << "None";
             break;
     }
     return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Facet& facet)
+std::ostream& operator<<(std::ostream& stream, const Facet& facet)
 {
     stream << "c:" << facet.cellIndex << ",v:" << facet.localVertexIndex;
     return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Edge& edge)
+std::ostream& operator<<(std::ostream& stream, const Edge& edge)
 {
     stream << "v0:" << edge.v0 << ",v1:" << edge.v1;
     return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometryIntersection& intersection)
+std::ostream& operator<<(std::ostream& stream, const GeometryIntersection& intersection)
 {
     stream << intersection.type << ": ";
     switch (intersection.type)
     {
-        case DelaunayGraphCut::EGeometryType::Facet:
+        case EGeometryType::Facet:
             stream << intersection.facet;
             break;
-        case DelaunayGraphCut::EGeometryType::Vertex:
+        case EGeometryType::Vertex:
             stream << intersection.vertexIndex;
             break;
-        case DelaunayGraphCut::EGeometryType::Edge:
+        case EGeometryType::Edge:
             stream << intersection.edge;
             break;
-        case DelaunayGraphCut::EGeometryType::None:
+        case EGeometryType::None:
             stream << "None";
             break;
     }

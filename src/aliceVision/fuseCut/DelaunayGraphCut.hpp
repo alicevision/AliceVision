@@ -14,11 +14,15 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
+#include <aliceVision/fuseCut/Tetrahedralization.hpp>
+#include <aliceVision/fuseCut/Intersections.hpp>
 
 #include <geogram/delaunay/delaunay.h>
 #include <geogram/delaunay/delaunay_3d.h>
 #include <geogram/mesh/mesh.h>
 #include <geogram/basic/geometry_nd.h>
+
+
 
 #include <map>
 #include <set>
@@ -63,88 +67,6 @@ class DelaunayGraphCut
   public:
     using VertexIndex = GEO::index_t;
     using CellIndex = GEO::index_t;
-
-    struct Facet
-    {
-        CellIndex cellIndex = GEO::NO_CELL;
-        /// local opposite vertex index
-        VertexIndex localVertexIndex = GEO::NO_VERTEX;
-
-        Facet() {}
-        Facet(CellIndex ci, VertexIndex lvi)
-          : cellIndex(ci),
-            localVertexIndex(lvi)
-        {}
-
-        bool operator==(const Facet& f) const { return cellIndex == f.cellIndex && localVertexIndex == f.localVertexIndex; }
-    };
-
-    struct Edge
-    {
-        VertexIndex v0 = GEO::NO_VERTEX;
-        VertexIndex v1 = GEO::NO_VERTEX;
-
-        Edge() = default;
-        Edge(VertexIndex v0_, VertexIndex v1_)
-          : v0{v0_},
-            v1{v1_}
-        {}
-
-        bool operator==(const Edge& e) const { return v0 == e.v0 && v1 == e.v1; }
-        bool isSameUndirectionalEdge(const Edge& e) const { return (v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0); }
-    };
-
-    enum class EGeometryType
-    {
-        Vertex,
-        Edge,
-        Facet,
-        None
-    };
-
-    struct GeometryIntersection
-    {
-        EGeometryType type = EGeometryType::None;
-        union
-        {
-            Facet facet;
-            VertexIndex vertexIndex;
-            Edge edge;
-        };
-        GeometryIntersection() {}
-        explicit GeometryIntersection(const Facet& f)
-          : facet{f},
-            type{EGeometryType::Facet}
-        {}
-        explicit GeometryIntersection(const VertexIndex& v)
-          : vertexIndex{v},
-            type{EGeometryType::Vertex}
-        {}
-        explicit GeometryIntersection(const Edge& e)
-          : edge{e},
-            type{EGeometryType::Edge}
-        {}
-
-        bool operator==(const GeometryIntersection& g) const
-        {
-            if (type != g.type)
-                return false;
-
-            switch (type)
-            {
-                case EGeometryType::Vertex:
-                    return vertexIndex == g.vertexIndex;
-                case EGeometryType::Edge:
-                    return edge == g.edge;
-                case EGeometryType::Facet:
-                    return facet == g.facet;
-                case EGeometryType::None:
-                    break;
-            }
-            return true;
-        }
-        bool operator!=(const GeometryIntersection& g) const { return !(*this == g); }
-    };
 
     struct IntersectionHistory
     {
@@ -194,7 +116,7 @@ class DelaunayGraphCut
 
     mvsUtils::MultiViewParams& _mp;
 
-    GEO::Delaunay_var _tetrahedralization;
+    std::unique_ptr<Tetrahedralization> _tetrahedralization2;
     /// 3D points coordinates
     std::vector<Point3d> _verticesCoords;
     /// Information attached to each vertex
@@ -205,7 +127,6 @@ class DelaunayGraphCut
     std::vector<bool> _cellIsFull;
 
     std::vector<int> _camsVertexes;
-    std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
 
     bool saveTemporaryBinFiles;
 
@@ -220,7 +141,7 @@ class DelaunayGraphCut
      * @param f the facet
      * @return the global vertex index
      */
-    inline VertexIndex getOppositeVertexIndex(const Facet& f) const { return _tetrahedralization->cell_vertex(f.cellIndex, f.localVertexIndex); }
+    inline VertexIndex getOppositeVertexIndex(const Facet& f) const { return _tetrahedralization2->cell_vertex(f.cellIndex, f.localVertexIndex); }
 
     /**
      * @brief Retrieve the global vertex index of a vertex from a facet and an relative index
@@ -232,7 +153,7 @@ class DelaunayGraphCut
      */
     inline VertexIndex getVertexIndex(const Facet& f, int i) const
     {
-        return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
+        return _tetrahedralization2->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
     }
 
     inline const std::array<const Point3d*, 3> getFacetsPoints(const Facet& f) const
@@ -248,7 +169,7 @@ class DelaunayGraphCut
         double d = std::numeric_limits<double>::max();
         for (GEO::index_t i = 0; i < 4; ++i)
         {
-            GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(cellIndex, i);
+            GEO::signed_index_t currentVertex = _tetrahedralization2->cell_vertex(cellIndex, i);
             if (currentVertex < 0)
                 continue;
             double currentDist = GEO::Geom::distance2(_verticesCoords[currentVertex].m, p.m, 3);
@@ -261,32 +182,18 @@ class DelaunayGraphCut
         return result;
     }
 
-    /**
-     * @brief A cell is infinite if one of its vertices is infinite.
-     */
-    inline bool isInfiniteCell(CellIndex ci) const
-    {
-        return _tetrahedralization->cell_is_infinite(ci);
-        // return ci < 0 || ci > getNbVertices();
-    }
-    inline bool isInvalidOrInfiniteCell(CellIndex ci) const
-    {
-        return ci == GEO::NO_CELL || isInfiniteCell(ci);
-        // return ci < 0 || ci > getNbVertices();
-    }
-
     inline Facet mirrorFacet(const Facet& f) const
     {
         const std::array<VertexIndex, 3> facetVertices = {getVertexIndex(f, 0), getVertexIndex(f, 1), getVertexIndex(f, 2)};
 
         Facet out;
-        out.cellIndex = _tetrahedralization->cell_adjacent(f.cellIndex, f.localVertexIndex);
+        out.cellIndex = _tetrahedralization2->cell_adjacent(f.cellIndex, f.localVertexIndex);
         if (out.cellIndex != GEO::NO_CELL)
         {
             // Search for the vertex in adjacent cell which doesn't exist in input facet.
             for (int k = 0; k < 4; ++k)
             {
-                CellIndex out_vi = _tetrahedralization->cell_vertex(out.cellIndex, k);
+                CellIndex out_vi = _tetrahedralization2->cell_vertex(out.cellIndex, k);
                 if (std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
                 {
                     out.localVertexIndex = k;
@@ -295,54 +202,6 @@ class DelaunayGraphCut
             }
         }
         return out;
-    }
-
-    void updateVertexToCellsCache()
-    {
-        _neighboringCellsPerVertex.clear();
-
-        std::map<VertexIndex, std::set<CellIndex>> neighboringCellsPerVertexTmp;
-        int coutInvalidVertices = 0;
-        for (CellIndex ci = 0; ci < _tetrahedralization->nb_cells(); ++ci)
-        {
-            for (VertexIndex k = 0; k < 4; ++k)
-            {
-                const VertexIndex vi = _tetrahedralization->cell_vertex(ci, k);
-                if (vi == GEO::NO_VERTEX || vi >= _verticesCoords.size())
-                {
-                    ++coutInvalidVertices;
-                    continue;
-                }
-                neighboringCellsPerVertexTmp[vi].insert(ci);
-            }
-        }
-        ALICEVISION_LOG_INFO("coutInvalidVertices: " << coutInvalidVertices);
-        ALICEVISION_LOG_INFO("neighboringCellsPerVertexTmp: " << neighboringCellsPerVertexTmp.size());
-        _neighboringCellsPerVertex.resize(_verticesCoords.size());
-        ALICEVISION_LOG_INFO("verticesCoords: " << _verticesCoords.size());
-        for (const auto& it : neighboringCellsPerVertexTmp)
-        {
-            const std::set<CellIndex>& input = it.second;
-            std::vector<CellIndex>& output = _neighboringCellsPerVertex[it.first];
-            output.assign(input.begin(), input.end());
-        }
-    }
-
-    /**
-     * @brief vertexToCells
-     *
-     * It is a replacement for GEO::Delaunay::next_around_vertex which doesn't work as expected.
-     *
-     * @param vi
-     * @param lvi
-     * @return global index of the lvi'th neighboring cell
-     */
-    inline CellIndex vertexToCells(VertexIndex vi, int lvi) const
-    {
-        const std::vector<CellIndex>& localCells = _neighboringCellsPerVertex.at(vi);
-        if (lvi >= localCells.size())
-            return GEO::NO_CELL;
-        return localCells[lvi];
     }
 
     /**
@@ -367,7 +226,10 @@ class DelaunayGraphCut
      * @param vi the global vertexIndex
      * @return a vector of neighboring cell indices
      */
-    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const { return _neighboringCellsPerVertex.at(vi); }
+    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const { 
+        const auto & neighboringCellsPerVertex = _tetrahedralization2->getNeighboringCellsPerVertex();
+        return neighboringCellsPerVertex.at(vi); 
+    }
 
     /**
      * @brief Retrieves the global indexes of neighboring cells around one edge.
@@ -415,47 +277,6 @@ class DelaunayGraphCut
     void computeVerticesSegSize(std::vector<GC_Seg>& out_segments, const std::vector<bool>& useVertex, float alpha = 0.0f);
     void removeSmallSegs(const std::vector<GC_Seg>& segments, int minSegSize);
 
-    /**
-     * @brief Function that returns the next geometry intersected by the ray.
-     * The function handles different cases, whether we come from an edge, a facet or a vertex.
-     *
-     * @param inGeometry the geometry we come from
-     * @param originPt ray origin point
-     * @param dirVect ray direction
-     * @param intersectPt a reference that will store the computed intersection point for the intersected geometry
-     * @param epsilonFactor a multiplicative factor on the smaller side of the facet  used to define the boundary when we
-     * have to consider either a collision with an edge/vertex or a facet.
-     * @param lastIntersectPt constant reference to the last intersection point used to test the direction.
-     * @return
-     */
-    GeometryIntersection intersectNextGeom(const GeometryIntersection& inGeometry,
-                                           const Point3d& originPt,
-                                           const Point3d& dirVect,
-                                           Point3d& intersectPt,
-                                           const double epsilonFactor,
-                                           const Point3d& lastIntersectPt) const;
-
-    /**
-     * @brief Function that returns the next geometry intersected by the ray on a given facet or None if there are no intersected geometry.
-     * The function distinguishes the intersections cases using epsilon.
-     *
-     * @param originPt ray origin point
-     * @param DirVec ray direction
-     * @param facet the given facet to intersect with
-     * @param intersectPt a reference that will store the computed intersection point for the next intersecting geometry
-     * @param epsilonFactor a multiplicative factor on the smaller side of the facet  used to define the boundary when we
-     * have to consider either a collision with an edge/vertex or a facet.
-     * @param ambiguous boolean used to know if our intersection is ambiguous or not
-     * @param lastIntersectPt pointer to the last intersection point used to test the direction (if not nulllptr)
-     * @return
-     */
-    GeometryIntersection rayIntersectTriangle(const Point3d& originPt,
-                                              const Point3d& DirVec,
-                                              const Facet& facet,
-                                              Point3d& intersectPt,
-                                              const double epsilonFactor,
-                                              bool& ambiguous,
-                                              const Point3d* lastIntersectPt = nullptr) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
@@ -565,10 +386,10 @@ class DelaunayGraphCut
     void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);
 };
 
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type);
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Facet& facet);
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Edge& edge);
-std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometryIntersection& intersection);
+std::ostream& operator<<(std::ostream& stream, const EGeometryType type);
+std::ostream& operator<<(std::ostream& stream, const Facet& facet);
+std::ostream& operator<<(std::ostream& stream, const Edge& edge);
+std::ostream& operator<<(std::ostream& stream, const GeometryIntersection& intersection);
 std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometriesCount& count);
 
 }  // namespace fuseCut
