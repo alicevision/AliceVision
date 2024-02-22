@@ -68,7 +68,6 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
 
     mp.userParams.put("LargeScale.universePercentile", 0.999);
-    mp.userParams.put("delaunaycut.forceTEdgeDelta", 0.1f);
     mp.userParams.put("delaunaycut.seed", 1);
 
     std::array<Point3d, 8> hexah;
@@ -100,7 +99,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
         ALICEVISION_LOG_TRACE("[" << i << "]: " << delaunayGC._verticesCoords[i].x << ", " << delaunayGC._verticesCoords[i].y << ", "
                                   << delaunayGC._verticesCoords[i].z);
 
-    delaunayGC.createGraphCut(&hexah[0], cams, tempDirPath + "/", tempDirPath + "/SpaceCamsTracks/", false, false);
+    delaunayGC.createGraphCut(&hexah[0], cams);
     /*
     delaunayGC.computeDelaunay();
     delaunayGC.displayStatistics();

@@ -10,40 +10,117 @@
 namespace aliceVision {
 namespace fuseCut {
 
-GeometryIntersection TetrahedronsRayMarching::intersectNextGeom(const GeometryIntersection& inGeometry,
-                                            Eigen::Vector3d& intersectPt,
-                                            const Eigen::Vector3d& lastIntersectPt) const
+TetrahedronsRayMarching::TetrahedronsRayMarching(const Tetrahedralization & tetra,
+                                                const VertexIndex & originId,
+                                                const VertexIndex & destinationId,
+                                                const bool away)
+    :
+    _tetrahedralization(tetra),
+    _epsilonFactor(1e-4),
+    _intersection(originId),
+    _facetCount(0),
+    _vertexCount(0),
+    _edgeCount(0)
 {
-    switch (inGeometry.type)
-    {
-    case EGeometryType::Facet:
-        return intersectNextGeomFacet(inGeometry, intersectPt, lastIntersectPt);
-    case EGeometryType::Edge:
-        return intersectNextGeomEdge(inGeometry, intersectPt, lastIntersectPt);
-    case EGeometryType::Vertex:
-        return intersectNextGeomVertex(inGeometry, intersectPt, lastIntersectPt);
-    default:
-        break;
-    }
+    const auto & vertices = tetra.getVertices();
 
-    return GeometryIntersection();
+    const auto & ptOrigin = vertices[originId];
+    _origin.x() = ptOrigin.x;
+    _origin.y() = ptOrigin.y;
+    _origin.z() = ptOrigin.z;
+
+    _intersectionPoint = _origin;
+    _previousIntersectionPoint = _origin;
+
+    const auto & ptDest = vertices[destinationId];
+    Eigen::Vector3d dest;
+    dest.x() = ptDest.x;
+    dest.y() = ptDest.y;
+    dest.z() = ptDest.z;
+
+    _direction = (dest - _origin).normalized();
+    if (away)
+    {
+        _direction = -_direction;
+    }
 }
 
-GeometryIntersection TetrahedronsRayMarching::intersectNextGeomFacet(const GeometryIntersection& inGeometry,
-                                            Eigen::Vector3d& intersectPt,
-                                            const Eigen::Vector3d& lastIntersectPt) const
+GeometryIntersection TetrahedronsRayMarching::intersectNextGeom()
+{
+    
+
+    _previousIntersection = _intersection;
+    _previousIntersectionPoint = _intersectionPoint;
+
+    switch (_previousIntersection.type)
+    {
+    case EGeometryType::Facet:
+        _intersection = intersectNextGeomFacet();
+        _facetCount++;
+        break;
+    case EGeometryType::Edge:
+        _intersection = intersectNextGeomEdge();
+        _edgeCount++;
+        break;
+    case EGeometryType::Vertex:
+        _intersection = intersectNextGeomVertex();
+        _vertexCount++;
+        break;
+    default:
+        return GeometryIntersection();
+    }
+
+    if (_facetCount > 10000 && _previousIntersection.type == EGeometryType::Facet)
+    {
+        return GeometryIntersection();
+    }
+
+    if (_vertexCount > 1000 && _previousIntersection.type == EGeometryType::Vertex)
+    {
+        return GeometryIntersection();
+    }
+
+    if (_edgeCount > 1000 && _previousIntersection.type == EGeometryType::Edge)
+    {
+        return GeometryIntersection();
+    }
+
+    //Make sure we are moving in the right direction !
+    if ((_intersectionPoint - _origin).norm() <= (_previousIntersectionPoint - _origin).norm())
+    {
+        return GeometryIntersection();
+    }
+
+    //We intersected a facet.
+    //We directly move to the opposite side
+    if (_intersection.type == EGeometryType::Facet)
+    {
+        Facet f = mirrorFacet(_intersection.facet);
+        if (_tetrahedralization.isInvalidOrInfiniteCell(f.cellIndex))
+        {
+            return GeometryIntersection();
+        }
+
+        _previousIntersection = _intersection;
+        _intersection = GeometryIntersection(f);
+    }
+
+    return _intersection;
+}
+
+GeometryIntersection TetrahedronsRayMarching::intersectNextGeomFacet()
 {
     GeometryIntersection bestMatch;
     Eigen::Vector3d bestMatchIntersectPt;
 
     
-    const CellIndex tetrahedronIndex = inGeometry.facet.cellIndex;
+    const CellIndex tetrahedronIndex = _intersection.facet.cellIndex;
 
     // Test all facets of the tetrahedron using i as localVertexIndex to define next intersectionFacet
     for (int i = 0; i < 4; ++i)
     {
         // Because we can't intersect with incoming facet (same localVertexIndex)
-        if (i == inGeometry.facet.localVertexIndex)
+        if (i == _intersection.facet.localVertexIndex)
         {
             continue;
         }
@@ -51,8 +128,7 @@ GeometryIntersection TetrahedronsRayMarching::intersectNextGeomFacet(const Geome
         const Facet intersectionFacet(tetrahedronIndex, i);
         bool ambiguous = false;
 
-        const GeometryIntersection result =
-            rayIntersectTriangle(intersectionFacet, lastIntersectPt, intersectPt, ambiguous);
+        const GeometryIntersection result = rayIntersectTriangle(intersectionFacet, _previousIntersectionPoint, _intersectionPoint, ambiguous);
         if (result.type != EGeometryType::None)
         {
             if (!ambiguous)
@@ -61,21 +137,19 @@ GeometryIntersection TetrahedronsRayMarching::intersectNextGeomFacet(const Geome
             }
 
             // Retrieve the best intersected point (farthest from origin point)
-            if (bestMatch.type == EGeometryType::None || (_origin - intersectPt).size() > (_origin - bestMatchIntersectPt).size())
+            if (bestMatch.type == EGeometryType::None || (_origin - _intersectionPoint).size() > (_origin - bestMatchIntersectPt).size())
             {
-                bestMatchIntersectPt = intersectPt;
+                bestMatchIntersectPt = _intersectionPoint;
                 bestMatch = result;
             }
         }
     }
         
-    intersectPt = bestMatchIntersectPt;
+    _intersectionPoint = bestMatchIntersectPt;
     return bestMatch;
 }
 
-GeometryIntersection TetrahedronsRayMarching::intersectNextGeomEdge(const GeometryIntersection& inGeometry,
-                                            Eigen::Vector3d& intersectPt,
-                                            const Eigen::Vector3d& lastIntersectPt) const
+GeometryIntersection TetrahedronsRayMarching::intersectNextGeomEdge()
 {
     GeometryIntersection bestMatch;
     Eigen::Vector3d bestMatchIntersectPt;
@@ -83,13 +157,13 @@ GeometryIntersection TetrahedronsRayMarching::intersectNextGeomEdge(const Geomet
    
     GeometryIntersection result;
 
-    for (CellIndex adjCellIndex : getNeighboringCellsByEdge(inGeometry.edge))
+    for (CellIndex adjCellIndex : getNeighboringCellsByEdge(_intersection.edge))
     {
         if (_tetrahedralization.isInvalidOrInfiniteCell(adjCellIndex))
             continue;
         // Local vertices indices
-        const VertexIndex lvi0 = _tetrahedralization.index(adjCellIndex, inGeometry.edge.v0);
-        const VertexIndex lvi1 = _tetrahedralization.index(adjCellIndex, inGeometry.edge.v1);
+        const VertexIndex lvi0 = _tetrahedralization.index(adjCellIndex, _intersection.edge.v0);
+        const VertexIndex lvi1 = _tetrahedralization.index(adjCellIndex, _intersection.edge.v1);
 
         // The two facets that do not touch this edge need to be tested
         const std::array<Facet, 2> opositeFacets{{{adjCellIndex, lvi0}, {adjCellIndex, lvi1}}};
@@ -97,12 +171,11 @@ GeometryIntersection TetrahedronsRayMarching::intersectNextGeomEdge(const Geomet
         for (const Facet& facet : opositeFacets)
         {
             bool ambiguous = false;
-            const GeometryIntersection result =
-                rayIntersectTriangle(facet, lastIntersectPt, intersectPt, ambiguous);
+            const GeometryIntersection result = rayIntersectTriangle(facet, _previousIntersectionPoint, _intersectionPoint, ambiguous);
 
             if (result.type == EGeometryType::Edge)
             {
-                if (result.edge.isSameUndirectionalEdge(inGeometry.edge))
+                if (result.edge.isSameUndirectionalEdge(_intersection.edge))
                 {
                     continue;
                 }
@@ -110,59 +183,61 @@ GeometryIntersection TetrahedronsRayMarching::intersectNextGeomEdge(const Geomet
             if (result.type != EGeometryType::None)
             {
                 if (!ambiguous)
+                {
                     return result;
+                }
 
                 // Retrieve the best intersected point (farthest from origin point)
-                if (bestMatch.type == EGeometryType::None || (_origin - intersectPt).size() > (_origin - bestMatchIntersectPt).size())
+                if (bestMatch.type == EGeometryType::None || (_origin - _intersectionPoint).size() > (_origin - bestMatchIntersectPt).size())
                 {
-                    bestMatchIntersectPt = intersectPt;
+                    bestMatchIntersectPt = _intersectionPoint;
                     bestMatch = result;
                 }
             }
         }
     }
         
-    intersectPt = bestMatchIntersectPt;
+    _intersectionPoint = bestMatchIntersectPt;
     return bestMatch;
 }
 
-GeometryIntersection TetrahedronsRayMarching::intersectNextGeomVertex(const GeometryIntersection& inGeometry,
-                                            Eigen::Vector3d& intersectPt,
-                                            const Eigen::Vector3d& lastIntersectPt) const
+GeometryIntersection TetrahedronsRayMarching::intersectNextGeomVertex()
 {
     GeometryIntersection bestMatch;
     Eigen::Vector3d bestMatchIntersectPt;
 
 
-   for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(inGeometry.vertexIndex))
+   for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(_intersection.vertexIndex))
     {
         if (_tetrahedralization.isInvalidOrInfiniteCell(adjCellIndex))
             continue;
 
         // Get local vertex index
-        const VertexIndex localVertexIndex = _tetrahedralization.index(adjCellIndex, inGeometry.vertexIndex);
+        const VertexIndex localVertexIndex = _tetrahedralization.index(adjCellIndex, _intersection.vertexIndex);
 
         // Define the facet to intersect
         const Facet facet(adjCellIndex, localVertexIndex);
         bool ambiguous = false;
 
-        const GeometryIntersection result =
-            rayIntersectTriangle(facet, lastIntersectPt, intersectPt, ambiguous);
+        const GeometryIntersection result = rayIntersectTriangle(facet, _previousIntersectionPoint, _intersectionPoint, ambiguous);
+
         if (result.type != EGeometryType::None)
         {
             if (!ambiguous)
+            {
                 return result;
+            }
 
             // Retrieve the best intersected point (farthest from origin point)
-            if (bestMatch.type == EGeometryType::None || (_origin - intersectPt).size() > (_origin - bestMatchIntersectPt).size())
+            if (bestMatch.type == EGeometryType::None || (_origin - _intersectionPoint).size() > (_origin - bestMatchIntersectPt).size())
             {
-                bestMatchIntersectPt = intersectPt;
+                bestMatchIntersectPt = _intersectionPoint;
                 bestMatch = result;
             }
         }
     }
 
-    intersectPt = bestMatchIntersectPt;
+    _intersectionPoint = bestMatchIntersectPt;
     return bestMatch;
 }
 
@@ -224,7 +299,7 @@ Eigen::Vector2d TetrahedronsRayMarching::getLineTriangleIntersectBarycCoords(Eig
 
 GeometryIntersection TetrahedronsRayMarching::rayIntersectTriangle(
                                                         const Facet& facet,
-                                                        const Eigen::Vector3d & lastIntersectPt,
+                                                        const Eigen::Vector3d & lastIntersectionPoint,
                                                         Eigen::Vector3d & intersectPt,
                                                         bool& ambiguous) const
 {
@@ -291,7 +366,7 @@ GeometryIntersection TetrahedronsRayMarching::rayIntersectTriangle(
 
     // In case intersectPt is provided, check if intersectPt is in front of lastIntersectionPt
     // in the DirVec direction to ensure that we are moving forward in the right direction
-    const Eigen::Vector3d diff = tempIntersectPt - lastIntersectPt;
+    const Eigen::Vector3d diff = tempIntersectPt - lastIntersectionPoint;
     const double dotValue = _direction.dot(diff.normalized());
     
     if (dotValue < marginEpsilon || diff.size() < 100 * std::numeric_limits<double>::min())
@@ -340,6 +415,86 @@ GeometryIntersection TetrahedronsRayMarching::rayIntersectTriangle(
     }
 
     return GeometryIntersection(facet);
+}
+
+VertexIndex TetrahedronsRayMarching::getVertexIndex(const Facet& f, int i) const
+{
+    return _tetrahedralization.cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
+}
+
+ Facet TetrahedronsRayMarching::mirrorFacet(const Facet& f) const
+{
+    const std::array<VertexIndex, 3> facetVertices = {getVertexIndex(f, 0), getVertexIndex(f, 1), getVertexIndex(f, 2)};
+
+    Facet out;
+    out.cellIndex = _tetrahedralization.cell_adjacent(f.cellIndex, f.localVertexIndex);
+    if (out.cellIndex != GEO::NO_CELL)
+    {
+        // Search for the vertex in adjacent cell which doesn't exist in input facet.
+        for (int k = 0; k < 4; ++k)
+        {
+            CellIndex out_vi = _tetrahedralization.cell_vertex(out.cellIndex, k);
+            if (std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
+            {
+                out.localVertexIndex = k;
+                return out;
+            }
+        }
+    }
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& stream, const EGeometryType type)
+{
+    switch (type)
+    {
+        case EGeometryType::Facet:
+            stream << "Facet";
+            break;
+        case EGeometryType::Vertex:
+            stream << "Vertex";
+            break;
+        case EGeometryType::Edge:
+            stream << "Edge";
+            break;
+        case EGeometryType::None:
+            stream << "None";
+            break;
+    }
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Facet& facet)
+{
+    stream << "c:" << facet.cellIndex << ",v:" << facet.localVertexIndex;
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Edge& edge)
+{
+    stream << "v0:" << edge.v0 << ",v1:" << edge.v1;
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const GeometryIntersection& intersection)
+{
+    stream << intersection.type << ": ";
+    switch (intersection.type)
+    {
+        case EGeometryType::Facet:
+            stream << intersection.facet;
+            break;
+        case EGeometryType::Vertex:
+            stream << intersection.vertexIndex;
+            break;
+        case EGeometryType::Edge:
+            stream << intersection.edge;
+            break;
+        case EGeometryType::None:
+            stream << "None";
+            break;
+    }
+    return stream;
 }
 
 }

@@ -68,26 +68,6 @@ class DelaunayGraphCut
     using VertexIndex = GEO::index_t;
     using CellIndex = GEO::index_t;
 
-    struct IntersectionHistory
-    {
-        size_t steps = 0;
-        Point3d cam;
-        Point3d originPt;
-        Point3d dirVect;
-
-        std::vector<GeometryIntersection> geometries;
-        std::vector<Point3d> intersectPts;
-        std::vector<Point3d> vecToCam;
-        std::vector<float> distToCam;
-        std::vector<float> angleToCam;
-        IntersectionHistory(const Point3d& c, const Point3d& oPt, const Point3d& diV)
-          : cam{c},
-            originPt{oPt},
-            dirVect{diV}
-        {}
-
-        void append(const GeometryIntersection& geom, const Point3d& intersectPt);
-    };
 
     /**
      * @brief  Used for debug purposes to store count about geometries intersected during fillGraph and forceTedges.
@@ -127,8 +107,6 @@ class DelaunayGraphCut
     std::vector<bool> _cellIsFull;
 
     std::vector<int> _camsVertexes;
-
-    bool saveTemporaryBinFiles;
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
@@ -243,9 +221,6 @@ class DelaunayGraphCut
     void initCells();
     void displayStatistics();
 
-    void saveDhInfo(const std::string& fileNameInfo);
-    void saveDh(const std::string& fileNameDh, const std::string& fileNameInfo);
-
     StaticVector<StaticVector<int>*>* createPtsCams();
     void createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams);
     StaticVector<int>* getPtsCamsHist();
@@ -286,19 +261,21 @@ class DelaunayGraphCut
     Point3d cellCircumScribedSphereCentre(CellIndex ci) const;
     double getFaceWeight(const Facet& f1) const;
 
-    float weightFcn(float nrc, bool labatutWeights, int ncams);
 
-    void fillGraph(double nPixelSizeBehind, bool labatutWeights, bool fillOut, float distFcnHeight, float fullWeight);
-    void fillGraphPartPtRc(int& out_nstepsFront,
-                           int& out_nstepsBehind,
-                           GeometriesCount& outFrontCount,
-                           GeometriesCount& outBehindCount,
-                           int vertexIndex,
+    void fillGraph(double nPixelSizeBehind, float distFcnHeight, float fullWeight);
+    
+    void rayMarchingGraphEmpty(int vertexIndex,
+                                int cam,
+                                float weight,
+                                float fullWeight,
+                                double nPixelSizeBehind,
+                                float distFcnHeight);
+
+    void rayMarchingGraphFull(int vertexIndex,
                            int cam,
                            float weight,
                            float fullWeight,
                            double nPixelSizeBehind,
-                           bool fillOut,
                            float distFcnHeight);
 
     /**
@@ -314,7 +291,7 @@ class DelaunayGraphCut
 
     void maxflow();
 
-    void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName);
+    void voteFullEmptyScore(const StaticVector<int>& cams);
 
     void createDensePointCloud(const Point3d hexah[8],
                                const StaticVector<int>& cams,
@@ -322,11 +299,7 @@ class DelaunayGraphCut
                                const FuseParams* depthMapsFuseParams);
 
     void createGraphCut(const Point3d hexah[8],
-                        const StaticVector<int>& cams,
-                        const std::string& folderName,
-                        const std::string& tmpCamsPtsFolderName,
-                        bool removeSmallSegments,
-                        bool exportDebugTetrahedralization);
+                        const StaticVector<int>& cams);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
@@ -341,7 +314,7 @@ class DelaunayGraphCut
      * @brief Combine all post-processing steps results to reduce artefacts from the graph-cut (too large triangles, noisy tetrahedrons, isolated
      * cells, etc).
      */
-    void graphCutPostProcessing(const Point3d hexah[8], const std::string& folderName);
+    void graphCutPostProcessing(const Point3d hexah[8]);
 
     void segmentFullOrFree(bool full, StaticVector<int>& out_fullSegsColor, int& nsegments);
     int removeBubbles();
@@ -364,32 +337,11 @@ class DelaunayGraphCut
      * points. -1 means that we do not filter helper points at all.
      */
     mesh::Mesh* createMesh(int maxNbConnectedHelperPoints);
-    mesh::Mesh* createTetrahedralMesh(
-      bool filter = true,
-      const float& downscaleFactor = 0.95f,
-      const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
 
     void displayCellsStats() const;
-    void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);
-
-    /**
-     * @brief Export debug cells score as tetrahedral mesh.
-     * WARNING: Could create HUGE meshes, only use on very small datasets.
-     * @param[in] outputFolder: output directory (ending with path separator)
-     */
-    void exportFullScoreMeshs(const std::string& outputFolder) const;
-
-    void exportBackPropagationMesh(const std::string& filename,
-                                   std::vector<GeometryIntersection>& intersectedGeom,
-                                   const Point3d& fromPt,
-                                   const Point3d& toPt);
-    void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);
 };
 
-std::ostream& operator<<(std::ostream& stream, const EGeometryType type);
-std::ostream& operator<<(std::ostream& stream, const Facet& facet);
-std::ostream& operator<<(std::ostream& stream, const Edge& edge);
-std::ostream& operator<<(std::ostream& stream, const GeometryIntersection& intersection);
+
 std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometriesCount& count);
 
 }  // namespace fuseCut

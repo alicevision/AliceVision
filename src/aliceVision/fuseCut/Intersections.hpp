@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/fuseCut/Tetrahedralization.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -26,6 +27,7 @@ struct Facet
     
     /// local opposite vertex index
     VertexIndex localVertexIndex = GEO::NO_VERTEX;
+
 
     Facet() 
     {
@@ -135,37 +137,52 @@ struct GeometryIntersection
     bool operator!=(const GeometryIntersection& g) const { return !(*this == g); }
 };
 
+std::ostream& operator<<(std::ostream& stream, const EGeometryType type);
+std::ostream& operator<<(std::ostream& stream, const Facet& facet);
+std::ostream& operator<<(std::ostream& stream, const Edge& edge);
+std::ostream& operator<<(std::ostream& stream, const GeometryIntersection& intersection);
+
 class TetrahedronsRayMarching
 {
 public:
-    TetrahedronsRayMarching(const Tetrahedralization & tetra, 
-                            const Eigen::Vector3d & rayOrigin, 
-                            const Eigen::Vector3d & rayDirection)
-    :
-    _tetrahedralization(tetra),
-    _origin(rayOrigin),
-    _direction(rayDirection),
-    _epsilonFactor(1e-4)
+    TetrahedronsRayMarching(const Tetrahedralization & tetra,
+                            const VertexIndex & originId,
+                            const VertexIndex & destinationId,
+                            const bool away);
+                            
+    GeometryIntersection intersectNextGeom();
+
+    void updateIntersection(const GeometryIntersection & intersection)
     {
-        
+        _intersection = intersection;
     }
 
-    GeometryIntersection intersectNextGeom(const GeometryIntersection& inGeometry,
-                                            Eigen::Vector3d& intersectPt,
-                                            const Eigen::Vector3d& lastIntersectPt) const;
+    GeometryIntersection getIntersection() const
+    {
+        return _intersection;
+    }
+
+    GeometryIntersection getPreviousIntersection() const
+    {
+        return _previousIntersection;
+    }
+
+    const Eigen::Vector3d & getIntersectionPoint() const
+    {
+        return _intersectionPoint;
+    }
+
+    const Eigen::Vector3d & getPreviousIntersectionPoint() const
+    {
+        return _previousIntersectionPoint;
+    }
 
 private:
-    GeometryIntersection intersectNextGeomFacet(const GeometryIntersection& inGeometry,
-                                                Eigen::Vector3d& intersectPt,
-                                                const Eigen::Vector3d& lastIntersectPt) const;
+    GeometryIntersection intersectNextGeomFacet();
 
-    GeometryIntersection intersectNextGeomEdge(const GeometryIntersection& inGeometry,
-                                                Eigen::Vector3d& intersectPt,
-                                                const Eigen::Vector3d& lastIntersectPt) const;
+    GeometryIntersection intersectNextGeomEdge();
 
-    GeometryIntersection intersectNextGeomVertex(const GeometryIntersection& inGeometry,
-                                                Eigen::Vector3d& intersectPt,
-                                                const Eigen::Vector3d& lastIntersectPt) const;
+    GeometryIntersection intersectNextGeomVertex();
 
     Eigen::Vector2d getLineTriangleIntersectBarycCoords(Eigen::Vector3d & P, 
                                                         const Eigen::Vector3d & A,  
@@ -190,11 +207,23 @@ private:
         return neighboringCells;
     }
 
+    VertexIndex getVertexIndex(const Facet& f, int i) const;
+    Facet mirrorFacet(const Facet& f) const;
+
 private:
     const Tetrahedralization & _tetrahedralization;
-    const Eigen::Vector3d _origin;
-    const Eigen::Vector3d _direction;
     const double _epsilonFactor = 1e-4;
+
+    Eigen::Vector3d _origin;
+    Eigen::Vector3d _direction;
+    GeometryIntersection _intersection;
+    GeometryIntersection _previousIntersection;
+    Eigen::Vector3d _intersectionPoint;
+    Eigen::Vector3d _previousIntersectionPoint;
+
+    size_t _facetCount;
+    size_t _vertexCount;
+    size_t _edgeCount;
 };
 
 }

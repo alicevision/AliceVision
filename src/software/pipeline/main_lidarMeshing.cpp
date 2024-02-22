@@ -97,8 +97,8 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
 
     fuseCut::DelaunayGraphCut delaunayGC(mp);
     delaunayGC.createDensePointCloud(&lhexah[0], cams, &sfmData, nullptr);
-    delaunayGC.createGraphCut(&lhexah[0], cams, "/", "/SpaceCamsTracks/", false, false);
-    delaunayGC.graphCutPostProcessing(&lhexah[0], "/");
+    delaunayGC.createGraphCut(&lhexah[0], cams);
+    delaunayGC.graphCutPostProcessing(&lhexah[0]);
     mesh::Mesh * mesh = delaunayGC.createMesh(0);
     delaunayGC.createPtsCams(ptsCams);
     mesh::meshPostProcessing(mesh, ptsCams, mp, "/", nullptr, &lhexah[0]);

@@ -411,14 +411,8 @@ int aliceVision_main(int argc, char* argv[])
                         sfmDataIO::save(densePointCloud, (outDirectory / "densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
                     }
 
-                    delaunayGC.createGraphCut(&hexah[0],
-                                              cams,
-                                              outDirectory.string() + "/",
-                                              outDirectory.string() + "/SpaceCamsTracks/",
-                                              false,
-                                              exportDebugTetrahedralization);
-
-                    delaunayGC.graphCutPostProcessing(&hexah[0], outDirectory.string() + "/");
+                    delaunayGC.createGraphCut(&hexah[0], cams);
+                    delaunayGC.graphCutPostProcessing(&hexah[0]);
 
                     mesh = delaunayGC.createMesh(maxNbConnectedHelperPoints);
                     delaunayGC.createPtsCams(ptsCams);
