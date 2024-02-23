@@ -17,6 +17,7 @@
 #include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/PointCloud.hpp>
+#include <aliceVision/fuseCut/GraphFiller.hpp>
 
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
@@ -107,6 +108,10 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     fuseCut::Tetrahedralization tetrahedralization(pointcloud.getVertices());
 
     fuseCut::DelaunayGraphCut delaunayGC(mp, pointcloud, tetrahedralization);
+    fuseCut::GraphFiller gfiller(mp, pointcloud, tetrahedralization);
+    gfiller.build(cams);
+    delaunayGC._cellsAttr = gfiller.getCellsAttributes();
+    
     delaunayGC.createGraphCut(&lhexah[0], cams);
     delaunayGC.graphCutPostProcessing(&lhexah[0]);
     mesh::Mesh * mesh = delaunayGC.createMesh(0);

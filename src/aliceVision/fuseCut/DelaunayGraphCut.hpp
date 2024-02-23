@@ -50,48 +50,12 @@ class DelaunayGraphCut
 
 
     inline std::size_t getNbVertices() const { return _verticesAttr.size(); }
-
-
-    /**
-     * @brief Retrieves the global indexes of neighboring cells around a geometry.
-     *
-     * @param g the concerned geometry
-     * @return a vector of neighboring cell indices
-     */
-    std::vector<CellIndex> getNeighboringCellsByGeometry(const GeometryIntersection& g) const;
-
     
-    void initCells();
-
     void createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams);
-
-    float distFcn(float maxDist, float dist, float distFcnHeight) const;
-    
-    void fillGraph(double nPixelSizeBehind, float fullWeight);
-    
-    void rayMarchingGraphEmpty(int vertexIndex,
-                                int cam,
-                                float weight);
-
-    void rayMarchingGraphFull(int vertexIndex,
-                           int cam,
-                           float fullWeight,
-                           double nPixelSizeBehind);
-
-    /**
-     * @brief Estimate the cells property "on" based on the analysis of the visibility of neigbouring cells.
-     *
-     * @param nPixelSizeBehind Used to define the surface margin
-     */
-    void forceTedgesByGradientIJCV(float nPixelSizeBehind);
 
     int computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const;
 
-    void addToInfiniteSw(float sW);
-
     void maxflow();
-
-    void voteFullEmptyScore(const StaticVector<int>& cams);
 
     void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams);
 
@@ -132,7 +96,7 @@ class DelaunayGraphCut
      */
     mesh::Mesh* createMesh(int maxNbConnectedHelperPoints);
 
-private:
+public:
     mvsUtils::MultiViewParams& _mp;
     
     std::vector<GC_cellInfo> _cellsAttr;

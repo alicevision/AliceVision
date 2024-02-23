@@ -706,19 +706,6 @@ std::vector<int> createRandomArrayOfIntegers(const int size, const unsigned int 
     return v;
 }
 
-int findNSubstrsInString(const std::string& str, const std::string& val)
-{
-    int last = 0;
-    int n = 0;
-    int pos = str.find(val, last);
-    while (pos > -1)
-    {
-        n++;
-        last = pos + val.length();
-        pos = str.find(val, last);
-    }
-    return n;
-}
 
 std::string num2str(int num)
 {

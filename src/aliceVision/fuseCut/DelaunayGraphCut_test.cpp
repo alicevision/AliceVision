@@ -9,6 +9,7 @@
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/fuseCut/PointCloud.hpp>
+#include <aliceVision/fuseCut/GraphFiller.hpp>
 
 #include <boost/math/constants/constants.hpp>
 
@@ -98,8 +99,11 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     pointcloud.addPointsFromSfM(&hexah[0], cams, sfmData);
 
     fuseCut::Tetrahedralization tetrahedralization(pointcloud.getVertices());
+    fuseCut::GraphFiller gfiller(mp, pointcloud, tetrahedralization);
+    gfiller.build(cams);
 
     DelaunayGraphCut delaunayGC(mp, pointcloud, tetrahedralization);
+
 
     ALICEVISION_LOG_TRACE("Generated pts:");
     for (size_t i = 0; i < pointcloud.getVertices().size(); i++)
@@ -110,6 +114,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
                 << pointcloud.getVertices()[i].z);
     }
 
+    delaunayGC._cellsAttr = gfiller.getCellsAttributes();
     delaunayGC.createGraphCut(&hexah[0], cams);
 
 

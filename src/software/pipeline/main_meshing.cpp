@@ -22,6 +22,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/fuseCut/GraphFiller.hpp>
 
 #include <Eigen/Geometry>
 
@@ -414,6 +415,10 @@ int aliceVision_main(int argc, char* argv[])
                             sfmData::colorizeTracks(densePointCloud);
                         sfmDataIO::save(densePointCloud, (outDirectory / "densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
                     }
+
+                    fuseCut::GraphFiller gfiller(mp, pc, tetrahedralization);
+                    gfiller.build(cams);
+                    delaunayGC._cellsAttr = gfiller.getCellsAttributes();
 
                     delaunayGC.createGraphCut(&hexah[0], cams);
                     delaunayGC.graphCutPostProcessing(&hexah[0]);

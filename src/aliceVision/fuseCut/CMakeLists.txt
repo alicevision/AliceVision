@@ -9,6 +9,7 @@ set(fuseCut_files_headers
   BoundingBox.hpp
   Intersections.hpp
   PointCloud.hpp
+  GraphFiller.hpp
 )
 
 # Sources
@@ -20,6 +21,7 @@ set(fuseCut_files_sources
   Tetrahedralization.cpp
   Intersections.cpp
   PointCloud.cpp
+  GraphFiller.cpp
 )
 
 alicevision_add_library(aliceVision_fuseCut
