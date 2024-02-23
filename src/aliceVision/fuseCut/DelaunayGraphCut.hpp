@@ -43,21 +43,6 @@ class DelaunayGraphCut
     using VertexIndex = GEO::index_t;
     using CellIndex = GEO::index_t;
 
-
-    mvsUtils::MultiViewParams& _mp;
-
-    std::unique_ptr<Tetrahedralization> _tetrahedralization;
-    /// 3D points coordinates
-    const std::vector<Point3d> & _verticesCoords;
-    /// Information attached to each vertex
-    const std::vector<GC_vertexInfo> & _verticesAttr;
-    /// Information attached to each cell
-    std::vector<GC_cellInfo> _cellsAttr;
-    /// isFull info per cell: true is full / false is empty
-    std::vector<bool> _cellIsFull;
-
-    std::vector<int> _camsVertexes;
-
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
     DelaunayGraphCut(mvsUtils::MultiViewParams& mp, const PointCloud & pc);
@@ -122,37 +107,21 @@ class DelaunayGraphCut
 
     void computeDelaunay();
     void initCells();
-    void displayStatistics();
 
     void createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams);
-    StaticVector<int>* getPtsCamsHist();
-
-    /**
-     * @brief Compute connected segments size
-     * @param[out] out_segments
-     * @param[in] useVertex: sub-set of vertices to compute
-     * @param[in] alpha
-     */
-    void computeVerticesSegSize(std::vector<GC_Seg>& out_segments, const std::vector<bool>& useVertex, float alpha = 0.0f);
-
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
     
-    void fillGraph(double nPixelSizeBehind, float distFcnHeight, float fullWeight);
+    void fillGraph(double nPixelSizeBehind, float fullWeight);
     
     void rayMarchingGraphEmpty(int vertexIndex,
                                 int cam,
-                                float weight,
-                                float fullWeight,
-                                double nPixelSizeBehind,
-                                float distFcnHeight);
+                                float weight);
 
     void rayMarchingGraphFull(int vertexIndex,
                            int cam,
-                           float weight,
                            float fullWeight,
-                           double nPixelSizeBehind,
-                           float distFcnHeight);
+                           double nPixelSizeBehind);
 
     /**
      * @brief Estimate the cells property "on" based on the analysis of the visibility of neigbouring cells.
@@ -203,10 +172,22 @@ class DelaunayGraphCut
 
     /**
      * @brief Create a mesh from the tetrahedral scores
-     * @param[in] maxNbConnectedHelperPoints: maximum number of connected helper points before we remove the group. 0 means that we remove all helper
-     * points. -1 means that we do not filter helper points at all.
+     * @param[in] maxNbConnectedHelperPoints: maximum number of connected helper points before we remove the group. 
+     * 0 means that we remove all helper points. 
+     * -1 means that we do not filter helper points at all.
      */
     mesh::Mesh* createMesh(int maxNbConnectedHelperPoints);
+
+private:
+    mvsUtils::MultiViewParams& _mp;
+    
+    std::unique_ptr<Tetrahedralization> _tetrahedralization;
+    std::vector<GC_cellInfo> _cellsAttr;
+    std::vector<bool> _cellIsFull;
+
+    const std::vector<Point3d> & _verticesCoords;
+    const std::vector<GC_vertexInfo> & _verticesAttr;
+    const std::vector<int> & _camsVertexes;
 };
 
 

@@ -23,8 +23,6 @@ struct GC_cellInfo
     // float gEdgePhotoWeight[4];
     /// score for emptiness along each egde/facet
     std::array<float, 4> gEdgeVisWeight{{0.0f, 0.0f, 0.0f, 0.0f}};
-    /// fullness score: sum of all weights for fullness (just after the point p)
-    float fullnessScore = 0.0f;
     /// emptiness score: sum of all weights for emptiness (before the point p)
     float emptinessScore = 0.0f;
     /// first full tetrahedron score: sum of weights for T1 (tetrahedron just after the point p)
@@ -34,7 +32,6 @@ struct GC_cellInfo
     {
         fwrite(&cellSWeight, sizeof(float), 1, f);
         fwrite(&cellTWeight, sizeof(float), 1, f);
-        fwrite(&fullnessScore, sizeof(float), 1, f);
         fwrite(&emptinessScore, sizeof(float), 1, f);
         fwrite(&on, sizeof(float), 1, f);
 
@@ -46,7 +43,6 @@ struct GC_cellInfo
     {
         fread(&cellSWeight, sizeof(float), 1, f);
         fread(&cellTWeight, sizeof(float), 1, f);
-        fread(&fullnessScore, sizeof(float), 1, f);
         fread(&emptinessScore, sizeof(float), 1, f);
         fread(&on, sizeof(float), 1, f);
 
@@ -133,7 +129,7 @@ inline std::ostream& operator<<(std::ostream& stream, const GC_cellInfo& cellInf
 {
     stream << "cellSWeight:" << cellInfo.cellSWeight << ",cellTWeight:" << cellInfo.cellTWeight << ",gEdgeVisWeight[0]:" << cellInfo.gEdgeVisWeight[0]
            << ",gEdgeVisWeight[1]:" << cellInfo.gEdgeVisWeight[1] << ",gEdgeVisWeight[2]:" << cellInfo.gEdgeVisWeight[2]
-           << ",gEdgeVisWeight[3]:" << cellInfo.gEdgeVisWeight[3] << ",fullnessScore:" << cellInfo.fullnessScore
+           << ",gEdgeVisWeight[3]:" << cellInfo.gEdgeVisWeight[3] 
            << ",emptinessScore:" << cellInfo.emptinessScore << ",on:" << cellInfo.on;
     return stream;
 }
