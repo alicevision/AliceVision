@@ -12,7 +12,7 @@
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Hyperplane<double, 3>)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Hyperplane<double, 3>);
 
 namespace aliceVision {
 namespace geometry {

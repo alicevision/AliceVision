@@ -35,3 +35,55 @@ alicevision_add_test(frustumIntersection_test.cpp
         aliceVision_multiview
         aliceVision_multiview_test_data
 )
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
+    set_property(SOURCE Geometry.i PROPERTY CPLUSPLUS ON)
+    set_property(SOURCE Geometry.i PROPERTY SWIG_MODULE_NAME geometry)
+
+    swig_add_library(geometry
+        TYPE MODULE
+        LANGUAGE python
+        SOURCES Geometry.i
+    )
+
+    set_property(
+        TARGET geometry
+        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
+    )
+
+    target_include_directories(geometry
+    PRIVATE
+        ../include
+        ${ALICEVISION_ROOT}/include
+        ${Python3_INCLUDE_DIRS}
+        ${Python3_NumPy_INCLUDE_DIRS}
+    )
+    set_property(
+        TARGET geometry
+        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
+    )
+    set_property(
+        TARGET geometry
+        PROPERTY COMPILE_OPTIONS -std=c++17
+    )
+
+    target_link_libraries(geometry
+    PUBLIC
+        aliceVision_geometry
+    )
+
+    install(
+    TARGETS
+        geometry
+    DESTINATION
+        ${CMAKE_INSTALL_PREFIX}
+    )
+    install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/geometry.py
+    DESTINATION
+        ${CMAKE_INSTALL_PREFIX}
+    )
+endif()
