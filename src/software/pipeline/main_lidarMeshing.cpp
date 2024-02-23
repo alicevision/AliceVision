@@ -15,9 +15,9 @@
 
 #include <aliceVision/fuseCut/BoundingBox.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
-#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/PointCloud.hpp>
 #include <aliceVision/fuseCut/GraphFiller.hpp>
+#include <aliceVision/fuseCut/Mesher.hpp>
 
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
@@ -107,15 +107,15 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
 
     fuseCut::Tetrahedralization tetrahedralization(pointcloud.getVertices());
 
-    fuseCut::DelaunayGraphCut delaunayGC(mp, pointcloud, tetrahedralization);
     fuseCut::GraphFiller gfiller(mp, pointcloud, tetrahedralization);
     gfiller.build(cams);
-    delaunayGC._cellsAttr = gfiller.getCellsAttributes();
+    gfiller.binarize();
+
+    fuseCut::Mesher mesher(mp, pointcloud, tetrahedralization, gfiller.getCellsStatus());
     
-    delaunayGC.createGraphCut(&lhexah[0], cams);
-    delaunayGC.graphCutPostProcessing(&lhexah[0]);
-    mesh::Mesh * mesh = delaunayGC.createMesh(0);
-    delaunayGC.createPtsCams(ptsCams);
+    mesher.graphCutPostProcessing(&lhexah[0]);
+    mesh::Mesh * mesh = mesher.createMesh(0);
+    pointcloud.createPtsCams(ptsCams);
     mesh::meshPostProcessing(mesh, ptsCams, mp, "/", nullptr, &lhexah[0]);
     mesh->save(outputFile);
     delete mesh;

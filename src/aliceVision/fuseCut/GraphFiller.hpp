@@ -27,6 +27,11 @@ public:
         return _cellsAttr;
     }
 
+    std::vector<bool> & getCellsStatus()
+    {
+        return _cellIsFull;
+    }
+
     void binarize();
 
 private:

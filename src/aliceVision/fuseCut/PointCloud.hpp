@@ -65,6 +65,8 @@ public:
     {
         return _camsVertexes;
     }
+
+    void createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams);
     
 
 public:

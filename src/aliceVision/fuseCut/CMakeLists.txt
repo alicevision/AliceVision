@@ -1,6 +1,5 @@
 # Headers
 set(fuseCut_files_headers
-  DelaunayGraphCut.hpp
   delaunayGraphCutTypes.hpp
   Fuser.hpp
   MaxFlow_AdjList.hpp
@@ -10,11 +9,12 @@ set(fuseCut_files_headers
   Intersections.hpp
   PointCloud.hpp
   GraphFiller.hpp
+  Mesher.hpp
 )
 
 # Sources
 set(fuseCut_files_sources
-  DelaunayGraphCut.cpp
+
   Fuser.cpp
   MaxFlow_AdjList.cpp
   InputSet.cpp
@@ -22,6 +22,7 @@ set(fuseCut_files_sources
   Intersections.cpp
   PointCloud.cpp
   GraphFiller.cpp
+  Mesher.cpp
 )
 
 alicevision_add_library(aliceVision_fuseCut

@@ -989,5 +989,25 @@ void PointCloud::createDensePointCloud(const Point3d hexah[8],
     ALICEVISION_LOG_WARNING("Final dense point cloud: " << _verticesCoords.size() << " points.");
 }
 
+void PointCloud::createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams)
+{
+    long t = std::clock();
+    int npts = _verticesCoords.size();
+
+    out_ptsCams.reserve(npts);
+
+    for (const GC_vertexInfo& v : _verticesAttr)
+    {
+        StaticVector<int> cams;
+        cams.reserve(v.getNbCameras());
+        for (int c = 0; c < v.getNbCameras(); c++)
+        {
+            cams.push_back(v.cams[c]);
+        }
+
+        out_ptsCams.push_back(cams);
+    }
+}
+
 }
 }

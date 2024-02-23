@@ -8,7 +8,6 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/fuseCut/BoundingBox.hpp>
 #include <aliceVision/fuseCut/PointCloud.hpp>
@@ -23,6 +22,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/fuseCut/GraphFiller.hpp>
+#include <aliceVision/fuseCut/Mesher.hpp>
 
 #include <Eigen/Geometry>
 
@@ -402,12 +402,11 @@ int aliceVision_main(int argc, char* argv[])
 
                     fuseCut::Tetrahedralization tetrahedralization(pc.getVertices());
 
-                    fuseCut::DelaunayGraphCut delaunayGC(mp, pc, tetrahedralization);
                     if (saveRawDensePointCloud)
                     {
                         ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
                         StaticVector<StaticVector<int>> ptsCams;
-                        delaunayGC.createPtsCams(ptsCams);
+                        pc.createPtsCams(ptsCams);
                         sfmData::SfMData densePointCloud;
                         createDenseSfMData(sfmData, mp, pc.getVertices(), ptsCams, densePointCloud);
                         removeLandmarksWithoutObservations(densePointCloud);
@@ -418,13 +417,13 @@ int aliceVision_main(int argc, char* argv[])
 
                     fuseCut::GraphFiller gfiller(mp, pc, tetrahedralization);
                     gfiller.build(cams);
-                    delaunayGC._cellsAttr = gfiller.getCellsAttributes();
+                    gfiller.binarize();
 
-                    delaunayGC.createGraphCut(&hexah[0], cams);
-                    delaunayGC.graphCutPostProcessing(&hexah[0]);
+                    fuseCut::Mesher mesher(mp, pc, tetrahedralization, gfiller.getCellsStatus());
+                    mesher.graphCutPostProcessing(&hexah[0]);
 
-                    mesh = delaunayGC.createMesh(maxNbConnectedHelperPoints);
-                    delaunayGC.createPtsCams(ptsCams);
+                    mesh = mesher.createMesh(maxNbConnectedHelperPoints);
+                    pc.createPtsCams(ptsCams);
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string() + "/", nullptr, &hexah[0]);
 
                     break;
