@@ -16,7 +16,7 @@ from ..constants import IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH,
 # - ImageInfos& getAncestors()
 # - Poses& getPoses() => DONE
 # - Rigs& getRigs() => DONE
-# - Intrinsics& getIntrinsics() => DONE !!! Intrinsics derived classes not fully binded !!!
+# - Intrinsics& getIntrinsics() => DONE / Intrinsics derived classes not fully binded
 # - Landmarks& getLandmarks() => DONE
 # - Constraints2D& getConstraints2D() => DONE
 # - RotationPriors& getRotationPriors() => DONE
