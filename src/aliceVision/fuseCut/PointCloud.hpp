@@ -51,7 +51,7 @@ public:
                                 const sfmData::SfMData* sfmData,
                                 const PointCloudFuseParams* depthMapsFuseParams);
 
-    const std::vector<Point3d> & getVerticesCoords() const
+    const std::vector<Point3d> & getVertices() const
     {
         return _verticesCoords;
     }

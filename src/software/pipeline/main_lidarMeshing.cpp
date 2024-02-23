@@ -101,7 +101,12 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     fuseCut::PointCloud pointcloud(mp);
     pointcloud.createDensePointCloud(&lhexah[0], cams, &sfmData, nullptr);
 
-    fuseCut::DelaunayGraphCut delaunayGC(mp, pointcloud);
+    //Cleanup sfmData
+    sfmData.clear();
+
+    fuseCut::Tetrahedralization tetrahedralization(pointcloud.getVertices());
+
+    fuseCut::DelaunayGraphCut delaunayGC(mp, pointcloud, tetrahedralization);
     delaunayGC.createGraphCut(&lhexah[0], cams);
     delaunayGC.graphCutPostProcessing(&lhexah[0]);
     mesh::Mesh * mesh = delaunayGC.createMesh(0);

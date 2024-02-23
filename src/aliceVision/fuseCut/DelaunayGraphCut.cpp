@@ -43,13 +43,15 @@ namespace fuseCut {
 namespace fs = std::filesystem;
 
 
-DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams& mp, const PointCloud & pc)
+DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams& mp, const PointCloud & pc, const Tetrahedralization & tetrahedralization)
   : 
   _mp(mp),
-  _verticesCoords(pc.getVerticesCoords()),
+  _verticesCoords(pc.getVertices()),
   _verticesAttr(pc.getVerticesAttrs()),
-  _camsVertexes(pc.getCameraIndices())
+  _camsVertexes(pc.getCameraIndices()),
+  _tetrahedralization(tetrahedralization)
 {
+    initCells();
 }
 
 DelaunayGraphCut::~DelaunayGraphCut() {}
@@ -59,11 +61,11 @@ std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsBy
     switch (g.type)
     {
         case EGeometryType::Edge:
-            return _tetrahedralization->getNeighboringCellsByEdge(g.edge);
+            return _tetrahedralization.getNeighboringCellsByEdge(g.edge);
         case EGeometryType::Vertex:
-            return _tetrahedralization->getNeighboringCellsByVertexIndex(g.vertexIndex);
+            return _tetrahedralization.getNeighboringCellsByVertexIndex(g.vertexIndex);
         case EGeometryType::Facet:
-            return _tetrahedralization->getNeighboringCellsByFacet(g.facet);
+            return _tetrahedralization.getNeighboringCellsByFacet(g.facet);
         case EGeometryType::None:
             break;
     }
@@ -72,24 +74,10 @@ std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsBy
 }
 
 
-void DelaunayGraphCut::computeDelaunay()
-{
-    ALICEVISION_LOG_DEBUG("computeDelaunay GEOGRAM ...\n");
-
-    assert(_verticesCoords.size() == _verticesAttr.size());
-
-    _tetrahedralization = std::make_unique<Tetrahedralization>(_verticesCoords);
-  
-    initCells();
-
-    ALICEVISION_LOG_DEBUG("computeDelaunay done\n");
-}
-
 void DelaunayGraphCut::initCells()
 {
-    _cellsAttr.resize(_tetrahedralization->nb_cells());  // or nb_finite_cells() if keeps_infinite()
+    _cellsAttr.resize(_tetrahedralization.nb_cells());
 
-    ALICEVISION_LOG_INFO(_cellsAttr.size() << " cells created by tetrahedralization.");
     for (int i = 0; i < _cellsAttr.size(); ++i)
     {
         GC_cellInfo& c = _cellsAttr[i];
@@ -100,11 +88,10 @@ void DelaunayGraphCut::initCells()
         c.emptinessScore = 0.0f;
         for (int s = 0; s < 4; ++s)
         {
-            c.gEdgeVisWeight[s] = 0.0f;  // weights for the 4 faces of the tetrahedron
+            //weights for the 4 faces of the tetrahedron
+            c.gEdgeVisWeight[s] = 0.0f;
         }
     }
-
-    ALICEVISION_LOG_DEBUG("initCells [" << _tetrahedralization->nb_cells() << "] done");
 }
 
 void DelaunayGraphCut::createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams)
@@ -195,7 +182,7 @@ void DelaunayGraphCut::rayMarchingGraphEmpty(int vertexIndex,
 
 
 
-    TetrahedronsRayMarching marching(*_tetrahedralization, vertexIndex, _camsVertexes[cam], false);
+    TetrahedronsRayMarching marching(_tetrahedralization, vertexIndex, _camsVertexes[cam], false);
 
     Facet lastIntersectedFacet;
     bool lastGeoIsVertex = false;
@@ -279,7 +266,7 @@ void DelaunayGraphCut::rayMarchingGraphFull(int vertexIndex,
     GeometryIntersection geometry(vertexIndex);  // Starting on global vertex index
     Point3d intersectPt = originPt;
 
-    TetrahedronsRayMarching marching(*_tetrahedralization, vertexIndex, _camsVertexes[cam], true);
+    TetrahedronsRayMarching marching(_tetrahedralization, vertexIndex, _camsVertexes[cam], true);
 
     bool firstIteration = true;
     Facet lastIntersectedFacet;
@@ -362,7 +349,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                 // toTheCam
             
 
-                TetrahedronsRayMarching marching(*_tetrahedralization, vertexIndex, _camsVertexes[cam], false);
+                TetrahedronsRayMarching marching(_tetrahedralization, vertexIndex, _camsVertexes[cam], false);
 
                 // As long as we find a next geometry
                 Point3d lastIntersectPt = originPt;
@@ -408,7 +395,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                 Point3d intersectPt = originPt;
 
                
-                TetrahedronsRayMarching marching(*_tetrahedralization, vertexIndex, _camsVertexes[cam], true);
+                TetrahedronsRayMarching marching(_tetrahedralization, vertexIndex, _camsVertexes[cam], true);
 
                 Facet lastIntersectedFacet;
                 bool firstIteration = true;
@@ -467,7 +454,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                             }
                             // the information of first intersected cell can only be found by taking intersection of neighbouring cells for both
                             // geometries
-                            const std::vector<CellIndex> previousNeighbouring = _tetrahedralization->getNeighboringCellsByVertexIndex(previousGeometry.vertexIndex);
+                            const std::vector<CellIndex> previousNeighbouring = _tetrahedralization.getNeighboringCellsByVertexIndex(previousGeometry.vertexIndex);
                             const std::vector<CellIndex> currentNeigbouring = getNeighboringCellsByGeometry(geometry);
 
                             std::vector<CellIndex> neighboringCells;
@@ -542,23 +529,23 @@ int DelaunayGraphCut::computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) c
             if (!uo)
                 continue;
 
-            const Facet f2 = _tetrahedralization->mirrorFacet(f1);
-            if (_tetrahedralization->isInvalidOrInfiniteCell(f2.cellIndex))
+            const Facet f2 = _tetrahedralization.mirrorFacet(f1);
+            if (_tetrahedralization.isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
             const bool vo = _cellIsFull[f2.cellIndex];  // get if it is occupied
 
             if (vo)
                 continue;
 
-            VertexIndex v1 = getVertexIndex(f1, 0);
-            VertexIndex v2 = getVertexIndex(f1, 1);
-            VertexIndex v3 = getVertexIndex(f1, 2);
+            VertexIndex v1 = _tetrahedralization.getVertexIndex(f1, 0);
+            VertexIndex v2 = _tetrahedralization.getVertexIndex(f1, 1);
+            VertexIndex v3 = _tetrahedralization.getVertexIndex(f1, 2);
             ++nbSurfaceFacets;
             vertexIsOnSurface[v1] = true;
             vertexIsOnSurface[v2] = true;
             vertexIsOnSurface[v3] = true;
 
-            assert(!(_tetrahedralization->isInfiniteCell(f1.cellIndex) && _tetrahedralization->isInfiniteCell(f2.cellIndex)));  // infinite both cells of finite vertex!
+            assert(!(_tetrahedralization.isInfiniteCell(f1.cellIndex) && _tetrahedralization.isInfiniteCell(f2.cellIndex)));  // infinite both cells of finite vertex!
         }
     }
     ALICEVISION_LOG_INFO("computeIsOnSurface nbSurfaceFacets: " << nbSurfaceFacets);
@@ -592,9 +579,9 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8])
             VertexIndex cam_vi = _camsVertexes[rc];
             if (cam_vi == GEO::NO_VERTEX)
                 continue;
-            for (CellIndex adjCellIndex : _tetrahedralization->getNeighboringCellsByVertexIndex(cam_vi))  // GEOGRAM: set_stores_cicl(true) required
+            for (CellIndex adjCellIndex : _tetrahedralization.getNeighboringCellsByVertexIndex(cam_vi))  // GEOGRAM: set_stores_cicl(true) required
             {
-                if (_tetrahedralization->isInvalidOrInfiniteCell(adjCellIndex))
+                if (_tetrahedralization.isInvalidOrInfiniteCell(adjCellIndex))
                     continue;
 
                 if (_cellIsFull[adjCellIndex])
@@ -626,7 +613,7 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8])
                 int count = 0;
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(ci, k);
+                    const CellIndex nci = _tetrahedralization.cell_adjacent(ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
                     count += (_cellIsFull[nci] != _cellIsFull[ci]);
@@ -691,7 +678,7 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
 
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
+                    const CellIndex nci = _tetrahedralization.cell_adjacent(tmp_ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
                     if ((colorPerCell[nci] == -1) && (_cellIsFull[nci] == _cellIsFull[ci]))
@@ -749,7 +736,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
         std::vector<bool> vertexIsOnSurface;
         const int nbSurfaceFacets = computeIsOnSurface(vertexIsOnSurface);
 
-        const auto & neighboringCellsPerVertex = _tetrahedralization->getNeighboringCellsPerVertex();
+        const auto & neighboringCellsPerVertex = _tetrahedralization.getNeighboringCellsPerVertex();
 
 #pragma omp parallel for reduction(+ : toInvertCount)
         for (int vi = 0; vi < neighboringCellsPerVertex.size(); ++vi)
@@ -772,7 +759,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                 GEO::signed_index_t localVertexIndex = 0;
                 for (int k = 0; k < 4; ++k)
                 {
-                    const GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(ci, k);
+                    const GEO::signed_index_t currentVertex = _tetrahedralization.cell_vertex(ci, k);
                     if (currentVertex == GEO::NO_VERTEX)
                         break;
                     if (currentVertex != vi)
@@ -825,8 +812,8 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
             {
                 if (_cellIsFull[f.cellIndex] == invertFull)
                 {
-                    const Facet fv = _tetrahedralization->mirrorFacet(f);
-                    if (_tetrahedralization->isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[f.cellIndex] != _cellIsFull[fv.cellIndex])
+                    const Facet fv = _tetrahedralization.mirrorFacet(f);
+                    if (_tetrahedralization.isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[f.cellIndex] != _cellIsFull[fv.cellIndex])
                     {
                         borderCase = true;
                         break;
@@ -867,8 +854,6 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
 
 void DelaunayGraphCut::createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams)
 {
-    // Create tetrahedralization
-    computeDelaunay();
     voteFullEmptyScore(cams);
     maxflow();
 }
@@ -878,7 +863,7 @@ void DelaunayGraphCut::addToInfiniteSw(float sW)
     std::size_t nbInfinitCells = 0;
     for (CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
     {
-        if (_tetrahedralization->isInfiniteCell(ci))
+        if (_tetrahedralization.isInfiniteCell(ci))
         {
             GC_cellInfo& c = _cellsAttr[ci];
             c.cellSWeight += sW;
@@ -932,17 +917,17 @@ void DelaunayGraphCut::maxflow()
         for (VertexIndex k = 0; k < 4; ++k)
         {
             Facet fu(ci, k);
-            Facet fv = _tetrahedralization->mirrorFacet(fu);
-            if (_tetrahedralization->isInvalidOrInfiniteCell(fv.cellIndex))
+            Facet fv = _tetrahedralization.mirrorFacet(fu);
+            if (_tetrahedralization.isInvalidOrInfiniteCell(fv.cellIndex))
                 continue;
 
             float a1 = 0.0f;
             float a2 = 0.0f;
-            if ((!_tetrahedralization->isInfiniteCell(fu.cellIndex)) && (!_tetrahedralization->isInfiniteCell(fv.cellIndex)))
+            if ((!_tetrahedralization.isInfiniteCell(fu.cellIndex)) && (!_tetrahedralization.isInfiniteCell(fv.cellIndex)))
             {
                 // Score for each facet based on the quality of the topology
-                a1 = _tetrahedralization->getFaceWeight(fu);
-                a2 = _tetrahedralization->getFaceWeight(fv);
+                a1 = _tetrahedralization.getFaceWeight(fu);
+                a2 = _tetrahedralization.getFaceWeight(fv);
             }
 
             // In output of maxflow the cuts will become the surface.
@@ -959,35 +944,22 @@ void DelaunayGraphCut::maxflow()
         }
     }
 
-    ALICEVISION_LOG_INFO("Maxflow: clear cells info.");
     std::vector<GC_cellInfo>().swap(_cellsAttr);  // force clear to free some RAM before maxflow
 
-    long t_maxflow_compute = clock();
     // Find graph-cut solution
-    ALICEVISION_LOG_INFO("Maxflow: compute.");
     const float totalFlow = maxFlowGraph.compute();
-    mvsUtils::printfElapsedTime(t_maxflow_compute, "Maxflow computation ");
-    ALICEVISION_LOG_INFO("totalFlow: " << totalFlow);
 
-    ALICEVISION_LOG_INFO("Maxflow: update full/empty cells status.");
     _cellIsFull.resize(nbCells);
-    // Update FULL/EMPTY status of all cells
     std::size_t nbFullCells = 0;
     for (CellIndex ci = 0; ci < nbCells; ++ci)
     {
         _cellIsFull[ci] = maxFlowGraph.isTarget(ci);
         nbFullCells += _cellIsFull[ci];
     }
-    ALICEVISION_LOG_WARNING("Maxflow full/nbCells: " << nbFullCells << " / " << nbCells);
-
-    mvsUtils::printfElapsedTime(t_maxflow, "Full maxflow step");
-
-    ALICEVISION_LOG_INFO("Maxflow: done.");
 }
 
 void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams)
 {
-    ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
     const int maxint = std::numeric_limits<int>::max();
 
     const double nPixelSizeBehind = _mp.userParams.get<double>("delaunaycut.nPixelSizeBehind", 4.0);  // sigma value
@@ -1006,7 +978,6 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams)
 
 void DelaunayGraphCut::filterLargeHelperPoints(std::vector<bool>& out_reliableVertices, const std::vector<bool>& vertexIsOnSurface, int maxSegSize)
 {
-    ALICEVISION_LOG_DEBUG("DelaunayGraphCut::filterLargeHelperPoints");
     out_reliableVertices.clear();
 
     // Do not filter helper points if maxSegSize is negative/infinit
@@ -1029,7 +1000,7 @@ void DelaunayGraphCut::filterLargeHelperPoints(std::vector<bool>& out_reliableVe
         {
             // go through all the neighbouring points
             GEO::vector<VertexIndex> adjVertices;
-            _tetrahedralization->get_neighbors(vi, adjVertices);
+            _tetrahedralization.get_neighbors(vi, adjVertices);
 
             for (VertexIndex nvi : adjVertices)
             {
@@ -1099,20 +1070,13 @@ void DelaunayGraphCut::filterLargeHelperPoints(std::vector<bool>& out_reliableVe
             out_reliableVertices[vi] = false;
         }
     }
-
-    ALICEVISION_LOG_DEBUG("DelaunayGraphCut::filterLargeHelperPoints done.");
 }
 
 mesh::Mesh* DelaunayGraphCut::createMesh(int maxNbConnectedHelperPoints)
 {
-    ALICEVISION_LOG_INFO("Extract mesh from Graph Cut.");
 
     std::vector<bool> vertexIsOnSurface;
     const int nbSurfaceFacets = computeIsOnSurface(vertexIsOnSurface);
-
-    ALICEVISION_LOG_INFO("# surface facets: " << nbSurfaceFacets);
-    ALICEVISION_LOG_INFO("# vertixes: " << _verticesCoords.size());
-    ALICEVISION_LOG_INFO("_cellIsFull.size(): " << _cellIsFull.size());
 
     mesh::Mesh* me = new mesh::Mesh();
     me->pts = StaticVector<Point3d>();
@@ -1142,8 +1106,8 @@ mesh::Mesh* DelaunayGraphCut::createMesh(int maxNbConnectedHelperPoints)
                 continue;
             }
 
-            Facet f2 = _tetrahedralization->mirrorFacet(f1);
-            if (_tetrahedralization->isInvalidOrInfiniteCell(f2.cellIndex))
+            Facet f2 = _tetrahedralization.mirrorFacet(f1);
+            if (_tetrahedralization.isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
             bool vo = _cellIsFull[f2.cellIndex];  // get if it is occupied
 
@@ -1156,9 +1120,9 @@ mesh::Mesh* DelaunayGraphCut::createMesh(int maxNbConnectedHelperPoints)
             // "f1" is in a FULL cell and "f2" is in an EMPTY cell
 
             VertexIndex vertices[3];
-            vertices[0] = getVertexIndex(f1, 0);
-            vertices[1] = getVertexIndex(f1, 1);
-            vertices[2] = getVertexIndex(f1, 2);
+            vertices[0] = _tetrahedralization.getVertexIndex(f1, 0);
+            vertices[1] = _tetrahedralization.getVertexIndex(f1, 1);
+            vertices[2] = _tetrahedralization.getVertexIndex(f1, 2);
 
             if (!reliableVertices.empty())
             {
@@ -1182,8 +1146,8 @@ mesh::Mesh* DelaunayGraphCut::createMesh(int maxNbConnectedHelperPoints)
                 points[k] = _verticesCoords[vertices[k]];
             }
 
-            const Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];  // in FULL part
-            const Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];  // in EMPTY part
+            const Point3d D1 = _verticesCoords[_tetrahedralization.getOppositeVertexIndex(f1)];  // in FULL part
+            const Point3d D2 = _verticesCoords[_tetrahedralization.getOppositeVertexIndex(f2)];  // in EMPTY part
 
             const Point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
 
@@ -1212,14 +1176,11 @@ mesh::Mesh* DelaunayGraphCut::createMesh(int maxNbConnectedHelperPoints)
         }
     }
 
-    ALICEVISION_LOG_INFO("Extract mesh from Graph Cut done.");
     return me;
 }
 
 void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>& out_fullSegsColor, int& out_nsegments)
 {
-    ALICEVISION_LOG_DEBUG("segmentFullOrFree: segmenting connected space.");
-
     out_fullSegsColor.clear();
     out_fullSegsColor.reserve(_cellIsFull.size());
     out_fullSegsColor.resize_with(_cellIsFull.size(), -1);
@@ -1231,7 +1192,7 @@ void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>& out_fullS
     // segment connected free space
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if ((!_tetrahedralization->isInfiniteCell(ci)) && (out_fullSegsColor[ci] == -1) && (_cellIsFull[ci] == full))
+        if ((!_tetrahedralization.isInfiniteCell(ci)) && (out_fullSegsColor[ci] == -1) && (_cellIsFull[ci] == full))
         {
             // backtrack all connected interior cells
             buff.resize(0);
@@ -1245,10 +1206,10 @@ void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>& out_fullS
 
                 for (int k = 0; k < 4; ++k)
                 {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
+                    const CellIndex nci = _tetrahedralization.cell_adjacent(tmp_ci, k);
                     if (nci == GEO::NO_CELL)
                         continue;
-                    if ((!_tetrahedralization->isInfiniteCell(nci)) && (out_fullSegsColor[nci] == -1) && (_cellIsFull[nci] == full))
+                    if ((!_tetrahedralization.isInfiniteCell(nci)) && (out_fullSegsColor[nci] == -1) && (_cellIsFull[nci] == full))
                     {
                         buff.push_back(nci);
                     }
@@ -1263,8 +1224,6 @@ void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>& out_fullS
 
 int DelaunayGraphCut::removeBubbles()
 {
-    ALICEVISION_LOG_DEBUG("Removing empty bubbles.");
-
     int nbEmptySegments = 0;
     StaticVector<int> emptySegColors;
     segmentFullOrFree(false, emptySegColors, nbEmptySegments);
@@ -1277,13 +1236,13 @@ int DelaunayGraphCut::removeBubbles()
     // all free space segments which contains camera has to remain free
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if (_tetrahedralization->isInfiniteCell(ci) || emptySegColors[ci] < 0)
+        if (_tetrahedralization.isInfiniteCell(ci) || emptySegColors[ci] < 0)
             continue;
 
-        const GC_vertexInfo& a = _verticesAttr[_tetrahedralization->cell_vertex(ci, 0)];
-        const GC_vertexInfo& b = _verticesAttr[_tetrahedralization->cell_vertex(ci, 1)];
-        const GC_vertexInfo& c = _verticesAttr[_tetrahedralization->cell_vertex(ci, 2)];
-        const GC_vertexInfo& d = _verticesAttr[_tetrahedralization->cell_vertex(ci, 3)];
+        const GC_vertexInfo& a = _verticesAttr[_tetrahedralization.cell_vertex(ci, 0)];
+        const GC_vertexInfo& b = _verticesAttr[_tetrahedralization.cell_vertex(ci, 1)];
+        const GC_vertexInfo& c = _verticesAttr[_tetrahedralization.cell_vertex(ci, 2)];
+        const GC_vertexInfo& d = _verticesAttr[_tetrahedralization.cell_vertex(ci, 3)];
         if (a.isVirtual() || b.isVirtual() || c.isVirtual() || d.isVirtual())
         {
             // TODO FACA: check helper points are not connected to cameras?
@@ -1303,24 +1262,18 @@ int DelaunayGraphCut::removeBubbles()
     int nbModifiedCells = 0;
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if ((!_tetrahedralization->isInfiniteCell(ci)) && (emptySegColors[ci] >= 0) && (colorsToFill[emptySegColors[ci]]))
+        if ((!_tetrahedralization.isInfiniteCell(ci)) && (emptySegColors[ci] >= 0) && (colorsToFill[emptySegColors[ci]]))
         {
             _cellIsFull[ci] = true;
             ++nbModifiedCells;
         }
     }
 
-    ALICEVISION_LOG_INFO("DelaunayGraphCut::removeBubbles: nbBubbles: " << nbBubbles << ", all empty segments: " << nbEmptySegments);
-    ALICEVISION_LOG_WARNING("DelaunayGraphCut::removeBubbles: " << nbModifiedCells << " cells changed to full within " << _cellIsFull.size()
-                                                                << " cells.");
-
     return nbBubbles;
 }
 
 int DelaunayGraphCut::removeDust(int minSegSize)
 {
-    ALICEVISION_LOG_DEBUG("Removing dust (isolated full cells).");
-
     int nbFullSegments = 0;
     StaticVector<int> fullSegsColor;
     segmentFullOrFree(true, fullSegsColor, nbFullSegments);
@@ -1346,9 +1299,6 @@ int DelaunayGraphCut::removeDust(int minSegSize)
             ++ndust;
         }
     }
-
-    ALICEVISION_LOG_INFO("DelaunayGraphCut::removeDust: Number of full segments: " << nbFullSegments);
-    ALICEVISION_LOG_WARNING("DelaunayGraphCut::removeDust: " << ndust << " cells changed to empty within " << _cellIsFull.size() << " cells.");
 
     return ndust;
 }

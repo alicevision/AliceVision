@@ -45,55 +45,12 @@ class DelaunayGraphCut
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
-    DelaunayGraphCut(mvsUtils::MultiViewParams& mp, const PointCloud & pc);
+    DelaunayGraphCut(mvsUtils::MultiViewParams& mp, const PointCloud & pc, const Tetrahedralization & tetrahedralization);
     virtual ~DelaunayGraphCut();
 
-    /**
-     * @brief Retrieve the global vertex index of the localVertexIndex of the facet.
-     *
-     * @param f the facet
-     * @return the global vertex index
-     */
-    inline VertexIndex getOppositeVertexIndex(const Facet& f) const { return _tetrahedralization->cell_vertex(f.cellIndex, f.localVertexIndex); }
-
-    /**
-     * @brief Retrieve the global vertex index of a vertex from a facet and an relative index
-     * compared to the localVertexIndex of the facet.
-     *
-     * @param f the facet
-     * @param i the relative index (relative to the localVertexIndex of the facet)
-     * @return the global vertex index
-     */
-    inline VertexIndex getVertexIndex(const Facet& f, int i) const
-    {
-        return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
-    }
-
-    inline const std::array<const Point3d*, 3> getFacetsPoints(const Facet& f) const
-    {
-        return {&(_verticesCoords[getVertexIndex(f, 0)]), &(_verticesCoords[getVertexIndex(f, 1)]), &(_verticesCoords[getVertexIndex(f, 2)])};
-    }
 
     inline std::size_t getNbVertices() const { return _verticesAttr.size(); }
 
-    inline GEO::index_t nearestVertexInCell(GEO::index_t cellIndex, const Point3d& p) const
-    {
-        GEO::signed_index_t result = NO_TETRAHEDRON;
-        double d = std::numeric_limits<double>::max();
-        for (GEO::index_t i = 0; i < 4; ++i)
-        {
-            GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(cellIndex, i);
-            if (currentVertex < 0)
-                continue;
-            double currentDist = GEO::Geom::distance2(_verticesCoords[currentVertex].m, p.m, 3);
-            if (currentDist < d)
-            {
-                d = currentDist;
-                result = currentVertex;
-            }
-        }
-        return result;
-    }
 
     /**
      * @brief Retrieves the global indexes of neighboring cells around a geometry.
@@ -104,8 +61,6 @@ class DelaunayGraphCut
     std::vector<CellIndex> getNeighboringCellsByGeometry(const GeometryIntersection& g) const;
 
     
-
-    void computeDelaunay();
     void initCells();
 
     void createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams);
@@ -138,8 +93,7 @@ class DelaunayGraphCut
 
     void voteFullEmptyScore(const StaticVector<int>& cams);
 
-    void createGraphCut(const Point3d hexah[8],
-                        const StaticVector<int>& cams);
+    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
@@ -181,10 +135,10 @@ class DelaunayGraphCut
 private:
     mvsUtils::MultiViewParams& _mp;
     
-    std::unique_ptr<Tetrahedralization> _tetrahedralization;
     std::vector<GC_cellInfo> _cellsAttr;
     std::vector<bool> _cellIsFull;
 
+    const Tetrahedralization & _tetrahedralization;
     const std::vector<Point3d> & _verticesCoords;
     const std::vector<GC_vertexInfo> & _verticesAttr;
     const std::vector<int> & _camsVertexes;

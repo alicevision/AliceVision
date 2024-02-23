@@ -196,6 +196,15 @@ public:
     }
 
     VertexIndex getVertexIndex(const Facet& f, int i) const;
+
+    /**
+     * @brief Retrieve the global vertex index of the localVertexIndex of the facet.
+     *
+     * @param f the facet
+     * @return the global vertex index
+     */
+    inline VertexIndex getOppositeVertexIndex(const Facet& f) const { return cell_vertex(f.cellIndex, f.localVertexIndex); }
+
     
     Facet mirrorFacet(const Facet& f) const;
 

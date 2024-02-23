@@ -97,15 +97,17 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     // add points from sfm
     pointcloud.addPointsFromSfM(&hexah[0], cams, sfmData);
 
-    DelaunayGraphCut delaunayGC(mp, pointcloud);
+    fuseCut::Tetrahedralization tetrahedralization(pointcloud.getVertices());
+
+    DelaunayGraphCut delaunayGC(mp, pointcloud, tetrahedralization);
 
     ALICEVISION_LOG_TRACE("Generated pts:");
-    for (size_t i = 0; i < pointcloud.getVerticesCoords().size(); i++)
+    for (size_t i = 0; i < pointcloud.getVertices().size(); i++)
     {
         ALICEVISION_LOG_TRACE("[" << i << "]: " 
-                << pointcloud.getVerticesCoords()[i].x << ", " 
-                << pointcloud.getVerticesCoords()[i].y << ", "
-                << pointcloud.getVerticesCoords()[i].z);
+                << pointcloud.getVertices()[i].x << ", " 
+                << pointcloud.getVertices()[i].y << ", "
+                << pointcloud.getVertices()[i].z);
     }
 
     delaunayGC.createGraphCut(&hexah[0], cams);

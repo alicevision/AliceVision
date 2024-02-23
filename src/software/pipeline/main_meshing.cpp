@@ -399,14 +399,16 @@ int aliceVision_main(int argc, char* argv[])
                     fuseCut::PointCloud pc(mp);
                     pc.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
 
-                    fuseCut::DelaunayGraphCut delaunayGC(mp, pc);
+                    fuseCut::Tetrahedralization tetrahedralization(pc.getVertices());
+
+                    fuseCut::DelaunayGraphCut delaunayGC(mp, pc, tetrahedralization);
                     if (saveRawDensePointCloud)
                     {
                         ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
                         StaticVector<StaticVector<int>> ptsCams;
                         delaunayGC.createPtsCams(ptsCams);
                         sfmData::SfMData densePointCloud;
-                        createDenseSfMData(sfmData, mp, pc.getVerticesCoords(), ptsCams, densePointCloud);
+                        createDenseSfMData(sfmData, mp, pc.getVertices(), ptsCams, densePointCloud);
                         removeLandmarksWithoutObservations(densePointCloud);
                         if (colorizeOutput)
                             sfmData::colorizeTracks(densePointCloud);
