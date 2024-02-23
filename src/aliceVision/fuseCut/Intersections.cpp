@@ -95,7 +95,7 @@ GeometryIntersection TetrahedronsRayMarching::intersectNextGeom()
     //We directly move to the opposite side
     if (_intersection.type == EGeometryType::Facet)
     {
-        Facet f = mirrorFacet(_intersection.facet);
+        Facet f = _tetrahedralization.mirrorFacet(_intersection.facet);
         if (_tetrahedralization.isInvalidOrInfiniteCell(f.cellIndex))
         {
             return GeometryIntersection();
@@ -157,7 +157,7 @@ GeometryIntersection TetrahedronsRayMarching::intersectNextGeomEdge()
    
     GeometryIntersection result;
 
-    for (CellIndex adjCellIndex : getNeighboringCellsByEdge(_intersection.edge))
+    for (CellIndex adjCellIndex : _tetrahedralization.getNeighboringCellsByEdge(_intersection.edge))
     {
         if (_tetrahedralization.isInvalidOrInfiniteCell(adjCellIndex))
             continue;
@@ -207,7 +207,7 @@ GeometryIntersection TetrahedronsRayMarching::intersectNextGeomVertex()
     Eigen::Vector3d bestMatchIntersectPt;
 
 
-   for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(_intersection.vertexIndex))
+   for (CellIndex adjCellIndex : _tetrahedralization.getNeighboringCellsByVertexIndex(_intersection.vertexIndex))
     {
         if (_tetrahedralization.isInvalidOrInfiniteCell(adjCellIndex))
             continue;
@@ -417,33 +417,6 @@ GeometryIntersection TetrahedronsRayMarching::rayIntersectTriangle(
     return GeometryIntersection(facet);
 }
 
-VertexIndex TetrahedronsRayMarching::getVertexIndex(const Facet& f, int i) const
-{
-    return _tetrahedralization.cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
-}
-
- Facet TetrahedronsRayMarching::mirrorFacet(const Facet& f) const
-{
-    const std::array<VertexIndex, 3> facetVertices = {getVertexIndex(f, 0), getVertexIndex(f, 1), getVertexIndex(f, 2)};
-
-    Facet out;
-    out.cellIndex = _tetrahedralization.cell_adjacent(f.cellIndex, f.localVertexIndex);
-    if (out.cellIndex != GEO::NO_CELL)
-    {
-        // Search for the vertex in adjacent cell which doesn't exist in input facet.
-        for (int k = 0; k < 4; ++k)
-        {
-            CellIndex out_vi = _tetrahedralization.cell_vertex(out.cellIndex, k);
-            if (std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
-            {
-                out.localVertexIndex = k;
-                return out;
-            }
-        }
-    }
-    return out;
-}
-
 std::ostream& operator<<(std::ostream& stream, const EGeometryType type)
 {
     switch (type)
@@ -461,18 +434,6 @@ std::ostream& operator<<(std::ostream& stream, const EGeometryType type)
             stream << "None";
             break;
     }
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const Facet& facet)
-{
-    stream << "c:" << facet.cellIndex << ",v:" << facet.localVertexIndex;
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const Edge& edge)
-{
-    stream << "v0:" << edge.v0 << ",v1:" << edge.v1;
     return stream;
 }
 

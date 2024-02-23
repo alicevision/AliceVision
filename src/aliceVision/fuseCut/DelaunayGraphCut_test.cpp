@@ -8,6 +8,7 @@
 #include <aliceVision/multiview/NViewDataSet.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
+#include <aliceVision/fuseCut/PointCloud.hpp>
 
 #include <boost/math/constants/constants.hpp>
 
@@ -84,15 +85,19 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 
     const std::string tempDirPath = std::filesystem::temp_directory_path().generic_string();
 
-    DelaunayGraphCut delaunayGC(mp);
+    
     ALICEVISION_LOG_TRACE("Creating dense point cloud witout support pts.");
 
     // delaunayGC.createDensePointCloud(&hexah[0], cams, &sfmData, nullptr);
     const float minDist = (hexah[0] - hexah[1]).size() / 1000.0f;
     // add points for cam centers
-    delaunayGC.addPointsFromCameraCenters(cams, minDist);
+    
+    fuseCut::PointCloud pointcloud(mp);
+    pointcloud.addPointsFromCameraCenters(cams, minDist);
     // add points from sfm
-    delaunayGC.addPointsFromSfM(&hexah[0], cams, sfmData);
+    pointcloud.addPointsFromSfM(&hexah[0], cams, sfmData);
+
+    DelaunayGraphCut delaunayGC(mp, pointcloud);
 
     ALICEVISION_LOG_TRACE("Generated pts:");
     for (size_t i = 0; i < delaunayGC._verticesCoords.size(); i++)

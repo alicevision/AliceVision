@@ -23,6 +23,64 @@ namespace fuseCut {
 using VertexIndex = GEO::index_t;
 using CellIndex = GEO::index_t;
 
+struct Facet
+{
+    // Associated cell
+    CellIndex cellIndex = GEO::NO_CELL;
+    
+    /// local opposite vertex index
+    VertexIndex localVertexIndex = GEO::NO_VERTEX;
+
+
+    Facet() 
+    {
+
+    }
+
+    Facet(CellIndex ci, VertexIndex lvi)
+        : cellIndex(ci),
+        localVertexIndex(lvi)
+    {
+
+    }
+
+    bool operator==(const Facet& f) const 
+    { 
+        return cellIndex == f.cellIndex && localVertexIndex == f.localVertexIndex; 
+    }
+
+    VertexIndex getIndex(int i) const
+    {
+        return ((localVertexIndex + i + 1) % 4);
+    }
+};
+
+struct Edge
+{
+    VertexIndex v0 = GEO::NO_VERTEX;
+    VertexIndex v1 = GEO::NO_VERTEX;
+
+    Edge() = default;
+
+    Edge(VertexIndex v0_, VertexIndex v1_)
+        : v0{v0_},
+        v1{v1_}
+    {}
+
+    bool operator==(const Edge& e) const 
+    { 
+        return v0 == e.v0 && v1 == e.v1; 
+    }
+
+    bool isSameUndirectionalEdge(const Edge& e) const 
+    { 
+        return (v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0); 
+    }
+};
+
+std::ostream& operator<<(std::ostream& stream, const Facet& facet);
+std::ostream& operator<<(std::ostream& stream, const Edge& edge);
+
 class Tetrahedralization
 {
 public:
@@ -136,6 +194,29 @@ public:
     {
         return _vertices;
     }
+
+    VertexIndex getVertexIndex(const Facet& f, int i) const;
+    
+    Facet mirrorFacet(const Facet& f) const;
+
+    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const
+    { 
+        return getNeighboringCellsPerVertex().at(vi); 
+    }
+
+    std::vector<CellIndex> getNeighboringCellsByEdge(const Edge& e) const;
+    
+    /**
+     * @brief Retrieves the two global indexes of neighboring cells using a facet.
+     *
+     * @param f the concerned facet
+     * @return a vector of neighboring cell indices
+     */
+    std::vector<CellIndex> getNeighboringCellsByFacet(const Facet& f) const;
+
+    double getFaceWeight(const Facet& f1) const;
+
+    Point3d cellCircumScribedSphereCentre(CellIndex ci) const;
 
 private:
     void updateVertexToCellsCache(size_t verticesCount);

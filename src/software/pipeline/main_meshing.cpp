@@ -11,6 +11,7 @@
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/fuseCut/BoundingBox.hpp>
+#include <aliceVision/fuseCut/PointCloud.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
@@ -156,7 +157,7 @@ int aliceVision_main(int argc, char* argv[])
     unsigned int seed = 0;
     fuseCut::BoundingBox boundingBox;
 
-    fuseCut::FuseParams fuseParams;
+    fuseCut::PointCloudFuseParams fuseParams;
 
     int helperPointsGridSize = 10;
     int densifyNbFront = 0;
@@ -395,9 +396,11 @@ int aliceVision_main(int argc, char* argv[])
                     if (cams.empty())
                         throw std::logic_error("No camera to make the reconstruction");
 
-                    fuseCut::DelaunayGraphCut delaunayGC(mp);
-                    delaunayGC.createDensePointCloud(
-                      &hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
+                    fuseCut::PointCloud pc(mp);
+                    pc.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
+
+                    fuseCut::DelaunayGraphCut delaunayGC(mp, pc);
+                    //delaunayGC.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
                     if (saveRawDensePointCloud)
                     {
                         ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");

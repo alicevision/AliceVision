@@ -20,61 +20,6 @@ enum class EGeometryType
     None
 };
 
-struct Facet
-{
-    // Associated cell
-    CellIndex cellIndex = GEO::NO_CELL;
-    
-    /// local opposite vertex index
-    VertexIndex localVertexIndex = GEO::NO_VERTEX;
-
-
-    Facet() 
-    {
-
-    }
-
-    Facet(CellIndex ci, VertexIndex lvi)
-        : cellIndex(ci),
-        localVertexIndex(lvi)
-    {
-
-    }
-
-    bool operator==(const Facet& f) const 
-    { 
-        return cellIndex == f.cellIndex && localVertexIndex == f.localVertexIndex; 
-    }
-
-    VertexIndex getIndex(int i) const
-    {
-        return ((localVertexIndex + i + 1) % 4);
-    }
-};
-
-struct Edge
-{
-    VertexIndex v0 = GEO::NO_VERTEX;
-    VertexIndex v1 = GEO::NO_VERTEX;
-
-    Edge() = default;
-
-    Edge(VertexIndex v0_, VertexIndex v1_)
-        : v0{v0_},
-        v1{v1_}
-    {}
-
-    bool operator==(const Edge& e) const 
-    { 
-        return v0 == e.v0 && v1 == e.v1; 
-    }
-
-    bool isSameUndirectionalEdge(const Edge& e) const 
-    { 
-        return (v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0); 
-    }
-};
-
 struct GeometryIntersection
 {
     EGeometryType type = EGeometryType::None;
@@ -138,8 +83,6 @@ struct GeometryIntersection
 };
 
 std::ostream& operator<<(std::ostream& stream, const EGeometryType type);
-std::ostream& operator<<(std::ostream& stream, const Facet& facet);
-std::ostream& operator<<(std::ostream& stream, const Edge& edge);
 std::ostream& operator<<(std::ostream& stream, const GeometryIntersection& intersection);
 
 class TetrahedronsRayMarching
@@ -189,26 +132,10 @@ private:
                                                         const Eigen::Vector3d & B, 
                                                         const Eigen::Vector3d & C) const;
 
-    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const { return _tetrahedralization.getNeighboringCellsPerVertex().at(vi); }
-
     GeometryIntersection rayIntersectTriangle(const Facet& facet,
                                             const Eigen::Vector3d & lastIntersectPt,
                                             Eigen::Vector3d & intersectPt,
-                                            bool& ambiguous) const;
-
-    std::vector<CellIndex> getNeighboringCellsByEdge(const Edge& e) const
-    {
-        const std::vector<CellIndex> & v0ci = _tetrahedralization.getNeighboringCellsPerVertex().at(e.v0);
-        const std::vector<CellIndex> & v1ci = _tetrahedralization.getNeighboringCellsPerVertex().at(e.v1);
-
-        std::vector<CellIndex> neighboringCells;
-        std::set_intersection(v0ci.begin(), v0ci.end(), v1ci.begin(), v1ci.end(), std::back_inserter(neighboringCells));
-
-        return neighboringCells;
-    }
-
-    VertexIndex getVertexIndex(const Facet& f, int i) const;
-    Facet mirrorFacet(const Facet& f) const;
+                                            bool& ambiguous) const;    
 
 private:
     const Tetrahedralization & _tetrahedralization;

@@ -16,6 +16,7 @@
 #include <aliceVision/fuseCut/BoundingBox.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
+#include <aliceVision/fuseCut/PointCloud.hpp>
 
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
@@ -95,8 +96,12 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     lhexah[6].x = bbMax.x(); lhexah[6].y = bbMax.y(); lhexah[6].z = bbMax.z();
     lhexah[7].x = bbMin.x(); lhexah[7].y = bbMax.y(); lhexah[7].z = bbMax.z();
 
-    fuseCut::DelaunayGraphCut delaunayGC(mp);
-    delaunayGC.createDensePointCloud(&lhexah[0], cams, &sfmData, nullptr);
+
+
+    fuseCut::PointCloud pointcloud(mp);
+    pointcloud.createDensePointCloud(&lhexah[0], cams, &sfmData, nullptr);
+
+    fuseCut::DelaunayGraphCut delaunayGC(mp, pointcloud);
     delaunayGC.createGraphCut(&lhexah[0], cams);
     delaunayGC.graphCutPostProcessing(&lhexah[0]);
     mesh::Mesh * mesh = delaunayGC.createMesh(0);

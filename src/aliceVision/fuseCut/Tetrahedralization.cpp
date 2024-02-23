@@ -6,9 +6,11 @@
 
 #include "Tetrahedralization.hpp"
 
+#include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/system/Logger.hpp>
+
 #include <geogram/delaunay/delaunay.h>
 #include <geogram/delaunay/delaunay_3d.h>
-#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -234,6 +236,147 @@ bool Tetrahedralization::isInside(const CellIndex & ci, const Eigen::Vector3d & 
     }
 
     return true;
+}
+
+VertexIndex Tetrahedralization::getVertexIndex(const Facet& f, int i) const
+{
+    return cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
+}
+
+ Facet Tetrahedralization::mirrorFacet(const Facet& f) const
+{
+    const std::array<VertexIndex, 3> facetVertices = {getVertexIndex(f, 0), getVertexIndex(f, 1), getVertexIndex(f, 2)};
+
+    Facet out;
+    out.cellIndex = cell_adjacent(f.cellIndex, f.localVertexIndex);
+    if (out.cellIndex != GEO::NO_CELL)
+    {
+        // Search for the vertex in adjacent cell which doesn't exist in input facet.
+        for (int k = 0; k < 4; ++k)
+        {
+            CellIndex out_vi = cell_vertex(out.cellIndex, k);
+            if (std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
+            {
+                out.localVertexIndex = k;
+                return out;
+            }
+        }
+    }
+    return out;
+}
+
+
+std::vector<CellIndex> Tetrahedralization::getNeighboringCellsByEdge(const Edge& e) const
+{
+    const std::vector<CellIndex> & v0ci = getNeighboringCellsPerVertex().at(e.v0);
+    const std::vector<CellIndex> & v1ci = getNeighboringCellsPerVertex().at(e.v1);
+
+    std::vector<CellIndex> neighboringCells;
+    std::set_intersection(v0ci.begin(), v0ci.end(), v1ci.begin(), v1ci.end(), std::back_inserter(neighboringCells));
+
+    return neighboringCells;
+}
+
+std::vector<CellIndex> Tetrahedralization::getNeighboringCellsByFacet(const Facet& f) const
+{
+    std::vector<CellIndex> neighboringCells;
+    neighboringCells.push_back(f.cellIndex);
+
+    const Facet mFacet = mirrorFacet(f);
+    if (!isInvalidOrInfiniteCell(mFacet.cellIndex))
+        neighboringCells.push_back(mFacet.cellIndex);
+
+    return neighboringCells;
+}
+
+
+double Tetrahedralization::getFaceWeight(const Facet& f1) const
+{
+    const Facet f2 = mirrorFacet(f1);
+    const Point3d s1 = cellCircumScribedSphereCentre(f1.cellIndex);
+    const Point3d s2 = cellCircumScribedSphereCentre(f2.cellIndex);
+
+    const Point3d A = _vertices[getVertexIndex(f1, 0)];
+    const Point3d B = _vertices[getVertexIndex(f1, 1)];
+    const Point3d C = _vertices[getVertexIndex(f1, 2)];
+
+    const Point3d n = cross((B - A).normalize(), (C - A).normalize()).normalize();
+
+    double a1 = fabs(angleBetwV1andV2(n, (A - s1).normalize()));
+    if (a1 > 90)
+    {
+        a1 = 180.0 - a1;
+    }
+
+    double a2 = fabs(angleBetwV1andV2(n, (A - s2).normalize()));
+    if (a2 > 90)
+    {
+        a2 = 180.0 - a2;
+    }
+
+    a1 = a1 * ((double)M_PI / 180.0);
+    a2 = a2 * ((double)M_PI / 180.0);
+
+    double wf = 1.0 - std::min(std::cos(a1), std::cos(a2));
+
+    if ((std::isnan(wf)) || (wf < 0.0f) || (wf > 1.0f))
+        return 1.0;
+
+    return wf;
+}
+
+Point3d Tetrahedralization::cellCircumScribedSphereCentre(CellIndex ci) const
+{
+    // http://www.mps.mpg.de/homes/daly/CSDS/t4h/tetra.htm
+
+    const Point3d r0 = _vertices[cell_vertex(ci, 0)];
+    const Point3d r1 = _vertices[cell_vertex(ci, 1)];
+    const Point3d r2 = _vertices[cell_vertex(ci, 2)];
+    const Point3d r3 = _vertices[cell_vertex(ci, 3)];
+
+    const Point3d d1 = r1 - r0;
+    const Point3d d2 = r2 - r0;
+    const Point3d d3 = r3 - r0;
+
+    float x =
+      -(-(d1.x * d2.y * d3.z * d1.x - d1.x * d2.z * d3.y * (d1.x) + d1.y * d2.y * d3.z * d1.y - d1.y * d2.z * d3.y * d1.y +
+          d1.z * d2.y * d3.z * d1.z - d1.z * d2.z * d3.y * d1.z - d1.y * d2.x * d3.z * d2.x + d1.z * d2.x * d3.y * d2.x -
+          d1.y * d2.y * d3.z * d2.y + d1.z * d2.y * d3.y * d2.y - d1.y * d2.z * d3.z * d2.z + d1.z * d2.z * d3.y * d2.z +
+          d1.y * d2.z * d3.x * d3.x - d1.z * d2.y * d3.x * d3.x + d1.y * d2.z * d3.y * d3.y - d1.z * d2.y * d3.y * d3.y +
+          d1.y * d2.z * d3.z * d3.z - d1.z * d2.y * d3.z * d3.z) /
+        (2 * d1.x * d2.y * d3.z - 2 * d1.x * d2.z * d3.y - 2 * d1.y * d2.x * d3.z + 2 * d1.y * d2.z * d3.x + 2 * d1.z * d2.x * d3.y -
+         2 * d1.z * d2.y * d3.x));
+    float y =
+      -((d1.x * d2.x * d3.z * d1.x - d1.x * d2.z * d3.x * d1.x + d1.y * d2.x * d3.z * d1.y - d1.y * d2.z * d3.x * d1.y +
+         d1.z * d2.x * d3.z * d1.z - d1.z * d2.z * d3.x * d1.z - d1.x * d2.x * d3.z * d2.x + d1.z * d2.x * d3.x * d2.x -
+         d1.x * d2.y * d3.z * d2.y + d1.z * d2.y * d3.x * d2.y - d1.x * d2.z * d3.z * d2.z + d1.z * d2.z * d3.x * d2.z +
+         d1.x * d2.z * d3.x * d3.x - d1.z * d2.x * d3.x * d3.x + d1.x * d2.z * d3.y * d3.y - d1.z * d2.x * d3.y * d3.y +
+         d1.x * d2.z * d3.z * d3.z - d1.z * d2.x * d3.z * d3.z) /
+        (2 * d1.x * d2.y * d3.z - 2 * d1.x * d2.z * d3.y - 2 * d1.y * d2.x * d3.z + 2 * d1.y * d2.z * d3.x + 2 * d1.z * d2.x * d3.y -
+         2 * d1.z * d2.y * d3.x));
+    float z =
+      -(-(d1.x * d2.x * d3.y * d1.x - d1.x * d2.y * d3.x * d1.x + d1.y * d2.x * d3.y * d1.y - d1.y * d2.y * d3.x * d1.y +
+          d1.z * d2.x * d3.y * d1.z - d1.z * d2.y * d3.x * d1.z - d1.x * d2.x * d3.y * d2.x + d1.y * d2.x * d3.x * d2.x -
+          d1.x * d2.y * d3.y * d2.y + d1.y * d2.y * d3.x * d2.y - d1.x * d2.z * d3.y * d2.z + d1.y * d2.z * d3.x * d2.z +
+          d1.x * d2.y * d3.x * d3.x - d1.y * d2.x * d3.x * d3.x + d1.x * d2.y * d3.y * d3.y - d1.y * d2.x * d3.y * d3.y +
+          d1.x * d2.y * d3.z * d3.z - d1.y * d2.x * d3.z * d3.z) /
+        (2 * d1.x * d2.y * d3.z - 2 * d1.x * d2.z * d3.y - 2 * d1.y * d2.x * d3.z + 2 * d1.y * d2.z * d3.x + 2 * d1.z * d2.x * d3.y -
+         2 * d1.z * d2.y * d3.x));
+
+    return r0 + Point3d(x, y, z);
+}
+
+
+std::ostream& operator<<(std::ostream& stream, const Facet& facet)
+{
+    stream << "c:" << facet.cellIndex << ",v:" << facet.localVertexIndex;
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Edge& edge)
+{
+    stream << "v0:" << edge.v0 << ",v1:" << edge.v1;
+    return stream;
 }
 
 }
