@@ -40,8 +40,6 @@ class Fuser
     float computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale);
     float computeAveragePixelSizeInHexahedron(Point3d* hexah, const sfmData::SfMData& sfmData);
 
-    Voxel estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim, const sfmData::SfMData* sfmData = nullptr);
-
   private:
     bool updateInSurr(float pixToleranceFactor,
                       int pixSizeBall,
@@ -57,12 +55,7 @@ class Fuser
 
 unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale);
 
-std::string generateTempPtsSimsFiles(const std::string& tmpDir,
-                                     mvsUtils::MultiViewParams& mp,
-                                     bool addRandomNoise = false,
-                                     float percNoisePts = 0.0,
-                                     int noisPixSizeDistHalfThr = 0);
-void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& depthMapsPtsSimsTmpDir);
+
 
 }  // namespace fuseCut
 }  // namespace aliceVision

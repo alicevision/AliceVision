@@ -6,7 +6,10 @@
 
 #pragma once
 
+
 #include <aliceVision/types.hpp>
+
+#include <memory>
 #include <Eigen/Dense>
 
 namespace aliceVision {
