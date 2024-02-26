@@ -66,9 +66,9 @@ from pyalicevision import camera as av
 # - void setDistortionParams(vector<double>& distortionParams)
 # - template<class F> void setDistortionParamsFn(F&& callback) / not binded
 # - template<class F> void setDistortionParamsFn(size_t count, F&& callback) / not binded
-# - vector<double> getParams()
-# - size_t getParamsSize()
-# - updateFromParams(vector<double>& params)
+# - vector<double> getParams() => DONE
+# - size_t getParamsSize() => DONE
+# - updateFromParams(vector<double>& params) => DONE
 # - float getMaximalDistortion(double min_radius, double max_radius)
 # - Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(Vec2& pt) / Matrix and Vec2 not binded
 # - Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(Vec2& pt) / Matrix and Vec2 not binded
@@ -89,23 +89,23 @@ from pyalicevision import camera as av
 # - Vec2 cam2ima(Vec2 pt) / Vec2 not binded
 # - Eigen::Matrix<double, 2, 2> getDerivativeIma2CamWrtScale(const Vec2& p) /
 #                   Matrix and Vec2 not binded
-# - Eigen::Matrix2d getDerivativeIma2CamWrtPoint()
-# - Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint()
+# - Eigen::Matrix2d getDerivativeIma2CamWrtPoint() / Matrix not binded
+# - Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() / Matrix not binded
 # - void rescale(float factorW, float factorH)
-# - bool updateFromParams(vector<double>& params)
 # - bool importFromParams(vector<double>& params, Version& inputVersion)
 # - [inine] void setInitialScale(Vec2& initialScale) / Vec2 not binded
-# - [inline] Vec2 getInitialScale()
-# - [inline] void setRatioLocked(bool locked)
-# - [inline] bool isRatioLocked()
+# - [inline] Vec2 getInitialScale() / Vec2 not binded
+# - [inline] void setRatioLocked(bool locked) => DONE
+# - [inline] bool isRatioLocked() => DONE
 #
 ### Inherited functions (IntrinsicBase):
-# - [inline] isLocked()
+# - [inline] isLocked() => DONE
 # - [inline] unsigned int w() => DONE
 # - [inline] unsigned int h() => DONE
 # - [inline] double sensorWidth() => DONE
 # - [inline] double sensorHeight() => DONE
-# - [inline] string& serialNumber()
+# - [inline] string& serialNumber() => DONE
+# - [inline] EInitMode getInitializationMode() => DONE
 # - inline bool operator!=(const IntrinsicBase& other)
 # - Vec2 project(geometry::Pose3& pose, Vec4& pt3D, bool applyDistortion = true) /
 #                    Vec2, Pose3 and Vec4 not binded
@@ -118,26 +118,28 @@ from pyalicevision import camera as av
 #                    Matrix and Vec3 not binded
 # - [inline] Vec2 residual(geometry::Pose3& pose, Vec4& X, Vec2& x)
 # - [inline] Mat2X residuals(const geometry::Pose3& pose, const Mat3X& X, const Mat2X& x)
-# - [inline] void lock()
-# - [inline] void unlock()
+# - [inline] void lock() => DONE
+# - [inline] void unlock() => DONE
 # - [inline] void setWidth(unsigned int width) => DONE
 # - [inline] void setHeight(unsigned int height) => DONE
 # - [inline] void setSensorWidth(double width) => DONE
 # - [inline] void setSensorHeight(double height) => DONE
-# - [inline] void setSerialNumber(std::string& serialNumber)
-# - [inline] void setInitializationMode(EInitMode initializationMode)
+# - [inline] void setSerialNumber(std::string& serialNumber) => DONE
+# - [inline] void setInitializationMode(EInitMode initializationMode) => DONE
 # - string getTypeStr() => DONE
 # - bool isVisible(Vec2& pix) / Vec2 not binded
 # - bool isVisible(Vec2f& pix) / Vec2f not binded
 # - float getMaximalDistortion(double min_radius, double max_radius)
 # - std::size_t hashValue()
 # - void rescale(float factorW, float factorH)
-# - void initializeState()
-# - EEstimatorParameterState getState()
-# - void setState(EEstimatorParameterState state)
+# - void initializeState() => DONE
+# - EEstimatorParameterState getState() => DONE
+# - void setState(EEstimatorParameterState state) => DONE
 # - [inline] Vec3 applyIntrinsicExtrinsic(geometry::Pose3& pose, IntrinsicBase* intrinsic,
 #                   Vec2& x) / Vec3, Pose3 and Vec2 not binded
 ##################
+
+DEFAUT_PARAMETERS = (1.0, 1.0, 0.0, 0.0)
 
 def test_pinhole_default_constructor():
     """ Test creating a default Pinhole object and checking its default values
@@ -235,3 +237,86 @@ def test_pinhole_is_valid():
     # Width and height are forcibly set to 0, which should make the model invalid
     intrinsic3 = av.Pinhole(0, 0, 0, 0, 0, 0)
     assert not intrinsic3.isValid()
+
+
+def test_pinhole_get_set_params():
+    """ Test creating a Pinhole object, getting and setting its parameters with the
+    parent's class getters and setters. """
+    intrinsic = av.Pinhole()
+    params = intrinsic.getParams()
+
+    assert len(params) == intrinsic.getParamsSize()
+    assert params == DEFAUT_PARAMETERS
+
+    params = (2.0, 2.0, 1.0, 1.0)
+
+    assert params != intrinsic.getParams()
+    intrinsic.updateFromParams(params)
+    assert params == intrinsic.getParams()
+
+
+def test_pinhole_lock_unlock():
+    """ Test creating a Pinhole object and getting/updating its lock status. """
+    intrinsic = av.Pinhole()
+    assert not intrinsic.isLocked()
+
+    intrinsic.lock()
+    assert intrinsic.isLocked()
+    intrinsic.unlock()
+    assert not intrinsic.isLocked()
+
+
+def test_pinhole_ratio_lock_unlock():
+    """ Test creating a Pinhole object and getting/updating the lock status of its ratio. """
+    intrinsic = av.Pinhole()
+    assert intrinsic.isRatioLocked()
+
+    intrinsic.setRatioLocked(False)
+    assert not intrinsic.isRatioLocked()
+    intrinsic.setRatioLocked(True)
+    assert intrinsic.isRatioLocked()
+
+
+def test_pinhole_get_set_serial_number():
+    """ Test creating a Pinhole object and getting/updating its serial number. """
+    intrinsic = av.Pinhole()
+    assert intrinsic.serialNumber() == ""
+
+    serialNumber = "0123456"
+    intrinsic.setSerialNumber(serialNumber)
+    assert intrinsic.serialNumber() == serialNumber
+
+
+def test_pinhole_get_set_state():
+    """" Test creating Pinhole objects, initializing their state, and getting/updating
+    it with the getters and setters. """
+    intrinsic1 = av.Pinhole()
+    assert intrinsic1.getState() == av.EEstimatorParameterState_REFINED
+    assert not intrinsic1.isLocked()
+
+    # If the intrinsic is not locked, the state should be initialized to "REFINED"
+    intrinsic1.initializeState()
+    assert intrinsic1.getState() == av.EEstimatorParameterState_REFINED
+    intrinsic1.setState(av.EEstimatorParameterState_IGNORED)
+    assert intrinsic1.getState() == av.EEstimatorParameterState_IGNORED
+
+    intrinsic2 = av.Pinhole()
+    assert intrinsic2.getState() == av.EEstimatorParameterState_REFINED
+    intrinsic2.lock()
+    assert intrinsic2.isLocked()
+
+    # If the intrinsic is locked, the state should be initialized to "CONSTANT"
+    intrinsic2.initializeState()
+    assert intrinsic2.getState() == av.EEstimatorParameterState_CONSTANT
+    intrinsic2.setState(av.EEstimatorParameterState_REFINED)
+    assert intrinsic2.getState() == av.EEstimatorParameterState_REFINED
+
+
+def test_pinhole_get_set_initialization_mode():
+    """ Test creating an Pinhole object and getting/updating its initialization mode
+    with the dedicated getters and setters. """
+    intrinsic = av.Pinhole()
+    assert intrinsic.getInitializationMode() == av.EInitMode_NONE
+
+    intrinsic.setInitializationMode(av.EInitMode_ESTIMATED)
+    assert intrinsic.getInitializationMode() == av.EInitMode_ESTIMATED
