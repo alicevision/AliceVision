@@ -3,7 +3,6 @@ set(stl_files_headers
   bitmask.hpp
   DynamicBitset.hpp
   FlatMap.hpp
-  FlatSet.hpp
   hash.hpp
   indexedSort.hpp
   stl.hpp

@@ -11,7 +11,6 @@
 %include <aliceVision/stl/Bitmask.i>
 %include <aliceVision/stl/DynamicBitset.i>
 %include <aliceVision/stl/FlatMap.i>
-%include <aliceVision/stl/FlatSet.i>
 %include <aliceVision/stl/Hash.i>
 %include <aliceVision/stl/IndexedSort.i>
 %include <aliceVision/stl/MapUtils.i>
