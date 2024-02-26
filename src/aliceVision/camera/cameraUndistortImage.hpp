@@ -127,7 +127,7 @@ void UndistortImage(const image::Image<T>& imageIn,
         {
             const Vec2 undisto_pix(x + xOffset, y + yOffset);
             // compute coordinates with distortion
-            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
+            const Vec2 disto_pix = intrinsicPtr->getDistortedPixel(undisto_pix + ppCorrection);
 
             // pick pixel if it is in the image domain
             if (imageIn.contains(disto_pix(1), disto_pix(0)))

@@ -46,7 +46,7 @@ void PointsToMat(const IntrinsicBase* cam, const PointFeatures& vec_feats, MatT&
     for (PointFeatures::const_iterator iter = vec_feats.begin(); iter != vec_feats.end(); ++iter, ++i)
     {
         if (cam && cam->isValid())
-            m.col(i) = cam->get_ud_pixel(Vec2(iter->x(), iter->y()));
+            m.col(i) = cam->getUndistortedPixel(Vec2(iter->x(), iter->y()));
         else
             m.col(i) << iter->x(), iter->y();
     }
@@ -226,7 +226,7 @@ void StructureEstimationFromKnownPoses::filter(const SfMData& sfmData, const Pai
 
                             const Pose3 pose = sfmData.getPose(*view).getTransform();
                             const Vec2 pt = regionsPerView.getRegions(imaIndex, subTrack.descType).GetRegionPosition(featIndex);
-                            trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(pt));
+                            trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->getUndistortedPixel(pt));
                         }
                         const Vec3 Xs = trianObj.compute();
                         if (trianObj.minDepth() > 0 && trianObj.error() / (double)trianObj.size() < 4.0)

@@ -335,14 +335,14 @@ class IntrinsicBase
      * @param[in] p The point
      * @return The undistorted pixel
      */
-    virtual Vec2 get_ud_pixel(const Vec2& p) const = 0;
+    virtual Vec2 getUndistortedPixel(const Vec2& p) const = 0;
 
     /**
      * @brief Return the distorted pixel (with added distortion)
      * @param[in] p The undistorted point
      * @return The distorted pixel
      */
-    virtual Vec2 get_d_pixel(const Vec2& p) const = 0;
+    virtual Vec2 getDistortedPixel(const Vec2& p) const = 0;
 
     /**
      * @brief Set The intrinsic disto initialization mode

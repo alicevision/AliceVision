@@ -75,9 +75,9 @@ bool IntrinsicScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) const
     return true;
 }
 
-Vec2 IntrinsicScaleOffsetDisto::get_ud_pixel(const Vec2& p) const { return cam2ima(removeDistortion(ima2cam(p))); }
+Vec2 IntrinsicScaleOffsetDisto::getUndistortedPixel(const Vec2& p) const { return cam2ima(removeDistortion(ima2cam(p))); }
 
-Vec2 IntrinsicScaleOffsetDisto::get_d_pixel(const Vec2& p) const { return cam2ima(addDistortion(ima2cam(p))); }
+Vec2 IntrinsicScaleOffsetDisto::getDistortedPixel(const Vec2& p) const { return cam2ima(addDistortion(ima2cam(p))); }
 
 bool IntrinsicScaleOffsetDisto::updateFromParams(const std::vector<double>& params)
 {

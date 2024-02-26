@@ -59,8 +59,8 @@ from pyalicevision import camera as av
 # - bool hasDistortion()
 # - Vec2 addDistortion(Vec2& p) / Vec2 not binded
 # - Vec2 removeDistortion(Vec2& p) / Vec2 not binded
-# - Vec2 get_ud_pixel(Vec2& p) / Vec2 not binded
-# - Vec2 get_d_pixel(Vec2& p) / Vec2 not binded
+# - Vec2 getUndistortedPixel(Vec2& p) / Vec2 not binded
+# - Vec2 getDistortedPixel(Vec2& p) / Vec2 not binded
 # - size_t getDistortionParamsSize()
 # - vector<double> getDistortionParams()
 # - void setDistortionParams(vector<double>& distortionParams)

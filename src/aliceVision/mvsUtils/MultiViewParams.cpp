@@ -484,7 +484,7 @@ bool MultiViewParams::isPixelInSourceImage(const Pixel& pixRC, int camId, int ma
     const camera::IntrinsicBase* intrinsicPtr = _sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
     const double s = getDownscaleFactor(camId);
-    Vec2 pix_disto = intrinsicPtr->get_d_pixel({pixRC.x * s, pixRC.y * s}) / s;
+    Vec2 pix_disto = intrinsicPtr->getDistortedPixel({pixRC.x * s, pixRC.y * s}) / s;
     return isPixelInImage(Pixel(pix_disto.x(), pix_disto.y()), camId, margin);
 }
 

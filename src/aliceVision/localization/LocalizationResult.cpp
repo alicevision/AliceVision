@@ -53,7 +53,7 @@ const Mat LocalizationResult::retrieveUndistortedPt2D() const
     Mat pt2Dundistorted = Mat2X(2, numPts);
     for (std::size_t iPoint = 0; iPoint < numPts; ++iPoint)
     {
-        pt2Dundistorted.col(iPoint) = intrinsics.get_ud_pixel(distorted.col(iPoint));
+        pt2Dundistorted.col(iPoint) = intrinsics.getUndistortedPixel(distorted.col(iPoint));
     }
     return pt2Dundistorted;
 }

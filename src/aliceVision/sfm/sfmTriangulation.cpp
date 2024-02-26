@@ -61,7 +61,7 @@ void StructureComputationBlind::triangulate(sfmData::SfMData& sfmData, std::mt19
                     }
 
                     const Pose3 pose = sfmData.getPose(*view).getTransform();
-                    trianObj.add(pinHoleCam->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs.second.getCoordinates()));
+                    trianObj.add(pinHoleCam->getProjectiveEquivalent(pose), cam->getUndistortedPixel(itObs.second.getCoordinates()));
                 }
             }
             if (trianObj.size() < 2)
@@ -257,7 +257,7 @@ Vec3 StructureComputationRobust::trackSampleTriangulation(const sfmData::SfMData
         }
 
         const Pose3 pose = sfmData.getPose(*view).getTransform();
-        trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(itObs->second.getCoordinates()));
+        trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->getUndistortedPixel(itObs->second.getCoordinates()));
     }
     return trianObj.compute();
 }

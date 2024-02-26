@@ -136,7 +136,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData, std::map<IndexT, calibra
 
                     Eigen::Vector2d curpt;
                     curpt = detector.getCorners()[cid].center;
-                    curpt = cameraPinhole->get_ud_pixel(curpt);
+                    curpt = cameraPinhole->getUndistortedPixel(curpt);
 
                     refpts.push_back(refpt);
                     points.push_back(curpt);
