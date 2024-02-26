@@ -15,6 +15,7 @@
 %import <aliceVision/sensorDB/SensorDB.i>
 %import <aliceVision/sfmDataIO/SfMDataIO.i>
 %import <aliceVision/sfmData/SfMData.i>
+%import <aliceVision/stl/Stl.i>
 
 %{
 #include <aliceVision/version.hpp>

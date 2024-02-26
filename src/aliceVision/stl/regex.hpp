@@ -19,7 +19,7 @@ inline std::regex simpleFilterToRegex(const std::string& simpleFilter)
     filterToRegex = std::regex_replace(filterToRegex, std::regex("\\@"), std::string("[0-9]+"));  // one @ correspond to one or more digits
     filterToRegex = std::regex_replace(filterToRegex, std::regex("\\#"), std::string("[0-9]"));   // each # in pattern correspond to a digit
 
-    ALICEVISION_LOG_TRACE("filterToRegex: " << filterToRegex);
+    // ALICEVISION_LOG_TRACE("filterToRegex: " << filterToRegex);
     return std::regex(filterToRegex);
 }
 
@@ -31,7 +31,7 @@ inline std::regex simpleFilterToRegex_noThrow(const std::string& simpleFilter)
     }
     catch (std::regex_error& e)
     {
-        ALICEVISION_LOG_TRACE("Failed to create simpleFilterRegex from: " << simpleFilter << " => " << e.what());
+        // ALICEVISION_LOG_TRACE("Failed to create simpleFilterRegex from: " << simpleFilter << " => " << e.what());
         return std::regex();
     }
 }
