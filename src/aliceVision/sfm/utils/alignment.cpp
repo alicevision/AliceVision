@@ -101,6 +101,7 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
         return true;
     }
 
+
     // Compute rigid transformation p'i = S R pi + t
     double S;
     Vec3 t;
@@ -113,9 +114,82 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     ALICEVISION_LOG_DEBUG("There are " << reconstructedCommonViewIds.size() << " common cameras and " << inliers.size()
                                        << " were used to compute the similarity transform.");
 
-    *out_S = S;
-    *out_R = R;
-    *out_t = t;
+
+    //Check if selected point cloud have enough information to give a correct information
+    Eigen::Vector3d meanA = Eigen::Vector3d::Zero();
+    Eigen::Vector3d meanB = Eigen::Vector3d::Zero();
+
+    for (auto item : inliers)
+    {
+        meanA += xA.col(item);
+        meanB += xB.col(item);
+    }
+
+    meanA /= inliers.size();
+    meanB /= inliers.size();
+
+    Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
+    for (auto item : inliers)
+    {
+        cov += (xA.col(item) - meanA) * (xB.col(item) - meanA).transpose();
+    }
+
+    Eigen::JacobiSVD<Eigen::Matrix3d, ComputeFullU | ComputeFullV> svd(cov);
+    double ratio = svd.singularValues()[0] / svd.singularValues()[1];
+    if (ratio < 1e3)
+    {
+        *out_S = S;
+        *out_R = R;
+        *out_t = t;
+
+        return true;
+    }
+
+    ALICEVISION_LOG_INFO("Trajectory seems to be singular. Use another algorithm.");
+    
+
+    // If point cloud is badly conditionned let's try to add some
+    // Points from the axis
+    // Move input point in appropriate container
+    xA = Mat(3, reconstructedCommonViewIds.size() * 4);
+    xB = Mat(3, reconstructedCommonViewIds.size() * 4);
+    for (std::size_t i = 0; i < reconstructedCommonViewIds.size(); ++i)
+    {
+        auto viewIdPair = reconstructedCommonViewIds[i];
+        auto poseA = sfmDataA.getPose(sfmDataA.getView(viewIdPair.first)).getTransform();
+        auto poseB = sfmDataB.getPose(sfmDataB.getView(viewIdPair.second)).getTransform();
+
+        
+        poseA = poseA.transformSRt(S,Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero());
+        poseA = poseA.inverse();
+        poseB = poseB.inverse();
+        
+        xA.col(i * 4 + 0) = poseA(Eigen::Vector3d::Zero());
+        xA.col(i * 4 + 1) = poseA(Eigen::Vector3d::UnitX());
+        xA.col(i * 4 + 2) = poseA(Eigen::Vector3d::UnitY());
+        xA.col(i * 4 + 3) = poseA(Eigen::Vector3d::UnitZ());
+
+        xB.col(i * 4 + 0) = poseB(Eigen::Vector3d::Zero());
+        xB.col(i * 4 + 1) = poseB(Eigen::Vector3d::UnitX());
+        xB.col(i * 4 + 2) = poseB(Eigen::Vector3d::UnitY());
+        xB.col(i * 4 + 3) = poseB(Eigen::Vector3d::UnitZ());
+    }
+
+    inliers.clear();
+    double nS = 1.0;
+    Eigen::Vector3d nt;
+    Eigen::Matrix3d nR;
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, nS, nt, nR, inliers, true))
+    {
+        return false;
+    }
+
+    geometry::Pose3 p;
+    p = p.transformSRt(S, R, t);
+    
+    *out_S = S * nS;
+    *out_R = nR;
+    *out_t = nt;
 
     return true;
 }
