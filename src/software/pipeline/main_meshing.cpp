@@ -8,8 +8,9 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
+#include <aliceVision/fuseCut/BoundingBox.hpp>
+#include <aliceVision/fuseCut/PointCloud.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
@@ -20,6 +21,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/fuseCut/GraphFiller.hpp>
+#include <aliceVision/fuseCut/Mesher.hpp>
 
 #include <Eigen/Geometry>
 
@@ -128,156 +131,6 @@ void removeLandmarksWithoutObservations(sfmData::SfMData& sfmData)
     }
 }
 
-/// BoundingBox Structure stocking ordered values from the command line
-struct BoundingBox
-{
-    Eigen::Vector3d translation = Eigen::Vector3d::Zero();
-    Eigen::Vector3d rotation = Eigen::Vector3d::Zero();
-    Eigen::Vector3d scale = Eigen::Vector3d::Zero();
-
-    inline bool isInitialized() const { return scale(0) != 0.0; }
-
-    Eigen::Matrix4d modelMatrix() const
-    {
-        // Compute the translation matrix
-        Eigen::Matrix4d translateMat = Eigen::Matrix4d::Identity();
-        translateMat.col(3).head<3>() << translation.x(), translation.y(), translation.z();
-
-        // Compute the rotation matrix from quaternion made with Euler angles in that order: ZXY (same as Qt algorithm)
-        Eigen::Matrix4d rotateMat = Eigen::Matrix4d::Identity();
-
-        {
-            double pitch = rotation.x() * M_PI / 180;
-            double yaw = rotation.y() * M_PI / 180;
-            double roll = rotation.z() * M_PI / 180;
-
-            pitch *= 0.5;
-            yaw *= 0.5;
-            roll *= 0.5;
-
-            const double cy = std::cos(yaw);
-            const double sy = std::sin(yaw);
-            const double cr = std::cos(roll);
-            const double sr = std::sin(roll);
-            const double cp = std::cos(pitch);
-            const double sp = std::sin(pitch);
-            const double cycr = cy * cr;
-            const double sysr = sy * sr;
-
-            const double w = cycr * cp + sysr * sp;
-            const double x = cycr * sp + sysr * cp;
-            const double y = sy * cr * cp - cy * sr * sp;
-            const double z = cy * sr * cp - sy * cr * sp;
-
-            Eigen::Quaterniond quaternion(w, x, y, z);
-            rotateMat.block<3, 3>(0, 0) = quaternion.matrix();
-        }
-
-        // Compute the scale matrix
-        Eigen::Matrix4d scaleMat = Eigen::Matrix4d::Identity();
-        scaleMat.diagonal().head<3>() << scale.x(), scale.y(), scale.z();
-
-        // Model matrix
-        Eigen::Matrix4d modelMat = translateMat * rotateMat * scaleMat;
-
-        return modelMat;
-    }
-
-    void toHexahedron(Point3d* hexah) const
-    {
-        Eigen::Matrix4d modelMat = modelMatrix();
-
-        // Retrieve the eight vertices of the bounding box
-        // Based on VoxelsGrid::getHexah implementation
-        Eigen::Vector4d origin = Eigen::Vector4d(-1, -1, -1, 1);
-        Eigen::Vector4d vvx = Eigen::Vector4d(2, 0, 0, 0);
-        Eigen::Vector4d vvy = Eigen::Vector4d(0, 2, 0, 0);
-        Eigen::Vector4d vvz = Eigen::Vector4d(0, 0, 2, 0);
-
-        Eigen::Vector4d vertex0 = modelMat * origin;
-        Eigen::Vector4d vertex1 = modelMat * (origin + vvx);
-        Eigen::Vector4d vertex2 = modelMat * (origin + vvx + vvy);
-        Eigen::Vector4d vertex3 = modelMat * (origin + vvy);
-        Eigen::Vector4d vertex4 = modelMat * (origin + vvz);
-        Eigen::Vector4d vertex5 = modelMat * (origin + vvz + vvx);
-        Eigen::Vector4d vertex6 = modelMat * (origin + vvz + vvx + vvy);
-        Eigen::Vector4d vertex7 = modelMat * (origin + vvz + vvy);
-
-        // Apply those eight vertices to the hexah
-        hexah[0] = Point3d(vertex0.x(), vertex0.y(), vertex0.z());
-        hexah[1] = Point3d(vertex1.x(), vertex1.y(), vertex1.z());
-        hexah[2] = Point3d(vertex2.x(), vertex2.y(), vertex2.z());
-        hexah[3] = Point3d(vertex3.x(), vertex3.y(), vertex3.z());
-        hexah[4] = Point3d(vertex4.x(), vertex4.y(), vertex4.z());
-        hexah[5] = Point3d(vertex5.x(), vertex5.y(), vertex5.z());
-        hexah[6] = Point3d(vertex6.x(), vertex6.y(), vertex6.z());
-        hexah[7] = Point3d(vertex7.x(), vertex7.y(), vertex7.z());
-    }
-
-    static BoundingBox fromHexahedron(const Point3d* hexah)
-    {
-        BoundingBox bbox;
-
-        // Compute the scale
-        bbox.scale(0) = (hexah[0] - hexah[1]).size() / 2.;
-        bbox.scale(1) = (hexah[0] - hexah[3]).size() / 2.;
-        bbox.scale(2) = (hexah[0] - hexah[4]).size() / 2.;
-
-        // Compute the translation
-        Point3d cg(0., 0., 0.);
-        for (int i = 0; i < 8; i++)
-        {
-            cg += hexah[i];
-        }
-        cg /= 8.;
-
-        bbox.translation(0) = cg.x;
-        bbox.translation(1) = cg.y;
-        bbox.translation(2) = cg.z;
-
-        // Compute the rotation matrix
-        Eigen::Matrix3d rotateMat = Eigen::Matrix3d::Identity();
-        Point3d cx = ((hexah[1] + hexah[2] + hexah[5] + hexah[6]) / 4. - cg).normalize();
-        Point3d cy = ((hexah[3] + hexah[2] + hexah[7] + hexah[6]) / 4. - cg).normalize();
-        Point3d cz = ((hexah[7] + hexah[4] + hexah[5] + hexah[6]) / 4. - cg).normalize();
-        rotateMat.col(0).head<3>() << cx.x, cx.y, cx.z;
-        rotateMat.col(1).head<3>() << cy.x, cy.y, cy.z;
-        rotateMat.col(2).head<3>() << cz.x, cz.y, cz.z;
-
-        // Euler rotation angles
-        Eigen::Vector3d ea = rotateMat.eulerAngles(1, 0, 2) * 180. / M_PI;
-        bbox.rotation(0) = ea(1);
-        bbox.rotation(1) = ea(0);
-        bbox.rotation(2) = ea(2);
-
-        return bbox;
-    }
-};
-
-inline std::istream& operator>>(std::istream& in, BoundingBox& out_bbox)
-{
-    std::string token(std::istreambuf_iterator<char>(in), {});
-
-    std::vector<std::string> dataStr;
-    boost::split(dataStr, token, boost::is_any_of(","));
-    if (dataStr.size() != 9)
-    {
-        throw std::runtime_error("Invalid number of values for bounding box.");
-    }
-
-    std::vector<double> data;
-    data.reserve(9);
-    for (const std::string& elt : dataStr)
-    {
-        data.push_back(boost::lexical_cast<double>(elt));
-    }
-
-    out_bbox.translation << data[0], data[1], data[2];
-    out_bbox.rotation << data[3], data[4], data[5];
-    out_bbox.scale << data[6], data[7], data[8];
-
-    return in;
-}
 
 int aliceVision_main(int argc, char* argv[])
 {
@@ -303,9 +156,9 @@ int aliceVision_main(int argc, char* argv[])
     double minSolidAngleRatio = 0.2;
     int nbSolidAngleFilteringIterations = 2;
     unsigned int seed = 0;
-    BoundingBox boundingBox;
+    fuseCut::BoundingBox boundingBox;
 
-    fuseCut::FuseParams fuseParams;
+    fuseCut::PointCloudFuseParams fuseParams;
 
     int helperPointsGridSize = 10;
     int densifyNbFront = 0;
@@ -330,7 +183,7 @@ int aliceVision_main(int argc, char* argv[])
     optionalParams.add_options()
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
          "Input filtered depth maps folder.")
-        ("boundingBox", po::value<BoundingBox>(&boundingBox),
+        ("boundingBox", po::value<fuseCut::BoundingBox>(&boundingBox),
          "Specifies a bounding box to reconstruct: position, rotation (Euler ZXY) and scale.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
          "Maximum number of input points loaded from images.")
@@ -460,7 +313,6 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("LargeScale.densifyNbFront", densifyNbFront);
     mp.userParams.put("LargeScale.densifyNbBack", densifyNbBack);
     mp.userParams.put("LargeScale.densifyScale", densifyScale);
-
     mp.userParams.put("delaunaycut.seed", seed);
     mp.userParams.put("delaunaycut.nPixelSizeBehind", nPixelSizeBehind);
     mp.userParams.put("delaunaycut.fullWeight", fullWeight);
@@ -517,7 +369,7 @@ int aliceVision_main(int argc, char* argv[])
                         ALICEVISION_LOG_INFO("bounding Box : length: " << length << ", width: " << width << ", height: " << height);
 
                         // Save bounding box
-                        BoundingBox bbox = BoundingBox::fromHexahedron(&hexah[0]);
+                        fuseCut::BoundingBox bbox = fuseCut::BoundingBox::fromHexahedron(&hexah[0]);
                         std::string filename = (outDirectory / "boundingBox.txt").string();
                         std::ofstream fs(filename, std::ios::out);
                         if (!fs.is_open())
@@ -545,33 +397,33 @@ int aliceVision_main(int argc, char* argv[])
                     if (cams.empty())
                         throw std::logic_error("No camera to make the reconstruction");
 
-                    fuseCut::DelaunayGraphCut delaunayGC(mp);
-                    delaunayGC.createDensePointCloud(
-                      &hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
+                    fuseCut::PointCloud pc(mp);
+                    pc.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
+
+                    fuseCut::Tetrahedralization tetrahedralization(pc.getVertices());
+
                     if (saveRawDensePointCloud)
                     {
                         ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
                         StaticVector<StaticVector<int>> ptsCams;
-                        delaunayGC.createPtsCams(ptsCams);
+                        pc.createPtsCams(ptsCams);
                         sfmData::SfMData densePointCloud;
-                        createDenseSfMData(sfmData, mp, delaunayGC._verticesCoords, ptsCams, densePointCloud);
+                        createDenseSfMData(sfmData, mp, pc.getVertices(), ptsCams, densePointCloud);
                         removeLandmarksWithoutObservations(densePointCloud);
                         if (colorizeOutput)
                             sfmData::colorizeTracks(densePointCloud);
                         sfmDataIO::save(densePointCloud, (outDirectory / "densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
                     }
 
-                    delaunayGC.createGraphCut(&hexah[0],
-                                              cams,
-                                              outDirectory.string() + "/",
-                                              outDirectory.string() + "/SpaceCamsTracks/",
-                                              false,
-                                              exportDebugTetrahedralization);
+                    fuseCut::GraphFiller gfiller(mp, pc, tetrahedralization);
+                    gfiller.build(cams);
+                    gfiller.binarize();
 
-                    delaunayGC.graphCutPostProcessing(&hexah[0], outDirectory.string() + "/");
+                    fuseCut::Mesher mesher(mp, pc, tetrahedralization, gfiller.getCellsStatus());
+                    mesher.graphCutPostProcessing(&hexah[0]);
 
-                    mesh = delaunayGC.createMesh(maxNbConnectedHelperPoints);
-                    delaunayGC.createPtsCams(ptsCams);
+                    mesh = mesher.createMesh(maxNbConnectedHelperPoints);
+                    pc.createPtsCams(ptsCams);
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string() + "/", nullptr, &hexah[0]);
 
                     break;
