@@ -34,6 +34,12 @@ public:
      */
     void graphCutPostProcessing(const Point3d hexah[8]);
 
+    void setFilterBoundingBox(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
+    {
+        _bbMin = bbMin;
+        _bbMax = bbMax;
+    }
+
 private:
     int computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const;
 
@@ -70,6 +76,8 @@ private:
 private:
     std::vector<bool> _cellIsFull;
     mvsUtils::MultiViewParams& _mp;
+    Eigen::Vector3d _bbMin;
+    Eigen::Vector3d _bbMax;
 };
 
 }

@@ -9,6 +9,7 @@
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <boost/atomic/atomic_ref.hpp>
+#include <aliceVision/geometry/Intersection.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -25,6 +26,9 @@ Mesher::Mesher(mvsUtils::MultiViewParams& mp,
   _tetrahedralization(tetrahedralization)
 {
     std::swap(_cellIsFull, cellIsFull);
+
+    _bbMin.fill(std::numeric_limits<double>::lowest());
+    _bbMax.fill(std::numeric_limits<double>::max());
 }
 
 mesh::Mesh* Mesher::createMesh(int maxNbConnectedHelperPoints)
@@ -95,10 +99,29 @@ mesh::Mesh* Mesher::createMesh(int maxNbConnectedHelperPoints)
                     continue;
             }
 
+            //Check which points are inside bounding box
             Point3d points[3];
+            int countInside = 0;
             for (int k = 0; k < 3; ++k)
             {
                 points[k] = _verticesCoords[vertices[k]];
+                
+                Eigen::Vector3d pt;
+                pt.x() = points[k].x;
+                pt.y() = points[k].y;
+                pt.z() = points[k].z;
+                if (geometry::isPointInsideAABB(_bbMin, _bbMax, pt))
+                {
+                    countInside++;
+                }
+            }
+
+            // Exclude triangles
+            // which are fully outside the bounding box
+            // These are overlap triangles in lidar
+            if (countInside == 0)
+            {
+                continue;
             }
 
             const Point3d D1 = _verticesCoords[_tetrahedralization.getOppositeVertexIndex(f1)];  // in FULL part
