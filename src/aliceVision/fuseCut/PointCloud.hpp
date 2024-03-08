@@ -66,6 +66,11 @@ public:
         return _camsVertexes;
     }
 
+    const  std::vector<std::pair<int, Eigen::Vector3d>> & getRays() const
+    {
+        return _rays;
+    }
+
     void createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams);
     
 
@@ -84,6 +89,7 @@ private:
     std::vector<Point3d> _verticesCoords;
     std::vector<GC_vertexInfo> _verticesAttr;
     std::vector<int> _camsVertexes;
+    std::vector<std::pair<int, Eigen::Vector3d>> _rays;
 
     mvsUtils::MultiViewParams& _mp;
 };

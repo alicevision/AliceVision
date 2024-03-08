@@ -628,6 +628,15 @@ void PointCloud::addPointsFromSfM(const Point3d hexah[8], const StaticVector<int
             ++vAttrIt;
             ++addedPoints;
         }
+        else 
+        {
+            for (const auto& observationPair : landmark.getObservations())
+            {
+                int camid = _mp.getIndexFromViewId(observationPair.first);
+                _rays.push_back(std::make_pair(camid, landmark.X));
+            }
+        }
+
         ++landmarkIt;
     }
     if (addedPoints != nbPoints)

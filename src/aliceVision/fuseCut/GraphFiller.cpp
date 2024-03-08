@@ -11,7 +11,7 @@
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
 
 #include <boost/atomic/atomic_ref.hpp>
-
+#include <aliceVision/geometry/Intersection.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -24,9 +24,13 @@ GraphFiller::GraphFiller(mvsUtils::MultiViewParams& mp,
   _verticesCoords(pc.getVertices()),
   _verticesAttr(pc.getVerticesAttrs()),
   _camsVertexes(pc.getCameraIndices()),
+  _rays(pc.getRays()),
   _tetrahedralization(tetrahedralization)
 {
     initCells();
+
+    _bbMin.fill(std::numeric_limits<double>::lowest());
+    _bbMax.fill(std::numeric_limits<double>::max());
 }
 
 void GraphFiller::initCells()
@@ -109,6 +113,64 @@ void GraphFiller::fillGraph(double nPixelSizeBehind, float fullWeight)
             rayMarchingGraphFull(vertexIndex, v.cams[c], weight* fullWeight, nPixelSizeBehind);
         }
     }
+
+#pragma omp parallel for
+    for (int i = 0; i < _rays.size(); i++)
+    {
+        const auto & p = _rays[i];
+
+        int camid = p.first;
+        Point3d ptcam = _mp.CArr[camid];
+
+        Eigen::Vector3d ptstart;
+        ptstart.x() = ptcam.x;
+        ptstart.y() = ptcam.y;
+        ptstart.z() = ptcam.z;
+
+        Eigen::Vector3d ptdest = p.second;
+
+        //Compute direction
+        Eigen::Vector3d direction = ptdest - ptstart;
+        double scale = direction.norm();
+        if (scale < 1e-12)
+        {
+            continue;
+        }
+        direction = direction / scale;
+        
+        double bmin, bmax;
+        if (!geometry::rayIntersectAABB(_bbMin, _bbMax, ptstart, direction, bmin, bmax))
+        {
+            continue;
+        }
+
+        if (bmax < 1e-12)
+        {
+            continue;
+        }
+
+        if (bmax > scale)
+        {
+            continue;
+        }
+
+        //Find the coordinates on which the rays leaves the bounding box
+        Eigen::Vector3d border = ptstart + bmax * (ptdest - ptstart);
+        
+        fuseCut::CellIndex cellid;
+        if (!_tetrahedralization.locate(border, cellid))
+        {
+            continue;
+        }
+
+        if (!_tetrahedralization.isInside(cellid, border))
+        {
+            continue;
+        }
+
+        
+        rayMarchingGraphRays(cellid, ptdest, camid, 32.0);
+    }
 }
 
 void GraphFiller::rayMarchingGraphEmpty(int vertexIndex,
@@ -145,6 +207,8 @@ void GraphFiller::rayMarchingGraphEmpty(int vertexIndex,
         
         geometry = marching.intersectNextGeom();
         Eigen::Vector3d eintersectPt = marching.getIntersectionPoint();
+
+
         intersectPt.x = eintersectPt.x();
         intersectPt.y = eintersectPt.y();
         intersectPt.z = eintersectPt.z();
@@ -192,6 +256,75 @@ void GraphFiller::rayMarchingGraphEmpty(int vertexIndex,
     if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
     {
         boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight} = (float)maxint;
+    }
+}
+
+void GraphFiller::rayMarchingGraphRays(int cellIndex,
+                                        const Eigen::Vector3d & eoriginPt,
+                                         int cam,
+                                         float weight)
+{
+    const int maxint = std::numeric_limits<int>::max();
+
+    Facet facet(cellIndex, -1);
+
+
+    // Initialisation
+    GeometryIntersection geometry(facet);  // Starting on global vertex index
+
+    Point3d originPt;
+    originPt.x = eoriginPt.x();
+    originPt.y = eoriginPt.y();
+    originPt.z = eoriginPt.z();
+    Point3d intersectPt = originPt;
+
+
+    TetrahedronsRayMarching marching(_tetrahedralization, eoriginPt, _camsVertexes[cam], false);
+    marching.updateIntersection(geometry);
+
+
+    Facet lastIntersectedFacet;
+    bool lastGeoIsVertex = false;
+
+    // Break only when we reach our camera vertex (as long as we find a next geometry)
+    while (geometry.type != EGeometryType::Vertex || (_mp.CArr[cam] - intersectPt).size() >= 1.0e-3)
+    {
+        lastGeoIsVertex = false;
+        // Keep previous informations
+        const GeometryIntersection previousGeometry = geometry;
+        const Point3d lastIntersectPt = intersectPt;
+
+        
+        geometry = marching.intersectNextGeom();
+        Eigen::Vector3d eintersectPt = marching.getIntersectionPoint();
+
+        intersectPt.x = eintersectPt.x();
+        intersectPt.y = eintersectPt.y();
+        intersectPt.z = eintersectPt.z();
+
+        if (geometry.type == EGeometryType::None)
+        {
+            break;
+        }
+
+
+        if (geometry.type == EGeometryType::Facet)
+        {
+            GeometryIntersection previousGeometry = marching.getPreviousIntersection();
+
+            boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].emptinessScore} += weight;
+            boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].gEdgeVisWeight[previousGeometry.facet.localVertexIndex]} += weight;
+
+            
+            lastIntersectedFacet = geometry.facet;
+        }
+        else
+        {
+            if (previousGeometry.type == EGeometryType::Facet)
+            {
+                boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].emptinessScore} += weight;
+            }
+        }
     }
 }
 
@@ -326,7 +459,7 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         GeometryIntersection previousGeometry = marching.getPreviousIntersection();
 
                         const GC_cellInfo& c = _cellsAttr[previousGeometry.facet.cellIndex];
-                        if ((lastIntersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist)  // (p-originPt).size() > 2 * sigma
+                        if ((lastIntersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist) 
                         {
                             maxJump = std::max(maxJump, c.emptinessScore);
                         }

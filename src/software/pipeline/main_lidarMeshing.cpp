@@ -35,7 +35,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, const fuseCut::BoundingBox & boundingBox)
+bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
 {
     //initialization
     StaticVector<StaticVector<int>> ptsCams;
@@ -76,10 +76,6 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
         return false;
     }
 
-    //Compute boundingbox
-    Eigen::Vector3d bbMin, bbMax;
-    sfmData.getBoundingBox(bbMin, bbMax);
-
     //Check bounding box validity
     double w = std::abs(bbMin.x() - bbMax.x());
     double h = std::abs(bbMin.y() - bbMax.y());
@@ -102,17 +98,20 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     fuseCut::PointCloud pointcloud(mp);
     pointcloud.createDensePointCloud(&lhexah[0], cams, &sfmData, nullptr);
 
+    Eigen::Vector3d reducedBbMin = bbMin + Eigen::Vector3d::Ones() * 0.19;
+    Eigen::Vector3d reducedBbMax = bbMax + Eigen::Vector3d::Ones() * 0.19;
     //Cleanup sfmData
     sfmData.clear();
 
     fuseCut::Tetrahedralization tetrahedralization(pointcloud.getVertices());
 
     fuseCut::GraphFiller gfiller(mp, pointcloud, tetrahedralization);
+    gfiller.setBoundingBox(bbMin, bbMax);
     gfiller.build(cams);
     gfiller.binarize();
 
     fuseCut::Mesher mesher(mp, pointcloud, tetrahedralization, gfiller.getCellsStatus());
-    
+    mesher.setFilterBoundingBox(reducedBbMin, reducedBbMax);
     mesher.graphCutPostProcessing(&lhexah[0]);
     mesh::Mesh * mesh = mesher.createMesh(0);
     pointcloud.createPtsCams(ptsCams);
@@ -206,7 +205,7 @@ int aliceVision_main(int argc, char* argv[])
         std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
 
         ALICEVISION_LOG_INFO("Computing sub mesh " << idSub + 1 << " / " << setSize);
-        if (!computeSubMesh(input.sfmPath, ss, boundingBox))
+        if (!computeSubMesh(input.sfmPath, ss, input.bbMin, input.bbMax))
         {
             ALICEVISION_LOG_ERROR("Error computing sub mesh");
             return EXIT_FAILURE;

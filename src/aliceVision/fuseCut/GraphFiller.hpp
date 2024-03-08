@@ -32,6 +32,12 @@ public:
         return _cellIsFull;
     }
 
+    void setBoundingBox(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
+    {
+        _bbMin = bbMin;
+        _bbMax = bbMax;
+    }
+
     void binarize();
 
 private:
@@ -40,6 +46,7 @@ private:
 
     void fillGraph(double nPixelSizeBehind, float fullWeight);
     void rayMarchingGraphEmpty(int vertexIndex, int cam, float weight);
+    void rayMarchingGraphRays(int CellIndex, const Eigen::Vector3d & origin, int cam, float weight);
     void rayMarchingGraphFull(int vertexIndex, int cam, float fullWeight, double nPixelSizeBehind);
     void forceTedgesByGradientIJCV(float nPixelSizeBehind);
     
@@ -50,11 +57,14 @@ private:
     const std::vector<Point3d> & _verticesCoords;
     const std::vector<GC_vertexInfo> & _verticesAttr;
     const std::vector<int> & _camsVertexes;
+    const std::vector<std::pair<int, Eigen::Vector3d>> & _rays;
 
 private:
     mvsUtils::MultiViewParams& _mp;
     std::vector<GC_cellInfo> _cellsAttr;
     std::vector<bool> _cellIsFull;
+    Eigen::Vector3d _bbMin;
+    Eigen::Vector3d _bbMax;
 };
 
 }
