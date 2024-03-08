@@ -7,6 +7,7 @@
 #pragma once
 
 #include <boost/json.hpp>
+#include <Eigen/Dense>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -15,6 +16,8 @@ struct Input
 {
     std::string sfmPath;
     std::string subMeshPath;
+    Eigen::Vector3d bbMin;
+    Eigen::Vector3d bbMax;
 };
 
 using InputSet = std::vector<Input>;

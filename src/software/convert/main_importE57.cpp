@@ -336,9 +336,9 @@ int aliceVision_main(int argc, char** argv)
         Eigen::Vector3d bbmax = item->getBBMax();
 
         // Add borders of 20 cm
-        Eigen::Vector3d center = (bbmin + bbmax) * 0.5;
-        bbmin = center + 1.02 * (bbmin - center);
-        bbmax = center + 1.02 * (bbmax - center);
+        Eigen::Vector3d center = (bbmin + bbmax) * 0.2;
+        bbmin -= Eigen::Vector3d::Ones() * 0.2;
+        bbmax += Eigen::Vector3d::Ones() * 0.2;
 
         double sx = std::abs(bbmax.x() - bbmin.x());
         double sy = std::abs(bbmax.y() - bbmin.y());
@@ -346,7 +346,7 @@ int aliceVision_main(int argc, char** argv)
 
         ALICEVISION_LOG_INFO("Local Bounding box: " << sx << " x " << sy << " x " << sz);
 
-        sfmData::SfMData subSfmData(sfmData, bbmin, bbmax);
+        sfmData::SfMData subSfmData(sfmData, bbmin, bbmax, true, true);
 
         ALICEVISION_LOG_INFO("local count : " << subSfmData.getLandmarks().size() << " points");
 
@@ -357,6 +357,8 @@ int aliceVision_main(int argc, char** argv)
         transformed += ".abc";
 
         fuseCut::Input input;
+        input.bbMin = bbmin;
+        input.bbMax = bbmax;
         input.sfmPath = transformed.string();
 
         ALICEVISION_LOG_INFO("Saving to " << input.sfmPath);
