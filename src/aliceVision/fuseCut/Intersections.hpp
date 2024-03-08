@@ -92,6 +92,11 @@ public:
                             const VertexIndex & originId,
                             const VertexIndex & destinationId,
                             const bool away);
+
+    TetrahedronsRayMarching(const Tetrahedralization & tetra,
+                            const Eigen::Vector3d & origin,
+                            const VertexIndex & destinationId,
+                            const bool away);
                             
     GeometryIntersection intersectNextGeom();
 

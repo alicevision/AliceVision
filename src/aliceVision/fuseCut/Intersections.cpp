@@ -45,6 +45,37 @@ TetrahedronsRayMarching::TetrahedronsRayMarching(const Tetrahedralization & tetr
     }
 }
 
+TetrahedronsRayMarching::TetrahedronsRayMarching(const Tetrahedralization & tetra,
+                                                const Eigen::Vector3d & origin,
+                                                const VertexIndex & destinationId,
+                                                const bool away)
+ :
+    _tetrahedralization(tetra),
+    _epsilonFactor(1e-4),
+    _intersection(0),
+    _facetCount(0),
+    _vertexCount(0),
+    _edgeCount(0),
+    _origin(origin)
+{
+    const auto & vertices = tetra.getVertices();
+
+    _intersectionPoint = _origin;
+    _previousIntersectionPoint = _origin;
+
+    const auto & ptDest = vertices[destinationId];
+    Eigen::Vector3d dest;
+    dest.x() = ptDest.x;
+    dest.y() = ptDest.y;
+    dest.z() = ptDest.z;
+
+    _direction = (dest - _origin).normalized();
+    if (away)
+    {
+        _direction = -_direction;
+    }
+}
+
 GeometryIntersection TetrahedronsRayMarching::intersectNextGeom()
 {
     
