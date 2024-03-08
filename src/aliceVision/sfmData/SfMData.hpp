@@ -74,8 +74,13 @@ class SfMData
     /**
      * Copy constructor 
      * Use a bounding box to restrict the copied landmarks to the selected region
+     * @param other the sfmData to copy
+     * @param bbMin the minimal values of the bounding box
+     * @param bbMax the maximal values of the bounding box
+     * @param addInside store the landmarks inside the boundingbox
+     * @param addRay store the landmarks whose observation ray pass through the selected region BUT are not ending in the region
     */
-    SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax);
+    SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax, bool addInside = true, bool addRay = false);
 
     // Operators
 

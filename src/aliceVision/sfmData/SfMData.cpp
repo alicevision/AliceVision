@@ -8,6 +8,7 @@
 #include "SfMData.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/geometry/Intersection.hpp>
 
 #include <filesystem>
 
@@ -20,7 +21,7 @@ using namespace aliceVision::image;
 
 namespace fs = std::filesystem;
 
-SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
+SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax, bool addInside, bool addRay)
 {
     _views = other._views;
     _intrinsics  = other._intrinsics;
@@ -32,18 +33,48 @@ SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eig
     _poses = other._poses;
     _rigs = other._rigs;
 
+    std::map<IndexT, Eigen::Vector3d> centerPerViewId;
+
+    if (addRay)
+    {
+        for (const auto & pv : getViews())
+        {
+            IndexT poseId = pv.second->getPoseId();
+
+            if (poseId == UndefinedIndexT)
+            {
+                continue;
+            }
+
+            centerPerViewId[pv.first] = getAbsolutePose(poseId).getTransform().center();
+        }
+    }
+
     for (const auto & pl : other._landmarks)
     {
         const auto & pt = pl.second.X;
 
-        if (pt.x() < bbMin.x()) continue;
-        if (pt.y() < bbMin.y()) continue;
-        if (pt.z() < bbMin.z()) continue;
-        if (pt.x() > bbMax.x()) continue;
-        if (pt.y() > bbMax.y()) continue;
-        if (pt.z() > bbMax.z()) continue;
+        if (isPointInsideAABB(bbMin, bbMax, pt)) 
+        {
+            if (addInside)
+            {
+                _landmarks.insert(pl);
+            }
+        }
+        else if (addRay)
+        {
+            for (const auto & pobs : pl.second.getObservations())
+            {
+                IndexT viewId = pobs.first;
 
-        _landmarks.insert(pl);
+                const Eigen::Vector3d & start = centerPerViewId.at(viewId);
+                
+                if (isSegmentIntersectAABB(bbMin, bbMax, start, pt))
+                {
+                    _landmarks.insert(pl);
+                } 
+            }
+        }
     }
 }
 
