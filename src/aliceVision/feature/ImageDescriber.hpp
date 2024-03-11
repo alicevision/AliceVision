@@ -10,6 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/Regions.hpp>
+#include <aliceVision/feature/regionsFactory.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <memory>
 
@@ -258,6 +259,125 @@ class ImageDescriber
     void Save(const Regions* regions, const std::string& sfileNameFeats, const std::string& sfileNameDescs) const;
 
     void LoadFeatures(Regions* regions, const std::string& sfileNameFeats) const { regions->LoadFeatures(sfileNameFeats); }
+};
+
+/**
+ * @brief Used to load descripters computed outside of meshroom.
+ */
+class UnknownImageDescriber  : public ImageDescriber
+{
+  public:
+    UnknownImageDescriber() = default;
+
+    virtual ~UnknownImageDescriber() = default;
+
+     /**
+     * @brief Check if the image describer use CUDA
+     * @return True if the image describer use CUDA
+     */
+    bool useCuda() const override { return false; }
+
+    /**
+     * @brief Check if the image describer use float image
+     * @return True if the image describer use float image
+     */
+    bool useFloatImage() const override { return false; }
+
+    /**
+     * @brief Get the corresponding EImageDescriberType
+     * @return EImageDescriberType
+     */
+    EImageDescriberType getDescriberType() const override { return EImageDescriberType::UNKNOWN; }
+
+    /**
+     * @brief Get the total amount of RAM needed for a
+     * feature extraction of an image of the given dimension.
+     * @param[in] width The image width
+     * @param[in] height The image height
+     * @return total amount of memory needed
+     */
+    std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
+    {
+        std::cout<<"Bonjour 0"<<std::endl;
+        return 0;
+    }
+
+    /**
+     * @brief Set image describer always upRight
+     * @param[in] upRight
+     */
+    void setUpRight(bool upRight) override
+    {std::cout<<"Bonjour 1"<<std::endl;}
+
+    /**
+     * @brief Set if yes or no imageDescriber need to use cuda implementation
+     * @param[in] useCuda
+     */
+    void setUseCuda(bool useCuda) override 
+    {
+        std::cout<<"Bonjour 2"<<std::endl;
+    }
+
+    /**
+     * @brief set the CUDA pipe
+     * @param[in] pipe The CUDA pipe id
+     */
+    void setCudaPipe(int pipe) override
+    {
+        std::cout<<"Bonjour 3"<<std::endl;
+    }
+
+    /**
+     * @brief Use a preset to control the number of detected regions
+     * @param[in] preset The preset configuration
+     */
+    void setConfigurationPreset(ConfigurationPreset preset) override
+    {
+        std::cout<<"Bonjour 4"<<std::endl;
+    }
+
+    /**
+     * @brief Detect regions on the 8-bit image and compute their attributes (description)
+     * @param[in] image Image.
+     * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
+     * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
+     *    Non-zero values depict the region of interest.
+     * @return True if detection succed.
+     */
+    bool describe(const image::Image<unsigned char>& image,
+                  std::unique_ptr<Regions>& regions,
+                  const image::Image<unsigned char>* mask = nullptr) override
+    {
+        std::cout<<"Bonjour 5"<<std::endl;
+        return false;
+    }
+
+    /**
+     * @brief Detect regions on the float image and compute their attributes (description)
+     * @param[in] image Image.
+     * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
+     * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+     *    Non-zero values depict the region of interest.
+     * @return True if detection succed.
+     */
+    bool describe(const image::Image<float>& image, std::unique_ptr<Regions>& regions, const image::Image<unsigned char>* mask = nullptr) override
+    {
+        std::cout<<"Bonjour 6"<<std::endl;
+        return false;
+    }
+
+    /**
+     * @brief Allocate Regions type depending of the ImageDescriber
+     * @param[in,out] regions
+     */
+    void allocate(std::unique_ptr<Regions>& regions) const override 
+    {
+        std::cout<<"Bonjour 7"<<std::endl;
+        regions.reset(new UNKNOWN_Regions);
+    }
+
+  private:
+    std::unique_ptr<ImageDescriber> _imageDescriberImpl = nullptr;
 };
 
 /**

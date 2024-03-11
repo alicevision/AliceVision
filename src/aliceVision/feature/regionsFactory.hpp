@@ -29,5 +29,8 @@ using AKAZE_Liop_Regions = ScalarRegions<unsigned char, 144>;
 /// Define the AKAZE Keypoint (with a binary descriptor saved in an uchar array)
 using AKAZE_BinaryRegions = BinaryRegions<64>;
 
+/// Define an unknown feature regions 
+using UNKNOWN_Regions = ScalarRegions<float, 128>;
+
 }  // namespace feature
 }  // namespace aliceVision
