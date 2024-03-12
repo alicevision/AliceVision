@@ -98,7 +98,7 @@ int aliceVision_main(int argc, char** argv)
 
     // User optional parameters
     bool undistortedImages = false;
-    bool exportUVMaps = false;
+    bool exportSTMaps = false;
     bool exportFullROD = false;
     bool correctPrincipalPoint = true;
     std::map<IndexT, oiio::ROI> roiForIntrinsic;
@@ -122,8 +122,8 @@ int aliceVision_main(int argc, char** argv)
          "If false, animated camera(s) exported with original frame paths.")
         ("exportFullROD", po::value<bool>(&exportFullROD)->default_value(exportFullROD),
          "Export undistorted images with the full Region of Definition (RoD). Only supported by the EXR image file format.")
-        ("exportUVMaps", po::value<bool>(&exportUVMaps)->default_value(exportUVMaps),
-         "Export UV Maps in exr format to apply distort/undistort transformations in a compositing software.")
+        ("exportSTMaps", po::value<bool>(&exportSTMaps)->default_value(exportSTMaps),
+         "Export ST Maps in exr format to apply distort/undistort transformations in a compositing software.")
         ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
          "Apply an offset to correct the position of the principal point.")
         ("viewFilter", po::value<std::string>(&viewFilter)->default_value(viewFilter),
@@ -211,7 +211,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
-    const bool writeUndistordedResult = undistortedImages || exportUVMaps;
+    const bool writeUndistordedResult = undistortedImages || exportSTMaps;
 
     if (writeUndistordedResult && !fs::exists(undistortedImagesFolderPath))
         fs::create_directory(undistortedImagesFolderPath);
@@ -220,7 +220,7 @@ int aliceVision_main(int argc, char** argv)
     std::map<std::string, std::vector<std::pair<std::size_t, IndexT>>> dslrViewPerKey;
 
     // Export distortion map / one image per intrinsic
-    if (exportUVMaps)
+    if (exportSTMaps)
     {
         for (const auto& intrinsicPair : sfmDataExport.getIntrinsics())
         {
@@ -229,7 +229,7 @@ int aliceVision_main(int argc, char** argv)
             // Init image as black (no distortion)
             image_dist.resize(int(intrinsic.w()), int(intrinsic.h()), true, image::FBLACK);
 
-            // Compute UV vertors for distortion
+            // Compute ST vertors for distortion
             const Vec2 center(intrinsic.w() * 0.5, intrinsic.h() * 0.5);
             Vec2 ppCorrection(0.0, 0.0);
 
@@ -240,9 +240,9 @@ int aliceVision_main(int argc, char** argv)
             }
             ALICEVISION_LOG_DEBUG("ppCorrection:" + std::to_string(ppCorrection[0]) + ";" + std::to_string(ppCorrection[1]));
 
-            // UV Map: Undistort
+            // ST Map: Undistort
             {
-// Flip and normalize as UVMap
+// Flip and normalize as STMap
 #pragma omp parallel for
                 for (int y = 0; y < int(intrinsic.h()); ++y)
                 {
@@ -257,15 +257,15 @@ int aliceVision_main(int argc, char** argv)
                     }
                 }
 
-                const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Undistort." +
+                const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_STMap_Undistort." +
                                                                              image::EImageFileType_enumToString(outputMapFileType)))
                                                .string();
                 image::writeImage(dstImage, image_dist, image::ImageWriteOptions().storageDataType(image::EStorageDataType::Float));
             }
 
-            // UV Map: Distort
+            // ST Map: Distort
             {
-// Flip and normalize as UVMap
+// Flip and normalize as STMap
 #pragma omp parallel for
                 for (int y = 0; y < int(intrinsic.h()); ++y)
                 {
@@ -280,7 +280,7 @@ int aliceVision_main(int argc, char** argv)
                     }
                 }
 
-                const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Distort." +
+                const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_STMap_Distort." +
                                                                              image::EImageFileType_enumToString(outputMapFileType)))
                                                .string();
                 image::writeImage(dstImage, image_dist, image::ImageWriteOptions().storageDataType(image::EStorageDataType::Float));
