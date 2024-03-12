@@ -204,11 +204,28 @@ int aliceVision_main(int argc, char** argv)
         const unsigned int calibrationHeight = calibratedIntrinsic->h();
         const double calibrationAspect = static_cast<double>(calibrationHeight) / static_cast<double>(calibrationWidth);
 
-        // Check that aspect ratios are approximately equal
+        if(width != calibrationWidth || height != calibrationHeight)
+        {
+            ALICEVISION_LOG_WARNING(
+                    "The image size used for the calibration is different from the size of the sequence.\n" <<
+                    "Calibration size: " << calibrationWidth << "x" << calibrationHeight << "\n" <<
+                    "Sequence size: " << width << "x" << height);
+            ALICEVISION_LOG_WARNING(
+                    "Calibration image ratio: " << calibrationAspect << "\n" <<
+                    "Sequence image ratio: " << aspect);
+        }
+
+        // If aspect ratios are not approximately equal
         if (std::abs(aspect - calibrationAspect) > 1e-2)
         {
-            bool distortionOnly = (isDistortionCalibrated && !isIntrinsicCalibrated);
-            bool smaller = (width <= calibrationWidth && height <= calibrationHeight);
+            ALICEVISION_LOG_WARNING("Image aspect ratios are not approximately equal, so we need more checks.");
+
+            const bool distortionOnly = (isDistortionCalibrated && !isIntrinsicCalibrated);
+            const bool smaller = (width <= calibrationWidth && height <= calibrationHeight);
+
+            ALICEVISION_LOG_WARNING("Distorsion is calibrated: " << isDistortionCalibrated);
+            ALICEVISION_LOG_WARNING("Intrinsics are calibrated: " << isIntrinsicCalibrated);
+            ALICEVISION_LOG_WARNING("Size is smaller than calibration: " << smaller);
             
             if (distortionOnly == false || smaller == false)
             {
