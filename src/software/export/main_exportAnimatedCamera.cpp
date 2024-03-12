@@ -260,7 +260,7 @@ int aliceVision_main(int argc, char** argv)
                 const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Undistort." +
                                                                              image::EImageFileType_enumToString(outputMapFileType)))
                                                .string();
-                image::writeImage(dstImage, image_dist, image::ImageWriteOptions());
+                image::writeImage(dstImage, image_dist, image::ImageWriteOptions().storageDataType(image::EStorageDataType::Float));
             }
 
             // UV Map: Distort
@@ -283,7 +283,7 @@ int aliceVision_main(int argc, char** argv)
                 const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Distort." +
                                                                              image::EImageFileType_enumToString(outputMapFileType)))
                                                .string();
-                image::writeImage(dstImage, image_dist, image::ImageWriteOptions());
+                image::writeImage(dstImage, image_dist, image::ImageWriteOptions().storageDataType(image::EStorageDataType::Float));
             }
         }
     }
