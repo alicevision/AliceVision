@@ -199,14 +199,14 @@ int aliceVision_main(int argc, char* argv[])
                 ALICEVISION_LOG_INFO("Export distortion STMap: stmap_" << intrinsicId << "_distort.exr");
                 std::stringstream ss;
                 ss << outputFilePath << "/stmap_" << intrinsicId << "_distort.exr";
-                image::writeImage(ss.str(), stmap_distort, image::ImageWriteOptions());
+                image::writeImage(ss.str(), stmap_distort, image::ImageWriteOptions().storageDataType(image::EStorageDataType::Float));
             }
 
             {
                 ALICEVISION_LOG_INFO("Export undistortion STMap: stmap_" << intrinsicId << "_undistort.exr");
                 std::stringstream ss;
                 ss << outputFilePath << "/stmap_" << intrinsicId << "_undistort.exr";
-                image::writeImage(ss.str(), stmap_undistort, image::ImageWriteOptions());
+                image::writeImage(ss.str(), stmap_undistort, image::ImageWriteOptions().storageDataType(image::EStorageDataType::Float));
             }
         }
 
