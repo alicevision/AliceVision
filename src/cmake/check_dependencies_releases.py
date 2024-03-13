@@ -93,7 +93,7 @@ def parse_url(url):
         organisation_url = url_matches.group(1)
         version = (int(url_matches.group(2)), int(url_matches.group(3)), int(url_matches.group(4)))
     else:
-        # Try version with only 2 numbers 
+        # Try version with only 2 numbers
         url_pattern = r"(https?:\/\/.+?)(\d+)\.(\d+).*"
         url_matches = re.match(url_pattern, url)
         if url_matches:
@@ -131,7 +131,11 @@ def get_cmakefile_repositories(cmake_file_path):
 
 # Define CMake file to parse
 scriptPath = os.path.dirname(os.path.abspath(__file__))
-cmake_file_path = os.path.join(os.path.dirname(scriptPath), "CMakeLists.txt")
+cmake_file_path = os.path.join(scriptPath, "Dependencies.cmake")
+
+if not os.path.isfile(cmake_file_path):
+    print(f'Failed to find cmake file: {cmake_file_path}')
+    exit(-1)
 
 urls = get_cmakefile_urls(cmake_file_path)
 github_urls = []
