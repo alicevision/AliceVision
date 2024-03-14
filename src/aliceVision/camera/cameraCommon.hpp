@@ -113,7 +113,7 @@ inline EDISTORTION EDISTORTION_stringToEnum(const std::string& distortion)
     {
         return EDISTORTION::DISTORTION_RADIALK3PT;
     }
-    else if (type == "radialbrown")
+    else if (type == "brown")
     {
         return EDISTORTION::DISTORTION_BROWN;
     }
@@ -156,7 +156,7 @@ inline std::string EDISTORTION_enumToString(EDISTORTION distortion)
         case EDISTORTION::DISTORTION_RADIALK3PT:
             return "radialk3pt";
         case EDISTORTION::DISTORTION_BROWN:
-            return "radialbrown";
+            return "brown";
         case EDISTORTION::DISTORTION_FISHEYE:
             return "fisheye";
         case EDISTORTION::DISTORTION_FISHEYE1:
