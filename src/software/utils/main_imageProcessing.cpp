@@ -1742,8 +1742,8 @@ int aliceVision_main(int argc, char* argv[])
                     if (pParams.lensCorrection.geometry)
                     {
                         // build intrinsic
-                        const camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
-                        const camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask("radial3,fisheye4");
+                        const camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA;
+                        const camera::EDISTORTION defaultDistortionModel = camera::EDISTORTION::DISTORTION_RADIALK3;
                         const double defaultFocalLength = -1.0;
                         const double defaultFieldOfView = -1.0;
                         const double defaultFocalRatio = 1.0;
@@ -1759,7 +1759,7 @@ int aliceVision_main(int argc, char* argv[])
                                                                     defaultOffsetY,
                                                                     &lensParam,
                                                                     defaultCameraModel,
-                                                                    allowedCameraModels);
+                                                                    defaultDistortionModel);
 
                         pParams.lensCorrection.geometryModel = lensParam.perspParams;
                     }

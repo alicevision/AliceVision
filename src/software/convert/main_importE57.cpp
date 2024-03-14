@@ -172,7 +172,7 @@ int aliceVision_main(int argc, char** argv)
     sfmData::SfMData sfmData;
 
     // Create intrinsics
-    auto cam = camera::createEquidistant(aliceVision::camera::EINTRINSIC::EQUIDISTANT_CAMERA, 1, 1, 1, 0, 0);
+    auto cam = camera::createEquidistant(aliceVision::camera::EDISTORTION::DISTORTION_NONE, 1, 1, 1, 0, 0);
     sfmData.getIntrinsics().emplace(0, cam);
 
     // Create a reader using all files

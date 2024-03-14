@@ -35,7 +35,7 @@ class Undistortion
         setOffset({0.0, 0.0});
     }
 
-    virtual EDISTORTION getType() const = 0;
+    virtual EUNDISTORTION getType() const = 0;
 
     virtual Undistortion* clone() const = 0;
 

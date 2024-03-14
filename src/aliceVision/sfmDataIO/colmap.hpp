@@ -57,7 +57,7 @@ const std::set<camera::EINTRINSIC>& colmapCompatibleIntrinsics();
  * @param[in] intrinsicType the intrinsic to check.
  * @return \p true if the intrinsic is compatible.
  */
-bool isColmapCompatible(camera::EINTRINSIC intrinsicType);
+bool isColmapCompatible(camera::EINTRINSIC intrinsicType, camera::EDISTORTION distortionType);
 
 /**
  * @brief Given an SfMData scene returns the list of the IDs of the Colmap-compatible intrinsics.

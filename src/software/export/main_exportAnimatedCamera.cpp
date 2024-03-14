@@ -42,7 +42,7 @@ oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincip
     pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, intrinsic->h() - 1));
     const Vec2 center(intrinsic->w() * 0.5, intrinsic->h() * 0.5);
     Vec2 ppCorrection(0, 0);
-    if (camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType())
+    if (camera::EINTRINSIC::PINHOLE_CAMERA & intrinsic->getType())
     {
         const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsic);
         ppCorrection = pinholePtr->getPrincipalPoint() - center;
@@ -233,7 +233,7 @@ int aliceVision_main(int argc, char** argv)
             const Vec2 center(intrinsic.w() * 0.5, intrinsic.h() * 0.5);
             Vec2 ppCorrection(0.0, 0.0);
 
-            if ((camera::EINTRINSIC::VALID_PINHOLE & intrinsic.getType()) && correctPrincipalPoint)  // correct principal point
+            if ((camera::EINTRINSIC::PINHOLE_CAMERA & intrinsic.getType()) && correctPrincipalPoint)  // correct principal point
             {
                 const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPair.second.get());
                 ppCorrection = pinholePtr->getPrincipalPoint() - center;

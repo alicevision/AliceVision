@@ -230,21 +230,30 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
             std::vector<double> params = {scale(0), scale(1), offset(0), offset(1)};
             ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(params);
         }
+
         // Distortion parameters
+        camera::EDISTORTION distortionType = camera::EDISTORTION::DISTORTION_NONE;
         std::shared_ptr<camera::Distortion> distortion = intrinsicCasted->getDistortion();
         if (distortion)
         {
+            distortionType = distortion->getType();
             ODoubleArrayProperty(userProps, "mvg_distortionParams").set(distortion->getParameters());
         }
+
         // Undistortion parameters and offset
+        camera::EUNDISTORTION undistortionType = camera::EUNDISTORTION::UNDISTORTION_NONE;
         std::shared_ptr<camera::Undistortion> undistortion = intrinsicCasted->getUndistortion();
         if (undistortion)
         {
+            undistortionType = undistortion->getType();
             ODoubleArrayProperty(userProps, "mvg_undistortionParams").set(undistortion->getParameters());
             ODoubleProperty(userProps, "mvg_undistortionOffsetX").set(undistortion->getOffset().x());
             ODoubleProperty(userProps, "mvg_undistortionOffsetY").set(undistortion->getOffset().y());
             ODoubleProperty(userProps, "mvg_undistortionDiagonal").set(undistortion->getDiagonal());
         }
+        
+        OStringProperty(userProps, "mvg_distortionType").set(EDISTORTION_enumToString(distortionType));
+        OStringProperty(userProps, "mvg_undistortionType").set(EUNDISTORTION_enumToString(undistortionType));
 
         camObj.getSchema().set(camSample);
     }

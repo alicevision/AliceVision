@@ -75,7 +75,6 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EVie
  * @param[in] defaultOffsetY
  * @param[in] lensParam Lens data from LCP file
  * @param[in] defaultIntrinsicType (unknown by default)
- * @param[in] allowedEintrinsics The intrinsics values that can be attributed
  * @return shared_ptr IntrinsicBase
  */
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& view,
@@ -88,7 +87,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
                                                         double defaultOffsetY = 0.0,
                                                         LensParam* lensParam = nullptr,
                                                         camera::EINTRINSIC defaultIntrinsicType = camera::EINTRINSIC::UNKNOWN,
-                                                        camera::EINTRINSIC allowedEintrinsics = camera::EINTRINSIC::VALID_CAMERA_MODEL);
+                                                        camera::EDISTORTION defaultDistortionType = camera::EDISTORTION::DISTORTION_NONE);
 
 /**
  * @brief Allows you to retrieve the files paths corresponding to a view by searching through a list of folders.

@@ -235,8 +235,11 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // Copy original intrinsic
-        auto newIntrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(camera::createIntrinsic(intrinsic->getType()));
-        newIntrinsic->assign(*intrinsic);
+        std::shared_ptr<camera::IntrinsicScaleOffsetDisto> newIntrinsic(
+            dynamic_cast<camera::IntrinsicScaleOffsetDisto*>(
+                intrinsic->clone()
+            )
+        );
 
         if (isIntrinsicCalibrated)
         {

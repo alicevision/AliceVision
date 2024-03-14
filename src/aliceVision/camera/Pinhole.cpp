@@ -312,42 +312,6 @@ bool Pinhole::isVisibleRay(const Vec3& ray) const
 
 EINTRINSIC Pinhole::getType() const
 {
-    if (_pDistortion)
-    {
-        switch (_pDistortion->getType())
-        {
-            case EDISTORTION::DISTORTION_RADIALK1:
-                return EINTRINSIC::PINHOLE_CAMERA_RADIAL1;
-            case EDISTORTION::DISTORTION_RADIALK3:
-                return EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
-            case EDISTORTION::DISTORTION_BROWN:
-                return EINTRINSIC::PINHOLE_CAMERA_BROWN;
-            case EDISTORTION::DISTORTION_FISHEYE:
-                return EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
-            case EDISTORTION::DISTORTION_FISHEYE1:
-                return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1;
-            case EDISTORTION::DISTORTION_3DERADIAL4:
-                return EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4;
-            case EDISTORTION::DISTORTION_3DECLASSICLD:
-                return EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD;
-            case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
-                return EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4;
-            default:
-                throw std::out_of_range("Invalid distortion model for pinhole camera.");
-        }
-    }
-
-    if (_pUndistortion)
-    {
-        switch (_pUndistortion->getType())
-        {
-            case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
-                return EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4;
-            default:
-                throw std::out_of_range("Invalid undistortion model for pinhole camera.");
-        }
-    }
-
     return EINTRINSIC::PINHOLE_CAMERA;
 }
 

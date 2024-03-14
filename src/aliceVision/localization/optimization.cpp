@@ -69,7 +69,8 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
             // just add a simple pinhole camera with the same K as the input camera
             Vec2 pp = currIntrinsics->getPrincipalPoint();
             tinyScene.getIntrinsics().emplace(intrinsicID,
-                                              camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA,
+                                              camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE,
+                                                                    camera::EUNDISTORTION::UNDISTORTION_NONE,
                                                                     currIntrinsics->w(),
                                                                     currIntrinsics->h(),
                                                                     currIntrinsics->getFocalLengthPixX(),

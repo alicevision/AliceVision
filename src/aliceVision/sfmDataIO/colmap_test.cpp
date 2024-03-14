@@ -17,23 +17,23 @@ using namespace aliceVision;
 
 BOOST_AUTO_TEST_CASE(colmap_isCompatible)
 {
-    const std::map<camera::EINTRINSIC, bool> compatibility{
-      {camera::EINTRINSIC::PINHOLE_CAMERA, true},
-      {camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1, true},
-      {camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, true},
-      {camera::EINTRINSIC::PINHOLE_CAMERA_BROWN, true},
-      {camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE, true},
-      {camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1, true},
-      {camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4, false},
-      {camera::EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD, false},
-      {camera::EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4, false},
-      {camera::EINTRINSIC::EQUIDISTANT_CAMERA, false},
-      {camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, false},
+    const std::map<std::pair<camera::EINTRINSIC, camera::EDISTORTION>, bool> compatibility{
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_NONE}, true},
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_RADIALK1}, true},
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_RADIALK3}, true},
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_BROWN}, true},
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_FISHEYE}, true},
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_FISHEYE1}, true},
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_3DEANAMORPHIC4}, false},
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_3DECLASSICLD}, false},
+      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_3DERADIAL4}, false},
+      {{camera::EINTRINSIC::EQUIDISTANT_CAMERA, camera::EDISTORTION::DISTORTION_NONE}, false},
+      {{camera::EINTRINSIC::EQUIDISTANT_CAMERA, camera::EDISTORTION::DISTORTION_RADIALK3PT}, false},
     };
 
     for (const auto& c : compatibility)
     {
-        BOOST_CHECK(sfmDataIO::isColmapCompatible(c.first) == c.second);
+        BOOST_CHECK(sfmDataIO::isColmapCompatible(c.first.first, c.first.second) == c.second);
     }
 }
 
@@ -43,25 +43,26 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
     auto& intrTest = sfmTest.getIntrinsics();
     BOOST_CHECK(intrTest.empty());
     // add some compatible intrinsics
-    intrTest.emplace(10, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54));
-    intrTest.emplace(11, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078}));
+    intrTest.emplace(10, camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE,camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54));
+    intrTest.emplace(11, camera::createPinhole(camera::EDISTORTION::DISTORTION_RADIALK1, camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078}));
     intrTest.emplace(
       12,
-      camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714}));
+      camera::createPinhole(camera::EDISTORTION::DISTORTION_RADIALK3, camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714}));
     intrTest.emplace(
       13,
-      camera::createPinhole(
-        camera::EINTRINSIC::PINHOLE_CAMERA_BROWN, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714, 0.00134, -0.000542}));
+      camera::createPinhole(camera::EDISTORTION::DISTORTION_BROWN, camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714, 0.00134, -0.000542}));
     intrTest.emplace(
       14,
-      camera::createPinhole(
-        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714, 0.00134}));
+      camera::createPinhole(camera::EDISTORTION::DISTORTION_FISHEYE, camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.02078, 0.1705, -0.00714, 0.00134}));
     intrTest.emplace(15,
-                     camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.000542}));
+                     camera::createPinhole(camera::EDISTORTION::DISTORTION_FISHEYE1, camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.000542}));
     // add some incompatible intrinsics
-    intrTest.emplace(20, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 0., 0., 0., 0.));
+    intrTest.emplace(20, camera::createPinhole(camera::EDISTORTION::DISTORTION_3DEANAMORPHIC4, 
+                                                camera::EUNDISTORTION::UNDISTORTION_NONE, 
+                                                1920, 1080, 0., 0., 0., 0.));
     intrTest.emplace(21,
-                     camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD,
+                     camera::createPinhole(camera::EDISTORTION::DISTORTION_3DECLASSICLD, 
+                                           camera::EUNDISTORTION::UNDISTORTION_NONE,
                                            1920,
                                            1080,
                                            1548.76,
@@ -70,7 +71,8 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
                                            549.54,
                                            {-0.02078, 0.1705, -0.00714, 0.00134, -0.000542}));
     intrTest.emplace(22,
-                     camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4,
+                     camera::createPinhole(camera::EDISTORTION::DISTORTION_3DERADIAL4, 
+                                           camera::EUNDISTORTION::UNDISTORTION_NONE,
                                            1920,
                                            1080,
                                            1548.76,
@@ -78,10 +80,15 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
                                            992.36,
                                            549.54,
                                            {-0.02078, 0.1705, -0.00714, 0.00134, -0.00714, 0.00134}));
-    intrTest.emplace(23, camera::createEquidistant(camera::EINTRINSIC::EQUIDISTANT_CAMERA, 1920, 1080, 1548.76, 549.54, -0.02078));
+    intrTest.emplace(23, camera::createEquidistant(camera::EDISTORTION::DISTORTION_NONE,
+                                                1920, 1080, 1548.76, 549.54, -0.02078));
     intrTest.emplace(
       24,
-      camera::createEquidistant(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1548.76, 549.54, -0.02078, {0.1705, -0.00714, 0.00134}));
+      camera::createEquidistant(
+        camera::EDISTORTION::DISTORTION_RADIALK3PT, 
+        1920, 1080, 1548.76, 549.54, -0.02078, {0.1705, -0.00714, 0.00134}
+    )
+    );
 
     // reference for each intrinsic ID the relevant expected string
     const std::map<IndexT, std::string> stringRef{
@@ -112,7 +119,8 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
         }
         else
         {
-            BOOST_CHECK(sfmDataIO::isColmapCompatible(intr->getType()));
+            camera::EDISTORTION distoType = camera::getDistortionType(*intr);
+            BOOST_CHECK(sfmDataIO::isColmapCompatible(intr->getType(), distoType));
         }
     }
 
@@ -146,7 +154,11 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
         for (const auto& id : compatibleViews)
         {
             const auto intrID = sfmTest.getViews().at(id)->getIntrinsicId();
-            BOOST_CHECK(sfmDataIO::isColmapCompatible(sfmTest.getIntrinsics().at(intrID)->getType()));
+            const auto intrinsics = sfmTest.getIntrinsics().at(intrID);
+
+            camera::EDISTORTION distoType = camera::getDistortionType(*intrinsics);
+
+            BOOST_CHECK(sfmDataIO::isColmapCompatible(intrinsics->getType(), distoType));
         }
     }
 }

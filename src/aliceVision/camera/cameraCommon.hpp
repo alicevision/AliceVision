@@ -21,7 +21,7 @@ namespace camera {
 
 enum EDISTORTION
 {
-    NONE,
+    DISTORTION_NONE,
     DISTORTION_RADIALK1,
     DISTORTION_RADIALK3,
     DISTORTION_RADIALK3PT,
@@ -30,27 +30,20 @@ enum EDISTORTION
     DISTORTION_FISHEYE1,
     DISTORTION_3DERADIAL4,
     DISTORTION_3DEANAMORPHIC4,
-    DISTORTION_3DECLASSICLD,
+    DISTORTION_3DECLASSICLD
+};
+
+enum EUNDISTORTION
+{
+    UNDISTORTION_NONE,
+    UNDISTORTION_3DEANAMORPHIC4
 };
 
 enum EINTRINSIC
 {
     UNKNOWN = (1u << 0),
     PINHOLE_CAMERA = (1u << 1),                 // plain pinhole model
-    PINHOLE_CAMERA_RADIAL1 = (1u << 2),         // pinhole model with radial distortion K1
-    PINHOLE_CAMERA_RADIAL3 = (1u << 3),         // pinhole model with radial distortion K1,K2,K3
-    PINHOLE_CAMERA_BROWN = (1u << 4),           // pinhole model with radial distortion K1,K2,K3, tangential distortion T1,T2
-    PINHOLE_CAMERA_FISHEYE = (1u << 5),         // pinhole model with 4 coefficients fish-eye distortion
-    PINHOLE_CAMERA_FISHEYE1 = (1u << 6),        // pinhole model with 1 coefficient fish-eye distortion
-    PINHOLE_CAMERA_3DEANAMORPHIC4 = (1u << 7),  // pinhole model with 3DEqualizer anamorphic distortion
-    PINHOLE_CAMERA_3DECLASSICLD = (1u << 8),    // pinhole model with 3DEqualizer ClassicLD distortion
-    PINHOLE_CAMERA_3DERADIAL4 = (1u << 9),      // pinhole model with 3DEqualizer radial distortion
-    EQUIDISTANT_CAMERA = (1u << 10),            // plain equidistant model
-    EQUIDISTANT_CAMERA_RADIAL3 = (1u << 11),    // equidistant model with radial distortion
-    VALID_PINHOLE = PINHOLE_CAMERA | PINHOLE_CAMERA_RADIAL1 | PINHOLE_CAMERA_RADIAL3 | PINHOLE_CAMERA_3DERADIAL4 | PINHOLE_CAMERA_BROWN |
-                    PINHOLE_CAMERA_3DEANAMORPHIC4 | PINHOLE_CAMERA_3DECLASSICLD | PINHOLE_CAMERA_FISHEYE | PINHOLE_CAMERA_FISHEYE1,
-    VALID_EQUIDISTANT = EQUIDISTANT_CAMERA | EQUIDISTANT_CAMERA_RADIAL3,
-    VALID_CAMERA_MODEL = VALID_PINHOLE | VALID_EQUIDISTANT,
+    EQUIDISTANT_CAMERA = (1u << 2),            // plain equidistant model
 };
 
 BOOST_BITMASK(EINTRINSIC);
@@ -61,30 +54,9 @@ inline std::string EINTRINSIC_enumToString(EINTRINSIC intrinsic)
     {
         case EINTRINSIC::PINHOLE_CAMERA:
             return "pinhole";
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-            return "radial1";
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-            return "radial3";
-        case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
-            return "3deradial4";
-        case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-            return "brown";
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-            return "fisheye4";
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-            return "fisheye1";
-        case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
-            return "3deanamorphic4";
-        case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
-            return "3declassicld";
         case EINTRINSIC::EQUIDISTANT_CAMERA:
             return "equidistant";
-        case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:
-            return "equidistant_r3";
         case EINTRINSIC::UNKNOWN:
-        case EINTRINSIC::VALID_PINHOLE:
-        case EINTRINSIC::VALID_EQUIDISTANT:
-        case EINTRINSIC::VALID_CAMERA_MODEL:
             break;
     }
     throw std::out_of_range("Invalid Intrinsic Enum");
@@ -96,27 +68,14 @@ inline EINTRINSIC EINTRINSIC_stringToEnum(const std::string& intrinsic)
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
 
     if (type == "pinhole")
+    {
         return EINTRINSIC::PINHOLE_CAMERA;
-    if (type == "radial1")
-        return EINTRINSIC::PINHOLE_CAMERA_RADIAL1;
-    if (type == "radial3")
-        return EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
-    if (type == "3deradial4")
-        return EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4;
-    if (type == "brown")
-        return EINTRINSIC::PINHOLE_CAMERA_BROWN;
-    if (type == "fisheye4")
-        return EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
-    if (type == "fisheye1")
-        return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1;
-    if (type == "3deanamorphic4")
-        return EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4;
-    if (type == "3declassicld")
-        return EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD;
+    }
+
     if (type == "equidistant")
+    {
         return EINTRINSIC::EQUIDISTANT_CAMERA;
-    if (type == "equidistant_r3")
-        return EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3;
+    }
 
     throw std::out_of_range(intrinsic);
 }
@@ -130,27 +89,195 @@ inline std::istream& operator>>(std::istream& in, EINTRINSIC& e)
     return in;
 }
 
+inline bool isPinhole(EINTRINSIC eintrinsic) { return EINTRINSIC::PINHOLE_CAMERA & eintrinsic; }
+
+inline bool isEquidistant(EINTRINSIC eintrinsic) { return EINTRINSIC::EQUIDISTANT_CAMERA & eintrinsic; }
+
 // Return if the camera type is a valid enum
-inline bool isValid(EINTRINSIC eintrinsic) { return EINTRINSIC::VALID_CAMERA_MODEL & eintrinsic; }
+inline bool isValid(EINTRINSIC eintrinsic) { return isPinhole(eintrinsic) || isEquidistant(eintrinsic); }
 
-inline bool isPinhole(EINTRINSIC eintrinsic) { return EINTRINSIC::VALID_PINHOLE & eintrinsic; }
-
-inline bool isEquidistant(EINTRINSIC eintrinsic) { return EINTRINSIC::VALID_EQUIDISTANT & eintrinsic; }
-
-inline EINTRINSIC EINTRINSIC_parseStringToBitmask(const std::string& str, const std::string& joinChar = ",")
+inline EDISTORTION EDISTORTION_stringToEnum(const std::string& distortion)
 {
-    std::vector<std::string> intrinsicsVec;
-    boost::split(intrinsicsVec, str, boost::is_any_of(joinChar));
-    if (!intrinsicsVec.size())
+    std::string type = distortion;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
+
+    if (type == "radialk1")
     {
-        throw std::invalid_argument("'" + str + "'can't be parsed to EINTRINSIC Bitmask.");
+        return EDISTORTION::DISTORTION_RADIALK1;
     }
-    EINTRINSIC mask = EINTRINSIC_stringToEnum(intrinsicsVec[0]);
-    for (const std::string& intrinsic : intrinsicsVec)
+    else if (type == "radialk3")
     {
-        mask |= EINTRINSIC_stringToEnum(intrinsic);
+        return EDISTORTION::DISTORTION_RADIALK3;
     }
-    return mask;
+    else if (type == "radialk3pt")
+    {
+        return EDISTORTION::DISTORTION_RADIALK3PT;
+    }
+    else if (type == "radialbrown")
+    {
+        return EDISTORTION::DISTORTION_BROWN;
+    }
+    else if (type == "fisheye")
+    {
+        return EDISTORTION::DISTORTION_FISHEYE;
+    }
+    else if (type == "fisheye1")
+    {
+        return EDISTORTION::DISTORTION_FISHEYE1;
+    }
+    else if (type == "3deradial4")
+    {
+        return EDISTORTION::DISTORTION_3DERADIAL4;
+    }
+    else if (type == "3deanamorphic4")
+    {
+        return EDISTORTION::DISTORTION_3DEANAMORPHIC4;
+    }
+    else if (type == "3declassicld")
+    {
+        return EDISTORTION::DISTORTION_3DECLASSICLD;
+    }
+    else if (type == "none")
+    {
+        return EDISTORTION::DISTORTION_NONE;
+    }
+
+    throw std::out_of_range(distortion);
+}
+
+inline std::string EDISTORTION_enumToString(EDISTORTION distortion)
+{
+    switch (distortion)
+    {
+        case EDISTORTION::DISTORTION_RADIALK1:
+            return "radialk1";
+        case EDISTORTION::DISTORTION_RADIALK3:
+            return "radialk3";
+        case EDISTORTION::DISTORTION_RADIALK3PT:
+            return "radialk3pt";
+        case EDISTORTION::DISTORTION_BROWN:
+            return "radialbrown";
+        case EDISTORTION::DISTORTION_FISHEYE:
+            return "fisheye";
+        case EDISTORTION::DISTORTION_FISHEYE1:
+            return "fisheye1";
+        case EDISTORTION::DISTORTION_3DERADIAL4:
+            return "3deradial4";
+        case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+            return "3deanamorphic4";
+        case EDISTORTION::DISTORTION_3DECLASSICLD:
+            return "3declassicld";
+        case EDISTORTION::DISTORTION_NONE:
+            return "none";
+    }
+    throw std::out_of_range("Invalid Undistortion Enum");
+}
+
+inline EUNDISTORTION EUNDISTORTION_stringToEnum(const std::string& undistortion)
+{
+    std::string type = undistortion;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
+
+    
+    if (type == "3deanamorphic4")
+    {
+        return EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4;
+    }
+    else if (type == "none")
+    {
+        return EUNDISTORTION::UNDISTORTION_NONE;
+    }
+
+    throw std::out_of_range(undistortion);
+}
+
+inline std::string EUNDISTORTION_enumToString(EUNDISTORTION undistortion)
+{
+    switch (undistortion)
+    {
+        case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
+            return "3deanamorphic4";
+        case EUNDISTORTION::UNDISTORTION_NONE:
+            return "none";
+    }
+    throw std::out_of_range("Invalid Undistortion Enum");
+}
+
+inline void compatibilityStringToEnums(const std::string& intrinsic, EINTRINSIC & intrinsicType, EDISTORTION & distortionType, EUNDISTORTION & undistortionType)
+{
+    std::string type = intrinsic;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
+
+    if (type == "pinhole")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_NONE;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "radial1")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_RADIALK1;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "radial3")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_RADIALK3;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "3deradial4")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_3DERADIAL4;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "brown")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_BROWN;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "fisheye4")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_FISHEYE;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "fisheye1")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_FISHEYE1;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "3deanamorphic4")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_NONE;
+        undistortionType = EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4;
+    }
+    else if (type == "3declassicld")
+    {
+        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_3DECLASSICLD;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "equidistant")
+    {
+        intrinsicType = EINTRINSIC::EQUIDISTANT_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_NONE;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else if (type == "equidistant_r3")
+    {
+        intrinsicType = EINTRINSIC::EQUIDISTANT_CAMERA;
+        distortionType = EDISTORTION::DISTORTION_RADIALK3PT;
+        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
+    }
+    else 
+    {
+        throw std::out_of_range(intrinsic);
+    }
 }
 
 }  // namespace camera

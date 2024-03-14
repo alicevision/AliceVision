@@ -211,35 +211,44 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
         }
     }
 
-    switch (intrinsicPtr->getType())
+    camera::EDISTORTION distoType = camera::getDistortionType(*intrinsicPtr);
+
+    if (intrinsicPtr->getType() == EINTRINSIC::PINHOLE_CAMERA)
     {
-        case EINTRINSIC::PINHOLE_CAMERA:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 3>(
-              new ResidualErrorFunctor_PinholeRadialK1(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 3>(
-              new ResidualErrorFunctor_PinholeRadialK3(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 3>(
-              new ResidualErrorFunctor_Pinhole3DERadial4(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 3>(
-              new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 3>(
-              new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 3>(
-              new ResidualErrorFunctor_PinholeFisheye(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 3>(
-              new ResidualErrorFunctor_PinholeFisheye1(w, h, obsUndistorted));
-        default:
-            throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
+        switch (distoType)
+        {
+            case EDISTORTION::DISTORTION_NONE:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_RADIALK1:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 3>(
+                new ResidualErrorFunctor_PinholeRadialK1(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_RADIALK3:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 3>(
+                new ResidualErrorFunctor_PinholeRadialK3(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_3DERADIAL4:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 3>(
+                new ResidualErrorFunctor_Pinhole3DERadial4(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_3DECLASSICLD:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 3>(
+                new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_BROWN:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 3>(
+                new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_FISHEYE:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 3>(
+                new ResidualErrorFunctor_PinholeFisheye(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_FISHEYE1:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 3>(
+                new ResidualErrorFunctor_PinholeFisheye1(w, h, obsUndistorted));
+            default:
+                throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
+        }
+    }
+    else 
+    {
+        throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
     }
 }
 
@@ -266,37 +275,46 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
         }
     }
 
-    switch (intrinsicPtr->getType())
+    camera::EDISTORTION distoType = camera::getDistortionType(*intrinsicPtr);
+
+    if (intrinsicPtr->getType() == EINTRINSIC::PINHOLE_CAMERA)
     {
-        case EINTRINSIC::PINHOLE_CAMERA:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 6, 3>(
-              new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 6, 3>(
-              new ResidualErrorFunctor_PinholeRadialK1(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 6, 3>(
-              new ResidualErrorFunctor_PinholeRadialK3(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 6, 3>(
-              new ResidualErrorFunctor_Pinhole3DERadial4(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 6, 3>(
-              new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 6, 3>(
-              new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 6, 3>(
-              new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 6, 3>(
-              new ResidualErrorFunctor_PinholeFisheye(w, h, obsUndistorted));
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-            return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 6, 3>(
-              new ResidualErrorFunctor_PinholeFisheye1(w, h, obsUndistorted));
-        default:
-            throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
+        switch (distoType)
+        {
+            case EDISTORTION::DISTORTION_NONE:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 6, 3>(
+                new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_RADIALK1:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 6, 3>(
+                new ResidualErrorFunctor_PinholeRadialK1(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_RADIALK3:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 6, 3>(
+                new ResidualErrorFunctor_PinholeRadialK3(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_3DERADIAL4:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 6, 3>(
+                new ResidualErrorFunctor_Pinhole3DERadial4(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_3DECLASSICLD:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 6, 3>(
+                new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 6, 3>(
+                new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_BROWN:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 6, 3>(
+                new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_FISHEYE:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 6, 3>(
+                new ResidualErrorFunctor_PinholeFisheye(w, h, obsUndistorted));
+            case EDISTORTION::DISTORTION_FISHEYE1:
+                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 6, 3>(
+                new ResidualErrorFunctor_PinholeFisheye1(w, h, obsUndistorted));
+            default:
+                throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
+        }
+    }
+    else 
+    {
+        throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
     }
 }
 
@@ -320,29 +338,46 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const Intrinsic
     int w = intrinsicPtr->w();
     int h = intrinsicPtr->h();
 
-    switch (intrinsicPtr->getType())
+    camera::EDISTORTION distoType = camera::getDistortionType(*intrinsicPtr);
+
+    if (intrinsicPtr->getType() == EINTRINSIC::PINHOLE_CAMERA)
     {
-        case EINTRINSIC::PINHOLE_CAMERA:
+        switch (distoType)
+        {
+        case EDISTORTION::DISTORTION_NONE:
             return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Pinhole, 2, 3, 6, 6>(
               new ResidualErrorConstraintFunctor_Pinhole(w, h, observation_first.homogeneous(), observation_second.homogeneous()));
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
+        case EDISTORTION::DISTORTION_RADIALK1:
             return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK1, 2, 4, 6, 6>(
               new ResidualErrorConstraintFunctor_PinholeRadialK1(w, h, observation_first.homogeneous(), observation_second.homogeneous()));
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
+        case EDISTORTION::DISTORTION_RADIALK3:
             return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK3, 2, 6, 6, 6>(
               new ResidualErrorConstraintFunctor_PinholeRadialK3(w, h, observation_first.homogeneous(), observation_second.homogeneous()));
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
+        case EDISTORTION::DISTORTION_FISHEYE:
             return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeFisheye, 2, 7, 6, 6>(
               new ResidualErrorConstraintFunctor_PinholeFisheye(w, h, observation_first.homogeneous(), observation_second.homogeneous()));
-        case EQUIDISTANT_CAMERA:
+        default:
+            throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
+        }
+    }
+    else if (intrinsicPtr->getType() == EINTRINSIC::EQUIDISTANT_CAMERA)
+    {
+        switch (distoType)
+        {
+        case EDISTORTION::DISTORTION_NONE:
             return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Equidistant, 2, 3, 6, 6>(
               new ResidualErrorConstraintFunctor_Equidistant(w, h, observation_first.homogeneous(), observation_second.homogeneous(), radius));
-        case EQUIDISTANT_CAMERA_RADIAL3:
+        case EDISTORTION::DISTORTION_RADIALK3PT:
             return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_EquidistantRadialK3, 2, 6, 6, 6>(
               new ResidualErrorConstraintFunctor_EquidistantRadialK3(
                 w, h, observation_first.homogeneous(), observation_second.homogeneous(), radius));
         default:
             throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
+        }
+    }
+    else 
+    {
+        throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
     }
 }
 
