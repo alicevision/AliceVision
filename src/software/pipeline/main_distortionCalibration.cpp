@@ -273,7 +273,7 @@ int aliceVision_main(int argc, char* argv[])
         std::vector<double> initialParams;
         std::vector<std::vector<bool>> lockSteps;
 
-        if (undistortionModel == camera::EDISTORTION::DISTORTION_3DEANAMORPHIC4)
+        if (undistortionModel == camera::EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4)
         {
             initialParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0};
             lockSteps = {{true, true, true, true, true, true, true, true, true, true, true, true, true, true},
