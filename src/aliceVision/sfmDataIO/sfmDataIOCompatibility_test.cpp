@@ -245,13 +245,13 @@ BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_6)
     BOOST_CHECK(sfmData == sfmDataLoad);
 }
 
-BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_7)
+BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_8)
 {
     sfmData::SfMData sfmData;
     generateSampleScene(sfmData);
 
     fs::path pathSource(__FILE__);
-    fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.7.abc";
+    fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.8.abc";
 
     // TODO when we will have files to compare
     sfmData::SfMData sfmDataLoad;
@@ -260,13 +260,13 @@ BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_7)
     BOOST_CHECK(sfmData == sfmDataLoad);
 }
 
-BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_7)
+BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_8)
 {
     sfmData::SfMData sfmData;
     generateSampleScene(sfmData);
 
     fs::path pathSource(__FILE__);
-    fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.7.json";
+    fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.8.json";
 
     // TODO when we will have files to compare
     sfmData::SfMData sfmDataLoad;

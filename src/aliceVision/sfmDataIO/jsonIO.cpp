@@ -252,9 +252,8 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
     camera::EINTRINSIC intrinsicType;
     camera::EDISTORTION distortionType;
     camera::EUNDISTORTION undistortionType;
-    if (version < Version(1, 2, 7))
+    if (version < Version(1, 2, 8))
     {
-        std::cout << intrinsicTree.get<std::string>("type") << std::endl;
         compatibilityStringToEnums(intrinsicTree.get<std::string>("type"), intrinsicType, distortionType, undistortionType);
     }
     else 

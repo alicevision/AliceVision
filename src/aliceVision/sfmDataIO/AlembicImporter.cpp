@@ -612,7 +612,7 @@ bool readCamera(const Version& abcVersion,
         camera::EINTRINSIC intrinsicType;
         camera::EDISTORTION distortionType;
         camera::EUNDISTORTION undistortionType;
-        if (abcVersion < Version(1, 2, 7))
+        if (abcVersion < Version(1, 2, 8))
         {
             compatibilityStringToEnums(mvg_intrinsicType, intrinsicType, distortionType, undistortionType);
         }
