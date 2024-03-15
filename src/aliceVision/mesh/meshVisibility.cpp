@@ -164,6 +164,8 @@ void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh&
     StaticVector<Point3d> normalsPerVertex;
     mesh.computeNormalsForPts(normalsPerVertex);
 
+    ALICEVISION_LOG_INFO("Start checking each vertex: " << mesh.pts.size() << " vertices.");
+
 #pragma omp parallel for
     for (int vi = 0; vi < mesh.pts.size(); ++vi)
     {
@@ -192,6 +194,7 @@ void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh&
             vertexVisibility.push_back(camIndex);
         }
     }
+    ALICEVISION_LOG_INFO("remapMeshVisibility based on triangles normals done.");
 }
 
 }  // namespace mesh
