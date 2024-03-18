@@ -95,7 +95,7 @@ ObservationsPerView getObservationsPerViews(const SfMData& sfmData)
     ObservationsPerView observationsPerView;
     for(auto& landIt : sfmData.getLandmarks())
     {
-        for(const auto& obsIt : landIt.second.observations)
+        for (const auto& obsIt : landIt.second.getObservations())
         {
             IndexT viewId = obsIt.first;
             auto& observationsSet = observationsPerView[viewId];
@@ -155,7 +155,7 @@ bool prepareDenseScene(const SfMData& sfmData,
 
     bool doMaskLandmarks = landmarksMaskScale > 0.f;
     ObservationsPerView observationsPerView;
-    HashMap<IndexT, double> estimatedRadii;
+    std::map<IndexT, double> estimatedRadii;
     if (doMaskLandmarks)
     {
         observationsPerView = std::move(getObservationsPerViews(sfmData));
@@ -334,11 +334,13 @@ bool prepareDenseScene(const SfMData& sfmData,
                     for(const auto& observation : observations)
                     {
                         const auto& obs = *observation;
-                        for(int y = std::max(obs.x.y() - r, 0.);
-                            y <= std::min(obs.x.y() + r, (double)maskLandmarks.Height() - 1); y++)
+                        for (int y = std::max(obs.getCoordinates().y() - r, 0.);
+                             y <= std::min(obs.getCoordinates().y() + r, (double)maskLandmarks.height() - 1);
+                             y++)
                         {
-                            for(int x = std::max(obs.x.x() - r, 0.);
-                                x <= std::min(obs.x.x() + r, (double)maskLandmarks.Width() - 1); x++)
+                            for (int x = std::max(obs.getCoordinates().x() - r, 0.);
+                                 x <= std::min(obs.getCoordinates().x() + r, (double)maskLandmarks.width() - 1);
+                                 x++)
                             {
                                 maskLandmarks(y, x) = std::numeric_limits<unsigned char>::max();
                             }
@@ -356,13 +358,13 @@ bool prepareDenseScene(const SfMData& sfmData,
                 dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation,
                 [&maskLoaded, &mask, &maskLandmarks, &doMaskLandmarks](Image<RGBAfColor>& image)
                 {
-                    if(maskLoaded && (image.Width() * image.Height() != mask.Width() * mask.Height()))
+                    if(maskLoaded && (image.width() * image.height() != mask.width() * mask.height()))
                     {
                         ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
                         return;
                     }
 
-                    for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+                    for(int pix = 0; pix < image.width() * image.height(); ++pix)
                     {
                         image(pix).a() = (maskLoaded && mask(pix) == 0) ? 0.f : (doMaskLandmarks && maskLandmarks(pix) == 127) ? .5f : 1.f;
                     }

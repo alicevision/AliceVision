@@ -165,7 +165,7 @@ struct ObservationsAdaptator
     inline size_t kdtree_get_point_count() const { return _data.size(); }
 
     // Returns the dim'th component of the idx'th point in the class:
-    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data[idx].x(dim); }
+    inline T kdtree_get_pt(const size_t idx, int dim) const { return _data[idx].getCoordinates()(dim); }
 
     // Optional bounding-box computation: return false to default to a standard bbox computation loop.
     //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it
@@ -353,7 +353,7 @@ ObservationsPerView getObservationsPerViews(SfMData& sfmData)
     ObservationsPerView observationsPerView;
     for(auto& landIt : sfmData.getLandmarks())
     {
-        for(const auto& obsIt : landIt.second.observations)
+        for(const auto& obsIt : landIt.second.getObservations())
         {
             IndexT viewId = obsIt.first;
             auto& landmarksSet = observationsPerView[viewId];
@@ -376,7 +376,7 @@ void filterLandmarks_step1(SfMData& sfmData,
         ALICEVISION_LOG_INFO("Removing landmarks having an insufficient number of observations: started.");
         for(auto& it : sfmData.getLandmarks())
         {
-            if(it.second.observations.size() < params.minNbObservationsPerLandmark)
+            if (it.second.getObservations().size() < params.minNbObservationsPerLandmark)
                 continue;
             landmarksData[i++] = it.second;
         }
@@ -415,10 +415,10 @@ void filterLandmarks_step2(SfMData& sfmData,
     for(auto i = 0; i < landmarksData.size(); i++)
     {
         const sfmData::Landmark& landmark = landmarksData[i];
-        const auto& nbObservations = landmark.observations.size();
+        const auto& nbObservations = landmark.getObservations().size();
         auto& [viewIds, neighbors] = viewData[i];
         viewIds.reserve(nbObservations);
-        for(const auto& observationPair : landmark.observations)
+        for (const auto& observationPair : landmark.getObservations())
         {
             const IndexT viewId = observationPair.first;
             viewIds.push_back(viewId);
@@ -504,12 +504,12 @@ void filterLandmarks_step3(SfMData& sfmData,
         // compute landmark pixSize
         double pixSize = 0.;
         int n = 0;
-        for(const auto& observationPair : landmark.observations)
+        for (const auto& observationPair : landmark.getObservations())
         {
             const IndexT viewId = observationPair.first;
             pixSize += mp.getCamPixelSize(Point3d(landmark.X.x(), landmark.X.y(), landmark.X.z()),
                                           mp.getIndexFromViewId(viewId),
-                                          params.useFeatureScale ? observationPair.second.scale : 1);
+                                          params.useFeatureScale ? observationPair.second.getScale() : 1);
             n++;
         }
         pixSize /= n;
@@ -594,13 +594,13 @@ void computeInitialObservationScores(SfMData& sfmData, std::vector<Landmark*>& l
         const sfmData::Landmark& landmark = *landmarksData[i];
 
         // compute observation scores
-        const auto& nbObservations = landmark.observations.size();
+        const auto& nbObservations = landmark.getObservations().size();
         auto& [viewIds, viewScores] = viewScoresData[i];
         viewIds.reserve(nbObservations);
         viewScores.reserve(nbObservations);
         // accumulator for normalizing the scores
         double total = 0.;
-        for(const auto& observationPair : landmark.observations)
+        for (const auto& observationPair : landmark.getObservations())
         {
             const IndexT viewId = observationPair.first;
             const sfmData::View& view = *(sfmData.getViews().at(viewId));
@@ -869,7 +869,7 @@ void removeNonObservedLandmarks(SfMData& sfmData)
     const auto& initialNbLandmarks = sfmData.getLandmarks().size();
     for(auto it = sfmData.getLandmarks().begin(); it != sfmData.getLandmarks().end();)
     {
-        if(it->second.observations.size() == 0)
+        if (it->second.getObservations().size() == 0)
             it = sfmData.getLandmarks().erase(it);
         else
             ++it;
@@ -920,14 +920,13 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
 
         // keep only observations with best scores
         Observations filteredObservations;
-        size_t maxNbObservationsPerLandmark =
-            std::min(static_cast<size_t>(params.maxNbObservationsPerLandmark), landmark.observations.size());
+        size_t maxNbObservationsPerLandmark = std::min(static_cast<size_t>(params.maxNbObservationsPerLandmark), landmark.getObservations().size());
         for(auto j = 0; j < maxNbObservationsPerLandmark; j++)
         {
             // add observation only if it's an original observation and not augmented
             const auto& viewId = viewIds[idx[j]];
-            const auto& obsIt = landmark.observations.find(viewId);
-            if(obsIt != landmark.observations.end())
+            const auto& obsIt = landmark.getObservations().find(viewId);
+            if (obsIt != landmark.getObservations().end())
                 filteredObservations[viewId] = obsIt->second;
             else if (params.observationsPropagationKeep)
             {
@@ -939,7 +938,7 @@ bool filterObservations3D(SfMData& sfmData, const FilterParams::FilterObservatio
                 filteredObservations[viewId] = Observation(x, UndefinedIndexT, 0.0);
             }
         }
-        landmark.observations = std::move(filteredObservations);
+        landmark.getObservations() = std::move(filteredObservations);
     }
     ALICEVISION_LOG_INFO("Selecting observations with best scores: done");
 
@@ -970,7 +969,7 @@ double filter2DView(SfMData& sfmData, const FilterParams::FilterObservations2DPa
         std::vector<double> distances_(nbNeighbors_);
         KnnNonZeroSearch resultSet(nbNeighbors_);
         resultSet.init(&indices_[0], &distances_[0]);
-        tree.findNeighbors(resultSet, obs.x.data());
+        tree.findNeighbors(resultSet, obs.getCoordinates().data());
         const auto& nbFound = resultSet.size();
         if(nbFound == 0)
             continue;
@@ -1023,7 +1022,7 @@ double filter2DView(SfMData& sfmData, const FilterParams::FilterObservations2DPa
 }
 
 bool filterObservations2D(SfMData& sfmData, const FilterParams::FilterObservations2DParams& params,
-                          HashMap<IndexT, double>& estimatedRadii)
+                          std::map<IndexT, double>& estimatedRadii)
 {
     std::set<IndexT> viewIds = sfmData.getValidViews();
     std::vector<double> estimatedRadii_(viewIds.size(), -1.);
@@ -1046,7 +1045,7 @@ bool filterObservations2D(SfMData& sfmData, const FilterParams::FilterObservatio
     // clear and update landmark observations
     for(auto& landmark : sfmData.getLandmarks())
     {
-        landmark.second.observations.clear();
+        landmark.second.getObservations().clear();
     }
     for(int i = 0; i < viewIds.size(); ++i)
     {
@@ -1064,7 +1063,7 @@ bool filterObservations2D(SfMData& sfmData, const FilterParams::FilterObservatio
             auto& landmarks = observationsIt->second.second;
             for(int j = 0; j < observations.size(); j++)
             {
-                landmarks[j]->observations[viewId] = observations[j];
+                landmarks[j]->getObservations()[viewId] = observations[j];
             }
         }
     }
@@ -1163,7 +1162,7 @@ int aliceVision_main(int argc, char *argv[])
 
     // Read the input SfM scene
     SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, inputSfmFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::load(sfmData, inputSfmFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << inputSfmFilename << "' cannot be read.");
         return EXIT_FAILURE;
@@ -1188,7 +1187,7 @@ int aliceVision_main(int argc, char *argv[])
 
     if(params.filterObservations2D.enabled)
     {
-        HashMap<IndexT, double> estimatedRadii;
+        std::map<IndexT, double> estimatedRadii;
         ALICEVISION_LOG_INFO("Filtering observations in 2D: started.");
         filterObservations2D(sfmData, params.filterObservations2D, estimatedRadii);
         ALICEVISION_LOG_INFO("Filtering observations in 2D: done.");
@@ -1206,7 +1205,7 @@ int aliceVision_main(int argc, char *argv[])
         }
     }
 
-    sfmDataIO::Save(sfmData, outputSfmFilename, sfmDataIO::ESfMData::ALL);
+    sfmDataIO::save(sfmData, outputSfmFilename, sfmDataIO::ESfMData::ALL);
     return EXIT_SUCCESS;
 
 }
