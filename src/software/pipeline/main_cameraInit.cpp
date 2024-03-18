@@ -468,7 +468,10 @@ int aliceVision_main(int argc, char** argv)
             }
         }
 
-        if (boost::algorithm::starts_with(parentPath.stem().string(), "ps_") || boost::algorithm::starts_with(parentPath.stem().string(), "hdr_"))
+        std::string toCompare = parentPath.stem().string();
+        transform(toCompare.begin(), toCompare.end(), toCompare.begin(), ::tolower);
+
+        if (boost::algorithm::starts_with(toCompare, "ps_") || boost::algorithm::starts_with(parentPath.stem().string(), "hdr_"))
         {
             std::hash<std::string> hash;
             IndexT tmpPoseID = hash(parentPath.string());  // use a temporary pose Id to group the images
