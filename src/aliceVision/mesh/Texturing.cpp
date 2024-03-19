@@ -237,7 +237,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
                             uvPix.y = 1.0 - uvPix.y;
 
                             // sanity check: discard invalid UVs
-                            if (uvPix.x < 0 || uvPix.x > 1.0 || uvPix.y < 0 || uvPix.x > 1.0)
+                            if (uvPix.x < 0 || uvPix.x > 1.0 || uvPix.y < 0 || uvPix.y > 1.0)
                             {
                                 ALICEVISION_LOG_WARNING("Discarding invalid UV: " + std::to_string(uvPix.x) + ", " + std::to_string(uvPix.y));
                                 uvPix = Point2d();
