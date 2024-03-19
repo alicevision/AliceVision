@@ -217,11 +217,7 @@ void buildLightMatFromJSON(const std::string& fileName,
                     }
                     else if (cpt == 4)
                     {
-                        // no support for SH lighting :
-                        for (int pictureIndex = 0; pictureIndex < lightMat.rows(); ++pictureIndex)
-                        {
-                            lightMat.row(pictureIndex) = lightMat.row(pictureIndex) / lightMat.row(pictureIndex).norm();
-                        }
+                        lightMat.row(lineNumber) = lightMat.row(lineNumber)/lightMat.row(lineNumber).norm();
                         ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
                     }
                     ++cpt;
@@ -252,10 +248,7 @@ void buildLightMatFromJSON(const std::string& fileName,
                         else if (cpt == 4)
                         {
                             // no support for SH lighting :
-                            for (int pictureIndex = 0; pictureIndex < lightMat.rows(); ++pictureIndex)
-                            {
-                                lightMat.row(pictureIndex) = lightMat.row(pictureIndex) / lightMat.row(pictureIndex).norm();
-                            }
+                            lightMat.row(lineNumber) = lightMat.row(lineNumber)/lightMat.row(lineNumber).norm();
                             ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
                         }
                         ++cpt;
