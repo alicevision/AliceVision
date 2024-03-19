@@ -266,7 +266,7 @@ class KeyframeSelector
                                      const cv::Mat& squaredSum,
                                      const int x,
                                      const int y,
-                                     const int windowSize,
+                                     const std::size_t windowSize,
                                      const cv::Mat& mask);
 
     /**
