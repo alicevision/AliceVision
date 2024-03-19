@@ -1029,7 +1029,8 @@ double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const s
     }
 
     double maxstd = 0.0;
-    int x, y;
+    int x = 1;
+    int y = 1;
 
     // Starts at 1 because the integral image is padded with 0s on the top and left borders
     for (y = 1; y < sum.rows - windowSize; y += windowSize / 4)
