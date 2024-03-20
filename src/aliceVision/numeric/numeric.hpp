@@ -488,6 +488,7 @@ template<class T>
 constexpr T divideRoundUp(T x, T y)
 {
     static_assert(std::is_integral<T>::value, "divideRoundUp only works with integer arguments");
+    assert(y != 0);  // Prevents division by zero
     const auto xPos = x >= 0;
     const auto yPos = y >= 0;
     if (xPos == yPos)
