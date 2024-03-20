@@ -236,7 +236,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     else if (intrinsicType == camera::EINTRINSIC::UNKNOWN)
     {
         intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA;
-        distortionType = camera::EDISTORTION::DISTORTION_NONE;
+        distortionType = camera::EDISTORTION::DISTORTION_RADIALK3;
     }
 
     // create the desired intrinsic
