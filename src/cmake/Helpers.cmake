@@ -34,6 +34,11 @@ function(alicevision_add_library library_name)
 
   if(NOT LIBRARY_USE_CUDA)
     add_library(${library_name} ${LIBRARY_SOURCES})
+    
+    if(ALICEVISION_BUILD_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
+        append_coverage_compiler_flags_to_target(${library_name})
+    endif()
+
   elseif(BUILD_SHARED_LIBS)
     cuda_add_library(${library_name} SHARED ${LIBRARY_SOURCES} OPTIONS --compiler-options "-fPIC")
   else()
@@ -172,6 +177,10 @@ function(alicevision_add_software software_name)
     OUTPUT_NAME ${software_name}
     )
 
+    if(ALICEVISION_BUILD_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
+        append_coverage_compiler_flags_to_target(${software_name}_exe)
+    endif()
+
   target_link_libraries(${software_name}_exe
     PUBLIC ${SOFTWARE_LINKS}
   )
@@ -238,6 +247,10 @@ function(alicevision_add_test test_file)
            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
            COMMAND $<TARGET_FILE:${TEST_EXECUTABLE_NAME}> --catch_system_error=yes --log_level=all
   )
+   
+  if(ALICEVISION_BUILD_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
+    append_coverage_compiler_flags_to_target(${TEST_EXECUTABLE_NAME})
+  endif()
 
   if(UNIX)
     # setup LD_LIBRARY_PATH for running tests

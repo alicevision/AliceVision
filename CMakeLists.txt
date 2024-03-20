@@ -58,6 +58,7 @@ endif()
 # Enable cmake UNIT TEST framework
 # ==============================================================================
 if(ALICEVISION_BUILD_TESTS)
+    include(CTest)
     enable_testing()
 endif()
 

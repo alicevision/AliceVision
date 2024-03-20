@@ -133,6 +133,8 @@ struct InitKmeanspp
 #pragma omp parallel for num_threads(threadCount)
             for (int j = 0; j < numTrials; ++j)
             {
+                typename std::vector<squared_distance_type>::iterator dstiter;
+        
                 // draw an element from 0 to currSum
                 // in order to choose a point with a probability proportional to D(x)^2
                 // let's compute the overall sum of D(x)^2 and draw a number between
