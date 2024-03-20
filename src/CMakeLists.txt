@@ -197,9 +197,15 @@ if(SSE2_FOUND OR TARGET_ARCHITECTURE STREQUAL "native")
   endif()
   set(ALICEVISION_HAVE_SSE 1)
 endif()
-if(UNIX AND NOT ALICEVISION_BUILD_COVERAGE)
-  set(CMAKE_C_FLAGS_RELEASE "-O3")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+if(UNIX)
+  if (ALICEVISION_BUILD_COVERAGE)
+    set(CMAKE_C_FLAGS_RELEASE "-O1")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O1")
+  else ()
+    set(CMAKE_C_FLAGS_RELEASE "-O3")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+  endif()
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -234,11 +240,11 @@ endif()
 # Enable code coverage generation (only with GCC)
 # ==============================================================================
 if(ALICEVISION_BUILD_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
-  message("ALICEVISION_BUILD_COVERAGE enabled")
-  set(CMAKE_BUILD_TYPE "Debug")
-  add_definitions(--coverage -fprofile-arcs -ftest-coverage)
-  set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
+    message("ALICEVISION_BUILD_COVERAGE enabled")
+    include(CodeCoverage)
+    setup_target_for_coverage_gcovr_xml(
+    NAME coverage                 
+    EXECUTABLE ctest -j 4)
 endif()
 
 # ==============================================================================
