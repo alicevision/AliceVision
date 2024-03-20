@@ -43,6 +43,14 @@ void lightCalibrationOneImage(const std::string& picturePath,
                               Eigen::VectorXf& lightingDirection,
                               float& intensity);
 
+void calibrateLightFromRealSphere(const std::string& picturePath,
+                                  const std::string& maskPath,
+                                  const Eigen::Matrix3f& K,
+                                  const float sphereRadius,
+                                  const std::string& method,
+                                  Eigen::VectorXf& lightingDirection,
+                                  float& intensity);
+
 /**
  * @brief Compute the brightest point on a sphere
  * This function cuts the input image around the sphere and applies a convolution filter to find the brightest point in the cut region
@@ -51,6 +59,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
  * @param[out] brigthestPoint An Eigen::Vector2f vector containing the x and y coordinates of the brightest point on the image
  */
 void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint);
+
+void detectBrightestPoint(const image::Image<float> newMask, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint);
 
 /**
  *  @brief Create a triangle kernel
@@ -77,6 +87,11 @@ void getNormalOnSphere(const float xPicture, const float yPicture, const std::ar
  */
 void cutImage(const image::Image<float>& imageFloat,
               const std::array<float, 3>& sphereParam,
+              image::Image<float>& patch,
+              std::array<float, 2>& patchOrigin);
+
+void cutImage(const image::Image<float>& imageFloat,
+              const image::Image<float>& newMask,
               image::Image<float>& patch,
               std::array<float, 2>& patchOrigin);
 

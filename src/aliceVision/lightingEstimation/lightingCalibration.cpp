@@ -340,6 +340,52 @@ void lightCalibrationOneImage(const std::string& picturePath,
 
         lightingDirection << directionnalPart, secondOrder;
     }
+void calibrateLightFromRealSphere(const std::string& picturePath,
+                                  const std::string& maskPath,
+                                  const Eigen::Matrix3f& K,
+                                  const float sphereRadius,
+                                  const std::string& method,
+                                  Eigen::VectorXf& lightingDirection,
+                                  float& intensity)
+{
+    // Read picture :
+    image::Image<float> imageFloat;
+    image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
+
+    image::Image<image::RGBfColor> normals(imageFloat.width(), imageFloat.height());
+    image::Image<float> newMask(imageFloat.width(), imageFloat.height());
+
+    getRealNormalOnSphere(maskPath, K, sphereRadius, normals, newMask);
+
+    // If method = brightest point :
+    if (!method.compare("brightestPoint"))
+    {
+        // Detect brightest point :
+        Eigen::Vector2f brigthestPoint;
+        detectBrightestPoint(newMask, imageFloat, brigthestPoint);
+
+        Eigen::Vector2f brigthestPoint_xy;
+        brigthestPoint_xy(0) = brigthestPoint(0) - imageFloat.cols() / 2;
+        brigthestPoint_xy(1) = brigthestPoint(1) - imageFloat.rows() / 2;
+
+        Eigen::Vector3f normalBrightestPoint;
+        normalBrightestPoint = normals(round(brigthestPoint(1)), round(brigthestPoint(0))).cast<float>();
+
+        // Observation direction :
+        Eigen::Vector3f observationRayPersp;
+
+        // orthographic approximation :
+        observationRayPersp(0) = brigthestPoint_xy(0) / K(0,0);
+        observationRayPersp(1) = brigthestPoint_xy(1) / K(0,0);
+        observationRayPersp(2) = 1.0;
+        observationRayPersp = -observationRayPersp / observationRayPersp.norm();
+
+        // Evaluate lighting direction :
+        lightingDirection = 2 * normalBrightestPoint.dot(observationRayPersp) * normalBrightestPoint - observationRayPersp;
+        lightingDirection = lightingDirection / lightingDirection.norm();
+
+        intensity = 1.0;
+    }
 }
 
 void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint)
@@ -364,6 +410,28 @@ void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::
 
     brigthestPoint(0) = maxCol + patchOrigin[0] - imageFloat.cols() / 2;
     brigthestPoint(1) = maxRow + patchOrigin[1] - imageFloat.rows() / 2;
+void detectBrightestPoint(const image::Image<float> newMask, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint)
+{
+    image::Image<float> patch;
+    std::array<float, 2> patchOrigin;
+    cutImage(imageFloat, newMask, patch, patchOrigin);
+
+    image::Image<float> convolutedPatch1;
+    image::Image<float> convolutedPatch2;
+
+    // Create Kernel
+    size_t kernelSize = round(patch.rows() / 40);  // arbitrary
+    Eigen::VectorXf kernel(2 * kernelSize + 1);
+    createTriangleKernel(kernelSize, kernel);
+
+    image::imageVerticalConvolution(patch, kernel, convolutedPatch1);
+    image::imageHorizontalConvolution(convolutedPatch1, kernel, convolutedPatch2);
+
+    Eigen::Index maxRow, maxCol;
+    static_cast<void>(convolutedPatch2.maxCoeff(&maxRow, &maxCol));
+
+    brigthestPoint(0) = maxCol + patchOrigin[0];
+    brigthestPoint(1) = maxRow + patchOrigin[1];
 }
 
 void createTriangleKernel(const size_t kernelSize, Eigen::VectorXf& kernel)
@@ -414,6 +482,43 @@ void cutImage(const image::Image<float>& imageFloat,
             }
         }
     }
+}
+
+void cutImage(const image::Image<float>& imageFloat,
+              const image::Image<float>& newMask,
+              image::Image<float>& patch,
+              std::array<float, 2>& patchOrigin)
+{
+    int minISphere = newMask.rows();
+    int minJSphere = newMask.cols();
+    int maxISphere = 0;
+    int maxJSphere = 0;
+
+    for (int j = 0; j < newMask.cols(); ++j)
+    {
+        for (int i = 0; i < newMask.rows(); ++i)
+        {
+            if (newMask(i, j) == 1)
+            {
+                if(minISphere > i)
+                    minISphere = i;
+
+                if(minJSphere > j)
+                    minJSphere = j;
+
+                if(maxISphere < i)
+                    maxISphere = i;
+
+                if(maxJSphere < j)
+                    maxJSphere = j;
+            }
+        }
+    }
+
+    patchOrigin[0] = minJSphere;
+    patchOrigin[1] = minISphere;
+
+    patch = imageFloat.block(minISphere, minJSphere, maxISphere-minISphere,  maxJSphere-minJSphere);
 }
 
 void writeJSON(const std::string& fileName,
