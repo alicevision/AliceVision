@@ -13,6 +13,7 @@
 
 // Lighting calibration
 #include <aliceVision/lightingEstimation/lightingCalibration.hpp>
+#include <aliceVision/lightingEstimation/ellipseGeometry.hpp>
 
 // Command line parameters
 #include <aliceVision/cmdline/cmdline.hpp>
@@ -47,7 +48,7 @@ int aliceVision_main(int argc, char** argv)
     system::Timer timer;
 
     std::string inputPath;
-    std::string inputJSON;
+    std::string inputDetection;
     std::string ouputJSON;
     std::string method;
     bool saveAsModel;
@@ -57,8 +58,8 @@ int aliceVision_main(int argc, char** argv)
     requiredParams.add_options()
         ("inputPath,i", po::value<std::string>(&inputPath)->required(),
          "Path to the SfMData input.")
-        ("inputJSON, j", po::value<std::string>(&inputJSON)->required(),
-         "Path to the folder containing the JSON file that describes spheres' positions and radius.")
+        ("inputDetection, j", po::value<std::string>(&inputDetection)->required(),
+         "Path to the folder containing the JSON file that describes spheres' positions and radius")
         ("outputFile, o", po::value<std::string>(&ouputJSON)->required(),
          "Path to JSON output file.");
 
@@ -92,7 +93,8 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read.");
             return EXIT_FAILURE;
         }
-        lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method, saveAsModel);
+
+        lightingEstimation::lightCalibration(sfmData, inputDetection, ouputJSON, method, saveAsModel);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
