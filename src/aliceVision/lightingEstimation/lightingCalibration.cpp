@@ -198,15 +198,23 @@ void lightCalibrationOneImage(const std::string& picturePath,
         Eigen::Vector2f brigthestPoint;
         detectBrightestPoint(sphereParam, imageFloat, brigthestPoint);
 
+        Eigen::Vector2f brigthestPoint_xy;
+        brigthestPoint_xy(0) = brigthestPoint(0) - imageFloat.cols() / 2;
+        brigthestPoint_xy(1) = brigthestPoint(1) - imageFloat.rows() / 2;
+
         Eigen::Vector3f normalBrightestPoint;
-        getNormalOnSphere(brigthestPoint(0), brigthestPoint(1), sphereParam, normalBrightestPoint);
+        getNormalOnSphere(brigthestPoint_xy(0), brigthestPoint_xy(1), sphereParam, normalBrightestPoint);
 
         // Observation direction :
         Eigen::Vector3f observationRayPersp;
 
-        observationRayPersp(0) = (brigthestPoint(0) - imageFloat.cols() / 2) / focal;
-        observationRayPersp(1) = (brigthestPoint(1) - imageFloat.rows() / 2) / focal;
-        observationRayPersp(2) = 1;
+        // orthographic approximation :
+        //observationRay(0) = 0.0;
+        //observationRay(1) = 0.0;
+        //observationRay(2) = -1.0;
+        observationRayPersp(0) = brigthestPoint_xy(0) / focal;
+        observationRayPersp(1) = brigthestPoint_xy(1) / focal;
+        observationRayPersp(2) = 1.0;
         observationRayPersp = -observationRayPersp / observationRayPersp.norm();
 
         // Evaluate lighting direction :
@@ -408,8 +416,10 @@ void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::
     Eigen::Index maxRow, maxCol;
     static_cast<void>(convolutedPatch2.maxCoeff(&maxRow, &maxCol));
 
-    brigthestPoint(0) = maxCol + patchOrigin[0] - imageFloat.cols() / 2;
-    brigthestPoint(1) = maxRow + patchOrigin[1] - imageFloat.rows() / 2;
+    brigthestPoint(0) = maxCol + patchOrigin[0];
+    brigthestPoint(1) = maxRow + patchOrigin[1];
+}
+
 void detectBrightestPoint(const image::Image<float> newMask, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint)
 {
     image::Image<float> patch;
