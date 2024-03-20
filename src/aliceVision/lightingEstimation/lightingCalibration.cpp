@@ -6,6 +6,7 @@
 
 #include "lightingCalibration.hpp"
 #include "lightingEstimation.hpp"
+#include "ellipseGeometry.hpp"
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
