@@ -68,7 +68,7 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
         bool filterTrackForks = true;
         robustEstimation::ERobustEstimator localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
         double localizerEstimatorError = std::numeric_limits<double>::infinity();
-        std::size_t localizerEstimatorMaxIterations = 4096;
+        std::size_t localizerEstimatorMaxIterations = 50000;
 
         // Pyramid scoring
 
