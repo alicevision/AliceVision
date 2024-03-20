@@ -695,6 +695,13 @@ bool loadJSON(sfmData::SfMData& sfmData,
         Vec3i v;
         loadMatrix("version", v, fileTree);
         version = v;
+        
+        const Vec3i currentVersion = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
+        if (Version(currentVersion) < version)
+        {
+            ALICEVISION_LOG_ERROR("File has a version more recent than this library");
+            return false;
+        }
     }
 
     // folders

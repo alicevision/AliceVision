@@ -12,6 +12,7 @@
 #include <Alembic/AbcCoreOgawa/All.h>
 
 #include <aliceVision/version.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -1016,6 +1017,12 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
     }
 
     Version abcVersion(vecAbcVersion[0], vecAbcVersion[1], vecAbcVersion[2]);
+
+    const Vec3i currentVersion = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
+    if (Version(currentVersion) < abcVersion)
+    {
+        ALICEVISION_THROW_ERROR("File has a version more recent than this library");
+    }
 
     if (userProps.getPropertyHeader("mvg_featuresFolders"))
     {
