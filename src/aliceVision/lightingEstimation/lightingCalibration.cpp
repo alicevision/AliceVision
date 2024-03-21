@@ -35,7 +35,7 @@ namespace aliceVision {
 namespace lightingEstimation {
 
 void lightCalibration(const sfmData::SfMData& sfmData,
-                      const std::string& inputJSON,
+                      const std::string& inputFile,
                       const std::string& outputPath,
                       const std::string& method,
                       const bool saveAsModel)
@@ -64,10 +64,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
     std::vector<std::array<float, 3>> allSpheresParams;
     std::vector<Eigen::Matrix3f> KMatrices;
 
-    std::string inputJSONFullName = inputJSON + "/detection.json";
-    std::string maskFullName = inputJSON + "/mask.png";
-
-    if(fs::exists(inputJSONFullName))
+    if(fs::path(inputFile).extension() == ".json")
     {
         std::cout << "JSON file detected" << std::endl;
         fromJSON = true;
@@ -78,7 +75,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         // Main tree
         bpt::ptree fileTree;
         // Read the json file and initialize the tree
-        bpt::read_json(inputJSONFullName, fileTree);
+        bpt::read_json(inputFile, fileTree);
 
         for (const auto& [currentTime, currentView] : viewMap)
         {
@@ -170,7 +167,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         {
             Eigen::Matrix3f K = KMatrices.at(i);
             float sphereRadius = 1.0;
-            calibrateLightFromRealSphere(picturePath, maskFullName, K, sphereRadius, method, lightingDirection, intensity);
+            calibrateLightFromRealSphere(picturePath, inputFile, K, sphereRadius, method, lightingDirection, intensity);
         }
 
         lightMat.row(i) = lightingDirection;
