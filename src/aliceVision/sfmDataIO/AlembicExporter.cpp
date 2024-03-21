@@ -647,8 +647,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
                                         const camera::Pinhole* cam,
                                         const std::string& imagePath,
                                         IndexT viewId,
-                                        IndexT intrinsicId,
-                                        float sensorWidthMM)
+                                        IndexT intrinsicId)
 {
     Eigen::Matrix4d M = Eigen::Matrix4d::Identity();
     M(1, 1) = -1;
@@ -681,14 +680,19 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
     // Camera intrinsic parameters
     CameraSample camSample;
 
+    
     // Take the max of the image size to handle the case where the image is in portrait mode
     const float imgWidth = cam->w();
     const float imgHeight = cam->h();
+    const float sensorWidth = cam->sensorWidth();
+    const float sensorHeight = cam->sensorHeight();
     const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-    const float focalLength_pix = static_cast<const float>(cam->getScale()(0));
-    const float focalLength_mm = sensorWidthMM * focalLength_pix / sensorWidth_pix;
-    const float pix2mm = sensorWidthMM / sensorWidth_pix;
-
+    const float focalLengthX_pix = static_cast<const float>(cam->getScale()(0));
+    const float focalLengthY_pix = static_cast<const float>(cam->getScale()(1));
+    const float focalLength_mm = sensorWidth * focalLengthX_pix / sensorWidth_pix;
+    const float squeeze = focalLengthX_pix / focalLengthY_pix;
+    const float pix2mm = sensorWidth / sensorWidth_pix;
+    
     // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
     // ABC: origin is centered and orientation is (up,right)
     // Following values are in cm, hence the 0.1 multiplier
@@ -698,6 +702,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
     camSample.setFocalLength(focalLength_mm);
     camSample.setHorizontalAperture(haperture_cm);
     camSample.setVerticalAperture(vaperture_cm);
+    camSample.setLensSqueezeRatio(squeeze);
 
     // Add sensor size in pixels as custom property
     std::vector<::uint32_t> sensorSize_pix = {cam->w(), cam->h()};
