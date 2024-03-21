@@ -93,7 +93,7 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
     }
 }
 
-void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
+void loadLightSH(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
 {
     std::stringstream stream;
     std::string line;
@@ -194,6 +194,9 @@ void buildLightMatFromJSON(const std::string& fileName,
         int cpt = 0;
         for (auto& light : fileTree.get_child("lights"))
         {
+            if (lineNumber == lightMat.rows())
+                break;
+
             IndexT lightIndex = light.second.get<IndexT>("lightId", UndefinedIndexT);
             if (lightIndex != UndefinedIndexT)
             {
@@ -204,14 +207,25 @@ void buildLightMatFromJSON(const std::string& fileName,
                     ++cpt;
                 }
                 intList.push_back(currentIntensities);
-
                 cpt = 0;
-
                 for (auto& direction : light.second.get_child("direction"))
                 {
-                    lightMat(lightIndex, cpt) = direction.second.get_value<float>();
+                    if (cpt < 3)
+                    {
+                        lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                    }
+                    else if (cpt == 4)
+                    {
+                        // no support for SH lighting :
+                        for (int pictureIndex = 0; pictureIndex < lightMat.rows(); ++pictureIndex)
+                        {
+                            lightMat.row(pictureIndex) = lightMat.row(pictureIndex) / lightMat.row(pictureIndex).norm();
+                        }
+                        ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
+                    }
                     ++cpt;
                 }
+                ++lineNumber;
             }
             else
             {
@@ -230,12 +244,78 @@ void buildLightMatFromJSON(const std::string& fileName,
 
                     for (auto& direction : light.second.get_child("direction"))
                     {
-                        lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                        if (cpt < 3)
+                        {
+                            lightMat(lineNumber, cpt) = direction.second.get_value<float>();
+                        }
+                        else if (cpt == 4)
+                        {
+                            // no support for SH lighting :
+                            for (int pictureIndex = 0; pictureIndex < lightMat.rows(); ++pictureIndex)
+                            {
+                                lightMat.row(pictureIndex) = lightMat.row(pictureIndex) / lightMat.row(pictureIndex).norm();
+                            }
+                            ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
+                        }
                         ++cpt;
                     }
                     ++lineNumber;
+                    break;
                 }
             }
+        }
+    }
+}
+
+void buildLightMatFromLP(const std::string& fileName,
+                         const std::vector<std::string>& imageList,
+                         Eigen::MatrixXf& lightMat,
+                         std::vector<std::array<float, 3>>& intList)
+{
+    std::string pictureName;
+    float x, y, z;
+
+    int lineNumber = 0;
+    std::array<float, 3> intensities = {1.0, 1.0, 1.0};
+
+    for (auto& currentImPath : imageList)
+    {
+        std::stringstream stream;
+        std::string line;
+        std::fstream intFile;
+        intFile.open(fileName, std::ios::in);
+
+        if (!intFile.is_open())
+        {
+            ALICEVISION_LOG_ERROR("Unable to load Lp file");
+            ALICEVISION_THROW_ERROR("Cannot open '" << fileName << "'!");
+        }
+        else
+        {
+            fs::path imagePathFS = fs::path(currentImPath);
+            while (!intFile.eof())
+            {
+                std::getline(intFile, line);
+                stream.clear();
+                stream.str(line);
+
+                stream >> pictureName >> x >> y >> z;
+
+                std::string stringToCompare = imagePathFS.filename().string();
+
+                if (boost::algorithm::iequals(pictureName, stringToCompare))
+                {
+                    lightMat(lineNumber, 0) = x;
+                    lightMat(lineNumber, 1) = -y;
+                    lightMat(lineNumber, 2) = -z;
+                    ++lineNumber;
+
+                    intList.push_back(intensities);
+
+                    break;
+                }
+            }
+            intFile.close();
         }
     }
 }
@@ -432,6 +512,14 @@ void writePSResults(const std::string& outputPath, const image::Image<image::RGB
       outputPath + "/normals.exr",
       normals,
       image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
+    image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
+    convertNormalMap2png(normals, normalsImPNG);
+    image::writeImage(
+      outputPath + "/normals.png",
+      normalsImPNG,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
     image::writeImage(
       outputPath + "/albedo.exr",
       albedo,
@@ -447,6 +535,14 @@ void writePSResults(const std::string& outputPath,
       outputPath + "/" + std::to_string(poseId) + "_normals.exr",
       normals,
       image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
+    image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
+    convertNormalMap2png(normals, normalsImPNG);
+    image::writeImage(
+      outputPath + "/" + std::to_string(poseId) + "_normals.png",
+      normalsImPNG,
+      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
     image::writeImage(
       outputPath + "/" + std::to_string(poseId) + "_albedo.exr",
       albedo,

@@ -196,14 +196,16 @@ struct Texturing
     void generateTextures(const mvsUtils::MultiViewParams& mp,
                           const fs::path& outPath,
                           size_t memoryAvailable,
-                          image::EImageFileType textureFileType = image::EImageFileType::PNG);
+                          image::EImageFileType textureFileType = image::EImageFileType::PNG,
+                          mvsUtils::EFileType imageType = mvsUtils::EFileType::none);
 
     /// Generate texture files for the given sub-set of texture atlases
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                 const std::vector<size_t>& atlasIDs,
                                 mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
                                 const fs::path& outPath,
-                                image::EImageFileType textureFileType = image::EImageFileType::PNG);
+                                image::EImageFileType textureFileType = image::EImageFileType::PNG,
+                                mvsUtils::EFileType imageType = mvsUtils::EFileType::none);
 
     void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
                                      const Mesh& denseMesh,
@@ -223,7 +225,8 @@ struct Texturing
                       const std::size_t atlasID,
                       const fs::path& outPath,
                       image::EImageFileType textureFileType,
-                      const int level);
+                      const int level,
+                      mvsUtils::EFileType imageType = mvsUtils::EFileType::none);
 
     /// Save textured mesh as an OBJ + MTL file
     void saveAs(const fs::path& dir, const std::string& basename, aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::OBJ);

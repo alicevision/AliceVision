@@ -34,9 +34,9 @@ void photometricStereo(const std::string& inputPath,
                        image::Image<image::RGBfColor>& albedo)
 {
     size_t dim = 3;
-    if (PSParameters.SHOrder == 2)
+    if (PSParameters.SHOrder != 0)
     {
-        dim = 9;
+        ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
     }
 
     std::vector<std::string> imageList;
@@ -91,9 +91,9 @@ void photometricStereo(const sfmData::SfMData& sfmData,
     bool skipAll = true;
     bool groupedImages = false;
     size_t dim = 3;
-    if (PSParameters.SHOrder == 2)
+    if (PSParameters.SHOrder != 0)
     {
-        dim = 9;
+        ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
     }
 
     std::string pathToAmbiant = "";
@@ -111,17 +111,29 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         ALICEVISION_LOG_INFO("Pose Id: " << posesIt.first);
         std::vector<IndexT>& initViewIds = posesIt.second;
 
-        std::map<std::string, IndexT> idMap;
-        for (auto& viewId : initViewIds)
-        {
-            std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getImage().getMetadata();
-            idMap[currentMetadata.at("Exif:DateTimeDigitized")] = viewId;
-        }
+        bool hasMetadata = true;
+        std::map<std::string, std::string> metadataTest = sfmData.getView(initViewIds.at(0)).getImage().getMetadata();
+        if (metadataTest.find("Exif:DateTimeDigitized") == metadataTest.end())
+            hasMetadata = false;
 
         std::vector<IndexT> viewIds;
-        for (const auto& [currentTime, viewId] : idMap)
+        if (hasMetadata)
         {
-            viewIds.push_back(viewId);
+            std::map<std::string, IndexT> idMap;
+            for (auto& viewId : initViewIds)
+            {
+                std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getImage().getMetadata();
+                idMap[currentMetadata.at("Exif:DateTimeDigitized")] = viewId;
+            }
+
+            for (const auto& [currentTime, viewId] : idMap)
+            {
+                viewIds.push_back(viewId);
+            }
+        }
+        else
+        {
+            viewIds = initViewIds;
         }
 
         for (auto& viewId : viewIds)
@@ -134,6 +146,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
             }
             else if (PSParameters.removeAmbiant)
             {
+                ALICEVISION_LOG_INFO("Remove ambiant light - " << imagePath.string());
                 pathToAmbiant = imagePath.string();
             }
         }
@@ -147,7 +160,16 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         }
         else
         {
-            buildLightMatFromJSON(lightData, viewIds, lightMat, intList);
+            const std::string extension = fs::path(lightData).extension();
+
+            if (extension == ".json")  // JSON File
+            {
+                buildLightMatFromJSON(lightData, viewIds, lightMat, intList);
+            }
+            else if (extension == ".lp")
+            {
+                buildLightMatFromLP(lightData, imageList, lightMat, intList);
+            }
         }
 
         /* Ensure that there are as many images as light calibrations, and that the list of input images is not empty.
@@ -305,6 +327,8 @@ void photometricStereo(const std::vector<std::string>& imageList,
 
         for (int i = 0; i < maskSize; ++i)
             indices.push_back(i);
+
+        hasMask = true;
     }
 
     // Read ambiant
@@ -325,17 +349,18 @@ void photometricStereo(const std::vector<std::string>& imageList,
 
     // Tiling
     int auxMaskSize = maskSize;
-    int numberOfPixels = auxMaskSize * imageList.size() * 3;
+    int numberOfPixels = auxMaskSize * 3;
+
     int numberOfMasks = 1;
 
-    while (numberOfPixels > sizeMax)
+    while (numberOfPixels > sizeMax / imageList.size())
     {
         numberOfMasks = numberOfMasks * 2;
-        auxMaskSize = floor(auxMaskSize / 4);
-        numberOfPixels = auxMaskSize * imageList.size() * 3;
+        auxMaskSize = floor(auxMaskSize / 2);
+        numberOfPixels = 3 * auxMaskSize;
     }
 
-    Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(), pictRows * pictCols);
+    Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(3, pictRows * pictCols);
     Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3, pictRows * pictCols);
 
     int remainingPixels = maskSize;
@@ -399,7 +424,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
                                                          currentPicture.block(2, 0, 1, currentMaskSize) * 0.0722;
         }
 
-        Eigen::MatrixXf M_channel(3, currentMaskSize);
+        Eigen::MatrixXf M_channel(lightMat.cols(), currentMaskSize);
         int currentIdx;
 
         if (PSParameters.isRobust)
@@ -443,11 +468,11 @@ void photometricStereo(const std::vector<std::string>& imageList,
                 }
             }
 
-            for (size_t i = 0; i < maskSize; ++i)
+            for (size_t i = 0; i < currentMaskSize; ++i)
             {
                 if (hasMask)
                 {
-                    currentIdx = indices.at(i);  // Index in picture
+                    currentIdx = currentMaskIndices.at(i);  // Index in picture
                 }
                 else
                 {
@@ -460,17 +485,17 @@ void photometricStereo(const std::vector<std::string>& imageList,
             for (size_t ch = 0; ch < 3; ++ch)
             {
                 // Create I matrix for current pixel
-                Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
+                Eigen::MatrixXf pixelValues_channel(imageList.size(), currentMaskSize);
                 for (size_t i = 0; i < imageList.size(); ++i)
                 {
-                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3 * i, 0, 1, maskSize);
+                    pixelValues_channel.block(i, 0, 1, currentMaskSize) = imMat.block(ch + 3 * i, 0, 1, currentMaskSize);
                 }
 
-                for (size_t i = 0; i < maskSize; ++i)
+                for (size_t i = 0; i < currentMaskSize; ++i)
                 {
                     if (hasMask)
                     {
-                        currentIdx = indices.at(i);  // Index in picture
+                        currentIdx = currentMaskIndices.at(i);  // Index in picture
                     }
                     else
                     {
@@ -505,10 +530,10 @@ void photometricStereo(const std::vector<std::string>& imageList,
             for (size_t ch = 0; ch < 3; ++ch)
             {
                 // Create I matrix for current pixel
-                Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
+                Eigen::MatrixXf pixelValues_channel(imageList.size(), currentMaskSize);
                 for (size_t i = 0; i < imageList.size(); ++i)
                 {
-                    pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3 * i, 0, 1, maskSize);
+                    pixelValues_channel.block(i, 0, 1, currentMaskSize) = imMat.block(ch + 3 * i, 0, 1, currentMaskSize);
                 }
 
                 M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(pixelValues_channel);
@@ -540,7 +565,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
     albedo = albedoIm;
 }
 
-void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat)
+void loadPSData(const std::string& folderPath, const size_t SH_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat)
 {
     std::string intFileName;
     std::string pathToCM;
@@ -559,15 +584,15 @@ void loadPSData(const std::string& folderPath, const size_t HS_order, std::vecto
     }
 
     // Light directions
-    if (HS_order == 0)
+    if (SH_order == 0)
     {
         dirFileName = folderPath + "/light_directions.txt";
         loadLightDirections(dirFileName, convertionMatrix, lightMat);
     }
-    else if (HS_order == 2)
+    else if (SH_order == 2)
     {
-        dirFileName = folderPath + "/light_directions_HS.txt";
-        loadLightHS(dirFileName, lightMat);
+        dirFileName = folderPath + "/light_directions_SH.txt";
+        loadLightSH(dirFileName, lightMat);
     }
 }
 

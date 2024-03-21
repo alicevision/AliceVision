@@ -50,6 +50,8 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string outputFolder;
     std::string imagesFolder;
+    std::string normalsFolder;
+
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO;
     bool flipNormals = false;
@@ -81,6 +83,9 @@ int aliceVision_main(int argc, char* argv[])
         ("imagesFolder", po::value<std::string>(&imagesFolder),
          "Use images from a specific folder instead of those specify in the SfMData file.\n"
          "Filename should be the image UID.")
+        ("normalsFolder", po::value<std::string>(&normalsFolder),
+         "Use normal maps from a specific folder to texture the mesh.\n"
+         "Filename should be: UID_normalMap.")
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
          "Output texture size.")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
@@ -246,6 +251,14 @@ int aliceVision_main(int argc, char* argv[])
         denseMesh.load(inputRefMeshFilepath);
 
         mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, bumpMappingParams);
+    }
+
+    // generate normal maps textures from the fusion of normal maps per image
+    if (!normalsFolder.empty() && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
+    {
+        ALICEVISION_LOG_INFO("Generate normal maps.");
+        mvsUtils::MultiViewParams mpN(sfmData, normalsFolder);
+        mesh.generateTextures(mpN, outputFolder, hwc.getMaxMemory(), texParams.textureFileType, mvsUtils::EFileType::normalMap);
     }
 
     // save final obj file

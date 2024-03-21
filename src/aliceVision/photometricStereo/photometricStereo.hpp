@@ -82,11 +82,11 @@ void photometricStereo(const std::vector<std::string>& imageList,
 /**
  * @brief Load data used in the PS algorithm
  * @param[in] folderPath Path to the folder that contains data
- * @param[in] HS_order Order of the spherical harmonics
+ * @param[in] SH_order Order of the spherical harmonics
  * @param[out] intList Intensities of lights
  * @param[out] lightMat Directions of lights
  */
-void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat);
+void loadPSData(const std::string& folderPath, const size_t SH_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat);
 
 /**
  * @brief Get the name of the pictures in a given folder

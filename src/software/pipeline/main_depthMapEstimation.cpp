@@ -296,7 +296,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // MultiViewParams initialization
-    mvsUtils::MultiViewParams mp(sfmData, imagesFolder, outputFolder, "", false, downscale);
+    mvsUtils::MultiViewParams mp(sfmData, imagesFolder, outputFolder, "", mvsUtils::EFileType::none, downscale);
 
     // set MultiViewParams min/max view angle
     mp.setMinViewAngle(minViewAngle);
