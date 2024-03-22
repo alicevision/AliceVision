@@ -11,6 +11,7 @@
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
@@ -343,7 +344,7 @@ int aliceVision_main(int argc, char* argv[])
     image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
 
     // Create output dir
-    if (!fs::exists(outFolder))
+    if (!utils::exists(outFolder))
         fs::create_directory(outFolder);
 
     // Read the input SfM scene

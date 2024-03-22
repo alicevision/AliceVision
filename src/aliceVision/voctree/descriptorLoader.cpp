@@ -7,6 +7,7 @@
 #include "descriptorLoader.hpp"
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -94,7 +95,7 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData,
                                                                                  feature::EImageDescriberType_enumToString(descType) + ".desc"))
                                                .string();
 
-                if (fs::exists(filepath))
+                if (utils::exists(filepath))
                 {
                     descriptorsFiles[view.first] = filepath;
                     found = true;

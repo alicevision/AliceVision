@@ -82,7 +82,7 @@ bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount)
     std::filesystem::path path(pathname);
 
     std::ofstream file_index;
-    if (std::filesystem::exists(path))
+    if (utils::exists(path))
     {
         file_index.open(pathname, std::ios::binary | std::ios::out | std::ios::in);
     }

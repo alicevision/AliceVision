@@ -7,6 +7,7 @@
 #include "photometricDataIO.hpp"
 
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -242,7 +243,7 @@ void buildLightMatFromJSON(const std::string& fileName,
 
 void loadMask(std::string const& maskName, image::Image<float>& mask)
 {
-    if (maskName.empty() || !fs::exists(maskName))
+    if (maskName.empty() || !utils::exists(maskName))
     {
         if (maskName.empty())
         {

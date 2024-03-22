@@ -14,6 +14,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 #include <aliceVision/panorama/sphericalMapping.hpp>
@@ -464,7 +465,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::string> imagePaths;
     {
         const fs::path path = fs::absolute(inputPath);
-        if (fs::exists(path))
+        if (utils::exists(path))
         {
             // Input is either :
             // - an image folder

@@ -7,6 +7,7 @@
 #include "colorspace.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <OpenImageIO/color.h>
 
@@ -40,7 +41,7 @@ std::string getDefaultColorConfigFilePath()
     if (ALICEVISION_OCIO != NULL)
     {
         configOCIOFilePath = std::string(ALICEVISION_OCIO);
-        if (fs::exists(configOCIOFilePath))
+        if (utils::exists(configOCIOFilePath))
         {
             // Check if a sRGB linear color space named "scene-linear Rec.709-sRGB" is present and set as scene_linear role
             oiio::ColorConfig colorConfig(configOCIOFilePath);
@@ -76,7 +77,7 @@ std::string getDefaultColorConfigFilePath()
         if (OCIO != NULL)
         {
             configOCIOFilePath = std::string(OCIO);
-            if (fs::exists(configOCIOFilePath))
+            if (utils::exists(configOCIOFilePath))
             {
                 ALICEVISION_LOG_TRACE("OCIO configuration file: '" << configOCIOFilePath << "' found.");
                 return configOCIOFilePath;
@@ -96,7 +97,7 @@ std::string getDefaultColorConfigFilePath()
     if (ALICEVISION_ROOT == NULL)
     {
         const std::string configFromSource = getColorConfigFilePathFromSourceCode();
-        if (fs::exists(configFromSource))
+        if (utils::exists(configFromSource))
         {
             ALICEVISION_LOG_DEBUG("ALICEVISION_ROOT is not defined, use embedded OCIO config file from source code: " << configFromSource);
             return configFromSource;
@@ -108,10 +109,10 @@ std::string getDefaultColorConfigFilePath()
     configOCIOFilePath = std::string(ALICEVISION_ROOT);
     configOCIOFilePath.append("/share/aliceVision/config.ocio");
 
-    if (!fs::exists(configOCIOFilePath))
+    if (!utils::exists(configOCIOFilePath))
     {
         const std::string configFromSource = getColorConfigFilePathFromSourceCode();
-        if (fs::exists(configFromSource))
+        if (utils::exists(configFromSource))
         {
             ALICEVISION_LOG_DEBUG("Embedded OCIO config file in ALICEVISION_ROOT does not exist, use config from source code: " << configFromSource);
             return configFromSource;

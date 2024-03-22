@@ -7,6 +7,7 @@
 #include "LocalBundleAdjustmentGraph.hpp"
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <lemon/bfs.h>
 
@@ -609,7 +610,7 @@ double LocalBundleAdjustmentGraph::standardDeviation(const std::vector<T>& data)
 
 void LocalBundleAdjustmentGraph::drawGraph(const sfmData::SfMData& sfmData, const std::string& folder, const std::string& nameComplement)
 {
-    if (!fs::exists(folder))
+    if (!utils::exists(folder))
         fs::create_directory(folder);
 
     std::stringstream dotStream;

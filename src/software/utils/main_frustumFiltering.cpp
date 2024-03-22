@@ -8,11 +8,12 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/matchingImageCollection/ImagePairListIO.hpp>
-#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -99,8 +100,8 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // check that we can create the output folder
-    if (!fs::exists(fs::path(outputFilename).parent_path()))
-        if (!fs::exists(fs::path(outputFilename).parent_path()))
+    if (!utils::exists(fs::path(outputFilename).parent_path()))
+        if (!utils::exists(fs::path(outputFilename).parent_path()))
             return EXIT_FAILURE;
 
     // load input SfMData scene

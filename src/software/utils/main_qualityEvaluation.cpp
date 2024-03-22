@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/config.hpp>
 
 #include <software/utils/precisionEvaluationToGt.hpp>
@@ -64,7 +65,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if (!fs::exists(outputFolder))
+    if (!utils::exists(outputFolder))
         fs::create_directory(outputFolder);
 
     // load GT camera rotations & positions [R|C]:

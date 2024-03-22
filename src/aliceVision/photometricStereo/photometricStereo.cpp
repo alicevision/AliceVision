@@ -10,6 +10,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -553,7 +554,7 @@ void loadPSData(const std::string& folderPath, const size_t HS_order, std::vecto
     // Convertion matrix
     Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity();
     pathToCM = folderPath + "/convertionMatrix.txt";
-    if (fs::exists(pathToCM))
+    if (utils::exists(pathToCM))
     {
         readMatrix(pathToCM, convertionMatrix);
     }

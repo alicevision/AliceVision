@@ -14,6 +14,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/image/all.hpp>
 
@@ -179,7 +180,7 @@ int aliceVision_main(int argc, char** argv)
 
     const std::string outDirectory = fs::path(outputSfMDataFilepath).parent_path().string();
 
-    if (!fs::exists(outDirectory))
+    if (!utils::exists(outDirectory))
     {
         ALICEVISION_LOG_ERROR("Output folder does not exist: " << outDirectory);
         return EXIT_FAILURE;

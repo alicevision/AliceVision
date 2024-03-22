@@ -9,6 +9,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/conversion.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
 
@@ -149,7 +150,7 @@ int aliceVision_main(int argc, char* argv[])
     // export
     {
         // Create output dir
-        if (!fs::exists(outputFolder))
+        if (!utils::exists(outputFolder))
             fs::create_directory(outputFolder);
 
         // Read the input SfM scene

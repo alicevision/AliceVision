@@ -10,6 +10,8 @@
 
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/utils/filesIO.hpp>
+
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
@@ -101,7 +103,7 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(const std::string
     _selectionMethod(selectionMethod),
     _imgRef(imgRef)
 {
-    if (!fs::exists(outputDirectory))
+    if (!utils::exists(outputDirectory))
         fs::create_directory(outputDirectory);
 }
 
@@ -206,7 +208,6 @@ bool ColorHarmonizationEngineGlobal::Process()
         const size_t viewI = iter->first.first;
         const size_t viewJ = iter->first.second;
 
-        //
         const MatchesPerDescType& matchesPerDesc = iter->second;
 
         //-- Edges names:
@@ -270,7 +271,7 @@ bool ColorHarmonizationEngineGlobal::Process()
             std::string sEdge = _fileNames[viewI] + "_" + _fileNames[viewJ];
             sEdge = (fs::path(_outputDirectory) / sEdge).string();
 
-            if (!fs::exists(sEdge))
+            if (!utils::exists(sEdge))
                 fs::create_directory(sEdge);
 
             std::string out_filename_I = "00_mask_I.png";
@@ -426,7 +427,7 @@ bool ColorHarmonizationEngineGlobal::Process()
         const std::string out_folder =
           (fs::path(_outputDirectory) / (EHistogramSelectionMethod_enumToString(_selectionMethod) + "_" + vec_harmonizeMethod[harmonizeMethod]))
             .string();
-        if (!fs::exists(out_folder))
+        if (!utils::exists(out_folder))
             fs::create_directory(out_folder);
         const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[imaNum]).filename()).string();
 

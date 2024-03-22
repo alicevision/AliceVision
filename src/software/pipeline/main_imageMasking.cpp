@@ -11,6 +11,7 @@
 #include <aliceVision/imageMasking/imageMasking.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 
 #include <OpenImageIO/imagebuf.h>
@@ -167,7 +168,7 @@ int main(int argc, char** argv)
     }
 
     // check sfm file
-    if (!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
+    if (!sfmFilePath.empty() && !utils::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
     {
         ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
         return EXIT_FAILURE;
@@ -188,7 +189,7 @@ int main(int argc, char** argv)
     }
 
     // ensure output folder exists
-    if (!outputFilePath.empty() && !fs::exists(outputFilePath))
+    if (!outputFilePath.empty() && !utils::exists(outputFilePath))
     {
         if (!fs::create_directory(outputFilePath))
         {
@@ -293,7 +294,7 @@ int main(int argc, char** argv)
                 if (pos != std::string::npos)
                     depthMapPath.replace(pos, k_stem.size(), fs::path(imgPath).extension().string().substr(1));
             }
-            if (!fs::exists(depthMapPath))
+            if (!utils::exists(depthMapPath))
             {
                 ALICEVISION_LOG_DEBUG("depthMapPath from expression: \"" << depthMapPath << "\" not found.");
                 depthMapPath.clear();
@@ -307,7 +308,7 @@ int main(int argc, char** argv)
         {
             // Look for View UID
             fs::path p = fs::path(depthMapFolder) / (std::to_string(view.getViewId()) + fs::path(imgPath).extension().string());
-            if (fs::exists(p))
+            if (utils::exists(p))
             {
                 depthMapPath = p.string();
                 ALICEVISION_LOG_DEBUG("depthMapPath found from folder and View UID: \"" << depthMapPath << "\".");
@@ -316,7 +317,7 @@ int main(int argc, char** argv)
             {
                 // Look for an image with the same filename
                 p = fs::path(depthMapFolder) / fs::path(imgPath).filename();
-                if (fs::exists(p))
+                if (utils::exists(p))
                 {
                     depthMapPath = p.string();
                     ALICEVISION_LOG_DEBUG("depthMapPath found from folder and input filename: \"" << depthMapPath << "\".");

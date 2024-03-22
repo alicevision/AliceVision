@@ -177,7 +177,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if (fs::exists(inputData))
+    if (utils::exists(inputData))
     {
         // checkers collection
         std::vector<CChecker> ccheckers;

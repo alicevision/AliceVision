@@ -12,6 +12,8 @@
 #include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
 #include "aliceVision/sfmData/SfMData.hpp"
 
+#include <aliceVision/utils/filesIO.hpp>
+
 #include <cmath>
 #include <filesystem>
 
@@ -239,7 +241,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                 continue;
             }
 
-            if (std::filesystem::exists(outputSvgDir))
+            if (utils::exists(outputSvgDir))
             {
                 const std::size_t nbMatches = outGeometricInliers.size();
                 const std::string name = std::to_string(nbMatches) + "hmatches_" + std::to_string(viewI.getViewId()) + "_" +

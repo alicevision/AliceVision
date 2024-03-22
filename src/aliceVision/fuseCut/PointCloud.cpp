@@ -6,6 +6,8 @@
 
 #include "PointCloud.hpp"
 
+#include <aliceVision/utils/filesIO.hpp>
+
 #include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
@@ -330,7 +332,7 @@ void PointCloud::fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d 
                 const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap);
                 // If we have an nModMap in input (from depthmapfilter) use it,
                 // else init with a constant value.
-                if (fs::exists(nmodMapFilepath))
+                if (utils::exists(nmodMapFilepath))
                 {
                     image::readImage(nmodMapFilepath, numOfModalsMap, image::EImageColorSpace::NO_CONVERSION);
                     if (numOfModalsMap.width() != width || numOfModalsMap.height() != height)
