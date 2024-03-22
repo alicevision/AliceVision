@@ -183,15 +183,19 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     {
         CameraSample camSample;
 
+        const Vec2 & scale = intrinsicCasted->getScale();
+        const Vec2 & offset = intrinsicCasted->getOffset();
+        
         // Take the max of the image size to handle the case where the image is in portrait mode
         const float imgWidth = intrinsicCasted->w();
         const float imgHeight = intrinsicCasted->h();
         const float sensorWidth = intrinsicCasted->sensorWidth();
         const float sensorHeight = intrinsicCasted->sensorHeight();
         const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-        const float focalLengthX_pix = static_cast<const float>(intrinsicCasted->getScale()(0));
-        const float focalLengthY_pix = static_cast<const float>(intrinsicCasted->getScale()(1));
+        const float focalLengthX_pix = static_cast<const float>(scale(0));
+        const float focalLengthY_pix = static_cast<const float>(scale(1));
         const float focalLength_mm = sensorWidth * focalLengthX_pix / sensorWidth_pix;
+        const float shiftX_mm = sensorWidth * focalLengthX_pix / sensorWidth_pix;
         const float squeeze = focalLengthX_pix / focalLengthY_pix;
         const float pix2mm = sensorWidth / sensorWidth_pix;
 
@@ -200,11 +204,15 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
         // Following values are in cm, hence the 0.1 multiplier
         const float haperture_cm = static_cast<const float>(0.1 * imgWidth * pix2mm);
         const float vaperture_cm = static_cast<const float>(0.1 * imgHeight * pix2mm);
+        const float offsetX_cm = static_cast<const float>(0.1 * offset(0) * pix2mm);
+        const float offsetY_cm = static_cast<const float>(0.1 * (-offset(1)) * pix2mm);
 
         camSample.setFocalLength(focalLength_mm);
         camSample.setHorizontalAperture(haperture_cm);
         camSample.setVerticalAperture(vaperture_cm);
         camSample.setLensSqueezeRatio(squeeze);
+        camSample.setHorizontalFilmOffset(offsetX_cm);
+        camSample.setVerticalFilmOffset(offsetY_cm);
 
         // Add sensor width (largest image side) in pixels as custom property
         std::vector<::uint32_t> sensorSize_pix = {intrinsicCasted->w(), intrinsicCasted->h()};
@@ -680,6 +688,8 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
     // Camera intrinsic parameters
     CameraSample camSample;
 
+    const Vec2 & scale = cam->getScale();
+    const Vec2 & offset = cam->getOffset();
     
     // Take the max of the image size to handle the case where the image is in portrait mode
     const float imgWidth = cam->w();
@@ -687,8 +697,8 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
     const float sensorWidth = cam->sensorWidth();
     const float sensorHeight = cam->sensorHeight();
     const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-    const float focalLengthX_pix = static_cast<const float>(cam->getScale()(0));
-    const float focalLengthY_pix = static_cast<const float>(cam->getScale()(1));
+    const float focalLengthX_pix = static_cast<const float>(scale(0));
+    const float focalLengthY_pix = static_cast<const float>(scale(1));
     const float focalLength_mm = sensorWidth * focalLengthX_pix / sensorWidth_pix;
     const float squeeze = focalLengthX_pix / focalLengthY_pix;
     const float pix2mm = sensorWidth / sensorWidth_pix;
@@ -698,11 +708,17 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
     // Following values are in cm, hence the 0.1 multiplier
     const float haperture_cm = static_cast<const float>(0.1 * imgWidth * pix2mm);
     const float vaperture_cm = static_cast<const float>(0.1 * imgHeight * pix2mm);
+    
+    //Alembic Offset is the 2d motion of the camera which create the offset (opposite)
+    const float offsetX_cm = static_cast<const float>(-0.1 * offset(0) * pix2mm);
+    const float offsetY_cm = static_cast<const float>(-0.1 * (-offset(1)) * pix2mm);
 
     camSample.setFocalLength(focalLength_mm);
     camSample.setHorizontalAperture(haperture_cm);
     camSample.setVerticalAperture(vaperture_cm);
     camSample.setLensSqueezeRatio(squeeze);
+    camSample.setHorizontalFilmOffset(offsetX_cm);
+    camSample.setVerticalFilmOffset(offsetY_cm);
 
     // Add sensor size in pixels as custom property
     std::vector<::uint32_t> sensorSize_pix = {cam->w(), cam->h()};
