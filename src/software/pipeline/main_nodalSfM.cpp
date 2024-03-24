@@ -166,9 +166,9 @@ void buildInitialWorld(sfmData::SfMData& sfmData,
         Vec2 refV = refFeatures[refFeatureId].coords().cast<double>();
         Vec2 nextV = nextFeatures[nextFeatureId].coords().cast<double>();
 
-        Vec3 refP = refIntrinsics->toUnitSphere(refIntrinsics->ima2cam(refIntrinsics->get_ud_pixel(refV)));
+        Vec3 refP = refIntrinsics->toUnitSphere(refIntrinsics->ima2cam(refIntrinsics->getUndistortedPixel(refV)));
         Vec3 tP = pair.R * refP;
-        Vec2 nextp = nextIntrinsics->get_ud_pixel(nextV);
+        Vec2 nextp = nextIntrinsics->getUndistortedPixel(nextV);
         Vec2 estp = nextIntrinsics->cam2ima((tP.head(2) / tP(2)));
         double dist = (nextp - estp).norm();
 
@@ -260,7 +260,7 @@ bool localizeNext(sfmData::SfMData& sfmData,
         const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
         IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
         Vec2 nvV = newViewFeatures[newViewFeatureId].coords().cast<double>();
-        Vec3 camP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->get_ud_pixel(nvV)));
+        Vec3 camP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->getUndistortedPixel(nvV)));
 
         refX.col(pos) = landmarks.at(trackId).X;
         newX.col(pos) = camP;
@@ -361,11 +361,11 @@ bool addPoints(sfmData::SfMData& sfmData,
             Vec2 newV = newFeat.coords().cast<double>();
             Vec2 refV = refFeat.coords().cast<double>();
 
-            Vec3 newP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->get_ud_pixel(newV)));
+            Vec3 newP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->getUndistortedPixel(newV)));
             Vec3 refP = ref_R_new * newP;
 
             Vec2 newPix = refViewIntrinsics->cam2ima(refP.head(2) / refP(2));
-            Vec2 refPix = refViewIntrinsics->get_ud_pixel(refV);
+            Vec2 refPix = refViewIntrinsics->getUndistortedPixel(refV);
             double dist = (newPix - newPix).norm();
             if (dist > 4.0)
             {

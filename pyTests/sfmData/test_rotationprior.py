@@ -11,7 +11,7 @@ from pyalicevision import sfmData as av
 # - RotationPrior() => DONE
 # - RotationPrior(IndexT view_first = UndefinedIndexT, IndexT view_second = UndefinedIndexT,
 #                 Eigen::Matrix3d second_R_first = Eigen::Matrix3d::Identity())
-#                 => DONE !!! Eigen::Matrix3d not binded !!!
+#                 => DONE / Eigen::Matrix3d not binded
 # - operator==(other) => DONE
 ##################
 

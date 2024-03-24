@@ -104,10 +104,10 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
     }
 
     /// Return the un-distorted pixel (with removed distortion)
-    Vec2 get_ud_pixel(const Vec2& p) const override;
+    Vec2 getUndistortedPixel(const Vec2& p) const override;
 
     /// Return the distorted pixel (with added distortion)
-    Vec2 get_d_pixel(const Vec2& p) const override;
+    Vec2 getDistortedPixel(const Vec2& p) const override;
 
     std::size_t getDistortionParamsSize() const
     {

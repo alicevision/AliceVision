@@ -6,6 +6,11 @@
 
 %module (module="pyalicevision") sfmData
 
+%include <aliceVision/global.i>
+%include <aliceVision/camera/IntrinsicBase.i>
+%include <aliceVision/camera/Pinhole.i>
+%include <aliceVision/camera/Equidistant.i>
+
 %include <aliceVision/sfmData/CameraPose.i>
 %include <aliceVision/sfmData/Constraint2D.i>
 %include <aliceVision/sfmData/Landmark.i>
@@ -15,9 +20,6 @@
 %include <aliceVision/sfmData/View.i>
 
 %include <aliceVision/sfmData/SfMData.hpp>
-
-%include <aliceVision/global.i>
-%include <aliceVision/camera/IntrinsicBase.i>
 
 %{
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -29,6 +31,8 @@ using namespace aliceVision::camera;
 %template(Constraints2D) std::vector<aliceVision::sfmData::Constraint2D>;
 %template(ImageInfos) std::map<IndexT, std::shared_ptr<aliceVision::sfmData::ImageInfo>>;
 %template(Intrinsics) std::map<IndexT, std::shared_ptr<aliceVision::camera::IntrinsicBase>>;
+%template(PinholeIntrinsics) std::map<IndexT, std::shared_ptr<aliceVision::camera::Pinhole>>;
+%template(EquidistantIntrinsics) std::map<IndexT, std::shared_ptr<aliceVision::camera::Equidistant>>;
 %template(Landmarks) std::map<IndexT, aliceVision::sfmData::Landmark>;
 %template(Poses) std::map<IndexT, aliceVision::sfmData::CameraPose>;
 %template(Rigs) std::map<IndexT, aliceVision::sfmData::Rig>;

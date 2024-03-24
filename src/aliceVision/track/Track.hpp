@@ -11,7 +11,6 @@
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/stl/FlatMap.hpp>
-#include <aliceVision/stl/FlatSet.hpp>
 
 #include <algorithm>
 #include <iostream>

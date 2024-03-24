@@ -9,12 +9,12 @@ from pyalicevision import sfmData as av
 ##################
 ### List of functions:
 # - Observation() => DONE
-# - Observation(Vec2& p, IndexT idFeat, double scale) !!! Vec2 not binded !!!
+# - Observation(Vec2& p, IndexT idFeat, double scale) / Vec2 not binded
 # - operator==(other) => DONE
-# - Vec2& getCoordinates() !!! Vec2 not binded !!!
+# - Vec2& getCoordinates() / Vec2 not binded
 # - double getX() => DONE
 # - double getY() => DONE
-# - void setCoordinates(Vec2& coordinates) !!! Vec2 not binded !!!
+# - void setCoordinates(Vec2& coordinates) / Vec2 not binded
 # - void setCoordinates(double x, double y) => DONE
 # - IndexT getFeatureId() => DONE
 # - void setFeatureId(IndexT featureId) => DONE

@@ -139,8 +139,8 @@ bool estimatePairAngle(const sfmData::SfMData& sfmData,
         const Vec2 refpt = refFeatures[refFeatureId].coords().cast<double>();
         const Vec2 nextpt = nextfeatures[nextfeatureId].coords().cast<double>();
 
-        const Vec2 refptu = refIntrinsics->get_ud_pixel(refpt);
-        const Vec2 nextptu = nextIntrinsics->get_ud_pixel(nextpt);
+        const Vec2 refptu = refIntrinsics->getUndistortedPixel(refpt);
+        const Vec2 nextptu = nextIntrinsics->getUndistortedPixel(nextpt);
 
         Vec3 line = F * refptu.homogeneous();
 
@@ -265,8 +265,8 @@ bool buildSfmData(sfmData::SfMData& sfmData,
         const Vec2 refpt = refFeatures[refFeatureId].coords().cast<double>();
         const Vec2 nextpt = nextFeatures[nextFeatureId].coords().cast<double>();
 
-        const Vec2 refptu = refIntrinsics->get_ud_pixel(refpt);
-        const Vec2 nextptu = nextIntrinsics->get_ud_pixel(nextpt);
+        const Vec2 refptu = refIntrinsics->getUndistortedPixel(refpt);
+        const Vec2 nextptu = nextIntrinsics->getUndistortedPixel(nextpt);
 
         Vec3 X;
         multiview::TriangulateDLT(P1, refptu, P2, nextptu, X);

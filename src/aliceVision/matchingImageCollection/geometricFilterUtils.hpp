@@ -50,7 +50,7 @@ void fillMatricesWithUndistortFeaturesMatches(const matching::IndMatches& putati
     {
         const Vec2 pt_I = getFeaturePosition(feature_I, putativeMatches[i]._i);
         if (I_hasValidIntrinsics)
-            x_I.col(i) = cam_I->get_ud_pixel(pt_I);
+            x_I.col(i) = cam_I->getUndistortedPixel(pt_I);
         else
             x_I.col(i) = pt_I;
     }
@@ -59,7 +59,7 @@ void fillMatricesWithUndistortFeaturesMatches(const matching::IndMatches& putati
     {
         const Vec2 pt_J = getFeaturePosition(feature_J, putativeMatches[i]._j);
         if (J_hasValidIntrinsics)
-            x_J.col(i) = cam_J->get_ud_pixel(pt_J);
+            x_J.col(i) = cam_J->getUndistortedPixel(pt_J);
         else
             x_J.col(i) = pt_J;
     }

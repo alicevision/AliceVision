@@ -112,7 +112,8 @@ class Equidistant : public IntrinsicScaleOffsetDisto
 
     /**
      * @brief Return true if this ray should be visible in the image
-     * @return true if this ray is visible theorically
+     * @param[in] ray the ray that may or may not be visible in the image
+     * @return True if this ray is visible theoretically, false otherwise
      */
     bool isVisibleRay(const Vec3& ray) const override;
 
@@ -131,14 +132,14 @@ class Equidistant : public IntrinsicScaleOffsetDisto
     inline Vec2 getCircleCenter() const { return _circleCenter; }
 
     /**
-     * @Brief get horizontal fov in radians
-     * @return  horizontal fov in radians
+     * @brief Get the horizontal FOV in radians
+     * @return Horizontal FOV in radians
      */
     double getHorizontalFov() const override;
 
     /**
-     * @Brief get vertical fov in radians
-     * @return  vertical fov in radians
+     * @brief Get the vertical FOV in radians
+     * @return Vertical FOV in radians
      */
     double getVerticalFov() const override;
 

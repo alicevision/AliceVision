@@ -9,11 +9,11 @@ from pyalicevision import sfmData as av
 ##################
 ### List of functions:
 # - CameraPose() => DONE
-# - CameraPose(geometry::Pose3& transform, bool locked) !!! Pose3 not binded !!!
-# - [inline] geometry::Pose3& getTransform() !!! Pose3 not binded !!!
+# - CameraPose(geometry::Pose3& transform, bool locked) / Pose3 not binded
+# - [inline] geometry::Pose3& getTransform() / Pose3 not binded
 # - [inline] bool isLocked() => DONE
 # - [inline] operator==(other) => DONE
-# - [inline] void setTransform(geometry::Pose3& transform) !!! Pose3 not binded !!!
+# - [inline] void setTransform(geometry::Pose3& transform) / Pose3 not binded
 # - [inline] void lock() => DONE
 # - [inline] void unlock() => DONE
 # - void initializeState() => DONE

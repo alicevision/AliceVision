@@ -37,7 +37,7 @@ class IntrinsicBase
 
     /**
      * @brief Get the lock state of the intrinsic
-     * @return true if the intrinsic is locked
+     * @return True if the intrinsic is locked, false otherwise
      */
     inline bool isLocked() const { return _locked; }
 
@@ -89,9 +89,9 @@ class IntrinsicBase
     /**
      * @brief Projection of a 3D point into the camera plane (Apply pose, disto (if any) and Intrinsics)
      * @param[in] pose The pose
-     * @param[in] pt3D The 3d point
-     * @param[in] applyDistortion If true apply distrortion if any
-     * @return The 2d projection in the camera plane
+     * @param[in] pt3D The 3D point
+     * @param[in] applyDistortion If true, apply the distortion if there is any
+     * @return The 2D projection in the camera plane
      */
     Vec2 project(const geometry::Pose3& pose, const Vec4& pt3D, bool applyDistortion = true) const
     {
@@ -101,19 +101,19 @@ class IntrinsicBase
     /**
      * @brief Projection of a 3D point into the camera plane (Apply pose, disto (if any) and Intrinsics)
      * @param[in] pose The pose
-     * @param[in] pt3D The 3d point
-     * @param[in] applyDistortion If true apply distrortion if any
-     * @return The 2d projection in the camera plane
+     * @param[in] pt3D The 3D point
+     * @param[in] applyDistortion If true, apply the distortion if there is any
+     * @return The 2D projection in the camera plane
      */
     virtual Vec2 project(const Eigen::Matrix4d& pose, const Vec4& pt3D, bool applyDistortion = true) const = 0;
 
     /**
      * @brief Back-projection of a 2D point at a specific depth into a 3D point
-     * @param[in] pt2D The 2d point
-     * @param[in] applyDistortion If true apply distrortion if any
+     * @param[in] pt2D The 2D point
+     * @param[in] applyDistortion If true, apply the distortion if there is any
      * @param[in] pose The camera pose
      * @param[in] depth The depth
-     * @return The 3d point
+     * @return The 3D point
      */
     Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const;
 
@@ -122,47 +122,47 @@ class IntrinsicBase
     Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(const Vec3& pt);
 
     /**
-     * @brief get derivative of a projection of a 3D point into the camera plane
+     * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
-     * @param[in] pt3D The 3d point
-     * @param[in] applyDistortion If true apply distrortion if any
-     * @return The projection jacobian  wrt pose
+     * @param[in] pt3D The 3D point
+     * @param[in] applyDistortion If true, apply the distortion if there is any
+     * @return The projection jacobian with respect to the pose
      */
     virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
 
     /**
-     * @brief get derivative of a projection of a 3D point into the camera plane
+     * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
-     * @param[in] pt3D The 3d point
-     * @param[in] applyDistortion If true apply distrortion if any
-     * @return The projection jacobian  wrt pose
+     * @param[in] pt3D The 3D point
+     * @param[in] applyDistortion If true, apply the distortion if there is any
+     * @return The projection jacobian with respect to the pose
      */
     virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
 
     /**
-     * @brief get derivative of a projection of a 3D point into the camera plane
+     * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
-     * @param[in] pt3D The 3d point
-     * @param[in] applyDistortion If true apply distrortion if any
-     * @return The projection jacobian  wrt point
+     * @param[in] pt3D The 3D point
+     * @param[in] applyDistortion If true, apply the distortion if there is any
+     * @return The projection jacobian with respect to the point
      */
     virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
 
     /**
-     * @brief get derivative of a projection of a 3D point into the camera plane
+     * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
-     * @param[in] pt3D The 3d point
-     * @param[in] applyDistortion If true apply distrortion if any
-     * @return The projection jacobian  wrt point
+     * @param[in] pt3D The 3D point
+     * @param[in] applyDistortion If true, apply the distortion if there is any
+     * @return The projection jacobian with respect to the point
      */
     virtual Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
 
     /**
-     * @brief get derivative of a projection of a 3D point into the camera plane
+     * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
-     * @param[in] pt3D The 3d point
-     * @param[in] applyDistortion If true apply distrortion if any
-     * @return The projection jacobian wrt params
+     * @param[in] pt3D The 3D point
+     * @param[in] applyDistortion If true, apply the distortion if there is any
+     * @return The projection jacobian with respect to the params
      */
     virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const Eigen::Matrix4d& pos, const Vec4& pt3D) const = 0;
 
@@ -171,7 +171,7 @@ class IntrinsicBase
      * @param[in] pose The pose
      * @param[in] X The 3D projected point
      * @param[in] x The image observation
-     * @return residual
+     * @return residual between the 3D projected point and the image observation
      */
     inline Vec2 residual(const geometry::Pose3& pose, const Vec4& X, const Vec2& x) const
     {
@@ -180,11 +180,11 @@ class IntrinsicBase
     }
 
     /**
-     * @brief Compute the residual between the 3D projected point X and an image observation x
+     * @brief Compute the residuals between the 3D projected point X and an image observation x
      * @param[in] pose The pose
      * @param[in] X The 3D projection
      * @param[in] x The image observation
-     * @return residual
+     * @return residuals between the 3D projected point and the image observation
      */
     inline Mat2X residuals(const geometry::Pose3& pose, const Mat3X& X, const Mat2X& x) const
     {
@@ -199,35 +199,35 @@ class IntrinsicBase
     }
 
     /**
-     * @brief lock the intrinsic
+     * @brief Lock the intrinsic
      */
     inline void lock() { _locked = true; }
 
     /**
-     * @brief unlock the intrinsic
+     * @brief Unlock the intrinsic
      */
     inline void unlock() { _locked = false; }
 
     /**
-     * @brief Set intrinsic image width
+     * @brief Set the intrinsic image width
      * @param[in] width The image width
      */
     inline void setWidth(unsigned int width) { _w = width; }
 
     /**
-     * @brief Set intrinsic image height
+     * @brief Set the intrinsic image height
      * @param[in] height The image height
      */
     inline void setHeight(unsigned int height) { _h = height; }
 
     /**
-     * @brief Set intrinsic sensor width
+     * @brief Set the intrinsic sensor width
      * @param[in] width The sensor width
      */
     inline void setSensorWidth(double width) { _sensorWidth = width; }
 
     /**
-     * @brief Set intrinsic sensor height
+     * @brief Set the intrinsic sensor height
      * @param[in] height The sensor height
      */
     inline void setSensorHeight(double height) { _sensorHeight = height; }
@@ -239,8 +239,8 @@ class IntrinsicBase
     inline void setSerialNumber(const std::string& serialNumber) { _serialNumber = serialNumber; }
 
     /**
-     * @brief Set The intrinsic initialization mode
-     * @param[in] initializationMode The intrintrinsic initialization mode enum
+     * @brief Set the intrinsic initialization mode
+     * @param[in] initializationMode The intrintrinsic initialization mode enum value
      */
     inline void setInitializationMode(EInitMode initializationMode) { _initializationMode = initializationMode; }
 
@@ -259,40 +259,40 @@ class IntrinsicBase
 
     /**
      * @brief Get embed camera type
-     * @return EINTRINSIC enum
+     * @return EINTRINSIC enum value
      */
     virtual EINTRINSIC getType() const = 0;
 
     /**
-     * get a string
-     * @return the string describing the intrinsic type
+     * @brief Get the string describing the intrinsic type
+     * @return The string describing the intrinsic type
      */
     std::string getTypeStr() const { return EINTRINSIC_enumToString(getType()); }
 
     /**
-     * @brief Get intrinsic parameters
-     * @return intrinsic parameters
+     * @brief Get the intrinsic parameters
+     * @return Intrinsic parameters as a vector
      */
     virtual std::vector<double> getParams() const = 0;
 
     /**
-     * @brief Get count of intrinsic parameters
-     * @return the number of intrinsic parameters
+     * @brief Get the count of intrinsic parameters
+     * @return The number of intrinsic parameters
      */
     virtual std::size_t getParamsSize() const = 0;
 
     /**
      * @brief Update intrinsic parameters
      * @param[in] intrinsic parameters
-     * @return true if done
+     * @return True if the parameters were successfully updated, false otherwise
      */
     virtual bool updateFromParams(const std::vector<double>& params) = 0;
 
     /**
-     * @brief import intrinsic parameters from external array
+     * @brief Import intrinsic parameters from external array
      * @param[in] intrinsic parameters
      * @param[in] inputVersion input source version (for optional transformation)
-     * @return true if done
+     * @return True if the parameters were successfully imported, false otherwise
      */
     virtual bool importFromParams(const std::vector<double>& params, const Version& inputVersion) = 0;
 
@@ -311,8 +311,8 @@ class IntrinsicBase
     virtual Vec2 ima2cam(const Vec2& p) const = 0;
 
     /**
-     * @brief Camera model handle a distortion field
-     * @return True if the camera model handle a distortion field
+     * @brief Camera model handles a distortion field
+     * @return True if the camera model handles a distortion field
      */
     virtual bool hasDistortion() const { return false; }
 
@@ -335,14 +335,14 @@ class IntrinsicBase
      * @param[in] p The point
      * @return The undistorted pixel
      */
-    virtual Vec2 get_ud_pixel(const Vec2& p) const = 0;
+    virtual Vec2 getUndistortedPixel(const Vec2& p) const = 0;
 
     /**
      * @brief Return the distorted pixel (with added distortion)
      * @param[in] p The undistorted point
      * @return The distorted pixel
      */
-    virtual Vec2 get_d_pixel(const Vec2& p) const = 0;
+    virtual Vec2 getDistortedPixel(const Vec2& p) const = 0;
 
     /**
      * @brief Set The intrinsic disto initialization mode
@@ -372,21 +372,21 @@ class IntrinsicBase
     /**
      * @brief Return true if this ray should be visible in the image
      * @param ray input ray to check for visibility
-     * @return true if this ray is visible theorically
+     * @return True if this ray is visible theorically
      */
     virtual bool isVisibleRay(const Vec3& ray) const = 0;
 
     /**
      * @brief Return true if these pixel coordinates should be visible in the image
      * @param pix input pixel coordinates to check for visibility
-     * @return true if visible
+     * @return True if visible
      */
     virtual bool isVisible(const Vec2& pix) const;
 
     /**
      * @brief Return true if these pixel coordinates should be visible in the image
      * @param pix input pixel coordinates to check for visibility
-     * @return true if visible
+     * @return True if visible
      */
     virtual bool isVisible(const Vec2f& pix) const;
 
@@ -395,7 +395,7 @@ class IntrinsicBase
      * maximal undistorted radius for a range of distorted radius.
      * @param min_radius the minimal radius to consider
      * @param max_radius the maximal radius to consider
-     * @return the maximal undistorted radius
+     * @return The maximal undistorted radius
      */
     virtual float getMaximalDistortion(double min_radius, double max_radius) const;
 
@@ -413,21 +413,21 @@ class IntrinsicBase
     virtual void rescale(float factorW, float factorH);
 
     /**
-     * @brief transform a given point (in pixels) to unit sphere in meters
+     * @brief Transform a given point (in pixels) to unit sphere in meters
      * @param pt the input point
-     * @return a point on the unit sphere
+     * @return A point on the unit sphere
      */
     virtual Vec3 toUnitSphere(const Vec2& pt) const = 0;
 
     /**
-     * @Brief get horizontal fov in radians
-     * @return  horizontal fov in radians
+     * @brief Get the horizontal FOV in radians
+     * @return Horizontal FOV in radians
      */
     virtual double getHorizontalFov() const = 0;
 
     /**
-     * @Brief get vertical fov in radians
-     * @return  vertical fov in radians
+     * @brief Get the vertical FOV in radians
+     * @return Vertical FOV in radians
      */
     virtual double getVerticalFov() const = 0;
 

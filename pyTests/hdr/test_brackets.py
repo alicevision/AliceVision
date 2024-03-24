@@ -8,7 +8,7 @@ import pyalicevision as av
 
 ##################
 ### List of functions:
-# - operator<<() !!! not binded as such, replaced by "print" !!!
+# - operator<<() / not binded as such, replaced by "print"
 # - bool estimateBracketsFromSfmData(vector<vector<shared_ptr<View>>>& groups,SfMData& sfmData,
 #                                    size_t countBrackets)
 # - int selectTargetViews(vector<vector<shared_ptr<View>>>& groups, SfMData& sfmData,

@@ -8,7 +8,7 @@ from pyalicevision import sfmData as av
 ### List of functions:
 # - struct RigSubPose(geometry::Pose3& pose = geometry::Pose3(),
 #                     ERigSubPoseStatus status = ERigSubPoseStatus::UNINITIALIZED)
-#                     => DONE !!! Pose3 not binded !!!
+#                     => DONE / Pose3 not binded
 # - operator==(RigSubPose& other) => DONE
 # - Rig(unsinged int nbSubPoses = 0) => DONE
 # - operator==(other) => DONE

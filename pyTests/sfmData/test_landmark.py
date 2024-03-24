@@ -11,10 +11,10 @@ from pyalicevision import sfmData as av
 # - Landmark()
 # - Landmark(feature::EImageDescriberType descType)
 # - Landmark(Vec3& pos3d, feature::EImageDescriberType descType,
-#            image::RGBColor& color) !!! not binded !!!
+#            image::RGBColor& color) / not binded
 # - operator==(other) => DONE
 # - [inline] operator!=(other) => DONE
-# - Observations& getObservations() !!! Observations (stl::flat_map) not binded !!!
+# - Observations& getObservations() / Observations (stl::flat_map) not binded
 ##################
 
 def test_landmark_default_constructor():

@@ -57,7 +57,7 @@ oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincip
     for (const Vec2& n : pointToBeChecked)
     {
         // Undistort pixel without principal point correction
-        const Vec2 n_undist = intrinsic->get_ud_pixel(n);
+        const Vec2 n_undist = intrinsic->getUndistortedPixel(n);
         maxDistortionVector.push_back(n_undist);
     }
 
@@ -250,7 +250,7 @@ int aliceVision_main(int argc, char** argv)
                     {
                         const Vec2 undisto_pix(x, y);
                         // Compute coordinates with distortion
-                        const Vec2 disto_pix = intrinsic.get_d_pixel(undisto_pix) + ppCorrection;
+                        const Vec2 disto_pix = intrinsic.getDistortedPixel(undisto_pix) + ppCorrection;
 
                         image_dist(y, x).r() = float((disto_pix[0]) / (intrinsic.w() - 1));
                         image_dist(y, x).g() = float((intrinsic.h() - 1 - disto_pix[1]) / (intrinsic.h() - 1));
@@ -273,7 +273,7 @@ int aliceVision_main(int argc, char** argv)
                     {
                         const Vec2 disto_pix(x, y);
                         // Compute coordinates without distortion
-                        const Vec2 undisto_pix = intrinsic.get_ud_pixel(disto_pix) - ppCorrection;
+                        const Vec2 undisto_pix = intrinsic.getUndistortedPixel(disto_pix) - ppCorrection;
 
                         image_dist(y, x).r() = float((undisto_pix[0]) / (intrinsic.w() - 1));
                         image_dist(y, x).g() = float((intrinsic.h() - 1 - undisto_pix[1]) / (intrinsic.h() - 1));

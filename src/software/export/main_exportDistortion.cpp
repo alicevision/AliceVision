@@ -106,7 +106,7 @@ void toSTMap(image::Image<image::RGBAfColor>& stmap,
         {
             const Vec2 pix((j + xOffset), (i + yOffset));
 
-            const Vec2 disto_pix = distort ? intrinsic->get_ud_pixel(pix) : intrinsic->get_d_pixel(pix);
+            const Vec2 disto_pix = distort ? intrinsic->getUndistortedPixel(pix) : intrinsic->getDistortedPixel(pix);
 
             stmap(i, j).b() = disto_pix[0] / (static_cast<float>(intrinsic->w()) - 1.0f);
             stmap(i, j).a() = (static_cast<float>(intrinsic->h()) - 1.0f - disto_pix[1]) / (static_cast<float>(intrinsic->h()) - 1.0f);

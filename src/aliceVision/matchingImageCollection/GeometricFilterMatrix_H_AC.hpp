@@ -114,7 +114,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
         if (hasValidIntrinsics)
         {
             for (feature::PointFeatures::const_iterator iter = vec_feats.begin(); iter != vec_feats.end(); ++iter, ++i)
-                m.col(i) = cam->get_ud_pixel(Vec2(iter->x(), iter->y()));
+                m.col(i) = cam->getUndistortedPixel(Vec2(iter->x(), iter->y()));
         }
         else
         {

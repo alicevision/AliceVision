@@ -7,14 +7,15 @@
 %module pyalicevision
 
 %include <aliceVision/global.i>
+%include <aliceVision/version.hpp>
 
 %import <aliceVision/camera/Camera.i>
+%import <aliceVision/geometry/Geometry.i>
 %import <aliceVision/hdr/Hdr.i>
 %import <aliceVision/sensorDB/SensorDB.i>
 %import <aliceVision/sfmDataIO/SfMDataIO.i>
 %import <aliceVision/sfmData/SfMData.i>
-
-%include <aliceVision/version.hpp>
+%import <aliceVision/stl/Stl.i>
 
 %{
 #include <aliceVision/version.hpp>

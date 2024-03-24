@@ -80,11 +80,14 @@ class IntrinsicScaleOffset : public IntrinsicBase
 
     /**
      * @brief Import a vector of params loaded from a file. It is similar to updateFromParams but it deals with file compatibility.
+     * @param[in] params a vector containing the intrinsic's parameters
+     * @param[in] inputVersion
+     * @return True if the parameters were correctly updated, false otherwise
      */
     bool importFromParams(const std::vector<double>& params, const Version& inputVersion) override;
 
     /**
-     * @brief Set initial Scale (for constraining minimization)
+     * @brief Set the initial scale for the intrinsic (used to constrain minimization)
      */
     inline void setInitialScale(const Vec2& initialScale) { _initialScale = initialScale; }
 
@@ -95,8 +98,8 @@ class IntrinsicScaleOffset : public IntrinsicBase
     inline Vec2 getInitialScale() const { return _initialScale; }
 
     /**
-     * @brief lock the ratio between fx and fy
-     * @param lock is the ratio locked
+     * @brief Lock the ratio between fx and fy
+     * @param lock True if the ratio is locked, false otherwise
      */
     inline void setRatioLocked(bool lock) { _ratioLocked = lock; }
 

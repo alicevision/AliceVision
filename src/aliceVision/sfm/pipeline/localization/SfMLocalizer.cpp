@@ -74,7 +74,7 @@ bool SfMLocalizer::localize(const Pair& imageSize,
             pt2Dundistorted = Mat2X(2, numPts);
             for (std::size_t iPoint = 0; iPoint < numPts; ++iPoint)
             {
-                pt2Dundistorted.col(iPoint) = pinholeCam->get_ud_pixel(resectionData.pt2D.col(iPoint));
+                pt2Dundistorted.col(iPoint) = pinholeCam->getUndistortedPixel(resectionData.pt2D.col(iPoint));
             }
         }
 

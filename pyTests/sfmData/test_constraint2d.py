@@ -11,7 +11,7 @@ from pyalicevision import sfmData as av
 # - Constraint2D() => DONE
 # - Constraint2D(IndexT view_first, Observation& observation_first, IndexT view_second,
 #                Observation& observation_second,
-#                feature::EImageDescriberType descType) !!! EImageDescriberType not binded !!!
+#                feature::EImageDescriberType descType) / EImageDescriberType not binded
 # - operator==(other) => DONE
 # - [inline] operator!=(other) => DONE
 ##################
