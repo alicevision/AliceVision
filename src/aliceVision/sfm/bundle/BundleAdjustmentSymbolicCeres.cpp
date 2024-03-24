@@ -192,7 +192,7 @@ void BundleAdjustmentSymbolicCeres::Statistics::show() const
         {
             if (camdistIt.first < 0)
                 nbCamNotConnected += camdistIt.second;
-            else if (camdistIt.first == 1)
+            else if (camdistIt.first == 0)
                 nbCamDistEqZero += camdistIt.second;
             else if (camdistIt.first == 1)
                 nbCamDistEqOne += camdistIt.second;
