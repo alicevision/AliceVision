@@ -157,7 +157,7 @@ def test_equidistant_default_constructor():
     intrinsic = av.Equidistant()
 
     # Distortion is not set, default type is "EINTRINSIC::EQUIDISTANT_CAMERA"
-    assert intrinsic.getType() == 1024 and intrinsic.getTypeStr() == "equidistant"
+    assert intrinsic.getType() == av.EQUIDISTANT_CAMERA and intrinsic.getTypeStr() == "equidistant"
 
     assert intrinsic.w() == 1, "The Equidistant intrinsic's default width should be 1"
     assert intrinsic.h() == 1, "The Equidistant intrinsic's default height should be 1"
