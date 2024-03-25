@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
+    const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);
 
     // Remove poses and structure
     SfMData sfmData2 = sfmData;
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
+    const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);
 
     // Remove poses and structure
     SfMData sfmData2 = sfmData;
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
     // The third one will have an invalid intrinsic (unknown focal length)
     {
         // Create the intrinsic with unknown focal length
-        sfmData2.getIntrinsics().emplace(1, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, config._cx * 2, config._cy * 2, -1, -1, 0, 0));
+        sfmData2.getIntrinsics().emplace(1, camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE, camera::EUNDISTORTION::UNDISTORTION_NONE, config._cx * 2, config._cy * 2, -1, -1, 0, 0));
         // The 3rd view use this invalid intrinsic
         sfmData2.getViews().at(2)->setIntrinsicId(1);
     }
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
     const NViewDataSet d = NRealisticCamerasRing(nbPoses, nbPoints, config);
 
     // Translate the input dataset to a SfMData scene
-    const SfMData sfmData = getInputRigScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
+    const SfMData sfmData = getInputRigScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);
 
     // Remove poses and structure
     SfMData sfmData2 = sfmData;

@@ -26,7 +26,7 @@ using namespace aliceVision::sfmData;
 
 double RMSE(const SfMData& sfmData);
 
-SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic);
+SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic, EDISTORTION edistortion);
 
 // Test summary:
 // - Create a SfMData scene from a synthetic dataset
@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);
 
     const double dResidual_before = RMSE(sfmData);
 
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_RADIAL1);
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_RADIALK1);
 
     const double dResidual_before = RMSE(sfmData);
 
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_RADIALK3);
 
     const double dResidual_before = RMSE(sfmData);
 
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_BROWN);
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_BROWN);
 
     const double dResidual_before = RMSE(sfmData);
 
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_FISHEYE);
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_FISHEYE);
 
     const double dResidual_before = RMSE(sfmData);
 
@@ -142,8 +142,8 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
-    SfMData sfmData_notRefined = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);  // used to compate which parameters are refined.
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);
+    SfMData sfmData_notRefined = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);  // used to compate which parameters are refined.
 
     // Transform the views scheme
     //          v0 - v3
@@ -267,7 +267,7 @@ double RMSE(const SfMData& sfm_data)
 // Translation a synthetic scene into a valid SfMData scene.
 // => A synthetic scene is used:
 //    a random noise between [-.5,.5] is added on observed data points
-SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic)
+SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic, EDISTORTION edistortion)
 {
     // Translate the input dataset to a SfMData scene
     SfMData sfm_data;
@@ -298,7 +298,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, w, h, config._fx, config._fx, 0, 0));
+        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, edistortion, EUNDISTORTION::UNDISTORTION_NONE, w, h, config._fx, config._fx, 0, 0));
     }
 
     // 4. Landmarks

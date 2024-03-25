@@ -141,44 +141,39 @@ std::vector<cameraPair> buildIntrinsics()
 {
     std::vector<cameraPair> cameras;
 
-    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA, 1920, 1080, 900, 900, 80, 50),
-                                     camera::createPinhole(camera::PINHOLE_CAMERA, 1920, 1080, 1200, 1200, 0, 0)));
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::DISTORTION_NONE, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50),
+                                     camera::createPinhole(camera::DISTORTION_NONE, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0)));
 
-    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 900, 900, 80, 50, {0.5}),
-                                     camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL1, 1920, 1080, 1200, 1200, 0, 0, {0.0})));
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::DISTORTION_RADIALK1, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {0.5}),
+                                     camera::createPinhole(camera::DISTORTION_RADIALK1, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {0.0})));
 
-    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 900, 900, 80, 50, {0.5, -0.4, 1.2}),
-                                     camera::createPinhole(camera::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0})));
-
-    cameras.push_back(
-      std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_BROWN, 1920, 1080, 900, 900, 80, 50, {-0.054, 0.014, 0.006, 0.001, -0.001}),
-                     camera::createPinhole(camera::PINHOLE_CAMERA_BROWN, 1920, 1080, 1200, 1200, 0, 0, {0, 0, 0, 0, 0})));
-
-    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE, 1920, 1080, 900, 900, 80, 50, {0.5, -0.4, 0.1, 0.2}),
-                                     camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0})));
-
-    cameras.push_back(std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE1, 1920, 1080, 900, 900, 80, 50, {0.5}),
-                                     camera::createPinhole(camera::PINHOLE_CAMERA_FISHEYE1, 1920, 1080, 1200, 1200, 0, 0, {1.2})));
-
-    /*cameras.push_back(std::make_pair(
-        camera::createPinhole(camera::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 900, 900, 80, 50, {0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 1.0, 1.0}), camera::createPinhole(camera::PINHOLE_CAMERA_3DEANAMORPHIC4, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0})
-    ));*/
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::DISTORTION_RADIALK3, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {0.5, -0.4, 1.2}),
+                                     camera::createPinhole(camera::DISTORTION_RADIALK3, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0})));
 
     cameras.push_back(
-      std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_3DERADIAL4, 1920, 1080, 900, 900, 80, 50, {0.2, 0.0, 0.0, 0.0, 0.0, 0.0}),
-                     camera::createPinhole(camera::PINHOLE_CAMERA_3DERADIAL4, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0})));
+      std::make_pair(camera::createPinhole(camera::DISTORTION_BROWN, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {-0.054, 0.014, 0.006, 0.001, -0.001}),
+                     camera::createPinhole(camera::DISTORTION_BROWN, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {0, 0, 0, 0, 0})));
+
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::DISTORTION_FISHEYE, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {0.5, -0.4, 0.1, 0.2}),
+                                     camera::createPinhole(camera::DISTORTION_FISHEYE, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0})));
+
+    cameras.push_back(std::make_pair(camera::createPinhole(camera::DISTORTION_FISHEYE1, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {0.5}),
+                                     camera::createPinhole(camera::DISTORTION_FISHEYE1, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {1.2})));
+
 
     cameras.push_back(
-      std::make_pair(camera::createPinhole(camera::PINHOLE_CAMERA_3DECLASSICLD, 1920, 1080, 900, 900, 80, 50, {0.2, 1.0, 0.0, 0.0, 0.0}),
-                     camera::createPinhole(camera::PINHOLE_CAMERA_3DECLASSICLD, 1920, 1080, 1200, 1200, 0, 0, {0.0, 1.0, 0.0, 0.0, 0.0})));
+      std::make_pair(camera::createPinhole(camera::DISTORTION_3DERADIAL4, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {0.2, 0.0, 0.0, 0.0, 0.0, 0.0}),
+                     camera::createPinhole(camera::DISTORTION_3DERADIAL4, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0})));
 
-    cameras.push_back(std::make_pair(camera::createEquidistant(camera::EQUIDISTANT_CAMERA, 1920, 1080, 1500, 80, 50),
-                                     camera::createEquidistant(camera::EQUIDISTANT_CAMERA, 1920, 1080, 1300, 0, 0)));
+    cameras.push_back(
+      std::make_pair(camera::createPinhole(camera::DISTORTION_3DECLASSICLD, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {0.2, 1.0, 0.0, 0.0, 0.0}),
+                     camera::createPinhole(camera::DISTORTION_3DECLASSICLD, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 1.0, 0.0, 0.0, 0.0})));
 
-    cameras.push_back(std::make_pair(camera::createEquidistant(camera::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1500, 0, 0, {0.11, -0.30, 0.1}),
-                                     camera::createEquidistant(camera::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 900, 10, 20, {0.0, 0.0, 0.0})));
+    cameras.push_back(std::make_pair(camera::createEquidistant(camera::DISTORTION_NONE, 1920, 1080, 1500, 80, 50),
+                                     camera::createEquidistant(camera::DISTORTION_NONE, 1920, 1080, 1300, 0, 0)));
+
+    cameras.push_back(std::make_pair(camera::createEquidistant(camera::DISTORTION_RADIALK3PT, 1920, 1080, 1500, 0, 0, {0.11, -0.30, 0.1}),
+                                     camera::createEquidistant(camera::DISTORTION_RADIALK3PT, 1920, 1080, 900, 10, 20, {0.0, 0.0, 0.0})));
 
     return cameras;
 }

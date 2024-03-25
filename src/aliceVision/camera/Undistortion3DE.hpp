@@ -27,7 +27,7 @@ class Undistortion3DEAnamorphic4 : public Undistortion
         _undistortionParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0};
     }
 
-    EDISTORTION getType() const override { return EDISTORTION::DISTORTION_3DEANAMORPHIC4; }
+    EUNDISTORTION getType() const override { return EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4; }
 
     Undistortion* clone() const override { return new Undistortion3DEAnamorphic4(*this); }
 

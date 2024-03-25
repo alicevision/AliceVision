@@ -13,8 +13,8 @@
 
 BOOST_AUTO_TEST_CASE(PANORAMA_SFM_EQUIDISTANT)
 {
-    auto intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1357.0, 1357.0, 0, 0);
-    auto intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1200.0, 1200.0, 40, -20);
+    auto intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA, camera::EDISTORTION::DISTORTION_RADIALK3, camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1357.0, 1357.0, 0, 0);
+    auto intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA, camera::EDISTORTION::DISTORTION_RADIALK3, camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1200.0, 1200.0, 40, -20);
 
     test_panorama(intrinsic_gt, intrinsic_est, 0.0);
 }

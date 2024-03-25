@@ -110,14 +110,18 @@ class CostPanoramaPinHole : public ceres::CostFunction
               _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) +
               _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) *
                 _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
-            Eigen::Matrix<double, 2, Eigen::Dynamic> Jdisto =
-              _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous *
-                                                                           _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) *
-                                                                           _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
 
             J.block<2, 2>(0, 0) = Jscale;
             J.block<2, 2>(0, 2) = Jpp;
-            J.block(0, 4, 2, disto_size) = Jdisto;
+
+            if (disto_size > 0)
+            {
+                Eigen::Matrix<double, 2, Eigen::Dynamic> Jdisto =
+                _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous *
+                                                                           _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) *
+                                                                           _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
+                J.block(0, 4, 2, disto_size) = Jdisto;
+            }
         }
 
         return true;

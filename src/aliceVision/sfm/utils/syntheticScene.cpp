@@ -43,7 +43,7 @@ void generateSyntheticMatches(matching::PairwiseMatches& outPairwiseMatches, con
     }
 }
 
-sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic)
+sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic, camera::EDISTORTION edistortion)
 {
     // Translate the input dataset to a SfMData scene
     sfmData::SfMData sfmData;
@@ -73,7 +73,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigur
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfmData.getIntrinsics().emplace(0, camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx));
+        sfmData.getIntrinsics().emplace(0, camera::createIntrinsic(eintrinsic, edistortion, camera::EUNDISTORTION::UNDISTORTION_NONE, w, h, config._fx, config._fx));
     }
 
     // 4. Landmarks
@@ -94,7 +94,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigur
     return sfmData;
 }
 
-sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic)
+sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic, camera::EDISTORTION edistortion)
 {
     // 1. Rig
     // 2. Views
@@ -142,7 +142,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfi
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfmData.getIntrinsics().emplace(0, camera::createIntrinsic(eintrinsic, w, h, config._fx, config._fx));
+        sfmData.getIntrinsics().emplace(0, camera::createIntrinsic(eintrinsic, edistortion, camera::EUNDISTORTION::UNDISTORTION_NONE, w, h, config._fx, config._fx));
     }
 
     // 5. Landmarks

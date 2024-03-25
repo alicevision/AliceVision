@@ -58,13 +58,13 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
             if (i == 0)
             {
                 sfm_data.getIntrinsics().emplace(
-                  0, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
+                  0, camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE, camera::EUNDISTORTION::UNDISTORTION_NONE, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
             }
         }
         else
         {
             sfm_data.getIntrinsics().emplace(
-              i, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
+              i, camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE, camera::EUNDISTORTION::UNDISTORTION_NONE, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
         }
     }
 
@@ -99,7 +99,7 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
 
             sfm_data.getIntrinsics().emplace(
               nbIntrinsics + subPoseId,
-              camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
+              camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE, camera::EUNDISTORTION::UNDISTORTION_NONE, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
 
             for (std::size_t pose = 0; pose < nbRigPoses; ++pose)
             {

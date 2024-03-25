@@ -39,7 +39,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 namespace po = boost::program_options;
 using namespace aliceVision;
@@ -146,7 +146,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string checkerBoardsPath;
     std::string sfmOutputDataFilepath;
 
-    std::string cameraModelName = "3deanamorphic4";
+    std::string undistortionModelName = "3deanamorphic4";
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -160,8 +160,8 @@ int aliceVision_main(int argc, char* argv[])
     
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("cameraModel", po::value<std::string>(&cameraModelName)->default_value(cameraModelName),
-         "Camera model used for estimating distortion.");
+        ("undistortionModelName", po::value<std::string>(&undistortionModelName)->default_value(undistortionModelName),
+         "Distortion model used for estimating undistortion.");
     // clang-format on
 
     CmdLine cmdline("This program calibrates camera distortion.\n"
@@ -205,7 +205,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Retrieve camera model
-    camera::EINTRINSIC cameraModel = camera::EINTRINSIC_stringToEnum(cameraModelName);
+    camera::EUNDISTORTION undistortionModel = camera::EUNDISTORTION_stringToEnum(undistortionModelName);
 
     // Calibrate each intrinsic independently
     for (auto& [intrinsicId, intrinsicPtr] : sfmData.getIntrinsics())
@@ -215,7 +215,15 @@ int aliceVision_main(int argc, char* argv[])
 
         // Create new camera corresponding to given model
         std::shared_ptr<camera::Pinhole> cameraOut =
-          std::dynamic_pointer_cast<camera::Pinhole>(camera::createIntrinsic(cameraModel, cameraIn->w(), cameraIn->h()));
+            std::dynamic_pointer_cast<camera::Pinhole>(
+                camera::createIntrinsic(
+                    camera::EINTRINSIC::PINHOLE_CAMERA,
+                    camera::EDISTORTION::DISTORTION_NONE,
+                    undistortionModel,
+                    cameraIn->w(), 
+                    cameraIn->h()
+                )
+            );
 
         if (!cameraIn || !cameraOut)
         {
@@ -231,9 +239,6 @@ int aliceVision_main(int argc, char* argv[])
         cameraOut->setSerialNumber(cameraIn->serialNumber());
         cameraOut->setScale(cameraIn->getScale());
         cameraOut->setOffset(cameraIn->getOffset());
-
-        // Remove distortion object
-        cameraOut->setDistortionObject(nullptr);
 
         // Change distortion initialization mode to calibrated
         cameraOut->setDistortionInitializationMode(camera::EInitMode::CALIBRATED);
@@ -268,7 +273,7 @@ int aliceVision_main(int argc, char* argv[])
         std::vector<double> initialParams;
         std::vector<std::vector<bool>> lockSteps;
 
-        if (cameraModel == camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4)
+        if (undistortionModel == camera::EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4)
         {
             initialParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0};
             lockSteps = {{true, true, true, true, true, true, true, true, true, true, true, true, true, true},

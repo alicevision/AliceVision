@@ -118,7 +118,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
                                                         double defaultOffsetY,
                                                         LensParam* lensParam,
                                                         camera::EINTRINSIC defaultIntrinsicType,
-                                                        camera::EINTRINSIC allowedEintrinsics)
+                                                        camera::EDISTORTION defaultDistortionType)
 {
     // can't combine defaultFocalLengthPx and defaultFieldOfView
     assert(defaultFocalLength < 0 || defaultFieldOfView < 0);
@@ -151,6 +151,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     }
 
     camera::EINTRINSIC intrinsicType = defaultIntrinsicType;
+    camera::EDISTORTION distortionType = defaultDistortionType;
 
     bool isResized = false;
 
@@ -198,57 +199,51 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     const double focalRatio = 1.0 / pixelAspectRatio;
 
     bool hasFisheyeCompatibleParameters = ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0));
-    bool checkPossiblePinhole = (allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) && hasFisheyeCompatibleParameters;
-
+    
     // choose intrinsic type
 
-    camera::EINTRINSIC lcpIntrinsicType =
-      (lensParam == nullptr || lensParam->isEmpty())
-        ? camera::EINTRINSIC::UNKNOWN
-        : (lensParam->isFisheye() ? camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE : camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
+    //If lcp exists and is valid
+    camera::EINTRINSIC lcpIntrinsicType = camera::EINTRINSIC::UNKNOWN;
+    camera::EDISTORTION lcpDistortionType = camera::EDISTORTION::DISTORTION_NONE;
+    if (!(lensParam != nullptr || lensParam->isEmpty()))
+    {
+        lcpIntrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA;
+
+        if (lensParam->isFisheye())
+        {
+            lcpDistortionType = camera::EDISTORTION::DISTORTION_FISHEYE;
+        }
+        else
+        {
+            lcpDistortionType = camera::EDISTORTION::DISTORTION_RADIALK3;
+        }
+    }
 
     if (cameraBrand == "Custom")
     {
         intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
     }
-    else if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN) && (allowedEintrinsics & lcpIntrinsicType))
+    else if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN))
     {
         intrinsicType = lcpIntrinsicType;
     }
-    else if (checkPossiblePinhole)
+    else if (hasFisheyeCompatibleParameters)
     {
         // If the focal lens is short, the fisheye model should fit better.
-        intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
+        intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = camera::EDISTORTION::DISTORTION_FISHEYE;
     }
     else if (intrinsicType == camera::EINTRINSIC::UNKNOWN)
     {
-        // Choose a default camera model if no default type
-        static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities = {camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,
-                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
-                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
-                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
-                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1,
-                                                                                       camera::EINTRINSIC::PINHOLE_CAMERA};
-
-        for (const auto& e : intrinsicsPriorities)
-        {
-            if (allowedEintrinsics & e)
-            {
-                intrinsicType = e;
-                break;
-            }
-        }
-
-        // If still unassigned
-        if (intrinsicType == camera::EINTRINSIC::UNKNOWN)
-        {
-            throw std::invalid_argument("No intrinsic type can be attributed.");
-        }
+        intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA;
+        distortionType = camera::EDISTORTION::DISTORTION_RADIALK3;
     }
 
     // create the desired intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(
       /*camera*/ intrinsicType,
+      distortionType,
+      camera::EUNDISTORTION::UNDISTORTION_NONE,
       /*dimensions*/ view.getImage().getWidth(),
       view.getImage().getHeight(),
       /*focal length*/ pxFocalLength,
@@ -268,47 +263,50 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     }
 
     // initialize distortion parameters
-    switch (intrinsicType)
+    if (intrinsicType == camera::EINTRINSIC::PINHOLE_CAMERA)
     {
-        case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
+        switch (distortionType)
         {
-            if (cameraBrand == "GoPro")
+            case camera::EDISTORTION::DISTORTION_FISHEYE:
             {
-                intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 0.0524, 0.0094, -0.0037, -0.0004});
+                if (cameraBrand == "GoPro")
+                {
+                    intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 0.0524, 0.0094, -0.0037, -0.0004});
+                }
+                else if (lensParam && (!lensParam->isEmpty()) && (cameraBrand != "Custom"))
+                {
+                    std::vector<double> p = {pxFocalLength, pxFocalLength, 0, 0};
+                    p.push_back(lensParam->fisheyeParams.RadialDistortParam1);
+                    p.push_back(lensParam->fisheyeParams.RadialDistortParam2);
+                    p.push_back(0.0);
+                    p.push_back(0.0);
+                    intrinsic->updateFromParams(p);
+                }
+                break;
             }
-            else if (lensParam && (!lensParam->isEmpty()) && (cameraBrand != "Custom"))
+            case camera::EDISTORTION::DISTORTION_FISHEYE1:
             {
-                std::vector<double> p = {pxFocalLength, pxFocalLength, 0, 0};
-                p.push_back(lensParam->fisheyeParams.RadialDistortParam1);
-                p.push_back(lensParam->fisheyeParams.RadialDistortParam2);
-                p.push_back(0.0);
-                p.push_back(0.0);
-                intrinsic->updateFromParams(p);
+                if (cameraBrand == "GoPro")
+                {
+                    intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 1.04});
+                }
+                break;
             }
-            break;
+            case camera::EDISTORTION::DISTORTION_RADIALK3:
+            {
+                if (lensParam && (!lensParam->isEmpty()) && (cameraBrand != "Custom"))
+                {
+                    std::vector<double> p = {pxFocalLength, pxFocalLength, 0, 0};
+                    p.push_back(lensParam->perspParams.RadialDistortParam1);
+                    p.push_back(lensParam->perspParams.RadialDistortParam2);
+                    p.push_back(lensParam->perspParams.RadialDistortParam3);
+                    intrinsic->updateFromParams(p);
+                }
+                break;
+            }
+            default:
+                break;
         }
-        case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-        {
-            if (cameraBrand == "GoPro")
-            {
-                intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 1.04});
-            }
-            break;
-        }
-        case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-        {
-            if (lensParam && (!lensParam->isEmpty()) && (cameraBrand != "Custom"))
-            {
-                std::vector<double> p = {pxFocalLength, pxFocalLength, 0, 0};
-                p.push_back(lensParam->perspParams.RadialDistortParam1);
-                p.push_back(lensParam->perspParams.RadialDistortParam2);
-                p.push_back(lensParam->perspParams.RadialDistortParam3);
-                intrinsic->updateFromParams(p);
-            }
-            break;
-        }
-        default:
-            break;
     }
 
     // create serial number

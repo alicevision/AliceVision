@@ -86,11 +86,11 @@ void generateSyntheticMatches(matching::PairwiseMatches& outPairwiseMatches, con
 
 // Translate a synthetic scene into a valid SfMData scene
 // As only one intrinsic is defined we used shared intrinsic
-sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic);
+sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic, camera::EDISTORTION edistortion);
 
 // Translate a synthetic scene into a valid SfMData scene
 // As only one intrinsic is defined we used shared intrinsic
-sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic);
+sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic, camera::EDISTORTION edistortion);
 
 }  // namespace sfm
 }  // namespace aliceVision

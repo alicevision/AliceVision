@@ -23,7 +23,7 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 using namespace aliceVision::sfmData;
 
-SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic);
+SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic, EDISTORTION edistortion);
 
 BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_noCamera)
 {
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_alreadyAligned)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);
 
     double bS = 1.0;
     Mat3 bR = Mat3::Identity();
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_checkRotation)
     const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
     // Translate the input dataset to a SfMData scene
-    SfMData sfmDataOrig = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
+    SfMData sfmDataOrig = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);
     SfMData sfmData = sfmDataOrig;
     double aS = 1.0;
 
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_checkRotation)
 // Translation a synthetic scene into a valid SfMData scene.
 // => A synthetic scene is used:
 //    a random noise between [-.5,.5] is added on observed data points
-SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic)
+SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic, EDISTORTION edistortion)
 {
     // Translate the input dataset to a SfMData scene
     SfMData sfm_data;
@@ -170,7 +170,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy));
+        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, edistortion, EUNDISTORTION::UNDISTORTION_NONE, w, h, config._fx, config._cx, config._cy));
     }
 
     // 4. Landmarks

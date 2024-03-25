@@ -331,7 +331,13 @@ int aliceVision_main(int argc, char** argv)
 
         image::Image<float> imageGrey;
         std::shared_ptr<camera::Pinhole> queryIntrinsics =
-          std::dynamic_pointer_cast<camera::Pinhole>(camera::createIntrinsic(camera::PINHOLE_CAMERA_RADIAL3));
+          std::dynamic_pointer_cast<camera::Pinhole>(
+            camera::createIntrinsic(
+                camera::EINTRINSIC::PINHOLE_CAMERA, 
+                camera::EDISTORTION::DISTORTION_RADIALK3,
+                camera::EUNDISTORTION::UNDISTORTION_NONE
+                )
+            );
         bool hasIntrinsics = false;
 
         std::size_t iInputFrame = 0;

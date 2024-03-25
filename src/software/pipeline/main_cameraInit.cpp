@@ -38,7 +38,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 using namespace aliceVision::sfmDataIO;
@@ -166,7 +166,7 @@ int aliceVision_main(int argc, char** argv)
 
     // user optional parameters
     std::string defaultCameraModelName;
-    std::string allowedCameraModelsStr = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
+    std::string defaultDistortionModelName;
     std::string colorProfileDatabaseDirPath;
 
     double defaultFocalLength = -1.0;
@@ -215,9 +215,9 @@ int aliceVision_main(int argc, char** argv)
         ("defaultOffsetY", po::value<double>(&defaultOffsetY)->default_value(defaultOffsetY),
          "Default offset from the principal point Y coordinate.")
         ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
-         "Default camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
-        ("allowedCameraModels", po::value<std::string>(&allowedCameraModelsStr)->default_value(allowedCameraModelsStr),
-         "Permitted model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
+         "Default camera model type (pinhole, equidistant).")
+        ("defaultDistortionModel", po::value<std::string>(&defaultDistortionModelName)->default_value(defaultDistortionModelName),
+         "Default Distortion model type (none, radialk1, radialk3, radialk3pt, radialbrown, fisheye, fisheye1, 3deradial4, 3deanamorphic4, 3declassicld).")
         ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
          std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
          "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"
@@ -251,6 +251,11 @@ int aliceVision_main(int argc, char** argv)
     camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::UNKNOWN;
     if (!defaultCameraModelName.empty())
         defaultCameraModel = camera::EINTRINSIC_stringToEnum(defaultCameraModelName);
+
+    // set user Distortion model
+    camera::EDISTORTION defaultDistortionModel = camera::EDISTORTION::DISTORTION_NONE;
+    if (!defaultDistortionModelName.empty())
+        defaultDistortionModel = camera::EDISTORTION_stringToEnum(defaultDistortionModelName);
 
     // check user choose at least one input option
     if (imageFolder.empty() && sfmFilePath.empty())
@@ -333,8 +338,6 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_ERROR("Invalid input sensor database '" << sensorDatabasePath << "', please specify a valid file.");
         return EXIT_FAILURE;
     }
-
-    camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask(allowedCameraModelsStr);
 
     // use current time as seed for random generator for intrinsic Id without metadata
     std::srand(std::time(0));
@@ -647,7 +650,7 @@ int aliceVision_main(int argc, char** argv)
                                                                                 defaultOffsetY,
                                                                                 &lensParam,
                                                                                 defaultCameraModel,
-                                                                                allowedCameraModels);
+                                                                                defaultDistortionModel);
 
         if (!lensParam.isEmpty())
             ++lcpGeometryViewCount;

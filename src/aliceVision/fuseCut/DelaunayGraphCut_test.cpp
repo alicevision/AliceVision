@@ -55,7 +55,8 @@ BOOST_AUTO_TEST_CASE(fuseCut_solidAngle)
 
 SfMData generateSfm(const NViewDatasetConfigurator& config,
                     const size_t size = 3,
-                    camera::EINTRINSIC eintrinsic = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
+                    camera::EINTRINSIC eintrinsic = camera::EINTRINSIC::PINHOLE_CAMERA,
+                    camera::EDISTORTION edistortion = camera::EDISTORTION::DISTORTION_RADIALK3);
 
 BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 {
@@ -121,7 +122,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
  * @param eintrinsic
  * @return
  */
-SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, camera::EINTRINSIC eintrinsic)
+SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, camera::EINTRINSIC eintrinsic, camera::EDISTORTION distortion)
 {
     assert(size > 0);
 
@@ -191,7 +192,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
     {
         const unsigned int w = config._cx * 2;
         const unsigned int h = config._cy * 2;
-        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy));
+        sfm_data.getIntrinsics().emplace(0, createIntrinsic(eintrinsic, distortion, camera::EUNDISTORTION::UNDISTORTION_NONE, w, h, config._fx, config._cx, config._cy));
     }
 
     // 4. Landmarks

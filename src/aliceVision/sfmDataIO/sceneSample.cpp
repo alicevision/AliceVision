@@ -32,11 +32,10 @@ void generateSampleScene(sfmData::SfMData& output)
     const double offsetX = -26;
     const double offsetY = 16;
     output.getIntrinsics().emplace(
-      0, camera::createPinhole(camera::EINTRINSIC::PINHOLE_CAMERA, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
+      0, camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE, camera::EUNDISTORTION::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
     output.getIntrinsics().emplace(
       1,
-      camera::createPinhole(
-        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, {0.1, 0.05, -0.001}));
+      camera::createPinhole(camera::EDISTORTION::DISTORTION_RADIALK3, camera::EUNDISTORTION::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, {0.1, 0.05, -0.001}));
 
     // Generate poses on another cube
     IndexT idpose = 0;

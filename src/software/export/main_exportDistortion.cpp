@@ -36,9 +36,11 @@ std::string toNuke(std::shared_ptr<Undistortion> undistortion, EINTRINSIC intrin
 
     std::stringstream ss;
 
-    switch (intrinsicType)
+    
+
+    switch (undistortion->getType())
     {
-        case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
+        case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
             ss << "LensDistortion2 {"
                << "\n"
                << " distortionModelPreset \"3DEqualizer/3DE4 Anamorphic - Standard, Degree 4\""

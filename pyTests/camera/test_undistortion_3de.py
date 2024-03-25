@@ -49,7 +49,7 @@ def test_undistortion_3de_constructor():
     # TODO: uncomment when Vec2 is binded
     # assert size[0] == WIDTH and size[1] == HEIGHT
 
-    assert undistortion.getType() == av.DISTORTION_3DEANAMORPHIC4
+    assert undistortion.getType() == av.UNDISTORTION_3DEANAMORPHIC4
 
     parameters = undistortion.getParameters()
     assert parameters == DEFAULT_PARAMETERS

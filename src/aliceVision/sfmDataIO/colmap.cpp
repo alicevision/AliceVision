@@ -28,22 +28,30 @@ ColmapConfig::ColmapConfig(const std::string& basePath)
     _points3DPath = (fs::path(_sparseDirectory) / fs::path("points3D.txt")).string();
 }
 
-const std::set<camera::EINTRINSIC>& colmapCompatibleIntrinsics()
+
+bool isColmapCompatible(camera::EINTRINSIC intrinsicType, camera::EDISTORTION distortionType)
 {
-    static const std::set<camera::EINTRINSIC> compatibleIntrinsics{camera::PINHOLE_CAMERA,
-                                                                   camera::PINHOLE_CAMERA_RADIAL1,
-                                                                   camera::PINHOLE_CAMERA_RADIAL3,
-                                                                   camera::PINHOLE_CAMERA_BROWN,
-                                                                   camera::PINHOLE_CAMERA_FISHEYE,
-                                                                   camera::PINHOLE_CAMERA_FISHEYE1};
-    return compatibleIntrinsics;
+    if (intrinsicType != camera::EINTRINSIC::PINHOLE_CAMERA) 
+    {
+        return false;
+    }
+
+    switch (distortionType)
+    {
+    case camera::EDISTORTION::DISTORTION_NONE:
+    case camera::EDISTORTION::DISTORTION_RADIALK1:
+    case camera::EDISTORTION::DISTORTION_RADIALK3:
+    case camera::EDISTORTION::DISTORTION_BROWN:
+    case camera::EDISTORTION::DISTORTION_FISHEYE:
+    case camera::EDISTORTION::DISTORTION_FISHEYE1:
+        return true;
+    default:
+        break;
+    };
+
+    return false;
 }
 
-bool isColmapCompatible(camera::EINTRINSIC intrinsicType)
-{
-    const auto compatible = colmapCompatibleIntrinsics();
-    return compatible.find(intrinsicType) != compatible.end();
-}
 
 CompatibleList getColmapCompatibleIntrinsics(const sfmData::SfMData& sfMData)
 {
@@ -53,7 +61,10 @@ CompatibleList getColmapCompatibleIntrinsics(const sfmData::SfMData& sfMData)
         const auto& intrinsics = iter.second;
         const auto intrID = iter.first;
         const auto intrType = intrinsics->getType();
-        if (isColmapCompatible(intrType))
+
+        camera::EDISTORTION distoType = camera::getDistortionType(*intrinsics);
+
+        if (isColmapCompatible(intrType, distoType))
         {
             compatible.insert(intrID);
         }
@@ -92,9 +103,19 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
     std::stringstream intrString;
 
     camera::EINTRINSIC current_type = intrinsic->getType();
-    switch (current_type)
+
+    camera::EDISTORTION distoType = camera::getDistortionType(*intrinsic);    
+
+    if (current_type != camera::EINTRINSIC::PINHOLE_CAMERA)
     {
-        case camera::PINHOLE_CAMERA:
+        throw std::invalid_argument("The intrinsics " + EINTRINSIC_enumToString(current_type) + 
+                                    " for camera " + std::to_string(intrinsicsID) +
+                                    " are not supported in Colmap");
+    }
+
+    switch (distoType)
+    {
+        case camera::DISTORTION_NONE:
             // PINHOLE_CAMERA corresponds to Colmap's PINHOLE
             // Parameters: f, cx, cy
             {
@@ -107,7 +128,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << pinhole_intrinsic->getPrincipalPoint().y() << "\n";
             }
             break;
-        case camera::PINHOLE_CAMERA_RADIAL1:
+        case camera::DISTORTION_RADIALK1:
             // PINHOLE_CAMERA_RADIAL1 can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
@@ -125,7 +146,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << "\n";
             }
             break;
-        case camera::PINHOLE_CAMERA_RADIAL3:
+        case camera::DISTORTION_RADIALK3:
             // PINHOLE_CAMERA_RADIAL3 can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
@@ -148,7 +169,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
             }
             break;
-        case camera::PINHOLE_CAMERA_BROWN:
+        case camera::DISTORTION_BROWN:
             // PINHOLE_CAMERA_BROWN can only be modeled by Colmap's FULL_OPENCV setting the unused parameters to 0
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
@@ -171,7 +192,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
             }
             break;
-        case camera::PINHOLE_CAMERA_FISHEYE:
+        case camera::DISTORTION_FISHEYE:
             // PINHOLE_CAMERA_FISHEYE is modeled by Colmap's OPENCV_FISHEYE
             // Parameters: fx, fy, cx, cy, k1, k2, k3, k4
             {
@@ -186,7 +207,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << pinholeIntrinsicFisheye->getParams().at(6) << " " << pinholeIntrinsicFisheye->getParams().at(7) << "\n";
             }
             break;
-        case camera::PINHOLE_CAMERA_FISHEYE1:
+        case camera::DISTORTION_FISHEYE1:
             // PINHOLE_CAMERA_FISHEYE corresponds to Colmap's FOV
             // Parameters: fx, fy, cx, cy, k1, k2, k3, k4
             {
@@ -232,7 +253,9 @@ void generateColmapCamerasTxtFile(const sfmData::SfMData& sfmData, const std::st
         const IndexT intrID = iter.first;
         std::shared_ptr<camera::IntrinsicBase> intrinsic = iter.second;
 
-        if (isColmapCompatible(intrinsic->getType()))
+        camera::EDISTORTION distoType = camera::getDistortionType(*intrinsic);
+
+        if (isColmapCompatible(intrinsic->getType(), distoType))
         {
             outfile << convertIntrinsicsToColmapString(intrID, intrinsic);
         }

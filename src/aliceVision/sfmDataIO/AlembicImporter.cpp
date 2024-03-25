@@ -12,6 +12,7 @@
 #include <Alembic/AbcCoreOgawa/All.h>
 
 #include <aliceVision/version.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -398,6 +399,8 @@ bool readCamera(const Version& abcVersion,
     std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
     std::string mvg_intrinsicInitializationMode = EInitMode_enumToString(EInitMode::NONE);
     std::string mvg_intrinsicDistortionInitializationMode = EInitMode_enumToString(EInitMode::NONE);
+    std::string mvg_distortionType = EDISTORTION_enumToString(EDISTORTION::DISTORTION_NONE);
+    std::string mvg_undistortionType = EDISTORTION_enumToString(EDISTORTION::DISTORTION_NONE);
     std::vector<double> mvg_intrinsicParams;
     std::vector<IndexT> mvg_ancestorImagesParams;
     Vec2 initialFocalLengthPix = {-1, -1};
@@ -507,6 +510,14 @@ bool readCamera(const Version& abcVersion,
             {
                 mvg_intrinsicType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicType", sampleFrame);
             }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_distortionType"))
+            {
+                mvg_distortionType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_distortionType", sampleFrame);
+            }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_undistortionType"))
+            {
+                mvg_undistortionType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_undistortionType", sampleFrame);
+            }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_intrinsicInitializationMode"))
             {
                 mvg_intrinsicInitializationMode =
@@ -598,10 +609,26 @@ bool readCamera(const Version& abcVersion,
         // const float mm2pix = sensorSize_pix.at(0) / sensorWidth_mm;
         // imgWidth = haperture_cm * 10.0 * mm2pix;
         // imgHeight = vaperture_cm * 10.0 * mm2pix;
+        
+        camera::EINTRINSIC intrinsicType;
+        camera::EDISTORTION distortionType;
+        camera::EUNDISTORTION undistortionType;
+        if (abcVersion < Version(1, 2, 8))
+        {
+            compatibilityStringToEnums(mvg_intrinsicType, intrinsicType, distortionType, undistortionType);
+        }
+        else 
+        {
+            intrinsicType = EINTRINSIC_stringToEnum(mvg_intrinsicType);
+            distortionType = EDISTORTION_stringToEnum(mvg_distortionType);
+            undistortionType = EUNDISTORTION_stringToEnum(mvg_undistortionType);
+        }
 
         // create intrinsic parameters object
         std::shared_ptr<camera::IntrinsicBase> intrinsic = createIntrinsic(
-          /*intrinsic type*/ EINTRINSIC_stringToEnum(mvg_intrinsicType),
+          /*intrinsic type*/ intrinsicType,
+          /*distortion type*/ distortionType,
+          /*undistortion type*/ undistortionType,
           /*width*/ sensorSize_pix.at(0),
           /*height*/ sensorSize_pix.at(1));
 
@@ -619,6 +646,7 @@ bool readCamera(const Version& abcVersion,
               (initialFocalLengthPix(0) > 0) ? initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0] : -1;
             intrinsicCasted->setInitialScale(initialFocalLengthPix);
             intrinsicCasted->setRatioLocked(lockRatio);
+
             std::shared_ptr<camera::Distortion> distortion = intrinsicCasted->getDistortion();
             if (distortion)
             {
@@ -650,9 +678,13 @@ bool readCamera(const Version& abcVersion,
         }
 
         if (intrinsicLocked)
+        {
             intrinsic->lock();
+        }
         else
+        {
             intrinsic->unlock();
+        }
 
         sfmData.getIntrinsics().emplace(intrinsicId, intrinsic);
     }
@@ -985,6 +1017,12 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
     }
 
     Version abcVersion(vecAbcVersion[0], vecAbcVersion[1], vecAbcVersion[2]);
+
+    const Vec3i currentVersion = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
+    if (Version(currentVersion) < abcVersion)
+    {
+        ALICEVISION_THROW_ERROR("File has a version more recent than this library");
+    }
 
     if (userProps.getPropertyHeader("mvg_featuresFolders"))
     {

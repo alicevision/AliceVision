@@ -67,7 +67,7 @@ inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType, 
             distortion = std::make_shared<Distortion3DEAnamorphic4>();
             break;
         default:
-            break;
+            return nullptr;
     }
 
     if (distortion && params.size() > 0)
@@ -89,20 +89,20 @@ inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType, 
  * @param[in] params Distortion parameters.
  * @return Shared pointer of initialized undistortion object.
  */
-inline std::shared_ptr<Undistortion> createUndistortion(EDISTORTION distortionType,
+inline std::shared_ptr<Undistortion> createUndistortion(EUNDISTORTION undistortionType,
                                                         unsigned int w = 0,
                                                         unsigned int h = 0,
                                                         std::initializer_list<double> params = {})
 {
     std::shared_ptr<Undistortion> undistortion = nullptr;
 
-    switch (distortionType)
+    switch (undistortionType)
     {
-        case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
+        case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
             undistortion = std::make_shared<Undistortion3DEAnamorphic4>(w, h);
             break;
         default:
-            break;
+            return nullptr;
     }
 
     if (undistortion && params.size() > 0)
@@ -119,46 +119,10 @@ inline std::shared_ptr<Undistortion> createUndistortion(EDISTORTION distortionTy
 }
 
 /**
- * @brief Retrieve distortion type corresponding to a given intrinsic type.
- * @param[in] intrinsicType Intrinsic type enum value.
- * @return The corresponding distortion type enum value.
- */
-inline EDISTORTION getDistortionType(EINTRINSIC intrinsicType)
-{
-    switch (intrinsicType)
-    {
-        case EINTRINSIC::PINHOLE_CAMERA:
-            return EDISTORTION::NONE;
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-            return EDISTORTION::DISTORTION_RADIALK1;
-        case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-            return EDISTORTION::DISTORTION_RADIALK3;
-        case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-            return EDISTORTION::DISTORTION_BROWN;
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-            return EDISTORTION::DISTORTION_FISHEYE;
-        case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-            return EDISTORTION::DISTORTION_FISHEYE1;
-        case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
-            return EDISTORTION::DISTORTION_3DEANAMORPHIC4;
-        case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
-            return EDISTORTION::DISTORTION_3DECLASSICLD;
-        case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
-            return EDISTORTION::DISTORTION_3DERADIAL4;
-        case EINTRINSIC::EQUIDISTANT_CAMERA:
-            return EDISTORTION::NONE;
-        case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:
-            return EDISTORTION::DISTORTION_RADIALK3PT;
-        default:
-            break;
-    }
-
-    throw std::out_of_range("Invalid intrinsic type");
-}
-
-/**
  * @brief Factory function to create an intrinsic object.
  * @param[in] intrinsicType Type of intrinsic to use.
+ * @param[in] distortionType Type of distortion to use.
+ * @param[in] undistortionType Type of undistortion to use.
  * @param[in] w Intrinsic width.
  * @param[in] h Intrinsic height.
  * @param[in] focalLengthPixX Focal length in pixels (x-axis).
@@ -168,6 +132,8 @@ inline EDISTORTION getDistortionType(EINTRINSIC intrinsicType)
  * @return Shared pointer of initialized intrinsic object.
  */
 inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
+                                                      EDISTORTION distortionType,
+                                                      EUNDISTORTION undistortionType,
                                                       unsigned int w = 0,
                                                       unsigned int h = 0,
                                                       double focalLengthPixX = 0.0,
@@ -175,8 +141,8 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
                                                       double offsetX = 0.0,
                                                       double offsetY = 0.0)
 {
-    auto distortion = createDistortion(getDistortionType(intrinsicType));
-    auto undistortion = createUndistortion(getDistortionType(intrinsicType), w, h);
+    auto distortion = createDistortion(distortionType);
+    auto undistortion = createUndistortion(undistortionType, w, h);
 
     if (isPinhole(intrinsicType))
     {
@@ -193,7 +159,8 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
 
 /**
  * @brief Factory function to create a pinhole camera object.
- * @param[in] intrinsicType Type of pinhole camera to use.
+ * @param[in] distortionType Type of distortion to use.
+ * @param[in] undistortionType Type of undistortion to use.
  * @param[in] w Intrinsic width.
  * @param[in] h Intrinsic height.
  * @param[in] focalLengthPixX Focal length in pixels (x-axis).
@@ -203,7 +170,8 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
  * @param[in] distortionParams Distortion parameters.
  * @return Shared pointer of initialized pinhole camera object.
  */
-inline std::shared_ptr<Pinhole> createPinhole(EINTRINSIC intrinsicType,
+inline std::shared_ptr<Pinhole> createPinhole(EDISTORTION distortionType,
+                                              EUNDISTORTION undistortionType,
                                               unsigned int w = 0,
                                               unsigned int h = 0,
                                               double focalLengthPixX = 0.0,
@@ -212,20 +180,15 @@ inline std::shared_ptr<Pinhole> createPinhole(EINTRINSIC intrinsicType,
                                               double offsetY = 0.0,
                                               std::initializer_list<double> distortionParams = {})
 {
-    if (!isPinhole(intrinsicType))
-    {
-        return nullptr;
-    }
-
-    auto distortion = createDistortion(getDistortionType(intrinsicType), distortionParams);
-    auto undistortion = createUndistortion(getDistortionType(intrinsicType), w, h, distortionParams);
+    auto distortion = createDistortion(distortionType, distortionParams);
+    auto undistortion = createUndistortion(undistortionType, w, h, distortionParams);
 
     return std::make_shared<Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, undistortion);
 }
 
 /**
  * @brief Factory function to create an equidistant camera object.
- * @param[in] intrinsicType Type of equidistant camera to use.
+ * @param[in] distortionType Type of distortion to use.
  * @param[in] w Intrinsic width.
  * @param[in] h Intrinsic height.
  * @param[in] focalLengthPixX Focal length in pixels (x-axis).
@@ -235,7 +198,7 @@ inline std::shared_ptr<Pinhole> createPinhole(EINTRINSIC intrinsicType,
  * @param[in] distortionParams Distortion parameters.
  * @return Shared pointer of initialized equidistant camera object.
  */
-inline std::shared_ptr<Equidistant> createEquidistant(EINTRINSIC intrinsicType,
+inline std::shared_ptr<Equidistant> createEquidistant(EDISTORTION distortionType,
                                                       unsigned int w = 0,
                                                       unsigned int h = 0,
                                                       double focalLengthPix = 0.0,
@@ -243,14 +206,29 @@ inline std::shared_ptr<Equidistant> createEquidistant(EINTRINSIC intrinsicType,
                                                       double offsetY = 0.0,
                                                       std::initializer_list<double> distortionParams = {})
 {
-    if (!isEquidistant(intrinsicType))
-    {
-        return nullptr;
-    }
-
-    auto distortion = createDistortion(getDistortionType(intrinsicType), distortionParams);
+    auto distortion = createDistortion(distortionType, distortionParams);
 
     return std::make_shared<Equidistant>(w, h, focalLengthPix, offsetX, offsetY, distortion);
+}
+
+inline EDISTORTION getDistortionType(const IntrinsicBase & intrinsic)
+{
+    camera::EDISTORTION distoType = camera::EDISTORTION::DISTORTION_NONE;
+
+    try
+    {
+        const auto & isod = dynamic_cast<const camera::IntrinsicScaleOffsetDisto &>(intrinsic);
+        auto disto = isod.getDistortion();
+        if (disto)
+        {
+            distoType = disto->getType();
+        }
+    }
+    catch(const std::bad_cast & e)
+    {
+    }
+    
+    return distoType;
 }
 
 }  // namespace camera
