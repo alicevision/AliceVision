@@ -124,6 +124,10 @@ bool load(aliceVision::sfmData::SfMData& sfmData, const std::string& filename, E
         ALICEVISION_THROW_ERROR("Cannot load the ABC file: \"" << filename << "\", AliceVision is built without Alembic support.");
 #endif
     }
+    else if (extension == ".ply")
+    {
+        status = loadPLY(sfmData, filename);
+    }
     else if (fs::is_directory(filename))
     {
         status = readGt(filename, sfmData);

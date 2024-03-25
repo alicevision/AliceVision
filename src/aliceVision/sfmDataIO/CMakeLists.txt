@@ -41,6 +41,7 @@ alicevision_add_library(aliceVision_sfmDataIO
     aliceVision_sfmData
     aliceVision_camera
   PRIVATE_LINKS
+    assimp::assimp
     aliceVision_image
     Boost::regex
     Boost::boost

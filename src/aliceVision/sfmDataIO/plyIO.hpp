@@ -23,5 +23,13 @@ namespace sfmDataIO {
  */
 bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
+/**
+ * @brief Load the structure from a PLY file
+ * @param[in] sfmData The output SfMData
+ * @param[in] filename The filename
+ * @return true if completed
+ */
+bool loadPLY(sfmData::SfMData& sfmData, const std::string& filename);
+
 }  // namespace sfmDataIO
 }  // namespace aliceVision

@@ -7,6 +7,9 @@
 
 #include "plyIO.hpp"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+
 #include <fstream>
 #include <iostream>
 
@@ -102,6 +105,64 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         stream.close();
     }
     return bOk;
+}
+
+bool loadPLY(sfmData::SfMData& sfmData, const std::string& filename)
+{
+    Assimp::Importer importer;
+
+    sfmData.clear();
+
+    const aiScene* scene = importer.ReadFile(filename, 0);
+    if (!scene)
+    {
+        return false;
+    }
+
+    sfmData::Landmarks & landmarks = sfmData.getLandmarks();
+
+    std::list<aiNode*> nodes;
+    nodes.push_back(scene->mRootNode);
+
+    while (!nodes.empty())
+    {
+        aiNode* node = nodes.back();
+        nodes.pop_back();
+
+        for (int idMesh = 0; idMesh < node->mNumMeshes; ++idMesh)
+        {
+            const unsigned int meshId = node->mMeshes[idMesh];
+            const aiMesh* mesh = scene->mMeshes[meshId];
+
+            for (int idPoint = 0; idPoint < mesh->mNumVertices; ++idPoint)
+            {
+                const aiVector3D v = mesh->mVertices[idPoint];
+
+                sfmData::Landmark l;
+
+                l.X.x() = v.x;
+                l.X.y() = -v.y;
+                l.X.z() = -v.z;
+
+                if (mesh->HasVertexColors(0))
+                {
+                    const aiColor4D c = mesh->mColors[0][idPoint];
+                    l.rgb.r() = c.r * 255.0;
+                    l.rgb.g() = c.g * 255.0;
+                    l.rgb.b() = c.b * 255.0;
+                }
+
+                landmarks[landmarks.size()] = l;
+            }
+        }
+
+        for (int idChild = 0; idChild < node->mNumChildren; ++idChild)
+        {
+            nodes.push_back(node->mChildren[idChild]);
+        }
+    }
+
+    return true;
 }
 
 }  // namespace sfmDataIO
