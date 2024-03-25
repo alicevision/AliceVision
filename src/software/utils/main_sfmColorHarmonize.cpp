@@ -89,7 +89,7 @@ int aliceVision_main(int argc, char** argv)
     ColorHarmonizationEngineGlobal colorHarmonizeEngine(
       sfmDataFilename, featuresFolders, matchesFolders, outputFolder, describerTypes, selectionMethod, imgRef);
 
-    if (colorHarmonizeEngine.Process())
+    if (colorHarmonizeEngine.process())
     {
         ALICEVISION_LOG_INFO("Color harmonization took: " << timer.elapsed() << " s");
         return EXIT_SUCCESS;

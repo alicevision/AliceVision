@@ -1358,11 +1358,12 @@ bool tryLoadMask(Image<unsigned char>* mask,
                  const std::string& fileExtension)
 {
 
-    for (const auto& masksFolder_str : masksFolders)
+    for (const auto& masksFolderStr : masksFolders)
     {
-        if (!masksFolder_str.empty() && utils::exists(masksFolder_str))
+
+        if (!masksFolderStr.empty() && utils::exists(masksFolderStr))
         {
-            const auto masksFolder = fs::path(masksFolder_str);
+            const auto masksFolder = fs::path(masksFolderStr);
             const auto idMaskPath = masksFolder / fs::path(std::to_string(viewId)).replace_extension(fileExtension);
             const auto nameMaskPath = masksFolder / fs::path(srcImage).filename().replace_extension(fileExtension);
 

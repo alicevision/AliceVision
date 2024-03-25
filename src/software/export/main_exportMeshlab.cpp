@@ -61,8 +61,8 @@ int aliceVision_main(int argc, char** argv)
         fs::create_directory(outDirectory);
 
     // Read the SfM scene
-    SfMData sfm_data;
-    if (!sfmDataIO::load(sfm_data, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
+    SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
     {
         std::cerr << std::endl << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
         return EXIT_FAILURE;
@@ -79,14 +79,14 @@ int aliceVision_main(int argc, char** argv)
 
     outfile << " <RasterGroup>" << outfile.widen('\n');
 
-    for (Views::const_iterator iter = sfm_data.getViews().begin(); iter != sfm_data.getViews().end(); ++iter)
+    for (Views::const_iterator iter = sfmData.getViews().begin(); iter != sfmData.getViews().end(); ++iter)
     {
         const View* view = iter->second.get();
-        if (!sfm_data.isPoseAndIntrinsicDefined(view))
+        if (!sfmData.isPoseAndIntrinsicDefined(view))
             continue;
 
-        const Pose3 pose = sfm_data.getPose(*view).getTransform();
-        Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
+        const Pose3 pose = sfmData.getPose(*view).getTransform();
+        Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view->getIntrinsicId());
 
         // We have a valid view with a corresponding camera & pose
         const std::string srcImage = view->getImage().getImagePath();

@@ -29,7 +29,6 @@ bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath)
 {
     const std::string ext = fs::path(filepath).extension().string();
 
-
     if (!utils::exists(filepath))
         return false;
 
@@ -231,6 +230,7 @@ bool Load(PairwiseMatches& matches,
 
     // build up a set with normalized paths to remove duplicates
     std::set<std::string> foldersSet;
+    std::error_code ec;
     for (const auto& folder : folders)
     {
         if (utils::exists(folder))
