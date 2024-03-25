@@ -8,6 +8,7 @@
 #include "SfMData.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <filesystem>
 
@@ -153,7 +154,7 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
     for (const auto& folder : folders)
     {
         const fs::path f = fs::absolute(folder);
-        if (fs::exists(f))
+        if (utils::exists(f))
         {
             // fs::canonical can only be used if the path exists
             absolutePaths.push_back(fs::canonical(f).string());

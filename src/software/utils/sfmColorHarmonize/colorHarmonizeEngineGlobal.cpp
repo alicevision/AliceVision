@@ -10,6 +10,8 @@
 
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/utils/filesIO.hpp>
+
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
@@ -101,7 +103,7 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(const std::string
     _selectionMethod(selectionMethod),
     _imgRef(imgRef)
 {
-    if (!fs::exists(outputDirectory))
+    if (!utils::exists(outputDirectory))
         fs::create_directory(outputDirectory);
 }
 
@@ -114,16 +116,17 @@ inline void pauseProcess()
     std::cin >> i;
 }
 
-bool ColorHarmonizationEngineGlobal::Process()
+bool ColorHarmonizationEngineGlobal::process()
 {
-    const std::string vec_harmonizeMethod[1] = {"quantifiedGainCompensation"};
+    const std::string vecHarmonizeMethod[1] = {"quantifiedGainCompensation"};
     const int harmonizeMethod = 0;
+    std::error_code ec;
 
     //-------------------
     // Load data
     //-------------------
 
-    if (!ReadInputData())
+    if (!readInputData())
         return false;
     if (_pairwiseMatches.empty())
     {
@@ -154,7 +157,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     //-------------------
     // Keep the largest CC in the image graph
     //-------------------
-    if (!CleanGraph())
+    if (!cleanGraph())
     {
         std::cout << std::endl << "There is no largest CC in the graph" << std::endl;
         return false;
@@ -164,9 +167,9 @@ bool ColorHarmonizationEngineGlobal::Process()
     // Compute remaining camera node Id
     //-------------------
 
-    std::map<size_t, size_t> map_cameraNodeToCameraIndex;  // graph node Id to 0->Ncam
-    std::map<size_t, size_t> map_cameraIndexTocameraNode;  // 0->Ncam correspondance to graph node Id
-    std::set<size_t> set_indeximage;
+    std::map<size_t, size_t> mapCameraNodeToCameraIndex;  // graph node Id to 0->Ncam
+    std::map<size_t, size_t> mapCameraIndexTocameraNode;  // 0->Ncam correspondance to graph node Id
+    std::set<size_t> setIndexImage;
 
     for (size_t i = 0; i < _pairwiseMatches.size(); ++i)
     {
@@ -175,28 +178,28 @@ bool ColorHarmonizationEngineGlobal::Process()
 
         const size_t I = iter->first.first;
         const size_t J = iter->first.second;
-        set_indeximage.insert(I);
-        set_indeximage.insert(J);
+        setIndexImage.insert(I);
+        setIndexImage.insert(J);
     }
 
-    for (std::set<size_t>::const_iterator iterSet = set_indeximage.begin(); iterSet != set_indeximage.end(); ++iterSet)
+    for (std::set<size_t>::const_iterator iterSet = setIndexImage.begin(); iterSet != setIndexImage.end(); ++iterSet)
     {
-        map_cameraIndexTocameraNode[std::distance(set_indeximage.begin(), iterSet)] = *iterSet;
-        map_cameraNodeToCameraIndex[*iterSet] = std::distance(set_indeximage.begin(), iterSet);
+        mapCameraIndexTocameraNode[std::distance(setIndexImage.begin(), iterSet)] = *iterSet;
+        mapCameraNodeToCameraIndex[*iterSet] = std::distance(setIndexImage.begin(), iterSet);
     }
 
     std::cout << "\nRemaining cameras after CC filter : \n"
-              << map_cameraIndexTocameraNode.size() << " from a total of " << _fileNames.size() << std::endl;
+              << mapCameraIndexTocameraNode.size() << " from a total of " << _fileNames.size() << std::endl;
 
     size_t bin = 256;
     double minvalue = 0.0;
     double maxvalue = 255.0;
 
     // For each edge computes the selection masks and histograms (for the RGB channels)
-    std::vector<relativeColorHistogramEdge> map_relativeHistograms[3];
-    map_relativeHistograms[0].resize(_pairwiseMatches.size());
-    map_relativeHistograms[1].resize(_pairwiseMatches.size());
-    map_relativeHistograms[2].resize(_pairwiseMatches.size());
+    std::vector<relativeColorHistogramEdge> mapRelativeHistograms[3];
+    mapRelativeHistograms[0].resize(_pairwiseMatches.size());
+    mapRelativeHistograms[1].resize(_pairwiseMatches.size());
+    mapRelativeHistograms[2].resize(_pairwiseMatches.size());
 
     for (size_t i = 0; i < _pairwiseMatches.size(); ++i)
     {
@@ -206,7 +209,6 @@ bool ColorHarmonizationEngineGlobal::Process()
         const size_t viewI = iter->first.first;
         const size_t viewJ = iter->first.second;
 
-        //
         const MatchesPerDescType& matchesPerDesc = iter->second;
 
         //-- Edges names:
@@ -270,16 +272,16 @@ bool ColorHarmonizationEngineGlobal::Process()
             std::string sEdge = _fileNames[viewI] + "_" + _fileNames[viewJ];
             sEdge = (fs::path(_outputDirectory) / sEdge).string();
 
-            if (!fs::exists(sEdge))
+            if (!utils::exists(sEdge))
                 fs::create_directory(sEdge);
 
-            std::string out_filename_I = "00_mask_I.png";
-            out_filename_I = (fs::path(sEdge) / out_filename_I).string();
+            std::string outFilenameI = "00_mask_I.png";
+            outFilenameI = (fs::path(sEdge) / outFilenameI).string();
 
-            std::string out_filename_J = "00_mask_J.png";
-            out_filename_J = (fs::path(sEdge) / out_filename_J).string();
-            writeImage(out_filename_I, maskI, image::ImageWriteOptions());
-            writeImage(out_filename_J, maskJ, image::ImageWriteOptions());
+            std::string outFilenameJ = "00_mask_J.png";
+            outFilenameJ = (fs::path(sEdge) / outFilenameJ).string();
+            writeImage(outFilenameI, maskI, image::ImageWriteOptions());
+            writeImage(outFilenameJ, maskJ, image::ImageWriteOptions());
         }
 
         //-- Compute the histograms
@@ -293,37 +295,34 @@ bool ColorHarmonizationEngineGlobal::Process()
         int channelIndex = 0;  // RED channel
         colorHarmonization::CommonDataByPair::computeHisto(histoI, maskI, channelIndex, imageI);
         colorHarmonization::CommonDataByPair::computeHisto(histoJ, maskJ, channelIndex, imageJ);
-        relativeColorHistogramEdge& edgeR = map_relativeHistograms[channelIndex][i];
-        edgeR =
-          relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ], histoI.GetHist(), histoJ.GetHist());
+        relativeColorHistogramEdge& edgeR = mapRelativeHistograms[channelIndex][i];
+        edgeR = relativeColorHistogramEdge(mapCameraNodeToCameraIndex[viewI], mapCameraNodeToCameraIndex[viewJ], histoI.GetHist(), histoJ.GetHist());
 
         histoI = histoJ = utils::Histogram<double>(minvalue, maxvalue, bin);
         channelIndex = 1;  // GREEN channel
         colorHarmonization::CommonDataByPair::computeHisto(histoI, maskI, channelIndex, imageI);
         colorHarmonization::CommonDataByPair::computeHisto(histoJ, maskJ, channelIndex, imageJ);
-        relativeColorHistogramEdge& edgeG = map_relativeHistograms[channelIndex][i];
-        edgeG =
-          relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ], histoI.GetHist(), histoJ.GetHist());
+        relativeColorHistogramEdge& edgeG = mapRelativeHistograms[channelIndex][i];
+        edgeG = relativeColorHistogramEdge(mapCameraNodeToCameraIndex[viewI], mapCameraNodeToCameraIndex[viewJ], histoI.GetHist(), histoJ.GetHist());
 
         histoI = histoJ = utils::Histogram<double>(minvalue, maxvalue, bin);
         channelIndex = 2;  // BLUE channel
         colorHarmonization::CommonDataByPair::computeHisto(histoI, maskI, channelIndex, imageI);
         colorHarmonization::CommonDataByPair::computeHisto(histoJ, maskJ, channelIndex, imageJ);
-        relativeColorHistogramEdge& edgeB = map_relativeHistograms[channelIndex][i];
-        edgeB =
-          relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ], histoI.GetHist(), histoJ.GetHist());
+        relativeColorHistogramEdge& edgeB = mapRelativeHistograms[channelIndex][i];
+        edgeB = relativeColorHistogramEdge(mapCameraNodeToCameraIndex[viewI], mapCameraNodeToCameraIndex[viewJ], histoI.GetHist(), histoJ.GetHist());
     }
 
     std::cout << "\n -- \n SOLVE for color consistency with linear programming\n --" << std::endl;
     //-- Solve for the gains and offsets:
-    std::vector<size_t> vec_indexToFix;
-    vec_indexToFix.push_back(map_cameraNodeToCameraIndex[_imgRef]);
+    std::vector<size_t> vecIndexToFix;
+    vecIndexToFix.push_back(mapCameraNodeToCameraIndex[_imgRef]);
 
     using namespace aliceVision::linearProgramming;
 
-    std::vector<double> vec_solution_r(_fileNames.size() * 2 + 1);
-    std::vector<double> vec_solution_g(_fileNames.size() * 2 + 1);
-    std::vector<double> vec_solution_b(_fileNames.size() * 2 + 1);
+    std::vector<double> vecSolutionR(_fileNames.size() * 2 + 1);
+    std::vector<double> vecSolutionG(_fileNames.size() * 2 + 1);
+    std::vector<double> vecSolutionB(_fileNames.size() * 2 + 1);
 
     aliceVision::system::Timer timer;
 
@@ -334,108 +333,108 @@ bool ColorHarmonizationEngineGlobal::Process()
 #endif
     // Red channel
     {
-        SOLVER_LP_T lpSolver(vec_solution_r.size());
+        SOLVER_LP_T lpSolver(vecSolutionR.size());
 
-        GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[0], vec_indexToFix);
+        GainOffsetConstraintBuilder cstBuilder(mapRelativeHistograms[0], vecIndexToFix);
         LPConstraintsSparse constraint;
         cstBuilder.Build(constraint);
         lpSolver.setup(constraint);
         lpSolver.solve();
-        lpSolver.getSolution(vec_solution_r);
+        lpSolver.getSolution(vecSolutionR);
     }
     // Green channel
     {
-        SOLVER_LP_T lpSolver(vec_solution_g.size());
+        SOLVER_LP_T lpSolver(vecSolutionG.size());
 
-        GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[1], vec_indexToFix);
+        GainOffsetConstraintBuilder cstBuilder(mapRelativeHistograms[1], vecIndexToFix);
         LPConstraintsSparse constraint;
         cstBuilder.Build(constraint);
         lpSolver.setup(constraint);
         lpSolver.solve();
-        lpSolver.getSolution(vec_solution_g);
+        lpSolver.getSolution(vecSolutionG);
     }
     // Blue channel
     {
-        SOLVER_LP_T lpSolver(vec_solution_b.size());
+        SOLVER_LP_T lpSolver(vecSolutionB.size());
 
-        GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[2], vec_indexToFix);
+        GainOffsetConstraintBuilder cstBuilder(mapRelativeHistograms[2], vecIndexToFix);
         LPConstraintsSparse constraint;
         cstBuilder.Build(constraint);
         lpSolver.setup(constraint);
         lpSolver.solve();
-        lpSolver.getSolution(vec_solution_b);
+        lpSolver.getSolution(vecSolutionB);
     }
 
     std::cout << std::endl
               << " ColorHarmonization solving on a graph with: " << _pairwiseMatches.size() << " edges took (s): " << timer.elapsed() << std::endl
               << "LInfinity fitting error: \n"
-              << "- for the red channel is: " << vec_solution_r.back() << " gray level(s)" << std::endl
-              << "- for the green channel is: " << vec_solution_g.back() << " gray level(s)" << std::endl
-              << "- for the blue channel is: " << vec_solution_b.back() << " gray level(s)" << std::endl;
+              << "- for the red channel is: " << vecSolutionR.back() << " gray level(s)" << std::endl
+              << "- for the green channel is: " << vecSolutionG.back() << " gray level(s)" << std::endl
+              << "- for the blue channel is: " << vecSolutionB.back() << " gray level(s)" << std::endl;
 
     std::cout << "\n\nFound solution_r:\n";
-    std::copy(vec_solution_r.begin(), vec_solution_r.end(), std::ostream_iterator<double>(std::cout, " "));
+    std::copy(vecSolutionR.begin(), vecSolutionR.end(), std::ostream_iterator<double>(std::cout, " "));
 
     std::cout << "\n\nFound solution_g:\n";
-    std::copy(vec_solution_g.begin(), vec_solution_g.end(), std::ostream_iterator<double>(std::cout, " "));
+    std::copy(vecSolutionG.begin(), vecSolutionG.end(), std::ostream_iterator<double>(std::cout, " "));
 
     std::cout << "\n\nFound solution_b:\n";
-    std::copy(vec_solution_b.begin(), vec_solution_b.end(), std::ostream_iterator<double>(std::cout, " "));
+    std::copy(vecSolutionB.begin(), vecSolutionB.end(), std::ostream_iterator<double>(std::cout, " "));
     std::cout << std::endl;
 
-    std::cout << "\n\nThere is :\n" << set_indeximage.size() << " images to transform." << std::endl;
+    std::cout << "\n\nThere is :\n" << setIndexImage.size() << " images to transform." << std::endl;
 
     //-> convert solution to gain offset and creation of the LUT per image
-    auto progressDisplay = system::createConsoleProgressDisplay(set_indeximage.size(), std::cout);
-    for (std::set<size_t>::const_iterator iterSet = set_indeximage.begin(); iterSet != set_indeximage.end(); ++iterSet, ++progressDisplay)
+    auto progressDisplay = system::createConsoleProgressDisplay(setIndexImage.size(), std::cout);
+    for (std::set<size_t>::const_iterator iterSet = setIndexImage.begin(); iterSet != setIndexImage.end(); ++iterSet, ++progressDisplay)
     {
         const size_t imaNum = *iterSet;
         typedef Eigen::Matrix<double, 256, 1> Vec256;
-        std::vector<Vec256> vec_map_lut(3);
+        std::vector<Vec256> vecMapLut(3);
 
-        const size_t nodeIndex = std::distance(set_indeximage.begin(), iterSet);
+        const size_t nodeIndex = std::distance(setIndexImage.begin(), iterSet);
 
-        const double g_r = vec_solution_r[nodeIndex * 2];
-        const double offset_r = vec_solution_r[nodeIndex * 2 + 1];
-        const double g_g = vec_solution_g[nodeIndex * 2];
-        const double offset_g = vec_solution_g[nodeIndex * 2 + 1];
-        const double g_b = vec_solution_b[nodeIndex * 2];
-        const double offset_b = vec_solution_b[nodeIndex * 2 + 1];
+        const double gR = vecSolutionR[nodeIndex * 2];
+        const double offsetR = vecSolutionR[nodeIndex * 2 + 1];
+        const double gG = vecSolutionG[nodeIndex * 2];
+        const double offsetG = vecSolutionG[nodeIndex * 2 + 1];
+        const double gB = vecSolutionB[nodeIndex * 2];
+        const double offsetB = vecSolutionB[nodeIndex * 2 + 1];
 
         for (size_t k = 0; k < 256; ++k)
         {
-            vec_map_lut[0][k] = clamp(k * g_r + offset_r, 0., 255.);
-            vec_map_lut[1][k] = clamp(k * g_g + offset_g, 0., 255.);
-            vec_map_lut[2][k] = clamp(k * g_b + offset_b, 0., 255.);
+            vecMapLut[0][k] = clamp(k * gR + offsetR, 0., 255.);
+            vecMapLut[1][k] = clamp(k * gG + offsetG, 0., 255.);
+            vecMapLut[2][k] = clamp(k * gB + offsetB, 0., 255.);
         }
 
-        Image<RGBColor> image_c;
-        readImage(_fileNames[imaNum], image_c, image::EImageColorSpace::LINEAR);
+        Image<RGBColor> imageC;
+        readImage(_fileNames[imaNum], imageC, image::EImageColorSpace::LINEAR);
 
 #pragma omp parallel for
-        for (int j = 0; j < image_c.height(); ++j)
+        for (int j = 0; j < imageC.height(); ++j)
         {
-            for (int i = 0; i < image_c.width(); ++i)
+            for (int i = 0; i < imageC.width(); ++i)
             {
-                image_c(j, i)[0] = clamp(vec_map_lut[0][image_c(j, i)[0]], 0., 255.);
-                image_c(j, i)[1] = clamp(vec_map_lut[1][image_c(j, i)[1]], 0., 255.);
-                image_c(j, i)[2] = clamp(vec_map_lut[2][image_c(j, i)[2]], 0., 255.);
+                imageC(j, i)[0] = clamp(vecMapLut[0][imageC(j, i)[0]], 0., 255.);
+                imageC(j, i)[1] = clamp(vecMapLut[1][imageC(j, i)[1]], 0., 255.);
+                imageC(j, i)[2] = clamp(vecMapLut[2][imageC(j, i)[2]], 0., 255.);
             }
         }
 
-        const std::string out_folder =
-          (fs::path(_outputDirectory) / (EHistogramSelectionMethod_enumToString(_selectionMethod) + "_" + vec_harmonizeMethod[harmonizeMethod]))
+        const std::string outFolder =
+          (fs::path(_outputDirectory) / (EHistogramSelectionMethod_enumToString(_selectionMethod) + "_" + vecHarmonizeMethod[harmonizeMethod]))
             .string();
-        if (!fs::exists(out_folder))
-            fs::create_directory(out_folder);
-        const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[imaNum]).filename()).string();
+        if (!utils::exists(outFolder))
+            fs::create_directory(outFolder);
+        const std::string outFilename = (fs::path(outFolder) / fs::path(_fileNames[imaNum]).filename()).string();
 
-        writeImage(out_filename, image_c, image::ImageWriteOptions());
+        writeImage(outFilename, imageC, image::ImageWriteOptions());
     }
     return true;
 }
 
-bool ColorHarmonizationEngineGlobal::ReadInputData()
+bool ColorHarmonizationEngineGlobal::readInputData()
 {
     if (!fs::is_directory(_outputDirectory))
     {
@@ -487,7 +486,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
     return true;
 }
 
-bool ColorHarmonizationEngineGlobal::CleanGraph()
+bool ColorHarmonizationEngineGlobal::cleanGraph()
 {
     // Create a graph from pairwise correspondences:
     // - keep the largest connected component.

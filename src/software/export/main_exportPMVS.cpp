@@ -10,6 +10,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
 
@@ -42,7 +43,7 @@ bool exportToPMVSFormat(const SfMData& sfm_data,
                         const bool b_VisData = true)
 {
     bool bOk = true;
-    if (!fs::exists(sOutDirectory))
+    if (!utils::exists(sOutDirectory))
     {
         fs::create_directory(sOutDirectory);
         bOk = fs::is_directory(sOutDirectory);
@@ -330,7 +331,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Create output dir
-    if (!fs::exists(outputFolder))
+    if (!utils::exists(outputFolder))
         fs::create_directory(outputFolder);
 
     SfMData sfmData;

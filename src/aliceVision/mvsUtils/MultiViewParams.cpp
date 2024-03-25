@@ -122,7 +122,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         oiio::ParamValueList::const_iterator scaleIt = metadata.end();
         oiio::ParamValueList::const_iterator pIt = metadata.end();
 
-        const bool fileExists = fs::exists(imgParams.path);
+        const bool fileExists = utils::exists(imgParams.path);
         if (fileExists)
         {
             metadata = image::readImageMetadata(imgParams.path);
@@ -168,7 +168,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             const std::string fileNameP = getFileNameFromIndex(*this, i, EFileType::P);
             const std::string fileNameD = getFileNameFromIndex(*this, i, EFileType::D);
 
-            if (fs::exists(fileNameP) && fs::exists(fileNameD))
+            if (utils::exists(fileNameP) && utils::exists(fileNameD))
             {
                 ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from file '" << fileNameP << "'.");
 
@@ -234,7 +234,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
 void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& fileNameP, const std::string& fileNameD)
 {
-    if (!fs::exists(fileNameP))
+    if (!utils::exists(fileNameP))
         throw std::runtime_error(std::string("mv_multiview_params: no such file: ") + fileNameP);
 
     std::ifstream in{fileNameP};
@@ -269,7 +269,7 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
     iRArr[index] = RArr[index].inverse();
     iCamArr[index] = iRArr[index] * iKArr[index];
 
-    if (fs::exists(fileNameD))
+    if (utils::exists(fileNameD))
     {
         std::ifstream inD{fileNameD};
         inD >> FocK1K2Arr[index].x >> FocK1K2Arr[index].y >> FocK1K2Arr[index].z;

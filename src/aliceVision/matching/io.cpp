@@ -29,7 +29,7 @@ bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath)
 {
     const std::string ext = fs::path(filepath).extension().string();
 
-    if (!fs::exists(filepath))
+    if (!utils::exists(filepath))
         return false;
 
     if (ext == ".txt")
@@ -230,9 +230,10 @@ bool Load(PairwiseMatches& matches,
 
     // build up a set with normalized paths to remove duplicates
     std::set<std::string> foldersSet;
+    std::error_code ec;
     for (const auto& folder : folders)
     {
-        if (fs::exists(folder))
+        if (utils::exists(folder))
         {
             foldersSet.insert(fs::canonical(folder).string());
         }

@@ -26,6 +26,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <flann/algorithms/dist.h>
 
@@ -843,7 +844,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc& quer
 
             // the directory where to save the feature matches
             const auto baseDir = fs::path(param._visualDebug) / queryImage;
-            if ((!fs::exists(baseDir)))
+            if ((!utils::exists(baseDir)))
             {
                 ALICEVISION_LOG_DEBUG("created " << baseDir.string());
                 fs::create_directories(baseDir);

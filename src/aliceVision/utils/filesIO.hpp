@@ -115,5 +115,11 @@ inline std::time_t getLastWriteTime(const std::string& path)
     }
 }
 
+[[nodiscard]] inline bool exists(const fs::path& path) noexcept
+{
+    std::error_code ec;
+    return fs::exists(path, ec);
+}
+
 }  // namespace utils
 }  // namespace aliceVision

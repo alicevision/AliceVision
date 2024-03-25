@@ -73,25 +73,25 @@ void CacheManager::deleteIndexFiles()
 
 bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount)
 {
-    size_t index_id = startBlockId / _blockCountPerIndex;
-    size_t block_id_in_index = startBlockId % _blockCountPerIndex;
-    size_t position_in_index = block_id_in_index * _blockSize;
+    size_t indexId = startBlockId / _blockCountPerIndex;
+    size_t blockIdInIndex = startBlockId % _blockCountPerIndex;
+    size_t positionInIndex = blockIdInIndex * _blockSize;
     size_t len = _blockSize * blocksCount;
 
-    std::string pathname = getPathForIndex(index_id);
+    std::string pathname = getPathForIndex(indexId);
     std::filesystem::path path(pathname);
 
-    std::ofstream file_index;
-    if (std::filesystem::exists(path))
+    std::ofstream fileIndex;
+    if (utils::exists(path))
     {
-        file_index.open(pathname, std::ios::binary | std::ios::out | std::ios::in);
+        fileIndex.open(pathname, std::ios::binary | std::ios::out | std::ios::in);
     }
     else
     {
-        file_index.open(pathname, std::ios::binary | std::ios::out);
+        fileIndex.open(pathname, std::ios::binary | std::ios::out);
     }
 
-    if (!file_index.is_open())
+    if (!fileIndex.is_open())
     {
         return false;
     }
@@ -99,15 +99,15 @@ bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount)
     ALICEVISION_LOG_TRACE("CacheManager::prepareBlockGroup: " << blocksCount * _blockSize << " bytes to '" << path << "'.");
 
     /*write a dummy byte at the end of the tile to "book" this place on disk*/
-    file_index.seekp(position_in_index + len - 1, file_index.beg);
-    if (!file_index)
+    fileIndex.seekp(positionInIndex + len - 1, fileIndex.beg);
+    if (!fileIndex)
     {
         return false;
     }
 
     char c[1];
     c[0] = 0xff;
-    file_index.write(c, 1);
+    fileIndex.write(c, 1);
 
     return true;
 }

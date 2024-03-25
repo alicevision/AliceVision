@@ -10,6 +10,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/regex.hpp>
 
@@ -326,7 +327,7 @@ void readMapFromFileOrTiles(int rc,
     const std::string mapPath = getFileNameFromIndex(mp, rc, fileType, customSuffix);
 
     // check single file fullsize map exists
-    if (fs::exists(mapPath))
+    if (utils::exists(mapPath))
     {
         ALICEVISION_LOG_TRACE("Load depth map (full image): " << mapPath << ", scale: " << scale << ", step: " << step);
         // read single file fullsize map
@@ -605,7 +606,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc, const MultiViewParams& mp, in
     bool fromTiles = false;
 
     // get nbDepthValues from metadata
-    if (fs::exists(depthMapPath))  // untilled
+    if (utils::exists(depthMapPath))  // untilled
     {
         fileExists = true;
         const oiio::ParamValueList metadata = image::readImageMetadata(depthMapPath);

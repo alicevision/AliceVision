@@ -8,6 +8,7 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -169,14 +170,14 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // check first mesh file path
-    if (!inputFirstMeshPath.empty() && !fs::exists(inputFirstMeshPath) && !fs::is_regular_file(inputFirstMeshPath))
+    if (!inputFirstMeshPath.empty() && !utils::exists(inputFirstMeshPath) && !fs::is_regular_file(inputFirstMeshPath))
     {
         ALICEVISION_LOG_ERROR("The first mesh file doesn't exist");
         return EXIT_FAILURE;
     }
 
     // check second mesh file path
-    if (!inputSecondMeshPath.empty() && !fs::exists(inputSecondMeshPath) && !fs::is_regular_file(inputSecondMeshPath))
+    if (!inputSecondMeshPath.empty() && !utils::exists(inputSecondMeshPath) && !fs::is_regular_file(inputSecondMeshPath))
     {
         ALICEVISION_LOG_ERROR("The second mesh file doesn't exist");
         return EXIT_FAILURE;
@@ -193,7 +194,7 @@ int aliceVision_main(int argc, char** argv)
     {
         const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
 
-        if (!outputFolderPart.empty() && !fs::exists(outputFolderPart))
+        if (!outputFolderPart.empty() && !utils::exists(outputFolderPart))
         {
             if (!fs::create_directory(outputFolderPart))
             {

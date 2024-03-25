@@ -7,12 +7,14 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/system/ProgressDisplay.hpp>
+
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
 #include <boost/program_options.hpp>
@@ -213,7 +215,7 @@ int aliceVision_main(int argc, char** argv)
     const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
     const bool writeUndistordedResult = undistortedImages || exportSTMaps;
 
-    if (writeUndistordedResult && !fs::exists(undistortedImagesFolderPath))
+    if (writeUndistordedResult && !utils::exists(undistortedImagesFolderPath))
         fs::create_directory(undistortedImagesFolderPath);
 
     std::map<std::string, std::map<std::size_t, IndexT>> videoViewPerFrame;

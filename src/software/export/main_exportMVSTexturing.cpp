@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
 
@@ -53,7 +54,7 @@ int aliceVision_main(int argc, char** argv)
     bool bOneHaveDisto = false;
 
     // Create output dir
-    if (!fs::exists(outDirectory))
+    if (!utils::exists(outDirectory))
         fs::create_directory(outDirectory);
 
     // Read the SfM scene

@@ -18,6 +18,7 @@
 
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <cctag/ICCTag.hpp>
 
@@ -758,7 +759,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions& queryRegio
 
             // the directory where to save the feature matches
             const auto baseDir = fs::path(param._visualDebug) / queryImage;
-            if ((!fs::exists(baseDir)))
+            if ((!utils::exists(baseDir)))
             {
                 ALICEVISION_LOG_DEBUG("created " << baseDir.string());
                 fs::create_directories(baseDir);

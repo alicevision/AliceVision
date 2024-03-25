@@ -12,6 +12,7 @@
 #include <aliceVision/lensCorrectionProfile/lcp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/image/io.cpp>
 #include <aliceVision/image/dcp.hpp>
@@ -272,14 +273,14 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // check input folder
-    if (!imageFolder.empty() && !fs::exists(imageFolder) && !fs::is_directory(imageFolder))
+    if (!imageFolder.empty() && !utils::exists(imageFolder) && !fs::is_directory(imageFolder))
     {
         ALICEVISION_LOG_ERROR("The input folder doesn't exist");
         return EXIT_FAILURE;
     }
 
     // check sfm file
-    if (!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
+    if (!sfmFilePath.empty() && !utils::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
     {
         ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
         return EXIT_FAILURE;
@@ -296,7 +297,7 @@ int aliceVision_main(int argc, char** argv)
     {
         const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
 
-        if (!outputFolderPart.empty() && !fs::exists(outputFolderPart))
+        if (!outputFolderPart.empty() && !utils::exists(outputFolderPart))
         {
             if (!fs::create_directory(outputFolderPart))
             {

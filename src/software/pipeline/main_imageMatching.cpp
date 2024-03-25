@@ -12,6 +12,7 @@
 #include <aliceVision/sfm/FrustumFilter.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/config.hpp>
 
@@ -272,7 +273,7 @@ int aliceVision_main(int argc, char** argv)
 
     // check if the output folder exists
     const auto basePath = fs::path(outputFile).parent_path();
-    if (!basePath.empty() && !fs::exists(basePath))
+    if (!basePath.empty() && !utils::exists(basePath))
     {
         // then create the missing folder
         if (!fs::create_directories(basePath))

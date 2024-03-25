@@ -14,30 +14,30 @@ namespace track {
 
 using namespace aliceVision::matching;
 
-bool getCommonTracksInImages(const std::set<std::size_t>& imageIndexes, const TracksMap& tracksIn, TracksMap& map_tracksOut)
+bool getCommonTracksInImages(const std::set<std::size_t>& imageIndexes, const TracksMap& tracksIn, TracksMap& tracksOut)
 {
     assert(!imageIndexes.empty());
-    map_tracksOut.clear();
+    tracksOut.clear();
 
     // go along the tracks
     for (auto& trackIn : tracksIn)
     {
         // look if the track contains the provided view index & save the point ids
-        Track map_temp;
+        Track mapTemp;
         for (std::size_t imageIndex : imageIndexes)
         {
             auto iterSearch = trackIn.second.featPerView.find(imageIndex);
             if (iterSearch == trackIn.second.featPerView.end())
                 break;  // at least one request image is not in the track
-            map_temp.featPerView[iterSearch->first] = iterSearch->second;
-            map_temp.descType = trackIn.second.descType;
+            mapTemp.featPerView[iterSearch->first] = iterSearch->second;
+            mapTemp.descType = trackIn.second.descType;
         }
         // if we have a feature for each input image
         // we can add it to the output tracks.
-        if (map_temp.featPerView.size() == imageIndexes.size())
-            map_tracksOut[trackIn.first] = std::move(map_temp);
+        if (mapTemp.featPerView.size() == imageIndexes.size())
+            tracksOut[trackIn.first] = std::move(mapTemp);
     }
-    return !map_tracksOut.empty();
+    return !tracksOut.empty();
 }
 
 void getCommonTracksInImages(const std::set<std::size_t>& imageIndexes, const TracksPerView& tracksPerView, std::set<std::size_t>& visibleTracks)
@@ -89,11 +89,11 @@ bool getCommonTracksInImagesFast(const std::set<std::size_t>& imageIndexes,
     assert(!imageIndexes.empty());
     tracksOut.clear();
 
-    std::set<std::size_t> set_visibleTracks;
-    getCommonTracksInImages(imageIndexes, tracksPerView, set_visibleTracks);
+    std::set<std::size_t> visibleTracks;
+    getCommonTracksInImages(imageIndexes, tracksPerView, visibleTracks);
 
     // go along the tracks
-    for (std::size_t visibleTrack : set_visibleTracks)
+    for (std::size_t visibleTrack : visibleTracks)
     {
         TracksMap::const_iterator itTrackIn = tracksIn.find(visibleTrack);
         if (itTrackIn == tracksIn.end())
@@ -185,7 +185,7 @@ void getTracksIdVector(const TracksMap& tracks, std::set<std::size_t>* tracksIds
         tracksIds->insert(iterT->first);
 }
 
-bool getFeatureIdInViewPerTrack(const TracksMap& allTracks, const std::set<std::size_t>& trackIds, IndexT viewId, std::vector<FeatureId>* out_featId)
+bool getFeatureIdInViewPerTrack(const TracksMap& allTracks, const std::set<std::size_t>& trackIds, IndexT viewId, std::vector<FeatureId>* outFeatId)
 {
     for (std::size_t trackId : trackIds)
     {
@@ -196,18 +196,18 @@ bool getFeatureIdInViewPerTrack(const TracksMap& allTracks, const std::set<std::
             continue;
 
         // try to find imageIndex
-        const Track& map_ref = iterT->second;
-        auto iterSearch = map_ref.featPerView.find(viewId);
-        if (iterSearch != map_ref.featPerView.end())
-            out_featId->emplace_back(map_ref.descType, iterSearch->second.featureId);
+        const Track& mapRef = iterT->second;
+        auto iterSearch = mapRef.featPerView.find(viewId);
+        if (iterSearch != mapRef.featPerView.end())
+            outFeatId->emplace_back(mapRef.descType, iterSearch->second.featureId);
     }
-    return !out_featId->empty();
+    return !outFeatId->empty();
 }
 
-void tracksToIndexedMatches(const TracksMap& tracks, const std::vector<IndexT>& filterIndex, std::vector<IndMatch>* out_index)
+void tracksToIndexedMatches(const TracksMap& tracks, const std::vector<IndexT>& filterIndex, std::vector<IndMatch>* outIndex)
 {
-    std::vector<IndMatch>& vec_indexref = *out_index;
-    vec_indexref.clear();
+    std::vector<IndMatch>& indexRef = *outIndex;
+    indexRef.clear();
 
     for (std::size_t i = 0; i < filterIndex.size(); ++i)
     {
@@ -215,15 +215,15 @@ void tracksToIndexedMatches(const TracksMap& tracks, const std::vector<IndexT>& 
         TracksMap::const_iterator itF = std::find_if(tracks.begin(), tracks.end(), FunctorMapFirstEqual(filterIndex[i]));
 
         // the current track.
-        const Track& map_ref = itF->second;
+        const Track& mapRef = itF->second;
 
         // check we have 2 elements for a track.
-        assert(map_ref.featPerView.size() == 2);
+        assert(mapRef.featPerView.size() == 2);
 
-        const IndexT indexI = (map_ref.featPerView.begin())->second.featureId;
-        const IndexT indexJ = (++map_ref.featPerView.begin())->second.featureId;
+        const IndexT indexI = (mapRef.featPerView.begin())->second.featureId;
+        const IndexT indexJ = (++mapRef.featPerView.begin())->second.featureId;
 
-        vec_indexref.emplace_back(indexI, indexJ);
+        indexRef.emplace_back(indexI, indexJ);
     }
 }
 
@@ -250,8 +250,8 @@ void imageIdInTracks(const TracksMap& tracks, std::set<std::size_t>& imagesId)
 {
     for (TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
     {
-        const Track& map_ref = iterT->second;
-        for (auto iter = map_ref.featPerView.begin(); iter != map_ref.featPerView.end(); ++iter)
+        const Track& mapRef = iterT->second;
+        for (auto iter = mapRef.featPerView.begin(); iter != mapRef.featPerView.end(); ++iter)
             imagesId.insert(iter->first);
     }
 }

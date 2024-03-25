@@ -1357,20 +1357,22 @@ bool tryLoadMask(Image<unsigned char>* mask,
                  const std::string& srcImage,
                  const std::string& fileExtension)
 {
-    for (const auto& masksFolder_str : masksFolders)
+
+    for (const auto& masksFolderStr : masksFolders)
     {
-        if (!masksFolder_str.empty() && fs::exists(masksFolder_str))
+
+        if (!masksFolderStr.empty() && utils::exists(masksFolderStr))
         {
-            const auto masksFolder = fs::path(masksFolder_str);
+            const auto masksFolder = fs::path(masksFolderStr);
             const auto idMaskPath = masksFolder / fs::path(std::to_string(viewId)).replace_extension(fileExtension);
             const auto nameMaskPath = masksFolder / fs::path(srcImage).filename().replace_extension(fileExtension);
 
-            if (fs::exists(idMaskPath))
+            if (utils::exists(idMaskPath))
             {
                 readImage(idMaskPath.string(), *mask, EImageColorSpace::LINEAR);
                 return true;
             }
-            else if (fs::exists(nameMaskPath))
+            else if (utils::exists(nameMaskPath))
             {
                 readImage(nameMaskPath.string(), *mask, EImageColorSpace::LINEAR);
                 return true;

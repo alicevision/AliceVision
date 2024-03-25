@@ -10,6 +10,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
 
@@ -75,7 +76,7 @@ bool exportToMVE2Format(const SfMData& sfm_data,
     {
         // Create 'views' subfolder
         const std::string sOutViewsDirectory = (fs::path(sOutDirectory) / "views").string();
-        if (!fs::exists(sOutViewsDirectory))
+        if (!utils::exists(sOutViewsDirectory))
         {
             std::cout << "\033[1;31mCreating folder:  " << sOutViewsDirectory << "\033[0m\n";
             fs::create_directory(sOutViewsDirectory);
@@ -117,7 +118,7 @@ bool exportToMVE2Format(const SfMData& sfm_data,
             padding << std::setw(4) << std::setfill('0') << view_index;
 
             sOutViewIteratorDirectory = (fs::path(sOutViewsDirectory) / ("view_" + padding.str() + ".mve")).string();
-            if (!fs::exists(sOutViewIteratorDirectory))
+            if (!utils::exists(sOutViewIteratorDirectory))
             {
                 fs::create_directory(sOutViewIteratorDirectory);
             }
@@ -253,7 +254,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Create output dir
-    if (!fs::exists(outDirectory))
+    if (!utils::exists(outDirectory))
         fs::create_directory(outDirectory);
 
     // Read the input SfM scene

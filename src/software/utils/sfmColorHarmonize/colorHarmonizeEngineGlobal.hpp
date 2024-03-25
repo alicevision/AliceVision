@@ -57,7 +57,7 @@ class ColorHarmonizationEngineGlobal
 
     ~ColorHarmonizationEngineGlobal();
 
-    virtual bool Process();
+    virtual bool process();
 
   private:
     EHistogramSelectionMethod _selectionMethod;
@@ -84,10 +84,10 @@ class ColorHarmonizationEngineGlobal
     std::string _outputDirectory;
 
     /// Clean graph
-    bool CleanGraph();
+    bool cleanGraph();
 
     /// Read input data (point correspondences)
-    bool ReadInputData();
+    bool readInputData();
 };
 
 }  // namespace aliceVision

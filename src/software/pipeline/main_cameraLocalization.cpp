@@ -23,6 +23,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/utils/convert.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -259,7 +260,7 @@ int aliceVision_main(int argc, char** argv)
 
     // if the provided folder for visual debugging does not exist create it
     // recursively
-    if ((!visualDebug.empty()) && (!fs::exists(visualDebug)))
+    if ((!visualDebug.empty()) && (!utils::exists(visualDebug)))
     {
         fs::create_directories(visualDebug);
     }

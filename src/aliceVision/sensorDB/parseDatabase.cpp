@@ -7,6 +7,7 @@
 
 #include "parseDatabase.hpp"
 #include <aliceVision/sensorDB/Datasheet.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/algorithm/string.hpp>
 
@@ -26,7 +27,7 @@ namespace sensorDB {
 bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& databaseStructure)
 {
     std::ifstream fileIn(databaseFilePath);
-    if (!fileIn || !fs::exists(databaseFilePath) || !fs::is_regular_file(databaseFilePath))
+    if (!fileIn || !utils::exists(databaseFilePath) || !fs::is_regular_file(databaseFilePath))
         return false;
 
     std::string line;

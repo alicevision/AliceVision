@@ -7,6 +7,7 @@
 #include "KeyframeSelector.hpp"
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <random>
 #include <tuple>
@@ -696,13 +697,13 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
             if (_mediaPaths.size() > 1)
             {
                 const std::string rigFolder = _outputFolder + "/rig/";
-                if (!fs::exists(rigFolder))
+                if (!utils::exists(rigFolder))
                 {
                     fs::create_directory(rigFolder);
                 }
 
                 processedOutputFolder = rigFolder + std::to_string(id);
-                if (!fs::exists(processedOutputFolder))
+                if (!utils::exists(processedOutputFolder))
                 {
                     fs::create_directory(processedOutputFolder);
                 }
@@ -871,13 +872,13 @@ bool KeyframeSelector::exportFlowVisualisation(const std::size_t rescaledWidth)
         if (_mediaPaths.size() > 1)
         {
             const std::string rigFolder = _outputFolder + "/rig/";
-            if (!fs::exists(rigFolder))
+            if (!utils::exists(rigFolder))
             {
                 fs::create_directory(rigFolder);
             }
 
             processedOutputFolder = rigFolder + std::to_string(mediaIndex);
-            if (!fs::exists(processedOutputFolder))
+            if (!utils::exists(processedOutputFolder))
             {
                 fs::create_directory(processedOutputFolder);
             }

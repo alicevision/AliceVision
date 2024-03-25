@@ -8,6 +8,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/depthMap/depthMapUtils.hpp>
@@ -39,7 +40,7 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
     {
         const std::string normalMapFilepath = getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::normalMapFiltered);
 
-        if (!fs::exists(normalMapFilepath))
+        if (!utils::exists(normalMapFilepath))
         {
             const system::Timer timer;
 

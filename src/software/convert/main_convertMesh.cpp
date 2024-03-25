@@ -8,6 +8,7 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
@@ -60,7 +61,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // check first mesh file path
-    if (!inputMeshPath.empty() && !fs::exists(inputMeshPath) && !fs::is_regular_file(inputMeshPath))
+    if (!inputMeshPath.empty() && !utils::exists(inputMeshPath) && !fs::is_regular_file(inputMeshPath))
     {
         ALICEVISION_LOG_ERROR("The input mesh file doesn't exist");
         return EXIT_FAILURE;
@@ -77,7 +78,7 @@ int aliceVision_main(int argc, char** argv)
     {
         const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
 
-        if (!outputFolderPart.empty() && !fs::exists(outputFolderPart))
+        if (!outputFolderPart.empty() && !utils::exists(outputFolderPart))
         {
             if (!fs::create_directory(outputFolderPart))
             {

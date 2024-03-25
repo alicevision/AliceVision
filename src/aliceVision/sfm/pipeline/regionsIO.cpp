@@ -8,6 +8,7 @@
 #include "regionsIO.hpp"
 
 #include <aliceVision/system/ProgressDisplay.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <atomic>
 #include <cassert>
@@ -35,7 +36,7 @@ std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& fo
         const fs::path featPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
         const fs::path descPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".desc");
 
-        if (fs::exists(featPath) && fs::exists(descPath))
+        if (utils::exists(featPath) && utils::exists(descPath))
         {
             featFilename = featPath.string();
             descFilename = descPath.string();
@@ -84,7 +85,7 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
     std::set<std::string> foldersSet;
     for (const auto& folder : folders)
     {
-        if (fs::exists(folder))
+        if (utils::exists(folder))
         {
             foldersSet.insert(fs::canonical(folder).string());
         }
@@ -93,7 +94,7 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
     for (const auto& folder : foldersSet)
     {
         const fs::path featPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
-        if (fs::exists(featPath))
+        if (utils::exists(featPath))
             featFilename = featPath.string();
     }
 
