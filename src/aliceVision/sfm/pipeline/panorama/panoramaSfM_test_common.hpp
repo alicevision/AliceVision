@@ -7,7 +7,7 @@
 
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
-#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/pipeline/panorama/ReconstructionEngine_panorama.hpp>
 
 #include <cmath>

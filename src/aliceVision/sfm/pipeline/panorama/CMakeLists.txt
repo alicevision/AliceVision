@@ -8,6 +8,7 @@ alicevision_add_test(panoramaSfM_radial3_test.cpp
         aliceVision_feature
         aliceVision_matching
         aliceVision_system
+        ${CERES_LIBRARIES}
 )
 
 alicevision_add_test(panoramaSfM_radial3_outliers_test.cpp
@@ -16,6 +17,7 @@ alicevision_add_test(panoramaSfM_radial3_outliers_test.cpp
         aliceVision_feature
         aliceVision_matching
         aliceVision_system
+        ${CERES_LIBRARIES}
 )
 
 alicevision_add_test(panoramaSfM_equidistant_test.cpp
@@ -24,6 +26,7 @@ alicevision_add_test(panoramaSfM_equidistant_test.cpp
         aliceVision_feature
         aliceVision_matching
         aliceVision_system
+        ${CERES_LIBRARIES}
 )
 
 alicevision_add_test(panoramaSfM_equidistant_outliers_test.cpp
@@ -32,5 +35,6 @@ alicevision_add_test(panoramaSfM_equidistant_outliers_test.cpp
         aliceVision_feature
         aliceVision_matching
         aliceVision_system
+        ${CERES_LIBRARIES}
 )
 

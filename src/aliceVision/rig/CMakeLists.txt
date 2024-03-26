@@ -16,8 +16,8 @@ alicevision_add_library(aliceVision_rig
     aliceVision_geometry
     aliceVision_localization
     aliceVision_numeric
-    ${CERES_LIBRARIES}
   PRIVATE_LINKS
     aliceVision_sfm
     aliceVision_system
+    ${CERES_LIBRARIES}
 )

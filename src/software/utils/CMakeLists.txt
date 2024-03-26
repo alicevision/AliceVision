@@ -29,6 +29,7 @@ if(ALICEVISION_BUILD_SFM)
                   ${CUDA_CUBLAS_LIBRARIES}
                   ${CUDA_cusparse_LIBRARY}
                   ${UNCERTAINTYTE_LIBRARY}
+                  ${CERES_LIBRARIES}
                   Boost::program_options
             INCLUDE_DIRS ${UNCERTAINTYTE_INCLUDE_DIR}
         )
@@ -51,6 +52,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               aliceVision_lensCorrectionProfile
               ${Boost_LIBRARIES}
+              ${CERES_LIBRARIES}
     )
 
     if(ALICEVISION_HAVE_OPENCV)
@@ -95,6 +97,7 @@ if(ALICEVISION_BUILD_SFM)
               Boost::program_options
               Boost::boost
               Boost::timer
+              ${CERES_LIBRARIES}
     )
 
     # Voctree statistics
@@ -122,6 +125,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # Transform rig
@@ -164,6 +168,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # SfM transfer
@@ -177,6 +182,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # SfM transform
@@ -190,6 +196,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # SfM to rig
@@ -225,6 +232,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # SfM split reconstructed
@@ -259,6 +267,7 @@ if(ALICEVISION_BUILD_SFM)
               Boost::boost
               Boost::timer
               ${LEMON_LIBRARY}
+              ${CERES_LIBRARIES}
     )
 
     # Keyframe selection
@@ -287,6 +296,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_system
               aliceVision_cmdline
               ${Boost_LIBRARIES}
+              ${CERES_LIBRARIES}
     )
 
     # Perform color chart detection

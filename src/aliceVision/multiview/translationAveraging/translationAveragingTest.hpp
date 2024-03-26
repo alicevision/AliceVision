@@ -15,9 +15,6 @@
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
-#include "ceres/ceres.h"
-#include "ceres/rotation.h"
-
 #include <fstream>
 #include <map>
 #include <utility>

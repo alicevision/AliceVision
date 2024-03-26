@@ -75,9 +75,9 @@ alicevision_add_library(aliceVision_sfm
     aliceVision_sfmData
     aliceVision_sfmDataIO
     Boost::boost
-    ${CERES_LIBRARIES}
   PRIVATE_LINKS
     ${LEMON_LIBRARY}
+    ${CERES_LIBRARIES}
 )
 
 # Unit tests
@@ -90,6 +90,7 @@ alicevision_add_test(bundle/bundleAdjustment_test.cpp
         aliceVision_feature
         aliceVision_system
         ${LEMON_LIBRARY}
+        ${CERES_LIBRARIES}
 )
 
 alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
@@ -100,6 +101,7 @@ alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
         aliceVision_feature
         aliceVision_system
         ${LEMON_LIBRARY}
+        ${CERES_LIBRARIES}
 )
 
 alicevision_add_test(utils/alignment_test.cpp
@@ -109,6 +111,7 @@ alicevision_add_test(utils/alignment_test.cpp
         aliceVision_multiview
         aliceVision_multiview_test_data
         ${LEMON_LIBRARY}
+        ${CERES_LIBRARIES}
 )
 
 add_subdirectory(pipeline)

@@ -88,6 +88,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # Track builder
@@ -102,6 +103,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_track
               Boost::program_options
               Boost::json
+              ${CERES_LIBRARIES}
     )
 
     # Relative pose
@@ -116,6 +118,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_track
               Boost::program_options
               Boost::json
+              ${CERES_LIBRARIES}
     )
 
     # Bootstraping SfM
@@ -130,6 +133,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_track
               Boost::program_options
               Boost::json
+              ${CERES_LIBRARIES}
     )
 
     # Incremental / Sequential SfM
@@ -144,6 +148,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # Incremental SFM for pure rotation
@@ -158,6 +163,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # SfM Triangulation
@@ -172,6 +178,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # Global SfM
@@ -186,6 +193,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # Compute structure from known camera poses
@@ -199,6 +207,7 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              ${CERES_LIBRARIES}
     )
 
     # Calibrate a camera
@@ -244,6 +253,7 @@ if(ALICEVISION_BUILD_SFM)
               Boost::program_options
               Boost::json
               Boost::boost
+              ${CERES_LIBRARIES}
     )
 
     # Calibrate a rig
@@ -360,6 +370,7 @@ if(ALICEVISION_BUILD_PANORAMA)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               ${Boost_LIBRARIES}
+              ${CERES_LIBRARIES}
     )
     alicevision_add_software(aliceVision_panoramaWarping
         SOURCE main_panoramaWarping.cpp
@@ -373,6 +384,7 @@ if(ALICEVISION_BUILD_PANORAMA)
               aliceVision_sfmDataIO
               aliceVision_panorama
               ${Boost_LIBRARIES}
+              ${CERES_LIBRARIES}
     )
     alicevision_add_software(aliceVision_panoramaMerging
         SOURCE main_panoramaMerging.cpp
@@ -426,6 +438,7 @@ if(ALICEVISION_BUILD_PANORAMA)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               ${Boost_LIBRARIES}
+              ${CERES_LIBRARIES}
     )
 endif()
 

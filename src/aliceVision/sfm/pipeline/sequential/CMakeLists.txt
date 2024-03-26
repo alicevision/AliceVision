@@ -5,4 +5,5 @@ alicevision_add_test(sequentialSfM_test.cpp
         aliceVision_multiview_test_data
         aliceVision_feature
         aliceVision_system
+        ${CERES_LIBRARIES}
 )
