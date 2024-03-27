@@ -45,18 +45,29 @@ function(alicevision_add_library library_name)
     cuda_add_library(${library_name} ${LIBRARY_SOURCES})
   endif()
 
+  
+  if (ALICEVISION_REMOVE_ABSOLUTE)
+    foreach (item ${LIBRARY_PUBLIC_LINKS})
+        get_filename_component(nameItem ${item} NAME)
+        list(APPEND TRANSFORMED_LIBRARY_PUBLIC_LINKS ${nameItem})
+    endforeach()
+  else()
+    set(TRANSFORMED_LIBRARY_PUBLIC_LINKS ${LIBRARY_PUBLIC_LINKS})
+  endif()
+
   # FindCUDA.cmake implicit	target_link_libraries() can not be mixed with new signature (CMake < 3.9.0)
   if(NOT LIBRARY_USE_CUDA)
     target_link_libraries(${library_name}
-      PUBLIC ${LIBRARY_PUBLIC_LINKS}
+      PUBLIC ${TRANSFORMED_LIBRARY_PUBLIC_LINKS}
       PRIVATE ${LIBRARY_PRIVATE_LINKS}
     )
   else()
     target_link_libraries(${library_name}
-       ${LIBRARY_PUBLIC_LINKS}
+       ${TRANSFORMED_LIBRARY_PUBLIC_LINKS}
        ${LIBRARY_PRIVATE_LINKS}
     )
   endif()
+
 
   target_include_directories(${library_name}
     PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
