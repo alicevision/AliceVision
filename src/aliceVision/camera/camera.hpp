@@ -16,6 +16,7 @@
 #include <aliceVision/camera/DistortionRadial.hpp>
 #include <aliceVision/camera/Undistortion.hpp>
 #include <aliceVision/camera/Undistortion3DE.hpp>
+#include <aliceVision/camera/UndistortionRadial.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
@@ -98,6 +99,9 @@ inline std::shared_ptr<Undistortion> createUndistortion(EUNDISTORTION undistorti
 
     switch (undistortionType)
     {
+        case EUNDISTORTION::UNDISTORTION_RADIALK3:
+            undistortion = std::make_shared<UndistortionRadialK3>(w, h);
+            break;
         case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
             undistortion = std::make_shared<Undistortion3DEAnamorphic4>(w, h);
             break;
