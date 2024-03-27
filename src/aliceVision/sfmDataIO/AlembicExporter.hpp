@@ -85,14 +85,12 @@ class AlembicExporter
      * @param[in] imagePath The localized image path
      * @param[in] viewId View id
      * @param[in] intrinsicId Intrinsic id
-     * @param[in] sensorWidthMM Width of the sensor in millimeters
      */
     void addCameraKeyframe(const geometry::Pose3& pose,
                            const camera::Pinhole* cam,
                            const std::string& imagePath,
                            IndexT viewId,
-                           IndexT intrinsicId,
-                           float sensorWidthMM = 36.0);
+                           IndexT intrinsicId);
 
     /**
      * @brief Initiate an animated camera

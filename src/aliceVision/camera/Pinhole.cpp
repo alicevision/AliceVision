@@ -40,7 +40,7 @@ Vec2 Pinhole::project(const Eigen::Matrix4d& pose, const Vec4& pt, bool applyDis
     const Vec4 X = pose * pt;  // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    const Vec2 distorted = this->addDistortion(P);
+    const Vec2 distorted = (applyDistortion)?this->addDistortion(P):P;
     const Vec2 impt = this->cam2ima(distorted);
 
     return impt;
