@@ -44,7 +44,7 @@ int aliceVision_main(int argc, char** argv)
     bool useSmartSelection = true;          // enable the smart selection instead of the regular one
     unsigned int minFrameStep = 12;         // minimum number of frames between two keyframes (regular selection)
     unsigned int maxFrameStep = 36;         // maximum number of frames between two keyframes (regular selection)
-    unsigned int minNbOutFrames = 10;       // minimum number of selected keyframes (smart selection)
+    unsigned int minNbOutFrames = 40;       // minimum number of selected keyframes (smart selection)
     unsigned int maxNbOutFrames = 2000;     // maximum number of selected keyframes (both selections)
     float pxDisplacement = 10.0;            // percentage of pixels that have moved across frames since last keyframe (smart selection)
     std::size_t rescaledWidthSharp = 720;   // width of the rescaled frames for the sharpness; 0 if no rescale is performed (smart selection)
