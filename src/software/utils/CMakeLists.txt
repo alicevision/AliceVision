@@ -407,4 +407,18 @@ if(ALICEVISION_BUILD_MVS)
               Boost::program_options
     )
 
+    # Select Connected Views
+    alicevision_add_software(aliceVision_selectConnectedViews
+        SOURCE main_selectConnectedViews.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_mvsData
+              aliceVision_mvsUtils
+              aliceVision_depthMap
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+    )
+
 endif() # ALICEVISION_BUILD_MVS
