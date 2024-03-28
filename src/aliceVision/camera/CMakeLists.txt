@@ -11,6 +11,7 @@ set(camera_files_headers
 	DistortionRadial.hpp
 	Undistortion.hpp
 	Undistortion3DE.hpp
+    UndistortionRadial.hpp
 	Equidistant.hpp
 	IntrinsicBase.hpp
 	IntrinsicInitMode.hpp
@@ -25,6 +26,7 @@ set(camera_files_sources
     DistortionFisheye.cpp
     DistortionFisheye1.cpp
     DistortionRadial.cpp
+    UndistortionRadial.cpp
     Equidistant.cpp
     IntrinsicBase.cpp
     IntrinsicScaleOffset.cpp

@@ -59,6 +59,8 @@ class Undistortion
 
     inline Vec2 getOffset() const { return _offset; }
 
+    inline Vec2 getScaledOffset() const { return _offset / _diagonal; }
+
     Vec2 getSize() const { return _size; }
 
     inline double getDiagonal() const { return _diagonal; }
