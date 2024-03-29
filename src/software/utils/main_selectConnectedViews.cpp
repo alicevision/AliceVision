@@ -37,7 +37,10 @@ void saveTCameras(std::ostream& stream, const MapTCamsPerView& tcamsPerView)
     for (auto it = tcamsPerView.begin(); it != tcamsPerView.end(); ++it)
     {
         if(it->second.empty())
+        {
+            ALICEVISION_LOG_WARNING("The camera " << it->first << " is reconstructed but is not linked to any other camera.");
             continue;
+        }
         // RC camera
         stream << it->first << " ";
         // List of TC cameras
