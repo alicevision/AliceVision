@@ -9,6 +9,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
@@ -558,7 +559,7 @@ int main(int argc, char** argv)
     inputMesh.load(inputMeshPath);
 
     // check sfm file
-    if (!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
+    if (!sfmFilePath.empty() && !utils::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
     {
         ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
         return EXIT_FAILURE;
@@ -580,7 +581,7 @@ int main(int argc, char** argv)
 
     // ensure output folder exists
     fs::path outputDirectory = fs::path(outputMeshPath).parent_path();
-    if (!outputDirectory.empty() && !fs::exists(outputDirectory))
+    if (!outputDirectory.empty() && !utils::exists(outputDirectory))
     {
         if (!fs::create_directory(outputDirectory))
         {

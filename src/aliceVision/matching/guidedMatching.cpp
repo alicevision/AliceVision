@@ -10,7 +10,7 @@
 namespace aliceVision {
 namespace matching {
 
-unsigned int pix_to_bucket(const Vec2i& x, int W, int H)
+unsigned int pixToBucket(const Vec2i& x, int W, int H)
 {
     if (x(1) == 0)
         return x(0);  // Top border
@@ -21,7 +21,7 @@ unsigned int pix_to_bucket(const Vec2i& x, int W, int H)
     return 2 * (W + H - 2) - x(1);    // Left border
 }
 
-bool line_to_endPoints(const Vec3& line, int W, int H, Vec2& x0, Vec2& x1)
+bool lineToEndPoints(const Vec3& line, int W, int H, Vec2& x0, Vec2& x1)
 {
     const double a = line(0);
     const double b = line(1);

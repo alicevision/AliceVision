@@ -7,6 +7,7 @@
 #include "FeatureExtractor.hpp"
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include <filesystem>
@@ -31,7 +32,7 @@ void FeatureExtractorViewJob::setImageDescribers(const std::vector<std::shared_p
         const std::shared_ptr<feature::ImageDescriber>& imageDescriber = imageDescribers.at(i);
         feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
 
-        if (fs::exists(getFeaturesPath(imageDescriberType)) && fs::exists(getDescriptorPath(imageDescriberType)))
+        if (utils::exists(getFeaturesPath(imageDescriberType)) && utils::exists(getDescriptorPath(imageDescriberType)))
         {
             continue;
         }
@@ -166,8 +167,6 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
     image::Image<unsigned char> imageGrayUChar;
     image::Image<unsigned char> mask;
 
-    
-
     image::readImage(job.view().getImage().getImagePath(), imageGrayFloat, workingColorSpace);
 
     double pixelRatio = 1.0;
@@ -187,17 +186,17 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
         imageGrayFloat.swap(resizedInput);
     }
 
-    if (!_masksFolder.empty() && fs::exists(_masksFolder))
+    if (!_masksFolder.empty() && utils::exists(_masksFolder))
     {
         const auto masksFolder = fs::path(_masksFolder);
         const auto idMaskPath = masksFolder / fs::path(std::to_string(job.view().getViewId())).replace_extension(_maskExtension);
         const auto nameMaskPath = masksFolder / fs::path(job.view().getImage().getImagePath()).filename().replace_extension(_maskExtension);
 
-        if (fs::exists(idMaskPath))
+        if (utils::exists(idMaskPath))
         {
             image::readImage(idMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
         }
-        else if (fs::exists(nameMaskPath))
+        else if (utils::exists(nameMaskPath))
         {
             image::readImage(nameMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
         }

@@ -316,12 +316,12 @@ void guidedMatching(const ModelT& mod,
  * @brief Compute a bucket index from an epipolar point
  *        (the one that is closer to image border intersection)
  */
-unsigned int pix_to_bucket(const Vec2i& x, int W, int H);
+unsigned int pixToBucket(const Vec2i& x, int W, int H);
 
 /**
  * @brief Compute intersection of the epipolar line with the image border
  */
-bool line_to_endPoints(const Vec3& line, int W, int H, Vec2& x0, Vec2& x1);
+bool lineToEndPoints(const Vec3& line, int W, int H, Vec2& x0, Vec2& x1);
 
 /**
  * @brief Guided Matching (features + descriptors with distance ratio):
@@ -348,7 +348,7 @@ bool line_to_endPoints(const Vec3& line, int W, int H, Vec2& x0, Vec2& x1);
  * @param[in] heightR
  * @param[in] errorTh Maximal authorized error threshold (consider it's a square threshold)
  * @param[in] distRatio Maximal authorized distance ratio
- * @param[out] vec_corresponding_index Ouput corresponding index
+ * @param[out] vecCorrespondingIndex Ouput corresponding index
  */
 template<typename ErrorT>
 void guidedMatchingFundamentalFast(const Mat3& FMat,
@@ -361,7 +361,7 @@ void guidedMatchingFundamentalFast(const Mat3& FMat,
                                    const int heightR,
                                    double errorTh,
                                    double distRatio,
-                                   matching::IndMatches& vec_corresponding_index)
+                                   matching::IndMatches& vecCorrespondingIndex)
 {
     // Looking for the corresponding points that have to satisfy:
     //   1. a geometric distance below the provided Threshold
@@ -384,11 +384,11 @@ void guidedMatchingFundamentalFast(const Mat3& FMat,
     //--
     //-- Store point in the corresponding epipolar line bucket
     //--
-    using Bucket_vec = std::vector<IndexT>;
-    using Buckets_vec = std::vector<Bucket_vec>;
+    using BucketVec = std::vector<IndexT>;
+    using BucketsVec = std::vector<BucketVec>;
     const int nb_buckets = 2 * (widthR + heightR - 2);
 
-    Buckets_vec buckets(nb_buckets);
+    BucketsVec buckets(nb_buckets);
     for (std::size_t i = 0; i < lRegions.RegionCount(); ++i)
     {
         // Compute epipolar line
@@ -396,10 +396,10 @@ void guidedMatchingFundamentalFast(const Mat3& FMat,
         const Vec3 line = F * Vec3(l_pt(0), l_pt(1), 1.);
         // If the epipolar line exists in Right image
         Vec2 x0, x1;
-        if (line_to_endPoints(line, widthR, heightR, x0, x1))
+        if (lineToEndPoints(line, widthR, heightR, x0, x1))
         {
             // Find in which cluster the point belongs
-            const auto bucket = pix_to_bucket(x0.cast<int>(), widthR, heightR);
+            const auto bucket = pixToBucket(x0.cast<int>(), widthR, heightR);
             buckets[bucket].push_back(i);
         }
     }
@@ -422,22 +422,22 @@ void guidedMatchingFundamentalFast(const Mat3& FMat,
 
         // Compute corresponding buckets
         Vec2 x0, x1;
-        if (!line_to_endPoints(l2min, widthR, heightR, x0, x1))
+        if (!lineToEndPoints(l2min, widthR, heightR, x0, x1))
             continue;
 
-        const auto bucket_start = pix_to_bucket(x0.cast<int>(), widthR, heightR);
+        const auto bucketStart = pixToBucket(x0.cast<int>(), widthR, heightR);
 
-        if (!line_to_endPoints(l2max, widthR, heightR, x0, x1))
+        if (!lineToEndPoints(l2max, widthR, heightR, x0, x1))
             continue;
 
-        const auto bucket_stop = pix_to_bucket(x0.cast<int>(), widthR, heightR);
+        const auto bucketStop = pixToBucket(x0.cast<int>(), widthR, heightR);
 
-        if (bucket_stop > bucket_start)
+        if (bucketStop > bucketStart)
         {
             // test candidate buckets
-            for (Buckets_vec::const_iterator itBs = buckets.begin() + bucket_start; itBs != buckets.begin() + bucket_stop; ++itBs)
+            for (BucketsVec::const_iterator itBs = buckets.begin() + bucketStart; itBs != buckets.begin() + bucketStop; ++itBs)
             {
-                const Bucket_vec& bucket = *itBs;
+                const BucketVec& bucket = *itBs;
                 for (unsigned int i : bucket)
                 {
                     // Compute descriptor distance
@@ -454,7 +454,7 @@ void guidedMatchingFundamentalFast(const Mat3& FMat,
         if (dR[i].isValid(distRatio))
         {
             // save the best corresponding index
-            vec_corresponding_index.emplace_back(i, dR[i].idx);
+            vecCorrespondingIndex.emplace_back(i, dR[i].idx);
         }
     }
 }

@@ -9,6 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <software/utils/sfmColorHarmonize/colorHarmonizeEngineGlobal.hpp>
 
@@ -78,7 +79,7 @@ int aliceVision_main(int argc, char** argv)
 
     const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-    if (!fs::exists(outputFolder))
+    if (!utils::exists(outputFolder))
         fs::create_directory(outputFolder);
 
     // harmonization process
@@ -88,7 +89,7 @@ int aliceVision_main(int argc, char** argv)
     ColorHarmonizationEngineGlobal colorHarmonizeEngine(
       sfmDataFilename, featuresFolders, matchesFolders, outputFolder, describerTypes, selectionMethod, imgRef);
 
-    if (colorHarmonizeEngine.Process())
+    if (colorHarmonizeEngine.process())
     {
         ALICEVISION_LOG_INFO("Color harmonization took: " << timer.elapsed() << " s");
         return EXIT_SUCCESS;

@@ -18,6 +18,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 
 #include <boost/program_options.hpp>
@@ -118,7 +119,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // create output folder
-    if (!fs::exists(outputFolder))
+    if (!utils::exists(outputFolder))
     {
         if (!fs::create_directory(outputFolder))
         {

@@ -9,6 +9,7 @@
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
@@ -321,7 +322,7 @@ int aliceVision_main(int argc, char** argv)
     {
         for (const auto& texture : texturing.material.getAllTextures())
         {
-            if (fs::exists(sourceFolder / texture))
+            if (utils::exists(sourceFolder / texture))
             {
                 fs::copy_file(sourceFolder / texture, destinationFolder / texture, fs::copy_options::update_existing);
             }
@@ -345,7 +346,7 @@ int aliceVision_main(int argc, char** argv)
         {
             for (const auto& texture : texturing.material.getAllTextures())
             {
-                if (fs::exists(destinationFolder / texture))
+                if (utils::exists(destinationFolder / texture))
                 {
                     writer.AddFile((destinationFolder / texture).string(), texture);
                 }

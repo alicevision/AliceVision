@@ -6,6 +6,7 @@
 
 #include "Mesh.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
@@ -2358,7 +2359,7 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
     normals.clear();
     pointsVisibilities.clear();
 
-    if (!std::filesystem::exists(filepath))
+    if (!utils::exists(filepath))
     {
         ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << filepath);
     }

@@ -30,6 +30,7 @@
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
@@ -152,7 +153,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(const SfM
     }
 
     // create sfm intermediate step folder
-    if (!fs::exists(_sfmStepFolder) && _params.logIntermediateSteps)
+    if (!utils::exists(_sfmStepFolder) && _params.logIntermediateSteps)
         fs::create_directory(_sfmStepFolder);
 
     // Set up the resection ID

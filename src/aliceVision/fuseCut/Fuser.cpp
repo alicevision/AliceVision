@@ -7,6 +7,7 @@
 #include "Fuser.hpp"
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -138,7 +139,7 @@ void Fuser::filterGroups(const std::vector<int>& cams, float pixToleranceFactor,
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
-    if (fs::exists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
+    if (utils::exists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
     {
         return true;
     }

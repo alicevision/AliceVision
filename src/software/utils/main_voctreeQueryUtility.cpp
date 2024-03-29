@@ -15,6 +15,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/utils/convert.hpp>
 
@@ -247,7 +248,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // create recursively the provided out dir
-        if (!fs::exists(fs::path(outDir)))
+        if (!utils::exists(fs::path(outDir)))
         {
             // ALICEVISION_COUT("creating folder" << outDir);
             fs::create_directories(fs::path(outDir));

@@ -12,6 +12,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
@@ -154,7 +155,7 @@ int aliceVision_main(int argc, char** argv)
     if (extraInfoFolder.empty())
         extraInfoFolder = fs::path(outputSfM).parent_path().string();
 
-    if (!fs::exists(extraInfoFolder))
+    if (!utils::exists(extraInfoFolder))
         fs::create_directory(extraInfoFolder);
 
     // triangulate
