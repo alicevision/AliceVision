@@ -316,7 +316,8 @@ def test_sfmdata_get_set_folders():
 
     # Set absolute path
     filename = "internal_folders.sfm"
-    abs_filename = os.path.abspath(os.path.dirname(__file__)) + "/" + filename
+    projectFolder = os.path.abspath(os.path.dirname(__file__))
+    abs_filename = os.path.join(projectFolder, filename)
     data.setAbsolutePath(abs_filename)
 
     # Check that the folders were kept and are now absolute paths
@@ -324,13 +325,13 @@ def test_sfmdata_get_set_folders():
         "The previously added features folder should have remained in the list"
     assert os.path.isabs(data.getFeaturesFolders()[0]), \
         "The absolute path has been set: the features folder's path should be absolute as well"
-    assert os.path.relpath(data.getFeaturesFolders()[0]) == relative_folder, \
+    assert os.path.relpath(data.getFeaturesFolders()[0], projectFolder) == relative_folder, \
         "The absolute path for the features folder should correspond to the provided relative one"
     assert len(data.getMatchesFolders()) == 1, \
         "The previously added matches folder should have remained in the list"
     assert os.path.isabs(data.getMatchesFolders()[0]), \
         "The absolute path has been set: the matches folder's path should be absolute as well"
-    assert os.path.relpath(data.getMatchesFolders()[0]) == relative_folder, \
+    assert os.path.relpath(data.getMatchesFolders()[0], projectFolder) == relative_folder, \
         "The absolute path for the matches folder should correspond to the provided relative one"
 
     # Check that relative folders are still valid
@@ -348,10 +349,10 @@ def test_sfmdata_get_set_folders():
     assert len(data.getMatchesFolders()) == 2, \
         "A second matches folder should have been addded to the list"
 
-    assert os.path.relpath(data.getFeaturesFolders()[0]) == relative_folder
-    assert os.path.relpath(data.getFeaturesFolders()[1]) == other_folder
-    assert os.path.relpath(data.getMatchesFolders()[0]) == relative_folder
-    assert os.path.relpath(data.getMatchesFolders()[1]) == other_folder
+    assert os.path.relpath(data.getFeaturesFolders()[0], projectFolder) == relative_folder
+    assert os.path.relpath(data.getFeaturesFolders()[1], projectFolder) == other_folder
+    assert os.path.relpath(data.getMatchesFolders()[0], projectFolder) == relative_folder
+    assert os.path.relpath(data.getMatchesFolders()[1], projectFolder) == other_folder
 
     # Reset features and matches folders and add new ones
     new_folder1 = "../new"
@@ -365,5 +366,5 @@ def test_sfmdata_get_set_folders():
     assert len(data.getFeaturesFolders()) == 3
     assert len(data.getMatchesFolders()) == 3
     for i in range(len(data.getFeaturesFolders())):
-        assert os.path.relpath(data.getFeaturesFolders()[i]) == new_folders[i]
-        assert os.path.relpath(data.getMatchesFolders()[i]) == new_folders[i]
+        assert os.path.relpath(data.getFeaturesFolders()[i], projectFolder) == new_folders[i]
+        assert os.path.relpath(data.getMatchesFolders()[i], projectFolder) == new_folders[i]
