@@ -148,21 +148,26 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
     // If absolute path is not set, return input folders
     if (absolutePath.empty())
         return folders;
+    // project folder from project filepath
+    const fs::path projectFolder = fs::path(absolutePath).parent_path();
     // Else, convert relative paths to absolute paths
     std::vector<std::string> absolutePaths;
     absolutePaths.reserve(folders.size());
     for (const auto& folder : folders)
     {
-        const fs::path f = fs::absolute(folder);
-        if (utils::exists(f))
+        fs::path f(folder);
+        if(f.is_relative())
         {
+            // convert to absolute path
+            f = projectFolder / folder;
+        }
+        if (fs::exists(f))
+        {
+            // simplify the path to avoid things like "../.."
             // fs::canonical can only be used if the path exists
-            absolutePaths.push_back(fs::canonical(f).string());
+            f = fs::canonical(f);
         }
-        else
-        {
-            absolutePaths.push_back(f.string());
-        }
+        absolutePaths.push_back(f.string());
     }
     return absolutePaths;
 }

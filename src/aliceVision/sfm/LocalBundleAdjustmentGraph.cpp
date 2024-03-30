@@ -108,9 +108,10 @@ void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData&
 
 void LocalBundleAdjustmentGraph::exportIntrinsicsHistory(const std::string& folder, const std::string& filename)
 {
-    ALICEVISION_LOG_DEBUG("Exporting intrinsics history...");
+    const std::string filepath = (fs::path(folder) / filename).string();
+    ALICEVISION_LOG_DEBUG("Exporting intrinsics history: " << filepath);
     std::ofstream os;
-    os.open((fs::path(folder) / filename).string(), std::ios::app);
+    os.open(filepath, std::ios::app);
     os.seekp(0, std::ios::end);  // put the cursor at the end
 
     for (const auto& intrinsicHistoryPair : _intrinsicsHistory)
