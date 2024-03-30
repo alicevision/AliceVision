@@ -34,7 +34,7 @@ def worldSpaceToScreenSpace(camera, worldPoint):
         
 
     # multiply all together and do the normalisation    
-    mPoint = om.MPoint(worldPoint[0],worldPoint[1],worldPoint[2]) * camInvMtx  * projMtx;
+    mPoint = om.MPoint(worldPoint[0], worldPoint[1], worldPoint[2]) * camInvMtx * projMtx
     x = (((mPoint[0] / mPoint[3]) / 2.0) + 0.5) * resWidth
     y = (((-mPoint[1] / mPoint[3]) / 2.0) + 0.5) * resHeight
     
