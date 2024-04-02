@@ -41,11 +41,13 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     StaticVector<StaticVector<int>> ptsCams;
 
     sfmData::SfMData sfmData;
+    ALICEVISION_LOG_INFO("Loading source");
     if (!sfmDataIO::load(sfmData, pathSfmData, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << pathSfmData << "' cannot be read.");
         return false;
     }
+    ALICEVISION_LOG_INFO("Loading source done");
 
     //Create multiview params
     mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
@@ -98,20 +100,26 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     fuseCut::PointCloud pointcloud(mp);
     pointcloud.createDensePointCloud(&lhexah[0], cams, &sfmData, nullptr);
 
-    Eigen::Vector3d reducedBbMin = bbMin + Eigen::Vector3d::Ones() * 0.19;
-    Eigen::Vector3d reducedBbMax = bbMax + Eigen::Vector3d::Ones() * 0.19;
+    /*Eigen::Vector3d reducedBbMin = bbMin;// + Eigen::Vector3d::Ones() * 0.19;
+    Eigen::Vector3d reducedBbMax = bbMax;*/
     //Cleanup sfmData
     sfmData.clear();
 
+    ALICEVISION_LOG_INFO("Tetrahedralization");
     fuseCut::Tetrahedralization tetrahedralization(pointcloud.getVertices());
+    ALICEVISION_LOG_INFO("Tetrahedralization done");
 
     fuseCut::GraphFiller gfiller(mp, pointcloud, tetrahedralization);
     gfiller.setBoundingBox(bbMin, bbMax);
+
+    ALICEVISION_LOG_INFO("build graph");
     gfiller.build(cams);
+
+    ALICEVISION_LOG_INFO("binarize graph");
     gfiller.binarize();
 
     fuseCut::Mesher mesher(mp, pointcloud, tetrahedralization, gfiller.getCellsStatus());
-    mesher.setFilterBoundingBox(reducedBbMin, reducedBbMax);
+    //mesher.setFilterBoundingBox(reducedBbMin, reducedBbMax);
     mesher.graphCutPostProcessing(&lhexah[0]);
     mesh::Mesh * mesh = mesher.createMesh(0);
     pointcloud.createPtsCams(ptsCams);
@@ -127,6 +135,7 @@ int aliceVision_main(int argc, char* argv[])
     system::Timer timer;
     int rangeStart = -1;
     int rangeSize = 1;
+    int rangeEnd = 1;
 
     std::string jsonFilename = "";
     std::string outputDirectory = "";
@@ -162,6 +171,10 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // Set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    //omp_set_num_threads(std::min(32u, hwc.getMaxThreads()));
+
     std::ifstream inputfile(jsonFilename);
     if (!inputfile.is_open())
     {
@@ -175,31 +188,29 @@ int aliceVision_main(int argc, char* argv[])
     boost::json::value jv = boost::json::parse(buffer.str());
     fuseCut::InputSet inputsets(boost::json::value_to<fuseCut::InputSet>(jv));
 
-    size_t setSize = inputsets.size();
+    int setSize = static_cast<int>(inputsets.size());
+
     if (rangeStart != -1)
     {
-        if (rangeStart < 0 || rangeSize < 0)
-        {
-            ALICEVISION_LOG_ERROR("Range is incorrect");
-            return EXIT_FAILURE;
-        }
+        rangeSize = ceil(double(setSize) / double(rangeSize));
+        rangeStart = rangeStart * rangeSize;
+        rangeEnd = rangeStart + rangeSize;
+        rangeEnd = std::min(rangeEnd, setSize);
 
-        if (rangeStart + rangeSize > setSize)
-            rangeSize = setSize - rangeStart;
-
-        if (rangeSize <= 0)
+        if (rangeStart > setSize)
         {
-            ALICEVISION_LOG_WARNING("Nothing to compute.");
+            ALICEVISION_LOG_INFO("Nothing to compute");
             return EXIT_SUCCESS;
-        }
+        }        
     }
     else
     {
         rangeStart = 0;
-        rangeSize = setSize;
+        rangeEnd = setSize;
     }
+    
 
-    for (int idSub = rangeStart; idSub < rangeStart + rangeSize; idSub++)
+    for (int idSub = rangeStart; idSub < rangeEnd; idSub++)
     {
         const fuseCut::Input & input = inputsets[idSub];
         std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";

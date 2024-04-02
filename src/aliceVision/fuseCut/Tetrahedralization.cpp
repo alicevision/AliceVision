@@ -20,14 +20,24 @@ Tetrahedralization::Tetrahedralization(const std::vector<Point3d> & vertices)
 {
     //Use geogram to build tetrahedrons
     GEO::initialize();
+
+    int countThreads = omp_get_max_threads();
+    if (countThreads > 16) countThreads = 16;
+
+    GEO::Process::set_max_threads(countThreads);
     GEO::Delaunay_var tetrahedralization = GEO::Delaunay::create(3, "BDEL");
     tetrahedralization->set_stores_neighbors(true);
+
+    ALICEVISION_LOG_INFO("Computing tetrahedralization");
     tetrahedralization->set_vertices(_vertices.size(), _vertices.front().m);
+    ALICEVISION_LOG_INFO("Done computing tetrahedralization");
 
     //Copy information
     _mesh.clear();
     _neighboringCellsPerVertex.clear();
     _mesh.resize(tetrahedralization->nb_cells());
+
+    #pragma omp parallel for
     for (CellIndex ci = 0; ci < tetrahedralization->nb_cells(); ci++)
     {
         Cell & c = _mesh[ci];
@@ -50,31 +60,63 @@ Tetrahedralization::Tetrahedralization(const std::vector<Point3d> & vertices)
 
 void Tetrahedralization::updateVertexToCellsCache(const size_t verticesCount)
 {
-    _neighboringCellsPerVertex.clear();
+    ALICEVISION_LOG_INFO("updateVertexToCellsCache");
+    using VectorOfVectorOfCellIndices = std::vector<std::vector<CellIndex>>;
+    
+    int nbThreads = omp_get_max_threads();
 
-    std::map<VertexIndex, std::set<CellIndex>> neighboringCellsPerVertexTmp;
+    ALICEVISION_LOG_INFO(nbThreads);
+    int size = nb_cells() / nbThreads;
 
-    for (CellIndex ci = 0; ci < nb_cells(); ++ci)
+    std::vector<VectorOfVectorOfCellIndices> perThreadStorage(nbThreads);
+
+    #pragma omp parallel for
+    for (int idThread = 0; idThread < nbThreads; idThread++)
     {
-        for (VertexIndex k = 0; k < 4; ++k)
+        int start = omp_get_thread_num() * size;
+        int end = start + size;
+        if (idThread == nbThreads - 1)
         {
-            const VertexIndex vi = cell_vertex(ci, k);
+            end = nb_cells();
+        }
+        
+        auto & dest = perThreadStorage[idThread];
+        dest.resize(verticesCount);
 
-            if (vi == GEO::NO_VERTEX || vi >= verticesCount)
+        for (CellIndex ci = start; ci < end; ++ci)
+        {
+            for (VertexIndex k = 0; k < 4; ++k)
             {
-                continue;
-            }
+                const VertexIndex vi = cell_vertex(ci, k);
 
-            neighboringCellsPerVertexTmp[vi].insert(ci);
+                if (vi == GEO::NO_VERTEX || vi >= verticesCount)
+                {
+                    continue;
+                }
+
+                dest[vi].push_back(ci);
+            }
         }
     }
-    
+
+    _neighboringCellsPerVertex.clear();
     _neighboringCellsPerVertex.resize(verticesCount);
-    for (const auto& it : neighboringCellsPerVertexTmp)
+
+    #pragma omp parallel for
+    for (VertexIndex vi = 0; vi < verticesCount; vi++)
     {
-        const std::set<CellIndex>& input = it.second;
-        std::vector<CellIndex>& output = _neighboringCellsPerVertex[it.first];
-        output.assign(input.begin(), input.end());
+        //Build unique set of cellindices
+        std::unordered_set<CellIndex> cells;
+        for (int idThread = 0; idThread < nbThreads; idThread++)
+        {
+            for (const auto & item : perThreadStorage[idThread][vi])
+            {
+                cells.insert(item);
+            }
+        }
+
+        //From set to vector
+        _neighboringCellsPerVertex[vi].assign(cells.begin(), cells.end());
     }
 }
 

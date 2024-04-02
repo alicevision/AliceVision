@@ -114,6 +114,7 @@ void GraphFiller::fillGraph(double nPixelSizeBehind, float fullWeight)
         }
     }
 
+    /*
 #pragma omp parallel for
     for (int i = 0; i < _rays.size(); i++)
     {
@@ -170,7 +171,7 @@ void GraphFiller::fillGraph(double nPixelSizeBehind, float fullWeight)
 
         
         rayMarchingGraphRays(cellid, ptdest, camid, 32.0);
-    }
+    }*/
 }
 
 void GraphFiller::rayMarchingGraphEmpty(int vertexIndex,
@@ -616,6 +617,7 @@ void GraphFiller::binarize()
     MaxFlow_AdjList maxFlowGraph(nbCells);
 
     // fill s-t edges
+    
     for (CellIndex ci = 0; ci < nbCells; ++ci)
     {
         const GC_cellInfo& c = _cellsAttr[ci];
@@ -629,12 +631,19 @@ void GraphFiller::binarize()
     const float CONSTalphaPHOTO = 5.0f;
 
     // fill u-v directed edges
+    #pragma omp parallel for
     for (CellIndex ci = 0; ci < nbCells; ++ci)
     {
         for (VertexIndex k = 0; k < 4; ++k)
         {
             Facet fu(ci, k);
             Facet fv = _tetrahedralization.mirrorFacet(fu);
+
+            if (fu.cellIndex > fv.cellIndex)
+            {
+                continue;
+            }
+
             if (_tetrahedralization.isInvalidOrInfiniteCell(fv.cellIndex))
             {
                 continue;
@@ -654,7 +663,10 @@ void GraphFiller::binarize()
             float wFvFu = _cellsAttr[fu.cellIndex].gEdgeVisWeight[fu.localVertexIndex] * CONSTalphaVIS + a1 * CONSTalphaPHOTO;
             float wFuFv = _cellsAttr[fv.cellIndex].gEdgeVisWeight[fv.localVertexIndex] * CONSTalphaVIS + a2 * CONSTalphaPHOTO;
 
-            maxFlowGraph.addEdge(fu.cellIndex, fv.cellIndex, wFuFv, wFvFu);
+            #pragma omp critical
+            {
+                maxFlowGraph.addEdge(fu.cellIndex, fv.cellIndex, wFuFv, wFvFu);
+            }
         }
     }
 

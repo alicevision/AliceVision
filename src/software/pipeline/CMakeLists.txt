@@ -495,6 +495,19 @@ if(ALICEVISION_BUILD_MVS)
               Boost::json
     )
 
+    #lidar decimating
+    alicevision_add_software(aliceVision_lidarDecimating
+        SOURCE main_lidarDecimating.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_mvsUtils
+              aliceVision_fuseCut
+              OpenMesh
+              Boost::program_options
+              Boost::json
+    )
+
     if(ALICEVISION_HAVE_MESHSDFILTER)
 
         # Mesh Denoising

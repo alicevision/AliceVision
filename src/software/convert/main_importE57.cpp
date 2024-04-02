@@ -218,16 +218,22 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Extracting Mesh " << idMesh);
 
         PointInfoVectorAdaptator pointCloudRef(vertices);
-        PointInfoKdTree tree(3, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(100));
+
+        nanoflann::KDTreeSingleIndexAdaptorParams params(10, nanoflann::KDTreeSingleIndexAdaptorFlags::None, 0);
+        PointInfoKdTree tree(3, pointCloudRef, params);
+
+        ALICEVISION_LOG_INFO("Building tree");
         tree.buildIndex();
+        ALICEVISION_LOG_INFO("Built tree");
 
         // Angular definition of a ray
         double angularRes = 2.0 * M_PI / std::max(grid.rows(), grid.cols());
-
         double cord = 2.0 * sin(angularRes * 0.5);
         double maxLength = 1.5 * maxDensity / cord;
 
         size_t originalSize = allVertices.size();
+
+        std::vector<std::vector<dataio::E57Reader::PointInfo>> vec_allVertices(omp_get_max_threads());
 
 // Loop trough all vertices
 #pragma omp parallel for
@@ -253,13 +259,15 @@ int aliceVision_main(int argc, char** argv)
                 }
             }
 
-#pragma omp critical
+            if (found)
             {
-                if (found)
-                {
-                    allVertices.push_back(vertices[vIndex]);
-                }
+                vec_allVertices[omp_get_thread_num()].push_back(vertices[vIndex]);
             }
+        }
+
+        for (const auto & item : vec_allVertices)
+        {
+            allVertices.insert(allVertices.end(), item.begin(), item.end());
         }
 
         ALICEVISION_LOG_INFO("Mesh has " << allVertices.size() - originalSize << " points");
@@ -268,36 +276,50 @@ int aliceVision_main(int argc, char** argv)
     {
         ALICEVISION_LOG_INFO("Building final point cloud");
         PointInfoVectorAdaptator pointCloudRef(allVertices);
-        PointInfoKdTree tree(3, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+
+        nanoflann::KDTreeSingleIndexAdaptorParams params(10, nanoflann::KDTreeSingleIndexAdaptorFlags::None, 0);
+        PointInfoKdTree tree(3, pointCloudRef, params);
+        
+        ALICEVISION_LOG_INFO("Building tree");
         tree.buildIndex();
+        ALICEVISION_LOG_INFO("Built tree");
+
+        int num_threads = omp_get_max_threads();
 
         auto& landmarks = sfmData.getLandmarks();
+
+        std::vector<sfmData::Landmarks> vec_landmarks(num_threads);
+
 #pragma omp parallel for
         for (int vIndex = 0; vIndex < allVertices.size(); ++vIndex)
         {
             // Search in the vicinity if a better point exists
             const double radius = maxDensity;
-            static const nanoflann::SearchParameters searchParams(0.f, false);
+            static const nanoflann::SearchParameters searchParams(0.001f, false);
             BestPointInRadius<double, std::size_t> resultSet(radius * radius, allVertices, cameras, vIndex);
             tree.findNeighbors(resultSet, allVertices[vIndex].coords.data(), searchParams);
-
-#pragma omp critical
+            
+            if (!resultSet.found)
             {
-                if (!resultSet.found)
-                {
-                    const auto& v = allVertices[vIndex];
+                auto & ls = vec_landmarks[omp_get_thread_num()];
 
-                    Eigen::Vector3d pt;
-                    pt.x() = v.coords.x();
-                    pt.y() = - v.coords.z();
-                    pt.z() = v.coords.y();
+                const auto& v = allVertices[vIndex];
 
-                    sfmData::Observation obs(Vec2(0.0, 0.0), landmarks.size(), 1.0);
-                    sfmData::Landmark landmark(pt, feature::EImageDescriberType::SIFT);
-                    landmark.getObservations().emplace(v.idMesh, obs);
-                    landmarks.emplace(vIndex, landmark);
-                }
+                Eigen::Vector3d pt;
+                pt.x() = v.coords.x();
+                pt.y() = - v.coords.z();
+                pt.z() = v.coords.y();
+
+                sfmData::Observation obs(Vec2(0.0, 0.0), ls.size(), 1.0);
+                sfmData::Landmark landmark(pt, feature::EImageDescriberType::SIFT);
+                landmark.getObservations().emplace(v.idMesh, obs);
+                ls.emplace(vIndex, landmark);
             }
+        }
+
+        for (const auto & item : vec_landmarks)
+        {
+            landmarks.insert(item.begin(), item.end());
         }
 
         ALICEVISION_LOG_INFO("Final point cloud has " << landmarks.size() << " points");
@@ -346,7 +368,7 @@ int aliceVision_main(int argc, char** argv)
 
         ALICEVISION_LOG_INFO("Local Bounding box: " << sx << " x " << sy << " x " << sz);
 
-        sfmData::SfMData subSfmData(sfmData, bbmin, bbmax, true, true);
+        sfmData::SfMData subSfmData(sfmData, bbmin, bbmax, true, false);
 
         ALICEVISION_LOG_INFO("local count : " << subSfmData.getLandmarks().size() << " points");
 
