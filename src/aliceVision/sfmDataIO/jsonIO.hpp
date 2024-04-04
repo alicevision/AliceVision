@@ -104,11 +104,8 @@ inline void loadPose3(const std::string& name, geometry::Pose3& pose, bpt::ptree
 inline void saveCameraPose(const std::string& name, const sfmData::CameraPose& cameraPose, bpt::ptree& parentTree)
 {
     bpt::ptree cameraPoseTree;
-
     savePose3("transform", cameraPose.getTransform(), cameraPoseTree);
-    cameraPoseTree.put(
-      "locked", static_cast<int>(cameraPose.isLocked()));  // convert bool to integer to avoid using "true/false" in exported file instead of "1/0".
-
+    cameraPoseTree.put("locked", cameraPose.isLocked());
     parentTree.add_child(name, cameraPoseTree);
 }
 
@@ -122,13 +119,20 @@ inline void loadCameraPose(const std::string& name, sfmData::CameraPose& cameraP
 {
     geometry::Pose3 pose;
 
-    loadPose3(name + ".transform", pose, cameraPoseTree);
+    bpt::ptree & poseTree = cameraPoseTree.get_child(name);
+
+    loadPose3("transform", pose, poseTree);
+    
     cameraPose.setTransform(pose);
 
-    if (cameraPoseTree.get<int>("locked", 0))
+    if (poseTree.get<bool>("locked", false))
+    {
         cameraPose.lock();
+    }
     else
+    {
         cameraPose.unlock();
+    }
 }
 
 /**
