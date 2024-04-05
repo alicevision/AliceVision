@@ -222,15 +222,24 @@ int aliceVision_main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
-        inputsets[idSub].subMeshPath = ss;
-
         ALICEVISION_LOG_INFO(ss);
     }
 
-    std::ofstream of(outputJsonFilename);
-    jv = boost::json::value_from(inputsets);
-    of << boost::json::serialize(jv);
-    of.close();
+    //Only the first chunk may update the json file
+    if (rangeStart == 0)
+    {
+        for (int idSub = 0; idSub < setSize; idSub++)
+        {
+            const fuseCut::Input & input = inputsets[idSub];
+            std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
+            inputsets[idSub].subMeshPath = ss;
+        }
+
+        std::ofstream of(outputJsonFilename);
+        jv = boost::json::value_from(inputsets);
+        of << boost::json::serialize(jv);
+        of.close();
+    }
 
     
     return EXIT_SUCCESS;

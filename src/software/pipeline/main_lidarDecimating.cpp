@@ -15,7 +15,8 @@
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
 #include <OpenMesh/Core/Geometry/VectorT.hh>
 #include <OpenMesh/Tools/Decimater/DecimaterT.hh>
-#include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
+
+#include <aliceVision/mesh/ModQuadricMetricT.hpp>
 
 #include <boost/program_options.hpp>
 #include <fstream>
@@ -34,7 +35,7 @@ bool computeSubMesh(const std::string & outputMeshPath, const std::string & inpu
 {
     typedef OpenMesh::TriMesh_ArrayKernelT<> Mesh;
     typedef OpenMesh::Decimater::DecimaterT<Mesh> Decimater;
-    typedef OpenMesh::Decimater::ModQuadricT<Mesh>::Handle HModQuadric;
+    typedef OpenMesh::Decimater::ModQuadricMetricT<Mesh>::Handle HModQuadricMetric;
 
     Mesh mesh;
     if (!OpenMesh::IO::read_mesh(mesh, inputMeshPath))
@@ -47,33 +48,25 @@ bool computeSubMesh(const std::string & outputMeshPath, const std::string & inpu
 
     const double tolerance = 0.001;
 
-    while (1)
+ 
+    int nbInputPoints = mesh.n_vertices();
+
+    Decimater decimater(mesh);
+    HModQuadricMetric hModQuadric;
+    decimater.add(hModQuadric);
+    decimater.module(hModQuadric).set_max_err(tolerance * tolerance);
+    decimater.initialize();        
+    size_t removedVertices = decimater.decimate(0);
+    decimater.mesh().garbage_collection();
+
+    if (mesh.n_faces() == 0)
     {
-        int nbInputPoints = mesh.n_vertices();
-        int minNbInputPoints = nbInputPoints / 2;
-
-        Decimater decimater(mesh);
-        HModQuadric hModQuadric;
-        decimater.add(hModQuadric);
-        decimater.module(hModQuadric).set_max_err(tolerance * tolerance);
-        decimater.initialize();        
-        size_t removedVertices = decimater.decimate_to(minNbInputPoints);
-        decimater.mesh().garbage_collection();
-
-        if (mesh.n_faces() == 0)
-        {
-            ALICEVISION_LOG_ERROR("Failed: the output mesh is empty.");
-            return false;
-        }
-
-        if (nbInputPoints == mesh.n_vertices())
-        {
-            break;
-        }
-
-        ALICEVISION_LOG_INFO("Before : " << nbInputPoints);
-        ALICEVISION_LOG_INFO("After : " << mesh.n_vertices());
+        ALICEVISION_LOG_ERROR("Failed: the output mesh is empty.");
+        return false;
     }
+
+    ALICEVISION_LOG_INFO("Before : " << nbInputPoints);
+    ALICEVISION_LOG_INFO("After : " << mesh.n_vertices());
 
     ALICEVISION_LOG_INFO("Save mesh.");
     if (!OpenMesh::IO::write_mesh(mesh, outputMeshPath))
@@ -92,6 +85,8 @@ int aliceVision_main(int argc, char* argv[])
     system::Timer timer;
     int rangeStart = -1;
     int rangeSize = 1;
+    int rangeEnd = 1;
+
 
     std::string jsonFilename = "";
     std::string outputDirectory = "";
@@ -136,31 +131,29 @@ int aliceVision_main(int argc, char* argv[])
     boost::json::value jv = boost::json::parse(buffer.str());
     fuseCut::InputSet inputsets(boost::json::value_to<fuseCut::InputSet>(jv));
 
-    size_t setSize = inputsets.size();
+    int setSize = static_cast<int>(inputsets.size());
+
     if (rangeStart != -1)
     {
-        if (rangeStart < 0 || rangeSize < 0)
-        {
-            ALICEVISION_LOG_ERROR("Range is incorrect");
-            return EXIT_FAILURE;
-        }
+        rangeSize = ceil(double(setSize) / double(rangeSize));
+        rangeStart = rangeStart * rangeSize;
+        rangeEnd = rangeStart + rangeSize;
+        rangeEnd = std::min(rangeEnd, setSize);
 
-        if (rangeStart + rangeSize > setSize)
-            rangeSize = setSize - rangeStart;
-
-        if (rangeSize <= 0)
+        if (rangeStart > setSize)
         {
-            ALICEVISION_LOG_WARNING("Nothing to compute.");
+            ALICEVISION_LOG_INFO("Nothing to compute");
             return EXIT_SUCCESS;
-        }
+        }        
     }
     else
     {
         rangeStart = 0;
-        rangeSize = setSize;
+        rangeEnd = setSize;
     }
+    
 
-    for (int idSub = rangeStart; idSub < rangeStart + rangeSize; idSub++)
+    for (int idSub = rangeStart; idSub < rangeEnd; idSub++)
     {
         const fuseCut::Input & input = inputsets[idSub];
         std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
@@ -173,10 +166,21 @@ int aliceVision_main(int argc, char* argv[])
         }
     }
 
-    std::ofstream of(outputJsonFilename);
-    jv = boost::json::value_from(inputsets);
-    of << boost::json::serialize(jv);
-    of.close();
+    //Only the first chunk may update the json file
+    if (rangeStart == 0)
+    {
+        for (int idSub = 0; idSub < setSize; idSub++)
+        {
+            const fuseCut::Input & input = inputsets[idSub];
+            std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
+            inputsets[idSub].subMeshPath = ss;
+        }
+
+        std::ofstream of(outputJsonFilename);
+        jv = boost::json::value_from(inputsets);
+        of << boost::json::serialize(jv);
+        of.close();
+    }
 
     
     return EXIT_SUCCESS;

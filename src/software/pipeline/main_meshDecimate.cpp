@@ -141,7 +141,7 @@ int aliceVision_main(int argc, char* argv[])
          */
         decimater.module(hModQuadric).unset_max_err();
         // let the decimater initialize the mesh and the modules
-        decimater.initialize();
+        decimater.initialize(); 
         // do decimation
         size_t removedVertices = decimater.decimate_to(nbOutputPoints);
         decimater.mesh().garbage_collection();

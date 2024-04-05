@@ -630,8 +630,10 @@ void GraphFiller::binarize()
     const float CONSTalphaVIS = 1.0f;
     const float CONSTalphaPHOTO = 5.0f;
 
+    int threadCount = std::min(16, omp_get_max_threads());
+
     // fill u-v directed edges
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(threadCount)
     for (CellIndex ci = 0; ci < nbCells; ++ci)
     {
         for (VertexIndex k = 0; k < 4; ++k)
@@ -669,6 +671,7 @@ void GraphFiller::binarize()
             }
         }
     }
+    ALICEVISION_LOG_INFO("plap");
 
     //Clear graph
     _cellsAttr.clear();
