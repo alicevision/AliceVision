@@ -7,9 +7,19 @@
 
 #pragma once
 
+#ifdef __CUDA_FP16_HPP__
+#define __CUDA_FP16_HPP_BAK__ __CUDA_FP16_HPP__
+#undef __CUDA_FP16_HPP__
+#endif
+
 #include "Image.hpp"
 #include "pixelTypes.hpp"
 #include "colorspace.hpp"
+
+#ifdef __CUDA_FP16_HPP_BAK__
+#define __CUDA_FP16_HPP__ __CUDA_FP16_HPP_BAK__ 
+#undef __CUDA_FP16_HPP_BAK__
+#endif
 
 #include <aliceVision/types.hpp>
 
