@@ -85,6 +85,7 @@ set VCPKG_ROOT=%cd%
 vcpkg install ^
           boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-geometry boost-graph boost-json boost-log ^
           boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
+          boost-format ^
           lz4 ^
           liblemon ^
           openexr ^

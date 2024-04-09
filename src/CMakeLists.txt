@@ -304,7 +304,7 @@ if(WIN32)
 
   #To be removed later, a bug to make things work with current vcpkg
   #https://github.com/microsoft/vcpkg/issues/22495
-  add_definitions(-DBOOST_USE_WINAPI_VERSION=BOOST_WINAPI_VERSION_WIN7)
+  add_definitions(-DBOOST_USE_WINAPI_VERSION=BOOST_WINAPI_VERSION_WIN10)
 endif()
 
 if(BUILD_SHARED_LIBS)
