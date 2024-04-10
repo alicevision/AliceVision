@@ -12,6 +12,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
+#include <fstream>
 #include <boost/program_options.hpp>
 
 
