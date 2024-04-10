@@ -178,7 +178,7 @@ endmacro(add_target_properties)
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/MeshSDFilter/external)
+if(ALICEVISION_USE_MESHSDFILTER AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/MeshSDFilter/external)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
