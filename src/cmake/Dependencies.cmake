@@ -41,6 +41,7 @@ option(AV_BUILD_OPENIMAGEIO "Enable building an embedded OpenImageIO library" ON
 option(AV_BUILD_BOOST "Enable building an embedded Boost library" ON)
 option(AV_BUILD_CERES "Enable building an embedded Ceres library" ON)
 option(AV_BUILD_SWIG "Enable building an embedded SWIG library" ON)
+option(AV_BUILD_OPENMESH "Enable building an embedded OpenMesh library" ON)
 
 if(AV_BUILD_DEPENDENCIES_PARALLEL EQUAL 0)
     cmake_host_system_information(RESULT AV_BUILD_DEPENDENCIES_PARALLEL QUERY NUMBER_OF_LOGICAL_CORES)
@@ -88,6 +89,7 @@ message(STATUS "AV_BUILD_ALEMBIC ${AV_BUILD_ALEMBIC}")
 message(STATUS "AV_BUILD_OPENIMAGEIO ${AV_BUILD_OPENIMAGEIO}")
 message(STATUS "AV_BUILD_CERES ${AV_BUILD_CERES}")
 message(STATUS "AV_BUILD_SWIG ${AV_BUILD_SWIG}")
+message(STATUS "AV_BUILD_OPENMESH ${AV_BUILD_OPENMESH}")
 message(STATUS "AV_BUILD_DEPENDENCIES_PARALLEL: ${AV_BUILD_DEPENDENCIES_PARALLEL}")
 ##########END LOGGING#########"
 
@@ -1302,6 +1304,32 @@ if(AV_BUILD_E57FORMAT)
     set(E57FORMAT_CMAKE_FLAGS -DE57FORMAT_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/E57Format)
 endif()
 
+if(AV_BUILD_OPENMESH)
+    # Add openmesh
+    set(OPENMESH_TARGET OpenMesh)
+
+    ExternalProject_add(${OPENMESH_TARGET}
+        URL https://www.graphics.rwth-aachen.de/media/openmesh_static/Releases/10.0/OpenMesh-10.0.0.tar.bz2
+        URL_HASH MD5=4d166aecbc09df58b38de9759c92a437
+        DOWNLOAD_DIR ${BUILD_DIR}/download/${OPENMESH_TARGET}
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${OPENMESH_TARGET}
+        BINARY_DIR ${BUILD_DIR}/${OPENMESH_TARGET}_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+            -DBUILD_APPS=OFF
+            -DOPENMESH_DOCS=OFF
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+    )
+
+    set(OPENMESH_CMAKE_FLAGS -DOPENMESH_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/OpenMesh/cmake)
+endif()
+
 set(AV_DEPS
     ${ZLIB_TARGET}
     ${ASSIMP_TARGET}
@@ -1336,6 +1364,7 @@ set(AV_DEPS
     ${LEMON_TARGET}
     ${SWIG_TARGET}
     ${E57FORMAT_TARGET}
+    ${OPENMESH_TARGET}
 )
 
 if(AV_BUILD_ALICEVISION)
@@ -1386,6 +1415,7 @@ if(AV_BUILD_ALICEVISION)
         ${USD_CMAKE_FLAGS}
         ${SWIG_CMAKE_FLAGS}
         ${E57FORMAT_CMAKE_FLAGS}
+        ${OPENMESH_CMAKE_FLAGS}
 
         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
         DEPENDS ${AV_DEPS}

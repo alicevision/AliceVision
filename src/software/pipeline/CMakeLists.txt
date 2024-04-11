@@ -516,7 +516,8 @@ if(ALICEVISION_BUILD_MVS)
             LINKS aliceVision_system
                   aliceVision_cmdline
                   aliceVision_mvsUtils
-                  OpenMesh
+                  OpenMeshCore
+                  OpenMeshTools
                   Boost::program_options
         )
     endif()

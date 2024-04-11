@@ -178,7 +178,7 @@ endmacro(add_target_properties)
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(ALICEVISION_USE_MESHSDFILTER AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/MeshSDFilter/external)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/MeshSDFilter/CMakeLists.txt)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
@@ -661,6 +661,8 @@ endif()
 set(ALICEVISION_HAVE_MESHSDFILTER 0)
 
 if(ALICEVISION_BUILD_MVS)
+  find_package(OpenMesh REQUIRED)
+
   if(ALICEVISION_USE_MESHSDFILTER STREQUAL "ON")
     set(ALICEVISION_HAVE_MESHSDFILTER 1)
     add_subdirectory(dependencies/MeshSDFilter)
