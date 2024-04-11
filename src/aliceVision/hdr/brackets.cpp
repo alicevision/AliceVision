@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <cmath>
 
 #include <filesystem>
 
@@ -77,7 +78,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         {
             // Automatically determines the number of brackets
             double exp = view->getImage().getCameraExposureSetting().getExposure();
-            if (exp < lastExposure)
+            if (exp <= lastExposure)
             {
                 groups.push_back(group);
                 group.clear();
