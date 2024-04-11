@@ -110,7 +110,7 @@ int aliceVision_main(int argc, char** argv)
     bool savePutativeMatches = false;
     bool guidedMatching = false;
     bool crossMatching = false;
-    int maxIteration = 2048;
+    int maxIteration = 50000;
     bool matchFilePerImage = false;
     size_t numMatchesToKeep = 0;
     bool useGridSort = true;
@@ -171,7 +171,7 @@ int aliceVision_main(int argc, char** argv)
         ("distanceRatio", po::value<float>(&distRatio)->default_value(distRatio),
          "Distance ratio to discard non meaningful matches.")
         ("maxIteration", po::value<int>(&maxIteration)->default_value(maxIteration),
-         "Maximum number of iterations allowed in ransac step.")
+         "Maximum number of iterations allowed in Ransac step.")
         ("useGridSort", po::value<bool>(&useGridSort)->default_value(useGridSort),
          "Use matching grid sort.")
         ("minRequired2DMotion", po::value<double>(&minRequired2DMotion)->default_value(minRequired2DMotion),
