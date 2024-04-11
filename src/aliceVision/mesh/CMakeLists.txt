@@ -10,6 +10,9 @@ set(mesh_files_headers
   meshVisibility.hpp
   Texturing.hpp
   UVAtlas.hpp
+  ModQuadricMetricT.hpp
+  QuadricMetricT.hpp
+  
 )
 
 # Sources
@@ -23,6 +26,7 @@ set(mesh_files_sources
   meshVisibility.cpp
   Texturing.cpp
   UVAtlas.cpp
+  ModQuadricMetricT.cpp
 )
 
 alicevision_add_library(aliceVision_mesh
@@ -35,5 +39,6 @@ alicevision_add_library(aliceVision_mesh
   PRIVATE_LINKS
     aliceVision_system
     Boost::boost
+    OpenMeshCore
 )
 
