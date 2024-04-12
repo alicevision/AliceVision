@@ -194,6 +194,22 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    //Let check that we don't have only groups of 1 images (LDR)
+    bool onlyOne = true;
+    for (const auto & item : groupedViews)
+    {
+        if (item.size() > 1)
+        {
+            onlyOne = false;
+        }
+    }
+
+    if (onlyOne)
+    {
+        ALICEVISION_LOG_INFO("Only groups of one bracket : Bypass processing.");
+        byPass = true;
+    }
+
     // Check groups
     std::size_t usedNbBrackets;
     {
