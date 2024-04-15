@@ -533,6 +533,17 @@ if(ALICEVISION_BUILD_MVS)
               Boost::program_options
     )
 
+    # Mesh Repair
+    alicevision_add_software(aliceVision_meshRepairing
+        SOURCE main_meshRepairing.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_mvsUtils
+              aliceVision_mesh
+              Boost::program_options
+    )
+
     # Mesh Masking
     alicevision_add_software(aliceVision_meshMasking
         SOURCE main_meshMasking.cpp
