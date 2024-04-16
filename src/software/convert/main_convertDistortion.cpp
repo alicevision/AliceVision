@@ -57,7 +57,8 @@ bool estimateDistortionMultiStep(std::shared_ptr<camera::Undistortion> undistort
 }
 
 bool convert(std::shared_ptr<camera::Undistortion> & undistortion, const camera::IntrinsicBase & intrinsic, const sfmData::Landmarks & landmarks)
-{
+{   
+    size_t countErrors = 0;
     std::vector<calibration::PointPair> ppts;
     for (const auto & pland : landmarks)
     {
@@ -70,12 +71,21 @@ bool convert(std::shared_ptr<camera::Undistortion> & undistortion, const camera:
             Vec2 check = intrinsic.getDistortedPixel(ppt.undistortedPoint);
             if ((check - ppt.distortedPoint).norm() > 1e-2)
             {
-                ALICEVISION_LOG_ERROR("error undistorting point");
+                countErrors++;
                 continue;
             }
 
             ppts.push_back(ppt);
         }
+    }
+
+    //If too much points where not inverted, then the model may not be ok.
+    const double maxRatioErrors = 0.1;
+    const double ratioErrors = double(countErrors) / double(countErrors + ppts.size());
+    ALICEVISION_LOG_INFO("Ratio of inversion errors is " << ratioErrors << " (max: "<< maxRatioErrors << ")");
+    if (ratioErrors > maxRatioErrors)
+    {
+        return false;
     }
 
     std::vector<double> initialParams;
