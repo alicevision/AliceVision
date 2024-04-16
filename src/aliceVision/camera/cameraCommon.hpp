@@ -36,6 +36,7 @@ enum EDISTORTION
 enum EUNDISTORTION
 {
     UNDISTORTION_NONE,
+    UNDISTORTION_RADIALK3,
     UNDISTORTION_3DEANAMORPHIC4
 };
 
@@ -183,6 +184,10 @@ inline EUNDISTORTION EUNDISTORTION_stringToEnum(const std::string& undistortion)
     {
         return EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4;
     }
+    else if (type == "radialk3")
+    {
+        return EUNDISTORTION::UNDISTORTION_RADIALK3;
+    }
     else if (type == "none")
     {
         return EUNDISTORTION::UNDISTORTION_NONE;
@@ -197,6 +202,8 @@ inline std::string EUNDISTORTION_enumToString(EUNDISTORTION undistortion)
     {
         case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
             return "3deanamorphic4";
+        case EUNDISTORTION::UNDISTORTION_RADIALK3:
+            return "radialk3";
         case EUNDISTORTION::UNDISTORTION_NONE:
             return "none";
     }
