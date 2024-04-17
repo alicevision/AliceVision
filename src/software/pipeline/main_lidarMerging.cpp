@@ -10,6 +10,8 @@
 #include <aliceVision/fuseCut/InputSet.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <boost/program_options.hpp>
+#include <aliceVision/stl/hash.hpp>
+#include <aliceVision/geometry/Intersection.hpp>
 #include <fstream>
 
 
@@ -22,6 +24,23 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
+inline size_t computeHash(const Point3d & pt)
+{
+    size_t seed = 0;
+    stl::hash_combine(seed, size_t(pt.x * 100.0));
+    stl::hash_combine(seed, size_t(pt.y * 100.0));
+    stl::hash_combine(seed, size_t(pt.z * 100.0));
+    return seed;
+}
+
+inline size_t computeHash(const mesh::Mesh::triangle & tri)
+{
+    size_t seed = 0;
+    stl::hash_combine(seed, tri.v[0]);
+    stl::hash_combine(seed, tri.v[1]);
+    stl::hash_combine(seed, tri.v[2]);
+    return seed;
+}
 
 int aliceVision_main(int argc, char* argv[])
 {
@@ -78,20 +97,103 @@ int aliceVision_main(int argc, char* argv[])
 
     mesh::Mesh globalMesh;
 
-    for (int id = 0; id < setSize; id++)
+    std::unordered_map<size_t, std::vector<size_t>> hashedpts;
+    std::unordered_map<size_t, std::vector<size_t>> hashedtris;
+
+    for (int idRef = 0; idRef < setSize; idRef++)
     {
-        mesh::Mesh mesh;
+        const fuseCut::Input & refInput = inputsets[idRef];
+
+        mesh::Mesh meshReference;
         try
         {
-            mesh.load(inputsets[id].subMeshPath);
+            meshReference.load(refInput.subMeshPath);
         }
         catch (...)
         {
-            ALICEVISION_LOG_ERROR("Can't read mesh " << inputsets[id].subMeshPath);
+            ALICEVISION_LOG_ERROR("Can't read mesh " << refInput.subMeshPath);
             return EXIT_FAILURE;
+        }      
+
+        std::unordered_map<size_t, size_t> transform;
+
+        int count = 0;
+        for (int indexPt = 0; indexPt < meshReference.pts.size(); indexPt++)
+        {           
+            const Point3d & pt = meshReference.pts[indexPt];
+
+            //Lookup if the point exist in the global mesh 
+            size_t hash = computeHash(pt);
+            size_t indexFound = 0;
+            bool found = false;
+            auto it = hashedpts.find(hash);
+            if (it != hashedpts.end())
+            {          
+                for (const auto& idx : it->second)
+                {
+                    const Point3d & otherPt = globalMesh.pts[idx];
+                    if (otherPt == pt)
+                    {
+                        found = true;
+                        indexFound = idx;
+                        break;
+                    }
+                }
+            }
+
+            if (found)
+            {
+                transform[indexPt] = indexFound;
+                count++;
+            }
+            else 
+            {
+                //If not found, it's a new point !
+                size_t index = globalMesh.pts.size();
+                transform[indexPt] = index;
+                globalMesh.pts.push_back(pt);
+                hashedpts[hash].push_back(index);
+            }
         }
 
-        globalMesh.addMesh(mesh);
+
+        //Copy the triangles
+        for (size_t indexTriangle = 0; indexTriangle < meshReference.tris.size(); indexTriangle++)
+        {
+            const auto & tri = meshReference.tris[indexTriangle];
+            
+            int tv1 = transform[tri.v[0]];
+            int tv2 = transform[tri.v[1]];
+            int tv3 = transform[tri.v[2]];
+            mesh::Mesh::triangle newTriangle(tv1, tv2, tv3);
+
+            /*Check if the triangle exists in the global mesh*/
+            size_t hash = computeHash(newTriangle);
+            bool found = false;
+            auto it = hashedtris.find(hash);
+            if (it != hashedtris.end())
+            {
+                for (size_t idxTriCmp : it->second)
+                {
+                    const auto & triCmp = globalMesh.tris[idxTriCmp];
+                    
+                    if (triCmp.v[0] == tv1 && triCmp.v[1] == tv2 && triCmp.v[2] == tv3)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (found)
+            {
+                continue;
+            }
+
+            hashedtris[hash].push_back(globalMesh.tris.size());
+            globalMesh.tris.push_back(newTriangle);
+        }
+        
     }
 
     globalMesh.save(outputMeshFilename);

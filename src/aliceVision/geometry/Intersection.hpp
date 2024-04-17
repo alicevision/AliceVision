@@ -61,5 +61,18 @@ bool rayIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbM
 */
 bool isSegmentIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax, const Eigen::Vector3d& start, const Eigen::Vector3d& end);
 
+
+/**
+ * @Brief is my segment intersecting the bounding box ?
+ * @param inputbbMin1 the minimal values of the first bounding box on each axis
+ * @param inputbbMax1 the maximal values of the first bounding box on each axis
+ * @param inputbbMin2 the minimal values of the second bounding box on each axis
+ * @param inputbbMax2 the maximal values of the second bounding box on each axis
+ * @param bbMin the minimal values of the bounding box on each axis which is the intersection of both bounding box
+ * @param bbMax the maximal values of the bounding box on each axis which is the intersection of both bounding box
+ * @return true if the bounding box intersects
+*/
+bool intersectionBetweenAABB(const Eigen::Vector3d & inputbbMin1, const Eigen::Vector3d & inputbbMax1, const Eigen::Vector3d & inputbbMin2, const Eigen::Vector3d & inputbbMax2, Eigen::Vector3d & bbMin, Eigen::Vector3d & bbMax);
+
 }  // namespace geometry
 }  // namespace aliceVision

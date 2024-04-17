@@ -172,5 +172,32 @@ bool isSegmentIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d
     return (boundsMin < boundsMax);
 }
 
+bool intersectionBetweenAABB(const Eigen::Vector3d & inputbbMin1, const Eigen::Vector3d & inputbbMax1, const Eigen::Vector3d & inputbbMin2, const Eigen::Vector3d & inputbbMax2, Eigen::Vector3d & bbMin, Eigen::Vector3d & bbMax)
+{
+    bbMin.x() = std::max(inputbbMin1.x(), inputbbMin2.x());
+    bbMax.x() = std::min(inputbbMax1.x(), inputbbMax2.x());
+    bbMin.y() = std::max(inputbbMin1.y(), inputbbMin2.y());
+    bbMax.y() = std::min(inputbbMax1.y(), inputbbMax2.y());
+    bbMin.z() = std::max(inputbbMin1.z(), inputbbMin2.z());
+    bbMax.z() = std::min(inputbbMax1.z(), inputbbMax2.z());
+
+    if (bbMin.x() >= bbMax.x())
+    {
+        return false;
+    }
+
+    if (bbMin.y() >= bbMax.y())
+    {
+        return false;
+    }
+
+    if (bbMin.z() >= bbMax.z())
+    {
+        return false;
+    }
+    
+    return true;
+}
+
 }  // namespace geometry
 }  // namespace aliceVision
