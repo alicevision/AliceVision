@@ -479,7 +479,7 @@ if(ALICEVISION_BUILD_MVS)
               Boost::program_options
     )
 
-    #lidar meshing
+    # Lidar meshing
     alicevision_add_software(aliceVision_lidarMeshing
         SOURCE main_lidarMeshing.cpp
         FOLDER ${FOLDER_SOFTWARE_PIPELINE}
@@ -495,7 +495,7 @@ if(ALICEVISION_BUILD_MVS)
               Boost::json
     )
 
-     #lidar meshing
+     # Lidar merging
      alicevision_add_software(aliceVision_lidarMerging
      SOURCE main_lidarMerging.cpp
      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
@@ -511,7 +511,7 @@ if(ALICEVISION_BUILD_MVS)
            Boost::json
     )
 
-    #lidar decimation
+    # Lidar decimation
     alicevision_add_software(aliceVision_lidarDecimating
     SOURCE main_lidarDecimating.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}

@@ -25,7 +25,6 @@
 #include <boost/program_options.hpp>
 #include <fstream>
 
-
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -35,9 +34,9 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
+bool computeSubMesh(const std::string& pathSfmData, std::string& outputFile, const Eigen::Vector3d& bbMin, const Eigen::Vector3d& bbMax)
 {
-    //initialization
+    // initialization
     StaticVector<StaticVector<int>> ptsCams;
 
     sfmData::SfMData sfmData;
@@ -49,7 +48,7 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     }
     ALICEVISION_LOG_INFO("Loading source done");
 
-    //Create multiview params
+    // Create multiview params
     mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
     mp.userParams.put("LargeScale.forcePixelSize", 0.01);
     mp.userParams.put("LargeScale.forceWeight", 32.0);
@@ -65,7 +64,7 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     mp.userParams.put("hallucinationsFiltering.minSolidAngleRatio", 0.2);
     mp.userParams.put("hallucinationsFiltering.nbSolidAngleFilteringIterations", 2);
 
-    //Set the input cams ids
+    // Set the input cams ids
     StaticVector<int> cams(mp.getNbCameras());
     for (int i = 0; i < cams.size(); ++i)
     {
@@ -78,31 +77,44 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
         return false;
     }
 
-    //Check bounding box validity
+    // Check bounding box validity
     double w = std::abs(bbMin.x() - bbMax.x());
     double h = std::abs(bbMin.y() - bbMax.y());
     double l = std::abs(bbMin.z() - bbMax.z());
-    if (w < 1e-6 || h < 1e-6 || l < 1e-6) return true;
+    if (w < 1e-6 || h < 1e-6 || l < 1e-6)
+        return true;
 
-    //Use mp format
+    // Use mp format
     std::array<Point3d, 8> lhexah;
-    lhexah[0].x = bbMin.x(); lhexah[0].y = bbMin.y(); lhexah[0].z = bbMin.z();
-    lhexah[1].x = bbMax.x(); lhexah[1].y = bbMin.y(); lhexah[1].z = bbMin.z();
-    lhexah[2].x = bbMax.x(); lhexah[2].y = bbMax.y(); lhexah[2].z = bbMin.z();
-    lhexah[3].x = bbMin.x(); lhexah[3].y = bbMax.y(); lhexah[3].z = bbMin.z();
-    lhexah[4].x = bbMin.x(); lhexah[4].y = bbMin.y(); lhexah[4].z = bbMax.z();
-    lhexah[5].x = bbMax.x(); lhexah[5].y = bbMin.y(); lhexah[5].z = bbMax.z();
-    lhexah[6].x = bbMax.x(); lhexah[6].y = bbMax.y(); lhexah[6].z = bbMax.z();
-    lhexah[7].x = bbMin.x(); lhexah[7].y = bbMax.y(); lhexah[7].z = bbMax.z();
-
-
+    lhexah[0].x = bbMin.x();
+    lhexah[0].y = bbMin.y();
+    lhexah[0].z = bbMin.z();
+    lhexah[1].x = bbMax.x();
+    lhexah[1].y = bbMin.y();
+    lhexah[1].z = bbMin.z();
+    lhexah[2].x = bbMax.x();
+    lhexah[2].y = bbMax.y();
+    lhexah[2].z = bbMin.z();
+    lhexah[3].x = bbMin.x();
+    lhexah[3].y = bbMax.y();
+    lhexah[3].z = bbMin.z();
+    lhexah[4].x = bbMin.x();
+    lhexah[4].y = bbMin.y();
+    lhexah[4].z = bbMax.z();
+    lhexah[5].x = bbMax.x();
+    lhexah[5].y = bbMin.y();
+    lhexah[5].z = bbMax.z();
+    lhexah[6].x = bbMax.x();
+    lhexah[6].y = bbMax.y();
+    lhexah[6].z = bbMax.z();
+    lhexah[7].x = bbMin.x();
+    lhexah[7].y = bbMax.y();
+    lhexah[7].z = bbMax.z();
 
     fuseCut::PointCloud pointcloud(mp);
     pointcloud.createDensePointCloud(&lhexah[0], cams, &sfmData, nullptr);
 
-    /*Eigen::Vector3d reducedBbMin = bbMin;// + Eigen::Vector3d::Ones() * 0.19;
-    Eigen::Vector3d reducedBbMax = bbMax;*/
-    //Cleanup sfmData
+    // Cleanup sfmData
     sfmData.clear();
 
     ALICEVISION_LOG_INFO("Tetrahedralization");
@@ -110,7 +122,7 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     ALICEVISION_LOG_INFO("Tetrahedralization done");
 
     fuseCut::GraphFiller gfiller(mp, pointcloud, tetrahedralization);
-    //gfiller.setBoundingBox(bbMin, bbMax);
+    // gfiller.setBoundingBox(bbMin, bbMax);
 
     ALICEVISION_LOG_INFO("build graph");
     gfiller.build(cams);
@@ -119,14 +131,13 @@ bool computeSubMesh(const std::string & pathSfmData, std::string & outputFile, c
     gfiller.binarize();
 
     fuseCut::Mesher mesher(mp, pointcloud, tetrahedralization, gfiller.getCellsStatus());
-    //mesher.setFilterBoundingBox(reducedBbMin, reducedBbMax);
     mesher.graphCutPostProcessing(&lhexah[0]);
-    mesh::Mesh * mesh = mesher.createMesh(0);
+    mesh::Mesh* mesh = mesher.createMesh(0);
     pointcloud.createPtsCams(ptsCams);
     mesh::meshPostProcessing(mesh, ptsCams, mp, "/", nullptr, &lhexah[0]);
     mesh->save(outputFile);
     delete mesh;
-    
+
     return true;
 }
 
@@ -147,9 +158,9 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&jsonFilename)->required(),
-         "json file.")
+         "Input JSON file.")
         ("output,o", po::value<std::string>(&outputDirectory)->required(),
-         "Output directory.")
+         "Output directory for sub-meshes.")
         ("outputJson", po::value<std::string>(&outputJsonFilename)->required(),
          "Output scene description.");
 
@@ -173,16 +184,14 @@ int aliceVision_main(int argc, char* argv[])
 
     // Set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
-    //omp_set_num_threads(std::min(32u, hwc.getMaxThreads()));
 
     std::ifstream inputfile(jsonFilename);
     if (!inputfile.is_open())
     {
-        ALICEVISION_LOG_ERROR("Cannot open json input file");
+        ALICEVISION_LOG_ERROR("Cannot open JSON input file");
         return EXIT_FAILURE;
     }
-    
-    
+
     std::stringstream buffer;
     buffer << inputfile.rdbuf();
     boost::json::value jv = boost::json::parse(buffer.str());
@@ -201,18 +210,17 @@ int aliceVision_main(int argc, char* argv[])
         {
             ALICEVISION_LOG_INFO("Nothing to compute");
             return EXIT_SUCCESS;
-        }        
+        }
     }
     else
     {
         rangeStart = 0;
         rangeEnd = setSize;
     }
-    
 
     for (int idSub = rangeStart; idSub < rangeEnd; idSub++)
     {
-        const fuseCut::Input & input = inputsets[idSub];
+        const fuseCut::Input& input = inputsets[idSub];
         std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
 
         ALICEVISION_LOG_INFO("Computing sub mesh " << idSub + 1 << " / " << setSize);
@@ -225,12 +233,12 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO(ss);
     }
 
-    //Only the first chunk may update the json file
+    // Only the first chunk may update the json file
     if (rangeStart == 0)
     {
         for (int idSub = 0; idSub < setSize; idSub++)
         {
-            const fuseCut::Input & input = inputsets[idSub];
+            const fuseCut::Input& input = inputsets[idSub];
             std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
             inputsets[idSub].subMeshPath = ss;
         }
@@ -241,6 +249,5 @@ int aliceVision_main(int argc, char* argv[])
         of.close();
     }
 
-    
     return EXIT_SUCCESS;
 }

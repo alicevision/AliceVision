@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2024 AliceVision contributors.
+// Copyright (c) 2023 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -46,7 +46,12 @@ bool rayIntersectUnitSphere(Vec3& coordinates, const Vec3& start, const Vec3& di
     return true;
 }
 
-bool rayIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax, const Eigen::Vector3d& start, const Eigen::Vector3d& direction, double& boundsMin, double& boundsMax)
+bool rayIntersectAABB(const Eigen::Vector3d& bbMin,
+                      const Eigen::Vector3d& bbMax,
+                      const Eigen::Vector3d& start,
+                      const Eigen::Vector3d& direction,
+                      double& boundsMin,
+                      double& boundsMax)
 {
     // x+lambda*dx>bbmin.x
     // y+lambda*dy>bbmin.y
@@ -61,7 +66,6 @@ bool rayIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbM
     // lambda < (bbmax.x-x)/dx
     // lambda < (bbmax.y-y)/dy
     // lambda < (bbmax.z-z)/dz
-
 
     boundsMin = std::numeric_limits<double>::lowest();
     boundsMax = std::numeric_limits<double>::max();
@@ -82,7 +86,7 @@ bool rayIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbM
             boundsMax = std::min(boundsMax, lmin);
         }
     }
-    else 
+    else
     {
         if (start.x() < bbMin.x() || start.x() > bbMax.x())
         {
@@ -106,7 +110,7 @@ bool rayIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbM
             boundsMax = std::min(boundsMax, lmin);
         }
     }
-    else 
+    else
     {
         if (start.y() < bbMin.y() || start.y() > bbMax.y())
         {
@@ -130,7 +134,7 @@ bool rayIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbM
             boundsMax = std::min(boundsMax, lmin);
         }
     }
-    else 
+    else
     {
         if (start.z() < bbMin.z() || start.z() > bbMax.z())
         {
@@ -141,11 +145,11 @@ bool rayIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbM
     return true;
 }
 
-bool isSegmentIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax, const Eigen::Vector3d& start, const Eigen::Vector3d& end)
+bool isSegmentIntersectAABB(const Eigen::Vector3d& bbMin, const Eigen::Vector3d& bbMax, const Eigen::Vector3d& start, const Eigen::Vector3d& end)
 {
     double boundsMin, boundsMax;
 
-    //Compute direction
+    // Compute direction
     Eigen::Vector3d direction = end - start;
     double scale = direction.norm();
     if (scale < 1e-12)
@@ -172,7 +176,12 @@ bool isSegmentIntersectAABB(const Eigen::Vector3d & bbMin, const Eigen::Vector3d
     return (boundsMin < boundsMax);
 }
 
-bool intersectionBetweenAABB(const Eigen::Vector3d & inputbbMin1, const Eigen::Vector3d & inputbbMax1, const Eigen::Vector3d & inputbbMin2, const Eigen::Vector3d & inputbbMax2, Eigen::Vector3d & bbMin, Eigen::Vector3d & bbMax)
+bool intersectionBetweenAABB(const Eigen::Vector3d& inputbbMin1,
+                             const Eigen::Vector3d& inputbbMax1,
+                             const Eigen::Vector3d& inputbbMin2,
+                             const Eigen::Vector3d& inputbbMax2,
+                             Eigen::Vector3d& bbMin,
+                             Eigen::Vector3d& bbMax)
 {
     bbMin.x() = std::max(inputbbMin1.x(), inputbbMin2.x());
     bbMax.x() = std::min(inputbbMax1.x(), inputbbMax2.x());
@@ -195,7 +204,7 @@ bool intersectionBetweenAABB(const Eigen::Vector3d & inputbbMin1, const Eigen::V
     {
         return false;
     }
-    
+
     return true;
 }
 

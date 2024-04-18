@@ -46,7 +46,6 @@
  *                                                                           *
 \*===========================================================================*/
 
-
 //=============================================================================
 //
 //  CLASS ModQuadricT
@@ -54,145 +53,123 @@
 //=============================================================================
 
 #ifndef OSG_MODQUADRICMETRIC_HH
-#define OSG_MODQUADRICMETRIC_HH
-
+    #define OSG_MODQUADRICMETRIC_HH
 
 //== INCLUDES =================================================================
 
-#include <float.h>
-#include <OpenMesh/Tools/Decimater/ModBaseT.hh>
-#include <OpenMesh/Core/Utils/Property.hh>
-#include <OpenMesh/Core/Utils/vector_cast.hh>
-#include "QuadricMetricT.hpp"
-
-
+    #include <float.h>
+    #include <OpenMesh/Tools/Decimater/ModBaseT.hh>
+    #include <OpenMesh/Core/Utils/Property.hh>
+    #include <OpenMesh/Core/Utils/vector_cast.hh>
+    #include "QuadricMetricT.hpp"
 
 //== NAMESPACE ================================================================
 
-namespace OpenMesh  {
+namespace OpenMesh {
 namespace Decimater {
 
-
 //== CLASS DEFINITION =========================================================
-
 
 /** \brief Mesh decimation module computing collapse priority based on error quadrics.
  *
  *  This module can be used as a binary and non-binary module.
  */
-template <class MeshT>
+template<class MeshT>
 class ModQuadricMetricT : public ModBaseT<MeshT>
 {
-public:
+  public:
+    // Defines the types Self, Handle, Base, Mesh, and CollapseInfo
+    // and the memberfunction name()
+    DECIMATING_MODULE(ModQuadricMetricT, MeshT, Quadric);
 
-  // Defines the types Self, Handle, Base, Mesh, and CollapseInfo
-  // and the memberfunction name()
-  DECIMATING_MODULE( ModQuadricMetricT, MeshT, Quadric );
+  public:
+    /** Constructor
+     *  \internal
+     */
+    ModQuadricMetricT(MeshT& _mesh)
+      : Base(_mesh, false)
+    {
+        unset_max_err();
+        Base::mesh().add_property(quadrics_);
+    }
 
-public:
+    /// Destructor
+    virtual ~ModQuadricMetricT() { Base::mesh().remove_property(quadrics_); }
 
-  /** Constructor
-   *  \internal
-   */
-  ModQuadricMetricT( MeshT &_mesh )
-    : Base(_mesh, false)
-  {
-    unset_max_err();
-    Base::mesh().add_property( quadrics_ );
-    
-  }
+  public:  // inherited
+    /// Initalize the module and prepare the mesh for decimation.
+    virtual void initialize(void);
 
+    /** Compute collapse priority based on error quadrics.
+     *
+     *  \see ModBaseT::collapse_priority() for return values
+     *  \see set_max_err()
+     */
+    virtual float collapse_priority(const CollapseInfo& _ci)
+    {
+        using namespace OpenMesh;
 
-  /// Destructor
-  virtual ~ModQuadricMetricT()
-  {
-    Base::mesh().remove_property(quadrics_);
-  }
+        typedef Geometry::QuadricMetricT<double> Q;
 
+        Q q = Base::mesh().property(quadrics_, _ci.v0);
+        q += Base::mesh().property(quadrics_, _ci.v1);
 
-public: // inherited
+        double err = q(_ci.p1) / double(q.getCount());
 
-  /// Initalize the module and prepare the mesh for decimation.
-  virtual void initialize(void);
+        return float((err < max_err_) ? err : float(Base::ILLEGAL_COLLAPSE));
+    }
 
-  /** Compute collapse priority based on error quadrics.
-   *
-   *  \see ModBaseT::collapse_priority() for return values
-   *  \see set_max_err()
-   */
-  virtual float collapse_priority(const CollapseInfo& _ci)
-  {
-    using namespace OpenMesh;
+    /// Post-process halfedge collapse (accumulate quadrics)
+    virtual void postprocess_collapse(const CollapseInfo& _ci)
+    {
+        Base::mesh().property(quadrics_, _ci.v1) += Base::mesh().property(quadrics_, _ci.v0);
+    }
 
-    typedef Geometry::QuadricMetricT<double> Q;
+    /// set the percentage of maximum quadric error
+    void set_error_tolerance_factor(double _factor);
 
-    Q q = Base::mesh().property(quadrics_, _ci.v0);
-    q += Base::mesh().property(quadrics_, _ci.v1);
+  public:  // specific methods
+    /** Set maximum quadric error constraint and enable binary mode.
+     *  \param _err    Maximum error allowed
+     *  \param _binary Let the module work in non-binary mode in spite of the
+     *                 enabled constraint.
+     *  \see unset_max_err()
+     */
+    void set_max_err(double _err, bool _binary = true)
+    {
+        max_err_ = _err;
+        Base::set_binary(_binary);
+    }
 
-    double err = q(_ci.p1) / double(q.getCount());
+    /// Unset maximum quadric error constraint and restore non-binary mode.
+    /// \see set_max_err()
+    void unset_max_err(void)
+    {
+        max_err_ = DBL_MAX;
+        Base::set_binary(false);
+    }
 
-    return float( (err < max_err_) ? err : float( Base::ILLEGAL_COLLAPSE ) );
-  }
+    /// Return value of max. allowed error.
+    double max_err() const { return max_err_; }
 
+  private:
+    // maximum quadric error
+    double max_err_;
 
-  /// Post-process halfedge collapse (accumulate quadrics)
-  virtual void postprocess_collapse(const CollapseInfo& _ci)
-  {
-    Base::mesh().property(quadrics_, _ci.v1) +=
-      Base::mesh().property(quadrics_, _ci.v0);
-  }
-
-  /// set the percentage of maximum quadric error
-  void set_error_tolerance_factor(double _factor);
-
-
-
-public: // specific methods
-
-  /** Set maximum quadric error constraint and enable binary mode.
-   *  \param _err    Maximum error allowed
-   *  \param _binary Let the module work in non-binary mode in spite of the
-   *                 enabled constraint.
-   *  \see unset_max_err()
-   */
-  void set_max_err(double _err, bool _binary=true)
-  {
-    max_err_ = _err;
-    Base::set_binary(_binary);
-  }
-
-  /// Unset maximum quadric error constraint and restore non-binary mode.
-  /// \see set_max_err()
-  void unset_max_err(void)
-  {
-    max_err_ = DBL_MAX;
-    Base::set_binary(false);
-  }
-
-  /// Return value of max. allowed error.
-  double max_err() const { return max_err_; }
-
-
-private:
-
-  // maximum quadric error
-  double max_err_;
-
-  // this vertex property stores a quadric for each vertex
-  VPropHandleT< Geometry::QuadricMetricT<double> >  quadrics_;
+    // this vertex property stores a quadric for each vertex
+    VPropHandleT<Geometry::QuadricMetricT<double>> quadrics_;
 };
 
 //=============================================================================
-} // END_NS_DECIMATER
-} // END_NS_OPENMESH
+}  // namespace Decimater
+}  // namespace OpenMesh
 //=============================================================================
 
-#if !defined(OPENMESH_DECIMATER_MODQUADRICMETRIC_CC)
-#define OSG_MODQUADRIC_TEMPLATES
-#include "ModQuadricMetricT.cpp"
-#endif
+    #if !defined(OPENMESH_DECIMATER_MODQUADRICMETRIC_CC)
+        #define OSG_MODQUADRIC_TEMPLATES
+        #include "ModQuadricMetricT.cpp"
+    #endif
 
 //=============================================================================
-#endif // OSG_MODQUADRIC_HH defined
+#endif  // OSG_MODQUADRIC_HH defined
 //=============================================================================
-

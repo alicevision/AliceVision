@@ -11,37 +11,32 @@
 #include <aliceVision/geometry/Intersection.hpp>
 #include <Eigen/Dense>
 
-namespace OpenMesh  {
+namespace OpenMesh {
 namespace Decimater {
 
-template <class MeshT>
+template<class MeshT>
 class ModBoundingBoxT : public ModBaseT<MeshT>
 {
-public:
-
+  public:
     // Defines the types Self, Handle, Base, Mesh, and CollapseInfo
     // and the memberfunction name()
-    DECIMATING_MODULE( ModBoundingBoxT, MeshT, BoundingBox );
+    DECIMATING_MODULE(ModBoundingBoxT, MeshT, BoundingBox);
 
-public:
-
-/** Constructor
- *  \internal
- */
-    ModBoundingBoxT(MeshT &_mesh)
-    : Base(_mesh, true)
+  public:
+    /** Constructor
+     *  \internal
+     */
+    ModBoundingBoxT(MeshT& _mesh)
+      : Base(_mesh, true)
     {
         _bbMin.fill(std::numeric_limits<double>::lowest());
         _bbMax.fill(std::numeric_limits<double>::max());
     }
 
-
     /// Destructor
-    virtual ~ModBoundingBoxT()
-    {
-    }
+    virtual ~ModBoundingBoxT() {}
 
-    void setBoundingBox(const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
+    void setBoundingBox(const Eigen::Vector3d& bbMin, const Eigen::Vector3d& bbMax)
     {
         _bbMin = bbMin;
         _bbMax = bbMax;
@@ -58,15 +53,14 @@ public:
         {
             return Base::ILLEGAL_COLLAPSE;
         }
-        
+
         return Base::LEGAL_COLLAPSE;
     }
 
-private:
+  private:
     Eigen::Vector3d _bbMin;
     Eigen::Vector3d _bbMax;
 };
 
-} // END_NS_DECIMATER
-} // END_NS_OPENMESH
-
+}  // namespace Decimater
+}  // namespace OpenMesh

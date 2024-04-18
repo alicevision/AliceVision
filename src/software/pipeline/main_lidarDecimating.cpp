@@ -23,7 +23,6 @@
 #include <boost/program_options.hpp>
 #include <fstream>
 
-
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -33,7 +32,11 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-bool computeSubMesh(const std::string & outputMeshPath, const std::string & inputMeshPath, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax, double errorLimit)
+bool computeSubMesh(const std::string& outputMeshPath,
+                    const std::string& inputMeshPath,
+                    const Eigen::Vector3d& bbMin,
+                    const Eigen::Vector3d& bbMax,
+                    double errorLimit)
 {
     typedef OpenMesh::TriMesh_ArrayKernelT<> Mesh;
     typedef OpenMesh::Decimater::DecimaterT<Mesh> Decimater;
@@ -49,18 +52,14 @@ bool computeSubMesh(const std::string & outputMeshPath, const std::string & inpu
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << inputMeshPath << "\" loaded.");
 
- 
     int nbInputPoints = mesh.n_vertices();
 
     Decimater decimater(mesh);
     HModQuadricMetric hModQuadric;
     decimater.add(hModQuadric);
     decimater.module(hModQuadric).set_max_err(errorLimit * errorLimit);
-    
-    /*HModBoundingBox hModBoundingBox;
-    decimater.add(hModBoundingBox);
-    decimater.module(hModBoundingBox).setBoundingBox(bbMin, bbMax);*/
-    decimater.initialize();        
+
+    decimater.initialize();
     size_t removedVertices = decimater.decimate(0);
     decimater.mesh().garbage_collection();
 
@@ -80,8 +79,6 @@ bool computeSubMesh(const std::string & outputMeshPath, const std::string & inpu
         return false;
     }
 
-    
-
     return true;
 }
 
@@ -93,7 +90,6 @@ int aliceVision_main(int argc, char* argv[])
     int rangeEnd = 1;
     double errorLimit = 0.001;
 
-
     std::string jsonFilename = "";
     std::string outputDirectory = "";
     std::string outputJsonFilename = "";
@@ -102,9 +98,9 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&jsonFilename)->required(),
-         "json file.")
+         "Input JSON file.")
         ("output,o", po::value<std::string>(&outputDirectory)->required(),
-         "Output directory.")
+         "Output directory for sub-meshes.")
         ("outputJson", po::value<std::string>(&outputJsonFilename)->required(),
          "Output scene description.");
 
@@ -115,7 +111,7 @@ int aliceVision_main(int argc, char* argv[])
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
          "Range size.")
         ("errorLimit", po::value<double>(&errorLimit)->default_value(errorLimit),
-         "limit on error allowed for collapsing in meters.");
+         "Limit on error allowed for collapsing in meters.");
     // clang-format on
 
     CmdLine cmdline("AliceVision lidarMeshing");
@@ -129,11 +125,10 @@ int aliceVision_main(int argc, char* argv[])
     std::ifstream inputfile(jsonFilename);
     if (!inputfile.is_open())
     {
-        ALICEVISION_LOG_ERROR("Cannot open json input file");
+        ALICEVISION_LOG_ERROR("Cannot open JSON input file");
         return EXIT_FAILURE;
     }
-    
-    
+
     std::stringstream buffer;
     buffer << inputfile.rdbuf();
     boost::json::value jv = boost::json::parse(buffer.str());
@@ -152,18 +147,17 @@ int aliceVision_main(int argc, char* argv[])
         {
             ALICEVISION_LOG_INFO("Nothing to compute");
             return EXIT_SUCCESS;
-        }        
+        }
     }
     else
     {
         rangeStart = 0;
         rangeEnd = setSize;
     }
-    
 
     for (int idSub = rangeStart; idSub < rangeEnd; idSub++)
     {
-        const fuseCut::Input & input = inputsets[idSub];
+        const fuseCut::Input& input = inputsets[idSub];
         std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
 
         ALICEVISION_LOG_INFO("Computing sub mesh " << idSub + 1 << " / " << setSize);
@@ -174,12 +168,12 @@ int aliceVision_main(int argc, char* argv[])
         }
     }
 
-    //Only the first chunk may update the json file
+    // Only the first chunk may update the json file
     if (rangeStart == 0)
     {
         for (int idSub = 0; idSub < setSize; idSub++)
         {
-            const fuseCut::Input & input = inputsets[idSub];
+            const fuseCut::Input& input = inputsets[idSub];
             std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
             inputsets[idSub].subMeshPath = ss;
         }
@@ -190,6 +184,5 @@ int aliceVision_main(int argc, char* argv[])
         of.close();
     }
 
-    
     return EXIT_SUCCESS;
 }

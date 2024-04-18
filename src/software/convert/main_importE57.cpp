@@ -189,11 +189,10 @@ int aliceVision_main(int argc, char** argv)
 
         // Create pose for sfmData
         const int idMesh = reader.getIdMesh();
-        
 
         Eigen::Vector3d correctedSensorPosition;
         correctedSensorPosition.x() = sensorPosition.x();
-        correctedSensorPosition.y() = - sensorPosition.z();
+        correctedSensorPosition.y() = -sensorPosition.z();
         correctedSensorPosition.z() = sensorPosition.y();
 
         geometry::Pose3 pose(Eigen::Matrix3d::Identity(), correctedSensorPosition);
@@ -265,7 +264,7 @@ int aliceVision_main(int argc, char** argv)
             }
         }
 
-        for (const auto & item : vec_allVertices)
+        for (const auto& item : vec_allVertices)
         {
             allVertices.insert(allVertices.end(), item.begin(), item.end());
         }
@@ -279,7 +278,7 @@ int aliceVision_main(int argc, char** argv)
 
         nanoflann::KDTreeSingleIndexAdaptorParams params(10, nanoflann::KDTreeSingleIndexAdaptorFlags::None, 0);
         PointInfoKdTree tree(3, pointCloudRef, params);
-        
+
         ALICEVISION_LOG_INFO("Building tree");
         tree.buildIndex();
         ALICEVISION_LOG_INFO("Built tree");
@@ -298,16 +297,16 @@ int aliceVision_main(int argc, char** argv)
             static const nanoflann::SearchParameters searchParams(0.001f, false);
             BestPointInRadius<double, std::size_t> resultSet(radius * radius, allVertices, cameras, vIndex);
             tree.findNeighbors(resultSet, allVertices[vIndex].coords.data(), searchParams);
-            
+
             if (!resultSet.found)
             {
-                auto & ls = vec_landmarks[omp_get_thread_num()];
+                auto& ls = vec_landmarks[omp_get_thread_num()];
 
                 const auto& v = allVertices[vIndex];
 
                 Eigen::Vector3d pt;
                 pt.x() = v.coords.x();
-                pt.y() = - v.coords.z();
+                pt.y() = -v.coords.z();
                 pt.z() = v.coords.y();
 
                 sfmData::Observation obs(Vec2(0.0, 0.0), ls.size(), 1.0);
@@ -317,7 +316,7 @@ int aliceVision_main(int argc, char** argv)
             }
         }
 
-        for (const auto & item : vec_landmarks)
+        for (const auto& item : vec_landmarks)
         {
             landmarks.insert(item.begin(), item.end());
         }
