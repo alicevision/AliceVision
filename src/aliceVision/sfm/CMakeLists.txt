@@ -28,6 +28,7 @@ set(sfm_files_headers
   pipeline/panorama/ReconstructionEngine_panorama.hpp
   pipeline/expanding/SfmTriangulation.hpp
   pipeline/expanding/SfmResection.hpp
+  pipeline/expanding/SfmBundle.hpp
   pipeline/regionsIO.hpp
   utils/alignment.hpp
   utils/statistics.hpp
@@ -57,6 +58,7 @@ set(sfm_files_sources
   pipeline/panorama/ReconstructionEngine_panorama.cpp
   pipeline/expanding/SfmTriangulation.cpp
   pipeline/expanding/SfmResection.cpp
+  pipeline/expanding/SfmBundle.cpp
   pipeline/regionsIO.cpp
   utils/alignment.cpp
   utils/statistics.cpp
