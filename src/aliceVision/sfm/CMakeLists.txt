@@ -27,6 +27,7 @@ set(sfm_files_headers
   pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp
   pipeline/panorama/ReconstructionEngine_panorama.hpp
   pipeline/expanding/SfmTriangulation.hpp
+  pipeline/expanding/SfmResection.hpp
   pipeline/regionsIO.hpp
   utils/alignment.hpp
   utils/statistics.hpp
@@ -55,6 +56,7 @@ set(sfm_files_sources
   pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.cpp
   pipeline/panorama/ReconstructionEngine_panorama.cpp
   pipeline/expanding/SfmTriangulation.cpp
+  pipeline/expanding/SfmResection.cpp
   pipeline/regionsIO.cpp
   utils/alignment.cpp
   utils/statistics.cpp

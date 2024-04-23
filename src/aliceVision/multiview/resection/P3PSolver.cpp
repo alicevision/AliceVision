@@ -264,6 +264,30 @@ void P3PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimati
     }
 }
 
+void P3PSolver::solve(const Mat3 & lifted, const Mat3 & structure, std::vector<Eigen::Matrix4d>& models) const
+{
+    Mat3 R;
+    Vec3 t;
+
+    Mat solutions = Mat(3, 16);
+
+    models.clear();
+    if(computeP3PPoses(lifted, structure, solutions))
+    {
+        for(size_t i = 0; i < 4; ++i)
+        {
+            R = solutions.block<3, 3>(0, i * 4 + 1);
+            t = -R * solutions.col(i * 4);
+
+            Eigen::Matrix4d model = Eigen::Matrix4d::Identity();
+            model.block<3, 3>(0, 0) = R;
+            model.block<3, 1>(0, 3) = t;
+
+            models.emplace_back(model);
+        }
+    }
+}
+
 }  // namespace resection
 }  // namespace multiview
 }  // namespace aliceVision
