@@ -93,6 +93,7 @@ alicevision_add_library(aliceVision_sfm
     aliceVision_sfmData
     aliceVision_sfmDataIO
     aliceVision_sfm_bundle
+    aliceVision_dataio
     Boost::boost
   PRIVATE_LINKS
     ${LEMON_LIBRARY}

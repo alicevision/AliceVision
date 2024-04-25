@@ -52,51 +52,6 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
-std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_code& ec)
-{
-    std::vector<boost::json::value> jvs;
-    boost::json::stream_parser p;
-    std::string line;
-    std::size_t n = 0;
-
-    while (true)
-    {
-        if (n == line.size())
-        {
-            if (!std::getline(is, line))
-            {
-                break;
-            }
-
-            n = 0;
-        }
-
-        // Consume at least part of the line
-        n += p.write_some(line.data() + n, line.size() - n, ec);
-
-        // If the parser found a value, add it
-        if (p.done())
-        {
-            jvs.push_back(p.release());
-            p.reset();
-        }
-    }
-
-    if (!p.done())
-    {
-        // Try to extract the end
-        p.finish(ec);
-        if (ec.failed())
-        {
-            return jvs;
-        }
-
-        jvs.push_back(p.release());
-    }
-
-    return jvs;
-}
-
 bool robustRotation(Mat3& R,
                     std::vector<size_t>& vecInliers,
                     const Mat& x1,
@@ -127,7 +82,6 @@ bool robustRotation(Mat3& R,
 }
 
 void buildInitialWorld(sfmData::SfMData& sfmData,
-                       const feature::FeaturesPerView& featuresPerView,
                        const sfm::ReconstructedPair& pair,
                        const track::TracksPerView& tracksPerView,
                        const track::TracksMap& trackMap)
@@ -142,9 +96,6 @@ void buildInitialWorld(sfmData::SfMData& sfmData,
     std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
     std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
 
-    const feature::MapFeaturesPerDesc& refFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(pair.reference);
-    const feature::MapFeaturesPerDesc& nextFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(pair.next);
-
     // Get tracks of interest which is the intersection of both list of tracks
     std::vector<size_t> refTracks = tracksPerView.at(pair.reference);
     std::vector<size_t> nextTracks = tracksPerView.at(pair.next);
@@ -157,14 +108,11 @@ void buildInitialWorld(sfmData::SfMData& sfmData,
     {
         const auto& track = trackMap.at(id);
 
-        const feature::PointFeatures& refFeatures = refFeaturesPerDesc.at(track.descType);
-        const feature::PointFeatures& nextFeatures = nextFeaturesPerDesc.at(track.descType);
+        const track::TrackItem & refTrackItem = track.featPerView.at(pair.reference);
+        const track::TrackItem & nextTrackItem = track.featPerView.at(pair.next);
 
-        IndexT refFeatureId = track.featPerView.at(pair.reference).featureId;
-        IndexT nextFeatureId = track.featPerView.at(pair.next).featureId;
-
-        Vec2 refV = refFeatures[refFeatureId].coords().cast<double>();
-        Vec2 nextV = nextFeatures[nextFeatureId].coords().cast<double>();
+        Vec2 refV = refTrackItem.coords;
+        Vec2 nextV = nextTrackItem.coords;
 
         Vec3 refP = refIntrinsics->toUnitSphere(refIntrinsics->ima2cam(refIntrinsics->getUndistortedPixel(refV)));
         Vec3 tP = pair.R * refP;
@@ -179,15 +127,14 @@ void buildInitialWorld(sfmData::SfMData& sfmData,
 
         sfmData::Landmark l(track.descType);
         l.X = refP;
-        l.getObservations()[pair.reference] = sfmData::Observation(refV, refFeatureId, refFeatures[refFeatureId].scale());
-        l.getObservations()[pair.next] = sfmData::Observation(nextV, nextFeatureId, nextFeatures[nextFeatureId].scale());
+        l.getObservations()[pair.reference] = sfmData::Observation(refV, refTrackItem.featureId, refTrackItem.scale);
+        l.getObservations()[pair.next] = sfmData::Observation(nextV, nextTrackItem.featureId, nextTrackItem.scale);
 
         landmarks[id] = l;
     }
 }
 
 IndexT findBestNext(sfmData::SfMData& sfmData,
-                    const feature::FeaturesPerView& featuresPerView,
                     const track::TracksPerView& tracksPerView,
                     const track::TracksMap& trackMap,
                     const std::set<IndexT>& visitedViews)
@@ -229,7 +176,6 @@ IndexT findBestNext(sfmData::SfMData& sfmData,
 }
 
 bool localizeNext(sfmData::SfMData& sfmData,
-                  const feature::FeaturesPerView& featuresPerView,
                   const track::TracksPerView& tracksPerView,
                   const track::TracksMap& trackMap,
                   const IndexT newViewId)
@@ -247,7 +193,6 @@ bool localizeNext(sfmData::SfMData& sfmData,
 
     const sfmData::View& newView = sfmData.getView(newViewId);
     std::shared_ptr<camera::IntrinsicBase> newViewIntrinsics = sfmData.getIntrinsicSharedPtr(newView.getIntrinsicId());
-    const feature::MapFeaturesPerDesc& newViewFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(newViewId);
 
     Mat refX(3, observedTracks.size());
     Mat newX(3, observedTracks.size());
@@ -256,10 +201,10 @@ bool localizeNext(sfmData::SfMData& sfmData,
     for (IndexT trackId : observedTracks)
     {
         const track::Track& track = trackMap.at(trackId);
+        const track::TrackItem & trackItem = track.featPerView.at(newViewId);
 
-        const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
-        IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
-        Vec2 nvV = newViewFeatures[newViewFeatureId].coords().cast<double>();
+        IndexT newViewFeatureId = trackItem.featureId;
+        Vec2 nvV = trackItem.coords;
         Vec3 camP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->getUndistortedPixel(nvV)));
 
         refX.col(pos) = landmarks.at(trackId).X;
@@ -288,17 +233,15 @@ bool localizeNext(sfmData::SfMData& sfmData,
     {
         IndexT trackId = observedTracks[pos];
         const track::Track& track = trackMap.at(trackId);
-        const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
-        IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
-        auto& feat = newViewFeatures[newViewFeatureId];
-        landmarks[trackId].getObservations()[newViewId] = sfmData::Observation(feat.coords().cast<double>(), newViewFeatureId, feat.scale());
+        const track::TrackItem & trackItem = track.featPerView.at(newViewId);
+        IndexT newViewFeatureId = trackItem.featureId;
+        landmarks[trackId].getObservations()[newViewId] = sfmData::Observation(trackItem.coords, newViewFeatureId, trackItem.scale);
     }
 
     return true;
 }
 
 bool addPoints(sfmData::SfMData& sfmData,
-               const feature::FeaturesPerView& featuresPerView,
                const track::TracksPerView& tracksPerView,
                const track::TracksMap& trackMap,
                const IndexT newViewId)
@@ -316,7 +259,6 @@ bool addPoints(sfmData::SfMData& sfmData,
 
     const sfmData::View& newView = sfmData.getView(newViewId);
     std::shared_ptr<camera::IntrinsicBase> newViewIntrinsics = sfmData.getIntrinsicSharedPtr(newView.getIntrinsicId());
-    const feature::MapFeaturesPerDesc& newViewFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(newViewId);
     const Eigen::Matrix3d new_R_world = sfmData.getPose(newView).getTransform().rotation();
 
     // For all reconstructed views
@@ -340,7 +282,6 @@ bool addPoints(sfmData::SfMData& sfmData,
 
         const Eigen::Matrix3d ref_R_world = sfmData.getPose(refView).getTransform().rotation();
         std::shared_ptr<camera::IntrinsicBase> refViewIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
-        const feature::MapFeaturesPerDesc& refViewFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(pV.first);
 
         Eigen::Matrix3d world_R_new = new_R_world.transpose();
         Eigen::Matrix3d ref_R_new = ref_R_world * world_R_new;
@@ -349,17 +290,12 @@ bool addPoints(sfmData::SfMData& sfmData,
         {
             const track::Track& track = trackMap.at(trackId);
 
-            const feature::PointFeatures& newViewFeatures = newViewFeaturesPerDesc.at(track.descType);
-            const feature::PointFeatures& refViewFeatures = refViewFeaturesPerDesc.at(track.descType);
+            const track::TrackItem & newTrackItem = track.featPerView.at(newViewId);
+            const track::TrackItem & refTrackItem = track.featPerView.at(pV.first);
 
-            IndexT newViewFeatureId = track.featPerView.at(newViewId).featureId;
-            IndexT refViewFeatureId = track.featPerView.at(pV.first).featureId;
 
-            auto& newFeat = newViewFeatures[newViewFeatureId];
-            auto& refFeat = refViewFeatures[refViewFeatureId];
-
-            Vec2 newV = newFeat.coords().cast<double>();
-            Vec2 refV = refFeat.coords().cast<double>();
+            Vec2 newV = newTrackItem.coords;
+            Vec2 refV = refTrackItem.coords;
 
             Vec3 newP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->getUndistortedPixel(newV)));
             Vec3 refP = ref_R_new * newP;
@@ -374,8 +310,8 @@ bool addPoints(sfmData::SfMData& sfmData,
 
             sfmData::Landmark l(track.descType);
             l.X = world_R_new * newP;
-            l.getObservations()[newViewId] = sfmData::Observation(newV, newViewFeatureId, refViewFeatures[refViewFeatureId].scale());
-            l.getObservations()[pV.first] = sfmData::Observation(refV, refViewFeatureId, newViewFeatures[newViewFeatureId].scale());
+            l.getObservations()[newViewId] = sfmData::Observation(newV, newTrackItem.featureId, newTrackItem.scale);
+            l.getObservations()[pV.first] = sfmData::Observation(refV, refTrackItem.featureId, refTrackItem.scale);
 
             landmarks[trackId] = l;
         }
@@ -412,11 +348,7 @@ int aliceVision_main(int argc, char** argv)
         ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(),
          "Tracks file.")
         ("pairs,p", po::value<std::string>(&pairsDirectory)->required(),
-         "Path to the pairs directory.")
-        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
-         "Path to folder(s) containing the extracted features.")
-        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-         feature::EImageDescriberType_informations().c_str());
+         "Path to the pairs directory.");
     // clang-format on
 
     CmdLine cmdline("AliceVision Nodal SfM");
@@ -436,18 +368,6 @@ int aliceVision_main(int argc, char** argv)
     if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
-        return EXIT_FAILURE;
-    }
-
-    // get imageDescriber type
-    const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
-
-    // features reading
-    feature::FeaturesPerView featuresPerView;
-    ALICEVISION_LOG_INFO("Load features");
-    if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
-    {
-        ALICEVISION_LOG_ERROR("Invalid features.");
         return EXIT_FAILURE;
     }
 
@@ -513,27 +433,27 @@ int aliceVision_main(int argc, char** argv)
     });
 
     // Using two views, create an initial map and pair of cameras
-    buildInitialWorld(sfmData, featuresPerView, reconstructedPairs[0], mapTracksPerView, mapTracks);
+    buildInitialWorld(sfmData, reconstructedPairs[0], mapTracksPerView, mapTracks);
 
     // Loop until termination of the process using the current boostrapped map
     std::set<IndexT> visited;
     while (1)
     {
         // Find the optimal next view to localize
-        IndexT next = findBestNext(sfmData, featuresPerView, mapTracksPerView, mapTracks, visited);
+        IndexT next = findBestNext(sfmData, mapTracksPerView, mapTracks, visited);
         if (next == UndefinedIndexT)
         {
             break;
         }
 
         // Localize the selected view
-        if (!localizeNext(sfmData, featuresPerView, mapTracksPerView, mapTracks, next))
+        if (!localizeNext(sfmData, mapTracksPerView, mapTracks, next))
         {
             break;
         }
 
         // Add points to the map in the frame of the first bootstrapping camera
-        if (!addPoints(sfmData, featuresPerView, mapTracksPerView, mapTracks, next))
+        if (!addPoints(sfmData, mapTracksPerView, mapTracks, next))
         {
             break;
         }

@@ -41,6 +41,8 @@ class Pose3
 
     Vec3 translation() const { return _homogeneous.block<3, 1>(0, 3); }
 
+    void setTranslation(const Vec3& translation) { _homogeneous.block<3, 1>(0, 3) = translation; }
+
     Vec3 center() const { return -rotation().transpose() * translation(); }
 
     void setCenter(const Vec3& center) { _homogeneous.block<3, 1>(0, 3) = -rotation() * center; }
