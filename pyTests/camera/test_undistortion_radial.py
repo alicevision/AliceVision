@@ -1,5 +1,5 @@
 """
-Collection of unit tests for the 3DE Undistortion model.
+Collection of unit tests for the Radial K3 Undistortion model.
 """
 
 import pytest
@@ -8,7 +8,7 @@ from pyalicevision import camera as av
 
 ##################
 ### List of functions:
-# - Undistortion3DEAnamorphic4(int width, int height) => DONE
+# - UndistortionRadialK3(int width, int height) => DONE
 # - EUNDISTORTION getType() => DONE
 # - Undistortion* clone() => DONE
 # - Vec2 undistortNormalized(Vec2& p) / Vec2 not binded
@@ -35,21 +35,21 @@ from pyalicevision import camera as av
 # - Vec2 inverse(Vec2& p) / Vec2 not binded
 ##################
 
-DEFAULT_PARAMETERS = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
-NON_DEFAULT_PARAMETERS = (0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
+DEFAULT_PARAMETERS = (0.0, 0.0, 0.0)
+NON_DEFAULT_PARAMETERS = (0.1, 0.0, 0.2)
 WIDTH = 1000
 HEIGHT = 800
 
-def test_undistortion_3de_constructor():
-    """ Test creating an Undistortion3DEAnamorphic4 object and checking its set
+def test_undistortion_radial_constructor():
+    """ Test creating an UndistortionRadialK3 object and checking its set
     values are correct. """
-    undistortion = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
+    undistortion = av.UndistortionRadialK3(WIDTH, HEIGHT)
 
     size = undistortion.getSize()
     # TODO: uncomment when Vec2 is binded
     # assert size[0] == WIDTH and size[1] == HEIGHT
 
-    assert undistortion.getType() == av.UNDISTORTION_3DEANAMORPHIC4
+    assert undistortion.getType() == av.UNDISTORTION_RADIALK3
 
     parameters = undistortion.getParameters()
     assert parameters == DEFAULT_PARAMETERS
@@ -58,10 +58,10 @@ def test_undistortion_3de_constructor():
     assert undistortion.getUndistortionParametersCount() == len(DEFAULT_PARAMETERS)
 
 
-def test_undistortion_3de_get_set_parameters():
-    """ Test creating an Undistortion3DEAnamorphic4 object and manipulating its
+def test_undistortion_radial_get_set_parameters():
+    """ Test creating an UndistortionRadialK3 object and manipulating its
     undistortion parameters. """
-    undistortion = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
+    undistortion = av.UndistortionRadialK3(WIDTH, HEIGHT)
     parameters = undistortion.getParameters()
     assert parameters == DEFAULT_PARAMETERS
 
@@ -83,15 +83,15 @@ def test_undistortion_3de_get_set_parameters():
     assert parameters == undistortion.getParameters()
 
 
-def test_undistortion_3de_compare():
-    """ Test creating different Undistortion3DEAnamorphic4 objects and comparing them
+def test_undistortion_radial_compare():
+    """ Test creating different UndistortionRadialK3 objects and comparing them
     with the '==' operator. """
-    undistortion1 = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
-    undistortion2 = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
+    undistortion1 = av.UndistortionRadialK3(WIDTH, HEIGHT)
+    undistortion2 = av.UndistortionRadialK3(WIDTH, HEIGHT)
     assert undistortion1 == undistortion2
 
     # The '==' operator only compares the undistortion parameters and ignores the size
-    undistortion3 = av.Undistortion3DEAnamorphic4(HEIGHT, WIDTH)
+    undistortion3 = av.UndistortionRadialK3(HEIGHT, WIDTH)
     assert undistortion1 == undistortion3
 
     # Update the undistortion parameters before comparing again
@@ -99,10 +99,10 @@ def test_undistortion_3de_compare():
     assert not undistortion1 == undistortion3
 
 
-def test_undistortion_3de_clone():
-    """ Test creating an Undistortion3DEAnamorphic4 object, cloning it, and checking
+def test_undistortion_radial_clone():
+    """ Test creating an UndistortionRadialK3 object, cloning it, and checking
     the values of the cloned object are correct. """
-    undistortion1 = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
+    undistortion1 = av.UndistortionRadialK3(WIDTH, HEIGHT)
     undistortion2 = undistortion1.clone()
     assert undistortion1 == undistortion2
 
@@ -112,10 +112,10 @@ def test_undistortion_3de_clone():
     assert undistortion2.getParameters() == DEFAULT_PARAMETERS
 
 
-def test_undistortion_3de_get_set_size():
-    """ Test creating an Undistortion3DEAnamorphic4 object and getting/setting its
+def test_undistortion_radial_get_set_size():
+    """ Test creating an UndistortionRadialK3 object and getting/setting its
     size. """
-    undistortion = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
+    undistortion = av.UndistortionRadialK3(WIDTH, HEIGHT)
     size = undistortion.getSize()
     # TODO: uncomment when Vec2 is binded
     # assert size[0] == WIDTH and size[1] == HEIGHT
@@ -128,6 +128,6 @@ def test_undistortion_3de_get_set_size():
 
 
 @pytest.mark.skip(reason="Vec2 not binded")
-def test_undistortion_3de_get_set_offset():
-    """ Test creating an Undistortion3DEAnamorphic4 object and manipulating its offset. """
+def test_undistortion_radial_get_set_offset():
+    """ Test creating an UndistortionRadialK3 object and manipulating its offset. """
     assert True
