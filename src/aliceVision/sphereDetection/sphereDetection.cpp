@@ -246,7 +246,7 @@ void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<flo
 
         fileTree.add_child(sphereName, spheresNode);
     }
-    bpt::write_json(outputPath.append("detection.json").string(), fileTree);
+    bpt::write_json(outputPath.string(), fileTree);
 }
 
 }  // namespace sphereDetection
