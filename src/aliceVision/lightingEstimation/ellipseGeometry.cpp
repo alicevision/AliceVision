@@ -25,12 +25,8 @@ void quadraticFromEllipseParameters(const std::array<float, 5>& ellipseParameter
     float phi = ellipseParameters[0]*PI/180.0;
     float c_x = ellipseParameters[1];
     float c_y = ellipseParameters[2];
-    float a = ellipseParameters[3];
-    float b = ellipseParameters[4];
-
-    float test = b;
-    b = a;
-    a = test;
+    float b = ellipseParameters[3];
+    float a = ellipseParameters[4];
 
     float A = a*a*sin(phi)*sin(phi) + b*b*cos(phi)*cos(phi);
     float B = 2*(b*b-a*a)*sin(phi)*cos(phi);
@@ -91,9 +87,10 @@ void estimateSphereCenter(const std::array<float, 5>& ellipseParameters,
     float dist = sqrt(1 - ((eigval[0] + eigval[1] + eigval[2] - uniqueEigval)/2) / uniqueEigval);
 
     Eigen::Vector3f eigvect = es.eigenvectors().col(index).real();
+    float sign = eigvect[2] > 0 ? 1 : -1;
 
     float norm = eigvect.norm();
-    float C_factor = sphereRadius*dist*eigvalSign.at(index)/norm;
+    float C_factor = sphereRadius*dist*sign/norm;
     Eigen::Vector3f C = C_factor*eigvect;
     sphereCenter[0]=C[0];
     sphereCenter[1]=C[1];
@@ -111,18 +108,16 @@ void sphereRayIntersection(const Eigen::Vector3f& direction,
     Eigen::Vector3f spCenter;
     spCenter << sphereCenter[0], sphereCenter[1], sphereCenter[2];
 
-    float b = 2*direction.dot(spCenter);
+    float b = -2*direction.dot(spCenter);
     float c = spCenter.dot(spCenter) - sphereRadius*sphereRadius;
 
     delta = b*b - 4*a*c;
 
     float factor;
-    delta = std::max(delta, std::numeric_limits<float>::epsilon());
 
     if (delta >= 0) {
         factor = (-b - sqrt(delta))/(2*a);
-        normal = -direction*factor - spCenter;
-        normal.normalize();
+        normal = (direction*factor - spCenter)/sphereRadius;
     }
     else {
         delta = -1;
