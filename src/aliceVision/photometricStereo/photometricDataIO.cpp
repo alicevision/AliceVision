@@ -469,9 +469,9 @@ void convertNormalMap2png(const image::Image<image::RGBfColor>& normalsIm, image
             }
             else
             {
-                normalsImPNG(i, j)(0) = floor(255 * (normalsIm(i, j)(0) + 1) / 2);
-                normalsImPNG(i, j)(1) = -floor(255 * (normalsIm(i, j)(1) + 1) / 2);
-                normalsImPNG(i, j)(2) = -floor(255 * normalsIm(i, j)(2));
+                normalsImPNG(i, j)(0) = floor(255.0 * (normalsIm(i, j)(0) + 1.0) / 2.0);
+                normalsImPNG(i, j)(1) = -ceil(255.0 * (normalsIm(i, j)(1) + 1.0) / 2.0);
+                normalsImPNG(i, j)(2) = -ceil(255.0 * normalsIm(i, j)(2));
             }
         }
     }
