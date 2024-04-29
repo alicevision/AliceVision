@@ -43,8 +43,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
                               Eigen::VectorXf& lightingDirection,
                               float& intensity);
 
-void calibrateLightFromRealSphere(const std::string& picturePath,
-                                  const std::string& maskPath,
+void calibrateLightFromRealSphere(const image::Image<float>& imageFloat,
+                                  const cv::Mat& maskCV,
                                   const Eigen::Matrix3f& K,
                                   const float sphereRadius,
                                   const std::string& method,

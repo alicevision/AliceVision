@@ -12,6 +12,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/convolution.hpp>
 #include <aliceVision/photometricStereo/photometricStereo.hpp>
+#include <aliceVision/photometricStereo/photometricDataIO.hpp>
 
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
@@ -59,6 +60,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         }
     }
 
+    bool testEllipse = true;
     bool fromJSON = false;
 
     std::vector<std::array<float, 3>> allSpheresParams;
@@ -69,6 +71,9 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         std::cout << "JSON file detected" << std::endl;
         fromJSON = true;
     }
+
+    int nbCols = 0;
+    int nbRows = 0;
 
     if (fromJSON)
     {
@@ -103,6 +108,20 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
                     IndexT intrinsicId = currentView.getIntrinsicId();
                     focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
+
+                    float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
+                    nbCols = sfmData.getIntrinsics().at(intrinsicId)->w();
+                    nbRows = sfmData.getIntrinsics().at(intrinsicId)->h();
+                    float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
+                    float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
+
+                    Eigen::MatrixXf currentK = Eigen::MatrixXf::Zero(3, 3);
+                    // Create K matrix
+                    currentK << focalPx, 0.0, x_p,
+                        0.0, focalPx, y_p,
+                        0.0, 0.0, 1.0;
+
+                    KMatrices.push_back(currentK);
                 }
                 else
                 {
@@ -127,8 +146,8 @@ void lightCalibration(const sfmData::SfMData& sfmData,
                 // Get intrinsics associated with this view :
                 IndexT intrinsicId = currentView.getIntrinsicId();
                 const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
-                int nbCols = sfmData.getIntrinsics().at(intrinsicId)->w();
-                int nbRows = sfmData.getIntrinsics().at(intrinsicId)->h();
+                nbCols = sfmData.getIntrinsics().at(intrinsicId)->w();
+                nbRows = sfmData.getIntrinsics().at(intrinsicId)->h();
                 const float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
                 const float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
 
@@ -161,15 +180,36 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         {
             float focal = focals.at(i);
             std::array<float, 3> sphereParam = allSpheresParams.at(i);
-            lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection, intensity);
+            if(testEllipse)
+            {
+                Eigen::Matrix3f K = KMatrices.at(i);
+                float sphereRadius = 1.0;
+                std::array<float, 5> ellipseParam;
+
+                cv::Mat maskCV = cv::Mat::zeros(nbRows, nbCols, CV_8UC1);
+
+                image::Image<float> imageFloat;
+                image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
+                getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam, maskCV);
+                calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity);
+            }
+            else
+            {
+                lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection, intensity);
+            }
         }
         else
         {
             Eigen::Matrix3f K = KMatrices.at(i);
             float sphereRadius = 1.0;
-            calibrateLightFromRealSphere(picturePath, inputFile, K, sphereRadius, method, lightingDirection, intensity);
-        }
+            cv::Mat maskCV = cv::imread(inputFile, cv::IMREAD_GRAYSCALE);
+            image::Image<float> imageFloat;
+            image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
 
+            calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity);
+
+            break;
+        }
         lightMat.row(i) = lightingDirection;
         intList.push_back(intensity);
     }
@@ -346,22 +386,21 @@ void lightCalibrationOneImage(const std::string& picturePath,
 
         lightingDirection << directionnalPart, secondOrder;
     }
-void calibrateLightFromRealSphere(const std::string& picturePath,
-                                  const std::string& maskPath,
+void calibrateLightFromRealSphere(const image::Image<float>& imageFloat,
+                                  const cv::Mat& maskCV,
                                   const Eigen::Matrix3f& K,
                                   const float sphereRadius,
                                   const std::string& method,
                                   Eigen::VectorXf& lightingDirection,
                                   float& intensity)
 {
-    // Read picture :
-    image::Image<float> imageFloat;
-    image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
-
     image::Image<image::RGBfColor> normals(imageFloat.width(), imageFloat.height());
     image::Image<float> newMask(imageFloat.width(), imageFloat.height());
 
-    getRealNormalOnSphere(maskPath, K, sphereRadius, normals, newMask);
+    getRealNormalOnSphere(maskCV, K, sphereRadius, normals, newMask);
+
+    image::Image<image::RGBColor> normalsPNG(maskCV.cols, maskCV.rows);
+    aliceVision::photometricStereo::convertNormalMap2png(normals, normalsPNG);
 
     // If method = brightest point :
     if (!method.compare("brightestPoint"))
@@ -391,6 +430,43 @@ void calibrateLightFromRealSphere(const std::string& picturePath,
         lightingDirection = lightingDirection / lightingDirection.norm();
 
         intensity = 1.0;
+    }
+
+    // If method = whiteSphere :
+    else if (!method.compare("whiteSphere"))
+    {
+        // Evaluate light direction and intensity by pseudo-inverse
+
+        std::vector<int> indices;
+        aliceVision::photometricStereo::getIndMask(newMask, indices);
+
+        Eigen::VectorXf imSphere(indices.size());
+        Eigen::MatrixXf normalSphere(indices.size(), 3);
+
+        int currentIndex = 0;
+
+        for (int j = 0; j < newMask.cols(); ++j)
+        {
+            for (int i = 0; i < newMask.rows(); ++i)
+            {
+                if (newMask(i,j) > 0.1 && (imageFloat(i, j) > 0.2) && (imageFloat(i, j) < 0.8))
+                {
+                    // imSphere = normalSphere.s
+                    imSphere(currentIndex) = imageFloat(i, j);
+
+                    normalSphere(currentIndex, 0) = normals(i,j)(0);
+                    normalSphere(currentIndex, 1) = normals(i,j)(1);
+                    normalSphere(currentIndex, 2) = normals(i,j)(2);
+
+                    ++currentIndex;
+                }
+            }
+        }
+
+        lightingDirection = normalSphere.colPivHouseholderQr().solve(imSphere);
+
+        intensity = lightingDirection.norm();
+        lightingDirection = lightingDirection / intensity;
     }
 }
 
