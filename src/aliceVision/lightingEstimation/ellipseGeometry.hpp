@@ -8,6 +8,9 @@
 
 #include <aliceVision/image/Image.hpp>
 
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+
 #include <string>
 #include <vector>
 #include <array>
@@ -48,24 +51,25 @@ int findUniqueIndex(const std::vector<int>& vec);
  */
 void estimateSphereNormals(const std::array<float, 3>& sphereCenter,
                            const float sphereRadius,
-                           const image::Image<float>& ellipseMask,
                            const Eigen::Matrix3f& K,
                            image::Image<image::RGBfColor>& normals,
                            image::Image<float>& newMask);
 
 /**
  * @brief Estimate the normals of a sphere from a mask
- * @param[in] maskPath The path to the binary mask of the ellipse in the picture
+ * @param[in] maskCV The openCV image of the binary mask of the ellipse in the picture
  * @param[in] K Intrinsic parameters of the camera
  * @param[out] normals Normals on the sphere in camera frame
  * @param[out] newMask The mask of the sphere after ray tracing
 */
-void getRealNormalOnSphere(const std::string& maskPath,
+void getRealNormalOnSphere(const cv::Mat& maskCV,
                        const Eigen::Matrix3f& K,
                        const float sphereRadius,
                        image::Image<image::RGBfColor>& normals,
                        image::Image<float>& newMask);
 
+
+void getEllipseMaskFromSphereParameters(const std::array<float, 3>& sphereParam, const Eigen::Matrix3f& K, std::array<float, 5>& ellipseParameters, cv::Mat maskCV);
 
 } // namespace lightingEstimation
 } // namespace aliceVision

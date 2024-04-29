@@ -197,6 +197,7 @@ void getRealNormalOnSphere(const cv::Mat& maskCV,
     std::array<float, 3> sphereCenter;
     estimateSphereCenter(ellipseParameters, sphereRadius, K, sphereCenter);
     estimateSphereNormals(sphereCenter, sphereRadius, K, normals, newMask);
+}
 
 void getEllipseMaskFromSphereParameters(const std::array<float, 3>& sphereParam, const Eigen::Matrix3f& K, std::array<float, 5>& ellipseParameters, cv::Mat maskCV)
 {
