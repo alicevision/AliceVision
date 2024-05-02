@@ -348,7 +348,7 @@ void DCTIntegration(const image::Image<image::RGBfColor>& normals,
         {
             double denom = 4 * (pow(sin(0.5 * M_PI * j / nbCols), 2) + pow(sin(0.5 * M_PI * i / nbRows), 2));
             denom = std::max(denom, 0.0001);
-            z_bar_bar.at<float>(i, j) = fcos.at<float>(i, j) / denom;
+            z_bar_bar.at<float>(i, j) = -fcos.at<float>(i, j) / denom;
         }
     }
 
