@@ -57,4 +57,9 @@ int motionFromEssentialChooseSolution(const std::vector<Mat3>& Rs,
  */
 void motionFromEssential(const Mat3& E, std::vector<Mat3>* Rs, std::vector<Vec3>* ts);
 
+/**
+ * @brief HZ 9.7 page 259 (Result 9.19)
+ */
+void motionFromEssential(const Mat3& E, std::vector<Mat4> & Ts);
+
 }  // namespace aliceVision

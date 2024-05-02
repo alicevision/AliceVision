@@ -20,6 +20,8 @@ set(multiview_files_headers
   relativePose/HomographyKernel.hpp
   relativePose/Rotation3PSolver.hpp
   relativePose/ISolverErrorRelativePose.hpp
+  relativePose/RelativeSphericalKernel.hpp
+  relativePose/RotationSphericalKernel.hpp
   resection/EPnPSolver.hpp
   resection/EPnPKernel.hpp
   resection/P3PSolver.hpp

@@ -24,6 +24,7 @@
 
 #include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/track/trackIO.hpp>
+#include <aliceVision/track/TracksHandler.hpp>
 
 #include <aliceVision/dataio/json.hpp>
 
@@ -52,28 +53,17 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData, const sfm::Reconstructe
 
     std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
     std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
-    std::shared_ptr<camera::Pinhole> refPinhole = std::dynamic_pointer_cast<camera::Pinhole>(refIntrinsics);
-    std::shared_ptr<camera::Pinhole> nextPinhole = std::dynamic_pointer_cast<camera::Pinhole>(nextIntrinsics);
-
-    if (refPinhole==nullptr || nextPinhole == nullptr)
-    {
-        return false;
-    }
     
     aliceVision::track::TracksMap mapTracksCommon;
     track::getCommonTracksInImagesFast({pair.reference, pair.next}, tracksMap, tracksPerView, mapTracksCommon);
 
-    const Eigen::Matrix3d Kref = refPinhole->K();
-    const Eigen::Matrix3d Knext = nextPinhole->K();
-
-    Eigen::Matrix3d F = Knext.inverse().transpose() * CrossProductMatrix(pair.t) * pair.R * Kref.inverse();
-
-    Eigen::Vector3d c = - pair.R.transpose() * pair.t;
-
-    Mat34 P1, P2;
-    P_from_KRt(Kref, Mat3::Identity(), Vec3::Zero(), P1);
-    P_from_KRt(Knext, pair.R, pair.t, P2);
+    const Mat4 T1 = Eigen::Matrix4d::Identity();
+    Mat4 T2 = Eigen::Matrix4d::Identity();
+    T2.block<3, 3>(0, 0) = pair.R;
+    T2.block<3, 1>(0, 3) = pair.t;
     
+    const Eigen::Vector3d c = - pair.R.transpose() * pair.t;
+
     size_t count = 0;
     std::vector<double> angles;
     for(const auto& commonItem : mapTracksCommon)
@@ -82,26 +72,21 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData, const sfm::Reconstructe
         
         const IndexT refFeatureId = track.featPerView.at(pair.reference).featureId;
         const IndexT nextfeatureId = track.featPerView.at(pair.next).featureId;
+
         const Vec2 refpt = track.featPerView.at(pair.reference).coords;
         const Vec2 nextpt = track.featPerView.at(pair.next).coords;
-
-        const Vec2 refptu = refIntrinsics->getUndistortedPixel(refpt);
-        const Vec2 nextptu = nextIntrinsics->getUndistortedPixel(nextpt);
-
-        Vec3 line = F * refptu.homogeneous();
-
-        //Make sure line normal is normalized
-        line = line * (1.0 / line.head<2>().norm());
-        double distance = nextptu.homogeneous().dot(line);
-        if (distance > maxDistance)
-        {
-            continue;
-        }
-
-        Vec3 X;
-        multiview::TriangulateDLT(P1, refptu, P2, nextptu, X);
         
-        if (X(2) < 0.0)
+        const Vec3 pt3d1 = refIntrinsics->toUnitSphere(refIntrinsics->removeDistortion(refIntrinsics->ima2cam(refpt)));
+        const Vec3 pt3d2 = nextIntrinsics->toUnitSphere(nextIntrinsics->removeDistortion(nextIntrinsics->ima2cam(nextpt)));
+
+        
+        Vec3 X;
+        multiview::TriangulateSphericalDLT(T1, pt3d1, T2, pt3d2, X);
+        
+        //Make sure 
+        Eigen::Vector3d dirX1 = (T1 * X.homogeneous()).head(3).normalized();
+        Eigen::Vector3d dirX2 = (T2 * X.homogeneous()).head(3).normalized();
+        if (!(dirX1.dot(pt3d1) > 0.0 && dirX2.dot(pt3d2)  > 0.0))
         {
             continue;
         }
@@ -115,10 +100,17 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData, const sfm::Reconstructe
         usedTracks.push_back(commonItem.first);
     }
 
+    if (angles.size() == 0)
+    {
+        resultAngle = 0.0;
+        return false;
+    }
+
+    std::cout << angles.size() << std::endl;
+
     const unsigned medianIndex = angles.size() / 2;
     std::nth_element(angles.begin(), angles.begin() + medianIndex, angles.end());
     resultAngle = angles[medianIndex];
-
     return true;
 }
 
@@ -130,20 +122,7 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
 
     std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
     std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
-    std::shared_ptr<camera::Pinhole> refPinhole = std::dynamic_pointer_cast<camera::Pinhole>(refIntrinsics);
-    std::shared_ptr<camera::Pinhole> nextPinhole = std::dynamic_pointer_cast<camera::Pinhole>(nextIntrinsics);
 
-    if (refPinhole==nullptr || nextPinhole == nullptr)
-    {
-        return false;
-    }
-
-    const Eigen::Matrix3d Kref = refPinhole->K();
-    const Eigen::Matrix3d Knext = nextPinhole->K();
-
-    Mat34 P1, P2;
-    P_from_KRt(Kref, Mat3::Identity(), Vec3::Zero(), P1);
-    P_from_KRt(Knext, pair.R, pair.t, P2);
 
     geometry::Pose3 poseNext;
     poseNext.setRotation(pair.R);
@@ -151,6 +130,11 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
     sfmData::CameraPose cposeNext(poseNext, false);
     sfmData.getPoses()[refView.getPoseId()] = sfmData::CameraPose();
     sfmData.getPoses()[nextView.getPoseId()] = cposeNext;
+
+    const Mat4 T1 = Eigen::Matrix4d::Identity();
+    Mat4 T2 = Eigen::Matrix4d::Identity();
+    T2.block<3, 3>(0, 0) = pair.R;
+    T2.block<3, 1>(0, 3) = pair.t;
     
     size_t count = 0;
     std::vector<double> angles;
@@ -161,16 +145,19 @@ bool buildSfmData(sfmData::SfMData & sfmData, const sfm::ReconstructedPair & pai
         const track::TrackItem & refItem = track.featPerView.at(pair.reference);
         const track::TrackItem & nextItem = track.featPerView.at(pair.next);
 
-        const Vec2 refpt = refItem.coords;
-        const Vec2 nextpt = nextItem.coords;
+        const Vec2 refpt = track.featPerView.at(pair.reference).coords;
+        const Vec2 nextpt = track.featPerView.at(pair.next).coords;
+        
+        const Vec3 pt3d1 = refIntrinsics->toUnitSphere(refIntrinsics->removeDistortion(refIntrinsics->ima2cam(refpt)));
+        const Vec3 pt3d2 = nextIntrinsics->toUnitSphere(nextIntrinsics->removeDistortion(nextIntrinsics->ima2cam(nextpt)));
 
-        const Vec2 refptu = refIntrinsics->getUndistortedPixel(refpt);
-        const Vec2 nextptu = nextIntrinsics->getUndistortedPixel(nextpt);
 
         Vec3 X;
-        multiview::TriangulateDLT(P1, refptu, P2, nextptu, X);
+        multiview::TriangulateSphericalDLT(T1, pt3d1, T2, pt3d2, X);
         
-        if (X(2) < 0.0)
+        Eigen::Vector3d dirX1 = (T1 * X.homogeneous()).head(3).normalized();
+        Eigen::Vector3d dirX2 = (T2 * X.homogeneous()).head(3).normalized();
+        if (!(dirX1.dot(pt3d1) > 0.0 && dirX2.dot(pt3d2)  > 0.0))
         {
             continue;
         }
@@ -298,29 +285,14 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_SUCCESS;
     }
 
-
     // Load tracks
     ALICEVISION_LOG_INFO("Load tracks");
-    std::ifstream tracksFile(tracksFilename);
-    if(tracksFile.is_open() == false)
+    track::TracksHandler tracksHandler;
+    if (!tracksHandler.load(tracksFilename, sfmData.getViewsKeys()))
     {
         ALICEVISION_LOG_ERROR("The input tracks file '" + tracksFilename + "' cannot be read.");
         return EXIT_FAILURE;
     }
-    std::stringstream buffer;
-    buffer << tracksFile.rdbuf();
-    boost::json::value jv = boost::json::parse(buffer.str());
-    track::TracksMap mapTracks(track::flat_map_value_to<track::Track>(jv));
-
-    // Compute tracks per view
-    ALICEVISION_LOG_INFO("Estimate tracks per view");
-    track::TracksPerView mapTracksPerView;
-    for(const auto& viewIt : sfmData.getViews())
-    {
-        // create an entry in the map
-        mapTracksPerView[viewIt.first];
-    }
-    track::computeTracksPerView(mapTracks, mapTracksPerView);
 
 
     //Result of pair estimations are stored in multiple files
@@ -357,7 +329,9 @@ int aliceVision_main(int argc, char** argv)
     {
         std::vector<std::size_t> usedTracks;
         double angle = 0.0;
-        if (!estimatePairAngle(sfmData, pair, mapTracks, mapTracksPerView, maxEpipolarDistance, angle, usedTracks))
+
+        std::cout << "toto" << std::endl;
+        if (!estimatePairAngle(sfmData, pair, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), maxEpipolarDistance, angle, usedTracks))
         {
             continue;
         }
@@ -373,10 +347,10 @@ int aliceVision_main(int argc, char** argv)
         int maxref = std::max(vref.getImage().getWidth(), vref.getImage().getHeight());
         int maxnext = std::max(vnext.getImage().getWidth(), vnext.getImage().getHeight());
 
-        double refScore = computeScore(mapTracks, usedTracks, pair.reference, maxref, 5);
-        double nextScore = computeScore(mapTracks, usedTracks, pair.next, maxnext, 5);
+        double refScore = computeScore(tracksHandler.getAllTracks(), usedTracks, pair.reference, maxref, 5);
+        double nextScore = computeScore(tracksHandler.getAllTracks(), usedTracks, pair.next, maxnext, 5);
 
-        double score = std::min(refScore, nextScore) * radianToDegree(angle);
+        double score = std::min(refScore, nextScore) * std::min(10.0, radianToDegree(angle));
 
         if (score > bestScore)
         {
@@ -386,7 +360,7 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    if (!buildSfmData(sfmData, bestPair, mapTracks, bestUsedTracks))
+    if (!buildSfmData(sfmData, bestPair, tracksHandler.getAllTracks(), bestUsedTracks))
     {
         return EXIT_FAILURE;
     }

@@ -37,26 +37,26 @@ void TriangulateDLT(const Mat34& P1, const Vec2& x1, const Mat34& P2, const Vec2
 // Solve:
 // [cross(x0,P0) X = 0]
 // [cross(x1,P1) X = 0]
-void TriangulateSphericalDLT(const Mat34& P1, const Vec3& x1, const Mat34& P2, const Vec3& x2, Vec4& X_homogeneous)
+void TriangulateSphericalDLT(const Mat4& T1, const Vec3& x1, const Mat4& T2, const Vec3& x2, Vec4& X_homogeneous)
 {
     Mat design(6, 4);
     for (int i = 0; i < 4; ++i)
     {
-        design(0, i) = -x1[2] * P1(1, i) + x1[1] * P1(2, i);
-        design(1, i) = x1[2] * P1(0, i) - x1[0] * P1(2, i);
-        design(2, i) = -x1[1] * P1(0, i) + x1[0] * P1(1, i);
+        design(0, i) = -x1[2] * T1(1, i) + x1[1] * T1(2, i);
+        design(1, i) = x1[2] * T1(0, i) - x1[0] * T1(2, i);
+        design(2, i) = -x1[1] * T1(0, i) + x1[0] * T1(1, i);
 
-        design(3, i) = -x2[2] * P2(1, i) + x2[1] * P2(2, i);
-        design(4, i) = x2[2] * P2(0, i) - x2[0] * P2(2, i);
-        design(5, i) = -x2[1] * P2(0, i) + x2[0] * P2(1, i);
+        design(3, i) = -x2[2] * T2(1, i) + x2[1] * T2(2, i);
+        design(4, i) = x2[2] * T2(0, i) - x2[0] * T2(2, i);
+        design(5, i) = -x2[1] * T2(0, i) + x2[0] * T2(1, i);
     }
     Nullspace(design, X_homogeneous);
 }
 
-void TriangulateSphericalDLT(const Mat34& P1, const Vec3& x1, const Mat34& P2, const Vec3& x2, Vec3& X_euclidean)
+void TriangulateSphericalDLT(const Mat4 & T1, const Vec3& x1, const Mat4& T2, const Vec3& x2, Vec3& X_euclidean)
 {
     Vec4 X_homogeneous;
-    TriangulateSphericalDLT(P1, x1, P2, x2, X_homogeneous);
+    TriangulateSphericalDLT(T1, x1, T2, x2, X_homogeneous);
     homogeneousToEuclidean(X_homogeneous, X_euclidean);
 }
 

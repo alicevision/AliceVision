@@ -327,5 +327,12 @@ double Pinhole::getVerticalFov() const
     return 2.0 * atan2(sensorHeight() / 2.0, focalLengthMM);
 }
 
+double Pinhole::pixelProbability() const
+{
+    const double focalLengthMM = sensorHeight() * getScale().y() / double(h());
+    const double pixToMm = 1.0 / _scale(0);
+    return std::atan2(pixToMm, focalLengthMM) / getVerticalFov();
+}
+
 }  // namespace camera
 }  // namespace aliceVision

@@ -143,6 +143,13 @@ class Equidistant : public IntrinsicScaleOffsetDisto
      */
     double getVerticalFov() const override;
 
+
+    /**
+     * @brief how a one pixel change relates to an angular change
+     * @return a value in radians
+    */
+    virtual double pixelProbability() const override;
+
   protected:
     double _circleRadius{0.0};
     Vec2 _circleCenter{0.0, 0.0};

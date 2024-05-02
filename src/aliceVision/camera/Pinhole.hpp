@@ -114,6 +114,12 @@ class Pinhole : public IntrinsicScaleOffsetDisto
      * @return Vertical FOV in radians
      */
     double getVerticalFov() const override;
+
+    /**
+     * @brief how a one pixel change relates to an angular change
+     * @return a value in radians
+    */
+    virtual double pixelProbability() const override;
 };
 
 }  // namespace camera

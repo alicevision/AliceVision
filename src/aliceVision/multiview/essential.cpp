@@ -73,6 +73,49 @@ void motionFromEssential(const Mat3& E, std::vector<Mat3>* Rs, std::vector<Vec3>
     (*ts)[3] = -U.col(2);
 }
 
+// HZ 9.7 page 259 (Result 9.19)
+void motionFromEssential(const Mat3& E, std::vector<Mat4> & Ts)
+{
+    Eigen::JacobiSVD<Mat3> USV(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Mat3 U = USV.matrixU();
+    // Vec3 d =  USV.singularValues();
+    Mat3 Vt = USV.matrixV().transpose();
+
+    // Last column of U is undetermined since d = (a a 0).
+    if (U.determinant() < 0)
+    {
+        U.col(2) *= -1;
+    }
+    // Last row of Vt is undetermined since d = (a a 0).
+    if (Vt.determinant() < 0)
+    {
+        Vt.row(2) *= -1;
+    }
+
+    Mat3 W;
+    W << 0, -1, 0, 1, 0, 0, 0, 0, 1;
+
+    Mat3 U_W_Vt = U * W * Vt;
+    Mat3 U_Wt_Vt = U * W.transpose() * Vt;
+
+    Ts.resize(4);
+    Ts[0].setIdentity();
+    Ts[0].block<3, 3>(0, 0) = U_W_Vt;
+    Ts[0].block<3, 1>(0, 3) = U.col(2);
+    
+    Ts[1].setIdentity();
+    Ts[1].block<3, 3>(0, 0) = U_W_Vt;
+    Ts[1].block<3, 1>(0, 3) = -U.col(2);
+
+    Ts[2].setIdentity();
+    Ts[2].block<3, 3>(0, 0) = U_Wt_Vt;
+    Ts[2].block<3, 1>(0, 3) = U.col(2);
+
+    Ts[3].setIdentity();
+    Ts[3].block<3, 3>(0, 0) = U_Wt_Vt;
+    Ts[3].block<3, 1>(0, 3) = -U.col(2);
+}
+
 // HZ 9.6 pag 259 (9.6.3 Geometrical interpretation of the 4 solutions)
 int motionFromEssentialChooseSolution(const std::vector<Mat3>& Rs,
                                       const std::vector<Vec3>& ts,
