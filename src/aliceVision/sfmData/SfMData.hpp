@@ -262,6 +262,27 @@ class SfMData
     /**
      * @brief Check if the given view have defined intrinsic and pose
      * @param[in] view The given view
+     * @return true if intrinsic  defined
+     */
+    bool isIntrinsicDefined(const View & view) const
+    {
+        return (view.getIntrinsicId() != UndefinedIndexT  
+                && _intrinsics.find(view.getIntrinsicId()) != _intrinsics.end());
+    }
+
+    /**
+     * @brief Check if the given view have defined intrinsic and pose
+     * @param[in] viewID The given viewID
+     * @return true if intrinsic and pose defined
+     */
+    bool isIntrinsicDefined(IndexT viewId) const 
+    { 
+        return isIntrinsicDefined(*_views.at(viewId)); 
+    }
+
+    /**
+     * @brief Check if the given view have defined intrinsi
+     * @param[in] view The given view
      * @return true if intrinsic and pose defined
      */
     bool isPoseAndIntrinsicDefined(const View* view) const

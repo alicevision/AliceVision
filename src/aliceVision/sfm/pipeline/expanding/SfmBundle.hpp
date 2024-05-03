@@ -19,6 +19,9 @@ namespace sfm {
 class SfmBundle
 {
 public:
+    using uptr = std::unique_ptr<SfmBundle>;
+    
+public:
     /**
      * @brief Process bundle
      * @param sfmData the scene description to optimize

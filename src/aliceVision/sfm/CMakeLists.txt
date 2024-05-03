@@ -29,6 +29,12 @@ set(sfm_files_headers
   pipeline/expanding/SfmTriangulation.hpp
   pipeline/expanding/SfmResection.hpp
   pipeline/expanding/SfmBundle.hpp
+  pipeline/expanding/ExpansionHistory.hpp
+  pipeline/expanding/ExpansionChunk.hpp
+  pipeline/expanding/ExpansionIteration.hpp
+  pipeline/expanding/ExpansionPolicy.hpp
+  pipeline/expanding/ExpansionPolicyLegacy.hpp
+  pipeline/expanding/ExpansionProcess.hpp
   pipeline/regionsIO.hpp
   utils/alignment.hpp
   utils/statistics.hpp
@@ -59,6 +65,11 @@ set(sfm_files_sources
   pipeline/expanding/SfmTriangulation.cpp
   pipeline/expanding/SfmResection.cpp
   pipeline/expanding/SfmBundle.cpp
+  pipeline/expanding/ExpansionHistory.cpp
+  pipeline/expanding/ExpansionChunk.cpp
+  pipeline/expanding/ExpansionIteration.cpp
+  pipeline/expanding/ExpansionPolicyLegacy.cpp
+  pipeline/expanding/ExpansionProcess.cpp
   pipeline/regionsIO.cpp
   utils/alignment.cpp
   utils/statistics.cpp

@@ -93,9 +93,6 @@ bool getPoseStructure(Mat4 & T,
             Eigen::Vector3d dirX1 = (T1 * X.homogeneous()).head(3).normalized();
             Eigen::Vector3d dirX2 = (T2 * X.homogeneous()).head(3).normalized();
 
-            std::cout << "*" << dirX1.dot(pt3d1) << " ";
-            std::cout << dirX2.dot(pt3d2) << std::endl;
-
             if (!(dirX1.dot(pt3d1) > 0.0 && dirX2.dot(pt3d2)  > 0.0))
             {
                 continue;
@@ -105,8 +102,6 @@ bool getPoseStructure(Mat4 & T,
             points.push_back(X);
             countValid++;
         }
-
-        std::cout << countValid << std::endl;
 
         if (countValid > bestCoundValid)
         {

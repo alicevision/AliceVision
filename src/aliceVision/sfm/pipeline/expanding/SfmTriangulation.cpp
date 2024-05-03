@@ -177,12 +177,16 @@ bool SfmTriangulation::checkChierality(const sfmData::SfMData & sfmData, const s
     for (const auto & pRefObs : landmark.getObservations())
     {
         IndexT refViewId = pRefObs.first;
-
         const sfmData::View & refView = sfmData.getView(refViewId);
-        const sfmData::CameraPose & refCameraPose = sfmData.getPoses().at(refView.getPoseId());
+        const sfmData::Observation & obs = pRefObs.second;
+        const camera::IntrinsicBase * intrinsic = sfmData.getIntrinsicPtr(refView.getIntrinsicId());
+        const sfmData::CameraPose refCameraPose = sfmData.getPose(refView);
         const geometry::Pose3 & refPose = refCameraPose.getTransform();
 
-        if (refPose.depth(landmark.X) < 0.0)
+        const Vec3 dir = intrinsic->toUnitSphere(intrinsic->removeDistortion(intrinsic->ima2cam(obs.getCoordinates())));
+        const Vec3 ldir = refPose(landmark.X).normalized();
+
+        if (dir.dot(ldir) < 0.0)
         {
             return false;
         }
