@@ -176,6 +176,12 @@ int aliceVision_main(int argc, char** argv)
             {
                 std::shared_ptr<camera::Distortion> distortion = isod->getDistortion();
                 std::shared_ptr<camera::Undistortion> undistortion;
+
+                if (!distortion)
+                {
+                   ALICEVISION_LOG_ERROR("No distortion object found for intrinsic " << pairIntrinsic.first);
+                   break;
+                }
                 
                 switch (distortion->getType())
                 {
