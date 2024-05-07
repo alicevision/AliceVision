@@ -10,8 +10,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 #include <aliceVision/track/TracksHandler.hpp>
-//#include <aliceVision/sfm/pipeline/expanding/LbaPolicy.hpp>
-//#include <aliceVision/sfm/pipeline/expanding/ExpansionHistory.hpp>
+#include <aliceVision/sfm/pipeline/expanding/LbaPolicy.hpp>
+#include <aliceVision/sfm/pipeline/expanding/ExpansionHistory.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -31,11 +31,21 @@ public:
     */
     bool process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
 
+    /**
+     * brief setup the expansion chunk handler
+     * @param expansionChunk a unique ptr. Ownership will be taken
+     */
+    void setLbaPolicyHandler(LbaPolicy::uptr & lbaPolicy)
+    {
+        _lbaPolicy = std::move(lbaPolicy);
+    }
+
+
 private:
     /**
      * Initialize bundle properties
     */
-    bool initialize(const sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
+    bool initialize(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
 
     /**
      * Cleanup sfmData 
@@ -45,7 +55,7 @@ private:
     bool cleanup(sfmData::SfMData & sfmData);
 
 private:
-    //std::unique_ptr<LbaPolicy> _lbaPolicy;
+    LbaPolicy::uptr _lbaPolicy;
 
 private:
 

@@ -85,53 +85,7 @@ void ExpansionHistory::saveState(const sfmData::SfMData & sfmData)
         _focalHistory[pIntrinsic.first].push_back(std::make_pair(usage, iso->getScale().x()));
     }
 
-    for (auto & pfh : _focalHistory)
-    {
-        const auto & vec = pfh.second;
-
-        size_t lastGood = std::numeric_limits<size_t>::max();
-        std::vector<std::pair<size_t, double>> filtered;
-
-        for (int id = vec.size() - 1; id >= 0; id--)
-        {
-            //Make sure the usage decrease
-            if (vec[id].first < lastGood)
-            {
-                lastGood = vec[id].first;
-                filtered.push_back(vec[id]);
-            }
-        }
-
-        std::vector<double> cropped;
-        std::vector<double> focals;
-        int largestCount = filtered.front().first;
-        bool nomore = false;
-        for (int id = 0; id < filtered.size(); id++)
-        {
-            if (!nomore)
-            {
-                cropped.push_back(filtered[id].second);
-            }
-
-            if (largestCount - filtered[id].first > 25)
-            {
-                nomore = true;
-            }
-
-            focals.push_back(filtered[id].second);
-        }
-        
-
-        /*const double mean = std::accumulate(cropped.begin(), cropped.end(), 0.0) / cropped.size();
-        std::vector<double> diff(cropped.size());
-        std::transform(cropped.begin(), cropped.end(), diff.begin(), [mean](double x) { return x - mean; });
-        const double sqSum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-        double stddev = std::sqrt(sqSum / cropped.size());
-
-        double minVal = *std::min_element(focals.begin(), focals.end());
-        double maxVal = *std::max_element(focals.begin(), focals.end());
-        double normStdev = stddev / (maxVal - minVal);*/
-    }   
+    
 }
 
 } // namespace sfm

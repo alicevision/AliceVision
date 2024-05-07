@@ -17,6 +17,7 @@
 #include <aliceVision/sfm/pipeline/expanding/ExpansionPolicyLegacy.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionIteration.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionProcess.hpp>
+#include <aliceVision/sfm/pipeline/expanding/LbaPolicyConnexity.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -81,8 +82,13 @@ int aliceVision_main(int argc, char** argv)
     }
 
 
-    sfm::SfmBundle::uptr sfmBundle = std::make_unique<sfm::SfmBundle>();
     sfm::ExpansionHistory::sptr expansionHistory = std::make_shared<sfm::ExpansionHistory>();
+
+    sfm::LbaPolicy::uptr sfmPolicy = std::make_unique<sfm::LbaPolicyConnexity>();
+    sfmPolicy->setExpansionHistoryHandler(expansionHistory);
+    
+    sfm::SfmBundle::uptr sfmBundle = std::make_unique<sfm::SfmBundle>();
+    sfmBundle->setLbaPolicyHandler(sfmPolicy);
 
     sfm::ExpansionChunk::uptr expansionChunk = std::make_unique<sfm::ExpansionChunk>();
     expansionChunk->setBundleHandler(sfmBundle);

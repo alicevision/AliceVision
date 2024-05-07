@@ -54,6 +54,16 @@ public:
 
     void saveState(const sfmData::SfMData & sfmData);
 
+    /**
+     * Get the history of focals over time for a particular intrinsic id
+     * @param intrinsicId the id of the intrinsic
+     * @return a vector defining over time pairs of <count usage, focal value> where count usage is the number of views using this intrinsic
+    */
+    const std::vector<std::pair<size_t, double>> & getFocalHistory(IndexT intrinsicId)
+    {
+        return _focalHistory[intrinsicId];
+    }
+
 private:
     // History of focals per intrinsics
     std::map<IndexT, std::vector<std::pair<size_t, double>>> _focalHistory;

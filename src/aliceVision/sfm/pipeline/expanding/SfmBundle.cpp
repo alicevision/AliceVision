@@ -62,7 +62,7 @@ bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
     return somethingChanged;
 }
 
-bool SfmBundle::initialize(const sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
+bool SfmBundle::initialize(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
 {
     bool enableLocalStrategy = _useLBA;
 
@@ -73,16 +73,10 @@ bool SfmBundle::initialize(const sfmData::SfMData & sfmData, const track::Tracks
 
     if (enableLocalStrategy)
     {
-        /*if (_lbaPolicy)
+        if (_lbaPolicy)
         {
             _lbaPolicy->build(sfmData, tracksHandler, viewIds);
-        }*/
-
-        /*_lbaGraph = std::make_shared<LocalBundleAdjustmentGraph>(sfmData);
-        _lbaGraph->setGraphDistanceLimit(_LBAGraphDistanceLimit);
-        _lbaGraph->updateGraphWithNewViews(sfmData, tracksHandler.getTracksPerView(), sfmData.getValidViews(), _LBAMinNbOfMatches);
-        _lbaGraph->computeGraphDistances(sfmData, viewIds);
-        _lbaGraph->convertDistancesToStates(sfmData);*/
+        }
     }
 
     return true;
