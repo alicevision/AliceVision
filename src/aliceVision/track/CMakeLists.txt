@@ -2,6 +2,7 @@
 set(tracks_files_headers
   Track.hpp
   TracksBuilder.hpp
+  TracksHandler.hpp
   tracksUtils.hpp
   trackIO.hpp
 )
@@ -9,6 +10,7 @@ set(tracks_files_headers
 # Sources
 set(tracks_files_sources
   TracksBuilder.cpp
+  TracksHandler.hpp
   tracksUtils.cpp
   trackIO.cpp
 )
