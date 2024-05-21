@@ -93,7 +93,7 @@ void getTracksIdVector(const TracksMap& tracks, std::set<std::size_t>* tracksIds
  * @param[out] outFeatId the number of features in the image as a vector
  * @return true if the vector of features Ids is not empty
  */
-bool getFeatureIdInViewPerTrack(const TracksMap& allTracks, const std::set<std::size_t>& trackIds, IndexT viewId, std::vector<FeatureId>* outFeatId);
+bool getFeatureIdInViewPerTrack(const TracksMap& allTracks, const std::set<std::size_t>& trackIds, IndexT viewId, std::vector<FeatureId>& outFeatId);
 
 struct FunctorMapFirstEqual
 {

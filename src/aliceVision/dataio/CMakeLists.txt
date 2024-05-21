@@ -4,6 +4,7 @@ set(dataio_files_headers
   IFeed.hpp
   ImageFeed.hpp
   SfMDataFeed.hpp
+  json.hpp
 )
 
 # Sources
@@ -12,6 +13,7 @@ set(dataio_files_sources
   IFeed.cpp
   ImageFeed.cpp
   SfMDataFeed.cpp
+  json.cpp
 )
 
 if(ALICEVISION_HAVE_OPENCV)
@@ -34,6 +36,7 @@ alicevision_add_library(aliceVision_dataio
     aliceVision_sfmDataIO
     aliceVision_system
     Boost::boost
+    Boost::json
 )
 
 if(ALICEVISION_HAVE_OPENCV)

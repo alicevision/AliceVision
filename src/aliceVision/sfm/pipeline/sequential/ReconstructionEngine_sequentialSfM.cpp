@@ -1568,7 +1568,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
 
     // Get back featId associated to a tracksID already reconstructed.
     // These 2D/3D associations will be used for the resection.
-    getFeatureIdInViewPerTrack(_map_tracks, resectionData.tracksId, viewId, &resectionData.featuresId);
+    getFeatureIdInViewPerTrack(_map_tracks, resectionData.tracksId, viewId, resectionData.featuresId);
 
     // Localize the image inside the SfM reconstruction
     resectionData.pt2D.resize(2, resectionData.tracksId.size());

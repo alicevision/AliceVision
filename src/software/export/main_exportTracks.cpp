@@ -183,7 +183,7 @@ int aliceVision_main(int argc, char** argv)
                 {
                     const feature::EImageDescriberType descType = tracksIt->second.descType;
                     assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-                    track::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
+                    track::Track::TrackInfoPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
                     const PointFeatures& featuresI = featuresPerView.getFeatures(viewI->getViewId(), descType);
                     const PointFeatures& featuresJ = featuresPerView.getFeatures(viewJ->getViewId(), descType);
@@ -200,7 +200,7 @@ int aliceVision_main(int argc, char** argv)
                 {
                     const feature::EImageDescriberType descType = tracksIt->second.descType;
                     assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-                    track::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
+                    track::Track::TrackInfoPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
                     const PointFeatures& featuresI = featuresPerView.getFeatures(viewI->getViewId(), descType);
                     const PointFeatures& featuresJ = featuresPerView.getFeatures(viewJ->getViewId(), descType);

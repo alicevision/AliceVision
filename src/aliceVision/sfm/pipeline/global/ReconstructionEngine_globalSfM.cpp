@@ -301,7 +301,7 @@ bool ReconstructionEngine_globalSfM::computeInitialStructure(matching::PairwiseM
             Landmark& newLandmark = structure[idx];
             newLandmark.descType = track.descType;
             Observations& obs = newLandmark.getObservations();
-            for (Track::FeatureIdPerView::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
+            for (Track::TrackInfoPerView::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
             {
                 const size_t imaIndex = it->first;
                 const size_t featIndex = it->second.featureId;
