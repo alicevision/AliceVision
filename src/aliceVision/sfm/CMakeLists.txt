@@ -1,4 +1,16 @@
 # Headers
+set(sfm_bundle_files_headers
+  bundle/BundleAdjustment.hpp
+  bundle/BundleAdjustmentCeres.hpp
+  bundle/BundleAdjustmentSymbolicCeres.hpp
+)
+
+# Sources
+set(sfm_bundle_files_sources
+  bundle/BundleAdjustmentCeres.cpp
+  bundle/BundleAdjustmentSymbolicCeres.cpp
+)
+
 set(sfm_files_headers
   pipeline/global/GlobalSfMRotationAveragingSolver.hpp
   pipeline/global/GlobalSfMTranslationAveragingSolver.hpp
@@ -18,9 +30,6 @@ set(sfm_files_headers
   utils/alignment.hpp
   utils/statistics.hpp
   utils/syntheticScene.hpp
-  bundle/BundleAdjustment.hpp
-  bundle/BundleAdjustmentCeres.hpp
-  bundle/BundleAdjustmentSymbolicCeres.hpp
   LocalBundleAdjustmentGraph.hpp
   FrustumFilter.hpp
   ResidualErrorFunctor.hpp
@@ -48,14 +57,23 @@ set(sfm_files_sources
   utils/alignment.cpp
   utils/statistics.cpp
   utils/syntheticScene.cpp
-  bundle/BundleAdjustmentCeres.cpp
-  bundle/BundleAdjustmentSymbolicCeres.cpp
   LocalBundleAdjustmentGraph.cpp
   FrustumFilter.cpp
   generateReport.cpp
   sfmFilters.cpp
   sfmStatistics.cpp
   sfmTriangulation.cpp
+)
+
+alicevision_add_library(aliceVision_sfm_bundle
+  SOURCES ${sfm_bundle_files_headers} ${sfm_bundle_files_sources}
+  PUBLIC_LINKS
+    aliceVision_system
+    aliceVision_numeric
+    aliceVision_geometry
+    aliceVision_camera
+    aliceVision_sfmData
+    ${CERES_LIBRARIES}
 )
 
 alicevision_add_library(aliceVision_sfm
@@ -74,8 +92,8 @@ alicevision_add_library(aliceVision_sfm
     aliceVision_linearProgramming
     aliceVision_sfmData
     aliceVision_sfmDataIO
+    aliceVision_sfm_bundle
     Boost::boost
-    ${CERES_LIBRARIES}
   PRIVATE_LINKS
     ${LEMON_LIBRARY}
 )
