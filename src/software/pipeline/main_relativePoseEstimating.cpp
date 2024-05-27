@@ -70,8 +70,6 @@ bool getPoseStructure(Mat4 & T,
         const Mat4 T1 = Eigen::Matrix4d::Identity();
         const Mat4 & T2 = Ts[it];
 
-        std::cout << T2.inverse() << std::endl;
-
         std::vector<Vec3> points;
         std::vector<size_t> updatedInliers;
 
@@ -349,7 +347,7 @@ int aliceVision_main(int argc, char** argv)
     int chunkEnd = int(double(rangeStart + rangeSize) * ratioChunk);
 
     // For each covisible pair
-//#pragma omp parallel for
+#pragma omp parallel for
     for (int posPairs = chunkStart; posPairs < chunkEnd; posPairs++)
     {
         auto iterPairs = covisibility.begin();
@@ -425,8 +423,6 @@ int aliceVision_main(int argc, char** argv)
                 continue;
             }
 
-            std::cout << inliers.size() << std::endl;
-
             std::vector<Vec3> structure;
             reconstructed.reference = refImage;
             reconstructed.next = nextImage;
@@ -437,13 +433,9 @@ int aliceVision_main(int argc, char** argv)
                 continue;
             }
 
-            std::cout << vecInliers.size() << std::endl;
-
             reconstructed.R = T.block<3, 3>(0, 0);
             reconstructed.t = T.block<3, 1>(0, 3);
         }
-
-        std::cout << vecInliers.size() << std::endl;
         
         // Extract inliers
         std::vector<Vec2> refPtsValid, nextPtsValid;

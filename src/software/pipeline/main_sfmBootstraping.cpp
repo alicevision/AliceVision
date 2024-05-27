@@ -106,8 +106,6 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData, const sfm::Reconstructe
         return false;
     }
 
-    std::cout << angles.size() << std::endl;
-
     const unsigned medianIndex = angles.size() / 2;
     std::nth_element(angles.begin(), angles.begin() + medianIndex, angles.end());
     resultAngle = angles[medianIndex];
@@ -330,7 +328,6 @@ int aliceVision_main(int argc, char** argv)
         std::vector<std::size_t> usedTracks;
         double angle = 0.0;
 
-        std::cout << "toto" << std::endl;
         if (!estimatePairAngle(sfmData, pair, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), maxEpipolarDistance, angle, usedTracks))
         {
             continue;
