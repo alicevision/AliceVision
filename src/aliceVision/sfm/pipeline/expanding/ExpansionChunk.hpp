@@ -51,6 +51,43 @@ public:
         _historyHandler = expansionHistory;
     }
 
+    void setResectionMaxIterations(size_t maxIterations)
+    {
+        _resectionIterations = maxIterations;
+    }
+
+    /**
+     * @brief set the maximal error allowed for ransac resection module
+     * @param error the error value or <= 0 for automatic decision
+     * @param count the number of points
+    */
+    void setResectionMaxError(double error)
+    {
+        _resectionMaxError = error;
+        if (_resectionMaxError <= 0.0)
+        {
+            _resectionMaxError = std::numeric_limits<double>::infinity();
+        }
+    }
+
+    /**
+     * @brief set the minimal number of points to enable triangulation of a track
+     * @param count the number of points
+    */
+    void setTriangulationMinPoints(size_t count)
+    {
+        _triangulationMinPoints = count;
+    }
+
+    /**
+     * @brief set the minimal allowed parallax degree for triangulation
+     * @param angle the angle in DEGREES
+    */
+    void setMinAngleTriangulation(double angle)
+    {
+        _minTriangulationAngleDegrees = angle;
+    }
+
 private:
 
     /**
@@ -78,6 +115,7 @@ private:
     size_t _triangulationMinPoints = 2;
     double _minTriangulationAngleDegrees = 3.0;
     double _maxTriangulationError = 8.0;
+    double _resectionMaxError = std::numeric_limits<double>::infinity();
 };
 
 } // namespace sfm

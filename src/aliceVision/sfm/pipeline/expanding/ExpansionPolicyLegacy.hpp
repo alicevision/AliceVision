@@ -15,6 +15,9 @@ namespace sfm {
 class ExpansionPolicyLegacy : public ExpansionPolicy
 {
 public:
+    using uptr = std::unique_ptr<ExpansionPolicyLegacy>;
+    
+public:
 
     /**
      * @brief Initialize policy for an iteration
@@ -52,6 +55,24 @@ public:
                                 const size_t maxSize,
                                 const size_t countLevels);
 
+    /**
+     * @brief set the number of views for which we consider the sfm to be unstable
+     * @param count a number of views
+    */
+    void setNbFirstUnstableViews(size_t count)
+    {
+        _nbFirstUnstableViews = count;
+    }
+
+    /**
+     * @brief set the number of views we want for a given chunk
+     * @param count a number of views
+    */
+    void setMaxViewsPerGroup(size_t count)
+    {
+        _maxViewsPerGroup = count;
+    }
+
 private:
 
     // vector of  selected views for this iteration
@@ -71,10 +92,10 @@ private:
     std::size_t _countPyramidLevels = 5;
 
     // Number of cameras in scene under which the set is considered as unstable 
-    size_t _nbFirstUnstableCameras = 30;
+    size_t _nbFirstUnstableViews = 30;
 
     // Maximal number of images in a chunk
-    size_t _maxImagesPerGroup = 30;
+    size_t _maxViewsPerGroup = 30;
 };
 
 }

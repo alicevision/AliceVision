@@ -40,6 +40,38 @@ public:
         _lbaPolicy = std::move(lbaPolicy);
     }
 
+    void setBundleAdjustmentMaxOutlier(size_t bundleAdjustmentMaxOutlier)
+    {
+        _bundleAdjustmentMaxOutlier = bundleAdjustmentMaxOutlier;
+    }
+
+    /**
+     * @brief set the minimal allowed parallax degree after bundle (Or the landmark will be removed)
+     * @param angle the angle in DEGREES
+    */
+    void setMinAngleLandmark(double angle)
+    {
+        _minAngleForLandmark = angle;
+    }
+
+    /**
+     * @brief set the maximal allowed error in pixels (Or the landmark will be removed)
+     * @param error the error in pixels
+    */
+    void setMaxReprojectionError(double error)
+    {
+        _maxReprojectionError = error;
+    }
+
+    /**
+     * @brief set the Minimal number of connected views to refine an intrinsic principal point
+     * @param count the number of views
+    */
+    void setMinNbCamerasToRefinePrincipalPoint(size_t count)
+    {
+        _minNbCamerasToRefinePrincipalPoint = count;
+    }
+
 
 private:
     /**
@@ -60,7 +92,7 @@ private:
 private:
 
     EFeatureConstraint _featureConstraint = EFeatureConstraint::SCALE;
-    double _maxReprojectionError = 40.0;
+    double _maxReprojectionError = 4.0;
     double _minAngleForLandmark = 2.0;
     size_t _minTrackLength = 2;
     size_t _minPointsPerPose = 30;

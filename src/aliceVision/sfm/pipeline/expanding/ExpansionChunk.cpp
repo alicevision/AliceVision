@@ -31,7 +31,7 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
 
         if (!sfmData.isPoseAndIntrinsicDefined(viewId))
         {
-            SfmResection resection(_resectionIterations, std::numeric_limits<double>::infinity());
+            SfmResection resection(_resectionIterations, _resectionMaxError);
 
             Eigen::Matrix4d pose;
             double threshold = 0.0;

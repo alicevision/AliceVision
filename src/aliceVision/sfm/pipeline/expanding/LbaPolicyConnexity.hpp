@@ -15,7 +15,7 @@ namespace sfm {
 class LbaPolicyConnexity : public LbaPolicy
 {
 public:
-    using uptr = std::unique_ptr<LbaPolicy>;
+    using uptr = std::unique_ptr<LbaPolicyConnexity>;
     
 public:
     /**
@@ -25,6 +25,15 @@ public:
      * @param views the list of views of interest
     */
     virtual bool build(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds) override;
+
+    /**
+     * @brief set the max distance in the graph to search for connexity
+     * @param distanceLimit is the max number of hops between two element in the graph 
+    */
+    void setDistanceLimit(int distanceLimit)
+    {
+        _distanceLimit = distanceLimit;
+    }
 
 private:
     void upgradeSfmData(sfmData::SfMData & sfmData, const ConnexityGraph & graph);

@@ -113,8 +113,8 @@ bool ExpansionPolicyLegacy::process(const sfmData::SfMData & sfmData, const trac
     //Always add at least the best score, whatever it is
     _selectedViews.insert(vscoring[0].id);
 
-    int maxSetSize = _maxImagesPerGroup;
-    if (sfmData.getValidViews().size() < _nbFirstUnstableCameras)
+    int maxSetSize = _maxViewsPerGroup;
+    if (sfmData.getValidViews().size() < _nbFirstUnstableViews)
     {
         maxSetSize = 1;
     }
