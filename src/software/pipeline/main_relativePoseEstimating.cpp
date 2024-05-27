@@ -15,7 +15,6 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
-#include <aliceVision/feature/imageDescriberCommon.hpp>
 
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
@@ -43,7 +42,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -122,12 +121,10 @@ bool getPoseStructure(Mat3& R,
 
 bool robustEssential(Mat3& E,
                      std::vector<size_t>& vecInliers,
-                     const Mat3& K1,
-                     const Mat3& K2,
+                     const camera::IntrinsicBase & cam1,
+                     const camera::IntrinsicBase & cam2,
                      const Mat& x1,
                      const Mat& x2,
-                     const std::pair<size_t, size_t>& size_ima1,
-                     const std::pair<size_t, size_t>& size_ima2,
                      std::mt19937& randomNumberGenerator,
                      const size_t maxIterationCount,
                      const size_t minInliers)
@@ -139,14 +136,17 @@ bool robustEssential(Mat3& E,
     using KernelT =
       multiview::RelativePoseKernel_K<SolverT, multiview::relativePose::FundamentalSymmetricEpipolarDistanceError, robustEstimation::Mat3Model>;
 
-    KernelT kernel(x1, size_ima1.first, size_ima1.second, x2, size_ima2.first, size_ima2.second, K1, K2);
+    const camera::Pinhole & pinhole1 = dynamic_cast<const camera::Pinhole &>(cam1);
+    const camera::Pinhole & pinhole2 = dynamic_cast<const camera::Pinhole &>(cam2);
+
+    KernelT kernel(x1, cam1.w(), cam1.h(), x2, cam2.w(), cam2.h(), pinhole1.K(), pinhole2.K());
 
     robustEstimation::Mat3Model model;
     vecInliers.clear();
 
     // robustly estimation of the Essential matrix and its precision
     const std::pair<double, double> acRansacOut =
-      robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vecInliers, maxIterationCount, &model, 4.0);
+      robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vecInliers, maxIterationCount, &model);
 
     if (vecInliers.size() < minInliers)
     {
@@ -247,7 +247,6 @@ int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
     std::string sfmDataFilename;
-    std::vector<std::string> featuresFolders;
     std::string tracksFilename;
     std::string outputDirectory;
     int rangeStart = -1;
@@ -272,10 +271,6 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
-         "Path to folder(s) containing the extracted features.")
-        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-         feature::EImageDescriberType_informations().c_str())
         ("enforcePureRotation,e", po::value<bool>(&enforcePureRotation)->default_value(enforcePureRotation),
          "Enforce pure rotation in estimation.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
@@ -308,15 +303,21 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Define range to compute
-    if (rangeStart != -1)
+    if(rangeStart != -1)
     {
-        if (rangeStart < 0 || rangeSize < 0 || rangeStart > sfmData.getViews().size())
+        if(rangeStart < 0 || rangeSize < 0)
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
 
-        if (rangeStart + rangeSize > sfmData.getViews().size())
+        if (rangeStart > sfmData.getViews().size())
+        {
+            ALICEVISION_LOG_INFO("Empty range to compute");
+            return EXIT_SUCCESS;
+        }
+
+        if(rangeStart + rangeSize > sfmData.getViews().size())
         {
             rangeSize = sfmData.getViews().size() - rangeStart;
         }
@@ -328,17 +329,6 @@ int aliceVision_main(int argc, char** argv)
     }
     ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
 
-    // get imageDescriber type
-    const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
-
-    // features reading
-    feature::FeaturesPerView featuresPerView;
-    ALICEVISION_LOG_INFO("Load features");
-    if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
-    {
-        ALICEVISION_LOG_ERROR("Invalid features.");
-        return EXIT_FAILURE;
-    }
 
     // Load tracks
     ALICEVISION_LOG_INFO("Load tracks");
@@ -400,9 +390,6 @@ int aliceVision_main(int argc, char** argv)
         aliceVision::track::TracksMap mapTracksCommon;
         track::getCommonTracksInImagesFast({refImage, nextImage}, mapTracks, mapTracksPerView, mapTracksCommon);
 
-        feature::MapFeaturesPerDesc& refFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(refImage);
-        feature::MapFeaturesPerDesc& nextFeaturesPerDesc = featuresPerView.getFeaturesPerDesc(nextImage);
-
         // Build features coordinates matrices
         const std::size_t n = mapTracksCommon.size();
         Mat refX(2, n);
@@ -412,14 +399,8 @@ int aliceVision_main(int argc, char** argv)
         {
             const track::Track& track = commonItem.second;
 
-            const feature::PointFeatures& refFeatures = refFeaturesPerDesc.at(track.descType);
-            const feature::PointFeatures& nextfeatures = nextFeaturesPerDesc.at(track.descType);
-
-            IndexT refFeatureId = track.featPerView.at(refImage).featureId;
-            IndexT nextfeatureId = track.featPerView.at(nextImage).featureId;
-
-            refX.col(pos) = refFeatures[refFeatureId].coords().cast<double>();
-            nextX.col(pos) = nextfeatures[nextfeatureId].coords().cast<double>();
+            refX.col(pos) = track.featPerView.at(refImage).coords;
+            nextX.col(pos) = track.featPerView.at(nextImage).coords;
 
             pos++;
         }
@@ -459,12 +440,10 @@ int aliceVision_main(int argc, char** argv)
             std::vector<size_t> inliers;
             const bool essentialSuccess = robustEssential(E,
                                                           inliers,
-                                                          refPinhole->K(),
-                                                          nextPinhole->K(),
+                                                          *refIntrinsics,
+                                                          *nextIntrinsics,
                                                           refX,
                                                           nextX,
-                                                          std::make_pair(refPinhole->w(), refPinhole->h()),
-                                                          std::make_pair(nextPinhole->w(), nextPinhole->h()),
                                                           randomNumberGenerator,
                                                           1024,
                                                           minInliers);
@@ -492,8 +471,8 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // Compute matched points coverage of image
-        double areaRef = refPinhole->w() * refPinhole->h();
-        double areaNext = nextPinhole->w() * nextPinhole->h();
+        double areaRef = refIntrinsics->w() * refIntrinsics->h();
+        double areaNext = nextIntrinsics->w() * nextIntrinsics->h();
         double areaScore = computeAreaScore(refpts, nextpts, areaRef, areaNext);
 
         // Compute ratio of matched points

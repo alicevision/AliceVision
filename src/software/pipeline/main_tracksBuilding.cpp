@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2023 AliceVision contributors.
+// Copyright (c) 2024 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -135,6 +135,25 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO("Track export to structure");
     track::TracksMap mapTracks;
     tracksBuilder.exportToSTL(mapTracks);
+
+    //Fill additional data
+    for (auto & ptrack : mapTracks)
+    {
+        auto & track = ptrack.second;
+
+        for (auto & pitem : track.featPerView)
+        {
+            IndexT viewId = pitem.first;
+            track::TrackItem & item = pitem.second;
+            const auto & feats = featuresPerView.getFeaturesPerDesc(viewId);
+
+            const feature::PointFeatures & features = feats.at(track.descType);
+            const feature::PointFeature & feature = features.at(item.featureId);
+
+            item.coords = feature.coords().cast<double>();
+            item.scale = feature.scale();
+        }
+    }
 
     // write the json file with the tree
     ALICEVISION_LOG_INFO("Export to file");

@@ -234,7 +234,7 @@ void StructureEstimationFromKnownPoses::filter(const SfMData& sfmData, const Pai
                         {
 #pragma omp critical
                             {
-                                track::Track::FeatureIdPerView::const_iterator iterI, iterJ, iterK;
+                                track::Track::TrackInfoPerView::const_iterator iterI, iterJ, iterK;
                                 iterI = iterJ = iterK = subTrack.featPerView.begin();
                                 std::advance(iterJ, 1);
                                 std::advance(iterK, 2);
