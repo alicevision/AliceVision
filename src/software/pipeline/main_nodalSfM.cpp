@@ -91,7 +91,7 @@ void buildInitialWorld(sfmData::SfMData& sfmData,
 
     // Make sure initial camera pose is identity
     sfmData.setPose(refView, sfmData::CameraPose());
-    sfmData.setPose(nextView, sfmData::CameraPose(geometry::Pose3(pair.R, Vec3::Zero())));
+    sfmData.setPose(nextView, sfmData::CameraPose(pair.pose));
 
     std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
     std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
@@ -115,7 +115,7 @@ void buildInitialWorld(sfmData::SfMData& sfmData,
         Vec2 nextV = nextTrackItem.coords;
 
         Vec3 refP = refIntrinsics->toUnitSphere(refIntrinsics->ima2cam(refIntrinsics->getUndistortedPixel(refV)));
-        Vec3 tP = pair.R * refP;
+        Vec3 tP = pair.pose.rotation() * refP;
         Vec2 nextp = nextIntrinsics->getUndistortedPixel(nextV);
         Vec2 estp = nextIntrinsics->cam2ima((tP.head(2) / tP(2)));
         double dist = (nextp - estp).norm();

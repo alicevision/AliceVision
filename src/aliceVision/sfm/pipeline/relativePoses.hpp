@@ -16,8 +16,7 @@ struct ReconstructedPair
 {
     IndexT reference;
     IndexT next;
-    Mat3 R;
-    Vec3 t;
+    geometry::Pose3 pose;
     double score;
 };
 
@@ -25,8 +24,8 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, sfm:
 {
     jv = {{"reference", input.reference},
           {"next", input.next},
-          {"R", boost::json::value_from(SO3::logm(input.R))},
-          {"t", boost::json::value_from(input.t)},
+          {"R", boost::json::value_from(SO3::logm(input.pose.rotation()))},
+          {"t", boost::json::value_from(input.pose.translation())},
           {"score", boost::json::value_from(input.score)}};
 }
 
@@ -38,8 +37,8 @@ ReconstructedPair tag_invoke(boost::json::value_to_tag<ReconstructedPair>, boost
 
     ret.reference = boost::json::value_to<IndexT>(obj.at("reference"));
     ret.next = boost::json::value_to<IndexT>(obj.at("next"));
-    ret.R = SO3::expm(boost::json::value_to<Vec3>(obj.at("R")));
-    ret.t = boost::json::value_to<Vec3>(obj.at("t"));
+    ret.pose.setRotation(SO3::expm(boost::json::value_to<Vec3>(obj.at("R"))));
+    ret.pose.setTranslation(boost::json::value_to<Vec3>(obj.at("t")));
     ret.score = boost::json::value_to<double>(obj.at("score"));
 
     return ret;

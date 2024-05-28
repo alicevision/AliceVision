@@ -294,8 +294,7 @@ int aliceVision_main(int argc, char** argv)
 
             reconstructed.reference = refImage;
             reconstructed.next = nextImage;
-            reconstructed.R = R;
-            reconstructed.t.fill(0);
+            reconstructed.pose.setRotation(R);
         }
         else
         {
@@ -328,8 +327,7 @@ int aliceVision_main(int argc, char** argv)
                 continue;
             }
 
-            reconstructed.R = T.block<3, 3>(0, 0);
-            reconstructed.t = T.block<3, 1>(0, 3);
+            reconstructed.pose = geometry::Pose3(T);
         }
         
         // Extract inliers
