@@ -169,7 +169,7 @@ bool TracksBuilder::exportToStream(std::ostream& os)
     return os.good();
 }
 
-void TracksBuilder::exportToSTL(TracksMap& allTracks) const
+void TracksBuilder::exportToSTL(TracksMap& allTracks, const feature::FeaturesPerView * featuresPerView) const
 {
     allTracks.clear();
 
@@ -187,6 +187,28 @@ void TracksBuilder::exportToSTL(TracksMap& allTracks) const
             // all descType inside the track will be the same
             outTrack.descType = currentPair.second.descType;
             outTrack.featPerView[currentPair.first].featureId = currentPair.second.featIndex;
+        }
+    }
+
+    //Fill additional data
+    if (featuresPerView != nullptr)
+    {
+        for (auto & ptrack : allTracks)
+        {
+            auto & track = ptrack.second;
+
+            for (auto & pitem : track.featPerView)
+            {
+                IndexT viewId = pitem.first;
+                track::TrackItem & item = pitem.second;
+                const auto & feats = featuresPerView->getFeaturesPerDesc(viewId);
+
+                const feature::PointFeatures & features = feats.at(track.descType);
+                const feature::PointFeature & feature = features.at(item.featureId);
+
+                item.coords = feature.coords().cast<double>();
+                item.scale = feature.scale();
+            }
         }
     }
 }
