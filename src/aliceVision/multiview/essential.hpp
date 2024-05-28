@@ -9,7 +9,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-
+#include <aliceVision/camera/IntrinsicBase.hpp>
 #include <vector>
 
 namespace aliceVision {
@@ -61,5 +61,30 @@ void motionFromEssential(const Mat3& E, std::vector<Mat3>* Rs, std::vector<Vec3>
  * @brief HZ 9.7 page 259 (Result 9.19)
  */
 void motionFromEssential(const Mat3& E, std::vector<Mat4> & Ts);
+
+/**
+ * @brief Estimate the relative transformation of the camera and
+ * the associated 3d structure of the observed points using an 
+ * essential matrix as input prior
+ * @param T the output estimated pose
+ * @param structure the output estimated structure
+ * @param newVecInliers the updated inliers list (set of indices in the coordinates vectors)
+ * @param E the input Essential matrix prior
+ * @param vecInliers the input list of inliers (set of indices in the coordinates vectors)
+ * @param cam1 the first camera intrinsic object
+ * @param cam2 the second camera intrinsic object
+ * @param x1 the observed points coordinates in the first camera
+ * @param x2 the observed points coordinates in the second camera
+ * @return true if estimation succeeded
+*/
+bool estimateTransformStructureFromEssential(Mat4 & T,
+                                std::vector<Vec3>& structure,
+                                std::vector<size_t>& newVecInliers,
+                                const Mat3& E,
+                                const std::vector<size_t>& vecInliers,
+                                const camera::IntrinsicBase & cam1,
+                                const camera::IntrinsicBase & cam2,
+                                const std::vector<Vec2> & x1,
+                                const std::vector<Vec2> & x2);
 
 }  // namespace aliceVision

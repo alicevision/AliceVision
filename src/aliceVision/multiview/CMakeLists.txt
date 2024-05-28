@@ -78,6 +78,7 @@ alicevision_add_library(aliceVision_multiview
   PUBLIC_LINKS
     aliceVision_numeric
     aliceVision_robustEstimation
+    aliceVision_camera
     ${CERES_LIBRARIES}
   PRIVATE_LINKS
     aliceVision_system

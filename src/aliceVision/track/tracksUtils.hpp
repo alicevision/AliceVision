@@ -141,5 +141,13 @@ void imageIdInTracks(const TracksPerView& tracksPerView, std::set<std::size_t>& 
  */
 void imageIdInTracks(const TracksMap& tracks, std::set<std::size_t>& imagesId);
 
+
+/**
+ * @brief compute the set of pairs of views which shares some observed features
+ * @param covisibility a map indexed by pair of views and whose values are the number of shared features
+ * @param mapTracks the input tracks map
+*/
+void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track::TracksMap& mapTracks);
+
 }  // namespace track
 }  // namespace aliceVision

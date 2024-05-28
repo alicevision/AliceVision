@@ -167,4 +167,76 @@ bool motionFromEssentialAndCorrespondence(const Mat3& E, const Mat3& K1, const V
     }
 }
 
+bool estimateTransformStructureFromEssential(Mat4 & T,
+                                std::vector<Vec3>& structure,
+                                std::vector<size_t>& newVecInliers,
+                                const Mat3& E,
+                                const std::vector<size_t>& vecInliers,
+                                const camera::IntrinsicBase & cam1,
+                                const camera::IntrinsicBase & cam2,
+                                const std::vector<Vec2> & x1,
+                                const std::vector<Vec2> & x2)
+{
+    // Find set of analytical solutions
+    std::vector<Mat4> Ts;
+    motionFromEssential(E, Ts);
+
+    // Check each possible solution and keep the best one
+    size_t bestCoundValid = 0;
+    for (int it = 0; it < Ts.size(); it++)
+    {
+        const Mat4 T1 = Eigen::Matrix4d::Identity();
+        const Mat4 & T2 = Ts[it];
+
+        std::vector<Vec3> points;
+        std::vector<size_t> updatedInliers;
+
+        // Triangulate each point
+        size_t countValid = 0;
+        for (size_t k = 0; k < vecInliers.size(); ++k)
+        {
+            const Vec2& pt1 = x1[vecInliers[k]];
+            const Vec2& pt2 = x2[vecInliers[k]];
+
+            const Vec3 pt3d1 = cam1.toUnitSphere(cam1.removeDistortion(cam1.ima2cam(pt1)));
+            const Vec3 pt3d2 = cam2.toUnitSphere(cam2.removeDistortion(cam2.ima2cam(pt2)));
+
+            Vec3 X;
+            multiview::TriangulateSphericalDLT(T1, pt3d1, T2, pt3d2, X);
+
+            Vec2 ptValid1 = cam1.project(T1, X.homogeneous(), true);
+            Vec2 ptValid2 = cam2.project(T2, X.homogeneous(), true);
+
+            Eigen::Vector3d dirX1 = (T1 * X.homogeneous()).head(3).normalized();
+            Eigen::Vector3d dirX2 = (T2 * X.homogeneous()).head(3).normalized();
+
+            // Check that the points are logically 
+            if (!(dirX1.dot(pt3d1) > 0.0 && dirX2.dot(pt3d2)  > 0.0))
+            {
+                continue;
+            }
+
+            updatedInliers.push_back(vecInliers[k]);
+            points.push_back(X);
+            countValid++;
+        }
+
+        if (countValid > bestCoundValid)
+        {
+            bestCoundValid = countValid;
+            structure = points;
+            newVecInliers = updatedInliers;
+            T = Ts[it];
+        }
+    }
+
+    // Check result validity
+    if (newVecInliers.size() < 10)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 }  // namespace aliceVision
