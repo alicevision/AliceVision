@@ -24,7 +24,7 @@ public:
      * @param tracksHandler the tracks for this scene
      * @param views the list of views of interest
     */
-    virtual bool build(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds) override;
+    bool build(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds) override;
 
     /**
      * @brief set the max distance in the graph to search for connexity

@@ -148,7 +148,7 @@ class Equidistant : public IntrinsicScaleOffsetDisto
      * @brief how a one pixel change relates to an angular change
      * @return a value in radians
     */
-    virtual double pixelProbability() const override;
+    double pixelProbability() const override;
 
   protected:
     double _circleRadius{0.0};
