@@ -354,6 +354,29 @@ void getIndMask(image::Image<float> const& mask, std::vector<int>& indices)
     }
 }
 
+void getIndMask(image::Image<float> const& mask, std::vector<int>& indices, image::Image<float>& indexInMask)
+{
+    const int nbRows = mask.rows();
+    const int nbCols = mask.cols();
+
+    for (int j = 0; j < nbCols; ++j)
+    {
+        for (int i = 0; i < nbRows; ++i)
+        {
+            if (mask(i, j) > 0.7)
+            {
+                int currentIndex = j * nbRows + i;
+                indices.push_back(currentIndex);
+                indexInMask(i, j) = indices.size() - 1;
+            }
+            else
+            {
+                indexInMask(i, j) = -1;
+            }
+        }
+    }
+}
+
 void intensityScaling(std::array<float, 3> const& intensities, image::Image<image::RGBfColor>& imageToScale)
 {
     int nbRows = imageToScale.rows();

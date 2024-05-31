@@ -85,6 +85,8 @@ void loadMask(std::string const& maskName, image::Image<float>& mask);
  */
 void getIndMask(image::Image<float> const& mask, std::vector<int>& indices);
 
+void getIndMask(image::Image<float> const& mask, std::vector<int>& indices, image::Image<float>& indexInMask);
+
 /**
  * @brief Apply the intensities to each channel of each image
  * @param[in] intensities Intensity values to apply to the image
