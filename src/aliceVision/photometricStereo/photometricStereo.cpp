@@ -118,9 +118,10 @@ void photometricStereo(const sfmData::SfMData& sfmData,
             hasMetadata = false;
 
         std::vector<IndexT> viewIds;
+        std::map<std::string, IndexT> idMap;
+
         if (hasMetadata)
         {
-            std::map<std::string, IndexT> idMap;
             for (auto& viewId : initViewIds)
             {
                 std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getImage().getMetadata();
@@ -134,7 +135,15 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         }
         else
         {
-            viewIds = initViewIds;
+            for (auto& viewId : initViewIds)
+            {
+                const fs::path imagePath = fs::path(sfmData.getView(viewId).getImage().getImagePath());
+                idMap[imagePath] = viewId;
+            }
+        }
+        for (const auto& [currentId, viewId] : idMap)
+        {
+            viewIds.push_back(viewId);
         }
 
         for (auto& viewId : viewIds)
