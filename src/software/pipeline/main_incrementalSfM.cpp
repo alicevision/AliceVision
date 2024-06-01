@@ -309,7 +309,10 @@ int aliceVision_main(int argc, char** argv)
     sfmEngine.setMatches(&pairwiseMatches);
 
     if (!sfmEngine.process())
+    {
+        ALICEVISION_LOG_ERROR("Failed to reconstruct.");
         return EXIT_FAILURE;
+    }
 
     // Mimic sfmTransform "EAlignmentMethod::AUTO"
     if (useAutoTransform)
@@ -336,7 +339,9 @@ int aliceVision_main(int argc, char** argv)
 
     // get the color for the 3D points
     if (computeStructureColor)
+    {
         sfmEngine.colorize();
+    }
 
     sfmEngine.retrieveMarkersId();
 
