@@ -8,27 +8,27 @@ namespace aliceVision {
 
 void HardwareContext::displayHardware()
 {
-    std::cout << "Hardware : " << std::endl;
+    ALICEVISION_LOG_INFO("Hardware:");
 
-    std::cout << "\tDetected core count : " << system::get_total_cpus() << std::endl;
+    ALICEVISION_LOG_INFO("\tDetected core count: " << system::get_total_cpus());
 
     if (_maxUserCoresAvailable < std::numeric_limits<unsigned int>::max())
     {
-        std::cout << "\tUser upper limit on core count : " << _maxUserCoresAvailable << std::endl;
+        ALICEVISION_LOG_INFO("\tUser upper limit on core count: " << _maxUserCoresAvailable);
     }
 
-    std::cout << "\tOpenMP will use " << omp_get_max_threads() << " cores" << std::endl;
+    ALICEVISION_LOG_INFO("\tOpenMP will use " << omp_get_max_threads() << " cores");
 
     auto meminfo = system::getMemoryInfo();
 
-    std::cout << "\tDetected available memory : " << meminfo.availableRam / (1024 * 1024) << " Mo" << std::endl;
+    ALICEVISION_LOG_INFO("\tDetected available memory: " << meminfo.availableRam / (1024 * 1024) << " Mo");
 
     if (_maxUserMemoryAvailable < std::numeric_limits<size_t>::max())
     {
-        std::cout << "\tUser upper limit on memory available : " << _maxUserMemoryAvailable / (1024 * 1024) << " Mo" << std::endl;
+        ALICEVISION_LOG_INFO("\tUser upper limit on memory available: " << _maxUserMemoryAvailable / (1024 * 1024) << " Mo");
     }
 
-    std::cout << std::endl;
+    ALICEVISION_LOG_INFO("");
 }
 
 unsigned int HardwareContext::getMaxThreads() const
