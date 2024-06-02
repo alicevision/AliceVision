@@ -805,24 +805,24 @@ int aliceVision_main(int argc, char** argv)
     {
         for (const auto& poseGroup : poseGroups)
         {
-            bool hasAmbiant = false;
+            bool hasAmbient = false;
 
-            // Photometric stereo : ambiant viewId used for all pictures
+            // Photometric stereo : ambient viewId used for all pictures
             for (const IndexT vId : poseGroup.second)
             {
                 const fs::path imagePath = fs::path(sfmData.getView(vId).getImage().getImagePath());
-                if (boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+                if (boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
                 {
-                    hasAmbiant = true;
+                    hasAmbient = true;
                     for (const auto it : poseGroup.second)
                     {
-                        // Update poseId with ambiant view id
+                        // Update poseId with ambient view id
                         sfmData.getView(it).setPoseId(vId);
                     }
                     break;
                 }
             }
-            if (!hasAmbiant)
+            if (!hasAmbient)
             {
                 // Sort views of the poseGroup per timestamps
                 std::vector<std::pair<int64_t, IndexT>> sortedViews;

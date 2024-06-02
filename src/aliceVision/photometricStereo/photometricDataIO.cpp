@@ -98,7 +98,7 @@ void loadLightSH(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
 {
     std::stringstream stream;
     std::string line;
-    float x, y, z, ambiant, nxny, nxnz, nynz, nx2ny2, nz2;
+    float x, y, z, ambient, nxny, nxnz, nynz, nx2ny2, nz2;
 
     std::fstream dirFile;
     dirFile.open(dirFileName, std::ios::in);
@@ -118,13 +118,13 @@ void loadLightSH(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
             stream.clear();
             stream.str(line);
 
-            stream >> x >> y >> z >> ambiant >> nxny >> nxnz >> nynz >> nx2ny2 >> nz2;
+            stream >> x >> y >> z >> ambient >> nxny >> nxnz >> nynz >> nx2ny2 >> nz2;
             if (lineNumber < lightMat.rows())
             {
                 lightMat(lineNumber, 0) = x;
                 lightMat(lineNumber, 1) = -y;
                 lightMat(lineNumber, 2) = -z;
-                lightMat(lineNumber, 3) = ambiant;
+                lightMat(lineNumber, 3) = ambient;
                 lightMat(lineNumber, 4) = nxny;
                 lightMat(lineNumber, 5) = nxnz;
                 lightMat(lineNumber, 6) = nynz;

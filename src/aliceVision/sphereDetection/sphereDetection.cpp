@@ -183,7 +183,7 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
         const std::string sphereName = std::to_string(viewID.second->getViewId());
         const fs::path imagePath = fs::path(sfmData.getView(viewID.second->getViewId()).getImage().getImagePath());
 
-        if (boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+        if (boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
             continue;
 
         const auto pred = predict(session, imagePath, minScore);

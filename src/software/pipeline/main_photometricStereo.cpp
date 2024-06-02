@@ -78,9 +78,9 @@ int aliceVision_main(int argc, char** argv)
         ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"),
          "Path to light file (JSON). If empty, .txt files are expected in the image folder.")
         ("SHOrder,s", po::value<size_t>(&PSParameters.SHOrder)->default_value(0),
-         "Spherical harmonics order, 0 = directional, 1 = directional + ambiant, 2 = second order SH.")
-        ("removeAmbiant,a", po::value<bool>(&PSParameters.removeAmbiant)->default_value(false),
-         "True if the ambiant light is to be removed on PS images, false otherwise.")
+         "Spherical harmonics order, 0 = directional, 1 = directional + ambient, 2 = second order SH.")
+        ("removeAmbient,a", po::value<bool>(&PSParameters.removeAmbient)->default_value(false),
+         "True if the ambient light is to be removed on PS images, false otherwise.")
         ("isRobust,r", po::value<bool>(&PSParameters.isRobust)->default_value(false),
          "True to use the robust algorithm, false otherwise.")
         ("downscale, d", po::value<int>(&PSParameters.downscale)->default_value(1),

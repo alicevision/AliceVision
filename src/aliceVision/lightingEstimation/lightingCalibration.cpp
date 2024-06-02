@@ -87,7 +87,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
             ALICEVISION_LOG_INFO("View Id: " << currentView.getViewId());
             const fs::path imagePath = fs::path(currentView.getImage().getImagePath());
 
-            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
             {
                 std::string sphereName = std::to_string(currentView.getViewId());
                 auto sphereExists = (fileTree.get_child_optional(sphereName)).is_initialized();
@@ -138,7 +138,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
             ALICEVISION_LOG_INFO("View Id: " << currentView.getViewId());
             const fs::path imagePath = fs::path(currentView.getImage().getImagePath());
 
-            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
             {
                 ALICEVISION_LOG_INFO("  - " << imagePath.string());
                 imageList.push_back(imagePath.string());
@@ -641,7 +641,7 @@ void writeJSON(const std::string& fileName,
         const bool calibratedFile = (std::find(imageList.begin(), imageList.end(), viewId.getImage().getImagePath()) != imageList.end());
 
         // Only write images that were actually used for the lighting calibration, instead of all the input images
-        if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant") && calibratedFile)
+        if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient") && calibratedFile)
         {
             bpt::ptree lightTree;
             if (saveAsModel)
@@ -684,7 +684,7 @@ void writeJSON(const std::string& fileName,
         else
         {
             ALICEVISION_LOG_INFO("'" << imagePath << "' is in the input SfMData but has not been used for the lighting "
-                                     << "calibration or contains 'ambiant' in its filename.");
+                                     << "calibration or contains 'ambient' in its filename.");
         }
     }
 

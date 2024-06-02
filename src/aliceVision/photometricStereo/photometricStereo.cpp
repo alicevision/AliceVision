@@ -61,21 +61,21 @@ void photometricStereo(const std::string& inputPath,
     std::string maskName = lightDataPath.remove_filename().string() + "/mask.png";
     loadMask(maskName, mask);
 
-    std::string pathToAmbiant = "";
+    std::string pathToAmbient = "";
 
-    if (PSParameters.removeAmbiant)
+    if (PSParameters.removeAmbient)
     {
         for (auto& currentPath : imageList)
         {
             const fs::path imagePath = fs::path(currentPath);
-            if (boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+            if (boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
             {
-                pathToAmbiant = imagePath.string();
+                pathToAmbient = imagePath.string();
             }
         }
     }
 
-    photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, PSParameters, normals, albedo);
+    photometricStereo(imageList, intList, lightMat, mask, pathToAmbient, PSParameters, normals, albedo);
 
     writePSResults(outputPath, normals, albedo);
     image::writeImage(outputPath + "/mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
@@ -97,7 +97,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         ALICEVISION_LOG_INFO("SH will soon be available for use in PS. For now, lighting is reduced to directional");
     }
 
-    std::string pathToAmbiant = "";
+    std::string pathToAmbient = "";
     std::map<IndexT, std::vector<IndexT>> viewsPerPoseId;
 
     for (auto& viewIt : sfmData.getViews())
@@ -149,15 +149,15 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         for (auto& viewId : viewIds)
         {
             const fs::path imagePath = fs::path(sfmData.getView(viewId).getImage().getImagePath());
-            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
             {
                 ALICEVISION_LOG_INFO(" - " << imagePath.string());
                 imageList.push_back(imagePath.string());
             }
-            else if (PSParameters.removeAmbiant)
+            else if (PSParameters.removeAmbient)
             {
-                ALICEVISION_LOG_INFO("Remove ambiant light - " << imagePath.string());
-                pathToAmbiant = imagePath.string();
+                ALICEVISION_LOG_INFO("Remove ambient light - " << imagePath.string());
+                pathToAmbient = imagePath.string();
             }
         }
 
@@ -211,7 +211,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
 
         loadMask(currentMaskPath, mask);
 
-        photometricStereo(imageList, intList, lightMat, mask, pathToAmbiant, PSParameters, normals, albedo);
+        photometricStereo(imageList, intList, lightMat, mask, pathToAmbient, PSParameters, normals, albedo);
 
         writePSResults(outputPath, normals, albedo, posesIt.first);
         image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png",
