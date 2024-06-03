@@ -49,7 +49,7 @@ bool computeSubMesh(const std::string& pathSfmData, std::string& outputFile, con
     ALICEVISION_LOG_INFO("Loading source done");
 
     // Create multiview params
-    mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
+    mvsUtils::MultiViewParams mp(sfmData);
     mp.userParams.put("LargeScale.forcePixelSize", 0.01);
     mp.userParams.put("LargeScale.forceWeight", 32.0);
     mp.userParams.put("LargeScale.helperPointsGridSize", 10);
