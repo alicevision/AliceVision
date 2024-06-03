@@ -67,8 +67,8 @@ class AugmentedNormal : public Eigen::Matrix<float, 9, 1, 0, 9, 1>
     inline const T& nz() const { return (*this)(2); }
     inline T& nz() { return (*this)(2); }
 
-    inline const T& nambiant() const { return (*this)(3); }
-    inline T& nambiant() { return (*this)(3); }
+    inline const T& nambient() const { return (*this)(3); }
+    inline T& nambient() { return (*this)(3); }
 
     inline const T& nx_ny() const { return (*this)(4); }
     inline T& nx_ny() { return (*this)(4); }

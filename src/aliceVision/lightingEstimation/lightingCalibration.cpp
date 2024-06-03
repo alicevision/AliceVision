@@ -386,6 +386,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
 
         lightingDirection << directionnalPart, secondOrder;
     }
+}
+
 void calibrateLightFromRealSphere(const image::Image<float>& imageFloat,
                                   const cv::Mat& maskCV,
                                   const Eigen::Matrix3f& K,
