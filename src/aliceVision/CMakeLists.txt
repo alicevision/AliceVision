@@ -51,7 +51,6 @@ endif()
 # MVS modules
 
 if(ALICEVISION_BUILD_MVS)
-  add_subdirectory(lightingEstimation)
   add_subdirectory(mesh)
   add_subdirectory(mvsData)
   add_subdirectory(mvsUtils)
@@ -79,6 +78,7 @@ if (ALICEVISION_BUILD_STEREOPHOTOMETRY)
             add_subdirectory(sphereDetection)
         endif()
     endif()
+    add_subdirectory(lightingEstimation)
 endif()
 
 
