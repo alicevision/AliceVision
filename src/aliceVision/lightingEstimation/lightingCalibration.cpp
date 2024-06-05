@@ -39,7 +39,8 @@ void lightCalibration(const sfmData::SfMData& sfmData,
                       const std::string& inputFile,
                       const std::string& outputPath,
                       const std::string& method,
-                      const bool saveAsModel)
+                      const bool saveAsModel,
+                      const bool ellipticEstimation)
 {
     std::vector<std::string> imageList;
     std::vector<float> focals;
@@ -60,7 +61,6 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         }
     }
 
-    bool testEllipse = true;
     bool fromJSON = false;
 
     std::vector<std::array<float, 3>> allSpheresParams;
@@ -180,7 +180,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         {
             float focal = focals.at(i);
             std::array<float, 3> sphereParam = allSpheresParams.at(i);
-            if(testEllipse)
+            if(ellipticEstimation)
             {
                 Eigen::Matrix3f K = KMatrices.at(i);
                 float sphereRadius = 1.0;

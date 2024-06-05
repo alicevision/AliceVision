@@ -21,19 +21,23 @@ namespace lightingEstimation {
  * @param[in] sfmData Input .sfm file to calibrate from
  * @param[in] inputJSON Path to the JSON file containing the spheres parameters (see sphereDetection)
  * @param[out] outputPath Path to the JSON file in which lights' directions are written
+ * @param[in] method Method used for calibration ("brightestPoint" or "whiteSphere")
+ * @param[in] saveAsModel True to save the estimated lights as model
+ * @param[in] ellipticEstimation True to use elliptic estimation of the lighting
  */
 void lightCalibration(const sfmData::SfMData& sfmData,
                       const std::string& inputJSON,
                       const std::string& outputPath,
                       const std::string& method,
-                      const bool saveAsModel);
+                      const bool saveAsModel,
+                      const bool ellipticEstimation);
 
 /**
  * @brief Calibrate lighting direction of an image containing a sphere
  * @param[in] picturePath Path to the image file
  * @param[in] sphereParam An array of 3 floating-point: the coordinates of the sphere center in the picture frame and the radius of the sphere
  * @param[in] focal Focal length of the camera
- * @param[in] method Method used for calibration (only "brightestPoint" for now)
+ * @param[in] method Method used for calibration ("brightestPoint" or "whiteSphere")
  * @param[out] lightingDirection Output parameter for the estimated lighting direction
  */
 void lightCalibrationOneImage(const std::string& picturePath,
