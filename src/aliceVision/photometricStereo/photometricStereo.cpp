@@ -290,7 +290,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
                        const std::vector<std::array<float, 3>>& intList,
                        const Eigen::MatrixXf& lightMat,
                        image::Image<float>& mask,
-                       const std::string& pathToAmbiant,
+                       const std::string& pathToAmbient,
                        const PhotometricSteroParameters& PSParameters,
                        image::Image<image::RGBfColor>& normals,
                        image::Image<image::RGBfColor>& albedo)
@@ -341,19 +341,19 @@ void photometricStereo(const std::vector<std::string>& imageList,
         hasMask = true;
     }
 
-    // Read ambiant
-    image::Image<image::RGBfColor> imageAmbiant;
+    // Read ambient
+    image::Image<image::RGBfColor> imageAmbient;
 
-    if (boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
+    if (boost::algorithm::icontains(fs::path(pathToAmbient).stem().string(), "ambient"))
     {
-        ALICEVISION_LOG_INFO("Removing ambiant light");
-        ALICEVISION_LOG_INFO(pathToAmbiant);
+        ALICEVISION_LOG_INFO("Removing ambient light");
+        ALICEVISION_LOG_INFO(pathToAmbient);
 
-        image::readImage(pathToAmbiant, imageAmbiant, image::EImageColorSpace::NO_CONVERSION);
+        image::readImage(pathToAmbient, imageAmbient, image::EImageColorSpace::NO_CONVERSION);
 
         if (PSParameters.downscale > 1)
         {
-            imageAlgo::resizeImage(PSParameters.downscale, imageAmbiant);
+            imageAlgo::resizeImage(PSParameters.downscale, imageAmbient);
         }
     }
 
@@ -419,9 +419,9 @@ void photometricStereo(const std::vector<std::string>& imageList,
                 imageAlgo::resizeImage(PSParameters.downscale, imageFloat);
             }
 
-            if (boost::algorithm::icontains(fs::path(pathToAmbiant).stem().string(), "ambiant"))
+            if (boost::algorithm::icontains(fs::path(pathToAmbient).stem().string(), "ambient"))
             {
-                imageFloat = imageFloat - imageAmbiant;
+                imageFloat = imageFloat - imageAmbient;
             }
 
             intensityScaling(intList.at(i), imageFloat);
@@ -620,7 +620,7 @@ void getPicturesNames(const std::string& folderPath, std::vector<std::string>& i
         std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
 
         if (!boost::algorithm::icontains(currentFilePath.stem().string(), "mask") &&
-            !boost::algorithm::icontains(currentFilePath.stem().string(), "ambiant"))
+            !boost::algorithm::icontains(currentFilePath.stem().string(), "ambient"))
         {
             for (const std::string& extension : extensions)
             {
