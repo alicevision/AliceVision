@@ -625,18 +625,7 @@ if(ALICEVISION_BUILD_MVS)
 endif() # if(ALICEVISION_BUILD_MVS)
 
 
-if (ALICEVISION_BUILD_STEREOPHOTOMETRY)
-    alicevision_add_software(aliceVision_lightingCalibration
-        SOURCE main_lightingCalibration.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_lightingEstimation
-              aliceVision_cmdline
-              aliceVision_system
-              aliceVision_sfmData
-              aliceVision_sfmDataIO
-              Boost::program_options
-    )
-
+if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
     if(ALICEVISION_HAVE_OPENCV)
         # Photometric Stereo
 
@@ -682,6 +671,18 @@ if (ALICEVISION_BUILD_STEREOPHOTOMETRY)
                       ${OpenCV_LIBRARIES}
             )
         endif()
+
+        alicevision_add_software(aliceVision_lightingCalibration
+            SOURCE main_lightingCalibration.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_lightingEstimation
+                  aliceVision_cmdline
+                  aliceVision_system
+                  aliceVision_sfmData
+                  aliceVision_sfmDataIO
+                  Boost::program_options
+        )
+
     endif()
 endif()
 
