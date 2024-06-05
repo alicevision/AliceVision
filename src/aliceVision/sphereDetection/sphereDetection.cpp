@@ -219,7 +219,7 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
             ALICEVISION_LOG_WARNING("No sphere detected for '" << imagePath << "'.");
         }
     }
-    bpt::write_json(outputPath.append("detection.json").string(), fileTree);
+    bpt::write_json(outputPath.string(), fileTree);
 }
 
 void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath)
