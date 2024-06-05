@@ -138,7 +138,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
             for (auto& viewId : initViewIds)
             {
                 const fs::path imagePath = fs::path(sfmData.getView(viewId).getImage().getImagePath());
-                idMap[imagePath] = viewId;
+                idMap[imagePath.string()] = viewId;
             }
         }
         for (const auto& [currentId, viewId] : idMap)
@@ -170,7 +170,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         }
         else
         {
-            const std::string extension = fs::path(lightData).extension();
+            const std::string extension = fs::path(lightData).extension().string();
 
             if (extension == ".json")  // JSON File
             {
