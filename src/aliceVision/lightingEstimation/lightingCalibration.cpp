@@ -61,95 +61,48 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         }
     }
 
-    bool fromJSON = false;
-
     std::vector<std::array<float, 3>> allSpheresParams;
     std::vector<Eigen::Matrix3f> KMatrices;
-
-    if(fs::path(inputFile).extension() == ".json")
-    {
-        std::cout << "JSON file detected" << std::endl;
-        fromJSON = true;
-    }
 
     int nbCols = 0;
     int nbRows = 0;
 
-    if (fromJSON)
+    // Main tree
+    bpt::ptree fileTree;
+    // Read the json file and initialize the tree
+    bpt::read_json(inputFile, fileTree);
+
+    for (const auto& [currentId, currentView] : viewMap)
     {
-        // Main tree
-        bpt::ptree fileTree;
-        // Read the json file and initialize the tree
-        bpt::read_json(inputFile, fileTree);
+        ALICEVISION_LOG_INFO("View Id: " << currentView.getViewId());
+        const fs::path imagePath = fs::path(currentView.getImage().getImagePath());
 
-        for (const auto& [currentTime, currentView] : viewMap)
+        if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
         {
-            ALICEVISION_LOG_INFO("View Id: " << currentView.getViewId());
-            const fs::path imagePath = fs::path(currentView.getImage().getImagePath());
-
-            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
-            {
-                std::string sphereName = std::to_string(currentView.getViewId());
-                auto sphereExists = (fileTree.get_child_optional(sphereName)).is_initialized();
-                if (sphereExists)
-                {
-                    ALICEVISION_LOG_INFO("  - " << imagePath.string());
-                    imageList.push_back(imagePath.string());
-
-                    std::array<float, 3> currentSphereParams;
-                    for (auto& currentSphere : fileTree.get_child(sphereName))
-                    {
-                        currentSphereParams[0] = currentSphere.second.get_child("").get("x", 0.0);
-                        currentSphereParams[1] = currentSphere.second.get_child("").get("y", 0.0);
-                        currentSphereParams[2] = currentSphere.second.get_child("").get("r", 0.0);
-                    }
-
-                    allSpheresParams.push_back(currentSphereParams);
-
-                    IndexT intrinsicId = currentView.getIntrinsicId();
-                    focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
-
-                    float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
-                    nbCols = sfmData.getIntrinsics().at(intrinsicId)->w();
-                    nbRows = sfmData.getIntrinsics().at(intrinsicId)->h();
-                    float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
-                    float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
-
-                    Eigen::MatrixXf currentK = Eigen::MatrixXf::Zero(3, 3);
-                    // Create K matrix
-                    currentK << focalPx, 0.0, x_p,
-                        0.0, focalPx, y_p,
-                        0.0, 0.0, 1.0;
-
-                    KMatrices.push_back(currentK);
-                }
-                else
-                {
-                    ALICEVISION_LOG_WARNING("No detected sphere found for '" << imagePath << "'.");
-                }
-            }
-        }
-    }
-    else
-    {
-        IndexT viewId;
-        for (const auto& [currentTime, currentView] : viewMap)
-        {
-            ALICEVISION_LOG_INFO("View Id: " << currentView.getViewId());
-            const fs::path imagePath = fs::path(currentView.getImage().getImagePath());
-
-            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
+            std::string sphereName = std::to_string(currentView.getViewId());
+            auto sphereExists = (fileTree.get_child_optional(sphereName)).is_initialized();
+            if (sphereExists)
             {
                 ALICEVISION_LOG_INFO("  - " << imagePath.string());
                 imageList.push_back(imagePath.string());
-                viewId = currentView.getViewId();
-                // Get intrinsics associated with this view :
+
+                std::array<float, 3> currentSphereParams;
+                for (auto& currentSphere : fileTree.get_child(sphereName))
+                {
+                    currentSphereParams[0] = currentSphere.second.get_child("").get("x", 0.0);
+                    currentSphereParams[1] = currentSphere.second.get_child("").get("y", 0.0);
+                    currentSphereParams[2] = currentSphere.second.get_child("").get("r", 0.0);
+                }
+                allSpheresParams.push_back(currentSphereParams);
+
                 IndexT intrinsicId = currentView.getIntrinsicId();
-                const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
+                focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
+
+                float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
                 nbCols = sfmData.getIntrinsics().at(intrinsicId)->w();
                 nbRows = sfmData.getIntrinsics().at(intrinsicId)->h();
-                const float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
-                const float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
+                float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
+                float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
 
                 Eigen::MatrixXf currentK = Eigen::MatrixXf::Zero(3, 3);
                 // Create K matrix
@@ -158,6 +111,10 @@ void lightCalibration(const sfmData::SfMData& sfmData,
                     0.0, 0.0, 1.0;
 
                 KMatrices.push_back(currentK);
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("No detected sphere found for '" << imagePath << "'.");
             }
         }
     }
@@ -171,45 +128,30 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
     for (size_t i = 0; i < imageList.size(); ++i)
     {
-
         std::string picturePath = imageList.at(i);
-
         Eigen::VectorXf lightingDirection = Eigen::VectorXf::Zero(lightSize);
         float intensity;
-        if(fromJSON)
-        {
-            float focal = focals.at(i);
-            std::array<float, 3> sphereParam = allSpheresParams.at(i);
-            if(ellipticEstimation)
-            {
-                Eigen::Matrix3f K = KMatrices.at(i);
-                float sphereRadius = 1.0;
-                std::array<float, 5> ellipseParam;
 
-                cv::Mat maskCV = cv::Mat::zeros(nbRows, nbCols, CV_8UC1);
-
-                image::Image<float> imageFloat;
-                image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
-                getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam, maskCV);
-                calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity);
-            }
-            else
-            {
-                lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection, intensity);
-            }
-        }
-        else
+        float focal = focals.at(i);
+        std::array<float, 3> sphereParam = allSpheresParams.at(i);
+        if(ellipticEstimation)
         {
             Eigen::Matrix3f K = KMatrices.at(i);
             float sphereRadius = 1.0;
-            cv::Mat maskCV = cv::imread(inputFile, cv::IMREAD_GRAYSCALE);
+            std::array<float, 5> ellipseParam;
+
+            cv::Mat maskCV = cv::Mat::zeros(nbRows, nbCols, CV_8UC1);
+
             image::Image<float> imageFloat;
             image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
-
+            getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam, maskCV);
             calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity);
-
-            break;
         }
+        else
+        {
+            lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection, intensity);
+        }
+
         lightMat.row(i) = lightingDirection;
         intList.push_back(intensity);
     }

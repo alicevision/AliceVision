@@ -88,6 +88,11 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_ERROR("Directory input: WIP");
         ALICEVISION_THROW(std::invalid_argument, "Input directories are not yet supported");
     }
+    else if (fs::path(inputDetection).extension() != ".json")
+    {
+        ALICEVISION_LOG_ERROR("The input detection file must be a JSON file.");
+        ALICEVISION_THROW(std::invalid_argument, "JSON needed for sphere positions and radius.");
+    }
     else
     {
         sfmData::SfMData sfmData;
