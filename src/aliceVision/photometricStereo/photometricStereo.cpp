@@ -127,11 +127,6 @@ void photometricStereo(const sfmData::SfMData& sfmData,
                 std::map<std::string, std::string> currentMetadata = sfmData.getView(viewId).getImage().getMetadata();
                 idMap[currentMetadata.at("Exif:DateTimeDigitized")] = viewId;
             }
-
-            for (const auto& [currentTime, viewId] : idMap)
-            {
-                viewIds.push_back(viewId);
-            }
         }
         else
         {
