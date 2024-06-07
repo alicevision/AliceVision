@@ -245,19 +245,23 @@ void lightCalibrationOneImage(const std::string& picturePath,
 
         // Observation direction :
         Eigen::Vector3f observationRayPersp;
+        Eigen::Vector3f observationRay;
 
         // orthographic approximation :
-        //observationRay(0) = 0.0;
-        //observationRay(1) = 0.0;
-        //observationRay(2) = -1.0;
+        observationRay(0) = 0.0;
+        observationRay(1) = 0.0;
+        observationRay(2) = -1.0;
+
         observationRayPersp(0) = brigthestPoint_xy(0) / focal;
         observationRayPersp(1) = brigthestPoint_xy(1) / focal;
         observationRayPersp(2) = 1.0;
         observationRayPersp = -observationRayPersp / observationRayPersp.norm();
 
         // Evaluate lighting direction :
-        lightingDirection = 2 * normalBrightestPoint.dot(observationRayPersp) * normalBrightestPoint - observationRayPersp;
-        lightingDirection = lightingDirection / lightingDirection.norm();
+        //lightingDirection = 2 * normalBrightestPoint.dot(observationRayPersp) * normalBrightestPoint - observationRayPersp;
+        //lightingDirection = lightingDirection / lightingDirection.norm();
+
+        lightingDirection = 2 * normalBrightestPoint.dot(observationRay) * normalBrightestPoint - observationRay;
 
         intensity = 1.0;
     }
