@@ -551,6 +551,7 @@ void cutImage(const image::Image<float>& imageFloat,
               image::Image<float>& patch,
               std::array<float, 2>& patchOrigin)
 {
+    // Absolute position of the patch's top left corner in image
     const int minISphere = floor(sphereParam[1] - sphereParam[2] + imageFloat.rows() / 2);
     const int minJSphere = floor(sphereParam[0] - sphereParam[2] + imageFloat.cols() / 2);
 
@@ -639,7 +640,7 @@ void writeJSON(const std::string& fileName,
         }
     }
 
-    for (const auto& [currentTime, viewId] : viewMap)
+    for (const auto& [currentId, viewId] : viewMap)
     {
         const fs::path imagePath = fs::path(viewId.getImage().getImagePath());
 
