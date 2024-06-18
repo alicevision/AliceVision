@@ -27,9 +27,22 @@ namespace calibration {
  */
 struct LineWithPoints
 {
+    int groupId;
+    int step;
     double angle;
+    double angleOffset;
     double dist;
     std::vector<Vec2> points;
+};
+
+
+/**
+ * Define a pair of pair of lines
+*/
+struct SizeConstraint
+{
+    std::pair<int, int> firstPair;
+    std::pair<int, int> secondPair;
 };
 
 /**
@@ -63,6 +76,7 @@ struct Statistics
  * @param[out] undistortionToEstimate Undistortion object with the parameters to estimate.
  * @param[out] statistics Statistics on the estimation error.
  * @param[in] lines Set of line aligned points used to estimate distortion.
+ * @param[in] constraints set of line size constraints (pair of pair of lines)
  * @param[in] lockCenter Lock the distortion offset during optimization.
  * @param[in] lockDistortions Distortion parameters to lock during optimization.
  * @return False if the estimation failed, otherwise true.
@@ -70,7 +84,9 @@ struct Statistics
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
               std::vector<LineWithPoints>& lines,
-              bool lockCenter,
+              const std::vector<calibration::SizeConstraint>& constraints,
+              const bool lockCenter,
+              const bool lockAngles,
               const std::vector<bool>& lockDistortions);
 
 
@@ -89,7 +105,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
               const std::vector<PointPair>& pointpairs,
-              bool lockCenter,
+              const bool lockCenter,
               const std::vector<bool>& lockDistortions);
 
 }  // namespace calibration

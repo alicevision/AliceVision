@@ -33,6 +33,7 @@ class Undistortion
     {
         setSize(width, height);
         setOffset({0.0, 0.0});
+        _pixelAspectRatio = 1.0;
     }
 
     virtual EUNDISTORTION getType() const = 0;
@@ -47,7 +48,8 @@ class Undistortion
     void setSize(int width, int height)
     {
         _size = {width, height};
-        _diagonal = sqrt(width * width + height * height) * 0.5;
+        double hh = height / _pixelAspectRatio;
+        _diagonal = sqrt(width * width + hh * hh) * 0.5;
         _center = {width / 2, height / 2};
     }
 
@@ -55,6 +57,13 @@ class Undistortion
     {
         //May be used for plates with a different size than lens grid
         _diagonal = diagonal;
+    }
+
+    void setPixelAspectRatio(double pixelAspectRatio) 
+    { 
+        _pixelAspectRatio = pixelAspectRatio; 
+        double hh = _size.y() / _pixelAspectRatio;
+        _diagonal = sqrt(_size.x() * _size.x() + hh * hh) * 0.5;
     }
 
     inline Vec2 getOffset() const { return _offset; }
@@ -65,8 +74,8 @@ class Undistortion
 
     inline double getDiagonal() const { return _diagonal; }
 
+    double getPixelAspectRatio() const { return _pixelAspectRatio; }
     
-
     const std::vector<double>& getParameters() const { return _undistortionParams; }
 
     void setParameters(const std::vector<double>& params)
@@ -105,6 +114,7 @@ class Undistortion
     Vec2 _center;
     Vec2 _offset;
     double _diagonal;
+    double _pixelAspectRatio;
     std::vector<double> _undistortionParams{};
 };
 

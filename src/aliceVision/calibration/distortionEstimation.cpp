@@ -15,12 +15,186 @@
 namespace aliceVision {
 namespace calibration {
 
+class CostLineDistanceRatio : public ceres::CostFunction
+{
+  public:
+    CostLineDistanceRatio(double target)
+      : _target(target)
+    {
+        set_num_residuals(1);
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(1);
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_dist_line11 = parameters[0];
+        const double* parameter_dist_line12 = parameters[1];
+        const double* parameter_dist_line21 = parameters[2];
+        const double* parameter_dist_line22 = parameters[3];
+
+        const double dist_line11 = parameter_dist_line11[0];
+        const double dist_line12 = parameter_dist_line12[0];
+        const double dist_line21 = parameter_dist_line21[0];
+        const double dist_line22 = parameter_dist_line22[0];
+
+        const double diff1 = dist_line12 - dist_line11;
+        const double diff2 = dist_line22 - dist_line21;
+        const double ratio = diff1 / diff2;
+
+        double w = 10000.0;
+        residuals[0] = w * (ratio - _target);
+
+        if (jacobians == nullptr)
+        {
+            return true;
+        }
+
+        double d_ratio_d_diff1 = 1.0 / diff2;
+        double d_ratio_d_diff2 = - diff1 / (diff2 * diff2);
+
+        if (jacobians[0] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[0]);
+            J(0, 0) = - w * (d_ratio_d_diff1);
+        }
+
+        if (jacobians[1] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[1]);
+            J(0, 0) = w * (d_ratio_d_diff1);
+        }
+
+        if (jacobians[2] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[2]);
+            J(0, 0) = - w * (d_ratio_d_diff2);
+        }
+
+        if (jacobians[3] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[3]);
+            J(0, 0) = w * (d_ratio_d_diff2);
+        }
+
+        return true;
+    }
+
+  private:
+    double _target;
+};
+
+class CostLineDistanceRatioSharedLine : public ceres::CostFunction
+{
+  public:
+    CostLineDistanceRatioSharedLine(double target)
+      : _target(target)
+    {
+        set_num_residuals(1);
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(1);
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_dist_line11 = parameters[0];
+        const double* parameter_dist_line12 = parameters[1];
+        const double* parameter_dist_line21 = parameters[1];
+        const double* parameter_dist_line22 = parameters[2];
+
+        const double dist_line11 = parameter_dist_line11[0];
+        const double dist_line12 = parameter_dist_line12[0];
+        const double dist_line21 = parameter_dist_line21[0];
+        const double dist_line22 = parameter_dist_line22[0];
+
+        const double diff1 = dist_line12 - dist_line11;
+        const double diff2 = dist_line22 - dist_line21;
+        const double ratio = diff1 / diff2;
+
+        double w = 1.0;
+        residuals[0] = w * (ratio - _target);
+
+        if (jacobians == nullptr)
+        {
+            return true;
+        }
+
+        double d_ratio_d_diff1 = 1.0 / diff2;
+        double d_ratio_d_diff2 = - diff1 / (diff2 * diff2);
+
+        if (jacobians[0] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[0]);
+            J(0, 0) = - w * (d_ratio_d_diff1);
+        }
+
+        if (jacobians[1] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[1]);
+            J(0, 0) = w * (d_ratio_d_diff1) - w * (d_ratio_d_diff2);
+        }
+
+        if (jacobians[2] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[2]);
+            J(0, 0) = w * (d_ratio_d_diff2);
+        }
+
+        return true;
+    }
+
+  private:
+    double _target;
+};
+
+class CostLineAngle : public ceres::CostFunction
+{
+  public:
+    CostLineAngle(double target)
+      : _target(target)
+    {
+        set_num_residuals(1);
+        mutable_parameter_block_sizes()->push_back(1);
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_angle_line = parameters[0];
+
+        const double angle = parameter_angle_line[0];
+
+        double dot = angle - _target;
+        double w = 1.0;
+        residuals[0] = w * dot;
+
+        if (jacobians == nullptr)
+        {
+            return true;
+        }
+
+        if (jacobians[0] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[0]);
+            J(0, 0) = w;
+        }
+
+        return true;
+    }
+
+  private:
+    double _target;
+};
+
 class CostLine : public ceres::CostFunction
 {
   public:
-    CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt)
+    CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt, double offset)
       : _pt(pt),
-        _undistortion(undistortion)
+        _undistortion(undistortion),
+        _offset(offset)
     {
         set_num_residuals(1);
 
@@ -40,8 +214,8 @@ class CostLine : public ceres::CostFunction
         const double angle = parameter_angle_line[0];
         const double distanceToLine = parameter_dist_line[0];
 
-        const double cangle = std::cos(angle);
-        const double sangle = std::sin(angle);
+        const double cangle = std::cos(angle + _offset);
+        const double sangle = std::sin(angle + _offset);
 
         std::vector<double> cameraDistortionParams = _undistortion->getParameters();
         const std::size_t distortionSize = cameraDistortionParams.size();
@@ -57,9 +231,11 @@ class CostLine : public ceres::CostFunction
         _undistortion->setOffset(undistortionOffset);
 
         const Vec2 ipt = _undistortion->undistort(_pt);
+        const double pa = _undistortion->getPixelAspectRatio();
+        const double ny = ipt.y() / pa;
         const double w = 1.0;
-
-        residuals[0] = w * (cangle * ipt.x() + sangle * ipt.y() - distanceToLine);
+        
+        residuals[0] = w * (cangle * ipt.x() + sangle * ny - distanceToLine);
 
         if (jacobians == nullptr)
         {
@@ -69,7 +245,7 @@ class CostLine : public ceres::CostFunction
         if (jacobians[0] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[0]);
-            J(0, 0) = w * (ipt.x() * -sangle + ipt.y() * cangle);
+            J(0, 0) = w * (ipt.x() * -sangle + ny * cangle);
         }
 
         if (jacobians[1] != nullptr)
@@ -84,7 +260,7 @@ class CostLine : public ceres::CostFunction
 
             Eigen::Matrix<double, 1, 2> Jline;
             Jline(0, 0) = cangle;
-            Jline(0, 1) = sangle;
+            Jline(0, 1) = sangle / pa;
 
             J = w * Jline * _undistortion->getDerivativeUndistortWrtOffset(_pt);
         }
@@ -95,7 +271,7 @@ class CostLine : public ceres::CostFunction
 
             Eigen::Matrix<double, 1, 2> Jline;
             Jline(0, 0) = cangle;
-            Jline(0, 1) = sangle;
+            Jline(0, 1) = sangle / pa;
 
             J = w * Jline * _undistortion->getDerivativeUndistortWrtParameters(_pt);
         }
@@ -106,6 +282,7 @@ class CostLine : public ceres::CostFunction
   private:
     std::shared_ptr<camera::Undistortion> _undistortion;
     Vec2 _pt;
+    double _offset;
 };
 
 class CostPoint : public ceres::CostFunction
@@ -188,7 +365,9 @@ private:
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
               std::vector<LineWithPoints>& lines,
-              bool lockCenter,
+              const std::vector<calibration::SizeConstraint>& constraints,
+              const bool lockCenter,
+              const bool lockAngles,
               const std::vector<bool>& lockDistortions)
 {
     if (!undistortionToEstimate)
@@ -262,17 +441,56 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         }
     }
 
+    std::map<int, double> anglePerGroup;
+
     for (auto& l : lines)
     {
-        problem.AddParameterBlock(&l.angle, 1);
+        if (anglePerGroup.find(l.groupId) == anglePerGroup.end())
+        {
+            anglePerGroup[l.groupId] = l.angle;
+            problem.AddParameterBlock(&anglePerGroup[l.groupId], 1);
+        }
+
         problem.AddParameterBlock(&l.dist, 1);
 
         for (Vec2 pt : l.points)
         {
-            ceres::CostFunction* costFunction = new CostLine(undistortionToEstimate, pt);
-            problem.AddResidualBlock(costFunction, lossFunction, &l.angle, &l.dist, center, ptrUndistortionParameters);
+            ceres::CostFunction* costFunction = new CostLine(undistortionToEstimate, pt, l.angleOffset);
+            problem.AddResidualBlock(costFunction, lossFunction, &anglePerGroup[l.groupId], &l.dist, center, ptrUndistortionParameters);
         }
     }
+
+    if (lockAngles)
+    {
+        for (auto & [groupId, angle] : anglePerGroup)
+        {
+            problem.SetParameterBlockConstant(&angle);
+        }
+    }
+
+    for (auto & c : constraints)
+    {
+        LineWithPoints & l11 = lines[c.firstPair.first];
+        LineWithPoints & l12 = lines[c.firstPair.second];
+        LineWithPoints & l21 = lines[c.secondPair.first];
+        LineWithPoints & l22 = lines[c.secondPair.second];
+
+        double s1 = l12.step - l11.step;
+        double s2 = l22.step - l21.step;
+        double ratio = s1 / s2;
+
+        if (c.secondPair.first == c.firstPair.second)
+        {
+            ceres::CostFunction* costFunction = new CostLineDistanceRatioSharedLine(ratio);
+            problem.AddResidualBlock(costFunction, lossFunction, &l11.dist, &l12.dist, &l22.dist);
+        }
+        else 
+        {
+            ceres::CostFunction* costFunction = new CostLineDistanceRatio(ratio);
+            problem.AddResidualBlock(costFunction, lossFunction, &l11.dist, &l12.dist, &l21.dist, &l22.dist);
+        }
+    }
+
 
     ceres::Solver::Options options;
     options.use_inner_iterations = true;
@@ -296,17 +514,48 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
 
     for (auto& l : lines)
     {
-        const double sangle = std::sin(l.angle);
-        const double cangle = std::cos(l.angle);
+        l.angle = anglePerGroup[l.groupId];
+    }
+
+   
+    for (auto & c : constraints)
+    {
+        LineWithPoints & l11 = lines[c.firstPair.first];
+        LineWithPoints & l12 = lines[c.firstPair.second];
+        LineWithPoints & l21 = lines[c.secondPair.first];
+        LineWithPoints & l22 = lines[c.secondPair.second];
+
+        double s1 = l12.step - l11.step;
+        double s2 = l22.step - l21.step;
+        double d1 = l12.dist - l11.dist;
+        double d2 = l22.dist - l21.dist;
+        
+        if (std::abs(s1/s2 - d1/d2) > 1e-1) 
+        {
+            ALICEVISION_LOG_INFO("Some constraint is not respected");
+            std::cout << s1 << " " << s2 << " " << d1 << " " << d2 << std::endl;
+            std::cout << s1 / s2 << " " << d1 / d2 << std::endl;
+            std::cout << std::abs(s1/s2 - d1/d2) << std::endl;
+        }
+    }
+
+
+
+    for (auto& l : lines)
+    {
+        const double sangle = std::sin(l.angle + l.angleOffset);
+        const double cangle = std::cos(l.angle + l.angleOffset);
 
         for (const Vec2& pt : l.points)
         {
             const Vec2 ipt = undistortionToEstimate->undistort(pt);
-            const double res = (cangle * ipt.x() + sangle * ipt.y() - l.dist);
+            const double pa = undistortionToEstimate->getPixelAspectRatio();
+            const double ny = ipt.y() / pa;
+            const double res = (cangle * ipt.x() + sangle * ny - l.dist);
             errors.push_back(std::abs(res));
         }
     }
-
+ 
     const double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / static_cast<double>(errors.size());
     const double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
     const double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
@@ -325,7 +574,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
               const std::vector<PointPair>& pointpairs,
-              bool lockCenter,
+              const bool lockCenter,
               const std::vector<bool>& lockDistortions)
 {
     if (!undistortionToEstimate)
