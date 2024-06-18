@@ -258,6 +258,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
             ODoubleProperty(userProps, "mvg_undistortionOffsetX").set(undistortion->getOffset().x());
             ODoubleProperty(userProps, "mvg_undistortionOffsetY").set(undistortion->getOffset().y());
             ODoubleProperty(userProps, "mvg_undistortionDiagonal").set(undistortion->getDiagonal());
+            ODoubleProperty(userProps, "mvg_undistortionPixelAspectRatio").set(undistortion->getPixelAspectRatio());
         }
         
         OStringProperty(userProps, "mvg_distortionType").set(EDISTORTION_enumToString(distortionType));

@@ -167,11 +167,11 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
             : -1;
         const double focalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getScale().x() / double(intrinsic->w());
         const double focalRatio = intrinsicScaleOffset->getScale().x() / intrinsicScaleOffset->getScale().y();
-        const double pixelAspectRatio = 1.0 / focalRatio;
+        const double pixelRatio = 1.0 / focalRatio;
         
         intrinsicTree.put("initialFocalLength", initialFocalLengthMM);
         intrinsicTree.put("focalLength", focalLengthMM);
-        intrinsicTree.put("pixelRatio", pixelAspectRatio);
+        intrinsicTree.put("pixelRatio", pixelRatio);
         intrinsicTree.put("pixelRatioLocked", intrinsicScaleOffset->isRatioLocked());
 
         saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
@@ -211,6 +211,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
             undistortionType = undistortionObject->getType();
             saveMatrix("undistortionOffset", undistortionObject->getOffset(), intrinsicTree);
             intrinsicTree.put("undistortionDiagonal", undistortionObject->getDiagonal());
+            intrinsicTree.put("pixelAspectRatio", undistortionObject->getPixelAspectRatio());
 
             for (double param : undistortionObject->getParameters())
             {
@@ -389,6 +390,11 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
                 if (version >= Version(1, 2, 7))
                 {
                     undistortionObject->setDiagonal(intrinsicTree.get<double>("undistortionDiagonal"));
+                }
+
+                if (version >= Version(1, 2, 9))
+                {
+                    undistortionObject->setPixelAspectRatio(intrinsicTree.get<double>("pixelAspectRatio"));
                 }
             }
         }

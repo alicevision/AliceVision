@@ -423,6 +423,7 @@ bool readCamera(const Version& abcVersion,
     std::vector<double> undistortionParams;
     Vec2 undistortionOffset = {0, 0};
     double undistortionDiagonal = 0.0;
+    double undistortionPixelAspectRatio = 0.0;
 
     if (userProps)
     {
@@ -594,6 +595,10 @@ bool readCamera(const Version& abcVersion,
                 if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_undistortionDiagonal"))
                 {
                     undistortionDiagonal = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_undistortionDiagonal", sampleFrame);
+                }
+                if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_undistortionPixelAspectRatio"))
+                {
+                    undistortionPixelAspectRatio = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_undistortionPixelAspectRatio", sampleFrame);
                 }
             }
         }
