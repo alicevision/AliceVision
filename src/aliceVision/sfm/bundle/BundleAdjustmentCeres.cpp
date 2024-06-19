@@ -9,6 +9,7 @@
 #include <aliceVision/sfm/ResidualErrorFunctor.hpp>
 #include <aliceVision/sfm/ResidualErrorConstraintFunctor.hpp>
 #include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
+#include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
@@ -27,161 +28,6 @@ namespace sfm {
 
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
-
-class IntrinsicsManifold : public ceres::Manifold
-{
-  public:
-    explicit IntrinsicsManifold(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
-      : _ambientSize(parametersSize),
-        _focalRatio(focalRatio),
-        _lockFocal(lockFocal),
-        _lockFocalRatio(lockFocalRatio),
-        _lockCenter(lockCenter),
-        _lockDistortion(lockDistortion)
-    {
-        _distortionSize = _ambientSize - 4;
-        _tangentSize = 0;
-
-        if (!_lockFocal)
-        {
-            if (_lockFocalRatio)
-            {
-                _tangentSize += 1;
-            }
-            else
-            {
-                _tangentSize += 2;
-            }
-        }
-
-        if (!_lockCenter)
-        {
-            _tangentSize += 2;
-        }
-
-        if (!_lockDistortion)
-        {
-            _tangentSize += _distortionSize;
-        }
-    }
-
-    virtual ~IntrinsicsManifold() = default;
-
-    bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
-    {
-        for (int i = 0; i < _ambientSize; i++)
-        {
-            x_plus_delta[i] = x[i];
-        }
-
-        size_t posDelta = 0;
-        if (!_lockFocal)
-        {
-            if (_lockFocalRatio)
-            {
-                x_plus_delta[0] = x[0] + _focalRatio * delta[posDelta];
-                x_plus_delta[1] = x[1] + delta[posDelta];
-                posDelta++;
-            }
-            else
-            {
-                x_plus_delta[0] = x[0] + delta[posDelta];
-                posDelta++;
-                x_plus_delta[1] = x[1] + delta[posDelta];
-                posDelta++;
-            }
-        }
-
-        if (!_lockCenter)
-        {
-            x_plus_delta[2] = x[2] + delta[posDelta];
-            posDelta++;
-
-            x_plus_delta[3] = x[3] + delta[posDelta];
-            posDelta++;
-        }
-
-        if (!_lockDistortion)
-        {
-            for (int i = 0; i < _distortionSize; i++)
-            {
-                x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
-                posDelta++;
-            }
-        }
-
-        return true;
-    }
-
-    bool PlusJacobian(const double* x, double* jacobian) const override
-    {
-        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, AmbientSize(), TangentSize());
-
-        J.fill(0);
-
-        size_t posDelta = 0;
-        if (!_lockFocal)
-        {
-            if (_lockFocalRatio)
-            {
-                J(0, posDelta) = _focalRatio;
-                J(1, posDelta) = 1.0;
-                posDelta++;
-            }
-            else
-            {
-                J(0, posDelta) = 1.0;
-                posDelta++;
-                J(1, posDelta) = 1.0;
-                posDelta++;
-            }
-        }
-
-        if (!_lockCenter)
-        {
-            J(2, posDelta) = 1.0;
-            posDelta++;
-
-            J(3, posDelta) = 1.0;
-            posDelta++;
-        }
-
-        if (!_lockDistortion)
-        {
-            for (int i = 0; i < _distortionSize; i++)
-            {
-                J(4 + i, posDelta) = 1.0;
-                posDelta++;
-            }
-        }
-
-        return true;
-    }
-
-    bool Minus(const double* y, const double* x, double* delta) const override
-    {
-        throw std::invalid_argument("IntrinsicsManifold::Minus() should never be called");
-    }
-
-    bool MinusJacobian(const double* x, double* jacobian) const override
-    {
-        throw std::invalid_argument("IntrinsicsManifold::MinusJacobian() should never be called");
-    }
-
-    int AmbientSize() const override { return _ambientSize; }
-
-    int TangentSize() const override { return _tangentSize; }
-
-  private:
-    size_t _distortionSize;
-    size_t _ambientSize;
-    size_t _tangentSize;
-    double _focalRatio;
-    bool _lockFocal;
-    bool _lockFocalRatio;
-    bool _lockCenter;
-    bool _lockDistortion;
-};
 
 /**
  * @brief Create the appropriate cost functor according the provided input camera intrinsic model
@@ -737,17 +583,23 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
               std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
             if (intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
             {
+                
                 // if we have an initial guess, we only authorize a margin around this value.
                 assert(intrinsicBlock.size() >= 1);
-                const unsigned int maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h());  // TODO : check if rounding is needed
-                problem.SetParameterLowerBound(
-                  intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->getInitialScale().x() - maxFocalError));
-                problem.SetParameterUpperBound(
-                  intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->getInitialScale().x() + maxFocalError));
-                problem.SetParameterLowerBound(
-                  intrinsicBlockPtr, 1, static_cast<double>(intrinsicScaleOffset->getInitialScale().y() - maxFocalError));
-                problem.SetParameterUpperBound(
-                  intrinsicBlockPtr, 1, static_cast<double>(intrinsicScaleOffset->getInitialScale().y() + maxFocalError));
+                const double maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h());
+
+                const double fx = intrinsicScaleOffset->getInitialScale().x();
+                const double fy = intrinsicScaleOffset->getInitialScale().y();
+
+                const double lboundY = std::max(0.0, fy - maxFocalError);
+                const double uboundY = std::max(0.0, fy + maxFocalError);
+                const double lboundX = std::max(0.0, lboundY * fx/fy);
+                const double uboundX = std::max(0.0, uboundY * fx/fy);
+
+                problem.SetParameterLowerBound(intrinsicBlockPtr, 0, lboundX);
+                problem.SetParameterUpperBound(intrinsicBlockPtr, 0, uboundX);
+                problem.SetParameterLowerBound(intrinsicBlockPtr, 1, lboundY);
+                problem.SetParameterUpperBound(intrinsicBlockPtr, 1, uboundY);
             }
             else  // no initial guess
             {
@@ -758,7 +610,6 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
             }
 
             focalRatio = intrinsicBlockPtr[0] / intrinsicBlockPtr[1];
-
             std::shared_ptr<camera::IntrinsicScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
             if (castedcam_iso)
             {
