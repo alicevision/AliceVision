@@ -38,6 +38,8 @@ class IntrinsicScaleOffset : public IntrinsicBase
 
     inline Vec2 getOffset() const { return _offset; }
 
+    double getFocalLengthMM() const;
+
     /**
      * @brief Principal point in image coordinate ((0,0) is image top-left).
      */

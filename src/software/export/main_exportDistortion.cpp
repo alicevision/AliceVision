@@ -29,14 +29,19 @@ namespace po = boost::program_options;
 using namespace aliceVision;
 using namespace aliceVision::camera;
 
-std::string toNuke(std::shared_ptr<Undistortion> undistortion)
+std::string toNuke(std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic)
 {
-    const std::vector<double>& params = undistortion->getParameters();
-    const auto& size = undistortion->getSize();
-
     std::stringstream ss;
 
+    const double focal = intrinsic->getFocalLengthMM();
+    const double sensorWidth = intrinsic->sensorWidth();
+    const double sensorHeight = intrinsic->sensorHeight();
+    
+    const auto undistortion = intrinsic->getUndistortion();    
+    const std::vector<double>& params = undistortion->getParameters();
+    const auto& size = undistortion->getSize();
     const Vec2 offset = undistortion->getScaledOffset();
+    const double pa = undistortion->getPixelAspectRatio();
 
     switch (undistortion->getType())
     {
@@ -63,38 +68,33 @@ std::string toNuke(std::shared_ptr<Undistortion> undistortion)
                << "\n";
             break;
         case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
-            ss << "LensDistortion2 {"
-               << "\n"
-               << " distortionModelPreset \"3DEqualizer/3DE4 Anamorphic - Standard, Degree 4\""
-               << "\n"
-               << " lens Anamorphic"
-               << "\n"
-               << " distortionNumeratorX00 " << params[0] << "\n"
-               << " distortionNumeratorX01 " << params[4] << "\n"
-               << " distortionNumeratorX10 " << params[2] << "\n"
-               << " distortionNumeratorX11 " << params[6] << "\n"
-               << " distortionNumeratorX20 " << params[8] << "\n"
-               << " distortionNumeratorY00 " << params[1] << "\n"
-               << " distortionNumeratorY01 " << params[5] << "\n"
-               << " distortionNumeratorY10 " << params[3] << "\n"
-               << " distortionNumeratorY11 " << params[7] << "\n"
-               << " distortionNumeratorY20 " << params[9] << "\n"
-               << " output Undistort"
-               << "\n"
-               << " distortionScalingType Format"
-               << "\n"
-               << " distortionScalingFormat \"" << size(0) << " " << size(1) << " 0 0 " << size(0) << " " << size(1) << " 1 AV_undist_fmt \""
-               << "\n"
-               << " distortionModelType \"Radial Asymmetric\""
-               << "\n"
-               << " distortionOrder {2 0}"
-               << "\n"
-               << " normalisationType Diagonal"
-               << "\n"
-               << " distortInFisheyeSpace false"
-               << "\n"
-               << "}"
-               << "\n";
+            ss  << "LD_3DE4_Anamorphic_Standard_Degree_4 {\n"
+                << "direction undistort \n"
+                << "tde4_focal_length_cm " << focal << " \n" 
+                << "tde4_custom_focus_distance_cm 1.0 \n"
+                << "tde4_filmback_width_cm " << sensorWidth << " \n"
+                << "tde4_filmback_height_cm " << sensorHeight / pa << " \n"
+                << "tde4_lens_center_offset_x_cm 0.0000000 \n"
+                << "tde4_lens_center_offset_y_cm 0.0000000 \n"
+                << "tde4_pixel_aspect " << pa << " \n"
+                << "field_of_view_xa_unit 0.0000000 \n"
+                << "field_of_view_xb_unit 1.0000000 \n"
+                << "field_of_view_ya_unit 0.0000000 \n"
+                << "field_of_view_yb_unit 1.0000000 \n"
+                << "Cx02_Degree_2 " << params[0] << " \n"
+                << "Cy02_Degree_2 " << params[1] << " \n"
+                << "Cx22_Degree_2 " << params[2] << " \n"
+                << "Cy22_Degree_2 " << params[3] << " \n"
+                << "Cx04_Degree_4 " << params[4] << " \n"
+                << "Cy04_Degree_4 " << params[5] << " \n"
+                << "Cx24_Degree_4 " << params[6] << " \n"
+                << "Cy24_Degree_4 " << params[7] << " \n"
+                << "Cx44_Degree_4 " << params[8] << " \n"
+                << "Cy44_Degree_4 " << params[9] << " \n"
+                << "Lens_Rotation " << radianToDegree(params[10]) << " \n"
+                << "Squeeze_X " << params[11] << "\n"
+                << "Squeeze_Y " << params[12] << "\n"
+                << "}\n";
             break;
         default:
             ALICEVISION_THROW_ERROR(
@@ -199,7 +199,7 @@ int aliceVision_main(int argc, char* argv[])
         {
             ALICEVISION_LOG_INFO("Computing Nuke LensDistortion node");
 
-            const std::string nukeNodeStr = toNuke(undistortion);
+            const std::string nukeNodeStr = toNuke(intrinsicDisto);
 
             ALICEVISION_LOG_INFO("Writing Nuke LensDistortion node in " << intrinsicId << ".nk");
             std::stringstream ss;

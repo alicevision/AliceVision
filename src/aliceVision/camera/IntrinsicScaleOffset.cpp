@@ -156,5 +156,10 @@ bool IntrinsicScaleOffset::importFromParams(const std::vector<double>& params, c
     return true;
 }
 
+double IntrinsicScaleOffset::getFocalLengthMM() const
+{
+    return _scale(0) * sensorWidth() / static_cast<double>(std::max(w(), h()));
+}
+
 }  // namespace camera
 }  // namespace aliceVision
