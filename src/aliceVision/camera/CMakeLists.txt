@@ -10,6 +10,8 @@ set(camera_files_headers
 	DistortionRadial.hpp
 	Undistortion.hpp
 	Undistortion3DEA4.hpp
+    Undistortion3DERadial4.hpp
+    Undistortion3DEClassicLD.hpp
     UndistortionRadial.hpp
 	Equidistant.hpp
 	IntrinsicBase.hpp
@@ -32,6 +34,8 @@ set(camera_files_sources
     Pinhole.cpp
 	Undistortion.cpp
     Undistortion3DEA4.cpp
+    Undistortion3DERadial4.cpp
+    Undistortion3DEClassicLD.cpp
 )
 
 alicevision_add_library(aliceVision_camera

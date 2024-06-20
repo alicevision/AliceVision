@@ -34,7 +34,9 @@ enum EUNDISTORTION
 {
     UNDISTORTION_NONE,
     UNDISTORTION_RADIALK3,
-    UNDISTORTION_3DEANAMORPHIC4
+    UNDISTORTION_3DEANAMORPHIC4,
+    UNDISTORTION_3DECLASSICLD,
+    UNDISTORTION_3DERADIAL4,
 };
 
 enum EINTRINSIC
@@ -163,6 +165,14 @@ inline EUNDISTORTION EUNDISTORTION_stringToEnum(const std::string& undistortion)
     {
         return EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4;
     }
+    else if (type == "3declassicld")
+    {
+        return EUNDISTORTION::UNDISTORTION_3DECLASSICLD;
+    }
+    else if (type == "3deradial4")
+    {
+        return EUNDISTORTION::UNDISTORTION_3DERADIAL4;
+    }
     else if (type == "radialk3")
     {
         return EUNDISTORTION::UNDISTORTION_RADIALK3;
@@ -181,6 +191,10 @@ inline std::string EUNDISTORTION_enumToString(EUNDISTORTION undistortion)
     {
         case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
             return "3deanamorphic4";
+        case EUNDISTORTION::UNDISTORTION_3DECLASSICLD:
+            return "3declassicld";
+        case EUNDISTORTION::UNDISTORTION_3DERADIAL4:
+            return "3deradial4";
         case EUNDISTORTION::UNDISTORTION_RADIALK3:
             return "radialk3";
         case EUNDISTORTION::UNDISTORTION_NONE:

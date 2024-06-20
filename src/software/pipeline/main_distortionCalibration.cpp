@@ -410,6 +410,28 @@ int aliceVision_main(int argc, char* argv[])
                     },
                 };
         }
+        else if (undistortionModel == camera::EUNDISTORTION::UNDISTORTION_3DECLASSICLD)
+        {
+            initialParams = {0.0, 1.0, 0.0, 0.0, 0.0};
+            steps = {
+                        //First, lock everything but lines 
+                        {
+                            {true, true, true, true, true},
+                            std::vector<calibration::SizeConstraint>(),
+                            false
+                        },
+                        {
+                            {false, true, false, false, false},
+                            std::vector<calibration::SizeConstraint>(),
+                            false
+                        },
+                        {
+                            {false, true, false, false, false},
+                            allConstraints,
+                            false
+                        }
+                    };
+        }
         else
         {
             ALICEVISION_LOG_ERROR("Unsupported camera model for undistortion.");
