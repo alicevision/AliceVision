@@ -28,7 +28,7 @@
 #include <aliceVision/calibration/checkerDetector_io.hpp>
 #include <aliceVision/calibration/distortionEstimation.hpp>
 
-#include <aliceVision/camera/Undistortion3DE.hpp>
+#include <aliceVision/camera/Undistortion3DEA4.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/property_tree/json_parser.hpp>

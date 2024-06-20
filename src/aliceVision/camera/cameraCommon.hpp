@@ -28,9 +28,6 @@ enum EDISTORTION
     DISTORTION_BROWN,
     DISTORTION_FISHEYE,
     DISTORTION_FISHEYE1,
-    DISTORTION_3DERADIAL4,
-    DISTORTION_3DEANAMORPHIC4,
-    DISTORTION_3DECLASSICLD
 };
 
 enum EUNDISTORTION
@@ -126,18 +123,6 @@ inline EDISTORTION EDISTORTION_stringToEnum(const std::string& distortion)
     {
         return EDISTORTION::DISTORTION_FISHEYE1;
     }
-    else if (type == "3deradial4")
-    {
-        return EDISTORTION::DISTORTION_3DERADIAL4;
-    }
-    else if (type == "3deanamorphic4")
-    {
-        return EDISTORTION::DISTORTION_3DEANAMORPHIC4;
-    }
-    else if (type == "3declassicld")
-    {
-        return EDISTORTION::DISTORTION_3DECLASSICLD;
-    }
     else if (type == "none")
     {
         return EDISTORTION::DISTORTION_NONE;
@@ -162,12 +147,6 @@ inline std::string EDISTORTION_enumToString(EDISTORTION distortion)
             return "fisheye";
         case EDISTORTION::DISTORTION_FISHEYE1:
             return "fisheye1";
-        case EDISTORTION::DISTORTION_3DERADIAL4:
-            return "3deradial4";
-        case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
-            return "3deanamorphic4";
-        case EDISTORTION::DISTORTION_3DECLASSICLD:
-            return "3declassicld";
         case EDISTORTION::DISTORTION_NONE:
             return "none";
     }
@@ -233,12 +212,6 @@ inline void compatibilityStringToEnums(const std::string& intrinsic, EINTRINSIC 
         distortionType = EDISTORTION::DISTORTION_RADIALK3;
         undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
     }
-    else if (type == "3deradial4")
-    {
-        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
-        distortionType = EDISTORTION::DISTORTION_3DERADIAL4;
-        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
-    }
     else if (type == "brown")
     {
         intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
@@ -262,12 +235,6 @@ inline void compatibilityStringToEnums(const std::string& intrinsic, EINTRINSIC 
         intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
         distortionType = EDISTORTION::DISTORTION_NONE;
         undistortionType = EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4;
-    }
-    else if (type == "3declassicld")
-    {
-        intrinsicType = EINTRINSIC::PINHOLE_CAMERA;
-        distortionType = EDISTORTION::DISTORTION_3DECLASSICLD;
-        undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
     }
     else if (type == "equidistant")
     {
