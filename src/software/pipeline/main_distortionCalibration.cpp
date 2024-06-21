@@ -57,7 +57,7 @@ std::vector<calibration::LineWithPoints> createLines(
 {
     std::vector<calibration::LineWithPoints> lines;
 
-    const std::size_t minPointsPerLine = 10;
+    const std::size_t minPointsPerLine = 5;
 
     int dim1 = exploreByRow ? board.rows() : board.cols();
     int dim2 = exploreByRow ? board.cols() : board.rows();
