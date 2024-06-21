@@ -1647,9 +1647,8 @@ void CheckerDetector::filterNestedCheckerBoards(const size_t& height, const size
         }
 
         double mean_area = mean_squares / count_squares;
-
         // Check that square size function is increasing
-        if (mean_area < previous_area * 0.8)
+        if (mean_area < previous_area * 0.5)
             continue;
 
         previous_area = mean_area;
