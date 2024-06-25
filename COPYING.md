@@ -93,6 +93,11 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (c) Lemon authors.  
     Distributed under the [Boost License 1.0](http://www.boost.org/LICENSE_1_0.txt).
 
+*   __libE57Format__  
+    [https://github.com/asmaloney/libE57Format](https://github.com/asmaloney/libE57Format)  
+    Copyright (c) libE57Format authors.  
+    Distributed under the [BSL-1.0 license](https://opensource.org/licenses/BSL-1.0).   
+
 *   __MeshSDFilter__  
     [https://github.com/bldeng/MeshSDFilter](https://github.com/bldeng/MeshSDFilter)  
     Copyright (c) 2017, Bailin Deng. All rights reserved.  
