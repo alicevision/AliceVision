@@ -65,6 +65,7 @@ struct Statistics
     double mean;
     double stddev;
     double median;
+    double lastDecile;
     double max;
 };
 

@@ -111,33 +111,68 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, std
         std::vector<int> verticals, horizontals;
         
         items = createLines(corners, b, true, false, false, false, false);
+
+        int groupId = 0;
         for (int i = 0; i < items.size(); i++)
         {
-            items[i].groupId = 0;
+            items[i].groupId = groupId;
             items[i].angle = 0;
-            items[i].angleOffset = M_PI_2;
+            items[i].angleOffset = 0;
             horizontals.push_back(lineWithPoints.size());
             lineWithPoints.push_back(items[i]);
+            groupId++;
         }
 
         items = createLines(corners, b, false, false, false, false, false);        
         for (int i = 0; i < items.size(); i++)
         {
-            items[i].groupId = 0;
+            items[i].groupId = groupId;
             items[i].angle = 0;
             items[i].angleOffset = 0;
             verticals.push_back(lineWithPoints.size());
             lineWithPoints.push_back(items[i]);
+            groupId++;
         }
 
-        /*items = createLines(corners, b, true, true, false, false, false);
-        lineWithPoints.insert(lineWithPoints.end(), items.begin(), items.end());
+        items = createLines(corners, b, true, true, false, false, false);
+        for (int i = 0; i < items.size(); i++)
+        {
+            items[i].groupId = groupId;
+            items[i].angle = 0;
+            items[i].angleOffset = 0;
+            lineWithPoints.push_back(items[i]);
+            groupId++;
+        }
+
         items = createLines(corners, b, true, true, false, true, false);
-        lineWithPoints.insert(lineWithPoints.end(), items.begin(), items.end());
+        for (int i = 0; i < items.size(); i++)
+        {
+            items[i].groupId = groupId;
+            items[i].angle = 0;
+            items[i].angleOffset = 0;
+            lineWithPoints.push_back(items[i]);
+            groupId++;
+        }
+
         items = createLines(corners, b, false, false, true, false, false);
-        lineWithPoints.insert(lineWithPoints.end(), items.begin(), items.end());
+        for (int i = 0; i < items.size(); i++)
+        {
+            items[i].groupId = groupId;
+            items[i].angle = 0;
+            items[i].angleOffset = 0;
+            lineWithPoints.push_back(items[i]);
+            groupId++;
+        }
+
         items = createLines(corners, b, false, false, true, true, false);
-        lineWithPoints.insert(lineWithPoints.end(), items.begin(), items.end());*/
+        for (int i = 0; i < items.size(); i++)
+        {
+            items[i].groupId = groupId;
+            items[i].angle = 0;
+            items[i].angleOffset = 0;
+            lineWithPoints.push_back(items[i]);
+            groupId++;
+        }
 
 
         std::vector<std::pair<int, int>> pairs1;
@@ -394,18 +429,18 @@ int aliceVision_main(int argc, char* argv[])
                         true
                     },
                     {
-                        {true, true, true, true, true, true, true, true, true, true, false, false, true},
-                        allConstraints,
+                        {true, true, true, true, true, true, true, true, true, true, true, true, true},
+                        std::vector<calibration::SizeConstraint>(),
                         false
                     },
                     {
-                        {false, false, false, false, true, true, true, true, true, true, false, false, true},
-                        allConstraints,
+                        {false, false, false, false, true, true, true, true, true, true, true, true, true},
+                        std::vector<calibration::SizeConstraint>(),
                         false
                     },
                     {
-                        {false, false, false, false, false, false, false, false, false, false, false, false, true},
-                        allConstraints,
+                        {false, false, false, false, false, false, false, false, false, false, true, true, true},
+                        std::vector<calibration::SizeConstraint>(),
                         false
                     },
                 };
@@ -427,7 +462,7 @@ int aliceVision_main(int argc, char* argv[])
                         },
                         {
                             {false, true, false, false, false},
-                            allConstraints,
+                            std::vector<calibration::SizeConstraint>(),
                             false
                         }
                     };
@@ -444,12 +479,12 @@ int aliceVision_main(int argc, char* argv[])
                         },
                         {
                             {false, true, true, true, true, true, true, true},
-                            allConstraints,
+                            std::vector<calibration::SizeConstraint>(),
                             false
                         },
                         {
                             {false, false, false, false, false, false, false, false},
-                            allConstraints,
+                            std::vector<calibration::SizeConstraint>(),
                             false
                         }
                     };
@@ -474,6 +509,7 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Result quality of calibration: ");
         ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
         ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
+        ALICEVISION_LOG_INFO("Last decile of error: " << statistics.lastDecile);
     }
 
     // Save sfmData to disk

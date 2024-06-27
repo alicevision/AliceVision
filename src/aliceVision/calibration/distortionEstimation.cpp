@@ -562,11 +562,13 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     std::sort(errors.begin(), errors.end());
     const double median = errors[errors.size() / 2];
     const double max = errors[errors.size() - 1];
+    const double lastDecile = errors[errors.size() * 0.9];
 
     statistics.mean = mean;
     statistics.stddev = stddev;
     statistics.median = median;
     statistics.max = max;
+    statistics.lastDecile = lastDecile;
 
     return true;
 }
@@ -688,12 +690,14 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     std::sort(errors.begin(), errors.end());
     const double median = errors[errors.size() / 2];
     const double max = errors[errors.size() - 1];
-
+    const double lastDecile = errors[errors.size() * 0.9];
 
     statistics.mean = mean;
     statistics.stddev = stddev;
     statistics.median = median;
     statistics.max = max;
+    statistics.lastDecile = lastDecile;
+    
 
     return true;
 }
