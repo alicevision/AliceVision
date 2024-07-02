@@ -72,6 +72,8 @@ class Undistortion
 
     Vec2 getSize() const { return _size; }
 
+    Vec2 getCenter() const { return _center + _offset; }
+
     inline double getDiagonal() const { return _diagonal; }
 
     double getPixelAspectRatio() const { return _pixelAspectRatio; }

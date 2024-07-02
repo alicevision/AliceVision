@@ -300,8 +300,8 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivati
     d_np_d_squeezed(1, 1) = cphi;
 
     Eigen::Matrix<double, 2, 1> d_np_d_phi;
-    d_np_d_phi(0, 0) = ptu.x() * (-sphi) + ptu.y() * (cphi);
-    d_np_d_phi(1, 0) = ptu.x() * (-cphi) + ptu.y() * (-sphi);
+    d_np_d_phi(0, 0) = squeezed.x() * (-sphi) + squeezed.y() * (cphi);
+    d_np_d_phi(1, 0) = squeezed.x() * (-cphi) + squeezed.y() * (-sphi);
     
 
     Eigen::Matrix<double, 2, 13> J = Eigen::Matrix<double, 2, 13>::Zero();

@@ -7,6 +7,7 @@
 #include "distortionEstimation.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/sfm/bundle/manifolds/se3.hpp>
 
 #include <ceres/ceres.h>
 
@@ -362,6 +363,176 @@ private:
     Vec2 _ptDistorted;
 };
 
+class CostPointGeometry : public ceres::CostFunction
+{
+public:
+    CostPointGeometry(std::shared_ptr<camera::Undistortion> & undistortion, const Vec2& ptUndistorted, const Vec2 &ptDistorted, bool poseRight)
+        : _ptUndistorted(ptUndistorted)
+        , _ptDistorted(ptDistorted)
+        , _undistortion(undistortion)
+        , _poseRight(poseRight)
+    {
+        set_num_residuals(2);
+        mutable_parameter_block_sizes()->push_back(2);
+        mutable_parameter_block_sizes()->push_back(undistortion->getUndistortionParametersCount());
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(16);
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_center = parameters[0];
+        const double* parameter_disto = parameters[1];
+        const double* parameter_offsetx = parameters[2];
+        const double* parameter_offsety = parameters[3];
+        const double* parameter_pose = parameters[4];
+
+        const double offsetx = *parameter_offsetx;
+        const double offsety = *parameter_offsety;
+
+        const Eigen::Map<const SE3::Matrix> T(parameter_pose);
+
+        const int undistortionSize = _undistortion->getUndistortionParametersCount();
+
+
+        //Read parameters and update camera
+        std::vector<double> undistortionParams(undistortionSize);
+
+        for (int idParam = 0; idParam < undistortionSize; idParam++)
+        {
+            undistortionParams[idParam] = parameter_disto[idParam];
+        }
+        _undistortion->setParameters(undistortionParams);
+
+        Vec2 offset;
+        offset.x() = parameter_center[0];
+        offset.y() = parameter_center[1];
+        _undistortion->setOffset(offset);
+
+        const double pa = _undistortion->getPixelAspectRatio();
+
+        const Vec2 upt = _undistortion->undistort(_ptDistorted);
+
+        //Estimate measure
+        const Vec2 ipt = _ptUndistorted;
+                
+        Vec4 ipt4;
+        ipt4.x() = ipt.x();
+        ipt4.y() = ipt.y();
+        ipt4.z() = 0.0;
+        ipt4.w() = 1.0;
+
+        const Vec4 tpt = T * ipt4;
+        
+        Vec2 projected = tpt.head(2) / tpt(2);
+        Vec2 scaled;
+
+        scaled.x() = projected.x() + offsetx;
+        scaled.y() = pa * projected.y() + offsety;
+                
+        const double w = 1 + ipt.norm();
+
+        residuals[0] = w * (upt.x() - scaled.x());
+        residuals[1] = w * (upt.y() - scaled.y());
+
+        if(jacobians == nullptr)
+        {
+            return true;
+        }
+
+        
+
+        if(jacobians[0] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[0]);
+
+            J = w * _undistortion->getDerivativeUndistortWrtOffset(_ptDistorted);
+        }
+
+        if(jacobians[1] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 2, undistortionSize);
+
+            J = w * _undistortion->getDerivativeUndistortWrtParameters(_ptDistorted);
+        }
+
+
+        if (jacobians[2] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, 1);
+            
+            Vec2 d_scaled_d_offsetx;
+            d_scaled_d_offsetx(0) = 1.0;
+            d_scaled_d_offsetx(1) = 0.0;
+            
+            J = -w * d_scaled_d_offsetx;
+        }
+
+        if (jacobians[3] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[3], 2, 1);
+            
+            Vec2 d_scaled_d_offsety;
+            d_scaled_d_offsety(0) = 0.0;
+            d_scaled_d_offsety(1) = 1.0;
+            
+            J = -w * d_scaled_d_offsety;
+        }
+
+        if (jacobians[4] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[4]);
+            
+            Eigen::Matrix<double, 2, 4> d_projected_d_tpt;
+            d_projected_d_tpt(0, 0) = 1.0 / tpt.z();
+            d_projected_d_tpt(0, 1) = 0.0;
+            d_projected_d_tpt(0, 2) = - tpt.x() / (tpt.z() * tpt.z());
+            d_projected_d_tpt(0, 3) = 0.0;
+            d_projected_d_tpt(1, 0) = 0.0;
+            d_projected_d_tpt(1, 1) = 1.0 / tpt.z();
+            d_projected_d_tpt(1, 2) = - tpt.y() / (tpt.z() * tpt.z());
+            d_projected_d_tpt(1, 3) = 0.0;
+
+            Eigen::Matrix<double, 4, 2> d_ipt4_d_ipt;
+            d_ipt4_d_ipt(0, 0) = 1;
+            d_ipt4_d_ipt(0, 1) = 0;
+            d_ipt4_d_ipt(1, 0) = 0;
+            d_ipt4_d_ipt(1, 1) = 1;
+            d_ipt4_d_ipt(2, 0) = 0;
+            d_ipt4_d_ipt(2, 1) = 0;
+            d_ipt4_d_ipt(3, 0) = 0;
+            d_ipt4_d_ipt(3, 1) = 0;
+
+            Eigen::Matrix<double, 2, 2> d_scaled_d_projected;
+            d_scaled_d_projected(0, 0) = 1.0;
+            d_scaled_d_projected(0, 1) = 0;
+            d_scaled_d_projected(1, 0) = 0;
+            d_scaled_d_projected(1, 1) = pa;
+
+            J = - w * d_scaled_d_projected * d_projected_d_tpt * getJacobian_AB_wrt_A<4, 4, 1>(T, ipt4);
+
+            if (_poseRight)
+            {
+                J = J * getJacobian_AB_wrt_B<4, 4, 4>(T, Eigen::Matrix4d::Identity());
+            }
+            else 
+            {
+                J = J * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), T);
+            }
+
+        }
+
+        return true;
+    }
+
+private:
+    std::shared_ptr<camera::Undistortion> _undistortion;
+    Vec2 _ptUndistorted;
+    Vec2 _ptDistorted;
+    bool _poseRight;
+};
+
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
               std::vector<LineWithPoints>& lines,
@@ -401,7 +572,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     problem.AddParameterBlock(center, 2);
     if (lockCenter)
     {
-        problem.SetParameterBlockConstant(center);
+        //problem.SetParameterBlockConstant(center);
     }
 
     // Add distortion parameter
@@ -539,7 +710,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         }
     }
 
-
+    
 
     for (auto& l : lines)
     {
@@ -590,7 +761,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     }
 
     ceres::Problem problem;
-    ceres::LossFunction* lossFunction =  new ceres::HuberLoss(2.0);
+    ceres::LossFunction* lossFunction = new ceres::HuberLoss(2.0);
 
     std::vector<double> undistortionParameters = undistortionToEstimate->getParameters();
     Vec2 undistortionOffset = undistortionToEstimate->getOffset();
@@ -698,9 +869,178 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     statistics.max = max;
     statistics.lastDecile = lastDecile;
     
-
     return true;
 }
+
+bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
+              Statistics& statistics,
+              const std::vector<PointPair>& pointpairs,
+              const bool lockCenter,
+              const std::vector<bool>& lockDistortions,
+              Eigen::Matrix4d & T, bool useRight)
+{
+    if (!undistortionToEstimate)
+    {
+        return false;
+    }
+
+    if (pointpairs.empty())
+    {
+        return false;
+    }
+
+    ceres::Problem problem;
+    ceres::LossFunction* lossFunction = nullptr;
+
+    std::vector<double> undistortionParameters = undistortionToEstimate->getParameters();
+    Vec2 undistortionOffset = undistortionToEstimate->getOffset();
+
+    const std::size_t countUndistortionParams = undistortionParameters.size();
+
+    if (lockDistortions.size() != countUndistortionParams)
+    {
+        ALICEVISION_LOG_ERROR("Invalid number of distortion parameters (lockDistortions=" << lockDistortions.size() << ", countDistortionParams="
+                                                                                          << countUndistortionParams << ").");
+        return false;
+    }
+
+    double* ptrUndistortionParameters = &undistortionParameters[0];
+    double* center = &undistortionOffset.x();
+
+    // Add off center parameter
+    problem.AddParameterBlock(center, 2);
+    if (lockCenter)
+    {
+        problem.SetParameterBlockConstant(center);
+    }
+
+    // Add distortion parameter
+    problem.AddParameterBlock(ptrUndistortionParameters, countUndistortionParams);
+
+    // Check if all distortions are locked
+    bool allLocked = true;
+    for (bool lock : lockDistortions)
+    {
+        if (!lock)
+        {
+            allLocked = false;
+        }
+    }
+
+    if (allLocked)
+    {
+        problem.SetParameterBlockConstant(ptrUndistortionParameters);
+    }
+    else
+    {
+        // At least one parameter is not locked
+
+        std::vector<int> constantDistortions;
+        for (int idParamDistortion = 0; idParamDistortion < lockDistortions.size(); ++idParamDistortion)
+        {
+            if (lockDistortions[idParamDistortion])
+            {
+                constantDistortions.push_back(idParamDistortion);
+            }
+        }
+
+        if (!constantDistortions.empty())
+        {
+            ceres::SubsetManifold* subsetManifold = new ceres::SubsetManifold(countUndistortionParams, constantDistortions);
+            problem.SetManifold(ptrUndistortionParameters, subsetManifold);
+        }
+    }
+
+    double offsetx = undistortionToEstimate->getCenter().x();
+    double offsety = undistortionToEstimate->getCenter().y();
+    problem.AddParameterBlock(&offsetx, 1);
+    problem.SetParameterBlockConstant(&offsetx);
+    problem.AddParameterBlock(&offsety, 1);
+
+    SE3::Matrix Tpose = T;
+    problem.AddParameterBlock(Tpose.data(), 16);
+
+    if (useRight)
+    {
+        problem.SetManifold(Tpose.data(), new sfm::SE3ManifoldRight(true, true));
+    }
+    else
+    {
+        problem.SetManifold(Tpose.data(), new sfm::SE3ManifoldLeft(true, true));
+    }
+
+    for (auto& ppt : pointpairs)
+    {
+        ceres::CostFunction* costFunction = new CostPointGeometry(undistortionToEstimate, ppt.undistortedPoint, ppt.distortedPoint, useRight);
+        problem.AddResidualBlock(costFunction, lossFunction, center, ptrUndistortionParameters, &offsetx, &offsety, Tpose.data());
+    }
+
+    ceres::Solver::Options options;
+    options.use_inner_iterations = true;
+    options.max_num_iterations = 100;
+    options.function_tolerance = 1e-24;
+    options.parameter_tolerance = 1e-24;
+    options.gradient_tolerance = 1e-24;
+    options.logging_type = ceres::SILENT;   
+    
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+
+    ALICEVISION_LOG_TRACE(summary.FullReport());
+
+    if (!summary.IsSolutionUsable())
+    {
+        ALICEVISION_LOG_ERROR("Lens calibration estimation failed.");
+        return false;
+    }
+
+    undistortionToEstimate->setOffset(undistortionOffset);
+    undistortionToEstimate->setParameters(undistortionParameters);
+    std::vector<double> errors;
+    const double pa = undistortionToEstimate->getPixelAspectRatio();
+
+    for (auto& ppt : pointpairs)
+    {
+        const Vec2 ipt = ppt.undistortedPoint;
+        
+        Vec4 ipt4;
+        ipt4.x() = ipt.x();
+        ipt4.y() = ipt.y();
+        ipt4.z() = 0.0;
+        ipt4.w() = 1.0;
+
+        const Vec4 tpt = Tpose * ipt4;
+        
+        Vec2 projected = tpt.head(2) / tpt(2);
+        Vec2 scaled;
+        scaled.x() = projected.x() + offsetx;
+        scaled.y() = pa * projected.y() + offsety;
+    
+        const double res = (undistortionToEstimate->undistort(ppt.distortedPoint) - scaled).norm();
+        
+        errors.push_back(res);
+    }
+
+    const double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / static_cast<double>(errors.size());
+    const double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
+    const double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
+    std::sort(errors.begin(), errors.end());
+    const double median = errors[errors.size() / 2];
+    const double max = errors[errors.size() - 1];
+    const double lastDecile = errors[errors.size() * 0.9];
+
+    statistics.mean = mean;
+    statistics.stddev = stddev;
+    statistics.median = median;
+    statistics.max = max;
+    statistics.lastDecile = lastDecile;
+
+    T = Tpose;
+    
+    return true;
+}
+
 
 }  // namespace calibration
 }  // namespace aliceVision
