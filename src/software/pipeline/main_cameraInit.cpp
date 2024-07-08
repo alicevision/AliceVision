@@ -218,7 +218,7 @@ int aliceVision_main(int argc, char** argv)
         ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
          "Default camera model type (pinhole, equidistant).")
         ("defaultDistortionModel", po::value<std::string>(&defaultDistortionModelName)->default_value(defaultDistortionModelName),
-         "Default Distortion model type (none, radialk1, radialk3, radialk3pt, radialbrown, fisheye, fisheye1, 3deradial4, 3deanamorphic4, 3declassicld).")
+         "Default Distortion model type (none, radialk1, radialk3, radialk3pt, radialbrown, fisheye, fisheye1).")
         ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
          std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
          "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"

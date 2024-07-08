@@ -9,13 +9,12 @@
 
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/Distortion.hpp>
-#include <aliceVision/camera/Distortion3DE.hpp>
 #include <aliceVision/camera/DistortionBrown.hpp>
 #include <aliceVision/camera/DistortionFisheye.hpp>
 #include <aliceVision/camera/DistortionFisheye1.hpp>
 #include <aliceVision/camera/DistortionRadial.hpp>
 #include <aliceVision/camera/Undistortion.hpp>
-#include <aliceVision/camera/Undistortion3DE.hpp>
+#include <aliceVision/camera/Undistortion3DEA4.hpp>
 #include <aliceVision/camera/UndistortionRadial.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
@@ -57,15 +56,6 @@ inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType, 
             break;
         case EDISTORTION::DISTORTION_FISHEYE1:
             distortion = std::make_shared<DistortionFisheye1>();
-            break;
-        case EDISTORTION::DISTORTION_3DECLASSICLD:
-            distortion = std::make_shared<Distortion3DEClassicLD>();
-            break;
-        case EDISTORTION::DISTORTION_3DERADIAL4:
-            distortion = std::make_shared<Distortion3DERadial4>();
-            break;
-        case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
-            distortion = std::make_shared<Distortion3DEAnamorphic4>();
             break;
         default:
             return nullptr;

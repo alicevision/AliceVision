@@ -161,14 +161,6 @@ std::vector<cameraPair> buildIntrinsics()
                                      camera::createPinhole(camera::DISTORTION_FISHEYE1, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {1.2})));
 
 
-    cameras.push_back(
-      std::make_pair(camera::createPinhole(camera::DISTORTION_3DERADIAL4, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {0.2, 0.0, 0.0, 0.0, 0.0, 0.0}),
-                     camera::createPinhole(camera::DISTORTION_3DERADIAL4, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0})));
-
-    cameras.push_back(
-      std::make_pair(camera::createPinhole(camera::DISTORTION_3DECLASSICLD, camera::UNDISTORTION_NONE, 1920, 1080, 900, 900, 80, 50, {0.2, 1.0, 0.0, 0.0, 0.0}),
-                     camera::createPinhole(camera::DISTORTION_3DECLASSICLD, camera::UNDISTORTION_NONE, 1920, 1080, 1200, 1200, 0, 0, {0.0, 1.0, 0.0, 0.0, 0.0})));
-
     cameras.push_back(std::make_pair(camera::createEquidistant(camera::DISTORTION_NONE, 1920, 1080, 1500, 80, 50),
                                      camera::createEquidistant(camera::DISTORTION_NONE, 1920, 1080, 1300, 0, 0)));
 
