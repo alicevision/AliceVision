@@ -15,35 +15,31 @@
 namespace aliceVision {
 namespace camera {
 
-class Undistortion3DEAnamorphic4 : public Undistortion
+class Undistortion3DEClassicLD : public Undistortion
 {
   public:
     /**
      * @brief Default constructor, no distortion.
      */
-    Undistortion3DEAnamorphic4(int width, int height)
+    Undistortion3DEClassicLD(int width, int height)
       : Undistortion(width, height)
     {
-        _undistortionParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0};
+        _undistortionParams = {0.0, 1.0, 0.0, 0.0, 0.0};
     }
 
-    EUNDISTORTION getType() const override { return EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4; }
+    EUNDISTORTION getType() const override { return EUNDISTORTION::UNDISTORTION_3DECLASSICLD; }
 
-    Undistortion* clone() const override { return new Undistortion3DEAnamorphic4(*this); }
+    Undistortion* clone() const override { return new Undistortion3DEClassicLD(*this); }
 
-    Vec2 undistortNormalizedBase(const Vec2& p) const;
     Vec2 undistortNormalized(const Vec2& p) const override;
 
-    Eigen::Matrix<double, 2, 2> getDerivativeUndistortNormalizedwrtPointBase(const Vec2& p) const;
     Eigen::Matrix<double, 2, 2> getDerivativeUndistortNormalizedwrtPoint(const Vec2& p) const override;
-
-    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortNormalizedwrtParametersBase(const Vec2& p) const;
     Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortNormalizedwrtParameters(const Vec2& p) const override;
 
     /// add distortion (return p' such that undisto(p') = p)
     Vec2 inverseNormalized(const Vec2& p) const override;
 
-    virtual ~Undistortion3DEAnamorphic4() = default;
+    virtual ~Undistortion3DEClassicLD() = default;
 };
 
 }  // namespace camera

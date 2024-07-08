@@ -105,6 +105,12 @@ class IntrinsicScaleOffset : public IntrinsicBase
 
     inline bool isRatioLocked() const { return _ratioLocked; }
 
+    /**
+     * @brief get focal length in mm
+     * @return focal length in mm
+    */
+    double getFocalLengthMM() const;
+
   protected:
     Vec2 _scale{1.0, 1.0};
     Vec2 _offset{0.0, 0.0};

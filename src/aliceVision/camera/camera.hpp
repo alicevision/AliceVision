@@ -15,6 +15,8 @@
 #include <aliceVision/camera/DistortionRadial.hpp>
 #include <aliceVision/camera/Undistortion.hpp>
 #include <aliceVision/camera/Undistortion3DEA4.hpp>
+#include <aliceVision/camera/Undistortion3DEClassicLD.hpp>
+#include <aliceVision/camera/Undistortion3DERadial4.hpp>
 #include <aliceVision/camera/UndistortionRadial.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
@@ -94,6 +96,12 @@ inline std::shared_ptr<Undistortion> createUndistortion(EUNDISTORTION undistorti
             break;
         case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
             undistortion = std::make_shared<Undistortion3DEAnamorphic4>(w, h);
+            break;
+        case EUNDISTORTION::UNDISTORTION_3DECLASSICLD:
+            undistortion = std::make_shared<Undistortion3DEClassicLD>(w, h);
+            break;
+        case EUNDISTORTION::UNDISTORTION_3DERADIAL4:
+            undistortion = std::make_shared<Undistortion3DERadial4>(w, h);
             break;
         default:
             return nullptr;

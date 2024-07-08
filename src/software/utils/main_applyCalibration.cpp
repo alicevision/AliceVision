@@ -262,8 +262,9 @@ int aliceVision_main(int argc, char** argv)
             auto calibratedUndistortion = calibratedIntrinsic->getUndistortion();
             auto undistortion = camera::createUndistortion(calibratedUndistortion->getType());
             undistortion->setSize(width, height);
+            undistortion->setPixelAspectRatio(calibratedUndistortion->getPixelAspectRatio());
+            undistortion->setDesqueezed(calibratedUndistortion->isDesqueezed());
             undistortion->setParameters(calibratedUndistortion->getParameters());
-
 
             newIntrinsic->setUndistortionObject(undistortion);
             newIntrinsic->setDistortionInitializationMode(camera::EInitMode::CALIBRATED);

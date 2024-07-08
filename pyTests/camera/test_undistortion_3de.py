@@ -35,8 +35,8 @@ from pyalicevision import camera as av
 # - Vec2 inverse(Vec2& p) / Vec2 not binded
 ##################
 
-DEFAULT_PARAMETERS = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
-NON_DEFAULT_PARAMETERS = (0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
+DEFAULT_PARAMETERS = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0)
+NON_DEFAULT_PARAMETERS = (0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0)
 WIDTH = 1000
 HEIGHT = 800
 

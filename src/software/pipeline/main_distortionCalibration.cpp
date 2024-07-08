@@ -275,10 +275,10 @@ int aliceVision_main(int argc, char* argv[])
 
         if (undistortionModel == camera::EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4)
         {
-            initialParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0};
-            lockSteps = {{true, true, true, true, true, true, true, true, true, true, true, true, true, true},
-                         {false, false, false, false, true, true, true, true, true, true, true, true, true, true},
-                         {false, false, false, false, false, false, false, false, false, false, true, true, true, true}};
+            initialParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0};
+            lockSteps = {{true, true, true, true, true, true, true, true, true, true, true, true, true},
+                         {false, false, false, false, true, true, true, true, true, true, true, true, true},
+                         {false, false, false, false, false, false, false, false, false, false, true, true, true}};
         }
         else
         {

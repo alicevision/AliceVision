@@ -423,6 +423,8 @@ bool readCamera(const Version& abcVersion,
     std::vector<double> undistortionParams;
     Vec2 undistortionOffset = {0, 0};
     double undistortionDiagonal = 0.0;
+    double undistortionPixelAspectRatio = 1.0;
+    bool undistortionDesqueezed = false;
 
     if (userProps)
     {
@@ -595,6 +597,14 @@ bool readCamera(const Version& abcVersion,
                 {
                     undistortionDiagonal = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_undistortionDiagonal", sampleFrame);
                 }
+                if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_undistortionPixelAspectRatio"))
+                {
+                    undistortionPixelAspectRatio = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_undistortionPixelAspectRatio", sampleFrame);
+                }
+                if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_undistortionDesqueezed"))
+                {
+                    undistortionDesqueezed = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_undistortionPixelAspectRatio", sampleFrame);
+                }
             }
         }
     }
@@ -662,6 +672,12 @@ bool readCamera(const Version& abcVersion,
                 if (abcVersion >= Version(1, 2, 7))
                 {
                     undistortion->setDiagonal(undistortionDiagonal);
+                }
+
+                if (abcVersion >= Version(1, 2, 9))
+                {
+                    undistortion->setPixelAspectRatio(undistortionPixelAspectRatio);
+                    undistortion->setDesqueezed(undistortionDesqueezed);
                 }
 
                 // If undistortion exists, distortion does not
