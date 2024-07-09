@@ -45,11 +45,11 @@ Vec2 Undistortion3DEAnamorphic4::undistortNormalizedBase(const Vec2& p) const
     const double& xu = p.x();
     const double& yu = p.y();
 
-    double r2 = xu * xu + yu * yu;
-    double r4 = r2 * r2;
-    double theta = std::atan2(yu, xu);
-    double cos_2theta = cos(2.0 * theta);
-    double cos_4theta = cos(4.0 * theta);
+    const double r2 = xu * xu + yu * yu;
+    const double r4 = r2 * r2;
+    const double theta = std::atan2(yu, xu);
+    const double cos_2theta = cos(2.0 * theta);
+    const double cos_4theta = cos(4.0 * theta);
    
     // Compute dist
     Vec2 np;
@@ -76,7 +76,7 @@ Vec2 Undistortion3DEAnamorphic4::undistortNormalized(const Vec2& p) const
     rotated.x() = cphi * xu - sphi * yu;
     rotated.y() = sphi * xu + cphi * yu;
 
-    Vec2 ptu = undistortNormalizedBase(rotated);
+    const Vec2 ptu = undistortNormalizedBase(rotated);
 
     Vec2 squeezed;
     squeezed.x() = ptu.x() * pa * sqx;
@@ -126,25 +126,25 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNo
     const double xxxy = xx * xy;
     const double xyyy = xy * xy;
 
-    double distx = 1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy;
-    double disty = 1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy;
+    const double distx = 1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy;
+    const double disty = 1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy;
 
     // Compute dist
     Vec2 np;
     np.x() = xu * distx;
     np.y() = yu * disty;
 
-    double d_xx_d_x = 2.0 * xu;
-    double d_xxxx_d_x = 4.0 * xu * xx; 
-    double d_xxyy_d_x = 2.0 * xu * yy; 
-    double d_yy_d_y = 2.0 * yu;
-    double d_yyyy_d_y = 4.0 * yu * yy;
-    double d_xxyy_d_y = 2.0 * yu * xx;
+    const double d_xx_d_x = 2.0 * xu;
+    const double d_xxxx_d_x = 4.0 * xu * xx; 
+    const double d_xxyy_d_x = 2.0 * xu * yy; 
+    const double d_yy_d_y = 2.0 * yu;
+    const double d_yyyy_d_y = 4.0 * yu * yy;
+    const double d_xxyy_d_y = 2.0 * yu * xx;
 
-    double d_distx_d_x = cx_xx * d_xx_d_x + cx_xxxx * d_xxxx_d_x + cx_xxyy * d_xxyy_d_x; 
-    double d_distx_d_y = cx_yy * d_yy_d_y + cx_xxyy * d_xxyy_d_y + cx_yyyy * d_yyyy_d_y;
-    double d_disty_d_x = cy_xx * d_xx_d_x + cy_xxxx * d_xxxx_d_x + cy_xxyy * d_xxyy_d_x; 
-    double d_disty_d_y = cy_yy * d_yy_d_y + cy_xxyy * d_xxyy_d_y + cy_yyyy * d_yyyy_d_y;
+    const double d_distx_d_x = cx_xx * d_xx_d_x + cx_xxxx * d_xxxx_d_x + cx_xxyy * d_xxyy_d_x; 
+    const double d_distx_d_y = cx_yy * d_yy_d_y + cx_xxyy * d_xxyy_d_y + cx_yyyy * d_yyyy_d_y;
+    const double d_disty_d_x = cy_xx * d_xx_d_x + cy_xxxx * d_xxxx_d_x + cy_xxyy * d_xxyy_d_x; 
+    const double d_disty_d_y = cy_yy * d_yy_d_y + cy_xxyy * d_xxyy_d_y + cy_yyyy * d_yyyy_d_y;
 
     Eigen::Matrix2d d_np_d_ptu;
     d_np_d_ptu(0, 0) = distx + xu * d_distx_d_x;
@@ -184,7 +184,7 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNo
     d_rotated_d_pt(1, 0) = sphi;
     d_rotated_d_pt(1, 1) = cphi;
 
-    Vec2 ptu = undistortNormalizedBase(rotated);
+    const Vec2 ptu = undistortNormalizedBase(rotated);
 
     Vec2 squeezed;
     squeezed.x() = ptu.x() * pa * sqx;
@@ -225,11 +225,11 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivati
     const double& xu = p.x();
     const double& yu = p.y();
 
-    double r2 = xu * xu + yu * yu;
-    double r4 = r2 * r2;
-    double theta = std::atan2(yu, xu);
-    double cos_2theta = cos(2.0 * theta);
-    double cos_4theta = cos(4.0 * theta);
+    const double r2 = xu * xu + yu * yu;
+    const double r4 = r2 * r2;
+    const double theta = std::atan2(yu, xu);
+    const double cos_2theta = cos(2.0 * theta);
+    const double cos_4theta = cos(4.0 * theta);
    
     // Compute dist
     const double xd = xu * (1.0 + cx02 * r2 + cx04 * r4 + cx22 * r2 * cos_2theta + cx24 * r4 * cos_2theta + cx44 * r4 * cos_4theta);
@@ -271,7 +271,7 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivati
     d_rotated_d_phi(0, 0) = xu * (-sphi) + yu * (-cphi);
     d_rotated_d_phi(1, 0) = xu * (cphi) + yu * (-sphi);
 
-    Vec2 ptu = undistortNormalizedBase(rotated);
+    const Vec2 ptu = undistortNormalizedBase(rotated);
 
     Vec2 squeezed;
     squeezed.x() = ptu.x() * pa * sqx;

@@ -21,8 +21,8 @@ Vec2 Undistortion3DERadial4::undistortNormalized(const Vec2& p) const
     const double & b_cylindric_bending = _undistortionParams[7];
 
     const double q = sqrt(1.0 + b_cylindric_bending);
-	const double cphi = cos(phi_cylindric_direction);
-	const double sphi = sin(phi_cylindric_direction);
+    const double cphi = cos(phi_cylindric_direction);
+    const double sphi = sin(phi_cylindric_direction);
 
     double m11 = cphi * cphi * q + sphi * sphi / q;
     double m12 = (q - 1.0 / q) * cphi * sphi;
@@ -30,23 +30,23 @@ Vec2 Undistortion3DERadial4::undistortNormalized(const Vec2& p) const
     double m22 = cphi * cphi / q + sphi * sphi * q;
 
     const double x = p.x();
-	const double y = p.y();
-	const double x2 = x * x;
-	const double y2 = y * y;
-	const double xy = x * y;
-	const double r2 = x2 + y2;
-	const double r4 = r2 * r2;
+    const double y = p.y();
+    const double x2 = x * x;
+    const double y2 = y * y;
+    const double xy = x * y;
+    const double r2 = x2 + y2;
+    const double r4 = r2 * r2;
 
-	const double c2 = distortion_degree_2;
-	const double c4 = quartic_distortion_degree_4;
-	const double u1 = u_degree_2;
-	const double v1 = v_degree_2;
-	const double u3 = u_degree_4;
-	const double v3 = v_degree_4;
+    const double c2 = distortion_degree_2;
+    const double c4 = quartic_distortion_degree_4;
+    const double u1 = u_degree_2;
+    const double v1 = v_degree_2;
+    const double u3 = u_degree_4;
+    const double v3 = v_degree_4;
 
-	Eigen::Vector2d radial;
-	radial.x() = x * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * x2) * (u1 + u3 * r2) + 2.0 * xy * (v1 + v3 * r2);
-	radial.y() = y * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * y2) * (v1 + v3 * r2) + 2.0 * xy * (u1 + u3 * r2);
+    Eigen::Vector2d radial;
+    radial.x() = x * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * x2) * (u1 + u3 * r2) + 2.0 * xy * (v1 + v3 * r2);
+    radial.y() = y * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * y2) * (v1 + v3 * r2) + 2.0 * xy * (u1 + u3 * r2);
 
     Eigen::Vector2d np;
     np.x() = m11 * radial.x() + m12 * radial.y();
@@ -68,32 +68,32 @@ Eigen::Matrix<double, 2, 2> Undistortion3DERadial4::getDerivativeUndistortNormal
     const double & b_cylindric_bending = _undistortionParams[7];
 
     const double q = sqrt(1.0 + b_cylindric_bending);
-	const double cphi = cos(phi_cylindric_direction);
-	const double sphi = sin(phi_cylindric_direction);
+    const double cphi = cos(phi_cylindric_direction);
+    const double sphi = sin(phi_cylindric_direction);
 
-    double m11 = cphi * cphi * q + sphi * sphi / q;
-    double m12 = (q - 1.0 / q) * cphi * sphi;
-    double m21 = (q - 1.0 / q) * cphi * sphi;
-    double m22 = cphi * cphi / q + sphi * sphi * q;
+    const double m11 = cphi * cphi * q + sphi * sphi / q;
+    const double m12 = (q - 1.0 / q) * cphi * sphi;
+    const double m21 = (q - 1.0 / q) * cphi * sphi;
+    const double m22 = cphi * cphi / q + sphi * sphi * q;
 
     const double x = p.x();
-	const double y = p.y();
-	const double x2 = x * x;
-	const double y2 = y * y;
-	const double xy = x * y;
-	const double r2 = x2 + y2;
-	const double r4 = r2 * r2;
+    const double y = p.y();
+    const double x2 = x * x;
+    const double y2 = y * y;
+    const double xy = x * y;
+    const double r2 = x2 + y2;
+    const double r4 = r2 * r2;
 
-	const double c2 = distortion_degree_2;
-	const double c4 = quartic_distortion_degree_4;
-	const double u1 = u_degree_2;
-	const double v1 = v_degree_2;
-	const double u3 = u_degree_4;
-	const double v3 = v_degree_4;
+    const double c2 = distortion_degree_2;
+    const double c4 = quartic_distortion_degree_4;
+    const double u1 = u_degree_2;
+    const double v1 = v_degree_2;
+    const double u3 = u_degree_4;
+    const double v3 = v_degree_4;
 
     Eigen::Vector2d radial;
-	radial.x() = x * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * x2) * (u1 + u3 * r2) + 2.0 * xy * (v1 + v3 * r2);
-	radial.y() = y * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * y2) * (v1 + v3 * r2) + 2.0 * xy * (u1 + u3 * r2);
+    radial.x() = x * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * x2) * (u1 + u3 * r2) + 2.0 * xy * (v1 + v3 * r2);
+    radial.y() = y * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * y2) * (v1 + v3 * r2) + 2.0 * xy * (u1 + u3 * r2);
 
     Eigen::Vector2d np;
     np.x() = m11 * radial.x() + m12 * radial.y();
@@ -126,12 +126,12 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DERadial4::getDerivativeUn
     const double & b_cylindric_bending = _undistortionParams[7];
 
     const double q = sqrt(1.0 + b_cylindric_bending);
-	const double cphi = cos(phi_cylindric_direction);
-	const double sphi = sin(phi_cylindric_direction);
+    const double cphi = cos(phi_cylindric_direction);
+    const double sphi = sin(phi_cylindric_direction);
 
-    double d_q_b_cylindric_bending = 1.0 / (2.0 * q);
-    double d_cphi_d_phi = -sphi;
-    double d_sphi_d_phi = cphi;
+    const double d_q_b_cylindric_bending = 1.0 / (2.0 * q);
+    const double d_cphi_d_phi = -sphi;
+    const double d_sphi_d_phi = cphi;
 
     Eigen::Matrix<double, 3, 2> d_intermediatecylindricparams_d_cylindricparams;
     d_intermediatecylindricparams_d_cylindricparams(0, 0) = d_cphi_d_phi;
@@ -141,27 +141,27 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DERadial4::getDerivativeUn
     d_intermediatecylindricparams_d_cylindricparams(2, 0) = 0;
     d_intermediatecylindricparams_d_cylindricparams(2, 1) = d_q_b_cylindric_bending;
 
-    double m11 = cphi * cphi * q + sphi * sphi / q;
-    double m12 = (q - 1.0 / q) * cphi * sphi;
-    double m21 = (q - 1.0 / q) * cphi * sphi;
-    double m22 = cphi * cphi / q + sphi * sphi * q;
+    const double m11 = cphi * cphi * q + sphi * sphi / q;
+    const double m12 = (q - 1.0 / q) * cphi * sphi;
+    const double m21 = (q - 1.0 / q) * cphi * sphi;
+    const double m22 = cphi * cphi / q + sphi * sphi * q;
 
-    double d_invq_d_q = - 1.0 / (q * q);
+    const double d_invq_d_q = - 1.0 / (q * q);
 
-    double d_m11_d_cphi = 2.0 * cphi * q;
-    double d_m12_d_cphi = (q - 1.0 / q) * sphi;
-    double d_m21_d_cphi = (q - 1.0 / q) * sphi;
-    double d_m22_d_cphi = 2.0 * cphi / q;
+    const double d_m11_d_cphi = 2.0 * cphi * q;
+    const double d_m12_d_cphi = (q - 1.0 / q) * sphi;
+    const double d_m21_d_cphi = (q - 1.0 / q) * sphi;
+    const double d_m22_d_cphi = 2.0 * cphi / q;
 
-    double d_m11_d_sphi = 2.0 * sphi / q;
-    double d_m12_d_sphi = (q - 1.0 / q) * cphi;
-    double d_m21_d_sphi = (q - 1.0 / q) * cphi;
-    double d_m22_d_sphi = 2.0 * sphi * q;
+    const double d_m11_d_sphi = 2.0 * sphi / q;
+    const double d_m12_d_sphi = (q - 1.0 / q) * cphi;
+    const double d_m21_d_sphi = (q - 1.0 / q) * cphi;
+    const double d_m22_d_sphi = 2.0 * sphi * q;
 
-    double d_m11_d_q = cphi * cphi + sphi * sphi * d_invq_d_q;
-    double d_m12_d_q = (1.0 - d_invq_d_q) * cphi * sphi;
-    double d_m21_d_q = (q - d_invq_d_q) * cphi * sphi;
-    double d_m22_d_q = cphi * cphi * d_invq_d_q + sphi * sphi;
+    const double d_m11_d_q = cphi * cphi + sphi * sphi * d_invq_d_q;
+    const double d_m12_d_q = (1.0 - d_invq_d_q) * cphi * sphi;
+    const double d_m21_d_q = (q - d_invq_d_q) * cphi * sphi;
+    const double d_m22_d_q = cphi * cphi * d_invq_d_q + sphi * sphi;
 
     Eigen::Matrix<double, 4, 3> d_m_d_intermediatecylindricparams;
 
@@ -179,23 +179,23 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DERadial4::getDerivativeUn
     d_m_d_intermediatecylindricparams(3, 2) = d_m22_d_q;
 
     const double x = p.x();
-	const double y = p.y();
-	const double x2 = x * x;
-	const double y2 = y * y;
-	const double xy = x * y;
-	const double r2 = x2 + y2;
-	const double r4 = r2 * r2;
+    const double y = p.y();
+    const double x2 = x * x;
+    const double y2 = y * y;
+    const double xy = x * y;
+    const double r2 = x2 + y2;
+    const double r4 = r2 * r2;
 
-	const double c2 = distortion_degree_2;
-	const double c4 = quartic_distortion_degree_4;
-	const double u1 = u_degree_2;
-	const double v1 = v_degree_2;
-	const double u3 = u_degree_4;
-	const double v3 = v_degree_4;
+    const double c2 = distortion_degree_2;
+    const double c4 = quartic_distortion_degree_4;
+    const double u1 = u_degree_2;
+    const double v1 = v_degree_2;
+    const double u3 = u_degree_4;
+    const double v3 = v_degree_4;
 
-	Eigen::Vector2d radial;
-	radial.x() = x * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * x2) * (u1 + u3 * r2) + 2.0 * xy * (v1 + v3 * r2);
-	radial.y() = y * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * y2) * (v1 + v3 * r2) + 2.0 * xy * (u1 + u3 * r2);
+    Eigen::Vector2d radial;
+    radial.x() = x * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * x2) * (u1 + u3 * r2) + 2.0 * xy * (v1 + v3 * r2);
+    radial.y() = y * (1.0 + c2 * r2 + c4 * r4) + (r2 + 2.0 * y2) * (v1 + v3 * r2) + 2.0 * xy * (u1 + u3 * r2);
 
     
 

@@ -17,29 +17,29 @@ Vec2 Undistortion3DEClassicLD::undistortNormalized(const Vec2& p) const
     const double & cy = _undistortionParams[3];
     const double & c4 = _undistortionParams[4];
 
-    double cxx = c2 / sq;
-    double cxy = (c2 + cx) / sq;
-    double cxxx = c4 / sq;
-    double cxxy = 2.0 * c4 / sq;
-    double cxyy = c4 / sq;
-    double cyx = c2 + cy;
-    double cyy = c2;
-    double cyxx = c4;
-    double cyyx = 2.0 * c4;
-    double cyyy = c4;
+    const double cxx = c2 / sq;
+    const double cxy = (c2 + cx) / sq;
+    const double cxxx = c4 / sq;
+    const double cxxy = 2.0 * c4 / sq;
+    const double cxyy = c4 / sq;
+    const double cyx = c2 + cy;
+    const double cyy = c2;
+    const double cyxx = c4;
+    const double cyyx = 2.0 * c4;
+    const double cyyy = c4;
 
-    double x = p.x();
-	double y = p.y();
-	double x2 = x * x;
-	double y2 = y * y;
-	double x4 = x2 * x2;
-	double y4 = y2 * y2;
-	float x2y2 = x2 * y2;
+    const double x = p.x();
+    const double y = p.y();
+    const double x2 = x * x;
+    const double y2 = y * y;
+    const double x4 = x2 * x2;
+    const double y4 = y2 * y2;
+    const double x2y2 = x2 * y2;
 
     Vec2 np;
 
     np.x() = x * (1.0 + cxx * x2 + cxy * y2 + cxxx * x4 + cxxy * x2y2 + cxyy * y4);
-	np.y() = y * (1.0 + cyx * x2 + cyy * y2 + cyxx * x4 + cyyx * x2y2 + cyyy * y4);
+    np.y() = y * (1.0 + cyx * x2 + cyy * y2 + cyxx * x4 + cyyx * x2y2 + cyyy * y4);
 
     return np;
 }
@@ -53,40 +53,40 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEClassicLD::getDerivativeUndistortNorm
     const double & cy = _undistortionParams[3];
     const double & c4 = _undistortionParams[4];
 
-    double cxx = c2 / sq;
-    double cxy = (c2 + cx) / sq;
-    double cxxx = c4 / sq;
-    double cxxy = 2.0 * c4 / sq;
-    double cxyy = c4 / sq;
-    double cyx = c2 + cy;
-    double cyy = c2;
-    double cyxx = c4;
-    double cyyx = 2.0 * c4;
-    double cyyy = c4;
+    const double cxx = c2 / sq;
+    const double cxy = (c2 + cx) / sq;
+    const double cxxx = c4 / sq;
+    const double cxxy = 2.0 * c4 / sq;
+    const double cxyy = c4 / sq;
+    const double cyx = c2 + cy;
+    const double cyy = c2;
+    const double cyxx = c4;
+    const double cyyx = 2.0 * c4;
+    const double cyyy = c4;
 
-    double x = p.x();
-	double y = p.y();
-	double x2 = x * x;
-	double y2 = y * y;
-    double x3 = x2 * x;
-    double y3 = y2 * y;
-	double x4 = x2 * x2;
-	double y4 = y2 * y2;
-	double x2y2 = x2 * y2;
+    const double x = p.x();
+    const double y = p.y();
+    const double x2 = x * x;
+    const double y2 = y * y;
+    const double x3 = x2 * x;
+    const double y3 = y2 * y;
+    const double x4 = x2 * x2;
+    const double y4 = y2 * y2;
+    const double x2y2 = x2 * y2;
 
     Vec2 np;
 
-    double d1 = (1.0 + cxx * x2 + cxy * y2 + cxxx * x4 + cxxy * x2y2 + cxyy * y4);
-    double d2 = (1.0 + cyx * x2 + cyy * y2 + cyxx * x4 + cyyx * x2y2 + cyyy * y4);
+    const double d1 = (1.0 + cxx * x2 + cxy * y2 + cxxx * x4 + cxxy * x2y2 + cxyy * y4);
+    const double d2 = (1.0 + cyx * x2 + cyy * y2 + cyxx * x4 + cyyx * x2y2 + cyyy * y4);
     
     np.x() = x * d1;
-	np.y() = y * d2;
+    np.y() = y * d2;
 
-    double d_d1_d_x = cxx * 2.0 * x + cxxx * 4.0 * x3 + cxxy * 2.0 * x * y2;
-    double d_d1_d_y = cxy * 2.0 * y + cxxy * 2.0 * y * x2 + cxyy * 4.0 * y3;
+    const double d_d1_d_x = cxx * 2.0 * x + cxxx * 4.0 * x3 + cxxy * 2.0 * x * y2;
+    const double d_d1_d_y = cxy * 2.0 * y + cxxy * 2.0 * y * x2 + cxyy * 4.0 * y3;
 
-    double d_d2_d_x = cyx * 2.0 * x + cyxx * 4.0 * x3 + cyyx * 2.0 * x * y2;
-    double d_d2_d_y = cyy * 2.0 * y + cyyx * 2.0 * y * x2 + cyyy * 4.0 * y3;
+    const double d_d2_d_x = cyx * 2.0 * x + cyxx * 4.0 * x3 + cyyx * 2.0 * x * y2;
+    const double d_d2_d_y = cyy * 2.0 * y + cyyx * 2.0 * y * x2 + cyyy * 4.0 * y3;
 
     Eigen::Matrix<double, 2, 2> J;
     J(0, 0) = 1.0 * d1 + x * d_d1_d_x;
@@ -105,17 +105,16 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEClassicLD::getDerivative
     const double & cy = _undistortionParams[3];
     const double & c4 = _undistortionParams[4];
 
-    double cxx = c2 / sq;
-    double cxy = (c2 + cx) / sq;
-    double cxxx = c4 / sq;
-    double cxxy = 2.0 * c4 / sq;
-    double cxyy = c4 / sq;
-    
-    double cyx = c2 + cy;
-    double cyy = c2;
-    double cyxx = c4;
-    double cyyx = 2.0 * c4;
-    double cyyy = c4;
+    const double cxx = c2 / sq;
+    const double cxy = (c2 + cx) / sq;
+    const double cxxx = c4 / sq;
+    const double cxxy = 2.0 * c4 / sq;
+    const double cxyy = c4 / sq;
+    const double cyx = c2 + cy;
+    const double cyy = c2;
+    const double cyxx = c4;
+    const double cyyx = 2.0 * c4;
+    const double cyyy = c4;
 
     const double sq2 = sq * sq;
 
@@ -142,19 +141,19 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEClassicLD::getDerivative
 
     
 
-    double x = p.x();
-	double y = p.y();
-	double x2 = x * x;
-	double y2 = y * y;
-    double x3 = x2 * x;
-    double y3 = y2 * y;
-	double x4 = x2 * x2;
-	double y4 = y2 * y2;
-	double x2y2 = x2 * y2;
+    const double x = p.x();
+    const double y = p.y();
+    const double x2 = x * x;
+    const double y2 = y * y;
+    const double x3 = x2 * x;
+    const double y3 = y2 * y;
+    const double x4 = x2 * x2;
+    const double y4 = y2 * y2;
+    const double x2y2 = x2 * y2;
 
     Vec2 np;
     np.x() = x * (1.0 + cxx * x2 + cxy * y2 + cxxx * x4 + cxxy * x2y2 + cxyy * y4);
-	np.y() = y * (1.0 + cyx * x2 + cyy * y2 + cyxx * x4 + cyyx * x2y2 + cyyy * y4);
+    np.y() = y * (1.0 + cyx * x2 + cyy * y2 + cyxx * x4 + cyyx * x2y2 + cyyy * y4);
 
     Eigen::Matrix<double, 2, 10> d_np_d_intermediate = Eigen::Matrix<double, 2, 10>::Zero();
     
