@@ -24,9 +24,6 @@ BOOST_AUTO_TEST_CASE(colmap_isCompatible)
       {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_BROWN}, true},
       {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_FISHEYE}, true},
       {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_FISHEYE1}, true},
-      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_3DEANAMORPHIC4}, false},
-      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_3DECLASSICLD}, false},
-      {{camera::EINTRINSIC::PINHOLE_CAMERA, camera::EDISTORTION::DISTORTION_3DERADIAL4}, false},
       {{camera::EINTRINSIC::EQUIDISTANT_CAMERA, camera::EDISTORTION::DISTORTION_NONE}, false},
       {{camera::EINTRINSIC::EQUIDISTANT_CAMERA, camera::EDISTORTION::DISTORTION_RADIALK3PT}, false},
     };
@@ -57,29 +54,6 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
     intrTest.emplace(15,
                      camera::createPinhole(camera::EDISTORTION::DISTORTION_FISHEYE1, camera::EUNDISTORTION::UNDISTORTION_NONE, 1920, 1080, 1548.76, 1547.32, 992.36, 549.54, {-0.000542}));
     // add some incompatible intrinsics
-    intrTest.emplace(20, camera::createPinhole(camera::EDISTORTION::DISTORTION_3DEANAMORPHIC4, 
-                                                camera::EUNDISTORTION::UNDISTORTION_NONE, 
-                                                1920, 1080, 0., 0., 0., 0.));
-    intrTest.emplace(21,
-                     camera::createPinhole(camera::EDISTORTION::DISTORTION_3DECLASSICLD, 
-                                           camera::EUNDISTORTION::UNDISTORTION_NONE,
-                                           1920,
-                                           1080,
-                                           1548.76,
-                                           1547.32,
-                                           992.36,
-                                           549.54,
-                                           {-0.02078, 0.1705, -0.00714, 0.00134, -0.000542}));
-    intrTest.emplace(22,
-                     camera::createPinhole(camera::EDISTORTION::DISTORTION_3DERADIAL4, 
-                                           camera::EUNDISTORTION::UNDISTORTION_NONE,
-                                           1920,
-                                           1080,
-                                           1548.76,
-                                           1547.32,
-                                           992.36,
-                                           549.54,
-                                           {-0.02078, 0.1705, -0.00714, 0.00134, -0.00714, 0.00134}));
     intrTest.emplace(23, camera::createEquidistant(camera::EDISTORTION::DISTORTION_NONE,
                                                 1920, 1080, 1548.76, 549.54, -0.02078));
     intrTest.emplace(

@@ -5,10 +5,14 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 %include <aliceVision/camera/Undistortion.i>
-%include <aliceVision/camera/Undistortion3DE.hpp>
+%include <aliceVision/camera/Undistortion3DEA4.hpp>
+%include <aliceVision/camera/Undistortion3DEClassicLD.hpp>
+%include <aliceVision/camera/Undistortion3DERadial4.hpp>
 
 %{
-#include <aliceVision/camera/Undistortion3DE.hpp>
+#include <aliceVision/camera/Undistortion3DEA4.hpp>
+#include <aliceVision/camera/Undistortion3DEClassicLD.hpp>
+#include <aliceVision/camera/Undistortion3DERadial4.hpp>
 using namespace aliceVision;
 using namespace aliceVision::camera;
 %}

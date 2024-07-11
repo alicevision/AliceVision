@@ -4,13 +4,14 @@ set(camera_files_headers
 	cameraCommon.hpp
 	cameraUndistortImage.hpp
 	Distortion.hpp
-	Distortion3DE.hpp
 	DistortionBrown.hpp
 	DistortionFisheye.hpp
 	DistortionFisheye1.hpp
 	DistortionRadial.hpp
 	Undistortion.hpp
-	Undistortion3DE.hpp
+	Undistortion3DEA4.hpp
+    Undistortion3DERadial4.hpp
+    Undistortion3DEClassicLD.hpp
     UndistortionRadial.hpp
 	Equidistant.hpp
 	IntrinsicBase.hpp
@@ -21,7 +22,6 @@ set(camera_files_headers
 )
 
 set(camera_files_sources
-    Distortion3DE.cpp
     DistortionBrown.cpp
     DistortionFisheye.cpp
     DistortionFisheye1.cpp
@@ -33,7 +33,9 @@ set(camera_files_sources
     IntrinsicScaleOffsetDisto.cpp
     Pinhole.cpp
 	Undistortion.cpp
-    Undistortion3DE.cpp
+    Undistortion3DEA4.cpp
+    Undistortion3DERadial4.cpp
+    Undistortion3DEClassicLD.cpp
 )
 
 alicevision_add_library(aliceVision_camera
@@ -52,7 +54,6 @@ alicevision_add_test(pinholeBrown_test.cpp      NAME "camera_pinholeBrown"      
 alicevision_add_test(pinholeFisheye_test.cpp    NAME "camera_pinholeFisheye"      LINKS aliceVision_camera)
 alicevision_add_test(pinholeFisheye1_test.cpp   NAME "camera_pinholeFisheye1"     LINKS aliceVision_camera)
 alicevision_add_test(pinholeRadial_test.cpp     NAME "camera_pinholeRadial"       LINKS aliceVision_camera)
-alicevision_add_test(pinhole3DE_test.cpp     	NAME "camera_pinhole3DE"       LINKS aliceVision_camera)
 alicevision_add_test(equidistant_test.cpp       NAME "camera_equidistant"         LINKS aliceVision_camera)
 
 

@@ -20,7 +20,6 @@ using namespace aliceVision::camera;
 %include <aliceVision/camera/cameraCommon.hpp>
 %include <aliceVision/camera/cameraUndistortImage.hpp>
 
-%include <aliceVision/camera/Distortion3DE.i>
 %include <aliceVision/camera/DistortionBrown.i>
 %include <aliceVision/camera/DistortionFisheye.i>
 %include <aliceVision/camera/DistortionFisheye1.i>

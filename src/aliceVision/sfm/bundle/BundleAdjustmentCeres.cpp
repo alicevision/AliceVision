@@ -225,14 +225,6 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
             case EDISTORTION::DISTORTION_RADIALK3:
                 return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 3>(
                 new ResidualErrorFunctor_PinholeRadialK3(w, h, obsUndistorted));
-            case EDISTORTION::DISTORTION_3DERADIAL4:
-                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 3>(
-                new ResidualErrorFunctor_Pinhole3DERadial4(w, h, obsUndistorted));
-            case EDISTORTION::DISTORTION_3DECLASSICLD:
-                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 3>(
-                new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
-            case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
-                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
             case EDISTORTION::DISTORTION_BROWN:
                 return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 3>(
                 new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
@@ -290,15 +282,6 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
             case EDISTORTION::DISTORTION_RADIALK3:
                 return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 6, 3>(
                 new ResidualErrorFunctor_PinholeRadialK3(w, h, obsUndistorted));
-            case EDISTORTION::DISTORTION_3DERADIAL4:
-                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 6, 3>(
-                new ResidualErrorFunctor_Pinhole3DERadial4(w, h, obsUndistorted));
-            case EDISTORTION::DISTORTION_3DECLASSICLD:
-                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 6, 3>(
-                new ResidualErrorFunctor_Pinhole3DEClassicLD(w, h, obsUndistorted));
-            case EDISTORTION::DISTORTION_3DEANAMORPHIC4:
-                return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 6, 3>(
-                new ResidualErrorFunctor_Pinhole(w, h, obsUndistorted));
             case EDISTORTION::DISTORTION_BROWN:
                 return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 6, 3>(
                 new ResidualErrorFunctor_PinholeBrownT2(w, h, obsUndistorted));
