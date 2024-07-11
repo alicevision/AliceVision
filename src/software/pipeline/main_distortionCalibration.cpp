@@ -46,7 +46,7 @@ using namespace aliceVision;
 
 bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, const calibration::CheckerDetector& detect)
 {
-    const std::size_t minPointsPerLine = 10;
+    const std::size_t minPointsPerLine = 5;
 
     const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detect.getCorners();
     const std::vector<calibration::CheckerDetector::CheckerBoard>& boards = detect.getBoards();

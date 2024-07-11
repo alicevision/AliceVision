@@ -1446,6 +1446,43 @@ bool CheckerDetector::removeInvalidCheckerboards()
 
         const Vec2i delta = horizontal ? Vec2i{1, 0} : Vec2i{0, 1};
 
+        /**
+         * Check squares for not too important angles
+        */
+        for (int i = 0; i < board.rows() - 1; ++i)
+        {
+            for (int j = 0; j < board.cols() - 1; j++)
+            {
+                const IndexT c00 = board(i, j);
+                const IndexT c01 = board(i, j + 1);
+                const IndexT c10 = board(i + 1, j);
+                const IndexT c11 = board(i + 1, j + 1);
+
+                if (c00 == UndefinedIndexT || c01 == UndefinedIndexT || c10 == UndefinedIndexT || c11 == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                Vec2 dir1 = (_corners[c01].center - _corners[c00].center).normalized();
+                Vec2 dir2 = (_corners[c10].center - _corners[c00].center).normalized();
+                Vec2 dir3 = (_corners[c10].center - _corners[c11].center).normalized();
+                Vec2 dir4 = (_corners[c01].center - _corners[c11].center).normalized();
+
+                double a1 = std::acos(dir1.dot(dir2));
+                double a2 = std::acos(dir1.dot(dir2));
+
+                if (a1 < M_PI_4 || a1 > 3.0 * M_PI_4) 
+                {
+                    return true;
+                }
+
+                if (a2 < M_PI_4 || a2 > 3.0 * M_PI_4) 
+                {
+                    return true;
+                }
+            }
+        }
+
         for (int i = 0; i < board.rows() - delta.y(); ++i)
         {
             Vec2 sum{0, 0};
@@ -1610,9 +1647,8 @@ void CheckerDetector::filterNestedCheckerBoards(const size_t& height, const size
         }
 
         double mean_area = mean_squares / count_squares;
-
         // Check that square size function is increasing
-        if (mean_area < previous_area * 0.8)
+        if (mean_area < previous_area * 0.5)
             continue;
 
         previous_area = mean_area;
