@@ -88,7 +88,10 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
     std::string colorSpaceFromFileName = "";
     if (!imagePath.empty())
     {
-        colorSpaceFromFileName = getGlobalColorConfigOCIO().getColorSpaceFromFilepath(imagePath);
+        // Use only filename for color space infering
+        const std::string filename = fs::path(imagePath).filename().string(); 
+        colorSpaceFromFileName = getGlobalColorConfigOCIO().getColorSpaceFromFilepath(filename);
+        boost::algorithm::to_lower(colorSpaceFromFileName);
     }
 
     std::map<std::string, std::string> mapColorSpaces;
@@ -121,7 +124,7 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
     {
         colorSpace = mapColorSpaces.at("workPlateColourSpace");
     }
-    else if (!colorSpaceFromFileName.empty())
+    else if (!colorSpaceFromFileName.empty() && colorSpaceFromFileName != "raw")
     {
         colorSpace = colorSpaceFromFileName;
     }
