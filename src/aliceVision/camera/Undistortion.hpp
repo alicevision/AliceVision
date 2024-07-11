@@ -50,7 +50,7 @@ class Undistortion
 
         double hh = _size.y();
         if (_isDesqueezed)
-        { 
+        {
             hh = _size.y() / _pixelAspectRatio;
         }
 
@@ -66,7 +66,6 @@ class Undistortion
 
     void setSize(int width, int height)
     {
-        
         double hh = height;
         if (!_isDesqueezed)
         {
@@ -80,17 +79,17 @@ class Undistortion
 
     void setDiagonal(double diagonal)
     {
-        //May be used for plates with a different size than lens grid
+        // May be used for plates with a different size than lens grid
         _diagonal = diagonal;
     }
 
-    void setPixelAspectRatio(double pixelAspectRatio) 
-    { 
-        _pixelAspectRatio = pixelAspectRatio; 
-        
+    void setPixelAspectRatio(double pixelAspectRatio)
+    {
+        _pixelAspectRatio = pixelAspectRatio;
+
         double hh = _size.y();
         if (_isDesqueezed)
-        { 
+        {
             hh = _size.y() / _pixelAspectRatio;
         }
 
@@ -108,7 +107,7 @@ class Undistortion
     inline double getDiagonal() const { return _diagonal; }
 
     double getPixelAspectRatio() const { return _pixelAspectRatio; }
-    
+
     const std::vector<double>& getParameters() const { return _undistortionParams; }
 
     void setParameters(const std::vector<double>& params)

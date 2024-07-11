@@ -24,7 +24,9 @@ using namespace aliceVision::camera;
 %include <aliceVision/camera/DistortionFisheye.i>
 %include <aliceVision/camera/DistortionFisheye1.i>
 %include <aliceVision/camera/DistortionRadial.i>
-%include <aliceVision/camera/Undistortion3DE.i>
+%include <aliceVision/camera/Undistortion3DEA4.i>
+%include <aliceVision/camera/Undistortion3DEClassicLD.i>
+%include <aliceVision/camera/Undistortion3DERadial4.i>
 %include <aliceVision/camera/UndistortionRadial.i>
 
 %include <aliceVision/camera/IntrinsicInitMode.i>
