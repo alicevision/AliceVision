@@ -315,7 +315,7 @@ int aliceVision_main(int argc, char** argv)
             image::readImage(view.getImage().getImagePath(), image, image::EImageColorSpace::LINEAR);
             oiio::ParamValueList metadata = image::readImageMetadata(view.getImage().getImagePath());
 
-            if (cam->isValid() && cam->hasDistortion())
+            if (cam != nullptr && cam->isValid() && cam->hasDistortion())
             {
                 // Undistort the image and save it
                 if (exportFullROD)
@@ -348,6 +348,14 @@ int aliceVision_main(int argc, char** argv)
             }
             else  // No distortion
             {
+                if(cam == nullptr)
+                {
+                    ALICEVISION_LOG_ERROR("One camera intrinsic is undefined (intrinsic Id: " << view.getIntrinsicId() << ", view Id: " << view.getViewId() << ")");
+                }
+                else if(!cam->isValid())
+                {
+                    ALICEVISION_LOG_ERROR("One camera intrinsic is not valid (intrinsic Id: " << view.getIntrinsicId() << ", view Id: " << view.getViewId() << ")");
+                }
                 // Copy the image since there is no distortion
                 image::writeImage(dstImage, image, image::ImageWriteOptions(), metadata);
             }
