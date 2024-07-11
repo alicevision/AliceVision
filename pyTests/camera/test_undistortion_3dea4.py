@@ -1,29 +1,43 @@
 """
-Collection of unit tests for the 3DE Undistortion model.
+Collection of unit tests for the 3DEAnamorphic4 Undistortion model.
 """
 
 import pytest
 
 from pyalicevision import camera as av
+from math import sqrt, pow
 
 ##################
 ### List of functions:
-# - Undistortion3DEAnamorphic4(int width, int height) => DONE
+# - Undistortion3DEClassicLD(int width, int height) => DONE
 # - EUNDISTORTION getType() => DONE
 # - Undistortion* clone() => DONE
+# - Vec2 undistortNormalizedBase(Vec2& p) / Vec2 not binded
 # - Vec2 undistortNormalized(Vec2& p) / Vec2 not binded
+# - Eigen::Matrix<double, 2, 2> getDerivativeUndistortNormalizedwrtPointBase(Vec2& p) /
+#                   Matrix and Vec2 not binded
 # - Eigen::Matrix<double, 2, 2> getDerivativeUndistortNormalizedwrtPoint(Vec2& p) /
 #                   Matrix and Vec2 not binded
+# - Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortNormalizedwrtParametersBase(
+#                   Vec2& p) / Matrix and Vec2 not binded
 # - Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortNormalizedwrtParameters(
 #                   Vec2& p) / Matrix and Vec2 not binded
 # - Vec2 inverseNormalized(Vec2& p) / Vec2 not binded
 #
 ### Inherited functions (Undistortion):
 # - bool operator==(Undistortion& other) => DONE
+# - void setDesqueezed(bool isDesqueezed) => DONE
+# - bool isDesqueezed() => DONE
 # - void setOffset(Vec2& offset) / Vec2 not binded
 # - void setSize(int width, int height) => DONE
+# - void setDiagonal(double diagonal) => DONE
+# - void setPixelAspectRatio(double pixAspectRatio) => DONE
 # - [inline] Vec2 getOffset() / Vec2 not binded
-# - [inline] Vec2 getSize() / Vec2 not binded
+# - [inline] Vec2 getScaledOffset() / Vec2 not binded
+# - Vec2 getSize() / Vec2 not binded
+# - Vec2 getCenter() / Vec2 not binded
+# - [inline] double getDiagonal() => DONE
+# - double getPixelAspectRatio() => DONE
 # - vector<double>& getParameters() => DONE
 # - void setParameters(vector<double>& params)
 # - size_t getUndistortionParametersCount() => DONE
@@ -39,8 +53,12 @@ DEFAULT_PARAMETERS = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0
 NON_DEFAULT_PARAMETERS = (0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0)
 WIDTH = 1000
 HEIGHT = 800
+DIAGONAL = sqrt(pow(WIDTH, 2) + pow(HEIGHT, 2)) * 0.5
+PIXEL_ASPECT_RATIO = 1.79
+DESQUEEZED_HEIGHT = HEIGHT / PIXEL_ASPECT_RATIO
 
-def test_undistortion_3de_constructor():
+
+def test_undistortion_3dea4_constructor():
     """ Test creating an Undistortion3DEAnamorphic4 object and checking its set
     values are correct. """
     undistortion = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
@@ -57,8 +75,11 @@ def test_undistortion_3de_constructor():
     assert undistortion.getUndistortionParametersCount() == len(parameters)
     assert undistortion.getUndistortionParametersCount() == len(DEFAULT_PARAMETERS)
 
+    assert not undistortion.isDesqueezed()
+    assert undistortion.getPixelAspectRatio() == 1.0
 
-def test_undistortion_3de_get_set_parameters():
+
+def test_undistortion_3dea4_get_set_parameters():
     """ Test creating an Undistortion3DEAnamorphic4 object and manipulating its
     undistortion parameters. """
     undistortion = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
@@ -83,7 +104,7 @@ def test_undistortion_3de_get_set_parameters():
     assert parameters == undistortion.getParameters()
 
 
-def test_undistortion_3de_compare():
+def test_undistortion_3dea4_compare():
     """ Test creating different Undistortion3DEAnamorphic4 objects and comparing them
     with the '==' operator. """
     undistortion1 = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
@@ -99,7 +120,7 @@ def test_undistortion_3de_compare():
     assert not undistortion1 == undistortion3
 
 
-def test_undistortion_3de_clone():
+def test_undistortion_3dea4_clone():
     """ Test creating an Undistortion3DEAnamorphic4 object, cloning it, and checking
     the values of the cloned object are correct. """
     undistortion1 = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
@@ -112,7 +133,7 @@ def test_undistortion_3de_clone():
     assert undistortion2.getParameters() == DEFAULT_PARAMETERS
 
 
-def test_undistortion_3de_get_set_size():
+def test_undistortion_3dea4_get_set_size():
     """ Test creating an Undistortion3DEAnamorphic4 object and getting/setting its
     size. """
     undistortion = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
@@ -128,6 +149,44 @@ def test_undistortion_3de_get_set_size():
 
 
 @pytest.mark.skip(reason="Vec2 not binded")
-def test_undistortion_3de_get_set_offset():
+def test_undistortion_3dea4_get_set_offset():
     """ Test creating an Undistortion3DEAnamorphic4 object and manipulating its offset. """
     assert True
+
+
+def test_undistortion_3dea4_get_set_par_desqueezed_diagonal():
+    """ Test creating an Undistortion3DEAnamorphic4 object and getting/setting its pixel
+    aspect ratio, its diagonal and its desqueezed status. """
+    undistortion = av.Undistortion3DEAnamorphic4(WIDTH, HEIGHT)
+    assert undistortion.getPixelAspectRatio() == 1.0
+    assert not undistortion.isDesqueezed()
+    assert undistortion.getDiagonal() == DIAGONAL
+
+    # Setting the pixel aspect ratio while keeping 'isDesqueezed' to False: only the pixel
+    # aspect ratio should be updated
+    undistortion.setPixelAspectRatio(PIXEL_ASPECT_RATIO)
+    assert undistortion.getPixelAspectRatio() == PIXEL_ASPECT_RATIO
+    assert not undistortion.isDesqueezed()
+    assert undistortion.getDiagonal() == DIAGONAL
+
+    # Applying desqueezing: the pixel aspect ratio should be applied and the diagonal updated
+    undistortion.setDesqueezed(True)
+    assert undistortion.getPixelAspectRatio() == PIXEL_ASPECT_RATIO
+    assert undistortion.isDesqueezed()
+    new_diagonal = sqrt(pow(WIDTH, 2) + pow(DESQUEEZED_HEIGHT, 2)) * 0.5
+    assert undistortion.getDiagonal() == new_diagonal
+
+    # Hard-setting the diagonal
+    manual_diagonal = 400
+    assert manual_diagonal != new_diagonal
+    undistortion.setDiagonal(manual_diagonal)
+    assert undistortion.getPixelAspectRatio() == PIXEL_ASPECT_RATIO
+    assert undistortion.isDesqueezed()
+    assert undistortion.getDiagonal() == manual_diagonal
+
+    # Removing desqueezing: the pixel aspect ratio remains the same, but the diagonal should
+    # be recomputed as if it was not there
+    undistortion.setDesqueezed(False)
+    assert undistortion.getPixelAspectRatio() == PIXEL_ASPECT_RATIO
+    assert not undistortion.isDesqueezed()
+    assert undistortion.getDiagonal() == DIAGONAL
