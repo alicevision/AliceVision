@@ -32,6 +32,7 @@ struct LineWithPoints
     std::vector<Vec2> points;
 };
 
+
 /**
  * @brief a pair of points coordinates
  * 
@@ -52,6 +53,7 @@ struct Statistics
     double mean;
     double stddev;
     double median;
+    double lastDecile;
     double max;
 };
 
@@ -70,7 +72,8 @@ struct Statistics
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
               std::vector<LineWithPoints>& lines,
-              bool lockCenter,
+              const bool lockCenter,
+              const bool lockAngles,
               const std::vector<bool>& lockDistortions);
 
 
@@ -89,8 +92,30 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
               const std::vector<PointPair>& pointpairs,
-              bool lockCenter,
+              const bool lockCenter,
               const std::vector<bool>& lockDistortions);
+
+/**
+ * @brief Estimate the undistortion parameters of a camera using a set of pair of undistorted/distorted points.
+ *
+ * This algorithms minimizes a distance between points and points using distortion.
+ *
+ * @param[out] undistortionToEstimate Undistortion object with the parameters to estimate.
+ * @param[out] statistics Statistics on the estimation error.
+ * @param[in] pointpairs Set of pair of points used to estimate distortion.
+ * @param[in] lockCenter Lock the distortion offset during optimization.
+ * @param[in] lockDistortions Distortion parameters to lock during optimization.
+ * @param[in] T the in/out transformation matrix
+ * @return False if the estimation failed, otherwise true.
+ */
+bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
+              Statistics& statistics,
+              const std::vector<PointPair>& pointpairs,
+              const bool lockCenter,
+              const std::vector<bool>& lockDistortions,
+              Eigen::Matrix3d & R, 
+              Eigen::Vector3d & t,
+              double &scale);
 
 }  // namespace calibration
 }  // namespace aliceVision

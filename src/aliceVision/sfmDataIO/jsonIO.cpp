@@ -396,7 +396,7 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
                 if (version >= Version(1, 2, 9))
                 {
                     undistortionObject->setPixelAspectRatio(intrinsicTree.get<double>("pixelAspectRatio"));
-                    undistortionObject->setDesqueezed(intrinsicTree.get<double>("isDesqueezed"));
+                    undistortionObject->setDesqueezed(intrinsicTree.get<bool>("isDesqueezed"));
                 }
             }
         }
