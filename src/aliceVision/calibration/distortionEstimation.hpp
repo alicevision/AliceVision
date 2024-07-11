@@ -16,6 +16,12 @@
 namespace aliceVision {
 namespace calibration {
 
+struct PointWithScale
+{
+    Vec2 center;
+    double scale;
+};
+
 /**
  * @brief Set of 2D points that belong to the same line.
  *
@@ -29,7 +35,7 @@ struct LineWithPoints
 {
     double angle;
     double dist;
-    std::vector<Vec2> points;
+    std::vector<PointWithScale> points;
 };
 
 
@@ -43,6 +49,7 @@ struct PointPair
 {
     Vec2 distortedPoint;
     Vec2 undistortedPoint;
+    double scale;
 };
 
 /**

@@ -19,9 +19,10 @@ namespace calibration {
 class CostLine : public ceres::CostFunction
 {
   public:
-    CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt)
+    CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt, double sigma)
       : _pt(pt),
-        _undistortion(undistortion)
+        _undistortion(undistortion),
+        _sigma(sigma)
     {
         set_num_residuals(1);
 
@@ -60,7 +61,7 @@ class CostLine : public ceres::CostFunction
         const Vec2 ipt = _undistortion->undistort(_pt);
         const double pa = _undistortion->getPixelAspectRatio();
         const double ny = ipt.y() / pa;
-        const double w = 1.0;
+        const double w = 1.0 / _sigma;
         
         residuals[0] = w * (cangle * ipt.x() + sangle * ny - distanceToLine);
 
@@ -109,15 +110,17 @@ class CostLine : public ceres::CostFunction
   private:
     std::shared_ptr<camera::Undistortion> _undistortion;
     Vec2 _pt;
+    double _sigma;
 };
 
 class CostPoint : public ceres::CostFunction
 {
 public:
-    CostPoint(std::shared_ptr<camera::Undistortion> & undistortion, const Vec2& ptUndistorted, const Vec2 &ptDistorted)
+    CostPoint(std::shared_ptr<camera::Undistortion> & undistortion, const Vec2& ptUndistorted, const Vec2 &ptDistorted, double sigma)
         : _ptUndistorted(ptUndistorted)
         , _ptDistorted(ptDistorted)
         , _undistortion(undistortion)
+        , _sigma(sigma)
     {
         set_num_residuals(2);
         mutable_parameter_block_sizes()->push_back(2);
@@ -154,7 +157,7 @@ public:
         npt.y() = npt.y() / hsize.y();
 
         const double w1 = std::max(std::abs(npt.x()), std::abs(npt.y()));
-        const double w = w1 * w1;
+        const double w = w1 * w1 / _sigma;
 
         residuals[0] = w * (ipt.x() - _ptUndistorted.x());
         residuals[1] = w * (ipt.y() - _ptUndistorted.y());
@@ -186,15 +189,17 @@ private:
     std::shared_ptr<camera::Undistortion> _undistortion;
     Vec2 _ptUndistorted;
     Vec2 _ptDistorted;
+    double _sigma;
 };
 
 class CostPointGeometry : public ceres::CostFunction
 {
 public:
-    CostPointGeometry(std::shared_ptr<camera::Undistortion> & undistortion, const Vec2& ptUndistorted, const Vec2 &ptDistorted)
+    CostPointGeometry(std::shared_ptr<camera::Undistortion> & undistortion, const Vec2& ptUndistorted, const Vec2 &ptDistorted, double sigma)
         : _ptUndistorted(ptUndistorted)
         , _ptDistorted(ptDistorted)
         , _undistortion(undistortion)
+        , _sigma(sigma)
     {
         set_num_residuals(2);
         mutable_parameter_block_sizes()->push_back(2);
@@ -260,7 +265,7 @@ public:
         scaled.x() = scale * projected.x() + offsetx;
         scaled.y() = pa * scale * projected.y() + offsety;
                 
-        const double w = 1 + ipt.norm();
+        const double w = (1 + ipt.norm()) / _sigma;
 
         residuals[0] = w * (upt.x() - scaled.x());
         residuals[1] = w * (upt.y() - scaled.y());
@@ -384,6 +389,7 @@ private:
     std::shared_ptr<camera::Undistortion> _undistortion;
     Vec2 _ptUndistorted;
     Vec2 _ptDistorted;
+    double _sigma;
 };
 
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
@@ -475,9 +481,9 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
             problem.SetParameterBlockConstant(&l.angle);
         }
 
-        for (Vec2 pt : l.points)
+        for (const auto & pt : l.points)
         {
-            ceres::CostFunction* costFunction = new CostLine(undistortionToEstimate, pt);
+            ceres::CostFunction* costFunction = new CostLine(undistortionToEstimate, pt.center, pow(2.0, pt.scale));
             problem.AddResidualBlock(costFunction, lossFunction, &l.angle, &l.dist, center, ptrUndistortionParameters);
         }
     }
@@ -508,12 +514,13 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         const double sangle = std::sin(l.angle);
         const double cangle = std::cos(l.angle);
 
-        for (const Vec2& pt : l.points)
+        for (const auto & pt : l.points)
         {
-            const Vec2 ipt = undistortionToEstimate->undistort(pt);
+            const Vec2 ipt = undistortionToEstimate->undistort(pt.center);
             const double pa = undistortionToEstimate->getPixelAspectRatio();
             const double ny = ipt.y() / pa;
-            const double res = (cangle * ipt.x() + sangle * ny - l.dist);
+            double divider = pow(2.0, pt.scale);
+            const double res = (cangle * ipt.x() + sangle * ny - l.dist) / divider;
             errors.push_back(std::abs(res));
         }
     }
@@ -615,7 +622,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
 
     for (auto& ppt : pointpairs)
     {
-        ceres::CostFunction* costFunction = new CostPoint(undistortionToEstimate, ppt.undistortedPoint, ppt.distortedPoint);
+        ceres::CostFunction* costFunction = new CostPoint(undistortionToEstimate, ppt.undistortedPoint, ppt.distortedPoint, pow(2.0, ppt.scale));
         problem.AddResidualBlock(costFunction, lossFunction, center, ptrUndistortionParameters);
     }
 
@@ -638,11 +645,12 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     undistortionToEstimate->setOffset(undistortionOffset);
     undistortionToEstimate->setParameters(undistortionParameters);
     std::vector<double> errors;
-
+    
     for (auto& ppt : pointpairs)
     {
         const Vec2 ipt = undistortionToEstimate->undistort(ppt.distortedPoint);
-        const double res = (ipt - ppt.undistortedPoint).norm();
+        double divider = pow(2.0, ppt.scale);
+        const double res = (ipt - ppt.undistortedPoint).norm() / divider;
         errors.push_back(res);
     }
 
@@ -766,7 +774,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
 
     for (auto& ppt : pointpairs)
     {
-        ceres::CostFunction* costFunction = new CostPointGeometry(undistortionToEstimate, ppt.undistortedPoint, ppt.distortedPoint);
+        ceres::CostFunction* costFunction = new CostPointGeometry(undistortionToEstimate, ppt.undistortedPoint, ppt.distortedPoint, pow(2.0, ppt.scale));
         problem.AddResidualBlock(costFunction, lossFunction, center, ptrUndistortionParameters, &scale, &offsetx, &offsety, Rest.data(), Test.data());
     }
 
@@ -807,9 +815,12 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         Vec2 scaled;
         scaled.x() = scale * projected.x() + offsetx;
         scaled.y() = pa * scale * projected.y() + offsety;
-    
-        const double res = (undistortionToEstimate->undistort(ppt.distortedPoint) - scaled).norm();
+
+        double divider = pow(2.0, ppt.scale);
+
+        const double res = (undistortionToEstimate->undistort(ppt.distortedPoint) - scaled).norm() / divider;
         
+
         errors.push_back(res);
     }
 

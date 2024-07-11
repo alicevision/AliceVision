@@ -89,6 +89,7 @@ void processPerspective(const calibration::CheckerDetector & detector, std::shar
             pp.undistortedPoint.y() = (double(i) - centerBoard.y()) / board_scale;
             pp.distortedPoint.x() = pt.x();
             pp.distortedPoint.y() = pt.y();
+            pp.scale = corners[idx].scale;
 
             minx = std::min(pt.x(), minx);
             miny = std::min(pt.y(), miny);
@@ -170,7 +171,12 @@ std::vector<calibration::LineWithPoints> createLines(
                 continue;
 
             const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
-            line.points.push_back(p.center);
+
+            calibration::PointWithScale pws;
+            pws.center = p.center;
+            pws.scale = p.scale;
+
+            line.points.push_back(pws);
         }
 
         // Check that we don't have a too small line which won't be easy to estimate
