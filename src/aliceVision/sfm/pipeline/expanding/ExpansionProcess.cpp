@@ -39,6 +39,25 @@ bool ExpansionProcess::process(sfmData::SfMData & sfmData, track::TracksHandler 
         {
             return false;
         }
+
+        if (_postProcessHandler)
+        {
+            if (_postProcessHandler->process(sfmData, tracksHandler))
+            {
+                return true;
+                
+                if (_iterationHandler->getChunkHandler() == nullptr)
+                {
+                    return false;
+                }
+
+                // Perform a new estimation step on modified views
+                if (!_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, _postProcessHandler->getUpdatedViews()))
+                {
+                    return false;
+                }
+            }
+        }
     }
     while (sfmData.getPoses().size() != nbPoses);
 

@@ -18,6 +18,7 @@
 #include <aliceVision/sfm/pipeline/expanding/ExpansionIteration.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionProcess.hpp>
 #include <aliceVision/sfm/pipeline/expanding/LbaPolicyConnexity.hpp>
+#include <aliceVision/sfm/pipeline/expanding/ExpansionPostProcessRig.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -51,6 +52,8 @@ int aliceVision_main(int argc, char** argv)
     double maxReprojectionError = 4.0;
     bool lockAllIntrinsics = false;
     int minNbCamerasToRefinePrincipalPoint = 3;
+    bool useRigConstraint = true;
+    int minNbCamerasForRigCalibration = 20;
 
     int randomSeed = std::mt19937::default_seed;
 
@@ -88,6 +91,8 @@ int aliceVision_main(int argc, char** argv)
          "If we do not have enough cameras, the principal point in consider is considered in the center of the image. "
          "If minNbCamerasToRefinePrincipalPoint<=0, the principal point is never refined. "
          "If minNbCamerasToRefinePrincipalPoint==1, the principal point is always refined.")
+    ("useRigConstraint", po::value<bool>(&useRigConstraint)->default_value(useRigConstraint), "Enable/Disable rig constraint.")
+    ("rigMinNbCamerasForCalibration", po::value<int>(&minNbCamerasForRigCalibration)->default_value(minNbCamerasForRigCalibration),"Minimal number of cameras to start the calibration of the rig.")
     ;
      // clang-format on
    
@@ -189,9 +194,19 @@ int aliceVision_main(int argc, char** argv)
     expansionIteration->setExpansionPolicyHandler(expansionPolicy);
     expansionIteration->setExpansionChunkHandler(expansionChunk);
 
+    /*sfm::ExpansionPostProcess::uptr expansionPostProcess;
+    if (useRigConstraint)
+    {
+        sfm::ExpansionPostProcessRig::uptr expansionPostProcessTyped = std::make_unique<sfm::ExpansionPostProcessRig>();
+        expansionPostProcessTyped->setMinimalNumberCameras(minNbCamerasForRigCalibration);
+        expansionPostProcess = std::move(expansionPostProcessTyped);
+    }*/
+
+
     sfm::ExpansionProcess::uptr expansionProcess = std::make_unique<sfm::ExpansionProcess>();
     expansionProcess->setExpansionHistoryHandler(expansionHistory);
     expansionProcess->setExpansionIterationHandler(expansionIteration);
+    /*expansionProcess->setExpansionIterationPostProcessHandler(expansionPostProcess);*/
 
     if (!expansionProcess->process(sfmData, tracksHandler))
     {

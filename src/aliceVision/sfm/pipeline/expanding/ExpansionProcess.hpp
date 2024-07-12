@@ -12,6 +12,7 @@
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionIteration.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionHistory.hpp>
+#include <aliceVision/sfm/pipeline/expanding/ExpansionPostProcess.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -46,6 +47,7 @@ public:
     {
         _historyHandler = expansionHistory;
     }
+    
     /**
      * brief setup the expansion iteration handler
      * @param expansionIteration a unique ptr. Ownership will be taken
@@ -53,6 +55,15 @@ public:
     void setExpansionIterationHandler(ExpansionIteration::uptr & expansionIteration)
     {
         _iterationHandler = std::move(expansionIteration);
+    }
+
+    /**
+     * brief setup the expansion iteration post process handler
+     * @param expansionPostProcess a unique ptr. Ownership will be taken
+     */
+    void setExpansionIterationPostProcessHandler(ExpansionPostProcess::uptr & expansionPostProcess)
+    {
+        _postProcessHandler = std::move(expansionPostProcess);
     }
 
 private:
@@ -81,6 +92,11 @@ private:
      * Handle iteration prcess
     */
     std::unique_ptr<ExpansionIteration> _iterationHandler;
+
+    /**
+     * Postprocess step
+    */
+    ExpansionPostProcess::uptr _postProcessHandler;
 };
 
 } // namespace sfm

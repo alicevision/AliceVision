@@ -32,6 +32,8 @@ set(sfm_files_headers
   pipeline/expanding/ExpansionHistory.hpp
   pipeline/expanding/ExpansionChunk.hpp
   pipeline/expanding/ExpansionIteration.hpp
+  pipeline/expanding/ExpansionPostProcess.hpp
+  pipeline/expanding/ExpansionPostProcessRig.hpp
   pipeline/expanding/ExpansionPolicy.hpp
   pipeline/expanding/ExpansionPolicyLegacy.hpp
   pipeline/expanding/ExpansionProcess.hpp
@@ -72,6 +74,7 @@ set(sfm_files_sources
   pipeline/expanding/ExpansionChunk.cpp
   pipeline/expanding/ExpansionIteration.cpp
   pipeline/expanding/ExpansionPolicyLegacy.cpp
+  pipeline/expanding/ExpansionPostProcessRig.cpp
   pipeline/expanding/ExpansionProcess.cpp
   pipeline/expanding/ConnexityGraph.cpp
   pipeline/expanding/LbaPolicyConnexity.cpp
