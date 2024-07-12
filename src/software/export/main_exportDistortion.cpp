@@ -42,6 +42,7 @@ std::string toNuke(std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic)
     const auto& size = undistortion->getSize();
     const Vec2 offset = undistortion->getScaledOffset();
     const double pa = undistortion->getPixelAspectRatio();
+    const double updatedSensorHeight = (undistortion->isDesqueezed())?sensorHeight:sensorHeight/pa;
 
     switch (undistortion->getType())
     {
@@ -73,7 +74,7 @@ std::string toNuke(std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic)
                 << "tde4_focal_length_cm " << focal << " \n" 
                 << "tde4_custom_focus_distance_cm 1.0 \n"
                 << "tde4_filmback_width_cm " << sensorWidth << " \n"
-                << "tde4_filmback_height_cm " << sensorHeight / pa << " \n"
+                << "tde4_filmback_height_cm " << updatedSensorHeight << " \n"
                 << "tde4_lens_center_offset_x_cm 0.0000000 \n"
                 << "tde4_lens_center_offset_y_cm 0.0000000 \n"
                 << "tde4_pixel_aspect " << pa << " \n"
@@ -102,7 +103,7 @@ std::string toNuke(std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic)
                 << "tde4_focal_length_cm " << focal << " \n" 
                 << "tde4_custom_focus_distance_cm 1.0 \n"
                 << "tde4_filmback_width_cm " << sensorWidth << " \n"
-                << "tde4_filmback_height_cm " << sensorHeight / pa << " \n"
+                << "tde4_filmback_height_cm " << updatedSensorHeight << " \n"
                 << "tde4_lens_center_offset_x_cm 0.0000000 \n"
                 << "tde4_lens_center_offset_y_cm 0.0000000 \n"
                 << "tde4_pixel_aspect " << pa << " \n"
@@ -126,7 +127,7 @@ std::string toNuke(std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic)
                 << "tde4_focal_length_cm " << focal << " \n" 
                 << "tde4_custom_focus_distance_cm 1.0 \n"
                 << "tde4_filmback_width_cm " << sensorWidth << " \n"
-                << "tde4_filmback_height_cm " << sensorHeight / pa << " \n"
+                << "tde4_filmback_height_cm " << updatedSensorHeight << " \n"
                 << "tde4_lens_center_offset_x_cm 0.0000000 \n"
                 << "tde4_lens_center_offset_y_cm 0.0000000 \n"
                 << "tde4_pixel_aspect " << pa << " \n"

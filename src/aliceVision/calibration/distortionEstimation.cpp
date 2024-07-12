@@ -245,7 +245,7 @@ public:
         offset.y() = parameter_center[1];
         _undistortion->setOffset(offset);
 
-        const double pa = _undistortion->getPixelAspectRatio();
+        const double pa = (_undistortion->isDesqueezed())?1.0:_undistortion->getPixelAspectRatio();
 
         const Vec2 upt = _undistortion->undistort(_ptDistorted);
 
@@ -798,7 +798,9 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     undistortionToEstimate->setOffset(undistortionOffset);
     undistortionToEstimate->setParameters(undistortionParameters);
     std::vector<double> errors;
-    const double pa = undistortionToEstimate->getPixelAspectRatio();
+    
+    const double pa = (undistortionToEstimate->isDesqueezed())?1.0:undistortionToEstimate->getPixelAspectRatio();
+
 
     for (auto& ppt : pointpairs)
     {

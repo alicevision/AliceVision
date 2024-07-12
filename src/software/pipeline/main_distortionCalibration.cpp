@@ -259,6 +259,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string checkerBoardsPath;
     std::string sfmOutputDataFilepath;
     bool handleSqueeze = true;
+    bool isDesqueezed = false;
 
     std::string undistortionModelName = "3deanamorphic4";
 
@@ -277,7 +278,9 @@ int aliceVision_main(int argc, char* argv[])
         ("undistortionModelName", po::value<std::string>(&undistortionModelName)->default_value(undistortionModelName),
          "Distortion model used for estimating undistortion.")
         ("handleSqueeze", po::value<bool>(&handleSqueeze)->default_value(handleSqueeze),
-         "Estimate squeeze after estimating distortion");
+         "Estimate squeeze after estimating distortion")
+        ("isDesqueezed", po::value<bool>(&isDesqueezed)->default_value(isDesqueezed),
+         "Is the image already desqueezed");
     // clang-format on
 
     CmdLine cmdline("This program calibrates camera distortion.\n"
@@ -386,6 +389,7 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         undistortion->setPixelAspectRatio(pixelAspectRatio);
+        undistortion->setDesqueezed(isDesqueezed);
 
         // Transform checkerboards to line With points
         std::vector<calibration::LineWithPoints> allLinesWithPoints;
