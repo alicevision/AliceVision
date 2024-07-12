@@ -57,10 +57,7 @@ class Undistortion
         _diagonal = sqrt(_size.x() * _size.x() + hh * hh) * 0.5;
     }
 
-    bool isDesqueezed() const
-    {
-        return _isDesqueezed;
-    }
+    bool isDesqueezed() const { return _isDesqueezed; }
 
     void setOffset(const Vec2& offset) { _offset = offset; }
 

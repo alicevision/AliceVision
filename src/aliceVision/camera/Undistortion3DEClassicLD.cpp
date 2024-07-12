@@ -11,11 +11,11 @@ namespace camera {
 
 Vec2 Undistortion3DEClassicLD::undistortNormalized(const Vec2& p) const
 {
-    const double & c2 = _undistortionParams[0];
-    const double & sq = _undistortionParams[1];
-    const double & cx = _undistortionParams[2];
-    const double & cy = _undistortionParams[3];
-    const double & c4 = _undistortionParams[4];
+    const double& c2 = _undistortionParams[0];
+    const double& sq = _undistortionParams[1];
+    const double& cx = _undistortionParams[2];
+    const double& cy = _undistortionParams[3];
+    const double& c4 = _undistortionParams[4];
 
     const double cxx = c2 / sq;
     const double cxy = (c2 + cx) / sq;
@@ -44,14 +44,13 @@ Vec2 Undistortion3DEClassicLD::undistortNormalized(const Vec2& p) const
     return np;
 }
 
-
 Eigen::Matrix<double, 2, 2> Undistortion3DEClassicLD::getDerivativeUndistortNormalizedwrtPoint(const Vec2& p) const
 {
-    const double & c2 = _undistortionParams[0];
-    const double & sq = _undistortionParams[1];
-    const double & cx = _undistortionParams[2];
-    const double & cy = _undistortionParams[3];
-    const double & c4 = _undistortionParams[4];
+    const double& c2 = _undistortionParams[0];
+    const double& sq = _undistortionParams[1];
+    const double& cx = _undistortionParams[2];
+    const double& cy = _undistortionParams[3];
+    const double& c4 = _undistortionParams[4];
 
     const double cxx = c2 / sq;
     const double cxy = (c2 + cx) / sq;
@@ -78,7 +77,7 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEClassicLD::getDerivativeUndistortNorm
 
     const double d1 = (1.0 + cxx * x2 + cxy * y2 + cxxx * x4 + cxxy * x2y2 + cxyy * y4);
     const double d2 = (1.0 + cyx * x2 + cyy * y2 + cyxx * x4 + cyyx * x2y2 + cyyy * y4);
-    
+
     np.x() = x * d1;
     np.y() = y * d2;
 
@@ -98,12 +97,12 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEClassicLD::getDerivativeUndistortNorm
 }
 
 Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEClassicLD::getDerivativeUndistortNormalizedwrtParameters(const Vec2& p) const
-{   
-    const double & c2 = _undistortionParams[0];
-    const double & sq = _undistortionParams[1];
-    const double & cx = _undistortionParams[2];
-    const double & cy = _undistortionParams[3];
-    const double & c4 = _undistortionParams[4];
+{
+    const double& c2 = _undistortionParams[0];
+    const double& sq = _undistortionParams[1];
+    const double& cx = _undistortionParams[2];
+    const double& cy = _undistortionParams[3];
+    const double& c4 = _undistortionParams[4];
 
     const double cxx = c2 / sq;
     const double cxy = (c2 + cx) / sq;
@@ -119,27 +118,25 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEClassicLD::getDerivative
     const double sq2 = sq * sq;
 
     Eigen::Matrix<double, 10, 5> d_intermediate_d_params = Eigen::Matrix<double, 10, 5>::Zero();
-    
+
     d_intermediate_d_params(0, 0) = 1.0 / sq;
-    d_intermediate_d_params(0, 1) = - c2 / sq2;
+    d_intermediate_d_params(0, 1) = -c2 / sq2;
     d_intermediate_d_params(1, 0) = 1.0 / sq;
-    d_intermediate_d_params(1, 1) = - (c2 + cx) / sq2;
+    d_intermediate_d_params(1, 1) = -(c2 + cx) / sq2;
     d_intermediate_d_params(1, 2) = 1.0 / sq;
-    d_intermediate_d_params(2, 1) = - c4 / sq2;
+    d_intermediate_d_params(2, 1) = -c4 / sq2;
     d_intermediate_d_params(2, 4) = 1.0 / sq;
     d_intermediate_d_params(3, 1) = -2.0 * c4 / sq2;
     d_intermediate_d_params(3, 4) = 2.0 / sq;
-    d_intermediate_d_params(4, 1) = - c4 / sq2;
+    d_intermediate_d_params(4, 1) = -c4 / sq2;
     d_intermediate_d_params(4, 4) = 1.0 / sq;
-    
+
     d_intermediate_d_params(5, 0) = 1.0;
     d_intermediate_d_params(5, 3) = 1.0;
     d_intermediate_d_params(6, 0) = 1.0;
     d_intermediate_d_params(7, 4) = 1.0;
     d_intermediate_d_params(8, 4) = 2.0;
     d_intermediate_d_params(9, 4) = 1.0;
-
-    
 
     const double x = p.x();
     const double y = p.y();
@@ -156,7 +153,7 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEClassicLD::getDerivative
     np.y() = y * (1.0 + cyx * x2 + cyy * y2 + cyxx * x4 + cyyx * x2y2 + cyyy * y4);
 
     Eigen::Matrix<double, 2, 10> d_np_d_intermediate = Eigen::Matrix<double, 2, 10>::Zero();
-    
+
     d_np_d_intermediate(0, 0) = x * x2;
     d_np_d_intermediate(0, 1) = x * y2;
     d_np_d_intermediate(0, 2) = x * x4;

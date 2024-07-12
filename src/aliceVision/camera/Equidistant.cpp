@@ -464,10 +464,7 @@ bool Equidistant::isVisibleRay(const Vec3& ray) const
     return centered.norm() <= _circleRadius;
 }
 
-EINTRINSIC Equidistant::getType() const
-{
-    return EINTRINSIC::EQUIDISTANT_CAMERA;
-}
+EINTRINSIC Equidistant::getType() const { return EINTRINSIC::EQUIDISTANT_CAMERA; }
 
 double Equidistant::getHorizontalFov() const
 {

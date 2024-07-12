@@ -77,7 +77,6 @@ Eigen::Matrix<double, 2, 2> Undistortion::getDerivativeUndistortWrtOffset(const 
         pa = 1.0;
     }
 
-
     centered(0) = p(0) - _center(0) - _offset(0);
     centered(1) = p(1) - _center(1) - _offset(1);
 
@@ -126,7 +125,6 @@ Vec2 Undistortion::inverse(const Vec2& p) const
 
     Vec2 distorted = inverseNormalized(normalized);
     Vec2 unnormalized;
-
 
     unnormalized(0) = distorted(0) * _diagonal + _center(0) + _offset(0);
     unnormalized(1) = distorted(1) * _diagonal * pa + _center(1) + _offset(1);

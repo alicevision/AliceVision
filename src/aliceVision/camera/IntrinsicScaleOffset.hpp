@@ -108,7 +108,7 @@ class IntrinsicScaleOffset : public IntrinsicBase
     /**
      * @brief get focal length in mm
      * @return focal length in mm
-    */
+     */
     double getFocalLengthMM() const;
 
   protected:

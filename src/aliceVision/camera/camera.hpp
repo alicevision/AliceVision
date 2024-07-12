@@ -213,23 +213,22 @@ inline std::shared_ptr<Equidistant> createEquidistant(EDISTORTION distortionType
     return std::make_shared<Equidistant>(w, h, focalLengthPix, offsetX, offsetY, distortion);
 }
 
-inline EDISTORTION getDistortionType(const IntrinsicBase & intrinsic)
+inline EDISTORTION getDistortionType(const IntrinsicBase& intrinsic)
 {
     camera::EDISTORTION distoType = camera::EDISTORTION::DISTORTION_NONE;
 
     try
     {
-        const auto & isod = dynamic_cast<const camera::IntrinsicScaleOffsetDisto &>(intrinsic);
+        const auto& isod = dynamic_cast<const camera::IntrinsicScaleOffsetDisto&>(intrinsic);
         auto disto = isod.getDistortion();
         if (disto)
         {
             distoType = disto->getType();
         }
     }
-    catch(const std::bad_cast & e)
-    {
-    }
-    
+    catch (const std::bad_cast& e)
+    {}
+
     return distoType;
 }
 
