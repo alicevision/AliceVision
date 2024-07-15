@@ -331,7 +331,7 @@ int aliceVision_main(int argc, char** argv)
             bestUsedTracks = usedTracks;
         }
     }
- 
+
     if (!buildSfmData(sfmData, bestPair.reference, bestPair.next, bestPair.pose, tracksHandler.getAllTracks(), bestUsedTracks))
     {
         return EXIT_FAILURE;

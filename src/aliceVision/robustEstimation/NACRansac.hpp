@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2023 AliceVision contributors.
+// Copyright (c) 2024 AliceVision contributors.
 // Copyright (c) 2012 openMVG contributors.
 // Copyright (c) 2012, 2013 Lionel MOISAN.
 // Copyright (c) 2012, 2013 Pascal MONASSE.
