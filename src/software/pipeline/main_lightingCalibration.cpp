@@ -51,6 +51,7 @@ int aliceVision_main(int argc, char** argv)
     std::string inputDetection;
     std::string ouputJSON;
     std::string method;
+    bool doDebug;
     bool saveAsModel;
     bool ellipticEstimation;
 
@@ -70,6 +71,8 @@ int aliceVision_main(int argc, char** argv)
          "Calibration used for several datasets.")
         ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"),
          "Method for light estimation.")
+        ("doDebug, d", po::value<bool>(&doDebug)->default_value(true),
+         "Do we save debug images.")
         ("ellipticEstimation, e", po::value<bool>(&ellipticEstimation)->default_value(false),
          "Used ellipse model for calibration spheres (more precise).");
     // clang-format on
@@ -102,7 +105,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        lightingEstimation::lightCalibration(sfmData, inputDetection, ouputJSON, method, saveAsModel, ellipticEstimation);
+        lightingEstimation::lightCalibration(sfmData, inputDetection, ouputJSON, method, doDebug, saveAsModel, ellipticEstimation);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
