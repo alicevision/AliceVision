@@ -39,6 +39,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
                       const std::string& inputFile,
                       const std::string& outputPath,
                       const std::string& method,
+                      const bool doDebug,
                       const bool saveAsModel,
                       const bool ellipticEstimation)
 {
@@ -154,6 +155,13 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
         lightMat.row(i) = lightingDirection;
         intList.push_back(intensity);
+
+        if(doDebug)
+        {
+            int outputSize = 1024;
+            std::string outputFileName = fs::path(outputPath).parent_path().string() + "/" + fs::path(picturePath).stem().string() + "_" + method + ".png";
+            sphereFromLighting(lightingDirection, lightingDirection.norm(), outputFileName, outputSize);
+        }
     }
 
     // Write in JSON file
