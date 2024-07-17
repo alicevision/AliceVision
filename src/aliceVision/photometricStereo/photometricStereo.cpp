@@ -223,6 +223,14 @@ void photometricStereo(const sfmData::SfMData& sfmData,
           outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.exr",
           normals,
           image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+
+
+        image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
+        convertNormalMap2png(normals, normalsImPNG);
+        image::writeImage(
+            outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.png",
+            normalsImPNG,
+            image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     }
 
     if (skipAll)
@@ -279,6 +287,21 @@ void photometricStereo(const sfmData::SfMData& sfmData,
 
     sfmDataIO::save(
       normalSfmData, outputPath + "/normalMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS));
+
+    // Create Normal_png SfmData
+    sfmData::SfMData normalSfmDataPNG = albedoSfmData;
+    for (auto& viewIt : normalSfmDataPNG.getViews())
+    {
+        const IndexT viewId = viewIt.first;
+        IndexT poseId = viewIt.second->getPoseId();
+
+        sfmData::View* view = normalSfmDataPNG.getViews().at(viewId).get();
+        std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_normals_w.png";
+        view->getImage().setImagePath(imagePath);
+    }
+
+    sfmDataIO::save(
+      normalSfmDataPNG, outputPath + "/normalMapsPNG.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS));
 }
 
 void photometricStereo(const std::vector<std::string>& imageList,
