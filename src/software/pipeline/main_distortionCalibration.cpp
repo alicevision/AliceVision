@@ -26,7 +26,8 @@
 
 #include <aliceVision/calibration/checkerDetector.hpp>
 #include <aliceVision/calibration/checkerDetector_io.hpp>
-#include <aliceVision/calibration/distortionEstimation.hpp>
+#include <aliceVision/calibration/distortionEstimationLine.hpp>
+#include <aliceVision/calibration/distortionEstimationGeometry.hpp>
 
 #include <aliceVision/camera/Undistortion3DEA4.hpp>
 
@@ -44,91 +45,81 @@
 namespace po = boost::program_options;
 using namespace aliceVision;
 
-void processPerspective(const calibration::CheckerDetector & detector, std::shared_ptr<camera::Undistortion> & undistortion,  calibration::Statistics & statistics)
+void processPerspective(const std::map<IndexT, calibration::CheckerDetector> & boardsAllImages,        
+                        std::shared_ptr<camera::Undistortion> & undistortion,  
+                        calibration::Statistics & statistics)
 {
-    const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
-    const std::vector<calibration::CheckerDetector::CheckerBoard>& boards = detector.getBoards();
+    std::vector<bool> sharedParameters(undistortion->getParameters().size(), true);
+    //Shared squeeze X
+    sharedParameters[11] = false;
+    calibration::DistortionEstimationGeometry estimator(sharedParameters);
 
-    if (boards.size() == 0) 
+    for (const auto & pdetector : boardsAllImages)
     {
-        return;
-    }
+        const calibration::CheckerDetector & detector = pdetector.second; 
+        const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
+        const std::vector<calibration::CheckerDetector::CheckerBoard>& boards = detector.getBoards();
 
-    const auto & board = boards[0];
-
-    std::vector<calibration::PointPair> pointPairs;
-
-    Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
-    Eigen::Vector3d t = Eigen::Vector3d::Zero();
-
-    Eigen::Vector2d centerBoard;
-    centerBoard.x() = double(board.cols()) * 0.5;
-    centerBoard.y() = double(board.rows()) * 0.5;
-
-    double board_scale = double(std::max(board.cols(), board.rows()));
-
-    double minx = std::numeric_limits<double>::max();
-    double miny = std::numeric_limits<double>::max();
-    double maxx = 0.0;
-    double maxy = 0.0;
-    
-    for (int i = 0; i < board.rows(); i++)
-    {
-        for (int j = 0; j < board.cols(); j++)
+        if (boards.size() == 0) 
         {
-            IndexT idx = board(i, j);
-            if (idx == UndefinedIndexT)
-            {
-                continue;
-            }
-
-            Vec2 pt = corners[idx].center;
-
-            calibration::PointPair pp;           
-            pp.undistortedPoint.x() = (double(j) - centerBoard.x()) / board_scale;
-            pp.undistortedPoint.y() = (double(i) - centerBoard.y()) / board_scale;
-            pp.distortedPoint.x() = pt.x();
-            pp.distortedPoint.y() = pt.y();
-            pp.scale = corners[idx].scale;
-
-            minx = std::min(pt.x(), minx);
-            miny = std::min(pt.y(), miny);
-            maxx = std::max(pt.x(), maxx);
-            maxy = std::max(pt.y(), maxy);
-
-            pointPairs.push_back(pp);
+            return;
         }
+
+        const auto & board = boards[0];
+
+        std::vector<calibration::PointPair> pointPairs;
+
+        Eigen::Vector2d centerBoard;
+        centerBoard.x() = double(board.cols()) * 0.5;
+        centerBoard.y() = double(board.rows()) * 0.5;
+
+        double board_scale = double(std::max(board.cols(), board.rows()));
+
+
+        for (int i = 0; i < board.rows(); i++)
+        {
+            for (int j = 0; j < board.cols(); j++)
+            {
+                IndexT idx = board(i, j);
+                if (idx == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                Vec2 pt = corners[idx].center;
+
+                calibration::PointPair pp;           
+                pp.undistortedPoint.x() = (double(j) - centerBoard.x()) / board_scale;
+                pp.undistortedPoint.y() = (double(i) - centerBoard.y()) / board_scale;
+                pp.distortedPoint.x() = pt.x();
+                pp.distortedPoint.y() = pt.y();
+                pp.scale = corners[idx].scale;
+
+                pointPairs.push_back(pp);
+            }
+        }
+
+        estimator.addView(undistortion, pointPairs);
     }
 
-    double scale = maxx - minx;
-    
-    t(2) = 1.0;
-    
-    // Lock distortion but estimate pose
-    {
-        ALICEVISION_LOG_INFO("Estimating squeeze");
-        std::vector<bool> locks = {true, true, true, true, true, true, true, true, true, true, true, false, true};
-        calibration::estimate(undistortion, statistics, pointPairs, true, locks, R, t, scale);
+    std::vector<bool> locksStep1 = {true, true, true, true, true, true, true, true, true, true, true, false, true};
+    std::vector<bool> locksStep2 = {false, false, false, false, false, false, false, false, false, false, false, false, true};
 
-        ALICEVISION_LOG_INFO("Result quality of calibration: ");
-        ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
-        ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
-        ALICEVISION_LOG_INFO("Last decile of error: " << statistics.lastDecile);
-        ALICEVISION_LOG_INFO("Max of error: " << statistics.max);
-    }
-    
-    // Estimate pose and distortion
-    {
-        ALICEVISION_LOG_INFO("Estimating all parameters");
-        std::vector<bool> locks = {false, false, false, false, false, false, false, false, false, false, false, false, true};
-        calibration::estimate(undistortion, statistics, pointPairs, true, locks, R, t, scale);
+    estimator.compute(statistics, true, locksStep1);
 
-        ALICEVISION_LOG_INFO("Result quality of calibration: ");
-        ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
-        ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
-        ALICEVISION_LOG_INFO("Last decile of error: " << statistics.lastDecile);
-        ALICEVISION_LOG_INFO("Max of error: " << statistics.max);
-    }
+    ALICEVISION_LOG_INFO("Result quality of calibration: ");
+    ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
+    ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
+    ALICEVISION_LOG_INFO("Last decile of error: " << statistics.lastDecile);
+    ALICEVISION_LOG_INFO("Max of error: " << statistics.max);
+
+    estimator.compute(statistics, true, locksStep2);
+
+    ALICEVISION_LOG_INFO("Result quality of calibration: ");
+    ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
+    ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
+    ALICEVISION_LOG_INFO("Last decile of error: " << statistics.lastDecile);
+    ALICEVISION_LOG_INFO("Max of error: " << statistics.max);
 }
 
 // Utility lambda to create lines by iterating over a board's cells in a given order
@@ -499,22 +490,16 @@ int aliceVision_main(int argc, char* argv[])
         {
             if (handleSqueeze)
             {
-                if (boardsAllImages.size() == 1)
+                //Check that all views contains only 1 board
+                for (const auto &pdetector : boardsAllImages)
                 {
-                    const auto & detector = boardsAllImages.begin()->second;
-                    if (detector.getBoards().size() == 1)
-                    {
-                        processPerspective(detector, undistortion, statistics);
-                    }
-                    else 
+                    if (pdetector.second.getBoards().size() > 1)
                     {
                         ALICEVISION_LOG_ERROR("Multiple calibration boards are not supported");
                     }
                 }
-                else 
-                {
-                    ALICEVISION_LOG_ERROR("Multiple calibration boards are not supported");
-                }
+
+                processPerspective(boardsAllImages, undistortion, statistics);
             }
         }
 
