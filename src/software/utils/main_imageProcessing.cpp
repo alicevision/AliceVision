@@ -1750,6 +1750,7 @@ int aliceVision_main(int argc, char* argv[])
                         const double defaultOffsetX = 0.0;
                         const double defaultOffsetY = 0.0;
                         intrinsicBase = sfmDataIO::getViewIntrinsic(view,
+                                                                    intrinsicInitMode,
                                                                     focalLengthmm,
                                                                     sensorWidth,
                                                                     defaultFocalLength,

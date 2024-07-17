@@ -1486,7 +1486,13 @@ std::shared_ptr<camera::IntrinsicBase> KeyframeSelector::createIntrinsic(const s
                                                                          const double imageRatio,
                                                                          const std::size_t mediaIndex)
 {
-    auto intrinsic = sfmDataIO::getViewIntrinsic(view, focalLength, sensorWidth);
+    camera::EInitMode mode = camera::EInitMode::ESTIMATED;
+    if (sensorWidth <= 0)
+    {
+        mode = camera::EInitMode::UNKNOWN;
+    }
+    
+    auto intrinsic = sfmDataIO::getViewIntrinsic(view, mode, focalLength, sensorWidth);
     if (imageRatio > 1.0 && sensorWidth > -1.0)
     {
         intrinsic->setSensorWidth(sensorWidth);

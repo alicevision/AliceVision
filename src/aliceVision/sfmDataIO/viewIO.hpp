@@ -66,6 +66,7 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EVie
 /**
  * @brief create an intrinsic for the given View
  * @param[in] view The given view
+ * @param[in] intrinsicInitMode validity flags
  * @param[in] mmFocalLength (-1 if unknown)
  * @param[in] sensorWidth (-1 if unknown)
  * @param[in] defaultFocalLength (-1 if unknown)
@@ -78,6 +79,7 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EVie
  * @return shared_ptr IntrinsicBase
  */
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& view,
+                                                        const camera::EInitMode intrinsicInitMode,
                                                         double mmFocalLength = -1.0,
                                                         double sensorWidth = -1,
                                                         double defaultFocalLength = -1,

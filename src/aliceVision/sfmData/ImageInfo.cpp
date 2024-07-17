@@ -384,9 +384,10 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
             ALICEVISION_LOG_WARNING("Use default sensor size (24x36 mm)");
         }
         sensorWidth = 36.0;
-        sensorHeight = 24.0;
+        sensorHeight = -1.0;
     }
-    else if (sensorHeight == -1.0)  // If the sensor height has already been set with the effective height, don't overwrite it
+
+    if (sensorHeight == -1.0)  // If the sensor height has already been set with the effective height, don't overwrite it
     {
         sensorHeight = (imageRatio > 1.0) ? sensorWidth / imageRatio : sensorWidth * imageRatio;
     }

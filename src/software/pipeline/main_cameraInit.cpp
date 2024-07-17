@@ -642,6 +642,7 @@ int aliceVision_main(int argc, char** argv)
 
         // build intrinsic
         std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(view,
+                                                                                intrinsicInitMode,
                                                                                 focalLengthmm,
                                                                                 sensorWidth,
                                                                                 defaultFocalLength,
