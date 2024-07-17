@@ -238,7 +238,7 @@ void lightCalibrationOneImage(const std::string& picturePath,
             for (int i = 0; i < patch.rows(); ++i)
             {
                 const float distanceToCenter = std::sqrt((i - radius) * (i - radius) + (j - radius) * (j - radius));
-                if ((distanceToCenter < 0.95 * radius) && (patch(i, j) > 0.1) && (patch(i, j) < 0.98))
+                if ((distanceToCenter < 0.95 * radius) && (patch(i, j) > 0.2) && (patch(i, j) < 0.8))
                 {
                     // imSphere = normalSphere.s
                     imSphere(currentIndex) = patch(i, j);
@@ -289,7 +289,7 @@ void lightCalibrationOneImage(const std::string& picturePath,
             for (size_t i = 0; i < patch.rows(); ++i)
             {
                 float distanceToCenter = sqrt((i - radius) * (i - radius) + (j - radius) * (j - radius));
-                if (distanceToCenter < 0.95 * radius && (patch(i, j) > 0.1) && (patch(i, j) < 0.98))
+                if (distanceToCenter < 0.95 * radius && (patch(i, j) > 0.2) && (patch(i, j) < 0.8))
                 {
                     imSphere(currentIndex) = patch(i, j);
 
