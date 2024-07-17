@@ -22,6 +22,7 @@ namespace lightingEstimation {
  * @param[in] inputJSON Path to the JSON file containing the spheres parameters (see sphereDetection)
  * @param[out] outputPath Path to the JSON file in which lights' directions are written
  * @param[in] method Method used for calibration ("brightestPoint" or "whiteSphere")
+ * @param[in] doDebug True to save debug images
  * @param[in] saveAsModel True to save the estimated lights as model
  * @param[in] ellipticEstimation True to use elliptic estimation of the lighting
  */
@@ -29,6 +30,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
                       const std::string& inputJSON,
                       const std::string& outputPath,
                       const std::string& method,
+                      const bool doDebug,
                       const bool saveAsModel,
                       const bool ellipticEstimation);
 
