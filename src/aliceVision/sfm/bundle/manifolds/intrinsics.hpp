@@ -14,15 +14,15 @@
 namespace aliceVision {
 namespace sfm {
 
-class IntrinsicsManifoldSymbolic : public ceres::Manifold
+class IntrinsicsManifold : public ceres::Manifold
 {
   public:
-    explicit IntrinsicsManifoldSymbolic(size_t parametersSize,
-                                        double focalRatio,
-                                        bool lockFocal,
-                                        bool lockFocalRatio,
-                                        bool lockCenter,
-                                        bool lockDistortion)
+    explicit IntrinsicsManifold(size_t parametersSize,
+                                double focalRatio,
+                                bool lockFocal,
+                                bool lockFocalRatio,
+                                bool lockCenter,
+                                bool lockDistortion)
       : _ambientSize(parametersSize),
         _focalRatio(focalRatio),
         _lockFocal(lockFocal),
@@ -56,7 +56,7 @@ class IntrinsicsManifoldSymbolic : public ceres::Manifold
         }
     }
 
-    virtual ~IntrinsicsManifoldSymbolic() = default;
+    virtual ~IntrinsicsManifold() = default;
 
     bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
     {
@@ -70,8 +70,8 @@ class IntrinsicsManifoldSymbolic : public ceres::Manifold
         {
             if (_lockFocalRatio)
             {
-                x_plus_delta[0] = x[0] + delta[posDelta];
-                x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
+                x_plus_delta[0] = (x[1] + delta[posDelta]) * _focalRatio ;
+                x_plus_delta[1] = x[1] + delta[posDelta];
                 ++posDelta;
             }
             else

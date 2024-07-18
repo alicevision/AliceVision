@@ -386,15 +386,20 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
             {
                 // if we have an initial guess, we only authorize a margin around this value.
                 assert(intrinsicBlock.size() >= 1);
-                const unsigned int maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h());  // TODO : check if rounding is needed
-                problem.SetParameterLowerBound(
-                  intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->getInitialScale().x() - maxFocalError));
-                problem.SetParameterUpperBound(
-                  intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->getInitialScale().x() + maxFocalError));
-                problem.SetParameterLowerBound(
-                  intrinsicBlockPtr, 1, static_cast<double>(intrinsicScaleOffset->getInitialScale().y() - maxFocalError));
-                problem.SetParameterUpperBound(
-                  intrinsicBlockPtr, 1, static_cast<double>(intrinsicScaleOffset->getInitialScale().y() + maxFocalError));
+                const double maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h());
+
+                const double fx = intrinsicScaleOffset->getInitialScale().x();
+                const double fy = intrinsicScaleOffset->getInitialScale().y();
+
+                const double lboundY = std::max(0.0, fy - maxFocalError);
+                const double uboundY = std::max(0.0, fy + maxFocalError);
+                const double lboundX = std::max(0.0, lboundY * fx/fy);
+                const double uboundX = std::max(0.0, uboundY * fx/fy);
+
+                problem.SetParameterLowerBound(intrinsicBlockPtr, 0, lboundX);
+                problem.SetParameterUpperBound(intrinsicBlockPtr, 0, uboundX);
+                problem.SetParameterLowerBound(intrinsicBlockPtr, 1, lboundY);
+                problem.SetParameterUpperBound(intrinsicBlockPtr, 1, uboundY);
             }
             else  // no initial guess
             {
@@ -404,7 +409,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
                 problem.SetParameterLowerBound(intrinsicBlockPtr, 1, 0.0);
             }
 
-            focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
+            focalRatio = intrinsicBlockPtr[0] / intrinsicBlockPtr[1];
 
             std::shared_ptr<camera::IntrinsicScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
             if (castedcam_iso)
@@ -446,8 +451,8 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
             lockDistortion = true;
         }
 
-        IntrinsicsManifoldSymbolic* subsetManifold =
-          new IntrinsicsManifoldSymbolic(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
+        IntrinsicsManifold* subsetManifold =
+          new IntrinsicsManifold(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
         problem.SetManifold(intrinsicBlockPtr, subsetManifold);
         _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::REFINED);
     }
