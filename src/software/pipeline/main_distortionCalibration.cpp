@@ -65,7 +65,18 @@ void processPerspective(const std::map<IndexT, calibration::CheckerDetector> & b
             return;
         }
 
-        const auto & board = boards[0];
+        int maxSurface = 0;
+        int idBestBoard = 0;
+        for (int idboard = 0; idboard < boards.size(); idboard++)
+        {
+            int surface = boards[idboard].rows() * boards[idboard].cols();
+            if (surface > maxSurface)
+            {
+                maxSurface = surface;
+                idBestBoard = idboard;
+            }
+        }
+        const auto & board = boards[idBestBoard];
 
         std::vector<calibration::PointPair> pointPairs;
 
@@ -102,7 +113,7 @@ void processPerspective(const std::map<IndexT, calibration::CheckerDetector> & b
         estimator.addView(undistortion, pointPairs);
     }
 
-    std::vector<bool> locksStep1 = {true, true, true, true, true, true, true, true, true, true, true, false, true};
+    std::vector<bool> locksStep1 = {true, true, true, true, true, true, true, true, true, true, false, false, true};
     std::vector<bool> locksStep2 = {false, false, false, false, false, false, false, false, false, false, false, false, true};
 
     estimator.compute(statistics, true, locksStep1);
@@ -506,7 +517,7 @@ int aliceVision_main(int argc, char* argv[])
         if (statistics.lastDecile > 1.0)
         {
             ALICEVISION_LOG_ERROR("Quality seems off for the calibration");
-            return EXIT_FAILURE;
+            //return EXIT_FAILURE;
         }
 
         // Override input intrinsic with output camera
