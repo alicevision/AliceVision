@@ -20,6 +20,8 @@ set(multiview_files_headers
   relativePose/HomographyKernel.hpp
   relativePose/Rotation3PSolver.hpp
   relativePose/ISolverErrorRelativePose.hpp
+  relativePose/RelativeSphericalKernel.hpp
+  relativePose/RotationSphericalKernel.hpp
   resection/EPnPSolver.hpp
   resection/EPnPKernel.hpp
   resection/P3PSolver.hpp
@@ -76,6 +78,7 @@ alicevision_add_library(aliceVision_multiview
   PUBLIC_LINKS
     aliceVision_numeric
     aliceVision_robustEstimation
+    aliceVision_camera
     ${CERES_LIBRARIES}
   PRIVATE_LINKS
     aliceVision_system

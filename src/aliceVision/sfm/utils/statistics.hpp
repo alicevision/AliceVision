@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <vector>
+#include <Eigen/Dense>
+
 namespace aliceVision {
 
 namespace sfmData {
@@ -21,6 +24,20 @@ namespace sfm {
  * @return RMSE value
  */
 double RMSE(const sfmData::SfMData& sfmData);
+
+/**
+ * @brief Compute area based score
+ * score is the ratio of the area of the convex hull of the points over the image area
+ * @param refPts the reference image points
+ * @param nextPts the next image points
+ * @param refWidth the refereince image width
+ * @param refHeight the reference image height
+ * @param nextWidth the next image width
+ * @param nextHeight the next image height
+ * @return score
+ * 
+*/
+double computeAreaScore(const std::vector<Eigen::Vector2d>& refPts, const std::vector<Eigen::Vector2d>& nextPts, size_t refWidth, size_t refHeight, size_t nextWidth, size_t nextHeight);
 
 }  // namespace sfm
 }  // namespace aliceVision

@@ -364,6 +364,12 @@ class IntrinsicBase
     virtual double imagePlaneToCameraPlaneError(double value) const = 0;
 
     /**
+     * @brief What is the probability of a pixel wrt the whole fov
+     * @return a value in radians
+    */
+    virtual double pixelProbability() const = 0;
+
+    /**
      * @brief Return true if the intrinsic is valid
      * @return True if the intrinsic is valid
      */

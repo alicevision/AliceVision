@@ -481,5 +481,12 @@ double Equidistant::getHorizontalFov() const
 
 double Equidistant::getVerticalFov() const { return getHorizontalFov(); }
 
+double Equidistant::pixelProbability() const
+{
+    return 1.0 / double(w());
+}
+
+
+
 }  // namespace camera
 }  // namespace aliceVision

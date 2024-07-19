@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/track/Track.hpp>
+#include <aliceVision/feature/FeaturesPerView.hpp>
 
 #include <memory>
 
@@ -50,6 +51,7 @@ class TracksBuilder
     /**
      * @brief Build tracks for a given series of pairWise matches
      * @param[in] pairwiseMatches PairWise matches
+     * @param[in] featuresPerView all features (used for matching) in pairwiseMatches
      */
     void build(const PairwiseMatches& pairwiseMatches);
 
@@ -71,8 +73,11 @@ class TracksBuilder
     /**
      * @brief Export tracks as a map (each entry is a sequence of imageId and keypointId):
      *        {TrackIndex => {(imageIndex, keypointId), ... ,(imageIndex, keypointId)}
+     * @param allTracks output to tracks
+     * @param featuresPerView is the feature per view map for accessing features information. 
+     * If nullptr, then no coordinates or scale will be saved (For legacy purpose)
      */
-    void exportToSTL(TracksMap& allTracks) const;
+    void exportToSTL(TracksMap& allTracks, const feature::FeaturesPerView* featuresPerView = nullptr) const;
 
     /**
      * @brief Return the number of connected set in the UnionFind structure (tree forest)

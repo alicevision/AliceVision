@@ -34,6 +34,27 @@ void TriangulateNView(const Mat2X& x, const std::vector<Mat34>& Ps, Vec4& X, con
     X = X_and_alphas.head(4);
 }
 
+void TriangulateNViewAlgebraicSpherical(const std::vector<Vec3> &xs, 
+                               const std::vector<Eigen::Matrix4d> & Ts,
+                               Vec4 & X, 
+                               const std::vector<double> *weights)
+
+{
+    Mat2X::Index nviews = xs.size();
+    assert(static_cast<std::size_t>(nviews) == Ts.size());
+
+    Mat design(3 * nviews, 4);
+    for(Mat2X::Index i = 0; i < nviews; ++i)
+    {
+        design.block<3, 4>(3 * i, 0) = CrossProductMatrix(xs[i]) * Ts[i].block<3, 4>(0, 0);
+        if(weights != nullptr)
+        {
+            design.block<3, 4>(3 * i, 0) *= (*weights)[i];
+        }
+    }
+    Nullspace(design, X);
+}
+
 void TriangulateNViewLORANSAC(const std::vector<Vec2>& pts,
                               const std::vector<Mat34>& Ps,
                               std::mt19937& generator,

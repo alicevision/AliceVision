@@ -41,6 +41,15 @@ class P3PSolver : public robustEstimation::ISolver<robustEstimation::Mat34Model>
     void solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models) const override;
 
     /**
+     * @brief Solve the problem of camera pose.
+     *
+     * @param[in] lifted 2d points lifted on the unit sphere. One per column.
+     * @param[in] structure Corresponding 3d points
+     * @param[out] models A list of at most 4 candidate solutions.
+     */
+    void solve(const Mat3 & lifted, const Mat3 & structure, std::vector<Eigen::Matrix4d>& models) const;
+
+    /**
      * @brief Solve the problem.
      *
      * @param[in]  x2d 2d points in the first image. One per column.

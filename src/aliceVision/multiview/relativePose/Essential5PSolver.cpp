@@ -72,6 +72,18 @@ Mat fivePointsNullspaceBasis(const Mat2X& x1, const Mat2X& x2)
 }
 
 /**
+ * @brief Compute the nullspace of the linear constraints given by the matches.
+ */
+Mat fivePointsNullspaceBasisSpherical(const Mat& x1, const Mat& x2)
+{
+    Eigen::Matrix<double, 9, 9> A;
+    A.setZero();  // make A square until Eigen supports rectangular SVD.
+    encodeEpipolarSphericalEquation(x1, x2, &A);
+    Eigen::JacobiSVD<Eigen::Matrix<double, 9, 9>> svd(A, Eigen::ComputeFullV);
+    return svd.matrixV().topRightCorner<9, 4>();
+}
+
+/**
  * @brief Builds the polynomial constraint matrix M.
  */
 Mat fivePointsPolynomialConstraints(const Mat& EBasis)
@@ -139,13 +151,13 @@ Mat fivePointsPolynomialConstraints(const Mat& EBasis)
 
 void Essential5PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const
 {
-    assert(2 == x1.rows());
+    assert(2 == x1.rows() || 3 == x1.rows());
     assert(5 <= x1.cols());
     assert(x1.rows() == x2.rows());
     assert(x1.cols() == x2.cols());
 
     // step 1: Nullspace Extraction.
-    const Eigen::Matrix<double, 9, 4> EBasis = fivePointsNullspaceBasis(x1, x2);
+    const Eigen::Matrix<double, 9, 4> EBasis = (x1.rows()==2)?fivePointsNullspaceBasis(x1, x2):fivePointsNullspaceBasisSpherical(x1, x2);
 
     // step 2: Constraint Expansion.
     const Eigen::Matrix<double, 10, 20> EConstraints = fivePointsPolynomialConstraints(EBasis);

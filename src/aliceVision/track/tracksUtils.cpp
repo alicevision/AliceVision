@@ -264,5 +264,33 @@ void imageIdInTracks(const TracksMap& tracks, std::set<std::size_t>& imagesId)
     }
 }
 
+void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track::TracksMap& mapTracks)
+{
+    for (const auto& item : mapTracks)
+    {
+        const auto& track = item.second;
+
+        for (auto it = track.featPerView.begin(); it != track.featPerView.end(); it++)
+        {
+            Pair p;
+            p.first = it->first;
+
+            for (auto next = std::next(it); next != track.featPerView.end(); next++)
+            {
+                p.second = next->first;
+
+                if (covisibility.find(p) == covisibility.end())
+                {
+                    covisibility[p] = 0;
+                }
+                else
+                {
+                    covisibility[p]++;
+                }
+            }
+        }
+    }
+}
+
 }  // namespace track
 }  // namespace aliceVision
