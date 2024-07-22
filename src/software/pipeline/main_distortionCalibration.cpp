@@ -517,7 +517,6 @@ int aliceVision_main(int argc, char* argv[])
         if (statistics.lastDecile > 1.0)
         {
             ALICEVISION_LOG_ERROR("Quality seems off for the calibration");
-            //return EXIT_FAILURE;
         }
 
         // Override input intrinsic with output camera
