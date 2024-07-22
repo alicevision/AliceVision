@@ -37,6 +37,7 @@ int aliceVision_main(int argc, char* argv[])
     bool exportDebugImages = false;
     bool doubleSize = false;
     bool useNestedGrids = false;
+    bool ignorePixelAspectRatio = false;
 
     // Command line parameters
     // clang-format off
@@ -58,6 +59,8 @@ int aliceVision_main(int argc, char* argv[])
          "Export debug images.")
         ("doubleSize", po::value<bool>(&doubleSize)->default_value(doubleSize), 
          "Double image size prior to processing.")
+        ("ignorePixelAspectRatio", po::value<bool>(&ignorePixelAspectRatio)->default_value(ignorePixelAspectRatio), 
+         "Ignore pixel aspect ratio.")
         ("useNestedGrids", po::value<bool>(&useNestedGrids)->default_value(useNestedGrids), 
          "Images contain nested calibration grids. These grids must be centered on image center.");
     // clang-format on
@@ -126,7 +129,7 @@ int aliceVision_main(int argc, char* argv[])
         image::readImage(imagePath, source, image::EImageColorSpace::SRGB);
 
         double pixelRatio = view->getImage().getDoubleMetadata({"PixelAspectRatio"});
-        if (pixelRatio < 0.0)
+        if (pixelRatio < 0.0 || ignorePixelAspectRatio)
         {
             pixelRatio = 1.0;
         }

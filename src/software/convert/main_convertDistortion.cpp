@@ -10,7 +10,7 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
-#include <aliceVision/calibration/distortionEstimation.hpp>
+#include <aliceVision/calibration/distortionEstimationPoint.hpp>
 #include <aliceVision/camera/UndistortionRadial.hpp>
 
 #include <boost/program_options.hpp>

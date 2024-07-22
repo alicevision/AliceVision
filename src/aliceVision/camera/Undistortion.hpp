@@ -49,7 +49,7 @@ class Undistortion
         _isDesqueezed = isDesqueezed;
 
         double hh = _size.y();
-        if (_isDesqueezed)
+        if (!_isDesqueezed)
         { 
             hh = _size.y() / _pixelAspectRatio;
         }
@@ -89,7 +89,7 @@ class Undistortion
         _pixelAspectRatio = pixelAspectRatio; 
         
         double hh = _size.y();
-        if (_isDesqueezed)
+        if (!_isDesqueezed)
         { 
             hh = _size.y() / _pixelAspectRatio;
         }

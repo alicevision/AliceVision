@@ -5,13 +5,18 @@ set(calibration_files_headers
   patternDetect.hpp
   exportData.hpp
   distortionEstimation.hpp
+  distortionEstimationLine.hpp
+  distortionEstimationPoint.hpp
+  distortionEstimationGeometry.hpp
   checkerDetector.hpp
   checkerDetector_io.hpp
 )
 
 # Sources
 set(calibration_files_sources
-  distortionEstimation.cpp
+  distortionEstimationLine.cpp
+  distortionEstimationPoint.cpp
+  distortionEstimationGeometry.cpp
   checkerDetector.cpp
   checkerDetector_io.cpp
 )
