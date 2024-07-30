@@ -171,8 +171,10 @@ class IntrinsicBase
      */
     inline Vec2 residual(const geometry::Pose3& pose, const Vec4& X, const Vec2& x, bool applyDistortion = true) const
     {
-        const Vec2 proj = this->project(pose, X, applyDistortion);
-        return x - proj;
+        // We will compare to an undistorted point, so always ignore the distortion when computing coordinates
+        const Vec2 proj = this->project(pose, X, false);
+
+        return ((applyDistortion)?this->getUndistortedPixel(x):x) - proj;
     }
 
     /**

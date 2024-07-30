@@ -25,11 +25,11 @@ public:
                     const std::vector<Eigen::Vector3d> & structure, 
                     const std::vector<Eigen::Vector2d> & observations) 
     : _camera(camera), 
-    _structure(structure), 
-    _observations(observations)
+    _structure(structure)
     {
-        for (const auto & pt : _observations)
+        for (const auto & pt : observations)
         {
+            _observations.push_back(_camera->getUndistortedPixel(pt));
             _liftedObservations.push_back(_camera->toUnitSphere(_camera->removeDistortion(_camera->ima2cam(pt))));
         }
 
@@ -120,7 +120,7 @@ public:
             const Vec4 X = _structure[idx].homogeneous();
             const Vec2 x = _observations[idx];
 
-            const Vec2 residual = _camera->residual(geometry::Pose3(model), X, x);
+            const Vec2 residual = _camera->residual(geometry::Pose3(model), X, x, false);
 
             errors[idx] = residual.norm();
         }

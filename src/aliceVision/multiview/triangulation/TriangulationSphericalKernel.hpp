@@ -29,15 +29,16 @@ public:
         const std::vector<Eigen::Matrix4d>& poses, 
         std::vector<std::shared_ptr<camera::IntrinsicBase>> & intrinsics
     )
-  : _observations(observations)
-  , _poses(poses)
+  : _poses(poses)
   , _intrinsics(intrinsics)
   {
     for (int id = 0; id < observations.size(); id++)
     {
         //Lift all points onto the metric unit sphere
-        const Vec2 & obs = _observations[id];
+        const Vec2 & obs = observations[id];
         std::shared_ptr<camera::IntrinsicBase> camera = _intrinsics[id];
+
+        _observations.push_back(camera->getUndistortedPixel(obs));
         _lifted.push_back(camera->toUnitSphere(camera->removeDistortion(camera->ima2cam(obs))));
     }
   }
@@ -146,7 +147,7 @@ public:
         X = X / X(3);
     }
 
-    Vec2 residual = _intrinsics[sample]->residual(_poses[sample], X, _observations[sample]);
+    Vec2 residual = _intrinsics[sample]->residual(_poses[sample], X, _observations[sample], false);
 
     return residual.norm();
   }
@@ -215,7 +216,7 @@ public:
 
 private:
   std::vector<Vec3> _lifted;
-  const std::vector<Vec2> _observations;
+  std::vector<Vec2> _observations;
   const std::vector<Eigen::Matrix4d> _poses;
   const std::vector<std::shared_ptr<camera::IntrinsicBase>> _intrinsics;
   multiview::TriangulateNViewsSphericalSolver _solver;
