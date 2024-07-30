@@ -38,7 +38,8 @@ enum class EAlignmentMethod : unsigned char
     FROM_CAMERAS_POSEID,
     FROM_CAMERAS_FILEPATH,
     FROM_CAMERAS_METADATA,
-    FROM_MARKERS
+    FROM_MARKERS,
+    FROM_LANDMARKS,
 };
 
 /**
@@ -60,6 +61,8 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
             return "from_cameras_metadata";
         case EAlignmentMethod::FROM_MARKERS:
             return "from_markers";
+        case EAlignmentMethod::FROM_LANDMARKS:
+            return "from_landmarks";
     }
     throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -84,6 +87,8 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
         return EAlignmentMethod::FROM_CAMERAS_METADATA;
     if (method == "from_markers")
         return EAlignmentMethod::FROM_MARKERS;
+    if (method == "from_landmarks")
+        return EAlignmentMethod::FROM_LANDMARKS;
     throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -130,6 +135,7 @@ int aliceVision_main(int argc, char** argv)
          "\t- from_cameras_poseid: Align cameras with same pose ID.\n"
          "\t- from_cameras_filepath: Align cameras with a filepath matching, using --fileMatchingPattern.\n"
          "\t- from_cameras_metadata: Align cameras with matching metadata, using --metadataMatchingList.\n"
+         "\t- from_landmarks: Alilgn using landmarks sharing features.\n"
          "\t- from_markers: Align from markers with the same ID.\n")
         ("fileMatchingPattern", po::value<std::string>(&fileMatchingPattern)->default_value(fileMatchingPattern),
          "Matching pattern for the from_cameras_filepath method.\n")
@@ -205,6 +211,11 @@ int aliceVision_main(int argc, char** argv)
         case EAlignmentMethod::FROM_MARKERS:
         {
             hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
+            break;
+        }
+        case EAlignmentMethod::FROM_LANDMARKS:
+        {
+            hasValidSimilarity = sfm::computeSimilarityFromCommonLandmarks(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
             break;
         }
     }

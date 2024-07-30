@@ -120,6 +120,13 @@ bool computeSimilarityFromCommonMarkers(const sfmData::SfMData& sfmDataA,
                                         Mat3* out_R,
                                         Vec3* out_t);
 
+bool computeSimilarityFromCommonLandmarks(const sfmData::SfMData& sfmDataA,
+                                        const sfmData::SfMData& sfmDataB,
+                                        std::mt19937& randomNumberGenerator,
+                                        double* out_S,
+                                        Mat3* out_R,
+                                        Vec3* out_t);
+
 /**
  * @brief Apply a transformation the given SfMData
  *
