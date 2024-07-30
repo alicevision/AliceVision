@@ -125,7 +125,6 @@ class IntrinsicBase
      * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
      * @param[in] pt3D The 3D point
-     * @param[in] applyDistortion If true, apply the distortion if there is any
      * @return The projection jacobian with respect to the pose
      */
     virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
@@ -134,7 +133,6 @@ class IntrinsicBase
      * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
      * @param[in] pt3D The 3D point
-     * @param[in] applyDistortion If true, apply the distortion if there is any
      * @return The projection jacobian with respect to the pose
      */
     virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
@@ -143,7 +141,6 @@ class IntrinsicBase
      * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
      * @param[in] pt3D The 3D point
-     * @param[in] applyDistortion If true, apply the distortion if there is any
      * @return The projection jacobian with respect to the point
      */
     virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
@@ -152,7 +149,6 @@ class IntrinsicBase
      * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
      * @param[in] pt3D The 3D point
-     * @param[in] applyDistortion If true, apply the distortion if there is any
      * @return The projection jacobian with respect to the point
      */
     virtual Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
@@ -161,7 +157,6 @@ class IntrinsicBase
      * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
      * @param[in] pt3D The 3D point
-     * @param[in] applyDistortion If true, apply the distortion if there is any
      * @return The projection jacobian with respect to the params
      */
     virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const Eigen::Matrix4d& pos, const Vec4& pt3D) const = 0;
@@ -171,11 +166,12 @@ class IntrinsicBase
      * @param[in] pose The pose
      * @param[in] X The 3D projected point
      * @param[in] x The image observation
+     * @param[in] applyDistortion If true, apply the distortion if there is any
      * @return residual between the 3D projected point and the image observation
      */
-    inline Vec2 residual(const geometry::Pose3& pose, const Vec4& X, const Vec2& x) const
+    inline Vec2 residual(const geometry::Pose3& pose, const Vec4& X, const Vec2& x, bool applyDistortion = true) const
     {
-        const Vec2 proj = this->project(pose, X);
+        const Vec2 proj = this->project(pose, X, applyDistortion);
         return x - proj;
     }
 
