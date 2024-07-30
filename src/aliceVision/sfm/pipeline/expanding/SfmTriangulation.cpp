@@ -139,6 +139,7 @@ bool SfmTriangulation::processTrack(
 
     if (observations.size() <= 0)
     {
+        return false;
     }
     else 
     {

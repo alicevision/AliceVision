@@ -294,8 +294,9 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO("Give a score to all pairs");
     int count = 0;
 
-    double bestScore = 0.0;
+    double bestScore = std::numeric_limits<double>::lowest();
     sfm::ReconstructedPair bestPair;
+    bestPair.reference = UndefinedIndexT;
     std::vector<std::size_t> bestUsedTracks;
 
     for (const sfm::ReconstructedPair & pair: reconstructedPairs)
@@ -308,9 +309,10 @@ int aliceVision_main(int argc, char** argv)
             continue;
         }
 
+        //If the angle is too small, then dramatically reduce its chances
         if (radianToDegree(angle) < minAngle)
         {
-            continue;
+            angle = -1.0 / angle;
         }
 
         const sfmData::View & vref = sfmData.getView(pair.reference);
@@ -330,6 +332,12 @@ int aliceVision_main(int argc, char** argv)
             bestScore = score;
             bestUsedTracks = usedTracks;
         }
+    }
+
+    if (bestPair.reference == UndefinedIndexT)
+    {
+        ALICEVISION_LOG_INFO("No valid pair");
+        return EXIT_FAILURE;
     }
 
     if (!buildSfmData(sfmData, bestPair.reference, bestPair.next, bestPair.pose, tracksHandler.getAllTracks(), bestUsedTracks))
