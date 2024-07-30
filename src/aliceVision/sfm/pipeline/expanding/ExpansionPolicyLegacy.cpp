@@ -188,7 +188,7 @@ double ExpansionPolicyLegacy::computeScore(const track::TracksMap & tracksMap,
         }
 
         //The higher the level, the higher the weight per cell
-        double w = pow(2.0, shiftLevel);
+        double w = pow(2.0, countLevels - (shiftLevel + 1));
         sum += w * double(size);
     }
 
