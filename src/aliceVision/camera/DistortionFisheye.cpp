@@ -119,7 +119,7 @@ Vec2 DistortionFisheye::removeDistortion(const Vec2& p) const
     if (theta_dist > eps)
     {
         double theta = theta_dist;
-        for (int j = 0; j < 10; ++j)
+        for (int j = 0; j < 20; ++j)
         {
             const double theta2 = theta * theta;
             const double theta4 = theta2 * theta2;
