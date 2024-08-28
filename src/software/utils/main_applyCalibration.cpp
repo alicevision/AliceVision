@@ -11,6 +11,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
+#include <aliceVision/dataio/json.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -26,62 +27,8 @@
 namespace po = boost::program_options;
 using namespace aliceVision;
 
-int aliceVision_main(int argc, char** argv)
+bool applySfmData(sfmData::SfMData & sfmData, const sfmData::SfMData & sfmDataCalibrated)
 {
-    // command-line parameters
-    std::string sfmDataFilename;
-    std::string outSfMDataFilename;
-    std::string sfmDataCalibratedFilename;
-
-    // clang-format off
-    po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-         "SfMData scene to apply calibration to.")
-        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-         "Output SfMData scene.")
-        ("calibration,c", po::value<std::string>(&sfmDataCalibratedFilename)->required(),
-         "Calibrated SfMData scene.");
-    // clang-format on
-
-    CmdLine cmdline("AliceVision applyCalibration");
-    cmdline.add(requiredParams);
-    if (!cmdline.execute(argc, argv))
-    {
-        return EXIT_FAILURE;
-    }
-
-    // Load input scene
-    sfmData::SfMData sfmData;
-    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
-    {
-        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
-        return EXIT_FAILURE;
-    }
-
-    // Special case to handle:
-    // If calibrated SfMData filename is an empty string
-    // simply copy the input SfMData
-    if (sfmDataCalibratedFilename.empty())
-    {
-        // Save sfmData to disk
-        if (!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
-        {
-            ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfMDataFilename << "' cannot be written.");
-            return EXIT_FAILURE;
-        }
-
-        return EXIT_SUCCESS;
-    }
-
-    // Load calibrated scene
-    sfmData::SfMData sfmDataCalibrated;
-    if (!sfmDataIO::load(sfmDataCalibrated, sfmDataCalibratedFilename, sfmDataIO::ESfMData::ALL))
-    {
-        ALICEVISION_LOG_ERROR("The calibrated SfMData file '" << sfmDataCalibratedFilename << "' cannot be read");
-        return EXIT_FAILURE;
-    }
-
     // Detect calibration setup
     const auto& calibratedIntrinsics = sfmDataCalibrated.getIntrinsics();
 
@@ -91,7 +38,7 @@ int aliceVision_main(int argc, char** argv)
     if (!isMonoCam && !isMultiCam)
     {
         ALICEVISION_LOG_ERROR("Unknown calibration setup");
-        return EXIT_FAILURE;
+        return false;
     }
 
     // Apply rig calibration
@@ -100,7 +47,7 @@ int aliceVision_main(int argc, char** argv)
         if (sfmData.getRigs().size() != 1)
         {
             ALICEVISION_LOG_ERROR("There must be exactly 1 rig to apply rig calibration");
-            return EXIT_FAILURE;
+            return false;
         }
 
         // Retrieve calibrated sub-poses
@@ -114,7 +61,7 @@ int aliceVision_main(int argc, char** argv)
         if (subPoses.size() != calibratedSubPoses.size())
         {
             ALICEVISION_LOG_ERROR("Incoherent number of sub-poses");
-            return EXIT_FAILURE;
+            return false;
         }
 
         // Copy calibrated sub-poses
@@ -192,7 +139,9 @@ int aliceVision_main(int argc, char** argv)
         const bool isDistortionCalibrated = calibratedIntrinsic->getDistortionInitializationMode() == camera::EInitMode::CALIBRATED;
 
         if (!isIntrinsicCalibrated && !isDistortionCalibrated)
+        {
             continue;
+        }
 
         // Aspect ratio of input intrinsic
         const unsigned int width = intrinsic->w();
@@ -230,7 +179,7 @@ int aliceVision_main(int argc, char** argv)
             if (distortionOnly == false || smaller == false)
             {
                 ALICEVISION_LOG_ERROR("Intrinsic from input SfMData and calibrated SfMData are incompatible.");
-                return EXIT_FAILURE;
+                return false;
             }
         }
 
@@ -272,6 +221,240 @@ int aliceVision_main(int argc, char** argv)
 
         // Overwrite intrinsic with new one
         intrinsics.at(intrinsicId) = newIntrinsic;
+    }
+
+    return true;
+}
+
+bool applyJson(sfmData::SfMData & sfmData, boost::json::value & input)
+{
+    if (input.kind() != boost::json::kind::object)
+    {
+        return false;
+    }
+
+    if (sfmData.getIntrinsics().size() != 1)
+    {
+        ALICEVISION_LOG_ERROR("Number of intrinsics is not one");
+        return false;
+    }
+
+    auto intrinsic = std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(sfmData.getIntrinsics().begin()->second);
+    if (!camera::isPinhole(intrinsic->getType()))
+    {
+        ALICEVISION_LOG_ERROR("Original intrinsic is not a pinhole");
+        return false;
+    }
+
+    auto const& obj = input.get_object();
+
+    const std::string & model = boost::json::value_to<std::string>(obj.at("distortionModel"));
+    
+    const double & focalLength = boost::json::value_to<double>(obj.at("focalLength"));
+    const double & focusDistance = boost::json::value_to<double>(obj.at("focusDistance"));
+    const double & filmbackWidth = boost::json::value_to<double>(obj.at("filmbackWidth"));
+    const double & filmbackHeight = boost::json::value_to<double>(obj.at("filmbackHeight"));
+    const double & filmbackOffsetX = boost::json::value_to<double>(obj.at("filmbackOffsetX"));
+    const double & filmbackOffsetY = boost::json::value_to<double>(obj.at("filmbackOffsetY"));
+    const double & pixelAspect = boost::json::value_to<double>(obj.at("pixelAspect"));
+
+    if (std::abs(filmbackOffsetX) > 1e-12)
+    {
+        ALICEVISION_LOG_ERROR("Unsupported value for filmbackOffsetX");
+        return false;
+    }
+
+    if (std::abs(filmbackOffsetY) > 1e-12)
+    {
+        ALICEVISION_LOG_ERROR("Unsupported value for filmbackOffsetY");
+        return false;
+    }
+    
+    double w = intrinsic->w();
+    double h = intrinsic->h();
+    double nh = h / pixelAspect;
+    double ratio = w / nh;
+    double ratioDesqueezed = w / nh;
+    double iratio = filmbackWidth / filmbackHeight;
+
+    //Compare image size ratio and filmback size ratio
+    bool isDesqueezed = false;
+    if (std::abs(ratioDesqueezed - iratio) < 1e-2)
+    {
+        ALICEVISION_LOG_INFO("Input image look desqueezed");
+        isDesqueezed = true;
+    }
+    else if (std::abs(ratio - iratio) > 1e-2)
+    {
+        ALICEVISION_LOG_ERROR("Incompatible image ratios");
+        return false;
+    }
+
+    intrinsic->setSensorWidth(filmbackWidth);
+    intrinsic->setSensorHeight((isDesqueezed)?filmbackHeight:filmbackHeight*pixelAspect);
+    intrinsic->setDistortionObject(nullptr);
+
+    if (model == "anamorphic4")
+    {        
+        std::vector<double> params = 
+        {
+            boost::json::value_to<double>(obj.at("Cx02Degree2")),
+            boost::json::value_to<double>(obj.at("Cy02Degree2")),
+            boost::json::value_to<double>(obj.at("Cx22Degree2")),
+            boost::json::value_to<double>(obj.at("Cy22Degree2")),
+            boost::json::value_to<double>(obj.at("Cx04Degree4")),
+            boost::json::value_to<double>(obj.at("Cy04Degree4")),
+            boost::json::value_to<double>(obj.at("Cx24Degree4")),
+            boost::json::value_to<double>(obj.at("Cy24Degree4")),
+            boost::json::value_to<double>(obj.at("Cx44Degree4")),
+            boost::json::value_to<double>(obj.at("Cy44Degree4")),
+            degreeToRadian(boost::json::value_to<double>(obj.at("lensRotation"))),
+            boost::json::value_to<double>(obj.at("squeezeX")),
+            boost::json::value_to<double>(obj.at("squeezeY")),
+        };
+
+        auto undistortion = camera::createUndistortion(camera::EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4);
+        undistortion->setSize(w, h);
+        undistortion->setPixelAspectRatio(pixelAspect);
+        undistortion->setDesqueezed(isDesqueezed);
+        undistortion->setParameters(params);
+        intrinsic->setUndistortionObject(undistortion);
+        intrinsic->setDistortionInitializationMode(camera::EInitMode::CALIBRATED);
+    }
+    else if (model == "classicLD")
+    {        
+        std::vector<double> params = 
+        {
+            boost::json::value_to<double>(obj.at("distortion")),
+            boost::json::value_to<double>(obj.at("anamorphicSqueeze")),
+            boost::json::value_to<double>(obj.at("curvatureX")),
+            boost::json::value_to<double>(obj.at("curvatureY")),
+            boost::json::value_to<double>(obj.at("quarticDistortion"))
+        };
+
+        auto undistortion = camera::createUndistortion(camera::EUNDISTORTION::UNDISTORTION_3DECLASSICLD);
+        undistortion->setSize(w, h);
+        undistortion->setPixelAspectRatio(pixelAspect);
+        undistortion->setDesqueezed(isDesqueezed);
+        undistortion->setParameters(params);
+        intrinsic->setUndistortionObject(undistortion);
+        intrinsic->setDistortionInitializationMode(camera::EInitMode::CALIBRATED);
+    }
+    else if (model == "radial4")
+    {        
+        std::vector<double> params = 
+        {
+            boost::json::value_to<double>(obj.at("distortionDegree2")),
+            boost::json::value_to<double>(obj.at("uDegree2")),
+            boost::json::value_to<double>(obj.at("vDegree2")),
+            boost::json::value_to<double>(obj.at("quarticDistortionDegree4")),
+            boost::json::value_to<double>(obj.at("uDegree4")),
+            boost::json::value_to<double>(obj.at("vDegree4")),
+            boost::json::value_to<double>(obj.at("phiCylindricDirection")),
+            boost::json::value_to<double>(obj.at("bCylindricBending")),
+        };
+
+        auto undistortion = camera::createUndistortion(camera::EUNDISTORTION::UNDISTORTION_3DERADIAL4);
+        undistortion->setSize(w, h);
+        undistortion->setPixelAspectRatio(pixelAspect);
+        undistortion->setDesqueezed(isDesqueezed);
+        undistortion->setParameters(params);
+        intrinsic->setUndistortionObject(undistortion);
+        intrinsic->setDistortionInitializationMode(camera::EInitMode::CALIBRATED);
+    }
+    else 
+    {
+        ALICEVISION_LOG_ERROR("unknown distortion model");
+        return false;
+    }
+
+    return true;
+}
+
+int aliceVision_main(int argc, char** argv)
+{
+    // command-line parameters
+    std::string sfmDataFilename;
+    std::string outSfMDataFilename;
+    std::string calibrationFilename;
+    bool useJson = true;
+
+    // clang-format off
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+         "SfMData scene to apply calibration to.")
+        ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+         "Output SfMData scene.")
+        ("useJson", po::value<bool>(&useJson)->default_value(useJson),
+         "Use external JSON file instead of sfm file.")
+        ("calibration,c", po::value<std::string>(&calibrationFilename)->required(),
+         "Calibrated SfMData scene.");
+    // clang-format on
+
+    CmdLine cmdline("AliceVision applyCalibration");
+    cmdline.add(requiredParams);
+    if (!cmdline.execute(argc, argv))
+    {
+        return EXIT_FAILURE;
+    }
+
+    // Load input scene
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
+        return EXIT_FAILURE;
+    }
+
+    // Special case to handle:
+    // If calibrated SfMData filename is an empty string
+    // simply copy the input SfMData
+    if (calibrationFilename.empty())
+    {
+        // Save sfmData to disk
+        if (!sfmDataIO::save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+        {
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << outSfMDataFilename << "' cannot be written.");
+            return EXIT_FAILURE;
+        }
+
+        return EXIT_SUCCESS;
+    }
+
+    
+    if (useJson)
+    {
+        boost::json::error_code ec;
+        std::ifstream inputfile(calibrationFilename); 
+        std::vector<boost::json::value> content = readJsons(inputfile, ec);
+        if (content.size() != 1)
+        {
+            ALICEVISION_LOG_ERROR("Invalid calibration file");
+            return EXIT_FAILURE;
+        }
+
+        if (!applyJson(sfmData, content[0]))
+        {
+            ALICEVISION_LOG_ERROR("Error applying calibrated json");
+            return EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        // Load calibrated scene
+        sfmData::SfMData sfmDataCalibrated;
+        if (!sfmDataIO::load(sfmDataCalibrated, calibrationFilename, sfmDataIO::ESfMData::ALL))
+        {
+            ALICEVISION_LOG_ERROR("The calibrated SfMData file '" << calibrationFilename << "' cannot be read");
+            return EXIT_FAILURE;
+        }
+
+        if (!applySfmData(sfmData, sfmDataCalibrated))
+        {
+            ALICEVISION_LOG_ERROR("Error applying calibrated sfmData");
+            return EXIT_FAILURE;
+        }
     }
 
     // Save sfmData to disk
