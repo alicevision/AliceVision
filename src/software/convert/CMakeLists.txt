@@ -46,7 +46,7 @@ if(ALICEVISION_BUILD_SFM)
                 Boost::program_options
                 Boost::json
                 E57Format
-                nanoflann
+                nanoflann::nanoflann
         )
     endif()
 
