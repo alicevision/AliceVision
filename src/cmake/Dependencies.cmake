@@ -27,6 +27,7 @@ option(AV_BUILD_COINUTILS "Enable building an embedded CoinUtils" ON)
 option(AV_BUILD_OSI "Enable building an embedded Osi" ON)
 option(AV_BUILD_CLP "Enable building an embedded Clp" ON)
 option(AV_BUILD_FLANN "Enable building an embedded Flann" ON)
+option(AV_BUILD_NANOFLANN "Enable building an embedded NanoFlann" ON)
 option(AV_BUILD_LEMON "Enable building an embedded LEMON library" ON)
 option(AV_BUILD_E57FORMAT "Enable building an embedded E57Format" ON)
 option(AV_BUILD_PCL "Enable building an embedded PointCloud library" OFF)
@@ -75,6 +76,7 @@ message(STATUS "AV_BUILD_COINUTILS: ${AV_BUILD_COINUTILS}")
 message(STATUS "AV_BUILD_OSI: ${AV_BUILD_OSI}")
 message(STATUS "AV_BUILD_CLP: ${AV_BUILD_CLP}")
 message(STATUS "AV_BUILD_FLANN: ${AV_BUILD_FLANN}")
+message(STATUS "AV_BUILD_NANOFLANN: ${AV_BUILD_NANOFLANN}")
 message(STATUS "AV_BUILD_PCL: ${AV_BUILD_PCL}")
 message(STATUS "AV_BUILD_USD: ${AV_BUILD_USD}")
 message(STATUS "AV_BUILD_LEMON: ${AV_BUILD_LEMON}")
@@ -741,6 +743,34 @@ if(AV_BUILD_FLANN)
     set(FLANN_CMAKE_FLAGS -Dflann_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/flann/)
 endif()
 
+if(AV_BUILD_NANOFLANN)
+    set(NANOFLANN_TARGET nanoflann)
+    ExternalProject_Add(${NANOFLANN_TARGET}
+        GIT_REPOSITORY https://github.com/jlblancoc/nanoflann
+        GIT_TAG 419c26c498d12231817ada6488e2fd2442dbc68d
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${NANOFLANN_TARGET}
+        BINARY_DIR ${BUILD_DIR}/${NANOFLANN_TARGET}_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND 
+            ${CMAKE_COMMAND} -E env PKG_CONFIG_PATH=${CMAKE_INSTALL_PREFIX}/lib64/pkgconfig/
+            ${CMAKE_COMMAND} 
+            ${CMAKE_CORE_BUILD_FLAGS}
+            -DNANOFLANN_BUILD_EXAMPLES=OFF
+            -DNANOFLANN_BUILD_TESTS=OFF
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+            -DCMAKE_INSTALL_LIBDIR=lib
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+        INSTALL_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} install
+        DEPENDS ${LZ4_TARGET}
+    )
+
+    set(NANOFLANN_CMAKE_FLAGS -Dflann_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/nanoflann/)
+endif()
+
 if(AV_BUILD_PCL)
     # Add Point Cloud Library
     set(PCL_TARGET pcl)
@@ -1360,6 +1390,7 @@ set(AV_DEPS
     ${CLP_TARGET}
     ${USD_TARGET}
     ${FLANN_TARGET}
+    ${NANOFLANN_TARGET}
     ${LZ4_TARGET}
     ${LEMON_TARGET}
     ${SWIG_TARGET}
@@ -1411,6 +1442,7 @@ if(AV_BUILD_ALICEVISION)
         ${COINUTILS_CMAKE_FLAGS} ${OSI_CMAKE_FLAGS} ${CLP_CMAKE_FLAGS}
         ${LZ4_CMAKE_FLAGS}
         ${FLANN_CMAKE_FLAGS}
+        ${NANOFLANN_CMAKE_FLAGS}
         ${PCL_CMAKE_FLAGS}
         ${USD_CMAKE_FLAGS}
         ${SWIG_CMAKE_FLAGS}

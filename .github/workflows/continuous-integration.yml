@@ -22,7 +22,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: alicevision/alicevision-deps:2024.04.10-centos7-cuda11.3.1
+      image: alicevision/alicevision-deps:2024.08.28-centos7-cuda11.3.1
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
@@ -167,7 +167,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2024.04.10.zip?ref_type=heads&inline=false"
+          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2024.08.28.zip?ref_type=heads&inline=false"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 

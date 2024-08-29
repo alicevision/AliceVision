@@ -37,7 +37,7 @@ alicevision_add_library(aliceVision_fuseCut
     Boost::graph
     Boost::container
   PRIVATE_LINKS
-    nanoflann
+    nanoflann::nanoflann
     Boost::boost
     Boost::json
 )
