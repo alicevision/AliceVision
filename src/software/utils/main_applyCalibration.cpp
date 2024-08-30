@@ -387,9 +387,9 @@ int aliceVision_main(int argc, char** argv)
         ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
          "Output SfMData scene.")
         ("useJson", po::value<bool>(&useJson)->default_value(useJson),
-         "Use external JSON file instead of sfm file.")
+         "Calibration is a Lens calibration file generated using 3Dequalizer instead of an sfmData.")
         ("calibration,c", po::value<std::string>(&calibrationFilename)->required(),
-         "Calibrated SfMData scene.");
+         "Calibration file (SfmData or Lens calibration file).");
     // clang-format on
 
     CmdLine cmdline("AliceVision applyCalibration");
