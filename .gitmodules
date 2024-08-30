@@ -1,3 +1,0 @@
-[submodule "src/dependencies/MeshSDFilter"]
-	path = src/dependencies/MeshSDFilter
-	url = https://github.com/alicevision/MeshSDFilter.git

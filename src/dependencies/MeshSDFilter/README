@@ -1,0 +1,64 @@
+MeshSDFilter -- Static/Dynamic Filtering for Mesh Geometry
+===========================================================
+
+
+This code implements the mesh normal filtering algorithm from the following paper:
+
+- Juyong Zhang, Bailin Deng, Yang Hong, Yue Peng, Wenjie Qin, Ligang Liu. Static/Dynamic Filtering for Mesh Geometry. arXiv:1712.03574.
+
+
+
+1. Compiling
+
+The code requires c++ compiplers with c++11 support. It has been tested on the following systems and compilers:
+- Windows 10 using Visual Studio 2015;
+- macOS sierra, using homebrew GCC 7, or clang compiler from Xcode 8.3;
+- Debian 9.1 using GCC 6.3.
+
+
+Follow the following steps to compile the code:
+
+1) Make sure Eigen is installed. We recommend version 3.3+.
+	- Download Eigen from eigen.tuxfamily.org and extract it into a folder 'eigen' within the 'external' folder. Make sure the file 'external/eigen/Eigen/Dense' can be found 
+	- Alternatively: 1) On Ubuntu and Debian, use the command "apt-get install libeigen3-dev" to install Eigen; 2) On macOS, install homebrew (https://brew.sh/) and run "brew install cmake open-mesh eigen". 
+    
+2) Create a folder “build” within the root directory of the code
+
+3) Run cmake to generate the build files inside the build folder, and compile the source code:
+
+- On linux or mac, run the following commands within the build folder:
+	$ cmake -DCMAKE_BUILD_TYPE=Release ..
+	$ make
+    	
+- On mac, the default Apple clang compiler does not support OpenMP. To enable OpenMP, first install the homebrew GCC:
+	$ brew install gcc
+  This should install gcc 7, with compiler commands gcc-7 and g++7. Then run the following command within the build folder:
+  	$ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 ..
+	$ make
+	    
+- On windows, use the cmake GUI to generate a visual studio solution file, and build the solution.
+
+4) Afterwards, there should be two exectuable files 'MeshSDFilter' and 'MeshDenoiser' generated.
+
+
+
+2. Usage
+
+Use one of the following commands to filter or denoise a mesh:
+	$ MeshSDFilter OPTION_FILE INPUT_MESH OUTPUT_MESH
+	$ MeshDenoiser OPTION_FILE INPUT_MESH OUTPUT_MESH
+			
+- INPUT_MESH and OUTPUT_MESH are mesh files for input and result.
+- OPTION_FILE is a file that specifies the parameters. Example files for filtering and denoising are provided in FilteringOptions.txt and DenoisingOptions.txt .
+	
+
+
+3. License
+
+The code is released under BSD 3-Clause License.
+
+
+
+4. Contact
+
+Feel free to contact Bailin Deng <bldeng@gmail.com> if you have any comments or questions.

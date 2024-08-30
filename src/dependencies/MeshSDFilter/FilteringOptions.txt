@@ -1,0 +1,20 @@
+#### Option file for SD filtering of mesh face normals
+#### Lines starting with '#' are comments
+
+## Regularization weight, must be positive.
+Lambda  10
+
+## Gaussian standard deviation for spatial weight, scaled by the average distance between adjacent face cetroids. Must be positive.
+Eta 2.5
+
+## Gaussian standard deviation for guidance weight, must be positive.
+Mu  20
+
+## Gaussian standard deviation for signal weight, must be positive
+Nu  0.26
+
+## Closeness weight for mesh update, must be positive
+MeshUpdateClosenessWeight  0.001
+
+## Iterations for mesh update, must be positive
+MeshUpdateIterations  20
