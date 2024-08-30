@@ -311,8 +311,10 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_cmdline
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
+                  aliceVision_dataio
                   aliceVision_camera
                   Boost::program_options
+                  Boost::json
         )
     endif()
 
