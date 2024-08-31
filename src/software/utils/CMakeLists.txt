@@ -211,6 +211,8 @@ if(ALICEVISION_BUILD_SFM)
               aliceVision_cmdline
               aliceVision_sfmData
               aliceVision_sfmDataIO
+              aliceVision_sfm
+              aliceVision_matching
               Boost::program_options
     )
 
