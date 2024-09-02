@@ -15,6 +15,7 @@
 
 #include <boost/program_options.hpp>
 
+#include <fstream>
 #include <string>
 #include <cmath>
 #include <memory>
