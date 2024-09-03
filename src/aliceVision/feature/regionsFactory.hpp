@@ -30,7 +30,7 @@ using AKAZE_Liop_Regions = ScalarRegions<unsigned char, 144>;
 using AKAZE_BinaryRegions = BinaryRegions<64>;
 
 /// Define an unknown feature regions 
-using UNKNOWN_Regions = ScalarRegions<float, 128>;
+using GENERIC_Regions = ScalarRegions<float, 128>;
 
 }  // namespace feature
 }  // namespace aliceVision
