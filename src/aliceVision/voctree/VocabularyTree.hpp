@@ -360,8 +360,8 @@ inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(feature::E
         case EImageDescriberType::AKAZE_MLDB:
             res.reset(new VocabularyTree<AKAZE_BinaryRegions::DescriptorT>);
             break;
-        case EImageDescriberType::UNKNOWN:
-            res.reset(new VocabularyTree<UNKNOWN_Regions::DescriptorT>);
+        case EImageDescriberType::GENERIC:
+            res.reset(new VocabularyTree<GENERIC_Regions::DescriptorT>);
             break;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)

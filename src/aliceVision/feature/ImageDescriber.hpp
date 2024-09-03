@@ -264,12 +264,12 @@ class ImageDescriber
 /**
  * @brief Used to load descripters computed outside of meshroom.
  */
-class UnknownImageDescriber  : public ImageDescriber
+class GenericImageDescriber  : public ImageDescriber
 {
   public:
-    UnknownImageDescriber() = default;
+    GenericImageDescriber() = default;
 
-    virtual ~UnknownImageDescriber() = default;
+    virtual ~GenericImageDescriber() = default;
 
      /**
      * @brief Check if the image describer use CUDA
@@ -287,7 +287,7 @@ class UnknownImageDescriber  : public ImageDescriber
      * @brief Get the corresponding EImageDescriberType
      * @return EImageDescriberType
      */
-    EImageDescriberType getDescriberType() const override { return EImageDescriberType::UNKNOWN; }
+    EImageDescriberType getDescriberType() const override { return EImageDescriberType::GENERIC; }
 
     /**
      * @brief Get the total amount of RAM needed for a
@@ -363,7 +363,7 @@ class UnknownImageDescriber  : public ImageDescriber
      */
     void allocate(std::unique_ptr<Regions>& regions) const override 
     {
-        regions.reset(new UNKNOWN_Regions);
+        regions.reset(new GENERIC_Regions);
     }
 
   private:

@@ -27,7 +27,9 @@ enum class EImageDescriberType : unsigned char
     
     AKAZE = 20,
     AKAZE_LIOP = 21,
-    AKAZE_MLDB = 22
+    AKAZE_MLDB = 22,
+
+    GENERIC = 100
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     ,
@@ -111,7 +113,8 @@ inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
         case EImageDescriberType::AKAZE_LIOP:
         case EImageDescriberType::AKAZE_MLDB:
             return 0.14f;
-
+        case EImageDescriberType::GENERIC:
+            return -1.0f;
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
         case EImageDescriberType::CCTAG3:
         case EImageDescriberType::CCTAG4:

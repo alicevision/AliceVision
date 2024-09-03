@@ -36,6 +36,10 @@ std::string describerTypeColor(feature::EImageDescriberType descType)
             return "purple";
         case feature::EImageDescriberType::AKAZE_MLDB:
             return "purple";
+
+        case feature::EImageDescriberType::GENERIC:
+            return "black";
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
         case feature::EImageDescriberType::CCTAG3:
             return "blue";
