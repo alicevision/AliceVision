@@ -27,29 +27,25 @@ enum class EImageDescriberType : unsigned char
     
     AKAZE = 20,
     AKAZE_LIOP = 21,
-    AKAZE_MLDB = 22,
-
-    GENERIC = 100
+    AKAZE_MLDB = 22
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    ,
-    CCTAG3 = 30,
-    CCTAG4 = 31
+    , CCTAG3 = 30
+    , CCTAG4 = 31
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
     #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-    ,
-    SIFT_OCV = 40
+    , SIFT_OCV = 40
     #endif
-    ,
-    AKAZE_OCV = 41
+    , AKAZE_OCV = 41
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
-    ,
-    APRILTAG16H5 = 50
+    , APRILTAG16H5 = 50
 #endif
+
+    , GENERIC = 100
 };
 
 /**
