@@ -112,9 +112,8 @@ inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
         case EImageDescriberType::AKAZE:
         case EImageDescriberType::AKAZE_LIOP:
         case EImageDescriberType::AKAZE_MLDB:
-            return 0.14f;
         case EImageDescriberType::GENERIC:
-            return -1.0f;
+            return 0.14f;
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
         case EImageDescriberType::CCTAG3:
         case EImageDescriberType::CCTAG4:
