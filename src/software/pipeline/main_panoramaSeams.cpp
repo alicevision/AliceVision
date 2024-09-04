@@ -246,6 +246,11 @@ int aliceVision_main(int argc, char** argv)
             continue;
         }
 
+        if (fs::file_size(iter.path()) == 0)
+        {
+            continue;
+        }
+
         std::smatch m;
         const std::string text = iter.path().string();
         if (!std::regex_search(text, m, pattern))
