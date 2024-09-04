@@ -294,21 +294,22 @@ bool applyJson(sfmData::SfMData & sfmData, boost::json::value & input)
     intrinsic->setSensorWidth(filmbackWidth);
     intrinsic->setSensorHeight((isDesqueezed)?filmbackHeight:filmbackHeight*pixelAspect);
     intrinsic->setDistortionObject(nullptr);
+    intrinsic->setFocalLength(focalLength, pixelAspect);
 
     if (model == "anamorphic4")
     {        
         std::vector<double> params = 
         {
-            boost::json::value_to<double>(obj.at("Cx02Degree2")),
-            boost::json::value_to<double>(obj.at("Cy02Degree2")),
-            boost::json::value_to<double>(obj.at("Cx22Degree2")),
-            boost::json::value_to<double>(obj.at("Cy22Degree2")),
-            boost::json::value_to<double>(obj.at("Cx04Degree4")),
-            boost::json::value_to<double>(obj.at("Cy04Degree4")),
-            boost::json::value_to<double>(obj.at("Cx24Degree4")),
-            boost::json::value_to<double>(obj.at("Cy24Degree4")),
-            boost::json::value_to<double>(obj.at("Cx44Degree4")),
-            boost::json::value_to<double>(obj.at("Cy44Degree4")),
+            boost::json::value_to<double>(obj.at("cx02Degree2")),
+            boost::json::value_to<double>(obj.at("cy02Degree2")),
+            boost::json::value_to<double>(obj.at("cx22Degree2")),
+            boost::json::value_to<double>(obj.at("cy22Degree2")),
+            boost::json::value_to<double>(obj.at("cx04Degree4")),
+            boost::json::value_to<double>(obj.at("cy04Degree4")),
+            boost::json::value_to<double>(obj.at("cx24Degree4")),
+            boost::json::value_to<double>(obj.at("cy24Degree4")),
+            boost::json::value_to<double>(obj.at("cx44Degree4")),
+            boost::json::value_to<double>(obj.at("cy44Degree4")),
             degreeToRadian(boost::json::value_to<double>(obj.at("lensRotation"))),
             boost::json::value_to<double>(obj.at("squeezeX")),
             boost::json::value_to<double>(obj.at("squeezeY")),

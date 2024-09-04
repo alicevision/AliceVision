@@ -171,6 +171,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
         
         intrinsicTree.put("initialFocalLength", initialFocalLengthMM);
         intrinsicTree.put("focalLength", focalLengthMM);
+
         intrinsicTree.put("pixelRatio", pixelRatio);
         intrinsicTree.put("pixelRatioLocked", intrinsicScaleOffset->isRatioLocked());
 
