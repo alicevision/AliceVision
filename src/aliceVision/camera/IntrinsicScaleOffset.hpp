@@ -111,6 +111,13 @@ class IntrinsicScaleOffset : public IntrinsicBase
     */
     double getFocalLengthMM() const;
 
+    /**
+     * @Brief set scale given focal length and pixelaspectratio
+     * @param focalLengthMM focal length in mm
+     * @param pixelAspectRatio pixel aspect ratio (image with = pixelAspectRatio * realwith)
+    */
+    void setFocalLength(double focalLengthMM, double pixelAspectRatio);
+
   protected:
     Vec2 _scale{1.0, 1.0};
     Vec2 _offset{0.0, 0.0};

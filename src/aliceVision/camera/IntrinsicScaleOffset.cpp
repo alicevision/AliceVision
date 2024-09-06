@@ -161,5 +161,12 @@ double IntrinsicScaleOffset::getFocalLengthMM() const
     return _scale(0) * sensorWidth() / static_cast<double>(std::max(w(), h()));
 }
 
+void IntrinsicScaleOffset::setFocalLength(double focalLengthMM, double pixelAspectRatio)
+{
+    const double focalRatio = 1.0 / pixelAspectRatio;
+    _scale(0) = (focalLengthMM / sensorWidth()) * double(w());
+    _scale(1) = _scale(0) / focalRatio;
+}
+
 }  // namespace camera
 }  // namespace aliceVision
