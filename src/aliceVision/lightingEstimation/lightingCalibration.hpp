@@ -21,26 +21,41 @@ namespace lightingEstimation {
  * @param[in] sfmData Input .sfm file to calibrate from
  * @param[in] inputJSON Path to the JSON file containing the spheres parameters (see sphereDetection)
  * @param[out] outputPath Path to the JSON file in which lights' directions are written
+ * @param[in] method Method used for calibration ("brightestPoint" or "whiteSphere")
+ * @param[in] doDebug True to save debug images
+ * @param[in] saveAsModel True to save the estimated lights as model
+ * @param[in] ellipticEstimation True to use elliptic estimation of the lighting
  */
 void lightCalibration(const sfmData::SfMData& sfmData,
                       const std::string& inputJSON,
                       const std::string& outputPath,
                       const std::string& method,
-                      const bool saveAsModel);
+                      const bool doDebug,
+                      const bool saveAsModel,
+                      const bool ellipticEstimation);
 
 /**
  * @brief Calibrate lighting direction of an image containing a sphere
  * @param[in] picturePath Path to the image file
  * @param[in] sphereParam An array of 3 floating-point: the coordinates of the sphere center in the picture frame and the radius of the sphere
  * @param[in] focal Focal length of the camera
- * @param[in] method Method used for calibration (only "brightestPoint" for now)
+ * @param[in] method Method used for calibration ("brightestPoint" or "whiteSphere")
  * @param[out] lightingDirection Output parameter for the estimated lighting direction
  */
 void lightCalibrationOneImage(const std::string& picturePath,
                               const std::array<float, 3>& sphereParam,
                               const float focal,
                               const std::string& method,
-                              Eigen::Vector3f& lightingDirection);
+                              Eigen::VectorXf& lightingDirection,
+                              float& intensity);
+
+void calibrateLightFromRealSphere(const image::Image<float>& imageFloat,
+                                  const cv::Mat& maskCV,
+                                  const Eigen::Matrix3f& K,
+                                  const float sphereRadius,
+                                  const std::string& method,
+                                  Eigen::VectorXf& lightingDirection,
+                                  float& intensity);
 
 /**
  * @brief Compute the brightest point on a sphere
@@ -50,6 +65,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
  * @param[out] brigthestPoint An Eigen::Vector2f vector containing the x and y coordinates of the brightest point on the image
  */
 void detectBrightestPoint(const std::array<float, 3>& sphereParam, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint);
+
+void detectBrightestPoint(const image::Image<float> newMask, const image::Image<float>& imageFloat, Eigen::Vector2f& brigthestPoint);
 
 /**
  *  @brief Create a triangle kernel
@@ -79,6 +96,11 @@ void cutImage(const image::Image<float>& imageFloat,
               image::Image<float>& patch,
               std::array<float, 2>& patchOrigin);
 
+void cutImage(const image::Image<float>& imageFloat,
+              const image::Image<float>& newMask,
+              image::Image<float>& patch,
+              std::array<float, 2>& patchOrigin);
+
 /**
  * @brief Write a JSON file containing light information
  * @param[in] fileName The path to the JSON file to generate
@@ -87,13 +109,17 @@ void cutImage(const image::Image<float>& imageFloat,
  * @param[in] lightMat A matrix containing the directions of the light sources
  * @param[in] intList A vector of arrays containing the intensity of the light sources
  * @param[in] saveAsModel True to save the light IDs instead of the view IDs, false otherwise
+ * @param[in] method Name of the method for lighting estimation: whiteSphere, brightestPoint, SH
  */
 void writeJSON(const std::string& fileName,
                const sfmData::SfMData& sfmData,
                const std::vector<std::string>& imageList,
                const Eigen::MatrixXf& lightMat,
                const std::vector<float>& intList,
-               const bool saveAsModel);
+               const bool saveAsModel,
+               const std::string method);
+
+void sphereFromLighting(const Eigen::VectorXf& lightVector, const float intensity, const std::string outputFileName, const int outputSize);
 
 }  // namespace lightingEstimation
 }  // namespace aliceVision

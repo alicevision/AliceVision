@@ -40,7 +40,7 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
  * @param[in] dirFileName Path to the direction file
  * @param[out] lightMat Matrix of directions of light
  */
-void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
+void loadLightSH(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
 
 /**
  * @brief Load light data from a JSON file to an Eigen matrix (with a list of images)
@@ -66,6 +66,11 @@ void buildLightMatFromJSON(const std::string& fileName,
                            Eigen::MatrixXf& lightMat,
                            std::vector<std::array<float, 3>>& intList);
 
+void buildLightMatFromLP(const std::string& fileName,
+                         const std::vector<std::string>& imageList,
+                         Eigen::MatrixXf& lightMat,
+                         std::vector<std::array<float, 3>>& intList);
+
 /**
  * @brief Load a mask
  * @param[in] maskName Path to mask
@@ -79,6 +84,8 @@ void loadMask(std::string const& maskName, image::Image<float>& mask);
  * @param[out] indices Vector containing the column-wise absolute indices of the mask's pixels
  */
 void getIndMask(image::Image<float> const& mask, std::vector<int>& indices);
+
+void getIndMask(image::Image<float> const& mask, std::vector<int>& indices, image::Image<float>& indexInMask);
 
 /**
  * @brief Apply the intensities to each channel of each image

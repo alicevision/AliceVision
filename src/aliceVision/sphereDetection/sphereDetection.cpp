@@ -183,7 +183,7 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
         const std::string sphereName = std::to_string(viewID.second->getViewId());
         const fs::path imagePath = fs::path(sfmData.getView(viewID.second->getViewId()).getImage().getImagePath());
 
-        if (boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+        if (boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
             continue;
 
         const auto pred = predict(session, imagePath, minScore);
@@ -219,7 +219,7 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
             ALICEVISION_LOG_WARNING("No sphere detected for '" << imagePath << "'.");
         }
     }
-    bpt::write_json(outputPath.append("detection.json").string(), fileTree);
+    bpt::write_json(outputPath.string(), fileTree);
 }
 
 void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath)
@@ -246,7 +246,7 @@ void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<flo
 
         fileTree.add_child(sphereName, spheresNode);
     }
-    bpt::write_json(outputPath.append("detection.json").string(), fileTree);
+    bpt::write_json(outputPath.string(), fileTree);
 }
 
 }  // namespace sphereDetection

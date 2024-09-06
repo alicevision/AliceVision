@@ -80,6 +80,7 @@ enum class EFileType
     volumeTopographicCut = 50,
     stats9p = 51,
     tilePattern = 52,
+    none = 9999
 };
 
 class MultiViewParams
@@ -116,7 +117,7 @@ class MultiViewParams
                     const std::string& imagesFolder = "",
                     const std::string& depthMapsFolder = "",
                     const std::string& depthMapsFilterFolder = "",
-                    bool readFromDepthMaps = false,
+                    mvsUtils::EFileType fileType = mvsUtils::EFileType::none,
                     int downscale = 1);
 
     ~MultiViewParams();

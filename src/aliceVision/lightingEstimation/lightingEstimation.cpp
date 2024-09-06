@@ -32,7 +32,7 @@ void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, co
         rhoTimesN(validIndex, 0) = albedoChannel(i) * augmentedNormals(i).nx();
         rhoTimesN(validIndex, 1) = albedoChannel(i) * augmentedNormals(i).ny();
         rhoTimesN(validIndex, 2) = albedoChannel(i) * augmentedNormals(i).nz();
-        rhoTimesN(validIndex, 3) = albedoChannel(i) * augmentedNormals(i).nambiant();
+        rhoTimesN(validIndex, 3) = albedoChannel(i) * augmentedNormals(i).nambient();
         rhoTimesN(validIndex, 4) = albedoChannel(i) * augmentedNormals(i).nx_ny();
         rhoTimesN(validIndex, 5) = albedoChannel(i) * augmentedNormals(i).nx_nz();
         rhoTimesN(validIndex, 6) = albedoChannel(i) * augmentedNormals(i).ny_nz();

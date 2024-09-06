@@ -19,7 +19,7 @@ namespace photometricStereo {
 struct PhotometricSteroParameters
 {
     size_t SHOrder;      // Order of spherical harmonics (lighting)
-    bool removeAmbiant;  // Do we remove ambiant light ? (currently tested)
+    bool removeAmbient;  // Do we remove ambient light ? (currently tested)
     bool isRobust;       // Do we use the robust version of the algorithm ? (currently tested)
     int downscale;       // Downscale factor
 };
@@ -65,7 +65,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
  * @param[in] intList List of light intensities
  * @param[in] lightMat List of light direction/coefficients (SH)
  * @param[in] mask Mask that defines region of interest
- * @param[in] pathToAmbiant Path to picture without any additional lighting
+ * @param[in] pathToAmbient Path to picture without any additional lighting
  * @param[in] PSParameters Parameters for the PS algorithm
  * @param[out] normals Normal map of the scene
  * @param[out] albedo Albedo map of the scene
@@ -74,7 +74,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
                        const std::vector<std::array<float, 3>>& intList,
                        const Eigen::MatrixXf& lightMat,
                        image::Image<float>& mask,
-                       const std::string& pathToAmbiant,
+                       const std::string& pathToAmbient,
                        const PhotometricSteroParameters& PSParameters,
                        image::Image<image::RGBfColor>& normals,
                        image::Image<image::RGBfColor>& albedo);
@@ -82,11 +82,11 @@ void photometricStereo(const std::vector<std::string>& imageList,
 /**
  * @brief Load data used in the PS algorithm
  * @param[in] folderPath Path to the folder that contains data
- * @param[in] HS_order Order of the spherical harmonics
+ * @param[in] SH_order Order of the spherical harmonics
  * @param[out] intList Intensities of lights
  * @param[out] lightMat Directions of lights
  */
-void loadPSData(const std::string& folderPath, const size_t HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat);
+void loadPSData(const std::string& folderPath, const size_t SH_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat);
 
 /**
  * @brief Get the name of the pictures in a given folder

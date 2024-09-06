@@ -13,6 +13,7 @@
 
 // Lighting calibration
 #include <aliceVision/lightingEstimation/lightingCalibration.hpp>
+#include <aliceVision/lightingEstimation/ellipseGeometry.hpp>
 
 // Command line parameters
 #include <aliceVision/cmdline/cmdline.hpp>
@@ -47,18 +48,20 @@ int aliceVision_main(int argc, char** argv)
     system::Timer timer;
 
     std::string inputPath;
-    std::string inputJSON;
+    std::string inputDetection;
     std::string ouputJSON;
     std::string method;
+    bool doDebug;
     bool saveAsModel;
+    bool ellipticEstimation;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputPath,i", po::value<std::string>(&inputPath)->required(),
          "Path to the SfMData input.")
-        ("inputJSON, j", po::value<std::string>(&inputJSON)->required(),
-         "Path to the folder containing the JSON file that describes spheres' positions and radius.")
+        ("inputDetection, j", po::value<std::string>(&inputDetection)->required(),
+         "Path to the folder containing the JSON file that describes spheres' positions and radius")
         ("outputFile, o", po::value<std::string>(&ouputJSON)->required(),
          "Path to JSON output file.");
 
@@ -67,7 +70,11 @@ int aliceVision_main(int argc, char** argv)
         ("saveAsModel, s", po::value<bool>(&saveAsModel)->default_value(false),
          "Calibration used for several datasets.")
         ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"),
-         "Method for light estimation.");
+         "Method for light estimation.")
+        ("doDebug, d", po::value<bool>(&doDebug)->default_value(true),
+         "Do we save debug images.")
+        ("ellipticEstimation, e", po::value<bool>(&ellipticEstimation)->default_value(false),
+         "Used ellipse model for calibration spheres (more precise).");
     // clang-format on
 
     CmdLine cmdline("AliceVision lightingCalibration");
@@ -84,6 +91,11 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_ERROR("Directory input: WIP");
         ALICEVISION_THROW(std::invalid_argument, "Input directories are not yet supported");
     }
+    else if (fs::path(inputDetection).extension() != ".json")
+    {
+        ALICEVISION_LOG_ERROR("The input detection file must be a JSON file.");
+        ALICEVISION_THROW(std::invalid_argument, "JSON needed for sphere positions and radius.");
+    }
     else
     {
         sfmData::SfMData sfmData;
@@ -92,7 +104,8 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read.");
             return EXIT_FAILURE;
         }
-        lightingEstimation::lightCalibration(sfmData, inputJSON, ouputJSON, method, saveAsModel);
+
+        lightingEstimation::lightCalibration(sfmData, inputDetection, ouputJSON, method, doDebug, saveAsModel, ellipticEstimation);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
