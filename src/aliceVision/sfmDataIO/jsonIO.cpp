@@ -174,6 +174,9 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
 
         intrinsicTree.put("pixelRatio", pixelRatio);
         intrinsicTree.put("pixelRatioLocked", intrinsicScaleOffset->isRatioLocked());
+        intrinsicTree.put("offsetLocked", intrinsicScaleOffset->isOffsetLocked());
+        intrinsicTree.put("scaleLocked", intrinsicScaleOffset->isScaleLocked());
+
 
         saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
     }
@@ -197,7 +200,10 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
                 paramTree.put("", param);
                 distParamsTree.push_back(std::make_pair("", paramTree));
             }
+
+            intrinsicTree.put("distortionLocked", distortionObject->isLocked());
         }
+
         intrinsicTree.put("distortionInitializationMode",
                           camera::EInitMode_enumToString(intrinsicScaleOffsetDisto->getDistortionInitializationMode()));
 
@@ -360,6 +366,12 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
             intrinsicWithScale->setInitialScale(initialFocalLengthPx);
             intrinsicWithScale->setRatioLocked(intrinsicTree.get<bool>("pixelRatioLocked"));
         }
+
+        if (version >= Version(1, 2, 10))
+        {
+            intrinsicWithScale->setOffsetLocked(intrinsicTree.get<bool>("offsetLocked"));
+            intrinsicWithScale->setScaleLocked(intrinsicTree.get<bool>("scaleLocked"));
+        }
     }
 
     // Load distortion
@@ -415,6 +427,11 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
             if (distortionParams.size() == distortionObject->getParameters().size())
             {
                 distortionObject->setParameters(distortionParams);
+            }
+
+            if (version >= Version(1, 2, 10))
+            {
+                distortionObject->setLocked(intrinsicTree.get<bool>("distortionLocked"));
             }
         }
     }

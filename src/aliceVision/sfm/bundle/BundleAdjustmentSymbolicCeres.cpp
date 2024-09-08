@@ -348,6 +348,13 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
             continue;
         }
 
+        std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset =
+              std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
+        if (!intrinsicScaleOffset)
+        {
+            continue;
+        }
+
         assert(isValid(intrinsicPtr->getType()));
 
         _intrinsicObjects[intrinsicId].reset(intrinsicPtr->clone());
@@ -377,8 +384,10 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         bool lockDistortion = false;
         double focalRatio = 1.0;
 
+        lockFocal = (!refineIntrinsicsFocalLength) || intrinsicScaleOffset->isScaleLocked();
+
         // refine the focal length
-        if (refineIntrinsicsFocalLength)
+        if (!lockFocal)
         {
             std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset =
               std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
@@ -410,22 +419,22 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
             }
 
             focalRatio = intrinsicBlockPtr[0] / intrinsicBlockPtr[1];
-
-            std::shared_ptr<camera::IntrinsicScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsicPtr);
-            if (castedcam_iso)
-            {
-                lockRatio = castedcam_iso->isRatioLocked();
-            }
+            lockRatio = intrinsicScaleOffset->isRatioLocked();
         }
-        else
+
+        // optical center
+        lockCenter = intrinsicScaleOffset->isOffsetLocked();
+        
+        bool validRefineCenter = (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) ||
+                        ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA) 
+                        && _minNbImagesToRefineOpticalCenter > 0 
+                        && usageCount >= _minNbImagesToRefineOpticalCenter);
+        if (!validRefineCenter)
         {
-            // set focal length as constant
-            lockFocal = true;
+            lockCenter = true;
         }
 
-        const bool optional_center =
-          ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA) && (usageCount > _minNbImagesToRefineOpticalCenter));
-        if ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || optional_center)
+        if (!lockCenter)
         {
             // refine optical center within 10% of the image size.
             assert(intrinsicBlock.size() >= 4);
@@ -439,16 +448,25 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
             problem.SetParameterLowerBound(intrinsicBlockPtr, 3, opticalCenterMinPercent * intrinsicPtr->h());
             problem.SetParameterUpperBound(intrinsicBlockPtr, 3, opticalCenterMaxPercent * intrinsicPtr->h());
         }
-        else
-        {
-            // don't refine the optical center
-            lockCenter = true;
-        }
 
         // lens distortion
         if (!refineIntrinsicsDistortion)
         {
             lockDistortion = true;
+        }
+
+        //Check if this particular distortion is locked
+        std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsicScaleOffsetDisto =
+              std::dynamic_pointer_cast<camera::IntrinsicScaleOffsetDisto>(intrinsicPtr);
+        if (intrinsicScaleOffsetDisto)
+        {
+            if (intrinsicScaleOffsetDisto->getDistortion())
+            {
+                if (intrinsicScaleOffsetDisto->getDistortion()->isLocked())
+                {
+                    lockDistortion = true;
+                }
+            }
         }
 
         IntrinsicsManifold* subsetManifold =

@@ -67,10 +67,16 @@ class Distortion
 
     virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2& p) const { return Eigen::MatrixXd(0, 0); }
 
+    inline void setLocked(bool lock) { _isLocked = lock; }
+
+    inline bool isLocked() const { return _isLocked; }
+
     virtual ~Distortion() = default;
+
 
   protected:
     std::vector<double> _distortionParams{};
+    bool _isLocked{false};
 };
 
 }  // namespace camera

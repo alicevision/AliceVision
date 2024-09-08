@@ -106,6 +106,22 @@ class IntrinsicScaleOffset : public IntrinsicBase
     inline bool isRatioLocked() const { return _ratioLocked; }
 
     /**
+     * @brief Lock the offset
+     * @param lock True if the offset is locked, false otherwise
+     */
+    inline void setOffsetLocked(bool lock) { _offsetLocked = lock; }
+
+    inline bool isOffsetLocked() const { return _offsetLocked; }
+
+    /**
+     * @brief Lock the scale
+     * @param lock True if the scale is locked, false otherwise
+     */
+    inline void setScaleLocked(bool lock) { _scaleLocked = lock; }
+
+    inline bool isScaleLocked() const { return _scaleLocked; }
+
+    /**
      * @brief get focal length in mm
      * @return focal length in mm
     */
@@ -123,6 +139,8 @@ class IntrinsicScaleOffset : public IntrinsicBase
     Vec2 _offset{0.0, 0.0};
     Vec2 _initialScale{-1.0, -1.0};
     bool _ratioLocked{true};
+    bool _offsetLocked{false};
+    bool _scaleLocked{false};
 };
 
 }  // namespace camera

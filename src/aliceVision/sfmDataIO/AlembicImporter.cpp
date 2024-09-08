@@ -419,6 +419,9 @@ bool readCamera(const Version& abcVersion,
     bool poseLocked = false;
     bool poseIndependant = true;
     bool lockRatio = true;
+    bool lockOffset = false;
+    bool lockScale = false;
+    bool lockDistortion = false;
     std::vector<double> distortionParams;
     std::vector<double> undistortionParams;
     Vec2 undistortionOffset = {0, 0};
@@ -468,6 +471,14 @@ bool readCamera(const Version& abcVersion,
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_intrinsicPixelRatioLocked"))
             {
                 lockRatio = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicPixelRatioLocked", sampleFrame);
+            }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_intrinsicOffsetLocked"))
+            {
+                lockOffset = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicOffsetLocked", sampleFrame);
+            }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_intrinsicScaleLocked"))
+            {
+                lockScale = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicScaleLocked", sampleFrame);
             }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_poseLocked"))
             {
@@ -577,6 +588,10 @@ bool readCamera(const Version& abcVersion,
                 prop.get(sample, ISampleSelector(sampleFrame));
                 distortionParams.assign(sample->get(), sample->get() + sample->size());
             }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_distortionLocked"))
+            {
+                lockDistortion = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_distortionLocked", sampleFrame);
+            }
             if (userProps.getPropertyHeader("mvg_undistortionParams"))
             {
                 // Undistortion parameters
@@ -656,11 +671,18 @@ bool readCamera(const Version& abcVersion,
               (initialFocalLengthPix(0) > 0) ? initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0] : -1;
             intrinsicCasted->setInitialScale(initialFocalLengthPix);
             intrinsicCasted->setRatioLocked(lockRatio);
+            intrinsicCasted->setOffsetLocked(lockOffset);
+            intrinsicCasted->setScaleLocked(lockScale);
 
             std::shared_ptr<camera::Distortion> distortion = intrinsicCasted->getDistortion();
             if (distortion)
             {
-                distortion->setParameters(distortionParams);
+                distortion->setParameters(distortionParams);    
+
+                if (abcVersion >= Version(1, 2, 10))
+                {
+                    distortion->setLocked(lockDistortion);
+                }
             }
 
             std::shared_ptr<camera::Undistortion> undistortion = intrinsicCasted->getUndistortion();
