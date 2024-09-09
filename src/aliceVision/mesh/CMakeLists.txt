@@ -12,7 +12,7 @@ set(mesh_files_headers
   UVAtlas.hpp
   ModQuadricMetricT.hpp
   QuadricMetricT.hpp
-  
+  MeshIntersection.hpp
 )
 
 # Sources
@@ -27,6 +27,7 @@ set(mesh_files_sources
   Texturing.cpp
   UVAtlas.cpp
   ModQuadricMetricT.cpp
+  MeshIntersection.cpp
 )
 
 alicevision_add_library(aliceVision_mesh

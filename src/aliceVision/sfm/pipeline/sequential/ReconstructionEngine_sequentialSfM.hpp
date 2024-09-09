@@ -147,11 +147,6 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
      */
     void createInitialReconstruction(const std::vector<Pair>& initialImagePairCandidates);
 
-    /**
-     * @brief If we have already reconstructed landmarks in a previous reconstruction,
-     * we need to recognize the corresponding tracks and update the landmarkIds accordingly.
-     */
-    void remapLandmarkIdsToTrackIds();
 
     /**
      * @brief Loop of reconstruction updates

@@ -186,10 +186,12 @@ if(ALICEVISION_BUILD_SFM)
         LINKS aliceVision_system
               aliceVision_cmdline
               aliceVision_feature
+              aliceVision_mesh
               aliceVision_sfm
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
+              Boost::json
     )
 
     # SfM to rig
