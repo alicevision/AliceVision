@@ -610,6 +610,121 @@ bool computeSimilarityFromCommonLandmarks(const sfmData::SfMData& sfmDataA,
     return true;
 }
 
+bool computeSimilarityFromPairs(const std::vector<Vec3> & ptsA,
+                                const std::vector<Vec3> & ptsB,
+                                std::mt19937& randomNumberGenerator,
+                                double* out_S,
+                                Mat3* out_R,
+                                Vec3* out_t)
+{
+    // Move input point in appropriate container
+    Mat xA(3, ptsA.size());
+    Mat xB(3, ptsB.size());
+    
+    int count = 0;
+    for (auto & p : ptsA)
+    {
+        xA.col(count) = p;
+        count++;
+    }
+
+    count = 0;
+    for (auto & p : ptsB)
+    {
+        xB.col(count) = p;
+        count++;
+    }
+
+    // Compute rigid transformation p'i = S R pi + t
+    double S;
+    Vec3 t;
+    Mat3 R;
+    std::vector<std::size_t> inliers;
+
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, S, t, R, inliers, true))
+    {
+        std::cout << "merde" << std::endl;
+        return false;
+    }
+
+    ALICEVISION_LOG_DEBUG("There are " << ptsA.size() << " common points and " << inliers.size()
+                                       << " were used to compute the similarity transform.");
+
+    *out_S = S;
+    *out_R = R;
+    *out_t = t;
+
+    return true;
+}
+
+bool computeNewCoordinateSystemFromPairs(const sfmData::SfMData& sfmDataA,
+                                        const sfmData::SfMData& sfmDataB,
+                                        std::mt19937& randomNumberGenerator,
+                                        double* out_S,
+                                        Mat3* out_R,
+                                        Vec3* out_t)
+{
+    //create map featureId, landmarkId
+    std::map<IndexT, IndexT> mapFeatureIdToLandmarkId;
+    for (const auto & plandmark : sfmDataA.getLandmarks())
+    {
+        for (const auto & pobs : plandmark.second.getObservations())
+        {
+            IndexT featureId = pobs.second.getFeatureId();
+            mapFeatureIdToLandmarkId[featureId] = plandmark.first;
+        }
+    }
+
+    std::map<IndexT, IndexT> mapLandmarkAtoLandmarkB;
+    for (const auto & plandmark : sfmDataB.getLandmarks())
+    {
+        for (const auto & pobs : plandmark.second.getObservations())
+        {
+            IndexT featureId = pobs.second.getFeatureId();
+            
+            auto found = mapFeatureIdToLandmarkId.find(featureId);
+            if (found == mapFeatureIdToLandmarkId.end())
+            {
+                continue;
+            }
+
+            mapLandmarkAtoLandmarkB[found->second] = plandmark.first;
+        }
+    }
+
+    // Move input point in appropriate container
+    Mat xA(3, mapLandmarkAtoLandmarkB.size());
+    Mat xB(3, mapLandmarkAtoLandmarkB.size());
+    
+    int count = 0;
+    for (auto & pair : mapLandmarkAtoLandmarkB)
+    {
+        xA.col(count) = sfmDataA.getLandmarks().at(pair.first).X;
+        xB.col(count) = sfmDataB.getLandmarks().at(pair.second).X;
+        count++;
+    }
+
+    // Compute rigid transformation p'i = S R pi + t
+    double S;
+    Vec3 t;
+    Mat3 R;
+    std::vector<std::size_t> inliers;
+
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, S, t, R, inliers, true))
+    {
+        return false;
+    }
+
+    ALICEVISION_LOG_DEBUG("There are " << mapLandmarkAtoLandmarkB.size() << " common markers and " << inliers.size()
+                                       << " were used to compute the similarity transform.");
+
+    *out_S = S;
+    *out_R = R;
+    *out_t = t;
+
+    return true;
+}
+
 /**
  * Image orientation CCW
  */

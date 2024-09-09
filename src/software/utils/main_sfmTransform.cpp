@@ -7,17 +7,28 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
+#include <aliceVision/sfm/utils/preprocess.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/track/TracksHandler.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
+#include <aliceVision/mesh/MeshIntersection.hpp>
 #include <aliceVision/config.hpp>
+#include <fstream>
 
 #include <boost/program_options.hpp>
+#include <boost/json.hpp>
 
 #include <iomanip>
 #include <string>
 #include <sstream>
 #include <vector>
+#include <fstream>
+
+
+
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -45,6 +56,7 @@ enum class EAlignmentMethod : unsigned char
     FROM_CENTER_CAMERA,
     FROM_MARKERS,
     FROM_GPS,
+    FROM_LINEUP,
     ALIGN_GROUND
 };
 
@@ -77,6 +89,8 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
             return "from_markers";
         case EAlignmentMethod::FROM_GPS:
             return "from_gps";
+        case EAlignmentMethod::FROM_LINEUP:
+            return "from_lineup";
         case EAlignmentMethod::ALIGN_GROUND:
             return "align_ground";
     }
@@ -113,6 +127,8 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
         return EAlignmentMethod::FROM_MARKERS;
     if (method == "from_gps")
         return EAlignmentMethod::FROM_GPS;
+    if (method == "from_lineup")
+        return EAlignmentMethod::FROM_LINEUP;
     if (method == "align_ground")
         return EAlignmentMethod::ALIGN_GROUND;
     throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
@@ -251,6 +267,167 @@ IndexT getReferenceViewId(const sfmData::SfMData& sfmData, const std::string& tr
     return refViewId;
 }
 
+bool getPoseFromJson(const std::string & lineUpFilename, Eigen::Matrix4d & T, IndexT & frameId)
+{
+    std::ifstream inputfile(lineUpFilename);
+    if (!inputfile.is_open())
+    {
+        return false;
+    }
+
+    std::stringstream buffer;
+    buffer << inputfile.rdbuf();
+    boost::json::value jv = boost::json::parse(buffer.str());
+
+    const boost::json::object& obj = jv.as_object();
+
+    //Reading information from lineup
+    const double rx = degreeToRadian(boost::json::value_to<double>(obj.at("rx")));
+    const double ry = degreeToRadian(boost::json::value_to<double>(obj.at("ry")));
+    const double rz = degreeToRadian(boost::json::value_to<double>(obj.at("rz")));
+    const double tx = boost::json::value_to<double>(obj.at("tx"));
+    const double ty = boost::json::value_to<double>(obj.at("ty"));
+    const double tz = boost::json::value_to<double>(obj.at("tz"));
+    
+    frameId = boost::json::value_to<IndexT>(obj.at("frame_no"));
+
+    Eigen::AngleAxisd Rx(rx, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd Ry(ry, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd Rz(rz, Eigen::Vector3d::UnitZ());
+
+    Eigen::Matrix3d R = Ry.toRotationMatrix() * Rx.toRotationMatrix() * Rz.toRotationMatrix();   
+
+    Eigen::Vector3d t;
+    t.x() = tx;
+    t.y() = ty;
+    t.z() = tz;
+
+    T = Eigen::Matrix4d::Identity();
+    T.block<3, 3>(0, 0) = R;
+    T.block<3, 1>(0, 3) = t;
+
+    return true;
+}
+
+
+bool parseLineUp(const std::string & lineUpFilename, const std::string & tracksFilename, const std::string & objectFilename, sfmData::SfMData& sfmData, double & S, Eigen::Matrix3d &  R, Eigen::Vector3d & t)
+{
+    // Load new pose from file and the lined up frame id
+    IndexT frameId = UndefinedIndexT;
+    Eigen::Matrix4d inputTransform;
+    if (!getPoseFromJson(lineUpFilename, inputTransform, frameId))
+    {
+        return false;
+    }
+
+    //Find in the sfmData the view with the given frame id
+    IndexT viewId = UndefinedIndexT;
+    IndexT poseId = UndefinedIndexT;
+    IndexT intrinsicId = UndefinedIndexT;
+    for (const auto & pv : sfmData.getViews())
+    {
+        if (pv.second->getFrameId() == frameId)
+        {
+            viewId = pv.first;
+            intrinsicId = pv.second->getIntrinsicId();
+            poseId = pv.second->getPoseId();
+        }
+    }
+
+    // Make sure some view has been found
+    if (viewId == UndefinedIndexT)
+    {
+        ALICEVISION_LOG_INFO("Frame Number not found amongst views");
+        return false;
+    }
+
+    // Make sure the associated view has both pose and intrinsics calibrated
+    if (!sfmData.isPoseAndIntrinsicDefined(viewId))
+    {
+        ALICEVISION_LOG_INFO("View has not been reconstructed, can't lineup");
+        return false;
+    }
+
+    // Load tracks
+    ALICEVISION_LOG_INFO("Load tracks");
+    track::TracksHandler tracksHandler;
+    if (!tracksHandler.load(tracksFilename, sfmData.getValidViews()))
+    {
+        ALICEVISION_LOG_ERROR("The input tracks file '" + tracksFilename + "' cannot be read.");
+        return false;
+    }
+
+    //Get all tracks for lineup view
+    const auto & tpv = tracksHandler.getTracksPerView();
+    const auto & tracks = tracksHandler.getAllTracks();
+    const auto & trackRefs = tpv.at(viewId);
+
+    //Make sure landmarks are correctly identified
+    sfm::remapLandmarkIdsToTrackIds(sfmData, tracks);
+
+    //Retrieve camera intrinsics
+    const auto & intrinsic = sfmData.getIntrinsics().at(intrinsicId);
+    
+    //Get transform in av coordinates
+    Eigen::Matrix4d aliceTinput = Eigen::Matrix4d::Identity();
+    aliceTinput(1, 1) = -1;
+    aliceTinput(1, 2) = 0;
+    aliceTinput(2, 1) = 0;
+    aliceTinput(2, 2) = -1;
+
+    const Eigen::Matrix4d newworld_T_frame = aliceTinput * inputTransform * aliceTinput.inverse();
+    const Eigen::Matrix4d frame_T_newworld = newworld_T_frame.inverse();
+
+    auto & landmarks = sfmData.getLandmarks();    
+
+    mesh::MeshIntersection meshIntersection;
+    if (!meshIntersection.initialize(objectFilename))
+    {
+        return false;
+    }
+
+    meshIntersection.setPose(frame_T_newworld);
+
+    // Keep only tracks with reconstructed landmark observed in lineup view
+    std::vector<Vec3> landmarkCoordinates;
+    std::vector<Vec3> meshCoordinates;
+    for (auto trackId: trackRefs)
+    {
+        if (landmarks.find(trackId) == landmarks.end())
+        {
+            continue;
+        }
+
+        auto & l = landmarks.at(trackId);
+        if (l.getObservations().find(viewId) == l.getObservations().end())
+        {
+            continue;
+        }
+
+        const auto & track = tracks.at(trackId);
+        const auto & trackitem = track.featPerView.at(viewId);
+        const Vec2 & imageCoords = trackitem.coords;
+
+        Vec3 pt3d;
+        if (!meshIntersection.peek(pt3d, *intrinsic, imageCoords))
+        {
+            continue;
+        }
+
+        landmarkCoordinates.push_back(landmarks.at(trackId).X);
+        meshCoordinates.push_back(pt3d);
+    }
+
+
+    std::mt19937 randomNumberGenerator;
+    if (!sfm::computeSimilarityFromPairs(landmarkCoordinates, meshCoordinates, randomNumberGenerator, &S, &R, &t))
+    {
+        return false;
+    }
+
+    return true;
+}
+
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
@@ -269,6 +446,9 @@ int aliceVision_main(int argc, char** argv)
     std::string outputViewsAndPosesFilepath;
 
     std::string manualTransform;
+    std::string lineUpFilename = "";
+    std::string tracksFilename = "";
+    std::string objectFilename = "";
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -312,6 +492,12 @@ int aliceVision_main(int argc, char** argv)
          "Apply translation transformation.")
         ("markers", po::value<std::vector<sfm::MarkerWithCoord>>(&markers)->multitoken(),
          "Markers ID and target coordinates 'ID:x,y,z'.")
+        ("lineUp", po::value<std::string>(&lineUpFilename)->default_value(lineUpFilename),
+         "LineUp file used as information.")
+        ("tracksFile", po::value<std::string>(&tracksFilename)->default_value(tracksFilename),
+         "tracks file used as information for lineup.")
+        ("objectFile", po::value<std::string>(&objectFilename)->default_value(objectFilename),
+         "object file used as information for lineup.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
          "Path of the output SfMData file.");
     // clang-format on
@@ -481,6 +667,15 @@ int aliceVision_main(int argc, char** argv)
             if (!sfm::computeNewCoordinateSystemFromGpsData(sfmData, randomNumberGenerator, S, R, t))
             {
                 ALICEVISION_LOG_ERROR("Failed to find a valid transformation from the GPS metadata.");
+                return EXIT_FAILURE;
+            }
+            break;
+        }
+        case EAlignmentMethod::FROM_LINEUP:
+        {
+            if (!parseLineUp(lineUpFilename, tracksFilename, objectFilename, sfmData, S, R, t))
+            {
+                ALICEVISION_LOG_ERROR("Failed to use given lineup");
                 return EXIT_FAILURE;
             }
             break;
