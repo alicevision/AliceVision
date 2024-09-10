@@ -428,6 +428,7 @@ bool readCamera(const Version& abcVersion,
     double undistortionDiagonal = 0.0;
     double undistortionPixelAspectRatio = 1.0;
     bool undistortionDesqueezed = false;
+    std::string serialNumber = "";
 
     if (userProps)
     {
@@ -463,6 +464,10 @@ bool readCamera(const Version& abcVersion,
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_resectionId"))
             {
                 resectionId = getAbcProp_uint(userProps, *propHeader, "mvg_resectionId", sampleFrame);
+            }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_intrinsicSerialNumber"))
+            {
+                serialNumber = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicSerialNumber", sampleFrame);
             }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_intrinsicLocked"))
             {
@@ -657,6 +662,7 @@ bool readCamera(const Version& abcVersion,
           /*width*/ sensorSize_pix.at(0),
           /*height*/ sensorSize_pix.at(1));
 
+        intrinsic->setSerialNumber(serialNumber);
         intrinsic->setSensorWidth(sensorSize_mm.at(0));
         intrinsic->setSensorHeight(sensorSize_mm.at(1));
         intrinsic->importFromParams(mvg_intrinsicParams, abcVersion);
