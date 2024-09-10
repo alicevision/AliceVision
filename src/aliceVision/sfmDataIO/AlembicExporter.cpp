@@ -229,7 +229,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
         OBoolProperty(userProps, "mvg_intrinsicLocked").set(intrinsicCasted->isLocked());
         OBoolProperty(userProps, "mvg_intrinsicPixelRatioLocked").set(intrinsicCasted->isRatioLocked());
         OBoolProperty(userProps, "mvg_intrinsicOffsetLocked").set(intrinsicCasted->isOffsetLocked());
-        OBoolProperty(userProps, "mvg_intrinsicScaleLocked").set(intrinsicCasted->isOffsetLocked());
+        OBoolProperty(userProps, "mvg_intrinsicScaleLocked").set(intrinsicCasted->isScaleLocked());
         OStringProperty(userProps, "mvg_intrinsicDistortionInitializationMode")
           .set(camera::EInitMode_enumToString(intrinsicCasted->getDistortionInitializationMode()));
 
