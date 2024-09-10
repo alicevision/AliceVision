@@ -569,7 +569,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
         lockFocal = (!refineIntrinsicsFocalLength) || intrinsicScaleOffset->isScaleLocked();
 
         // refine the focal length
-        if (lockFocal)
+        if (!lockFocal)
         {
             if (intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
             {
