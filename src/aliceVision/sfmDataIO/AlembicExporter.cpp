@@ -226,10 +226,11 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
         OStringProperty(userProps, "mvg_intrinsicType").set(intrinsicCasted->getTypeStr());
         OStringProperty(userProps, "mvg_intrinsicInitializationMode").set(camera::EInitMode_enumToString(intrinsicCasted->getInitializationMode()));
         ODoubleProperty(userProps, "mvg_initialFocalLength").set(initialFocalLength);
+        OStringProperty(userProps, "mvg_intrinsicSerialNumber").set(intrinsicCasted->serialNumber());
         OBoolProperty(userProps, "mvg_intrinsicLocked").set(intrinsicCasted->isLocked());
         OBoolProperty(userProps, "mvg_intrinsicPixelRatioLocked").set(intrinsicCasted->isRatioLocked());
         OBoolProperty(userProps, "mvg_intrinsicOffsetLocked").set(intrinsicCasted->isOffsetLocked());
-        OBoolProperty(userProps, "mvg_intrinsicScaleLocked").set(intrinsicCasted->isOffsetLocked());
+        OBoolProperty(userProps, "mvg_intrinsicScaleLocked").set(intrinsicCasted->isScaleLocked());
         OStringProperty(userProps, "mvg_intrinsicDistortionInitializationMode")
           .set(camera::EInitMode_enumToString(intrinsicCasted->getDistortionInitializationMode()));
 
