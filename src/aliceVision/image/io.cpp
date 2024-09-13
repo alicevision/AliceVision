@@ -872,13 +872,8 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     else if (EImageColorSpace_isSupportedOIIOEnum(imageReadOptions.workingColorSpace) &&
              EImageColorSpace_isSupportedOIIOEnum(EImageColorSpace_stringToEnum(fromColorSpaceName)))
     {
-        const auto colorConfigPath = getAliceVisionOCIOConfig();
-        if (colorConfigPath.empty())
-        {
-            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
-        }
         oiio::ImageBuf colorspaceBuf;
-        oiio::ColorConfig colorConfig(colorConfigPath);
+        oiio::ColorConfig& colorConfig(getGlobalColorConfigOCIO());
         oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
                                          inBuf,
                                          fromColorSpaceName,
@@ -1103,12 +1098,7 @@ void writeImage(const std::string& path,
     }
     else if (EImageColorSpace_isSupportedOIIOEnum(fromColorSpace) && EImageColorSpace_isSupportedOIIOEnum(toColorSpace))
     {
-        const auto colorConfigPath = getAliceVisionOCIOConfig();
-        if (colorConfigPath.empty())
-        {
-            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
-        }
-        oiio::ColorConfig colorConfig(colorConfigPath);
+        oiio::ColorConfig& colorConfig(getGlobalColorConfigOCIO());
         oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
                                          *outBuf,
                                          EImageColorSpace_enumToOIIOString(fromColorSpace),
@@ -1393,13 +1383,6 @@ std::string getAliceVisionRoot()
         return aliceVisionRootOverride;
     const char* value = std::getenv("ALICEVISION_ROOT");
     return value ? value : "";
-}
-
-std::string getAliceVisionOCIOConfig()
-{
-    if (!getAliceVisionRoot().empty())
-        return getAliceVisionRoot() + "/share/aliceVision/config.ocio";
-    return {};
 }
 
 void setAliceVisionRootOverride(const std::string& value) { aliceVisionRootOverride = value; }
