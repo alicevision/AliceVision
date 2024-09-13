@@ -28,6 +28,34 @@
 namespace aliceVision {
 namespace image {
 
+enum class ELoadStatus
+{
+    NONE = 0,
+    NOT_LOADED = 1,
+    LOADING = 2,
+    LOADED = 3,
+    ERROR = 4
+};
+
+std::ostream& operator<<(std::ostream& os, ELoadStatus status);
+
+template<typename TPix>
+struct CacheKeyInit
+{
+    using TInfo = ColorTypeInfo<TPix>;
+    CacheKeyInit(const std::string& filename, int downscaleLevel = 1)
+    : filename(filename), downscaleLevel(downscaleLevel)
+    {
+        if (downscaleLevel < 1)
+        {
+            ALICEVISION_THROW_ERROR("[image] ImageCache CacheKeyInit: cannot load image with downscale level < 1, "
+                                    << "request was made with downscale level " << downscaleLevel);
+        }
+    }
+    std::string filename;
+    int downscaleLevel;
+};
+
 /**
  * @brief A struct used to identify a cached image using its file description, color type info and downscale level.
  */
@@ -37,21 +65,45 @@ struct CacheKey
     int nbChannels;
     oiio::TypeDesc::BASETYPE typeDesc;
     int downscaleLevel;
-    std::time_t lastWriteTime;
 
+    CacheKey(const CacheKey& other)
+    {
+        filename = other.filename;
+        nbChannels = other.nbChannels;
+        typeDesc = other.typeDesc;
+        downscaleLevel = other.downscaleLevel;
+    }
     CacheKey(const std::string& path, int nchannels, oiio::TypeDesc::BASETYPE baseType, int level, std::time_t time)
       : filename(path),
         nbChannels(nchannels),
         typeDesc(baseType),
-        downscaleLevel(level),
-        lastWriteTime(time)
+        downscaleLevel(level)
+    {}
+    template<typename TPix>
+    CacheKey(const CacheKeyInit<TPix>& init)
+      : filename(init.filename),
+        nbChannels(ColorTypeInfo<TPix>::size),
+        typeDesc(ColorTypeInfo<TPix>::typeDesc),
+        downscaleLevel(init.downscaleLevel)
     {}
 
     bool operator==(const CacheKey& other) const
     {
-        return (filename == other.filename && nbChannels == other.nbChannels && typeDesc == other.typeDesc &&
-                downscaleLevel == other.downscaleLevel && lastWriteTime == other.lastWriteTime);
+        return (filename == other.filename &&
+            nbChannels == other.nbChannels &&
+            typeDesc == other.typeDesc &&
+            downscaleLevel == other.downscaleLevel);
     }
+
+    std::ostream& operator<<(std::ostream& os) const
+    {
+        os << "CacheKey: " << filename << " " << nbChannels << " " << typeDesc << " " << downscaleLevel;
+        return os;
+    }
+
+    int baseTypeSize() const;
+    int pixelTypeSize() const;
+    int imageMemorySize(const int width, const int height) const;
 };
 
 struct CacheKeyHasher
@@ -63,7 +115,6 @@ struct CacheKeyHasher
         boost::hash_combine(seed, key.nbChannels);
         boost::hash_combine(seed, key.typeDesc);
         boost::hash_combine(seed, key.downscaleLevel);
-        boost::hash_combine(seed, key.lastWriteTime);
         return seed;
     }
 };
@@ -74,17 +125,17 @@ struct CacheKeyHasher
 struct CacheInfo
 {
     /// memory usage limits
-    const unsigned long long int capacity;
-    const unsigned long long int maxSize;
+    const std::atomic<unsigned long long int> capacity;
+    const std::atomic<unsigned long long int> maxSize;
 
     /// current state of the cache
-    int nbImages = 0;
-    unsigned long long int contentSize = 0;
+    std::atomic<int> nbImages = 0;
+    std::atomic<unsigned long long int> contentSize = 0;
 
     /// usage statistics
-    int nbLoadFromDisk = 0;
-    int nbLoadFromCache = 0;
-    int nbRemoveUnused = 0;
+    std::atomic<int> nbLoadFromDisk = 0;
+    std::atomic<int> nbLoadFromCache = 0;
+    std::atomic<int> nbRemoveUnused = 0;
 
     CacheInfo(float capacity_MiB, float maxSize_MiB)
       : capacity(capacity_MiB * 1024 * 1024),
@@ -104,22 +155,23 @@ struct CacheInfo
 class CacheValue
 {
   public:
-    /**
-     * @brief Factory method to create a CacheValue instance that wraps a shared pointer to an image
-     * @param[in] img shared pointer to an image
-     * @result CacheValue instance wrapping the shared pointer
-     */
-    static CacheValue wrap(std::shared_ptr<Image<unsigned char>> img);
-    static CacheValue wrap(std::shared_ptr<Image<float>> img);
-    static CacheValue wrap(std::shared_ptr<Image<RGBColor>> img);
-    static CacheValue wrap(std::shared_ptr<Image<RGBfColor>> img);
-    static CacheValue wrap(std::shared_ptr<Image<RGBAColor>> img);
-    static CacheValue wrap(std::shared_ptr<Image<RGBAfColor>> img);
+    CacheValue() = default;
+    CacheValue(const CacheValue&) = default;
 
-  private:
-    /// constructor is private to only allow creating instances using the static methods above
-    /// thus ensuring that only one of the shared pointers is non-null
-    CacheValue();
+    CacheValue& operator=(const CacheValue&) = default;
+
+    CacheValue(unsigned long long int memorySize)
+    : _memorySize(memorySize)
+    , _loadStatus(ELoadStatus::NOT_LOADED)
+    {
+    }
+
+    CacheValue(std::shared_ptr<Image<unsigned char>> img);
+    CacheValue(std::shared_ptr<Image<float>> img);
+    CacheValue(std::shared_ptr<Image<RGBColor>> img);
+    CacheValue(std::shared_ptr<Image<RGBfColor>> img);
+    CacheValue(std::shared_ptr<Image<RGBAColor>> img);
+    CacheValue(std::shared_ptr<Image<RGBAfColor>> img);
 
   public:
     /**
@@ -136,11 +188,40 @@ class CacheValue
      */
     int useCount() const;
 
+    void setStatus(ELoadStatus status) { _loadStatus = status; }
+    ELoadStatus status() const { return _loadStatus; }
+
     /**
-     * @brief Retrieve the memory size (in bytes) of the wrapped image.
-     * @return the memory size of the wrapped image if there is one, otherwise 0
+     * @brief Retrieve the memory size (in bytes) reserved for the wrapped image.
      */
-    unsigned long long int memorySize() const;
+    unsigned long long int memorySize() const { return _memorySize; }
+    void setMemorySize(unsigned long long int v) { _memorySize = v; }
+
+    /**
+     * @brief Retrieve the memory size (in bytes) currently allocated for the wrapped image.
+     */
+    unsigned long long int effectiveMemorySize() const;
+
+    /**
+     * @brief Retrieve the memory size of the base type of the image.
+    */
+    // int baseTypeSize() const;
+
+    // void set(const CacheKey& key)
+    // {
+    //     filename = key.filename;
+    //     nbChannels = key.nbChannels;
+    //     typeDesc = key.typeDesc;
+    //     downscaleLevel = key.downscaleLevel;
+    // }
+
+    // std::string filename;
+    // oiio::TypeDesc::BASETYPE typeDesc;
+    // int downscaleLevel = 0;
+    // std::time_t lastWriteTime = 0;
+    // int nbChannels = 0;
+    // int width = 0;
+    // int height = 0;
 
   private:
     std::shared_ptr<Image<unsigned char>> imgUChar;
@@ -149,6 +230,8 @@ class CacheValue
     std::shared_ptr<Image<RGBfColor>> imgRGBf;
     std::shared_ptr<Image<RGBAColor>> imgRGBA;
     std::shared_ptr<Image<RGBAfColor>> imgRGBAf;
+    unsigned long long int _memorySize = 0;
+    ELoadStatus _loadStatus = ELoadStatus::NONE;
 };
 
 template<>
@@ -224,28 +307,13 @@ class ImageCache
     ImageCache(const ImageCache&) = delete;
     ImageCache& operator=(const ImageCache&) = delete;
 
-    /**
-     * @brief Retrieve a cached image at a given downscale level.
-     * @note This method is thread-safe.
-     * @param[in] filename the image's filename on disk
-     * @param[in] downscaleLevel the downscale level
-     * @param[in] cachedOnly if true, only return images that are already in the cache
-     * @param[in] lazyCleaning if true, will try lazy cleaning heuristic before LRU cleaning
-     * @return a shared pointer to the cached image
-     * @throws std::runtime_error if the image does not fit in the maximal size of the cache
-     */
-    template<typename TPix>
-    std::shared_ptr<Image<TPix>> get(const std::string& filename, int downscaleLevel = 1, bool cachedOnly = false, bool lazyCleaning = true);
-
-    /**
-     * @brief Check if an image at a given downscale level is currently in the cache.
-     * @note This method is thread-safe.
-     * @param[in] filename the image's filename on disk
-     * @param[in] downscaleLevel the downscale level
-     * @return whether or not the cache currently contains the image
-     */
-    template<typename TPix>
-    bool contains(const std::string& filename, int downscaleLevel = 1) const;
+    CacheValue get(const CacheKey& keyReq);
+    const CacheValue getReadOnly(const CacheKey& keyReq) const;
+    CacheValue getAtMaxDownscale(const CacheKey& key);
+    CacheValue getOrCreate(const CacheKey& key, int width, int height, bool lazyCleaning = true);
+    bool updateImage(const CacheKey& key, CacheValue newValue);
+    bool contains(const CacheKey& key) const;
+    bool containsValidImage(const CacheKey& key) const;
 
     /**
      * @return information on the current cache state and usage
@@ -256,6 +324,11 @@ class ImageCache
      * @return the image reading options of the cache
      */
     inline const ImageReadOptions& readOptions() const { return _options; }
+    inline ImageReadOptions readOptionsCopy() const
+    {
+        std::scoped_lock<std::mutex> lock(_mutexReadOptions);
+        return _options;
+    }
 
     /**
      * @brief Provide a description of the current internal state of the cache (useful for logging).
@@ -263,204 +336,27 @@ class ImageCache
      */
     std::string toString() const;
 
-  private:
-    /**
-     * @brief Load a new image corresponding to the given key and add it as a new entry in the cache.
-     * @param[in] key the key used to identify the entry in the cache
-     * @param[in] lockPeek lock on the peeking mutex, will be released
-     */
-    template<typename TPix>
-    void load(const CacheKey& key, std::unique_lock<std::mutex>& lockPeek);
+private:
+    CacheValue* _getPtr(const CacheKey& keyReq);
+    const CacheValue* _getPtrReadOnly(const CacheKey& keyReq) const;
+    CacheValue _getOrCreate(const CacheKey& key, int width, int height, bool lazyCleaning = true);
+    bool _containsValidImage(const CacheKey& key) const;
+    void _createBuffer(const CacheKey& key, unsigned long long int memorySize);
+    std::string _toString() const;
 
+  private:
     CacheInfo _info;
     ImageReadOptions _options;
     std::unordered_map<CacheKey, CacheValue, CacheKeyHasher> _imagePtrs;
     /// ordered from LRU (Least Recently Used) to MRU (Most Recently Used)
     std::list<CacheKey> _keys;
 
-    mutable std::mutex _mutexGeneral;
-    mutable std::mutex _mutexPeek;
+    mutable std::mutex _mutex;
+    mutable std::mutex _mutexReadOptions;
 };
 
-// Since some methods in the ImageCache class are templated
-// their definition must be given in this header file
-
 template<typename TPix>
-std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int downscaleLevel, bool cachedOnly, bool lazyCleaning)
-{
-    if (downscaleLevel < 1)
-    {
-        ALICEVISION_THROW_ERROR("[image] ImageCache: cannot load image with downscale level < 1, "
-                                << "request was made with downscale level " << downscaleLevel);
-    }
-
-    std::unique_lock<std::mutex> lockPeek(_mutexPeek);
-
-    ALICEVISION_LOG_TRACE("[image] ImageCache: reading " << filename << " with downscale level " << downscaleLevel << " from thread "
-                                                         << std::this_thread::get_id());
-
-    using TInfo = ColorTypeInfo<TPix>;
-
-    auto lastWriteTime = utils::getLastWriteTime(filename);
-    CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, downscaleLevel, lastWriteTime);
-
-    // find the requested image in the cached images
-    {
-        auto it = std::find(_keys.begin(), _keys.end(), keyReq);
-        if (it != _keys.end())
-        {
-            // image becomes LRU
-            _keys.erase(it);
-            _keys.push_back(keyReq);
-
-            _info.nbLoadFromCache++;
-
-            ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
-            return _imagePtrs.at(keyReq).get<TPix>();
-        }
-        else if (cachedOnly)
-        {
-            return nullptr;
-        }
-    }
-
-    const std::scoped_lock<std::mutex> lockGeneral(_mutexGeneral);
-
-    // retrieve image size
-    int width, height;
-    readImageSize(filename, width, height);
-    unsigned long long int memSize = (width / downscaleLevel) * (height / downscaleLevel) * sizeof(TPix);
-
-    // add image to cache if it fits in capacity
-    if (memSize + _info.contentSize <= _info.capacity)
-    {
-        load<TPix>(keyReq, lockPeek);
-
-        ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
-        return _imagePtrs.at(keyReq).get<TPix>();
-    }
-
-    // retrieve missing capacity
-    long long int missingCapacity = memSize + _info.contentSize - _info.capacity;
-
-    // find unused image with size bigger than missing capacity
-    // remove it and add image to cache
-    if (lazyCleaning)
-    {
-        auto it = _keys.begin();
-        while (it != _keys.end())
-        {
-            const CacheKey& key = *it;
-            const CacheValue& value = _imagePtrs.at(key);
-            if (value.useCount() == 1 && value.memorySize() >= missingCapacity)
-            {
-                _info.nbImages--;
-                _info.contentSize -= value.memorySize();
-                _imagePtrs.erase(key);
-                _keys.erase(it);
-
-                _info.nbRemoveUnused++;
-
-                load<TPix>(keyReq, lockPeek);
-
-                ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
-                return _imagePtrs.at(keyReq).get<TPix>();
-            }
-            ++it;
-        }
-    }
-
-    // remove as few unused images as possible
-    while (missingCapacity > 0)
-    {
-        auto it = std::find_if(_keys.begin(), _keys.end(), [this](const CacheKey& k) { return _imagePtrs.at(k).useCount() == 1; });
-
-        if (it != _keys.end())
-        {
-            const CacheKey& key = *it;
-            const CacheValue& value = _imagePtrs.at(key);
-
-            _info.nbImages--;
-            _info.contentSize -= value.memorySize();
-            _imagePtrs.erase(key);
-            _keys.erase(it);
-
-            _info.nbRemoveUnused++;
-
-            missingCapacity = memSize + _info.contentSize - _info.capacity;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // add image to cache if it fits in maxSize
-    if (memSize + _info.contentSize <= _info.maxSize)
-    {
-        load<TPix>(keyReq, lockPeek);
-
-        ALICEVISION_LOG_TRACE("[image] ImageCache: " << toString());
-        return _imagePtrs.at(keyReq).get<TPix>();
-    }
-
-    ALICEVISION_THROW_ERROR("[image] ImageCache: failed to load image \n" << toString());
-
-    return nullptr;
-}
-
-template<typename TPix>
-void ImageCache::load(const CacheKey& key, std::unique_lock<std::mutex>& lockPeek)
-{
-    lockPeek.unlock();
-
-    auto img = std::make_shared<Image<TPix>>();
-
-    // load image from disk
-    readImage(key.filename, *img, _options);
-
-    // apply downscale
-    if (key.downscaleLevel > 1)
-    {
-        imageAlgo::resizeImage(key.downscaleLevel, *img);
-    }
-
-    lockPeek.lock();
-
-    _info.nbLoadFromDisk++;
-
-    // create wrapper around shared pointer
-    CacheValue value = CacheValue::wrap(img);
-
-    // add to cache as MRU
-    _imagePtrs.insert({key, value});
-    _keys.push_back(key);
-
-    // update memory usage
-    _info.nbImages++;
-    _info.contentSize += value.memorySize();
-}
-
-template<typename TPix>
-bool ImageCache::contains(const std::string& filename, int downscaleLevel) const
-{
-    if (downscaleLevel < 1)
-    {
-        ALICEVISION_THROW_ERROR("[image] ImageCache: cannot contain image with downscale level < 1, "
-                                << "request was made with downscale level " << downscaleLevel);
-    }
-
-    const std::scoped_lock<std::mutex> lockPeek(_mutexPeek);
-
-    using TInfo = ColorTypeInfo<TPix>;
-
-    auto lastWriteTime = utils::getLastWriteTime(filename);
-    CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, downscaleLevel, lastWriteTime);
-
-    auto it = std::find(_keys.begin(), _keys.end(), keyReq);
-
-    return it != _keys.end();
-}
+CacheValue imageProviderSync(ImageCache& imageCache, const std::string& filename, int downscaleLevel = 1);
 
 }  // namespace image
 }  // namespace aliceVision
