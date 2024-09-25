@@ -170,6 +170,8 @@ int aliceVision_main(int argc, char** argv)
             continue;
         }
 
+        ALICEVISION_LOG_INFO("Processing intrinsic " << pairIntrinsic.first);
+
         if (from == "distortion")
         {
             if (to == "undistortion")
