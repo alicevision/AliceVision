@@ -31,10 +31,11 @@ class Undistortion
   public:
     Undistortion(int width, int height)
     {
-        setSize(width, height);
-        setOffset({0.0, 0.0});
         _pixelAspectRatio = 1.0;
         _isDesqueezed = false;
+        
+        setSize(width, height);
+        setOffset({0.0, 0.0});
     }
 
     virtual EUNDISTORTION getType() const = 0;

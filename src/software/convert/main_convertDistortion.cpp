@@ -67,9 +67,10 @@ bool convert(std::shared_ptr<camera::Undistortion> & undistortion, const camera:
             calibration::PointPair ppt;
             ppt.distortedPoint = pobs.second.getCoordinates();
             ppt.undistortedPoint = intrinsic.getUndistortedPixel(ppt.distortedPoint);
+            ppt.scale = pobs.second.getScale();
 
             Vec2 check = intrinsic.getDistortedPixel(ppt.undistortedPoint);
-            if ((check - ppt.distortedPoint).norm() > 1e-2)
+            if ((check - ppt.distortedPoint).norm() > 1e-3)
             {
                 countErrors++;
                 continue;
