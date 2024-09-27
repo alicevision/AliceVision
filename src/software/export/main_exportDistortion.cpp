@@ -235,11 +235,17 @@ int aliceVision_main(int argc, char* argv[])
 
         const auto intrinsicDisto = std::dynamic_pointer_cast<IntrinsicScaleOffsetDisto>(intrinsicPtr);
         if (!intrinsicDisto)
+        {
+            ALICEVISION_LOG_INFO("Intrinsic " << intrinsicId << " has incorrect format");
             continue;
+        }
 
         const auto undistortion = intrinsicDisto->getUndistortion();
         if (!undistortion)
+        {
+            ALICEVISION_LOG_INFO("Intrinsic " << intrinsicId << " is not exported as it has no undistortion object.");
             continue;
+        }
 
         if (exportNukeNode)
         {
