@@ -69,9 +69,13 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         SOURCES Camera.i
     )
 
+    if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+        list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DSWIGWORDSIZE64")
+    endif()
+
     set_property(
         TARGET camera
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
+        PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
     )
 
     target_include_directories(camera
@@ -93,6 +97,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     target_link_libraries(camera
     PUBLIC
         aliceVision_camera
+        ${Python3_LIBRARIES}
     )
 
     install(
