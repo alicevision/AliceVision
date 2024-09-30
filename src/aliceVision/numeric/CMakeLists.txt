@@ -47,9 +47,13 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         SOURCES numeric.i
     )
 
+    if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR UNIX)
+        list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DLINUXPLATFORM")
+    endif()
+
     set_property(
         TARGET numeric
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
+        PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
     )
 
     target_include_directories(numeric
@@ -71,6 +75,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     target_link_libraries(numeric
     PUBLIC
         aliceVision_numeric
+        ${Python3_LIBRARIES}
     )
 
     install(

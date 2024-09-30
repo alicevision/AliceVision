@@ -48,9 +48,13 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         SOURCES Geometry.i
     )
 
+    if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR UNIX)
+        list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DLINUXPLATFORM")
+    endif()
+
     set_property(
         TARGET geometry
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
+        PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
     )
 
     target_include_directories(geometry
@@ -72,6 +76,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     target_link_libraries(geometry
     PUBLIC
         aliceVision_geometry
+        ${Python3_LIBRARIES}
     )
 
     install(
