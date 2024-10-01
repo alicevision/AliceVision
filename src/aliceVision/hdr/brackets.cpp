@@ -24,30 +24,23 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
 
     const sfmData::Views& views = sfmData.getViews();
 
-    // Order views by their image names (without path and extension to make sure we handle rotated images)
-    std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
+    std::set<float> fnumbers;
+    std::vector<LuminanceInfo> luminances;
     for (auto& viewIt : sfmData.getViews())
     {
-        viewsOrderedByName.push_back(viewIt.second);
-    }
+        IndexT id = viewIt.first;
+        auto view = viewIt.second; 
+        if (view ==nullptr)
+        {
+            continue;
+        }
 
-    std::sort(viewsOrderedByName.begin(),
-              viewsOrderedByName.end(),
-              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-                  if (a == nullptr || b == nullptr)
-                      return true;
-
-                  std::filesystem::path path_a(a->getImage().getImagePath());
-                  std::filesystem::path path_b(b->getImage().getImagePath());
-
-                  return (path_a.stem().string() < path_b.stem().string());
-              });
-
-    // Print a warning if the aperture changes.
-    std::set<float> fnumbers;
-    for (auto& view : viewsOrderedByName)
-    {
         fnumbers.insert(view->getImage().getMetadataFNumber());
+        double exp = view->getImage().getCameraExposureSetting().getExposure();
+        std::string path = view->getImage().getImagePath();
+
+        LuminanceInfo li(viewIt.first, path, exp);
+        luminances.push_back(li);
     }
 
     if (fnumbers.size() != 1)
@@ -61,119 +54,25 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         }
     }
 
-    std::vector<std::shared_ptr<sfmData::View>> group;
-    double lastExposure = std::numeric_limits<double>::min();
-    for (auto& view : viewsOrderedByName)
+    std::vector<std::vector<IndexT>> groupsids;
+    
+    if (countBrackets == 0)
     {
-        if (countBrackets > 0)
-        {
-            group.push_back(view);
-            if (group.size() == countBrackets)
-            {
-                groups.push_back(group);
-                group.clear();
-            }
-        }
-        else
-        {
-            // Automatically determines the number of brackets
-            double exp = view->getImage().getCameraExposureSetting().getExposure();
-            if (exp <= lastExposure)
-            {
-                groups.push_back(group);
-                group.clear();
-            }
-
-            lastExposure = exp;
-            group.push_back(view);
-        }
+        groupsids = estimateGroups(luminances);
+    } 
+    else 
+    {
+        groupsids = divideGroups(luminances, countBrackets);
     }
 
-    if (!group.empty())
+    for (const auto & group : groupsids)
     {
-        groups.push_back(group);
-    }
-
-    // Vote for the best bracket count
-    std::map<size_t, int> counters;
-    for (const auto& group : groups)
-    {
-        size_t bracketCount = group.size();
-        if (counters.find(bracketCount) != counters.end())
+        std::vector<std::shared_ptr<sfmData::View>> gview;
+        for (const auto & id : group)
         {
-            counters[bracketCount]++;
+            gview.push_back(sfmData.getViews().at(id));
         }
-        else
-        {
-            counters[bracketCount] = 1;
-        }
-    }
-
-    int maxSize = 0;
-    int bestBracketCount = 0;
-    for (const auto& item : counters)
-    {
-        if (item.second > maxSize)
-        {
-            maxSize = item.second;
-            bestBracketCount = item.first;
-        }
-        else if (item.second == maxSize && item.first > bestBracketCount)
-        {
-            // If two brackets size have the same vote number,
-            // keep the larger one (this avoids keeping only the outlier)
-            bestBracketCount = item.first;
-        }
-    }
-
-    // Only keep groups with the majority bracket size
-    auto groupIt = groups.begin();
-    while (groupIt != groups.end())
-    {
-        if (groupIt->size() != bestBracketCount)
-        {
-            groupIt = groups.erase(groupIt);
-        }
-        else
-        {
-            groupIt++;
-        }
-    }
-
-    std::vector<std::vector<sfmData::ExposureSetting>> v_exposuresSetting;
-    for (auto& group : groups)
-    {
-        // Sort all images by exposure time
-        std::sort(group.begin(), group.end(), [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-            if (a == nullptr || b == nullptr)
-                return true;
-            return (a->getImage().getCameraExposureSetting().getExposure() < b->getImage().getCameraExposureSetting().getExposure());
-        });
-
-        std::vector<sfmData::ExposureSetting> exposuresSetting;
-        for (auto& v : group)
-        {
-            exposuresSetting.push_back(v->getImage().getCameraExposureSetting());
-        }
-        v_exposuresSetting.push_back(exposuresSetting);
-    }
-
-    // Check exposure consistency between group
-    if (v_exposuresSetting.size() > 1)
-    {
-        for (int g = 1; g < v_exposuresSetting.size(); ++g)
-        {
-            for (int e = 0; e < v_exposuresSetting[g].size(); ++e)
-            {
-                if (!(v_exposuresSetting[g][e] == v_exposuresSetting[g - 1][e]))
-                {
-                    ALICEVISION_LOG_WARNING("Non consistant exposures between poses have been detected. Most likely the dataset has been captured "
-                                            "with an automatic exposure mode enabled. Final result can be impacted.");
-                    g = v_exposuresSetting.size();
-                    break;
-                }
-            }
-        }
+        groups.push_back(gview);
     }
 
     return true;
@@ -283,6 +182,383 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& targetViews,
         targetViews.push_back(group[targetIndex]);
     }
     return targetIndex;
+}
+
+std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<LuminanceInfo> & luminanceInfos)
+{
+    std::vector<std::vector<LuminanceInfo>> splitted;
+
+    if (luminanceInfos.size() == 0)
+    {
+        return splitted;
+    }
+
+    //Ignore non existing files
+    //Remove relative paths
+    //Remove symlinks
+    //This will enable correct path comparison
+    std::vector<LuminanceInfo> correctedPaths;
+    for (const auto item : luminanceInfos)
+    {
+        if (!std::filesystem::exists(item.mpath))
+        {
+            continue;
+        }
+
+        LuminanceInfo corrected = item;
+        corrected.mpath = std::filesystem::canonical(item.mpath);
+
+        correctedPaths.push_back(corrected);
+    }
+
+    //Sort luminanceinfos by names
+    std::sort(correctedPaths.begin(),
+              correctedPaths.end(),
+              [](const LuminanceInfo& a, const LuminanceInfo& b) -> bool {
+                return (a.mpath < b.mpath);
+              });
+
+    //Split items per base directory
+    std::vector<LuminanceInfo> current;
+    for (int index = 0; index < correctedPaths.size(); index++)
+    {
+        if (index == 0)
+        {
+            current.push_back(correctedPaths[index]);
+            continue;
+        }
+
+        std::filesystem::path pathCur(correctedPaths[index].mpath);
+        std::filesystem::path pathPrev(correctedPaths[index - 1].mpath);
+
+        if (pathCur.parent_path() != pathPrev.parent_path())
+        {
+            splitted.push_back(current);
+            current.clear();
+        }
+        
+        current.push_back(correctedPaths[index]);
+    }
+    splitted.push_back(current);
+
+    return splitted;
+}
+
+std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<LuminanceInfo> & luminanceInfos)
+{
+    std::vector<std::vector<LuminanceInfo>> splitted;
+
+    if (luminanceInfos.size() == 0)
+    {
+        return splitted;
+    }
+
+    //Split the luminanceInfos into groups which have monotonic values 
+    //(either increasing or decreasing)
+    std::vector<LuminanceInfo> current;
+    current.push_back(luminanceInfos[0]);
+    for (int index = 1; index < luminanceInfos.size(); index++)
+    {   
+        float val = luminanceInfos[index].mexposure;
+        float prev = luminanceInfos[index - 1].mexposure;
+
+
+        if (val == prev)
+        {
+            splitted.push_back(current);
+            
+            current.clear();
+            current.push_back(luminanceInfos[index]);
+            continue;
+        }
+
+        if (index + 1 == luminanceInfos.size())
+        {
+            current.push_back(luminanceInfos[index]);
+            continue;
+        }
+
+        float next = luminanceInfos[index + 1].mexposure;
+
+        //If sign is negative, then the function is not locally monotonic
+        float sign = (next - val) * (val - prev);
+
+        if (sign < 0)
+        {
+            current.push_back(luminanceInfos[index]);
+            splitted.push_back(current);
+            current.clear();
+            //Extremity is added on both groups
+            current.push_back(luminanceInfos[index]);
+        }
+        else
+        {
+            current.push_back(luminanceInfos[index]);
+        }
+    }
+
+    //Close the last group
+    splitted.push_back(current);
+
+    return splitted;
+}
+
+/**
+* @brief assume ref is smaller than larger
+* Try to find a subpart of larger which has the same set of exposures that smaller
+* @param smaller the set to compare
+* @param larger the set where the subpart should be
+* @return the index of the subpart or -1 if not found
+*/
+int extractIndex(const std::vector<LuminanceInfo> & smaller, const std::vector<LuminanceInfo> & larger)
+{
+    int largerSize = larger.size();
+    int smallerSize = smaller.size();
+    int diff = largerSize - smallerSize;
+
+    //For all continuous subparts of the erased sequence
+    for (int indexStart = 0; indexStart < diff; indexStart++)
+    {
+        //Check that the subpart is the same set of exposures
+        bool allCorrect = true;
+        for (int pos = 0; pos < smallerSize; pos++)
+        {
+            if (smaller[pos].mexposure != larger[indexStart + pos].mexposure)
+            {
+                allCorrect = false;
+            }
+        }
+
+        if (allCorrect)
+        {
+            return indexStart;
+        }
+    }
+
+    return -1;
+}
+
+
+std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo> & luminanceInfos)
+{
+    std::vector<std::vector<IndexT>> groups;
+    if (luminanceInfos.size() == 0)
+    {
+        return groups;
+    }
+
+    //Split and order the items using path
+    std::vector<std::vector<LuminanceInfo>> splitted = splitBasedir(luminanceInfos);
+    //Create monotonic groups
+    std::vector<std::vector<LuminanceInfo>> monotonics;
+    for (const auto & luminanceInfoOneDir : splitted)
+    {
+        std::vector<std::vector<LuminanceInfo>> lmonotonics = splitMonotonics(luminanceInfoOneDir);
+        monotonics.insert(monotonics.end(), lmonotonics.begin(), lmonotonics.end());
+    }
+
+    //Sort the voters groups by exposure increasing
+    for (auto & group : monotonics)
+    {
+        std::sort(group.begin(), 
+                  group.end(), 
+                  [](const LuminanceInfo& a, const LuminanceInfo& b) {
+                    return (a.mexposure < b.mexposure);
+                  });
+    }
+
+    // Vote for the best bracket count
+    std::map<size_t, int> counters;
+    for (const auto& group : monotonics)
+    {
+        size_t bracketCount = group.size();
+        if (counters.find(bracketCount) != counters.end())
+        {
+            counters[bracketCount]++;
+        }
+        else
+        {
+            counters[bracketCount] = 1;
+        }
+    }
+
+    int maxSize = 0;
+    int bestBracketCount = 0;
+    for (const auto& item : counters)
+    {
+        if (item.second > maxSize)
+        {
+            maxSize = item.second;
+            bestBracketCount = item.first;
+        }
+        else if (item.second == maxSize && item.first > bestBracketCount)
+        {
+            // If two brackets size have the same vote number,
+            // keep the larger one (this avoids keeping only the outlier)
+            bestBracketCount = item.first;
+        }
+    }
+
+    // Only keep voters with the majority bracket size
+    auto groupIt = monotonics.begin();
+    std::vector<std::vector<LuminanceInfo>> eraseds;
+    while (groupIt != monotonics.end())
+    {
+        if (groupIt->size() != bestBracketCount)
+        {
+            eraseds.push_back(*groupIt);
+            groupIt = monotonics.erase(groupIt);
+        }
+        else
+        {
+            groupIt++;
+        }
+    }
+
+    //Try to push back erased
+    for (const auto & erased: eraseds)
+    {
+        //If erased is larger than the most voted, then 
+        //Maybe it contains outliers. Try to find a correct subpart
+        int diff = int(erased.size()) - bestBracketCount;
+        if (diff < 0)
+        {
+            continue;
+        }
+        
+
+        //Compare with all valid monotonics
+        int offset = -1;
+        for (const auto& monotonic : monotonics)
+        {
+            offset = extractIndex(monotonic, erased);
+            if (offset >= 0)
+            {
+                break;
+            }
+        }
+
+        //If something found, put it back on list of monotonics
+        if (offset >= 0)
+        {
+            std::vector<LuminanceInfo> subpart;
+            for (int index = 0; index < bestBracketCount; index++)
+            {
+                subpart.push_back(erased[offset + index]);
+            }
+            monotonics.push_back(subpart);
+        }
+    }
+
+    //check coherency
+    bool coherency = true;
+    for (int idref = 1; idref < monotonics.size(); ++idref)
+    {
+        const int idprev = idref - 1;
+        for (int idExposure = 0; idExposure < monotonics[idref].size(); ++idExposure)
+        {
+            if (!(monotonics[idref][idExposure].mexposure == monotonics[idprev][idExposure].mexposure))
+            {
+                ALICEVISION_LOG_WARNING("Non consistant exposures between poses have been detected.\
+                Most likely the dataset has been captured with an automatic exposure mode enabled.\
+                Final result can be impacted.");
+                coherency = false;
+                
+                break;
+            }
+        }
+
+        if (!coherency)
+        {
+            break;
+        }
+    }
+
+    for (const auto & monotonic : monotonics)
+    {
+        std::vector<IndexT> group;
+        for (const auto & li : monotonic)
+        {
+            group.push_back(li.mviewId);
+        }
+        groups.push_back(group);
+    }
+
+    ALICEVISION_LOG_INFO("Groups found : "  << monotonics.size());
+
+    return groups;
+}
+
+std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<LuminanceInfo> & luminanceInfos, unsigned bracketSize)
+{
+    std::vector<std::vector<IndexT>> groups;
+    if (luminanceInfos.size() == 0)
+    {
+        return groups;
+    }
+
+    //Split and order the items using path
+    std::vector<std::vector<LuminanceInfo>> splitted = splitBasedir(luminanceInfos);
+
+    std::vector<std::vector<LuminanceInfo>> divided;
+
+    for (const auto & item : splitted)
+    {
+        if (item.size() % bracketSize != 0)
+        {
+            ALICEVISION_LOG_ERROR("Input bracket size is not compatible with the number of images");
+            return groups;
+        }
+
+        //For each group of bracketSize items
+        for (int index = 0; index < item.size(); index += bracketSize)
+        {   
+            //Create a new set
+            std::vector<LuminanceInfo> part;
+            for (int bracket = 0; bracket < bracketSize; bracket++)
+            {
+                part.push_back(item[index + bracket]);
+            }
+
+            divided.push_back(part);
+        }
+    }
+
+    //check coherency
+    bool coherency = true;
+    for (int idref = 1; idref < divided.size(); ++idref)
+    {
+        const int idprev = idref - 1;
+        for (int idExposure = 0; idExposure < divided[idref].size(); ++idExposure)
+        {
+            if (!(divided[idref][idExposure].mexposure == divided[idprev][idExposure].mexposure))
+            {
+                ALICEVISION_LOG_WARNING("Non consistant exposures between poses have been detected.\
+                Most likely the dataset has been captured with an automatic exposure mode enabled.\
+                Final result can be impacted.");
+                coherency = false;
+                
+                break;
+            }
+        }
+
+        if (!coherency)
+        {
+            break;
+        }
+    }
+
+    for (const auto & item : divided)
+    {
+        std::vector<IndexT> group;
+        for (const auto & li : item)
+        {
+            group.push_back(li.mviewId);
+        }
+        groups.push_back(group);
+    }
+
+    return groups;
 }
 
 }  // namespace hdr
