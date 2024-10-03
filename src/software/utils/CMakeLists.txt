@@ -399,6 +399,32 @@ if(ALICEVISION_BUILD_MVS)
               Geogram::geogram
               ${Boost_LIBRARIES}
     )
+    
+    # Rendering of depthmaps
+    alicevision_add_software(aliceVision_depthMapRendering
+        SOURCE main_depthMapRendering.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+            aliceVision_cmdline
+            aliceVision_feature
+            aliceVision_mesh
+            aliceVision_sfm
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+    )
+
+    # Rendering of normalmaps
+    alicevision_add_software(aliceVision_normalMapRendering
+        SOURCE main_normalMapRendering.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+            aliceVision_cmdline
+            aliceVision_feature
+            aliceVision_mesh
+            aliceVision_sfm
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+    )
 
     # Mesh Remove Unseen Faces
     alicevision_add_software(aliceVision_meshRemoveUnseenFaces

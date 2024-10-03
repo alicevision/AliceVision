@@ -28,7 +28,7 @@ bool MeshIntersection::initialize(const std::string & pathToModel)
     return true;
 }
 
-bool MeshIntersection::peek(Vec3 & output, const camera::IntrinsicBase & intrinsic, const Vec2 & imageCoords)
+bool MeshIntersection::peekPoint(Vec3 & output, const camera::IntrinsicBase & intrinsic, const Vec2 & imageCoords)
 {
     const Vec3 posCamera = _pose.center();
     const Vec3 wdir = intrinsic.backproject(imageCoords, true, _pose, 1.0);
@@ -54,6 +54,36 @@ bool MeshIntersection::peek(Vec3 & output, const camera::IntrinsicBase & intrins
     output.x() = p.x;
     output.y() = -p.y;
     output.z() = -p.z;
+
+    return true;
+}
+
+bool MeshIntersection::peekNormal(Vec3 & output, const camera::IntrinsicBase & intrinsic, const Vec2 & imageCoords)
+{
+    const Vec3 posCamera = _pose.center();
+    const Vec3 wdir = intrinsic.backproject(imageCoords, true, _pose, 1.0);
+    const Vec3 dir = (wdir - posCamera).normalized();
+    
+    //Create geogram ray from alicevision ray
+    GEO::Ray ray;
+    ray.origin.x = posCamera.x();
+    ray.origin.y = -posCamera.y();
+    ray.origin.z = -posCamera.z();
+    ray.direction.x = dir.x();
+    ray.direction.y = -dir.y();
+    ray.direction.z = -dir.z();
+
+    GEO::MeshFacetsAABB::Intersection intersection;
+    if (!_aabb.ray_nearest_intersection(ray, intersection)) 
+    {
+        return false;
+    }
+
+    const GEO::vec3 n = GEO::normalize(intersection.N);
+
+    output.x() = n.x;
+    output.y() = -n.y;
+    output.z() = -n.z;
 
     return true;
 }
