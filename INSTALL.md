@@ -254,9 +254,6 @@ CMake Options
 * `ALICEVISION_BUILD_DOC` (default `AUTO`)
   Build AliceVision documentation
 
-* `ALICEVISION_BUILD_EXAMPLES` (default `ON`)
-  Build AliceVision samples applications (aliceVision software are still built)
-
 * `ALICEVISION_BUILD_COVERAGE` (default `OFF`)
   Enable code coverage generation (gcc only)
 
@@ -279,9 +276,9 @@ Linux compilation
  cmake -DCMAKE_BUILD_TYPE=Release . ../AliceVision
 ```
 
-If you want enable unit tests and examples to the build:
+If you want enable unit tests to the build:
 ```bash
-cmake -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_TESTS=ON -DALICEVISION_BUILD_EXAMPLES=ON ../AliceVision
+cmake -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_TESTS=ON ../AliceVision
 ```
 
 In order to use the MOSEK 6 back-end for the linear programming aliceVision module:
@@ -343,11 +340,10 @@ git clone --recursive https://github.com/alicevision/AliceVision.git
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -G "Xcode" ../AliceVision
 ```
-If you want enable unit tests and examples to the build:
+If you want enable unit tests to the build:
 ```bash
 cmake -DCMAKE_BUILD_TYPE=Release \
       -DALICEVISION_BUILD_TESTS=ON \
-      -DALICEVISION_BUILD_EXAMPLES=ON \
       -G "Xcode" \
       ../AliceVision
 xcodebuild -configuration Release

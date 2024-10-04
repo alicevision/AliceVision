@@ -51,7 +51,6 @@ jobs:
            -DCMAKE_INSTALL_PREFIX:PATH=$PWD/../../AV_install \
            -DTARGET_ARCHITECTURE=core \
            -DALICEVISION_BUILD_TESTS:BOOL=ON \
-           -DALICEVISION_BUILD_EXAMPLES:BOOL=ON \
            -DALICEVISION_BUILD_SWIG_BINDING:BOOL=ON \
            -DALICEVISION_USE_OPENCV:BOOL=ON \
            -DALICEVISION_USE_CUDA:BOOL=ON \
@@ -216,7 +215,6 @@ jobs:
                              -DTARGET_ARCHITECTURE=core
                              -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }}
                              -DALICEVISION_BUILD_TESTS=ON
-                             -DALICEVISION_BUILD_EXAMPLES=OFF
                              -DALICEVISION_USE_OPENCV=ON
                              -DALICEVISION_USE_CUDA=ON
                              -DALICEVISION_USE_CCTAG=OFF
