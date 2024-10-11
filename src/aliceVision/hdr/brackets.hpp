@@ -11,6 +11,24 @@
 namespace aliceVision {
 namespace hdr {
 
+
+struct LuminanceInfo
+{
+    aliceVision::IndexT mviewId;
+    std::string mpath;
+    float mexposure;
+
+    LuminanceInfo() = default;
+
+    LuminanceInfo(aliceVision::IndexT vid, const std::string & path, float exposure):
+        mviewId(vid),
+        mpath(path),
+        mexposure(exposure)
+    {
+
+    }
+};
+
 enum class ECalibrationMethod
 {
     LINEAR,
@@ -84,7 +102,7 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
  * @brief Estimate the brackets information from the SfM data
  * @param[out] groups the estimated groups
  * @param[in] sfmData SfM data to estimate the brackets from
- * @param[in] countBrackets the number of brackets
+ * @param[in] countBrackets the number of brackets (optional, 0 means that it will be guessed)
  * @return false if an error occurs (e.g. an invalid SfMData file has been provided), true otherwise
  */
 bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<aliceVision::sfmData::View>>>& groups,
@@ -109,6 +127,23 @@ int selectTargetViews(std::vector<std::shared_ptr<aliceVision::sfmData::View>>& 
                       const int offsetRefBracketIndex,
                       const std::string& targetIndexesFilename,
                       const double meanTargetedLuma = 0.4);
+
+
+
+/**
+ * @brief compute a set of group of viewids
+ * Each group should be the brackets of the same image
+ * @param luminanceInfos the input information about each image
+*/
+std::vector<std::vector<aliceVision::IndexT>> estimateGroups(const std::vector<LuminanceInfo> & luminanceInfos);
+
+/**
+ * @brief build a set of group of viewids
+ * Each group should be the brackets of the same image
+ * @param luminanceInfos the input information about each image
+ * @param bracketSize the number of brackets per hdr image (not estimated)
+*/
+std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<LuminanceInfo> & luminanceInfos, unsigned bracketSize);
 
 }  // namespace hdr
 }  // namespace aliceVision

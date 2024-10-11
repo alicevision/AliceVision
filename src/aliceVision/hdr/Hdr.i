@@ -6,4 +6,6 @@
 
 %module (module="pyalicevision") hdr
 
+%include <aliceVision/global.i>
 %include <aliceVision/hdr/Brackets.i>
+
