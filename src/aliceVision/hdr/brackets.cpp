@@ -206,7 +206,7 @@ std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<Luminance
         }
 
         LuminanceInfo corrected = item;
-        corrected.mpath = std::filesystem::canonical(item.mpath);
+        corrected.mpath = std::filesystem::canonical(item.mpath).string();
 
         correctedPaths.push_back(corrected);
     }
