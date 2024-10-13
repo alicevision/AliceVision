@@ -23,7 +23,9 @@
 %}
 
 %inline %{
-    typedef long unsigned int size_t;
+    #if defined(SWIGWORDSIZE64)
+        typedef long unsigned int size_t;
+    #endif
     typedef uint32_t IndexT;
 %}
 
@@ -37,7 +39,10 @@
 
 %template(IndexTSet) std::set<IndexT>;
 
-%template(SizeTPair) std::pair<size_t, size_t>;
+namespace std {
+    %template(SizeTPair) pair<size_t, size_t>;
+}
+%template(LongUintPair) std::pair<long unsigned int, long unsigned int>;
 
 // As defined in aliceVision/types.hpp
 %template(Pair) std::pair<IndexT, IndexT>;

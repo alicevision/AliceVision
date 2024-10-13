@@ -61,9 +61,13 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         SOURCES Hdr.i
     )
 
+    if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+        list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DSWIGWORDSIZE64")
+    endif()
+
     set_property(
         TARGET hdr
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
+        PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
     )
 
     target_include_directories(hdr
@@ -89,6 +93,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         aliceVision_numeric
         aliceVision_image
         aliceVision_sfmData
+        ${Python3_LIBRARIES}
     )
 
     install(
