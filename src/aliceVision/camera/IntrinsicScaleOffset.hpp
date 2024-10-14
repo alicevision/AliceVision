@@ -125,14 +125,35 @@ class IntrinsicScaleOffset : public IntrinsicBase
      * @brief get focal length in mm
      * @return focal length in mm
     */
-    double getFocalLengthMM() const;
+    double getFocalLength() const;
+
+    /**
+     * @brief get initial focal length in mm
+     * @return initial focal length in mm
+    */
+    double getInitialFocalLength() const;
+
+    /**
+     * @brief estimate the pixel aspect ratio
+     * @return the pixel aspect ratio
+    */
+    double getPixelAspectRatio() const;
 
     /**
      * @Brief set scale given focal length and pixelaspectratio
      * @param focalLengthMM focal length in mm
-     * @param pixelAspectRatio pixel aspect ratio (image with = pixelAspectRatio * realwith)
+     * @param pixelAspectRatio pixel aspect ratio (image with = pixelAspectRatio * realwidth)
+     * @param usePixelRatioForX use pixel ratio
     */
-    void setFocalLength(double focalLengthMM, double pixelAspectRatio);
+    void setFocalLength(double focalLengthMM, double pixelAspectRatio, bool useCompatibility = false);
+
+    /**
+     * @Brief set initial scale given initial focal length and pixelaspectratio
+     * @param initialFocalLengthMM initial focal length in mm
+     * @param pixelAspectRatio pixel aspect ratio (image with = pixelAspectRatio * realwidth)
+     * @param useCompability make sure compatibility mode is used
+    */
+    void setInitialFocalLength(double initialFocalLengthMM, double pixelAspectRatio, bool useCompatibility = false);
 
   protected:
     Vec2 _scale{1.0, 1.0};

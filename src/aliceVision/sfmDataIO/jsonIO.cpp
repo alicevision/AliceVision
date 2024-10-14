@@ -160,24 +160,13 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
 
     std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
     if (intrinsicScaleOffset)
-    {
-        const double initialFocalLengthMM =
-          (intrinsicScaleOffset->getInitialScale().x() > 0)
-            ? intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getInitialScale().x() / double(intrinsic->w())
-            : -1;
-        const double focalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getScale().x() / double(intrinsic->w());
-        const double focalRatio = intrinsicScaleOffset->getScale().x() / intrinsicScaleOffset->getScale().y();
-        const double pixelRatio = 1.0 / focalRatio;
-        
-        intrinsicTree.put("initialFocalLength", initialFocalLengthMM);
-        intrinsicTree.put("focalLength", focalLengthMM);
-
-        intrinsicTree.put("pixelRatio", pixelRatio);
+    {           
+        intrinsicTree.put("initialFocalLength", intrinsicScaleOffset->getInitialFocalLength());
+        intrinsicTree.put("focalLength", intrinsicScaleOffset->getFocalLength());
+        intrinsicTree.put("pixelRatio", intrinsicScaleOffset->getPixelAspectRatio());
         intrinsicTree.put("pixelRatioLocked", intrinsicScaleOffset->isRatioLocked());
         intrinsicTree.put("offsetLocked", intrinsicScaleOffset->isOffsetLocked());
         intrinsicTree.put("scaleLocked", intrinsicScaleOffset->isScaleLocked());
-
-
         saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
     }
 
@@ -290,46 +279,10 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
         principalPoint[1] -= (double(height) / 2.0);
     }
 
-    // Focal length
-    Vec2 pxFocalLength;
-    if (version < Version(1, 2, 0))
-    {
-        pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
-        // Only one focal value for X and Y in previous versions
-        pxFocalLength(1) = pxFocalLength(0);
-    }
-    else if (version < Version(1, 2, 2))  // version >= 1.2
-    {
-        loadMatrix("pxFocalLength", pxFocalLength, intrinsicTree);
-    }
-    else if (version < Version(1, 2, 5))
-    {
-        const double fmm = intrinsicTree.get<double>("focalLength", 1.0);
-        // pixelRatio field was actually storing the focalRatio before version 1.2.5
-        const double focalRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
-
-        const double fx = (fmm / sensorWidth) * double(width);
-        const double fy = fx / focalRatio;
-
-        pxFocalLength(0) = fx;
-        pxFocalLength(1) = fy;
-    }
-    else
-    {
-        const double fmm = intrinsicTree.get<double>("focalLength", 1.0);
-        const double pixelAspectRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
-
-        const double focalRatio = 1.0 / pixelAspectRatio;
-        const double fx = (fmm / sensorWidth) * double(width);
-        const double fy = fx / focalRatio;
-
-        pxFocalLength(0) = fx;
-        pxFocalLength(1) = fy;
-    }
 
     // pinhole parameters
-    intrinsic = camera::createIntrinsic(intrinsicType, distortionType, undistortionType, width, height, pxFocalLength(0), pxFocalLength(1), principalPoint(0), principalPoint(1));
-
+    intrinsic = camera::createIntrinsic(intrinsicType, distortionType, undistortionType, width, height, 1.0, 1.0, principalPoint(0), principalPoint(1));
+    
     intrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
     intrinsic->setInitializationMode(initializationMode);
     intrinsic->setSensorWidth(sensorWidth);
@@ -345,25 +298,72 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
         intrinsic->unlock();
     }
 
+
     std::shared_ptr<camera::IntrinsicScaleOffset> intrinsicWithScale = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
     if (intrinsicWithScale != nullptr)
     {
+        // Focal length
+        if (version < Version(1, 2, 0))
+        {
+            Vec2 pxFocalLength;
+            pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
+            // Only one focal value for X and Y in previous versions
+            pxFocalLength(1) = pxFocalLength(0);
+            intrinsicWithScale->setScale(pxFocalLength);
+        }
+        else if (version < Version(1, 2, 2))  // version >= 1.2
+        {
+            Vec2 pxFocalLength;
+            loadMatrix("pxFocalLength", pxFocalLength, intrinsicTree);
+            intrinsicWithScale->setScale(pxFocalLength);
+        }
+        else if (version < Version(1, 2, 5))
+        {
+            // pixelRatio field was actually storing the focalRatio before version 1.2.5
+            const double fmm = intrinsicTree.get<double>("focalLength", 1.0);
+            const double focalRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
+            const double fx = (fmm / sensorWidth) * double(width);
+            const double fy = fx / focalRatio;
+
+            Vec2 pxFocalLength;
+            pxFocalLength(0) = fx;
+            pxFocalLength(1) = fy;
+            intrinsicWithScale->setScale(pxFocalLength);
+        }
+        else if (version < Version(1, 2, 11))
+        {
+            const double fmm = intrinsicTree.get<double>("focalLength", 1.0);
+            const double pixelAspectRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
+            intrinsicWithScale->setFocalLength(fmm, pixelAspectRatio, true);
+        }
+        else
+        {
+            const double fmm = intrinsicTree.get<double>("focalLength", 1.0);
+            const double pixelAspectRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
+            intrinsicWithScale->setFocalLength(fmm, pixelAspectRatio);
+        }
+
+
         if (version < Version(1, 2, 2))
         {
             Vec2 initialFocalLengthPx;
+            const Vec2 pxFocalLength = intrinsicWithScale->getScale();
             initialFocalLengthPx(0) = intrinsicTree.get<double>("pxInitialFocalLength");
             initialFocalLengthPx(1) = (initialFocalLengthPx(0) > 0) ? initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0) : -1;
             intrinsicWithScale->setInitialScale(initialFocalLengthPx);
         }
+        else if (version < Version(1, 2, 11))
+        {
+            const double initialFocalLengthMM = intrinsicTree.get<double>("initialFocalLength");
+            const double pixelAspectRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
+            intrinsicWithScale->setInitialFocalLength(initialFocalLengthMM, pixelAspectRatio, true);
+            intrinsicWithScale->setRatioLocked(intrinsicTree.get<bool>("pixelRatioLocked"));
+        }
         else
         {
-            double initialFocalLengthMM = intrinsicTree.get<double>("initialFocalLength");
-
-            Vec2 initialFocalLengthPx;
-            initialFocalLengthPx(0) = (initialFocalLengthMM / sensorWidth) * double(width);
-            initialFocalLengthPx(1) = (initialFocalLengthPx(0) > 0) ? initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0) : -1;
-
-            intrinsicWithScale->setInitialScale(initialFocalLengthPx);
+            const double initialFocalLengthMM = intrinsicTree.get<double>("initialFocalLength");
+            const double pixelAspectRatio = intrinsicTree.get<double>("pixelRatio", 1.0);
+            intrinsicWithScale->setInitialFocalLength(initialFocalLengthMM, pixelAspectRatio);
             intrinsicWithScale->setRatioLocked(intrinsicTree.get<bool>("pixelRatioLocked"));
         }
 

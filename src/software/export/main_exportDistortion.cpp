@@ -33,7 +33,7 @@ std::string toNuke(std::shared_ptr<camera::IntrinsicScaleOffsetDisto> intrinsic)
 {
     std::stringstream ss;
 
-    const double focal = intrinsic->getFocalLengthMM();
+    const double focal = intrinsic->getFocalLength();
     const double sensorWidth = intrinsic->sensorWidth();
     const double sensorHeight = intrinsic->sensorHeight();
     

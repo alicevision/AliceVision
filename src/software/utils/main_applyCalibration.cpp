@@ -273,9 +273,9 @@ bool applyJson(sfmData::SfMData & sfmData, boost::json::value & input)
     
     double w = intrinsic->w();
     double h = intrinsic->h();
-    double nh = h / pixelAspect;
+    double nw = w * pixelAspect;
     double ratio = w / h;
-    double ratioDesqueezed = w / nh;
+    double ratioDesqueezed = nw / h;
     double filmratio = filmbackWidth / filmbackHeight;
 
     bool hasSpecialPixelAspect = (std::abs(pixelAspect - 1.0) > 1e-4);
@@ -293,10 +293,11 @@ bool applyJson(sfmData::SfMData & sfmData, boost::json::value & input)
         return false;
     }
 
-    intrinsic->setSensorWidth(filmbackWidth);
-    intrinsic->setSensorHeight((isDesqueezed)?filmbackHeight:filmbackHeight*pixelAspect);
+    intrinsic->setSensorWidth((isDesqueezed)?filmbackWidth:filmbackWidth/pixelAspect);
+    intrinsic->setSensorHeight(filmbackHeight);
     intrinsic->setDistortionObject(nullptr);
     intrinsic->setFocalLength(focalLength, pixelAspect);
+    intrinsic->setInitialFocalLength(focalLength, pixelAspect);
 
     if (model == "anamorphic4")
     {        
