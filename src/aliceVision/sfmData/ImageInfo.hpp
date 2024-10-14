@@ -220,6 +220,24 @@ class ImageInfo
             focalLength = -1;
         }
 
+        // For DJI drones, the focal length may be expressed as a list (e.g. [50000,1000])
+        std::string focalLengthList = getMetadata({"focal_length"});
+        std::string focalLengthStr = "";
+        std::string focalLengthDividerStr = "";
+
+        if (!focalLengthList.empty() && focalLengthList.find("[") == 0 && focalLengthList.find("]") == focalLengthList.size() - 1)
+        {
+            std::size_t delimiterPosition = focalLengthList.find(",");
+            if (delimiterPosition != std::string::npos)
+            {
+                focalLengthStr = focalLengthList.substr(1, delimiterPosition - 1);
+                focalLengthDividerStr = focalLengthList.substr(delimiterPosition + 1, focalLengthList.size() - delimiterPosition - 2);
+            }
+
+            // Focal length is provided in µm, hence the required division
+            focalLength = std::stod(focalLengthStr) / std::stod(focalLengthDividerStr);
+        }
+
         // Might be available and more precise (especially if the focal length was initially retrieved from a string)
         double nominativeFocalLength = getDoubleMetadata({"AxialNominalFocalLength"});
         if (nominativeFocalLength != -1)
