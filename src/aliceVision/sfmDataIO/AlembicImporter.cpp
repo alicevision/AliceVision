@@ -673,8 +673,12 @@ bool readCamera(const Version& abcVersion,
         if (intrinsicCasted)
         {
             // fy_pix = fx_pix * fy/fx
-            initialFocalLengthPix(1) =
-              (initialFocalLengthPix(0) > 0) ? initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0] : -1;
+            initialFocalLengthPix(1) = initialFocalLengthPix(0);
+            if (initialFocalLengthPix(0) > 0.0)
+            {
+                initialFocalLengthPix(0) = initialFocalLengthPix(0) / intrinsicCasted->getPixelAspectRatio();
+            }
+
             intrinsicCasted->setInitialScale(initialFocalLengthPix);
             intrinsicCasted->setRatioLocked(lockRatio);
             intrinsicCasted->setOffsetLocked(lockOffset);
