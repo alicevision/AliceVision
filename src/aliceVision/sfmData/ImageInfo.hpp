@@ -239,10 +239,16 @@ class ImageInfo
         }
 
         // Might be available and more precise (especially if the focal length was initially retrieved from a string)
-        double nominativeFocalLength = getDoubleMetadata({"AxialNominalFocalLength"});
-        if (nominativeFocalLength != -1)
+        double nominalFocalLength = getDoubleMetadata({"AxialNominalFocalLength", "axialNominalFocalLength"});
+        if (nominalFocalLength != -1)
         {
-            focalLength = nominativeFocalLength;
+            // For ARRI camera, the axial nominal focal length might either be available as mm or µm.
+            // We assume that if the result is larger than 9999, then the unit cannot be mm
+            if (nominalFocalLength > 9999)
+            {
+                nominalFocalLength /= 1000;
+            }
+            focalLength = nominalFocalLength;
         }
 
         return focalLength;
