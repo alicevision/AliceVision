@@ -208,6 +208,8 @@ class ImageInfo
             focalLength = getDoubleMetadata({"LensZoomActualFocalLength"});
             if (focalLength != -1)
             {
+                ALICEVISION_LOG_DEBUG("Used Sony metadata 'LensZoomActualFocalLength'. The retrieved focal length ("
+                                      << focalLength << ") is in meters and will be multiplied by 1000.");
                 focalLength *= 1000;
             }
         }
@@ -227,6 +229,8 @@ class ImageInfo
 
         if (!focalLengthList.empty() && focalLengthList.find("[") == 0 && focalLengthList.find("]") == focalLengthList.size() - 1)
         {
+            ALICEVISION_LOG_DEBUG("Used DJI drones metadata 'focal_length'. The retrieved focal length ("
+                                  << focalLengthList << ") will have its first term divided by its second term.");
             std::size_t delimiterPosition = focalLengthList.find(",");
             if (delimiterPosition != std::string::npos)
             {
@@ -242,6 +246,8 @@ class ImageInfo
         double nominalFocalLength = getDoubleMetadata({"AxialNominalFocalLength", "axialNominalFocalLength"});
         if (nominalFocalLength != -1)
         {
+            ALICEVISION_LOG_DEBUG("Used ARRI metadata 'AxialNominalFocalLength'. The retrieved focal length ("
+                                  << nominalFocalLength << ") will need to be converted from mm or µm.");
             // For ARRI camera, the axial nominal focal length might either be available as mm or µm.
             // We assume that if the result is larger than 9999, then the unit cannot be mm
             if (nominalFocalLength > 9999)
