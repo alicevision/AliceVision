@@ -198,67 +198,7 @@ class ImageInfo
      * @brief Get the corresponding "FocalLength" metadata value
      * @return the metadata value float or -1 if no corresponding value
      */
-    double getMetadataFocalLength() const
-    {
-        double focalLength = getDoubleMetadata({"Exif:FocalLength", "focalLength", "focal length", "lens_focal_length"});
-
-        if (focalLength == -1)
-        {
-            // Sony metadata: the focal length is provided in meters
-            focalLength = getDoubleMetadata({"LensZoomActualFocalLength"});
-            if (focalLength != -1)
-            {
-                ALICEVISION_LOG_DEBUG("Used Sony metadata 'LensZoomActualFocalLength'. The retrieved focal length ("
-                                      << focalLength << ") is in meters and will be multiplied by 1000.");
-                focalLength *= 1000;
-            }
-        }
-
-        // 32767 = (2^15 - 1) - Maximum of a signed short: means there is no available focal length
-        // 4294967295 = (2^32 - 1) - Maximum of a signed integer: means there is no available focal length
-        //   -> might be truncated and/or rounded up to 4.29497e+06
-        else if (focalLength == USHRT_MAX || focalLength == SHRT_MAX || focalLength == UINT_MAX || focalLength == INT_MAX || focalLength == 4294970)
-        {
-            focalLength = -1;
-        }
-
-        // For DJI drones, the focal length may be expressed as a list (e.g. [50000,1000])
-        std::string focalLengthList = getMetadata({"focal_length"});
-        std::string focalLengthStr = "";
-        std::string focalLengthDividerStr = "";
-
-        if (!focalLengthList.empty() && focalLengthList.find("[") == 0 && focalLengthList.find("]") == focalLengthList.size() - 1)
-        {
-            ALICEVISION_LOG_DEBUG("Used DJI drones metadata 'focal_length'. The retrieved focal length ("
-                                  << focalLengthList << ") will have its first term divided by its second term.");
-            std::size_t delimiterPosition = focalLengthList.find(",");
-            if (delimiterPosition != std::string::npos)
-            {
-                focalLengthStr = focalLengthList.substr(1, delimiterPosition - 1);
-                focalLengthDividerStr = focalLengthList.substr(delimiterPosition + 1, focalLengthList.size() - delimiterPosition - 2);
-            }
-
-            // Focal length is provided in µm, hence the required division
-            focalLength = std::stod(focalLengthStr) / std::stod(focalLengthDividerStr);
-        }
-
-        // Might be available and more precise (especially if the focal length was initially retrieved from a string)
-        double nominalFocalLength = getDoubleMetadata({"AxialNominalFocalLength", "axialNominalFocalLength"});
-        if (nominalFocalLength != -1)
-        {
-            ALICEVISION_LOG_DEBUG("Used ARRI metadata 'AxialNominalFocalLength'. The retrieved focal length ("
-                                  << nominalFocalLength << ") will need to be converted from mm or µm.");
-            // For ARRI camera, the axial nominal focal length might either be available as mm or µm.
-            // We assume that if the result is larger than 9999, then the unit cannot be mm
-            if (nominalFocalLength > 9999)
-            {
-                nominalFocalLength /= 1000;
-            }
-            focalLength = nominalFocalLength;
-        }
-
-        return focalLength;
-    }
+    double getMetadataFocalLength() const;
 
     /**
      * @brief Get the corresponding "ExposureTime" (shutter) metadata value
