@@ -61,6 +61,8 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
             return "akaze_liop";
         case EImageDescriberType::AKAZE_MLDB:
             return "akaze_mldb";
+        case EImageDescriberType::GENERIC:
+            return "generic";
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
         case EImageDescriberType::CCTAG3:
@@ -112,6 +114,9 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
         return EImageDescriberType::AKAZE_LIOP;
     if (type == "akaze_mldb")
         return EImageDescriberType::AKAZE_MLDB;
+
+    if (type == "generic")
+        return EImageDescriberType::GENERIC;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     if (type == "cctag3")
