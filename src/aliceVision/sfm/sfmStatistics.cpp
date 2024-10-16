@@ -64,7 +64,11 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData,
 
     if (outHistogram)
     {
-        *outHistogram = utils::Histogram<double>(0.0, std::ceil(outStats.max), std::ceil(outStats.max) * 2);
+        // clamp the max residu:
+        // - avoid errors in case of nonsense values
+        // - focus on the important residu, the small ones
+        const size_t maxValue = std::min(size_t(std::ceil(outStats.max)), size_t(30));
+        *outHistogram = utils::Histogram<double>(0.0, maxValue, maxValue * 5);
         outHistogram->Add(vecResiduals.begin(), vecResiduals.end());
     }
 }
@@ -122,7 +126,9 @@ void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData,
 
     if (outHistogram)
     {
-        *outHistogram = utils::Histogram<double>(outStats.min, outStats.max + 1, outStats.max - outStats.min + 1);
+        // clamp the max to avoid errors in case of nonsense values
+        const size_t maxValue = std::min(size_t(std::ceil(outStats.max) + 1), size_t(1000));
+        *outHistogram = utils::Histogram<double>(0.0, maxValue, maxValue);
         outHistogram->Add(nbObservations.begin(), nbObservations.end());
     }
 }
@@ -166,8 +172,7 @@ void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, BoxStats<
 
     if (outHistogram)
     {
-        //*outHistogram = Histogram<double>(0, sfmData.getViews().size(), sfmData.getViews().size());
-        *outHistogram = utils::Histogram<double>(outStats.min, (outStats.max + 1), 10);
+        *outHistogram = utils::Histogram<double>(outStats.min, (outStats.max + 1), 50);
         outHistogram->Add(nbLandmarksPerViewVec.begin(), nbLandmarksPerViewVec.end());
     }
 }
@@ -304,6 +309,7 @@ void computeScaleHistogram(const sfmData::SfMData& sfmData,
     if (outHistogram)
     {
         size_t maxValue = std::ceil(outStats.max);
+        maxValue = std::min(maxValue, size_t(100)); // clamp max value in case of nonsense value
         *outHistogram = utils::Histogram<double>(0.0, double(maxValue), maxValue + 1);
         outHistogram->Add(vecScaleObservations.begin(), vecScaleObservations.end());
     }
@@ -359,9 +365,6 @@ void computeResidualsPerView(const sfmData::SfMData& sfmData,
             continue;
         const std::vector<double>& residuals = it->second;
         BoxStats<double> residualStats(residuals.begin(), residuals.end());
-        utils::Histogram<double> residual_histogram =
-          utils::Histogram<double>(residualStats.min, residualStats.max + 1, residualStats.max - residualStats.min + 1);
-        residual_histogram.Add(residuals.begin(), residuals.end());
 
         nbResidualsPerViewMin[viewIdx] = residualStats.min;
         nbResidualsPerViewMax[viewIdx] = residualStats.max;
@@ -414,9 +417,6 @@ void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData,
         const IndexT viewId = viewKeys[viewIdx];
         const std::vector<int>& nbObservations = observationLengthsPerView[viewId];
         BoxStats<double> observationsLengthsStats(nbObservations.begin(), nbObservations.end());
-        utils::Histogram<double> observationsLengthsHistogram(
-          observationsLengthsStats.min, observationsLengthsStats.max + 1, observationsLengthsStats.max - observationsLengthsStats.min + 1);
-        observationsLengthsHistogram.Add(nbObservations.begin(), nbObservations.end());
 
         nbObservationsLengthsPerViewMin[viewIdx] = observationsLengthsStats.min;
         nbObservationsLengthsPerViewMax[viewIdx] = observationsLengthsStats.max;
