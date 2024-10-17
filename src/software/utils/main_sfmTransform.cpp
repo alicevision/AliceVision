@@ -409,7 +409,7 @@ bool parseLineUp(const std::string & lineUpFilename, const std::string & tracksF
         const Vec2 & imageCoords = trackitem.coords;
 
         Vec3 pt3d;
-        if (!meshIntersection.peek(pt3d, *intrinsic, imageCoords))
+        if (!meshIntersection.peekPoint(pt3d, *intrinsic, imageCoords))
         {
             continue;
         }
