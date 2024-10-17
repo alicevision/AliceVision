@@ -16,6 +16,7 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -83,6 +84,28 @@ void process(const std::string& dstColorImage,
     }
 }
 
+using ObservationsPerView = stl::flat_map<std::size_t, std::vector<const Observation*>>;
+
+/**
+ * @brief Get the landmark observations of camera views.
+ * @param[in] sfmData: A given SfMData
+ * @return Observations per camera view
+ */
+ObservationsPerView getObservationsPerViews(const SfMData& sfmData)
+{
+    ObservationsPerView observationsPerView;
+    for(auto& landIt : sfmData.getLandmarks())
+    {
+        for (const auto& obsIt : landIt.second.getObservations())
+        {
+            IndexT viewId = obsIt.first;
+            auto& observationsSet = observationsPerView[viewId];
+            observationsSet.push_back(&obsIt.second);
+        }
+    }
+    return observationsPerView;
+}
+
 bool prepareDenseScene(const SfMData& sfmData,
                        const std::vector<std::string>& imagesFolders,
                        const std::vector<std::string>& masksFolders,
@@ -93,7 +116,9 @@ bool prepareDenseScene(const SfMData& sfmData,
                        image::EImageFileType outputFileType,
                        bool saveMetadata,
                        bool saveMatricesFiles,
-                       bool evCorrection)
+                       bool evCorrection,
+                       float landmarksMaskScale,
+                       std::string inputRadiiFilename)
 {
     // defined view Ids
     std::set<IndexT> viewIds;
@@ -129,7 +154,44 @@ bool prepareDenseScene(const SfMData& sfmData,
     const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
     ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0 / medianCameraExposure));
 
-#pragma omp parallel for num_threads(3)
+    bool doMaskLandmarks = landmarksMaskScale > 0.f;
+    ObservationsPerView observationsPerView;
+    std::map<IndexT, double> estimatedRadii;
+    if (doMaskLandmarks)
+    {
+        observationsPerView = std::move(getObservationsPerViews(sfmData));
+
+        if (!inputRadiiFilename.empty())
+        {
+            std::stringstream stream;
+            std::string line;
+            IndexT viewId;
+            double radius;
+
+            std::fstream fs(inputRadiiFilename, std::ios::in);
+            if(!fs.is_open())
+            {
+                ALICEVISION_LOG_WARNING("Unable to open the radii file " << inputRadiiFilename
+                                                                         << "\nDefaulting to using image size.");
+            }
+            else
+            {
+                while(!fs.eof())
+                {
+                    std::getline(fs, line);
+                    stream.clear();
+                    stream.str(line);
+                    stream >> viewId;
+                    stream >> radius;
+                    estimatedRadii[viewId] = radius;
+                }
+                fs.close();
+            }
+        }
+
+    }
+
+#pragma omp parallel for
     for (int i = 0; i < viewIds.size(); ++i)
     {
         auto itView = viewIds.begin();
@@ -252,29 +314,62 @@ bool prepareDenseScene(const SfMData& sfmData,
                                               << " Ev compensation: " + std::to_string(exposureCompensation));
             }
 
-            image::Image<unsigned char> mask;
-            if (tryLoadMask(&mask, masksFolders, viewId, srcImage, maskExtension))
+            image::Image<unsigned char> maskLandmarks;
+            if(doMaskLandmarks)
             {
-                process<Image<RGBAfColor>>(
-                  dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask](Image<RGBAfColor>& image) {
-                      if (image.width() * image.height() != mask.width() * mask.height())
-                      {
-                          ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
-                          return;
-                      }
+                // for the T camera, image alpha should be at least 0.4f * 255 (masking)
+                maskLandmarks =
+                    image::Image<unsigned char>(view->getImage().getWidth(), view->getImage().getHeight(), true, 127);
+                double radius;
+                const auto& it = estimatedRadii.find(viewId);
+                if(it != estimatedRadii.end())
+                    radius = it->second;
+                else
+                    radius = 0.5 * (view->getImage().getWidth() + view->getImage().getHeight());
+                int r = (int)(landmarksMaskScale * radius);
+                const auto& observationsIt = observationsPerView.find(viewId);
+                if(observationsIt != observationsPerView.end())
+                {
+                    const auto& observations = observationsIt->second;
+                    int j = 0;
+                    for(const auto& observation : observations)
+                    {
+                        const auto& obs = *observation;
+                        for (int y = std::max(obs.getCoordinates().y() - r, 0.);
+                             y <= std::min(obs.getCoordinates().y() + r, (double)maskLandmarks.height() - 1);
+                             y++)
+                        {
+                            for (int x = std::max(obs.getCoordinates().x() - r, 0.);
+                                 x <= std::min(obs.getCoordinates().x() + r, (double)maskLandmarks.width() - 1);
+                                 x++)
+                            {
+                                maskLandmarks(y, x) = std::numeric_limits<unsigned char>::max();
+                            }
+                        }
+                        j++;
+                    }
+                }
+            }
 
-                      for (int pix = 0; pix < image.width() * image.height(); ++pix)
-                      {
-                          const bool masked = (mask(pix) == 0);
-                          image(pix).a() = masked ? 0.f : 1.f;
-                      }
-                  });
-            }
-            else
-            {
-                const auto noMaskingFunc = [](Image<RGBAfColor>& image) {};
-                process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
-            }
+            image::Image<unsigned char> mask;
+            bool maskLoaded = false;
+            if(tryLoadMask(&mask, masksFolders, viewId, srcImage, maskExtension))
+                maskLoaded = true;
+            process<Image<RGBAfColor>>(
+                dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation,
+                [&maskLoaded, &mask, &maskLandmarks, &doMaskLandmarks](Image<RGBAfColor>& image)
+                {
+                    if(maskLoaded && (image.width() * image.height() != mask.width() * mask.height()))
+                    {
+                        ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
+                        return;
+                    }
+
+                    for(int pix = 0; pix < image.width() * image.height(); ++pix)
+                    {
+                        image(pix).a() = (maskLoaded && mask(pix) == 0) ? 0.f : (doMaskLandmarks && maskLandmarks(pix) == 127) ? .5f : 1.f;
+                    }
+                });
         }
 
         ++progressDisplay;
@@ -299,6 +394,8 @@ int aliceVision_main(int argc, char* argv[])
     bool saveMetadata = true;
     bool saveMatricesTxtFiles = false;
     bool evCorrection = false;
+    std::string inputRadiiFilename;
+    float landmarksMaskScale = 0.f;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -329,9 +426,16 @@ int aliceVision_main(int argc, char* argv[])
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
          "Range size.")
         ("evCorrection", po::value<bool>(&evCorrection)->default_value(evCorrection),
-         "Correct exposure value.");
+         "Correct exposure value.")
+        ("landmarksMaskScale", po::value<float>(&landmarksMaskScale)->default_value(landmarksMaskScale),
+         "Scale of the projection of landmarks to mask images for depth computation.\n"
+         "If 0, masking using landmarks will not be used.\n"
+         "Otherwise, it's used to scale the projection radius \n"
+         "(either specified by `inputRadiiFile` or by image size if the former is not given).")
+        ("inputRadiiFile", po::value<std::string>(&inputRadiiFilename)->default_value(inputRadiiFilename),
+         "Input Radii file containing the estimated projection radius of landmarks per view. \n"
+         "If not specified, image size will be used to specify the radius.");
     // clang-format on
-
     CmdLine cmdline("AliceVision prepareDenseScene");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
@@ -393,7 +497,9 @@ int aliceVision_main(int argc, char* argv[])
                           outputFileType,
                           saveMetadata,
                           saveMatricesTxtFiles,
-                          evCorrection))
+                          evCorrection,
+                          landmarksMaskScale,
+                          inputRadiiFilename))
         return EXIT_SUCCESS;
 
     return EXIT_FAILURE;
