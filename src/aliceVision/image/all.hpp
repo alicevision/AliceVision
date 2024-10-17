@@ -28,4 +28,3 @@
 #include "aliceVision/image/Sampler.hpp"
 #include "aliceVision/image/conversionOpenCV.hpp"
 #include "aliceVision/image/dcp.hpp"
-#include "aliceVision/image/ImageCache.hpp"
