@@ -1028,7 +1028,8 @@ int aliceVision_main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&inputExpression)->default_value(inputExpression),
          "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a "
-         "single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+         "single digit, '@' one or more digits, '?' one character and '*' zero or more)."
+         "Argument must be between quotes if regex are used.")
         ("inputFolders", po::value<std::vector<std::string>>(&inputFolders)->multitoken(),
          "Use images from specific folder(s) instead of those specify in the SfMData file.")
         ("output,o", po::value<std::string>(&outputPath)->required(),
