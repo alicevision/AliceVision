@@ -228,6 +228,10 @@ std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDe
         case EImageDescriberType::AKAZE_LIOP:
             describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEOptions(), feature::AKAZE_LIOP)));
             break;
+        //Generic descriptor to be used when the descriptor is computed outside of alicevsion
+        case EImageDescriberType::GENERIC:
+            describerPtr.reset(new GenericImageDescriber());
+            break;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
         case EImageDescriberType::CCTAG3:
