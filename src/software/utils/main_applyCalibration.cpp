@@ -273,28 +273,31 @@ bool applyJson(sfmData::SfMData & sfmData, boost::json::value & input)
     
     double w = intrinsic->w();
     double h = intrinsic->h();
-    double nh = h / pixelAspect;
-    double ratio = w / nh;
-    double ratioDesqueezed = w / nh;
-    double iratio = filmbackWidth / filmbackHeight;
+    double nw = w * pixelAspect;
+    double ratio = w / h;
+    double ratioDesqueezed = nw / h;
+    double filmratio = filmbackWidth / filmbackHeight;
+
+    bool hasSpecialPixelAspect = (std::abs(pixelAspect - 1.0) > 1e-4);
 
     //Compare image size ratio and filmback size ratio
     bool isDesqueezed = false;
-    if (std::abs(ratioDesqueezed - iratio) < 1e-2)
+    if ((std::abs(ratio - filmratio) < 1e-2) && hasSpecialPixelAspect)
     {
         ALICEVISION_LOG_INFO("Input image look desqueezed");
         isDesqueezed = true;
     }
-    else if (std::abs(ratio - iratio) > 1e-2)
+    else if (std::abs(ratioDesqueezed - filmratio) > 1e-2)
     {
         ALICEVISION_LOG_ERROR("Incompatible image ratios");
         return false;
     }
 
-    intrinsic->setSensorWidth(filmbackWidth);
-    intrinsic->setSensorHeight((isDesqueezed)?filmbackHeight:filmbackHeight*pixelAspect);
+    intrinsic->setSensorWidth((isDesqueezed)?filmbackWidth:filmbackWidth/pixelAspect);
+    intrinsic->setSensorHeight(filmbackHeight);
     intrinsic->setDistortionObject(nullptr);
     intrinsic->setFocalLength(focalLength, pixelAspect);
+    intrinsic->setInitialFocalLength(focalLength, pixelAspect);
 
     if (model == "anamorphic4")
     {        
