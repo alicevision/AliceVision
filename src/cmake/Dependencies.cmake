@@ -1291,7 +1291,7 @@ if(AV_BUILD_SWIG)
 
     ExternalProject_Add(${SWIG_TARGET}
         GIT_REPOSITORY https://github.com/swig/swig
-        GIT_TAG v4.2.0
+        GIT_TAG v4.3.0
         DOWNLOAD_DIR ${BUILD_DIR}/download/${SWIG_TARGET}
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -1306,7 +1306,7 @@ if(AV_BUILD_SWIG)
     )
 
     set(SWIG_CMAKE_FLAGS
-        -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig/4.2.0
+        -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig/4.3.0
         -DSWIG_EXECUTABLE=${CMAKE_INSTALL_PREFIX}/bin-deps
     )
 endif()
