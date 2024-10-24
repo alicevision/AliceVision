@@ -58,7 +58,7 @@ RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
         -DALICEVISION_USE_ONNX_GPU:BOOL=OFF \
         -DALICEVISION_BUILD_DOC:BOOL=OFF \
         -DALICEVISION_BUILD_SWIG_BINDING:BOOL=ON \
-        -DSWIG_DIR:PATH="${AV_INSTALL}/share/swig/4.2.0" -DSWIG_EXECUTABLE:PATH="${AV_INSTALL}/bin-deps/swig" \
+        -DSWIG_DIR:PATH="${AV_INSTALL}/share/swig/4.3.0" -DSWIG_EXECUTABLE:PATH="${AV_INSTALL}/bin-deps/swig" \
         "${AV_DEV}" && \
     make install -j${CPU_CORES} && \
     make bundle && \
