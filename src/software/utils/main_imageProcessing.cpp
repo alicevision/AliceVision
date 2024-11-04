@@ -1514,34 +1514,35 @@ int aliceVision_main(int argc, char* argv[])
         const fs::path inputPath(inputExpression);
         std::vector<std::string> filesStrPaths;
 
-        // If sfmInputDataFilename is empty use imageFolders instead
         if (inputExpression.empty())
         {
             // Get supported files
             filesStrPaths =
               utils::getFilesPathsFromFolders(inputFolders, [](const fs::path& path) { return image::isSupported(path.extension().string()); });
         }
+        else if (fs::is_regular_file(inputPath))
+        {
+            filesStrPaths.push_back(inputPath.string());
+        }
+        else if (inputFolders.empty())
+        {
+            ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
+
+            const std::regex regex = utils::filterToRegex(inputExpression);
+            // Get supported files in inputPath directory which matches our regex filter
+            filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(), [&regex](const fs::path& path) {
+                return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
+            });
+        }
         else
         {
-            // If you try to use both a regex-like filter expression and folders as input
-            if (!inputFolders.empty())
+            const std::regex regex = utils::filterToRegex(inputExpression);
+            for (const auto& inputFolder : inputFolders)
             {
-                ALICEVISION_LOG_WARNING("InputFolders and filter expression cannot be used at the same time, InputFolders are ignored here.");
-            }
-
-            if (fs::is_regular_file(inputPath))
-            {
-                filesStrPaths.push_back(inputPath.string());
-            }
-            else
-            {
-                ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
-
-                const std::regex regex = utils::filterToRegex(inputExpression);
-                // Get supported files in inputPath directory which matches our regex filter
-                filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(), [&regex](const fs::path& path) {
+                std::vector<std::string> currFilesStrPaths = utils::getFilesPathsFromFolder(inputFolder, [&regex](const fs::path& path) {
                     return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
                 });
+                filesStrPaths.insert(filesStrPaths.end(), currFilesStrPaths.begin(), currFilesStrPaths.end());
             }
         }
 
