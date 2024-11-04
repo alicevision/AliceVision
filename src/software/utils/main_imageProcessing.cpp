@@ -1610,10 +1610,28 @@ int aliceVision_main(int argc, char* argv[])
                     outputFilePath = (fs::path(outputPath).parent_path() / (filename + outputExt)).generic_string();
                     ALICEVISION_LOG_WARNING("Extension " << userExt << " is not supported! Output image saved in " << outputFilePath);
                 }
+                // Create output directory if it does not exist
+                if (!fs::exists(fs::path(outputPath).parent_path()))
+                {
+                    if (!fs::create_directory(fs::path(outputPath).parent_path()))
+                    {
+                        ALICEVISION_LOG_ERROR("Unexisting directory " << fs::path(outputPath).parent_path().generic_string() << " cannot be created");
+                        return EXIT_FAILURE;
+                    }
+                }
             }
             else
             {
                 outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
+                // Create output directory if it does not exist
+                if (!fs::exists(fs::path(outputPath)))
+                {
+                    if (!fs::create_directory(fs::path(outputPath)))
+                    {
+                        ALICEVISION_LOG_ERROR("Unexisting directory " << outputPath << " cannot be created");
+                        return EXIT_FAILURE;
+                    }
+                }
             }
 
             image::DCPProfile dcpProf;
