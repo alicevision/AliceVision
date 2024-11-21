@@ -72,7 +72,6 @@ bool Segmentation::initialize()
 
         _output.resize(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
         _cudaInput = cudaAllocator.Alloc(_output.size() * sizeof(float));
-        _cudaOutput = cudaAllocator.Alloc(_output.size() * sizeof(float));
 #endif
     }
     else
@@ -94,7 +93,6 @@ bool Segmentation::terminate()
     Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
     Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
     cudaAllocator.Free(_cudaInput);
-    cudaAllocator.Free(_cudaOutput);
 #endif
 
     return true;
