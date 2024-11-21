@@ -86,10 +86,17 @@ class Segmentation
 
     /**
      * Transform model output to a label image
-     * @param labels the output labels imaage
+     * @param labels the output labels image
      * @param modeloutput the model output vector
      */
     bool labelsFromModelOutput(image::Image<ScoredLabel>& labels, const std::vector<float>& modelOutput);
+
+    /**
+     * Transform model output to a label image
+     * @param labels the output labels image
+     * @param modeloutput the model output tensor
+     */
+    bool labelsFromOutputTensor(image::Image<ScoredLabel>& labels, Ort::Value& modelOutput);
 
     /**
      * Process effectively a buffer of the model input size
