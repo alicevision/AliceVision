@@ -1524,18 +1524,12 @@ int aliceVision_main(int argc, char* argv[])
         {
             filesStrPaths.push_back(inputPath.string());
         }
-        else if (inputFolders.empty())
-        {
-            ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
-
-            const std::regex regex = utils::filterToRegex(inputExpression);
-            // Get supported files in inputPath directory which matches our regex filter
-            filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(), [&regex](const fs::path& path) {
-                return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
-            });
-        }
         else
         {
+            if (inputFolders.empty())
+            {
+                inputFolders.push_back(inputPath.parent_path().generic_string());
+            }
             const std::regex regex = utils::filterToRegex(inputExpression);
             for (const auto& inputFolder : inputFolders)
             {
