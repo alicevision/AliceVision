@@ -89,11 +89,14 @@ bool Segmentation::initialize()
 
 bool Segmentation::terminate()
 {
+    if (_parameters.useGpu)
+    {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ONNX_GPU)
-    Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
-    Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
-    cudaAllocator.Free(_cudaInput);
+        Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
+        Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
+        cudaAllocator.Free(_cudaInput);
 #endif
+    }
 
     return true;
 }
