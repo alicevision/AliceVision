@@ -76,14 +76,6 @@ class Equidistant : public IntrinsicScaleOffsetDisto
 
     Vec2 project(const Vec4& pt, bool applyDistortion = true) const override;
 
-    Eigen::Matrix<double, 2, 9> getDerivativeTransformProjectWrtRotation(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
-
-    Eigen::Matrix<double, 2, 16> getDerivativeTransformProjectWrtPose(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
-
-    Eigen::Matrix<double, 2, 16> getDerivativeTransformProjectWrtPoseLeft(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
-
-    Eigen::Matrix<double, 2, 4> getDerivativeTransformProjectWrtPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
-
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
 
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtDisto(const Eigen::Matrix4d& pose, const Vec4& pt) const;

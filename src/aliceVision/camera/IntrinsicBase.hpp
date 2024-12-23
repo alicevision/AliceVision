@@ -136,38 +136,7 @@ class IntrinsicBase
 
     Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(const Vec3& pt);
 
-    /**
-     * @brief Get the derivative of a projection of a 3D point into the camera plane
-     * @param[in] pose The pose
-     * @param[in] pt3D The 3D point
-     * @return The projection jacobian with respect to the pose
-     */
-    virtual Eigen::Matrix<double, 2, 16> getDerivativeTransformProjectWrtPose(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
-
-    /**
-     * @brief Get the derivative of a projection of a 3D point into the camera plane
-     * @param[in] pose The pose
-     * @param[in] pt3D The 3D point
-     * @return The projection jacobian with respect to the rotation
-     */
-    virtual Eigen::Matrix<double, 2, 9> getDerivativeTransformProjectWrtRotation(const Eigen::Matrix4d& pose, const Vec4& pt) const = 0;
-
-    /**
-     * @brief Get the derivative of a projection of a 3D point into the camera plane
-     * @param[in] pose The pose
-     * @param[in] pt3D The 3D point
-     * @return The projection jacobian with respect to the pose
-     */
-    virtual Eigen::Matrix<double, 2, 16> getDerivativeTransformProjectWrtPoseLeft(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
-
-    /**
-     * @brief Get the derivative of a projection of a 3D point into the camera plane
-     * @param[in] pose The pose
-     * @param[in] pt3D The 3D point
-     * @return The projection jacobian with respect to the point
-     */
-    virtual Eigen::Matrix<double, 2, 4> getDerivativeTransformProjectWrtPoint(const Eigen::Matrix4d& pose, const Vec4& pt3D) const = 0;
-
+  
     /**
      * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
