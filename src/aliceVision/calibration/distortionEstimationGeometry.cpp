@@ -7,6 +7,7 @@
 #include "distortionEstimationGeometry.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/numeric/algebra.hpp>
 #include <aliceVision/sfm/bundle/manifolds/so3.hpp>
 #include <ceres/ceres.h>
 #include <cmath>
