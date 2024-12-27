@@ -21,6 +21,7 @@
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
+#include <aliceVision/camera/Equirectangular.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <memory>
@@ -154,6 +155,11 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
     if (isEquidistant(intrinsicType))
     {
         return std::make_shared<Equidistant>(w, h, focalLengthPixX, offsetX, offsetY, distortion);
+    }
+
+    if (isEquirectangular(intrinsicType))
+    {
+        return std::make_shared<Equirectangular>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY);
     }
 
     return nullptr;

@@ -14,6 +14,7 @@ set(camera_files_headers
     Undistortion3DEClassicLD.hpp
     UndistortionRadial.hpp
 	Equidistant.hpp
+    Equirectangular.hpp
 	IntrinsicBase.hpp
 	IntrinsicInitMode.hpp
 	IntrinsicScaleOffset.hpp
@@ -28,6 +29,7 @@ set(camera_files_sources
     DistortionRadial.cpp
     UndistortionRadial.cpp
     Equidistant.cpp
+    Equirectangular.cpp
     IntrinsicBase.cpp
     IntrinsicScaleOffset.cpp
     IntrinsicScaleOffsetDisto.cpp

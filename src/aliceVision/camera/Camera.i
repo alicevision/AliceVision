@@ -29,4 +29,5 @@ using namespace aliceVision::camera;
 
 %include <aliceVision/camera/IntrinsicInitMode.i>
 %include <aliceVision/camera/Equidistant.i>
+%include <aliceVision/camera/Equirectangular.i>
 %include <aliceVision/camera/Pinhole.i>

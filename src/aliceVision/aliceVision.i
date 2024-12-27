@@ -25,6 +25,7 @@
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
+#include <aliceVision/camera/Equirectangular.hpp>
 
 using namespace aliceVision;
 

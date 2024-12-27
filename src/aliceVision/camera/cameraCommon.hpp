@@ -44,6 +44,7 @@ enum EINTRINSIC
     UNKNOWN = (1u << 0),
     PINHOLE_CAMERA = (1u << 1),                 // plain pinhole model
     EQUIDISTANT_CAMERA = (1u << 2),            // plain equidistant model
+    EQUIRECTANGULAR_CAMERA = (1u << 3),            // plain equirectangular model
 };
 
 BOOST_BITMASK(EINTRINSIC);
@@ -56,6 +57,8 @@ inline std::string EINTRINSIC_enumToString(EINTRINSIC intrinsic)
             return "pinhole";
         case EINTRINSIC::EQUIDISTANT_CAMERA:
             return "equidistant";
+        case EINTRINSIC::EQUIRECTANGULAR_CAMERA:
+            return "equirectangular";
         case EINTRINSIC::UNKNOWN:
             break;
     }
@@ -77,6 +80,11 @@ inline EINTRINSIC EINTRINSIC_stringToEnum(const std::string& intrinsic)
         return EINTRINSIC::EQUIDISTANT_CAMERA;
     }
 
+    if (type == "equirectangular")
+    {
+        return EINTRINSIC::EQUIRECTANGULAR_CAMERA;
+    }
+
     throw std::out_of_range(intrinsic);
 }
 
@@ -93,8 +101,10 @@ inline bool isPinhole(EINTRINSIC eintrinsic) { return EINTRINSIC::PINHOLE_CAMERA
 
 inline bool isEquidistant(EINTRINSIC eintrinsic) { return EINTRINSIC::EQUIDISTANT_CAMERA & eintrinsic; }
 
+inline bool isEquirectangular(EINTRINSIC eintrinsic) { return EINTRINSIC::EQUIRECTANGULAR_CAMERA & eintrinsic; }
+
 // Return if the camera type is a valid enum
-inline bool isValid(EINTRINSIC eintrinsic) { return isPinhole(eintrinsic) || isEquidistant(eintrinsic); }
+inline bool isValid(EINTRINSIC eintrinsic) { return isPinhole(eintrinsic) || isEquidistant(eintrinsic) || isEquirectangular(eintrinsic); }
 
 inline EDISTORTION EDISTORTION_stringToEnum(const std::string& distortion)
 {
