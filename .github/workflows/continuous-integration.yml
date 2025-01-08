@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: ["alicevision/alicevision-deps:2024.12.03-ubuntu22.04-cuda12.1.0", "alicevision/alicevision-deps:2024.12.09-rocky9-cuda12.1.0"]
+        container: ["alicevision/alicevision-deps:2025.01.06-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.01.06-rocky9-cuda12.1.1"]
     container:
       image: ${{ matrix.container }}
     env:
@@ -33,7 +33,7 @@ jobs:
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
       ALICEVISION_SENSOR_DB: ${{ github.workspace }}/../AV_install/share/aliceVision/cameraSensors.db
       ALICEVISION_LENS_PROFILE_INFO: ""
-      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2024.12.03-ubuntu22.04-cuda12.1.0' && 'ON' || 'OFF' }}"
+      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.01.06-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
     steps:
       - uses: actions/checkout@v1
 
