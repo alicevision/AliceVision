@@ -8,6 +8,7 @@ option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 option(AV_USE_CUDA "Enable CUDA" ON)
 option(AV_USE_OPENMP "Enable OpenMP" $<$<CXX_COMPILER_ID:"AppleClang">,OFF,ON>) # disable by default for AppleClang
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(ALICEVISION_COPY_MESHROOM_DATA "Copy meshroom files" ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
@@ -82,6 +83,19 @@ install(
         CONTRIBUTORS.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
 )
+
+if (ALICEVISION_COPY_MESHROOM_DATA)
+    install(
+        DIRECTORY 
+            meshroom/nodes
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/meshroom/
+    )
+    install(
+        DIRECTORY 
+            meshroom/pipelines
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/meshroom/
+    )
+endif()
 
 endif()
 
