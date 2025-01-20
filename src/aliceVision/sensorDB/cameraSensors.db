@@ -694,6 +694,7 @@ Canon;Canon EOS M6;22.3;digicamdb,dpreview,dxomark,imaging-resource
 Canon;Canon EOS M6 Mark II;22.3;digicamdb,dpreview,dxomark,imaging-resource
 Canon;Canon EOS R;36.0;digicamdb,dpreview,imaging-resource
 Canon;Canon EOS R10;22.3;digicamdb
+Canon;Canon EOS R100;22.3;digicamdb
 Canon;Canon EOS R3;36.00;digicamdb,dpreview,imaging-resource
 Canon;Canon EOS R5;36.0;digicamdb,dpreview,imaging-resource
 Canon;Canon EOS R5 C;36.0;imaging-resource
@@ -701,7 +702,6 @@ Canon;Canon EOS R6;35.9;devicespecifications,digicamdb
 Canon;Canon EOS R6 II;36.0;dpreview
 Canon;Canon EOS R6 Mark II;36.0;imaging-resource
 Canon;Canon EOS R7;22.3;imaging-resource
-Canon;Canon EOS R100;22.3;digicamdb
 Canon;Canon EOS Ra;36.0;dpreview
 Canon;Canon EOS Rebel SL1;22.3;digicamdb,dpreview,imaging-resource
 Canon;Canon EOS Rebel SL2;22.3;digicamdb,dpreview,imaging-resource
@@ -1456,9 +1456,9 @@ DJI;FC300XW;6.17;usercontribution
 DJI;FC330;6.17;usercontribution
 DJI;FC3411;13.13;usercontribution
 DJI;FC350;6.17;usercontribution
+DJI;FC3582;9.7;usercontribution
 DJI;FC550;17.3;usercontribution
 DJI;FC550RAW;17.3;usercontribution
-DJI;FC3582;9.7;usercontribution
 DJI;FC6310;13.2;usercontribution
 DJI;FC6310R;13.2;usercontribution
 DJI;FC6310S;13.2;usercontribution
@@ -1467,11 +1467,11 @@ DJI;FC6520;17.3;usercontribution
 DJI;FC6540;23.5;usercontribution
 DJI;FC7203;6.16;usercontribution
 DJI;FC7303;6.16;usercontribution
+DJI;M3T;6.4;dji
 DJI;MAVIC2-ENTERPRISE-ADVANCED;4.8;
 DJI;Mavic3;17.3;dji
 DJI;Mini 2 SE;6.16;dji
 DJI;Mini3Pro;9.79;usercontribution
-DJI;M3T;6.4;dji
 DJI;Phantom 4;6.3;dxomark
 DJI;Phantom 4 Pro;13.2;dxomark
 DJI;Phantom Vision FC200;6.17;usercontribution
@@ -5685,12 +5685,12 @@ Samsung;Samsung EX2F;7.44;digicamdb,dpreview,dxomark
 Samsung;Samsung Galaxy A5;4.69;devicespecifications
 Samsung;Samsung Galaxy A5 Duos;4.69;devicespecifications
 Samsung;Samsung Galaxy A53 5G;7.42;devicespecifications
-Samsung;Samsung Galaxy A53 SM-A536U;7.42;devicespecifications
-Samsung;Samsung Galaxy A53 SM-A536U1;7.42;devicespecifications
 Samsung;Samsung Galaxy A53 SM-A5360;7.42;devicespecifications
+Samsung;Samsung Galaxy A53 SM-A536B;7.42;devicespecifications
 Samsung;Samsung Galaxy A53 SM-A536E;7.42;devicespecifications
 Samsung;Samsung Galaxy A53 SM-A536E/DS;7.42;devicespecifications
-Samsung;Samsung Galaxy A53 SM-A536B;7.42;devicespecifications
+Samsung;Samsung Galaxy A53 SM-A536U;7.42;devicespecifications
+Samsung;Samsung Galaxy A53 SM-A536U1;7.42;devicespecifications
 Samsung;Samsung Galaxy A70;5.14;devicespecifications
 Samsung;Samsung Galaxy A8;5.3;devicespecifications
 Samsung;Samsung Galaxy A8 SM-A530W;5.3;devicespecifications
@@ -6856,7 +6856,6 @@ Sony;Sony DSLR-A900;35.9;usercontribution
 Sony;Sony FDR-X1000V;6.19;usercontribution
 Sony;Sony FDR-X3000;5.744;dpreview
 Sony;Sony FX30;23.4;dpreview
-Sony;Sony ILME-FX30;23.4;dpreview
 Sony;Sony HDR-AS300;5.744;dpreview
 Sony;Sony HDR-HC7e;4.98;usercontribution
 Sony;Sony ILCE 5000;23.2;dpreview
@@ -6872,6 +6871,7 @@ Sony;Sony ILCE-7RM2;35.9;usercontribution
 Sony;Sony ILCE-7RM3;35.9;usercontribution
 Sony;Sony ILCE-7RM4;35.7;usercontribution
 Sony;Sony ILCE-QX1;23.2;usercontribution
+Sony;Sony ILME-FX30;23.4;dpreview
 Sony;Sony IMX179;6.18;usercontribution
 Sony;Sony IMX298;5.22;digicamdb,dpreview
 Sony;Sony Mavica CD1000;5.312;digicamdb,dpreview
@@ -6987,6 +6987,7 @@ Sony;Venice;36.2;usercontribution
 Spice;Spice Stellar 519;3.68;devicespecifications
 Starmobile;Starmobile Up Max;4.69;devicespecifications
 Starmobile;Starmobile Up Ultra;4.69;devicespecifications
+StereoLabs;Zed2i;5.38;usercontribution
 Sugar;Sugar Y11;2.95;devicespecifications
 Sugar;Sugar Y12;3.68;devicespecifications
 Sugar;Sugar Y15;2.95;devicespecifications
@@ -7300,6 +7301,7 @@ Xgody;Xgody Y20;3.68;devicespecifications
 Xiaomi;Black Shark 2 Pro;6.4;kimovil
 Xiaomi;CC9;6.4;kimovil
 Xiaomi;m2007j20cg;7.4;devicespecifications
+Xiaomi;M2101K7BG;6.4;devicespecifications
 Xiaomi;M2102J20SG;6.4;usercontribution
 Xiaomi;MI 9;6.4;devicespecifications
 Xiaomi;Mi A1;5.11;devicespecifications
@@ -7308,6 +7310,7 @@ Xiaomi;POCOPHONE F1;5.64;deviceranks
 Xiaomi;POCOPHONE F2 Pro;7.27;usercontribution
 Xiaomi;POCOPHONE F3;6.4;usercontribution
 Xiaomi;Redmi K30 Pro Zoom Edition;7.4;devicespecifications
+Xiaomi;Xiaomi Mi 11T;8.42;gsmarena
 Xiaomi;Xiaomi Mi 3;4.69;devicespecifications
 Xiaomi;Xiaomi Mi 3 TD;4.69;devicespecifications
 Xiaomi;Xiaomi Mi 4;4.69;devicespecifications
@@ -7328,7 +7331,6 @@ Xiaomi;Xiaomi Mi 9 Pro;6.4;kimovil
 Xiaomi;Xiaomi Mi 9 Pro 5G;6.4;kimovil
 Xiaomi;Xiaomi Mi 9 SE;6.4;kimovil
 Xiaomi;Xiaomi Mi 9T Pro;6.4;kimovil
-Xiaomi;Xiaomi Mi 11T;8.42;gsmarena
 Xiaomi;Xiaomi Mi A2;4.96;devicespecifications
 Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
 Xiaomi;Xiaomi Mi Max;4.74;devicespecifications
@@ -7367,6 +7369,7 @@ Xiaomi;Xiaomi Redmi 7A;4.96;kimovil,usercontribution
 Xiaomi;Xiaomi Redmi K20;6.4;kimovil
 Xiaomi;Xiaomi Redmi K20 Pro;6.4;kimovil
 Xiaomi;Xiaomi Redmi Note;4.6;devicespecifications
+Xiaomi;Xiaomi Redmi Note 10S;6.4;devicespecifications
 Xiaomi;Xiaomi Redmi Note 2;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi Note 2 Prime;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi Note 3 16GB;4.69;devicespecifications
@@ -7503,4 +7506,3 @@ Zuk;Zuk Z1;4.69;devicespecifications
 Zuk;Zuk Z2;4.61;devicespecifications
 Zuk;Zuk Z2 Pro;4.61;devicespecifications
 Zuk;Zuk Z2 Rio Edition;4.54;devicespecifications
-StereoLabs;Zed2i;5.38;usercontribution
