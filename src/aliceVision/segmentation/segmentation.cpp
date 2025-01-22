@@ -67,11 +67,7 @@ bool Segmentation::initialize()
         _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
     #endif
 
-        Ort::MemoryInfo memInfoCuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
-        Ort::Allocator cudaAllocator(*_ortSession, memInfoCuda);
-
         _output.resize(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
-        _cudaInput = cudaAllocator.Alloc(_output.size() * sizeof(float));
 #endif
     }
     else
@@ -81,20 +77,6 @@ bool Segmentation::initialize()
         _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, modelWeights.c_str(), ortSessionOptions);
 #else
         _ortSession = std::make_unique<Ort::Session>(*_ortEnvironment, _parameters.modelWeights.c_str(), ortSessionOptions);
-#endif
-    }
-
-    return true;
-}
-
-bool Segmentation::terminate()
-{
-    if (_parameters.useGpu)
-    {
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ONNX_GPU)
-        Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
-        Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
-        cudaAllocator.Free(_cudaInput);
 #endif
     }
 
@@ -299,24 +281,14 @@ bool Segmentation::processTile(image::Image<ScoredLabel>& labels, const image::I
         return false;
     }
 
-    std::vector<float> output(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
-    int idx = 0;
-    for (int ch = 0; ch < _parameters.classes.size(); ch++)
-    {
-        for (int i = 0; i < _parameters.modelHeight; i++)
-        {
-            for (int j = 0; j < _parameters.modelWidth; j++)
-            {
-                const std::vector<int64_t> coords = {0, ch, i, j};
-                output[idx++] = outTensor[0].At<float>(coords);
-            }
-        }
-    }
-
     if (!labelsFromOutputTensor(labels, outTensor[0]))
     {
         return false;
     }
+
+    std::vector<float> output(_parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
+    auto *outTData = outTensor.front().GetTensorMutableData<float>();
+    output.assign(outTData, outTData + _parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
 
     return true;
 }
@@ -325,8 +297,7 @@ bool Segmentation::processTileGPU(image::Image<ScoredLabel>& labels, const image
 {
     ALICEVISION_LOG_TRACE("Process tile using gpu");
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    Ort::MemoryInfo mem_info_cuda("Cuda", OrtAllocatorType::OrtArenaAllocator, 0, OrtMemType::OrtMemTypeDefault);
-    Ort::Allocator cudaAllocator(*_ortSession, mem_info_cuda);
+    Ort::MemoryInfo memInfo = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
     std::vector<const char*> inputNames{"input"};
     std::vector<const char*> outputNames{"output"};
@@ -335,16 +306,18 @@ bool Segmentation::processTileGPU(image::Image<ScoredLabel>& labels, const image
     std::vector<float> transformedInput;
     imageToPlanes(transformedInput, source);
 
-    cudaMemcpy(_cudaInput, transformedInput.data(), sizeof(float) * transformedInput.size(), cudaMemcpyHostToDevice);
-
-    Ort::Value inputTensors = Ort::Value::CreateTensor<float>(
-      mem_info_cuda, reinterpret_cast<float*>(_cudaInput), transformedInput.size(), inputDimensions.data(), inputDimensions.size());
+    std::vector<Ort::Value> inputTensors;
+    inputTensors.emplace_back(Ort::Value::CreateTensor<float>(memInfo,
+                                                              transformedInput.data(),
+                                                              transformedInput.size(),
+                                                              inputDimensions.data(),
+                                                              inputDimensions.size()));
 
     std::vector<Ort::Value> outTensor;
 
     try
     {
-        outTensor = _ortSession->Run(Ort::RunOptions{nullptr}, inputNames.data(), &inputTensors, 1, outputNames.data(), 1);
+        outTensor = _ortSession->Run(Ort::RunOptions{nullptr}, inputNames.data(), inputTensors.data(), 1, outputNames.data(), 1);
     }
     catch (const Ort::Exception& exception)
     {
@@ -352,23 +325,13 @@ bool Segmentation::processTileGPU(image::Image<ScoredLabel>& labels, const image
         return false;
     }
 
-    int idx = 0;
-    for (int ch = 0; ch < _parameters.classes.size(); ch++)
-    {
-        for (int i = 0; i < _parameters.modelHeight; i++)
-        {
-            for (int j = 0; j < _parameters.modelWidth; j++)
-            {
-                const std::vector<int64_t> coords = {0, ch, i, j};
-                _output[idx++] = outTensor[0].At<float>(coords);
-            }
-        }
-    }
-
     if (!labelsFromOutputTensor(labels, outTensor[0]))
     {
         return false;
     }
+
+    auto *outTData = outTensor.front().GetTensorMutableData<float>();
+    _output.assign(outTData, outTData + _parameters.classes.size() * _parameters.modelHeight * _parameters.modelWidth);
 
 #endif
 
