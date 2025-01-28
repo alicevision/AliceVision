@@ -483,7 +483,26 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
 {
     oiio::ParamValueList metadata;
     for (const auto& metadataPair : metadataMap)
+    {   
+        if (metadataPair.first == "version")
+        {
+            //OpenEXR may crash if version is not stored as an int.
+            int version = 0;
+            try 
+            {
+                version = std::stoi(metadataPair.second);
+                metadata.push_back(oiio::ParamValue(metadataPair.first, version));
+                continue;
+            }
+            catch (...)
+            {
+                //If not an int, then business as usual
+            }
+        }
+
         metadata.push_back(oiio::ParamValue(metadataPair.first, metadataPair.second));
+    }
+
     return metadata;
 }
 
