@@ -21,7 +21,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -113,11 +113,21 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
         auto& intrinsics2 = sfmData2.getIntrinsics();
         const size_t totalSize = intrinsics1.size() + intrinsics2.size();
 
-        intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());
-        if (intrinsics1.size() < totalSize)
+        //If both sfm share a common intrinsicId
+        //Make sure there is no ambiguity and the  content is the same
+        for (const auto & [key, intrinsic] : intrinsics1)
         {
-            ALICEVISION_LOG_ERROR("Unhandled error: common intrinsics ID between both SfMData");
-            return false;
+            const auto & itIntrinsicOther = intrinsics2.find(key);
+            if (itIntrinsicOther != intrinsics2.end())
+            {
+                const auto & obj1 = *intrinsic;
+                const auto & obj2 = *(itIntrinsicOther->second);
+
+                if (!(obj1 == obj2))
+                {
+                    ALICEVISION_LOG_ERROR("Unhandled error: common intrinsic ID with different parameters between both SfMData");
+                }
+            } 
         }
     }
 
@@ -355,7 +365,7 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
-    std::string sfmDataFilename1, sfmDataFilename2;
+    std::vector<std::string> sfmDataFilenames;
     std::string outSfMDataFilename;
     EMergeMethod mergeMethod = EMergeMethod::SIMPLE_COPY;
     std::vector<std::string> matchesFolders;
@@ -364,10 +374,8 @@ int aliceVision_main(int argc, char** argv)
     // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("firstinput,i1", po::value<std::string>(&sfmDataFilename1)->required(),
-         "First SfMData file to merge.")
-        ("secondinput,i2", po::value<std::string>(&sfmDataFilename2)->required(),
-         "Second SfMData file to merge.")
+        ("inputs,i", po::value<std::vector<std::string>>(&sfmDataFilenames)->multitoken(),
+         "Path to sfmDatas to merge.")
         ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
          "Output SfMData scene.");
         
@@ -391,55 +399,69 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Load input scene
-    sfmData::SfMData sfmData1;
-    if (!sfmDataIO::load(sfmData1, sfmDataFilename1, sfmDataIO::ESfMData::ALL))
+    if (sfmDataFilenames.empty())
     {
-        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename1 << "' cannot be read");
+        ALICEVISION_LOG_ERROR("At least one sfmData input should be given.");
         return EXIT_FAILURE;
     }
 
-    sfmData::SfMData sfmData2;
-    if (!sfmDataIO::load(sfmData2, sfmDataFilename2, sfmDataIO::ESfMData::ALL))
-    {
-        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename2 << "' cannot be read");
-        return EXIT_FAILURE;
-    }
+    sfmData::SfMData outputSfmData;
 
-    if (mergeMethod == EMergeMethod::SIMPLE_COPY)
+    for (int id = 0; id < sfmDataFilenames.size(); id++)
     {
-        if (!simpleMerge(sfmData1, sfmData2))
+        const std::string & filename = sfmDataFilenames[id];
+        ALICEVISION_LOG_INFO("Processing " << filename);
+
+        // Load input scene
+        sfmData::SfMData sfmData;
+        if (!sfmDataIO::load(sfmData, filename, sfmDataIO::ESfMData::ALL))
         {
+            ALICEVISION_LOG_ERROR("The input SfMData file '" << filename << "' cannot be read");
             return EXIT_FAILURE;
         }
-    }
-    else 
-    {
-         // get imageDescriber type
-        const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-        // matches reading
-        matching::PairwiseMatches pairwiseMatches;
-        if (!matching::Load(pairwiseMatches, std::set<IndexT>(), matchesFolders, describerTypes, 0, 0))
+        if (id == 0)
         {
-            std::stringstream ss("Unable to read the matches file(s) from:\n");
-            for (const std::string& folder : matchesFolders)
+            outputSfmData = sfmData;
+            continue;
+        }
+
+        if (mergeMethod == EMergeMethod::SIMPLE_COPY)
+        {
+            if (!simpleMerge(outputSfmData, sfmData))
             {
-                ss << "\t- " << folder << "\n";
+                return EXIT_FAILURE;
+            }
+        }
+        else 
+        {
+            // get imageDescriber type
+            const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
+
+            // matches reading
+            matching::PairwiseMatches pairwiseMatches;
+            if (!matching::Load(pairwiseMatches, std::set<IndexT>(), matchesFolders, describerTypes, 0, 0))
+            {
+                std::stringstream ss("Unable to read the matches file(s) from:\n");
+                for (const std::string& folder : matchesFolders)
+                {
+                    ss << "\t- " << folder << "\n";
+                }
+
+                ALICEVISION_LOG_WARNING(ss.str());
+                
+                return EXIT_FAILURE;
             }
 
-            ALICEVISION_LOG_WARNING(ss.str());
-            
-            return EXIT_FAILURE;
-        }
-
-        if (!fromLandmarksMerge(sfmData1, sfmData2, pairwiseMatches))
-        {
-            return EXIT_FAILURE;
+            if (!fromLandmarksMerge(outputSfmData, sfmData, pairwiseMatches))
+            {
+                return EXIT_FAILURE;
+            }
         }
     }
+  
 
-    if (!sfmDataIO::save(sfmData1, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::save(outputSfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
         return EXIT_FAILURE;

@@ -20,6 +20,7 @@
 #include <string>
 #include <regex>
 #include <iostream>
+#include <fstream>
 #include <list>
 
 #include <boost/property_tree/ptree.hpp>

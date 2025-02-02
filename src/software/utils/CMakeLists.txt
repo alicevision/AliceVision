@@ -53,6 +53,15 @@ if(ALICEVISION_BUILD_SFM)
               ${Boost_LIBRARIES}
     )
 
+    alicevision_add_software(aliceVision_maskProcessing 
+        SOURCE main_maskProcessing.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_image
+              ${Boost_LIBRARIES}
+    )
+
     if(ALICEVISION_HAVE_OPENCV)
         target_link_libraries(aliceVision_imageProcessing_exe PRIVATE ${OpenCV_LIBS})
     endif()
