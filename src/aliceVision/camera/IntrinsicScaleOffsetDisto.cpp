@@ -91,11 +91,6 @@ bool IntrinsicScaleOffsetDisto::updateFromParams(const std::vector<double>& para
         return false;
     }
 
-    if (_pDistortion && params.size() == 4 + _pDistortion->getParameters().size())
-    {
-        setDistortionParams({params.begin() + 4, params.end()});
-    }
-
     return true;
 }
 

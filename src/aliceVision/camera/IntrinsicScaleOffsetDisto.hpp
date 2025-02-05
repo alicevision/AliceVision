@@ -190,22 +190,12 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
     {
         std::vector<double> params = {_scale(0), _scale(1), _offset(0), _offset(1)};
 
-        if (_pDistortion)
-        {
-            params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
-        }
-
         return params;
     }
 
     std::size_t getParametersSize() const override
     {
-        std::size_t size = 4;
-        if (_pDistortion)
-        {
-            size += _pDistortion->getParameters().size();
-        }
-        return size;
+        return 4;
     }
 
     // Data wrapper for non linear optimization (update from data)
@@ -259,6 +249,10 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
 
         return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
     }
+
+    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose, const Vec4& pt) const = 0;
+
+    virtual Eigen::Matrix<double, 3, Eigen::Dynamic> getDerivativeBackProjectUnitWrtDistortion(const Vec2& pt2D) const = 0;
 
     /**
      * @brief Set The intrinsic disto initialization mode

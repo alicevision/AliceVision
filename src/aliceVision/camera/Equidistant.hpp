@@ -77,9 +77,7 @@ class Equidistant : public IntrinsicScaleOffsetDisto
     Vec2 project(const Vec4& pt, bool applyDistortion = true) const override;
 
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
-
-    Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtDisto(const Eigen::Matrix4d& pose, const Vec4& pt) const;
-
+    
     Eigen::Matrix<double, 2, 2> getDerivativeTransformProjectWrtScale(const Eigen::Matrix4d& pose, const Vec4& pt) const;
 
     Eigen::Matrix<double, 2, 2> getDerivativeTransformProjectWrtPrincipalPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const;
@@ -98,6 +96,10 @@ class Equidistant : public IntrinsicScaleOffsetDisto
      * @return The backproject jacobian with respect to the pose
      */
     Eigen::Matrix<double, 3, Eigen::Dynamic> getDerivativeBackProjectUnitWrtParams(const Vec2& pt2D) const override;
+
+    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
+
+    Eigen::Matrix<double, 3, Eigen::Dynamic> getDerivativeBackProjectUnitWrtDistortion(const Vec2& pt2D) const override;
 
     double imagePlaneToCameraPlaneError(double value) const override;
 

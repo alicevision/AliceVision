@@ -164,6 +164,16 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProje
     return ret;
 }
 
+Eigen::Matrix<double, 2, Eigen::Dynamic> Equirectangular::getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose, const Vec4& pt) const
+{
+    return Eigen::Matrix<double, 2, 1>::Zero();
+}
+
+Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProjectUnitWrtDistortion(const Vec2& pt2D) const
+{
+    return Eigen::Matrix<double, 3, 1>::Zero();
+}
+
 double Equirectangular::imagePlaneToCameraPlaneError(double value) const { return 0.0; }
 
 bool Equirectangular::isVisibleRay(const Vec3& ray) const
