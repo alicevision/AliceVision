@@ -21,16 +21,13 @@ class IntrinsicsManifold : public ceres::Manifold
                                 double focalRatio,
                                 bool lockFocal,
                                 bool lockFocalRatio,
-                                bool lockCenter,
-                                bool lockDistortion)
+                                bool lockCenter)
       : _ambientSize(parametersSize),
         _focalRatio(focalRatio),
         _lockFocal(lockFocal),
         _lockFocalRatio(lockFocalRatio),
-        _lockCenter(lockCenter),
-        _lockDistortion(lockDistortion)
+        _lockCenter(lockCenter)
     {
-        _distortionSize = _ambientSize - 4;
         _tangentSize = 0;
 
         if (!_lockFocal)
@@ -48,11 +45,6 @@ class IntrinsicsManifold : public ceres::Manifold
         if (!_lockCenter)
         {
             _tangentSize += 2;
-        }
-
-        if (!_lockDistortion)
-        {
-            _tangentSize += _distortionSize;
         }
     }
 
@@ -92,15 +84,6 @@ class IntrinsicsManifold : public ceres::Manifold
             ++posDelta;
         }
 
-        if (!_lockDistortion)
-        {
-            for (int i = 0; i < _distortionSize; i++)
-            {
-                x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
-                ++posDelta;
-            }
-        }
-
         return true;
     }
 
@@ -137,15 +120,6 @@ class IntrinsicsManifold : public ceres::Manifold
             ++posDelta;
         }
 
-        if (!_lockDistortion)
-        {
-            for (int i = 0; i < _distortionSize; i++)
-            {
-                J(4 + i, posDelta) = 1.0;
-                ++posDelta;
-            }
-        }
-
         return true;
     }
 
@@ -164,14 +138,12 @@ class IntrinsicsManifold : public ceres::Manifold
     int TangentSize() const override { return _tangentSize; }
 
   private:
-    size_t _distortionSize;
     size_t _ambientSize;
     size_t _tangentSize;
     double _focalRatio;
     bool _lockFocal;
     bool _lockFocalRatio;
     bool _lockCenter;
-    bool _lockDistortion;
 };
 
 }  // namespace sfm

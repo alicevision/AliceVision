@@ -20,15 +20,28 @@ class CostIntrinsicsProject : public ceres::CostFunction
         _intrinsics(intrinsics)
     {
         set_num_residuals(2);
+
+        size_t size_disto = 1;
+        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsics);
+        if (isod)
+        {
+            _distortion = isod->getDistortion();
+            if (_distortion)
+            {
+                size_disto = _distortion->getParameters().size();
+            }
+        }
         
-        mutable_parameter_block_sizes()->push_back(intrinsics->getParameters().size());
+        mutable_parameter_block_sizes()->push_back(intrinsics->getParametersSize());
+        mutable_parameter_block_sizes()->push_back(size_disto);
         mutable_parameter_block_sizes()->push_back(3);
     }
 
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
     {
         const double* parameter_intrinsics = parameters[0];
-        const double* parameter_point = parameters[1];
+        const double* parameter_distortion = parameters[1];
+        const double* parameter_point = parameters[2];
 
         const Eigen::Map<const Vec3> pt(parameter_point);
         const Vec4 pth = pt.homogeneous();
@@ -49,7 +62,7 @@ class CostIntrinsicsProject : public ceres::CostFunction
             return true;
         }
 
-        size_t params_size = _intrinsics->getParameters().size();
+        size_t params_size = _intrinsics->getParametersSize();
         double d_res_d_pt_est = 1.0 / scale;
 
         if (jacobians[0] != nullptr)
@@ -58,10 +71,18 @@ class CostIntrinsicsProject : public ceres::CostFunction
 
             J = d_res_d_pt_est * _intrinsics->getDerivativeTransformProjectWrtParams(T, pth);
         }
-
-        if (jacobians[1] != nullptr)
+        
+        if (jacobians[1] != nullptr && _distortion)
         {
-            Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[1]);
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 2, _distortion->getParameters().size());
+
+            auto isod = camera::IntrinsicScaleOffsetDisto::cast(_intrinsics);
+            J = d_res_d_pt_est * isod->getDerivativeTransformProjectWrtDistortion(T, pth);
+        }
+
+        if (jacobians[2] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[2]);
 
             J = d_res_d_pt_est * _intrinsics->getDerivativeTransformProjectWrtPoint3(T, pth);
         }
@@ -72,6 +93,7 @@ class CostIntrinsicsProject : public ceres::CostFunction
   private:
     const sfmData::Observation _measured;
     const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
+    std::shared_ptr<camera::Distortion> _distortion;
 };
 
 }  // namespace sfm
