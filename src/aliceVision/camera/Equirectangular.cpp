@@ -107,7 +107,7 @@ Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtPri
 
 Eigen::Matrix<double, 2, Eigen::Dynamic> Equirectangular::getDerivativeTransformProjectWrtParams(const Eigen::Matrix4d& pose, const Vec4& pt3D) const
 {
-    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
+    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParameters().size());
 
     ret.block<2, 2>(0, 0) = getDerivativeTransformProjectWrtScale(pose, pt3D);
     ret.block<2, 2>(0, 2) = getDerivativeTransformProjectWrtPrincipalPoint(pose, pt3D);

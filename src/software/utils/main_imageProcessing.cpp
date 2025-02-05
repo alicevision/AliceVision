@@ -1431,7 +1431,7 @@ int aliceVision_main(int argc, char* argv[])
 
             if (pParams.par.enabled)
             {
-                pParams.par.value = cam->getParams()[1] / cam->getParams()[0];
+                pParams.par.value = cam->getParameters()[1] / cam->getParameters()[0];
             }
 
             // Image processing

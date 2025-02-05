@@ -97,13 +97,13 @@ void lightCalibration(const sfmData::SfMData& sfmData,
                 allSpheresParams.push_back(currentSphereParams);
 
                 IndexT intrinsicId = currentView.getIntrinsicId();
-                focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0));
+                focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(0));
 
-                float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
+                float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(0);
                 nbCols = sfmData.getIntrinsics().at(intrinsicId)->w();
                 nbRows = sfmData.getIntrinsics().at(intrinsicId)->h();
-                float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
-                float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
+                float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(2);
+                float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(3);
 
                 Eigen::MatrixXf currentK = Eigen::MatrixXf::Zero(3, 3);
                 // Create K matrix

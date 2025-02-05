@@ -40,7 +40,7 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const std::shared_ptr<Intr
 {
     auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionSimpleErrorFunctor>(new ProjectionSimpleErrorFunctor(observation, intrinsic));
 
-    costFunction->AddParameterBlock(intrinsic->getParams().size());
+    costFunction->AddParameterBlock(intrinsic->getParameters().size());
     costFunction->AddParameterBlock(6);
     costFunction->AddParameterBlock(3);
     costFunction->SetNumResiduals(2);
@@ -58,7 +58,7 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(std::shared_ptr<Intrins
 {
     auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionErrorFunctor>(new ProjectionErrorFunctor(observation, intrinsic));
 
-    costFunction->AddParameterBlock(intrinsic->getParams().size());
+    costFunction->AddParameterBlock(intrinsic->getParameters().size());
     costFunction->AddParameterBlock(6);
     costFunction->AddParameterBlock(6);
     costFunction->AddParameterBlock(3);
@@ -79,7 +79,7 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(std::shared_ptr
 {       
     auto costFunction = new ceres::DynamicAutoDiffCostFunction<Constraint2dErrorFunctor>(new Constraint2dErrorFunctor(observation_first, observation_second, intrinsic));
 
-    costFunction->AddParameterBlock(intrinsic->getParams().size()); 
+    costFunction->AddParameterBlock(intrinsic->getParameters().size()); 
     costFunction->AddParameterBlock(6);
     costFunction->AddParameterBlock(6);
     costFunction->SetNumResiduals(2);
@@ -431,7 +431,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
         _intrinsicObjects[intrinsicId].reset(intrinsicPtr->clone());
 
         std::vector<double>& intrinsicBlock = _intrinsicsBlocks[intrinsicId];
-        intrinsicBlock = intrinsicPtr->getParams();
+        intrinsicBlock = intrinsicPtr->getParameters();
 
         double* intrinsicBlockPtr = intrinsicBlock.data();
 

@@ -182,7 +182,7 @@ Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeTransformProjectWrtPrincip
 
 Eigen::Matrix<double, 2, Eigen::Dynamic> Equidistant::getDerivativeTransformProjectWrtParams(const Eigen::Matrix4d& pose, const Vec4& pt3D) const
 {
-    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
+    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParameters().size());
 
     ret.block<2, 2>(0, 0) = getDerivativeTransformProjectWrtScale(pose, pt3D);
     ret.block<2, 2>(0, 2) = getDerivativeTransformProjectWrtPrincipalPoint(pose, pt3D);
@@ -276,7 +276,7 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equidistant::getDerivativeBackProjectUn
     const Vec2 ptUndist = removeDistortion(ptMeters);
     const Vec3 ptSphere = toUnitSphere(ptUndist);
 
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, getParams().size());
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, getParameters().size());
 
     J.block<3, 2>(0, 0) = getDerivativetoUnitSphereWrtScale(ptUndist);
     J.block<3, 2>(0, 2) = getDerivativetoUnitSphereWrtPoint(ptUndist) * getDerivativeRemoveDistoWrtPt(ptMeters) * getDerivativeIma2CamWrtPrincipalPoint();

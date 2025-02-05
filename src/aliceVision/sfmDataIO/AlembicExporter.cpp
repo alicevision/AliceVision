@@ -742,7 +742,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
     // Intrinsic type
     _dataImpl->_mvgIntrinsicType.set(cam->getTypeStr());
     // Intrinsic parameters
-    std::vector<double> intrinsicParams = cam->getParams();
+    std::vector<double> intrinsicParams = cam->getParameters();
     _dataImpl->_mvgIntrinsicParams.set(intrinsicParams);
 
     // Attach intrinsic parameters to camera object

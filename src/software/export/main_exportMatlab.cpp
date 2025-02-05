@@ -115,7 +115,7 @@ bool exportToMatlab(const SfMData& sfm_data, const std::string& outDirectory)
                 continue;
             const IntrinsicBase& intrinsics = *sfm_data.getIntrinsics().at(view.getIntrinsicId()).get();
             cameraIntrinsicsFile << view.getViewId() << " " << camera::EINTRINSIC_enumToString(intrinsics.getType());
-            for (double p : intrinsics.getParams())
+            for (double p : intrinsics.getParameters())
                 cameraIntrinsicsFile << " " << p;
             cameraIntrinsicsFile << "\n";
         }

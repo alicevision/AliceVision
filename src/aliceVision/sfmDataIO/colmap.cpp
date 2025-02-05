@@ -139,7 +139,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << " " << pinhole_intrinsic_radial->w() << " " << pinhole_intrinsic_radial->h() << " "
                            << pinhole_intrinsic_radial->getFocalLengthPixX() << " " << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
                            << pinhole_intrinsic_radial->getPrincipalPoint().x() << " " << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
-                           << pinhole_intrinsic_radial->getParams().at(4)
+                           << pinhole_intrinsic_radial->getParameters().at(4)
                            << " "
                            // k2, p1, p2, k3, k4, k5, k6
                            << "0.0 0.0 0.0 0.0 0.0 0.0 0.0"
@@ -157,13 +157,13 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << " " << pinhole_intrinsic_radial->w() << " " << pinhole_intrinsic_radial->h() << " "
                            << pinhole_intrinsic_radial->getFocalLengthPixX() << " " << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
                            << pinhole_intrinsic_radial->getPrincipalPoint().x() << " " << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
-                           << pinhole_intrinsic_radial->getParams().at(4) << " " << pinhole_intrinsic_radial->getParams().at(5)
+                           << pinhole_intrinsic_radial->getParameters().at(4) << " " << pinhole_intrinsic_radial->getParameters().at(5)
                            << " "
                            // tangential params p1 and p2
                            << 0.0 << " " << 0.0
                            << " "
                            // k3
-                           << pinhole_intrinsic_radial->getParams().at(6)
+                           << pinhole_intrinsic_radial->getParameters().at(6)
                            << " "
                            // remaining radial params k4-k6
                            << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
@@ -180,13 +180,13 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << " " << pinholeCameraBrownIntrinsics->w() << " " << pinholeCameraBrownIntrinsics->h() << " "
                            << pinholeCameraBrownIntrinsics->getFocalLengthPixX() << " " << pinholeCameraBrownIntrinsics->getFocalLengthPixY() << " "
                            << pinholeCameraBrownIntrinsics->getPrincipalPoint().x() << " " << pinholeCameraBrownIntrinsics->getPrincipalPoint().y()
-                           << " " << pinholeCameraBrownIntrinsics->getParams().at(4) << " " << pinholeCameraBrownIntrinsics->getParams().at(5)
+                           << " " << pinholeCameraBrownIntrinsics->getParameters().at(4) << " " << pinholeCameraBrownIntrinsics->getParameters().at(5)
                            << " "
                            // tangential params p1 and p2
-                           << pinholeCameraBrownIntrinsics->getParams().at(7) << " " << pinholeCameraBrownIntrinsics->getParams().at(8)
+                           << pinholeCameraBrownIntrinsics->getParameters().at(7) << " " << pinholeCameraBrownIntrinsics->getParameters().at(8)
                            << " "
                            // k3
-                           << pinholeCameraBrownIntrinsics->getParams().at(6)
+                           << pinholeCameraBrownIntrinsics->getParameters().at(6)
                            << " "
                            // remaining radial params k4-k6
                            << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
@@ -203,8 +203,8 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << " " << pinholeIntrinsicFisheye->w() << " " << pinholeIntrinsicFisheye->h() << " "
                            << pinholeIntrinsicFisheye->getFocalLengthPixX() << " " << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
                            << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " " << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
-                           << pinholeIntrinsicFisheye->getParams().at(4) << " " << pinholeIntrinsicFisheye->getParams().at(5) << " "
-                           << pinholeIntrinsicFisheye->getParams().at(6) << " " << pinholeIntrinsicFisheye->getParams().at(7) << "\n";
+                           << pinholeIntrinsicFisheye->getParameters().at(4) << " " << pinholeIntrinsicFisheye->getParameters().at(5) << " "
+                           << pinholeIntrinsicFisheye->getParameters().at(6) << " " << pinholeIntrinsicFisheye->getParameters().at(7) << "\n";
             }
             break;
         case camera::DISTORTION_FISHEYE1:
@@ -218,7 +218,7 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                            << " " << pinholeIntrinsicFisheye->w() << " " << pinholeIntrinsicFisheye->h() << " "
                            << pinholeIntrinsicFisheye->getFocalLengthPixX() << " " << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
                            << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " " << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
-                           << pinholeIntrinsicFisheye->getParams().at(4) << "\n";
+                           << pinholeIntrinsicFisheye->getParameters().at(4) << "\n";
             }
             break;
         default:

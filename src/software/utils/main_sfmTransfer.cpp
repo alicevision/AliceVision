@@ -208,7 +208,7 @@ int aliceVision_main(int argc, char** argv)
             {
                 if (intrinsic.first == intrinsicRef.first)
                 {
-                    intrinsic.second->updateFromParams(intrinsicRef.second->getParams());
+                    intrinsic.second->updateFromParams(intrinsicRef.second->getParameters());
                     break;
                 }
             }

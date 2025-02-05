@@ -29,7 +29,7 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         for (sfmData::Intrinsics::const_iterator iterIntrinsic = intrinsics.begin(); iterIntrinsic != intrinsics.end(); ++iterIntrinsic)
         {
             // get params
-            const std::vector<double> intrinsicsParams = iterIntrinsic->second.get()->getParams();
+            const std::vector<double> intrinsicsParams = iterIntrinsic->second.get()->getParameters();
             std::copy(intrinsicsParams.begin(), intrinsicsParams.end(), std::ostream_iterator<double>(stream, " "));
             stream << '\n';
         }

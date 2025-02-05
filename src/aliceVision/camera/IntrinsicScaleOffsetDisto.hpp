@@ -186,7 +186,7 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
     }
 
     // Data wrapper for non linear optimization (get data)
-    std::vector<double> getParams() const override
+    std::vector<double> getParameters() const override
     {
         std::vector<double> params = {_scale(0), _scale(1), _offset(0), _offset(1)};
 
@@ -198,7 +198,7 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
         return params;
     }
 
-    std::size_t getParamsSize() const override
+    std::size_t getParametersSize() const override
     {
         std::size_t size = 4;
         if (_pDistortion)

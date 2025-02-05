@@ -93,7 +93,7 @@ std::size_t IntrinsicBase::hashValue() const
     stl::hash_combine(seed, _sensorWidth);
     stl::hash_combine(seed, _sensorHeight);
     stl::hash_combine(seed, _serialNumber);
-    const std::vector<double> params = this->getParams();
+    const std::vector<double> params = this->getParameters();
     for (double param : params)
     {
         stl::hash_combine(seed, param);

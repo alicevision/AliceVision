@@ -236,7 +236,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         // just debugging stuff
         if (allTheSameIntrinsics)
         {
-            std::vector<double> params = tinyScene.getIntrinsics().at(0).get()->getParams();
+            std::vector<double> params = tinyScene.getIntrinsics().at(0).get()->getParameters();
             ALICEVISION_LOG_DEBUG("K before bundle: " << params[0] << " " << params[1] << " " << params[2]);
             if (params.size() == 6)
                 ALICEVISION_LOG_DEBUG("Distortion before bundle: " << params[3] << " " << params[4] << " " << params[5]);
@@ -303,7 +303,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         // update the intrinsics of each localization result
 
         // get its optimized parameters
-        std::vector<double> params = tinyScene.getIntrinsics().at(0).get()->getParams();
+        std::vector<double> params = tinyScene.getIntrinsics().at(0).get()->getParameters();
         ALICEVISION_LOG_DEBUG("Type of intrinsics " << tinyScene.getIntrinsics().at(0).get()->getType());
         if (params.size() == 4)
         {

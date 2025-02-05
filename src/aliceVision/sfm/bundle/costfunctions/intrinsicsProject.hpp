@@ -21,7 +21,7 @@ class CostIntrinsicsProject : public ceres::CostFunction
     {
         set_num_residuals(2);
         
-        mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());
+        mutable_parameter_block_sizes()->push_back(intrinsics->getParameters().size());
         mutable_parameter_block_sizes()->push_back(3);
     }
 
@@ -49,7 +49,7 @@ class CostIntrinsicsProject : public ceres::CostFunction
             return true;
         }
 
-        size_t params_size = _intrinsics->getParams().size();
+        size_t params_size = _intrinsics->getParameters().size();
         double d_res_d_pt_est = 1.0 / scale;
 
         if (jacobians[0] != nullptr)

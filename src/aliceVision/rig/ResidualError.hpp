@@ -25,9 +25,9 @@ class ResidualErrorMainCameraFunctor
         _K = intrinsics.K();
 
         _params.reserve(4);
-        _params.push_back(intrinsics.getParams()[4]);
-        _params.push_back(intrinsics.getParams()[5]);
-        _params.push_back(intrinsics.getParams()[6]);
+        _params.push_back(intrinsics.getParameters()[4]);
+        _params.push_back(intrinsics.getParameters()[5]);
+        _params.push_back(intrinsics.getParameters()[6]);
 
         // Set the observation
         _observation[0] = pt2d[0];
@@ -133,9 +133,9 @@ class ResidualErrorSecondaryCameraFunctor
         _K = intrinsics.K();
 
         _params.reserve(3);
-        _params.push_back(intrinsics.getParams()[3]);
-        _params.push_back(intrinsics.getParams()[4]);
-        _params.push_back(intrinsics.getParams()[5]);
+        _params.push_back(intrinsics.getParameters()[3]);
+        _params.push_back(intrinsics.getParameters()[4]);
+        _params.push_back(intrinsics.getParameters()[5]);
 
         // Set the observation
         _observation[0] = pt2d[0];
@@ -260,9 +260,9 @@ class ResidualErrorSecondaryCameraFixedRelativeFunctor
         _K = intrinsics.K();
 
         _params.reserve(3);
-        _params.push_back(intrinsics.getParams()[3]);
-        _params.push_back(intrinsics.getParams()[4]);
-        _params.push_back(intrinsics.getParams()[5]);
+        _params.push_back(intrinsics.getParameters()[3]);
+        _params.push_back(intrinsics.getParameters()[4]);
+        _params.push_back(intrinsics.getParameters()[5]);
 
         // Set the observation
         _observation[0] = pt2d[0];

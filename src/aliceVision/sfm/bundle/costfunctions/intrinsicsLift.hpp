@@ -21,7 +21,7 @@ class CostIntrinsicsLift : public ceres::CostFunction
     {
         set_num_residuals(3);
         
-        mutable_parameter_block_sizes()->push_back(intrinsics->getParamsSize());
+        mutable_parameter_block_sizes()->push_back(intrinsics->getParametersSize());
     }
 
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
@@ -44,7 +44,7 @@ class CostIntrinsicsLift : public ceres::CostFunction
 
         if (jacobians[0] != nullptr)
         {
-            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[0], 3, _intrinsics->getParamsSize());
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[0], 3, _intrinsics->getParametersSize());
 
             J = _intrinsics->getDerivativeBackProjectUnitWrtParams(_pt2d);
         }
