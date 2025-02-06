@@ -105,7 +105,7 @@ struct ProjectionErrorFunctor
             transformedPoint[2] += cam_t[2];
         }
 
-        const T * innerParameters[2];
+        const T * innerParameters[3];
         innerParameters[0] = parameter_intrinsics;
         innerParameters[1] = parameter_distortion;
         innerParameters[2] = transformedPoint;

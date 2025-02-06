@@ -260,9 +260,9 @@ class ResidualErrorSecondaryCameraFixedRelativeFunctor
         _K = intrinsics.K();
 
         _params.reserve(3);
-        _params.push_back(intrinsics.getParameters()[3]);
-        _params.push_back(intrinsics.getParameters()[4]);
-        _params.push_back(intrinsics.getParameters()[5]);
+        _params.push_back(intrinsics.getDistortion()->getParameters()[0]);
+        _params.push_back(intrinsics.getDistortion()->getParameters()[1]);
+        _params.push_back(intrinsics.getDistortion()->getParameters()[2]);
 
         // Set the observation
         _observation[0] = pt2d[0];
