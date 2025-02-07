@@ -111,7 +111,7 @@ class CheckerDetector
      * @param source[in] Input image containing checkerboards.
      * @param useNestedGrid[in] Indicate if the image contains nested calibration grids.
      * @param debug[in] Indicate if debug images should be drawn.
-     * @return False if a problem occured during detection, otherwise true.
+     * @return False if a problem occurred during detection, otherwise true.
      */
     bool process(const image::Image<image::RGBColor>& source, bool useNestedGrids = false, bool debug = false);
 
@@ -154,7 +154,7 @@ class CheckerDetector
      * @param[out] corners Container for extracted corners.
      * @param[in] input Input grayscale image.
      * @param[in] scale Scale applied to the image before the extraction.
-     * @return False if a problem occured during extraction, otherwise true.
+     * @return False if a problem occurred during extraction, otherwise true.
      */
     bool processLevel(std::vector<Vec2>& corners, const image::Image<float>& input, double scale) const;
 
@@ -305,7 +305,7 @@ class CheckerDetector
      * @param[in,out] board Checkerboard to extend.
      * @param[in] refinedCorners All detected corners.
      * @param[in] nested Extend the board inwards or outwards.
-     * @return False if a problem occured or if the energy of the extended board is higher than before, otherwise true.
+     * @return False if a problem occurred or if the energy of the extended board is higher than before, otherwise true.
      */
     bool growIterationUp(CheckerBoard& board, const std::vector<CheckerBoardCorner>& refinedCorners, bool nested) const;
 
@@ -329,7 +329,7 @@ class CheckerDetector
      *     2.3. if the new board energy is lower than the first board energy, replace the latter
      * 3. remove overlapping boards
      *
-     * @return False if a problem occured during merging, otherwise true.
+     * @return False if a problem occurred during merging, otherwise true.
      */
     bool mergeCheckerboards();
 
@@ -387,7 +387,7 @@ class CheckerDetector
      * A checkboard is considered invalid if one of its rows or columns contains two edges
      * that have an absolute angle between them that is above a certain threshold (currently PI/4).
      *
-     * @return False if a problem occured during filtering, otherwise true.
+     * @return False if a problem occurred during filtering, otherwise true.
      */
     bool removeInvalidCheckerboards();
 

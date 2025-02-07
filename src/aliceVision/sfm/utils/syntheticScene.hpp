@@ -80,7 +80,7 @@ void generateSyntheticFeatures(feature::FeaturesPerView& outFeaturesPerView,
  * @brief Generate features matches between views from a known SfMData (synthetic scene).
  * @param[out] outPairwiseMatches The output pairwiseMatches
  * @param[in] sfmData The synthetic SfM dataset
- * @param[in] descType The desciptor type
+ * @param[in] descType The descriptor type
  */
 void generateSyntheticMatches(matching::PairwiseMatches& outPairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType);
 

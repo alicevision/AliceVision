@@ -156,7 +156,7 @@ namespace aliceVision {
                                                                                                                                                      \
     {                                                                                                                                                \
         double a, b, c, d0, d1, d2;                                                                                                                  \
-        /* is T1 completly inside T2? */                                                                                                             \
+        /* is T1 completely inside T2? */                                                                                                             \
         /* check if V0 is inside tri(U0,U1,U2) */                                                                                                    \
         a = U1[i1] - U0[i1];                                                                                                                         \
         b = -(U1[i0] - U0[i0]);                                                                                                                      \

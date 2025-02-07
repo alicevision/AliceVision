@@ -30,7 +30,7 @@ namespace aliceVision {
 
 /*
  * @struct Range
- * @brief Small CPU and GPU host / device struct descibing a 1d range.
+ * @brief Small CPU and GPU host / device struct describing a 1d range.
  */
 struct Range
 {
@@ -71,7 +71,7 @@ inline Range intersect(const Range& a, const Range& b) { return Range(CUDA_MAX(a
 
 /*
  * @struct ROI
- * @brief Small CPU and GPU host / device struct descibing a rectangular 2d region of interest.
+ * @brief Small CPU and GPU host / device struct describing a rectangular 2d region of interest.
  */
 struct ROI
 {

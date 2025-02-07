@@ -119,7 +119,7 @@ __device__ inline void computeRotCSEpip(Patch& ptch,
     normalize(v1);
     normalize(v2);
 
-    // y has to be ortogonal to the epipolar plane
+    // y has to be orthogonal to the epipolar plane
     // n has to be on the epipolar plane
     // x has to be on the epipolar plane
 

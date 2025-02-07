@@ -35,10 +35,10 @@ namespace localization {
  * @param[in] vec_subPoses A vector containing the subposes of the cameras wrt
  * the main one, ie the camera 0. This vector has numCameras-1 elements.
  * @param[in] descTypesPerCamera optional vector of describer types per camera.
- * It is used in the weighting stategy to decide if the resection is strongly supported.
+ * It is used in the weighting strategy to decide if the resection is strongly supported.
  * @param[out] rigPose The rig pose referred to the position of the main camera.
- * @param[out] inliers A vector of the same size as the number of cameras c
- * ontaining the indices of inliers.
+ * @param[out] inliers A vector of the same size as the number of cameras containing
+ * the indices of inliers.
  * @param[in] threshold The threshold in radians to use in the ransac process. It
  * represents the maximum angular error between the direction of the 3D point in
  * space and the bearing vector of the feature (i.e. the direction of the

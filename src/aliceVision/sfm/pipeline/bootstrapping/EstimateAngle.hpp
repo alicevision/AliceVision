@@ -21,7 +21,7 @@ namespace sfm {
  * @param tracksMap the input map of tracks
  * @param tracksPerView tracks grouped by views
  * @param resultAngle the output median angle
- * @param usedTracks the list of tracks which were succesfully reconstructed
+ * @param usedTracks the list of tracks which were successfully reconstructed
  * @return true
 */
 bool estimatePairAngle(const sfmData::SfMData & sfmData, 

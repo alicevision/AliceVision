@@ -36,7 +36,7 @@ void getInfoBinFile(const std::string& path, int dim, std::size_t& numDescriptor
     fs.seekg(0, fs.end);
 
     // get the length in byte of the file
-    //@fixeme we are ignoring the first element of the file which is the number of
+    //@fixme we are ignoring the first element of the file which is the number of
     // feature. However given the large amount of data of the feature this is mitigate
     // by the integer division in bytepd later
     int length = fs.tellg();

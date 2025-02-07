@@ -28,7 +28,7 @@ namespace voctree {
 void getInfoBinFile(const std::string& path, int dim, std::size_t& numDescriptors, int& bytesPerElement);
 
 /**
- * @brief Extract a list of decriptor files from a sfmData.
+ * @brief Extract a list of descriptor files from a sfmData.
  * @param[in] sfmDataPath The input sfmData
  * @param[in] featuresFolders The folder(s) containing the descriptor files
  * @param[out] descriptorsFiles A list of descriptor files

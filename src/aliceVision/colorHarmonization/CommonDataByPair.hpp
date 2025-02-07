@@ -26,7 +26,7 @@ class CommonDataByPair
     virtual ~CommonDataByPair() {}
 
     /**
-     * Compute mask forthe two images
+     * Compute mask for the two images
      *
      * \param[out] maskLeft Mask of the left image (initialized to corresponding image size).
      * \param[out] maskRight  Mask of the right image (initialized to corresponding image size).

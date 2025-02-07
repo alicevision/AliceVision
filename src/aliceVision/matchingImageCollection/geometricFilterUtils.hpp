@@ -173,7 +173,7 @@ void copyInlierMatches(const std::vector<size_t>& inliers,
 void centerMatrix(const Eigen::Matrix2Xf& points2d, Mat3& t);
 
 /**
- * @brief Compute the standardizing tranformation for the input features.
+ * @brief Compute the standardizing transformation for the input features.
  * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/relative_pose.h#L1075
  * @param[in] featuresI The input matching features from the first image.
  * @param[in] featuresJ The input matching features from the secong image.

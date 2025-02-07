@@ -136,7 +136,7 @@ struct lm_RRefine_functor : LMFunctor<double>
 
 /** 3D rigid transformation refinement using LM
  * Refine the Scale, Rotation and translation rigid transformation
- * using a Levenberg-Marquardt opimization.
+ * using a Levenberg-Marquardt optimization.
  *
  * \param[in] x1 The first 3xN matrix of euclidean points
  * \param[in] x2 The second 3xN matrix of euclidean points

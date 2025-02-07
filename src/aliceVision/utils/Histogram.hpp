@@ -25,11 +25,11 @@ namespace utils {
 // 2009-06-30, updated 2011-06-17 and 2011-08-03
 
 // 2011-12-17 Modified by Pierre Moulon
-//  - use vector array to avoid memory managment
+//  - use vector array to avoid memory management
 //  - add value by sequence with iterator
 
 /**
- * @brief Histogram computes the distrubution function (df) of
+ * @brief Histogram computes the distribution function (df) of
  *  unique sended value or iterable data inside the provided range.
  *
  * @author Pierre MOULON base on work from Jansson Consulting

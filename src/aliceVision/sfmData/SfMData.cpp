@@ -133,7 +133,7 @@ bool SfMData::operator==(const SfMData& other) const
             return false;
     }
 
-    // Root path can be reseted during exports
+    // Root path can be reset during exports
     return true;
 }
 
@@ -250,7 +250,7 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
     // const bool knownPose = existsPose(view);
     CameraPose& viewPose = _poses[view.getPoseId()];
 
-    // Pose dedicated for this view (independant from rig, even if it is potentially part of a rig)
+    // Pose dedicated for this view (independent from rig, even if it is potentially part of a rig)
     if (view.isPoseIndependant())
     {
         viewPose = absolutePose;

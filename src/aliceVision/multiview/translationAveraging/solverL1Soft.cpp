@@ -88,7 +88,7 @@ bool solve_translations_problem_softl1(const std::vector<relativeInfo>& vec_init
     if (!b_translation_triplets)
     {
         // use random initialization, since using only single bearing vector results
-        //  in a is less conditionned system.
+        //  in a is less conditioned system.
         for (int i = 0; i < nb_scales; ++i)
         {
             vec_scales[i] = (double)rand() / RAND_MAX;
@@ -113,7 +113,7 @@ bool solve_translations_problem_softl1(const std::vector<relativeInfo>& vec_init
 
     // Add constraints to the minimization
     //
-    // A. Add cost functor from camera translation to the relative informations
+    // A. Add cost functor from camera translation to the relative information
     cpt = 0;
     IndexT scale_idx = 0;
     for (const relativeInfo& info : vec_initial_estimates)

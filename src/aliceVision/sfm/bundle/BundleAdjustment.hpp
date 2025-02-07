@@ -113,7 +113,7 @@ class BundleAdjustment
      */
     virtual bool adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions = REFINE_ALL) = 0;
 
-    // TODO: Use filter to say wich parameter is const or not (allow to refine only a subpart of the intrinsics or the poses)
+    // TODO: Use filter to say which parameter is const or not (allow to refine only a subpart of the intrinsics or the poses)
 };
 
 BOOST_BITMASK(BundleAdjustment::ERefineOptions)

@@ -73,7 +73,7 @@ enum class EImageFileType
 };
 
 /**
- * @brief get informations about each image file type
+ * @brief get information about each image file type
  * @return String
  */
 std::string EImageFileType_informations();
@@ -184,7 +184,7 @@ enum class EImageQuality
 };
 
 /**
- * @brief get informations about each image quality
+ * @brief get information about each image quality
  * @return String
  */
 std::string EImageQuality_informations();

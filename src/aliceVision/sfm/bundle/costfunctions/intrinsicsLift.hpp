@@ -30,7 +30,7 @@ class CostIntrinsicsLift : public ceres::CostFunction
 
         const Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
 
-        //Here we assume the intrinsincs object has been externally updated
+        //Here we assume the intrinsics object has been externally updated
         Vec3 pt_est = _intrinsics->backProjectUnit(_pt2d);
 
         residuals[0] = pt_est(0);

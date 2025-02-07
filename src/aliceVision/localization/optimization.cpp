@@ -35,7 +35,7 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
     const std::size_t numViews = vec_localizationResult.size();
     assert(numViews > 0);
 
-    // the id for the instrinsic group
+    // the id for the intrinsic group
     IndexT intrinsicID = 0;
 
     // Setup a tiny SfM scene with the corresponding 2D-3D data
@@ -419,7 +419,7 @@ bool refineRigPose(const std::vector<geometry::Pose3>& vec_subPoses,
     // Configure a BA engine and run it
     // todo: Set the most appropriate options
     aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options;  // Set all
-    // the options field in our owm struct - unnecessary dependancy to aliceVision here
+    // the options field in our owm struct - unnecessary dependency to aliceVision here
 
     ceres::Solver::Options options;
 
@@ -557,7 +557,7 @@ bool refineRigPose(const std::vector<Mat>& pts2d,
     // Configure a BA engine and run it
     // todo: Set the most appropriate options
     aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options;  // Set all
-    // the options field in our owm struct - unnecessary dependancy to aliceVision here
+    // the options field in our owm struct - unnecessary dependency to aliceVision here
 
     ceres::Solver::Options options;
 

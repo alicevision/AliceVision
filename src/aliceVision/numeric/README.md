@@ -12,7 +12,7 @@ Basic idea is to provide to openMVG :
 
 ## Vector, Matrix containers
 
-This project redefines some Eigen basis type (points, vectors, matrices) for code consitency and clarity:
+This project redefines some Eigen basis type (points, vectors, matrices) for code consistency and clarity:
 
 * ``Vec2`` a single 2d point stored as a column matrix (x,y),
 * ``Vec3`` a single 3d point stored as a column matrix (x,y,z),

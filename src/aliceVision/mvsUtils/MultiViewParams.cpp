@@ -90,7 +90,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                 // if path was not found
                 if (paths.empty())
                 {
-                    throw std::runtime_error("Cannot find image file coresponding to the view '" + std::to_string(view.getViewId()) +
+                    throw std::runtime_error("Cannot find image file corresponding to the view '" + std::to_string(view.getViewId()) +
                                              "' in folder '" + _imagesFolder + "'.");
                 }
                 else if (paths.size() > 1)
@@ -244,7 +244,7 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
     std::ifstream in{fileNameP};
     char fc;
     in >> fc;
-    if (fc == 'C')  // FURUKAWA'S PROJCTION MATRIX FILE FORMAT
+    if (fc == 'C')  // FURUKAWA'S PROJECTION MATRIX FILE FORMAT
     {
         in >> fc;  // O
         in >> fc;  // N

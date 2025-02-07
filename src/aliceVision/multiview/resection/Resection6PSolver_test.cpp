@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(Resection6PSolver_weights_only6)
 
     Mat pts3d = d._X;
 
-    // chose a couple of points with a weigth of 0.5
+    // chose a couple of points with a weight of 0.5
     weights[1] = .5;
     weights[2] = .5;
 

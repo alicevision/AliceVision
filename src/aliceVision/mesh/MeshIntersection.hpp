@@ -16,7 +16,7 @@ class MeshIntersection
 {
 public:
     /**
-     * @brief initialize object. to be called before any other methodd
+     * @brief initialize object. to be called before any other method
      * @param pathToModel path to obj file to use as mesh
     */
     bool initialize(const std::string & pathToModel);

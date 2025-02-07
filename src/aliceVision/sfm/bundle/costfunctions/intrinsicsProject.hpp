@@ -35,7 +35,7 @@ class CostIntrinsicsProject : public ceres::CostFunction
 
         const Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
 
-        //Here we assume the intrinsincs object has been externally updated
+        //Here we assume the intrinsics object has been externally updated
         Vec2 pt_est = _intrinsics->project(pth, true);
         const double scale = (_measured.getScale() > 1e-12) ? _measured.getScale() : 1.0;
 

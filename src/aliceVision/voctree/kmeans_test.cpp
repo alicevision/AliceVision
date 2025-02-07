@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(kmeanSimple)
 
     for (std::size_t trial = 0; trial < 10; ++trial)
     {
-        // now try to generate k cluster well far away and comapare
+        // now try to generate k cluster well far away and compare
         features.clear();
         membership.clear();
         centersGT.clear();
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(kmeanVarying)
         centersGT.reserve(K);
         centers.reserve(K);
 
-        // now try to generate k cluster well far away and comapare
+        // now try to generate k cluster well far away and compare
         for (std::size_t i = 0; i < K; ++i)
         {
             // at each i iteration translate the cluster by STEP*i

@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset)
     rotate(vec_shifted.begin(), vec_shifted.begin() + OFFET_VALUE, vec_shifted.end());
 
     //-- Try to solve the color consistency between the two histograms
-    //-- We are looking for gain and offet parameter for each image {g;o}
+    //-- We are looking for gain and offset parameter for each image {g;o}
     //--  and the upper bound precision found by Linfinity minimization.
     std::vector<double> vec_solution(2 * 2 + 1);
 
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Offset_gain)
     std::vector<std::size_t> vec_shifted = histo_offset_gain.GetHist();
 
     //-- Try to solve the color consistency between the two histograms
-    //-- We are looking for gain and offet parameter for each image {g;o}
+    //-- We are looking for gain and offset parameter for each image {g;o}
     //--  and the upper bound precision found by Linfinity minimization.
     std::vector<double> vec_solution(3 * 2 + 1);
 

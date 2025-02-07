@@ -47,7 +47,7 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ")");
 
             // add R camera parameters to the device cache (device constant memory)
-            // no aditional downscale applied, we are working at input depth map resolution
+            // no additional downscale applied, we are working at input depth map resolution
             deviceCache.addCameraParams(rc, 1 /*downscale*/, _mp);
 
             // get R camera parameters id in device constant memory array
@@ -94,7 +94,7 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
         }
     }
 
-    // device cache countains CUDA objects
+    // device cache contains CUDA objects
     // this objects should be destroyed before the end of the program (i.e. the end of the CUDA context)
     DeviceCache::getInstance().clear();
 }

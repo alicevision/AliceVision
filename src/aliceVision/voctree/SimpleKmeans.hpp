@@ -239,7 +239,7 @@ void printFeatVector(const std::vector<Feature>& f)
  * of these values are found it prints them out and in the end it returns false
  *
  * @param f the feature to check (supposed to have a size() method)
- * @param str somethig to write as debug
+ * @param str something to write as debug
  * @return true if everything is ok
  */
 template<class Feature>

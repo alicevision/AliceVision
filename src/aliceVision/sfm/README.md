@@ -46,7 +46,7 @@ SfM_Data sfm_data;
 
 const double dResidual_before = RMSE(sfm_data);
 
-// Bundle adjustement over all the parameters:
+// Bundle adjustment over all the parameters:
 std::shared_ptr<Bundle_Adjustment> ba_object = std::make_shared<Bundle_Adjustment_Ceres>();
 ba_object->Adjust(sfm_data);
 

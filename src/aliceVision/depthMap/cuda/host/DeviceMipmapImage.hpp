@@ -80,7 +80,7 @@ class DeviceMipmapImage
     unsigned int _maxDownscale = 0;                  //< the max downscale factor (must be power of two), last downscale level
     unsigned int _levels = 0;                        //< the number of downscale levels in the mipmapped array
     size_t _width = 0;                               //< original image buffer width (no downscale)
-    size_t _height = 0;                              //< original image buffer heigh (no downscale)
+    size_t _height = 0;                              //< original image buffer height (no downscale)
 };
 
 }  // namespace depthMap

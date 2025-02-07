@@ -43,7 +43,7 @@ class CCTagLocalizer : public ILocalizer
     void setCudaPipe(int i) override;
 
     /**
-     * @brief Just a wrapper around the different localization algorithm, the algorith
+     * @brief Just a wrapper around the different localization algorithm, the algorithm
      * used to localized is chosen using \p param._algorithm
      *
      * @param[in] imageGrey The input greyscale image.

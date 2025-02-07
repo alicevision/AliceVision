@@ -38,7 +38,7 @@ EstimationStatus rigResection(const std::vector<Mat>& pts2d,
                               bool verbosity /*= true*/)
 {
     const std::size_t numCameras = pts2d.size();
-    // Note that the  threshold to provide ot the ransac is expressed in cos(angle),
+    // Note that the threshold to provide to the ransac is expressed in cos(angle),
     // more specifically it's the maximum angle allowed between the 3D direction of
     // the feature point and the 3D direction of the associated 3D point. The reprojection
     // error computed in the ransac is 1-cos(angle), where angle is the angle between

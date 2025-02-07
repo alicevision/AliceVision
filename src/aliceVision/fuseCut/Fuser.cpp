@@ -268,7 +268,7 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
         }
 
         // if it is conistent in only one camera and is weakly supported then remove him
-        // weakly supported point must be consisten in at least two cameras
+        // weakly supported point must be consistent in at least two cameras
         if ((numOfModalsMap(i) <= 1) && (simMap(i) >= 1.0f))
         {
             depthMap(i) = -1.0f;

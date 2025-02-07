@@ -88,7 +88,7 @@ std::string getImageColorSpace(const OIIO::ImageSpec& oiioSpec, const std::strin
     std::string colorSpaceFromFileName = "";
     if (!imagePath.empty())
     {
-        // Use only filename for color space infering
+        // Use only filename for color space inferring
         const std::string filename = fs::path(imagePath).filename().string(); 
         colorSpaceFromFileName = getGlobalColorConfigOCIO().getColorSpaceFromFilepath(filename);
         boost::algorithm::to_lower(colorSpaceFromFileName);
@@ -419,8 +419,8 @@ std::string ERawColorInterpretation_informations()
 {
     return "Raw color interpretation :\n"
            "* none : None \n"
-           "* librawnowhitebalancing : libRaw whithout white balancing \n"
-           "* librawwhitebalancing : libRaw whith white balancing \n"
+           "* librawnowhitebalancing : libRaw without white balancing \n"
+           "* librawwhitebalancing : libRaw with white balancing \n"
            "* dcplinearprocessing : DCP linear processing \n"
            "* dcpmetadata : None but DCP info embedded in metadata";
 }
@@ -638,7 +638,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
             configSpec.attribute("raw:auto_bright", 0);                                                // disable exposure correction
             configSpec.attribute("raw:use_camera_wb", 0);                                              // no white balance correction
             configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul);  // no neutralization
-            configSpec.attribute("raw:use_camera_matrix", 0);                                          // do not use embeded color profile if any
+            configSpec.attribute("raw:use_camera_matrix", 0);                                          // do not use embedded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");                                             // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
@@ -651,7 +651,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
             configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright);       // automatic exposure correction
             configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment);  // manual exposure adjustment
             configSpec.attribute("raw:use_camera_wb", 0);                                  // no white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 1);  // do not use embeded color profile if any, except for dng files
+            configSpec.attribute("raw:use_camera_matrix", 1);  // do not use embedded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear");  // use linear colorspace with sRGB primaries
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
@@ -664,7 +664,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
             configSpec.attribute("raw:auto_bright", imageReadOptions.rawAutoBright);       // automatic exposure correction
             configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment);  // manual exposure adjustment
             configSpec.attribute("raw:use_camera_wb", 1);                                  // white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 1);  // do not use embeded color profile if any, except for dng files
+            configSpec.attribute("raw:use_camera_matrix", 1);  // do not use embedded color profile if any, except for dng files
             configSpec.attribute("raw:ColorSpace", "Linear");  // use linear colorspace with sRGB primaries
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
@@ -691,7 +691,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
             configSpec.attribute("raw:Exposure", imageReadOptions.rawExposureAdjustment);  // manual exposure adjustment
             configSpec.attribute("raw:use_camera_wb", 0);                                  // No White balance correction => user_mul is used
             configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul);
-            configSpec.attribute("raw:use_camera_matrix", 0);  // do not use embeded color profile if any
+            configSpec.attribute("raw:use_camera_matrix", 0);  // do not use embedded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
@@ -717,7 +717,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
             configSpec.attribute("raw:auto_bright", 0);                                                // disable exposure correction
             configSpec.attribute("raw:use_camera_wb", 0);                                              // no white balance correction
             configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul);  // no neutralization
-            configSpec.attribute("raw:use_camera_matrix", 0);                                          // do not use embeded color profile if any
+            configSpec.attribute("raw:use_camera_matrix", 0);                                          // do not use embedded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");                                             // use raw data
             configSpec.attribute("raw:HighlightMode", imageReadOptions.highlightMode);
             configSpec.attribute("raw:balance_clamped", (imageReadOptions.highlightMode == 0) ? 1 : 0);
@@ -734,7 +734,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
-    inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT);  // force image convertion to float (for grayscale and color space convertion)
+    inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT);  // force image conversion to float (for grayscale and color space conversion)
 
     if (!inBuf.initialized())
         ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'. The file might not exist.");
@@ -900,7 +900,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     // convert to grayscale if needed
     if (nchannels == 1 && inBuf.spec().nchannels >= 3)
     {
-        // convertion region of interest (for inBuf.spec().nchannels > 3)
+        // conversion region of interest (for inBuf.spec().nchannels > 3)
         oiio::ROI convertionROI = inBuf.roi();
         convertionROI.chbegin = 0;
         convertionROI.chend = 3;

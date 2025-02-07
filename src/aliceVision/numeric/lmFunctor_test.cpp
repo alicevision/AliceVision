@@ -23,7 +23,7 @@
 using namespace aliceVision;
 using namespace svg;
 
-// Implementation of the prolem found here :
+// Implementation of the problem found here :
 // digilander.libero.it/foxes/optimiz/Optimiz1.htm
 
 // Eigen LM functor to compute a mono-dimensional exponential regression

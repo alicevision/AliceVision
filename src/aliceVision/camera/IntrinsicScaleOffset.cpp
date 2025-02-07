@@ -176,7 +176,7 @@ double IntrinsicScaleOffset::getFocalLength() const
     //That means a larger pixel ratio leads to a smaller focal (in X).
     const double pixelAspectRatio = getPixelAspectRatio();
     
-    //Assumming the focal length is *ignoring* the stretch
+    //Assuming the focal length is *ignoring* the stretch
     //Thus the returned focal is the bigger focal canceling the pixelAspectRatio
     return focalInMillimeters * pixelAspectRatio;
 }
@@ -201,7 +201,7 @@ double IntrinsicScaleOffset::getInitialFocalLength() const
     //That means a larger pixel ratio leads to a smaller focal (in X).
     const double pixelAspectRatio = getPixelAspectRatio();
     
-    //Assumming the focal length is *ignoring* the stretch
+    //Assuming the focal length is *ignoring* the stretch
     //Thus the returned focal is the bigger focal canceling the pixelAspectRatio
     return focalInMillimeters * pixelAspectRatio;
 }

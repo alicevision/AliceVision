@@ -32,7 +32,7 @@ inline Real gaussian(const Real x, const Real y, const Real sigma)
  * @param Ly Input Y-derivative
  * @param id_octave Id of given octave
  * @param ipt Input interest point
- * @param desc Ouput descriptor
+ * @param desc Output descriptor
  * @note Rectangular grid of 24 s x 24 s. Descriptor Length 64. The descriptor is inspired
  * from Agrawal et al., CenSurE: Center Surround Extremas for Realtime Feature Detection and Matching,
  * ECCV 2008

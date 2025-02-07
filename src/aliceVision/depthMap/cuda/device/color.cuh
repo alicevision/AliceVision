@@ -156,8 +156,8 @@ __device__ inline float rgb2gray(const uchar4 c)
  * @note "Adaptive Support-Weight Approach for Correspondence Search", Kuk-Jin Yoon, In So Kweon
  * @see http://koasas.kaist.ac.kr/bitstream/10203/21048/1/000235253300014.pdf
  * 
- * @param[in] dx x-axis distance beetween the two pixels
- * @param[in] dy y-axis distance beetween the two pixels
+ * @param[in] dx x-axis distance between the two pixels
+ * @param[in] dy y-axis distance between the two pixels
  * @param[in] c1 the first patch pixel color (Lab 0..255)
  * @param[in] c2 the second patch pixel color (Lab 0..255)
  * @param[in] invGammaC the inverted strength of grouping by color similarity (gammaC: 5.5 / 105.5)

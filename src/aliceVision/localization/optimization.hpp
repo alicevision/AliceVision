@@ -74,7 +74,7 @@ bool refineRigPose(const std::vector<geometry::Pose3>& vec_subPoses,
  * 2D-3D associations.
  * @param[in] pts3d A vector of N 3xM matrices containing the image points of the
  * 2D-3D associations.
- * @param[in] inliers A vector of N vectors, each contining the inliers for the 2D-3D
+ * @param[in] inliers A vector of N vectors, each containing the inliers for the 2D-3D
  * associations.
  * @param[in] vec_queryIntrinsics A vector of N intrinsics, one for each camera of the rig.
  * @param[in] vec_subPoses The rig calibration, ie the pose of the cameras wrt the main

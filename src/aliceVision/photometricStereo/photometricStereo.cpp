@@ -604,7 +604,7 @@ void loadPSData(const std::string& folderPath, const size_t SH_order, std::vecto
     intFileName = folderPath + "/light_intensities.txt";
     loadLightIntensities(intFileName, intList);
 
-    // Convertion matrix
+    // Conversion matrix
     Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity();
     pathToCM = folderPath + "/convertionMatrix.txt";
     if (utils::exists(pathToCM))

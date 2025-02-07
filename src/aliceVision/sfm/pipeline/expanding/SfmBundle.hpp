@@ -27,7 +27,7 @@ public:
      * @param sfmData the scene description to optimize
      * @param tracksHandler the tracks manager
      * @param viewIds the set of views to bundle
-     * @return false if an error occured
+     * @return false if an error occurred
     */
     bool process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
 
@@ -82,7 +82,7 @@ private:
     /**
      * Cleanup sfmData 
      * @param sfmData the scene to clean
-     * @return true if enough change occured during the cleaning
+     * @return true if enough change occurred during the cleaning
     */
     bool cleanup(sfmData::SfMData & sfmData);
 

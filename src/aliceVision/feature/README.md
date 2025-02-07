@@ -31,7 +31,7 @@ typedef Descriptor<float, 128> siftDescriptorData;
 typedef Descriptor<float, 64> surfDescriptorData;
 
 // Binary descriptor (128 bits)
-typedef Descritpor<std::bitset<128>,1> binaryDescriptor_bitset;
+typedef Descriptor<std::bitset<128>,1> binaryDescriptor_bitset;
 // or using unsigned chars
 typedef Descriptor<unsigned char, 128/sizeof(unsigned char)> binaryDescriptor_uchar;
 ```

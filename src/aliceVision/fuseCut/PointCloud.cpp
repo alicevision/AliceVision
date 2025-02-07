@@ -576,7 +576,7 @@ void PointCloud::fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d 
     // Insert the new elements
     if (_verticesCoords.empty())
     {
-        // replace with the new points if emoty
+        // replace with the new points if empty
         _verticesCoords.swap(verticesCoordsPrepare);
         _verticesAttr.swap(verticesAttrPrepare);
     }

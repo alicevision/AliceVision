@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
                 pt = Vec2(WIDTH * realDist(gen), HEIGHT * realDist(gen));
                 ++iter;
                 // safeguard against infinite loops
-                assert(iter > 1000 && "Unable to generate a random point, iterations excedeed!");
+                assert(iter > 1000 && "Unable to generate a random point, iterations exceeded!");
             }
             pts2D.col(idx) = pt;
         }

@@ -1372,7 +1372,7 @@ bool CheckerDetector::mergeCheckerboards()
         {
             const CheckerBoard baseBoard = checkers[idRef].first;
 
-            // Build dictionnary of corners for faster lookup
+            // Build dictionary of corners for faster lookup
             std::unordered_map<IndexT, Vec2i> baseCorners;
             for (int i = 0; i < baseBoard.rows(); ++i)
             {

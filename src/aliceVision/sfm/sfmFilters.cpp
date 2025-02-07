@@ -195,7 +195,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
                 {
                     if (viewPair.second->isPartOfRig())
                     {
-                        // the pose is now independant
+                        // the pose is now independent
                         viewPair.second->setPoseId(viewPair.first);
                         viewPair.second->setIndependantPose(true);
                     }

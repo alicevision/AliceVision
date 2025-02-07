@@ -20,7 +20,7 @@ namespace aliceVision {
 namespace fuseCut {
 
 /**
- * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
+ * @brief Maxflow computation based on a standard Adjacency List graph representation.
  *
  * @see MaxFlow_CSR which use less memory.
  */
