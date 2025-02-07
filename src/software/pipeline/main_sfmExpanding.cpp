@@ -83,6 +83,7 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmDataOutputFilename;
     std::string tracksFilename;
     std::string meshFilename;
+    std::string outputSfMViewsAndPoses;
 
     std::size_t localizerEstimatorMaxIterations = 50000;
     double localizerEstimatorError = 0.0;
@@ -112,6 +113,7 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+    ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
     ("localizerEstimatorMaxIterations", po::value<std::size_t>(&localizerEstimatorMaxIterations)->default_value(localizerEstimatorMaxIterations), "Maximum number of RANSAC iterations.")
     ("localizerEstimatorError", po::value<double>(&localizerEstimatorError)->default_value(0.0), "Reprojection error threshold (in pixels) for the localizer estimator (0 for default value according to the estimator).")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),"Lock/Unlock scene previously reconstructed.")
@@ -278,7 +280,12 @@ int aliceVision_main(int argc, char** argv)
 
     sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
 
-    
+    if (!outputSfMViewsAndPoses.empty())
+    {   
+        sfmDataIO::save(sfmData, outputSfMViewsAndPoses, 
+            sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)
+        );
+    }
 
     return EXIT_SUCCESS;
 }
