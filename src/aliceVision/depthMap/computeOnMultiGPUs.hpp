@@ -1,4 +1,4 @@
-// This file is part of the extention to AliceVision project.
+// This file is part of the extension to AliceVision project.
 // Copyright (c) 2018 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,

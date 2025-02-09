@@ -75,7 +75,7 @@ std::ostream& operator<<(std::ostream& os, EFeatureQuality v);
 std::istream& operator>>(std::istream& in, EFeatureQuality& v);
 
 /**
- * @brief The method used to filter out features with too low constrast (that can be considered as noise).
+ * @brief The method used to filter out features with too low contrast (that can be considered as noise).
  */
 enum class EFeatureConstrastFiltering
 {

@@ -414,7 +414,7 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness,
 
     // If a block contains less than _minBlockSize frames (when there are lots of available threads for a small number
     // of frames, for example), resize it: less threads will be spawned, but since new FeedProvider objects need to be
-    // created for each thread, we prevent spawing thread that will need to create FeedProvider objects
+    // created for each thread, we prevent spawning thread that will need to create FeedProvider objects
     // for very few frames.
     if (blockSize < _minBlockSize && nbFrames >= _minBlockSize)
     {

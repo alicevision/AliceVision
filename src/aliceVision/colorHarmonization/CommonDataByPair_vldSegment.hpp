@@ -58,7 +58,7 @@ class CommonDataByPair_vldSegment : public CommonDataByPair
 
         // In order to illustrate the gvld(or vld)-consistant neighbors, the following two parameters has been externalized as inputs of the function
         // KVLD.
-        //  gvld-consistancy matrix, intitialized to -1,  >0 consistancy value, -1=unknow, -2=false
+        //  gvld-consistency matrix, initialized to -1,  >0 consistency value, -1=unknow, -2=false
         aliceVision::Mat E = aliceVision::Mat::Ones(_matches.size(), _matches.size()) * (-1);
 
         // indices of match in the initial matches, if true at the end of KVLD, a match is kept.

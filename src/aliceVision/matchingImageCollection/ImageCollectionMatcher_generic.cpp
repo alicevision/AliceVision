@@ -88,7 +88,7 @@ void ImageCollectionMatcher_generic::Match(std::mt19937& randomNumberGenerator,
                 IndMatches vec_putatives_matches_cross;
                 matcherCross.Match(_f_dist_ratio, regionsI, vec_putatives_matches_cross);
 
-                // Create a dictionnary of matches indexed by their pair of indexes
+                // Create a dictionary of matches indexed by their pair of indexes
                 std::map<std::pair<int, int>, IndMatch> check_matches;
                 for (IndMatch& m : vec_putatives_matches_cross)
                 {

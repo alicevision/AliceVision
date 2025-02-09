@@ -331,7 +331,7 @@ void filledCircle(int x, int y, int radius, const Color& col, Image* pim)
     }
 }
 
-// Draw a serie of circles along the line, the algorithm is slow but accurate
+// Draw a series of circles along the line, the algorithm is slow but accurate
 template<typename Image, typename Color>
 void drawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thickness, Image* pim)
 {

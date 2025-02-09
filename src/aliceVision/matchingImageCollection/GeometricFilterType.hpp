@@ -25,8 +25,8 @@ enum class EGeometricFilterType
 };
 
 /**
- * @brief Get informations about each geometric filter type
- * @return informations String
+ * @brief Get information about each geometric filter type
+ * @return information String
  */
 inline std::string EGeometricFilterType_informations()
 {

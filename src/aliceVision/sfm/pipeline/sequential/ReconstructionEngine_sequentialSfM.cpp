@@ -554,7 +554,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
             if (_params.useLocalBundleAdjustment)
                 _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
 
-            // after rig calibration, camera may have moved by replacing independant poses by a rig pose with a common
+            // after rig calibration, camera may have moved by replacing independent poses by a rig pose with a common
             // subpose. so we need to perform a bundle adjustment, to ensure that 3D points and cameras poses are
             // coherents.
             bundleAdjustment(updatedViews);
@@ -613,7 +613,7 @@ std::set<IndexT> ReconstructionEngine_sequentialSfM::resection(IndexT resectionI
             if (rig.isInitialized() && !knownPose && (subpose.status == ERigSubPoseStatus::UNINITIALIZED))
             {
                 ALICEVISION_LOG_DEBUG("Resection of image " << i << " was skipped." << std::endl
-                                                            << "Rig initialized but unkown pose and sub-pose." << std::endl
+                                                            << "Rig initialized but unknown pose and sub-pose." << std::endl
                                                             << "\t- view id: " << viewId << std::endl
                                                             << "\t- rig id: " << view.getRigId() << std::endl
                                                             << "\t- sub-pose id: " << view.getSubPoseId());
@@ -1849,7 +1849,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViewsLORANSAC(SfMData& 
                 inliers.insert(*std::next(observations.begin(), id));
 
             // -- Check:
-            //  - nb of cameras validing the track
+            //  - nb of cameras validating the track
             //  - angle (small angle leads imprecise triangulation)
             //  - positive depth (chierality)
             if (inliers.size() < _params.minNbObservationsForTriangulation ||
@@ -2057,7 +2057,7 @@ void ReconstructionEngine_sequentialSfM::triangulate2Views(SfMData& scene,
         //  if (!map_tracksCommonIJ.empty())
         //  {
         //    ALICEVISION_LOG_DEBUG("--Triangulated 3D points [" << I << "-" << J << "]:\n"
-        //                      "\t#Track extented: " << extented_track << "\n"
+        //                      "\t#Track extended: " << extented_track << "\n"
         //                      "\t#Validated/#Possible: " << new_added_track << "/" << new_putative_track << "\n"
         //                      "\t#3DPoint for the entire scene: " << scene.getLandmarks().size());
         //  }

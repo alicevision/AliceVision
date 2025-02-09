@@ -173,7 +173,7 @@ class LocalBundleAdjustmentGraph
      *        - \a Ignored <=> else (dist = -1 U [D+2; +inf.[)
      *      - an Intrinsic is set to:
      *        - \a Refined by default
-     *        - \a Constant <=> its focal lenght is considered as stable in its W last saved values according to all of its values.
+     *        - \a Constant <=> its focal length is considered as stable in its W last saved values according to all of its values.
      *     - a Landmarks is set to:
      *        - \a Ignored by default
      *        - \a Refined <=> its connected to a refined camera
@@ -236,7 +236,7 @@ class LocalBundleAdjustmentGraph
 
     /**
      * @brief Compute, for each camera the variation of the last \a windowSize values of the focal length.
-     *  If the focal lenght variations are considered as enought constant the function updates \a _mapFocalIsConstant.
+     *  If the focal length variations are considered as enough constant the function updates \a _mapFocalIsConstant.
      * @details Pipeline:
      *    \b H: the history of all the focal length for a given intrinsic
      *    \b S: the subpart of H including the last \a wondowSize values only.
@@ -316,7 +316,7 @@ class LocalBundleAdjustmentGraph
 
     // Intrinsics data
     // - Local BA needs to know the evolution of all the intrinsics parameters.
-    // - When camera parameters are enought refined (no variation) they are set to constant in the BA.
+    // - When camera parameters are enough refined (no variation) they are set to constant in the BA.
 
     struct IntrinsicHistory
     {
@@ -341,7 +341,7 @@ class LocalBundleAdjustmentGraph
     IntrinsicsHistory _intrinsicsHistory;
 
     /**
-     * @brief Indicates, for each intrinsic, if its focallength has been concidered as constant.
+     * @brief Indicates, for each intrinsic, if its focallength has been considered as constant.
      * <IntrinsicId, isConsideredAsConstant>
      */
     std::map<IndexT, bool> _mapFocalIsConstant;

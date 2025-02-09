@@ -31,7 +31,7 @@ namespace matching {
  * @param[in] xLeft The left data points
  * @param[in] xRight The right data points
  * @param[in] errorTh Maximal authorized error threshold
- * @param[out] out_validMatches Ouput corresponding index
+ * @param[out] out_validMatches Output corresponding index
  */
 template<typename ModelT, typename ErrorT>
 void guidedMatching(const ModelT& mod, const Mat& xLeft, const Mat& xRight, double errorTh, matching::IndMatches& out_validMatches)
@@ -138,7 +138,7 @@ struct distanceRatio
  * @param[in] rDescriptors The right descriptors
  * @param[in] errorTh Maximal authorized error threshold
  * @param[in] distRatio Maximal authorized distance ratio
- * @param[out] vec_corresponding_index Ouput corresponding index
+ * @param[out] vec_corresponding_index Output corresponding index
  */
 template<typename ModelT, typename ErrorT, typename DescriptorT, typename MetricT>
 void guidedMatching(const ModelT& mod,
@@ -204,7 +204,7 @@ void guidedMatching(const ModelT& mod,
  * @param[in] rRegions regions (point features & corresponding descriptors)
  * @param[in] errorTh Maximal authorized error threshold
  * @param[in] distRatio Maximal authorized distance ratio
- * @param[out] out_matches Ouput corresponding index
+ * @param[out] out_matches Output corresponding index
  */
 template<typename ModelT, typename ErrorT>
 void guidedMatching(const ModelT& mod,
@@ -289,7 +289,7 @@ void guidedMatching(const ModelT& mod,
  * @param[in] rRegions regions (point features & corresponding descriptors)
  * @param[in] errorTh Maximal authorized error threshold
  * @param[in] distRatio Maximal authorized distance ratio
- * @param[out] out_matchesPerDesc Ouput corresponding index
+ * @param[out] out_matchesPerDesc Output corresponding index
  */
 template<typename ModelT, typename ErrorT>
 void guidedMatching(const ModelT& mod,
@@ -348,7 +348,7 @@ bool lineToEndPoints(const Vec3& line, int W, int H, Vec2& x0, Vec2& x1);
  * @param[in] heightR
  * @param[in] errorTh Maximal authorized error threshold (consider it's a square threshold)
  * @param[in] distRatio Maximal authorized distance ratio
- * @param[out] vecCorrespondingIndex Ouput corresponding index
+ * @param[out] vecCorrespondingIndex Output corresponding index
  */
 template<typename ErrorT>
 void guidedMatchingFundamentalFast(const Mat3& FMat,

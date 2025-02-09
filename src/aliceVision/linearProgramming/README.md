@@ -41,7 +41,7 @@ This project provides access to different solvers (not exhaustive):
 - OSI_CLP (COIN-OR) project,
 - MOSEK commercial, free in a research context.
 
-Those solver have been choosen due to the stability of their results and ability to handle large problems without numerical stability (LPSolve and GPLK have been discarded after extensive experiments).
+Those solver have been chosen due to the stability of their results and ability to handle large problems without numerical stability (LPSolve and GPLK have been discarded after extensive experiments).
 
 See examples from linearProgramming_test.cpp.
 
@@ -91,14 +91,14 @@ $$
 #### Linear programming, quasi convex optimization
 
 This project used a lot of L infinity minimisation formulation.
-Often the posed problems are quasi-convex and dependent of an external parameter that we are looking for (i.e the maximal re-projection error for which the set of contraint is still feasible).
+Often the posed problems are quasi-convex and dependent of an external parameter that we are looking for (i.e the maximal re-projection error for which the set of constraint is still feasible).
 
 Optimization of this upper bound parameter can be done by iterating over all the possible value or by using a bisection that reduce the search range at each iteration.
 
 ```c+pp
 // Require: gammaLow, gammUp (Low and upper bound of the parameter to optimize)
 // Require: the LP problem (cstraintBuilder)
-//Ensure: the optimal gamma value, or return infeasibility of the contraints set.
+//Ensure: the optimal gamma value, or return infeasibility of the constraints set.
 
 BisectionLP(ISolver & solver,
             ConstraintBuilder & cstraintBuilder,

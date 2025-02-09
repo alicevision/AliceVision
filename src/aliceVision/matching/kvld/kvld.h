@@ -27,8 +27,8 @@
 #include <aliceVision/numeric/numeric.hpp>
 
 // Parameters concerning speed and performance
-const bool uniqueMatch = true;  // if activated, a point can be matched to only one point in the other image. Note: if false, it also desactivate
-                                // partially geometric verification
+const bool uniqueMatch = true;  // if activated, a point can be matched to only one point in the other image.
+                                // Note: if false, it also deactivates partially geometric verification
 const double juge = 0.35;
 const size_t max_connection = 20;
 const double distance_thres = 0.5;
@@ -136,7 +136,7 @@ class VLD
 };
 
 //==================KVLD algorithm======================//
-// Output specification: out put matches are 1-to-1 matches, multiple matches with one point is not allowed (or you can deactive this verification
+// Output specification: out put matches are 1-to-1 matches, multiple matches with one point is not allowed (or you can deactivate this verification
 // part in the code)
 //
 // I1, I2: input images,
@@ -150,7 +150,7 @@ class VLD
 //
 // matchesFiltered: the output list of matches filled by KVLD process.(it will be cleared to empty at the beginning of KVLD).
 //
-// score: list of score for output matches. If geometric verification is set to true, each element presents the geometric consistancy score of the
+// score: list of score for output matches. If geometric verification is set to true, each element presents the geometric consistency score of the
 // corresponding match with its neighbor matches
 //        otherwise, it presents the average photometric consistency score with its neighbor matches.
 //

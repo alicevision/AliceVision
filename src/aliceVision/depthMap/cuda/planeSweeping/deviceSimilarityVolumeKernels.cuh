@@ -309,7 +309,7 @@ __global__ void volume_refineSimilarity_kernel(TSimRefine* inout_volSim_d, int i
       normalize(v1);
       normalize(v2);
 
-      // y has to be ortogonal to the epipolar plane
+      // y has to be orthogonal to the epipolar plane
       // n has to be on the epipolar plane
       // x has to be on the epipolar plane
 

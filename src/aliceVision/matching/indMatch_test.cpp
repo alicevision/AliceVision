@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(IndMatch_DuplicateRemoval_NoRemoval)
     // Check no removal
     BOOST_CHECK(!IndMatch::getDeduplicated(vec_indMatch));
 
-    // Check lexigraphical sorting
-    // Due to lexigraphical sorting (0,1) must appears first
+    // Check lexicographical sorting
+    // Due to lexicographical sorting (0,1) must appears first
     BOOST_CHECK_EQUAL(IndMatch(0, 1), vec_indMatch[0]);
     BOOST_CHECK_EQUAL(IndMatch(2, 3), vec_indMatch[1]);
 }

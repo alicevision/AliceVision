@@ -97,7 +97,7 @@ class ExposureSetting
         // This means also that if we want to simulate that all the image have the same aperture, we have to increase virtually th
         // light received as if the aperture was smaller. So we increase the exposure time
 
-        // If the iso is larger than the default value, this means that it recevied more light than with a default iso
+        // If the iso is larger than the default value, this means that it received more light than with a default iso
         // This means also that if we want to simulate that all the image have the same iso, we have to decrease virtually th
         // light received as if the iso was smaller. So we decrease the exposure time or equivalent, increase the aperture value
 

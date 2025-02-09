@@ -114,7 +114,7 @@ std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, co
     }
     pyramidMemoryConsuption *= params._numScales * sizeof(float);
 
-    const int nbTempPyramids = 4;             // Gaussian + DOG + Gradiant + orientation (Note: DOG use 1 layer less, but this is ignored here)
+    const int nbTempPyramids = 4;             // Gaussian + DOG + Gradient + orientation (Note: DOG use 1 layer less, but this is ignored here)
     return fullImgSize * 4 * sizeof(float) +  // input RGBA image
            nbTempPyramids * pyramidMemoryConsuption +          // pyramids
            (params._maxTotalKeypoints * 128 * sizeof(float));  // output keypoints

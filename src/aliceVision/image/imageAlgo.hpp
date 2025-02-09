@@ -25,7 +25,7 @@ void RGBtoLAB(oiio::ImageBuf::Iterator<float>& pixel);
 void LABtoRGB(oiio::ImageBuf::Iterator<float>& pixel);
 
 /**
- * @brief split an image in chunks and proces them in parallel
+ * @brief split an image in chunks and process them in parallel
  * @param [in] image to process (in place or not)
  * @param [in] pixelFunc the function to apply
  */
@@ -167,7 +167,7 @@ void resampleImage(int newWidth, int newHeight, const image::Image<IndexT>& inIm
  *            Default is gaussian kernel
  *            See openImageIO documentation "ImageBufAlgo.make_kernel"
  * @param[in] kernelWidth The kernel width
- * @param[in] kernelHeight The kernal height
+ * @param[in] kernelHeight The kernel height
  */
 void convolveImage(const image::Image<unsigned char>& inBuffer,
                    image::Image<unsigned char>& outBuffer,

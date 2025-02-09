@@ -73,7 +73,7 @@ class ImageDescriber_APRILTAG : public ImageDescriber
      * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
      * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
      *    Non-zero values depict the region of interest.
-     * @return True if detection succed.
+     * @return True if detection succeeded.
      */
     bool describe(const image::Image<unsigned char>& image,
                   std::unique_ptr<Regions>& regions,

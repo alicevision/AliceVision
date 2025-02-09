@@ -148,7 +148,7 @@ inline Point3d proj(const Point3d& e, const Point3d& a) { return e * (dot(e, a) 
 inline double tripleProduct(const Point3d& a, const Point3d& b, const Point3d& c) { return dot(a, cross(b, c)); }
 
 /**
- * @brief Solid angle of a tetrahedron. It takes 3 vectors OA, OB, AC to define the solid angle define by the triangle ABC arount the point O.
+ * @brief Solid angle of a tetrahedron. It takes 3 vectors OA, OB, AC to define the solid angle define by the triangle ABC around the point O.
  * @see The Solid Angle of a Plane Triangle, A. Van Oosterom, J. Strackee, 1983. DOI: 10.1109/TBME.1983.325207
  */
 inline double tetrahedronSolidAngle(const Point3d& oa, const Point3d& ob, const Point3d& oc)

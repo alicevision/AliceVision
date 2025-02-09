@@ -11,7 +11,7 @@ search_path: luts
 environment: {}
 
 #
-# The family separator is the character used to seprate colorspace family attributes into
+# The family separator is the character used to separate colorspace family attributes into
 # tokens or levels for hierarchical menus.  (The "/" character is also the default.)
 #
 family_separator: /

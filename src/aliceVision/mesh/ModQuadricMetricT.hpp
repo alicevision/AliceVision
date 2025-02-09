@@ -97,7 +97,7 @@ class ModQuadricMetricT : public ModBaseT<MeshT>
     virtual ~ModQuadricMetricT() { Base::mesh().remove_property(quadrics_); }
 
   public:  // inherited
-    /// Initalize the module and prepare the mesh for decimation.
+    /// Initialize the module and prepare the mesh for decimation.
     virtual void initialize(void);
 
     /** Compute collapse priority based on error quadrics.

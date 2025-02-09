@@ -57,7 +57,7 @@ bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
     // Remove constraints which are too far away from landmark
     const std::size_t nbOutliersConstraints =  removeConstraints(sfmData, _maxConstraintDistance);
 
-    // Remove poses without enough observations in an interative fashion
+    // Remove poses without enough observations in an interactive fashion
     const std::size_t nbOutliers = nbOutliersResidualErr + nbOutliersAngleErr;
     std::set<IndexT> removedViewsIdIteration;
     bool somethingErased = eraseUnstablePosesAndObservations(sfmData, _minPointsPerPose, _minTrackLength, &removedViewsIdIteration);

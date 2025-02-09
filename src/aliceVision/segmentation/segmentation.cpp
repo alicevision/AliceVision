@@ -167,7 +167,7 @@ bool Segmentation::processImage(image::Image<IndexT>& labels, const image::Image
 
 bool Segmentation::tiledProcess(image::Image<IndexT>& labels, const image::Image<image::RGBfColor>& source)
 {
-    // Compute the theorical tiles count
+    // Compute the theoretical tiles count
     int cwidth = divideRoundUp(source.width(), _parameters.modelWidth);
     int cheight = divideRoundUp(source.height(), _parameters.modelHeight);
 

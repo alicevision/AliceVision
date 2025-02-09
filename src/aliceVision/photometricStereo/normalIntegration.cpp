@@ -172,7 +172,7 @@ void normalIntegration(const sfmData::SfMData& sfmData,
                 nbCols = normalsImPNG2.cols();
                 nbRows = normalsImPNG2.rows();
             }
-            // Main fonction
+            // Main function
             image::Image<float> depthMap;
 
             aliceVision::image::Image<float> distanceMap;
@@ -260,7 +260,7 @@ void normalIntegration(const sfmData::SfMData& sfmData,
             nbRows = normalsImPNG2.rows();
         }
 
-        // Main fonction
+        // Main function
         image::Image<float> depthMap(nbCols, nbRows);
         DCTIntegration(normalsImPNG2, depthMap, perspective, K, normalsMask);
 

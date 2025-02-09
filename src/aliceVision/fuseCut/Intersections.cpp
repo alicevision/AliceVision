@@ -358,7 +358,7 @@ GeometryIntersection TetrahedronsRayMarching::rayIntersectTriangle(
         return GeometryIntersection();
     }
 
-    // Ouside the triangle with marginEpsilon margin
+    // Outside the triangle with marginEpsilon margin
     if (u < -marginEpsilon || v < -marginEpsilon || (u + v) > (1.0 + marginEpsilon))
     {
         return GeometryIntersection();

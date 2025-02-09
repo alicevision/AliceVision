@@ -124,7 +124,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     // can't combine defaultFocalLengthPx and defaultFieldOfView
     assert(defaultFocalLength < 0 || defaultFieldOfView < 0);
 
-    // get view informations
+    // get view information
     const std::string& cameraBrand = view.getImage().getMetadataMake();
     const std::string& cameraModel = view.getImage().getMetadataModel();
     const std::string& bodySerialNumber = view.getImage().getMetadataBodySerialNumber();

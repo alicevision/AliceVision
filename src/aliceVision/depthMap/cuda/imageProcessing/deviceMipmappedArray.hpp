@@ -38,7 +38,7 @@ extern void cuda_createMipmappedArrayTexture(cudaTextureObject_t* out_mipmappedA
  * @param[in] in_mipmappedArray_tex The CUDA mipmapped array texture object
  * @param[in] levels The number of levels generated in the CUDA mipmapped array
  * @param[in] firstLevelWidth The CUDA mipmapped array level 0 width
- * @param[in] firstLevelHeight TThe CUDA mipmapped array level 0 height
+ * @param[in] firstLevelHeight The CUDA mipmapped array level 0 height
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_createMipmappedArrayDebugFlatImage(CudaDeviceMemoryPitched<CudaRGBA, 2>& out_flatImage_dmp,

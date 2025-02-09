@@ -75,7 +75,7 @@ bool testCudaDeviceId(int cudaDeviceId)
     cudaGetDevice(&currentCudaDeviceId);
     if (currentCudaDeviceId != cudaDeviceId)
     {
-        ALICEVISION_LOG_WARNING("CUDA device id should be: " << cudaDeviceId << ", program curently use device id: " << currentCudaDeviceId << ".");
+        ALICEVISION_LOG_WARNING("CUDA device id should be: " << cudaDeviceId << ", program currently use device id: " << currentCudaDeviceId << ".");
         return false;
     }
     return true;
