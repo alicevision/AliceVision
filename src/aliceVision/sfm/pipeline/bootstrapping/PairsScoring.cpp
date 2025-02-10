@@ -16,6 +16,8 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
                 const std::vector<sfm::ReconstructedPair> & pairs,
                 const track::TracksMap& tracksMap, 
                 const track::TracksPerView & tracksPerView, 
+                const std::set<IndexT> & filterIn,
+                const std::set<IndexT> & filterOut,
                 double minAngle,
                 double maxAngle)
 {
@@ -25,6 +27,42 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
     for (IndexT pairId = 0; pairId < pairs.size(); pairId++)
     {
         const sfm::ReconstructedPair & pair = pairs[pairId];
+
+        if (!filterIn.empty())
+        {
+            bool found = false;
+
+            for (auto item : filterIn)
+            {
+                if (pair.reference == item || pair.next == item)
+                {
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                continue;
+            }
+        }
+
+        if (!filterOut.empty())
+        {
+            bool found = false;
+
+            for (auto item : filterOut)
+            {
+                if (pair.reference == item || pair.next == item)
+                {
+                    found = true;
+                }
+            }
+
+            if (found)
+            {
+                continue;
+            }
+        }
         
         double angle = 0.0;
         std::vector<size_t> usedTracks;
