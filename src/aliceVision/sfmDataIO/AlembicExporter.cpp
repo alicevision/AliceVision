@@ -112,6 +112,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     {
         OBoolProperty(userProps, "mvg_poseLocked").set(pose->isLocked());
         OBoolProperty(userProps, "mvg_rotationOnly").set(pose->isRotationOnly());
+        OBoolProperty(userProps, "mvg_removable").set(pose->isRemovable());
 
         // Convert from computer vision convention to computer graphics (opengl-like)
         Eigen::Matrix4d M = Eigen::Matrix4d::Identity();
