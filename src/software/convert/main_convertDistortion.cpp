@@ -101,7 +101,7 @@ bool convert(std::shared_ptr<camera::Undistortion> & undistortion, const camera:
                     };
         break;
     default:
-        ALICEVISION_LOG_ERROR("Unsupported camera model for convertion.");
+        ALICEVISION_LOG_ERROR("Unsupported camera model for conversion.");
         return false;
     };
 
@@ -222,7 +222,7 @@ int aliceVision_main(int argc, char** argv)
     // export the SfMData scene in the expected format
     if (!sfmDataIO::save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData::ALL))
     {
-        ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputSfMDataFilename << "'");
+        ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outputSfMDataFilename << "'");
         return EXIT_FAILURE;
     }
 

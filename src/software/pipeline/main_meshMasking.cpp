@@ -34,7 +34,7 @@ namespace fs = std::filesystem;
 /**
  * @brief Basic cache system to manage masks.
  *
- * It keeps the latest "maxSize" (defaut = 16) masks in memory.
+ * It keeps the latest "maxSize" (default = 16) masks in memory.
  */
 struct MaskCache
 {

@@ -1,5 +1,5 @@
 ## AliceVision
-## Convertion software
+## Conversion software
 
 # Software PROPERTY FOLDER is 'Software/Convert'
 set(FOLDER_SOFTWARE_CONVERT "Software/Convert")

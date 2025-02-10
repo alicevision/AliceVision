@@ -165,7 +165,7 @@ int aliceVision_main(int argc, char** argv)
         ("guidedMatching", po::value<bool>(&guidedMatching)->default_value(guidedMatching),
          "Use the found model to improve the pairwise correspondences.")
         ("crossMatching", po::value<bool>(&crossMatching)->default_value(crossMatching),
-         "Make sure that the matching process is symmetric (same matches for I->J than fo J->I).")
+         "Make sure that the matching process is symmetric (same matches for I->J than for J->I).")
         ("matchFilePerImage", po::value<bool>(&matchFilePerImage)->default_value(matchFilePerImage),
          "Save matches in a separate file per image.")
         ("distanceRatio", po::value<float>(&distRatio)->default_value(distRatio),

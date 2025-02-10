@@ -173,7 +173,7 @@ bool applySfmData(sfmData::SfMData & sfmData, const sfmData::SfMData & sfmDataCa
             const bool distortionOnly = (isDistortionCalibrated && !isIntrinsicCalibrated);
             const bool smaller = (width <= calibrationWidth && height <= calibrationHeight);
 
-            ALICEVISION_LOG_WARNING("Distorsion is calibrated: " << isDistortionCalibrated);
+            ALICEVISION_LOG_WARNING("Distortion is calibrated: " << isDistortionCalibrated);
             ALICEVISION_LOG_WARNING("Intrinsics are calibrated: " << isIntrinsicCalibrated);
             ALICEVISION_LOG_WARNING("Size is smaller than calibration: " << smaller);
             

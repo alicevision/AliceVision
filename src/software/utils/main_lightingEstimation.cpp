@@ -42,7 +42,7 @@ enum class EAlbedoEstimation
 };
 
 /**
- * @brief get informations about each describer type
+ * @brief get information about each describer type
  * @return String
  */
 std::string EAlbedoEstimation_informations()

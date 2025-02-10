@@ -362,7 +362,7 @@ int aliceVision_main(int argc, char** argv)
     // number of views with LCP data used to add chromatic aberration params in metadata
     std::size_t lcpChromaticViewCount = 0;
 
-    // load known informations
+    // load known information
     if (imageFolder.empty())
     {
         // fill SfMData from the JSON file

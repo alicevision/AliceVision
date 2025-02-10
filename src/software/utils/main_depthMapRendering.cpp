@@ -138,12 +138,12 @@ int aliceVision_main(int argc, char** argv)
 
         //Store depthmap
         auto path = (pathOutputDirectory / (std::to_string(index) + "_depthMap.exr"));
-        ALICEVISION_LOG_INFO("Ouput depthmap to " << path);
+        ALICEVISION_LOG_INFO("Output depthmap to " << path);
         image::writeImage(path.string(), image, image::ImageWriteOptions(), metadata);
 
         //Store mask
         path = (pathOutputDirectory / (std::to_string(index) + "_mask.exr"));
-        ALICEVISION_LOG_INFO("Ouput mask to " << path);
+        ALICEVISION_LOG_INFO("Output mask to " << path);
         image::writeImage(path.string(), mask, image::ImageWriteOptions(), metadata);
     }
 

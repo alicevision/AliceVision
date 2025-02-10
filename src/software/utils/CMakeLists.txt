@@ -119,7 +119,7 @@ if(ALICEVISION_BUILD_SFM)
               Boost::boost
     )
 
-    # Frustrum filtering
+    # Frustum filtering
     alicevision_add_software(aliceVision_frustumFiltering
         SOURCE main_frustumFiltering.cpp
         FOLDER ${FOLDER_SOFTWARE_UTILS}

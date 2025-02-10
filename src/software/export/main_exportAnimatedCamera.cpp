@@ -179,7 +179,7 @@ int aliceVision_main(int argc, char** argv)
     }
     system::Timer timer;
 
-    // Decide the views and instrinsics to export
+    // Decide the views and intrinsics to export
     sfmData::SfMData sfmDataExport;
     for (auto& viewPair : sfmData.getViews())
     {
