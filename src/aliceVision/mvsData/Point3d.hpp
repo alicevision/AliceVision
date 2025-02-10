@@ -11,6 +11,7 @@
 #include <ostream>
 
 #include <Eigen/Core>
+#include <aliceVision/stl/hash.hpp>
 
 // #include <geogram/basic/vecg.h>
 namespace GEO {
@@ -169,5 +170,17 @@ inline std::ostream& operator<<(std::ostream& stream, const Point3d& p)
 }
 
 inline Eigen::Matrix<double, 3, 1> toEigen(const Point3d& v) { return Eigen::Matrix<double, 3, 1>(v.m); }
+
+struct Point3dHash
+{
+    std::size_t operator()(const Point3d & p) const noexcept
+    {
+        std::size_t seed = 0;
+        stl::hash_combine(seed, p.x);
+        stl::hash_combine(seed, p.y);
+        stl::hash_combine(seed, p.z);
+        return seed;
+    }
+};
 
 }  // namespace aliceVision

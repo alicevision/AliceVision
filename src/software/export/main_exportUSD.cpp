@@ -137,7 +137,7 @@ int aliceVision_main(int argc, char** argv)
 
     ALICEVISION_LOG_TRACE("Creating USD stage");
     const std::string extension = fileType == EUSDFileType::USDC || fileType == EUSDFileType::USDZ ? "usdc" : "usda";
-    const fs::path stagePath = fs::canonical(outputFolderPath) / ("texturedMesh." + extension);
+    const fs::path stagePath = fs::absolute(outputFolderPath) / ("texturedMesh." + extension);
     UsdStageRefPtr stage = UsdStage::CreateNew(stagePath.string());
     if (!stage)
     {
