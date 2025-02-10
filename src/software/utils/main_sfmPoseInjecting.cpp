@@ -228,6 +228,7 @@ int aliceVision_main(int argc, char** argv)
             {
                 geometry::Pose3 pose(rpose.T);
                 sfmData::CameraPose cpose(pose, false);
+                cpose.setRemovable(false);
                 sfmData.setAbsolutePose(id, cpose);
             }
         }
