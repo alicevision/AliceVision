@@ -50,7 +50,7 @@ namespace fs = boost::filesystem;
  * @brief build an initial set of landmarks from a view and a mesh object
  * @param sfmData the input/output sfmData
  * @param meshFilename the mesh path
- * @param referenceViewId the reference view id
+ * @param referenceViewIds the list of reference view id
  * @param tracksMap the input map of tracks
  * @return true
 */
@@ -58,7 +58,7 @@ bool landmarksFromMesh(
                         sfmData::Landmarks & landmarks,
                         const sfmData::SfMData & sfmData, 
                         const std::string & meshFilename,
-                        const IndexT referenceViewId,
+                        const std::set<IndexT> referenceViewIds,
                         const track::TracksHandler& tracksHandler)
 {
     //Load mesh in the mesh intersection object
@@ -68,37 +68,40 @@ bool landmarksFromMesh(
     {
         return EXIT_FAILURE;
     }
-
-    const sfmData::View & v = sfmData.getView(referenceViewId);
-    const sfmData::CameraPose & cpose = sfmData.getAbsolutePose(v.getPoseId());
-    const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(v.getIntrinsicId());
-
-    mi.setPose(cpose.getTransform());
-
-    const auto & trackIds = tracksHandler.getTracksPerView().at(referenceViewId);
-    const auto & tracksMap = tracksHandler.getAllTracks();
-
-    for (const auto trackId : trackIds)
+    
+    for (const auto referenceViewId: referenceViewIds)
     {
-        const track::Track & track = tracksMap.at(trackId);
-        const track::TrackItem & refItem = track.featPerView.at(referenceViewId);
-        
-        const Vec2 refpt = track.featPerView.at(referenceViewId).coords;
-        const std::size_t featureId = track.featPerView.at(referenceViewId).featureId;
-        const double scale = track.featPerView.at(referenceViewId).scale;
+        const sfmData::View & v = sfmData.getView(referenceViewId);
+        const sfmData::CameraPose & cpose = sfmData.getAbsolutePose(v.getPoseId());
+        const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(v.getIntrinsicId());
 
-        Vec3 point;
-        if (!mi.pickPoint(point, intrinsic, refpt))
+        mi.setPose(cpose.getTransform());
+
+        const auto & trackIds = tracksHandler.getTracksPerView().at(referenceViewId);
+        const auto & tracksMap = tracksHandler.getAllTracks();
+
+        for (const auto trackId : trackIds)
         {
-            continue;
-        }
+            const track::Track & track = tracksMap.at(trackId);
+            const track::TrackItem & refItem = track.featPerView.at(referenceViewId);
+            
+            const Vec2 refpt = track.featPerView.at(referenceViewId).coords;
+            const std::size_t featureId = track.featPerView.at(referenceViewId).featureId;
+            const double scale = track.featPerView.at(referenceViewId).scale;
 
-        sfmData::Landmark l;
-        l.X = point;
-        l.descType = feature::EImageDescriberType::SIFT;
-        sfmData::Observations & observations = l.getObservations();
-        observations[referenceViewId] = sfmData::Observation(refpt, featureId, scale);
-        landmarks[trackId] = l;
+            Vec3 point;
+            if (!mi.pickPoint(point, intrinsic, refpt))
+            {
+                continue;
+            }
+
+            sfmData::Landmark l;
+            l.X = point;
+            l.descType = feature::EImageDescriberType::SIFT;
+            sfmData::Observations & observations = l.getObservations();
+            observations[referenceViewId] = sfmData::Observation(refpt, featureId, scale);
+            landmarks[trackId] = l;
+        }
     }
 
     return true;
@@ -118,7 +121,9 @@ int aliceVision_main(int argc, char** argv)
     double minAngle = 5.0;
     double maxAngle = 40.0;
     std::pair<std::string, std::string> initialPairString("", "");
-    std::pair<IndexT, IndexT> initialPair(UndefinedIndexT, UndefinedIndexT);
+    
+    std::set<IndexT> firstViewFilters;
+    IndexT secondViewFilter = UndefinedIndexT;
 
     int randomSeed = std::mt19937::default_seed;
 
@@ -157,19 +162,15 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
         return EXIT_FAILURE;
     }
+    
 
 
-    if (sfmData.getValidViews().size() >= 2)
+    if (sfmData.getValidViews().size() >= 2 && meshFilename.empty())
     {
         ALICEVISION_LOG_INFO("SfmData has already an initialization");
         return EXIT_SUCCESS;
     }
-
-    if (sfmData.getValidViews().size() == 1)
-    {
-        ALICEVISION_LOG_INFO("SfmData has one view with a pose. Assuming we want to use it.");
-        initialPairString.first = std::to_string(*sfmData.getValidViews().begin());
-    }
+    
 
 
     if (!initialPairString.first.empty() || !initialPairString.second.empty())
@@ -182,18 +183,20 @@ int aliceVision_main(int argc, char** argv)
 
         if (!initialPairString.first.empty())
         {
-            initialPair.first = sfmData.findView(initialPairString.first);
-            if (initialPair.first == UndefinedIndexT)
+            IndexT viewId = sfmData.findView(initialPairString.first);
+            if (viewId == UndefinedIndexT)
             {
                 ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.first);
                 return EXIT_FAILURE;
             }
+
+            firstViewFilters.insert(viewId);
         }
 
         if (!initialPairString.second.empty())
         {
-            initialPair.second = sfmData.findView(initialPairString.second);
-            if (initialPair.second == UndefinedIndexT)
+            secondViewFilter = sfmData.findView(initialPairString.second);
+            if (secondViewFilter == UndefinedIndexT)
             {
                 ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.second);
                 return EXIT_FAILURE;
@@ -201,17 +204,31 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    if (initialPair.first != UndefinedIndexT)
+    //If no user forced filter
+    if (firstViewFilters.empty())
     {
-        ALICEVISION_LOG_INFO("Force one of the selected view to be " << initialPair.first);
+        //Use the view with pose as filters
+        const auto validViews = sfmData.getValidViews();
+        if (validViews.size() > 0)
+        {
+            ALICEVISION_LOG_INFO("SfmData has views with a pose. Assuming we want to use them.");
+            for (auto viewId: validViews)
+            {
+                firstViewFilters.insert(viewId);
+            }
+        }
     }
 
-    if (initialPair.second != UndefinedIndexT)
+    for (auto item : firstViewFilters)
     {
-        ALICEVISION_LOG_INFO("Force one of the selected view to be " << initialPair.second);
+        ALICEVISION_LOG_INFO("Accepted view filter : " << item);
     }
 
-    // Load tracks
+    if (secondViewFilter != UndefinedIndexT)
+    {
+        ALICEVISION_LOG_INFO("Secondary view filter : " << secondViewFilter);
+    }
+
     ALICEVISION_LOG_INFO("Load tracks");
     track::TracksHandler tracksHandler;
     if (!tracksHandler.load(tracksFilename, sfmData.getViewsKeys()))
@@ -224,10 +241,13 @@ int aliceVision_main(int argc, char** argv)
     //Load mesh in the mesh intersection object
     bool useMesh = false;
     sfmData::Landmarks landmarks;
-    if (!meshFilename.empty() && initialPair.first != UndefinedIndexT)
+    if (!meshFilename.empty() && !firstViewFilters.empty())
     {        
-        landmarksFromMesh(landmarks, sfmData, meshFilename, initialPair.first, tracksHandler);
-
+        if (!landmarksFromMesh(landmarks, sfmData, meshFilename, firstViewFilters, tracksHandler))
+        {
+            return EXIT_FAILURE;
+        }
+            
         useMesh = true;
     }
 
@@ -251,19 +271,31 @@ int aliceVision_main(int argc, char** argv)
           
             for (const auto & pair: localVector)
             {
-                // Filter out pairs given user filters
-                if (initialPair.first != UndefinedIndexT)
+                // One of the view must match one of the first view filters
+                // If there is an existing filter
+                if (!firstViewFilters.empty())
                 {
-                    if (pair.reference != initialPair.first && pair.next != initialPair.first)
+                    bool passFirstFilter = false;
+
+                    for (auto filter : firstViewFilters)
+                    {
+                        if (pair.reference == filter || pair.next == filter)
+                        {
+                            passFirstFilter = true;
+                            break;
+                        }
+                    }
+
+                    if (!passFirstFilter)
                     {
                         continue;
                     }
                 }
 
-                // Filter out pairs given user filters
-                if (initialPair.second != UndefinedIndexT)
+                //If the secondview filter is valid, use it.
+                if (secondViewFilter != UndefinedIndexT)
                 {
-                    if (pair.reference != initialPair.second && pair.next != initialPair.second)
+                    if (pair.reference != secondViewFilter && pair.next != secondViewFilter)
                     {
                         continue;
                     }
@@ -274,6 +306,8 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    ALICEVISION_LOG_INFO("Pairs to process : " << reconstructedPairs.size());
+
     //Check all pairs
     ALICEVISION_LOG_INFO("Give a score to all pairs");
     int count = 0;
@@ -283,8 +317,12 @@ int aliceVision_main(int argc, char** argv)
     bestPair.reference = UndefinedIndexT;
     std::vector<std::size_t> bestUsedTracks;
 
+    std::set<IndexT> filterIn;
+    std::set<IndexT> filterOut;
+
     IndexT bestPairId = findBestPair(sfmData, reconstructedPairs,  
                             tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
+                            filterIn, filterOut,
                             minAngle, maxAngle);
 
     if (bestPairId == UndefinedIndexT)
@@ -316,7 +354,6 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    std::cout << sfmData.getLandmarks().size() << std::endl;
 
     ALICEVISION_LOG_INFO("Best selected pair is : ");
     ALICEVISION_LOG_INFO(" - " << sfmData.getView(bestPair.reference).getImage().getImagePath());
