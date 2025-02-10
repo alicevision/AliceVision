@@ -122,6 +122,8 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    ALICEVISION_LOG_INFO("Loading " << inputMeshPath);
+
     // load input mesh and textures
     mesh::Texturing texturing;
     texturing.loadWithMaterial(inputMeshPath);
@@ -133,6 +135,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    ALICEVISION_LOG_TRACE("Creating USD stage");
     const std::string extension = fileType == EUSDFileType::USDC || fileType == EUSDFileType::USDZ ? "usdc" : "usda";
     const fs::path stagePath = fs::canonical(outputFolderPath) / ("texturedMesh." + extension);
     UsdStageRefPtr stage = UsdStage::CreateNew(stagePath.string());
@@ -145,6 +148,7 @@ int aliceVision_main(int argc, char** argv)
     UsdGeomSetStageMetersPerUnit(stage, 0.01);
 
     // create mesh
+    ALICEVISION_LOG_TRACE("Creating USD Mesh");
     UsdGeomXform xform = UsdGeomXform::Define(stage, SdfPath("/root"));
     UsdGeomMesh mesh = UsdGeomMesh::Define(stage, SdfPath("/root/mesh"));
     stage->SetDefaultPrim(xform.GetPrim());
@@ -157,6 +161,7 @@ int aliceVision_main(int argc, char** argv)
     subdSchema.Set(UsdGeomTokens->none);
 
     // write points
+    ALICEVISION_LOG_TRACE("Creating USD Points");
     UsdAttribute points = mesh.CreatePointsAttr();
 
     VtArray<GfVec3f> pointsData;
@@ -171,6 +176,7 @@ int aliceVision_main(int argc, char** argv)
     points.Set(pointsData);
 
     // write bounding box
+    ALICEVISION_LOG_TRACE("Creating USD Bounding box");
     const GfBBox3d bounds = mesh.ComputeLocalBound(UsdTimeCode::Default(), UsdGeomTokens->default_);
     UsdAttribute extent = mesh.CreateExtentAttr();
 
@@ -181,6 +187,7 @@ int aliceVision_main(int argc, char** argv)
     extent.Set(extentData);
 
     // write topology
+    ALICEVISION_LOG_TRACE("Creating USD Topology");
     UsdAttribute faceVertexCounts = mesh.CreateFaceVertexCountsAttr();
     VtArray<int> faceVertexCountsData(inputMesh->tris.size(), 3);
     faceVertexCounts.Set(faceVertexCountsData);
@@ -198,6 +205,7 @@ int aliceVision_main(int argc, char** argv)
     faceVertexIndices.Set(faceVertexIndicesData);
 
     // write face varying normals as primvar
+    ALICEVISION_LOG_TRACE("Creating USD Normals");
     if (!inputMesh->normals.empty() && !inputMesh->trisNormalsIds.empty())
     {
         VtArray<GfVec3f> normalsData;
@@ -243,6 +251,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // write UVs
+    ALICEVISION_LOG_TRACE("Creating USD UVs");
     if (!inputMesh->uvCoords.empty())
     {
         VtArray<GfVec2f> uvsData;
@@ -271,6 +280,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // create material and shaders
+    ALICEVISION_LOG_TRACE("Creating USD Material");
     UsdShadeMaterial material = UsdShadeMaterial::Define(stage, SdfPath("/root/mesh/mat"));
 
     UsdShadeShader preview = UsdShadeShader::Define(stage, SdfPath("/root/mesh/mat/preview"));
@@ -284,6 +294,7 @@ int aliceVision_main(int argc, char** argv)
     // add textures (only supporting diffuse and normal maps)
     if (texturing.material.hasTextures(mesh::Material::TextureType::DIFFUSE))
     {
+        ALICEVISION_LOG_TRACE("Creating Texture : Diffuse");
         SdfAssetPath diffuseTexturePath{texturing.material.textureName(mesh::Material::TextureType::DIFFUSE, -1)};
         UsdShadeShader diffuseTexture = UsdShadeShader::Define(stage, SdfPath("/root/mesh/mat/diffuseTexture"));
         diffuseTexture.CreateIdAttr(VtValue(UsdImagingTokens->UsdUVTexture));
@@ -294,6 +305,7 @@ int aliceVision_main(int argc, char** argv)
 
     if (texturing.material.hasTextures(mesh::Material::TextureType::NORMAL))
     {
+        ALICEVISION_LOG_TRACE("Creating Texture : Normal");
         SdfAssetPath normalTexturePath{texturing.material.textureName(mesh::Material::TextureType::NORMAL, -1)};
         UsdShadeShader normalTexture = UsdShadeShader::Define(stage, SdfPath("/root/mesh/mat/normalTexture"));
         normalTexture.CreateIdAttr(VtValue(UsdImagingTokens->UsdUVTexture));
@@ -315,6 +327,7 @@ int aliceVision_main(int argc, char** argv)
     stage->GetRootLayer()->Save();
 
     // Copy textures to output folder
+    ALICEVISION_LOG_INFO("Copy textures to output folder");
     const fs::path sourceFolder = fs::path(inputMeshPath).parent_path();
     const fs::path destinationFolder = fs::canonical(outputFolderPath);
 
@@ -332,6 +345,7 @@ int aliceVision_main(int argc, char** argv)
     // write out usdz if requested
     if (fileType == EUSDFileType::USDZ)
     {
+        ALICEVISION_LOG_INFO("Create compressed file");
         const fs::path usdzPath = fs::canonical(outputFolderPath) / "texturedMesh.usdz";
         UsdZipFileWriter writer = UsdZipFileWriter::CreateNew(usdzPath.string());
 
