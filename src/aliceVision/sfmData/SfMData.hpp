@@ -68,23 +68,24 @@ class SfMData
     PosesUncertainty _posesUncertainty;
     /// Uncertainty per landmark
     LandmarksUncertainty _landmarksUncertainty;
-    /// 2D Constraints
-    Constraints2D constraints2d;
-    /// Point constraints
-    ConstraintsPoint constraintsPoint;
-    /// Rotation priors
-    RotationPriors rotationpriors;
 
     SfMData() = default;
+    
+    /**
+     * @brief Copy constructor 
+     * @param other the copied sfmData
+     * @param unused a parameter to make sure we explicitely want this copy (for legacy)
+     * 
+    */
+    SfMData(const SfMData & other, bool unused);
 
     /**
-     * Copy constructor 
+     * @brief Copy constructor 
      * Use a bounding box to restrict the copied landmarks to the selected region
     */
     SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax);
 
     // Operators
-
     bool operator==(const SfMData& other) const;
 
     inline bool operator!=(const SfMData& other) const { return !(*this == other); }
@@ -137,22 +138,22 @@ class SfMData
      * @brief Get Constraints2D
      * @return Constraints2D
      */
-    const Constraints2D& getConstraints2D() const { return constraints2d; }
-    Constraints2D& getConstraints2D() { return constraints2d; }
+    const Constraints2D& getConstraints2D() const { return _constraints2d; }
+    Constraints2D& getConstraints2D() { return _constraints2d; }
 
     /**
      * @brief Get ConstraintsPoints
      * @return ConstraintsPoints
      */
-    const ConstraintsPoint& getConstraintsPoint() const { return constraintsPoint; }
-    ConstraintsPoint& getConstraintsPoint() { return constraintsPoint; }
+    const ConstraintsPoint& getConstraintsPoint() const { return _constraintsPoint; }
+    ConstraintsPoint& getConstraintsPoint() { return _constraintsPoint; }
 
     /**
      * @brief Get RotationPriors
      * @return RotationPriors
      */
-    const RotationPriors& getRotationPriors() const { return rotationpriors; }
-    RotationPriors& getRotationPriors() { return rotationpriors; }
+    const RotationPriors& getRotationPriors() const { return _rotationpriors; }
+    RotationPriors& getRotationPriors() { return _rotationpriors; }
 
     /**
      * @brief Get relative features folder paths
@@ -584,7 +585,7 @@ class SfMData
     void setAbsolutePose(IndexT poseId, const CameraPose& pose) { _poses[poseId] = pose; }
 
     /**
-     * @brief Erase the pose for the given poseId
+     * @brief Erase yhe pose for the given poseId
      * @param[in] poseId The given poseId
      * @param[in] noThrow If false, throw exception if no pose found
      */
@@ -654,6 +655,12 @@ class SfMData
     Poses _poses;
     /// Considered rigs
     Rigs _rigs;
+    /// 2D Constraints
+    Constraints2D _constraints2d;
+    /// Point constraints
+    ConstraintsPoint _constraintsPoint;
+    /// Rotation priors
+    RotationPriors _rotationpriors;
 
     /**
      * @brief Get Rig pose of a given camera view
