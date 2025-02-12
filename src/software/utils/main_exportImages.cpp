@@ -23,17 +23,6 @@ namespace fs = std::filesystem;
 
 using NameFunction = std::function<std::string(const sfmData::View &)>;
 
-template<typename T>
-std::string to_string_with_zero_padding(const T& value, std::size_t total_length)
-{
-    auto str = std::to_string(value);
-    if (str.length() < total_length)
-    {
-        str.insert(str.front() == '-' ? 1 : 0, total_length - str.length(), '0');
-    }
-
-    return str;
-}
 
 template<typename T>
 void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
@@ -70,7 +59,6 @@ void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
 
             // compute coordinates with distortion
             const Vec3 intermediate = intrinsicOutput.backProjectUnit(undisto_pix);
-            if (intermediate.z() < -0.2) continue;
             const Vec2 disto_pix = intrinsicSource.project(intermediate.homogeneous(), true);
 
             // pick pixel if it is in the image domain
@@ -82,18 +70,57 @@ void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
     }
 }
 
-void processImage(const std::string& dstFileName,
+/**
+ * @Brief process an image such that they appear captured by a new virtual intrinsic
+ * @param dstFileName the image output file name
+ * @param outputIntrinsic the virtual camera intrinsic
+ * @param sourceIntrinsic read image real intrinsic
+ * @param srcFileName the initial image file path
+ * @param evCorrection do we apply exposure compensation
+ * @param cameraExposure current image camera exposure
+ * @param medianCameraExposure median camera exposure for the sfmData
+ * @return false on error
+*/
+bool processImage(const std::string& dstFileName,
              const camera::IntrinsicBase & outputIntrinsic,
              const camera::IntrinsicBase & sourceIntrinsic,
-             const oiio::ParamValueList& metadata,
              const std::string& srcFileName,
              bool evCorrection,
-             float exposureCompensation)
+             double cameraExposure,
+             double medianCameraExposure)
 {
     image::Image<image::RGBAfColor> image;
     image::Image<image::RGBAfColor> image_ud;
 
-    readImage(srcFileName, image, image::EImageColorSpace::LINEAR);
+    oiio::ParamValueList metadata;
+    try 
+    {
+        metadata = image::readImageMetadata(srcFileName);
+    }
+    catch (...)
+    {
+        ALICEVISION_LOG_ERROR("Impossible to read image metadata");
+        return false;
+    }
+    
+    //Compute exposure compensation
+    const double ev = std::log2(1.0 / cameraExposure);
+    const float exposureCompensation = float(medianCameraExposure / cameraExposure);
+
+    // add exposure values to images metadata
+    metadata.push_back(oiio::ParamValue("AliceVision:EV", float(ev)));
+    metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
+
+    try
+    {
+        readImage(srcFileName, image, image::EImageColorSpace::LINEAR);
+    }
+    catch (...)
+    {
+        ALICEVISION_LOG_ERROR("Impossible to read image");
+        return false;
+    }
+    
 
     // exposure correction
     if (evCorrection)
@@ -110,9 +137,28 @@ void processImage(const std::string& dstFileName,
     ImageIntrinsicsTransform(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0));
 
     //Write the result
-    writeImage(dstFileName, image_ud, image::ImageWriteOptions(), metadata);
+    try
+    {
+        writeImage(dstFileName, image_ud, image::ImageWriteOptions(), metadata);
+    }
+    catch (...)
+    {
+        ALICEVISION_LOG_ERROR("Impossible to write image");
+        return false;
+    }
+
+    return true;
 }
 
+/**
+ * @Brief process a set of images such that they appear captured by a new virtual intrinsic
+ * @param input the original sfmData to parse
+ * @param target the transformed sfmData which will be used for intrinsics properties
+ * @param namingFunction function which defines how is the image named given the view object
+ * @param evCorrection do we correct the exposure
+ * @param rangeStart the initial view index to process (range selection)
+ * @param rangeEnd the last view index to process (range selection)
+*/
 bool process(const sfmData::SfMData & input, 
              const sfmData::SfMData & target, 
              const NameFunction & namingFunction,
@@ -132,7 +178,7 @@ bool process(const sfmData::SfMData & input,
 
         //Retrieve view
         IndexT viewId = viewsIt->first;
-        const sfmData::View & view = *viewsIt->second;
+        sfmData::View & view = *viewsIt->second;
 
         //Retrieve intrinsic
         IndexT intrinsicId = view.getIntrinsicId();
@@ -147,17 +193,8 @@ bool process(const sfmData::SfMData & input,
 
         const auto & targetIntrinsic = target.getIntrinsic(intrinsicId);
 
-        //Retrieve image
+        //Retrieve image name
         std::string srcFileName = view.getImage().getImagePath();
-        oiio::ParamValueList metadata = image::readImageMetadata(srcFileName);
-        
-
-        // add exposure values to images metadata
-        const double cameraExposure = view.getImage().getCameraExposureSetting().getExposure();
-        const double ev = std::log2(1.0 / cameraExposure);
-        const float exposureCompensation = float(medianCameraExposure / cameraExposure);
-        metadata.push_back(oiio::ParamValue("AliceVision:EV", float(ev)));
-        metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
 
         //Process Image
         std::string outFileName = namingFunction(view);
@@ -166,10 +203,10 @@ bool process(const sfmData::SfMData & input,
         processImage(outFileName,
                     targetIntrinsic,
                     intrinsic,
-                    metadata,
                     srcFileName,
                     evCorrection,
-                    exposureCompensation);
+                    view.getImage().getCameraExposureSetting().getExposure(),
+                    medianCameraExposure);
     }
 
     return true;
@@ -286,7 +323,7 @@ int aliceVision_main(int argc, char* argv[])
     {
         namingFunction = [&outputFileType, outFolder](const sfmData::View & view) 
         {
-            const std::string baseFilename = to_string_with_zero_padding(view.getFrameId(), 10);
+            const std::string baseFilename = utils::to_string_with_zero_padding(view.getFrameId(), 10);
             const std::string ext = image::EImageFileType_enumToString(outputFileType);
             return (fs::path(outFolder) / (baseFilename + "." + ext)).string();    
         };
