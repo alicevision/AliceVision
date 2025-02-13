@@ -184,15 +184,8 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& targetViews,
     return targetIndex;
 }
 
-std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<LuminanceInfo> & luminanceInfos)
+std::vector<LuminanceInfo> correctPaths(const std::vector<LuminanceInfo> & luminanceInfos)
 {
-    std::vector<std::vector<LuminanceInfo>> splitted;
-
-    if (luminanceInfos.size() == 0)
-    {
-        return splitted;
-    }
-
     //Ignore non existing files
     //Remove relative paths
     //Remove symlinks
@@ -210,6 +203,19 @@ std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<Luminance
 
         correctedPaths.push_back(corrected);
     }
+    return correctedPaths;
+}
+
+std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<LuminanceInfo> & luminanceInfos)
+{
+    std::vector<std::vector<LuminanceInfo>> splitted;
+
+    if (luminanceInfos.size() == 0)
+    {
+        return splitted;
+    }
+
+    std::vector<LuminanceInfo> correctedPaths = correctPaths(luminanceInfos);
 
     //Sort luminanceinfos by names
     std::sort(correctedPaths.begin(),
@@ -317,7 +323,7 @@ int extractIndex(const std::vector<LuminanceInfo> & smaller, const std::vector<L
     int diff = largerSize - smallerSize;
 
     //For all continuous subparts of the erased sequence
-    for (int indexStart = 0; indexStart < diff; indexStart++)
+    for (int indexStart = 0; indexStart <= diff; indexStart++)
     {
         //Check that the subpart is the same set of exposures
         bool allCorrect = true;
@@ -450,27 +456,133 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
         }
     }
 
-    //check coherency
-    bool coherency = true;
-    for (int idref = 1; idref < monotonics.size(); ++idref)
+    // In some cases (some Nikon cameras for instance) the medium exposure is at the first position of the ldr images group.
+    // Check that case and try to insert the resulting luminanceInfos seen as outliers at the mid index in the correponding groups.
+    if ((luminanceInfos.size() - monotonics.size() * monotonics[0].size() >= monotonics.size()) && // at least as many remaining outliers as groups
+        (monotonics[0].size() % 2 == 0)) // Even number of ldr images in a group
     {
-        const int idprev = idref - 1;
-        for (int idExposure = 0; idExposure < monotonics[idref].size(); ++idExposure)
+
+        //Sort luminanceinfos by names
+        std::vector<LuminanceInfo> LumInfoCorrectPath = correctPaths(luminanceInfos);
+        std::sort(LumInfoCorrectPath.begin(),
+                LumInfoCorrectPath.end(),
+                [](const LuminanceInfo& a, const LuminanceInfo& b) -> bool {
+                    return (a.mpath < b.mpath);
+                });
+
+        // Extract remaining outliers (all the images in the original list that don't belong to a group)
+        std::vector<LuminanceInfo> outliers;
+        for (const auto & li: LumInfoCorrectPath)
         {
-            if (!(monotonics[idref][idExposure].mexposure == monotonics[idprev][idExposure].mexposure))
+            bool notInMonotonics = true;
+            int idx = 0;
+            while (notInMonotonics && idx < monotonics.size())
             {
-                ALICEVISION_LOG_WARNING("Non consistent exposures between poses have been detected.\
-                Most likely the dataset has been captured with an automatic exposure mode enabled.\
-                Final result can be impacted.");
-                coherency = false;
-                
-                break;
+                int idxl = 0;
+                while (notInMonotonics && idxl < monotonics[idx].size())
+                {
+                    notInMonotonics = !(monotonics[idx][idxl].mpath == li.mpath);
+                    idxl++;
+                }
+                idx++;
+            }
+            if (notInMonotonics)
+            {
+                outliers.push_back(li);
             }
         }
 
-        if (!coherency)
+        // Check if for all groups we can find an outlier located just before the first item of the group in the global list
+        // sorted by name and with a mexposure in between the two middle items of the group
+
+        std::vector<int> firstGroupItemPositions;
+        for (int idxg = 0; idxg < monotonics.size(); ++idxg)
         {
-            break;
+            int pos = 0;
+            while (LumInfoCorrectPath[pos].mpath != monotonics[idxg][0].mpath && pos < LumInfoCorrectPath.size())
+            {
+                pos++;
+            }
+            firstGroupItemPositions.push_back(pos);
+        }
+        // The nth item of firstGroupItemPositions is the position in the global list sorted by name of the first element of the nth group
+        
+
+        LuminanceInfo emptyLumInfo(0, "", 0.0);
+        std::vector<LuminanceInfo> lumInfosToBeAdded(monotonics.size(), emptyLumInfo);
+
+        for (const auto & item: outliers)
+        {
+            int pos = 0;
+            while (LumInfoCorrectPath[pos].mpath != item.mpath && pos < LumInfoCorrectPath.size())
+            {
+                pos++;
+            }
+            int idx = 0;
+            while (firstGroupItemPositions[idx] != pos + 1 && idx < firstGroupItemPositions.size())
+            {
+                idx++;
+            }
+            if (idx < firstGroupItemPositions.size())
+            {
+                lumInfosToBeAdded[idx] = item;
+            }
+        }
+
+        // Check that all candidate have the same mexposure value in the right range
+        const float mexpRef = lumInfosToBeAdded[0].mexposure;
+        const int groupSize = monotonics[0].size();
+        const float mexpMin = monotonics[0][groupSize/2 - 1].mexposure;
+        const float mexpMax = monotonics[0][groupSize/2].mexposure;
+        bool lumInfosToBeAddedIsValid = mexpMin < mexpRef &&  mexpRef < mexpMax;
+        if (lumInfosToBeAddedIsValid)
+        {
+            for (int idx = 1; idx < lumInfosToBeAdded.size(); ++idx)
+            {
+                lumInfosToBeAddedIsValid = lumInfosToBeAddedIsValid && lumInfosToBeAdded[idx].mexposure == mexpRef;
+            }
+            if (lumInfosToBeAddedIsValid)
+            {
+                // Add candidate outliers at the mid position of the corresponding group 
+                for (int idx = 0; idx < lumInfosToBeAdded.size(); ++idx)
+                {
+                    std::vector<LuminanceInfo>::iterator mid = monotonics[idx].begin() + groupSize / 2;
+                    monotonics[idx].insert(mid, lumInfosToBeAdded[idx]);
+                }
+            }
+        }
+    }
+
+    //check coherency
+    bool coherency = monotonics.size() * monotonics[0].size() <= luminanceInfos.size();
+    if (!coherency)
+    {
+        ALICEVISION_LOG_WARNING("Non coherent number of ldr images per group.\
+        Most likely the original ldr image set was split incorrectly.\
+        Final result can be impacted.");
+    }
+    else
+    {
+        for (int idref = 1; idref < monotonics.size(); ++idref)
+        {
+            const int idprev = idref - 1;
+            for (int idExposure = 0; idExposure < monotonics[idref].size(); ++idExposure)
+            {
+                if (!(monotonics[idref][idExposure].mexposure == monotonics[idprev][idExposure].mexposure))
+                {
+                    ALICEVISION_LOG_WARNING("Non consistent exposures between poses have been detected.\
+                    Most likely the dataset has been captured with an automatic exposure mode enabled.\
+                    Final result can be impacted.");
+                    coherency = false;
+                    
+                    break;
+                }
+            }
+
+            if (!coherency)
+            {
+                break;
+            }
         }
     }
 
@@ -484,7 +596,7 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
         groups.push_back(group);
     }
 
-    ALICEVISION_LOG_INFO("Groups found : "  << monotonics.size());
+    ALICEVISION_LOG_INFO(monotonics.size() << " group(s) of " << monotonics[0].size() << " bracket(s) found");
 
     return groups;
 }
