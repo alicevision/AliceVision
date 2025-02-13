@@ -126,9 +126,12 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
                 if (!(obj1 == obj2))
                 {
                     ALICEVISION_LOG_ERROR("Unhandled error: common intrinsic ID with different parameters between both SfMData");
+                    return false;
                 }
             } 
         }
+
+        intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());
     }
 
     {
@@ -136,12 +139,25 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
         auto& rigs2 = sfmData2.getRigs();
         const size_t totalSize = rigs1.size() + rigs2.size();
 
-        rigs1.insert(rigs2.begin(), rigs2.end());
-        if (rigs1.size() < totalSize)
+        //If both sfm share a common rigid
+        //Make sure there is no ambiguity and the  content is the same
+        for (const auto & [key, rig] : rigs1)
         {
-            ALICEVISION_LOG_ERROR("Unhandled error: common rigs ID between both SfMData");
-            return false;
+            const auto & itRigOther = rigs2.find(key);
+            if (itRigOther != rigs2.end())
+            {
+                const auto & obj1 = rig;
+                const auto & obj2 = itRigOther->second;
+
+                if (!(obj1 == obj2))
+                {
+                    ALICEVISION_LOG_ERROR("Unhandled error: common rig ID with different parameters between both SfMData");
+                    return false;
+                }
+            } 
         }
+
+        rigs1.insert(rigs2.begin(), rigs2.end());
     }
 
     {
