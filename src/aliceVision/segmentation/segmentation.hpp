@@ -57,7 +57,7 @@ class Segmentation
         }
     }
 
-    virtual ~Segmentation() { terminate(); }
+    virtual ~Segmentation() {}
 
     /**
      * Process an input image to estimate segmentation
@@ -73,11 +73,6 @@ class Segmentation
     bool initialize();
 
     /**
-     * Onnx destruction code
-     */
-    bool terminate();
-
-    /**
      * Assume the source image is the correct size
      * @param labels the output label image
      * @param source the input image to process
@@ -86,10 +81,10 @@ class Segmentation
 
     /**
      * Transform model output to a label image
-     * @param labels the output labels imaage
-     * @param modeloutput the model output vector
+     * @param labels the output labels image
+     * @param modeloutput the model output tensor
      */
-    bool labelsFromModelOutput(image::Image<ScoredLabel>& labels, const std::vector<float>& modelOutput);
+    bool labelsFromOutputTensor(image::Image<ScoredLabel>& labels, Ort::Value& modelOutput);
 
     /**
      * Process effectively a buffer of the model input size
