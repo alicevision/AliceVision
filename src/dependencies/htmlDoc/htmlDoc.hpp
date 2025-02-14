@@ -235,7 +235,7 @@ namespace htmlDocument
     {
       htmlStream << "\n<head>\n";
       htmlStream << htmlMarkup("title",title);
-      // CSS and JS ressources
+      // CSS and JS resources
       for (std::vector<std::string>::const_iterator iter = vec_css.begin(); iter != vec_css.end(); ++iter)
         htmlStream << "<link rel=\"stylesheet\" type=\"text/css\" href=\"" << *iter <<"\" />\n";
       for (std::vector<std::string>::const_iterator iter = vec_js.begin(); iter != vec_js.end(); ++iter)

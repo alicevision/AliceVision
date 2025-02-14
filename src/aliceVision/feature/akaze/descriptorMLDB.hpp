@@ -99,7 +99,7 @@ inline void ComputeMeanValuesInSubdivisions(const Eigen::Matrix<Real, Eigen::Dyn
 ** @param mean_Ly input mean values of Ly values (mean per subdivision)
 ** @param nb_subdiv Number of subdivision (in 2d so it's a nb_subdivxnb_subdiv pattern)
 ** @param outIndex input/output index to store description
-** @param desc output vector (ideally a std::bitset) containing binary description of theses regions
+** @param desc output vector (ideally a std::bitset) containing binary description of these regions
 **/
 template<typename DescriptorType, typename Real>
 inline void ComputeBinaryValues(const Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& mean_Li,

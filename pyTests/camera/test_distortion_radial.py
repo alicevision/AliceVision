@@ -111,7 +111,7 @@ def test_distortion_radial_k1_get_set_parameters():
     assert list(parameters) == DEFAULT_PARAMETERS_K1, \
         "The distortion parameters have not been correctly initialized with the default values"
 
-    # Parametes are given as a reference: editing 'parameters' should update the object
+    # Parameters are given as a reference: editing 'parameters' should update the object
     for idx, _ in enumerate(parameters):
         parameters[idx] = NON_DEFAULT_PARAMETERS_K1[idx]
 
@@ -254,7 +254,7 @@ def test_distortion_radial_k3_get_set_parameters():
     assert list(parameters) == DEFAULT_PARAMETERS_K3, \
         "The distortion parameters have not been correctly initialized with the default values"
 
-    # Parametes are given as a reference: editing 'parameters' should update the object
+    # Parameters are given as a reference: editing 'parameters' should update the object
     for idx, _ in enumerate(parameters):
         parameters[idx] = NON_DEFAULT_PARAMETERS_K3[idx]
 
@@ -397,7 +397,7 @@ def test_distortion_radial_k3pt_get_set_parameters():
     assert list(parameters) == DEFAULT_PARAMETERS_K3, \
         "The distortion parameters have not been correctly initialized with the default values"
 
-    # Parametes are given as a reference: editing 'parameters' should update the object
+    # Parameters are given as a reference: editing 'parameters' should update the object
     for idx, _ in enumerate(parameters):
         parameters[idx] = NON_DEFAULT_PARAMETERS_K3[idx]
 
@@ -501,7 +501,7 @@ def test_distortion_radial_compare():
     assert k11 == k12, "K1 distortion parameters are identical"
     k11.setParameters(NON_DEFAULT_PARAMETERS_K1)
     assert not k11 == k12, \
-        "K1 distortion paramters of the first object have been updated, " \
+        "K1 distortion parameters of the first object have been updated, " \
         "they should not be equal"
 
     k31 = av.DistortionRadialK3()

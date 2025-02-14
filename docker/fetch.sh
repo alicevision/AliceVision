@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Download as many external dependancies as possible to minimise
+# Download as many external dependencies as possible to minimise
 # the amount of repeated downloads when building Docker images
 #
 # The downloaded files are stored in the 'dl' directory in the
-# top of the AliceVision source, and copied into the Docker enviroments
+# top of the AliceVision source, and copied into the Docker environments
 # when the images are built
 
 set -e

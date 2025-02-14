@@ -38,7 +38,7 @@ Follow the following steps to compile the code:
 	    
 - On windows, use the cmake GUI to generate a visual studio solution file, and build the solution.
 
-4) Afterwards, there should be two exectuable files 'MeshSDFilter' and 'MeshDenoiser' generated.
+4) Afterwards, there should be two executable files 'MeshSDFilter' and 'MeshDenoiser' generated.
 
 
 

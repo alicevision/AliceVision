@@ -29,7 +29,7 @@ def test_sfmdataio_save():
     data = av.sfmData.SfMData()
     ret = av.sfmDataIO.load(data, SFMDATA_PATH, av.sfmDataIO.ALL)
 
-    assert ret, "Loading the SfMData file should have been successfull as it is a valid one"
+    assert ret, "Loading the SfMData file should have been successful as it is a valid one"
 
     views = data.getViews()
     nb_views = len(views)
@@ -60,7 +60,7 @@ def test_sfmdataio_valid_ids():
     data = av.sfmData.SfMData()
     ret = av.sfmDataIO.load(data, SFMDATA_PATH, av.sfmDataIO.ALL)
 
-    assert ret, "Loading the SfMData file should have been successfull as it is a valid one"
+    assert ret, "Loading the SfMData file should have been successful as it is a valid one"
     assert av.sfmDataIO.validIds(data, av.sfmDataIO.ALL)
 
     # Add a default View object at index 12345

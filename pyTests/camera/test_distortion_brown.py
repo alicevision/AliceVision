@@ -140,7 +140,7 @@ def test_distortion_brown_get_derivative_add():
 def test_distortion_brown_get_radius():
     """ Test creating a DistortionBrown object and retrieving its undistorted 
     radius. """
-    # 'getUndistortedRadius' is not overriden by this class and is expected to return
+    # 'getUndistortedRadius' is not overridden by this class and is expected to return
     # the provided radius, as it is defined in the parent 'Distortion' class
     distortion = av.DistortionBrown()
     radius = 1.2

@@ -273,7 +273,7 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
         return;
     }
 
-    throw std::runtime_error("SfMData::setPose: dependant view pose not part of an initialized rig.");
+    throw std::runtime_error("SfMData::setPose: dependent view pose not part of an initialized rig.");
 }
 
 void SfMData::combine(const SfMData& sfmData)

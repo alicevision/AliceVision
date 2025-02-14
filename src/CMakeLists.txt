@@ -1036,7 +1036,7 @@ endif()
 # Install rules
 # ==============================================================================
 
-# Include module with fuction 'write_basic_package_version_file'
+# Include module with function 'write_basic_package_version_file'
 include(CMakePackageConfigHelpers)
 
 # name of the exported project (cannot use PROJECT_NAME as it is AliceVisionSrc
