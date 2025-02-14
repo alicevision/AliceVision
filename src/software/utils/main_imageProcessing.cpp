@@ -1431,7 +1431,11 @@ int aliceVision_main(int argc, char* argv[])
 
             if (pParams.par.enabled)
             {
-                pParams.par.value = cam->getParams()[1] / cam->getParams()[0];
+                auto iso = camera::IntrinsicScaleOffset::cast(cam);
+                if (iso)
+                {
+                    pParams.par.value = iso->getScale().y() / iso->getScale().x();
+                }
             }
 
             // Image processing

@@ -236,10 +236,8 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         // just debugging stuff
         if (allTheSameIntrinsics)
         {
-            std::vector<double> params = tinyScene.getIntrinsics().at(0).get()->getParams();
+            std::vector<double> params = tinyScene.getIntrinsics().at(0)->getParameters();
             ALICEVISION_LOG_DEBUG("K before bundle: " << params[0] << " " << params[1] << " " << params[2]);
-            if (params.size() == 6)
-                ALICEVISION_LOG_DEBUG("Distortion before bundle: " << params[3] << " " << params[4] << " " << params[5]);
         }
     }
 
@@ -302,20 +300,19 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         // if we used the same intrinsics for all the localization results we need to
         // update the intrinsics of each localization result
 
-        // get its optimized parameters
-        std::vector<double> params = tinyScene.getIntrinsics().at(0).get()->getParams();
-        ALICEVISION_LOG_DEBUG("Type of intrinsics " << tinyScene.getIntrinsics().at(0).get()->getType());
-        if (params.size() == 4)
+        auto intrinsic = tinyScene.getIntrinsics().at(0);
+        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+        std::shared_ptr<camera::Distortion> distortion;
+        if (isod)
         {
-            // this means that the b_no_distortion has been passed
-            // set distortion to 0
-            params.push_back(0);
-            params.push_back(0);
-            params.push_back(0);
+            distortion = isod->getDistortion();
         }
-        assert(params.size() == 6);
+
+        // get its optimized parameters
+        std::vector<double> params = intrinsic->getParameters();
+
+        ALICEVISION_LOG_DEBUG("Type of intrinsics " << intrinsic->getType());
         ALICEVISION_LOG_DEBUG("K after bundle: " << params[0] << " " << params[1] << " " << params[2] << " " << params[3]);
-        ALICEVISION_LOG_DEBUG("Distortion after bundle " << params[4] << " " << params[5] << " " << params[6]);
 
         // update the intrinsics of the each localization result
         for (size_t viewID = 0; viewID < numViews; ++viewID)
@@ -326,6 +323,13 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
                 continue;
             }
             currResult.updateIntrinsics(params);
+
+            auto currDistortion = currResult.getIntrinsics().getDistortion();
+            if (distortion && currDistortion)
+            {
+                currDistortion->setParameters(distortion->getParameters());
+            }
+            
 
             // just debugging -- print reprojection errors
             const Mat2X residuals = currResult.computeInliersResiduals();

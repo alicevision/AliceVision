@@ -202,13 +202,13 @@ int aliceVision_main(int argc, char** argv)
 
     if (matchingMethod == EMatchingMethod::FROM_INTRINSICID)
     {
-        for (auto intrinsic : sfmData.getIntrinsics())
+        for (auto & [idIntrinsic, intrinsic] : sfmData.getIntrinsics())
         {
-            for (const auto intrinsicRef : sfmDataRef.getIntrinsics())
+            for (const auto & [idIntrinsicRef, intrinsicRef] : sfmDataRef.getIntrinsics())
             {
-                if (intrinsic.first == intrinsicRef.first)
+                if (idIntrinsic == idIntrinsicRef)
                 {
-                    intrinsic.second->updateFromParams(intrinsicRef.second->getParams());
+                    intrinsic.reset(intrinsicRef->clone());
                     break;
                 }
             }

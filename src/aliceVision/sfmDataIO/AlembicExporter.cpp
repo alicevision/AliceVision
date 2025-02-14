@@ -263,6 +263,8 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
             ODoubleProperty(userProps, "mvg_undistortionOffsetY").set(undistortion->getOffset().y());
             ODoubleProperty(userProps, "mvg_undistortionDiagonal").set(undistortion->getDiagonal());
             ODoubleProperty(userProps, "mvg_undistortionPixelAspectRatio").set(undistortion->getPixelAspectRatio());
+            OBoolProperty(userProps, "mvg_undistortionDesqueezed").set(undistortion->isDesqueezed());
+            OBoolProperty(userProps, "mvg_undistortionLocked").set(undistortion->isLocked());
         }
         
         OStringProperty(userProps, "mvg_distortionType").set(EDISTORTION_enumToString(distortionType));
@@ -740,7 +742,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
     // Intrinsic type
     _dataImpl->_mvgIntrinsicType.set(cam->getTypeStr());
     // Intrinsic parameters
-    std::vector<double> intrinsicParams = cam->getParams();
+    std::vector<double> intrinsicParams = cam->getParameters();
     _dataImpl->_mvgIntrinsicParams.set(intrinsicParams);
 
     // Attach intrinsic parameters to camera object

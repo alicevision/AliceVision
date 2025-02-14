@@ -107,7 +107,7 @@ Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtPri
 
 Eigen::Matrix<double, 2, Eigen::Dynamic> Equirectangular::getDerivativeTransformProjectWrtParams(const Eigen::Matrix4d& pose, const Vec4& pt3D) const
 {
-    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
+    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParameters().size());
 
     ret.block<2, 2>(0, 0) = getDerivativeTransformProjectWrtScale(pose, pt3D);
     ret.block<2, 2>(0, 2) = getDerivativeTransformProjectWrtPrincipalPoint(pose, pt3D);
@@ -162,6 +162,16 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProje
     ret.block<3, 2>(0, 2) = J * getDerivativeIma2CamWrtPrincipalPoint();
     
     return ret;
+}
+
+Eigen::Matrix<double, 2, Eigen::Dynamic> Equirectangular::getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose, const Vec4& pt) const
+{
+    return Eigen::Matrix<double, 2, 1>::Zero();
+}
+
+Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProjectUnitWrtDistortion(const Vec2& pt2D) const
+{
+    return Eigen::Matrix<double, 3, 1>::Zero();
 }
 
 double Equirectangular::imagePlaneToCameraPlaneError(double value) const { return 0.0; }

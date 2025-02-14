@@ -124,7 +124,8 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
                 intrString << intrinsicsID << " "
                            << "PINHOLE"
                            << " " << pinhole_intrinsic->w() << " " << pinhole_intrinsic->h() << " " << pinhole_intrinsic->getFocalLengthPixX() << " "
-                           << pinhole_intrinsic->getFocalLengthPixY() << " " << pinhole_intrinsic->getPrincipalPoint().x() << " "
+                           << pinhole_intrinsic->getFocalLengthPixY() << " " 
+                           << pinhole_intrinsic->getPrincipalPoint().x() << " "
                            << pinhole_intrinsic->getPrincipalPoint().y() << "\n";
             }
             break;
@@ -134,12 +135,17 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             {
                 std::shared_ptr<camera::Pinhole> pinhole_intrinsic_radial = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
 
+                auto distortion = pinhole_intrinsic_radial->getDistortion();
+
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
-                           << " " << pinhole_intrinsic_radial->w() << " " << pinhole_intrinsic_radial->h() << " "
-                           << pinhole_intrinsic_radial->getFocalLengthPixX() << " " << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
-                           << pinhole_intrinsic_radial->getPrincipalPoint().x() << " " << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
-                           << pinhole_intrinsic_radial->getParams().at(4)
+                           << " " << pinhole_intrinsic_radial->w() << " " 
+                           << pinhole_intrinsic_radial->h() << " "
+                           << pinhole_intrinsic_radial->getFocalLengthPixX() << " " 
+                           << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
+                           << pinhole_intrinsic_radial->getPrincipalPoint().x() << " " 
+                           << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
+                           << distortion->getParameters().at(0)
                            << " "
                            // k2, p1, p2, k3, k4, k5, k6
                            << "0.0 0.0 0.0 0.0 0.0 0.0 0.0"
@@ -151,20 +157,23 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
                 std::shared_ptr<camera::Pinhole> pinhole_intrinsic_radial = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
+                auto distortion = pinhole_intrinsic_radial->getDistortion();
 
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
-                           << " " << pinhole_intrinsic_radial->w() << " " << pinhole_intrinsic_radial->h() << " "
-                           << pinhole_intrinsic_radial->getFocalLengthPixX() << " " << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
-                           << pinhole_intrinsic_radial->getPrincipalPoint().x() << " " << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
-                           << pinhole_intrinsic_radial->getParams().at(4) << " " << pinhole_intrinsic_radial->getParams().at(5)
-                           << " "
+                           << " " << pinhole_intrinsic_radial->w() << " " 
+                           << pinhole_intrinsic_radial->h() << " "
+                           << pinhole_intrinsic_radial->getFocalLengthPixX() << " " 
+                           << pinhole_intrinsic_radial->getFocalLengthPixY() << " "
+                           << pinhole_intrinsic_radial->getPrincipalPoint().x() << " " 
+                           << pinhole_intrinsic_radial->getPrincipalPoint().y() << " "
+                           << distortion->getParameters().at(0) << " " 
+                           << distortion->getParameters().at(1) << " "
                            // tangential params p1 and p2
                            << 0.0 << " " << 0.0
                            << " "
                            // k3
-                           << pinhole_intrinsic_radial->getParams().at(6)
-                           << " "
+                           << distortion->getParameters().at(2) << " "
                            // remaining radial params k4-k6
                            << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
             }
@@ -174,20 +183,22 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // Parameters: fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6
             {
                 std::shared_ptr<camera::Pinhole> pinholeCameraBrownIntrinsics = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
+                auto distortion = pinholeCameraBrownIntrinsics->getDistortion();
 
                 intrString << intrinsicsID << " "
                            << "FULL_OPENCV"
                            << " " << pinholeCameraBrownIntrinsics->w() << " " << pinholeCameraBrownIntrinsics->h() << " "
-                           << pinholeCameraBrownIntrinsics->getFocalLengthPixX() << " " << pinholeCameraBrownIntrinsics->getFocalLengthPixY() << " "
-                           << pinholeCameraBrownIntrinsics->getPrincipalPoint().x() << " " << pinholeCameraBrownIntrinsics->getPrincipalPoint().y()
-                           << " " << pinholeCameraBrownIntrinsics->getParams().at(4) << " " << pinholeCameraBrownIntrinsics->getParams().at(5)
-                           << " "
+                           << pinholeCameraBrownIntrinsics->getFocalLengthPixX() << " " 
+                           << pinholeCameraBrownIntrinsics->getFocalLengthPixY() << " "
+                           << pinholeCameraBrownIntrinsics->getPrincipalPoint().x() << " " 
+                           << pinholeCameraBrownIntrinsics->getPrincipalPoint().y() << " " 
+                           << distortion->getParameters().at(0) << " " 
+                           << distortion->getParameters().at(1) << " "
                            // tangential params p1 and p2
-                           << pinholeCameraBrownIntrinsics->getParams().at(7) << " " << pinholeCameraBrownIntrinsics->getParams().at(8)
-                           << " "
+                           << distortion->getParameters().at(3) << " " 
+                           << distortion->getParameters().at(4) << " "
                            // k3
-                           << pinholeCameraBrownIntrinsics->getParams().at(6)
-                           << " "
+                           << distortion->getParameters().at(2) << " "
                            // remaining radial params k4-k6
                            << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
             }
@@ -197,14 +208,19 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // Parameters: fx, fy, cx, cy, k1, k2, k3, k4
             {
                 std::shared_ptr<camera::Pinhole> pinholeIntrinsicFisheye = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
+                auto distortion = pinholeIntrinsicFisheye->getDistortion();
 
                 intrString << intrinsicsID << " "
                            << "OPENCV_FISHEYE"
                            << " " << pinholeIntrinsicFisheye->w() << " " << pinholeIntrinsicFisheye->h() << " "
-                           << pinholeIntrinsicFisheye->getFocalLengthPixX() << " " << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
-                           << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " " << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
-                           << pinholeIntrinsicFisheye->getParams().at(4) << " " << pinholeIntrinsicFisheye->getParams().at(5) << " "
-                           << pinholeIntrinsicFisheye->getParams().at(6) << " " << pinholeIntrinsicFisheye->getParams().at(7) << "\n";
+                           << pinholeIntrinsicFisheye->getFocalLengthPixX() << " " 
+                           << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
+                           << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " " 
+                           << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
+                           << distortion->getParameters().at(0) << " " 
+                           << distortion->getParameters().at(1) << " "
+                           << distortion->getParameters().at(2) << " " 
+                           << distortion->getParameters().at(3) << "\n";
             }
             break;
         case camera::DISTORTION_FISHEYE1:
@@ -212,13 +228,16 @@ std::string convertIntrinsicsToColmapString(const IndexT intrinsicsID, std::shar
             // Parameters: fx, fy, cx, cy, k1, k2, k3, k4
             {
                 std::shared_ptr<camera::Pinhole> pinholeIntrinsicFisheye = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
+                auto distortion = pinholeIntrinsicFisheye->getDistortion();
 
                 intrString << intrinsicsID << " "
                            << "FOV"
                            << " " << pinholeIntrinsicFisheye->w() << " " << pinholeIntrinsicFisheye->h() << " "
-                           << pinholeIntrinsicFisheye->getFocalLengthPixX() << " " << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
-                           << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " " << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
-                           << pinholeIntrinsicFisheye->getParams().at(4) << "\n";
+                           << pinholeIntrinsicFisheye->getFocalLengthPixX() << " " 
+                           << pinholeIntrinsicFisheye->getFocalLengthPixY() << " "
+                           << pinholeIntrinsicFisheye->getPrincipalPoint().x() << " " 
+                           << pinholeIntrinsicFisheye->getPrincipalPoint().y() << " "
+                           << distortion->getParameters().at(0) << "\n";
             }
             break;
         default:

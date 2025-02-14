@@ -29,7 +29,7 @@ LocalBundleAdjustmentGraph::LocalBundleAdjustmentGraph(const sfmData::SfMData& s
 
         IntrinsicHistory intrinsicHistory;
         intrinsicHistory.nbPoses = 0;
-        intrinsicHistory.focalLength = intrinsicPtr->getParams().at(0);
+        intrinsicHistory.focalLength = intrinsicPtr->getParameters().at(0);
         intrinsicHistory.isConstant = intrinsicPtr->isLocked();
 
         _intrinsicsHistory[intrinsicId].push_back(intrinsicHistory);
@@ -99,7 +99,7 @@ void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData&
 
         IntrinsicHistory intrinsicHistory;
         intrinsicHistory.nbPoses = intrinsicUsage[intrinsicId];
-        intrinsicHistory.focalLength = intrinsicPtr->getParams().at(0);
+        intrinsicHistory.focalLength = intrinsicPtr->getParameters().at(0);
         intrinsicHistory.isConstant = isFocalLengthConstant(intrinsicId);
 
         _intrinsicsHistory.at(intrinsicId).push_back(intrinsicHistory);

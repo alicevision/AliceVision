@@ -30,8 +30,9 @@ struct Constraint2dErrorFunctor
     bool operator()(T const* const* parameters, T* residuals) const
     {       
         const T* parameter_intrinsics = parameters[0];
-        const T* parameter_pose1 = parameters[1];
-        const T* parameter_pose2 = parameters[2];
+        const T* parameter_distortion = parameters[1];
+        const T* parameter_pose1 = parameters[2];
+        const T* parameter_pose2 = parameters[3];
 
         
         Eigen::Matrix<T, 3, 3> oneRo, twoRo, twoRone;
@@ -40,14 +41,16 @@ struct Constraint2dErrorFunctor
         twoRone = twoRo * oneRo.transpose();
 
         Eigen::Vector<T, 3> lifted;
-        const T * liftParameters[1];
+        const T * liftParameters[2];
         liftParameters[0] = parameter_intrinsics;
+        liftParameters[1] = parameter_distortion;
         _intrinsicLiftFunctor(liftParameters, lifted.data());
         Eigen::Vector<T, 3> transformed = twoRone * lifted;
 
-        const T * projectParameters[2];
+        const T * projectParameters[3];
         projectParameters[0] = parameter_intrinsics;
-        projectParameters[1] = transformed.data();
+        projectParameters[1] = parameter_distortion;
+        projectParameters[2] = transformed.data();
         return _intrinsicProjectFunctor(projectParameters, residuals);
     }
 

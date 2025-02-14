@@ -31,8 +31,9 @@ struct ProjectionSimpleErrorFunctor
     bool operator()(T const* const* parameters, T* residuals) const
     {       
         const T* parameter_intrinsics = parameters[0];
-        const T* parameter_pose = parameters[1];
-        const T* parameter_point = parameters[2];
+        const T* parameter_distortion = parameters[1];
+        const T* parameter_pose = parameters[2];
+        const T* parameter_point = parameters[3];
 
         //--
         // Apply external parameters (Pose)
@@ -49,9 +50,10 @@ struct ProjectionSimpleErrorFunctor
         transformedPoint[1] += cam_t[1];
         transformedPoint[2] += cam_t[2];
 
-        const T * innerParameters[2];
+        const T * innerParameters[3];
         innerParameters[0] = parameter_intrinsics;
-        innerParameters[1] = transformedPoint;
+        innerParameters[1] = parameter_distortion;
+        innerParameters[2] = transformedPoint;
 
         return _intrinsicFunctor(innerParameters, residuals);
     }
@@ -70,9 +72,10 @@ struct ProjectionErrorFunctor
     bool operator()(T const* const* parameters, T* residuals) const
     {       
         const T* parameter_intrinsics = parameters[0];
-        const T* parameter_pose = parameters[1];
-        const T* parameter_subpose = parameters[2];
-        const T* parameter_point = parameters[3];
+        const T* parameter_distortion = parameters[1];
+        const T* parameter_pose = parameters[2];
+        const T* parameter_subpose = parameters[3];
+        const T* parameter_point = parameters[4];
 
         T transformedPoint[3];
         {
@@ -102,9 +105,10 @@ struct ProjectionErrorFunctor
             transformedPoint[2] += cam_t[2];
         }
 
-        const T * innerParameters[2];
+        const T * innerParameters[3];
         innerParameters[0] = parameter_intrinsics;
-        innerParameters[1] = transformedPoint;
+        innerParameters[1] = parameter_distortion;
+        innerParameters[2] = transformedPoint;
 
         return _intrinsicFunctor(innerParameters, residuals);
     }

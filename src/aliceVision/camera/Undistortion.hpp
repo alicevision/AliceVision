@@ -33,6 +33,7 @@ class Undistortion
     {
         _pixelAspectRatio = 1.0;
         _isDesqueezed = false;
+        _isLocked = false;
         
         setSize(width, height);
         setOffset({0.0, 0.0});
@@ -61,6 +62,16 @@ class Undistortion
     bool isDesqueezed() const
     {
         return _isDesqueezed;
+    }
+
+    bool isLocked() const
+    {
+        return _isLocked;
+    }
+
+    void setLocked(bool lock) 
+    {
+        _isLocked = lock;
     }
 
     void setOffset(const Vec2& offset) { _offset = offset; }
@@ -151,6 +162,7 @@ class Undistortion
     double _pixelAspectRatio;
     bool _isDesqueezed;
     std::vector<double> _undistortionParams{};
+    bool _isLocked;
 };
 
 }  // namespace camera

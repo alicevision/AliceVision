@@ -209,6 +209,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
             intrinsicTree.put("undistortionDiagonal", undistortionObject->getDiagonal());
             intrinsicTree.put("pixelAspectRatio", undistortionObject->getPixelAspectRatio());
             intrinsicTree.put("isDesqueezed", undistortionObject->isDesqueezed());
+            intrinsicTree.put("isLocked", undistortionObject->isLocked());
 
             for (double param : undistortionObject->getParameters())
             {
@@ -400,6 +401,7 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
                 Vec2 offset;
                 loadMatrix("undistortionOffset", offset, intrinsicTree);
                 undistortionObject->setOffset(offset);
+                undistortionObject->setLocked(intrinsicTree.get<bool>("isLocked", true));
 
                 if (version >= Version(1, 2, 7))
                 {

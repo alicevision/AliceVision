@@ -270,13 +270,13 @@ class IntrinsicBase
      * @brief Get the intrinsic parameters
      * @return Intrinsic parameters as a vector
      */
-    virtual std::vector<double> getParams() const = 0;
+    virtual std::vector<double> getParameters() const = 0;
 
     /**
      * @brief Get the count of intrinsic parameters
      * @return The number of intrinsic parameters
      */
-    virtual std::size_t getParamsSize() const = 0;
+    virtual std::size_t getParametersSize() const = 0;
 
     /**
      * @brief Update intrinsic parameters

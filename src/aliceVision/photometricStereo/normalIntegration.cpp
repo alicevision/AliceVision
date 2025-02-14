@@ -112,9 +112,9 @@ void normalIntegration(const sfmData::SfMData& sfmData,
                     viewId = viewIt.first;
                     // Get intrinsics associated with this view :
                     intrinsicId = viewIt.second->getIntrinsicId();
-                    const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
-                    const float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
-                    const float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
+                    const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(0);
+                    const float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(2);
+                    const float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(3);
 
                     // Create K matrix
                     K(0, 0) = focalPx;
@@ -219,9 +219,9 @@ void normalIntegration(const sfmData::SfMData& sfmData,
         {
             intrinsicId = sfmData.getViews().begin()->second->getIntrinsicId();
             // Get intrinsics associated with this view :
-            const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
-            const float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
-            const float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
+            const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(0);
+            const float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(2);
+            const float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(3);
 
             // Create K matrix
             K(0, 0) = focalPx;
