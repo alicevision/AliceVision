@@ -59,7 +59,7 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("uniqueIntrinsics", po::bool_switch(&uniqueIntrinsics),
-          "Consider all the camera having the same intrinsics (the first camera instrinsics will be used for all the others).")
+          "Consider all the camera having the same intrinsics (the first camera intrinsics will be used for all the others).")
         ("importPoses", po::value<bool>(&importPoses)->default_value(importPoses),
          "Import the poses, disable this if you want, e.g. test the sfm part and assess the camera pose estimation.")
         ("lockIntrinsics", po::value<bool>(&lockIntrinsics)->default_value(lockIntrinsics),

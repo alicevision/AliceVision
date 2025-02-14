@@ -34,7 +34,7 @@ enum class ESubsetType : unsigned char
 };
 
 /**
- * @brief get informations about each subset type
+ * @brief get information about each subset type
  * @return String
  */
 std::string ESubsetType_informations()
@@ -137,7 +137,7 @@ int aliceVision_main(int argc, char* argv[])
         ("smoothingSubset",po::value<std::string>(&smoothingSubsetTypeName)->default_value(smoothingSubsetTypeName),
          ESubsetType_informations().c_str())
         ("smoothingBoundariesNeighbours", po::value<int>(&smoothingBoundariesNeighbours)->default_value(smoothingBoundariesNeighbours),
-         "Neighbours of the boudaries to consider.")
+         "Neighbours of the boundaries to consider.")
         ("smoothingIterations", po::value<int>(&smoothNIter)->default_value(smoothNIter),
          "Number of smoothing iterations.")
         ("smoothingLambda", po::value<float>(&lambda)->default_value(lambda),

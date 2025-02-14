@@ -240,7 +240,7 @@ int aliceVision_main(int argc, char** argv)
         {
             bool found = true;
 
-            // Check if the point is close to the sensor enough to be theorically close to a neighboor
+            // Check if the point is close to the sensor enough to be theoretically close to a neighbor
             double length = (vertices[vIndex].coords - sensorPosition).norm();
             if (length < maxLength)
             {

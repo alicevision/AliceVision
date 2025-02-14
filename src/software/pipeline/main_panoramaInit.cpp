@@ -875,7 +875,7 @@ int main(int argc, char* argv[])
         ("initializeCameras", po::value<std::string>(&initializeCameras),
          "Initialization type for the cameras poses.")
         ("nbViewsPerLine", po::value<std::string>(&nbViewsPerLineString),
-         "Number of views per line splitted by comma. For instance, \"2,4,*,4,2\".")
+         "Number of views per line split by commas. For instance, \"2,4,*,4,2\".")
         ("buildContactSheet", po::value<bool>(&buildContactSheet)->default_value(buildContactSheet),
          "Build a contact sheet");
 
@@ -1074,7 +1074,7 @@ int main(int argc, char* argv[])
         {
             if (nbViewsPerLineString.empty())
             {
-                ALICEVISION_LOG_ERROR("Init cameras from Sperical, but 'nbViewsPerLine' is not set.");
+                ALICEVISION_LOG_ERROR("Init cameras from Spherical, but 'nbViewsPerLine' is not set.");
                 return EXIT_FAILURE;
             }
 

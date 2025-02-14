@@ -130,7 +130,7 @@ int aliceVision_main(int argc, char* argv[])
         ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
          "Option to uniformize images exposure.")
         ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
-         "Triangle visibility is based on the union of vertices visiblity.")
+         "Triangle visibility is based on the union of vertices visibility.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
          "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the "
          "convention changes from one software to another.")

@@ -286,7 +286,7 @@ int aliceVision_main(int argc, char** argv)
                                     throw std::runtime_error("Invalid RigId/PoseId (out of rig) for view: " + viewA.getImage().getImagePath());
                             }
                         }
-                        // copy the pose of the rig or the independant pose
+                        // copy the pose of the rig or the independent pose
                         sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getPoses().at(viewB.getPoseId());
 
                         // warning: we copy the full rig (and not only the subpose corresponding to the view).
@@ -337,7 +337,7 @@ int aliceVision_main(int argc, char** argv)
                             for (const auto& obsIt : landIt.second.getObservations())
                             {
                                 const IndexT viewId = obsIt.first;
-                                // If the observation view has a correspondance in the other sfmData, we copy it :
+                                // If the observation view has a correspondence in the other sfmData, we copy it :
                                 if (commonViewsMap.find(viewId) != commonViewsMap.end())
                                 {
                                     newLandmark.getObservations().emplace(commonViewsMap.at(viewId), landIt.second.getObservations().at(viewId));

@@ -124,7 +124,7 @@ int aliceVision_main(int argc, char** argv)
         }
         
         auto path = (pathOutputDirectory / (std::to_string(index) + "_normalMap.exr"));
-        ALICEVISION_LOG_INFO("Ouput to " << path);
+        ALICEVISION_LOG_INFO("Output to " << path);
         image::writeImage(path.string(), image, image::ImageWriteOptions(), metadata);
     }
 

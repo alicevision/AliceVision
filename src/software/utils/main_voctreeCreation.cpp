@@ -76,7 +76,7 @@ int aliceVision_main(int argc, char** argv)
          "Number of levels of the tree.")
         ("sanitycheck,s", po::value<bool>(&sanityCheck)->default_value(sanityCheck),
          "Perform a sanity check at the end of the creation of the vocabulary tree. "
-         "The sanity check is a query to the database with the same documents/images useed to train the vocabulary tree.");
+         "The sanity check is a query to the database with the same documents/images used to train the vocabulary tree.");
     // clang-format on
 
     CmdLine cmdline(

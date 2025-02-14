@@ -84,7 +84,7 @@ int aliceVision_main(int argc, char** argv)
         ("contrastFiltering", po::value<feature::EFeatureConstrastFiltering>(&featDescConfig.contrastFiltering)->default_value(featDescConfig.contrastFiltering),
          feature::EFeatureConstrastFiltering_information().c_str())
         ("relativePeakThreshold", po::value<float>(&featDescConfig.relativePeakThreshold)->default_value(featDescConfig.relativePeakThreshold),
-         "Peak Threshold relative to median of gradiants.")
+         "Peak Threshold relative to median of gradients.")
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("forceCpuExtraction", po::value<bool>(&forceCpuExtraction)->default_value(forceCpuExtraction),

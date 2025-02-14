@@ -434,7 +434,7 @@ int aliceVision_main(int argc, char** argv)
     // Using two views, create an initial map and pair of cameras
     buildInitialWorld(sfmData, reconstructedPairs[0], mapTracksPerView, mapTracks);
 
-    // Loop until termination of the process using the current boostrapped map
+    // Loop until termination of the process using the current bootstrapped map
     std::set<IndexT> visited;
     while (1)
     {
@@ -458,7 +458,7 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    // Refinment options
+    // Refinement options
     sfm::BundleAdjustmentCeres::CeresOptions options;
     sfm::BundleAdjustment::ERefineOptions refineOptions =
       sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_STRUCTURE | sfm::BundleAdjustment::REFINE_INTRINSICS_FOCAL |
