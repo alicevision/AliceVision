@@ -301,11 +301,11 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
         // update the intrinsics of each localization result
 
         auto intrinsic = tinyScene.getIntrinsics().at(0);
-        auto casted = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
         std::shared_ptr<camera::Distortion> distortion;
-        if (casted)
+        if (isod)
         {
-            distortion = casted->getDistortion();
+            distortion = isod->getDistortion();
         }
 
         // get its optimized parameters
@@ -324,10 +324,10 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
             }
             currResult.updateIntrinsics(params);
 
-            auto curDistortion = currResult.getIntrinsics().getDistortion();
-            if (distortion && curDistortion)
+            auto currDistortion = currResult.getIntrinsics().getDistortion();
+            if (distortion && currDistortion)
             {
-                curDistortion->setParameters(distortion->getParameters());
+                currDistortion->setParameters(distortion->getParameters());
             }
             
 

@@ -1431,14 +1431,14 @@ int aliceVision_main(int argc, char* argv[])
 
             if (pParams.par.enabled)
             {
-                auto casted = camera::IntrinsicScaleOffset::cast(cam);
-                if (casted)
+                auto iso = camera::IntrinsicScaleOffset::cast(cam);
+                if (iso)
                 {
-                    pParams.par.value = casted->getScale().y() / casted->getScale().x();
+                    pParams.par.value = iso->getScale().y() / iso->getScale().x();
                 }
             }
 
-            // Image processSing
+            // Image processing
             processImage(image, pParams, viewMetadata, cam);
 
             if (pParams.applyDcpMetadata)

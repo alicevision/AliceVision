@@ -21,19 +21,19 @@ class CostIntrinsicsProject : public ceres::CostFunction
     {
         set_num_residuals(2);
 
-        size_t size_disto = 1;
+        size_t sizeDisto = 1;
         auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsics);
         if (isod)
         {
             _distortion = isod->getDistortion();
             if (_distortion)
             {
-                size_disto = _distortion->getParameters().size();
+                sizeDisto = _distortion->getParameters().size();
             }
         }
         
         mutable_parameter_block_sizes()->push_back(intrinsics->getParametersSize());
-        mutable_parameter_block_sizes()->push_back(size_disto);
+        mutable_parameter_block_sizes()->push_back(sizeDisto);
         mutable_parameter_block_sizes()->push_back(3);
     }
 

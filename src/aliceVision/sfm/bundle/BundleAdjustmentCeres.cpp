@@ -1021,7 +1021,7 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
     ceres::Solve(options, &problem, &summary);
 
     // print summary
-    //if (_ceresOptions.summary)
+    if (_ceresOptions.summary)
         ALICEVISION_LOG_INFO(summary.FullReport());
 
     // solution is not usable
